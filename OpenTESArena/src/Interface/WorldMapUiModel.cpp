@@ -12,11 +12,57 @@
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
 
+#include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
 std::string WorldMapUiModel::getProvinceNameOffsetFilename()
 {
 	return "OUTPROV.CIF";
+}
+
+const WorldMapMask &WorldMapUiModel::getMask(const Game &game, int maskID)
+{
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &worldMapMasks = binaryAssetLibrary.getWorldMapMasks();
+
+	DebugAssertIndex(worldMapMasks, maskID);
+	return worldMapMasks[maskID];
+}
+
+std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosition, bool ignoreCenterProvince,
+	bool ignoreExitButton)
+{
+	const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+	const auto &worldMapMasks = game.getBinaryAssetLibrary().getWorldMapMasks();
+	const int maskCount = static_cast<int>(worldMapMasks.size());
+	for (int maskID = 0; maskID < maskCount; maskID++)
+	{
+		constexpr int centerProvinceID = LocationUtils::CENTER_PROVINCE_ID;
+		constexpr int exitButtonID = WorldMapUiModel::EXIT_BUTTON_MASK_ID;
+		if ((ignoreCenterProvince && (maskID == centerProvinceID)) ||
+			(ignoreExitButton && (maskID == exitButtonID)))
+		{
+			continue;
+		}
+
+		DebugAssertIndex(worldMapMasks, maskID);
+		const WorldMapMask &mapMask = worldMapMasks[maskID];
+		const Rect &maskRect = mapMask.getRect();
+
+		if (maskRect.contains(classicPosition))
+		{
+			// See if the pixel is set in the bitmask.
+			const bool success = mapMask.get(classicPosition.x, classicPosition.y);
+
+			if (success)
+			{
+				return maskID;
+			}
+		}
+	}
+
+	// No province/button found at the given pixel.
+	return std::nullopt;
 }
 
 void WorldMapUiModel::tickTravelTime(Game &game, int travelDays)

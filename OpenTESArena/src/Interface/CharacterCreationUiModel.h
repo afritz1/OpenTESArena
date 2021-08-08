@@ -56,7 +56,6 @@ namespace ChooseRaceUiModel
 	std::string getProvinceConfirmYesText(Game &game);
 	std::string getProvinceConfirmNoText(Game &game);
 	std::string getProvinceTooltipText(Game &game, int provinceID);
-	std::optional<int> getProvinceID(Game &game, const Int2 &originalPosition);
 	std::string getProvinceConfirmedFirstText(Game &game);
 	std::string getProvinceConfirmedSecondText(Game &game);
 	std::string getProvinceConfirmedThirdText(Game &game);

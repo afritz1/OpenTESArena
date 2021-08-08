@@ -13,6 +13,7 @@ namespace InputActionMapName
 	constexpr const char *GameWorld = "GameWorld";
 	constexpr const char *Logbook = "Logbook";
 	constexpr const char *MainMenu = "MainMenu"; // Load, new game, exit, test.
+	constexpr const char *WorldMap = "WorldMap";
 
 	constexpr const char *Names[] =
 	{
@@ -23,7 +24,8 @@ namespace InputActionMapName
 		Cinematic,
 		GameWorld,
 		Logbook,
-		MainMenu
+		MainMenu,
+		WorldMap
 	};
 }
 

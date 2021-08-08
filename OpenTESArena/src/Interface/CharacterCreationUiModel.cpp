@@ -361,39 +361,6 @@ std::string ChooseRaceUiModel::getProvinceTooltipText(Game &game, int provinceID
 	return "Land of the " + raceName;
 }
 
-std::optional<int> ChooseRaceUiModel::getProvinceID(Game &game, const Int2 &originalPosition)
-{
-	const auto &worldMapMasks =game.getBinaryAssetLibrary().getWorldMapMasks();
-	const int maskCount = static_cast<int>(worldMapMasks.size());
-	for (int maskID = 0; maskID < maskCount; maskID++)
-	{
-		// Ignore the center province and the "Exit" button.
-		constexpr int exitButtonID = 9;
-		if ((maskID == LocationUtils::CENTER_PROVINCE_ID) || (maskID == exitButtonID))
-		{
-			continue;
-		}
-
-		const WorldMapMask &mapMask = worldMapMasks.at(maskID);
-		const Rect &maskRect = mapMask.getRect();
-
-		if (maskRect.contains(originalPosition))
-		{
-			// See if the pixel is set in the bitmask.
-			const bool success = mapMask.get(originalPosition.x, originalPosition.y);
-
-			if (success)
-			{
-				// Return the mask's ID.
-				return maskID;
-			}
-		}
-	}
-
-	// No province mask found at the given location.
-	return std::nullopt;
-}
-
 std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 {
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();

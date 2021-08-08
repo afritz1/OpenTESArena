@@ -16,6 +16,7 @@
 #include "MessageBoxSubPanel.h"
 #include "TextCinematicPanel.h"
 #include "TextSubPanel.h"
+#include "WorldMapUiModel.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -184,8 +185,7 @@ void ChooseRaceUiController::onMouseButtonChanged(Game &game, MouseButtonType bu
 	// Listen for clicks on the map, checking if the mouse is over a province mask.
 	if ((buttonType == MouseButtonType::Left) && pressed)
 	{
-		const Int2 originalPoint = game.getRenderer().nativeToOriginal(position);
-		const std::optional<int> provinceID = ChooseRaceUiModel::getProvinceID(game, originalPoint);
+		const std::optional<int> provinceID = WorldMapUiModel::getMaskID(game, position, true, true);
 		if (provinceID.has_value())
 		{
 			ChooseRaceUiController::onProvinceButtonSelected(game, *provinceID);

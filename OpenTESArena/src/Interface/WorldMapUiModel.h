@@ -3,18 +3,30 @@
 
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "../Math/Vector2.h"
 
 class Game;
 class Panel;
+class WorldMapMask;
 
 namespace WorldMapUiModel
 {
 	// -- World map --
 
+	static constexpr int EXIT_BUTTON_MASK_ID = 9;
+	static constexpr int MASK_COUNT = EXIT_BUTTON_MASK_ID + 1;
+
 	std::string getProvinceNameOffsetFilename();
+
+	// Gets the mask click area for a province or the exit button.
+	const WorldMapMask &getMask(const Game &game, int maskID);
+
+	// Gets the province ID or exit button ID of the hovered pixel on the world map.
+	std::optional<int> getMaskID(Game &game, const Int2 &mousePosition, bool ignoreCenterProvince,
+		bool ignoreExitButton);
 
 	// -- Fast travel --
 

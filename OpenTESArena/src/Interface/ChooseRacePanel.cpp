@@ -5,6 +5,7 @@
 #include "CharacterCreationUiView.h"
 #include "ChooseRacePanel.h"
 #include "TextSubPanel.h"
+#include "WorldMapUiModel.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
@@ -130,11 +131,8 @@ void ChooseRacePanel::renderSecondary(Renderer &renderer)
 	const auto &inputManager = game.getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 
-	// Draw hovered province tooltip.
-	const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
-
 	// Draw tooltip if the mouse is in a province.
-	const std::optional<int> provinceID = ChooseRaceUiModel::getProvinceID(game, originalPoint);
+	const std::optional<int> provinceID = WorldMapUiModel::getMaskID(game, mousePosition, true, true);
 	if (provinceID.has_value())
 	{
 		this->drawProvinceTooltip(*provinceID, renderer);

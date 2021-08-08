@@ -226,6 +226,13 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_f));
 		}
+		else if (StringView::equals(mapName, InputActionMapName::WorldMap))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::WorldMap,
+				InputStateType::BeginPerform,
+				SDLK_m));
+		}
 		else
 		{
 			DebugLogError("Unrecognized default map name \"" + std::string(mapName) + "\".");
