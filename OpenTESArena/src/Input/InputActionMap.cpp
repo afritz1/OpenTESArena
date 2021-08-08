@@ -83,6 +83,13 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_r));
 		}
+		else if (StringView::equals(mapName, InputActionMapName::CharacterEquipment))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::CharacterSheet,
+				InputStateType::BeginPerform,
+				SDLK_TAB));
+		}
 		else if (StringView::equals(mapName, InputActionMapName::CharacterSheet))
 		{
 			defs.emplace_back(makeKeyDef(

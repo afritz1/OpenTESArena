@@ -9,6 +9,7 @@ namespace InputActionMapName
 
 	constexpr const char *Automap = "Automap";
 	constexpr const char *CharacterCreation = "CharacterCreation"; // Save/reroll attributes.
+	constexpr const char *CharacterEquipment = "CharacterEquipment";
 	constexpr const char *CharacterSheet = "CharacterSheet";
 	constexpr const char *Cinematic = "Cinematic"; // Skip, etc..
 	constexpr const char *GameWorld = "GameWorld";
@@ -22,6 +23,7 @@ namespace InputActionMapName
 
 		Automap,
 		CharacterCreation,
+		CharacterEquipment,
 		CharacterSheet,
 		Cinematic,
 		GameWorld,

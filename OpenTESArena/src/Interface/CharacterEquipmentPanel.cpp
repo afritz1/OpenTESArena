@@ -7,6 +7,7 @@
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 
@@ -14,6 +15,12 @@
 
 CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 	: Panel(game) { }
+
+CharacterEquipmentPanel::~CharacterEquipmentPanel()
+{
+	auto &inputManager = this->getGame().getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterEquipment, false);
+}
 
 bool CharacterEquipmentPanel::init()
 {
@@ -111,9 +118,12 @@ bool CharacterEquipmentPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, this->scrollUpButton.getRect(),
 		[this, &game]() { this->scrollUpButton.click(this->inventoryListBox); });
 
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterEquipment, true);
+
 	auto backToStatsInputActionFunc = CharacterSheetUiController::onBackToStatsInputAction;
 	this->addInputActionListener(InputActionName::Back, backToStatsInputActionFunc);
-	this->addInputActionListener(InputActionName::CharacterSheet, backToStatsInputActionFunc); // @todo: make sure input action map is active
+	this->addInputActionListener(InputActionName::CharacterSheet, backToStatsInputActionFunc);
 
 	this->addMouseScrollChangedListener([this](Game &game, MouseWheelScrollType type, const Int2 &position)
 	{
