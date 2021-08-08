@@ -14,6 +14,7 @@
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
+#include "../Input/InputActionName.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -146,6 +147,7 @@ bool OptionsPanel::init()
 	initTabTextBox(this->miscTextBox, 3, OptionsUiModel::MISC_TAB_NAME);
 	initTabTextBox(this->devTextBox, 4, OptionsUiModel::DEV_TAB_NAME);
 
+	// Button proxies are added later.
 	this->backToPauseMenuButton = Button<Game&>(
 		OptionsUiView::BackToPauseMenuButtonCenterPoint,
 		OptionsUiView::BackToPauseMenuButtonWidth,
@@ -153,6 +155,15 @@ bool OptionsPanel::init()
 		OptionsUiController::onBackToPauseMenuButtonSelected);
 	this->tabButton = Button<OptionsPanel&, OptionsUiModel::Tab*, OptionsUiModel::Tab>(
 		OptionsUiController::onTabButtonSelected);
+
+	this->addInputActionListener(InputActionName::Back,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->backToPauseMenuButton.click(values.game);
+		}
+	});
 
 	// Create graphics options.
 	this->graphicsOptions.emplace_back(OptionsUiModel::makeWindowModeOption(game));
