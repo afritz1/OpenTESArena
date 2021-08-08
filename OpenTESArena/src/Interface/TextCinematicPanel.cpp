@@ -9,6 +9,8 @@
 #include "TextCinematicUiView.h"
 #include "../Audio/AudioManager.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../Math/Vector2.h"
 #include "../Media/TextCinematicDefinition.h"
 #include "../Media/TextureManager.h"
@@ -24,8 +26,18 @@
 TextCinematicPanel::TextCinematicPanel(Game &game)
 	: Panel(game) { }
 
-bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
-	const std::function<void(Game&)> &onFinished)
+TextCinematicPanel::~TextCinematicPanel()
+{
+	auto &game = this->getGame();
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, false);
+
+	// Stop voice if it is still playing.
+	auto &audioManager = game.getAudioManager();
+	audioManager.stopSound();
+}
+
+bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage, const OnFinishedFunction &onFinished)
 {
 	auto &game = this->getGame();
 	const auto &cinematicLibrary = game.getCinematicLibrary();
@@ -83,7 +95,44 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		return textBoxes;
 	}();
 
-	this->skipButton = Button<Game&>(onFinished);
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, true);
+
+	auto skipPageFunc = [this, onFinished](Game &game)
+	{
+		// Only allow page skipping if there is no speech.
+		if (!TextCinematicUiModel::shouldPlaySpeech(game))
+		{
+			this->textIndex++;
+
+			// If done with the last text box, then prepare for the next panel.
+			int textBoxCount = static_cast<int>(this->textBoxes.size());
+			if (this->textIndex >= textBoxCount)
+			{
+				this->textIndex = textBoxCount - 1;
+				onFinished(game);
+			}
+		}
+	};
+
+	this->skipButton = Button<Game&>(
+		0,
+		0,
+		ArenaRenderUtils::SCREEN_WIDTH,
+		ArenaRenderUtils::SCREEN_HEIGHT,
+		[skipPageFunc](Game &game) { skipPageFunc(game); });
+
+	this->addButtonProxy(MouseButtonType::Left, this->skipButton.getRect(),
+		[this, &game]() { this->skipButton.click(game); });
+
+	this->addInputActionListener(InputActionName::Back,
+		[onFinished, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			onFinished(game);
+		}
+	});
 
 	// Optionally initialize speech state if speech is available.
 	if (TextCinematicUiModel::shouldPlaySpeech(game))
@@ -99,45 +148,6 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	this->textIndex = 0;
 
 	return true;
-}
-
-void TextCinematicPanel::handleEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-
-	if (escapePressed)
-	{
-		// Force the cinematic to end.
-		this->skipButton.click(game);
-
-		// Stop voice if it is still playing.
-		auto &audioManager = game.getAudioManager();
-		audioManager.stopSound();
-	}
-
-	// Only allow page skipping if there is no speech.
-	if (!TextCinematicUiModel::shouldPlaySpeech(game))
-	{
-		const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-		const bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
-		const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
-		const bool skipHotkeyPressed = spacePressed || enterPressed;
-
-		if (leftClick || skipHotkeyPressed)
-		{
-			this->textIndex++;
-
-			// If done with the last text box, then prepare for the next panel.
-			int textBoxCount = static_cast<int>(this->textBoxes.size());
-			if (this->textIndex >= textBoxCount)
-			{
-				this->textIndex = textBoxCount - 1;
-				this->skipButton.click(game);
-			}
-		}
-	}
 }
 
 void TextCinematicPanel::tick(double dt)
