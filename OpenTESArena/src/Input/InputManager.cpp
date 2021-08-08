@@ -558,7 +558,8 @@ bool InputManager::isInTextEntryMode() const
 	return inTextEntryMode == SDL_TRUE;
 }
 
-void InputManager::handleHeldInputs(Game &game, uint32_t mouseState, const Int2 &mousePosition, double dt)
+void InputManager::handleHeldInputs(Game &game, const BufferView<const InputActionMap*> &activeMaps,
+	uint32_t mouseState, const Int2 &mousePosition, double dt)
 {
 	auto handleHeldMouseButton = [this, &game, mouseState, &mousePosition, dt](MouseButtonType buttonType)
 	{
@@ -584,11 +585,12 @@ void InputManager::handleHeldInputs(Game &game, uint32_t mouseState, const Int2 
 	const uint8_t *keyboardState = SDL_GetKeyboardState(nullptr);
 	const SDL_Keymod keyboardMod = SDL_GetModState();
 
-	for (const InputActionMap &map : this->inputActionMaps)
+	for (int i = 0; i < activeMaps.getCount(); i++)
 	{
-		if (map.active && (!this->isInTextEntryMode() || map.allowedDuringTextEntry))
+		const InputActionMap *map = activeMaps.get(i);
+		if (map->active && (!this->isInTextEntryMode() || map->allowedDuringTextEntry))
 		{
-			for (const InputActionDefinition &def : map.defs)
+			for (const InputActionDefinition &def : map->defs)
 			{
 				if (def.stateType == InputStateType::Performing)
 				{
@@ -626,10 +628,21 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 	// @todo: don't save mouse delta as member, just keep local variable here once we can.
 	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
 
+	// Need to gather up active maps before looping over them since callbacks can change which maps are active.
+	std::vector<const InputActionMap*> activeMaps;
+	for (const InputActionMap &map : this->inputActionMaps)
+	{
+		if (map.active)
+		{
+			activeMaps.emplace_back(&map);
+		}
+	}
+
 	// Handle held mouse buttons and keys.
+	const BufferView<const InputActionMap*> activeMapsView(activeMaps.data(), static_cast<int>(activeMaps.size()));
 	Int2 mousePosition;
 	const uint32_t mouseState = SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
-	this->handleHeldInputs(game, mouseState, mousePosition, dt);
+	this->handleHeldInputs(game, activeMapsView, mouseState, mousePosition, dt);
 
 	// Handle SDL events.
 	// @todo: make sure to not fire duplicate callbacks for the same input action if it is registered to multiple
@@ -646,11 +659,11 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 			const bool isKeyDown = e.type == SDL_KEYDOWN;
 			const bool isKeyUp = e.type == SDL_KEYUP;
 
-			for (const InputActionMap &map : this->inputActionMaps)
+			for (const InputActionMap *map : activeMaps)
 			{
-				if (map.active && (!this->isInTextEntryMode() || map.allowedDuringTextEntry))
+				if (map->active && (!this->isInTextEntryMode() || map->allowedDuringTextEntry))
 				{
-					for (const InputActionDefinition &def : map.defs)
+					for (const InputActionDefinition &def : map->defs)
 					{
 						const bool matchesStateType = (isKeyDown && def.stateType == InputStateType::BeginPerform) ||
 							(isKeyUp && def.stateType == InputStateType::EndPerform);
@@ -718,11 +731,11 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 					}
 				}
 
-				for (const InputActionMap &map : this->inputActionMaps)
+				for (const InputActionMap *map : activeMaps)
 				{
-					if (map.active)
+					if (map->active)
 					{
-						for (const InputActionDefinition &def : map.defs)
+						for (const InputActionDefinition &def : map->defs)
 						{
 							const bool matchesStateType = (isButtonPress && def.stateType == InputStateType::BeginPerform) ||
 								(isButtonRelease && def.stateType == InputStateType::EndPerform);
@@ -775,11 +788,11 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 					}
 				}
 
-				for (const InputActionMap &map : this->inputActionMaps)
+				for (const InputActionMap *map : activeMaps)
 				{
-					if (map.active)
+					if (map->active)
 					{
-						for (const InputActionDefinition &def : map.defs)
+						for (const InputActionDefinition &def : map->defs)
 						{
 							const bool matchesStateType = !def.stateType.has_value();
 
