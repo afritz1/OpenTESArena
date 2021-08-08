@@ -485,11 +485,13 @@ void Game::handleInput(double dt)
 {
 	// Handle input listener callbacks and general input updating.
 	const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
-	this->inputManager.update(*this, dt, buttonProxies, [this]()
+	auto onFinishedProcessingEventFunc = [this]()
 	{
 		// See if the event requested any changes in active panels.
 		this->handlePanelChanges();
-	});
+	};
+
+	this->inputManager.update(*this, dt, buttonProxies, onFinishedProcessingEventFunc);
 }
 
 void Game::handleApplicationExit()
