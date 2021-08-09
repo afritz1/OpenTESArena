@@ -2,6 +2,11 @@
 
 #include "StringView.h"
 
+bool StringView::equals(const std::string_view &a, const std::string_view &b)
+{
+	return a == b;
+}
+
 bool StringView::caseInsensitiveEquals(const std::string_view &a, const std::string_view &b)
 {
 	if (a.size() != b.size())

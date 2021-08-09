@@ -349,6 +349,13 @@ TextureAssetReference GameWorldUiView::getDefaultPaletteTextureAssetRef()
 	return TextureAssetReference(std::string(ArenaPaletteName::Default));
 }
 
+Int2 GameWorldUiView::getNativeWindowCenter(const Renderer &renderer)
+{
+	const Int2 windowDims = renderer.getWindowDimensions();
+	const Int2 nativeCenter = windowDims / 2;
+	return nativeCenter;
+}
+
 // @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
 // levels where ceilingScale < 1.0, and same with ceiling blue dots).
 void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)

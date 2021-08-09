@@ -14,6 +14,7 @@
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
+#include "../Input/InputActionName.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -26,6 +27,67 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
+
+namespace
+{
+	void TryIncrementOption(OptionsUiModel::Option &option)
+	{
+		const OptionsUiModel::OptionType optionType = option.getType();
+		if (optionType == OptionsUiModel::OptionType::Bool)
+		{
+			OptionsUiModel::BoolOption &boolOpt = static_cast<OptionsUiModel::BoolOption&>(option);
+			boolOpt.toggle();
+		}
+		else if (optionType == OptionsUiModel::OptionType::Int)
+		{
+			OptionsUiModel::IntOption &intOpt = static_cast<OptionsUiModel::IntOption&>(option);
+			intOpt.set(intOpt.getNext());
+		}
+		else if (optionType == OptionsUiModel::OptionType::Double)
+		{
+			OptionsUiModel::DoubleOption &doubleOpt = static_cast<OptionsUiModel::DoubleOption&>(option);
+			doubleOpt.set(doubleOpt.getNext());
+		}
+		else if (optionType == OptionsUiModel::OptionType::String)
+		{
+			// Do nothing.
+			static_cast<void>(option);
+		}
+		else
+		{
+			throw DebugException("Invalid type \"" + std::to_string(static_cast<int>(optionType)) + "\".");
+		}
+	}
+
+	void TryDecrementOption(OptionsUiModel::Option &option)
+	{
+		const OptionsUiModel::OptionType optionType = option.getType();
+		if (optionType == OptionsUiModel::OptionType::Bool)
+		{
+			OptionsUiModel::BoolOption &boolOpt = static_cast<OptionsUiModel::BoolOption&>(option);
+			boolOpt.toggle();
+		}
+		else if (optionType == OptionsUiModel::OptionType::Int)
+		{
+			OptionsUiModel::IntOption &intOpt = static_cast<OptionsUiModel::IntOption&>(option);
+			intOpt.set(intOpt.getPrev());
+		}
+		else if (optionType == OptionsUiModel::OptionType::Double)
+		{
+			OptionsUiModel::DoubleOption &doubleOpt = static_cast<OptionsUiModel::DoubleOption&>(option);
+			doubleOpt.set(doubleOpt.getPrev());
+		}
+		else if (optionType == OptionsUiModel::OptionType::String)
+		{
+			// Do nothing.
+			static_cast<void>(option);
+		}
+		else
+		{
+			throw DebugException("Invalid type \"" + std::to_string(static_cast<int>(optionType)) + "\".");
+		}
+	}
+}
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game) { }
@@ -85,6 +147,7 @@ bool OptionsPanel::init()
 	initTabTextBox(this->miscTextBox, 3, OptionsUiModel::MISC_TAB_NAME);
 	initTabTextBox(this->devTextBox, 4, OptionsUiModel::DEV_TAB_NAME);
 
+	// Button proxies are added later.
 	this->backToPauseMenuButton = Button<Game&>(
 		OptionsUiView::BackToPauseMenuButtonCenterPoint,
 		OptionsUiView::BackToPauseMenuButtonWidth,
@@ -92,6 +155,15 @@ bool OptionsPanel::init()
 		OptionsUiController::onBackToPauseMenuButtonSelected);
 	this->tabButton = Button<OptionsPanel&, OptionsUiModel::Tab*, OptionsUiModel::Tab>(
 		OptionsUiController::onTabButtonSelected);
+
+	this->addInputActionListener(InputActionName::Back,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->backToPauseMenuButton.click(values.game);
+		}
+	});
 
 	// Create graphics options.
 	this->graphicsOptions.emplace_back(OptionsUiModel::makeWindowModeOption(game));
@@ -129,8 +201,8 @@ bool OptionsPanel::init()
 	// Set initial tab.
 	this->tab = OptionsUiModel::Tab::Graphics;
 
-	// Initialize all option text boxes for the initial tab.
-	this->updateVisibleOptionTextBoxes();
+	// Initialize all option text boxes and buttons for the initial tab.
+	this->updateVisibleOptions();
 
 	return true;
 }
@@ -211,7 +283,7 @@ void OptionsPanel::updateOptionTextBoxText(int index)
 	textBox.setText(text);
 }
 
-void OptionsPanel::updateVisibleOptionTextBoxes()
+void OptionsPanel::updateVisibleOptions()
 {
 	auto &game = this->getGame();
 	const auto &visibleOptions = this->getVisibleOptions();
@@ -219,11 +291,71 @@ void OptionsPanel::updateVisibleOptionTextBoxes()
 	this->currentTabTextBoxes.clear();
 	this->currentTabTextBoxes.resize(visibleOptions.size());
 
+	// Remove all button proxies, including the static ones.
+	this->clearButtonProxies();
+
+	auto addTabButtonProxy = [this](OptionsUiModel::Tab tab, const Rect &rect)
+	{
+		this->addButtonProxy(MouseButtonType::Left, rect,
+			[this, tab]() { this->tabButton.click(*this, &this->tab, tab); });
+	};
+
+	// Add the static button proxies.
+	addTabButtonProxy(OptionsUiModel::Tab::Graphics, OptionsUiView::GraphicsTabRect);
+	addTabButtonProxy(OptionsUiModel::Tab::Audio, OptionsUiView::AudioTabRect);
+	addTabButtonProxy(OptionsUiModel::Tab::Input, OptionsUiView::InputTabRect);
+	addTabButtonProxy(OptionsUiModel::Tab::Misc, OptionsUiView::MiscTabRect);
+	addTabButtonProxy(OptionsUiModel::Tab::Dev, OptionsUiView::DevTabRect);
+	this->addButtonProxy(MouseButtonType::Left, this->backToPauseMenuButton.getRect(),
+		[this, &game]() { this->backToPauseMenuButton.click(game); });
+
+	auto addOptionButtonProxies = [this](int index)
+	{
+		DebugAssertIndex(this->currentTabTextBoxes, index);
+		const TextBox &optionTextBox = this->currentTabTextBoxes[index];
+		const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
+
+		const Rect optionRect(
+			OptionsUiView::ListOrigin.x,
+			OptionsUiView::ListOrigin.y + (optionTextBoxHeight * index),
+			OptionsUiView::ListDimensions.x,
+			optionTextBoxHeight);
+
+		auto buttonFunc = [this, index](bool isLeftClick)
+		{
+			auto &visibleOptions = this->getVisibleOptions();
+			DebugAssertIndex(visibleOptions, index);
+			std::unique_ptr<OptionsUiModel::Option> &optionPtr = visibleOptions[index];
+			OptionsUiModel::Option &option = *optionPtr;
+
+			// Modify the option based on which button was pressed.
+			if (isLeftClick)
+			{
+				TryIncrementOption(option);
+			}
+			else
+			{
+				TryDecrementOption(option);
+			}
+
+			this->updateOptionTextBoxText(index);
+		};
+
+		this->addButtonProxy(MouseButtonType::Left, optionRect, [buttonFunc]() { buttonFunc(true); });
+		this->addButtonProxy(MouseButtonType::Right, optionRect, [buttonFunc]() { buttonFunc(false); });
+	};
+
 	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
 		this->initOptionTextBox(i);
 		this->updateOptionTextBoxText(i);
+		addOptionButtonProxies(i);
 	}
+}
+
+std::optional<CursorData> OptionsPanel::getCurrentCursor() const
+{
+	return this->getDefaultCursor();
 }
 
 void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
@@ -345,154 +477,6 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 	const Rect &descriptionTextBoxRect = descriptionTextBox.getRect();
 	renderer.drawOriginal(descriptionTextBox.getTexture(),
 		descriptionTextBoxRect.getLeft(), descriptionTextBoxRect.getTop());
-}
-
-std::optional<CursorData> OptionsPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
-
-void OptionsPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
-
-	if (escapePressed)
-	{
-		this->backToPauseMenuButton.click(this->getGame());
-	}
-	else if (leftClick)
-	{
-		// Check for various button clicks.
-		// @todo: the tab rects should be pretty easy to iterate over
-		if (this->backToPauseMenuButton.contains(originalPoint))
-		{
-			this->backToPauseMenuButton.click(this->getGame());
-		}
-		else if (OptionsUiView::GraphicsTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Graphics);
-		}
-		else if (OptionsUiView::AudioTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Audio);
-		}
-		else if (OptionsUiView::InputTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Input);
-		}
-		else if (OptionsUiView::MiscTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Misc);
-		}
-		else if (OptionsUiView::DevTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Dev);
-		}
-	}
-
-	// Check for option clicks. Left click is "next", right click is "previous", with
-	// respect to an option's value in its pre-defined range (if any).
-	if (leftClick || rightClick)
-	{
-		auto &visibleOptions = this->getVisibleOptions();
-
-		for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
-		{
-			const auto &optionTextBox = this->currentTabTextBoxes.at(i);
-			const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
-
-			const Rect optionRect(
-				OptionsUiView::ListOrigin.x,
-				OptionsUiView::ListOrigin.y + (optionTextBoxHeight * i),
-				OptionsUiView::ListDimensions.x,
-				optionTextBoxHeight);
-
-			// See if the option's rectangle contains the mouse click.
-			if (optionRect.contains(originalPoint))
-			{
-				auto &option = visibleOptions.at(i);
-
-				// Lambdas for modifying the option value based on what it is and whether
-				// to try and increment it or decrement it (if that has any meaning).
-				auto tryIncrement = [&option]()
-				{
-					if (option->getType() == OptionsUiModel::OptionType::Bool)
-					{
-						OptionsUiModel::BoolOption *boolOpt = static_cast<OptionsUiModel::BoolOption*>(option.get());
-						boolOpt->toggle();
-					}
-					else if (option->getType() == OptionsUiModel::OptionType::Int)
-					{
-						OptionsUiModel::IntOption *intOpt = static_cast<OptionsUiModel::IntOption*>(option.get());
-						intOpt->set(intOpt->getNext());
-					}
-					else if (option->getType() == OptionsUiModel::OptionType::Double)
-					{
-						OptionsUiModel::DoubleOption *doubleOpt = static_cast<OptionsUiModel::DoubleOption*>(option.get());
-						doubleOpt->set(doubleOpt->getNext());
-					}
-					else if (option->getType() == OptionsUiModel::OptionType::String)
-					{
-						// Do nothing.
-						static_cast<void>(option);
-					}
-					else
-					{
-						throw DebugException("Invalid type \"" +
-							std::to_string(static_cast<int>(option->getType())) + "\".");
-					}
-				};
-
-				auto tryDecrement = [&option]()
-				{
-					if (option->getType() == OptionsUiModel::OptionType::Bool)
-					{
-						OptionsUiModel::BoolOption *boolOpt = static_cast<OptionsUiModel::BoolOption*>(option.get());
-						boolOpt->toggle();
-					}
-					else if (option->getType() == OptionsUiModel::OptionType::Int)
-					{
-						OptionsUiModel::IntOption *intOpt = static_cast<OptionsUiModel::IntOption*>(option.get());
-						intOpt->set(intOpt->getPrev());
-					}
-					else if (option->getType() == OptionsUiModel::OptionType::Double)
-					{
-						OptionsUiModel::DoubleOption *doubleOpt = static_cast<OptionsUiModel::DoubleOption*>(option.get());
-						doubleOpt->set(doubleOpt->getPrev());
-					}
-					else if (option->getType() == OptionsUiModel::OptionType::String)
-					{
-						// Do nothing.
-						static_cast<void>(option);
-					}
-					else
-					{
-						throw DebugException("Invalid type \"" +
-							std::to_string(static_cast<int>(option->getType())) + "\".");
-					}
-				};
-
-				// Modify the option based on which button was pressed.
-				if (leftClick)
-				{
-					tryIncrement();
-				}
-				else
-				{
-					tryDecrement();
-				}
-
-				this->updateOptionTextBoxText(i);
-				break;
-			}
-		}
-	}
 }
 
 void OptionsPanel::render(Renderer &renderer)

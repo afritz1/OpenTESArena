@@ -10,6 +10,14 @@ void CharacterSheetUiController::onDoneButtonSelected(Game &game)
 	game.setPanel<GameWorldPanel>();
 }
 
+void CharacterSheetUiController::onDoneInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		CharacterSheetUiController::onDoneButtonSelected(values.game);
+	}
+}
+
 void CharacterSheetUiController::onNextPageButtonSelected(Game &game)
 {
 	game.setPanel<CharacterEquipmentPanel>();
@@ -18,6 +26,14 @@ void CharacterSheetUiController::onNextPageButtonSelected(Game &game)
 void CharacterSheetUiController::onBackToStatsButtonSelected(Game &game)
 {
 	game.setPanel<CharacterPanel>();
+}
+
+void CharacterSheetUiController::onBackToStatsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		CharacterSheetUiController::onBackToStatsButtonSelected(values.game);
+	}
 }
 
 void CharacterSheetUiController::onSpellbookButtonSelected(Game &game)

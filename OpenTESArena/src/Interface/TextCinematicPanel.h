@@ -29,6 +29,8 @@ class Renderer;
 
 class TextCinematicPanel : public Panel
 {
+public:
+	using OnFinishedFunction = std::function<void(Game&)>;
 private:
 	std::vector<TextBox> textBoxes; // One for every three new lines.
 	Button<Game&> skipButton;
@@ -38,11 +40,10 @@ private:
 	int animImageIndex, textIndex, textCinematicDefIndex;
 public:
 	TextCinematicPanel(Game &game);
-	~TextCinematicPanel() override = default;
+	~TextCinematicPanel() override;
 
-	bool init(int textCinematicDefIndex, double secondsPerImage, const std::function<void(Game&)> &onFinished);
+	bool init(int textCinematicDefIndex, double secondsPerImage, const OnFinishedFunction &onFinished);
 
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };

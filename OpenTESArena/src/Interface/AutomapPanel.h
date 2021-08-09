@@ -41,20 +41,15 @@ private:
 	// XZ coordinate offset in automap space, stored as a real so scroll position can be sub-pixel.
 	Double2 automapOffset;
 
-	// Listen for when the LMB is held on a compass direction.
-	void handleMouse(double dt);
-
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	AutomapPanel(Game &game);
-	~AutomapPanel() override = default;
+	~AutomapPanel() override;
 
 	bool init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
 		const ChunkManager &chunkManager, const std::string &locationName);
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
-	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };
 

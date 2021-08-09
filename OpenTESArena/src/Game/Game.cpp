@@ -12,6 +12,7 @@
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
+#include "../Input/InputActionName.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
 #include "../Media/TextureManager.h"
@@ -78,6 +79,33 @@ Game::Game()
 	{
 		throw DebugException("Couldn't init renderer.");
 	}
+
+	this->inputManager.init();
+
+	// Add application-level input event handlers.
+	this->applicationExitListenerID = this->inputManager.addApplicationExitListener(
+		[this]()
+	{
+		this->handleApplicationExit();
+	});
+
+	this->windowResizedListenerID = this->inputManager.addWindowResizedListener(
+		[this](int width, int height)
+	{
+		this->handleWindowResized(width, height);
+	});
+
+	this->takeScreenshotListenerID = this->inputManager.addInputActionListener(InputActionName::Screenshot,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			// Save a screenshot to the local folder.
+			const auto &renderer = this->getRenderer();
+			const Surface screenshot = renderer.getScreenshot();
+			this->saveScreenshot(screenshot);
+		}
+	});
 
 	// Determine which version of the game the Arena path is pointing to.
 	const bool isFloppyVersion = [this, arenaPathIsRelative]()
@@ -198,6 +226,26 @@ Game::Game()
 	// This keeps the programmer from deleting a sub-panel the same frame it's in use.
 	// The pop is delayed until the beginning of the next frame.
 	this->requestedSubPanelPop = false;
+
+	this->running = true;
+}
+
+Game::~Game()
+{
+	if (this->applicationExitListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->applicationExitListenerID);
+	}
+
+	if (this->windowResizedListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->windowResizedListenerID);
+	}
+
+	if (this->takeScreenshotListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->takeScreenshotListenerID);
+	}
 }
 
 Panel *Game::getActivePanel() const
@@ -414,74 +462,54 @@ void Game::handlePanelChanges()
 		this->requestedSubPanelPop = false;
 		
 		// Unpause the panel that is now the top-most one.
-		const bool paused = false;
-		this->getActivePanel()->onPauseChanged(paused);
+		this->getActivePanel()->onPauseChanged(false);
+	}
+
+	// If a new panel was requested, switch to it.
+	if (this->nextPanel.get() != nullptr)
+	{
+		this->panel = std::move(this->nextPanel);
 	}
 
 	// If a new sub-panel was requested, then add it to the stack.
 	if (this->nextSubPanel.get() != nullptr)
 	{
 		// Pause the top-most panel.
-		const bool paused = true;
-		this->getActivePanel()->onPauseChanged(paused);
+		this->getActivePanel()->onPauseChanged(true);
 
-		this->subPanels.push_back(std::move(this->nextSubPanel));
-	}
-
-	// If a new panel was requested, switch to it. If it will be the active panel 
-	// (i.e., there are no sub-panels), then subsequent events will be sent to it.
-	if (this->nextPanel.get() != nullptr)
-	{
-		this->panel = std::move(this->nextPanel);
+		this->subPanels.emplace_back(std::move(this->nextSubPanel));
 	}
 }
 
-void Game::handleEvents(bool &running)
+void Game::handleInput(double dt)
 {
-	// Handle events for the current game state.
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	// Handle input listener callbacks and general input updating.
+	const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
+	auto onFinishedProcessingEventFunc = [this]()
 	{
-		// Application events and window resizes are handled here.
-		bool applicationExit = this->inputManager.applicationExit(e);
-		bool resized = this->inputManager.windowResized(e);
-		bool takeScreenshot = this->inputManager.keyPressed(e, SDLK_PRINTSCREEN);
-
-		if (applicationExit)
-		{
-			running = false;
-		}
-
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->resizeWindow(width, height);
-
-			// Call each panel's resize method. The panels should not be listening for
-			// resize events themselves because it's more of an "application event" than
-			// a panel event.
-			this->panel->resize(width, height);
-
-			for (auto &subPanel : this->subPanels)
-			{
-				subPanel->resize(width, height);
-			}
-		}
-
-		if (takeScreenshot)
-		{
-			// Save a screenshot to the local folder.
-			const auto &renderer = this->getRenderer();
-			const Surface screenshot = renderer.getScreenshot();
-			this->saveScreenshot(screenshot);
-		}
-
-		// Panel-specific events are handled by the active panel.
-		this->getActivePanel()->handleEvent(e);
-
 		// See if the event requested any changes in active panels.
 		this->handlePanelChanges();
+	};
+
+	this->inputManager.update(*this, dt, buttonProxies, onFinishedProcessingEventFunc);
+}
+
+void Game::handleApplicationExit()
+{
+	this->running = false;
+}
+
+void Game::handleWindowResized(int width, int height)
+{
+	this->resizeWindow(width, height);
+
+	// Call each panel's resize method. The panels should not be listening for resize events themselves
+	// because it's more of an application event than a panel event.
+	this->panel->resize(width, height);
+
+	for (auto &subPanel : this->subPanels)
+	{
+		subPanel->resize(width, height);
 	}
 }
 
@@ -557,8 +585,7 @@ void Game::loop()
 	auto thisTime = std::chrono::high_resolution_clock::now();
 
 	// Primary game loop.
-	bool running = true;
-	while (running)
+	while (this->running)
 	{
 		const auto lastTime = thisTime;
 		thisTime = std::chrono::high_resolution_clock::now();
@@ -602,9 +629,6 @@ void Game::loop()
 		// Reset scratch allocator for use with this frame.
 		this->scratchAllocator.clear();
 
-		// Update the input manager's state.
-		this->inputManager.update();
-
 		// Update the audio manager listener (if any) and check for finished sounds.
 		this->updateAudio(dt);
 
@@ -614,11 +638,11 @@ void Game::loop()
 		// Listen for input events.
 		try
 		{
-			this->handleEvents(running);
+			this->handleInput(dt);
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("handleEvents() exception: " + std::string(e.what()));
+			DebugCrash("handleInput() exception: " + std::string(e.what()));
 		}
 
 		// Animate the current game state by delta time.

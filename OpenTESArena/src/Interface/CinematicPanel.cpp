@@ -1,8 +1,9 @@
-#include "SDL.h"
-
 #include "CinematicPanel.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/Texture.h"
 
@@ -10,9 +11,30 @@ CinematicPanel::CinematicPanel(Game &game)
 	: Panel(game) { }
 
 bool CinematicPanel::init(const std::string &paletteName, const std::string &sequenceName,
-	double secondsPerImage, const std::function<void(Game&)> &endingAction)
+	double secondsPerImage, const OnFinishedFunction &onFinished)
 {
-	this->skipButton = Button(endingAction);
+	auto &game = this->getGame();
+
+	this->skipButton = Button<Game&>(
+		0,
+		0,
+		ArenaRenderUtils::SCREEN_WIDTH,
+		ArenaRenderUtils::SCREEN_HEIGHT,
+		onFinished);
+
+	this->addButtonProxy(MouseButtonType::Left, this->skipButton.getRect(),
+		[this, &game]() { this->skipButton.click(game); });
+
+	this->addInputActionListener(InputActionName::Skip,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			auto &game = values.game;
+			this->skipButton.click(game);
+		}
+	});
+
 	this->paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
 	this->sequenceFilename = sequenceName;
 	this->secondsPerImage = secondsPerImage;
@@ -24,21 +46,6 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 TextureAssetReference CinematicPanel::getCurrentSequenceTextureAssetRef()
 {
 	return TextureAssetReference(std::string(this->sequenceFilename), this->imageIndex);
-}
-
-void CinematicPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	const bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
-	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool skipHotkeyPressed = spacePressed || enterPressed || escapePressed;
-
-	if (leftClick || skipHotkeyPressed)
-	{
-		this->skipButton.click(this->getGame());
-	}
 }
 
 void CinematicPanel::tick(double dt)

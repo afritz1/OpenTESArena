@@ -57,11 +57,10 @@ public:
 
 	bool init();
 
-	// Regenerates all option text boxes in the current tab (public for UiController function).
-	void updateVisibleOptionTextBoxes();
+	// Regenerates all options in the current tab (public for UiController function).
+	void updateVisibleOptions();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

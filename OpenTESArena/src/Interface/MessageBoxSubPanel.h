@@ -59,6 +59,7 @@ public:
 	};
 
 	using ItemCallback = std::function<void()>;
+	using OnClosedFunction = std::function<void()>;
 private:
 	struct Item
 	{
@@ -66,7 +67,7 @@ private:
 		Texture backgroundTexture;
 		TextBox textBox;
 		ItemCallback callback;
-		std::optional<SDL_Keycode> hotkey;
+		std::string inputActionName; // Empty if no hotkey for this button.
 		bool isCancelButton;
 
 		Item();
@@ -78,23 +79,24 @@ private:
 	Texture titleBackgroundTexture;
 	TextBox titleTextBox;
 	Buffer<Item> items;
+	OnClosedFunction onClosed;
 public:
 	MessageBoxSubPanel(Game &game);
-	~MessageBoxSubPanel() override = default;
+	~MessageBoxSubPanel() override;
 
 	bool init(const BackgroundProperties &backgroundProperties, const Rect &titleRect,
-		const TitleProperties &titleProperties, const ItemsProperties &itemsProperties);
+		const TitleProperties &titleProperties, const ItemsProperties &itemsProperties,
+		const OnClosedFunction &onClosed = OnClosedFunction());
 
 	void setTitleText(const std::string_view &text);
 	void setItemText(int itemIndex, const std::string_view &text);
 	void setItemCallback(int itemIndex, const ItemCallback &callback, bool isCancelButton);
-	void setItemHotkey(int itemIndex, const std::optional<SDL_Keycode> &keycode);
+	void setItemInputAction(int itemIndex, const std::string &inputActionName);
 
 	void addOverrideColor(int itemIndex, int charIndex, const Color &overrideColor);
 	void clearOverrideColors(int itemIndex);
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

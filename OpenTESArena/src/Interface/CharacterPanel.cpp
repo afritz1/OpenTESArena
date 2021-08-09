@@ -5,12 +5,20 @@
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 
 #include "components/debug/Debug.h"
 
 CharacterPanel::CharacterPanel(Game &game)
 	: Panel(game) { }
+
+CharacterPanel::~CharacterPanel()
+{
+	auto &inputManager = this->getGame().getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, false);
+}
 
 bool CharacterPanel::init()
 {
@@ -57,42 +65,24 @@ bool CharacterPanel::init()
 		CharacterSheetUiView::NextPageButtonHeight,
 		CharacterSheetUiController::onNextPageButtonSelected);
 
+	this->addButtonProxy(MouseButtonType::Left, this->doneButton.getRect(),
+		[this, &game]() { this->doneButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->nextPageButton.getRect(),
+		[this, &game]() { this->nextPageButton.click(game); });
+
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, true);
+
+	auto doneInputActionFunc = CharacterSheetUiController::onDoneInputAction;
+	this->addInputActionListener(InputActionName::Back, doneInputActionFunc);
+	this->addInputActionListener(InputActionName::CharacterSheet, doneInputActionFunc);
+
 	return true;
 }
 
 std::optional<CursorData> CharacterPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void CharacterPanel::handleEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool tabPressed = inputManager.keyPressed(e, SDLK_TAB);
-
-	if (escapePressed || tabPressed)
-	{
-		this->doneButton.click(game);
-	}
-
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = game.getRenderer().nativeToOriginal(mousePosition);
-
-		if (this->doneButton.contains(mouseOriginalPoint))
-		{
-			this->doneButton.click(game);
-		}
-		else if (this->nextPageButton.contains(mouseOriginalPoint))
-		{
-			this->nextPageButton.click(game);
-		}
-	}
 }
 
 void CharacterPanel::render(Renderer &renderer)

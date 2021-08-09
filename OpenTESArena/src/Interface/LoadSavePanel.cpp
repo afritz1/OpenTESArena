@@ -5,6 +5,7 @@
 #include "LoadSaveUiModel.h"
 #include "LoadSaveUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 
 LoadSavePanel::LoadSavePanel(Game &game)
@@ -40,8 +41,16 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 		this->saveTextBoxes.emplace_back(std::move(textBox));
 	}
 
-	this->confirmButton = Button<Game&, int>(LoadSaveUiController::onEntryButtonSelected);
-	this->backButton = Button<Game&>(LoadSaveUiController::onBackButtonSelected);
+	// Each save slot is a button proxy with its own callback based on its index.
+	for (int i = 0; i < LoadSaveUiModel::SlotCount; i++)
+	{
+		const Rect slotRect = LoadSaveUiModel::getSlotRect(i);
+		this->addButtonProxy(MouseButtonType::Left, slotRect,
+			[this, &game, i]() { LoadSaveUiController::onEntryButtonSelected(game, i); });
+	}
+
+	this->addInputActionListener(InputActionName::Back, LoadSaveUiController::onBackInputAction);
+
 	this->type = type;
 
 	return true;
@@ -50,33 +59,6 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 std::optional<CursorData> LoadSavePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void LoadSavePanel::handleEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	if (escapePressed || rightClick)
-	{
-		this->backButton.click(game);
-	}
-	else if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
-
-		// Listen for saved game click.
-		// @todo: each save entry should just be a button with its own callback based on its index
-		const std::optional<int> clickedIndex = LoadSaveUiModel::getClickedIndex(originalPoint);
-		if (clickedIndex.has_value())
-		{
-			this->confirmButton.click(game, *clickedIndex);
-		}
-	}
 }
 
 void LoadSavePanel::render(Renderer &renderer)

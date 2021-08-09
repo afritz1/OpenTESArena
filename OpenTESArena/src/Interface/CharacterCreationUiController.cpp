@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "SDL.h"
 
 #include "CharacterCreationUiController.h"
@@ -14,30 +16,38 @@
 #include "MessageBoxSubPanel.h"
 #include "TextCinematicPanel.h"
 #include "TextSubPanel.h"
+#include "WorldMapUiModel.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../UI/TextBox.h"
+#include "../UI/TextEntry.h"
 #include "../World/SkyUtils.h"
 #include "../WorldMap/LocationUtils.h"
 
 #include "components/utilities/String.h"
 
-void ChooseClassCreationUiController::onBackToMainMenuButtonSelected(Game &game)
+void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputActionCallbackValues &values)
 {
-	game.setCharacterCreationState(nullptr);
-	game.setPanel<MainMenuPanel>();
-
-	const MusicLibrary &musicLibrary = game.getMusicLibrary();
-	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-		MusicDefinition::Type::MainMenu, game.getRandom());
-
-	if (musicDef == nullptr)
+	if (values.performed)
 	{
-		DebugLogWarning("Missing main menu music.");
-	}
+		auto &game = values.game;
+		game.setCharacterCreationState(nullptr);
+		game.setPanel<MainMenuPanel>();
 
-	AudioManager &audioManager = game.getAudioManager();
-	audioManager.setMusic(musicDef);
+		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+			MusicDefinition::Type::MainMenu, game.getRandom());
+
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing main menu music.");
+		}
+
+		AudioManager &audioManager = game.getAudioManager();
+		audioManager.setMusic(musicDef);
+	}
 }
 
 void ChooseClassCreationUiController::onGenerateButtonSelected(Game &game)
@@ -50,9 +60,13 @@ void ChooseClassCreationUiController::onSelectButtonSelected(Game &game)
 	game.setPanel<ChooseClassPanel>();
 }
 
-void ChooseClassUiController::onBackToChooseClassCreationButtonSelected(Game &game)
+void ChooseClassUiController::onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values)
 {
-	game.setPanel<ChooseClassCreationPanel>();
+	if (values.performed)
+	{
+		auto &game = values.game;
+		game.setPanel<ChooseClassCreationPanel>();
+	}
 }
 
 void ChooseClassUiController::onUpButtonSelected(ListBox &listBox)
@@ -73,9 +87,13 @@ void ChooseClassUiController::onItemButtonSelected(Game &game, int charClassDefI
 	game.setPanel<ChooseNamePanel>();
 }
 
-void ChooseGenderUiController::onBackToChooseNameButtonSelected(Game &game)
+void ChooseGenderUiController::onBackToChooseNameInputAction(const InputActionCallbackValues &values)
 {
-	game.setPanel<ChooseNamePanel>();
+	if (values.performed)
+	{
+		auto &game = values.game;
+		game.setPanel<ChooseNamePanel>();
+	}
 }
 
 void ChooseGenderUiController::onMaleButtonSelected(Game &game)
@@ -96,34 +114,83 @@ void ChooseGenderUiController::onFemaleButtonSelected(Game &game)
 	game.setPanel<ChooseRacePanel>();
 }
 
-void ChooseNameUiController::onBackToChooseClassButtonSelected(Game &game)
+void ChooseNameUiController::onBackToChooseClassInputAction(const InputActionCallbackValues &values)
 {
-	SDL_StopTextInput();
+	if (values.performed)
+	{
+		auto &game = values.game;
+		auto &inputManager = game.getInputManager();
+		inputManager.setTextInputMode(false);
 
-	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setName(nullptr);
+		auto &charCreationState = game.getCharacterCreationState();
+		charCreationState.setName(nullptr);
 
-	game.setPanel<ChooseClassPanel>();
+		game.setPanel<ChooseClassPanel>();
+	}
 }
 
-void ChooseNameUiController::onAcceptButtonSelected(Game &game, const std::string &acceptedName)
+void ChooseNameUiController::onTextInput(const std::string_view &text, std::string &name, bool *outDirty)
 {
-	SDL_StopTextInput();
+	DebugAssert(outDirty != nullptr);
 
-	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setName(acceptedName.c_str());
-
-	game.setPanel<ChooseGenderPanel>();
+	*outDirty = TextEntry::append(name, text, ChooseNameUiModel::isCharacterAccepted,
+		CharacterCreationState::MAX_NAME_LENGTH);
 }
 
-void ChooseRaceUiController::onBackToChooseGenderButtonSelected(Game &game)
+void ChooseNameUiController::onBackspaceInputAction(const InputActionCallbackValues &values, std::string &name, bool *outDirty)
 {
-	game.setPanel<ChooseGenderPanel>();
+	DebugAssert(outDirty != nullptr);
+
+	if (values.performed)
+	{
+		*outDirty = TextEntry::backspace(name);
+	}
+}
+
+void ChooseNameUiController::onAcceptInputAction(const InputActionCallbackValues &values, const std::string &name)
+{
+	if (values.performed)
+	{
+		if (name.size() > 0)
+		{
+			auto &game = values.game;
+			auto &inputManager = game.getInputManager();
+			inputManager.setTextInputMode(false);
+
+			auto &charCreationState = game.getCharacterCreationState();
+			charCreationState.setName(name.c_str());
+
+			game.setPanel<ChooseGenderPanel>();
+		}
+	}
+}
+
+void ChooseRaceUiController::onBackToChooseGenderInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		auto &game = values.game;
+		game.setPanel<ChooseGenderPanel>();
+	}
 }
 
 void ChooseRaceUiController::onInitialPopUpButtonSelected(Game &game)
 {
 	game.popSubPanel();
+}
+
+void ChooseRaceUiController::onMouseButtonChanged(Game &game, MouseButtonType buttonType,
+	const Int2 &position, bool pressed)
+{
+	// Listen for clicks on the map, checking if the mouse is over a province mask.
+	if ((buttonType == MouseButtonType::Left) && pressed)
+	{
+		const std::optional<int> provinceID = WorldMapUiModel::getMaskID(game, position, true, true);
+		if (provinceID.has_value())
+		{
+			ChooseRaceUiController::onProvinceButtonSelected(game, *provinceID);
+		}
+	}
 }
 
 void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
@@ -290,9 +357,13 @@ void ChooseRaceUiController::onProvinceConfirmedFourthButtonSelected(Game &game)
 	game.setPanel<ChooseAttributesPanel>();
 }
 
-void ChooseAttributesUiController::onBackToRaceSelectionButtonSelected(Game &game)
+void ChooseAttributesUiController::onBackToRaceSelectionInputAction(const InputActionCallbackValues &values)
 {
-	game.setPanel<ChooseRacePanel>();
+	if (values.performed)
+	{
+		auto &game = values.game;
+		game.setPanel<ChooseRacePanel>();
+	}
 }
 
 void ChooseAttributesUiController::onInitialPopUpSelected(Game &game)
@@ -317,8 +388,14 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 	const MessageBoxSubPanel::ItemsProperties itemsProperties =
 		ChooseAttributesUiView::getMessageBoxItemsProperties(fontLibrary);
 
+	auto onClosed = [&game]()
+	{
+		auto &inputManager = game.getInputManager();
+		inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
+	};
+
 	std::unique_ptr<MessageBoxSubPanel> panel = std::make_unique<MessageBoxSubPanel>(game);
-	if (!panel->init(backgroundProperties, titleRect, titleProperties, itemsProperties))
+	if (!panel->init(backgroundProperties, titleRect, titleProperties, itemsProperties, onClosed))
 	{
 		DebugCrash("Couldn't init save/reroll message box sub-panel.");
 	}
@@ -339,7 +416,7 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 		panel->addOverrideColor(0, entry.charIndex, entry.color);
 	}
 
-	panel->setItemHotkey(0, SDLK_s);
+	panel->setItemInputAction(0, InputActionName::SaveAttributes);
 
 	const std::string rerollText = ChooseAttributesUiModel::getMessageBoxRerollText(game);
 	panel->setItemText(1, rerollText);
@@ -355,7 +432,10 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 		panel->addOverrideColor(1, entry.charIndex, entry.color);
 	}
 
-	panel->setItemHotkey(1, SDLK_r);
+	panel->setItemInputAction(1, InputActionName::RerollAttributes);
+
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, true);
 
 	game.pushSubPanel(std::move(panel));
 }

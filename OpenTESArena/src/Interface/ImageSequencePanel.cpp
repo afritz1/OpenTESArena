@@ -4,8 +4,11 @@
 
 #include "ImageSequencePanel.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../Media/TextureManager.h"
 #include "../UI/Texture.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -15,7 +18,7 @@ ImageSequencePanel::ImageSequencePanel(Game &game)
 
 bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 	const std::vector<std::string> &textureNames, const std::vector<double> &imageDurations,
-	const std::function<void(Game&)> &endingAction)
+	const OnFinishedFunction &onFinished)
 {
 	if (paletteNames.size() != textureNames.size())
 	{
@@ -31,28 +34,10 @@ bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 		return false;
 	}
 
-	this->skipButton = Button<Game&>(endingAction);
-	this->paletteNames = paletteNames;
-	this->textureNames = textureNames;
-	this->imageDurations = imageDurations;
-	this->currentSeconds = 0.0;
-	this->imageIndex = 0;
-	return true;
-}
+	auto &game = this->getGame();
 
-void ImageSequencePanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	const bool skipAllHotkeyPressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool skipOneHotkeyPressed = inputManager.keyPressed(e, SDLK_SPACE) ||
-		inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
-
-	if (skipAllHotkeyPressed)
-	{
-		this->skipButton.click(this->getGame());
-	}
-	else if (leftClick || skipOneHotkeyPressed)
+	this->skipButton = Button<Game&>(0, 0, ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT,
+		[this](Game &game)
 	{
 		this->currentSeconds = 0.0;
 
@@ -61,9 +46,29 @@ void ImageSequencePanel::handleEvent(const SDL_Event &e)
 
 		if (this->imageIndex == imageCount)
 		{
-			this->skipButton.click(this->getGame());
+			this->onFinished(game);
 		}
-	}	
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->skipButton.getRect(),
+		[this, &game]() { this->skipButton.click(game); });
+
+	this->addInputActionListener(InputActionName::Skip,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->onFinished(game);
+		}
+	});
+
+	this->onFinished = onFinished;
+	this->paletteNames = paletteNames;
+	this->textureNames = textureNames;
+	this->imageDurations = imageDurations;
+	this->currentSeconds = 0.0;
+	this->imageIndex = 0;
+	return true;
 }
 
 void ImageSequencePanel::tick(double dt)
@@ -84,7 +89,7 @@ void ImageSequencePanel::tick(double dt)
 			// Check if the last image is now over.
 			if (this->imageIndex == imageCount)
 			{
-				this->skipButton.click(this->getGame());
+				this->onFinished(this->getGame());
 			}
 		}
 	}

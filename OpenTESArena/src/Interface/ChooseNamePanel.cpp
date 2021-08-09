@@ -15,6 +15,7 @@
 #include "../Game/CharacterCreationState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Input/InputActionName.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
@@ -46,27 +47,52 @@ bool ChooseNamePanel::init()
 
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = ChooseNameUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo =
-		ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBox::InitInfo titleTextBoxInitInfo = ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	const TextBox::InitInfo entryTextBoxInitInfo =
-		ChooseNameUiView::getEntryTextBoxInitInfo(fontLibrary);
+	const TextBox::InitInfo entryTextBoxInitInfo = ChooseNameUiView::getEntryTextBoxInitInfo(fontLibrary);
 	if (!this->entryTextBox.init(entryTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init entry text box.");
 		return false;
 	}
 
-	this->backToClassButton = Button<Game&>(ChooseNameUiController::onBackToChooseClassButtonSelected);
-	this->acceptButton = Button<Game&, const std::string&>(ChooseNameUiController::onAcceptButtonSelected);
+	this->addInputActionListener(InputActionName::Back, ChooseNameUiController::onBackToChooseClassInputAction);
+	this->addInputActionListener(InputActionName::Accept,
+		[this](const InputActionCallbackValues &values)
+	{
+		ChooseNameUiController::onAcceptInputAction(values, this->name);
+	});
 
-	// Activate SDL text input (handled in handleEvent()).
-	SDL_StartTextInput();
+	this->addInputActionListener(InputActionName::Backspace,
+		[this](const InputActionCallbackValues &values)
+	{
+		bool dirty;
+		ChooseNameUiController::onBackspaceInputAction(values, this->name, &dirty);
+
+		if (dirty)
+		{
+			this->entryTextBox.setText(this->name);
+		}
+	});
+
+	this->addTextInputListener([this](const std::string_view &text)
+	{
+		bool dirty;
+		ChooseNameUiController::onTextInput(text, this->name, &dirty);
+
+		if (dirty)
+		{
+			this->entryTextBox.setText(this->name);
+		}
+	});
+
+	auto &inputManager = game.getInputManager();
+	inputManager.setTextInputMode(true);
 
 	return true;
 }
@@ -74,37 +100,6 @@ bool ChooseNamePanel::init()
 std::optional<CursorData> ChooseNamePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void ChooseNamePanel::handleEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
-	const bool backspacePressed = inputManager.keyPressed(e, SDLK_BACKSPACE) ||
-		inputManager.keyPressed(e, SDLK_KP_BACKSPACE);
-
-	if (escapePressed)
-	{
-		this->backToClassButton.click(this->getGame());
-	}
-	else if (enterPressed && (this->name.size() > 0))
-	{
-		// Accept the given name.
-		this->acceptButton.click(this->getGame(), this->name);
-	}
-	else
-	{
-		// Listen for SDL text input and changes in text.
-		const bool textChanged = TextEntry::updateText(this->name, e, backspacePressed,
-			ChooseNameUiModel::isCharacterAccepted, CharacterCreationState::MAX_NAME_LENGTH);
-
-		if (textChanged)
-		{
-			this->entryTextBox.setText(this->name);
-		}
-	}
 }
 
 void ChooseNamePanel::render(Renderer &renderer)

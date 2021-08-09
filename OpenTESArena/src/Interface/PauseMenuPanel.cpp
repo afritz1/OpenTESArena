@@ -8,6 +8,7 @@
 #include "PauseMenuUiModel.h"
 #include "PauseMenuUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../Media/PortraitFile.h"
 #include "../UI/CursorData.h"
 #include "../UI/TextRenderUtils.h"
@@ -115,6 +116,36 @@ bool PauseMenuPanel::init()
 		PauseMenuUiView::MusicDownButtonHeight,
 		PauseMenuUiController::onMusicDownButtonSelected);
 
+	this->addButtonProxy(MouseButtonType::Left, this->newButton.getRect(),
+		[this, &game]() { this->newButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->loadButton.getRect(),
+		[this, &game]() { this->loadButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->saveButton.getRect(),
+		[this, &game]() { this->saveButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->exitButton.getRect(),
+		[this, &game]() { this->exitButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->resumeButton.getRect(),
+		[this, &game]() { this->resumeButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->optionsButton.getRect(),
+		[this, &game]() { this->optionsButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->soundUpButton.getRect(),
+		[this, &game]() { this->soundUpButton.click(game, *this); });
+	this->addButtonProxy(MouseButtonType::Left, this->soundDownButton.getRect(),
+		[this, &game]() { this->soundDownButton.click(game, *this); });
+	this->addButtonProxy(MouseButtonType::Left, this->musicUpButton.getRect(),
+		[this, &game]() { this->musicUpButton.click(game, *this); });
+	this->addButtonProxy(MouseButtonType::Left, this->musicDownButton.getRect(),
+		[this, &game]() { this->musicDownButton.click(game, *this); });
+
+	this->addInputActionListener(InputActionName::Back,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->resumeButton.click(game);
+		}
+	});
+
 	// Cover up the detail slider with a new options background.
 	this->optionsButtonTexture = TextureUtils::generate(
 		PauseMenuUiView::OptionsButtonPatternType,
@@ -141,72 +172,6 @@ void PauseMenuPanel::updateSoundText(double volume)
 std::optional<CursorData> PauseMenuPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void PauseMenuPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-
-	if (escapePressed)
-	{
-		this->resumeButton.click(this->getGame());
-	}
-
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		auto &game = this->getGame();
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = game.getRenderer().nativeToOriginal(mousePosition);
-
-		auto &options = game.getOptions();
-		auto &audioManager = game.getAudioManager();
-
-		// See if any of the buttons are clicked.
-		// (This code is getting kind of bad now. Maybe use a vector?)
-		if (this->loadButton.contains(mouseOriginalPoint))
-		{
-			this->loadButton.click(game);
-		}
-		else if (this->exitButton.contains(mouseOriginalPoint))
-		{
-			this->exitButton.click(game);
-		}
-		else if (this->newButton.contains(mouseOriginalPoint))
-		{
-			this->newButton.click(game);
-		}
-		else if (this->saveButton.contains(mouseOriginalPoint))
-		{
-			this->saveButton.click(game);
-		}
-		else if (this->resumeButton.contains(mouseOriginalPoint))
-		{
-			this->resumeButton.click(game);
-		}
-		else if (this->optionsButton.contains(mouseOriginalPoint))
-		{
-			this->optionsButton.click(game);
-		}
-		else if (this->musicUpButton.contains(mouseOriginalPoint))
-		{
-			this->musicUpButton.click(game, *this);
-		}
-		else if (this->musicDownButton.contains(mouseOriginalPoint))
-		{
-			this->musicDownButton.click(game, *this);
-		}
-		else if (this->soundUpButton.contains(mouseOriginalPoint))
-		{
-			this->soundUpButton.click(game, *this);
-		}
-		else if (this->soundDownButton.contains(mouseOriginalPoint))
-		{
-			this->soundDownButton.click(game, *this);
-		}
-	}
 }
 
 void PauseMenuPanel::render(Renderer &renderer)

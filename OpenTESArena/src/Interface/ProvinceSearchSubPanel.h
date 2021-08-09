@@ -22,11 +22,8 @@ private:
 	Texture parchment;
 	TextBox textTitleTextBox, textEntryTextBox;
 	ListBox locationsListBox;
-	Button<Game&, ProvinceSearchSubPanel&> textAcceptButton;
 	Button<ListBox&> listUpButton, listDownButton;
 
-	void handleTextEntryEvent(const SDL_Event &e);
-	void handleListEvent(const SDL_Event &e);
 	void renderTextEntry(Renderer &renderer);
 	void renderList(Renderer &renderer);
 public:
@@ -35,7 +32,7 @@ public:
 	ProvinceMapPanel *provinceMapPanel;
 	std::vector<int> locationsListIndices;
 	std::string locationName;
-	ProvinceMapUiModel::SearchMode mode;
+	ProvinceSearchUiModel::Mode mode;
 	int provinceID;
 
 	ProvinceSearchSubPanel(Game &game);
@@ -43,12 +40,11 @@ public:
 
 	bool init(ProvinceMapPanel &provinceMapPanel, int provinceID);
 
-	// Initializes the locations list box based on the locations list IDs.
+	// Initializes the locations list screen based on the locations list IDs.
 	// - Public for UI controller
-	void initLocationsListBox();
+	void initLocationsList();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };

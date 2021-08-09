@@ -307,19 +307,19 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 	return locationFormatText + startDateString + "\n\n" + dayString + distanceString + arrivalDateString;
 }
 
-bool ProvinceMapUiModel::isCharAllowedInSearchText(char c)
+bool ProvinceSearchUiModel::isCharAllowed(char c)
 {
 	// Letters, numbers, spaces, and symbols are allowed.
 	return (c >= ' ') && (c < 127);
 }
 
-std::string ProvinceMapUiModel::getSearchSubPanelTitleText(Game &game)
+std::string ProvinceSearchUiModel::getTitleText(Game &game)
 {
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	return exeData.travel.searchTitleText;
 }
 
-std::vector<int> ProvinceMapUiModel::getMatchingLocations(Game &game, const std::string &locationName,
+std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const std::string &locationName,
 	int provinceIndex, const int **exactLocationIndex)
 {
 	auto &gameState = game.getGameState();

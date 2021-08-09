@@ -13,9 +13,11 @@
 
 class TextSubPanel : public Panel
 {
+public:
+	using OnClosedFunction = std::function<void(Game&)>;
 private:
+	Button<Game&> closeButton;
 	TextBox textBox;
-	std::function<void(Game&)> onClosed;
 	Texture texture;
 	Int2 textureCenter;
 public:
@@ -23,12 +25,11 @@ public:
 	~TextSubPanel() override = default;
 
 	bool init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
-		const std::function<void(Game&)> &onClosed, Texture &&texture, const Int2 &textureCenter);
+		const OnClosedFunction &onClosed, Texture &&texture, const Int2 &textureCenter);
 	bool init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
-		const std::function<void(Game&)> &onClosed);
+		const OnClosedFunction &onClosed);
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

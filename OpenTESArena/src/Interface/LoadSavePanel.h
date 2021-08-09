@@ -16,8 +16,6 @@ public:
 	enum class Type { Load, Save };
 private:
 	std::vector<TextBox> saveTextBoxes;
-	Button<Game&, int> confirmButton;
-	Button<Game&> backButton;
 	LoadSavePanel::Type type;
 public:
 	LoadSavePanel(Game &game);
@@ -26,7 +24,6 @@ public:
 	bool init(LoadSavePanel::Type type);
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

@@ -11,17 +11,14 @@ class Renderer;
 class WorldMapPanel : public Panel
 {
 private:
-	Button<Game&> backToGameButton;
-	Button<Game&, int> provinceButton;
 	Buffer<Int2> provinceNameOffsets; // Yellow province name positions.
 public:
 	WorldMapPanel(Game &game);
-	~WorldMapPanel() override = default;
+	~WorldMapPanel() override;
 
 	bool init();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

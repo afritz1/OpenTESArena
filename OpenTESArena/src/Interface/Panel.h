@@ -3,27 +3,30 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
+#include <vector>
 
+#include "../Input/InputManager.h"
 #include "../Math/Vector2.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureUtils.h"
+#include "../UI/Button.h"
 
-// Each panel interprets user input and draws to the screen. There is only one panel 
-// active at a time, and it is owned by the Game.
+#include "components/utilities/BufferView.h"
 
-// How might "continued" text boxes work? Arena has some pop-up text boxes that have
-// multiple screens based on the amount of text, and even some buttons like "yes/no" on
-// the last screen. I think I'll just replace them with scrolled text boxes. The buttons
-// can be separate interface objects (no need for a "ScrollableButtonedTextBox").
+// Each panel interprets user input and draws to the screen. There is only one panel active at
+// a time, and it is owned by the Game, although there can be any number of sub-panels.
 
 class Color;
 class CursorData;
 class FontLibrary;
 class Game;
+class Rect;
 class Renderer;
 class Texture;
 
 enum class CursorAlignment;
+enum class MouseButtonType;
 
 struct SDL_Texture;
 
@@ -34,21 +37,48 @@ class Panel
 private:
 	Game &game;
 protected:
+	// Allocated input listener IDs that must be freed when the panel is done with them.
+	std::vector<InputManager::ListenerID> inputActionListenerIDs;
+	std::vector<InputManager::ListenerID> mouseButtonChangedListenerIDs;
+	std::vector<InputManager::ListenerID> mouseButtonHeldListenerIDs;
+	std::vector<InputManager::ListenerID> mouseScrollChangedListenerIDs;
+	std::vector<InputManager::ListenerID> mouseMotionListenerIDs;
+	std::vector<InputManager::ListenerID> textInputListenerIDs;
+
+	std::vector<ButtonProxy> buttonProxies;
+
 	Game &getGame() const;
 
 	// Default cursor used by most panels.
 	CursorData getDefaultCursor() const;
+
+	void addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback);
+	void addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
+	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
+	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
+	void addMouseMotionListener(const MouseMotionCallback &callback);
+	void addTextInputListener(const TextInputCallback &callback);
+
+	// Adds a button proxy for a dynamic button (i.e. ListBox items).
+	void addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,
+		const ButtonProxy::Callback &callback, const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
+
+	// Adds a button proxy for a static button.
+	void addButtonProxy(MouseButtonType buttonType, const Rect &rect, const ButtonProxy::Callback &callback,
+		const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
+
+	void clearButtonProxies();
 public:
 	Panel(Game &game);
-	virtual ~Panel() = default;
+	virtual ~Panel();
 
 	// Gets the panel's active mouse cursor and alignment, if any. Override this if the panel has at
 	// least one cursor defined.
 	virtual std::optional<CursorData> getCurrentCursor() const;
 
-	// Handles panel-specific events. Application events like closing and resizing
-	// are handled by the game loop.
-	virtual void handleEvent(const SDL_Event &e);
+	// Returns button proxies for ease of iteration and finding out which button is clicked in a frame
+	// so its callback can be called.
+	virtual BufferView<const ButtonProxy> getButtonProxies() const;
 
 	// Called when a sub-panel above this panel is pushed (added) or popped (removed).
 	virtual void onPauseChanged(bool paused);

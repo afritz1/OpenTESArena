@@ -15,6 +15,7 @@
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Input/InputActionMapName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -38,6 +39,12 @@
 AutomapPanel::AutomapPanel(Game &game)
 	: Panel(game) { }
 
+AutomapPanel::~AutomapPanel()
+{
+	auto &inputManager = this->getGame().getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::Automap, false);
+}
+
 bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
 	const ChunkManager &chunkManager, const std::string &locationName)
 {
@@ -58,6 +65,22 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		AutomapUiView::BackToGameButtonWidth,
 		AutomapUiView::BackToGameButtonHeight,
 		AutomapUiController::onBackToGameButtonSelected);
+
+	this->addButtonProxy(MouseButtonType::Left, this->backToGameButton.getRect(),
+		[&game]() { AutomapUiController::onBackToGameButtonSelected(game); });
+
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::Automap, true);
+
+	auto backToGameInputActionFunc = AutomapUiController::onBackToGameInputAction;
+	this->addInputActionListener(AutomapUiController::getInputActionName(), backToGameInputActionFunc);
+	this->addInputActionListener(AutomapUiController::getBackToGameInputActionName(), backToGameInputActionFunc);
+
+	this->addMouseButtonHeldListener(
+		[this](Game &game, MouseButtonType buttonType, const Int2 &position, double dt)
+	{
+		AutomapUiController::onMouseButtonHeld(game, buttonType, position, dt, &this->automapOffset);
+	});
 
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
 	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
@@ -125,72 +148,6 @@ std::optional<CursorData> AutomapPanel::getCurrentCursor() const
 	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::BottomLeft);
 }
 
-void AutomapPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool nPressed = inputManager.keyPressed(e, SDLK_n);
-
-	if (escapePressed || nPressed)
-	{
-		this->backToGameButton.click(this->getGame());
-	}
-
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
-
-		// Check if "Exit" was clicked.
-		if (this->backToGameButton.contains(mouseOriginalPoint))
-		{
-			this->backToGameButton.click(this->getGame());
-		}
-	}
-
-	// @todo: text events if in text mode
-}
-
-void AutomapPanel::handleMouse(double dt)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
-
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-		.nativeToOriginal(mousePosition);
-
-	// Check if the LMB is held on one of the compass directions.
-	if (leftClick)
-	{
-		// @todo: move to AutomapUiController
-
-		const double scrollSpeed = AutomapUiView::ScrollSpeed * dt;
-
-		// Modify the automap offset based on input. The directions are reversed because
-		// to go right means to push the map left.
-		if (AutomapUiView::CompassRightRegion.contains(mouseOriginalPoint))
-		{
-			this->automapOffset = this->automapOffset - (Double2::UnitX * scrollSpeed);
-		}
-		else if (AutomapUiView::CompassLeftRegion.contains(mouseOriginalPoint))
-		{
-			this->automapOffset = this->automapOffset + (Double2::UnitX * scrollSpeed);
-		}
-		else if (AutomapUiView::CompassUpRegion.contains(mouseOriginalPoint))
-		{
-			this->automapOffset = this->automapOffset + (Double2::UnitY * scrollSpeed);
-		}
-		else if (AutomapUiView::CompassDownRegion.contains(mouseOriginalPoint))
-		{
-			this->automapOffset = this->automapOffset - (Double2::UnitY * scrollSpeed);
-		}
-	}
-}
-
 void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
@@ -206,11 +163,6 @@ void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
 	renderer.drawOriginal(tooltip, x, y);
-}
-
-void AutomapPanel::tick(double dt)
-{
-	this->handleMouse(dt);
 }
 
 void AutomapPanel::render(Renderer &renderer)

@@ -5,6 +5,9 @@
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/CursorData.h"
 
 #include "components/debug/Debug.h"
@@ -12,17 +15,70 @@
 WorldMapPanel::WorldMapPanel(Game &game)
 	: Panel(game) { }
 
+WorldMapPanel::~WorldMapPanel()
+{
+	auto &inputManager = this->getGame().getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::WorldMap, false);
+}
+
 bool WorldMapPanel::init()
 {
-	this->backToGameButton = Button<Game&>(
-		WorldMapUiView::BackToGameButtonCenterPoint,
-		WorldMapUiView::BackToGameButtonWidth,
-		WorldMapUiView::BackToGameButtonHeight,
-		WorldMapUiController::onBackToGameButtonSelected);
-	this->provinceButton = Button<Game&, int>(WorldMapUiController::onProvinceButtonSelected);
+	auto &game = this->getGame();
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::WorldMap, true);
+
+	const Rect fullscreenRect(
+		0,
+		0,
+		ArenaRenderUtils::SCREEN_WIDTH,
+		ArenaRenderUtils::SCREEN_HEIGHT);
+
+	auto backToGameFunc = WorldMapUiController::onBackToGameButtonSelected;
+
+	this->addButtonProxy(MouseButtonType::Left, fullscreenRect,
+		[this, &game, backToGameFunc]()
+	{
+		const auto &inputManager = game.getInputManager();
+		const Int2 mousePosition = inputManager.getMousePosition();
+		const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+
+		for (int i = 0; i < WorldMapUiModel::MASK_COUNT; i++)
+		{
+			const WorldMapMask &mask = WorldMapUiModel::getMask(game, i);
+			const Rect &maskRect = mask.getRect();
+			if (maskRect.contains(classicPosition))
+			{
+				const bool success = mask.get(classicPosition.x, classicPosition.y);
+
+				if (success)
+				{
+					if (i < WorldMapUiModel::EXIT_BUTTON_MASK_ID)
+					{
+						WorldMapUiController::onProvinceButtonSelected(game, i);
+					}
+					else
+					{
+						backToGameFunc(game);
+					}
+
+					break;
+				}
+			}
+		}
+	});
+
+	auto backToGameInputActionFunc = [backToGameFunc](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			backToGameFunc(values.game);
+		}
+	};
+
+	this->addInputActionListener(InputActionName::Back, backToGameInputActionFunc);
+	this->addInputActionListener(InputActionName::WorldMap, backToGameInputActionFunc);
 
 	// Load province name offsets.
-	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	const std::string provinceNameOffsetFilename = WorldMapUiModel::getProvinceNameOffsetFilename();
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(provinceNameOffsetFilename.c_str());
@@ -45,58 +101,6 @@ bool WorldMapPanel::init()
 std::optional<CursorData> WorldMapPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void WorldMapPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool mPressed = inputManager.keyPressed(e, SDLK_m);
-
-	if (escapePressed || mPressed)
-	{
-		this->backToGameButton.click(this->getGame());
-	}
-
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
-
-		// Listen for clicks on the map and exit button.
-		const auto &worldMapMasks = this->getGame().getBinaryAssetLibrary().getWorldMapMasks();
-		const int maskCount = static_cast<int>(worldMapMasks.size());
-		for (int maskID = 0; maskID < maskCount; maskID++)
-		{
-			const WorldMapMask &mapMask = worldMapMasks.at(maskID);
-			const Rect &maskRect = mapMask.getRect();
-
-			if (maskRect.contains(originalPoint))
-			{
-				// See if the clicked pixel is set in the bitmask.
-				const bool success = mapMask.get(originalPoint.x, originalPoint.y);
-
-				if (success)
-				{
-					// Mask IDs 0 through 8 are provinces, and 9 is the "Exit" button.
-					if (maskID < 9)
-					{
-						// Go to the selected province panel.
-						this->provinceButton.click(this->getGame(), maskID);
-					}
-					else
-					{
-						// Exit the world map panel.
-						this->backToGameButton.click(this->getGame());
-					}
-					
-					break;
-				}
-			}
-		}
-	}	
 }
 
 void WorldMapPanel::render(Renderer &renderer)

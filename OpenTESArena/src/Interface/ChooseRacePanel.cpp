@@ -5,7 +5,9 @@
 #include "CharacterCreationUiView.h"
 #include "ChooseRacePanel.h"
 #include "TextSubPanel.h"
+#include "WorldMapUiModel.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 
 ChooseRacePanel::ChooseRacePanel(Game &game)
@@ -15,8 +17,8 @@ bool ChooseRacePanel::init()
 {
 	auto &game = this->getGame();
 
-	this->backToGenderButton = Button<Game&>(ChooseRaceUiController::onBackToChooseGenderButtonSelected);
-	this->selectProvinceButton = Button<Game&, int>(ChooseRaceUiController::onProvinceButtonSelected);
+	this->addInputActionListener(InputActionName::Back, ChooseRaceUiController::onBackToChooseGenderInputAction);
+	this->addMouseButtonChangedListener(ChooseRaceUiController::onMouseButtonChanged);
 
 	// Push the initial text sub-panel.
 	// @todo: allocate std::function for unravelling the map with "push initial parchment sub-panel" on finished,
@@ -61,34 +63,6 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 std::optional<CursorData> ChooseRacePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void ChooseRacePanel::handleEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	// Interact with the map screen.
-	if (escapePressed)
-	{
-		this->backToGenderButton.click(game);
-	}
-	else if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
-
-		// Listen for clicks on the map, checking if the mouse is over a province mask.
-		const std::optional<int> provinceID = ChooseRaceUiModel::getProvinceID(game, originalPoint);
-		if (provinceID.has_value())
-		{
-			// Choose the selected province.
-			this->selectProvinceButton.click(game, *provinceID);
-		}
-	}
 }
 
 void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
@@ -157,11 +131,8 @@ void ChooseRacePanel::renderSecondary(Renderer &renderer)
 	const auto &inputManager = game.getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 
-	// Draw hovered province tooltip.
-	const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
-
 	// Draw tooltip if the mouse is in a province.
-	const std::optional<int> provinceID = ChooseRaceUiModel::getProvinceID(game, originalPoint);
+	const std::optional<int> provinceID = WorldMapUiModel::getMaskID(game, mousePosition, true, true);
 	if (provinceID.has_value())
 	{
 		this->drawProvinceTooltip(*provinceID, renderer);

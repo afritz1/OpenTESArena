@@ -13,6 +13,8 @@
 #include "../Game/Game.h"
 #include "../GameLogic/MapLogicController.h"
 #include "../GameLogic/PlayerLogicController.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../Media/PortraitFile.h"
 #include "../UI/CursorData.h"
 #include "../World/MapType.h"
@@ -21,6 +23,22 @@
 
 GameWorldPanel::GameWorldPanel(Game &game)
 	: Panel(game) { }
+
+GameWorldPanel::~GameWorldPanel()
+{
+	auto &game = this->getGame();
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, false);
+
+	// If in modern mode, disable free-look.
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+
+	if (modernInterface)
+	{
+		GameWorldUiModel::setFreeLookActive(game, false);
+	}
+}
 
 bool GameWorldPanel::init()
 {
@@ -114,13 +132,167 @@ bool GameWorldPanel::init()
 		GameWorldUiView::ScrollDownButtonWidth,
 		GameWorldUiView::ScrollDownButtonHeight,
 		GameWorldUiController::onScrollDownButtonSelected);
-	this->pauseButton = Button<Game&>(GameWorldUiController::onPauseButtonSelected);
 	this->mapButton = Button<Game&, bool>(
 		GameWorldUiView::MapButtonX,
 		GameWorldUiView::MapButtonY,
 		GameWorldUiView::MapButtonWidth,
 		GameWorldUiView::MapButtonHeight,
 		GameWorldUiController::onMapButtonSelected);
+
+	auto &player = game.getGameState().getPlayer();
+
+	this->addButtonProxy(MouseButtonType::Left, this->characterSheetButton.getRect(),
+		[this, &game]() { this->characterSheetButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->drawWeaponButton.getRect(),
+		[this, &player]() { this->drawWeaponButton.click(player); });
+	this->addButtonProxy(MouseButtonType::Left, this->stealButton.getRect(),
+		[this]() { this->stealButton.click(); });
+	this->addButtonProxy(MouseButtonType::Left, this->statusButton.getRect(),
+		[this, &game]() { this->statusButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->magicButton.getRect(),
+		[this]() { this->magicButton.click(); });
+	this->addButtonProxy(MouseButtonType::Left, this->logbookButton.getRect(),
+		[this, &game]() { this->logbookButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->useItemButton.getRect(),
+		[this]() { this->useItemButton.click(); });
+	this->addButtonProxy(MouseButtonType::Left, this->campButton.getRect(),
+		[this]() { this->campButton.click(); });
+	this->addButtonProxy(MouseButtonType::Left, this->scrollUpButton.getRect(),
+		[this]() { this->scrollUpButton.click(*this); });
+	this->addButtonProxy(MouseButtonType::Left, this->scrollDownButton.getRect(),
+		[this]() { this->scrollDownButton.click(*this); });
+	this->addButtonProxy(MouseButtonType::Left, this->mapButton.getRect(),
+		[this, &game]() { this->mapButton.click(game, true); });
+	this->addButtonProxy(MouseButtonType::Right, this->mapButton.getRect(),
+		[this, &game]() { this->mapButton.click(game, false); });
+
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, true);
+
+	this->addInputActionListener(InputActionName::Activate,
+		[this](const InputActionCallbackValues &values)
+	{
+		GameWorldUiController::onActivateInputAction(values, this->actionText);
+	});
+
+	this->addInputActionListener(InputActionName::Inspect,
+		[this](const InputActionCallbackValues &values)
+	{
+		GameWorldUiController::onInspectInputAction(values, this->actionText);
+	});
+
+	this->addInputActionListener(InputActionName::CharacterSheet,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->characterSheetButton.click(game);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::ToggleWeapon,
+		[this, &player](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->drawWeaponButton.click(player);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::Steal,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->stealButton.click();
+		}
+	});
+
+	this->addInputActionListener(InputActionName::Status,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->statusButton.click(game);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::CastMagic,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->magicButton.click();
+		}
+	});
+
+	this->addInputActionListener(InputActionName::Logbook,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->logbookButton.click(game);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::UseItem,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->useItemButton.click();
+		}
+	});
+
+	this->addInputActionListener(InputActionName::Camp,
+		[this](const InputActionCallbackValues &values)
+	{
+		Game &game = values.game;
+		GameState &gameState = game.getGameState();
+
+		// @todo: make this click the button eventually when not needed for testing.
+		gameState.setIsCamping(values.performed);
+	});
+
+	this->addInputActionListener(InputActionName::Automap,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->mapButton.click(game, true);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::WorldMap,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->mapButton.click(game, false);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::ToggleCompass, GameWorldUiController::onToggleCompassInputAction);
+	this->addInputActionListener(InputActionName::PlayerPosition,
+		[this](const InputActionCallbackValues &values)
+	{
+		GameWorldUiController::onPlayerPositionInputAction(values, this->actionText);
+	});
+
+	this->addInputActionListener(InputActionName::PauseMenu, GameWorldUiController::onPauseInputAction);
+	this->addInputActionListener(InputActionName::DebugProfiler, GameWorldUiController::onDebugInputAction);
+
+	this->addMouseButtonChangedListener([this](Game &game, MouseButtonType type, const Int2 &position, bool pressed)
+	{
+		const Rect &centerCursorRegion = this->nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
+		GameWorldUiController::onMouseButtonChanged(game, type, position, pressed, centerCursorRegion, this->actionText);
+	});
+
+	this->addMouseButtonHeldListener([this](Game &game, MouseButtonType type, const Int2 &position, double dt)
+	{
+		const Rect &centerCursorRegion = this->nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
+		GameWorldUiController::onMouseButtonHeld(game, type, position, dt, centerCursorRegion);
+	});
 
 	// Set all of the cursor regions relative to the current window.
 	const Int2 screenDims = game.getRenderer().getWindowDimensions();
@@ -138,19 +310,6 @@ bool GameWorldPanel::init()
 	}
 
 	return true;
-}
-
-GameWorldPanel::~GameWorldPanel()
-{
-	// If in modern mode, disable free-look.
-	auto &game = this->getGame();
-	const auto &options = game.getOptions();
-	const bool modernInterface = options.getGraphics_ModernInterface();
-
-	if (modernInterface)
-	{
-		GameWorldUiModel::setFreeLookActive(game, false);
-	}
 }
 
 std::optional<CursorData> GameWorldPanel::getCurrentCursor() const
@@ -203,194 +362,10 @@ std::optional<CursorData> GameWorldPanel::getCurrentCursor() const
 	}
 }
 
-void GameWorldPanel::handleEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	auto &options = game.getOptions();
-	auto &player = game.getGameState().getPlayer();
-	const auto &inputManager = game.getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
-
-	if (escapePressed)
-	{
-		this->pauseButton.click(game);
-	}
-	else if (f4Pressed)
-	{
-		// Increment or wrap profiler level.
-		const int oldProfilerLevel = options.getMisc_ProfilerLevel();
-		const int newProfilerLevel = (oldProfilerLevel < Options::MAX_PROFILER_LEVEL) ?
-			(oldProfilerLevel + 1) : Options::MIN_PROFILER_LEVEL;
-		options.setMisc_ProfilerLevel(newProfilerLevel);
-	}
-
-	// Listen for hotkeys.
-	const bool drawWeaponHotkeyPressed = inputManager.keyPressed(e, SDLK_f);
-	const bool automapHotkeyPressed = inputManager.keyPressed(e, SDLK_n);
-	const bool logbookHotkeyPressed = inputManager.keyPressed(e, SDLK_l);
-	const bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB) || inputManager.keyPressed(e, SDLK_F1);
-	const bool statusHotkeyPressed = inputManager.keyPressed(e, SDLK_v);
-	const bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
-	const bool toggleCompassHotkeyPressed = inputManager.keyPressed(e, SDLK_F8);
-
-	if (drawWeaponHotkeyPressed)
-	{
-		this->drawWeaponButton.click(player);
-	}
-	else if (automapHotkeyPressed)
-	{
-		const bool goToAutomap = true;
-		this->mapButton.click(game, goToAutomap);
-	}
-	else if (logbookHotkeyPressed)
-	{
-		this->logbookButton.click(game);
-	}
-	else if (sheetHotkeyPressed)
-	{
-		this->characterSheetButton.click(game);
-	}
-	else if (statusHotkeyPressed)
-	{
-		this->statusButton.click(game);
-	}
-	else if (worldMapHotkeyPressed)
-	{
-		const bool goToAutomap = false;
-		this->mapButton.click(game, goToAutomap);
-	}
-	else if (toggleCompassHotkeyPressed)
-	{
-		// Toggle compass display.
-		options.setMisc_ShowCompass(!options.getMisc_ShowCompass());
-	}
-
-	// Player's XY coordinate hotkey.
-	const bool f2Pressed = inputManager.keyPressed(e, SDLK_F2);
-
-	if (f2Pressed)
-	{
-		// Refresh player coordinates display (probably intended for debugging in the original game).
-		// These coordinates are in Arena's coordinate system.
-		const std::string text = GameWorldUiModel::getPlayerPositionText(game);
-		this->actionText.setText(text);
-
-		auto &gameState = game.getGameState();
-		gameState.setActionTextDuration(text);
-	}
-
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	// @temp: hold this key down to make clicks cause voxels to fade.
-	const bool debugFadeVoxel = inputManager.keyIsDown(SDL_SCANCODE_G);
-
-	const auto &renderer = game.getRenderer();
-
-	// Handle input events based on which player interface mode is active.
-	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
-	if (!modernInterface)
-	{
-		// Get mouse position relative to letterbox coordinates.
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-
-		const Rect &centerCursorRegion = this->nativeCursorRegions.at(4);
-
-		if (leftClick)
-		{
-			// Was an interface button clicked?
-			if (this->characterSheetButton.contains(originalPosition))
-			{
-				this->characterSheetButton.click(game);
-			}
-			else if (this->drawWeaponButton.contains(originalPosition))
-			{
-				this->drawWeaponButton.click(player);
-			}
-			else if (this->mapButton.contains(originalPosition))
-			{
-				const bool goToAutomap = true;
-				this->mapButton.click(game, goToAutomap);
-			}
-			else if (this->stealButton.contains(originalPosition))
-			{
-				this->stealButton.click();
-			}
-			else if (this->statusButton.contains(originalPosition))
-			{
-				this->statusButton.click(game);
-			}
-			else if (this->magicButton.contains(originalPosition))
-			{
-				this->magicButton.click();
-			}
-			else if (this->logbookButton.contains(originalPosition))
-			{
-				this->logbookButton.click(game);
-			}
-			else if (this->useItemButton.contains(originalPosition))
-			{
-				this->useItemButton.click();
-			}
-			else if (this->campButton.contains(originalPosition))
-			{
-				this->campButton.click();
-			}
-			else
-			{
-				// Check for left clicks in the game world.
-				if (centerCursorRegion.contains(mousePosition))
-				{
-					const bool primaryClick = true;
-					PlayerLogicController::handleClickInWorld(game, mousePosition, primaryClick, debugFadeVoxel, this->actionText);
-				}
-			}
-		}
-		else if (rightClick)
-		{
-			if (this->mapButton.contains(originalPosition))
-			{
-				this->mapButton.click(game, false);
-			}
-			else
-			{
-				// Check for right clicks in the game world.
-				if (centerCursorRegion.contains(mousePosition))
-				{
-					const bool primaryClick = false;
-					PlayerLogicController::handleClickInWorld(game, mousePosition, primaryClick, false, this->actionText);
-				}
-			}
-		}
-	}
-	else
-	{
-		// Check modern mode input events.
-		const bool ePressed = inputManager.keyPressed(e, SDLK_e);
-
-		// Any clicks will be at the center of the window.
-		const Int2 windowDims = renderer.getWindowDimensions();
-		const Int2 nativeCenter = windowDims / 2;
-
-		if (ePressed)
-		{
-			// Activate (left click in classic mode).
-			const bool primaryClick = true;
-			PlayerLogicController::handleClickInWorld(game, nativeCenter, primaryClick, debugFadeVoxel, this->actionText);
-		}
-		else if (leftClick)
-		{
-			// Read (right click in classic mode).
-			const bool primaryClick = false;
-			PlayerLogicController::handleClickInWorld(game, nativeCenter, primaryClick, false, this->actionText);
-		}
-	}
-}
-
 void GameWorldPanel::onPauseChanged(bool paused)
 {
+	Panel::onPauseChanged(paused);
+
 	auto &game = this->getGame();
 
 	// If in modern mode, set free-look to the given value.
@@ -461,21 +436,17 @@ void GameWorldPanel::tick(double dt)
 	auto &game = this->getGame();
 	DebugAssert(game.gameStateIsActive());
 
-	// Get the relative mouse state.
-	const auto &inputManager = game.getInputManager();
-	const Int2 mouseDelta = inputManager.getMouseDelta();
-
 	// Handle input for player motion.
 	const BufferView<const Rect> nativeCursorRegionsView(
 		this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
-	PlayerLogicController::handlePlayerTurning(game, dt, mouseDelta, nativeCursorRegionsView);
+	const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(game, dt, nativeCursorRegionsView);
+	PlayerLogicController::turnPlayer(game, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
 	PlayerLogicController::handlePlayerMovement(game, dt, nativeCursorRegionsView);
 
 	// Tick the game world clock time.
 	auto &gameState = game.getGameState();
-	const bool debugFastForwardClock = inputManager.keyIsDown(SDL_SCANCODE_R); // @todo: camp button
 	const Clock oldClock = gameState.getClock();
-	gameState.tick(debugFastForwardClock ? (dt * 250.0) : dt, game);
+	gameState.tick(dt, game);
 	const Clock newClock = gameState.getClock();
 
 	Renderer &renderer = game.getRenderer();
@@ -554,6 +525,8 @@ void GameWorldPanel::tick(double dt)
 	const CoordDouble3 newPlayerCoord = player.getPosition();
 
 	// Handle input for the player's attack.
+	const auto &inputManager = game.getInputManager();
+	const Int2 mouseDelta = inputManager.getMouseDelta();
 	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
 
 	MapInstance &mapInst = gameState.getActiveMapInst();

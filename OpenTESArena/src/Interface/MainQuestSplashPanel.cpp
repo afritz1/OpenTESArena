@@ -3,6 +3,7 @@
 #include "MainQuestSplashUiModel.h"
 #include "MainQuestSplashUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 
 #include "components/utilities/String.h"
@@ -32,6 +33,18 @@ bool MainQuestSplashPanel::init(int provinceID)
 		MainQuestSplashUiView::ExitButtonHeight,
 		MainQuestSplashUiController::onExitButtonSelected);
 
+	this->addButtonProxy(MouseButtonType::Left, this->exitButton.getRect(),
+		[this, &game]() { this->exitButton.click(game); });
+
+	this->addInputActionListener(InputActionName::Back,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->exitButton.click(game);
+		}
+	});
+
 	// Get the texture filename of the staff dungeon splash image.
 	this->splashTextureAssetRef = TextureAssetReference(MainQuestSplashUiModel::getSplashFilename(game, provinceID));
 
@@ -41,25 +54,6 @@ bool MainQuestSplashPanel::init(int provinceID)
 std::optional<CursorData> MainQuestSplashPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void MainQuestSplashPanel::handleEvent(const SDL_Event &e)
-{
-	// When the exit button is clicked, go to the game world panel.
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
-
-		if (this->exitButton.contains(originalPoint))
-		{
-			this->exitButton.click(this->getGame());
-		}
-	}
 }
 
 void MainQuestSplashPanel::render(Renderer &renderer)

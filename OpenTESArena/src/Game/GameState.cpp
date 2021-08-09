@@ -110,6 +110,7 @@ GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibra
 	this->actionTextRemainingSeconds = 0.0;
 	this->effectTextRemainingSeconds = 0.0;
 
+	this->isCamping = false;
 	this->chasmAnimSeconds = 0.0;
 }
 
@@ -917,6 +918,11 @@ bool GameState::effectTextIsVisible() const
 	return this->effectTextRemainingSeconds > 0.0;
 }
 
+void GameState::setIsCamping(bool isCamping)
+{
+	this->isCamping = isCamping;
+}
+
 void GameState::setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
 {
 	this->travelData = std::move(travelData);
@@ -1118,7 +1124,8 @@ void GameState::tick(double dt, Game &game)
 
 	// Tick the game clock.
 	const int oldHour = this->clock.getHours24();
-	this->clock.tick(dt * GameState::TIME_SCALE);
+	const double timeScale = GameState::GAME_TIME_SCALE * (this->isCamping ? 250.0 : 1.0);
+	this->clock.tick(dt * timeScale);
 	const int newHour = this->clock.getHours24();
 
 	// Check if the hour changed.

@@ -6,7 +6,6 @@
 
 #include "Panel.h"
 #include "../Assets/TextureAssetReference.h"
-#include "../UI/Button.h"
 
 // Designed for sets of images (i.e., videos) that play one after another and
 // eventually lead to another panel. Skipping is available, too.
@@ -16,6 +15,8 @@ class Renderer;
 
 class CinematicPanel : public Panel
 {
+public:
+	using OnFinishedFunction = std::function<void(Game&)>;
 private:
 	Button<Game&> skipButton;
 	TextureAssetReference paletteTextureAssetRef;
@@ -29,9 +30,8 @@ public:
 	~CinematicPanel() override = default;
 
 	bool init(const std::string &paletteName, const std::string &sequenceName, double secondsPerImage,
-		const std::function<void(Game&)> &endingAction);
+		const OnFinishedFunction &onFinished);
 
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };

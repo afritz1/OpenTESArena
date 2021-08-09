@@ -19,12 +19,11 @@ private:
 	Button<Game&> doneButton, nextPageButton;
 public:
 	CharacterPanel(Game &game);
-	~CharacterPanel() override = default;
+	~CharacterPanel() override;
 
 	bool init();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

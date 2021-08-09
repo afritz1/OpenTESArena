@@ -11,6 +11,7 @@
 #include "ChooseAttributesPanel.h"
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
@@ -49,7 +50,6 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 
-	this->backToRaceButton = Button<Game&>(ChooseAttributesUiController::onBackToRaceSelectionButtonSelected);
 	this->doneButton = Button<Game&, bool*>(
 		CharacterSheetUiView::DoneButtonCenterPoint,
 		CharacterSheetUiView::DoneButtonWidth,
@@ -60,6 +60,30 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiView::PortraitButtonWidth,
 		ChooseAttributesUiView::PortraitButtonHeight,
 		ChooseAttributesUiController::onPortraitButtonSelected);
+
+	this->addButtonProxy(MouseButtonType::Left, this->doneButton.getRect(),
+		[this, &game]() { this->doneButton.click(game, &this->attributesAreSaved); });
+	this->addButtonProxy(MouseButtonType::Left, this->portraitButton.getRect(),
+		[this, &game]()
+	{
+		if (this->attributesAreSaved)
+		{
+			// Increment the portrait ID.
+			this->portraitButton.click(game, true);
+		}
+	});
+
+	this->addButtonProxy(MouseButtonType::Right, this->portraitButton.getRect(),
+		[this, &game]()
+	{
+		if (this->attributesAreSaved)
+		{
+			// Decrement the portrait ID.
+			this->portraitButton.click(game, false);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::Back, ChooseAttributesUiController::onBackToRaceSelectionInputAction);
 
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setPortraitIndex(0);
@@ -95,46 +119,6 @@ bool ChooseAttributesPanel::init()
 std::optional<CursorData> ChooseAttributesPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-
-	if (escapePressed)
-	{
-		this->backToRaceButton.click(this->getGame());
-	}
-
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-		
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-		.nativeToOriginal(mousePosition);
-
-	if (leftClick)
-	{
-		if (this->doneButton.contains(mouseOriginalPoint))
-		{
-			this->doneButton.click(this->getGame(), &this->attributesAreSaved);
-		}
-		else if (this->portraitButton.contains(mouseOriginalPoint) && this->attributesAreSaved)
-		{
-			// Pass 'true' to increment the portrait ID.
-			this->portraitButton.click(this->getGame(), true);
-		}
-	}
-
-	if (rightClick)
-	{
-		if (this->portraitButton.contains(mouseOriginalPoint) && this->attributesAreSaved)
-		{
-			// Pass 'false' to decrement the portrait ID.
-			this->portraitButton.click(this->getGame(), false);
-		}
-	}	
 }
 
 void ChooseAttributesPanel::render(Renderer &renderer)

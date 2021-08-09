@@ -9,6 +9,8 @@
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
@@ -22,6 +24,12 @@
 
 LogbookPanel::LogbookPanel(Game &game)
 	: Panel(game) { }
+
+LogbookPanel::~LogbookPanel()
+{
+	auto &inputManager = this->getGame().getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::Logbook, false);
+}
 
 bool LogbookPanel::init()
 {
@@ -38,11 +46,28 @@ bool LogbookPanel::init()
 		return false;
 	}
 
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::Logbook, true);
+
 	this->backButton = Button<Game&>(
 		LogbookUiView::BackButtonCenterPoint,
 		LogbookUiView::BackButtonWidth,
 		LogbookUiView::BackButtonHeight,
 		LogbookUiController::onBackButtonSelected);
+
+	this->addButtonProxy(MouseButtonType::Left, this->backButton.getRect(),
+		[this, &game]() { this->backButton.click(game); });
+
+	auto backInputActionFunc = [this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->backButton.click(game);
+		}
+	};
+
+	this->addInputActionListener(InputActionName::Back, backInputActionFunc);
+	this->addInputActionListener(InputActionName::Logbook, backInputActionFunc);
 
 	return true;
 }
@@ -50,31 +75,6 @@ bool LogbookPanel::init()
 std::optional<CursorData> LogbookPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void LogbookPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool lPressed = inputManager.keyPressed(e, SDLK_l);
-
-	if (escapePressed || lPressed)
-	{
-		this->backButton.click(this->getGame());
-	}
-
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
-
-		if (this->backButton.contains(mouseOriginalPoint))
-		{
-			this->backButton.click(this->getGame());
-		}
-	}
 }
 
 void LogbookPanel::render(Renderer &renderer)

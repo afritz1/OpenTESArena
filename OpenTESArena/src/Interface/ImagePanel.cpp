@@ -2,7 +2,10 @@
 
 #include "ImagePanel.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/Texture.h"
 
@@ -12,28 +15,33 @@ ImagePanel::ImagePanel(Game &game)
 bool ImagePanel::init(const std::string &paletteName, const std::string &textureName,
 	double secondsToDisplay, const std::function<void(Game&)> &endingAction)
 {
-	this->skipButton = Button<Game&>(endingAction);
+	auto &game = this->getGame();
+
+	// Fullscreen button.
+	this->skipButton = Button<Game&>(
+		0,
+		0,
+		ArenaRenderUtils::SCREEN_WIDTH,
+		ArenaRenderUtils::SCREEN_HEIGHT,
+		endingAction);
+
+	this->addButtonProxy(MouseButtonType::Left, this->skipButton.getRect(),
+		[this, &game]() { this->skipButton.click(game); });
+
+	this->addInputActionListener(InputActionName::Skip,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->skipButton.click(game);
+		}
+	});
+
 	this->paletteName = paletteName;
 	this->textureName = textureName;
 	this->secondsToDisplay = secondsToDisplay;
 	this->currentSeconds = 0.0;
 	return true;
-}
-
-void ImagePanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	
-	const bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
-	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool skipHotkeyPressed = spacePressed || enterPressed || escapePressed;
-
-	if (leftClick || skipHotkeyPressed)
-	{
-		this->skipButton.click(this->getGame());
-	}	
 }
 
 void ImagePanel::tick(double dt)

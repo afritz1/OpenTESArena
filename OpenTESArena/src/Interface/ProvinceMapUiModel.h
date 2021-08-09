@@ -21,8 +21,6 @@ namespace ProvinceMapUiModel
 		TravelData(int locationID, int provinceID, int travelDays);
 	};
 
-	// -- Province panel --
-
 	const std::string SearchButtonTooltip = "Search";
 	const std::string TravelButtonTooltip = "Travel";
 	const std::string BackToWorldMapButtonTooltip = "Back to World Map";
@@ -35,16 +33,17 @@ namespace ProvinceMapUiModel
 
 	// Generates a text sub-panel with a parchment message.
 	std::unique_ptr<Panel> makeTextPopUp(Game &game, const std::string &text);
+}
 
-	// -- Search sub-panel --
+namespace ProvinceSearchUiModel
+{
+	enum class Mode { TextEntry, List };
 
-	enum class SearchMode { TextEntry, List };
+	constexpr int MaxNameLength = 20;
 
-	constexpr int SearchSubPanelMaxNameLength = 20;
+	bool isCharAllowed(char c);
 
-	bool isCharAllowedInSearchText(char c);
-
-	std::string getSearchSubPanelTitleText(Game &game);
+	std::string getTitleText(Game &game);
 
 	// Returns a list of all visible location indices in the given province that have a match with
 	// the given location name. Technically, this should only return up to one index, but returning

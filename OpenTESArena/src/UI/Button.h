@@ -3,6 +3,7 @@
 
 #include <functional>
 
+#include "../Input/PointerTypes.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 
@@ -16,14 +17,11 @@ private:
 	std::function<void(Args...)> callback;
 	Rect rect;
 public:
-	Button(int x, int y, int width, int height,
-		const std::function<void(Args...)> &callback)
+	Button(int x, int y, int width, int height, const std::function<void(Args...)> &callback)
 		: callback(callback), rect(x, y, width, height) { }
 
-	Button(const Int2 &center, int width, int height,
-		const std::function<void(Args...)> &callback)
-		: Button(center.x - (width / 2), center.y - (height / 2),
-			width, height, callback) { }
+	Button(const Int2 &center, int width, int height, const std::function<void(Args...)> &callback)
+		: Button(center.x - (width / 2), center.y - (height / 2), width, height, callback) { }
 
 	// "Hidden" button, intended only as a hotkey.
 	Button(const std::function<void(Args...)> &callback)
@@ -36,6 +34,11 @@ public:
 	Button(Button&&) = default;
 
 	Button &operator=(Button&&) = default;
+
+	const Rect &getRect() const
+	{
+		return this->rect;
+	}
 
 	int getX() const
 	{
@@ -94,6 +97,24 @@ public:
 	{
 		this->callback(std::forward<Args>(args)...);
 	}
+};
+
+// Allows the input manager to iterate over UI buttons and determine which one is clicked without
+// worrying about buttons' variadic templates.
+struct ButtonProxy
+{
+	using RectFunction = std::function<Rect()>;
+	using Callback = std::function<void()>;
+	using ActiveFunction = std::function<bool()>;
+
+	MouseButtonType buttonType; // Which mouse button triggers a click.
+	RectFunction rectFunc; // Position + size in classic UI space. Uses a function for dynamic buttons (ListBox, etc.).
+	Callback callback; // Called if the button is clicked.
+	ActiveFunction isActiveFunc; // Contains a callable function if it can be inactive.
+
+	ButtonProxy(MouseButtonType buttonType, const RectFunction &rectFunc,
+		const Callback &callback, const ActiveFunction &isActiveFunc = ActiveFunction());
+	ButtonProxy();
 };
 
 #endif

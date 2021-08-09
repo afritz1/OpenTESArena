@@ -12,11 +12,87 @@
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
+#include "../GameLogic/PlayerLogicController.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
+
+void GameWorldUiController::onActivate(Game &game, const Int2 &screenPoint, TextBox &actionText)
+{
+	constexpr bool primaryInteraction = true;
+	const auto &inputManager = game.getInputManager();
+	const bool debugFadeVoxel = inputManager.keyIsDown(SDL_SCANCODE_G);
+	PlayerLogicController::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction,
+		debugFadeVoxel, actionText);
+}
+
+void GameWorldUiController::onActivateInputAction(const InputActionCallbackValues &values, TextBox &actionText)
+{
+	if (values.performed)
+	{
+		Game &game = values.game;
+		const auto &options = game.getOptions();
+		if (options.getGraphics_ModernInterface())
+		{
+			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.getRenderer());
+			GameWorldUiController::onActivate(game, screenPoint, actionText);
+		}
+	}
+}
+
+void GameWorldUiController::onInspect(Game &game, const Int2 &screenPoint, TextBox &actionText)
+{
+	constexpr bool primaryInteraction = false;
+	constexpr bool debugFadeVoxel = false;
+	PlayerLogicController::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction,
+		debugFadeVoxel, actionText);
+}
+
+void GameWorldUiController::onInspectInputAction(const InputActionCallbackValues &values, TextBox &actionText)
+{
+	if (values.performed)
+	{
+		Game &game = values.game;
+		const auto &options = game.getOptions();
+		if (options.getGraphics_ModernInterface())
+		{
+			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.getRenderer());
+			GameWorldUiController::onInspect(game, screenPoint, actionText);
+		}
+	}
+}
+
+void GameWorldUiController::onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed,
+	const Rect &centerCursorRegion, TextBox &actionText)
+{
+	const auto &options = game.getOptions();
+	if (!options.getGraphics_ModernInterface() && pressed && centerCursorRegion.contains(position))
+	{
+		if (type == MouseButtonType::Left)
+		{
+			GameWorldUiController::onActivate(game, position, actionText);
+		}
+		else if (type == MouseButtonType::Right)
+		{
+			GameWorldUiController::onInspect(game, position, actionText);
+		}
+	}
+}
+
+void GameWorldUiController::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt,
+	const Rect &centerCursorRegion)
+{
+	const auto &options = game.getOptions();
+	if (!options.getGraphics_ModernInterface() && !centerCursorRegion.contains(position))
+	{
+		if (type == MouseButtonType::Left)
+		{
+			// @todo: move out of PlayerLogicController::handlePlayerTurning() and handlePlayerAttack()
+		}
+	}
+}
 
 void GameWorldUiController::onCharacterSheetButtonSelected(Game &game)
 {
@@ -80,36 +156,6 @@ void GameWorldUiController::onMagicButtonSelected()
 	DebugLog("Magic.");
 }
 
-void GameWorldUiController::onLogbookButtonSelected(Game &game)
-{
-	game.setPanel<LogbookPanel>();
-}
-
-void GameWorldUiController::onUseItemButtonSelected()
-{
-	DebugLog("Use item.");
-}
-
-void GameWorldUiController::onCampButtonSelected()
-{
-	DebugLog("Camp.");
-}
-
-void GameWorldUiController::onScrollUpButtonSelected(GameWorldPanel &panel)
-{
-	// Nothing yet.
-}
-
-void GameWorldUiController::onScrollDownButtonSelected(GameWorldPanel &panel)
-{
-	// Nothing yet.
-}
-
-void GameWorldUiController::onPauseButtonSelected(Game &game)
-{
-	game.setPanel<PauseMenuPanel>();
-}
-
 void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 {
 	if (goToAutomap)
@@ -141,5 +187,79 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 	else
 	{
 		game.setPanel<WorldMapPanel>();
+	}
+}
+
+void GameWorldUiController::onLogbookButtonSelected(Game &game)
+{
+	game.setPanel<LogbookPanel>();
+}
+
+void GameWorldUiController::onUseItemButtonSelected()
+{
+	DebugLog("Use item.");
+}
+
+void GameWorldUiController::onCampButtonSelected()
+{
+	DebugLog("Camp.");
+}
+
+void GameWorldUiController::onScrollUpButtonSelected(GameWorldPanel &panel)
+{
+	// Nothing yet.
+}
+
+void GameWorldUiController::onScrollDownButtonSelected(GameWorldPanel &panel)
+{
+	// Nothing yet.
+}
+
+void GameWorldUiController::onToggleCompassInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		auto &options = values.game.getOptions();
+		options.setMisc_ShowCompass(!options.getMisc_ShowCompass());
+	}
+}
+
+void GameWorldUiController::onPlayerPositionInputAction(const InputActionCallbackValues &values, TextBox &actionText)
+{
+	if (values.performed)
+	{
+		auto &game = values.game;
+
+		// Refresh player coordinates display (probably intended for debugging in the original game).
+		// These coordinates are in Arena's coordinate system.
+		const std::string text = GameWorldUiModel::getPlayerPositionText(game);
+		actionText.setText(text);
+
+		auto &gameState = game.getGameState();
+		gameState.setActionTextDuration(text);
+	}
+}
+
+void GameWorldUiController::onPauseInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		auto &game = values.game;
+		game.setPanel<PauseMenuPanel>();
+	}
+}
+
+void GameWorldUiController::onDebugInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		auto &game = values.game;
+		auto &options = game.getOptions();
+
+		// Increment or wrap profiler level.
+		const int oldProfilerLevel = options.getMisc_ProfilerLevel();
+		const int newProfilerLevel = (oldProfilerLevel < Options::MAX_PROFILER_LEVEL) ?
+			(oldProfilerLevel + 1) : Options::MIN_PROFILER_LEVEL;
+		options.setMisc_ProfilerLevel(newProfilerLevel);
 	}
 }

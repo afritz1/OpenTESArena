@@ -8,6 +8,7 @@
 #include "../Math/Vector2.h"
 
 class Game;
+class Rect;
 
 namespace LoadSaveUiModel
 {
@@ -24,6 +25,9 @@ namespace LoadSaveUiModel
 
 	std::string getSavesPath(Game &game);
 	std::vector<Entry> getSaveEntries(Game &game);
+
+	// Gets the classic space UI rect of a save slot.
+	Rect getSlotRect(int index);
 
 	// Returns the index of a save's clicked area, if any.
 	std::optional<int> getClickedIndex(const Int2 &originalPoint);

@@ -19,8 +19,6 @@ struct TextureAssetReference;
 
 namespace ProvinceMapUiView
 {
-	// -- Province panel --
-
 	const Rect SearchButtonRect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 	const Rect TravelButtonRect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 	const Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
@@ -73,47 +71,48 @@ namespace ProvinceMapUiView
 
 	std::string getMapIconOutlinesFilename();
 	std::string getMapIconBlinkingOutlinesFilename();
+}
 
-	// -- Search sub-panel --
+namespace ProvinceSearchUiView
+{
+	const Int2 DefaultTextCursorPosition(85, 100);
 
-	const Int2 SearchSubPanelDefaultTextCursorPosition(85, 100);
+	const int TitleTextBoxX = 30;
+	const int TitleTextBoxY = 89;
+	const std::string TitleFontName = ArenaFontName::Arena;
+	const Color TitleColor(52, 24, 8);
+	constexpr TextAlignment TitleTextAlignment = TextAlignment::TopLeft;
 
-	const int SearchSubPanelTitleTextBoxX = 30;
-	const int SearchSubPanelTitleTextBoxY = 89;
-	const std::string SearchSubPanelTitleFontName = ArenaFontName::Arena;
-	const Color SearchSubPanelTitleColor(52, 24, 8);
-	constexpr TextAlignment SearchSubPanelTitleTextAlignment = TextAlignment::TopLeft;
+	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	TextBox::InitInfo getSearchSubPanelTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	const std::string TextEntryFontName = ArenaFontName::Arena;
+	const Color TextEntryColor(52, 24, 8);
+	constexpr TextAlignment TextEntryTextAlignment = TextAlignment::TopLeft;
 
-	const std::string SearchSubPanelTextEntryFontName = ArenaFontName::Arena;
-	const Color SearchSubPanelTextEntryColor(52, 24, 8);
-	constexpr TextAlignment SearchSubPanelTextEntryTextAlignment = TextAlignment::TopLeft;
+	TextBox::InitInfo getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 
-	TextBox::InitInfo getSearchSubPanelTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+	int getTextEntryTextureX(int textureWidth);
+	int getTextEntryTextureY(int textureHeight);
+	constexpr int TextureWidth = 280;
+	constexpr int TextureHeight = 40;
+	constexpr TextureUtils::PatternType TexturePattern = TextureUtils::PatternType::Parchment;
 
-	int getSearchSubPanelTextEntryTextureX(int textureWidth);
-	int getSearchSubPanelTextEntryTextureY(int textureHeight);
-	constexpr int SearchSubPanelTextureWidth = 280;
-	constexpr int SearchSubPanelTextureHeight = 40;
-	constexpr TextureUtils::PatternType SearchSubPanelTexturePattern = TextureUtils::PatternType::Parchment;
+	const Int2 ListUpButtonCenterPoint(70, 24);
+	constexpr int ListUpButtonWidth = 8;
+	constexpr int ListUpButtonHeight = 8;
 
-	const Int2 SearchSubPanelListUpButtonCenterPoint(70, 24);
-	constexpr int SearchSubPanelListUpButtonWidth = 8;
-	constexpr int SearchSubPanelListUpButtonHeight = 8;
+	const Int2 ListDownButtonCenterPoint(70, 97);
+	constexpr int ListDownButtonWidth = 8;
+	constexpr int ListDownButtonHeight = 8;
 
-	const Int2 SearchSubPanelListDownButtonCenterPoint(70, 97);
-	constexpr int SearchSubPanelListDownButtonWidth = 8;
-	constexpr int SearchSubPanelListDownButtonHeight = 8;
+	constexpr int ListTextureX = 57;
+	constexpr int ListTextureY = 11;
 
-	constexpr int SearchSubPanelListTextureX = 57;
-	constexpr int SearchSubPanelListTextureY = 11;
+	const Rect ListBoxRect(85, 34, 147, 54);
+	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
 
-	const Rect SearchSubPanelListBoxRect(85, 34, 147, 54);
-	ListBox::Properties makeSearchSubPanelListBoxProperties(const FontLibrary &fontLibrary);
-
-	TextureAssetReference getSearchSubPanelListTextureAssetRef();
-	TextureAssetReference getSearchSubPanelListPaletteTextureAssetRef(Game &game, int provinceID);
+	TextureAssetReference getListTextureAssetRef();
+	TextureAssetReference getListPaletteTextureAssetRef(Game &game, int provinceID);
 }
 
 #endif

@@ -3,10 +3,12 @@
 
 class Game;
 
+struct InputActionCallbackValues;
+
 namespace LoadSaveUiController
 {
 	void onEntryButtonSelected(Game &game, int index);
-	void onBackButtonSelected(Game &game);
+	void onBackInputAction(const InputActionCallbackValues &values);
 }
 
 #endif

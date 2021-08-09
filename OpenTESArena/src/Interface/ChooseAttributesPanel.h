@@ -22,7 +22,6 @@ class ChooseAttributesPanel : public Panel
 {
 private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
-	Button<Game&> backToRaceButton;
 	Button<Game&, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
@@ -33,7 +32,6 @@ public:
 	bool init();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

@@ -1,5 +1,3 @@
-#include <vector>
-
 #include "SDL.h"
 
 #include "CinematicPanel.h"
@@ -27,22 +25,72 @@
 Panel::Panel(Game &game)
 	: game(game) { }
 
+Panel::~Panel()
+{
+	InputManager &inputManager = this->game.getInputManager();
+
+	// Free all the input listener IDs.
+	for (const InputManager::ListenerID listenerID : this->inputActionListenerIDs)
+	{
+		inputManager.removeListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->mouseButtonChangedListenerIDs)
+	{
+		inputManager.removeListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->mouseButtonHeldListenerIDs)
+	{
+		inputManager.removeListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->mouseScrollChangedListenerIDs)
+	{
+		inputManager.removeListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->mouseMotionListenerIDs)
+	{
+		inputManager.removeListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->textInputListenerIDs)
+	{
+		inputManager.removeListener(listenerID);
+	}
+}
+
 std::optional<CursorData> Panel::getCurrentCursor() const
 {
 	// Empty by default.
 	return std::nullopt;
 }
 
-void Panel::handleEvent(const SDL_Event &e)
+BufferView<const ButtonProxy> Panel::getButtonProxies() const
 {
-	// Do nothing by default.
-	static_cast<void>(e);
+	return BufferView<const ButtonProxy>(this->buttonProxies.data(), static_cast<int>(this->buttonProxies.size()));
 }
 
 void Panel::onPauseChanged(bool paused)
 {
-	// Do nothing by default.
-	static_cast<void>(paused);
+	InputManager &inputManager = this->game.getInputManager();
+
+	auto setListenersEnabled = [paused, &inputManager](std::vector<InputManager::ListenerID> &listenerIDs)
+	{
+		for (const InputManager::ListenerID listenerID : listenerIDs)
+		{
+			inputManager.setListenerEnabled(listenerID, !paused);
+		}
+	};
+
+	// Update listener active states so paused panels aren't hearing input callbacks.
+	setListenersEnabled(this->inputActionListenerIDs);
+	setListenersEnabled(this->mouseButtonChangedListenerIDs);
+	setListenersEnabled(this->mouseButtonHeldListenerIDs);
+	setListenersEnabled(this->mouseScrollChangedListenerIDs);
+	setListenersEnabled(this->mouseMotionListenerIDs);
+	setListenersEnabled(this->textInputListenerIDs);
 }
 
 void Panel::resize(int windowWidth, int windowHeight)
@@ -79,6 +127,60 @@ CursorData Panel::getDefaultCursor() const
 	}
 
 	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
+}
+
+void Panel::addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->inputActionListenerIDs.emplace_back(inputManager.addInputActionListener(actionName, callback));
+}
+
+void Panel::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->mouseButtonChangedListenerIDs.emplace_back(inputManager.addMouseButtonChangedListener(callback));
+}
+
+void Panel::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->mouseButtonHeldListenerIDs.emplace_back(inputManager.addMouseButtonHeldListener(callback));
+}
+
+void Panel::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->mouseScrollChangedListenerIDs.emplace_back(inputManager.addMouseScrollChangedListener(callback));
+}
+
+void Panel::addMouseMotionListener(const MouseMotionCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->mouseMotionListenerIDs.emplace_back(inputManager.addMouseMotionListener(callback));
+}
+
+void Panel::addTextInputListener(const TextInputCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->textInputListenerIDs.emplace_back(inputManager.addTextInputListener(callback));
+}
+
+void Panel::addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,
+	const ButtonProxy::Callback &callback, const ButtonProxy::ActiveFunction &isActiveFunc)
+{
+	this->buttonProxies.emplace_back(buttonType, rectFunc, callback, isActiveFunc);
+}
+
+void Panel::addButtonProxy(MouseButtonType buttonType, const Rect &rect, const ButtonProxy::Callback &callback,
+	const ButtonProxy::ActiveFunction &isActiveFunc)
+{
+	auto rectFunc = [rect]() { return rect; };
+	this->addButtonProxy(buttonType, rectFunc, callback, isActiveFunc);
+}
+
+void Panel::clearButtonProxies()
+{
+	this->buttonProxies.clear();
 }
 
 void Panel::tick(double dt)

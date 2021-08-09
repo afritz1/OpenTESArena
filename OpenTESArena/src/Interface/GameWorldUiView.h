@@ -202,6 +202,9 @@ namespace GameWorldUiView
 
 	TextureAssetReference getDefaultPaletteTextureAssetRef();
 
+	// Gets the pixel coordinate of the center of the window. Does not handle classic vs. modern mode.
+	Int2 getNativeWindowCenter(const Renderer &renderer);
+
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);
 	void DEBUG_DrawProfiler(Game &game, Renderer &renderer);

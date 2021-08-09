@@ -28,7 +28,7 @@ class GameWorldPanel : public Panel
 {
 private:
 	TextBox playerNameTextBox, triggerText, actionText, effectText;
-	Button<Game&> characterSheetButton, statusButton, logbookButton, pauseButton;
+	Button<Game&> characterSheetButton, statusButton, logbookButton;
 	Button<Player&> drawWeaponButton;
 	Button<> stealButton, magicButton, useItemButton, campButton;
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
@@ -47,7 +47,6 @@ public:
 	bool init();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void onPauseChanged(bool paused) override;
 	virtual void resize(int windowWidth, int windowHeight) override;
 	virtual void tick(double dt) override;
