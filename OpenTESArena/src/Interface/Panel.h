@@ -11,6 +11,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureUtils.h"
 #include "../UI/Button.h"
+#include "../UI/UiDrawCall.h"
 
 #include "components/utilities/BufferView.h"
 
@@ -36,7 +37,7 @@ class Panel
 {
 private:
 	Game &game;
-protected:
+
 	// Allocated input listener IDs that must be freed when the panel is done with them.
 	std::vector<InputManager::ListenerID> inputActionListenerIDs;
 	std::vector<InputManager::ListenerID> mouseButtonChangedListenerIDs;
@@ -47,6 +48,9 @@ protected:
 
 	std::vector<ButtonProxy> buttonProxies;
 
+	// Registered draw calls that will be iterated by the renderer.
+	std::vector<UiDrawCall> drawCalls;
+protected:
 	Game &getGame() const;
 
 	// Default cursor used by most panels.
@@ -68,6 +72,34 @@ protected:
 		const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
 
 	void clearButtonProxies();
+
+	// Helper functions for registering UI draw calls.
+	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
+		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
+		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const UiDrawCall::RectFunc &rectFunc,
+		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const Rect &rect,
+		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const UiDrawCall::RectFunc &rectFunc,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const Rect &rect,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const UiDrawCall::RectFunc &rectFunc,
+		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &rect,
+		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const UiDrawCall::RectFunc &rectFunc,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &rect,
+		const std::optional<Rect> &clipRect = std::nullopt);
+
+	void clearDrawCalls();
 public:
 	Panel(Game &game);
 	virtual ~Panel();
@@ -78,7 +110,11 @@ public:
 
 	// Returns button proxies for ease of iteration and finding out which button is clicked in a frame
 	// so its callback can be called.
-	virtual BufferView<const ButtonProxy> getButtonProxies() const;
+	BufferView<const ButtonProxy> getButtonProxies() const;
+
+	// Gets the registered UI draw calls for this panel. Each draw call is conditionally rendered
+	// depending on whether it is active.
+	BufferView<const UiDrawCall> getDrawCalls() const;
 
 	// Called when a sub-panel above this panel is pushed (added) or popped (removed).
 	virtual void onPauseChanged(bool paused);

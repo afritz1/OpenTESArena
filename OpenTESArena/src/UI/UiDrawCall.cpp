@@ -16,18 +16,40 @@ UiDrawCall::UiDrawCall()
 	this->textureType = static_cast<TextureType>(-1);
 }
 
+UiDrawCall::TextureBuilderFunc UiDrawCall::makeTextureBuilderFunc(TextureBuilderID textureBuilderID, PaletteID paletteID)
+{
+	return [textureBuilderID, paletteID]()
+	{
+		return UiDrawCall::TextureBuilderInfo(textureBuilderID, paletteID);
+	};
+}
+
+UiDrawCall::RectFunc UiDrawCall::makeRectFunc(const Rect &rect)
+{
+	return [rect]() { return rect; };
+}
+
+bool UiDrawCall::defaultActiveFunc()
+{
+	return true;
+}
+
 void UiDrawCall::init(TextureType textureType, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
 	const std::optional<Rect> &clipRect)
 {
+	DebugAssert(rectFunc);
+	DebugAssert(activeFunc);
+
 	this->textureType = textureType;
 	this->rectFunc = rectFunc;
 	this->activeFunc = activeFunc;
 	this->clipRect = clipRect;
 }
 
-void UiDrawCall::initWithTexture(const TextureInfoFunc &textureFunc, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
+void UiDrawCall::initWithTexture(const TextureFunc &textureFunc, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
 	const std::optional<Rect> &clipRect)
 {
+	DebugAssert(textureFunc);
 	this->init(TextureType::Texture, rectFunc, activeFunc, clipRect);
 	this->textureFunc = textureFunc;
 }
@@ -35,6 +57,7 @@ void UiDrawCall::initWithTexture(const TextureInfoFunc &textureFunc, const RectF
 void UiDrawCall::initWithTextureBuilder(const TextureBuilderFunc &textureBuilderFunc, const RectFunc &rectFunc,
 	const ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
 {
+	DebugAssert(textureBuilderFunc);
 	this->init(TextureType::TextureBuilder, rectFunc, activeFunc, clipRect);
 	this->textureBuilderFunc = textureBuilderFunc;
 }
