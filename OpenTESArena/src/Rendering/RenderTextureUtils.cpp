@@ -1,5 +1,4 @@
-#include "RendererSystem2D.h"
-#include "RendererSystem3D.h"
+#include "Renderer.h"
 #include "RenderTextureUtils.h"
 
 #include "components/debug/Debug.h"
@@ -50,20 +49,39 @@ ScopedSkyTextureRef::~ScopedSkyTextureRef()
 SkyTextureID ScopedSkyTextureRef::get() const
 {
 	return this->id;
+}*/
+
+ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, Renderer &renderer)
+{
+	DebugAssert(id >= 0);
+	this->id = id;
+	this->renderer = &renderer;
 }
 
-ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, RendererSystem2D &rendererSystem)
+ScopedUiTextureRef::ScopedUiTextureRef()
 {
-	this->id = id;
-	this->rendererSystem = &rendererSystem;
+	this->id = -1;
+	this->renderer = nullptr;
 }
 
 ScopedUiTextureRef::~ScopedUiTextureRef()
 {
-	this->rendererSystem->freeUiTexture(this->id);
+	if (this->renderer != nullptr)
+	{
+		this->renderer->freeUiTexture(this->id);
+	}
+}
+
+void ScopedUiTextureRef::init(UiTextureID id, Renderer &renderer)
+{
+	DebugAssert(this->id == -1);
+	DebugAssert(this->renderer == nullptr);
+	DebugAssert(id >= 0);
+	this->id = id;
+	this->renderer = &renderer;
 }
 
 UiTextureID ScopedUiTextureRef::get() const
 {
 	return this->id;
-}*/
+}

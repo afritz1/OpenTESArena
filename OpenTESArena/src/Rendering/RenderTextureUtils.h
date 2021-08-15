@@ -9,8 +9,7 @@ using EntityTextureID = int; // One per frame of entity animations, any dimensio
 using SkyTextureID = int; // Similar to entity textures but for mountains/clouds/stars/etc.
 using UiTextureID = int; // Used with all UI textures.
 
-class RendererSystem2D;
-class RendererSystem3D;
+class Renderer;
 
 // Convenience classes for creating and automatically destroying a texture.
 // @temp: commented out until the renderers are working with texture builders and texture IDs instead of
@@ -49,18 +48,21 @@ public:
 	~ScopedSkyTextureRef();
 
 	SkyTextureID get() const;
-};
+};*/
 
 class ScopedUiTextureRef
 {
 private:
 	UiTextureID id;
-	RendererSystem2D *rendererSystem;
+	Renderer *renderer;
 public:
-	ScopedUiTextureRef(UiTextureID id, RendererSystem2D &rendererSystem);
+	ScopedUiTextureRef(UiTextureID id, Renderer &renderer);
+	ScopedUiTextureRef();
 	~ScopedUiTextureRef();
 
+	void init(UiTextureID id, Renderer &renderer);
+
 	UiTextureID get() const;
-};*/
+};
 
 #endif
