@@ -50,6 +50,7 @@ private:
 
 	// Registered draw calls that will be iterated by the renderer.
 	std::vector<UiDrawCall> drawCalls;
+	// @todo: add a 'secondaryDrawCalls' list.
 protected:
 	Game &getGame() const;
 
@@ -131,7 +132,7 @@ public:
 
 	// Draws the panel's main contents onto the display. Any contents that are hidden
 	// when this panel is not the top-most one should go in renderSecondary().
-	virtual void render(Renderer &renderer) = 0;
+	virtual void render(Renderer &renderer);
 
 	// Draws the panel's secondary contents (pop-up text, tooltips, etc.). Does not
 	// clear the frame buffer. This method is only called for the top-most panel, and

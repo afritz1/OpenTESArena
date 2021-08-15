@@ -540,13 +540,65 @@ void Game::updateAudio(double dt)
 
 void Game::render()
 {
-	// Draw the panel's main content.
-	this->panel->render(this->renderer);
-
-	// Draw any sub-panels back to front.
+	// Get the draw calls from each UI panel/sub-panel and determine what to draw.
+	std::vector<Panel*> panelsToRender;
+	panelsToRender.emplace_back(this->panel.get());
 	for (auto &subPanel : this->subPanels)
 	{
-		subPanel->render(this->renderer);
+		panelsToRender.emplace_back(subPanel.get());
+	}
+
+	for (Panel *currentPanel : panelsToRender)
+	{
+		BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
+		for (int i = 0; i < drawCallsView.getCount(); i++)
+		{
+			const UiDrawCall &drawCall = drawCallsView.get(i);
+
+			if (!drawCall.isActive())
+			{
+				continue;
+			}
+
+			const std::optional<Rect> &clipRect = drawCall.getClipRect();
+			if (clipRect.has_value())
+			{
+				this->renderer.setClipRect(&clipRect->getRect());
+			}
+
+			const Rect rect = drawCall.getRect();
+			const UiDrawCall::TextureType textureType = drawCall.getTextureType();
+			if (textureType == UiDrawCall::TextureType::Texture)
+			{
+				const UiDrawCall::TextureInfo &textureInfo = drawCall.getTextureInfo();
+				this->renderer.drawOriginal(*textureInfo.texture, rect.getLeft(), rect.getTop(),
+					rect.getWidth(), rect.getHeight());
+			}
+			else if (textureType == UiDrawCall::TextureType::TextureBuilder)
+			{
+				const UiDrawCall::TextureBuilderInfo &textureBuilderInfo = drawCall.getTextureBuilderInfo();
+				this->renderer.drawOriginal(textureBuilderInfo.textureBuilderID, textureBuilderInfo.paletteID,
+					rect.getLeft(), rect.getTop(), rect.getWidth(), rect.getHeight(), this->textureManager);
+			}
+			else
+			{
+				DebugNotImplementedMsg(std::to_string(static_cast<int>(textureType)));
+			}
+
+			if (clipRect.has_value())
+			{
+				this->renderer.setClipRect(nullptr);
+			}
+		}
+	}
+
+	// vvv  legacy rendering  vvv
+	// @todo: remove this once all UI is using the new UiDrawCall way
+
+	// Draw panels back to front.
+	for (Panel *currentPanel : panelsToRender)
+	{
+		currentPanel->render(this->renderer);
 	}
 
 	// Call the active panel's secondary render method. Secondary render items are those
