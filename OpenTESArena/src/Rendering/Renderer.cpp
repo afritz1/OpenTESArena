@@ -657,6 +657,11 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		}
 	}();
 
+	if (!this->renderer2D->init(this->window))
+	{
+		DebugCrash("Couldn't init 2D renderer.");
+	}
+
 	// Initialize 3D renderer resources.
 	this->renderer3D = [systemType3D]() -> std::unique_ptr<RendererSystem3D>
 	{
@@ -675,6 +680,8 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
 	DebugAssert(this->gameWorldTexture.get() == nullptr);
 	this->fullGameWindow = false;
+
+	DebugAssert(!this->renderer3D->isInited());
 
 	return true;
 }
@@ -813,9 +820,20 @@ bool Renderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
 	return this->renderer3D->tryCreateSkyTexture(textureAssetRef, textureManager);
 }
 
-bool Renderer::tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
+bool Renderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
 {
-	return this->renderer2D->tryCreateUiTexture(textureAssetRef, textureManager);
+	return this->renderer2D->tryCreateUiTexture(texels, outID);
+}
+
+bool Renderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID)
+{
+	return this->renderer2D->tryCreateUiTexture(texels, palette, outID);
+}
+
+bool Renderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
+	const TextureManager &textureManager, UiTextureID *outID)
+{
+	return this->renderer2D->tryCreateUiTexture(textureBuilderID, paletteID, textureManager, outID);
 }
 
 void Renderer::freeVoxelTexture(const TextureAssetReference &textureAssetRef)
@@ -833,9 +851,9 @@ void Renderer::freeSkyTexture(const TextureAssetReference &textureAssetRef)
 	this->renderer3D->freeSkyTexture(textureAssetRef);
 }
 
-void Renderer::freeUiTexture(const TextureAssetReference &textureAssetRef)
+void Renderer::freeUiTexture(UiTextureID id)
 {
-	this->renderer2D->freeUiTexture(textureAssetRef);
+	this->renderer2D->freeUiTexture(id);
 }
 
 void Renderer::setFogDistance(double fogDistance)

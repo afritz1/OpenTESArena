@@ -1,10 +1,15 @@
 #ifndef RENDERER_SYSTEM_2D_H
 #define RENDERER_SYSTEM_2D_H
 
+#include <cstdint>
 #include <optional>
 
 #include "RenderTextureUtils.h"
 #include "../Math/Vector2.h"
+#include "../Media/Palette.h"
+#include "../Media/TextureUtils.h"
+
+#include "components/utilities/BufferView2D.h"
 
 // Abstract base class for UI renderer.
 
@@ -18,11 +23,9 @@
 // @todo: might eventually need some "shared" struct for resources to talk between 2D and 3D renderer
 // if it's the same backend.
 
-class TextureBuilder;
 class TextureManager;
 
 struct SDL_Window;
-struct TextureAssetReference;
 
 class RendererSystem2D
 {
@@ -45,17 +48,17 @@ public:
 
 	virtual ~RendererSystem2D();
 
-	virtual void init(SDL_Window *window) = 0;
+	virtual bool init(SDL_Window *window) = 0;
 	virtual void shutdown() = 0;
 
-	// Texture handle allocation function for a UI texture.
-	// @todo: this should take a TextureBuilder and return optional<UiTextureID>.
-	virtual bool tryCreateUiTexture(const TextureAssetReference &textureAssetRef,
-		TextureManager &textureManager) = 0;
+	// Texture handle allocation functions for a UI texture. All UI textures are stored as 32-bit.
+	virtual bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID) = 0;
+	virtual bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID) = 0;
+	virtual bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
+		const TextureManager &textureManager, UiTextureID *outID) = 0;
 
 	// Texture handle freeing function for a UI texture.
-	// @todo: this should eventually take a UiTextureID.
-	virtual void freeUiTexture(const TextureAssetReference &textureAssetRef) = 0;
+	virtual void freeUiTexture(UiTextureID id) = 0;
 
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetTextureDims(UiTextureID id) const = 0;

@@ -76,6 +76,23 @@ public:
 		return this->data != nullptr;
 	}
 
+	bool isSlice() const
+	{
+		return (this->viewWidth < this->width) || (this->viewHeight < this->height);
+	}
+
+	T *get()
+	{
+		DebugAssert(!this->isSlice());
+		return this->data;
+	}
+
+	const T *get() const
+	{
+		DebugAssert(!this->isSlice());
+		return this->data;
+	}
+
 	T &get(int x, int y)
 	{
 		DebugAssert(this->isValid());
@@ -88,6 +105,18 @@ public:
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
 		return this->data[index];
+	}
+
+	T *end()
+	{
+		DebugAssert(!this->isSlice());
+		return (this->data != nullptr) ? (this->data + (this->width + this->height)) : nullptr;
+	}
+
+	const T *end() const
+	{
+		DebugAssert(!this->isSlice());
+		return (this->data != nullptr) ? (this->data + (this->width + this->height)) : nullptr;
 	}
 
 	int getWidth() const

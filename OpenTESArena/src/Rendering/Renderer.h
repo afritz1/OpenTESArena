@@ -217,14 +217,17 @@ public:
 	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
 		TextureManager &textureManager);
 	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
-	bool tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID);
+	bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID);
+	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
+		const TextureManager &textureManager, UiTextureID *outID);
 
 	// Texture handle freeing functions.
 	// @todo: see RendererSystem3D -- these should take texture IDs instead.
 	void freeVoxelTexture(const TextureAssetReference &textureAssetRef);
 	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective);
 	void freeSkyTexture(const TextureAssetReference &textureAssetRef);
-	void freeUiTexture(const TextureAssetReference &textureAssetRef);
+	void freeUiTexture(UiTextureID id);
 
 	// Helper methods for changing data in the 3D renderer.
 	void setFogDistance(double fogDistance);
