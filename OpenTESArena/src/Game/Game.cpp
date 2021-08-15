@@ -554,7 +554,6 @@ void Game::render()
 		for (int i = 0; i < drawCallsView.getCount(); i++)
 		{
 			const UiDrawCall &drawCall = drawCallsView.get(i);
-
 			if (!drawCall.isActive())
 			{
 				continue;
@@ -566,24 +565,9 @@ void Game::render()
 				this->renderer.setClipRect(&clipRect->getRect());
 			}
 
+			const UiTextureID textureID = drawCall.getTextureID();
 			const Rect rect = drawCall.getRect();
-			const UiDrawCall::TextureType textureType = drawCall.getTextureType();
-			if (textureType == UiDrawCall::TextureType::Texture)
-			{
-				const UiDrawCall::TextureInfo &textureInfo = drawCall.getTextureInfo();
-				this->renderer.drawOriginal(*textureInfo.texture, rect.getLeft(), rect.getTop(),
-					rect.getWidth(), rect.getHeight());
-			}
-			else if (textureType == UiDrawCall::TextureType::TextureBuilder)
-			{
-				const UiDrawCall::TextureBuilderInfo &textureBuilderInfo = drawCall.getTextureBuilderInfo();
-				this->renderer.drawOriginal(textureBuilderInfo.textureBuilderID, textureBuilderInfo.paletteID,
-					rect.getLeft(), rect.getTop(), rect.getWidth(), rect.getHeight(), this->textureManager);
-			}
-			else
-			{
-				DebugNotImplementedMsg(std::to_string(static_cast<int>(textureType)));
-			}
+			this->renderer.drawOriginal(textureID, rect.getLeft(), rect.getTop(), rect.getWidth(), rect.getHeight());
 
 			if (clipRect.has_value())
 			{

@@ -5,65 +5,34 @@
 #include <optional>
 
 #include "../Math/Rect.h"
-#include "../Media/TextureUtils.h"
-
-class Texture;
+#include "../Rendering/RenderTextureUtils.h"
 
 class UiDrawCall
 {
 public:
-	enum class TextureType
-	{
-		Texture, // SDL texture.
-		TextureBuilder // TextureBuilderID + palette ID pair, provided until only using UiTextureID.
-	};
-
-	struct TextureInfo
-	{
-		const Texture *texture;
-
-		TextureInfo(const Texture &texture);
-	};
-
-	struct TextureBuilderInfo
-	{
-		TextureBuilderID textureBuilderID;
-		PaletteID paletteID;
-
-		TextureBuilderInfo(TextureBuilderID textureBuilderID, PaletteID paletteID);
-	};
-
-	using TextureFunc = std::function<TextureInfo()>;
-	using TextureBuilderFunc = std::function<TextureBuilderInfo()>;
+	using TextureFunc = std::function<UiTextureID()>;
 	using RectFunc = std::function<Rect()>;
 	using ActiveFunc = std::function<bool()>;
 private:
-	TextureType textureType; // Determines which texture function to use.
-	TextureFunc textureFunc;
-	TextureBuilderFunc textureBuilderFunc;
-
+	TextureFunc textureFunc; // UI texture to render with.
 	RectFunc rectFunc; // Position + size on-screen.
 	ActiveFunc activeFunc; // Whether to attempt to draw.
 	std::optional<Rect> clipRect; // For drawing within a clipped area.
-
-	void init(TextureType textureType, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
-		const std::optional<Rect> &clipRect);
 public:
-	UiDrawCall();
+	UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const std::optional<Rect> &clipRect = std::nullopt);
+	UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const ActiveFunc &activeFunc,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const std::optional<Rect> &clipRect = std::nullopt);
+	UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const std::optional<Rect> &clipRect = std::nullopt);
+	UiDrawCall(UiTextureID textureID, const Rect &rect, const ActiveFunc &activeFunc,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	UiDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect = std::nullopt);
 
-	static TextureBuilderFunc makeTextureBuilderFunc(TextureBuilderID textureBuilderID, PaletteID paletteID);
-	static bool defaultActiveFunc();
-	static RectFunc makeRectFunc(const Rect &rect);
-
-	void initWithTexture(const TextureFunc &textureFunc, const RectFunc &rectFunc,
-		const ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void initWithTextureBuilder(const TextureBuilderFunc &textureBuilderFunc, const RectFunc &rectFunc,
-		const ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-
-	TextureType getTextureType() const;
-	TextureInfo getTextureInfo() const;
-	TextureBuilderInfo getTextureBuilderInfo() const;
-
+	UiTextureID getTextureID() const;
 	Rect getRect() const;
 	bool isActive() const;
 	const std::optional<Rect> &getClipRect() const;

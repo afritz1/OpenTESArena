@@ -1178,6 +1178,11 @@ void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID palette
 	this->drawOriginal(textureBuilderID, paletteID, x, y, textureManager);
 }
 
+void Renderer::drawOriginal(UiTextureID id, int x, int y, int w, int h)
+{
+	DebugNotImplemented();
+}
+
 void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());

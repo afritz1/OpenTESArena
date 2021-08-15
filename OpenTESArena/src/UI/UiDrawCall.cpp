@@ -2,85 +2,66 @@
 
 #include "components/debug/Debug.h"
 
-UiDrawCall::TextureInfo::TextureInfo(const Texture &texture)
-	: texture(&texture) { }
-
-UiDrawCall::TextureBuilderInfo::TextureBuilderInfo(TextureBuilderID textureBuilderID, PaletteID paletteID)
+namespace
 {
-	this->textureBuilderID = textureBuilderID;
-	this->paletteID = paletteID;
-}
-
-UiDrawCall::UiDrawCall()
-{
-	this->textureType = static_cast<TextureType>(-1);
-}
-
-UiDrawCall::TextureBuilderFunc UiDrawCall::makeTextureBuilderFunc(TextureBuilderID textureBuilderID, PaletteID paletteID)
-{
-	return [textureBuilderID, paletteID]()
+	UiDrawCall::TextureFunc MakeTextureFunc(UiTextureID id)
 	{
-		return UiDrawCall::TextureBuilderInfo(textureBuilderID, paletteID);
-	};
+		return [id]() { return id; };
+	}
+
+	UiDrawCall::RectFunc MakeRectFunc(const Rect &rect)
+	{
+		return [rect]() { return rect; };
+	}
+
+	bool DefaultActiveFunc()
+	{
+		return true;
+	}
 }
 
-UiDrawCall::RectFunc UiDrawCall::makeRectFunc(const Rect &rect)
-{
-	return [rect]() { return rect; };
-}
-
-bool UiDrawCall::defaultActiveFunc()
-{
-	return true;
-}
-
-void UiDrawCall::init(TextureType textureType, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
+UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
 	const std::optional<Rect> &clipRect)
+	: textureFunc(textureFunc), rectFunc(rectFunc), activeFunc(activeFunc), clipRect(clipRect)
 {
-	DebugAssert(rectFunc);
-	DebugAssert(activeFunc);
-
-	this->textureType = textureType;
-	this->rectFunc = rectFunc;
-	this->activeFunc = activeFunc;
-	this->clipRect = clipRect;
+	DebugAssert(this->textureFunc);
+	DebugAssert(this->rectFunc);
+	DebugAssert(this->activeFunc);
 }
 
-void UiDrawCall::initWithTexture(const TextureFunc &textureFunc, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
+UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const std::optional<Rect> &clipRect)
+	: UiDrawCall(textureFunc, rectFunc, DefaultActiveFunc, clipRect) { }
+
+UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const ActiveFunc &activeFunc,
 	const std::optional<Rect> &clipRect)
-{
-	DebugAssert(textureFunc);
-	this->init(TextureType::Texture, rectFunc, activeFunc, clipRect);
-	this->textureFunc = textureFunc;
-}
+	: UiDrawCall(textureFunc, MakeRectFunc(rect), activeFunc, clipRect) { }
 
-void UiDrawCall::initWithTextureBuilder(const TextureBuilderFunc &textureBuilderFunc, const RectFunc &rectFunc,
-	const ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
-{
-	DebugAssert(textureBuilderFunc);
-	this->init(TextureType::TextureBuilder, rectFunc, activeFunc, clipRect);
-	this->textureBuilderFunc = textureBuilderFunc;
-}
+UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const std::optional<Rect> &clipRect)
+	: UiDrawCall(textureFunc, MakeRectFunc(rect), DefaultActiveFunc, clipRect) { }
 
-UiDrawCall::TextureType UiDrawCall::getTextureType() const
-{
-	return this->textureType;
-}
+UiDrawCall::UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
+	const std::optional<Rect> &clipRect)
+	: UiDrawCall(MakeTextureFunc(textureID), rectFunc, activeFunc, clipRect) { }
 
-UiDrawCall::TextureInfo UiDrawCall::getTextureInfo() const
+UiDrawCall::UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const std::optional<Rect> &clipRect)
+	: UiDrawCall(MakeTextureFunc(textureID), rectFunc, DefaultActiveFunc, clipRect) { }
+
+UiDrawCall::UiDrawCall(UiTextureID textureID, const Rect &rect, const ActiveFunc &activeFunc,
+	const std::optional<Rect> &clipRect)
+	: UiDrawCall(MakeTextureFunc(textureID), MakeRectFunc(rect), activeFunc, clipRect) { }
+
+UiDrawCall::UiDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect)
+	: UiDrawCall(MakeTextureFunc(textureID), MakeRectFunc(rect), DefaultActiveFunc, clipRect) { }
+
+UiTextureID UiDrawCall::getTextureID() const
 {
-	DebugAssert(this->textureType == TextureType::Texture);
+	DebugAssert(this->isActive());
 	return this->textureFunc();
-}
-
-UiDrawCall::TextureBuilderInfo UiDrawCall::getTextureBuilderInfo() const
-{
-	DebugAssert(this->textureType == TextureType::TextureBuilder);
-	return this->textureBuilderFunc();
 }
 
 Rect UiDrawCall::getRect() const
 {
+	DebugAssert(this->isActive());
 	return this->rectFunc();
 }
 
@@ -91,5 +72,6 @@ bool UiDrawCall::isActive() const
 
 const std::optional<Rect> &UiDrawCall::getClipRect() const
 {
+	DebugAssert(this->isActive());
 	return this->clipRect;
 }

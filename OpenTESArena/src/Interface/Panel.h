@@ -77,28 +77,19 @@ protected:
 	// Helper functions for registering UI draw calls.
 	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
 		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
-		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
 	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
 		const std::optional<Rect> &clipRect = std::nullopt);
 	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const UiDrawCall::RectFunc &rectFunc,
 		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const Rect &rect,
+	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
+		const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(UiTextureID textureID, const UiDrawCall::RectFunc &rectFunc,
 		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const UiDrawCall::RectFunc &rectFunc,
+	void addDrawCall(UiTextureID textureID, const UiDrawCall::RectFunc &rectFunc,
 		const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const Rect &rect,
+	void addDrawCall(UiTextureID textureID, const Rect &rect, const UiDrawCall::ActiveFunc &activeFunc,
 		const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const UiDrawCall::RectFunc &rectFunc,
-		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &rect,
-		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const UiDrawCall::RectFunc &rectFunc,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &rect,
-		const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect = std::nullopt);
 
 	void clearDrawCalls();
 public:

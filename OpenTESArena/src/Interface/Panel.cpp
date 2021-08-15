@@ -191,85 +191,47 @@ void Panel::clearButtonProxies()
 void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
 	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
 {
-	UiDrawCall drawCall;
-	drawCall.initWithTexture(textureFunc, rectFunc, activeFunc, clipRect);
-	this->drawCalls.emplace_back(std::move(drawCall));
-}
-
-void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
-	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
-{
-	UiDrawCall::RectFunc rectFunc = UiDrawCall::makeRectFunc(rect);
-	this->addDrawCall(textureFunc, rectFunc, activeFunc, clipRect);
+	this->drawCalls.emplace_back(textureFunc, rectFunc, activeFunc, clipRect);
 }
 
 void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
 	const std::optional<Rect> &clipRect)
 {
-	this->addDrawCall(textureFunc, rectFunc, UiDrawCall::defaultActiveFunc, clipRect);
+	this->drawCalls.emplace_back(textureFunc, rectFunc, clipRect);
+}
+
+void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
+	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
+{
+	this->drawCalls.emplace_back(textureFunc, rect, activeFunc, clipRect);
 }
 
 void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
 	const std::optional<Rect> &clipRect)
 {
-	this->addDrawCall(textureFunc, rect, UiDrawCall::defaultActiveFunc, clipRect);
+	this->drawCalls.emplace_back(textureFunc, rect, clipRect);
 }
 
-void Panel::addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const UiDrawCall::RectFunc &rectFunc,
-	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
-{
-	UiDrawCall drawCall;
-	drawCall.initWithTextureBuilder(textureBuilderFunc, rectFunc, activeFunc, clipRect);
-	this->drawCalls.emplace_back(std::move(drawCall));
-}
-
-void Panel::addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const Rect &rect,
-	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
-{
-	UiDrawCall::RectFunc rectFunc = UiDrawCall::makeRectFunc(rect);
-	this->addDrawCall(textureBuilderFunc, rectFunc, activeFunc, clipRect);
-}
-
-void Panel::addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const UiDrawCall::RectFunc &rectFunc,
+void Panel::addDrawCall(UiTextureID textureID, const UiDrawCall::RectFunc &rectFunc, const UiDrawCall::ActiveFunc &activeFunc,
 	const std::optional<Rect> &clipRect)
 {
-	this->addDrawCall(textureBuilderFunc, rectFunc, UiDrawCall::defaultActiveFunc, clipRect);
+	this->drawCalls.emplace_back(textureID, rectFunc, activeFunc, clipRect);
 }
 
-void Panel::addDrawCall(const UiDrawCall::TextureBuilderFunc &textureBuilderFunc, const Rect &rect,
+void Panel::addDrawCall(UiTextureID textureID, const UiDrawCall::RectFunc &rectFunc, const std::optional<Rect> &clipRect)
+{
+	this->drawCalls.emplace_back(textureID, rectFunc, clipRect);
+}
+
+void Panel::addDrawCall(UiTextureID textureID, const Rect &rect, const UiDrawCall::ActiveFunc &activeFunc,
 	const std::optional<Rect> &clipRect)
 {
-	this->addDrawCall(textureBuilderFunc, rect, UiDrawCall::defaultActiveFunc, clipRect);
+	this->drawCalls.emplace_back(textureID, rect, activeFunc, clipRect);
 }
 
-void Panel::addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const UiDrawCall::RectFunc &rectFunc,
-	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
+void Panel::addDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect)
 {
-	UiDrawCall::TextureBuilderFunc textureBuilderFunc = UiDrawCall::makeTextureBuilderFunc(textureBuilderID, paletteID);
-	this->addDrawCall(textureBuilderFunc, rectFunc, activeFunc, clipRect);
-}
-
-void Panel::addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &rect,
-	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
-{
-	UiDrawCall::TextureBuilderFunc textureBuilderFunc = UiDrawCall::makeTextureBuilderFunc(textureBuilderID, paletteID);
-	UiDrawCall::RectFunc rectFunc = UiDrawCall::makeRectFunc(rect);
-	this->addDrawCall(textureBuilderFunc, rectFunc, activeFunc, clipRect);
-}
-
-void Panel::addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const UiDrawCall::RectFunc &rectFunc,
-	const std::optional<Rect> &clipRect)
-{
-	UiDrawCall::TextureBuilderFunc textureBuilderFunc = UiDrawCall::makeTextureBuilderFunc(textureBuilderID, paletteID);
-	this->addDrawCall(textureBuilderFunc, rectFunc, UiDrawCall::defaultActiveFunc, clipRect);
-}
-
-void Panel::addDrawCall(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &rect,
-	const std::optional<Rect> &clipRect)
-{
-	UiDrawCall::TextureBuilderFunc textureBuilderFunc = UiDrawCall::makeTextureBuilderFunc(textureBuilderID, paletteID);
-	UiDrawCall::RectFunc rectFunc = UiDrawCall::makeRectFunc(rect);
-	this->addDrawCall(textureBuilderFunc, rectFunc, UiDrawCall::defaultActiveFunc, clipRect);
+	this->drawCalls.emplace_back(textureID, rect, clipRect);
 }
 
 void Panel::clearDrawCalls()
