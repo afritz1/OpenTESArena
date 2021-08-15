@@ -169,5 +169,10 @@ std::optional<Int2> SdlUiRenderer::tryGetTextureDims(UiTextureID id) const
 
 void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace renderSpace)
 {
-	DebugNotImplemented();
+	for (int i = 0; i < count; i++)
+	{
+		const RenderElement &element = elements[i];
+		// @todo: transform percents to pixel coordinates, SDL_RenderCopy, etc.
+		DebugNotImplemented();
+	}
 }

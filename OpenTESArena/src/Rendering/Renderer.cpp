@@ -1178,9 +1178,9 @@ void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID palette
 	this->drawOriginal(textureBuilderID, paletteID, x, y, textureManager);
 }
 
-void Renderer::drawOriginal(UiTextureID id, int x, int y, int w, int h)
+void Renderer::drawOriginal(const RendererSystem2D::RenderElement *renderElements, int count)
 {
-	DebugNotImplemented();
+	this->renderer2D->draw(renderElements, count, RendererSystem2D::RenderSpace::Classic);
 }
 
 void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect)

@@ -282,7 +282,7 @@ public:
 	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y,
 		const TextureManager &textureManager);
 	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
-	void drawOriginal(UiTextureID id, int x, int y, int w, int h);
+	void drawOriginal(const RendererSystem2D::RenderElement *renderElements, int count);
 	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect);
 	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, int x, int y);
 	void drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,

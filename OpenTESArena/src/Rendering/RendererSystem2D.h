@@ -63,12 +63,9 @@ public:
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetTextureDims(UiTextureID id) const = 0;
 
-	// Bulk drawing method for handling several UI elements.
+	// Drawing method for UI elements. Positions and sizes are in 0->1 vector space so that the caller's
+	// data is resolution-independent.
 	virtual void draw(const RenderElement *elements, int count, RenderSpace renderSpace) = 0;
-
-	// Convenience methods for drawing a single texture.
-	void draw(UiTextureID id, double x, double y, double width, double height, RenderSpace renderSpace);
-	void draw(UiTextureID id, double x, double y, RenderSpace renderSpace);
 };
 
 #endif

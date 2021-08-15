@@ -566,8 +566,18 @@ void Game::render()
 			}
 
 			const UiTextureID textureID = drawCall.getTextureID();
+
+			// @todo: add RenderSpace member to UiDrawCall and then add a branch here
+			constexpr double classicWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+			constexpr double classicHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
 			const Rect rect = drawCall.getRect();
-			this->renderer.drawOriginal(textureID, rect.getLeft(), rect.getTop(), rect.getWidth(), rect.getHeight());
+			const double xPercent = static_cast<double>(rect.getLeft()) / classicWidthReal;
+			const double yPercent = static_cast<double>(rect.getRight()) / classicHeightReal;
+			const double wPercent = static_cast<double>(rect.getWidth()) / classicWidthReal;
+			const double hPercent = static_cast<double>(rect.getHeight()) / classicHeightReal;
+
+			RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+			this->renderer.drawOriginal(&renderElement, 1);
 
 			if (clipRect.has_value())
 			{
