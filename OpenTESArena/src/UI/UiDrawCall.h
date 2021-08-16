@@ -4,10 +4,9 @@
 #include <functional>
 #include <optional>
 
+#include "RenderSpace.h"
 #include "../Math/Rect.h"
 #include "../Rendering/RenderTextureUtils.h"
-
-enum class RenderSpace;
 
 class UiDrawCall
 {
@@ -20,24 +19,30 @@ private:
 	RectFunc rectFunc; // Position + size on-screen.
 	ActiveFunc activeFunc; // Whether to attempt to draw.
 	std::optional<Rect> clipRect; // For drawing within a clipped area.
+	RenderSpace renderSpace; // Relative positioning and sizing in the application window.
 public:
 	UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const std::optional<Rect> &clipRect = std::nullopt);
+		const std::optional<Rect> &clipRect = std::nullopt, RenderSpace renderSpace = RenderSpace::Classic);
+	UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const std::optional<Rect> &clipRect = std::nullopt,
+		RenderSpace renderSpace = RenderSpace::Classic);
 	UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const ActiveFunc &activeFunc,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const std::optional<Rect> &clipRect = std::nullopt);
+		const std::optional<Rect> &clipRect = std::nullopt, RenderSpace renderSpace = RenderSpace::Classic);
+	UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const std::optional<Rect> &clipRect = std::nullopt,
+		RenderSpace renderSpace = RenderSpace::Classic);
 	UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const std::optional<Rect> &clipRect = std::nullopt);
+		const std::optional<Rect> &clipRect = std::nullopt, RenderSpace renderSpace = RenderSpace::Classic);
+	UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const std::optional<Rect> &clipRect = std::nullopt,
+		RenderSpace renderSpace = RenderSpace::Classic);
 	UiDrawCall(UiTextureID textureID, const Rect &rect, const ActiveFunc &activeFunc,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	UiDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect = std::nullopt);
+		const std::optional<Rect> &clipRect = std::nullopt, RenderSpace renderSpace = RenderSpace::Classic);
+	UiDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect = std::nullopt,
+		RenderSpace renderSpace = RenderSpace::Classic);
 
 	UiTextureID getTextureID() const;
 	Rect getRect() const;
 	bool isActive() const;
 	const std::optional<Rect> &getClipRect() const;
+	RenderSpace getRenderSpace() const;
 };
 
 #endif

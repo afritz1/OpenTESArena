@@ -21,37 +21,42 @@ namespace
 }
 
 UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
-	const std::optional<Rect> &clipRect)
+	const std::optional<Rect> &clipRect, RenderSpace renderSpace)
 	: textureFunc(textureFunc), rectFunc(rectFunc), activeFunc(activeFunc), clipRect(clipRect)
 {
 	DebugAssert(this->textureFunc);
 	DebugAssert(this->rectFunc);
 	DebugAssert(this->activeFunc);
+	this->renderSpace = renderSpace;
 }
 
-UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const std::optional<Rect> &clipRect)
-	: UiDrawCall(textureFunc, rectFunc, DefaultActiveFunc, clipRect) { }
+UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const RectFunc &rectFunc, const std::optional<Rect> &clipRect,
+	RenderSpace renderSpace)
+	: UiDrawCall(textureFunc, rectFunc, DefaultActiveFunc, clipRect, renderSpace) { }
 
 UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const ActiveFunc &activeFunc,
-	const std::optional<Rect> &clipRect)
-	: UiDrawCall(textureFunc, MakeRectFunc(rect), activeFunc, clipRect) { }
+	const std::optional<Rect> &clipRect, RenderSpace renderSpace)
+	: UiDrawCall(textureFunc, MakeRectFunc(rect), activeFunc, clipRect, renderSpace) { }
 
-UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const std::optional<Rect> &clipRect)
-	: UiDrawCall(textureFunc, MakeRectFunc(rect), DefaultActiveFunc, clipRect) { }
+UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const Rect &rect, const std::optional<Rect> &clipRect,
+	RenderSpace renderSpace)
+	: UiDrawCall(textureFunc, MakeRectFunc(rect), DefaultActiveFunc, clipRect, renderSpace) { }
 
 UiDrawCall::UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const ActiveFunc &activeFunc,
-	const std::optional<Rect> &clipRect)
-	: UiDrawCall(MakeTextureFunc(textureID), rectFunc, activeFunc, clipRect) { }
+	const std::optional<Rect> &clipRect, RenderSpace renderSpace)
+	: UiDrawCall(MakeTextureFunc(textureID), rectFunc, activeFunc, clipRect, renderSpace) { }
 
-UiDrawCall::UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const std::optional<Rect> &clipRect)
-	: UiDrawCall(MakeTextureFunc(textureID), rectFunc, DefaultActiveFunc, clipRect) { }
+UiDrawCall::UiDrawCall(UiTextureID textureID, const RectFunc &rectFunc, const std::optional<Rect> &clipRect,
+	RenderSpace renderSpace)
+	: UiDrawCall(MakeTextureFunc(textureID), rectFunc, DefaultActiveFunc, clipRect, renderSpace) { }
 
 UiDrawCall::UiDrawCall(UiTextureID textureID, const Rect &rect, const ActiveFunc &activeFunc,
-	const std::optional<Rect> &clipRect)
-	: UiDrawCall(MakeTextureFunc(textureID), MakeRectFunc(rect), activeFunc, clipRect) { }
+	const std::optional<Rect> &clipRect, RenderSpace renderSpace)
+	: UiDrawCall(MakeTextureFunc(textureID), MakeRectFunc(rect), activeFunc, clipRect, renderSpace) { }
 
-UiDrawCall::UiDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect)
-	: UiDrawCall(MakeTextureFunc(textureID), MakeRectFunc(rect), DefaultActiveFunc, clipRect) { }
+UiDrawCall::UiDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect,
+	RenderSpace renderSpace)
+	: UiDrawCall(MakeTextureFunc(textureID), MakeRectFunc(rect), DefaultActiveFunc, clipRect, renderSpace) { }
 
 UiTextureID UiDrawCall::getTextureID() const
 {
@@ -74,4 +79,9 @@ const std::optional<Rect> &UiDrawCall::getClipRect() const
 {
 	DebugAssert(this->isActive());
 	return this->clipRect;
+}
+
+RenderSpace UiDrawCall::getRenderSpace() const
+{
+	return this->renderSpace;
 }
