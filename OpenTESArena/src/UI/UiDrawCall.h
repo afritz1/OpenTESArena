@@ -7,6 +7,8 @@
 #include "../Math/Rect.h"
 #include "../Rendering/RenderTextureUtils.h"
 
+enum class RenderSpace;
+
 class UiDrawCall
 {
 public:

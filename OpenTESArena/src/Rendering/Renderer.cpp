@@ -18,6 +18,7 @@
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/RenderSpace.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 
@@ -1180,7 +1181,7 @@ void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID palette
 
 void Renderer::drawOriginal(const RendererSystem2D::RenderElement *renderElements, int count)
 {
-	this->renderer2D->draw(renderElements, count, RendererSystem2D::RenderSpace::Classic);
+	this->renderer2D->draw(renderElements, count, RenderSpace::Classic);
 }
 
 void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect)

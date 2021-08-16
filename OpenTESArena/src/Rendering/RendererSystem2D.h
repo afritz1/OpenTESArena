@@ -25,17 +25,13 @@
 
 class TextureManager;
 
+enum class RenderSpace;
+
 struct SDL_Window;
 
 class RendererSystem2D
 {
 public:
-	enum class RenderSpace
-	{
-		Native, // Relative to the native window itself.
-		Classic // Occupies a fixed-aspect-ratio portion of the native window.
-	};
-
 	struct RenderElement
 	{
 		UiTextureID id;
