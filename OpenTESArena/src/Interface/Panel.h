@@ -75,21 +75,11 @@ protected:
 	void clearButtonProxies();
 
 	// Helper functions for registering UI draw calls.
-	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
+	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::PositionFunc &positionFunc,
+		const UiDrawCall::SizeFunc &sizeFunc, const UiDrawCall::PivotFunc &pivotFunc,
 		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
+	void addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
 		const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
-		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(UiTextureID textureID, const UiDrawCall::RectFunc &rectFunc,
-		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(UiTextureID textureID, const UiDrawCall::RectFunc &rectFunc,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(UiTextureID textureID, const Rect &rect, const UiDrawCall::ActiveFunc &activeFunc,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect = std::nullopt);
 
 	void clearDrawCalls();
 public:

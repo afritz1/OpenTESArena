@@ -188,50 +188,23 @@ void Panel::clearButtonProxies()
 	this->buttonProxies.clear();
 }
 
-void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
+void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::PositionFunc &positionFunc,
+	const UiDrawCall::SizeFunc &sizeFunc, const UiDrawCall::PivotFunc &pivotFunc,
 	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
 {
-	this->drawCalls.emplace_back(textureFunc, rectFunc, activeFunc, clipRect);
+	this->drawCalls.emplace_back(textureFunc, positionFunc, sizeFunc, pivotFunc, activeFunc, clipRect);
 }
 
-void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::RectFunc &rectFunc,
+void Panel::addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
 	const std::optional<Rect> &clipRect)
 {
-	this->drawCalls.emplace_back(textureFunc, rectFunc, clipRect);
-}
-
-void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
-	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(textureFunc, rect, activeFunc, clipRect);
-}
-
-void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Rect &rect,
-	const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(textureFunc, rect, clipRect);
-}
-
-void Panel::addDrawCall(UiTextureID textureID, const UiDrawCall::RectFunc &rectFunc, const UiDrawCall::ActiveFunc &activeFunc,
-	const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(textureID, rectFunc, activeFunc, clipRect);
-}
-
-void Panel::addDrawCall(UiTextureID textureID, const UiDrawCall::RectFunc &rectFunc, const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(textureID, rectFunc, clipRect);
-}
-
-void Panel::addDrawCall(UiTextureID textureID, const Rect &rect, const UiDrawCall::ActiveFunc &activeFunc,
-	const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(textureID, rect, activeFunc, clipRect);
-}
-
-void Panel::addDrawCall(UiTextureID textureID, const Rect &rect, const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(textureID, rect, clipRect);
+	this->drawCalls.emplace_back(
+		UiDrawCall::makeTextureFunc(textureID),
+		UiDrawCall::makePositionFunc(position),
+		UiDrawCall::makeSizeFunc(size),
+		UiDrawCall::makePivotFunc(pivotType),
+		UiDrawCall::defaultActiveFunc,
+		clipRect);
 }
 
 void Panel::clearDrawCalls()

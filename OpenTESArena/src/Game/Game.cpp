@@ -567,14 +567,18 @@ void Game::render()
 
 			const UiTextureID textureID = drawCall.getTextureID();
 
-			// @todo: add RenderSpace member to UiDrawCall and then add a branch here
+			DebugAssert(drawCall.getRenderSpace() == RenderSpace::Classic); // @todo: support other render spaces
+
 			constexpr double classicWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
 			constexpr double classicHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
-			const Rect rect = drawCall.getRect();
-			const double xPercent = static_cast<double>(rect.getLeft()) / classicWidthReal;
-			const double yPercent = static_cast<double>(rect.getRight()) / classicHeightReal;
-			const double wPercent = static_cast<double>(rect.getWidth()) / classicWidthReal;
-			const double hPercent = static_cast<double>(rect.getHeight()) / classicHeightReal;
+			const Int2 position = drawCall.getPosition();
+			const Int2 size = drawCall.getSize();
+			const PivotType pivotType = drawCall.getPivotType();
+			DebugAssert(pivotType == PivotType::TopLeft); // @todo: support other pivot types (affects only x and yPercent).
+			const double xPercent = static_cast<double>(position.x) / classicWidthReal;
+			const double yPercent = static_cast<double>(position.y) / classicHeightReal;
+			const double wPercent = static_cast<double>(size.x) / classicWidthReal;
+			const double hPercent = static_cast<double>(size.y) / classicHeightReal;
 
 			RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
 			this->renderer.drawOriginal(&renderElement, 1);
