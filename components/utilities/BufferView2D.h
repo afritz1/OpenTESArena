@@ -110,13 +110,13 @@ public:
 	T *end()
 	{
 		DebugAssert(!this->isSlice());
-		return (this->data != nullptr) ? (this->data + (this->width + this->height)) : nullptr;
+		return (this->data != nullptr) ? (this->data + (this->width * this->height)) : nullptr;
 	}
 
 	const T *end() const
 	{
 		DebugAssert(!this->isSlice());
-		return (this->data != nullptr) ? (this->data + (this->width + this->height)) : nullptr;
+		return (this->data != nullptr) ? (this->data + (this->width * this->height)) : nullptr;
 	}
 
 	int getWidth() const
