@@ -18,6 +18,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorData.h"
+#include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 
@@ -575,33 +576,10 @@ void Game::render()
 			const PivotType pivotType = drawCall.getPivotType();
 			const RenderSpace renderSpace = drawCall.getRenderSpace();
 
-			double renderSpaceWidthReal, renderSpaceHeightReal;
-			double xPercent, yPercent;
-			if (renderSpace == RenderSpace::Classic)
-			{
-				renderSpaceWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
-				renderSpaceHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+			double xPercent, yPercent, wPercent, hPercent;
+			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
-				DebugAssert(pivotType == PivotType::TopLeft); // @todo: support other pivot types (affects only x and yPercent).
-				xPercent = static_cast<double>(position.x) / renderSpaceWidthReal;
-				yPercent = static_cast<double>(position.y) / renderSpaceHeightReal;
-			}
-			else if (renderSpace == RenderSpace::Native)
-			{
-				renderSpaceWidthReal = static_cast<double>(windowDims.x);
-				renderSpaceHeightReal = static_cast<double>(windowDims.y);
-
-				DebugAssert(pivotType == PivotType::BottomLeft); // @todo: support other pivot types (affects only x and yPercent).
-				xPercent = static_cast<double>(position.x) / renderSpaceWidthReal;
-				yPercent = static_cast<double>(position.y - size.y) / renderSpaceHeightReal;
-			}
-			else
-			{
-				DebugNotImplementedMsg(std::to_string(static_cast<int>(renderSpace)));
-			}
-
-			const double wPercent = static_cast<double>(size.x) / renderSpaceWidthReal;
-			const double hPercent = static_cast<double>(size.y) / renderSpaceHeightReal;
 			RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
 			this->renderer.draw(&renderElement, 1, renderSpace);
 
