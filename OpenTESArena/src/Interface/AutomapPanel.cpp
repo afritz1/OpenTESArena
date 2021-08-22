@@ -144,8 +144,12 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		UiDrawCall::defaultActiveFunc,
 		automapClipRect);
 
-	// @todo: add UiDrawCall for title
-	// - will need to change TextBox and ListBox to use ScopedUiTextureRef
+	const Rect &locationTextBoxRect = this->locationTextBox.getRect();
+	this->addDrawCall(
+		this->locationTextBox.getTextureID(),
+		locationTextBoxRect.getTopLeft(),
+		Int2(locationTextBoxRect.getWidth(), locationTextBoxRect.getHeight()),
+		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
