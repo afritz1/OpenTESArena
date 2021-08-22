@@ -203,5 +203,5 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 
 	// Draw inventory list box.
 	const Rect &inventoryListBoxRect = this->inventoryListBox.getRect();
-	renderer.drawOriginal(this->inventoryListBox.getTexture(), inventoryListBoxRect.getLeft(), inventoryListBoxRect.getTop());
+	renderer.drawOriginal(this->inventoryListBox.getTextureID(), inventoryListBoxRect.getLeft(), inventoryListBoxRect.getTop());
 }

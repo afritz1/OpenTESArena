@@ -10,6 +10,7 @@
 #include "Texture.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
+#include "../Rendering/RenderTextureUtils.h"
 
 class FontLibrary;
 class Renderer;
@@ -45,7 +46,7 @@ private:
 
 	std::vector<Item> items;
 	Properties properties;
-	Texture texture; // The output texture, updated upon scrolling or changing the list.
+	ScopedUiTextureRef textureRef; // Output texture, updated upon scrolling or changing the list.
 	Rect rect; // Screen position and dimensions.
 	double scrollPixelOffset; // Difference in pixels between the top of the first item and the top of the texture.
 	bool dirty;
@@ -75,7 +76,7 @@ public:
 	// falls within the list box rect.
 	const ItemCallback &getCallback(int index) const;
 
-	const Texture &getTexture();
+	UiTextureID getTextureID();
 
 	void insert(int index, std::string &&text);
 	void add(std::string &&text);

@@ -240,7 +240,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.drawOriginal(this->titleTextBox.getTextureID(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
 
 	const Rect &classesListBoxRect = this->classesListBox.getRect();
-	renderer.drawOriginal(this->classesListBox.getTexture(), classesListBoxRect.getLeft(), classesListBoxRect.getTop());
+	renderer.drawOriginal(this->classesListBox.getTextureID(), classesListBoxRect.getLeft(), classesListBoxRect.getTop());
 
 	// Draw tooltip if over a valid element in the list box.
 	const auto &inputManager = game.getInputManager();

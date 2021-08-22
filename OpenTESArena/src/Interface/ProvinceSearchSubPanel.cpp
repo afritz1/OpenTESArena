@@ -279,7 +279,7 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 
 	// Draw list box text.
 	const Rect &locationsListBoxRect = this->locationsListBox.getRect();
-	renderer.drawOriginal(this->locationsListBox.getTexture(),
+	renderer.drawOriginal(this->locationsListBox.getTextureID(),
 		locationsListBoxRect.getLeft(), locationsListBoxRect.getTop());
 }
 
