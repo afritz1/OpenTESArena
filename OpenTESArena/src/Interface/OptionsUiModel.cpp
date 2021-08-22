@@ -203,7 +203,7 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeResolutionScal
 	const auto &options = game.getOptions();
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::RESOLUTION_SCALE_NAME,
-		"Percent of the window resolution to use for software rendering.\nThis has a significant impact on performance.",
+		"Percent of the window resolution to use for game world rendering.\nThis has a significant impact on performance.",
 		options.getGraphics_ResolutionScale(),
 		0.050,
 		Options::MIN_RESOLUTION_SCALE,
@@ -266,7 +266,7 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCursorScaleOpt
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::CURSOR_SCALE_NAME,
 		options.getGraphics_CursorScale(),
-		0.10,
+		0.50,
 		Options::MIN_CURSOR_SCALE,
 		Options::MAX_CURSOR_SCALE,
 		1,
@@ -311,7 +311,7 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsMode
 	const auto &options = game.getOptions();
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::RENDER_THREADS_MODE_NAME,
-		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.\nVery Low: one, Low: 1/4, Medium: 1/2, High: 3/4,\nVery High: all but one, Max: all",
+		"Determines the number of CPU threads to use for game world\nrendering. This has a significant impact on performance. Max is not\nrecommended as it can cause a less responsive operating system\nin some cases.\n\nVery Low: one, Low: 1/4, Medium: 1/2, High: 3/4,\nVery High: all but one, Max: all",
 		options.getGraphics_RenderThreadsMode(),
 		1,
 		Options::MIN_RENDER_THREADS_MODE,
