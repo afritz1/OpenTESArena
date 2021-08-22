@@ -80,6 +80,7 @@ protected:
 		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
 	void addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
 		const std::optional<Rect> &clipRect = std::nullopt);
+	void addCursorDrawCall(UiTextureID textureID, PivotType pivotType);
 
 	void clearDrawCalls();
 public:

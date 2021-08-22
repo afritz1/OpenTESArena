@@ -41,7 +41,8 @@ AutomapPanel::AutomapPanel(Game &game)
 
 AutomapPanel::~AutomapPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	auto &inputManager = game.getInputManager();
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, false);
 }
 
@@ -82,137 +83,74 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		AutomapUiController::onMouseButtonHeld(game, buttonType, position, dt, &this->automapOffset);
 	});
 
+	auto &renderer = game.getRenderer();
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
 	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
-	this->mapTexture = [&game, &playerDirection, &chunkManager, &playerCoordXZ]()
-	{
-		const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
-		const bool isWild = [&game]()
-		{
-			const GameState &gameState = game.getGameState();
-			const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-			return activeMapDef.getMapType() == MapType::Wilderness;
-		}();
-
-		Texture texture = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild,
-			chunkManager, game.getRenderer());
-		return texture;
-	}();
+	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(
+		game.getGameState(), playerCoordXZ, playerDirection, chunkManager, renderer);
+	this->mapTextureRef.init(mapTextureID, renderer);
 
 	auto &textureManager = game.getTextureManager();
-	const TextureAssetReference backgroundPaletteTextureAssetRef = AutomapUiView::getBackgroundPaletteTextureAssetRef();
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteTextureAssetRef);
-	if (!backgroundPaletteID.has_value())
+	const UiTextureID backgroundTextureID = AutomapUiView::allocBgTexture(textureManager, renderer);
+	this->backgroundTextureRef.init(backgroundTextureID, renderer);
+
+	this->addDrawCall(
+		this->backgroundTextureRef.get(),
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
+
+	UiDrawCall::TextureFunc automapTextureFunc = [this]()
 	{
-		DebugLogError("Couldn't get palette ID for \"" + backgroundPaletteTextureAssetRef.filename + "\".");
-		return false;
-	}
+		return this->mapTextureRef.get();
+	};
 
-	this->backgroundPaletteID = *backgroundPaletteID;
-
-	const TextureAssetReference backgroundTextureAssetRef = AutomapUiView::getBackgroundTextureAssetRef();
-	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
-	if (!backgroundTextureBuilderID.has_value())
+	UiDrawCall::PositionFunc automapPositionFunc = [this, &game]()
 	{
-		DebugLogError("Couldn't get texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return false;
-	}
+		constexpr double pixelSizeReal = static_cast<double>(AutomapUiView::PixelSize);
+		const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
+		const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
+		
+		const Rect &drawingArea = AutomapUiView::DrawingArea;
+		const int mapX = (drawingArea.getLeft() + (drawingArea.getWidth() / 2)) + offsetX;
+		const int mapY = (drawingArea.getTop() + (drawingArea.getHeight() / 2)) + offsetY;
+		return Int2(mapX, mapY);
+	};
 
-	this->backgroundTextureBuilderID = *backgroundTextureBuilderID;
+	UiDrawCall::SizeFunc automapSizeFunc = [this, &game]()
+	{
+		auto &renderer = game.getRenderer();
+		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(this->mapTextureRef.get());
+		if (!dims.has_value())
+		{
+			DebugCrash("Couldn't get automap texture dimensions.");
+		}
+
+		return *dims;
+	};
+
+	UiDrawCall::PivotFunc automapPivotFunc = []()
+	{
+		return PivotType::TopLeft;
+	};
+
+	const std::optional<Rect> automapClipRect = AutomapUiView::DrawingArea;
+
+	this->addDrawCall(
+		automapTextureFunc,
+		automapPositionFunc,
+		automapSizeFunc,
+		automapPivotFunc,
+		UiDrawCall::defaultActiveFunc,
+		automapClipRect);
+
+	// @todo: add UiDrawCall for title
+	// - will need to change TextBox and ListBox to use ScopedUiTextureRef
+
+	const UiTextureID cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::BottomLeft);
+	
 	this->automapOffset = AutomapUiModel::makeAutomapOffset(playerCoordXZ.voxel);
 	return true;
-}
-
-std::optional<CursorData> AutomapPanel::getCurrentCursor() const
-{
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-
-	const TextureAssetReference cursorPaletteTextureAssetRef = AutomapUiView::getCursorPaletteTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(cursorPaletteTextureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugLogWarning("Couldn't get palette ID for \"" + cursorPaletteTextureAssetRef.filename + "\".");
-		return std::nullopt;
-	}
-
-	const TextureAssetReference cursorTextureAssetRef = AutomapUiView::getCursorTextureAssetRef();
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(cursorTextureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugLogWarning("Couldn't get texture builder ID for \"" + cursorTextureAssetRef.filename + "\".");
-		return std::nullopt;
-	}
-
-	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::BottomLeft);
-}
-
-void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
-{
-	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
-
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-	const int mouseX = originalPosition.x;
-	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
-		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
-		(mouseY - 1) : (mouseY - tooltip.getHeight());
-
-	renderer.drawOriginal(tooltip, x, y);
-}
-
-void AutomapPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw automap background.
-	const auto &textureManager = this->getGame().getTextureManager();
-	renderer.drawOriginal(this->backgroundTextureBuilderID, this->backgroundPaletteID, textureManager);
-
-	// Only draw the part of the automap within the drawing area.
-	const Rect nativeDrawingArea = renderer.originalToNative(AutomapUiView::DrawingArea);
-	renderer.setClipRect(&nativeDrawingArea.getRect());
-
-	// Draw automap.
-	constexpr double pixelSizeReal = static_cast<double>(AutomapUiView::PixelSize);
-	const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
-	const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
-	const int mapX = (AutomapUiView::DrawingArea.getLeft() + (AutomapUiView::DrawingArea.getWidth() / 2)) + offsetX;
-	const int mapY = (AutomapUiView::DrawingArea.getTop() + (AutomapUiView::DrawingArea.getHeight() / 2)) + offsetY;
-	renderer.drawOriginal(this->mapTexture, mapX, mapY);
-
-	// Reset renderer clipping to normal.
-	renderer.setClipRect(nullptr);
-
-	// Draw text: title.
-	const Rect &locationTextBoxRect = this->locationTextBox.getRect();
-	renderer.drawOriginal(this->locationTextBox.getTexture(),
-		locationTextBoxRect.getLeft(), locationTextBoxRect.getTop());
-
-	// Check if the mouse is over the compass directions for tooltips.
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-
-	if (AutomapUiView::CompassUpRegion.contains(originalPosition))
-	{
-		this->drawTooltip("Up", renderer);
-	}
-	else if (AutomapUiView::CompassDownRegion.contains(originalPosition))
-	{
-		this->drawTooltip("Down", renderer);
-	}
-	else if (AutomapUiView::CompassLeftRegion.contains(originalPosition))
-	{
-		this->drawTooltip("Left", renderer);
-	}
-	else if (AutomapUiView::CompassRightRegion.contains(originalPosition))
-	{
-		this->drawTooltip("Right", renderer);
-	}
 }

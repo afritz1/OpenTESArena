@@ -3,9 +3,13 @@
 
 #include "SDL_render.h"
 
+#include "ArenaRenderUtils.h"
 #include "SdlUiRenderer.h"
+#include "../Math/Constants.h"
+#include "../Math/Rect.h"
 #include "../Media/TextureBuilder.h"
 #include "../Media/TextureManager.h"
+#include "../UI/RenderSpace.h"
 
 #include "components/debug/Debug.h"
 
@@ -37,6 +41,7 @@ void SdlUiRenderer::shutdown()
 	}
 
 	this->textures.clear();
+
 	this->renderer = nullptr;
 	this->nextID = -1;
 }
@@ -51,15 +56,23 @@ bool SdlUiRenderer::tryCreateUiTextureInternal(const BufferView2D<TexelType> &sr
 	SDL_Texture *texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 	if (texture == nullptr)
 	{
-		DebugLogError("Couldn't allocate SDL texture (dims: " + std::to_string(width) + "x" + std::to_string(height) +
+		DebugLogError("Couldn't allocate SDL_Texture (dims: " + std::to_string(width) + "x" + std::to_string(height) +
 			", " + std::string(SDL_GetError()) + ").");
 		return nullptr;
 	}
 
-	uint32_t *dstPixels;
-	if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&dstPixels), nullptr) != 0)
+	if (SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND) != 0)
 	{
-		DebugLogError("Couldn't lock SDL texture for writing (dims: " + std::to_string(width) + "x" + std::to_string(height) +
+		DebugLogError("Couldn't set SDL_Texture blend mode to blend (dims: " + std::to_string(width) + "x" +
+			std::to_string(height) + ", " + std::string(SDL_GetError()) + ").");
+		return false;
+	}
+
+	uint32_t *dstPixels;
+	int pitch;
+	if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&dstPixels), &pitch) != 0)
+	{
+		DebugLogError("Couldn't lock SDL_Texture for writing (dims: " + std::to_string(width) + "x" + std::to_string(height) +
 			", " + std::string(SDL_GetError()) + ").");
 		return false;
 	}
@@ -92,8 +105,6 @@ bool SdlUiRenderer::tryCreateUiTextureInternal(const BufferView2D<TexelType> &sr
 	this->nextID++;
 	this->textures.emplace(*outID, texture);
 	return true;
-
-	return texture;
 }
 
 bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
@@ -167,12 +178,82 @@ std::optional<Int2> SdlUiRenderer::tryGetTextureDims(UiTextureID id) const
 	return Int2(width, height);
 }
 
-void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace renderSpace)
+void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect)
 {
+	auto originalPointToNative = [&letterboxRect](const Int2 &point)
+	{
+		const double originalXPercent = static_cast<double>(point.x) /
+			static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+		const double originalYPercent = static_cast<double>(point.y) /
+			static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+
+		const double letterboxWidthReal = static_cast<double>(letterboxRect.getWidth());
+		const double letterboxHeightReal = static_cast<double>(letterboxRect.getHeight());
+		const Int2 letterboxPoint(
+			static_cast<int>(std::round(letterboxWidthReal * originalXPercent)),
+			static_cast<int>(std::round(letterboxHeightReal * originalYPercent)));
+		const Int2 nativePoint(
+			letterboxPoint.x + letterboxRect.getLeft(),
+			letterboxPoint.y + letterboxRect.getTop());
+		return nativePoint;
+	};
+
+	auto originalRectToNative = [&originalPointToNative](const SDL_Rect &rect)
+	{
+		const Int2 oldTopLeft(rect.x, rect.y);
+		const Int2 oldBottomRight(rect.x + rect.w, rect.y + rect.h);
+		const Int2 newTopLeft = originalPointToNative(oldTopLeft);
+		const Int2 newBottomRight = originalPointToNative(oldBottomRight);
+
+		SDL_Rect newRect;
+		newRect.x = newTopLeft.x;
+		newRect.y = newTopLeft.y;
+		newRect.w = newBottomRight.x - newTopLeft.x;
+		newRect.h = newBottomRight.y - newTopLeft.y;
+		return newRect;
+	};
+
 	for (int i = 0; i < count; i++)
 	{
 		const RenderElement &element = elements[i];
-		// @todo: transform percents to pixel coordinates, SDL_RenderCopy, etc.
-		DebugNotImplemented();
+
+		const auto textureIter = this->textures.find(element.id);
+		DebugAssert(textureIter != this->textures.end());
+		SDL_Texture *texture = textureIter->second;
+
+		SDL_Rect nativeRect;
+		if (renderSpace == RenderSpace::Classic)
+		{
+			constexpr double screenWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+			constexpr double screenHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+
+			// Rect in classic 320x200 space.
+			SDL_Rect classicRect;
+			classicRect.x = static_cast<int>(static_cast<double>(element.x) * screenWidthReal); // @todo: probably don't truncate
+			classicRect.y = static_cast<int>(static_cast<double>(element.y) * screenHeightReal);
+			classicRect.w = static_cast<int>(static_cast<double>(element.width) * screenWidthReal); // @todo: dimensions should honor pixel centers, right?
+			classicRect.h = static_cast<int>(static_cast<double>(element.height) * screenHeightReal);
+
+			nativeRect = originalRectToNative(classicRect);
+		}
+		else if (renderSpace == RenderSpace::Native)
+		{
+			int renderWidth, renderHeight;
+			if (SDL_GetRendererOutputSize(this->renderer, &renderWidth, &renderHeight) != 0)
+			{
+				DebugCrash("Couldn't get renderer output size.");
+			}
+
+			nativeRect.x = static_cast<int>(static_cast<double>(element.x) * renderWidth); // @todo: probably don't truncate
+			nativeRect.y = static_cast<int>(static_cast<double>(element.y) * renderHeight);
+			nativeRect.w = static_cast<int>(static_cast<double>(element.width) * renderWidth); // @todo: dimensions should honor pixel centers, right?
+			nativeRect.h = static_cast<int>(static_cast<double>(element.height) * renderHeight);
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(renderSpace)));
+		}
+
+		SDL_RenderCopy(this->renderer, texture, nullptr, &nativeRect);
 	}
 }

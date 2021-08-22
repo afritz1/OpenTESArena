@@ -23,6 +23,7 @@
 // @todo: might eventually need some "shared" struct for resources to talk between 2D and 3D renderer
 // if it's the same backend.
 
+class Rect;
 class TextureManager;
 
 enum class RenderSpace;
@@ -61,7 +62,7 @@ public:
 
 	// Drawing method for UI elements. Positions and sizes are in 0->1 vector space so that the caller's
 	// data is resolution-independent.
-	virtual void draw(const RenderElement *elements, int count, RenderSpace renderSpace) = 0;
+	virtual void draw(const RenderElement *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect) = 0;
 };
 
 #endif

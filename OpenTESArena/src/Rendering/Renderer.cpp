@@ -81,6 +81,16 @@ Renderer::~Renderer()
 {
 	DebugLog("Closing.");
 
+	if (this->renderer2D)
+	{
+		this->renderer2D->shutdown();
+	}
+	
+	if (this->renderer3D)
+	{
+		this->renderer3D->shutdown();
+	}
+
 	SDL_DestroyWindow(this->window);
 
 	// This also destroys the frame buffer textures.
@@ -769,7 +779,16 @@ void Renderer::warpMouse(int x, int y)
 
 void Renderer::setClipRect(const SDL_Rect *rect)
 {
-	SDL_RenderSetClipRect(this->renderer, rect);
+	if (rect != nullptr)
+	{
+		// @temp: assume in classic space
+		Rect nativeRect = this->originalToNative(Rect(rect->x, rect->y, rect->w, rect->h));
+		SDL_RenderSetClipRect(this->renderer, &nativeRect.getRect());
+	}
+	else
+	{
+		SDL_RenderSetClipRect(this->renderer, nullptr);
+	}
 }
 
 void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWindow,
@@ -855,6 +874,11 @@ void Renderer::freeSkyTexture(const TextureAssetReference &textureAssetRef)
 void Renderer::freeUiTexture(UiTextureID id)
 {
 	this->renderer2D->freeUiTexture(id);
+}
+
+std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
+{
+	return this->renderer2D->tryGetTextureDims(id);
 }
 
 void Renderer::setFogDistance(double fogDistance)
@@ -1179,11 +1203,6 @@ void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID palette
 	this->drawOriginal(textureBuilderID, paletteID, x, y, textureManager);
 }
 
-void Renderer::drawOriginal(const RendererSystem2D::RenderElement *renderElements, int count)
-{
-	this->renderer2D->draw(renderElements, count, RenderSpace::Classic);
-}
-
 void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
@@ -1220,6 +1239,14 @@ void Renderer::drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID 
 {
 	this->drawOriginalClipped(textureBuilderID, paletteID, srcRect,
 		Rect(x, y, srcRect.getWidth(), srcRect.getHeight()), textureManager);
+}
+
+void Renderer::draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	const SDL_Rect letterboxRect = this->getLetterboxDimensions();
+	this->renderer2D->draw(renderElements, count, renderSpace,
+		Rect(letterboxRect.x, letterboxRect.y, letterboxRect.w, letterboxRect.h));
 }
 
 void Renderer::fill(const Texture &texture)

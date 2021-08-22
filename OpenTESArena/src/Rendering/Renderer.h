@@ -229,6 +229,8 @@ public:
 	void freeSkyTexture(const TextureAssetReference &textureAssetRef);
 	void freeUiTexture(UiTextureID id);
 
+	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;
+
 	// Helper methods for changing data in the 3D renderer.
 	void setFogDistance(double fogDistance);
 	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
@@ -282,13 +284,13 @@ public:
 	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y,
 		const TextureManager &textureManager);
 	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
-	void drawOriginal(const RendererSystem2D::RenderElement *renderElements, int count);
 	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect);
 	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, int x, int y);
 	void drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
 		const Rect &dstRect, const TextureManager &textureManager);
 	void drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
 		int x, int y, const TextureManager &textureManager);
+	void draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace);
 
 	// Stretches a texture over the entire native frame buffer.
 	void fill(const Texture &texture);

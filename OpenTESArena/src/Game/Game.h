@@ -41,10 +41,6 @@ class Surface;
 class Game
 {
 private:
-	// A vector of sub-panels treated like a stack. The top of the stack is the back.
-	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
-	std::vector<std::unique_ptr<Panel>> subPanels;
-
 	AudioManager audioManager;
 	MusicLibrary musicLibrary;
 
@@ -60,9 +56,17 @@ private:
 	std::unique_ptr<GameState> gameState;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
-	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
 	Renderer renderer;
 	TextureManager textureManager;
+	
+	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
+	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).
+	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
+
+	// A vector of sub-panels treated like a stack. The top of the stack is the back.
+	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
+	std::vector<std::unique_ptr<Panel>> subPanels;
+
 	BinaryAssetLibrary binaryAssetLibrary;
 	TextAssetLibrary textAssetLibrary;
 	Random random; // Convenience random for ease of use.

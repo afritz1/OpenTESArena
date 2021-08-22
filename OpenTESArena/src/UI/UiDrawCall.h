@@ -24,7 +24,7 @@ private:
 	SizeFunc sizeFunc; // Width + height in pixels.
 	PivotFunc pivotFunc; // Affects how the dimensions expand from the position (for UI scaling).
 	ActiveFunc activeFunc; // Whether to attempt to draw.
-	std::optional<Rect> clipRect; // For drawing within a clipped area.
+	std::optional<Rect> clipRect; // For drawing within a clipped area in the selected render space.
 	RenderSpace renderSpace; // Relative positioning and sizing in the application window.
 public:
 	UiDrawCall(const TextureFunc &textureFunc, const PositionFunc &positionFunc, const SizeFunc &sizeFunc,

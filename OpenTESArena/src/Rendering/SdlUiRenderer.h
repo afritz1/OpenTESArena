@@ -5,6 +5,8 @@
 
 #include "RendererSystem2D.h"
 
+class Rect;
+
 struct SDL_Renderer;
 struct SDL_Texture;
 
@@ -31,7 +33,8 @@ public:
 	void freeUiTexture(UiTextureID id) override;
 	std::optional<Int2> tryGetTextureDims(UiTextureID id) const override;
 
-	void draw(const RenderElement *elements, int count, RenderSpace renderSpace) override;
+	void draw(const RenderElement *elements, int count, RenderSpace renderSpace,
+		const Rect &letterboxRect) override;
 };
 
 #endif

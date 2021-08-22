@@ -207,6 +207,56 @@ void Panel::addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 
 		clipRect);
 }
 
+void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType)
+{
+	UiDrawCall::TextureFunc textureFunc = [textureID]()
+	{
+		return textureID;
+	};
+
+	UiDrawCall::PositionFunc positionFunc = [this]()
+	{
+		auto &game = this->getGame();
+		const auto &inputManager = game.getInputManager();
+		return inputManager.getMousePosition();
+	};
+
+	UiDrawCall::SizeFunc sizeFunc = [this, textureID]()
+	{
+		auto &game = this->getGame();
+		auto &renderer = game.getRenderer();		
+		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(textureID);
+		if (!dims.has_value())
+		{
+			DebugCrash("Couldn't get cursor texture dimensions for UI draw call.");
+		}
+
+		const auto &options = game.getOptions();
+		const double scale = options.getGraphics_CursorScale();
+		const Int2 scaledDims(
+			static_cast<int>(static_cast<double>(dims->x) * scale),
+			static_cast<int>(static_cast<double>(dims->y) * scale));
+		return scaledDims;
+	};
+
+	UiDrawCall::PivotFunc pivotFunc = [pivotType]()
+	{
+		return pivotType;
+	};
+
+	constexpr std::optional<Rect> clipRect = std::nullopt;
+	constexpr RenderSpace renderSpace = RenderSpace::Native;
+
+	this->drawCalls.emplace_back(
+		textureFunc,
+		positionFunc,
+		sizeFunc,
+		pivotFunc,
+		UiDrawCall::defaultActiveFunc,
+		clipRect,
+		renderSpace);
+}
+
 void Panel::clearDrawCalls()
 {
 	this->drawCalls.clear();
