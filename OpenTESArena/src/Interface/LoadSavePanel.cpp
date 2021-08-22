@@ -90,6 +90,6 @@ void LoadSavePanel::render(Renderer &renderer)
 	for (TextBox &textBox : this->saveTextBoxes)
 	{
 		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+		renderer.drawOriginal(textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 	}
 }

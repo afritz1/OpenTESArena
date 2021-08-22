@@ -242,5 +242,5 @@ void TextCinematicPanel::render(Renderer &renderer)
 	DebugAssertIndex(this->textBoxes, this->textIndex);
 	TextBox &textBox = this->textBoxes[this->textIndex];
 	const Rect &textBoxRect = textBox.getRect();
-	renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+	renderer.drawOriginal(textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 }

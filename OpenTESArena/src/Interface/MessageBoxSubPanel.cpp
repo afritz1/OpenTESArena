@@ -247,7 +247,7 @@ void MessageBoxSubPanel::render(Renderer &renderer)
 {
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
 	renderer.drawOriginal(this->titleBackgroundTexture, this->titleBackgroundRect.getLeft(), this->titleBackgroundRect.getTop());
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->titleTextBox.getTextureID(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
 
 	for (int i = 0; i < this->items.getCount(); i++)
 	{
@@ -255,6 +255,6 @@ void MessageBoxSubPanel::render(Renderer &renderer)
 		const Rect &itemBackgroundRect = item.backgroundTextureRect;
 		const Rect &itemTextBoxRect = item.textBox.getRect();
 		renderer.drawOriginal(item.backgroundTexture, itemBackgroundRect.getLeft(), itemBackgroundRect.getTop());
-		renderer.drawOriginal(item.textBox.getTexture(), itemTextBoxRect.getLeft(), itemTextBoxRect.getTop());
+		renderer.drawOriginal(item.textBox.getTextureID(), itemTextBoxRect.getLeft(), itemTextBoxRect.getTop());
 	}
 }

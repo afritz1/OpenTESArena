@@ -56,12 +56,15 @@ ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, Renderer &renderer)
 	DebugAssert(id >= 0);
 	this->id = id;
 	this->renderer = &renderer;
+	this->setDims();
 }
 
 ScopedUiTextureRef::ScopedUiTextureRef()
 {
 	this->id = -1;
 	this->renderer = nullptr;
+	this->width = -1;
+	this->height = -1;
 }
 
 ScopedUiTextureRef::~ScopedUiTextureRef()
@@ -79,9 +82,42 @@ void ScopedUiTextureRef::init(UiTextureID id, Renderer &renderer)
 	DebugAssert(id >= 0);
 	this->id = id;
 	this->renderer = &renderer;
+	this->setDims();
+}
+
+void ScopedUiTextureRef::setDims()
+{
+	const std::optional<Int2> dims = this->renderer->tryGetUiTextureDims(this->id);
+	if (!dims.has_value())
+	{
+		DebugCrash("Couldn't get UI texture dimensions (ID " + std::to_string(this->id) + ").");
+	}
+
+	this->width = dims->x;
+	this->height = dims->y;
 }
 
 UiTextureID ScopedUiTextureRef::get() const
 {
 	return this->id;
+}
+
+int ScopedUiTextureRef::getWidth() const
+{
+	return this->width;
+}
+
+int ScopedUiTextureRef::getHeight() const
+{
+	return this->height;
+}
+
+uint32_t *ScopedUiTextureRef::lockTexels()
+{
+	return this->renderer->lockUiTexture(this->id);
+}
+
+void ScopedUiTextureRef::unlockTexels()
+{
+	this->renderer->unlockUiTexture(this->id);
 }

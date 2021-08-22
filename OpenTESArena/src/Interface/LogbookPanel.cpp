@@ -105,5 +105,5 @@ void LogbookPanel::render(Renderer &renderer)
 
 	// Draw text: title.
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->titleTextBox.getTextureID(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
 }

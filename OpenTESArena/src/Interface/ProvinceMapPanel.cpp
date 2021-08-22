@@ -560,7 +560,7 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 	const Rect &textBoxRect = textBox.getRect();
 	const Int2 clampedPosition = ProvinceMapUiView::getLocationTextClampedPosition(
 		textBoxRect.getLeft(), textBoxRect.getTop(), textBoxRect.getWidth(), textBoxRect.getHeight());
-	renderer.drawOriginal(textBox.getTexture(), clampedPosition.x, clampedPosition.y);
+	renderer.drawOriginal(textBox.getTextureID(), clampedPosition.x, clampedPosition.y);
 }
 
 void ProvinceMapPanel::drawButtonTooltip(const std::string &text, Renderer &renderer)

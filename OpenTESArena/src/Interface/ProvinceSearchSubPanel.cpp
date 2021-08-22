@@ -243,8 +243,8 @@ void ProvinceSearchSubPanel::renderTextEntry(Renderer &renderer)
 	// Draw text: title, location name.
 	const Rect &titleTextBoxRect = this->textTitleTextBox.getRect();
 	const Rect &entryTextBoxRect = this->textEntryTextBox.getRect();
-	renderer.drawOriginal(this->textTitleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-	renderer.drawOriginal(this->textEntryTextBox.getTexture(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
+	renderer.drawOriginal(this->textTitleTextBox.getTextureID(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->textEntryTextBox.getTextureID(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
 
 	// @todo: draw blinking cursor.
 }

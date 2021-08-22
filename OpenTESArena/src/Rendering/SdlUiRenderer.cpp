@@ -46,13 +46,8 @@ void SdlUiRenderer::shutdown()
 	this->nextID = -1;
 }
 
-template <typename TexelType>
-bool SdlUiRenderer::tryCreateUiTextureInternal(const BufferView2D<TexelType> &srcTexels, const Palette *palette,
-	UiTextureID *outID)
+bool SdlUiRenderer::tryCreateUiTextureInternal(int width, int height, const TexelsInitFunc &initFunc, UiTextureID *outID)
 {
-	const int width = srcTexels.getWidth();
-	const int height = srcTexels.getHeight();
-
 	SDL_Texture *texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 	if (texture == nullptr)
 	{
@@ -77,28 +72,7 @@ bool SdlUiRenderer::tryCreateUiTextureInternal(const BufferView2D<TexelType> &sr
 		return false;
 	}
 
-	static_assert(std::is_integral_v<TexelType>);
-	constexpr bool isPaletted = sizeof(TexelType) == sizeof(uint8_t);
-	constexpr bool isTrueColor = sizeof(TexelType) == sizeof(uint32_t);
-	if constexpr (isPaletted)
-	{
-		DebugAssert(palette != nullptr);
-		const Palette &paletteRef = *palette;
-		std::transform(srcTexels.get(), srcTexels.end(), dstPixels,
-			[&paletteRef](const TexelType texel)
-		{
-			return paletteRef[texel].toARGB();
-		});
-	}
-	else if constexpr (isTrueColor)
-	{
-		std::copy(srcTexels.get(), srcTexels.end(), dstPixels);
-	}
-	else
-	{
-		DebugNotImplemented();
-	}
-
+	initFunc(dstPixels);
 	SDL_UnlockTexture(texture);
 
 	*outID = this->nextID;
@@ -109,12 +83,37 @@ bool SdlUiRenderer::tryCreateUiTextureInternal(const BufferView2D<TexelType> &sr
 
 bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
 {
-	return this->tryCreateUiTextureInternal(texels, nullptr, outID);
+	TexelsInitFunc initFunc = [&texels](uint32_t *dstTexels)
+	{
+		std::copy(texels.get(), texels.end(), dstTexels);
+	};
+
+	return this->tryCreateUiTextureInternal(texels.getWidth(), texels.getHeight(), initFunc, outID);
 }
 
 bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID)
 {
-	return this->tryCreateUiTextureInternal(texels, &palette, outID);
+	TexelsInitFunc initFunc = [&texels, &palette](uint32_t *dstTexels)
+	{
+		std::transform(texels.get(), texels.end(), dstTexels,
+			[&palette](const uint8_t texel)
+		{
+			return palette[texel].toARGB();
+		});
+	};
+
+	return this->tryCreateUiTextureInternal(texels.getWidth(), texels.getHeight(), initFunc, outID);
+}
+
+bool SdlUiRenderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
+{
+	TexelsInitFunc initFunc = [width, height](uint32_t *dstTexels)
+	{
+		uint32_t *dstTexelsEnd = dstTexels + (width * height);
+		std::fill(dstTexels, dstTexelsEnd, 0xFFFF00FF);
+	};
+
+	return this->tryCreateUiTextureInternal(width, height, initFunc, outID);
 }
 
 bool SdlUiRenderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
@@ -141,6 +140,44 @@ bool SdlUiRenderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, Palett
 	{
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(type)));
 	}
+}
+
+uint32_t *SdlUiRenderer::lockUiTexture(UiTextureID textureID)
+{
+	const auto iter = this->textures.find(textureID);
+	if (iter == this->textures.end())
+	{
+		DebugLogError("Couldn't get SDL_Texture from ID " + std::to_string(textureID) + " to lock.");
+		return nullptr;
+	}
+
+	SDL_Texture *texture = iter->second;
+	int width, height;
+	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+
+	uint32_t *dstTexels;
+	int pitch;
+	if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
+	{
+		DebugLogError("Couldn't lock SDL_Texture for updating (ID " + std::to_string(textureID) + ", dims: " +
+			std::to_string(width) + "x" + std::to_string(height) + ", " + std::string(SDL_GetError()) + ").");
+		return nullptr;
+	}
+
+	return dstTexels;
+}
+
+void SdlUiRenderer::unlockUiTexture(UiTextureID textureID)
+{
+	const auto iter = this->textures.find(textureID);
+	if (iter == this->textures.end())
+	{
+		DebugLogError("Couldn't get SDL_Texture from ID " + std::to_string(textureID) + " to unlock.");
+		return;
+	}
+
+	SDL_Texture *texture = iter->second;
+	SDL_UnlockTexture(texture);
 }
 
 void SdlUiRenderer::freeUiTexture(UiTextureID id)

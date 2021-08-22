@@ -170,7 +170,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const Rect &nameTextBoxRect = this->nameTextBox.getRect();
 	const Rect &raceTextBoxRect = this->raceTextBox.getRect();
 	const Rect &classTextBoxRect = this->classTextBox.getRect();
-	renderer.drawOriginal(this->nameTextBox.getTexture(), nameTextBoxRect.getLeft(), nameTextBoxRect.getTop());
-	renderer.drawOriginal(this->raceTextBox.getTexture(), raceTextBoxRect.getLeft(), raceTextBoxRect.getTop());
-	renderer.drawOriginal(this->classTextBox.getTexture(), classTextBoxRect.getLeft(), classTextBoxRect.getTop());
+	renderer.drawOriginal(this->nameTextBox.getTextureID(), nameTextBoxRect.getLeft(), nameTextBoxRect.getTop());
+	renderer.drawOriginal(this->raceTextBox.getTextureID(), raceTextBoxRect.getLeft(), raceTextBoxRect.getTop());
+	renderer.drawOriginal(this->classTextBox.getTextureID(), classTextBoxRect.getLeft(), classTextBoxRect.getTop());
 }

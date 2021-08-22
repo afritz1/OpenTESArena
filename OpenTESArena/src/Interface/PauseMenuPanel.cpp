@@ -240,7 +240,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	auto drawTextBox = [&renderer](TextBox &textBox, int xOffset)
 	{
 		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft() + xOffset, textBoxRect.getTop());
+		renderer.drawOriginal(textBox.getTextureID(), textBoxRect.getLeft() + xOffset, textBoxRect.getTop());
 	};
 
 	// Draw text: player's name, music volume, sound volume, options.

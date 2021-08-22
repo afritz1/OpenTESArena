@@ -432,7 +432,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 	}
 
 	const Rect &testButtonTextBoxRect = testButtonTextBox.getRect();
-	renderer.drawOriginal(testButtonTextBox.getTexture(), testButtonTextBoxRect.getLeft(), testButtonTextBoxRect.getTop());
+	renderer.drawOriginal(testButtonTextBox.getTextureID(), testButtonTextBoxRect.getLeft(), testButtonTextBoxRect.getTop());
 
 	const std::string testTypeText = "Test type: " + MainMenuUiModel::getTestTypeName(this->testType);
 	const TextRenderUtils::TextureGenInfo testTypeTextBoxTextureGenInfo =
@@ -454,7 +454,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 	}
 
 	const Rect &testTypeTextBoxRect = testTypeTextBox.getRect();
-	renderer.drawOriginal(testTypeTextBox.getTexture(), testTypeTextBoxRect.getLeft(), testTypeTextBoxRect.getTop());
+	renderer.drawOriginal(testTypeTextBox.getTextureID(), testTypeTextBoxRect.getLeft(), testTypeTextBoxRect.getTop());
 
 	const std::string testNameText = "Test location: " + this->getSelectedTestName();
 	const TextRenderUtils::TextureGenInfo testNameTextBoxTextureGenInfo =
@@ -476,7 +476,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 	}
 
 	const Rect &testNameTextBoxRect = testNameTextBox.getRect();
-	renderer.drawOriginal(testNameTextBox.getTexture(), testNameTextBoxRect.getLeft(), testNameTextBoxRect.getTop());
+	renderer.drawOriginal(testNameTextBox.getTextureID(), testNameTextBoxRect.getLeft(), testNameTextBoxRect.getTop());
 
 	// Draw weather text if applicable.
 	if ((this->testType == MainMenuUiModel::TestType_City) || (this->testType == MainMenuUiModel::TestType_Wilderness))
@@ -503,7 +503,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 		}
 
 		const Rect &testWeatherTextBoxRect = testWeatherTextBox.getRect();
-		renderer.drawOriginal(testWeatherTextBox.getTexture(), testWeatherTextBoxRect.getLeft(), testWeatherTextBoxRect.getTop());
+		renderer.drawOriginal(testWeatherTextBox.getTextureID(), testWeatherTextBoxRect.getLeft(), testWeatherTextBoxRect.getTop());
 	}
 }
 

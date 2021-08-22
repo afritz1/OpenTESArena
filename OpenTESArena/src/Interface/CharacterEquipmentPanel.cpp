@@ -197,9 +197,9 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
 	const Rect &playerRaceTextBoxRect = this->playerRaceTextBox.getRect();
 	const Rect &playerClassTextBoxRect = this->playerClassTextBox.getRect();
-	renderer.drawOriginal(this->playerNameTextBox.getTexture(), playerNameTextBoxRect.getLeft(), playerNameTextBoxRect.getTop());
-	renderer.drawOriginal(this->playerRaceTextBox.getTexture(), playerRaceTextBoxRect.getLeft(), playerRaceTextBoxRect.getTop());
-	renderer.drawOriginal(this->playerClassTextBox.getTexture(), playerClassTextBoxRect.getLeft(), playerClassTextBoxRect.getTop());
+	renderer.drawOriginal(this->playerNameTextBox.getTextureID(), playerNameTextBoxRect.getLeft(), playerNameTextBoxRect.getTop());
+	renderer.drawOriginal(this->playerRaceTextBox.getTextureID(), playerRaceTextBoxRect.getLeft(), playerRaceTextBoxRect.getTop());
+	renderer.drawOriginal(this->playerClassTextBox.getTextureID(), playerClassTextBoxRect.getLeft(), playerClassTextBoxRect.getTop());
 
 	// Draw inventory list box.
 	const Rect &inventoryListBoxRect = this->inventoryListBox.getRect();

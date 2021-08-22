@@ -679,7 +679,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 		// Draw text: player name.
 		const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
-		renderer.drawOriginal(this->playerNameTextBox.getTexture(),
+		renderer.drawOriginal(this->playerNameTextBox.getTextureID(),
 			playerNameTextBoxRect.getLeft(), playerNameTextBoxRect.getTop());
 	}
 }
@@ -779,21 +779,27 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	//   subtracting the time in tick() because it would always be one frame shorter then.
 	if (gameState.triggerTextIsVisible())
 	{
-		const Texture &triggerTextTexture = this->triggerText.getTexture();
+		const UiTextureID triggerTextTextureID = this->triggerText.getTextureID();
+		const std::optional<Int2> triggerTextTextureDims = renderer.tryGetUiTextureDims(triggerTextTextureID);
+		DebugAssert(triggerTextTextureDims.has_value());
+
 		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
 			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
 		const Int2 textPosition = GameWorldUiView::getTriggerTextPosition(
-			game, triggerTextTexture.getWidth(), triggerTextTexture.getHeight(),
+			game, triggerTextTextureDims->x, triggerTextTextureDims->y,
 			gameWorldInterfaceTextureBuilderRef.getHeight());
 
-		renderer.drawOriginal(triggerTextTexture, textPosition.x, textPosition.y);
+		renderer.drawOriginal(triggerTextTextureID, textPosition.x, textPosition.y);
 	}
 
 	if (gameState.actionTextIsVisible())
 	{
-		const Texture &actionTextTexture = this->actionText.getTexture();
-		const Int2 textPosition = GameWorldUiView::getActionTextPosition(actionTextTexture.getWidth());
-		renderer.drawOriginal(actionTextTexture, textPosition.x, textPosition.y);
+		const UiTextureID actionTextTextureID = this->actionText.getTextureID();
+		const std::optional<Int2> actionTextTextureDims = renderer.tryGetUiTextureDims(actionTextTextureID);
+		DebugAssert(actionTextTextureDims.has_value());
+
+		const Int2 textPosition = GameWorldUiView::getActionTextPosition(actionTextTextureDims->x);
+		renderer.drawOriginal(actionTextTextureID, textPosition.x, textPosition.y);
 	}
 
 	if (gameState.effectTextIsVisible())

@@ -237,7 +237,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 
 	// Draw text: title, list.
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->titleTextBox.getTextureID(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
 
 	const Rect &classesListBoxRect = this->classesListBox.getRect();
 	renderer.drawOriginal(this->classesListBox.getTexture(), classesListBoxRect.getLeft(), classesListBoxRect.getTop());

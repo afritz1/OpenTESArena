@@ -145,9 +145,9 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
 	const Rect &generateTextBoxRect = this->generateTextBox.getRect();
 	const Rect &selectTextBoxRect = this->selectTextBox.getRect();
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-	renderer.drawOriginal(this->generateTextBox.getTexture(), generateTextBoxRect.getLeft(), generateTextBoxRect.getTop());
-	renderer.drawOriginal(this->selectTextBox.getTexture(), selectTextBoxRect.getLeft(), selectTextBoxRect.getTop());
+	renderer.drawOriginal(this->titleTextBox.getTextureID(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->generateTextBox.getTextureID(), generateTextBoxRect.getLeft(), generateTextBoxRect.getTop());
+	renderer.drawOriginal(this->selectTextBox.getTextureID(), selectTextBoxRect.getLeft(), selectTextBoxRect.getTop());
 
 	// Check if the mouse is hovered over one of the boxes for tooltips.
 	const auto &inputManager = this->getGame().getInputManager();

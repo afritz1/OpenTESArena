@@ -219,8 +219,13 @@ public:
 	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
 	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID);
+	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID);
+
+	// Allows for updating all texels in the given UI texture. Must be unlocked to flush the changes.
+	uint32_t *lockUiTexture(UiTextureID textureID);
+	void unlockUiTexture(UiTextureID textureID);
 
 	// Texture handle freeing functions.
 	// @todo: see RendererSystem3D -- these should take texture IDs instead.
@@ -291,6 +296,10 @@ public:
 	void drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
 		int x, int y, const TextureManager &textureManager);
 	void draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace);
+
+	// @temp for compatibility with old panel render() (remove once all are using UiDrawCall).
+	void drawOriginal(UiTextureID textureID, int x, int y, int w, int h);
+	void drawOriginal(UiTextureID textureID, int x, int y);
 
 	// Stretches a texture over the entire native frame buffer.
 	void fill(const Texture &texture);

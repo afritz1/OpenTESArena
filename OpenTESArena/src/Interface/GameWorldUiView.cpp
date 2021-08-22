@@ -558,7 +558,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 	const int originalX = ArenaRenderUtils::SCREEN_WIDTH / 2;
 	const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;
-	renderer.drawOriginal(textBox.getTexture(), originalX, originalY);
+	renderer.drawOriginal(textBox.getTextureID(), originalX, originalY);
 }
 
 void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
@@ -604,7 +604,7 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 		}
 
 		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+		renderer.drawOriginal(textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 	}
 
 	if (profilerLevel >= 2)
@@ -673,7 +673,7 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 		}
 
 		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+		renderer.drawOriginal(textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 	}
 
 	if (profilerLevel >= 3)
@@ -770,7 +770,7 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 		}();
 
 		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+		renderer.drawOriginal(textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 		renderer.drawOriginal(frameTimesGraph, textBoxRect.getLeft(), 94);
 	}
 

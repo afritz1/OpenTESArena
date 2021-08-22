@@ -127,7 +127,7 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
 	const Rect &maleTextBoxRect = this->maleTextBox.getRect();
 	const Rect &femaleTextBoxRect = this->femaleTextBox.getRect();
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-	renderer.drawOriginal(this->maleTextBox.getTexture(), maleTextBoxRect.getLeft(), maleTextBoxRect.getTop());
-	renderer.drawOriginal(this->femaleTextBox.getTexture(), femaleTextBoxRect.getLeft(), femaleTextBoxRect.getTop());
+	renderer.drawOriginal(this->titleTextBox.getTextureID(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->maleTextBox.getTextureID(), maleTextBoxRect.getLeft(), maleTextBoxRect.getTop());
+	renderer.drawOriginal(this->femaleTextBox.getTextureID(), femaleTextBoxRect.getLeft(), femaleTextBoxRect.getTop());
 }

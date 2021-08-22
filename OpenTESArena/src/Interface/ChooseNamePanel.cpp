@@ -134,6 +134,6 @@ void ChooseNamePanel::render(Renderer &renderer)
 	// Draw text: title, name.
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
 	const Rect &entryTextBoxRect = this->entryTextBox.getRect();
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-	renderer.drawOriginal(this->entryTextBox.getTexture(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
+	renderer.drawOriginal(this->titleTextBox.getTextureID(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->entryTextBox.getTextureID(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
 }

@@ -83,5 +83,5 @@ void MainQuestSplashPanel::render(Renderer &renderer)
 
 	// Draw text.
 	const Rect &textBoxRect = this->textBox.getRect();
-	renderer.drawOriginal(this->textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+	renderer.drawOriginal(this->textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 }

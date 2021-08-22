@@ -53,6 +53,10 @@ public:
 	virtual bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID) = 0;
 	virtual bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID) = 0;
+	virtual bool tryCreateUiTexture(int width, int height, UiTextureID *outID) = 0;
+
+	virtual uint32_t *lockUiTexture(UiTextureID textureID) = 0;
+	virtual void unlockUiTexture(UiTextureID textureID) = 0;
 
 	// Texture handle freeing function for a UI texture.
 	virtual void freeUiTexture(UiTextureID id) = 0;

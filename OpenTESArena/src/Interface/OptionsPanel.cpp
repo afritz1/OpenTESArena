@@ -392,7 +392,7 @@ void OptionsPanel::drawText(Renderer &renderer)
 	auto drawTextBox = [&renderer](TextBox &textBox)
 	{
 		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+		renderer.drawOriginal(textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 	};
 
 	drawTextBox(this->titleTextBox);
@@ -435,7 +435,7 @@ void OptionsPanel::drawTextOfOptions(Renderer &renderer)
 
 		// Draw option text.
 		const Rect &optionTextBoxRect = optionTextBox.getRect();
-		renderer.drawOriginal(optionTextBox.getTexture(), optionTextBoxRect.getLeft(), optionTextBoxRect.getTop());
+		renderer.drawOriginal(optionTextBox.getTextureID(), optionTextBoxRect.getLeft(), optionTextBoxRect.getTop());
 
 		// Draw description if hovering over an option with a non-empty tooltip.
 		if (highlightedOptionIndex.has_value())
@@ -475,7 +475,7 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 	}
 
 	const Rect &descriptionTextBoxRect = descriptionTextBox.getRect();
-	renderer.drawOriginal(descriptionTextBox.getTexture(),
+	renderer.drawOriginal(descriptionTextBox.getTextureID(),
 		descriptionTextBoxRect.getLeft(), descriptionTextBoxRect.getTop());
 }
 
