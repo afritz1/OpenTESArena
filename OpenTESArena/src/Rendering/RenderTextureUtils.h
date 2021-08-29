@@ -63,7 +63,10 @@ private:
 public:
 	ScopedUiTextureRef(UiTextureID id, Renderer &renderer);
 	ScopedUiTextureRef();
+	ScopedUiTextureRef(ScopedUiTextureRef &&other);
 	~ScopedUiTextureRef();
+
+	ScopedUiTextureRef &operator=(ScopedUiTextureRef &&other);
 
 	void init(UiTextureID id, Renderer &renderer);
 

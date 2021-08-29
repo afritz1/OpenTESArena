@@ -67,12 +67,41 @@ ScopedUiTextureRef::ScopedUiTextureRef()
 	this->height = -1;
 }
 
+ScopedUiTextureRef::ScopedUiTextureRef(ScopedUiTextureRef &&other)
+{
+	this->id = other.id;
+	this->renderer = other.renderer;
+	this->width = other.width;
+	this->height = other.height;
+	other.id = -1;
+	other.renderer = nullptr;
+	other.width = -1;
+	other.height = -1;
+}
+
 ScopedUiTextureRef::~ScopedUiTextureRef()
 {
 	if (this->renderer != nullptr)
 	{
 		this->renderer->freeUiTexture(this->id);
 	}
+}
+
+ScopedUiTextureRef &ScopedUiTextureRef::operator=(ScopedUiTextureRef &&other)
+{
+	if (this != &other)
+	{
+		this->id = other.id;
+		this->renderer = other.renderer;
+		this->width = other.width;
+		this->height = other.height;
+		other.id = -1;
+		other.renderer = nullptr;
+		other.width = -1;
+		other.height = -1;
+	}
+
+	return *this;
 }
 
 void ScopedUiTextureRef::init(UiTextureID id, Renderer &renderer)
