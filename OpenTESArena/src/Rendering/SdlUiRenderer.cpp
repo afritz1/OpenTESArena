@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <type_traits>
 
 #include "SDL_render.h"
@@ -266,10 +267,10 @@ void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace r
 
 			// Rect in classic 320x200 space.
 			SDL_Rect classicRect;
-			classicRect.x = static_cast<int>(static_cast<double>(element.x) * screenWidthReal); // @todo: probably don't truncate
-			classicRect.y = static_cast<int>(static_cast<double>(element.y) * screenHeightReal);
-			classicRect.w = static_cast<int>(static_cast<double>(element.width) * screenWidthReal); // @todo: dimensions should honor pixel centers, right?
-			classicRect.h = static_cast<int>(static_cast<double>(element.height) * screenHeightReal);
+			classicRect.x = static_cast<int>(std::round(static_cast<double>(element.x) * screenWidthReal));
+			classicRect.y = static_cast<int>(std::round(static_cast<double>(element.y) * screenHeightReal));
+			classicRect.w = static_cast<int>(std::round(static_cast<double>(element.width) * screenWidthReal)); // @todo: dimensions should honor pixel centers, right?
+			classicRect.h = static_cast<int>(std::round(static_cast<double>(element.height) * screenHeightReal));
 
 			nativeRect = originalRectToNative(classicRect);
 		}
@@ -281,10 +282,10 @@ void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace r
 				DebugCrash("Couldn't get renderer output size.");
 			}
 
-			nativeRect.x = static_cast<int>(static_cast<double>(element.x) * renderWidth); // @todo: probably don't truncate
-			nativeRect.y = static_cast<int>(static_cast<double>(element.y) * renderHeight);
-			nativeRect.w = static_cast<int>(static_cast<double>(element.width) * renderWidth); // @todo: dimensions should honor pixel centers, right?
-			nativeRect.h = static_cast<int>(static_cast<double>(element.height) * renderHeight);
+			nativeRect.x = static_cast<int>(std::round(static_cast<double>(element.x) * renderWidth));
+			nativeRect.y = static_cast<int>(std::round(static_cast<double>(element.y) * renderHeight));
+			nativeRect.w = static_cast<int>(std::round(static_cast<double>(element.width) * renderWidth)); // @todo: dimensions should honor pixel centers, right?
+			nativeRect.h = static_cast<int>(std::round(static_cast<double>(element.height) * renderHeight));
 		}
 		else
 		{
