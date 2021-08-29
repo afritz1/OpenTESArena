@@ -53,7 +53,7 @@ bool SdlUiRenderer::tryCreateUiTextureInternal(int width, int height, const Texe
 	{
 		DebugLogError("Couldn't allocate SDL_Texture (dims: " + std::to_string(width) + "x" + std::to_string(height) +
 			", " + std::string(SDL_GetError()) + ").");
-		return nullptr;
+		return false;
 	}
 
 	if (SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND) != 0)
