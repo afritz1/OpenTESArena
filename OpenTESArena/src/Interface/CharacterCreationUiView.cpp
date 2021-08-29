@@ -2,6 +2,7 @@
 #include <optional>
 
 #include "CharacterCreationUiView.h"
+#include "CharacterSheetUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
@@ -501,7 +502,7 @@ int ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(int textHeight)
 	return textHeight + 12;
 }
 
-int ChooseAttributesUiView::getBodyOffsetX(Game &game)
+Int2 ChooseAttributesUiView::getBodyOffset(Game &game)
 {
 	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getBodyTextureAssetRef(game);
 
@@ -513,7 +514,7 @@ int ChooseAttributesUiView::getBodyOffsetX(Game &game)
 	}
 
 	const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	return ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth();
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth(), 0);
 }
 
 Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
@@ -567,7 +568,7 @@ TextureAssetReference ChooseAttributesUiView::getBodyTextureAssetRef(Game &game)
 	return TextureAssetReference(std::move(bodyFilename));
 }
 
-TextureAssetReference ChooseAttributesUiView::getHeadTextureAssetRef(Game &game)
+Buffer<TextureAssetReference> ChooseAttributesUiView::getHeadTextureAssetRefs(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const bool isMale = charCreationState.isMale();
@@ -575,8 +576,9 @@ TextureAssetReference ChooseAttributesUiView::getHeadTextureAssetRef(Game &game)
 
 	constexpr bool trimmed = false;
 	std::string headsFilename = PortraitFile::getHeads(isMale, raceID, trimmed);
-	const int headIndex = charCreationState.getPortraitIndex();
-	return TextureAssetReference(std::move(headsFilename), headIndex);
+
+	auto &textureManager = game.getTextureManager();
+	return TextureUtils::makeTextureAssetRefs(headsFilename, textureManager);
 }
 
 TextureAssetReference ChooseAttributesUiView::getShirtTextureAssetRef(Game &game)
@@ -600,4 +602,104 @@ TextureAssetReference ChooseAttributesUiView::getPantsTextureAssetRef(Game &game
 
 	std::string pantsFilename = PortraitFile::getPants(isMale);
 	return TextureAssetReference(std::move(pantsFilename));
+}
+
+PaletteID ChooseAttributesUiView::getPaletteID(TextureManager &textureManager)
+{
+	return CharacterSheetUiView::getPaletteID(textureManager);
+}
+
+UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
+{
+	auto &textureManager = game.getTextureManager();
+	const PaletteID paletteID = ChooseAttributesUiView::getPaletteID(textureManager);
+
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getBodyTextureAssetRef(game);
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	auto &renderer = game.getRenderer();
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for character body.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
+{
+	auto &textureManager = game.getTextureManager();
+	const PaletteID paletteID = ChooseAttributesUiView::getPaletteID(textureManager);
+
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getShirtTextureAssetRef(game);
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	auto &renderer = game.getRenderer();
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for character shirt.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseAttributesUiView::allocPantsTexture(Game &game)
+{
+	auto &textureManager = game.getTextureManager();
+	const PaletteID paletteID = ChooseAttributesUiView::getPaletteID(textureManager);
+
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getPantsTextureAssetRef(game);
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	auto &renderer = game.getRenderer();
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for character pants.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseAttributesUiView::allocHeadTexture(const TextureAssetReference &textureAssetRef,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const PaletteID paletteID = ChooseAttributesUiView::getPaletteID(textureManager);
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for character head \"" + textureAssetRef.filename + "\".");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseAttributesUiView::allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocStatsBgTexture(textureManager, renderer);
+}
+
+UiTextureID ChooseAttributesUiView::allocCursorTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocCursorTexture(textureManager, renderer);
 }

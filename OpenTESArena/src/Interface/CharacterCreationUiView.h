@@ -12,6 +12,8 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
+#include "components/utilities/Buffer.h"
+
 class ExeData;
 class Game;
 class Rect;
@@ -278,15 +280,25 @@ namespace ChooseAttributesUiView
 	int getAppearanceTextBoxTextureWidth(int textWidth);
 	int getAppearanceTextBoxTextureHeight(int textHeight);
 
-	int getBodyOffsetX(Game &game);
+	Int2 getBodyOffset(Game &game);
 	Int2 getHeadOffset(Game &game);
 	Int2 getShirtOffset(Game &game);
 	Int2 getPantsOffset(Game &game);
 
 	TextureAssetReference getBodyTextureAssetRef(Game &game);
-	TextureAssetReference getHeadTextureAssetRef(Game &game);
+	Buffer<TextureAssetReference> getHeadTextureAssetRefs(Game &game);
 	TextureAssetReference getShirtTextureAssetRef(Game &game);
 	TextureAssetReference getPantsTextureAssetRef(Game &game);
+
+	PaletteID getPaletteID(TextureManager &textureManager);
+
+	UiTextureID allocBodyTexture(Game &game);
+	UiTextureID allocShirtTexture(Game &game);
+	UiTextureID allocPantsTexture(Game &game);
+	UiTextureID allocHeadTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

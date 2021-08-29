@@ -23,6 +23,11 @@ bool ChooseAttributesPanel::init()
 	auto &renderer = game.getRenderer();
 	const auto &fontLibrary = game.getFontLibrary();
 
+	auto &charCreationState = game.getCharacterCreationState();
+	charCreationState.setPortraitIndex(0);
+
+	this->attributesAreSaved = false;
+
 	const std::string playerNameText = CharacterCreationUiModel::getPlayerName(game);
 	const TextBox::InitInfo playerNameTextBoxInitInfo =
 		CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
@@ -85,10 +90,107 @@ bool ChooseAttributesPanel::init()
 
 	this->addInputActionListener(InputActionName::Back, ChooseAttributesUiController::onBackToRaceSelectionInputAction);
 
-	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setPortraitIndex(0);
+	auto &textureManager = game.getTextureManager();
+	const UiTextureID bodyTextureID = ChooseAttributesUiView::allocBodyTexture(game);
+	const UiTextureID pantsTextureID = ChooseAttributesUiView::allocPantsTexture(game);
+	const UiTextureID shirtTextureID = ChooseAttributesUiView::allocShirtTexture(game);
+	const UiTextureID statsBgTextureID = ChooseAttributesUiView::allocStatsBgTexture(textureManager, renderer);
+	this->bodyTextureRef.init(bodyTextureID, renderer);
+	this->pantsTextureRef.init(pantsTextureID, renderer);
+	this->shirtTextureRef.init(shirtTextureID, renderer);
+	this->statsBgTextureRef.init(statsBgTextureID, renderer);
 
-	this->attributesAreSaved = false;
+	const Buffer<TextureAssetReference> headTextureAssetRefs = ChooseAttributesUiView::getHeadTextureAssetRefs(game);
+	this->headTextureRefs.init(headTextureAssetRefs.getCount());
+	for (int i = 0; i < headTextureAssetRefs.getCount(); i++)
+	{
+		const TextureAssetReference &headTextureAssetRef = headTextureAssetRefs.get(i);
+		const UiTextureID headTextureID = ChooseAttributesUiView::allocHeadTexture(headTextureAssetRef, textureManager, renderer);
+		this->headTextureRefs.set(i, ScopedUiTextureRef(headTextureID, renderer));
+	}
+
+	const Int2 bodyTextureDims = *renderer.tryGetUiTextureDims(bodyTextureID);
+	const Int2 pantsTextureDims = *renderer.tryGetUiTextureDims(pantsTextureID);
+	const Int2 shirtTextureDims = *renderer.tryGetUiTextureDims(shirtTextureID);
+	const Int2 statsBgTextureDims = *renderer.tryGetUiTextureDims(statsBgTextureID);
+
+	UiDrawCall::TextureFunc headTextureFunc = [this, &game]()
+	{
+		const auto &charCreationState = game.getCharacterCreationState();
+		const int portraitIndex = charCreationState.getPortraitIndex();
+		const ScopedUiTextureRef &headTextureRef = this->headTextureRefs.get(portraitIndex);
+		return headTextureRef.get();
+	};
+
+	UiDrawCall::PositionFunc headPositionFunc = [&game]()
+	{
+		return ChooseAttributesUiView::getHeadOffset(game);
+	};
+
+	UiDrawCall::SizeFunc headSizeFunc = [this, &game]()
+	{
+		const auto &charCreationState = game.getCharacterCreationState();
+		const int portraitIndex = charCreationState.getPortraitIndex();
+		const ScopedUiTextureRef &headTextureRef = this->headTextureRefs.get(portraitIndex);
+		return Int2(headTextureRef.getWidth(), headTextureRef.getHeight());
+	};
+
+	UiDrawCall::PivotFunc headPivotFunc = [this]()
+	{
+		return PivotType::TopLeft;
+	};
+
+	this->addDrawCall(
+		bodyTextureID,
+		ChooseAttributesUiView::getBodyOffset(game),
+		bodyTextureDims,
+		PivotType::TopLeft);
+	this->addDrawCall(
+		pantsTextureID,
+		ChooseAttributesUiView::getPantsOffset(game),
+		pantsTextureDims,
+		PivotType::TopLeft);
+	this->addDrawCall(
+		headTextureFunc,
+		headPositionFunc,
+		headSizeFunc,
+		headPivotFunc,
+		UiDrawCall::defaultActiveFunc);
+	this->addDrawCall(
+		shirtTextureID,
+		ChooseAttributesUiView::getShirtOffset(game),
+		shirtTextureDims,
+		PivotType::TopLeft);
+	this->addDrawCall(
+		statsBgTextureID,
+		Int2::Zero,
+		statsBgTextureDims,
+		PivotType::TopLeft);
+
+	const Rect &nameTextBoxRect = this->nameTextBox.getRect();
+	this->addDrawCall(
+		this->nameTextBox.getTextureID(),
+		nameTextBoxRect.getTopLeft(),
+		Int2(nameTextBoxRect.getWidth(), nameTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect &raceTextBoxRect = this->raceTextBox.getRect();
+	this->addDrawCall(
+		this->raceTextBox.getTextureID(),
+		raceTextBoxRect.getTopLeft(),
+		Int2(raceTextBoxRect.getWidth(), raceTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect &classTextBoxRect = this->classTextBox.getRect();
+	this->addDrawCall(
+		this->classTextBox.getTextureID(),
+		classTextBoxRect.getTopLeft(),
+		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const UiTextureID cursorTextureID = ChooseAttributesUiView::allocCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
 
 	// Push the initial text pop-up onto the sub-panel stack.
 	const std::string initialPopUpText = ChooseAttributesUiModel::getInitialText(game);
@@ -114,63 +216,4 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiView::InitialTextureCenterPoint);
 
 	return true;
-}
-
-std::optional<CursorData> ChooseAttributesPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
-
-void ChooseAttributesPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	const TextureAssetReference charSheetPaletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
-	const std::optional<PaletteID> charSheetPaletteID = textureManager.tryGetPaletteID(charSheetPaletteTextureAssetRef);
-	if (!charSheetPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get character sheet palette ID \"" + charSheetPaletteTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const TextureAssetReference headTextureAssetRef = ChooseAttributesUiView::getHeadTextureAssetRef(game);
-	const TextureAssetReference bodyTextureAssetRef = ChooseAttributesUiView::getBodyTextureAssetRef(game);
-	const TextureAssetReference shirtTextureAssetRef = ChooseAttributesUiView::getShirtTextureAssetRef(game);
-	const TextureAssetReference pantsTextureAssetRef = ChooseAttributesUiView::getPantsTextureAssetRef(game);
-	const TextureAssetReference statsBackgroundTextureAssetRef = CharacterSheetUiView::getStatsBackgroundTextureAssetRef();
-	const std::optional<TextureBuilderID> headTextureBuilderID = textureManager.tryGetTextureBuilderID(headTextureAssetRef);
-	const std::optional<TextureBuilderID> bodyTextureBuilderID = textureManager.tryGetTextureBuilderID(bodyTextureAssetRef);
-	const std::optional<TextureBuilderID> shirtTextureBuilderID = textureManager.tryGetTextureBuilderID(shirtTextureAssetRef);
-	const std::optional<TextureBuilderID> pantsTextureBuilderID = textureManager.tryGetTextureBuilderID(pantsTextureAssetRef);
-	const std::optional<TextureBuilderID> statsBackgroundTextureID = textureManager.tryGetTextureBuilderID(statsBackgroundTextureAssetRef);
-	DebugAssert(headTextureBuilderID.has_value());
-	DebugAssert(bodyTextureBuilderID.has_value());
-	DebugAssert(shirtTextureBuilderID.has_value());
-	DebugAssert(pantsTextureBuilderID.has_value());
-	DebugAssert(statsBackgroundTextureID.has_value());
-
-	const int bodyOffsetX = ChooseAttributesUiView::getBodyOffsetX(game);
-	const Int2 headOffset = ChooseAttributesUiView::getHeadOffset(game);
-	const Int2 shirtOffset = ChooseAttributesUiView::getShirtOffset(game);
-	const Int2 pantsOffset = ChooseAttributesUiView::getPantsOffset(game);
-
-	// Draw the current portrait and clothes.
-	renderer.drawOriginal(*bodyTextureBuilderID, *charSheetPaletteID, bodyOffsetX, 0, textureManager);
-	renderer.drawOriginal(*pantsTextureBuilderID, *charSheetPaletteID, pantsOffset.x, pantsOffset.y, textureManager);
-	renderer.drawOriginal(*headTextureBuilderID, *charSheetPaletteID, headOffset.x, headOffset.y, textureManager);
-	renderer.drawOriginal(*shirtTextureBuilderID, *charSheetPaletteID, shirtOffset.x, shirtOffset.y, textureManager);
-
-	// Draw attributes texture.
-	renderer.drawOriginal(*statsBackgroundTextureID, *charSheetPaletteID, textureManager);
-
-	// Draw text boxes: player name, race, class.
-	const Rect &nameTextBoxRect = this->nameTextBox.getRect();
-	const Rect &raceTextBoxRect = this->raceTextBox.getRect();
-	const Rect &classTextBoxRect = this->classTextBox.getRect();
-	renderer.drawOriginal(this->nameTextBox.getTextureID(), nameTextBoxRect.getLeft(), nameTextBoxRect.getTop());
-	renderer.drawOriginal(this->raceTextBox.getTextureID(), raceTextBoxRect.getLeft(), raceTextBoxRect.getTop());
-	renderer.drawOriginal(this->classTextBox.getTextureID(), classTextBoxRect.getLeft(), classTextBoxRect.getTop());
 }
