@@ -75,6 +75,8 @@ namespace CharacterSheetUiView
 	Int2 getShirtOffset(Game &game);
 	Int2 getPantsOffset(Game &game);
 
+	Int2 getNextPageOffset();
+
 	TextureAssetReference getPaletteTextureAssetRef();
 	TextureAssetReference getStatsBackgroundTextureAssetRef();
 	TextureAssetReference getEquipmentBackgroundTextureAssetRef();
@@ -90,7 +92,9 @@ namespace CharacterSheetUiView
 	UiTextureID allocShirtTexture(Game &game);
 	UiTextureID allocPantsTexture(Game &game);
 	UiTextureID allocHeadTexture(Game &game);
+	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocNextPageTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }
 

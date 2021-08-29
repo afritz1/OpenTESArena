@@ -101,6 +101,11 @@ Int2 CharacterSheetUiView::getPantsOffset(Game &game)
 	return PortraitFile::getPantsOffset(isMale);
 }
 
+Int2 CharacterSheetUiView::getNextPageOffset()
+{
+	return Int2(108, 179);
+}
+
 TextureAssetReference CharacterSheetUiView::getPaletteTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaPaletteName::CharSheet));
@@ -266,6 +271,25 @@ UiTextureID CharacterSheetUiView::allocHeadTexture(Game &game)
 	return textureID;
 }
 
+UiTextureID CharacterSheetUiView::allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const PaletteID paletteID = CharacterSheetUiView::getPaletteID(textureManager);
+	const TextureAssetReference textureAssetRef = CharacterSheetUiView::getStatsBackgroundTextureAssetRef();
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for stats background.");
+	}
+
+	return textureID;
+}
+
 UiTextureID CharacterSheetUiView::allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const PaletteID paletteID = CharacterSheetUiView::getPaletteID(textureManager);
@@ -280,6 +304,25 @@ UiTextureID CharacterSheetUiView::allocEquipmentBgTexture(TextureManager &textur
 	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for equipment background.");
+	}
+
+	return textureID;
+}
+
+UiTextureID CharacterSheetUiView::allocNextPageTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const PaletteID paletteID = CharacterSheetUiView::getPaletteID(textureManager);
+	const TextureAssetReference textureAssetRef = CharacterSheetUiView::getNextPageButtonTextureAssetRef();
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for next page button.");
 	}
 
 	return textureID;
