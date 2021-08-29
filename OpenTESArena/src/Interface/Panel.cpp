@@ -195,6 +195,18 @@ void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDraw
 	this->drawCalls.emplace_back(textureFunc, positionFunc, sizeFunc, pivotFunc, activeFunc, clipRect);
 }
 
+void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Int2 &position, const Int2 &size,
+	PivotType pivotType, const std::optional<Rect> &clipRect)
+{
+	this->drawCalls.emplace_back(
+		textureFunc,
+		UiDrawCall::makePositionFunc(position),
+		UiDrawCall::makeSizeFunc(size),
+		UiDrawCall::makePivotFunc(pivotType),
+		UiDrawCall::defaultActiveFunc,
+		clipRect);
+}
+
 void Panel::addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
 	const std::optional<Rect> &clipRect)
 {

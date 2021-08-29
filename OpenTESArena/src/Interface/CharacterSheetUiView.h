@@ -5,7 +5,9 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -68,7 +70,7 @@ namespace CharacterSheetUiView
 	constexpr int ScrollUpButtonWidth = 9;
 	constexpr int ScrollUpButtonHeight = 9;
 
-	int getBodyOffsetX(Game &game);
+	Int2 getBodyOffset(Game &game);
 	Int2 getHeadOffset(Game &game);
 	Int2 getShirtOffset(Game &game);
 	Int2 getPantsOffset(Game &game);
@@ -81,6 +83,15 @@ namespace CharacterSheetUiView
 	TextureAssetReference getHeadTextureAssetRef(Game &game);
 	TextureAssetReference getShirtTextureAssetRef(Game &game);
 	TextureAssetReference getPantsTextureAssetRef(Game &game);
+
+	PaletteID getPaletteID(TextureManager &textureManager);
+
+	UiTextureID allocBodyTexture(Game &game);
+	UiTextureID allocShirtTexture(Game &game);
+	UiTextureID allocPantsTexture(Game &game);
+	UiTextureID allocHeadTexture(Game &game);
+	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

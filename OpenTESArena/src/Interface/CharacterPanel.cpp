@@ -122,13 +122,13 @@ void CharacterPanel::render(Renderer &renderer)
 	DebugAssert(statsBackgroundTextureID.has_value());
 	DebugAssert(nextPageTextureID.has_value());
 
-	const int bodyOffsetX = CharacterSheetUiView::getBodyOffsetX(game);
+	const Int2 bodyOffset = CharacterSheetUiView::getBodyOffset(game);
 	const Int2 headOffset = CharacterSheetUiView::getHeadOffset(game);
 	const Int2 shirtOffset = CharacterSheetUiView::getShirtOffset(game);
 	const Int2 pantsOffset = CharacterSheetUiView::getPantsOffset(game);
 
 	// Draw the current portrait and clothes.
-	renderer.drawOriginal(*bodyTextureBuilderID, *charSheetPaletteID, bodyOffsetX, 0, textureManager);
+	renderer.drawOriginal(*bodyTextureBuilderID, *charSheetPaletteID, bodyOffset.x, bodyOffset.y, textureManager);
 	renderer.drawOriginal(*pantsTextureBuilderID, *charSheetPaletteID, pantsOffset.x, pantsOffset.y, textureManager);
 	renderer.drawOriginal(*headTextureBuilderID, *charSheetPaletteID, headOffset.x, headOffset.y, textureManager);
 	renderer.drawOriginal(*shirtTextureBuilderID, *charSheetPaletteID, shirtOffset.x, shirtOffset.y, textureManager);
