@@ -8,6 +8,7 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
+#include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 
 MessageBoxSubPanel::BackgroundProperties::BackgroundProperties(TextureUtils::PatternType patternType,
@@ -74,8 +75,9 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		*backgroundProperties.heightOverride : (titleRect.getHeight() + backgroundProperties.extraTitleHeight);
 	this->titleBackgroundRect = Rect(titleRect.getCenter(), titleBackgroundWidth, titleBackgroundHeight);
 
-	this->titleBackgroundTexture = TextureUtils::generate(backgroundProperties.patternType,
+	const Surface titleBackgroundSurface = TextureUtils::generate(backgroundProperties.patternType,
 		this->titleBackgroundRect.getWidth(), this->titleBackgroundRect.getHeight(), textureManager, renderer);
+	this->titleBackgroundTexture = renderer.createTextureFromSurface(titleBackgroundSurface);
 	if (this->titleBackgroundTexture.get() == nullptr)
 	{
 		DebugLogError("Couldn't init message box title background texture.");
@@ -118,8 +120,9 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 			titleBackgroundRect.getWidth(),
 			backgroundProperties.itemTextureHeight);
 
-		Texture itemBackgroundTexture = TextureUtils::generate(backgroundProperties.patternType,
+		Surface itemBackgroundSurface = TextureUtils::generate(backgroundProperties.patternType,
 			itemBackgroundRect.getWidth(), itemBackgroundRect.getHeight(), textureManager, renderer);
+		Texture itemBackgroundTexture = renderer.createTextureFromSurface(itemBackgroundSurface);
 
 		Rect itemTextBoxRect(
 			itemBackgroundRect.getCenter(),

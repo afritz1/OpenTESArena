@@ -8,6 +8,7 @@
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../World/MapType.h"
 #include "../WorldMap/LocationUtils.h"
@@ -393,10 +394,11 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 	}
 
 	const Rect &testButtonRect = MainMenuUiView::TestButtonRect;
-	const Texture testButton = TextureUtils::generate(MainMenuUiView::TestButtonPatternType,
+	const Surface testButtonSurface = TextureUtils::generate(MainMenuUiView::TestButtonPatternType,
 		testButtonRect.getWidth(), testButtonRect.getHeight(), textureManager, renderer);
-	renderer.drawOriginal(testButton, testButtonRect.getLeft(), testButtonRect.getTop(),
-		testButton.getWidth(), testButton.getHeight());
+	const Texture textButtonTexture = renderer.createTextureFromSurface(testButtonSurface);
+	renderer.drawOriginal(textButtonTexture, testButtonRect.getLeft(), testButtonRect.getTop(),
+		textButtonTexture.getWidth(), textButtonTexture.getHeight());
 
 	const std::string &testFontName = MainMenuUiView::TestButtonFontName;
 	const Color testTextColor = MainMenuUiView::getTestButtonTextColor();

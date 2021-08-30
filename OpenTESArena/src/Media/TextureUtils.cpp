@@ -67,7 +67,7 @@ Texture TextureUtils::makeTextureFrom8Bit(int width, int height, const uint8_t *
 	return texture;
 }
 
-Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
+Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
 	Renderer &renderer)
 {
 	// Initialize the scratch surface to transparent.
@@ -284,8 +284,7 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 		DebugCrash("Unrecognized pattern type.");
 	}
 
-	Texture texture = renderer.createTextureFromSurface(surface);
-	return texture;
+	return surface;
 }
 
 Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)

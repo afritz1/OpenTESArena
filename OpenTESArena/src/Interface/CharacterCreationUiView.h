@@ -55,12 +55,16 @@ namespace ChooseClassCreationUiView
 	constexpr int SelectButtonWidth = 175;
 	constexpr int SelectButtonHeight = 35;
 
-	int getTitleTextureX(int textureWidth);
-	int getTitleTextureY(int textureHeight);
+	Int2 getTitleTextureCenter();
+	Int2 getGenerateTextureCenter();
+	Int2 getSelectTextureCenter();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getGenerateTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getSelectTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
+	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseClassUiView

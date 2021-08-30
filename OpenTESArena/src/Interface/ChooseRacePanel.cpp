@@ -9,6 +9,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
+#include "../UI/Surface.h"
 
 ChooseRacePanel::ChooseRacePanel(Game &game)
 	: Panel(game) { }
@@ -43,12 +44,14 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		ChooseRaceUiView::InitialPopUpLineSpacing,
 		fontLibrary);
 
-	Texture texture = TextureUtils::generate(
+	auto &renderer = game.getRenderer();
+	Surface surface = TextureUtils::generate(
 		ChooseRaceUiView::InitialPopUpPatternType,
 		ChooseRaceUiView::InitialPopUpTextureWidth,
 		ChooseRaceUiView::InitialPopUpTextureHeight,
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
 	if (!subPanel->init(textBoxInitInfo, text, ChooseRaceUiController::onInitialPopUpButtonSelected,

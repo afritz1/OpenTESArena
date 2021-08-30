@@ -70,7 +70,7 @@ namespace TextureUtils
 		Renderer &renderer);
 
 	// Generates a new texture from a pattern.
-	Texture generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
+	Surface generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
 		Renderer &renderer);
 
 	// Generates a tooltip texture with pre-defined font/color/background.

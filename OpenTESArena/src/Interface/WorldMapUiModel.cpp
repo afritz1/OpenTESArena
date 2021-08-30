@@ -8,6 +8,7 @@
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../Math/Random.h"
+#include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
@@ -322,12 +323,14 @@ std::unique_ptr<Panel> WorldMapUiModel::makeCityArrivalPopUp(Game &game, int tar
 		WorldMapUiView::CityArrivalLineSpacing,
 		game.getFontLibrary());
 
-	Texture texture = TextureUtils::generate(
+	auto &renderer = game.getRenderer();
+	const Surface surface = TextureUtils::generate(
 		WorldMapUiView::CityArrivalTexturePatternType,
 		WorldMapUiView::getCityArrivalPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
 		WorldMapUiView::getCityArrivalPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
 	if (!subPanel->init(textBoxInitInfo, text, WorldMapUiController::onFastTravelCityArrivalPopUpSelected,

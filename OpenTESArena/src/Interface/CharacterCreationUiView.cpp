@@ -8,20 +8,28 @@
 #include "../Media/PortraitFile.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/Surface.h"
 
 TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::CharacterCreation));
 }
 
-int ChooseClassCreationUiView::getTitleTextureX(int textureWidth)
+Int2 ChooseClassCreationUiView::getTitleTextureCenter()
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
+	return Int2(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 1 - 20);
 }
 
-int ChooseClassCreationUiView::getTitleTextureY(int textureHeight)
+Int2 ChooseClassCreationUiView::getGenerateTextureCenter()
 {
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) + 1;
+	return ChooseClassCreationUiView::getTitleTextureCenter() + Int2(0, 40);
+}
+
+Int2 ChooseClassCreationUiView::getSelectTextureCenter()
+{
+	return ChooseClassCreationUiView::getGenerateTextureCenter() + Int2(0, 40);
 }
 
 TextBox::InitInfo ChooseClassCreationUiView::getTitleTextBoxInitInfo(const std::string_view &text,
@@ -60,6 +68,51 @@ TextBox::InitInfo ChooseClassCreationUiView::getSelectTextBoxInitInfo(const std:
 		ChooseClassCreationUiView::SelectTextColor,
 		ChooseClassCreationUiView::SelectTextAlignment,
 		fontLibrary);
+}
+
+UiTextureID ChooseClassCreationUiView::allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(textureAssetRef);
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get palette ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for background texture.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseClassCreationUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(
+		ChooseClassCreationUiView::PopUpPatternType,
+		ChooseClassCreationUiView::PopUpTextureWidth,
+		ChooseClassCreationUiView::PopUpTextureHeight,
+		textureManager,
+		renderer);
+
+	const BufferView2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
+		surface.getWidth(), surface.getHeight());
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(texelsView, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for parchment.");
+	}
+
+	return textureID;
 }
 
 Rect ChooseClassUiView::getListRect(Game &game)
@@ -697,9 +750,4 @@ UiTextureID ChooseAttributesUiView::allocHeadTexture(const TextureAssetReference
 UiTextureID ChooseAttributesUiView::allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	return CharacterSheetUiView::allocStatsBgTexture(textureManager, renderer);
-}
-
-UiTextureID ChooseAttributesUiView::allocCursorTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	return CharacterSheetUiView::allocCursorTexture(textureManager, renderer);
 }

@@ -38,12 +38,13 @@ bool ChooseNamePanel::init()
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 
-	this->parchment = TextureUtils::generate(
+	Surface parchmentSurface = TextureUtils::generate(
 		ChooseNameUiView::TexturePatternType,
 		ChooseNameUiView::TextureWidth,
 		ChooseNameUiView::TextureHeight,
 		game.getTextureManager(),
 		renderer);
+	this->parchment = renderer.createTextureFromSurface(parchmentSurface);
 
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = ChooseNameUiModel::getTitleText(game);

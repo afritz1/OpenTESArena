@@ -6,6 +6,7 @@
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../WorldMap/LocationUtils.h"
@@ -77,12 +78,13 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 		lineSpacing,
 		fontLibrary);
 
-	Texture texture = TextureUtils::generate(
+	const Surface surface = TextureUtils::generate(
 		ProvinceMapUiView::TextPopUpTexturePatternType,
 		ProvinceMapUiView::getTextPopUpTextureWidth(textBoxTextureGenInfo.width),
 		ProvinceMapUiView::getTextPopUpTextureHeight(textBoxTextureGenInfo.height),
 		game.getTextureManager(),
 		renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
 	if (!subPanel->init(textBoxInitInfo, text, ProvinceMapUiController::onTextPopUpSelected,

@@ -5,6 +5,7 @@
 #include "../Game/Game.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
+#include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
@@ -31,9 +32,11 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 		game.popSubPanel();
 	};
 
-	Texture texture = TextureUtils::generate(TextureUtils::PatternType::Dark,
+	auto &renderer = game.getRenderer();
+	Surface surface = TextureUtils::generate(TextureUtils::PatternType::Dark,
 		textBoxInitInfo.rect.getWidth() + 10, textBoxInitInfo.rect.getHeight() + 10,
-		game.getTextureManager(), game.getRenderer());
+		game.getTextureManager(), renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, popUpFunction, std::move(texture), center);
 }

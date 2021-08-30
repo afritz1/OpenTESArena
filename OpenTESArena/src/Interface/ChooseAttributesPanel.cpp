@@ -1,8 +1,6 @@
 #include <algorithm>
 #include <array>
 
-#include "SDL.h"
-
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
@@ -14,6 +12,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
+#include "../UI/Surface.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game) { }
@@ -205,12 +204,13 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiView::InitialTextLineSpacing,
 		fontLibrary);
 
-	Texture initialTexture = TextureUtils::generate(
+	Surface surface = TextureUtils::generate(
 		ChooseAttributesUiView::InitialTextPatternType,
 		ChooseAttributesUiView::getInitialTextureWidth(),
 		ChooseAttributesUiView::getInitialTextureHeight(),
 		game.getTextureManager(),
 		renderer);
+	Texture initialTexture = renderer.createTextureFromSurface(surface);
 
 	game.pushSubPanel<TextSubPanel>(initialPopUpTextBoxInitInfo, initialPopUpText,
 		ChooseAttributesUiController::onInitialPopUpSelected, std::move(initialTexture),

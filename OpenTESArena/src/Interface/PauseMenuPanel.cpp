@@ -11,6 +11,7 @@
 #include "../Input/InputActionName.h"
 #include "../Media/PortraitFile.h"
 #include "../UI/CursorData.h"
+#include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
@@ -147,12 +148,13 @@ bool PauseMenuPanel::init()
 	});
 
 	// Cover up the detail slider with a new options background.
-	this->optionsButtonTexture = TextureUtils::generate(
+	const Surface optionsButtonSurface = TextureUtils::generate(
 		PauseMenuUiView::OptionsButtonPatternType,
 		this->optionsButton.getWidth(),
 		this->optionsButton.getHeight(),
 		game.getTextureManager(),
 		renderer);
+	this->optionsButtonTexture = renderer.createTextureFromSurface(optionsButtonSurface);
 
 	return true;
 }

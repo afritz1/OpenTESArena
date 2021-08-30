@@ -86,6 +86,7 @@ bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texel
 {
 	TexelsInitFunc initFunc = [&texels](uint32_t *dstTexels)
 	{
+		DebugAssert(!texels.isSlice());
 		std::copy(texels.get(), texels.end(), dstTexels);
 	};
 

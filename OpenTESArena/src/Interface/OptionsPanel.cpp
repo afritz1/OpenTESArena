@@ -22,6 +22,7 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/Texture.h"
 
@@ -362,12 +363,13 @@ void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
 {
 	auto &textureManager = this->getGame().getTextureManager();
 	const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
-	Texture tabBackground = TextureUtils::generate(
+	Surface tabBackgroundSurface = TextureUtils::generate(
 		OptionsUiView::TabBackgroundPatternType,
 		graphicsTabRect.getWidth(),
 		graphicsTabRect.getHeight(),
 		textureManager,
 		renderer);
+	Texture tabBackground = renderer.createTextureFromSurface(tabBackgroundSurface);
 
 	// @todo: this loop condition should be driven by actual tab count
 	for (int i = 0; i < 5; i++)
@@ -377,12 +379,13 @@ void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
 		renderer.drawOriginal(tabBackground, tabX, tabY);
 	}
 
-	Texture returnBackground = TextureUtils::generate(
+	Surface returnBackgroundSurface = TextureUtils::generate(
 		OptionsUiView::TabBackgroundPatternType,
 		this->backToPauseMenuButton.getWidth(),
 		this->backToPauseMenuButton.getHeight(),
 		textureManager,
 		renderer);
+	Texture returnBackground = renderer.createTextureFromSurface(returnBackgroundSurface);
 
 	renderer.drawOriginal(returnBackground, this->backToPauseMenuButton.getX(), this->backToPauseMenuButton.getY());
 }

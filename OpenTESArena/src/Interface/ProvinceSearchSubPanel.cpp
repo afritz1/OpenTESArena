@@ -18,6 +18,7 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
+#include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextEntry.h"
 
@@ -34,12 +35,13 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
-	this->parchment = TextureUtils::generate(
+	const Surface parchmentSurface = TextureUtils::generate(
 		ProvinceSearchUiView::TexturePattern,
 		ProvinceSearchUiView::TextureWidth,
 		ProvinceSearchUiView::TextureHeight,
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
+	this->parchment = renderer.createTextureFromSurface(parchmentSurface);
 
 	const std::string textTitleText = ProvinceSearchUiModel::getTitleText(game);
 	const TextBox::InitInfo textTitleTextBoxInitInfo =

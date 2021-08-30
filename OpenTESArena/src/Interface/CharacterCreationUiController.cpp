@@ -21,6 +21,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
 #include "../World/SkyUtils.h"
@@ -255,8 +256,11 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFirstTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
-	Texture texture = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedFirstTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
+
+	auto &renderer = game.getRenderer();
+	Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedFirstTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected,
@@ -289,8 +293,11 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedSecondTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
-	Texture texture = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedSecondTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
+
+	auto &renderer = game.getRenderer();
+	Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedSecondTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected,
@@ -314,8 +321,11 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedThirdTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
-	Texture texture = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedThirdTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
+
+	auto &renderer = game.getRenderer();
+	Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedThirdTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected,
@@ -339,12 +349,15 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
-	Texture texture = TextureUtils::generate(
+
+	auto &renderer = game.getRenderer();
+	Surface surface = TextureUtils::generate(
 		ChooseRaceUiView::ProvinceConfirmedFourthTextPatternType,
 		textureRect.getWidth(),
 		textureRect.getHeight(),
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		ChooseRaceUiController::onProvinceConfirmedFourthButtonSelected,
@@ -606,12 +619,14 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 		ChooseAttributesUiView::AppearanceTextLineSpacing,
 		game.getFontLibrary());
 
-	Texture texture = TextureUtils::generate(
+	auto &renderer = game.getRenderer();
+	Surface surface = TextureUtils::generate(
 		ChooseAttributesUiView::AppearanceTextPatternType,
 		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
 		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
+	Texture texture = renderer.createTextureFromSurface(surface);
 
 	// The done button is replaced after the player confirms their stats, and it then leads to the main quest
 	// opening cinematic.
