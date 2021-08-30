@@ -197,6 +197,63 @@ TextBox::InitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_v
 		fontLibrary);
 }
 
+TextBox::InitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	std::string dummyText;
+	for (int i = 0; i < 10; i++)
+	{
+		if (i > 0)
+		{
+			dummyText += '\n';
+		}
+
+		dummyText += std::string(52, TextRenderUtils::LARGEST_CHAR);
+	}
+
+	TextRenderUtils::TextShadowInfo shadowInfo;
+	shadowInfo.init(1, 0, Color::Black);
+
+	return TextBox::InitInfo::makeWithCenter(
+		dummyText,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT - 32),
+		ArenaFontName::D,
+		Color::White,
+		TextAlignment::TopCenter,
+		shadowInfo,
+		0,
+		fontLibrary);
+}
+
+UiTextureID ChooseClassUiView::allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return ChooseClassCreationUiView::allocNightSkyTexture(textureManager, renderer);
+}
+
+UiTextureID ChooseClassUiView::allocPopUpTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference paletteTextureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
+	}
+
+	const TextureAssetReference textureAssetRef = ChooseClassUiView::getListBoxTextureAssetRef();
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get list pop-up texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for class pop-up.");
+	}
+
+	return textureID;
+}
+
 int ChooseGenderUiView::getTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);

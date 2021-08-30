@@ -20,8 +20,6 @@ class Rect;
 
 namespace CharacterCreationUiView
 {
-	constexpr int MaxTooltipLineLength = 14;
-
 	TextureAssetReference getNightSkyTextureAssetRef();
 }
 
@@ -69,6 +67,8 @@ namespace ChooseClassCreationUiView
 
 namespace ChooseClassUiView
 {
+	constexpr int MaxTooltipLineLength = 40;
+
 	constexpr int TitleX = 89;
 	constexpr int TitleY = 32;
 	const std::string TitleFontName = ArenaFontName::C;
@@ -87,6 +87,10 @@ namespace ChooseClassUiView
 	TextureAssetReference getListBoxTextureAssetRef();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
+	
+	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseGenderUiView

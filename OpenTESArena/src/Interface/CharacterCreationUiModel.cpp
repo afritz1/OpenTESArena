@@ -110,7 +110,7 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 				armorString.append(", ");
 
 				// If too long, add a new line.
-				if (lengthCounter > CharacterCreationUiView::MaxTooltipLineLength)
+				if (lengthCounter > ChooseClassUiView::MaxTooltipLineLength)
 				{
 					lengthCounter = 0;
 					armorString.append("\n   ");
@@ -159,7 +159,7 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 				shieldsString.append(", ");
 
 				// If too long, add a new line.
-				if (lengthCounter > CharacterCreationUiView::MaxTooltipLineLength)
+				if (lengthCounter > ChooseClassUiView::MaxTooltipLineLength)
 				{
 					lengthCounter = 0;
 					shieldsString.append("\n   ");
@@ -218,7 +218,7 @@ std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinit
 				weaponsString.append(", ");
 
 				// If too long, add a new line.
-				if (lengthCounter > CharacterCreationUiView::MaxTooltipLineLength)
+				if (lengthCounter > ChooseClassUiView::MaxTooltipLineLength)
 				{
 					lengthCounter = 0;
 					weaponsString.append("\n   ");
