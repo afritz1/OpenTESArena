@@ -4,6 +4,7 @@
 #include "CharacterSheetUiController.h"
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
+#include "CommonUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
@@ -150,9 +151,9 @@ bool CharacterPanel::init()
 		Int2(playerClassTextBoxRect.getWidth(), playerClassTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const UiTextureID cursorTextureID = CharacterSheetUiView::allocCursorTexture(textureManager, renderer);
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
 
 	return true;
 }

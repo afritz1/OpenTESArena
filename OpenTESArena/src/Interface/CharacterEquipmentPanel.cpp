@@ -2,6 +2,7 @@
 #include "CharacterSheetUiController.h"
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
+#include "CommonUiView.h"
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
 #include "../Game/Game.h"
@@ -213,9 +214,9 @@ bool CharacterEquipmentPanel::init()
 		Int2(inventoryListBoxRect.getWidth(), inventoryListBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const UiTextureID cursorTextureID = CharacterSheetUiView::allocCursorTexture(textureManager, renderer);
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
 
 	return true;
 }

@@ -95,7 +95,6 @@ namespace CharacterSheetUiView
 	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocNextPageTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

@@ -298,7 +298,6 @@ namespace ChooseAttributesUiView
 	UiTextureID allocHeadTexture(const TextureAssetReference &textureAssetRef,
 		TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

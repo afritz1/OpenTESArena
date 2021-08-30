@@ -9,6 +9,7 @@
 #include "CharacterSheetUiController.h"
 #include "CharacterSheetUiView.h"
 #include "ChooseAttributesPanel.h"
+#include "CommonUiView.h"
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
@@ -188,9 +189,9 @@ bool ChooseAttributesPanel::init()
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const UiTextureID cursorTextureID = ChooseAttributesUiView::allocCursorTexture(textureManager, renderer);
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
 
 	// Push the initial text pop-up onto the sub-panel stack.
 	const std::string initialPopUpText = ChooseAttributesUiModel::getInitialText(game);
