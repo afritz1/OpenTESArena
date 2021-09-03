@@ -184,7 +184,7 @@ bool ChooseClassPanel::init()
 	});
 
 	auto &textureManager = game.getTextureManager();
-	const UiTextureID nightSkyTextureID = ChooseClassUiView::allocNightSkyTexture(textureManager, renderer);
+	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID popUpTextureID = ChooseClassUiView::allocPopUpTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
 	this->popUpTextureRef.init(popUpTextureID, renderer);

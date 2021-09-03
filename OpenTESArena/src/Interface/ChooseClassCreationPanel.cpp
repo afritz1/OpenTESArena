@@ -80,7 +80,7 @@ bool ChooseClassCreationPanel::init()
 	this->addInputActionListener(InputActionName::Back, ChooseClassCreationUiController::onBackToMainMenuInputAction);
 
 	auto &textureManager = game.getTextureManager();
-	const UiTextureID nightSkyTextureID = ChooseClassCreationUiView::allocNightSkyTexture(textureManager, renderer);
+	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID parchmentTextureID = ChooseClassCreationUiView::allocParchmentTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);

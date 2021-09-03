@@ -21,6 +21,8 @@ class Rect;
 namespace CharacterCreationUiView
 {
 	TextureAssetReference getNightSkyTextureAssetRef();
+
+	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseClassCreationUiView
@@ -61,7 +63,6 @@ namespace ChooseClassCreationUiView
 	TextBox::InitInfo getGenerateTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getSelectTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
@@ -89,7 +90,6 @@ namespace ChooseClassUiView
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
 	
-	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
@@ -122,12 +122,15 @@ namespace ChooseGenderUiView
 	constexpr int FemaleButtonWidth = 175;
 	constexpr int FemaleButtonHeight = 35;
 
-	int getTitleTextureX(int textureWidth);
-	int getTitleTextureY(int textureHeight);
+	Int2 getTitleTextureCenter();
+	Int2 getMaleTextureCenter();
+	Int2 getFemaleTextureCenter();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getMaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getFemaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
+	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseNameUiView
