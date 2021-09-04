@@ -31,8 +31,7 @@ namespace WorldMapUiView
 
 	constexpr double FastTravelAnimationSecondsPerFrame = 1.0 / 24.0;
 
-	int getFastTravelAnimationTextureX(int textureWidth);
-	int getFastTravelAnimationTextureY(int textureHeight);
+	Int2 getFastTravelAnimationTextureCenter();
 	std::string getFastTravelAnimationFilename();
 	TextureAssetReference getFastTravelPaletteTextureAssetRef();
 

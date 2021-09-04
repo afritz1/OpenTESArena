@@ -19,14 +19,9 @@ std::string WorldMapUiView::getProvinceNamesFilename()
 	return ArenaTextureName::ProvinceNames;
 }
 
-int WorldMapUiView::getFastTravelAnimationTextureX(int textureWidth)
+Int2 WorldMapUiView::getFastTravelAnimationTextureCenter()
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
-}
-
-int WorldMapUiView::getFastTravelAnimationTextureY(int textureHeight)
-{
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
 }
 
 std::string WorldMapUiView::getFastTravelAnimationFilename()

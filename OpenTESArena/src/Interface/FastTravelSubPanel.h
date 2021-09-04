@@ -2,29 +2,25 @@
 #define FAST_TRAVEL_SUB_PANEL_H
 
 #include "Panel.h"
-#include "ProvinceMapPanel.h"
-#include "../Media/TextureUtils.h"
 
-// This sub-panel is the glue between the province map's travel button and the game world.
+#include "components/utilities/Buffer.h"
 
-class Random;
-class Renderer;
-class Texture;
+// The glue between the province map's travel button and the game world.
 
 class FastTravelSubPanel : public Panel
 {
 private:
+	Buffer<ScopedUiTextureRef> animTextureRefs;
+	ScopedUiTextureRef cursorTextureRef;
 	double currentSeconds, totalSeconds, targetSeconds;
-	size_t frameIndex;
+	int frameIndex;
 public:
 	FastTravelSubPanel(Game &game);
 	~FastTravelSubPanel() override = default;
 
 	bool init();
 
-	virtual std::optional<CursorData> getCurrentCursor() const override;
 	virtual void tick(double dt) override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif

@@ -7,6 +7,7 @@
 
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
+#include "ProvinceMapPanel.h"
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiView.h"
 #include "WorldMapPanel.h"
