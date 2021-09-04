@@ -12,17 +12,14 @@ class Renderer;
 class ChooseNamePanel : public Panel
 {
 private:
-	Texture parchment;
 	TextBox titleTextBox, entryTextBox;
 	std::string name;
+	ScopedUiTextureRef nightSkyTextureRef, parchmentTextureRef, cursorTextureRef;
 public:
 	ChooseNamePanel(Game &game);
 	~ChooseNamePanel() override = default;
 
 	bool init();
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif

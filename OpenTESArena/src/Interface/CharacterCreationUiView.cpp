@@ -316,14 +316,9 @@ UiTextureID ChooseGenderUiView::allocParchmentTexture(TextureManager &textureMan
 	return textureID;
 }
 
-int ChooseNameUiView::getTitleTextureX(int textureWidth)
+Int2 ChooseNameUiView::getTitleTextureCenter()
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
-}
-
-int ChooseNameUiView::getTitleTextureY(int textureHeight)
-{
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
 }
 
 TextBox::InitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_view &text,
@@ -351,6 +346,22 @@ TextBox::InitInfo ChooseNameUiView::getEntryTextBoxInitInfo(const FontLibrary &f
 		ChooseNameUiView::EntryColor,
 		ChooseNameUiView::EntryAlignment,
 		fontLibrary);
+}
+
+UiTextureID ChooseNameUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(ChooseNameUiView::TexturePatternType,
+		ChooseNameUiView::TextureWidth, ChooseNameUiView::TextureHeight, textureManager, renderer);
+	const BufferView2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
+		surface.getWidth(), surface.getHeight());
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(texelsView, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for parchment.");
+	}
+
+	return textureID;
 }
 
 TextureAssetReference ChooseRaceUiView::getBackgroundTextureAssetRef()

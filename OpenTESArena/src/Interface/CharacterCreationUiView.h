@@ -151,11 +151,12 @@ namespace ChooseNameUiView
 	const Color EntryColor(48, 12, 12);
 	constexpr TextAlignment EntryAlignment = TextAlignment::TopLeft;
 
-	int getTitleTextureX(int textureWidth);
-	int getTitleTextureY(int textureHeight);
+	Int2 getTitleTextureCenter();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+
+	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseRaceUiView
