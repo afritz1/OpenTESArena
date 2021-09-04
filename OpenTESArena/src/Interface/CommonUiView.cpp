@@ -1,5 +1,3 @@
-#include <optional>
-
 #include "CommonUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
@@ -10,23 +8,11 @@
 
 UiTextureID CommonUiView::allocDefaultCursorTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const std::string &textureFilename = ArenaTextureName::SwordCursor;
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
+	const TextureAssetReference paletteTextureAssetRef = TextureAssetReference(std::string(ArenaPaletteName::Default));
+	const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(ArenaTextureName::SwordCursor));
 
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for default cursor.");
 	}

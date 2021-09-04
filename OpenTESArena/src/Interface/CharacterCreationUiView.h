@@ -307,8 +307,6 @@ namespace ChooseAttributesUiView
 	TextureAssetReference getShirtTextureAssetRef(Game &game);
 	TextureAssetReference getPantsTextureAssetRef(Game &game);
 
-	PaletteID getPaletteID(TextureManager &textureManager);
-
 	UiTextureID allocBodyTexture(Game &game);
 	UiTextureID allocShirtTexture(Game &game);
 	UiTextureID allocPantsTexture(Game &game);

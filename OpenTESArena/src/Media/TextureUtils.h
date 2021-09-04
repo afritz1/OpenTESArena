@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Palette.h"
+#include "../Rendering/RenderTextureUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -79,6 +80,10 @@ namespace TextureUtils
 	// Generates individual texture asset references from the given filename. This should be used for filenames
 	// that point to a set of textures.
 	Buffer<TextureAssetReference> makeTextureAssetRefs(const std::string &filename, TextureManager &textureManager);
+
+	// Convenience function for allocating a UI texture. The returned handle must be eventually freed.
+	bool tryAllocUiTexture(const TextureAssetReference &textureAssetRef, const TextureAssetReference &paletteTextureAssetRef,
+		TextureManager &textureManager, Renderer &renderer, UiTextureID *outID);
 }
 
 using PaletteIdGroup = TextureUtils::IdGroup<PaletteID>;

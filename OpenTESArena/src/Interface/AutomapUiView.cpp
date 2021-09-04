@@ -422,21 +422,10 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getBackgroundPaletteTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
-	}
-
 	const TextureAssetReference textureAssetRef = AutomapUiView::getBackgroundTextureAssetRef();
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
-
+	
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for automap background.");
 	}
@@ -446,22 +435,11 @@ UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Render
 
 UiTextureID AutomapUiView::allocCursorTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference cursorPaletteTextureAssetRef = AutomapUiView::getCursorPaletteTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(cursorPaletteTextureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + cursorPaletteTextureAssetRef.filename + "\".");
-	}
-
-	const TextureAssetReference cursorTextureAssetRef = AutomapUiView::getCursorTextureAssetRef();
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(cursorTextureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + cursorTextureAssetRef.filename + "\".");
-	}
+	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getCursorPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = AutomapUiView::getCursorTextureAssetRef();
 
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for automap cursor.");
 	}

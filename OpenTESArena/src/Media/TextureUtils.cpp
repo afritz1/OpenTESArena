@@ -347,3 +347,30 @@ Buffer<TextureAssetReference> TextureUtils::makeTextureAssetRefs(const std::stri
 
 	return textureAssetRefs;
 }
+
+bool TextureUtils::tryAllocUiTexture(const TextureAssetReference &textureAssetRef,
+	const TextureAssetReference &paletteTextureAssetRef, TextureManager &textureManager, Renderer &renderer,
+	UiTextureID *outID)
+{
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
+		return false;
+	}
+
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+		return false;
+	}
+
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, outID))
+	{
+		DebugLogError("Couldn't create UI texture for \"" + textureAssetRef.filename + "\".");
+		return false;
+	}
+
+	return true;
+}

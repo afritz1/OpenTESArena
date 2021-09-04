@@ -19,20 +19,9 @@ TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
 UiTextureID CharacterCreationUiView::allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAssetReference textureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(textureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + textureAssetRef.filename + "\".");
-	}
-
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
 
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, textureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for background texture.");
 	}
@@ -228,21 +217,10 @@ TextBox::InitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const Fo
 UiTextureID ChooseClassUiView::allocPopUpTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAssetReference paletteTextureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
-	}
-
 	const TextureAssetReference textureAssetRef = ChooseClassUiView::getListBoxTextureAssetRef();
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get list pop-up texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
 
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for class pop-up.");
 	}
@@ -572,20 +550,9 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
 UiTextureID ChooseRaceUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAssetReference textureAssetRef = ChooseRaceUiView::getBackgroundTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(textureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get race select palette ID for \"" + textureAssetRef.filename + "\".");
-	}
-
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get race select texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
 
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, textureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for race select background.");
 	}
@@ -596,21 +563,10 @@ UiTextureID ChooseRaceUiView::allocBackgroundTexture(TextureManager &textureMana
 UiTextureID ChooseRaceUiView::allocNoExitTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAssetReference paletteTextureAssetRef = ChooseRaceUiView::getBackgroundTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get exit cover palette ID for \"" + paletteTextureAssetRef.filename + "\".");
-	}
-
 	const TextureAssetReference textureAssetRef = ChooseRaceUiView::getNoExitTextureAssetRef();
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get exit cover texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
 
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for exit cover.");
 	}
@@ -804,26 +760,16 @@ TextureAssetReference ChooseAttributesUiView::getPantsTextureAssetRef(Game &game
 	return TextureAssetReference(std::move(pantsFilename));
 }
 
-PaletteID ChooseAttributesUiView::getPaletteID(TextureManager &textureManager)
-{
-	return CharacterSheetUiView::getPaletteID(textureManager);
-}
-
 UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
 {
 	auto &textureManager = game.getTextureManager();
-	const PaletteID paletteID = ChooseAttributesUiView::getPaletteID(textureManager);
-
-	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getBodyTextureAssetRef(game);
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
-
 	auto &renderer = game.getRenderer();
+
+	const TextureAssetReference paletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getBodyTextureAssetRef(game);
+
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for character body.");
 	}
@@ -834,18 +780,13 @@ UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
 UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
 {
 	auto &textureManager = game.getTextureManager();
-	const PaletteID paletteID = ChooseAttributesUiView::getPaletteID(textureManager);
-
-	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getShirtTextureAssetRef(game);
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
-
 	auto &renderer = game.getRenderer();
+
+	const TextureAssetReference paletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getShirtTextureAssetRef(game);
+
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for character shirt.");
 	}
@@ -856,18 +797,13 @@ UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
 UiTextureID ChooseAttributesUiView::allocPantsTexture(Game &game)
 {
 	auto &textureManager = game.getTextureManager();
-	const PaletteID paletteID = ChooseAttributesUiView::getPaletteID(textureManager);
-
-	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getPantsTextureAssetRef(game);
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
-
 	auto &renderer = game.getRenderer();
+
+	const TextureAssetReference paletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getPantsTextureAssetRef(game);
+
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for character pants.");
 	}
@@ -878,15 +814,10 @@ UiTextureID ChooseAttributesUiView::allocPantsTexture(Game &game)
 UiTextureID ChooseAttributesUiView::allocHeadTexture(const TextureAssetReference &textureAssetRef,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const PaletteID paletteID = ChooseAttributesUiView::getPaletteID(textureManager);
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-	}
+	const TextureAssetReference paletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
 
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, paletteID, textureManager, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for character head \"" + textureAssetRef.filename + "\".");
 	}
