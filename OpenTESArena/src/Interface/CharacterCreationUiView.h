@@ -235,10 +235,15 @@ namespace ChooseRaceUiView
 	Rect getProvinceConfirmedThirdTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedFourthTextureRect(int textWidth, int textHeight);
 
+	TextBox::InitInfo getInitialPopUpTextBoxInitInfo(const std::string_view &text, Game &game);
+
 	TextBox::InitInfo getProvinceConfirmedFirstTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getProvinceConfirmedSecondTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getProvinceConfirmedThirdTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getProvinceConfirmedFourthTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
+	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocNoExitTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseAttributesUiView

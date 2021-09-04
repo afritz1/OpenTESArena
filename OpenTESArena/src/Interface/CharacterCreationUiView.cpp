@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <optional>
 
+#include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "CharacterSheetUiView.h"
 #include "../Assets/ArenaTextureName.h"
@@ -499,6 +500,19 @@ Rect ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(int textWidth, int 
 		std::max(textHeight + 8, 40));
 }
 
+TextBox::InitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::string_view &text, Game &game)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		ChooseRaceUiView::InitialPopUpTextCenterPoint,
+		ChooseRaceUiView::InitialPopUpFontName,
+		ChooseRaceUiView::InitialPopUpColor,
+		ChooseRaceUiView::InitialPopUpAlignment,
+		std::nullopt,
+		ChooseRaceUiView::InitialPopUpLineSpacing,
+		game.getFontLibrary());
+}
+
 TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
 	const std::string_view &text, const FontLibrary &fontLibrary)
 {
@@ -553,6 +567,55 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
 		std::nullopt,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextLineSpacing,
 		fontLibrary);
+}
+
+UiTextureID ChooseRaceUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = ChooseRaceUiView::getBackgroundTextureAssetRef();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(textureAssetRef);
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get race select palette ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get race select texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for race select background.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseRaceUiView::allocNoExitTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference paletteTextureAssetRef = ChooseRaceUiView::getBackgroundTextureAssetRef();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get exit cover palette ID for \"" + paletteTextureAssetRef.filename + "\".");
+	}
+
+	const TextureAssetReference textureAssetRef = ChooseRaceUiView::getNoExitTextureAssetRef();
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get exit cover texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for exit cover.");
+	}
+
+	return textureID;
 }
 
 int ChooseAttributesUiView::getInitialTextureWidth()

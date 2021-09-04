@@ -1,14 +1,11 @@
-#include "SDL.h"
-
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "ChooseRacePanel.h"
+#include "CommonUiView.h"
 #include "TextSubPanel.h"
-#include "WorldMapUiModel.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../UI/CursorData.h"
 #include "../UI/Surface.h"
 
 ChooseRacePanel::ChooseRacePanel(Game &game)
@@ -21,6 +18,28 @@ bool ChooseRacePanel::init()
 	this->addInputActionListener(InputActionName::Back, ChooseRaceUiController::onBackToChooseGenderInputAction);
 	this->addMouseButtonChangedListener(ChooseRaceUiController::onMouseButtonChanged);
 
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	const UiTextureID backgroundTextureID = ChooseRaceUiView::allocBackgroundTexture(textureManager, renderer);
+	const UiTextureID noExitTextureID = ChooseRaceUiView::allocNoExitTexture(textureManager, renderer);
+	this->backgroundTextureRef.init(backgroundTextureID, renderer);
+	this->noExitTextureRef.init(noExitTextureID, renderer);
+
+	this->addDrawCall(
+		this->backgroundTextureRef.get(),
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
+	this->addDrawCall(
+		this->noExitTextureRef.get(),
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		Int2(this->noExitTextureRef.getWidth(), this->noExitTextureRef.getHeight()),
+		PivotType::BottomRight);
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
+
 	// Push the initial text sub-panel.
 	// @todo: allocate std::function for unravelling the map with "push initial parchment sub-panel" on finished,
 	// setting the std::function to empty at that time?
@@ -32,18 +51,10 @@ bool ChooseRacePanel::init()
 
 std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 {
-	const auto &fontLibrary = game.getFontLibrary();
 	const std::string text = ChooseRaceUiModel::getTitleText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::InitialPopUpTextCenterPoint,
-		ChooseRaceUiView::InitialPopUpFontName,
-		ChooseRaceUiView::InitialPopUpColor,
-		ChooseRaceUiView::InitialPopUpAlignment,
-		std::nullopt,
-		ChooseRaceUiView::InitialPopUpLineSpacing,
-		fontLibrary);
+	const TextBox::InitInfo textBoxInitInfo = ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(text, game);
 
+	// @todo: change to UiTextureID probably and put in ChooseRaceUiView once TextSubPanel gets revised.
 	auto &renderer = game.getRenderer();
 	Surface surface = TextureUtils::generate(
 		ChooseRaceUiView::InitialPopUpPatternType,
@@ -61,83 +72,4 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 	}
 
 	return subPanel;
-}
-
-std::optional<CursorData> ChooseRacePanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
-
-void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
-{
-	auto &game = this->getGame();
-	const Texture tooltip = TextureUtils::createTooltip(
-		ChooseRaceUiModel::getProvinceTooltipText(game, provinceID),
-		this->getGame().getFontLibrary(),
-		renderer);
-
-	const auto &inputManager = game.getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-	const int mouseX = originalPosition.x;
-	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
-		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
-		mouseY : (mouseY - tooltip.getHeight());
-
-	renderer.drawOriginal(tooltip, x, y);
-}
-
-void ChooseRacePanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw background map.
-	auto &textureManager = this->getGame().getTextureManager();
-	const TextureAssetReference backgroundTextureAssetRef = ChooseRaceUiView::getBackgroundTextureAssetRef();
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundTextureAssetRef);
-	if (!backgroundPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get race select palette ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
-	if (!backgroundTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get race select texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
-
-	// Cover up the "exit" text at the bottom right.
-	const TextureAssetReference noExitTextureAssetRef = ChooseRaceUiView::getNoExitTextureAssetRef();
-	const std::optional<TextureBuilderID> noExitTextureBuilderID = textureManager.tryGetTextureBuilderID(noExitTextureAssetRef);
-	if (!noExitTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get exit cover texture builder ID for \"" + noExitTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const TextureBuilder &noExitTextureBuilder = textureManager.getTextureBuilderHandle(*noExitTextureBuilderID);
-	const int exitCoverX = ChooseRaceUiView::getNoExitTextureX(noExitTextureBuilder.getWidth());
-	const int exitCoverY = ChooseRaceUiView::getNoExitTextureY(noExitTextureBuilder.getHeight());
-	renderer.drawOriginal(*noExitTextureBuilderID, *backgroundPaletteID, exitCoverX, exitCoverY, textureManager);
-}
-
-void ChooseRacePanel::renderSecondary(Renderer &renderer)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-
-	// Draw tooltip if the mouse is in a province.
-	const std::optional<int> provinceID = WorldMapUiModel::getMaskID(game, mousePosition, true, true);
-	if (provinceID.has_value())
-	{
-		this->drawProvinceTooltip(*provinceID, renderer);
-	}
 }
