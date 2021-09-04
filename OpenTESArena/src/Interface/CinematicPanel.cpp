@@ -35,17 +35,49 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 		}
 	});
 
-	this->paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
-	this->sequenceFilename = sequenceName;
+	auto &textureManager = game.getTextureManager();
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceName.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogError("Couldn't get texture file metadata for \"" + sequenceName + "\".");
+		return false;
+	}
+
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const TextureAssetReference paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
+
+	auto &renderer = game.getRenderer();
+	this->textureRefs.init(textureFileMetadata.getTextureCount());
+	for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
+	{
+		const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(sequenceName), i);
+
+		UiTextureID textureID;
+		if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+		{
+			DebugLogError("Couldn't create UI texture for sequence \"" + sequenceName + "\" frame " + std::to_string(i) + ".");
+			return false;
+		}
+
+		this->textureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
+	}
+
+	UiDrawCall::TextureFunc textureFunc = [this]()
+	{
+		const ScopedUiTextureRef &textureRef = this->textureRefs.get(this->imageIndex);
+		return textureRef.get();
+	};
+
+	this->addDrawCall(
+		textureFunc,
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
+	
 	this->secondsPerImage = secondsPerImage;
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
 	return true;
-}
-
-TextureAssetReference CinematicPanel::getCurrentSequenceTextureAssetRef()
-{
-	return TextureAssetReference(std::string(this->sequenceFilename), this->imageIndex);
 }
 
 void CinematicPanel::tick(double dt)
@@ -58,47 +90,11 @@ void CinematicPanel::tick(double dt)
 		this->imageIndex++;
 	}
 
-	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(this->sequenceFilename.c_str());
-	if (!metadataID.has_value())
-	{
-		DebugLogError("Couldn't get texture file metadata for \"" + this->sequenceFilename + "\".");
-		return;
-	}
-
 	// If at the end, then prepare for the next panel.
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-	const int textureCount = textureFileMetadata.getTextureCount();
+	const int textureCount = this->textureRefs.getCount();
 	if (this->imageIndex >= textureCount)
 	{
 		this->imageIndex = textureCount - 1;
-		this->skipButton.click(game);
+		this->skipButton.click(this->getGame());
 	}
-}
-
-void CinematicPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Get current frame of the cinematic and draw it.
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(this->paletteTextureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugLogError("Couldn't get palette ID for \"" + this->paletteTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const TextureAssetReference currentTextureAssetRef = this->getCurrentSequenceTextureAssetRef();
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(currentTextureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get texture builder ID for \"" + currentTextureAssetRef.filename + "\" index " +
-			std::to_string(*currentTextureAssetRef.index) + ".");
-		return;
-	}
-
-	renderer.drawOriginal(*textureBuilderID, *paletteID, textureManager);
 }

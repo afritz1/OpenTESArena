@@ -7,6 +7,8 @@
 #include "Panel.h"
 #include "../Assets/TextureAssetReference.h"
 
+#include "components/utilities/Buffer.h"
+
 // Designed for sets of images (i.e., videos) that play one after another and
 // eventually lead to another panel. Skipping is available, too.
 
@@ -19,12 +21,9 @@ public:
 	using OnFinishedFunction = std::function<void(Game&)>;
 private:
 	Button<Game&> skipButton;
-	TextureAssetReference paletteTextureAssetRef;
-	std::string sequenceFilename;
+	Buffer<ScopedUiTextureRef> textureRefs;
 	double secondsPerImage, currentSeconds;
 	int imageIndex;
-
-	TextureAssetReference getCurrentSequenceTextureAssetRef();
 public:
 	CinematicPanel(Game &game);
 	~CinematicPanel() override = default;
@@ -33,7 +32,6 @@ public:
 		const OnFinishedFunction &onFinished);
 
 	virtual void tick(double dt) override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif
