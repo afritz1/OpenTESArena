@@ -5,15 +5,14 @@ class Game;
 
 namespace WorldMapUiController
 {
-	// -- World map --
-
 	void onBackToGameButtonSelected(Game &game);
 	void onProvinceButtonSelected(Game &game, int provinceID);
+}
 
-	// -- Fast travel --
-
-	void onFastTravelAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays);
-	void onFastTravelCityArrivalPopUpSelected(Game &game);
+namespace FastTravelUiController
+{
+	void onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays);
+	void onCityArrivalPopUpSelected(Game &game);
 }
 
 #endif

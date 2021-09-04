@@ -20,16 +20,16 @@ bool FastTravelSubPanel::init()
 	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
 	DebugAssert(travelDataPtr != nullptr);
 	const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
-	this->targetSeconds = std::max(WorldMapUiModel::FastTravelAnimationMinSeconds,
-		static_cast<double>(travelData.travelDays) * WorldMapUiView::FastTravelAnimationSecondsPerFrame);
+	this->targetSeconds = std::max(FastTravelUiModel::AnimationMinSeconds,
+		static_cast<double>(travelData.travelDays) * FastTravelUiView::AnimationSecondsPerFrame);
 
 	this->frameIndex = 0;
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
-	const TextureAssetReference paletteTextureAssetRef = WorldMapUiView::getFastTravelPaletteTextureAssetRef();
-	const std::string animFilename = WorldMapUiView::getFastTravelAnimationFilename();
+	const TextureAssetReference paletteTextureAssetRef = FastTravelUiView::getPaletteTextureAssetRef();
+	const std::string animFilename = FastTravelUiView::getAnimationFilename();
 
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
 	if (!metadataID.has_value())
@@ -64,7 +64,7 @@ bool FastTravelSubPanel::init()
 
 	this->addDrawCall(
 		animTextureFunc,
-		WorldMapUiView::getFastTravelAnimationTextureCenter(),
+		FastTravelUiView::getAnimationTextureCenter(),
 		Int2(textureFileMetadata.getWidth(0), textureFileMetadata.getHeight(0)),
 		PivotType::Middle);
 
@@ -81,9 +81,9 @@ void FastTravelSubPanel::tick(double dt)
 
 	// Update horse animation.
 	this->currentSeconds += dt;
-	while (this->currentSeconds >= WorldMapUiView::FastTravelAnimationSecondsPerFrame)
+	while (this->currentSeconds >= FastTravelUiView::AnimationSecondsPerFrame)
 	{
-		this->currentSeconds -= WorldMapUiView::FastTravelAnimationSecondsPerFrame;
+		this->currentSeconds -= FastTravelUiView::AnimationSecondsPerFrame;
 		this->frameIndex++;
 
 		if (this->frameIndex == this->animTextureRefs.getCount())
@@ -101,7 +101,7 @@ void FastTravelSubPanel::tick(double dt)
 		DebugAssert(travelDataPtr != nullptr);
 		const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
 
-		WorldMapUiController::onFastTravelAnimationFinished(game, travelData.provinceID,
+		FastTravelUiController::onAnimationFinished(game, travelData.provinceID,
 			travelData.locationID, travelData.travelDays);
 	}
 }
