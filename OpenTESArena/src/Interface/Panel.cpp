@@ -256,7 +256,7 @@ void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType)
 		return pivotType;
 	};
 
-	constexpr std::optional<Rect> clipRect = std::nullopt;
+	const std::optional<Rect> clipRect = std::nullopt;
 	constexpr RenderSpace renderSpace = RenderSpace::Native;
 
 	this->drawCalls.emplace_back(
