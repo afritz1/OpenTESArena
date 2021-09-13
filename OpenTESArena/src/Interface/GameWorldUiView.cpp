@@ -7,6 +7,7 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
+#include "../Media/PortraitFile.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/Surface.h"
 
@@ -36,6 +37,15 @@ TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::strin
 		fontLibrary);
 }
 
+Rect GameWorldUiView::getStatusButtonRect()
+{
+	return Rect(
+		GameWorldUiView::StatusButtonX,
+		GameWorldUiView::StatusButtonY,
+		GameWorldUiView::StatusButtonWidth,
+		GameWorldUiView::StatusButtonHeight);
+}
+
 Int2 GameWorldUiView::getStatusPopUpTextCenterPoint(Game &game)
 {
 	return GameWorldUiView::getInterfaceCenter(game);
@@ -51,9 +61,9 @@ int GameWorldUiView::getStatusPopUpTextureHeight(int textHeight)
 	return textHeight + 12;
 }
 
-Int2 GameWorldUiView::getGameWorldInterfacePosition(int textureHeight)
+Int2 GameWorldUiView::getGameWorldInterfacePosition()
 {
-	return Int2(0, ArenaRenderUtils::SCREEN_HEIGHT - textureHeight);
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
 }
 
 Int2 GameWorldUiView::getNoMagicTexturePosition()
@@ -61,23 +71,22 @@ Int2 GameWorldUiView::getNoMagicTexturePosition()
 	return Int2(91, 177);
 }
 
-Int2 GameWorldUiView::getTriggerTextPosition(Game &game, int textWidth, int textHeight,
-	int gameWorldInterfaceTextureHeight)
+Int2 GameWorldUiView::getTriggerTextPosition(Game &game, int gameWorldInterfaceTextureHeight)
 {
 	const auto &options = game.getOptions();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
-	const int textX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textWidth / 2) - 1;
+	const int textX = ArenaRenderUtils::SCREEN_WIDTH / 2;
 
-	const int interfaceOffset = modernInterface ? (gameWorldInterfaceTextureHeight / 2) : gameWorldInterfaceTextureHeight;
-	const int textY = ArenaRenderUtils::SCREEN_HEIGHT - interfaceOffset - textHeight - 3;
+	const int interfaceOffsetY = modernInterface ? (gameWorldInterfaceTextureHeight / 2) : gameWorldInterfaceTextureHeight;
+	const int textY = ArenaRenderUtils::SCREEN_HEIGHT - interfaceOffsetY - 3;
 
 	return Int2(textX, textY);
 }
 
-Int2 GameWorldUiView::getActionTextPosition(int textWidth)
+Int2 GameWorldUiView::getActionTextPosition()
 {
-	const int textX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textWidth / 2);
+	const int textX = ArenaRenderUtils::SCREEN_WIDTH / 2;
 	const int textY = 20;
 	return Int2(textX, textY);
 }
@@ -85,7 +94,7 @@ Int2 GameWorldUiView::getActionTextPosition(int textWidth)
 Int2 GameWorldUiView::getEffectTextPosition()
 {
 	// @todo
-	return Int2();
+	return Int2::Zero;
 }
 
 double GameWorldUiView::getTriggerTextSeconds(const std::string_view &text)
@@ -163,19 +172,24 @@ Int2 GameWorldUiView::getTooltipPosition(Game &game, int textureHeight)
 {
 	DebugAssert(!game.getOptions().getGraphics_ModernInterface());
 
-	auto &textureManager = game.getTextureManager();
-	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
-		GameWorldUiView::getGameWorldInterfaceTextureBuilderID(textureManager);
-	const TextureBuilder &gameWorldInterfaceTextureBuilder =
-		textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureBuilderID);
-
 	// @todo: wouldn't need texture height if we could specify the anchor/pivot for the rect to be the bottom left
 	const int x = 0;
-	const int y = ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight() - textureHeight;
+	const int y = ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.getHeight() - textureHeight;
 	return Int2(x, y);
 }
 
-Rect GameWorldUiView::getCompassClipRect(Game &game, const VoxelDouble2 &playerDirection, int textureHeight)
+Rect GameWorldUiView::getCompassClipRect()
+{
+	constexpr int width = 32;
+	constexpr int height = 7;
+	return Rect(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (width / 2),
+		height,
+		width,
+		height);
+}
+
+Int2 GameWorldUiView::getCompassSliderPosition(Game &game, const VoxelDouble2 &playerDirection)
 {
 	const double angle = GameWorldUiModel::getCompassAngle(playerDirection);
 
@@ -183,34 +197,18 @@ Rect GameWorldUiView::getCompassClipRect(Game &game, const VoxelDouble2 &playerD
 	// N to NE, because N is drawn in two places, but the second place (offset == 256) has tick marks where "NE"
 	// should be.
 	const int xOffset = static_cast<int>(240.0 + std::round(256.0 * (angle / (2.0 * Constants::Pi)))) % 256;
-	return Rect(xOffset, 0, 32, textureHeight);
+	const Rect clipRect = GameWorldUiView::getCompassClipRect();
+	return clipRect.getTopLeft() - Int2(xOffset, 0);
 }
 
-Int2 GameWorldUiView::getCompassSliderPosition(int clipWidth, int clipHeight)
+Int2 GameWorldUiView::getCompassFramePosition()
 {
-	// Top-left corner of the slider in 320x200 space.
-	const int sliderX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (clipWidth / 2);
-	const int sliderY = clipHeight;
-	return Int2(sliderX, sliderY);
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 0);
 }
 
-Int2 GameWorldUiView::getCompassFramePosition(int textureWidth)
+Int2 GameWorldUiView::getWeaponAnimationOffset(const std::string &weaponFilename, int frameIndex,
+	TextureManager &textureManager)
 {
-	return Int2((ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2), 0);
-}
-
-TextureAssetReference GameWorldUiView::getCompassSliderPaletteTextureAssetRef()
-{
-	return TextureAssetReference(std::string(ArenaPaletteName::Default));
-}
-
-Int2 GameWorldUiView::getCurrentWeaponAnimationOffset(Game &game)
-{
-	const auto &weaponAnimation = game.getGameState().getPlayer().getWeaponAnimation();
-	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-	const int weaponAnimIndex = weaponAnimation.getFrameIndex();
-	
-	auto &textureManager = game.getTextureManager();
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(weaponFilename.c_str());
 	if (!metadataID.has_value())
 	{
@@ -218,22 +216,7 @@ Int2 GameWorldUiView::getCurrentWeaponAnimationOffset(Game &game)
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-	return textureFileMetadata.getOffset(weaponAnimIndex);
-}
-
-std::optional<TextureBuilderID> GameWorldUiView::getActiveWeaponAnimationTextureBuilderID(Game &game)
-{
-	auto &gameState = game.getGameState();
-	const auto &player = gameState.getPlayer();
-	const auto &weaponAnimation = player.getWeaponAnimation();
-	if (weaponAnimation.isSheathed())
-	{
-		return std::nullopt;
-	}
-
-	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-	const int weaponAnimIndex = weaponAnimation.getFrameIndex();
-	return GameWorldUiView::getWeaponTextureBuilderID(game, weaponFilename, weaponAnimIndex);
+	return textureFileMetadata.getOffset(frameIndex);
 }
 
 Int2 GameWorldUiView::getInterfaceCenter(Game &game)
@@ -245,108 +228,10 @@ Int2 GameWorldUiView::getInterfaceCenter(Game &game)
 	}
 	else
 	{
-		TextureManager &textureManager = game.getTextureManager();
-		const TextureBuilderID textureBuilderID = GameWorldUiView::getGameWorldInterfaceTextureBuilderID(textureManager);
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-
 		return Int2(
 			ArenaRenderUtils::SCREEN_WIDTH / 2,
-			(ArenaRenderUtils::SCREEN_HEIGHT - textureBuilder.getHeight()) / 2);
+			(ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.getHeight()) / 2);
 	}
-}
-
-TextureBuilderID GameWorldUiView::getGameWorldInterfaceTextureBuilderID(TextureManager &textureManager)
-{
-	const std::string &textureFilename = ArenaTextureName::GameWorldInterface;
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return *textureBuilderID;
-}
-
-TextureBuilderID GameWorldUiView::getCompassFrameTextureBuilderID(Game &game)
-{
-	auto &textureManager = game.getTextureManager();
-	const std::string &textureFilename = ArenaTextureName::CompassFrame;
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return *textureBuilderID;
-}
-
-TextureBuilderID GameWorldUiView::getCompassSliderTextureBuilderID(Game &game)
-{
-	auto &textureManager = game.getTextureManager();
-	const std::string &textureFilename = ArenaTextureName::CompassSlider;
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return *textureBuilderID;
-}
-
-TextureBuilderID GameWorldUiView::getPlayerPortraitTextureBuilderID(Game &game,
-	const std::string &portraitsFilename, int portraitID)
-{
-	auto &textureManager = game.getTextureManager();
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs = textureManager.tryGetTextureBuilderIDs(portraitsFilename.c_str());
-	if (!textureBuilderIDs.has_value())
-	{
-		DebugCrash("Couldn't get texture builder IDs for \"" + portraitsFilename + "\".");
-	}
-
-	return textureBuilderIDs->getID(portraitID);
-}
-
-TextureBuilderID GameWorldUiView::getStatusGradientTextureBuilderID(Game &game, int gradientID)
-{
-	auto &textureManager = game.getTextureManager();
-	const std::string &statusGradientsFilename = ArenaTextureName::StatusGradients;
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs = textureManager.tryGetTextureBuilderIDs(statusGradientsFilename.c_str());
-	if (!textureBuilderIDs.has_value())
-	{
-		DebugCrash("Couldn't get texture builder IDs for \"" + statusGradientsFilename + "\".");
-	}
-
-	return textureBuilderIDs->getID(gradientID);
-}
-
-TextureBuilderID GameWorldUiView::getNoSpellTextureBuilderID(Game &game)
-{
-	auto &textureManager = game.getTextureManager();
-	const std::string &textureFilename = ArenaTextureName::NoSpell;
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return *textureBuilderID;
-}
-
-TextureBuilderID GameWorldUiView::getWeaponTextureBuilderID(Game &game, const std::string &weaponFilename, int index)
-{
-	auto &textureManager = game.getTextureManager();
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs = textureManager.tryGetTextureBuilderIDs(weaponFilename.c_str());
-	if (!textureBuilderIDs.has_value())
-	{
-		DebugCrash("Couldn't get texture builder IDs for \"" + weaponFilename + "\".");
-	}
-
-	return textureBuilderIDs->getID(index);
-}
-
-TextureAssetReference GameWorldUiView::getDefaultPaletteTextureAssetRef()
-{
-	return TextureAssetReference(std::string(ArenaPaletteName::Default));
 }
 
 Int2 GameWorldUiView::getNativeWindowCenter(const Renderer &renderer)
@@ -354,6 +239,177 @@ Int2 GameWorldUiView::getNativeWindowCenter(const Renderer &renderer)
 	const Int2 windowDims = renderer.getWindowDimensions();
 	const Int2 nativeCenter = windowDims / 2;
 	return nativeCenter;
+}
+
+TextureAssetReference GameWorldUiView::getPaletteTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaPaletteName::Default));
+}
+
+TextureAssetReference GameWorldUiView::getGameWorldInterfaceTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::GameWorldInterface));
+}
+
+TextureAssetReference GameWorldUiView::getStatusGradientTextureAssetRef(StatusGradientType gradientType)
+{
+	const int gradientID = static_cast<int>(gradientType);
+	return TextureAssetReference(std::string(ArenaTextureName::StatusGradients), gradientID);
+}
+
+TextureAssetReference GameWorldUiView::getPlayerPortraitTextureAssetRef(bool isMale, int raceID, int portraitID)
+{
+	const std::string &headsFilename = PortraitFile::getHeads(isMale, raceID, true);
+	return TextureAssetReference(std::string(headsFilename), portraitID);
+}
+
+TextureAssetReference GameWorldUiView::getNoMagicTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::NoSpell));
+}
+
+TextureAssetReference GameWorldUiView::getWeaponAnimTextureAssetRef(const std::string &weaponFilename, int index)
+{
+	return TextureAssetReference(std::string(weaponFilename), index);
+}
+
+TextureAssetReference GameWorldUiView::getCompassFrameTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::CompassFrame));
+}
+
+TextureAssetReference GameWorldUiView::getCompassSliderTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::CompassSlider));
+}
+
+TextureAssetReference GameWorldUiView::getArrowCursorTextureAssetRef(int cursorIndex)
+{
+	return TextureAssetReference(std::string(ArenaTextureName::ArrowCursors), cursorIndex);
+}
+
+UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = GameWorldUiView::getGameWorldInterfaceTextureAssetRef();
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for game world interface.");
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradientType,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = GameWorldUiView::getStatusGradientTextureAssetRef(gradientType);
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for status gradient " + std::to_string(static_cast<int>(gradientType)) + ".");
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = GameWorldUiView::getPlayerPortraitTextureAssetRef(isMale, raceID, portraitID);
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for player portrait (male: " + std::to_string(static_cast<int>(isMale)) +
+			", race: " + std::to_string(raceID) + ", portrait: " + std::to_string(portraitID) + ").");
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocNoMagicTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = GameWorldUiView::getNoMagicTextureAssetRef();
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for no magic icon.");
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFilename, int index,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = GameWorldUiView::getWeaponAnimTextureAssetRef(weaponFilename, index);
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for weapon animation \"" + weaponFilename +
+			"\" index " + std::to_string(index) + ".");
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocCompassFrameTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = GameWorldUiView::getCompassFrameTextureAssetRef();
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for compass frame.");
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = GameWorldUiView::getCompassSliderTextureAssetRef();
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for compass frame.");
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocTooltipTexture(const std::string_view &text, TextureManager &textureManager, Renderer &renderer)
+{
+	// @todo: alloc tooltip Buffer2D, render text to it, then renderer.tryCreateUiTexture().
+	DebugNotImplemented();
+	return UiTextureID();
+}
+
+UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = GameWorldUiView::getArrowCursorTextureAssetRef(cursorIndex);
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for arrow cursor " + std::to_string(cursorIndex) + ".");
+	}
+
+	return textureID;
 }
 
 // @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for

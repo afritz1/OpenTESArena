@@ -23,7 +23,10 @@
 #include "components/vfs/manager.hpp"
 
 Panel::Panel(Game &game)
-	: game(game) { }
+	: game(game)
+{
+	this->paused = false;
+}
 
 Panel::~Panel()
 {
@@ -79,8 +82,9 @@ BufferView<const UiDrawCall> Panel::getDrawCalls() const
 
 void Panel::onPauseChanged(bool paused)
 {
-	InputManager &inputManager = this->game.getInputManager();
+	this->paused = paused;
 
+	InputManager &inputManager = this->game.getInputManager();
 	auto setListenersEnabled = [paused, &inputManager](std::vector<InputManager::ListenerID> &listenerIDs)
 	{
 		for (const InputManager::ListenerID listenerID : listenerIDs)
@@ -108,6 +112,11 @@ void Panel::resize(int windowWidth, int windowHeight)
 Game &Panel::getGame() const
 {
 	return this->game;
+}
+
+bool Panel::isPaused() const
+{
+	return this->paused;
 }
 
 CursorData Panel::getDefaultCursor() const
@@ -190,9 +199,9 @@ void Panel::clearButtonProxies()
 
 void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::PositionFunc &positionFunc,
 	const UiDrawCall::SizeFunc &sizeFunc, const UiDrawCall::PivotFunc &pivotFunc,
-	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect)
+	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect, RenderSpace renderSpace)
 {
-	this->drawCalls.emplace_back(textureFunc, positionFunc, sizeFunc, pivotFunc, activeFunc, clipRect);
+	this->drawCalls.emplace_back(textureFunc, positionFunc, sizeFunc, pivotFunc, activeFunc, clipRect, renderSpace);
 }
 
 void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Int2 &position, const Int2 &size,

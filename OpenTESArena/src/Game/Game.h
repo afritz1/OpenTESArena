@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -40,6 +41,8 @@ class Surface;
 
 class Game
 {
+public:
+	using GameWorldRenderCallback = std::function<bool(Game&)>;
 private:
 	AudioManager audioManager;
 	MusicLibrary musicLibrary;
@@ -55,6 +58,7 @@ private:
 	EntityDefinitionLibrary entityDefLibrary;
 	std::unique_ptr<GameState> gameState;
 	std::unique_ptr<CharacterCreationState> charCreationState;
+	GameWorldRenderCallback gameWorldRenderCallback;
 	Options options;
 	Renderer renderer;
 	TextureManager textureManager;
@@ -222,6 +226,9 @@ public:
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.
 	void setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState);
+
+	// Sets the function to call for rendering the 3D scene.
+	void setGameWorldRenderCallback(const GameWorldRenderCallback &callback);
 
 	// Initial method for starting the game loop. This must only be called by main().
 	void loop();

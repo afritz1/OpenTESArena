@@ -3,6 +3,7 @@
 
 #include "SDL.h"
 
+#include "CommonUiView.h"
 #include "GameWorldPanel.h"
 #include "GameWorldUiController.h"
 #include "GameWorldUiModel.h"
@@ -38,6 +39,8 @@ GameWorldPanel::~GameWorldPanel()
 	{
 		GameWorldUiModel::setFreeLookActive(game, false);
 	}
+
+	game.setGameWorldRenderCallback([](Game&) { return true; });
 }
 
 bool GameWorldPanel::init()
@@ -294,6 +297,9 @@ bool GameWorldPanel::init()
 		GameWorldUiController::onMouseButtonHeld(game, type, position, dt, centerCursorRegion);
 	});
 
+	// Moved into a method for better organization due to extra complexity from classic/modern mode.
+	this->initUiDrawCalls();
+
 	// Set all of the cursor regions relative to the current window.
 	const Int2 screenDims = game.getRenderer().getWindowDimensions();
 	GameWorldUiModel::updateNativeCursorRegions(
@@ -309,56 +315,371 @@ bool GameWorldPanel::init()
 		GameWorldUiModel::setFreeLookActive(game, true);
 	}
 
+	game.setGameWorldRenderCallback(GameWorldPanel::gameWorldRenderCallback);
+
 	return true;
 }
 
-std::optional<CursorData> GameWorldPanel::getCurrentCursor() const
+void GameWorldPanel::initUiDrawCalls()
 {
-	// The cursor texture depends on the current mouse position.
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
-	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
-	const Int2 mousePosition = game.getInputManager().getMousePosition();
+	auto &renderer = game.getRenderer();
+
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+
+	/*in order of rendering:
+
+	primary:
+	game world interface
+	status gradient
+	player portrait
+	no magic icon
+	player name text box
+
+	secondary:
+	weapon animation (+ set/unset letterbox mode override in modern mode)
+	compass
+	trigger text
+	action text
+	effect text
+	hovered button tooltip
+	debug profiler*/
+
+	const UiTextureID gameWorldInterfaceTextureID =
+		GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
+	this->gameWorldInterfaceTextureRef.init(gameWorldInterfaceTextureID, renderer);
+
+	constexpr GameWorldUiView::StatusGradientType gradientType = GameWorldUiView::StatusGradientType::Default;
+	const UiTextureID statusGradientTextureID =
+		GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
+	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
+
+	const auto &player = game.getGameState().getPlayer();
+	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
+		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
+	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
+
+	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
+	this->noMagicTextureRef.init(noMagicTextureID, renderer);
+
+	const auto &weaponAnimation = player.getWeaponAnimation();
+	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
+	const std::optional<TextureFileMetadataID> weaponAnimMetadataID = textureManager.tryGetMetadataID(weaponFilename.c_str());
+	if (!weaponAnimMetadataID.has_value())
+	{
+		DebugCrash("Couldn't get texture file metadata ID for weapon animation \"" + weaponFilename + "\".");
+	}
+
+	const TextureFileMetadata &weaponAnimMetadata = textureManager.getMetadataHandle(*weaponAnimMetadataID);
+	this->weaponAnimTextureRefs.init(weaponAnimMetadata.getTextureCount());
+	for (int i = 0; i < weaponAnimMetadata.getTextureCount(); i++)
+	{
+		const UiTextureID weaponTextureID =
+			GameWorldUiView::allocWeaponAnimTexture(weaponFilename, i, textureManager, renderer);
+		this->weaponAnimTextureRefs.set(i, ScopedUiTextureRef(weaponTextureID, renderer));
+	}
+
+	const UiTextureID compassFrameTextureID = GameWorldUiView::allocCompassFrameTexture(textureManager, renderer);
+	const UiTextureID compassSliderTextureID = GameWorldUiView::allocCompassSliderTexture(textureManager, renderer);
+	this->compassFrameTextureRef.init(compassFrameTextureID, renderer);
+	this->compassSliderTextureRef.init(compassSliderTextureID, renderer);
+
+	const UiTextureID defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->defaultCursorTextureRef.init(defaultCursorTextureID, renderer);
+
+	this->arrowCursorTextureRefs.init(GameWorldUiView::ArrowCursorRegionCount);
+	for (int i = 0; i < GameWorldUiView::ArrowCursorRegionCount; i++)
+	{
+		const UiTextureID arrowTextureID = GameWorldUiView::allocArrowCursorTexture(i, textureManager, renderer);
+		this->arrowCursorTextureRefs.set(i, ScopedUiTextureRef(arrowTextureID, renderer));
+	}
 
 	if (modernInterface)
 	{
-		// Do not show cursor in modern mode.
-		return std::nullopt;
+		// @todo: modern mode weapon anim
+		/*
+			// @todo: this would probably be a lot easier to do if it could just specify it's in the native vector space?
+			// - clean this up for draw calls/UiTextureID stuff
+
+			// Draw stretched to fit the window.
+			const int letterboxStretchMode = Options::MAX_LETTERBOX_MODE;
+			renderer.setLetterboxMode(letterboxStretchMode);
+
+			// Percent of the horizontal weapon offset across the original screen.
+			const double weaponOffsetXPercent = static_cast<double>(weaponOffset.x) /
+				static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+
+			// Native left and right screen edges converted to original space.
+			const int newLeft = renderer.nativeToOriginal(Int2(0, 0)).x;
+			const int newRight = renderer.nativeToOriginal(Int2(renderer.getWindowDimensions().x, 0)).x;
+			const double newDiff = static_cast<double>(newRight - newLeft);
+
+			// Values to scale original weapon dimensions by.
+			const double weaponScaleX = newDiff / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+			const double weaponScaleY = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT) /
+				static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight());
+
+			const int weaponX = newLeft + static_cast<int>(std::round(newDiff * weaponOffsetXPercent));
+			const int weaponY = static_cast<int>(std::round(static_cast<double>(weaponOffset.y) * weaponScaleY));
+			const int weaponWidth = static_cast<int>(std::round(static_cast<double>(weaponTextureBuilderRef.getWidth()) * weaponScaleX));
+			const int weaponHeight = static_cast<int>(std::round(static_cast<double>(
+				std::min(weaponTextureBuilderRef.getHeight() + 1, std::max(ArenaRenderUtils::SCREEN_HEIGHT - weaponY, 0))) * weaponScaleY));
+
+			renderer.drawOriginal(*weaponTextureBuilderID, *defaultPaletteID, weaponX, weaponY,
+				weaponWidth, weaponHeight, textureManager);
+
+			// Reset letterbox mode back to what it was.
+			renderer.setLetterboxMode(options.getGraphics_LetterboxMode());
+		*/
 	}
 	else
 	{
-		const std::string &paletteFilename = ArenaPaletteName::Default;
-		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-		if (!paletteID.has_value())
+		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
 		{
-			DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+			const auto &weaponAnimation = player.getWeaponAnimation();
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			return textureRef.get();
+		};
+
+		UiDrawCall::PositionFunc weaponAnimPositionFunc = [this, &game, &player]()
+		{
+			const auto &weaponAnimation = player.getWeaponAnimation();
+			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
+			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
+
+			auto &textureManager = game.getTextureManager();
+			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
+			return offset;
+		};
+
+		UiDrawCall::SizeFunc weaponAnimSizeFunc = [this, &player]()
+		{
+			const auto &weaponAnimation = player.getWeaponAnimation();
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			return Int2(textureRef.getWidth(), textureRef.getHeight());
+		};
+
+		UiDrawCall::PivotFunc weaponAnimPivotFunc = []() { return PivotType::TopLeft; };
+
+		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
+		{
+			const auto &weaponAnimation = player.getWeaponAnimation();
+			return !this->isPaused() && !weaponAnimation.isSheathed();
+		};
+
+		this->addDrawCall(
+			weaponAnimTextureFunc,
+			weaponAnimPositionFunc,
+			weaponAnimSizeFunc,
+			weaponAnimPivotFunc,
+			weaponAnimActiveFunc);
+
+		this->addDrawCall(
+			this->gameWorldInterfaceTextureRef.get(),
+			GameWorldUiView::getGameWorldInterfacePosition(),
+			Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight()),
+			PivotType::Bottom);
+
+		const Int2 portraitPosition(GameWorldUiView::PlayerPortraitX, GameWorldUiView::PlayerPortraitY);
+		this->addDrawCall(
+			this->statusGradientTextureRef.get(),
+			portraitPosition,
+			Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight()),
+			PivotType::TopLeft);
+		this->addDrawCall(
+			this->playerPortraitTextureRef.get(),
+			portraitPosition,
+			Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight()),
+			PivotType::TopLeft);
+
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
+		if (!charClassDef.canCastMagic())
+		{
+			this->addDrawCall(
+				this->noMagicTextureRef.get(),
+				GameWorldUiView::getNoMagicTexturePosition(),
+				Int2(this->noMagicTextureRef.getWidth(), this->noMagicTextureRef.getHeight()),
+				PivotType::TopLeft);
 		}
 
-		// See which arrow cursor region the native mouse is in.
-		for (int i = 0; i < this->nativeCursorRegions.size(); i++)
+		const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
+		this->addDrawCall(
+			this->playerNameTextBox.getTextureID(),
+			playerNameTextBoxRect.getTopLeft(),
+			Int2(playerNameTextBoxRect.getWidth(), playerNameTextBoxRect.getHeight()),
+			PivotType::TopLeft);
+
+		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
 		{
-			if (this->nativeCursorRegions[i].contains(mousePosition))
+			const VoxelDouble2 &playerDirection = player.getGroundDirection();
+			const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
+			return sliderPosition;
+		};
+
+		UiDrawCall::ActiveFunc compassActiveFunc = [this]()
+		{
+			return !this->isPaused();
+		};
+
+		this->addDrawCall(
+			[this]() { return this->compassSliderTextureRef.get(); },
+			compassSliderPositionFunc,
+			[this]() { return Int2(this->compassSliderTextureRef.getWidth(), this->compassSliderTextureRef.getHeight()); },
+			[]() { return PivotType::TopLeft; },
+			compassActiveFunc,
+			GameWorldUiView::getCompassClipRect());
+		this->addDrawCall(
+			[this]() { return this->compassFrameTextureRef.get(); },
+			[]() { return GameWorldUiView::getCompassFramePosition(); },
+			[this]() { return Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight()); },
+			[]() { return PivotType::Top; },
+			compassActiveFunc);
+
+		UiDrawCall::TextureFunc triggerTextTextureFunc = [this]()
+		{
+			return this->triggerText.getTextureID();
+		};
+
+		UiDrawCall::TextureFunc actionTextTextureFunc = [this]()
+		{
+			return this->actionText.getTextureID();
+		};
+
+		UiDrawCall::TextureFunc effectTextTextureFunc = [this]()
+		{
+			return this->effectText.getTextureID();
+		};
+
+		UiDrawCall::ActiveFunc triggerTextActiveFunc = [this, &game]()
+		{
+			const auto &gameState = game.getGameState();
+			return !this->isPaused() && gameState.triggerTextIsVisible();
+		};
+
+		UiDrawCall::ActiveFunc actionTextActiveFunc = [this, &game]()
+		{
+			const auto &gameState = game.getGameState();
+			return !this->isPaused() && gameState.actionTextIsVisible();
+		};
+
+		UiDrawCall::ActiveFunc effectTextActiveFunc = [this, &game]()
+		{
+			const auto &gameState = game.getGameState();
+			return !this->isPaused() && gameState.effectTextIsVisible();
+		};
+
+		const Rect &triggerTextBoxRect = this->triggerText.getRect(); // Position is not usable due to classic/modern mode differences.
+		this->addDrawCall(
+			triggerTextTextureFunc,
+			[this, &game]() { return GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight()); },
+			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.getWidth(), triggerTextBoxRect.getHeight()); },
+			[]() { return PivotType::Bottom; },
+			triggerTextActiveFunc);
+
+		const Rect &actionTextBoxRect = this->actionText.getRect(); // Position is not usable due to classic/modern mode differences.
+		this->addDrawCall(
+			actionTextTextureFunc,
+			[]() { return GameWorldUiView::getActionTextPosition(); },
+			[actionTextBoxRect]() { return Int2(actionTextBoxRect.getWidth(), actionTextBoxRect.getHeight()); },
+			[]() { return PivotType::Top; },
+			actionTextActiveFunc);
+
+		const Rect &effectTextBoxRect = this->effectText.getRect();
+		this->addDrawCall(
+			effectTextTextureFunc,
+			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.getWidth() / 2), effectTextBoxRect.getTop()); },
+			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getWidth(), effectTextBoxRect.getHeight()); },
+			[]() { return PivotType::Bottom; },
+			effectTextActiveFunc);
+
+		// @todo: hovered button tooltip
+		// @todo: debug profiler
+
+		UiDrawCall::PositionFunc cursorPositionFunc = [&game]()
+		{
+			const auto &inputManager = game.getInputManager();
+			return inputManager.getMousePosition();
+		};
+
+		auto getCursorRegionIndex = [this, cursorPositionFunc]() -> std::optional<int>
+		{
+			const Int2 cursorPosition = cursorPositionFunc();
+
+			// See which arrow cursor region the native mouse is in.
+			for (int i = 0; i < this->nativeCursorRegions.size(); i++)
 			{
-				// Get the relevant arrow cursor.
-				const std::string &textureFilename = ArenaTextureName::ArrowCursors;
-				const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-					textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
-				if (!textureBuilderIDs.has_value())
+				if (this->nativeCursorRegions[i].contains(cursorPosition))
 				{
-					DebugCrash("Couldn't get texture builder IDs for \"" + textureFilename + "\".");
+					return i;
+				}
+			}
+
+			// Not in any of the arrow regions.
+			return std::nullopt;
+		};
+
+		UiDrawCall::TextureFunc cursorTextureFunc = [this, &game, getCursorRegionIndex]()
+		{
+			const std::optional<int> index = getCursorRegionIndex();
+			if (!index.has_value())
+			{
+				return this->defaultCursorTextureRef.get();
+			}
+
+			const ScopedUiTextureRef &arrowCursorTextureRef = this->arrowCursorTextureRefs.get(*index);
+			return arrowCursorTextureRef.get();
+		};
+
+		UiDrawCall::SizeFunc cursorSizeFunc = [this, &game, getCursorRegionIndex]()
+		{
+			const std::optional<int> index = getCursorRegionIndex();
+			const Int2 textureDims = [this, &index]()
+			{
+				if (!index.has_value())
+				{
+					return Int2(this->defaultCursorTextureRef.getWidth(), this->defaultCursorTextureRef.getHeight());
 				}
 
-				const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(i);
+				const ScopedUiTextureRef &arrowCursorTextureRef = this->arrowCursorTextureRefs.get(*index);
+				return Int2(arrowCursorTextureRef.getWidth(), arrowCursorTextureRef.getHeight());
+			}();
 
-				DebugAssertIndex(GameWorldUiView::ArrowCursorAlignments, i);
-				const CursorAlignment cursorAlignment = GameWorldUiView::ArrowCursorAlignments[i];
-				return CursorData(textureBuilderID, *paletteID, cursorAlignment);
+			const auto &options = game.getOptions();
+			const double cursorScale = options.getGraphics_CursorScale();
+			return Int2(
+				static_cast<int>(static_cast<double>(textureDims.x) * cursorScale),
+				static_cast<int>(static_cast<double>(textureDims.y) * cursorScale));
+		};
+
+		UiDrawCall::PivotFunc cursorPivotFunc = [this, getCursorRegionIndex]()
+		{
+			const std::optional<int> index = getCursorRegionIndex();
+			if (!index.has_value())
+			{
+				return PivotType::TopLeft;
 			}
-		}
 
-		// Not in any of the arrow regions.
-		return this->getDefaultCursor();
+			constexpr auto &arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
+			DebugAssertIndex(arrowCursorPivotTypes, *index);
+			return arrowCursorPivotTypes[*index];
+		};
+
+		UiDrawCall::ActiveFunc cursorActiveFunc = [this]()
+		{
+			return !this->isPaused();
+		};
+
+		this->addDrawCall(
+			cursorTextureFunc,
+			cursorPositionFunc,
+			cursorSizeFunc,
+			cursorPivotFunc,
+			cursorActiveFunc,
+			std::nullopt,
+			RenderSpace::Native);
 	}
 }
 
@@ -394,41 +715,47 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 	renderer.drawOriginal(tooltip, tooltipPosition.x, tooltipPosition.y);
 }
 
-void GameWorldPanel::drawCompass(const VoxelDouble2 &direction, TextureManager &textureManager, Renderer &renderer)
+bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 {
-	auto &game = this->getGame();
+	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
+	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
+	auto &gameState = game.getGameState();
+	auto &player = gameState.getPlayer();
+	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
+	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
+	const auto &options = game.getOptions();
+	const double ambientPercent = gameState.getAmbientPercent();
 
-	// Visible part of the slider (based on player position)
-	const TextureBuilderID compassSliderTextureBuilderID = GameWorldUiView::getCompassSliderTextureBuilderID(game);
-	const TextureBuilder &compassSlider = textureManager.getTextureBuilderHandle(compassSliderTextureBuilderID);
-	const Rect clipRect = GameWorldUiView::getCompassClipRect(game, direction, compassSlider.getHeight());
-	const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(clipRect.getWidth(), clipRect.getHeight());
-
-	// @temp: since there are some off-by-one rounding errors with SDL_RenderCopy, draw a black rectangle behind the
-	// slider to cover up gaps.
-	renderer.fillOriginalRect(
-		Color::Black,
-		sliderPosition.x - 1,
-		sliderPosition.y - 1,
-		clipRect.getWidth() + 2,
-		clipRect.getHeight() + 2);
-
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getCompassSliderPaletteTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
-	if (!paletteID.has_value())
+	const double latitude = [&gameState]()
 	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
-		return;
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
+		return locationDef.getLatitude();
+	}();
+
+	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
+
+	auto &textureManager = game.getTextureManager();
+	const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
+	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
+	if (!defaultPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteFilename + "\".");
+		return false;
 	}
 
-	renderer.drawOriginalClipped(compassSliderTextureBuilderID, *paletteID, clipRect,
-		sliderPosition.x, sliderPosition.y, textureManager);
+	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
 
-	// Draw the compass frame over the slider.
-	const TextureBuilderID compassFrameTextureBuilderID = GameWorldUiView::getCompassFrameTextureBuilderID(game);
-	const TextureBuilder &compassFrame = textureManager.getTextureBuilderHandle(compassFrameTextureBuilderID);
-	const Int2 compassFramePosition = GameWorldUiView::getCompassFramePosition(compassFrame.getWidth());
-	renderer.drawOriginal(compassFrameTextureBuilderID, *paletteID, compassFramePosition.x, compassFramePosition.y, textureManager);
+	auto &renderer = game.getRenderer();
+	renderer.renderWorld(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
+		ambientPercent, gameState.getDaytimePercent(), gameState.getChasmAnimPercent(), latitude,
+		gameState.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
+		options.getMisc_ChunkDistance(), activeLevelInst.getCeilingScale(), activeLevelInst, activeSkyInst,
+		activeWeatherInst, game.getRandom(), game.getEntityDefinitionLibrary(), defaultPalette);
+
+	return true;
 }
 
 void GameWorldPanel::tick(double dt)
@@ -583,7 +910,7 @@ void GameWorldPanel::tick(double dt)
 	}
 }
 
-void GameWorldPanel::render(Renderer &renderer)
+/*void GameWorldPanel::render(Renderer &renderer)
 {
 	DebugAssert(this->getGame().gameStateIsActive());
 
@@ -682,9 +1009,9 @@ void GameWorldPanel::render(Renderer &renderer)
 		renderer.drawOriginal(this->playerNameTextBox.getTextureID(),
 			playerNameTextBoxRect.getLeft(), playerNameTextBoxRect.getTop());
 	}
-}
+}*/
 
-void GameWorldPanel::renderSecondary(Renderer &renderer)
+/*void GameWorldPanel::renderSecondary(Renderer &renderer)
 {
 	DebugAssert(this->getGame().gameStateIsActive());
 	
@@ -873,4 +1200,4 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 
 	// Optionally draw profiler text.
 	GameWorldUiView::DEBUG_DrawProfiler(game, renderer);
-}
+}*/

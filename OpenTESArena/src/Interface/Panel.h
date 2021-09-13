@@ -51,8 +51,12 @@ private:
 	// Registered draw calls that will be iterated by the renderer.
 	std::vector<UiDrawCall> drawCalls;
 	// @todo: add a 'secondaryDrawCalls' list.
+
+	bool paused; // When not the top-most panel.
 protected:
 	Game &getGame() const;
+
+	bool isPaused() const;
 
 	// Default cursor used by most panels.
 	CursorData getDefaultCursor() const;
@@ -77,7 +81,8 @@ protected:
 	// Helper functions for registering UI draw calls.
 	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::PositionFunc &positionFunc,
 		const UiDrawCall::SizeFunc &sizeFunc, const UiDrawCall::PivotFunc &pivotFunc,
-		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt);
+		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt,
+		RenderSpace renderSpace = RenderSpace::Classic);
 	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Int2 &position, const Int2 &size,
 		PivotType pivotType, const std::optional<Rect> &clipRect = std::nullopt);
 	void addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,

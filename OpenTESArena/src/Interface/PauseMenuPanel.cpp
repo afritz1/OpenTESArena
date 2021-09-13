@@ -202,7 +202,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
-	// Draw game world interface below the pause menu.
+	/*// Draw game world interface below the pause menu.
 	const PaletteID gameWorldInterfacePaletteID = *backgroundPaletteID;
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID = GameWorldUiView::getGameWorldInterfaceTextureBuilderID(textureManager);
 	const TextureBuilder &gameWorldInterfaceTextureBuilder = textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureBuilderID);
@@ -235,7 +235,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 		const Int2 nonMagicIconPosition = GameWorldUiView::getNoMagicTexturePosition();
 		renderer.drawOriginal(nonMagicIconTextureBuilderID, nonMagicIconPaletteID,
 			nonMagicIconPosition.x, nonMagicIconPosition.y, textureManager);
-	}
+	}*/
 
 	renderer.drawOriginal(this->optionsButtonTexture, this->optionsButton.getX(), this->optionsButton.getY());
 

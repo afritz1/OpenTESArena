@@ -385,6 +385,11 @@ void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> cha
 	this->charCreationState = std::move(charCreationState);
 }
 
+void Game::setGameWorldRenderCallback(const GameWorldRenderCallback &callback)
+{
+	this->gameWorldRenderCallback = callback;
+}
+
 void Game::initOptions(const std::string &basePath, const std::string &optionsPath)
 {
 	// Load the default options first.
@@ -550,6 +555,14 @@ void Game::render()
 	}
 
 	this->renderer.clear();
+
+	if (this->gameWorldRenderCallback)
+	{
+		if (!this->gameWorldRenderCallback(*this))
+		{
+			DebugLogError("Couldn't render game world.");
+		}
+	}
 
 	const Int2 windowDims = renderer.getWindowDimensions();
 

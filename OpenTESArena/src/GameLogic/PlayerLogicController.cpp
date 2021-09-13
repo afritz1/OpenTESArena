@@ -482,21 +482,25 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 
 				if (!options.getGraphics_ModernInterface())
 				{
-					// The cursor must be above the game world interface in order to fire. In
-					// the original game, the cursor has to be in the center "X" region, but
-					// that seems pretty inconvenient, given that the border between cursor
-					// regions is hard to see at a glance, and that might be the difference
-					// between shooting an arrow and not shooting an arrow, so I'm relaxing
-					// the requirements here.
+					// The cursor must be above the game world interface in order to fire. In the original game,
+					// the cursor has to be in the center "X" region, but that seems pretty inconvenient, given
+					// that the border between cursor regions is hard to see at a glance, and that might be the
+					// difference between shooting an arrow and not shooting an arrow, so I'm relaxing the
+					// requirements here.
 					auto &textureManager = game.getTextureManager();
 					auto &renderer = game.getRenderer();
-					const TextureBuilderID gameWorldInterfaceTextureID =
-						GameWorldUiView::getGameWorldInterfaceTextureBuilderID(textureManager);
-					const TextureBuilder &gameWorldInterfaceTextureBuilder =
-						textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureID);
+					const TextureAssetReference gameWorldInterfaceTextureAssetRef = GameWorldUiView::getGameWorldInterfaceTextureAssetRef();
+					const std::optional<TextureFileMetadataID> metadataID =
+						textureManager.tryGetMetadataID(gameWorldInterfaceTextureAssetRef.filename.c_str());
+					if (!metadataID.has_value())
+					{
+						DebugCrash("Couldn't get game world interface metadata ID for \"" + gameWorldInterfaceTextureAssetRef.filename + "\".");
+					}
+
+					const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+					const int gameWorldInterfaceHeight = metadata.getHeight(0);
 					const int originalCursorY = renderer.nativeToOriginal(inputManager.getMousePosition()).y;
-					return rightClick && (originalCursorY <
-						(ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight()));
+					return rightClick && (originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight));
 				}
 				else
 				{

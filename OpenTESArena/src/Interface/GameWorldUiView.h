@@ -10,6 +10,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
@@ -17,9 +18,11 @@ class Game;
 
 namespace GameWorldUiView
 {
+	constexpr int ArrowCursorRegionCount = 9;
+
 	// Original arrow cursor rectangles for each part of the classic UI. Their components can be multiplied by
 	// the ratio of the native and the original resolution so they're flexible with most resolutions.
-	const std::array<Rect, 9> CursorRegions =
+	const std::array<Rect, ArrowCursorRegionCount> CursorRegions =
 	{
 		Rect(0, 0, 141, 49),
 		Rect(141, 0, 38, 49),
@@ -49,20 +52,24 @@ namespace GameWorldUiView
 	// Game world interface UI area.
 	const Rect UiBottomRegion(0, 147, 320, 53);
 
-	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse position so the cursor's
-	// click area is closer to the tip of each arrow, as is done in the original game (slightly differently,
-	// though. I think the middle cursor was originally top-aligned, not middle-aligned, which is strange).
-	constexpr std::array<CursorAlignment, 9> ArrowCursorAlignments =
+	// Arrow cursor pivots. These offset the drawn cursor relative to the mouse position so the cursor's
+	// click area is closer to the tip of each arrow.
+	constexpr std::array<PivotType, ArrowCursorRegionCount> ArrowCursorPivotTypes =
 	{
-		CursorAlignment::TopLeft,
-		CursorAlignment::Top,
-		CursorAlignment::TopRight,
-		CursorAlignment::TopLeft,
-		CursorAlignment::Middle,
-		CursorAlignment::TopRight,
-		CursorAlignment::Left,
-		CursorAlignment::Bottom,
-		CursorAlignment::Right
+		PivotType::TopLeft,
+		PivotType::Top,
+		PivotType::TopRight,
+		PivotType::BottomLeft,
+		PivotType::Middle,
+		PivotType::BottomRight,
+		PivotType::MiddleLeft,
+		PivotType::Bottom,
+		PivotType::MiddleRight,
+	};
+
+	enum class StatusGradientType
+	{
+		Default
 	};
 
 	constexpr int PlayerNameTextBoxX = 17;
@@ -95,6 +102,7 @@ namespace GameWorldUiView
 	constexpr int StatusButtonY = 151;
 	constexpr int StatusButtonWidth = 29;
 	constexpr int StatusButtonHeight = 22;
+	Rect getStatusButtonRect();
 	
 	const std::string StatusPopUpFontName = ArenaFontName::Arena;
 	const Color StatusPopUpTextColor(251, 239, 77);
@@ -142,7 +150,7 @@ namespace GameWorldUiView
 	constexpr int MapButtonWidth = 29;
 	constexpr int MapButtonHeight = 22;
 
-	Int2 getGameWorldInterfacePosition(int textureHeight);
+	Int2 getGameWorldInterfacePosition();
 
 	Int2 getNoMagicTexturePosition();
 
@@ -164,8 +172,8 @@ namespace GameWorldUiView
 	const Color EffectTextColor(251, 239, 77);
 	const Color EffectTextShadowColor(190, 113, 0);
 
-	Int2 getTriggerTextPosition(Game &game, int textWidth, int textHeight, int gameWorldInterfaceTextureHeight);
-	Int2 getActionTextPosition(int textWidth);
+	Int2 getTriggerTextPosition(Game &game, int gameWorldInterfaceTextureHeight);
+	Int2 getActionTextPosition();
 	Int2 getEffectTextPosition();
 
 	double getTriggerTextSeconds(const std::string_view &text);
@@ -178,32 +186,39 @@ namespace GameWorldUiView
 
 	Int2 getTooltipPosition(Game &game, int textureHeight);
 
-	Rect getCompassClipRect(Game &game, const VoxelDouble2 &playerDirection, int textureHeight);
-	Int2 getCompassSliderPosition(int clipWidth, int clipHeight);
-	Int2 getCompassFramePosition(int textureWidth);
-	TextureAssetReference getCompassSliderPaletteTextureAssetRef();
+	Rect getCompassClipRect();
+	Int2 getCompassSliderPosition(Game &game, const VoxelDouble2 &playerDirection);
+	Int2 getCompassFramePosition();
 
-	Int2 getCurrentWeaponAnimationOffset(Game &game);
-	std::optional<TextureBuilderID> getActiveWeaponAnimationTextureBuilderID(Game &game);
+	Int2 getWeaponAnimationOffset(const std::string &weaponFilename, int frameIndex, TextureManager &textureManager);
 
 	// Gets the center of the screen for pop-up related functions. The position depends on
 	// whether modern interface mode is set.
 	Int2 getInterfaceCenter(Game &game);
 
-	// Helper functions for various UI textures.
-	// @todo: these should probably return TextureAssetReferences to be like the other MVC files
-	TextureBuilderID getGameWorldInterfaceTextureBuilderID(TextureManager &textureManager);
-	TextureBuilderID getCompassFrameTextureBuilderID(Game &game);
-	TextureBuilderID getCompassSliderTextureBuilderID(Game &game);
-	TextureBuilderID getPlayerPortraitTextureBuilderID(Game &game, const std::string &portraitsFilename, int portraitID);
-	TextureBuilderID getStatusGradientTextureBuilderID(Game &game, int gradientID);
-	TextureBuilderID getNoSpellTextureBuilderID(Game &game);
-	TextureBuilderID getWeaponTextureBuilderID(Game &game, const std::string &weaponFilename, int index);
-
-	TextureAssetReference getDefaultPaletteTextureAssetRef();
-
 	// Gets the pixel coordinate of the center of the window. Does not handle classic vs. modern mode.
 	Int2 getNativeWindowCenter(const Renderer &renderer);
+
+	// Helper functions for various UI textures.
+	TextureAssetReference getPaletteTextureAssetRef();
+	TextureAssetReference getGameWorldInterfaceTextureAssetRef();
+	TextureAssetReference getStatusGradientTextureAssetRef(StatusGradientType gradientType);
+	TextureAssetReference getPlayerPortraitTextureAssetRef(bool isMale, int raceID, int portraitID);
+	TextureAssetReference getNoMagicTextureAssetRef();
+	TextureAssetReference getWeaponAnimTextureAssetRef(const std::string &weaponFilename, int index);
+	TextureAssetReference getCompassFrameTextureAssetRef();
+	TextureAssetReference getCompassSliderTextureAssetRef();
+	TextureAssetReference getArrowCursorTextureAssetRef(int cursorIndex);
+
+	UiTextureID allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocStatusGradientTexture(StatusGradientType gradientType, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocNoMagicTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocWeaponAnimTexture(const std::string &weaponFilename, int index, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocCompassFrameTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocTooltipTexture(const std::string_view &text, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);

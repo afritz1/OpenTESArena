@@ -22,7 +22,6 @@
 class Player;
 class Renderer;
 class TextureManager;
-class TransitionDefinition;
 
 class GameWorldPanel : public Panel
 {
@@ -34,24 +33,26 @@ private:
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
+	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, tooltipTextureRefs;
+	ScopedUiTextureRef gameWorldInterfaceTextureRef, statusGradientTextureRef, playerPortraitTextureRef,
+		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef;
+
+	void initUiDrawCalls();
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
 
-	// Draws the compass for some given player direction in the XZ plane.
-	void drawCompass(const VoxelDouble2 &direction, TextureManager &textureManager, Renderer &renderer);
+	// Called by game loop for rendering the 3D scene.
+	static bool gameWorldRenderCallback(Game &game);
 public:
 	GameWorldPanel(Game &game);
 	~GameWorldPanel() override;
 
 	bool init();
 
-	virtual std::optional<CursorData> getCurrentCursor() const override;
 	virtual void onPauseChanged(bool paused) override;
 	virtual void resize(int windowWidth, int windowHeight) override;
 	virtual void tick(double dt) override;
-	virtual void render(Renderer &renderer) override;
-	virtual void renderSecondary(Renderer &renderer) override;
 };
 
 #endif
