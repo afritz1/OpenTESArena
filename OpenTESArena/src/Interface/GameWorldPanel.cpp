@@ -336,41 +336,96 @@ void GameWorldPanel::initUiDrawCalls()
 
 	if (modernInterface)
 	{
-		// @todo: modern mode weapon anim
-		/*
-			// @todo: this would probably be a lot easier to do if it could just specify it's in the native vector space?
-			// - clean this up for draw calls/UiTextureID stuff
+		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
+		{
+			const auto &weaponAnimation = player.getWeaponAnimation();
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			return textureRef.get();
+		};
 
-			// Draw stretched to fit the window.
-			const int letterboxStretchMode = Options::MAX_LETTERBOX_MODE;
-			renderer.setLetterboxMode(letterboxStretchMode);
+		UiDrawCall::PositionFunc weaponAnimPositionFunc = [this, &game, &player]()
+		{
+			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
-			// Percent of the horizontal weapon offset across the original screen.
-			const double weaponOffsetXPercent = static_cast<double>(weaponOffset.x) /
-				static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+			const auto &weaponAnimation = player.getWeaponAnimation();
+			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
+			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
 
-			// Native left and right screen edges converted to original space.
-			const int newLeft = renderer.nativeToOriginal(Int2(0, 0)).x;
-			const int newRight = renderer.nativeToOriginal(Int2(renderer.getWindowDimensions().x, 0)).x;
-			const double newDiff = static_cast<double>(newRight - newLeft);
+			auto &textureManager = game.getTextureManager();
+			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
+			const Double2 offsetPercents(
+				static_cast<double>(offset.x) / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH),
+				static_cast<double>(offset.y) / static_cast<double>(classicViewHeight));
 
-			// Values to scale original weapon dimensions by.
-			const double weaponScaleX = newDiff / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
-			const double weaponScaleY = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT) /
-				static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight());
+			const auto &renderer = game.getRenderer();
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const Int2 nativePosition(
+				static_cast<int>(std::round(offsetPercents.x * static_cast<double>(windowDims.x))),
+				static_cast<int>(std::round(offsetPercents.y * static_cast<double>(windowDims.y))));
+			return nativePosition;
+		};
 
-			const int weaponX = newLeft + static_cast<int>(std::round(newDiff * weaponOffsetXPercent));
-			const int weaponY = static_cast<int>(std::round(static_cast<double>(weaponOffset.y) * weaponScaleY));
-			const int weaponWidth = static_cast<int>(std::round(static_cast<double>(weaponTextureBuilderRef.getWidth()) * weaponScaleX));
-			const int weaponHeight = static_cast<int>(std::round(static_cast<double>(
-				std::min(weaponTextureBuilderRef.getHeight() + 1, std::max(ArenaRenderUtils::SCREEN_HEIGHT - weaponY, 0))) * weaponScaleY));
+		UiDrawCall::SizeFunc weaponAnimSizeFunc = [this, &game, &player]()
+		{
+			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
-			renderer.drawOriginal(*weaponTextureBuilderID, *defaultPaletteID, weaponX, weaponY,
-				weaponWidth, weaponHeight, textureManager);
+			const auto &weaponAnimation = player.getWeaponAnimation();
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const Int2 textureDims(textureRef.getWidth(), textureRef.getHeight());
+			const Double2 texturePercents(
+				static_cast<double>(textureDims.x) / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH),
+				static_cast<double>(textureDims.y) / static_cast<double>(classicViewHeight));
 
-			// Reset letterbox mode back to what it was.
-			renderer.setLetterboxMode(options.getGraphics_LetterboxMode());
-		*/
+			const auto &renderer = game.getRenderer();
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const Int2 nativeTextureDims(
+				static_cast<int>(std::round(texturePercents.x * static_cast<double>(windowDims.x))),
+				static_cast<int>(std::round(texturePercents.y * static_cast<double>(windowDims.y))));
+			return nativeTextureDims;
+		};
+
+		UiDrawCall::PivotFunc weaponAnimPivotFunc = []() { return PivotType::TopLeft; };
+
+		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
+		{
+			const auto &weaponAnimation = player.getWeaponAnimation();
+			return !this->isPaused() && !weaponAnimation.isSheathed();
+		};
+
+		this->addDrawCall(
+			weaponAnimTextureFunc,
+			weaponAnimPositionFunc,
+			weaponAnimSizeFunc,
+			weaponAnimPivotFunc,
+			weaponAnimActiveFunc,
+			std::nullopt,
+			RenderSpace::Native);
+
+		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
+		{
+			const VoxelDouble2 &playerDirection = player.getGroundDirection();
+			const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
+			return sliderPosition;
+		};
+
+		UiDrawCall::ActiveFunc compassActiveFunc = [this]()
+		{
+			return !this->isPaused();
+		};
+
+		this->addDrawCall(
+			[this]() { return this->compassSliderTextureRef.get(); },
+			compassSliderPositionFunc,
+			[this]() { return Int2(this->compassSliderTextureRef.getWidth(), this->compassSliderTextureRef.getHeight()); },
+			[]() { return PivotType::TopLeft; },
+			compassActiveFunc,
+			GameWorldUiView::getCompassClipRect());
+		this->addDrawCall(
+			[this]() { return this->compassFrameTextureRef.get(); },
+			[]() { return GameWorldUiView::getCompassFramePosition(); },
+			[this]() { return Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight()); },
+			[]() { return PivotType::Top; },
+			compassActiveFunc);
 	}
 	else
 	{
