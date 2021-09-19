@@ -1,7 +1,6 @@
 #ifndef LOAD_SAVE_PANEL_H
 #define LOAD_SAVE_PANEL_H
 
-#include <memory>
 #include <vector>
 
 #include "Panel.h"
@@ -16,15 +15,13 @@ public:
 	enum class Type { Load, Save };
 private:
 	std::vector<TextBox> saveTextBoxes;
+	ScopedUiTextureRef backgroundTextureRef, cursorTextureRef;
 	LoadSavePanel::Type type;
 public:
 	LoadSavePanel(Game &game);
 	~LoadSavePanel() override = default;
 
 	bool init(LoadSavePanel::Type type);
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif
