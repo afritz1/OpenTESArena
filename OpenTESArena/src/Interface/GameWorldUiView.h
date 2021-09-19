@@ -3,6 +3,7 @@
 
 #include <array>
 
+#include "GameWorldUiModel.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -14,6 +15,7 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
+class FontLibrary;
 class Game;
 
 namespace GameWorldUiView
@@ -80,29 +82,19 @@ namespace GameWorldUiView
 
 	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	constexpr int CharacterSheetButtonX = 14;
-	constexpr int CharacterSheetButtonY = 166;
-	constexpr int CharacterSheetButtonWidth = 40;
-	constexpr int CharacterSheetButtonHeight = 29;
-
-	constexpr int PlayerPortraitX = 14;
-	constexpr int PlayerPortraitY = 166;
-
-	constexpr int WeaponSheathButtonX = 88;
-	constexpr int WeaponSheathButtonY = 151;
-	constexpr int WeaponSheathButtonWidth = 29;
-	constexpr int WeaponSheathButtonHeight = 22;
-
-	constexpr int StealButtonX = 147;
-	constexpr int StealButtonY = 151;
-	constexpr int StealButtonWidth = 29;
-	constexpr int StealButtonHeight = 22;
-
-	constexpr int StatusButtonX = 177;
-	constexpr int StatusButtonY = 151;
-	constexpr int StatusButtonWidth = 29;
-	constexpr int StatusButtonHeight = 22;
+	Rect getCharacterSheetButtonRect();
+	Rect getPlayerPortraitRect();
+	Rect getWeaponSheathButtonRect();
+	Rect getStealButtonRect();
 	Rect getStatusButtonRect();
+	Rect getMagicButtonRect();
+	Rect getLogbookButtonRect();
+	Rect getUseItemButtonRect();
+	Rect getCampButtonRect();
+	Rect getScrollUpButtonRect();
+	Rect getScrollDownButtonRect();
+	Rect getMapButtonRect();
+	Rect getButtonRect(GameWorldUiModel::ButtonType buttonType);
 	
 	const std::string StatusPopUpFontName = ArenaFontName::Arena;
 	const Color StatusPopUpTextColor(251, 239, 77);
@@ -114,41 +106,6 @@ namespace GameWorldUiView
 	Int2 getStatusPopUpTextCenterPoint(Game &game);
 	int getStatusPopUpTextureWidth(int textWidth);
 	int getStatusPopUpTextureHeight(int textHeight);
-
-	constexpr int MagicButtonX = 88;
-	constexpr int MagicButtonY = 175;
-	constexpr int MagicButtonWidth = 29;
-	constexpr int MagicButtonHeight = 22;
-
-	constexpr int LogbookButtonX = 118;
-	constexpr int LogbookButtonY = 175;
-	constexpr int LogbookButtonWidth = 29;
-	constexpr int LogbookButtonHeight = 22;
-
-	constexpr int UseItemButtonX = 147;
-	constexpr int UseItemButtonY = 175;
-	constexpr int UseItemButtonWidth = 29;
-	constexpr int UseItemButtonHeight = 22;
-
-	constexpr int CampButtonX = 177;
-	constexpr int CampButtonY = 175;
-	constexpr int CampButtonWidth = 29;
-	constexpr int CampButtonHeight = 22;
-	
-	constexpr int ScrollUpButtonX = 208;
-	constexpr int ScrollUpButtonY = (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 3;
-	constexpr int ScrollUpButtonWidth = 9;
-	constexpr int ScrollUpButtonHeight = ScrollUpButtonWidth;
-
-	constexpr int ScrollDownButtonX = 208;
-	constexpr int ScrollDownButtonY = (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 44;
-	constexpr int ScrollDownButtonWidth = 9;
-	constexpr int ScrollDownButtonHeight = ScrollDownButtonWidth;
-
-	constexpr int MapButtonX = 118;
-	constexpr int MapButtonY = 151;
-	constexpr int MapButtonWidth = 29;
-	constexpr int MapButtonHeight = 22;
 
 	Int2 getGameWorldInterfacePosition();
 
@@ -184,7 +141,7 @@ namespace GameWorldUiView
 	TextBox::InitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
 	TextBox::InitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
 
-	Int2 getTooltipPosition(Game &game, int textureHeight);
+	Int2 getTooltipPosition(Game &game);
 
 	Rect getCompassClipRect();
 	Int2 getCompassSliderPosition(Game &game, const VoxelDouble2 &playerDirection);
@@ -217,7 +174,7 @@ namespace GameWorldUiView
 	UiTextureID allocWeaponAnimTexture(const std::string &weaponFilename, int index, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocCompassFrameTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocTooltipTexture(const std::string_view &text, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, FontLibrary &fontLibrary, Renderer &renderer);
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
 
 	void DEBUG_ColorRaycastPixel(Game &game);

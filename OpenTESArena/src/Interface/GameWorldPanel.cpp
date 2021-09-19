@@ -76,71 +76,27 @@ bool GameWorldPanel::init()
 	// @todo: effect text box initialization
 
 	this->characterSheetButton = Button<Game&>(
-		GameWorldUiView::CharacterSheetButtonX,
-		GameWorldUiView::CharacterSheetButtonY,
-		GameWorldUiView::CharacterSheetButtonWidth,
-		GameWorldUiView::CharacterSheetButtonHeight,
-		GameWorldUiController::onCharacterSheetButtonSelected);
+		GameWorldUiView::getCharacterSheetButtonRect(), GameWorldUiController::onCharacterSheetButtonSelected);
 	this->drawWeaponButton = Button<Player&>(
-		GameWorldUiView::WeaponSheathButtonX,
-		GameWorldUiView::WeaponSheathButtonY,
-		GameWorldUiView::WeaponSheathButtonWidth,
-		GameWorldUiView::WeaponSheathButtonHeight,
-		GameWorldUiController::onWeaponButtonSelected);
+		GameWorldUiView::getWeaponSheathButtonRect(), GameWorldUiController::onWeaponButtonSelected);
 	this->stealButton = Button<>(
-		GameWorldUiView::StealButtonX,
-		GameWorldUiView::StealButtonY,
-		GameWorldUiView::StealButtonWidth,
-		GameWorldUiView::StealButtonHeight,
-		GameWorldUiController::onStealButtonSelected);
+		GameWorldUiView::getStealButtonRect(), GameWorldUiController::onStealButtonSelected);
 	this->statusButton = Button<Game&>(
-		GameWorldUiView::StatusButtonX,
-		GameWorldUiView::StatusButtonY,
-		GameWorldUiView::StatusButtonWidth,
-		GameWorldUiView::StatusButtonHeight,
-		GameWorldUiController::onStatusButtonSelected);
+		GameWorldUiView::getStatusButtonRect(), GameWorldUiController::onStatusButtonSelected);
 	this->magicButton = Button<>(
-		GameWorldUiView::MagicButtonX,
-		GameWorldUiView::MagicButtonY,
-		GameWorldUiView::MagicButtonWidth,
-		GameWorldUiView::MagicButtonHeight,
-		GameWorldUiController::onMagicButtonSelected);
+		GameWorldUiView::getMagicButtonRect(), GameWorldUiController::onMagicButtonSelected);
 	this->logbookButton = Button<Game&>(
-		GameWorldUiView::LogbookButtonX,
-		GameWorldUiView::LogbookButtonY,
-		GameWorldUiView::LogbookButtonWidth,
-		GameWorldUiView::LogbookButtonHeight,
-		GameWorldUiController::onLogbookButtonSelected);
+		GameWorldUiView::getLogbookButtonRect(), GameWorldUiController::onLogbookButtonSelected);
 	this->useItemButton = Button<>(
-		GameWorldUiView::UseItemButtonX,
-		GameWorldUiView::UseItemButtonY,
-		GameWorldUiView::UseItemButtonWidth,
-		GameWorldUiView::UseItemButtonHeight,
-		GameWorldUiController::onUseItemButtonSelected);
+		GameWorldUiView::getUseItemButtonRect(), GameWorldUiController::onUseItemButtonSelected);
 	this->campButton = Button<>(
-		GameWorldUiView::CampButtonX,
-		GameWorldUiView::CampButtonY,
-		GameWorldUiView::CampButtonWidth,
-		GameWorldUiView::CampButtonHeight,
-		GameWorldUiController::onCampButtonSelected);
+		GameWorldUiView::getCampButtonRect(), GameWorldUiController::onCampButtonSelected);
 	this->scrollUpButton = Button<GameWorldPanel&>(
-		GameWorldUiView::ScrollUpButtonX,
-		GameWorldUiView::ScrollUpButtonY,
-		GameWorldUiView::ScrollUpButtonWidth,
-		GameWorldUiView::ScrollUpButtonHeight,
-		GameWorldUiController::onScrollUpButtonSelected);
+		GameWorldUiView::getScrollUpButtonRect(), GameWorldUiController::onScrollUpButtonSelected);
 	this->scrollDownButton = Button<GameWorldPanel&>(
-		GameWorldUiView::ScrollDownButtonX,
-		GameWorldUiView::ScrollDownButtonY,
-		GameWorldUiView::ScrollDownButtonWidth,
-		GameWorldUiView::ScrollDownButtonHeight,
-		GameWorldUiController::onScrollDownButtonSelected);
+		GameWorldUiView::getScrollDownButtonRect(), GameWorldUiController::onScrollDownButtonSelected);
 	this->mapButton = Button<Game&, bool>(
-		GameWorldUiView::MapButtonX,
-		GameWorldUiView::MapButtonY,
-		GameWorldUiView::MapButtonWidth,
-		GameWorldUiView::MapButtonHeight,
-		GameWorldUiController::onMapButtonSelected);
+		GameWorldUiView::getMapButtonRect(), GameWorldUiController::onMapButtonSelected);
 
 	auto &player = game.getGameState().getPlayer();
 
@@ -482,15 +438,15 @@ void GameWorldPanel::initUiDrawCalls()
 			Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight()),
 			PivotType::Bottom);
 
-		const Int2 portraitPosition(GameWorldUiView::PlayerPortraitX, GameWorldUiView::PlayerPortraitY);
+		const Rect portraitRect = GameWorldUiView::getPlayerPortraitRect();
 		this->addDrawCall(
 			this->statusGradientTextureRef.get(),
-			portraitPosition,
+			portraitRect.getTopLeft(),
 			Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight()),
 			PivotType::TopLeft);
 		this->addDrawCall(
 			this->playerPortraitTextureRef.get(),
-			portraitPosition,
+			portraitRect.getTopLeft(),
 			Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight()),
 			PivotType::TopLeft);
 
@@ -595,8 +551,68 @@ void GameWorldPanel::initUiDrawCalls()
 			[]() { return PivotType::Bottom; },
 			effectTextActiveFunc);
 
-		// @todo: hovered button tooltip
-		// @todo: debug profiler
+		auto &fontLibrary = game.getFontLibrary();
+		this->tooltipTextureRefs.init(GameWorldUiModel::BUTTON_COUNT);
+		for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
+		{
+			const GameWorldUiModel::ButtonType buttonType = static_cast<GameWorldUiModel::ButtonType>(i);
+			const UiTextureID tooltipTextureID = GameWorldUiView::allocTooltipTexture(buttonType, fontLibrary, renderer);
+			this->tooltipTextureRefs.set(i, ScopedUiTextureRef(tooltipTextureID, renderer));
+		}
+
+		UiDrawCall::TextureFunc tooltipTextureFunc = [this, &game]()
+		{
+			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
+			if (!buttonType.has_value())
+			{
+				DebugCrash("Expected tooltip texture func to only be called when actually drawing a tooltip.");
+			}
+
+			const int index = static_cast<int>(*buttonType);
+			const ScopedUiTextureRef &tooltipTextureRef = this->tooltipTextureRefs.get(index);
+			return tooltipTextureRef.get();
+		};
+
+		UiDrawCall::PositionFunc tooltipPositionFunc = [&game]()
+		{
+			return GameWorldUiView::getTooltipPosition(game);
+		};
+
+		UiDrawCall::SizeFunc tooltipSizeFunc = [this, &game]()
+		{
+			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
+			if (!buttonType.has_value())
+			{
+				DebugCrash("Expected tooltip size func to only be called when actually drawing a tooltip.");
+			}
+
+			const int index = static_cast<int>(*buttonType);
+			const ScopedUiTextureRef &tooltipTextureRef = this->tooltipTextureRefs.get(index);
+			return Int2(tooltipTextureRef.getWidth(), tooltipTextureRef.getHeight());
+		};
+
+		UiDrawCall::PivotFunc tooltipPivotFunc = []()
+		{
+			return PivotType::BottomLeft;
+		};
+
+		UiDrawCall::ActiveFunc tooltipActiveFunc = [this, &game]()
+		{
+			if (this->isPaused())
+			{
+				return false;
+			}
+
+			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
+			return buttonType.has_value();
+		};
+
+		this->addDrawCall(
+			tooltipTextureFunc,
+			tooltipPositionFunc,
+			tooltipSizeFunc,
+			tooltipPivotFunc,
+			tooltipActiveFunc);
 
 		UiDrawCall::PositionFunc cursorPositionFunc = [&game]()
 		{
@@ -705,14 +721,6 @@ void GameWorldPanel::resize(int windowWidth, int windowHeight)
 	GameWorldUiModel::updateNativeCursorRegions(
 		BufferView<Rect>(this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size())),
 		windowWidth, windowHeight);
-}
-
-void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
-{
-	auto &game = this->getGame();
-	const Texture tooltip = TextureUtils::createTooltip(text, game.getFontLibrary(), renderer);	
-	const Int2 tooltipPosition = GameWorldUiView::getTooltipPosition(game, tooltip.getHeight());
-	renderer.drawOriginal(tooltip, tooltipPosition.x, tooltipPosition.y);
 }
 
 bool GameWorldPanel::gameWorldRenderCallback(Game &game)

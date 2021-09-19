@@ -566,19 +566,22 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 
 void ProvinceMapPanel::drawButtonTooltip(const std::string &text, Renderer &renderer)
 {
-	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
+	auto &game = this->getGame();
+	const auto &fontLibrary = game.getFontLibrary();
+	const Surface tooltipSurface = TextureUtils::createTooltip(text, fontLibrary);
+	const Texture tooltipTexture = renderer.createTextureFromSurface(tooltipSurface);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
-		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
-		mouseY : (mouseY - tooltip.getHeight());
+	const int x = ((mouseX + 8 + tooltipTexture.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
+		(mouseX + 8) : (mouseX - tooltipTexture.getWidth());
+	const int y = ((mouseY + tooltipTexture.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
+		mouseY : (mouseY - tooltipTexture.getHeight());
 
-	renderer.drawOriginal(tooltip, x, y);
+	renderer.drawOriginal(tooltipTexture, x, y);
 }
 
 void ProvinceMapPanel::render(Renderer &renderer)

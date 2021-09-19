@@ -287,7 +287,7 @@ Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 	return surface;
 }
 
-Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
+Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::D;
 	int fontDefIndex;
@@ -321,9 +321,8 @@ Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLi
 	constexpr TextAlignment alignment = TextAlignment::TopLeft;
 	TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines.data(), static_cast<int>(textLines.size())),
 		fontDef, dstX, dstY, textColor, alignment, lineSpacing, nullptr, nullptr, surfacePixelsView);
-
-	Texture texture = renderer.createTextureFromSurface(surface);
-	return texture;
+	
+	return surface;
 }
 
 Buffer<TextureAssetReference> TextureUtils::makeTextureAssetRefs(const std::string &filename,

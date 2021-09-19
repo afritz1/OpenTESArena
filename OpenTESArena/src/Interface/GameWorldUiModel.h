@@ -1,6 +1,7 @@
 #ifndef GAME_WORLD_UI_MODEL_H
 #define GAME_WORLD_UI_MODEL_H
 
+#include <optional>
 #include <string>
 
 #include "../Math/MathUtils.h"
@@ -13,20 +14,27 @@ class Rect;
 
 namespace GameWorldUiModel
 {
+	enum class ButtonType
+	{
+		CharacterSheet,
+		ToggleWeapon,
+		Map,
+		Steal,
+		Status,
+		Magic,
+		Logbook,
+		UseItem,
+		Camp
+	};
+
+	constexpr int BUTTON_COUNT = 9;
+
 	std::string getPlayerNameText(Game &game);
 	std::string getStatusButtonText(Game &game);
 	std::string getPlayerPositionText(Game &game);
 
-	// Tooltips.
-	std::string getCharacterSheetTooltipText();
-	std::string getWeaponTooltipText();
-	std::string getMapTooltipText();
-	std::string getStealTooltipText();
-	std::string getStatusTooltipText();
-	std::string getMagicTooltipText();
-	std::string getLogbookTooltipText();
-	std::string getUseItemTooltipText();
-	std::string getCampTooltipText();
+	std::optional<ButtonType> getHoveredButtonType(Game &game);
+	std::string getButtonTooltip(ButtonType buttonType);
 
 	void setFreeLookActive(Game &game, bool active);
 

@@ -37,13 +37,91 @@ TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::strin
 		fontLibrary);
 }
 
+Rect GameWorldUiView::getCharacterSheetButtonRect()
+{
+	return Rect(14, 166, 40, 29);
+}
+
+Rect GameWorldUiView::getPlayerPortraitRect()
+{
+	return GameWorldUiView::getCharacterSheetButtonRect();
+}
+
+Rect GameWorldUiView::getWeaponSheathButtonRect()
+{
+	return Rect(88, 151, 29, 22);
+}
+
+Rect GameWorldUiView::getStealButtonRect()
+{
+	return Rect(147, 151, 29, 22);
+}
+
 Rect GameWorldUiView::getStatusButtonRect()
 {
-	return Rect(
-		GameWorldUiView::StatusButtonX,
-		GameWorldUiView::StatusButtonY,
-		GameWorldUiView::StatusButtonWidth,
-		GameWorldUiView::StatusButtonHeight);
+	return Rect(177, 151, 29, 22);
+}
+
+Rect GameWorldUiView::getMagicButtonRect()
+{
+	return Rect(88, 175, 29, 22);
+}
+
+Rect GameWorldUiView::getLogbookButtonRect()
+{
+	return Rect(118, 175, 29, 22);
+}
+
+Rect GameWorldUiView::getUseItemButtonRect()
+{
+	return Rect(147, 175, 29, 22);
+}
+
+Rect GameWorldUiView::getCampButtonRect()
+{
+	return Rect(177, 175, 29, 22);
+}
+
+Rect GameWorldUiView::getScrollUpButtonRect()
+{
+	return Rect(208, (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 3, 9, 9);
+}
+
+Rect GameWorldUiView::getScrollDownButtonRect()
+{
+	return Rect(208, (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 44, 9, 9);
+}
+
+Rect GameWorldUiView::getMapButtonRect()
+{
+	return Rect(118, 151, 29, 22);
+}
+
+Rect GameWorldUiView::getButtonRect(GameWorldUiModel::ButtonType buttonType)
+{
+	switch (buttonType)
+	{
+	case GameWorldUiModel::ButtonType::CharacterSheet:
+		return GameWorldUiView::getCharacterSheetButtonRect();
+	case GameWorldUiModel::ButtonType::ToggleWeapon:
+		return GameWorldUiView::getWeaponSheathButtonRect();
+	case GameWorldUiModel::ButtonType::Map:
+		return GameWorldUiView::getMapButtonRect();
+	case GameWorldUiModel::ButtonType::Steal:
+		return GameWorldUiView::getStealButtonRect();
+	case GameWorldUiModel::ButtonType::Status:
+		return GameWorldUiView::getStatusButtonRect();
+	case GameWorldUiModel::ButtonType::Magic:
+		return GameWorldUiView::getMagicButtonRect();
+	case GameWorldUiModel::ButtonType::Logbook:
+		return GameWorldUiView::getLogbookButtonRect();
+	case GameWorldUiModel::ButtonType::UseItem:
+		return GameWorldUiView::getUseItemButtonRect();
+	case GameWorldUiModel::ButtonType::Camp:
+		return GameWorldUiView::getCampButtonRect();
+	default:
+		DebugUnhandledReturnMsg(Rect, std::to_string(static_cast<int>(buttonType)));
+	}
 }
 
 Int2 GameWorldUiView::getStatusPopUpTextCenterPoint(Game &game)
@@ -168,13 +246,12 @@ TextBox::InitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &f
 	return TextBox::InitInfo();
 }
 
-Int2 GameWorldUiView::getTooltipPosition(Game &game, int textureHeight)
+Int2 GameWorldUiView::getTooltipPosition(Game &game)
 {
 	DebugAssert(!game.getOptions().getGraphics_ModernInterface());
 
-	// @todo: wouldn't need texture height if we could specify the anchor/pivot for the rect to be the bottom left
 	const int x = 0;
-	const int y = ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.getHeight() - textureHeight;
+	const int y = ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.getHeight();
 	return Int2(x, y);
 }
 
@@ -391,11 +468,21 @@ UiTextureID GameWorldUiView::allocCompassSliderTexture(TextureManager &textureMa
 	return textureID;
 }
 
-UiTextureID GameWorldUiView::allocTooltipTexture(const std::string_view &text, TextureManager &textureManager, Renderer &renderer)
+UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType buttonType,
+	FontLibrary &fontLibrary, Renderer &renderer)
 {
-	// @todo: alloc tooltip Buffer2D, render text to it, then renderer.tryCreateUiTexture().
-	DebugNotImplemented();
-	return UiTextureID();
+	const std::string text = GameWorldUiModel::getButtonTooltip(buttonType);
+	const Surface surface = TextureUtils::createTooltip(text, fontLibrary);
+	const BufferView2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
+		surface.getWidth(), surface.getHeight());
+
+	UiTextureID id;
+	if (!renderer.tryCreateUiTexture(pixelsView, &id))
+	{
+		DebugCrash("Couldn't create tooltip texture for \"" + text + "\".");
+	}
+
+	return id;
 }
 
 UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer)

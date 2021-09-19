@@ -39,9 +39,6 @@ private:
 
 	void initUiDrawCalls();
 
-	// Draws a tooltip sitting on the top left of the game interface.
-	void drawTooltip(const std::string &text, Renderer &renderer);
-
 	// Called by game loop for rendering the 3D scene.
 	static bool gameWorldRenderCallback(Game &game);
 public:

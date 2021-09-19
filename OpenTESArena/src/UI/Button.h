@@ -17,6 +17,9 @@ private:
 	std::function<void(Args...)> callback;
 	Rect rect;
 public:
+	Button(const Rect &rect, const std::function<void(Args...)> &callback)
+		: callback(callback), rect(rect) { }
+
 	Button(int x, int y, int width, int height, const std::function<void(Args...)> &callback)
 		: callback(callback), rect(x, y, width, height) { }
 

@@ -75,7 +75,7 @@ namespace TextureUtils
 		Renderer &renderer);
 
 	// Generates a tooltip texture with pre-defined font/color/background.
-	Texture createTooltip(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
+	Surface createTooltip(const std::string &text, const FontLibrary &fontLibrary);
 
 	// Generates individual texture asset references from the given filename. This should be used for filenames
 	// that point to a set of textures.
