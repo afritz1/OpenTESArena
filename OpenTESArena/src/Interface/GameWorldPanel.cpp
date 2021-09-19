@@ -426,6 +426,63 @@ void GameWorldPanel::initUiDrawCalls()
 			[this]() { return Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight()); },
 			[]() { return PivotType::Top; },
 			compassActiveFunc);
+
+		UiDrawCall::TextureFunc triggerTextTextureFunc = [this]()
+		{
+			return this->triggerText.getTextureID();
+		};
+
+		UiDrawCall::TextureFunc actionTextTextureFunc = [this]()
+		{
+			return this->actionText.getTextureID();
+		};
+
+		UiDrawCall::TextureFunc effectTextTextureFunc = [this]()
+		{
+			return this->effectText.getTextureID();
+		};
+
+		UiDrawCall::ActiveFunc triggerTextActiveFunc = [this, &game]()
+		{
+			const auto &gameState = game.getGameState();
+			return !this->isPaused() && gameState.triggerTextIsVisible();
+		};
+
+		UiDrawCall::ActiveFunc actionTextActiveFunc = [this, &game]()
+		{
+			const auto &gameState = game.getGameState();
+			return !this->isPaused() && gameState.actionTextIsVisible();
+		};
+
+		UiDrawCall::ActiveFunc effectTextActiveFunc = [this, &game]()
+		{
+			const auto &gameState = game.getGameState();
+			return !this->isPaused() && gameState.effectTextIsVisible();
+		};
+
+		const Rect &triggerTextBoxRect = this->triggerText.getRect(); // Position is not usable due to classic/modern mode differences.
+		this->addDrawCall(
+			triggerTextTextureFunc,
+			[this, &game]() { return GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight()); },
+			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.getWidth(), triggerTextBoxRect.getHeight()); },
+			[]() { return PivotType::Bottom; },
+			triggerTextActiveFunc);
+
+		const Rect &actionTextBoxRect = this->actionText.getRect(); // Position is not usable due to classic/modern mode differences.
+		this->addDrawCall(
+			actionTextTextureFunc,
+			[]() { return GameWorldUiView::getActionTextPosition(); },
+			[actionTextBoxRect]() { return Int2(actionTextBoxRect.getWidth(), actionTextBoxRect.getHeight()); },
+			[]() { return PivotType::Top; },
+			actionTextActiveFunc);
+
+		const Rect &effectTextBoxRect = this->effectText.getRect();
+		this->addDrawCall(
+			effectTextTextureFunc,
+			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.getWidth() / 2), effectTextBoxRect.getTop()); },
+			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getWidth(), effectTextBoxRect.getHeight()); },
+			[]() { return PivotType::Bottom; },
+			effectTextActiveFunc);
 	}
 	else
 	{
