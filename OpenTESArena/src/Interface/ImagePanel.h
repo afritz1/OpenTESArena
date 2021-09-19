@@ -14,20 +14,20 @@ class Renderer;
 
 class ImagePanel : public Panel
 {
+public:
+	using OnFinishedFunction = std::function<void(Game&)>;
 private:
 	Button<Game&> skipButton;
-	std::string paletteName;
-	std::string textureName;
+	ScopedUiTextureRef textureRef;
 	double secondsToDisplay, currentSeconds;
 public:
 	ImagePanel(Game &game);
 	~ImagePanel() override = default;
 
 	bool init(const std::string &paletteName, const std::string &textureName, double secondsToDisplay,
-		const std::function<void(Game&)> &endingAction);
+		const OnFinishedFunction &onFinished);
 
 	virtual void tick(double dt) override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif
