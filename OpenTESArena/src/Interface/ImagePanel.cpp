@@ -34,23 +34,12 @@ bool ImagePanel::init(const std::string &paletteName, const std::string &texture
 	});
 
 	auto &textureManager = game.getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugLogError("Couldn't get palette for image from \"" + paletteName + "\".");
-		return false;
-	}
-
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureName.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get texture builder ID for image from \"" + textureName + "\".");
-		return false;
-	}
-
 	auto &renderer = game.getRenderer();
+	const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(textureName));
+	const TextureAssetReference paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
+
 	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
 		DebugLogError("Couldn't create UI texture for image \"" + textureName + "\" with palette \"" + paletteName + "\".");
 		return false;

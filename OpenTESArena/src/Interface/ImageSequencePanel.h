@@ -2,12 +2,13 @@
 #define IMAGE_SEQUENCE_PANEL_H
 
 #include <functional>
-#include <memory>
 #include <string>
 #include <vector>
 
 #include "Panel.h"
 #include "../UI/Button.h"
+
+#include "components/utilities/Buffer.h"
 
 // Halfway between a CinematicPanel and an ImagePanel, this panel displays still images one at a time and
 // allows only the escape button to fully skip until the end, unlike the CinematicPanel. Mouse clicks, etc.
@@ -20,8 +21,7 @@ public:
 private:
 	Button<Game&> skipButton;
 	OnFinishedFunction onFinished;
-	std::vector<std::string> paletteNames;
-	std::vector<std::string> textureNames;
+	Buffer<ScopedUiTextureRef> textureRefs;
 	std::vector<double> imageDurations;
 	double currentSeconds;
 	int imageIndex;
@@ -33,7 +33,6 @@ public:
 		const std::vector<double> &imageDurations, const OnFinishedFunction &onFinished);
 
 	virtual void tick(double dt) override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif
