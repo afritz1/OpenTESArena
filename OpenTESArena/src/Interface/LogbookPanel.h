@@ -12,14 +12,12 @@ class LogbookPanel : public Panel
 private:
 	TextBox titleTextBox;
 	Button<Game&> backButton;
+	ScopedUiTextureRef backgroundTextureRef, cursorTextureRef;
 public:
 	LogbookPanel(Game &game);
 	~LogbookPanel() override;
 
 	bool init();
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif
