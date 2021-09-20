@@ -9,7 +9,10 @@
 #include "../Assets/ArenaTypes.h"
 
 class ExeData;
+class Game;
 class ProvinceDefinition;
+
+enum class MapType;
 
 namespace MainMenuUiModel
 {
@@ -95,7 +98,14 @@ namespace MainMenuUiModel
 		{ ArenaTypes::WeatherType::SnowOvercast2, "Snow Overcast 2" }
 	};
 
+	std::string getTestButtonText();
 	std::string getTestTypeName(int type);
+
+	std::string getSelectedTestName(Game &game, int testType, int testIndex, int testIndex2);
+	std::optional<ArenaTypes::InteriorType> getSelectedTestInteriorType(int testType, int testIndex);
+	ArenaTypes::WeatherType getSelectedTestWeatherType(int testWeather);
+	MapType getSelectedTestMapType(int testType);
+
 	void getMainQuestLocationFromIndex(int testIndex, const ExeData &exeData,
 		int *outLocationID, int *outProvinceID, SpecialCaseType *outSpecialCaseType);
 	std::vector<int> makeShuffledLocationIndices(const ProvinceDefinition &provinceDef);

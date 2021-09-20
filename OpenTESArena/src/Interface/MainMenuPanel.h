@@ -7,6 +7,7 @@
 #include "Panel.h"
 #include "../Assets/ArenaTypes.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 class Renderer;
 
@@ -17,28 +18,25 @@ class MainMenuPanel : public Panel
 private:
 	Button<Game&> loadButton, newButton;
 	Button<> exitButton;
+	ScopedUiTextureRef backgroundTextureRef, cursorTextureRef;
+
+	// Test.
+	TextBox testButtonTextBox, testTypeTextBox, testNameTextBox, testWeatherTextBox;
 	Button<Game&, int, int, const std::string&,
 		const std::optional<ArenaTypes::InteriorType>&, ArenaTypes::WeatherType, MapType> quickStartButton;
 	Button<int*, int*, int*, int*> testTypeUpButton, testTypeDownButton;
 	Button<int*, int*, int*> testIndexUpButton, testIndexDownButton;
 	Button<int, int, int*> testIndex2UpButton, testIndex2DownButton;
 	Button<int, int*> testWeatherUpButton, testWeatherDownButton;
-	int testType, testIndex, testIndex2, testWeather; // Test values for quickstart.
+	ScopedUiTextureRef testArrowsTextureRef, testButtonTextureRef;
+	int testType, testIndex, testIndex2, testWeather;
 
-	std::string getSelectedTestName() const;
-	std::optional<ArenaTypes::InteriorType> getSelectedTestInteriorType() const;
-	ArenaTypes::WeatherType getSelectedTestWeatherType() const;
-	MapType getSelectedTestMapType() const;
-
-	void renderTestUI(Renderer &renderer);
+	void initTestUI();
 public:
 	MainMenuPanel(Game &game);
 	~MainMenuPanel() override;
 
 	bool init();
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif
