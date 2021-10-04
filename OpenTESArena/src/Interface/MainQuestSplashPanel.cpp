@@ -1,10 +1,10 @@
+#include "CommonUiView.h"
 #include "MainQuestSplashPanel.h"
 #include "MainQuestSplashUiController.h"
 #include "MainQuestSplashUiModel.h"
 #include "MainQuestSplashUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../UI/CursorData.h"
 
 #include "components/utilities/String.h"
 
@@ -45,43 +45,26 @@ bool MainQuestSplashPanel::init(int provinceID)
 		}
 	});
 
-	// Get the texture filename of the staff dungeon splash image.
-	this->splashTextureAssetRef = TextureAssetReference(MainQuestSplashUiModel::getSplashFilename(game, provinceID));
+	auto &textureManager = game.getTextureManager();
+	UiTextureID splashTextureID = MainQuestSplashUiView::allocSplashTextureID(game, provinceID);
+	this->splashTextureRef.init(splashTextureID, renderer);
+
+	this->addDrawCall(
+		this->splashTextureRef.get(),
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
+
+	const Rect &textBoxRect = this->textBox.getRect();
+	this->addDrawCall(
+		textBox.getTextureID(),
+		textBoxRect.getTopLeft(),
+		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
 
 	return true;
-}
-
-std::optional<CursorData> MainQuestSplashPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
-
-void MainQuestSplashPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw staff dungeon splash image.
-	auto &textureManager = this->getGame().getTextureManager();
-	const TextureAssetReference &paletteTextureAssetRef = this->splashTextureAssetRef;
-	const std::optional<PaletteID> splashPaletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
-	if (!splashPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get splash palette ID for \"" + paletteTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const TextureAssetReference &textureAssetRef = this->splashTextureAssetRef;
-	const std::optional<TextureBuilderID> splashTextureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-	if (!splashTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get splash texture builder ID for \"" + textureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*splashTextureBuilderID, *splashPaletteID, textureManager);
-
-	// Draw text.
-	const Rect &textBoxRect = this->textBox.getRect();
-	renderer.drawOriginal(this->textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 }

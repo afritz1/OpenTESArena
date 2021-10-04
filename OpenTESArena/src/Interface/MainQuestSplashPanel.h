@@ -13,15 +13,12 @@ class MainQuestSplashPanel : public Panel
 private:
 	TextBox textBox;
 	Button<Game&> exitButton;
-	TextureAssetReference splashTextureAssetRef;
+	ScopedUiTextureRef splashTextureRef, cursorTextureRef;
 public:
 	MainQuestSplashPanel(Game &game);
 	~MainQuestSplashPanel() override = default;
 
 	bool init(int provinceID);
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif
