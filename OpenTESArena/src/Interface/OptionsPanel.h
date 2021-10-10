@@ -37,7 +37,6 @@ private:
 	std::optional<int> getHoveredOptionIndex() const;
 
 	void updateOptionText(int index);
-	void updateDescriptionText(int optionIndex);
 public:
 	OptionsPanel(Game &game);
 	~OptionsPanel() override = default;

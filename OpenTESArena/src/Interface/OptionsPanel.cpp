@@ -88,8 +88,9 @@ bool OptionsPanel::init()
 		const std::optional<int> hoveredIndex = this->getHoveredOptionIndex();
 		if (hoveredIndex != this->hoveredOptionIndex)
 		{
-			const auto &visibleOptions = this->getVisibleOptions();
 			this->hoveredOptionIndex = hoveredIndex;
+
+			const auto &visibleOptions = this->getVisibleOptions();
 			if (hoveredIndex.has_value() && (*hoveredIndex < static_cast<int>(visibleOptions.size())))
 			{
 				const auto &option = visibleOptions[*hoveredIndex];
@@ -286,11 +287,6 @@ void OptionsPanel::updateOptionText(int index)
 	DebugAssertIndex(this->optionTextBoxes, index);
 	TextBox &textBox = this->optionTextBoxes[index];
 	textBox.setText(text);
-}
-
-void OptionsPanel::updateDescriptionText(int optionIndex)
-{
-
 }
 
 void OptionsPanel::updateVisibleOptions()
