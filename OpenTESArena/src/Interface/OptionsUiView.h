@@ -15,44 +15,9 @@ namespace OptionsUiView
 	const Color BackgroundColor(60, 60, 68);
 	const Color HighlightColor = BackgroundColor + Color(20, 20, 20);
 
-	// Screen locations for various options things.
-	const Int2 TabsOrigin(3, 38);
-	const Int2 TabsDimensions(54, 16);
-	const Int2 ListOrigin(
-		TabsOrigin.x + TabsDimensions.x + 5,
-		TabsOrigin.y);
-	const Int2 ListDimensions(
-		254,
-		TabsDimensions.y * 5);
-	const Int2 DescriptionOrigin(
-		TabsOrigin.x + 2,
-		TabsOrigin.y + (TabsDimensions.y * 5) + 4);
-
-	const Rect GraphicsTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y,
-		TabsDimensions.x,
-		TabsDimensions.y);
-	const Rect AudioTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y + TabsDimensions.y,
-		TabsDimensions.x,
-		TabsDimensions.y);
-	const Rect InputTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y + (TabsDimensions.y * 2),
-		TabsDimensions.x,
-		TabsDimensions.y);
-	const Rect MiscTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y + (TabsDimensions.y * 3),
-		TabsDimensions.x,
-		TabsDimensions.y);
-	const Rect DevTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y + (TabsDimensions.y * 4),
-		TabsDimensions.x,
-		TabsDimensions.y);
+	const Rect getTabRect(int index);
+	const Rect getListRect();
+	const Int2 getDescriptionXY();
 
 	const Int2 TitleTextBoxCenterPoint(160, 24);
 	const std::string TitleFontName = ArenaFontName::A;
@@ -61,18 +26,16 @@ namespace OptionsUiView
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	const Int2 BackToPauseMenuTextBoxCenterPoint(
+	const Int2 BackButtonTextBoxCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH - 30,
 		ArenaRenderUtils::SCREEN_HEIGHT - 15);
-	const std::string BackToPauseMenuFontName = ArenaFontName::Arena;
-	Color getBackToPauseMenuTextColor();
-	constexpr TextAlignment BackToPauseMenuTextAlignment = TextAlignment::MiddleCenter;
+	const std::string BackButtonFontName = ArenaFontName::Arena;
+	Color getBackButtonTextColor();
+	constexpr TextAlignment BackButtonTextAlignment = TextAlignment::MiddleCenter;
 
-	TextBox::InitInfo getBackToPauseMenuTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getBackButtonTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	const Int2 BackToPauseMenuButtonCenterPoint = BackToPauseMenuTextBoxCenterPoint;
-	constexpr int BackToPauseMenuButtonWidth = 40;
-	constexpr int BackToPauseMenuButtonHeight = 16;
+	Rect getBackButtonRect();
 
 	const std::string TabFontName = ArenaFontName::Arena;
 	Color getTabTextColor();
@@ -86,6 +49,15 @@ namespace OptionsUiView
 	const std::string DescriptionTextFontName = ArenaFontName::Arena;
 	Color getDescriptionTextColor();
 	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::TopLeft;
+
+	TextBox::InitInfo getTabTextBoxInitInfo(int index, const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getOptionTextBoxInitInfo(int index, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
+
+	UiTextureID allocBackgroundTexture(Renderer &renderer);
+	UiTextureID allocTabTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocHighlightTexture(Renderer &renderer);
+	UiTextureID allocBackButtonTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif
