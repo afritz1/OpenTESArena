@@ -1,12 +1,9 @@
 #ifndef PAUSE_MENU_PANEL_H
 #define PAUSE_MENU_PANEL_H
 
-#include <string>
-
 #include "Panel.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 class Renderer;
 
@@ -14,10 +11,10 @@ class PauseMenuPanel : public Panel
 {
 private:
 	TextBox playerNameTextBox, musicTextBox, soundTextBox, optionsTextBox;
-	Button<Game&> loadButton, exitButton;
-	Button<Game&> newButton, saveButton, resumeButton, optionsButton;
+	Button<Game&> loadButton, exitButton, newButton, saveButton, resumeButton, optionsButton;
 	Button<Game&, PauseMenuPanel&> soundUpButton, soundDownButton, musicUpButton, musicDownButton;
-	Texture optionsButtonTexture;
+	ScopedUiTextureRef backgroundTextureRef, gameWorldInterfaceTextureRef, statusGradientTextureRef,
+		playerPortraitTextureRef, noMagicTextureRef, optionsButtonTextureRef, cursorTextureRef;
 public:
 	PauseMenuPanel(Game &game);
 	~PauseMenuPanel() override = default;
@@ -26,9 +23,6 @@ public:
 
 	void updateMusicText(double volume);
 	void updateSoundText(double volume);
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif
