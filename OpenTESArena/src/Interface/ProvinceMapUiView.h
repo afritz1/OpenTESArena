@@ -13,12 +13,20 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
+class BinaryAssetLibrary;
 class Game;
 
 struct TextureAssetReference;
 
 namespace ProvinceMapUiView
 {
+	enum class HighlightType
+	{
+		None,
+		PlayerLocation,
+		TravelDestination
+	};
+
 	const Rect SearchButtonRect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 	const Rect TravelButtonRect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 	const Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
@@ -30,7 +38,9 @@ namespace ProvinceMapUiView
 	const Color LocationTextShadowColor(48, 48, 48);
 	constexpr int LocationTextShadowOffsetX = 1;
 	constexpr int LocationTextShadowOffsetY = 0;
-	Int2 getLocationTextClampedPosition(int textX, int textY, int textWidth, int textHeight);
+	Int2 getLocationTextClampedCenter(const Rect &unclampedRect);
+
+	TextBox::InitInfo getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
 	const std::string TextPopUpFontName = ArenaFontName::Arena;
@@ -41,7 +51,7 @@ namespace ProvinceMapUiView
 	const Int2 TextPopUpTextureCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-	int getTextPopUpTextureWidth(int textWidth);
+	int getTextPopUpTextureWidth(int textWidth); // @todo: these should be merged into a plain old allocPopUpTexture()
 	int getTextPopUpTextureHeight(int textHeight);
 
 	constexpr TextureUtils::PatternType TextPopUpTexturePatternType = TextureUtils::PatternType::Parchment;
@@ -59,18 +69,29 @@ namespace ProvinceMapUiView
 	constexpr int VillageIconHighlightIndex = 2;
 	constexpr int DungeonIconHighlightIndex = 3;
 
-	TextureAssetReference getProvinceBackgroundTextureAssetRef(Game &game, int provinceID);
-	TextureAssetReference getProvinceBackgroundPaletteTextureAssetRef(Game &game, int provinceID);
+	bool provinceHasStaffDungeonIcon(int provinceID);
 
-	TextureAssetReference getCityStateIconTextureAssetRef();
-	TextureAssetReference getTownIconTextureAssetRef();
-	TextureAssetReference getVillageIconTextureAssetRef();
-	TextureAssetReference getDungeonIconTextureAssetRef();
-	std::string getStaffDungeonIconsFilename();
+	TextureAssetReference getBackgroundTextureAssetRef(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
+	TextureAssetReference getBackgroundPaletteTextureAssetRef(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
+
+	TextureAssetReference getCityStateIconTextureAssetRef(HighlightType highlightType);
+	TextureAssetReference getTownIconTextureAssetRef(HighlightType highlightType);
+	TextureAssetReference getVillageIconTextureAssetRef(HighlightType highlightType);
+	TextureAssetReference getDungeonIconTextureAssetRef(HighlightType highlightType);
 	TextureAssetReference getStaffDungeonIconTextureAssetRef(int provinceID);
 
-	std::string getMapIconOutlinesFilename();
-	std::string getMapIconBlinkingOutlinesFilename();
+	UiTextureID allocBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocCityStateIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef,
+		TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocTownIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
+		TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocVillageIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
+		TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocDungeonIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
+		TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocStaffDungeonIconTexture(int provinceID, HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
+		TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ProvinceSearchUiView

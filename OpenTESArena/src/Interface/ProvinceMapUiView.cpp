@@ -5,6 +5,7 @@
 #include "../Game/Game.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -18,11 +19,33 @@ Int2 ProvinceMapUiView::getLocationCenterPoint(Game &game, int provinceID, int l
 	return Int2(locationDef.getScreenX(), locationDef.getScreenY());
 }
 
-Int2 ProvinceMapUiView::getLocationTextClampedPosition(int textX, int textY, int textWidth, int textHeight)
+Int2 ProvinceMapUiView::getLocationTextClampedCenter(const Rect &unclampedRect)
 {
-	return Int2(
-		std::clamp(textX, 2, ArenaRenderUtils::SCREEN_WIDTH - textWidth - 2),
-		std::clamp(textY, 2, ArenaRenderUtils::SCREEN_HEIGHT - textHeight - 2));
+	const Int2 unclampedTopLeft = unclampedRect.getTopLeft();
+	const Int2 clampedTopLeft(
+		std::clamp(unclampedTopLeft.x, 2, ArenaRenderUtils::SCREEN_WIDTH - unclampedRect.getWidth() - 2),
+		std::clamp(unclampedTopLeft.y, 2, ArenaRenderUtils::SCREEN_HEIGHT - unclampedRect.getHeight() - 2));
+	return clampedTopLeft + Int2(unclampedRect.getWidth() / 2, unclampedRect.getHeight() / 2);
+}
+
+TextBox::InitInfo ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	const std::string dummyText(24, TextRenderUtils::LARGEST_CHAR);
+
+	TextRenderUtils::TextShadowInfo shadowInfo;
+	shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY,
+		ProvinceMapUiView::LocationTextShadowColor);
+	constexpr int lineSpacing = 0;
+
+	return TextBox::InitInfo::makeWithCenter(
+		dummyText,
+		Int2::Zero,
+		ProvinceMapUiView::LocationFontName,
+		ProvinceMapUiView::LocationTextColor,
+		ProvinceMapUiView::LocationTextAlignment,
+		shadowInfo,
+		lineSpacing,
+		fontLibrary);
 }
 
 int ProvinceMapUiView::getTextPopUpTextureWidth(int textWidth)
@@ -36,58 +59,239 @@ int ProvinceMapUiView::getTextPopUpTextureHeight(int textHeight)
 	return std::max(textHeight + 16, 40);
 }
 
-TextureAssetReference ProvinceMapUiView::getProvinceBackgroundTextureAssetRef(Game &game, int provinceID)
+bool ProvinceMapUiView::provinceHasStaffDungeonIcon(int provinceID)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	return provinceID != LocationUtils::CENTER_PROVINCE_ID;
+}
+
+TextureAssetReference ProvinceMapUiView::getBackgroundTextureAssetRef(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
+{
+	const auto &exeData = binaryAssetLibrary.getExeData();
 	const auto &provinceImgFilenames = exeData.locations.provinceImgFilenames;
 	DebugAssertIndex(provinceImgFilenames, provinceID);
 	const std::string &filename = provinceImgFilenames[provinceID];
 	return TextureAssetReference(String::toUppercase(filename));
 }
 
-TextureAssetReference ProvinceMapUiView::getProvinceBackgroundPaletteTextureAssetRef(Game &game, int provinceID)
+TextureAssetReference ProvinceMapUiView::getBackgroundPaletteTextureAssetRef(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
 {
-	return TextureAssetReference(ProvinceMapUiView::getProvinceBackgroundTextureAssetRef(game, provinceID));
+	return TextureAssetReference(ProvinceMapUiView::getBackgroundTextureAssetRef(provinceID, binaryAssetLibrary));
 }
 
-TextureAssetReference ProvinceMapUiView::getCityStateIconTextureAssetRef()
+TextureAssetReference ProvinceMapUiView::getCityStateIconTextureAssetRef(HighlightType highlightType)
 {
-	return TextureAssetReference(std::string(ArenaTextureName::CityStateIcon));
+	if (highlightType == HighlightType::None)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::CityStateIcon));
+	}
+	else if (highlightType == HighlightType::PlayerLocation)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::MapIconOutlines), ProvinceMapUiView::CityStateIconHighlightIndex);
+	}
+	else if (highlightType == HighlightType::TravelDestination)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::MapIconOutlinesBlinking), ProvinceMapUiView::CityStateIconHighlightIndex);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(TextureAssetReference, std::to_string(static_cast<int>(highlightType)));
+	}
 }
 
-TextureAssetReference ProvinceMapUiView::getTownIconTextureAssetRef()
+TextureAssetReference ProvinceMapUiView::getTownIconTextureAssetRef(HighlightType highlightType)
 {
-	return TextureAssetReference(std::string(ArenaTextureName::TownIcon));
+	if (highlightType == HighlightType::None)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::TownIcon));
+	}
+	else if (highlightType == HighlightType::PlayerLocation)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::MapIconOutlines), ProvinceMapUiView::TownIconHighlightIndex);
+	}
+	else if (highlightType == HighlightType::TravelDestination)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::MapIconOutlinesBlinking), ProvinceMapUiView::TownIconHighlightIndex);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(TextureAssetReference, std::to_string(static_cast<int>(highlightType)));
+	}
 }
 
-TextureAssetReference ProvinceMapUiView::getVillageIconTextureAssetRef()
+TextureAssetReference ProvinceMapUiView::getVillageIconTextureAssetRef(HighlightType highlightType)
 {
-	return TextureAssetReference(std::string(ArenaTextureName::VillageIcon));
+	if (highlightType == HighlightType::None)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::VillageIcon));
+	}
+	else if (highlightType == HighlightType::PlayerLocation)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::MapIconOutlines), ProvinceMapUiView::VillageIconHighlightIndex);
+	}
+	else if (highlightType == HighlightType::TravelDestination)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::MapIconOutlinesBlinking), ProvinceMapUiView::VillageIconHighlightIndex);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(TextureAssetReference, std::to_string(static_cast<int>(highlightType)));
+	}
 }
 
-TextureAssetReference ProvinceMapUiView::getDungeonIconTextureAssetRef()
+TextureAssetReference ProvinceMapUiView::getDungeonIconTextureAssetRef(HighlightType highlightType)
 {
-	return TextureAssetReference(std::string(ArenaTextureName::DungeonIcon));
-}
-
-std::string ProvinceMapUiView::getStaffDungeonIconsFilename()
-{
-	return ArenaTextureName::StaffDungeonIcons;
+	if (highlightType == HighlightType::None)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::DungeonIcon));
+	}
+	else if (highlightType == HighlightType::PlayerLocation)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::MapIconOutlines), ProvinceMapUiView::DungeonIconHighlightIndex);
+	}
+	else if (highlightType == HighlightType::TravelDestination)
+	{
+		return TextureAssetReference(std::string(ArenaTextureName::MapIconOutlinesBlinking), ProvinceMapUiView::DungeonIconHighlightIndex);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(TextureAssetReference, std::to_string(static_cast<int>(highlightType)));
+	}
 }
 
 TextureAssetReference ProvinceMapUiView::getStaffDungeonIconTextureAssetRef(int provinceID)
 {
-	return TextureAssetReference(ProvinceMapUiView::getStaffDungeonIconsFilename(), provinceID);
+	return TextureAssetReference(std::string(ArenaTextureName::StaffDungeonIcons), provinceID);
 }
 
-std::string ProvinceMapUiView::getMapIconOutlinesFilename()
+UiTextureID ProvinceMapUiView::allocBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, Renderer &renderer)
 {
-	return ArenaTextureName::MapIconOutlines;
+	const TextureAssetReference textureAssetRef = ProvinceMapUiView::getBackgroundTextureAssetRef(provinceID, binaryAssetLibrary);
+	const TextureAssetReference paletteTextureAssetRef = ProvinceMapUiView::getBackgroundPaletteTextureAssetRef(provinceID, binaryAssetLibrary);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't allocate province \"" + std::to_string(provinceID) + "\" background texture.");
+	}
+
+	return textureID;
 }
 
-std::string ProvinceMapUiView::getMapIconBlinkingOutlinesFilename()
+UiTextureID ProvinceMapUiView::allocCityStateIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef,
+	TextureManager &textureManager, Renderer &renderer)
 {
-	return ArenaTextureName::MapIconOutlinesBlinking;
+	const TextureAssetReference textureAssetRef = ProvinceMapUiView::getCityStateIconTextureAssetRef(highlightType);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't allocate city state icon texture.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ProvinceMapUiView::allocTownIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = ProvinceMapUiView::getTownIconTextureAssetRef(highlightType);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't allocate town icon texture.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ProvinceMapUiView::allocVillageIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = ProvinceMapUiView::getVillageIconTextureAssetRef(highlightType);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't allocate village icon texture.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ProvinceMapUiView::allocDungeonIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = ProvinceMapUiView::getDungeonIconTextureAssetRef(highlightType);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't allocate dungeon icon texture.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, HighlightType highlightType,
+	const TextureAssetReference &paletteTextureAssetRef, TextureManager &textureManager, Renderer &renderer)
+{
+	DebugAssert(ProvinceMapUiView::provinceHasStaffDungeonIcon(provinceID));
+
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get staff dungeon palette ID for \"" + paletteTextureAssetRef.filename + "\".");
+	}
+
+	const TextureAssetReference textureAssetRef = ProvinceMapUiView::getStaffDungeonIconTextureAssetRef(provinceID);
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get staff dungeon texture builder ID for \"" + textureAssetRef.filename + "\".");
+	}
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	{
+		DebugCrash("Couldn't create staff dungeon texture for \"" + textureAssetRef.filename + "\".");
+	}
+
+	if (highlightType == HighlightType::None)
+	{
+		return textureID;
+	}
+
+	// Modify icon background texels based on the highlight type.
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+
+	const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+	const uint8_t *srcTexels = srcTexture.texels.get();
+	uint32_t *dstTexels = renderer.lockUiTexture(textureID);
+	if (dstTexels == nullptr)
+	{
+		DebugCrash("Couldn't lock staff dungeon icon texels for highlight modification.");
+	}
+
+	const uint8_t highlightColorIndex = (highlightType == HighlightType::PlayerLocation) ?
+		ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
+	const uint32_t highlightColor = palette[highlightColorIndex].toARGB();
+
+	const int texelCount = textureBuilder.getWidth() * textureBuilder.getHeight();
+	for (int i = 0; i < texelCount; i++)
+	{
+		const uint8_t srcTexel = srcTexels[i];
+		if (srcTexel == ProvinceMapUiView::BackgroundPaletteIndex)
+		{
+			dstTexels[i] = highlightColor;
+		}
+	}
+
+	renderer.unlockUiTexture(textureID);
+	return textureID;
 }
 
 TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view &text,
