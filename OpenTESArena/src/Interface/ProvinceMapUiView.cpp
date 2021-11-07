@@ -5,6 +5,7 @@
 #include "../Game/Game.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/Surface.h"
 #include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
@@ -321,16 +322,6 @@ TextBox::InitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLi
 		fontLibrary);
 }
 
-int ProvinceSearchUiView::getTextEntryTextureX(int textureWidth)
-{
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
-}
-
-int ProvinceSearchUiView::getTextEntryTextureY(int textureHeight)
-{
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) - 1;
-}
-
 ListBox::Properties ProvinceSearchUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::Arena;
@@ -367,9 +358,9 @@ TextureAssetReference ProvinceSearchUiView::getListTextureAssetRef()
 	return TextureAssetReference(std::string(ArenaTextureName::PopUp8));
 }
 
-TextureAssetReference ProvinceSearchUiView::getListPaletteTextureAssetRef(Game &game, int provinceID)
+TextureAssetReference ProvinceSearchUiView::getListPaletteTextureAssetRef(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 	const auto &provinceImgFilenames = exeData.locations.provinceImgFilenames;
 	DebugAssertIndex(provinceImgFilenames, provinceID);
 	const std::string &filename = provinceImgFilenames[provinceID];
@@ -377,4 +368,45 @@ TextureAssetReference ProvinceSearchUiView::getListPaletteTextureAssetRef(Game &
 	// Set all characters to uppercase because the texture manager expects 
 	// extensions to be uppercase, and most filenames in A.EXE are lowercase.
 	return String::toUppercase(filename);
+}
+
+UiTextureID ProvinceSearchUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const int width = ProvinceSearchUiView::TextureWidth;
+	const int height = ProvinceSearchUiView::TextureHeight;
+	const Surface surface = TextureUtils::generate(ProvinceSearchUiView::TexturePattern, width, height, textureManager, renderer);
+	
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	{
+		DebugCrash("Couldn't create parchment texture (dims: " + std::to_string(width) + "x" + std::to_string(height) + ").");
+	}
+
+	uint32_t *dstTexels = renderer.lockUiTexture(textureID);
+	if (dstTexels == nullptr)
+	{
+		DebugCrash("Couldn't lock parchment texels for writing.");
+	}
+
+	const int texelCount = width * height;
+	const uint32_t *srcTexels = static_cast<const uint32_t*>(surface.getPixels());
+	std::copy(srcTexels, srcTexels + texelCount, dstTexels);
+	renderer.unlockUiTexture(textureID);
+
+	return textureID;
+}
+
+UiTextureID ProvinceSearchUiView::allocListBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = ProvinceSearchUiView::getListTextureAssetRef();
+	const TextureAssetReference paletteTextureAssetRef = ProvinceSearchUiView::getListPaletteTextureAssetRef(binaryAssetLibrary, provinceID);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create list background texture.");
+	}
+
+	return textureID;
 }

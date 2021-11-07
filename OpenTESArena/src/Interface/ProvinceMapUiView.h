@@ -112,8 +112,6 @@ namespace ProvinceSearchUiView
 
 	TextBox::InitInfo getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 
-	int getTextEntryTextureX(int textureWidth);
-	int getTextEntryTextureY(int textureHeight);
 	constexpr int TextureWidth = 280;
 	constexpr int TextureHeight = 40;
 	constexpr TextureUtils::PatternType TexturePattern = TextureUtils::PatternType::Parchment;
@@ -133,7 +131,11 @@ namespace ProvinceSearchUiView
 	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAssetReference getListTextureAssetRef();
-	TextureAssetReference getListPaletteTextureAssetRef(Game &game, int provinceID);
+	TextureAssetReference getListPaletteTextureAssetRef(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID);
+
+	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocListBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

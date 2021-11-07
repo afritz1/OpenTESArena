@@ -228,7 +228,7 @@ void Panel::addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 
 		clipRect);
 }
 
-void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType)
+void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCall::ActiveFunc &activeFunc)
 {
 	UiDrawCall::TextureFunc textureFunc = [textureID]()
 	{
@@ -245,7 +245,7 @@ void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType)
 	UiDrawCall::SizeFunc sizeFunc = [this, textureID]()
 	{
 		auto &game = this->getGame();
-		auto &renderer = game.getRenderer();		
+		auto &renderer = game.getRenderer();
 		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(textureID);
 		if (!dims.has_value())
 		{
@@ -273,9 +273,14 @@ void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType)
 		positionFunc,
 		sizeFunc,
 		pivotFunc,
-		UiDrawCall::defaultActiveFunc,
+		activeFunc,
 		clipRect,
 		renderSpace);
+}
+
+void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType)
+{
+	this->addCursorDrawCall(textureID, pivotType, UiDrawCall::defaultActiveFunc);
 }
 
 void Panel::clearDrawCalls()

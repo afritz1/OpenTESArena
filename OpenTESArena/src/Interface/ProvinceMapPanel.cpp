@@ -199,7 +199,7 @@ bool ProvinceMapPanel::init(int provinceID)
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, hoveredLocationActiveFunc);
 
 	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
 	this->provinceID = provinceID;
