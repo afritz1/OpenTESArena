@@ -135,6 +135,7 @@ void GameWorldUiController::onStatusButtonSelected(Game &game)
 		GameWorldUiView::StatusPopUpTextLineSpacing,
 		game.getFontLibrary());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	Surface surface = TextureUtils::generate(
 		GameWorldUiView::StatusPopUpTexturePatternType,
@@ -142,11 +143,17 @@ void GameWorldUiController::onStatusButtonSelected(Game &game)
 		GameWorldUiView::getStatusPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
 		renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
 
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create status pop-up texture.");
+	}
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
 	const Int2 textureCenter = center;
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected,
-		std::move(texture), textureCenter);
+		std::move(textureRef), textureCenter);
 }
 
 void GameWorldUiController::onStatusPopUpSelected(Game &game)

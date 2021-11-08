@@ -244,6 +244,7 @@ namespace ChooseRaceUiView
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocNoExitTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocInitialPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseAttributesUiView

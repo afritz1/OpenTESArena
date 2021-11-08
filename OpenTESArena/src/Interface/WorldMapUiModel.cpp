@@ -323,20 +323,17 @@ std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int t
 		FastTravelUiView::CityArrivalLineSpacing,
 		game.getFontLibrary());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	const Surface surface = TextureUtils::generate(
-		FastTravelUiView::CityArrivalTexturePatternType,
-		FastTravelUiView::getCityArrivalPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
-		FastTravelUiView::getCityArrivalPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
-		game.getTextureManager(),
-		renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
+	const UiTextureID textureID = FastTravelUiView::allocCityArrivalPopUpTexture(
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight(), textureManager, renderer);
+	ScopedUiTextureRef textureRef(textureID, renderer);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
 	if (!subPanel->init(textBoxInitInfo, text, FastTravelUiController::onCityArrivalPopUpSelected,
-		std::move(texture), FastTravelUiView::getCityArrivalPopUpTextureCenterPoint(game)))
+		std::move(textureRef), FastTravelUiView::getCityArrivalPopUpTextureCenterPoint(game)))
 	{
-		DebugCrash("Couldn't init sub-panel.");
+		DebugCrash("Couldn't init city arrival sub-panel.");
 	}
 
 	return subPanel;

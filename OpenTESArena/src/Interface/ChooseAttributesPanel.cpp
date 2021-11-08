@@ -204,16 +204,22 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiView::InitialTextLineSpacing,
 		fontLibrary);
 
-	Surface surface = TextureUtils::generate(
+	const Surface initialPopUpSurface = TextureUtils::generate(
 		ChooseAttributesUiView::InitialTextPatternType,
 		ChooseAttributesUiView::getInitialTextureWidth(),
 		ChooseAttributesUiView::getInitialTextureHeight(),
 		game.getTextureManager(),
 		renderer);
-	Texture initialTexture = renderer.createTextureFromSurface(surface);
+	
+	UiTextureID initialPopUpTextureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(initialPopUpSurface, textureManager, renderer, &initialPopUpTextureID))
+	{
+		DebugCrash("Couldn't create initial pop-up texture.");
+	}
 
+	ScopedUiTextureRef initialPopUpTextureRef(initialPopUpTextureID, renderer);
 	game.pushSubPanel<TextSubPanel>(initialPopUpTextBoxInitInfo, initialPopUpText,
-		ChooseAttributesUiController::onInitialPopUpSelected, std::move(initialTexture),
+		ChooseAttributesUiController::onInitialPopUpSelected, std::move(initialPopUpTextureRef),
 		ChooseAttributesUiView::InitialTextureCenterPoint);
 
 	return true;

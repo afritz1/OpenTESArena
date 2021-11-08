@@ -32,13 +32,20 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 		game.popSubPanel();
 	};
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	Surface surface = TextureUtils::generate(TextureUtils::PatternType::Dark,
+	const Surface surface = TextureUtils::generate(TextureUtils::PatternType::Dark,
 		textBoxInitInfo.rect.getWidth() + 10, textBoxInitInfo.rect.getHeight() + 10,
 		game.getTextureManager(), renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
 
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, popUpFunction, std::move(texture), center);
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create non-implemented pop-up texture.");
+	}
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, popUpFunction, std::move(textureRef), center);
 }
 
 void LoadSaveUiController::onBackInputAction(const InputActionCallbackValues &values)

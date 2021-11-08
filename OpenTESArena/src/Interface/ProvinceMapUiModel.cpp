@@ -78,17 +78,14 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 		lineSpacing,
 		fontLibrary);
 
-	const Surface surface = TextureUtils::generate(
-		ProvinceMapUiView::TextPopUpTexturePatternType,
-		ProvinceMapUiView::getTextPopUpTextureWidth(textBoxTextureGenInfo.width),
-		ProvinceMapUiView::getTextPopUpTextureHeight(textBoxTextureGenInfo.height),
-		game.getTextureManager(),
-		renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
+	auto &textureManager = game.getTextureManager();
+	const UiTextureID textureID = ProvinceMapUiView::allocTextPopUpTexture(
+		textBoxTextureGenInfo.width, textBoxTextureGenInfo.height, textureManager, renderer);
+	ScopedUiTextureRef textureRef(textureID, renderer);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
 	if (!subPanel->init(textBoxInitInfo, text, ProvinceMapUiController::onTextPopUpSelected,
-		std::move(texture), ProvinceMapUiView::TextPopUpTextureCenterPoint))
+		std::move(textureRef), ProvinceMapUiView::TextPopUpTextureCenterPoint))
 	{
 		DebugCrash("Couldn't init province map text sub-panel.");
 	}

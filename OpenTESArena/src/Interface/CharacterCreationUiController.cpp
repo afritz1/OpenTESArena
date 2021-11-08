@@ -257,14 +257,20 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFirstTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedFirstTextPatternType,
+	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedFirstTextPatternType,
 		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create province confirmed #1 pop-up texture.");
+	}
 
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected,
-		std::move(texture), textureRect.getCenter());
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected,
+		std::move(textureRef), textureRect.getCenter());
 }
 
 void ChooseRaceUiController::onProvinceCancelButtonSelected(Game &game)
@@ -294,14 +300,20 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedSecondTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedSecondTextPatternType,
+	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedSecondTextPatternType,
 		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create province confirmed #2 pop-up texture.");
+	}
 
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected,
-		std::move(texture), textureRect.getCenter());
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected,
+		std::move(textureRef), textureRect.getCenter());
 }
 
 void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
@@ -322,14 +334,20 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedThirdTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedThirdTextPatternType,
+	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedThirdTextPatternType,
 		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create province confirmed #3 pop-up texture.");
+	}
 
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected,
-		std::move(texture), textureRect.getCenter());
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected,
+		std::move(textureRef), textureRect.getCenter());
 }
 
 void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
@@ -350,6 +368,7 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	Surface surface = TextureUtils::generate(
 		ChooseRaceUiView::ProvinceConfirmedFourthTextPatternType,
@@ -357,11 +376,16 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 		textureRect.getHeight(),
 		game.getTextureManager(),
 		renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create province confirmed #4 pop-up texture.");
+	}
 
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		ChooseRaceUiController::onProvinceConfirmedFourthButtonSelected,
-		std::move(texture), textureRect.getCenter());
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseRaceUiController::onProvinceConfirmedFourthButtonSelected,
+		std::move(textureRef), textureRect.getCenter());
 }
 
 void ChooseRaceUiController::onProvinceConfirmedFourthButtonSelected(Game &game)
@@ -619,20 +643,27 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 		ChooseAttributesUiView::AppearanceTextLineSpacing,
 		game.getFontLibrary());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	Surface surface = TextureUtils::generate(
+	const Surface surface = TextureUtils::generate(
 		ChooseAttributesUiView::AppearanceTextPatternType,
 		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
 		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
 		renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create appearance pop-up texture.");
+	}
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
 
 	// The done button is replaced after the player confirms their stats, and it then leads to the main quest
 	// opening cinematic.
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		ChooseAttributesUiController::onAppearanceTextBoxSelected,
-		std::move(texture), ChooseAttributesUiView::AppearanceTextCenterPoint);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseAttributesUiController::onAppearanceTextBoxSelected,
+		std::move(textureRef), ChooseAttributesUiView::AppearanceTextCenterPoint);
 
 	*attributesAreSaved = true;
 }

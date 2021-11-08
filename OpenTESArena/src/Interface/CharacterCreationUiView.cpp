@@ -574,6 +574,20 @@ UiTextureID ChooseRaceUiView::allocNoExitTexture(TextureManager &textureManager,
 	return textureID;
 }
 
+UiTextureID ChooseRaceUiView::allocInitialPopUpTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(ChooseRaceUiView::InitialPopUpPatternType,
+		ChooseRaceUiView::InitialPopUpTextureWidth, ChooseRaceUiView::InitialPopUpTextureHeight, textureManager, renderer);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create initial pop-up texture.");
+	}
+	
+	return textureID;
+}
+
 int ChooseAttributesUiView::getInitialTextureWidth()
 {
 	return 183;

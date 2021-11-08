@@ -48,6 +48,8 @@ namespace FastTravelUiView
 	Int2 getCityArrivalPopUpTextureCenterPoint(Game &game);
 	int getCityArrivalPopUpTextureWidth(int textWidth);
 	int getCityArrivalPopUpTextureHeight(int textHeight);
+
+	UiTextureID allocCityArrivalPopUpTexture(int textWidth, int textHeight, TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

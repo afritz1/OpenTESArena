@@ -92,6 +92,8 @@ namespace ProvinceMapUiView
 		TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocStaffDungeonIconTexture(int provinceID, HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
 		TextureManager &textureManager, Renderer &renderer);
+
+	UiTextureID allocTextPopUpTexture(int textWidth, int textHeight, TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ProvinceSearchUiView

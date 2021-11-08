@@ -1,5 +1,4 @@
-#include "SDL.h"
-
+#include "CommonUiView.h"
 #include "TextSubPanel.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
@@ -17,7 +16,7 @@ TextSubPanel::TextSubPanel(Game &game)
 	: Panel(game) { }
 
 bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
-	const OnClosedFunction &onClosed, Texture &&texture, const Int2 &textureCenter)
+	const OnClosedFunction &onClosed, ScopedUiTextureRef &&textureRef, const Int2 &textureCenter)
 {
 	auto &game = this->getGame();
 
@@ -48,67 +47,28 @@ bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::str
 		}
 	});
 	
-	this->texture = std::move(texture);
+	this->textureRef = std::move(textureRef);
+
+	this->addDrawCall(
+		this->textureRef.get(),
+		textureCenter,
+		Int2(this->textureRef.getWidth(), this->textureRef.getHeight()),
+		PivotType::Middle);
+
+	const Rect &textBoxRect = this->textBox.getRect();
+	this->addDrawCall(
+		this->textBox.getTextureID(),
+		textBoxRect.getCenter(),
+		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
+		PivotType::Middle);
+
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+
 	this->textureCenter = textureCenter;
 
 	return true;
-}
-
-bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
-	const OnClosedFunction &onClosed)
-{
-	return this->init(textBoxInitInfo, text, onClosed, Texture(), Int2());
-}
-
-std::optional<CursorData> TextSubPanel::getCurrentCursor() const
-{
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugLogWarning("Couldn't get palette ID for \"" + paletteFilename + "\".");
-		return std::nullopt;
-	}
-
-	const std::string &textureFilename = ArenaTextureName::SwordCursor;
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugLogWarning("Couldn't get texture ID for \"" + textureFilename + "\".");
-		return std::nullopt;
-	}
-
-	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
-}
-
-void TextSubPanel::render(Renderer &renderer)
-{
-	// Draw background if it exists.
-	if (this->texture.get() != nullptr)
-	{
-		const Rect textureRect(
-			this->textureCenter.x - (this->texture.getWidth() / 2),
-			this->textureCenter.y - (this->texture.getHeight() / 2),
-			this->texture.getWidth(),
-			this->texture.getHeight());
-
-		renderer.drawOriginal(this->texture,
-			textureRect.getLeft(),
-			textureRect.getTop(),
-			textureRect.getWidth(),
-			textureRect.getHeight());
-	}
-
-	// Draw text.
-	const Rect textBoxRect = this->textBox.getRect();
-	renderer.drawOriginal(this->textBox.getTextureID(),
-		textBoxRect.getLeft(),
-		textBoxRect.getTop(),
-		textBoxRect.getWidth(),
-		textBoxRect.getHeight());
 }

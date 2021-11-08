@@ -84,6 +84,12 @@ namespace TextureUtils
 	// Convenience function for allocating a UI texture. The returned handle must be eventually freed.
 	bool tryAllocUiTexture(const TextureAssetReference &textureAssetRef, const TextureAssetReference &paletteTextureAssetRef,
 		TextureManager &textureManager, Renderer &renderer, UiTextureID *outID);
+
+	// Convenience function for allocating a UI texture from an SDL surface. Note that the usage of this generally
+	// means there is waste with the allocation of the input surface, and this should just be a UI texture allocation
+	// and write instead eventually (instead of a copy).
+	bool tryAllocUiTextureFromSurface(const Surface &surface, TextureManager &textureManager, Renderer &renderer,
+		UiTextureID *outID);
 }
 
 using PaletteIdGroup = TextureUtils::IdGroup<PaletteID>;

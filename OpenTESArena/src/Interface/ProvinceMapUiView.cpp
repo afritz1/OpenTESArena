@@ -295,6 +295,25 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	return textureID;
 }
 
+UiTextureID ProvinceMapUiView::allocTextPopUpTexture(int textWidth, int textHeight,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(
+		ProvinceMapUiView::TextPopUpTexturePatternType,
+		ProvinceMapUiView::getTextPopUpTextureWidth(textWidth),
+		ProvinceMapUiView::getTextPopUpTextureHeight(textHeight),
+		textureManager,
+		renderer);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create text pop-up texture.");
+	}
+
+	return textureID;
+}
+
 TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view &text,
 	const FontLibrary &fontLibrary)
 {

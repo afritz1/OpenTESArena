@@ -4,6 +4,7 @@
 #include "WorldMapUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
+#include "../UI/Surface.h"
 
 Int2 WorldMapUiView::getProvinceNameOffset(int provinceID, TextureManager &textureManager)
 {
@@ -97,4 +98,23 @@ int FastTravelUiView::getCityArrivalPopUpTextureWidth(int textWidth)
 int FastTravelUiView::getCityArrivalPopUpTextureHeight(int textHeight)
 {
 	return textHeight + 12;
+}
+
+UiTextureID FastTravelUiView::allocCityArrivalPopUpTexture(int textWidth, int textHeight,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(
+		FastTravelUiView::CityArrivalTexturePatternType,
+		FastTravelUiView::getCityArrivalPopUpTextureWidth(textWidth),
+		FastTravelUiView::getCityArrivalPopUpTextureHeight(textHeight),
+		textureManager,
+		renderer);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create city arrival pop-up texture from surface.");
+	}
+
+	return textureID;
 }

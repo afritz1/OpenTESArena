@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "TextureUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Math/Rect.h"
@@ -371,5 +373,33 @@ bool TextureUtils::tryAllocUiTexture(const TextureAssetReference &textureAssetRe
 		return false;
 	}
 
+	return true;
+}
+
+bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureManager &textureManager,
+	Renderer &renderer, UiTextureID *outID)
+{
+	const int width = surface.getWidth();
+	const int height = surface.getHeight();
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	{
+		DebugLogError("Couldn't create UI texture from surface.");
+		return false;
+	}
+
+	const int texelCount = width * height;
+	const uint32_t *srcTexels = static_cast<const uint32_t*>(surface.getPixels());
+	uint32_t *dstTexels = renderer.lockUiTexture(textureID);
+	if (dstTexels == nullptr)
+	{
+		DebugLogError("Couldn't lock UI texels for writing from surface.");
+		return false;
+	}
+
+	std::copy(srcTexels, srcTexels + texelCount, dstTexels);
+	renderer.unlockUiTexture(textureID);
+	*outID = textureID;
 	return true;
 }

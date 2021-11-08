@@ -54,19 +54,14 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 	const std::string text = ChooseRaceUiModel::getTitleText(game);
 	const TextBox::InitInfo textBoxInitInfo = ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(text, game);
 
-	// @todo: change to UiTextureID probably and put in ChooseRaceUiView once TextSubPanel gets revised.
-	auto &renderer = game.getRenderer();
-	Surface surface = TextureUtils::generate(
-		ChooseRaceUiView::InitialPopUpPatternType,
-		ChooseRaceUiView::InitialPopUpTextureWidth,
-		ChooseRaceUiView::InitialPopUpTextureHeight,
-		game.getTextureManager(),
-		renderer);
-	Texture texture = renderer.createTextureFromSurface(surface);
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();	
+	const UiTextureID textureID = ChooseRaceUiView::allocInitialPopUpTexture(textureManager, renderer);	
+	ScopedUiTextureRef textureRef(textureID, renderer);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
 	if (!subPanel->init(textBoxInitInfo, text, ChooseRaceUiController::onInitialPopUpButtonSelected,
-		std::move(texture), ChooseRaceUiView::InitialPopUpTextureCenterPoint))
+		std::move(textureRef), ChooseRaceUiView::InitialPopUpTextureCenterPoint))
 	{
 		DebugCrash("Couldn't init choose race initial sub-panel.");
 	}
