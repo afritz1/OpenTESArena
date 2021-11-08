@@ -1,9 +1,6 @@
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstdio>
-
-#include "SDL.h"
 
 #include "TextCinematicPanel.h"
 #include "TextCinematicUiView.h"
@@ -37,60 +34,17 @@ TextCinematicPanel::~TextCinematicPanel()
 bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage, const OnFinishedFunction &onFinished)
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
 	const auto &cinematicLibrary = game.getCinematicLibrary();
+	const auto &fontLibrary = game.getFontLibrary();
+
 	const TextCinematicDefinition &textCinematicDef = cinematicLibrary.getTextDefinition(textCinematicDefIndex);
-
-	this->textBoxes = [&game, &textCinematicDef]()
+	const TextBox::InitInfo subtitlesTextBoxInitInfo = TextCinematicUiView::getSubtitlesTextBoxInitInfo(textCinematicDef.getFontColor(), fontLibrary);
+	if (!this->textBox.init(subtitlesTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const std::string subtitleText = TextCinematicUiModel::getSubtitleText(game, textCinematicDef);
-		const int subtitleTextLineCount = TextCinematicUiModel::getSubtitleTextLineCount(subtitleText);
-		const int textBoxesToMake = TextCinematicUiModel::getSubtitleTextBoxCount(subtitleTextLineCount);
-		const std::vector<std::string> subtitleTextLines = TextCinematicUiModel::getSubtitleTextLines(subtitleText);
-
-		// Group up to three text lines per text box.
-		std::vector<TextBox> textBoxes;
-		for (int i = 0; i < textBoxesToMake; i++)
-		{
-			std::string textBoxText;
-			int linesToUse = std::min(subtitleTextLineCount - (i * 3), 3);
-			for (int j = 0; j < linesToUse; j++)
-			{
-				const int textLineIndex = j + (i * 3);
-				DebugAssertIndex(subtitleTextLines, textLineIndex);
-				const std::string &textLine = subtitleTextLines[textLineIndex];
-				textBoxText.append(textLine);
-				textBoxText.append("\n");
-			}
-
-			// Avoid adding empty text boxes.
-			if (textBoxText.size() == 0)
-			{
-				continue;
-			}
-
-			// Eventually use a different color when other cinematic actors are supported.
-			const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
-				textBoxText,
-				TextCinematicUiView::SubtitleTextBoxCenterPoint,
-				TextCinematicUiView::SubtitleTextBoxFontName,
-				textCinematicDef.getFontColor(),
-				TextCinematicUiView::SubtitleTextBoxTextAlignment,
-				std::nullopt,
-				TextCinematicUiView::SubtitleTextBoxLineSpacing,
-				fontLibrary);
-
-			TextBox textBox;
-			if (!textBox.init(textBoxInitInfo, textBoxText, game.getRenderer()))
-			{
-				DebugLogError("Couldn't init text box " + std::to_string(i) + ".");
-			}
-
-			textBoxes.emplace_back(std::move(textBox));
-		}
-
-		return textBoxes;
-	}();
+		DebugLogError("Couldn't init subtitles text box.");
+		return false;
+	}
 
 	auto skipPageFunc = [this, onFinished](Game &game)
 	{
@@ -100,12 +54,14 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 			this->textIndex++;
 
 			// If done with the last text box, then prepare for the next panel.
-			int textBoxCount = static_cast<int>(this->textBoxes.size());
+			int textBoxCount = static_cast<int>(this->textPages.size());
 			if (this->textIndex >= textBoxCount)
 			{
 				this->textIndex = textBoxCount - 1;
 				onFinished(game);
 			}
+
+			this->updateSubtitles();
 		}
 	};
 
@@ -128,20 +84,71 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		}
 	});
 
+	const std::string subtitleText = TextCinematicUiModel::getSubtitleText(game, textCinematicDef);
+	this->textPages = TextCinematicUiModel::getSubtitleTextPages(subtitleText);
+
+	auto &textureManager = game.getTextureManager();
+	const std::string &animFilename = textCinematicDef.getAnimationFilename();
+	const std::vector<UiTextureID> animTextureIDs = TextCinematicUiView::allocAnimationTextures(animFilename, textureManager, renderer);
+	if (animTextureIDs.size() == 0)
+	{
+		DebugLogError("No animation frames for text cinematic \"" + animFilename + "\".");
+		return false;
+	}
+
+	for (const UiTextureID animTextureID : animTextureIDs)
+	{
+		ScopedUiTextureRef animTextureRef;
+		animTextureRef.init(animTextureID, renderer);
+		this->animTextureRefs.emplace_back(std::move(animTextureRef));
+	}
+
+	UiDrawCall::TextureFunc animTextureFunc = [this]()
+	{
+		DebugAssertIndex(this->animTextureRefs, this->animImageIndex);
+		return this->animTextureRefs[this->animImageIndex].get();
+	};
+
+	const std::optional<Int2> animTextureDims = renderer.tryGetUiTextureDims(animTextureIDs.front());
+	DebugAssert(animTextureDims.has_value());
+	this->addDrawCall(
+		animTextureFunc,
+		Int2::Zero,
+		*animTextureDims,
+		PivotType::TopLeft);
+
+	const Rect &textBoxRect = this->textBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->textBox.getTextureID(); },
+		textBoxRect.getCenter(),
+		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
+		PivotType::Middle);
+
 	// Optionally initialize speech state if speech is available.
 	if (TextCinematicUiModel::shouldPlaySpeech(game))
 	{
 		this->speechState.init(textCinematicDef.getTemplateDatKey());
 	}
 
-	this->animTextureFilename = textCinematicDef.getAnimationFilename();
 	this->secondsPerImage = secondsPerImage;
 	this->currentImageSeconds = 0.0;
 	this->textCinematicDefIndex = textCinematicDefIndex;
 	this->animImageIndex = 0;
 	this->textIndex = 0;
+	this->updateSubtitles();
 
 	return true;
+}
+
+void TextCinematicPanel::updateSubtitles()
+{
+	std::string textToDisplay;
+	if (this->textIndex < static_cast<int>(this->textPages.size()))
+	{
+		textToDisplay = this->textPages[this->textIndex];
+	}
+
+	this->textBox.setText(textToDisplay);
 }
 
 void TextCinematicPanel::tick(double dt)
@@ -153,17 +160,9 @@ void TextCinematicPanel::tick(double dt)
 		this->currentImageSeconds -= this->secondsPerImage;
 		this->animImageIndex++;
 
-		auto &textureManager = this->getGame().getTextureManager();
-		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(this->animTextureFilename.c_str());
-		if (!metadataID.has_value())
-		{
-			DebugCrash("Couldn't get anim texture file metadata for \"" + this->animTextureFilename + "\".");
-		}
-
 		// If at the end of the sequence, go back to the first image. The cinematic ends at the end
 		// of the last text box.
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-		if (this->animImageIndex == textureFileMetadata.getTextureCount())
+		if (this->animImageIndex == static_cast<int>(this->animTextureRefs.size()))
 		{
 			this->animImageIndex = 0;
 		}
@@ -201,6 +200,7 @@ void TextCinematicPanel::tick(double dt)
 					if (TextCinematicUiModel::SpeechState::isBeginningOfNewPage(nextVoiceIndex))
 					{
 						this->textIndex++;
+						this->updateSubtitles();
 					}
 				}
 				else
@@ -211,36 +211,4 @@ void TextCinematicPanel::tick(double dt)
 			}
 		}
 	}
-}
-
-void TextCinematicPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw current frame in animation.
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(this->animTextureFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugLogError("Couldn't get palette ID for \"" + this->animTextureFilename + "\".");
-		return;
-	}
-
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(this->animTextureFilename.c_str());
-	if (!textureBuilderIDs.has_value())
-	{
-		DebugLogError("Couldn't get texture builder IDs for \"" + this->animTextureFilename + "\".");
-		return;
-	}
-
-	const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(this->animImageIndex);
-	renderer.drawOriginal(textureBuilderID, *paletteID, textureManager);
-
-	// Draw the relevant text box.
-	DebugAssertIndex(this->textBoxes, this->textIndex);
-	TextBox &textBox = this->textBoxes[this->textIndex];
-	const Rect &textBoxRect = textBox.getRect();
-	renderer.drawOriginal(textBox.getTextureID(), textBoxRect.getLeft(), textBoxRect.getTop());
 }

@@ -89,17 +89,37 @@ std::string TextCinematicUiModel::getSubtitleText(Game &game, const TextCinemati
 	return newText;
 }
 
-int TextCinematicUiModel::getSubtitleTextLineCount(const std::string &subtitleText)
+std::vector<std::string> TextCinematicUiModel::getSubtitleTextPages(const std::string &text)
 {
-	return static_cast<int>(std::count(subtitleText.begin(), subtitleText.end(), '\n'));
-}
+	const int textLineCount = static_cast<int>(std::count(text.begin(), text.end(), '\n'));
+	const int textPagesToMake = static_cast<int>(std::ceil(textLineCount / 3)) + 1;
+	const std::vector<std::string> textLines = String::split(text, '\n');
 
-int TextCinematicUiModel::getSubtitleTextBoxCount(int lineCount)
-{
-	return static_cast<int>(std::ceil(lineCount / 3)) + 1;
-}
+	// Group up to three text lines per text box.
+	std::vector<std::string> textPages;
+	for (int i = 0; i < textPagesToMake; i++)
+	{
+		std::string textPageText;
+		int linesToUse = std::min(textLineCount - (i * 3), 3);
+		for (int j = 0; j < linesToUse; j++)
+		{
+			const int textLineIndex = j + (i * 3);
+			DebugAssertIndex(textLines, textLineIndex);
+			const std::string &textLine = textLines[textLineIndex];
 
-std::vector<std::string> TextCinematicUiModel::getSubtitleTextLines(const std::string &subtitleText)
-{
-	return String::split(subtitleText, '\n');
+			if (textPageText.length() > 0)
+			{
+				textPageText.append("\n");
+			}
+
+			textPageText.append(textLine);
+		}
+
+		if (textPageText.size() > 0)
+		{
+			textPages.emplace_back(std::move(textPageText));
+		}
+	}
+
+	return textPages;
 }
