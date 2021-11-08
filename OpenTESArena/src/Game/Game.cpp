@@ -603,32 +603,6 @@ void Game::render()
 		}
 	}
 
-	// vvv  legacy rendering  vvv
-	// @todo: remove this once all UI is using the new UiDrawCall way
-
-	// Draw panels back to front.
-	for (Panel *currentPanel : panelsToRender)
-	{
-		currentPanel->render(this->renderer);
-	}
-
-	// Call the active panel's secondary render method. Secondary render items are those
-	// that are hidden on panels below the active one.
-	Panel *activePanel = this->getActivePanel();
-	activePanel->renderSecondary(this->renderer);
-
-	// Get the active panel's cursor texture and alignment.
-	const std::optional<CursorData> cursor = activePanel->getCurrentCursor();
-
-	// Draw cursor if valid. Some panels do not define a cursor (like cinematics), so their cursor is empty.
-	if (cursor.has_value())
-	{
-		// The panel should not be drawing the cursor themselves. It's done here 
-		// just to make sure that the cursor is drawn only once and is always drawn last.
-		this->renderer.drawCursor(cursor->getTextureBuilderID(), cursor->getPaletteID(), cursor->getAlignment(),
-			this->inputManager.getMousePosition(), this->options.getGraphics_CursorScale(), this->textureManager);
-	}
-
 	this->renderer.present();
 }
 

@@ -64,12 +64,6 @@ Panel::~Panel()
 	}
 }
 
-std::optional<CursorData> Panel::getCurrentCursor() const
-{
-	// Empty by default.
-	return std::nullopt;
-}
-
 BufferView<const ButtonProxy> Panel::getButtonProxies() const
 {
 	return BufferView<const ButtonProxy>(this->buttonProxies.data(), static_cast<int>(this->buttonProxies.size()));
@@ -292,16 +286,4 @@ void Panel::tick(double dt)
 {
 	// Do nothing by default.
 	static_cast<void>(dt);
-}
-
-void Panel::render(Renderer &renderer)
-{
-	// Do nothing by default.
-	static_cast<void>(renderer);
-}
-
-void Panel::renderSecondary(Renderer &renderer)
-{
-	// Do nothing by default.
-	static_cast<void>(renderer);
 }

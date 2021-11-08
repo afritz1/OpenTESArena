@@ -95,10 +95,6 @@ public:
 	Panel(Game &game);
 	virtual ~Panel();
 
-	// Gets the panel's active mouse cursor and alignment, if any. Override this if the panel has at
-	// least one cursor defined.
-	virtual std::optional<CursorData> getCurrentCursor() const;
-
 	// Returns button proxies for ease of iteration and finding out which button is clicked in a frame
 	// so its callback can be called.
 	BufferView<const ButtonProxy> getButtonProxies() const;
@@ -119,15 +115,6 @@ public:
 	// in some form each frame without user input, or depends on things like a key
 	// or a mouse button being held down.
 	virtual void tick(double dt);
-
-	// Draws the panel's main contents onto the display. Any contents that are hidden
-	// when this panel is not the top-most one should go in renderSecondary().
-	virtual void render(Renderer &renderer);
-
-	// Draws the panel's secondary contents (pop-up text, tooltips, etc.). Does not
-	// clear the frame buffer. This method is only called for the top-most panel, and
-	// does nothing by default.
-	virtual void renderSecondary(Renderer &renderer);
 };
 
 #endif
