@@ -1,6 +1,7 @@
 #ifndef OPTIONS_UI_MODEL_H
 #define OPTIONS_UI_MODEL_H
 
+#include <array>
 #include <functional>
 #include <memory>
 #include <string>
@@ -13,15 +14,16 @@ namespace OptionsUiModel
 	// Options panel tabs.
 	enum class Tab { Graphics, Audio, Input, Misc, Dev };
 
-	const std::string OptionsTitleText = "Options";
-	const std::string BackToPauseMenuText = "Return";
+	constexpr int TAB_COUNT = 5;
+	constexpr int OPTION_COUNT = 9; // @todo: support list box somehow
 
-	// Tabs.
-	const std::string GRAPHICS_TAB_NAME = "Graphics";
-	const std::string AUDIO_TAB_NAME = "Audio";
-	const std::string INPUT_TAB_NAME = "Input";
-	const std::string MISC_TAB_NAME = "Misc";
-	const std::string DEV_TAB_NAME = "Dev";
+	const std::string TitleText = "Options";
+	const std::string BackButtonText = "Return";
+
+	const std::array<std::string, TAB_COUNT> TAB_NAMES =
+	{
+		"Graphics", "Audio", "Input", "Misc", "Dev"
+	};
 
 	// Graphics.
 	const std::string CURSOR_SCALE_NAME = "Cursor Scale";
@@ -76,7 +78,12 @@ namespace OptionsUiModel
 		const std::string &getTooltip() const;
 		OptionType getType() const;
 		virtual std::string getDisplayedValue() const = 0;
+
+		virtual void tryIncrement() = 0;
+		virtual void tryDecrement() = 0;
 	};
+
+	using OptionGroup = std::vector<std::unique_ptr<OptionsUiModel::Option>>;
 
 	class BoolOption : public Option
 	{
@@ -91,6 +98,9 @@ namespace OptionsUiModel
 		~BoolOption() override = default;
 
 		virtual std::string getDisplayedValue() const override;
+
+		void tryIncrement() override;
+		void tryDecrement() override;
 
 		void toggle();
 	};
@@ -117,6 +127,9 @@ namespace OptionsUiModel
 		int getPrev() const; // Subtracts delta from current value, clamped between [min, max].
 		virtual std::string getDisplayedValue() const override;
 
+		void tryIncrement() override;
+		void tryDecrement() override;
+
 		void set(int value);
 	};
 
@@ -139,6 +152,9 @@ namespace OptionsUiModel
 		double getPrev() const; // Subtracts delta from current value, clamped between [min, max].
 		virtual std::string getDisplayedValue() const override;
 
+		void tryIncrement() override;
+		void tryDecrement() override;
+
 		void set(double value);
 	};
 
@@ -156,6 +172,9 @@ namespace OptionsUiModel
 
 		virtual std::string getDisplayedValue() const override;
 
+		void tryIncrement() override;
+		void tryDecrement() override;
+
 		void set(std::string &&value);
 	};
 
@@ -168,17 +187,20 @@ namespace OptionsUiModel
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeCursorScaleOption(Game &game);
 	std::unique_ptr<OptionsUiModel::BoolOption> makeModernInterfaceOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeRenderThreadsModeOption(Game &game);
+	OptionGroup makeGraphicsOptionGroup(Game &game);
 
 	// Audio options.
 	std::unique_ptr<OptionsUiModel::IntOption> makeSoundChannelsOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeSoundResamplingOption(Game &game);
 	std::unique_ptr<OptionsUiModel::BoolOption> makeIs3dAudioOption(Game &game);
+	OptionGroup makeAudioOptionGroup(Game &game);
 
 	// Input options.
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeHorizontalSensitivityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeVerticalSensitivityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeCameraPitchLimitOption(Game &game);
 	std::unique_ptr<OptionsUiModel::BoolOption> makePixelPerfectSelectionOption(Game &game);
+	OptionGroup makeInputOptionGroup(Game &game);
 
 	// Miscellaneous options.
 	std::unique_ptr<OptionsUiModel::BoolOption> makeShowCompassOption(Game &game);
@@ -187,10 +209,15 @@ namespace OptionsUiModel
 	std::unique_ptr<OptionsUiModel::IntOption> makeChunkDistanceOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeStarDensityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::BoolOption> makePlayerHasLightOption(Game &game);
+	OptionGroup makeMiscOptionGroup(Game &game);
 
-	// Developer options
+	// Developer options.
 	std::unique_ptr<OptionsUiModel::BoolOption> makeCollisionOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeProfilerLevelOption(Game &game);
+	OptionGroup makeDevOptionGroup(Game &game);
+
+	// Convenience function for iteration.
+	OptionGroup makeOptionGroup(int index, Game &game);
 }
 
 #endif

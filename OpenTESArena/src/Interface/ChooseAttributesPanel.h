@@ -24,15 +24,14 @@ private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
 	Button<Game&, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
+	Buffer<ScopedUiTextureRef> headTextureRefs;
+	ScopedUiTextureRef bodyTextureRef, shirtTextureRef, pantsTextureRef, statsBgTextureRef, cursorTextureRef;
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 public:
 	ChooseAttributesPanel(Game &game);
 	~ChooseAttributesPanel() override = default;
 
 	bool init();
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif

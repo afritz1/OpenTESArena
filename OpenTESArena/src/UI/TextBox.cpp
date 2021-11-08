@@ -105,24 +105,16 @@ bool TextBox::init(const Rect &rect, const Properties &properties, Renderer &ren
 
 	const int textureWidth = properties.textureGenInfo.width;
 	const int textureHeight = properties.textureGenInfo.height;
-	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
-
-	if (this->texture.get() == nullptr)
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(textureWidth, textureHeight, &textureID))
 	{
-		DebugLogError("Couldn't create text box texture (" + std::to_string(textureWidth) + "x" +
+		DebugLogError("Couldn't create UI texture for text box (dims: " + std::to_string(textureWidth) + "x" +
 			std::to_string(textureHeight) + ").");
 		return false;
 	}
-
-	if (SDL_SetTextureBlendMode(this->texture.get(), SDL_BLENDMODE_BLEND) != 0)
-	{
-		DebugLogError("Couldn't set SDL texture blend mode.");
-		return false;
-	}
-
+	
+	this->textureRef.init(textureID, renderer);
 	this->dirty = true;
-
 	return true;
 }
 
@@ -147,7 +139,7 @@ const Rect &TextBox::getRect() const
 	return this->rect;
 }
 
-const Texture &TextBox::getTexture()
+UiTextureID TextBox::getTextureID()
 {
 	if (this->dirty)
 	{
@@ -155,7 +147,7 @@ const Texture &TextBox::getTexture()
 		DebugAssert(!this->dirty);
 	}
 
-	return this->texture;
+	return this->textureRef.get();
 }
 
 void TextBox::setText(const std::string_view &text)
@@ -183,11 +175,10 @@ void TextBox::updateTexture()
 		return;
 	}
 
-	uint32_t *texturePixels;
-	int pitch;
-	if (SDL_LockTexture(this->texture.get(), nullptr, reinterpret_cast<void**>(&texturePixels), &pitch) != 0)
+	uint32_t *texels = this->textureRef.lockTexels();
+	if (texels == nullptr)
 	{
-		DebugLogError("Couldn't lock text box texture for updating.");
+		DebugLogError("Couldn't lock text box UI texture for updating.");
 		return;
 	}
 
@@ -197,7 +188,10 @@ void TextBox::updateTexture()
 	DebugAssert(fontLibrary != nullptr);
 
 	const FontDefinition &fontDef = fontLibrary->getDefinition(this->properties.fontDefIndex);
-	BufferView2D<uint32_t> textureView(texturePixels, this->texture.getWidth(), this->texture.getHeight());
+
+	const int width = this->textureRef.getWidth();
+	const int height = this->textureRef.getHeight();
+	BufferView2D<uint32_t> textureView(texels, width, height);
 
 	// Clear texture.
 	textureView.fill(0);
@@ -214,7 +208,6 @@ void TextBox::updateTexture()
 			colorOverrideInfoPtr, shadowInfoPtr, textureView);
 	}
 
-	SDL_UnlockTexture(this->texture.get());
-
+	this->textureRef.unlockTexels();
 	this->dirty = false;
 }

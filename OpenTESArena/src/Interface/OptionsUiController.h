@@ -8,7 +8,7 @@ class OptionsPanel;
 
 namespace OptionsUiController
 {
-	void onBackToPauseMenuButtonSelected(Game &game);
+	void onBackButtonSelected(Game &game);
 	void onTabButtonSelected(OptionsPanel &panel, OptionsUiModel::Tab *currentTab, OptionsUiModel::Tab newTab);
 }
 

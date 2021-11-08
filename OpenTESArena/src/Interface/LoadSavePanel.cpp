@@ -1,5 +1,4 @@
-#include "SDL.h"
-
+#include "CommonUiView.h"
 #include "LoadSavePanel.h"
 #include "LoadSaveUiController.h"
 #include "LoadSaveUiModel.h"
@@ -27,7 +26,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 			text,
 			LoadSaveUiView::getEntryCenterPoint(i),
 			LoadSaveUiView::EntryFontName,
-			LoadSaveUiView::EntryTextColor,
+			LoadSaveUiView::getEntryTextColor(),
 			LoadSaveUiView::EntryTextAlignment,
 			fontLibrary);
 
@@ -51,45 +50,37 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 
 	this->addInputActionListener(InputActionName::Back, LoadSaveUiController::onBackInputAction);
 
-	this->type = type;
+	auto &textureManager = game.getTextureManager();
+	UiTextureID backgroundTextureID = LoadSaveUiView::allocBackgroundTexture(textureManager, renderer);
+	this->backgroundTextureRef.init(backgroundTextureID, renderer);
+	this->addDrawCall(
+		this->backgroundTextureRef.get(),
+		Int2::Zero,
+		Int2(this->backgroundTextureRef.getWidth(), this->backgroundTextureRef.getHeight()),
+		PivotType::TopLeft);
 
-	return true;
-}
-
-std::optional<CursorData> LoadSavePanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
-
-void LoadSavePanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw slots background.
-	auto &textureManager = this->getGame().getTextureManager();
-	const TextureAssetReference paletteTextureAssetRef = LoadSaveUiView::getPaletteTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
-	if (!paletteID.has_value())
+	for (int i = 0; i < static_cast<int>(this->saveTextBoxes.size()); i++)
 	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
-		return;
-	}
+		UiDrawCall::TextureFunc textBoxTextureFunc = [this, i]()
+		{
+			DebugAssertIndex(this->saveTextBoxes, i);
+			TextBox &textBox = this->saveTextBoxes[i];
+			return textBox.getTextureID();
+		};
 
-	const TextureAssetReference loadSaveTextureAssetRef = LoadSaveUiView::getLoadSaveTextureAssetRef();
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(loadSaveTextureAssetRef);
-	if (!textureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get texture builder ID for \"" + loadSaveTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*textureBuilderID, *paletteID, textureManager);
-
-	// Draw save text.
-	for (TextBox &textBox : this->saveTextBoxes)
-	{
+		const TextBox &textBox = this->saveTextBoxes[i];
 		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+		this->addDrawCall(
+			textBoxTextureFunc,
+			textBoxRect.getCenter(),
+			Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
+			PivotType::Middle);
 	}
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+
+	this->type = type;
+	return true;
 }

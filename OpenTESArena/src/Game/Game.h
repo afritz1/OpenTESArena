@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -40,11 +41,9 @@ class Surface;
 
 class Game
 {
+public:
+	using GameWorldRenderCallback = std::function<bool(Game&)>;
 private:
-	// A vector of sub-panels treated like a stack. The top of the stack is the back.
-	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
-	std::vector<std::unique_ptr<Panel>> subPanels;
-
 	AudioManager audioManager;
 	MusicLibrary musicLibrary;
 
@@ -59,10 +58,19 @@ private:
 	EntityDefinitionLibrary entityDefLibrary;
 	std::unique_ptr<GameState> gameState;
 	std::unique_ptr<CharacterCreationState> charCreationState;
+	GameWorldRenderCallback gameWorldRenderCallback;
 	Options options;
-	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
 	Renderer renderer;
 	TextureManager textureManager;
+	
+	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
+	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).
+	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
+
+	// A vector of sub-panels treated like a stack. The top of the stack is the back.
+	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
+	std::vector<std::unique_ptr<Panel>> subPanels;
+
 	BinaryAssetLibrary binaryAssetLibrary;
 	TextAssetLibrary textAssetLibrary;
 	Random random; // Convenience random for ease of use.
@@ -218,6 +226,9 @@ public:
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.
 	void setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState);
+
+	// Sets the function to call for rendering the 3D scene.
+	void setGameWorldRenderCallback(const GameWorldRenderCallback &callback);
 
 	// Initial method for starting the game loop. This must only be called by main().
 	void loop();

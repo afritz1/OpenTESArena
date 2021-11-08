@@ -1,13 +1,10 @@
 #include <algorithm>
 
-#include "SDL.h"
-
 #include "ImageSequencePanel.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Media/TextureManager.h"
-#include "../UI/Texture.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
@@ -41,9 +38,8 @@ bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 	{
 		this->currentSeconds = 0.0;
 
-		const int imageCount = static_cast<int>(this->textureNames.size());
+		const int imageCount = this->textureRefs.getCount();
 		this->imageIndex = std::min(this->imageIndex + 1, imageCount);
-
 		if (this->imageIndex == imageCount)
 		{
 			this->onFinished(game);
@@ -62,9 +58,41 @@ bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 		}
 	});
 
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	const int textureCount = static_cast<int>(textureNames.size());
+	this->textureRefs.init(textureCount);
+	for (int i = 0; i < textureCount; i++)
+	{
+		const std::string &textureName = textureNames[i]; // Assume single-image file.
+		const std::string &paletteName = paletteNames[i];
+		const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(textureName));
+		const TextureAssetReference paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
+
+		UiTextureID textureID;
+		if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+		{
+			DebugLogError("Couldn't create texture for image " + std::to_string(i) + " from \"" +
+				textureName + "\" with palette \"" + paletteName + "\".");
+			return false;
+		}
+
+		this->textureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
+	}
+
+	UiDrawCall::TextureFunc textureFunc = [this]()
+	{
+		const ScopedUiTextureRef &textureRef = this->textureRefs.get(this->imageIndex);
+		return textureRef.get();
+	};
+
+	this->addDrawCall(
+		textureFunc,
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
+
 	this->onFinished = onFinished;
-	this->paletteNames = paletteNames;
-	this->textureNames = textureNames;
 	this->imageDurations = imageDurations;
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
@@ -73,7 +101,7 @@ bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 
 void ImageSequencePanel::tick(double dt)
 {
-	const int imageCount = static_cast<int>(this->textureNames.size());
+	const int imageCount = this->textureRefs.getCount();
 
 	// Check if done iterating through images.
 	if (this->imageIndex < imageCount)
@@ -96,32 +124,4 @@ void ImageSequencePanel::tick(double dt)
 
 	// Clamp against the max so the index doesn't go outside the image vector.
 	this->imageIndex = std::min(this->imageIndex, imageCount - 1);
-}
-
-void ImageSequencePanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw image.
-	auto &textureManager = this->getGame().getTextureManager();
-	DebugAssertIndex(this->paletteNames, this->imageIndex);
-	const std::string &paletteName = this->paletteNames[this->imageIndex];
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteName + "\".");
-		return;
-	}
-
-	DebugAssertIndex(this->textureNames, this->imageIndex);
-	const std::string &textureName = this->textureNames[this->imageIndex];
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureName.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get texture builder ID for \"" + textureName + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*textureBuilderID, *paletteID, textureManager);
 }

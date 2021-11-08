@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
+#include "../Rendering/RenderTextureUtils.h"
 
 class FontLibrary;
 class Renderer;
@@ -61,7 +62,7 @@ private:
 	Properties properties;
 	std::string text;
 	TextRenderUtils::ColorOverrideInfo colorOverrideInfo;
-	Texture texture; // Output texture for rendering.
+	ScopedUiTextureRef textureRef; // Output texture for rendering.
 	bool dirty;
 
 	// Redraws the underlying texture for display.
@@ -76,7 +77,7 @@ public:
 	bool init(const InitInfo &initInfo, const std::string_view &text, Renderer &renderer);
 
 	const Rect &getRect() const;
-	const Texture &getTexture();
+	UiTextureID getTextureID();
 
 	void setText(const std::string_view &text);
 

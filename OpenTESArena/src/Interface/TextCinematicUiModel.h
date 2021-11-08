@@ -31,9 +31,9 @@ namespace TextCinematicUiModel
 	bool shouldPlaySpeech(Game &game);
 
 	std::string getSubtitleText(Game &game, const TextCinematicDefinition &textCinematicDef);
-	int getSubtitleTextLineCount(const std::string &subtitleText);
-	int getSubtitleTextBoxCount(int lineCount);
-	std::vector<std::string> getSubtitleTextLines(const std::string &subtitleText);
+
+	// Gets the subtitle pages to be drawn individually.
+	std::vector<std::string> getSubtitleTextPages(const std::string &text);
 }
 
 #endif

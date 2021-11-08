@@ -17,14 +17,13 @@ class CharacterPanel : public Panel
 private:
 	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox;
 	Button<Game&> doneButton, nextPageButton;
+	ScopedUiTextureRef bodyTextureRef, headTextureRef, shirtTextureRef, pantsTextureRef,
+		statsBgTextureRef, nextPageTextureRef, cursorTextureRef;
 public:
 	CharacterPanel(Game &game);
 	~CharacterPanel() override;
 
 	bool init();
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif

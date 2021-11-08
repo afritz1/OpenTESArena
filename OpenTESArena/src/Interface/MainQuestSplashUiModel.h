@@ -7,7 +7,6 @@ class Game;
 
 namespace MainQuestSplashUiModel
 {
-	std::string getSplashFilename(Game &game, int provinceID);
 	std::string getDungeonText(Game &game, int provinceID);
 }
 

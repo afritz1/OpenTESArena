@@ -10,13 +10,17 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../World/Coord.h"
 
+#include "components/utilities/Buffer2D.h"
+
 class ChunkManager;
+class GameState;
 class Renderer;
 class Texture;
 class TransitionDefinition;
@@ -103,8 +107,14 @@ namespace AutomapUiView
 		const TransitionDefinition *transitionDef);
 
 	// Generates a texture of the automap.
-	Texture makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
-		bool isWild, const ChunkManager &chunkManager, Renderer &renderer);
+	Buffer2D<uint32_t> makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
+		bool isWild, const ChunkManager &chunkManager);
+
+	// Texture allocation functions (must be freed when done).
+	UiTextureID allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,
+		const VoxelDouble2 &playerDirection, const ChunkManager &chunkManager, Renderer &renderer);
+	UiTextureID allocBgTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

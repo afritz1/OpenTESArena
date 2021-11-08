@@ -16,14 +16,13 @@ private:
 	Button<Game&> backToStatsButton, spellbookButton;
 	Button<Game&, int> dropButton;
 	Button<ListBox&> scrollDownButton, scrollUpButton;
+	ScopedUiTextureRef bodyTextureRef, headTextureRef, shirtTextureRef, pantsTextureRef,
+		equipmentBgTextureRef, cursorTextureRef;
 public:
 	CharacterEquipmentPanel(Game &game);
 	~CharacterEquipmentPanel() override;
 
 	bool init();
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif

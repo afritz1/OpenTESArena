@@ -1,27 +1,10 @@
-#include "SDL.h"
-
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "ChooseGenderPanel.h"
-#include "ChooseNamePanel.h"
-#include "ChooseRacePanel.h"
-#include "../Assets/ArenaTextureName.h"
-#include "../Assets/ExeData.h"
+#include "CommonUiView.h"
 #include "../Game/Game.h"
-#include "../Game/Options.h"
 #include "../Input/InputActionName.h"
-#include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureManager.h"
-#include "../Rendering/ArenaRenderUtils.h"
-#include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
-#include "../UI/FontLibrary.h"
-#include "../UI/Surface.h"
-#include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 
 ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	: Panel(game) { }
@@ -31,17 +14,9 @@ bool ChooseGenderPanel::init()
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 
-	this->parchment = TextureUtils::generate(
-		ChooseGenderUiView::TexturePatternType,
-		ChooseGenderUiView::TextureWidth,
-		ChooseGenderUiView::TextureHeight,
-		game.getTextureManager(),
-		renderer);
-
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = ChooseGenderUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo =
-		ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBox::InitInfo titleTextBoxInitInfo = ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
@@ -49,8 +24,7 @@ bool ChooseGenderPanel::init()
 	}
 
 	const std::string maleText = ChooseGenderUiModel::getMaleText(game);
-	const TextBox::InitInfo maleTextBoxInitInfo =
-		ChooseGenderUiView::getMaleTextBoxInitInfo(maleText, fontLibrary);
+	const TextBox::InitInfo maleTextBoxInitInfo = ChooseGenderUiView::getMaleTextBoxInitInfo(maleText, fontLibrary);
 	if (!this->maleTextBox.init(maleTextBoxInitInfo, maleText, renderer))
 	{
 		DebugLogError("Couldn't init male text box.");
@@ -58,8 +32,7 @@ bool ChooseGenderPanel::init()
 	}
 
 	const std::string femaleText = ChooseGenderUiModel::getFemaleText(game);
-	const TextBox::InitInfo femaleTextBoxInitInfo =
-		ChooseGenderUiView::getFemaleTextBoxInitInfo(femaleText, fontLibrary);
+	const TextBox::InitInfo femaleTextBoxInitInfo = ChooseGenderUiView::getFemaleTextBoxInitInfo(femaleText, fontLibrary);
 	if (!this->femaleTextBox.init(femaleTextBoxInitInfo, femaleText, renderer))
 	{
 		DebugLogError("Couldn't init female text box.");
@@ -84,50 +57,59 @@ bool ChooseGenderPanel::init()
 
 	this->addInputActionListener(InputActionName::Back, ChooseGenderUiController::onBackToChooseNameInputAction);
 
-	return true;
-}
+	auto &textureManager = game.getTextureManager();
+	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
+	const UiTextureID parchmentTextureID = ChooseGenderUiView::allocParchmentTexture(textureManager, renderer);
+	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
+	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-std::optional<CursorData> ChooseGenderPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
+	this->addDrawCall(
+		this->nightSkyTextureRef.get(),
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
 
-void ChooseGenderPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
+	const Int2 parchmentSize(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight());
+	this->addDrawCall(
+		this->parchmentTextureRef.get(),
+		ChooseGenderUiView::getTitleTextureCenter(),
+		parchmentSize,
+		PivotType::Middle);
+	this->addDrawCall(
+		this->parchmentTextureRef.get(),
+		ChooseGenderUiView::getMaleTextureCenter(),
+		parchmentSize,
+		PivotType::Middle);
+	this->addDrawCall(
+		this->parchmentTextureRef.get(),
+		ChooseGenderUiView::getFemaleTextureCenter(),
+		parchmentSize,
+		PivotType::Middle);
 
-	// Draw background.
-	auto &textureManager = this->getGame().getTextureManager();
-	const TextureAssetReference backgroundTextureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundTextureAssetRef);
-	if (!backgroundPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get background palette ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
-	if (!backgroundTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
-
-	// Draw parchments: title, male, and female.
-	const int parchmentX = ChooseGenderUiView::getTitleTextureX(this->parchment.getWidth());
-	const int parchmentY = ChooseGenderUiView::getTitleTextureY(this->parchment.getHeight());
-	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
-	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
-	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);
-
-	// Draw text: title, male, and female.
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	this->addDrawCall(
+		this->titleTextBox.getTextureID(),
+		titleTextBoxRect.getCenter(),
+		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
+		PivotType::Middle);
+
 	const Rect &maleTextBoxRect = this->maleTextBox.getRect();
+	this->addDrawCall(
+		this->maleTextBox.getTextureID(),
+		maleTextBoxRect.getCenter(),
+		Int2(maleTextBoxRect.getWidth(), maleTextBoxRect.getHeight()),
+		PivotType::Middle);
+
 	const Rect &femaleTextBoxRect = this->femaleTextBox.getRect();
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-	renderer.drawOriginal(this->maleTextBox.getTexture(), maleTextBoxRect.getLeft(), maleTextBoxRect.getTop());
-	renderer.drawOriginal(this->femaleTextBox.getTexture(), femaleTextBoxRect.getLeft(), femaleTextBoxRect.getTop());
+	this->addDrawCall(
+		this->femaleTextBox.getTextureID(),
+		femaleTextBoxRect.getCenter(),
+		Int2(femaleTextBoxRect.getWidth(), femaleTextBoxRect.getHeight()),
+		PivotType::Middle);
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
+
+	return true;
 }

@@ -1,5 +1,4 @@
-#include "RendererSystem2D.h"
-#include "RendererSystem3D.h"
+#include "Renderer.h"
 #include "RenderTextureUtils.h"
 
 #include "components/debug/Debug.h"
@@ -50,20 +49,104 @@ ScopedSkyTextureRef::~ScopedSkyTextureRef()
 SkyTextureID ScopedSkyTextureRef::get() const
 {
 	return this->id;
+}*/
+
+ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, Renderer &renderer)
+{
+	DebugAssert(id >= 0);
+	this->id = id;
+	this->renderer = &renderer;
+	this->setDims();
 }
 
-ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, RendererSystem2D &rendererSystem)
+ScopedUiTextureRef::ScopedUiTextureRef()
 {
-	this->id = id;
-	this->rendererSystem = &rendererSystem;
+	this->id = -1;
+	this->renderer = nullptr;
+	this->width = -1;
+	this->height = -1;
+}
+
+ScopedUiTextureRef::ScopedUiTextureRef(ScopedUiTextureRef &&other)
+{
+	this->id = other.id;
+	this->renderer = other.renderer;
+	this->width = other.width;
+	this->height = other.height;
+	other.id = -1;
+	other.renderer = nullptr;
+	other.width = -1;
+	other.height = -1;
 }
 
 ScopedUiTextureRef::~ScopedUiTextureRef()
 {
-	this->rendererSystem->freeUiTexture(this->id);
+	if (this->renderer != nullptr)
+	{
+		this->renderer->freeUiTexture(this->id);
+	}
+}
+
+ScopedUiTextureRef &ScopedUiTextureRef::operator=(ScopedUiTextureRef &&other)
+{
+	if (this != &other)
+	{
+		this->id = other.id;
+		this->renderer = other.renderer;
+		this->width = other.width;
+		this->height = other.height;
+		other.id = -1;
+		other.renderer = nullptr;
+		other.width = -1;
+		other.height = -1;
+	}
+
+	return *this;
+}
+
+void ScopedUiTextureRef::init(UiTextureID id, Renderer &renderer)
+{
+	DebugAssert(this->id == -1);
+	DebugAssert(this->renderer == nullptr);
+	DebugAssert(id >= 0);
+	this->id = id;
+	this->renderer = &renderer;
+	this->setDims();
+}
+
+void ScopedUiTextureRef::setDims()
+{
+	const std::optional<Int2> dims = this->renderer->tryGetUiTextureDims(this->id);
+	if (!dims.has_value())
+	{
+		DebugCrash("Couldn't get UI texture dimensions (ID " + std::to_string(this->id) + ").");
+	}
+
+	this->width = dims->x;
+	this->height = dims->y;
 }
 
 UiTextureID ScopedUiTextureRef::get() const
 {
 	return this->id;
-}*/
+}
+
+int ScopedUiTextureRef::getWidth() const
+{
+	return this->width;
+}
+
+int ScopedUiTextureRef::getHeight() const
+{
+	return this->height;
+}
+
+uint32_t *ScopedUiTextureRef::lockTexels()
+{
+	return this->renderer->lockUiTexture(this->id);
+}
+
+void ScopedUiTextureRef::unlockTexels()
+{
+	this->renderer->unlockUiTexture(this->id);
+}

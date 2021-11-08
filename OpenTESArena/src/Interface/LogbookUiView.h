@@ -5,6 +5,7 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -28,6 +29,8 @@ namespace LogbookUiView
 
 	TextureAssetReference getBackgroundPaletteTextureAssetRef();
 	TextureAssetReference getBackgroundTextureAssetRef();
+
+	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

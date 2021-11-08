@@ -4,24 +4,18 @@
 #include "Panel.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
-
-class Renderer;
 
 class ChooseGenderPanel : public Panel
 {
 private:
-	Texture parchment;
 	TextBox titleTextBox, maleTextBox, femaleTextBox;
 	Button<Game&> maleButton, femaleButton;
+	ScopedUiTextureRef nightSkyTextureRef, parchmentTextureRef, cursorTextureRef;
 public:
 	ChooseGenderPanel(Game &game);
 	~ChooseGenderPanel() override = default;
 
 	bool init();
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif

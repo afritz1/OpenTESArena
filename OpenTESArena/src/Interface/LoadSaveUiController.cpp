@@ -5,6 +5,7 @@
 #include "../Game/Game.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
+#include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
@@ -31,11 +32,20 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 		game.popSubPanel();
 	};
 
-	Texture texture = TextureUtils::generate(TextureUtils::PatternType::Dark,
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	const Surface surface = TextureUtils::generate(TextureUtils::PatternType::Dark,
 		textBoxInitInfo.rect.getWidth() + 10, textBoxInitInfo.rect.getHeight() + 10,
-		game.getTextureManager(), game.getRenderer());
+		game.getTextureManager(), renderer);
 
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, popUpFunction, std::move(texture), center);
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create non-implemented pop-up texture.");
+	}
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, popUpFunction, std::move(textureRef), center);
 }
 
 void LoadSaveUiController::onBackInputAction(const InputActionCallbackValues &values)

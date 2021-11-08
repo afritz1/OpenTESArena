@@ -1,93 +1,13 @@
 #include <algorithm>
-#include <limits>
-#include <optional>
+#include <string>
 
-#include "SDL.h"
-
+#include "CommonUiView.h"
 #include "OptionsPanel.h"
 #include "OptionsUiController.h"
+#include "OptionsUiModel.h"
 #include "OptionsUiView.h"
-#include "PauseMenuPanel.h"
-#include "../Audio/AudioManager.h"
-#include "../Entities/Player.h"
 #include "../Game/Game.h"
-#include "../Game/GameState.h"
-#include "../Game/Options.h"
-#include "../Game/PlayerInterface.h"
 #include "../Input/InputActionName.h"
-#include "../Media/Color.h"
-#include "../Media/TextureManager.h"
-#include "../Rendering/ArenaRenderUtils.h"
-#include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
-#include "../UI/FontLibrary.h"
-#include "../UI/TextAlignment.h"
-#include "../UI/Texture.h"
-
-#include "components/debug/Debug.h"
-#include "components/utilities/String.h"
-
-namespace
-{
-	void TryIncrementOption(OptionsUiModel::Option &option)
-	{
-		const OptionsUiModel::OptionType optionType = option.getType();
-		if (optionType == OptionsUiModel::OptionType::Bool)
-		{
-			OptionsUiModel::BoolOption &boolOpt = static_cast<OptionsUiModel::BoolOption&>(option);
-			boolOpt.toggle();
-		}
-		else if (optionType == OptionsUiModel::OptionType::Int)
-		{
-			OptionsUiModel::IntOption &intOpt = static_cast<OptionsUiModel::IntOption&>(option);
-			intOpt.set(intOpt.getNext());
-		}
-		else if (optionType == OptionsUiModel::OptionType::Double)
-		{
-			OptionsUiModel::DoubleOption &doubleOpt = static_cast<OptionsUiModel::DoubleOption&>(option);
-			doubleOpt.set(doubleOpt.getNext());
-		}
-		else if (optionType == OptionsUiModel::OptionType::String)
-		{
-			// Do nothing.
-			static_cast<void>(option);
-		}
-		else
-		{
-			throw DebugException("Invalid type \"" + std::to_string(static_cast<int>(optionType)) + "\".");
-		}
-	}
-
-	void TryDecrementOption(OptionsUiModel::Option &option)
-	{
-		const OptionsUiModel::OptionType optionType = option.getType();
-		if (optionType == OptionsUiModel::OptionType::Bool)
-		{
-			OptionsUiModel::BoolOption &boolOpt = static_cast<OptionsUiModel::BoolOption&>(option);
-			boolOpt.toggle();
-		}
-		else if (optionType == OptionsUiModel::OptionType::Int)
-		{
-			OptionsUiModel::IntOption &intOpt = static_cast<OptionsUiModel::IntOption&>(option);
-			intOpt.set(intOpt.getPrev());
-		}
-		else if (optionType == OptionsUiModel::OptionType::Double)
-		{
-			OptionsUiModel::DoubleOption &doubleOpt = static_cast<OptionsUiModel::DoubleOption&>(option);
-			doubleOpt.set(doubleOpt.getPrev());
-		}
-		else if (optionType == OptionsUiModel::OptionType::String)
-		{
-			// Do nothing.
-			static_cast<void>(option);
-		}
-		else
-		{
-			throw DebugException("Invalid type \"" + std::to_string(static_cast<int>(optionType)) + "\".");
-		}
-	}
-}
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game) { }
@@ -98,179 +18,265 @@ bool OptionsPanel::init()
 	auto &renderer = game.getRenderer();
 	const auto &fontLibrary = game.getFontLibrary();
 
-	const std::string titleText = OptionsUiModel::OptionsTitleText;
-	const TextBox::InitInfo titleTextBoxInitInfo =
-		OptionsUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const std::string titleText = OptionsUiModel::TitleText;
+	const TextBox::InitInfo titleTextBoxInitInfo = OptionsUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	const std::string backToPauseMenuText = OptionsUiModel::BackToPauseMenuText;
-	const TextBox::InitInfo backToPauseMenuTextBoxInitInfo =
-		OptionsUiView::getBackToPauseMenuTextBoxInitInfo(backToPauseMenuText, fontLibrary);
-	if (!this->backToPauseMenuTextBox.init(backToPauseMenuTextBoxInitInfo, backToPauseMenuText, renderer))
+	const TextBox::InitInfo descTextBoxInitInfo = OptionsUiView::getDescriptionTextBoxInitInfo(fontLibrary);
+	if (!this->descriptionTextBox.init(descTextBoxInitInfo, renderer))
 	{
-		DebugLogError("Couldn't init back to pause menu text box.");
+		DebugLogError("Couldn't init description text box.");
 		return false;
 	}
 
-	auto initTabTextBox = [&renderer, &fontLibrary](TextBox &textBox, int tabIndex, const std::string &text)
+	const std::string backButtonText = OptionsUiModel::BackButtonText;
+	const TextBox::InitInfo backButtonTextBoxInitInfo = OptionsUiView::getBackButtonTextBoxInitInfo(backButtonText, fontLibrary);
+	if (!this->backButtonTextBox.init(backButtonTextBoxInitInfo, backButtonText, renderer))
 	{
-		const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
-		const Int2 &tabsDimensions = OptionsUiView::TabsDimensions;
-		const Int2 initialTabTextCenter(
-			graphicsTabRect.getLeft() + (graphicsTabRect.getWidth() / 2),
-			graphicsTabRect.getTop() + (graphicsTabRect.getHeight() / 2));
-		const Int2 tabOffset(0, tabsDimensions.y * tabIndex);
-		const Int2 center = initialTabTextCenter + tabOffset;
+		DebugLogError("Couldn't init back button text box.");
+		return false;
+	}
 
-		const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
-			text,
-			center,
-			OptionsUiView::TabFontName,
-			OptionsUiView::getTabTextColor(),
-			OptionsUiView::TabTextAlignment,
-			fontLibrary);
-
-		if (!textBox.init(textBoxInitInfo, text, renderer))
+	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)
+	{
+		const std::string &tabName = OptionsUiModel::TAB_NAMES[i];
+		const TextBox::InitInfo tabInitInfo = OptionsUiView::getTabTextBoxInitInfo(i, tabName, fontLibrary);
+		TextBox tabTextBox;
+		if (!tabTextBox.init(tabInitInfo, tabName, renderer))
 		{
-			DebugCrash("Couldn't init text box " + std::to_string(tabIndex) + ".");
+			DebugLogError("Couldn't init tab text box " + std::to_string(i) + ".");
+			continue;
 		}
-	};
 
-	// @todo: should make this iterable
-	initTabTextBox(this->graphicsTextBox, 0, OptionsUiModel::GRAPHICS_TAB_NAME);
-	initTabTextBox(this->audioTextBox, 1, OptionsUiModel::AUDIO_TAB_NAME);
-	initTabTextBox(this->inputTextBox, 2, OptionsUiModel::INPUT_TAB_NAME);
-	initTabTextBox(this->miscTextBox, 3, OptionsUiModel::MISC_TAB_NAME);
-	initTabTextBox(this->devTextBox, 4, OptionsUiModel::DEV_TAB_NAME);
+		this->tabTextBoxes.emplace_back(std::move(tabTextBox));
+	}
+
+	for (int i = 0; i < OptionsUiModel::OPTION_COUNT; i++)
+	{
+		// Initialize to blank -- the text box will be populated later by the current tab.
+		const TextBox::InitInfo initInfo = OptionsUiView::getOptionTextBoxInitInfo(i, fontLibrary);
+		TextBox textBox;
+		if (!textBox.init(initInfo, renderer))
+		{
+			DebugLogError("Couldn't init option text box " + std::to_string(i) + ".");
+			continue;
+		}
+
+		this->optionTextBoxes.emplace_back(std::move(textBox));
+	}
 
 	// Button proxies are added later.
-	this->backToPauseMenuButton = Button<Game&>(
-		OptionsUiView::BackToPauseMenuButtonCenterPoint,
-		OptionsUiView::BackToPauseMenuButtonWidth,
-		OptionsUiView::BackToPauseMenuButtonHeight,
-		OptionsUiController::onBackToPauseMenuButtonSelected);
-	this->tabButton = Button<OptionsPanel&, OptionsUiModel::Tab*, OptionsUiModel::Tab>(
-		OptionsUiController::onTabButtonSelected);
+	this->backButton = Button<Game&>(OptionsUiView::getBackButtonRect(), OptionsUiController::onBackButtonSelected);
+	this->tabButton = Button<OptionsPanel&, OptionsUiModel::Tab*, OptionsUiModel::Tab>(OptionsUiController::onTabButtonSelected);
 
 	this->addInputActionListener(InputActionName::Back,
 		[this](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
-			this->backToPauseMenuButton.click(values.game);
+			this->backButton.click(values.game);
 		}
 	});
 
-	// Create graphics options.
-	this->graphicsOptions.emplace_back(OptionsUiModel::makeWindowModeOption(game));
-	this->graphicsOptions.emplace_back(OptionsUiModel::makeFpsLimitOption(game));
-	this->graphicsOptions.emplace_back(OptionsUiModel::makeResolutionScaleOption(game));
-	this->graphicsOptions.emplace_back(OptionsUiModel::makeVerticalFovOption(game));
-	this->graphicsOptions.emplace_back(OptionsUiModel::makeLetterboxModeOption(game));
-	this->graphicsOptions.emplace_back(OptionsUiModel::makeCursorScaleOption(game));
-	this->graphicsOptions.emplace_back(OptionsUiModel::makeModernInterfaceOption(game));
-	this->graphicsOptions.emplace_back(OptionsUiModel::makeRenderThreadsModeOption(game));
+	auto updateHoveredOptionIndex = [this, &game]()
+	{
+		// Update description if over a valid element.
+		const std::optional<int> hoveredIndex = this->getHoveredOptionIndex();
+		if (hoveredIndex != this->hoveredOptionIndex)
+		{
+			this->hoveredOptionIndex = hoveredIndex;
 
-	// Create audio options.
-	this->audioOptions.emplace_back(OptionsUiModel::makeSoundChannelsOption(game));
-	this->audioOptions.emplace_back(OptionsUiModel::makeSoundResamplingOption(game));
-	this->audioOptions.emplace_back(OptionsUiModel::makeIs3dAudioOption(game));
+			const auto &visibleOptions = this->getVisibleOptions();
+			if (hoveredIndex.has_value() && (*hoveredIndex < static_cast<int>(visibleOptions.size())))
+			{
+				const auto &option = visibleOptions[*hoveredIndex];
+				const std::string &descText = option->getTooltip();
+				this->descriptionTextBox.setText(descText);
+			}
+			else
+			{
+				this->descriptionTextBox.setText(std::string());
+			}
+		}
+	};
 
-	// Create input options.
-	this->inputOptions.emplace_back(OptionsUiModel::makeHorizontalSensitivityOption(game));
-	this->inputOptions.emplace_back(OptionsUiModel::makeVerticalSensitivityOption(game));
-	this->inputOptions.emplace_back(OptionsUiModel::makeCameraPitchLimitOption(game));
-	this->inputOptions.emplace_back(OptionsUiModel::makePixelPerfectSelectionOption(game));
+	this->addMouseMotionListener([this, updateHoveredOptionIndex](Game &game, int dx, int dy)
+	{
+		updateHoveredOptionIndex();
+	});
 
-	// Create miscellaneous options.
-	this->miscOptions.emplace_back(OptionsUiModel::makeShowCompassOption(game));
-	this->miscOptions.emplace_back(OptionsUiModel::makeShowIntroOption(game));
-	this->miscOptions.emplace_back(OptionsUiModel::makeTimeScaleOption(game));
-	this->miscOptions.emplace_back(OptionsUiModel::makeChunkDistanceOption(game));
-	this->miscOptions.emplace_back(OptionsUiModel::makeStarDensityOption(game));
-	this->miscOptions.emplace_back(OptionsUiModel::makePlayerHasLightOption(game));
+	auto &textureManager = game.getTextureManager();
+	const UiTextureID backgroundTextureID = OptionsUiView::allocBackgroundTexture(renderer);
+	this->backgroundTextureRef.init(backgroundTextureID, renderer);
+	this->addDrawCall(
+		this->backgroundTextureRef.get(),
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
 
-	// Create developer options.
-	this->devOptions.emplace_back(OptionsUiModel::makeCollisionOption(game));
-	this->devOptions.emplace_back(OptionsUiModel::makeProfilerLevelOption(game));
+	const UiTextureID tabTextureID = OptionsUiView::allocTabTexture(textureManager, renderer);
+	this->tabButtonTextureRef.init(tabTextureID, renderer);
+	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)
+	{
+		const Rect tabRect = OptionsUiView::getTabRect(i);
+		this->addDrawCall(
+			this->tabButtonTextureRef.get(),
+			tabRect.getTopLeft(),
+			Int2(tabRect.getWidth(), tabRect.getHeight()),
+			PivotType::TopLeft);
+	}
 
-	// Set initial tab.
+	const UiTextureID backButtonTextureID = OptionsUiView::allocBackButtonTexture(textureManager, renderer);
+	this->backButtonTextureRef.init(backButtonTextureID, renderer);
+	const Rect backButtonRect = OptionsUiView::getBackButtonRect();
+	this->addDrawCall(
+		this->backButtonTextureRef.get(),
+		backButtonRect.getTopLeft(),
+		Int2(backButtonRect.getWidth(), backButtonRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	this->addDrawCall(
+		titleTextBox.getTextureID(),
+		titleTextBoxRect.getTopLeft(),
+		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect &backButtonTextBoxRect = this->backButtonTextBox.getRect();
+	this->addDrawCall(
+		backButtonTextBox.getTextureID(),
+		backButtonTextBoxRect.getTopLeft(),
+		Int2(backButtonTextBoxRect.getWidth(), backButtonTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const UiTextureID highlightTextureID = OptionsUiView::allocHighlightTexture(renderer);
+	this->highlightTextureRef.init(highlightTextureID, renderer);
+	for (int i = 0; i < OptionsUiModel::OPTION_COUNT; i++)
+	{
+		UiDrawCall::ActiveFunc highlightActiveFunc = [this, i]()
+		{
+			const auto &visibleOptions = this->getVisibleOptions();
+			if (i >= static_cast<int>(visibleOptions.size()))
+			{
+				return false;
+			}
+
+			auto &game = this->getGame();
+			auto &renderer = game.getRenderer();
+			const auto &inputManager = game.getInputManager();
+			const Int2 mousePosition = inputManager.getMousePosition();
+			const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
+
+			DebugAssertIndex(this->optionTextBoxes, i);
+			const TextBox &textBox = this->optionTextBoxes[i];
+			const Rect &textBoxRect = textBox.getRect();
+			return textBoxRect.contains(originalPoint);
+		};
+
+		DebugAssertIndex(this->optionTextBoxes, i);
+		const TextBox &textBox = this->optionTextBoxes[i];
+		const Rect &textBoxRect = textBox.getRect();
+		this->addDrawCall(
+			[this]() { return this->highlightTextureRef.get(); },
+			[textBoxRect]() { return textBoxRect.getTopLeft(); },
+			[textBoxRect]() { return Int2(textBoxRect.getWidth(), textBoxRect.getHeight()); },
+			[]() { return PivotType::TopLeft; },
+			highlightActiveFunc);
+	}
+
+	for (TextBox &tabTextBox : this->tabTextBoxes)
+	{
+		const Rect &tabTextBoxRect = tabTextBox.getRect();
+		this->addDrawCall(
+			tabTextBox.getTextureID(),
+			tabTextBoxRect.getTopLeft(),
+			Int2(tabTextBoxRect.getWidth(), tabTextBoxRect.getHeight()),
+			PivotType::TopLeft);
+	}
+
+	for (int i = 0; i < static_cast<int>(this->optionTextBoxes.size()); i++)
+	{
+		UiDrawCall::TextureFunc textureFunc = [this, i]()
+		{
+			DebugAssertIndex(this->optionTextBoxes, i);
+			TextBox &optionTextBox = this->optionTextBoxes[i];
+			return optionTextBox.getTextureID();
+		};
+
+		const TextBox &optionTextBox = this->optionTextBoxes[i];
+		const Rect &optionTextBoxRect = optionTextBox.getRect();
+		this->addDrawCall(
+			textureFunc,
+			optionTextBoxRect.getTopLeft(),
+			Int2(optionTextBoxRect.getWidth(), optionTextBoxRect.getHeight()),
+			PivotType::TopLeft);
+	}
+
+	UiDrawCall::TextureFunc descTextureFunc = [this]()
+	{
+		return this->descriptionTextBox.getTextureID();
+	};
+
+	const Rect &descTextBoxRect = this->descriptionTextBox.getRect();
+	this->addDrawCall(
+		descTextureFunc,
+		descTextBoxRect.getTopLeft(),
+		Int2(descTextBoxRect.getWidth(), descTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+
+	// Create option groups.
+	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)
+	{
+		OptionsUiModel::OptionGroup group = OptionsUiModel::makeOptionGroup(i, game);
+		this->optionGroups.emplace_back(std::move(group));
+	}
+
+	// Populate option text boxes and option buttons for the initial tab.
 	this->tab = OptionsUiModel::Tab::Graphics;
-
-	// Initialize all option text boxes and buttons for the initial tab.
 	this->updateVisibleOptions();
+
+	updateHoveredOptionIndex();
 
 	return true;
 }
 
-std::vector<std::unique_ptr<OptionsUiModel::Option>> &OptionsPanel::getVisibleOptions()
+OptionsUiModel::OptionGroup &OptionsPanel::getVisibleOptions()
 {
-	if (this->tab == OptionsUiModel::Tab::Graphics)
-	{
-		return this->graphicsOptions;
-	}
-	else if (this->tab == OptionsUiModel::Tab::Audio)
-	{
-		return this->audioOptions;
-	}
-	else if (this->tab == OptionsUiModel::Tab::Input)
-	{
-		return this->inputOptions;
-	}
-	else if (this->tab == OptionsUiModel::Tab::Misc)
-	{
-		return this->miscOptions;
-	}
-	else if (this->tab == OptionsUiModel::Tab::Dev)
-	{
-		return this->devOptions;
-	}
-	else
-	{
-		throw DebugException("Invalid tab \"" +
-			std::to_string(static_cast<int>(this->tab)) + "\".");
-	}
+	const int index = static_cast<int>(this->tab);
+	DebugAssertIndex(this->optionGroups, index);
+	return this->optionGroups[index];
 }
 
-void OptionsPanel::initOptionTextBox(int index)
+std::optional<int> OptionsPanel::getHoveredOptionIndex() const
 {
 	auto &game = this->getGame();
-	const auto &fontLibrary = game.getFontLibrary();
+	auto &renderer = game.getRenderer();
+	const auto &inputManager = game.getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
-	const std::string &fontName = OptionsUiView::OptionTextBoxFontName;
-	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+	for (int i = 0; i < static_cast<int>(this->optionTextBoxes.size()); i++)
 	{
-		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
+		const TextBox &optionTextBox = this->optionTextBoxes[i];
+		const Rect &optionRect = optionTextBox.getRect();
+		if (optionRect.contains(originalPoint))
+		{
+			return i;
+		}
 	}
 
-	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const std::string dummyText(28, TextRenderUtils::LARGEST_CHAR);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
-	const Int2 &point = OptionsUiView::ListOrigin;
-	const int yOffset = textureGenInfo.height * index;
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
-		dummyText,
-		point.x,
-		point.y + yOffset,
-		fontName,
-		OptionsUiView::getOptionTextBoxColor(),
-		OptionsUiView::OptionTextBoxTextAlignment,
-		fontLibrary);
-
-	DebugAssertIndex(this->currentTabTextBoxes, index);
-	TextBox &textBox = this->currentTabTextBoxes[index];
-	if (!textBox.init(textBoxInitInfo, game.getRenderer()))
-	{
-		DebugCrash("Couldn't init tab text box " + std::to_string(index) + ".");
-	}
+	return std::nullopt;
 }
 
-void OptionsPanel::updateOptionTextBoxText(int index)
+void OptionsPanel::updateOptionText(int index)
 {
 	auto &game = this->getGame();
 	const auto &visibleOptions = this->getVisibleOptions();
@@ -278,217 +284,73 @@ void OptionsPanel::updateOptionTextBoxText(int index)
 	const auto &visibleOption = visibleOptions[index];
 	const std::string text = visibleOption->getName() + ": " + visibleOption->getDisplayedValue();
 
-	DebugAssertIndex(this->currentTabTextBoxes, index);
-	TextBox &textBox = this->currentTabTextBoxes[index];
+	DebugAssertIndex(this->optionTextBoxes, index);
+	TextBox &textBox = this->optionTextBoxes[index];
 	textBox.setText(text);
 }
 
 void OptionsPanel::updateVisibleOptions()
 {
 	auto &game = this->getGame();
-	const auto &visibleOptions = this->getVisibleOptions();
-
-	this->currentTabTextBoxes.clear();
-	this->currentTabTextBoxes.resize(visibleOptions.size());
 
 	// Remove all button proxies, including the static ones.
 	this->clearButtonProxies();
 
-	auto addTabButtonProxy = [this](OptionsUiModel::Tab tab, const Rect &rect)
+	auto addTabButtonProxy = [this](int index)
 	{
+		const OptionsUiModel::Tab tab = static_cast<OptionsUiModel::Tab>(index);
+		const Rect rect = OptionsUiView::getTabRect(index);
 		this->addButtonProxy(MouseButtonType::Left, rect,
 			[this, tab]() { this->tabButton.click(*this, &this->tab, tab); });
 	};
 
 	// Add the static button proxies.
-	addTabButtonProxy(OptionsUiModel::Tab::Graphics, OptionsUiView::GraphicsTabRect);
-	addTabButtonProxy(OptionsUiModel::Tab::Audio, OptionsUiView::AudioTabRect);
-	addTabButtonProxy(OptionsUiModel::Tab::Input, OptionsUiView::InputTabRect);
-	addTabButtonProxy(OptionsUiModel::Tab::Misc, OptionsUiView::MiscTabRect);
-	addTabButtonProxy(OptionsUiModel::Tab::Dev, OptionsUiView::DevTabRect);
-	this->addButtonProxy(MouseButtonType::Left, this->backToPauseMenuButton.getRect(),
-		[this, &game]() { this->backToPauseMenuButton.click(game); });
+	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)
+	{
+		addTabButtonProxy(i);
+	}
+
+	this->addButtonProxy(MouseButtonType::Left, this->backButton.getRect(),
+		[this, &game]() { this->backButton.click(game); });
 
 	auto addOptionButtonProxies = [this](int index)
 	{
-		DebugAssertIndex(this->currentTabTextBoxes, index);
-		const TextBox &optionTextBox = this->currentTabTextBoxes[index];
-		const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
-
-		const Rect optionRect(
-			OptionsUiView::ListOrigin.x,
-			OptionsUiView::ListOrigin.y + (optionTextBoxHeight * index),
-			OptionsUiView::ListDimensions.x,
-			optionTextBoxHeight);
-
 		auto buttonFunc = [this, index](bool isLeftClick)
 		{
 			auto &visibleOptions = this->getVisibleOptions();
 			DebugAssertIndex(visibleOptions, index);
-			std::unique_ptr<OptionsUiModel::Option> &optionPtr = visibleOptions[index];
-			OptionsUiModel::Option &option = *optionPtr;
+			std::unique_ptr<OptionsUiModel::Option> &option = visibleOptions[index];
 
-			// Modify the option based on which button was pressed.
 			if (isLeftClick)
 			{
-				TryIncrementOption(option);
+				option->tryIncrement();
 			}
 			else
 			{
-				TryDecrementOption(option);
+				option->tryDecrement();
 			}
 
-			this->updateOptionTextBoxText(index);
+			this->updateOptionText(index);
 		};
+
+		DebugAssertIndex(this->optionTextBoxes, index);
+		const TextBox &optionTextBox = this->optionTextBoxes[index];
+		const Rect optionRect = optionTextBox.getRect();
 
 		this->addButtonProxy(MouseButtonType::Left, optionRect, [buttonFunc]() { buttonFunc(true); });
 		this->addButtonProxy(MouseButtonType::Right, optionRect, [buttonFunc]() { buttonFunc(false); });
 	};
 
+	// Clear option text boxes and then re-populate the visible ones.
+	for (TextBox &textBox : this->optionTextBoxes)
+	{
+		textBox.setText(std::string());
+	}
+
+	const auto &visibleOptions = this->getVisibleOptions();
 	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
-		this->initOptionTextBox(i);
-		this->updateOptionTextBoxText(i);
+		this->updateOptionText(i);
 		addOptionButtonProxies(i);
 	}
-}
-
-std::optional<CursorData> OptionsPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
-
-void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
-{
-	auto &textureManager = this->getGame().getTextureManager();
-	const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
-	Texture tabBackground = TextureUtils::generate(
-		OptionsUiView::TabBackgroundPatternType,
-		graphicsTabRect.getWidth(),
-		graphicsTabRect.getHeight(),
-		textureManager,
-		renderer);
-
-	// @todo: this loop condition should be driven by actual tab count
-	for (int i = 0; i < 5; i++)
-	{
-		const int tabX = graphicsTabRect.getLeft();
-		const int tabY = graphicsTabRect.getTop() + (tabBackground.getHeight() * i);
-		renderer.drawOriginal(tabBackground, tabX, tabY);
-	}
-
-	Texture returnBackground = TextureUtils::generate(
-		OptionsUiView::TabBackgroundPatternType,
-		this->backToPauseMenuButton.getWidth(),
-		this->backToPauseMenuButton.getHeight(),
-		textureManager,
-		renderer);
-
-	renderer.drawOriginal(returnBackground, this->backToPauseMenuButton.getX(), this->backToPauseMenuButton.getY());
-}
-
-void OptionsPanel::drawText(Renderer &renderer)
-{
-	auto drawTextBox = [&renderer](TextBox &textBox)
-	{
-		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
-	};
-
-	drawTextBox(this->titleTextBox);
-	drawTextBox(this->backToPauseMenuTextBox);
-	drawTextBox(this->graphicsTextBox);
-	drawTextBox(this->audioTextBox);
-	drawTextBox(this->inputTextBox);
-	drawTextBox(this->miscTextBox);
-	drawTextBox(this->devTextBox);
-}
-
-void OptionsPanel::drawTextOfOptions(Renderer &renderer)
-{
-	const auto &visibleOptions = this->getVisibleOptions();
-	std::optional<int> highlightedOptionIndex;
-	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
-	{
-		auto &optionTextBox = this->currentTabTextBoxes.at(i);
-		const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
-		const Rect optionRect(
-			OptionsUiView::ListOrigin.x,
-			OptionsUiView::ListOrigin.y + (optionTextBoxHeight * i),
-			OptionsUiView::ListDimensions.x,
-			optionTextBoxHeight);
-
-		const auto &inputManager = this->getGame().getInputManager();
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-		const bool optionRectContainsMouse = optionRect.contains(originalPosition);
-
-		// If the options rect contains the mouse cursor, highlight it before drawing text.
-		if (optionRectContainsMouse)
-		{
-			renderer.fillOriginalRect(OptionsUiView::HighlightColor, optionRect.getLeft(),
-				optionRect.getTop(), optionRect.getWidth(), optionRect.getHeight());
-
-			// Store the highlighted option index for tooltip drawing.
-			highlightedOptionIndex = i;
-		}
-
-		// Draw option text.
-		const Rect &optionTextBoxRect = optionTextBox.getRect();
-		renderer.drawOriginal(optionTextBox.getTexture(), optionTextBoxRect.getLeft(), optionTextBoxRect.getTop());
-
-		// Draw description if hovering over an option with a non-empty tooltip.
-		if (highlightedOptionIndex.has_value())
-		{
-			DebugAssertIndex(visibleOptions, *highlightedOptionIndex);
-			const auto &visibleOption = visibleOptions[*highlightedOptionIndex];
-			const std::string &tooltip = visibleOption->getTooltip();
-
-			// Only draw if the tooltip has text.
-			if (!tooltip.empty())
-			{
-				this->drawDescription(tooltip, renderer);
-			}
-		}
-	}
-}
-
-void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
-{
-	auto &game = this->getGame();
-	const auto &fontLibrary = game.getFontLibrary();
-
-	const Int2 &point = OptionsUiView::DescriptionOrigin;
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
-		text,
-		point.x,
-		point.y,
-		OptionsUiView::DescriptionTextFontName,
-		OptionsUiView::getDescriptionTextColor(),
-		OptionsUiView::DescriptionTextAlignment,
-		fontLibrary);
-
-	TextBox descriptionTextBox;
-	if (!descriptionTextBox.init(textBoxInitInfo, text, renderer))
-	{
-		DebugCrash("Couldn't init description text box.");
-	}
-
-	const Rect &descriptionTextBoxRect = descriptionTextBox.getRect();
-	renderer.drawOriginal(descriptionTextBox.getTexture(),
-		descriptionTextBoxRect.getLeft(), descriptionTextBoxRect.getTop());
-}
-
-void OptionsPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw solid background.
-	renderer.clearOriginal(OptionsUiView::BackgroundColor);
-
-	// Draw elements.
-	this->drawReturnButtonsAndTabs(renderer);
-	this->drawText(renderer);
-	this->drawTextOfOptions(renderer);
 }

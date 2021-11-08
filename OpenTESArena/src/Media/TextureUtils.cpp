@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "TextureUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Math/Rect.h"
@@ -67,7 +69,7 @@ Texture TextureUtils::makeTextureFrom8Bit(int width, int height, const uint8_t *
 	return texture;
 }
 
-Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
+Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
 	Renderer &renderer)
 {
 	// Initialize the scratch surface to transparent.
@@ -284,11 +286,10 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 		DebugCrash("Unrecognized pattern type.");
 	}
 
-	Texture texture = renderer.createTextureFromSurface(surface);
-	return texture;
+	return surface;
 }
 
-Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
+Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::D;
 	int fontDefIndex;
@@ -322,9 +323,8 @@ Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLi
 	constexpr TextAlignment alignment = TextAlignment::TopLeft;
 	TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines.data(), static_cast<int>(textLines.size())),
 		fontDef, dstX, dstY, textColor, alignment, lineSpacing, nullptr, nullptr, surfacePixelsView);
-
-	Texture texture = renderer.createTextureFromSurface(surface);
-	return texture;
+	
+	return surface;
 }
 
 Buffer<TextureAssetReference> TextureUtils::makeTextureAssetRefs(const std::string &filename,
@@ -347,4 +347,59 @@ Buffer<TextureAssetReference> TextureUtils::makeTextureAssetRefs(const std::stri
 	}
 
 	return textureAssetRefs;
+}
+
+bool TextureUtils::tryAllocUiTexture(const TextureAssetReference &textureAssetRef,
+	const TextureAssetReference &paletteTextureAssetRef, TextureManager &textureManager, Renderer &renderer,
+	UiTextureID *outID)
+{
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
+		return false;
+	}
+
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+		return false;
+	}
+
+	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, outID))
+	{
+		DebugLogError("Couldn't create UI texture for \"" + textureAssetRef.filename + "\".");
+		return false;
+	}
+
+	return true;
+}
+
+bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureManager &textureManager,
+	Renderer &renderer, UiTextureID *outID)
+{
+	const int width = surface.getWidth();
+	const int height = surface.getHeight();
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	{
+		DebugLogError("Couldn't create UI texture from surface.");
+		return false;
+	}
+
+	const int texelCount = width * height;
+	const uint32_t *srcTexels = static_cast<const uint32_t*>(surface.getPixels());
+	uint32_t *dstTexels = renderer.lockUiTexture(textureID);
+	if (dstTexels == nullptr)
+	{
+		DebugLogError("Couldn't lock UI texels for writing from surface.");
+		return false;
+	}
+
+	std::copy(srcTexels, srcTexels + texelCount, dstTexels);
+	renderer.unlockUiTexture(textureID);
+	*outID = textureID;
+	return true;
 }

@@ -1,5 +1,4 @@
-#include "SDL.h"
-
+#include "CommonUiView.h"
 #include "GameWorldPanel.h"
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
@@ -11,6 +10,7 @@
 #include "../Input/InputActionName.h"
 #include "../Media/PortraitFile.h"
 #include "../UI/CursorData.h"
+#include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
@@ -55,66 +55,20 @@ bool PauseMenuPanel::init()
 		return false;
 	}
 
-	this->newButton = Button<Game&>(
-		PauseMenuUiView::NewGameButtonX,
-		PauseMenuUiView::NewGameButtonY,
-		PauseMenuUiView::NewGameButtonWidth,
-		PauseMenuUiView::NewGameButtonHeight,
-		PauseMenuUiController::onNewGameButtonSelected);
-	this->loadButton = Button<Game&>(
-		PauseMenuUiView::LoadButtonX,
-		PauseMenuUiView::LoadButtonY,
-		PauseMenuUiView::LoadButtonWidth,
-		PauseMenuUiView::LoadButtonHeight,
-		PauseMenuUiController::onLoadButtonSelected);
-	this->saveButton = Button<Game&>(
-		PauseMenuUiView::SaveButtonX,
-		PauseMenuUiView::SaveButtonY,
-		PauseMenuUiView::SaveButtonWidth,
-		PauseMenuUiView::SaveButtonHeight,
-		PauseMenuUiController::onSaveButtonSelected);
-	this->exitButton = Button<Game&>(
-		PauseMenuUiView::ExitButtonX,
-		PauseMenuUiView::ExitButtonY,
-		PauseMenuUiView::ExitButtonWidth,
-		PauseMenuUiView::ExitButtonHeight,
-		PauseMenuUiController::onExitButtonSelected);
-	this->resumeButton = Button<Game&>(
-		PauseMenuUiView::ResumeButtonX,
-		PauseMenuUiView::ResumeButtonY,
-		PauseMenuUiView::ResumeButtonWidth,
-		PauseMenuUiView::ResumeButtonHeight,
-		PauseMenuUiController::onResumeButtonSelected);
-	this->optionsButton = Button<Game&>(
-		PauseMenuUiView::OptionsButtonX,
-		PauseMenuUiView::OptionsButtonY,
-		PauseMenuUiView::OptionsButtonWidth,
-		PauseMenuUiView::OptionsButtonHeight,
-		PauseMenuUiController::onOptionsButtonSelected);
+	this->newButton = Button<Game&>(PauseMenuUiView::getNewGameButtonRect(), PauseMenuUiController::onNewGameButtonSelected);
+	this->loadButton = Button<Game&>(PauseMenuUiView::getLoadButtonRect(), PauseMenuUiController::onLoadButtonSelected);
+	this->saveButton = Button<Game&>(PauseMenuUiView::getSaveButtonRect(), PauseMenuUiController::onSaveButtonSelected);
+	this->exitButton = Button<Game&>(PauseMenuUiView::getExitButtonRect(), PauseMenuUiController::onExitButtonSelected);
+	this->resumeButton = Button<Game&>(PauseMenuUiView::getResumeButtonRect(), PauseMenuUiController::onResumeButtonSelected);
+	this->optionsButton = Button<Game&>(PauseMenuUiView::getOptionsButtonRect(), PauseMenuUiController::onOptionsButtonSelected);
 	this->soundUpButton = Button<Game&, PauseMenuPanel&>(
-		PauseMenuUiView::SoundUpButtonX,
-		PauseMenuUiView::SoundUpButtonY,
-		PauseMenuUiView::SoundUpButtonWidth,
-		PauseMenuUiView::SoundUpButtonHeight,
-		PauseMenuUiController::onSoundUpButtonSelected);
+		PauseMenuUiView::getSoundUpButtonRect(), PauseMenuUiController::onSoundUpButtonSelected);
 	this->soundDownButton = Button<Game&, PauseMenuPanel&>(
-		PauseMenuUiView::SoundDownButtonX,
-		PauseMenuUiView::SoundDownButtonY,
-		PauseMenuUiView::SoundDownButtonWidth,
-		PauseMenuUiView::SoundDownButtonHeight,
-		PauseMenuUiController::onSoundDownButtonSelected);
+		PauseMenuUiView::getSoundDownButtonRect(), PauseMenuUiController::onSoundDownButtonSelected);
 	this->musicUpButton = Button<Game&, PauseMenuPanel&>(
-		PauseMenuUiView::MusicUpButtonX,
-		PauseMenuUiView::MusicUpButtonY,
-		PauseMenuUiView::MusicUpButtonWidth,
-		PauseMenuUiView::MusicUpButtonHeight,
-		PauseMenuUiController::onMusicUpButtonSelected);
+		PauseMenuUiView::getMusicUpButtonRect(), PauseMenuUiController::onMusicUpButtonSelected);
 	this->musicDownButton = Button<Game&, PauseMenuPanel&>(
-		PauseMenuUiView::MusicDownButtonX,
-		PauseMenuUiView::MusicDownButtonY,
-		PauseMenuUiView::MusicDownButtonWidth,
-		PauseMenuUiView::MusicDownButtonHeight,
-		PauseMenuUiController::onMusicDownButtonSelected);
+		PauseMenuUiView::getMusicDownButtonRect(), PauseMenuUiController::onMusicDownButtonSelected);
 
 	this->addButtonProxy(MouseButtonType::Left, this->newButton.getRect(),
 		[this, &game]() { this->newButton.click(game); });
@@ -146,13 +100,104 @@ bool PauseMenuPanel::init()
 		}
 	});
 
+	auto &textureManager = game.getTextureManager();
+	const UiTextureID backgroundTextureID = PauseMenuUiView::allocBackgroundTexture(textureManager, renderer);
+	this->backgroundTextureRef.init(backgroundTextureID, renderer);
+	this->addDrawCall(
+		this->backgroundTextureRef.get(),
+		Int2::Zero,
+		Int2(this->backgroundTextureRef.getWidth(), this->backgroundTextureRef.getHeight()),
+		PivotType::TopLeft);
+
+	const UiTextureID gameWorldInterfaceTextureID =
+		GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
+	this->gameWorldInterfaceTextureRef.init(gameWorldInterfaceTextureID, renderer);
+
+	this->addDrawCall(
+		this->gameWorldInterfaceTextureRef.get(),
+		GameWorldUiView::getGameWorldInterfacePosition(),
+		Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight()),
+		PivotType::Bottom);
+
+	constexpr GameWorldUiView::StatusGradientType gradientType = GameWorldUiView::StatusGradientType::Default;
+	const UiTextureID statusGradientTextureID =
+		GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
+	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
+
+	const Rect portraitRect = GameWorldUiView::getPlayerPortraitRect();
+	this->addDrawCall(
+		this->statusGradientTextureRef.get(),
+		portraitRect.getTopLeft(),
+		Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight()),
+		PivotType::TopLeft);
+
+	auto &gameState = game.getGameState();
+	const auto &player = gameState.getPlayer();
+	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
+		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
+	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
+	this->addDrawCall(
+		this->playerPortraitTextureRef.get(),
+		portraitRect.getTopLeft(),
+		Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight()),
+		PivotType::TopLeft);
+
+	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
+	this->noMagicTextureRef.init(noMagicTextureID, renderer);
+
+	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
+	if (!charClassDef.canCastMagic())
+	{
+		this->addDrawCall(
+			this->noMagicTextureRef.get(),
+			GameWorldUiView::getNoMagicTexturePosition(),
+			Int2(this->noMagicTextureRef.getWidth(), this->noMagicTextureRef.getHeight()),
+			PivotType::TopLeft);
+	}
+
 	// Cover up the detail slider with a new options background.
-	this->optionsButtonTexture = TextureUtils::generate(
-		PauseMenuUiView::OptionsButtonPatternType,
-		this->optionsButton.getWidth(),
-		this->optionsButton.getHeight(),
-		game.getTextureManager(),
-		renderer);
+	const UiTextureID optionsButtonTextureID = PauseMenuUiView::allocOptionsButtonTexture(textureManager, renderer);
+	this->optionsButtonTextureRef.init(optionsButtonTextureID, renderer);
+
+	const Rect &optionsButtonRect = this->optionsButton.getRect();
+	this->addDrawCall(
+		this->optionsButtonTextureRef.get(),
+		optionsButtonRect.getTopLeft(),
+		Int2(optionsButtonRect.getWidth(), optionsButtonRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect &playerNameRect = this->playerNameTextBox.getRect();
+	this->addDrawCall(
+		this->playerNameTextBox.getTextureID(),
+		playerNameRect.getTopLeft(),
+		Int2(playerNameRect.getWidth(), playerNameRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect &musicVolumeRect = this->musicTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->musicTextBox.getTextureID(); },
+		musicVolumeRect.getCenter(),
+		Int2(musicVolumeRect.getWidth(), musicVolumeRect.getHeight()),
+		PivotType::Middle);
+
+	const Rect &soundVolumeRect = this->soundTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->soundTextBox.getTextureID(); },
+		soundVolumeRect.getCenter(),
+		Int2(soundVolumeRect.getWidth(), soundVolumeRect.getHeight()),
+		PivotType::Middle);
+
+	const Rect &optionsTextRect = this->optionsTextBox.getRect();
+	this->addDrawCall(
+		this->optionsTextBox.getTextureID(),
+		optionsTextRect.getTopLeft(),
+		Int2(optionsTextRect.getWidth(), optionsTextRect.getHeight()),
+		PivotType::TopLeft);
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
 
 	return true;
 }
@@ -167,85 +212,4 @@ void PauseMenuPanel::updateSoundText(double volume)
 {
 	const std::string volumeStr = PauseMenuUiModel::getVolumeString(volume);
 	this->soundTextBox.setText(volumeStr);
-}
-
-std::optional<CursorData> PauseMenuPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
-
-void PauseMenuPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw pause background.
-	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	const TextureAssetReference backgroundPaletteTextureAssetRef = PauseMenuUiView::getBackgroundPaletteTextureAssetRef();
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteTextureAssetRef);
-	if (!backgroundPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get pause background palette ID for \"" + backgroundPaletteTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const TextureAssetReference backgroundTextureAssetRef = PauseMenuUiView::getBackgroundTextureAssetRef();
-	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
-	if (!backgroundTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get pause background texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
-
-	// Draw game world interface below the pause menu.
-	const PaletteID gameWorldInterfacePaletteID = *backgroundPaletteID;
-	const TextureBuilderID gameWorldInterfaceTextureBuilderID = GameWorldUiView::getGameWorldInterfaceTextureBuilderID(textureManager);
-	const TextureBuilder &gameWorldInterfaceTextureBuilder = textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureBuilderID);
-	const Int2 gameWorldInterfacePosition = GameWorldUiView::getGameWorldInterfacePosition(gameWorldInterfaceTextureBuilder.getHeight());
-	renderer.drawOriginal(gameWorldInterfaceTextureBuilderID, gameWorldInterfacePaletteID,
-		gameWorldInterfacePosition.x, gameWorldInterfacePosition.y, textureManager);
-
-	// Draw player portrait.
-	const auto &player = game.getGameState().getPlayer();
-	const PaletteID portraitPaletteID = gameWorldInterfacePaletteID;
-	const std::string &headsFilename = PortraitFile::getHeads(player.isMale(), player.getRaceID(), true);
-	const TextureBuilderID portraitTextureBuilderID =
-		GameWorldUiView::getPlayerPortraitTextureBuilderID(game, headsFilename, player.getPortraitID());
-
-	const PaletteID statusPaletteID = portraitPaletteID;
-	const TextureBuilderID statusTextureBuilderID = GameWorldUiView::getStatusGradientTextureBuilderID(game, 0);
-
-	renderer.drawOriginal(statusTextureBuilderID, statusPaletteID,
-		GameWorldUiView::PlayerPortraitX, GameWorldUiView::PlayerPortraitY, textureManager);
-	renderer.drawOriginal(portraitTextureBuilderID, portraitPaletteID,
-		GameWorldUiView::PlayerPortraitX, GameWorldUiView::PlayerPortraitY, textureManager);
-
-	// If the player's class can't use magic, show the darkened spell icon.
-	const auto &charClassLibrary = game.getCharacterClassLibrary();
-	const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
-	if (!charClassDef.canCastMagic())
-	{
-		const PaletteID nonMagicIconPaletteID = gameWorldInterfacePaletteID;
-		const TextureBuilderID nonMagicIconTextureBuilderID = GameWorldUiView::getNoSpellTextureBuilderID(game);
-		const Int2 nonMagicIconPosition = GameWorldUiView::getNoMagicTexturePosition();
-		renderer.drawOriginal(nonMagicIconTextureBuilderID, nonMagicIconPaletteID,
-			nonMagicIconPosition.x, nonMagicIconPosition.y, textureManager);
-	}
-
-	renderer.drawOriginal(this->optionsButtonTexture, this->optionsButton.getX(), this->optionsButton.getY());
-
-	auto drawTextBox = [&renderer](TextBox &textBox, int xOffset)
-	{
-		const Rect &textBoxRect = textBox.getRect();
-		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft() + xOffset, textBoxRect.getTop());
-	};
-
-	// Draw text: player's name, music volume, sound volume, options.
-	drawTextBox(this->playerNameTextBox, 0);
-	drawTextBox(this->musicTextBox, 0);
-	drawTextBox(this->soundTextBox, 0);
-	drawTextBox(this->optionsTextBox, -1);
 }

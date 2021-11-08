@@ -1,26 +1,49 @@
 #include <algorithm>
 #include <optional>
 
+#include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
+#include "CharacterSheetUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/Surface.h"
 
 TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::CharacterCreation));
 }
 
-int ChooseClassCreationUiView::getTitleTextureX(int textureWidth)
+UiTextureID CharacterCreationUiView::allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
+	const TextureAssetReference textureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, textureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for background texture.");
+	}
+
+	return textureID;
 }
 
-int ChooseClassCreationUiView::getTitleTextureY(int textureHeight)
+Int2 ChooseClassCreationUiView::getTitleTextureCenter()
 {
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) + 1;
+	return Int2(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 1 - 20);
+}
+
+Int2 ChooseClassCreationUiView::getGenerateTextureCenter()
+{
+	return ChooseClassCreationUiView::getTitleTextureCenter() + Int2(0, 40);
+}
+
+Int2 ChooseClassCreationUiView::getSelectTextureCenter()
+{
+	return ChooseClassCreationUiView::getGenerateTextureCenter() + Int2(0, 40);
 }
 
 TextBox::InitInfo ChooseClassCreationUiView::getTitleTextBoxInitInfo(const std::string_view &text,
@@ -59,6 +82,27 @@ TextBox::InitInfo ChooseClassCreationUiView::getSelectTextBoxInitInfo(const std:
 		ChooseClassCreationUiView::SelectTextColor,
 		ChooseClassCreationUiView::SelectTextAlignment,
 		fontLibrary);
+}
+
+UiTextureID ChooseClassCreationUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(
+		ChooseClassCreationUiView::PopUpPatternType,
+		ChooseClassCreationUiView::PopUpTextureWidth,
+		ChooseClassCreationUiView::PopUpTextureHeight,
+		textureManager,
+		renderer);
+
+	const BufferView2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
+		surface.getWidth(), surface.getHeight());
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(texelsView, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for parchment.");
+	}
+
+	return textureID;
 }
 
 Rect ChooseClassUiView::getListRect(Game &game)
@@ -143,14 +187,60 @@ TextBox::InitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_v
 		fontLibrary);
 }
 
-int ChooseGenderUiView::getTitleTextureX(int textureWidth)
+TextBox::InitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
+	std::string dummyText;
+	for (int i = 0; i < 10; i++)
+	{
+		if (i > 0)
+		{
+			dummyText += '\n';
+		}
+
+		dummyText += std::string(52, TextRenderUtils::LARGEST_CHAR);
+	}
+
+	TextRenderUtils::TextShadowInfo shadowInfo;
+	shadowInfo.init(1, 0, Color::Black);
+
+	return TextBox::InitInfo::makeWithCenter(
+		dummyText,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT - 32),
+		ArenaFontName::D,
+		Color::White,
+		TextAlignment::TopCenter,
+		shadowInfo,
+		0,
+		fontLibrary);
 }
 
-int ChooseGenderUiView::getTitleTextureY(int textureHeight)
+UiTextureID ChooseClassUiView::allocPopUpTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
+	const TextureAssetReference paletteTextureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
+	const TextureAssetReference textureAssetRef = ChooseClassUiView::getListBoxTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for class pop-up.");
+	}
+
+	return textureID;
+}
+
+Int2 ChooseGenderUiView::getTitleTextureCenter()
+{
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 20);
+}
+
+Int2 ChooseGenderUiView::getMaleTextureCenter()
+{
+	return ChooseGenderUiView::getTitleTextureCenter() + Int2(0, 40);
+}
+
+Int2 ChooseGenderUiView::getFemaleTextureCenter()
+{
+	return ChooseGenderUiView::getMaleTextureCenter() + Int2(0, 40);
 }
 
 TextBox::InitInfo ChooseGenderUiView::getTitleTextBoxInitInfo(const std::string_view &text,
@@ -189,14 +279,25 @@ TextBox::InitInfo ChooseGenderUiView::getFemaleTextBoxInitInfo(const std::string
 		fontLibrary);
 }
 
-int ChooseNameUiView::getTitleTextureX(int textureWidth)
+UiTextureID ChooseGenderUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
+	const Surface surface = TextureUtils::generate(ChooseGenderUiView::TexturePatternType,
+		ChooseGenderUiView::TextureWidth, ChooseGenderUiView::TextureHeight, textureManager, renderer);
+	const BufferView2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
+		surface.getWidth(), surface.getHeight());
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(texelsView, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for parchment.");
+	}
+
+	return textureID;
 }
 
-int ChooseNameUiView::getTitleTextureY(int textureHeight)
+Int2 ChooseNameUiView::getTitleTextureCenter()
 {
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
 }
 
 TextBox::InitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_view &text,
@@ -224,6 +325,22 @@ TextBox::InitInfo ChooseNameUiView::getEntryTextBoxInitInfo(const FontLibrary &f
 		ChooseNameUiView::EntryColor,
 		ChooseNameUiView::EntryAlignment,
 		fontLibrary);
+}
+
+UiTextureID ChooseNameUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(ChooseNameUiView::TexturePatternType,
+		ChooseNameUiView::TextureWidth, ChooseNameUiView::TextureHeight, textureManager, renderer);
+	const BufferView2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
+		surface.getWidth(), surface.getHeight());
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(texelsView, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for parchment.");
+	}
+
+	return textureID;
 }
 
 TextureAssetReference ChooseRaceUiView::getBackgroundTextureAssetRef()
@@ -361,6 +478,19 @@ Rect ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(int textWidth, int 
 		std::max(textHeight + 8, 40));
 }
 
+TextBox::InitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::string_view &text, Game &game)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		ChooseRaceUiView::InitialPopUpTextCenterPoint,
+		ChooseRaceUiView::InitialPopUpFontName,
+		ChooseRaceUiView::InitialPopUpColor,
+		ChooseRaceUiView::InitialPopUpAlignment,
+		std::nullopt,
+		ChooseRaceUiView::InitialPopUpLineSpacing,
+		game.getFontLibrary());
+}
+
 TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
 	const std::string_view &text, const FontLibrary &fontLibrary)
 {
@@ -415,6 +545,47 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
 		std::nullopt,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextLineSpacing,
 		fontLibrary);
+}
+
+UiTextureID ChooseRaceUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference textureAssetRef = ChooseRaceUiView::getBackgroundTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, textureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for race select background.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseRaceUiView::allocNoExitTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference paletteTextureAssetRef = ChooseRaceUiView::getBackgroundTextureAssetRef();
+	const TextureAssetReference textureAssetRef = ChooseRaceUiView::getNoExitTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for exit cover.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseRaceUiView::allocInitialPopUpTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(ChooseRaceUiView::InitialPopUpPatternType,
+		ChooseRaceUiView::InitialPopUpTextureWidth, ChooseRaceUiView::InitialPopUpTextureHeight, textureManager, renderer);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create initial pop-up texture.");
+	}
+	
+	return textureID;
 }
 
 int ChooseAttributesUiView::getInitialTextureWidth()
@@ -501,7 +672,7 @@ int ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(int textHeight)
 	return textHeight + 12;
 }
 
-int ChooseAttributesUiView::getBodyOffsetX(Game &game)
+Int2 ChooseAttributesUiView::getBodyOffset(Game &game)
 {
 	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getBodyTextureAssetRef(game);
 
@@ -513,7 +684,7 @@ int ChooseAttributesUiView::getBodyOffsetX(Game &game)
 	}
 
 	const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	return ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth();
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth(), 0);
 }
 
 Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
@@ -567,7 +738,7 @@ TextureAssetReference ChooseAttributesUiView::getBodyTextureAssetRef(Game &game)
 	return TextureAssetReference(std::move(bodyFilename));
 }
 
-TextureAssetReference ChooseAttributesUiView::getHeadTextureAssetRef(Game &game)
+Buffer<TextureAssetReference> ChooseAttributesUiView::getHeadTextureAssetRefs(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const bool isMale = charCreationState.isMale();
@@ -575,8 +746,9 @@ TextureAssetReference ChooseAttributesUiView::getHeadTextureAssetRef(Game &game)
 
 	constexpr bool trimmed = false;
 	std::string headsFilename = PortraitFile::getHeads(isMale, raceID, trimmed);
-	const int headIndex = charCreationState.getPortraitIndex();
-	return TextureAssetReference(std::move(headsFilename), headIndex);
+
+	auto &textureManager = game.getTextureManager();
+	return TextureUtils::makeTextureAssetRefs(headsFilename, textureManager);
 }
 
 TextureAssetReference ChooseAttributesUiView::getShirtTextureAssetRef(Game &game)
@@ -600,4 +772,74 @@ TextureAssetReference ChooseAttributesUiView::getPantsTextureAssetRef(Game &game
 
 	std::string pantsFilename = PortraitFile::getPants(isMale);
 	return TextureAssetReference(std::move(pantsFilename));
+}
+
+UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
+{
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+
+	const TextureAssetReference paletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getBodyTextureAssetRef(game);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for character body.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
+{
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+
+	const TextureAssetReference paletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getShirtTextureAssetRef(game);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for character shirt.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseAttributesUiView::allocPantsTexture(Game &game)
+{
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+
+	const TextureAssetReference paletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = ChooseAttributesUiView::getPantsTextureAssetRef(game);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for character pants.");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseAttributesUiView::allocHeadTexture(const TextureAssetReference &textureAssetRef,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference paletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for character head \"" + textureAssetRef.filename + "\".");
+	}
+
+	return textureID;
+}
+
+UiTextureID ChooseAttributesUiView::allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocStatsBgTexture(textureManager, renderer);
 }

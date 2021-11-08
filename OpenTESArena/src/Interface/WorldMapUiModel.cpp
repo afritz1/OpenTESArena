@@ -8,6 +8,7 @@
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../Math/Random.h"
+#include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
@@ -65,7 +66,7 @@ std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosit
 	return std::nullopt;
 }
 
-void WorldMapUiModel::tickTravelTime(Game &game, int travelDays)
+void FastTravelUiModel::tickTravelTime(Game &game, int travelDays)
 {
 	auto &gameState = game.getGameState();
 	auto &random = game.getRandom();
@@ -92,7 +93,7 @@ void WorldMapUiModel::tickTravelTime(Game &game, int travelDays)
 	}
 }
 
-std::string WorldMapUiModel::getCityArrivalMessage(Game &game, int targetProvinceID,
+std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvinceID,
 	int targetLocationID, int travelDays)
 {
 	auto &gameState = game.getGameState();
@@ -308,32 +309,31 @@ std::string WorldMapUiModel::getCityArrivalMessage(Game &game, int targetProvinc
 	return fullText;
 }
 
-std::unique_ptr<Panel> WorldMapUiModel::makeCityArrivalPopUp(Game &game, int targetProvinceID,
+std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int targetProvinceID,
 	int targetLocationID, int travelDays)
 {
-	const std::string text = WorldMapUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
+	const std::string text = FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
-		WorldMapUiView::getCityArrivalPopUpTextCenterPoint(game),
-		WorldMapUiView::CityArrivalFontName,
-		WorldMapUiView::CityArrivalTextColor,
-		WorldMapUiView::CityArrivalTextAlignment,
+		FastTravelUiView::getCityArrivalPopUpTextCenterPoint(game),
+		FastTravelUiView::CityArrivalFontName,
+		FastTravelUiView::CityArrivalTextColor,
+		FastTravelUiView::CityArrivalTextAlignment,
 		std::nullopt,
-		WorldMapUiView::CityArrivalLineSpacing,
+		FastTravelUiView::CityArrivalLineSpacing,
 		game.getFontLibrary());
 
-	Texture texture = TextureUtils::generate(
-		WorldMapUiView::CityArrivalTexturePatternType,
-		WorldMapUiView::getCityArrivalPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
-		WorldMapUiView::getCityArrivalPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
-		game.getTextureManager(),
-		game.getRenderer());
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	const UiTextureID textureID = FastTravelUiView::allocCityArrivalPopUpTexture(
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight(), textureManager, renderer);
+	ScopedUiTextureRef textureRef(textureID, renderer);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
-	if (!subPanel->init(textBoxInitInfo, text, WorldMapUiController::onFastTravelCityArrivalPopUpSelected,
-		std::move(texture), WorldMapUiView::getCityArrivalPopUpTextureCenterPoint(game)))
+	if (!subPanel->init(textBoxInitInfo, text, FastTravelUiController::onCityArrivalPopUpSelected,
+		std::move(textureRef), FastTravelUiView::getCityArrivalPopUpTextureCenterPoint(game)))
 	{
-		DebugCrash("Couldn't init sub-panel.");
+		DebugCrash("Couldn't init city arrival sub-panel.");
 	}
 
 	return subPanel;

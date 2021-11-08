@@ -5,6 +5,7 @@
 #include "CharacterCreationUiView.h"
 #include "ChooseClassCreationPanel.h"
 #include "ChooseClassPanel.h"
+#include "CommonUiView.h"
 #include "MainMenuPanel.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
@@ -31,13 +32,6 @@ bool ChooseClassCreationPanel::init()
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-
-	this->parchment = TextureUtils::generate(
-		ChooseClassCreationUiView::PopUpPatternType,
-		ChooseClassCreationUiView::PopUpTextureWidth,
-		ChooseClassCreationUiView::PopUpTextureHeight,
-		game.getTextureManager(),
-		renderer);
 
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = ChooseClassCreationUiModel::getTitleText(game);
@@ -85,81 +79,61 @@ bool ChooseClassCreationPanel::init()
 
 	this->addInputActionListener(InputActionName::Back, ChooseClassCreationUiController::onBackToMainMenuInputAction);
 
-	return true;
-}
+	auto &textureManager = game.getTextureManager();
+	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
+	const UiTextureID parchmentTextureID = ChooseClassCreationUiView::allocParchmentTexture(textureManager, renderer);
+	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
+	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-std::optional<CursorData> ChooseClassCreationPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
+	this->addDrawCall(
+		this->nightSkyTextureRef.get(),
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
 
-void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)
-{
-	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
+	const Int2 parchmentSize(
+		this->parchmentTextureRef.getWidth(),
+		this->parchmentTextureRef.getHeight());
+	this->addDrawCall(
+		this->parchmentTextureRef.get(),
+		ChooseClassCreationUiView::getTitleTextureCenter(),
+		parchmentSize,
+		PivotType::Middle);
+	this->addDrawCall(
+		this->parchmentTextureRef.get(),
+		ChooseClassCreationUiView::getGenerateTextureCenter(),
+		parchmentSize,
+		PivotType::Middle);
+	this->addDrawCall(
+		this->parchmentTextureRef.get(),
+		ChooseClassCreationUiView::getSelectTextureCenter(),
+		parchmentSize,
+		PivotType::Middle);
 
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-	const int mouseX = originalPosition.x;
-	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
-		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
-		(mouseY - 1) : (mouseY - tooltip.getHeight());
-
-	renderer.drawOriginal(tooltip, x, y);
-}
-
-void ChooseClassCreationPanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw background.
-	auto &textureManager = this->getGame().getTextureManager();
-	const TextureAssetReference backgroundTextureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundTextureAssetRef);
-	if (!backgroundPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get background palette ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
-	if (!backgroundTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
-
-	// Draw parchments: title, generate, select.
-	const int parchmentX = ChooseClassCreationUiView::getTitleTextureX(this->parchment.getWidth());
-	const int parchmentY = ChooseClassCreationUiView::getTitleTextureY(this->parchment.getHeight());
-	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
-	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
-	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);
-
-	// Draw text: title, generate, select.
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	this->addDrawCall(
+		this->titleTextBox.getTextureID(),
+		titleTextBoxRect.getCenter(),
+		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
+		PivotType::Middle);
+
 	const Rect &generateTextBoxRect = this->generateTextBox.getRect();
+	this->addDrawCall(
+		this->generateTextBox.getTextureID(),
+		generateTextBoxRect.getCenter(),
+		Int2(generateTextBoxRect.getWidth(), generateTextBoxRect.getHeight()),
+		PivotType::Middle);
+
 	const Rect &selectTextBoxRect = this->selectTextBox.getRect();
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-	renderer.drawOriginal(this->generateTextBox.getTexture(), generateTextBoxRect.getLeft(), generateTextBoxRect.getTop());
-	renderer.drawOriginal(this->selectTextBox.getTexture(), selectTextBoxRect.getLeft(), selectTextBoxRect.getTop());
+	this->addDrawCall(
+		this->selectTextBox.getTextureID(),
+		selectTextBoxRect.getCenter(),
+		Int2(selectTextBoxRect.getWidth(), selectTextBoxRect.getHeight()),
+		PivotType::Middle);
 
-	// Check if the mouse is hovered over one of the boxes for tooltips.
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
 
-	if (this->generateButton.contains(originalPoint))
-	{
-		this->drawTooltip(ChooseClassCreationUiModel::getGenerateButtonTooltipText(), renderer);
-	}
-	else if (this->selectButton.contains(originalPoint))
-	{
-		this->drawTooltip(ChooseClassCreationUiModel::getSelectButtonTooltipText(), renderer);
-	}
+	return true;
 }

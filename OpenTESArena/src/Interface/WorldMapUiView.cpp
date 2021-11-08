@@ -1,15 +1,30 @@
 #include "GameWorldPanel.h"
 #include "GameWorldUiView.h"
+#include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
+#include "../UI/Surface.h"
 
-TextureAssetReference WorldMapUiView::getWorldMapTextureAssetReference()
+Int2 WorldMapUiView::getProvinceNameOffset(int provinceID, TextureManager &textureManager)
+{
+	const std::string provinceNameOffsetFilename = WorldMapUiModel::getProvinceNameOffsetFilename();
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(provinceNameOffsetFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugCrash("Couldn't get texture file metadata for \"" + provinceNameOffsetFilename + "\".");
+	}
+
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	return textureFileMetadata.getOffset(provinceID);
+}
+
+TextureAssetReference WorldMapUiView::getTextureAssetReference()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::WorldMap));
 }
 
-TextureAssetReference WorldMapUiView::getWorldMapPaletteTextureAssetReference()
+TextureAssetReference WorldMapUiView::getPaletteTextureAssetReference()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::WorldMap));
 }
@@ -19,43 +34,87 @@ std::string WorldMapUiView::getProvinceNamesFilename()
 	return ArenaTextureName::ProvinceNames;
 }
 
-int WorldMapUiView::getFastTravelAnimationTextureX(int textureWidth)
+UiTextureID WorldMapUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
+	const TextureAssetReference textureAssetRef = WorldMapUiView::getTextureAssetReference();
+	const TextureAssetReference paletteTextureAssetRef = WorldMapUiView::getPaletteTextureAssetReference();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for world map background.");
+	}
+
+	return textureID;
 }
 
-int WorldMapUiView::getFastTravelAnimationTextureY(int textureHeight)
+UiTextureID WorldMapUiView::allocHighlightedTextTexture(int provinceID, TextureManager &textureManager, Renderer &renderer)
 {
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
+	const TextureAssetReference paletteTextureAssetRef = WorldMapUiView::getPaletteTextureAssetReference();
+
+	const std::string provinceNamesFilename = WorldMapUiView::getProvinceNamesFilename();
+	const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(provinceNamesFilename), provinceID);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for highlighted text for province " + std::to_string(provinceID) + ".");
+	}
+
+	return textureID;
 }
 
-std::string WorldMapUiView::getFastTravelAnimationFilename()
+Int2 FastTravelUiView::getAnimationTextureCenter()
+{
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
+}
+
+std::string FastTravelUiView::getAnimationFilename()
 {
 	return ArenaTextureName::FastTravel;
 }
 
-TextureAssetReference WorldMapUiView::getFastTravelPaletteTextureAssetRef()
+TextureAssetReference FastTravelUiView::getPaletteTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::WorldMap));
 }
 
-Int2 WorldMapUiView::getCityArrivalPopUpTextCenterPoint(Game &game)
+Int2 FastTravelUiView::getCityArrivalPopUpTextCenterPoint(Game &game)
 {
 	return GameWorldUiView::getInterfaceCenter(game) - Int2(0, 1);
 }
 
-Int2 WorldMapUiView::getCityArrivalPopUpTextureCenterPoint(Game &game)
+Int2 FastTravelUiView::getCityArrivalPopUpTextureCenterPoint(Game &game)
 {
-	const Int2 textCenter = WorldMapUiView::getCityArrivalPopUpTextCenterPoint(game);
+	const Int2 textCenter = FastTravelUiView::getCityArrivalPopUpTextCenterPoint(game);
 	return textCenter + Int2(0, 1);
 }
 
-int WorldMapUiView::getCityArrivalPopUpTextureWidth(int textWidth)
+int FastTravelUiView::getCityArrivalPopUpTextureWidth(int textWidth)
 {
 	return textWidth + 10;
 }
 
-int WorldMapUiView::getCityArrivalPopUpTextureHeight(int textHeight)
+int FastTravelUiView::getCityArrivalPopUpTextureHeight(int textHeight)
 {
 	return textHeight + 12;
+}
+
+UiTextureID FastTravelUiView::allocCityArrivalPopUpTexture(int textWidth, int textHeight,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	const Surface surface = TextureUtils::generate(
+		FastTravelUiView::CityArrivalTexturePatternType,
+		FastTravelUiView::getCityArrivalPopUpTextureWidth(textWidth),
+		FastTravelUiView::getCityArrivalPopUpTextureHeight(textHeight),
+		textureManager,
+		renderer);
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create city arrival pop-up texture from surface.");
+	}
+
+	return textureID;
 }

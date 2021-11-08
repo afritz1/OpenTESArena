@@ -14,8 +14,6 @@ class WorldMapMask;
 
 namespace WorldMapUiModel
 {
-	// -- World map --
-
 	static constexpr int EXIT_BUTTON_MASK_ID = 9;
 	static constexpr int MASK_COUNT = EXIT_BUTTON_MASK_ID + 1;
 
@@ -27,11 +25,12 @@ namespace WorldMapUiModel
 	// Gets the province ID or exit button ID of the hovered pixel on the world map.
 	std::optional<int> getMaskID(Game &game, const Int2 &mousePosition, bool ignoreCenterProvince,
 		bool ignoreExitButton);
+}
 
-	// -- Fast travel --
-
+namespace FastTravelUiModel
+{
 	// Shortest amount of time the fast travel animation can show for.
-	static constexpr double FastTravelAnimationMinSeconds = 1.0;
+	static constexpr double AnimationMinSeconds = 1.0;
 
 	// Advances the game clock after having fast travelled.
 	void tickTravelTime(Game &game, int travelDays);

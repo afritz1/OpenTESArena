@@ -23,8 +23,7 @@ void WorldMapUiController::onProvinceButtonSelected(Game &game, int provinceID)
 	game.setPanel<ProvinceMapPanel>(provinceID);
 }
 
-void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetProvinceID,
-	int targetLocationID, int travelDays)
+void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays)
 {
 	// Clear selected map location.
 	auto &gameState = game.getGameState();
@@ -37,7 +36,7 @@ void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetP
 
 	// Update game clock.
 	// @todo: maybe move this to a WorldMapLogicController namespace
-	WorldMapUiModel::tickTravelTime(game, travelDays);
+	FastTravelUiModel::tickTravelTime(game, travelDays);
 
 	// Update weathers.
 	gameState.updateWeatherList(exeData);
@@ -174,7 +173,7 @@ void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetP
 		game.setPanel<GameWorldPanel>();
 
 		// Push a text sub-panel for the city arrival pop-up.
-		std::unique_ptr<Panel> arrivalPopUp = WorldMapUiModel::makeCityArrivalPopUp(
+		std::unique_ptr<Panel> arrivalPopUp = FastTravelUiModel::makeCityArrivalPopUp(
 			game, targetProvinceID, targetLocationID, travelDays);
 		game.pushSubPanel(std::move(arrivalPopUp));
 	}
@@ -277,7 +276,7 @@ void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetP
 	}
 }
 
-void WorldMapUiController::onFastTravelCityArrivalPopUpSelected(Game &game)
+void FastTravelUiController::onCityArrivalPopUpSelected(Game &game)
 {
 	game.popSubPanel();
 }

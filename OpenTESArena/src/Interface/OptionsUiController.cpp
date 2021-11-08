@@ -3,7 +3,7 @@
 #include "PauseMenuPanel.h"
 #include "../Game/Game.h"
 
-void OptionsUiController::onBackToPauseMenuButtonSelected(Game &game)
+void OptionsUiController::onBackButtonSelected(Game &game)
 {
 	game.setPanel<PauseMenuPanel>();
 }

@@ -4,18 +4,6 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-std::string MainQuestSplashUiModel::getSplashFilename(Game &game, int provinceID)
-{
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-	const auto &staffDungeonSplashIndices = exeData.travel.staffDungeonSplashIndices;
-	DebugAssertIndex(staffDungeonSplashIndices, provinceID);
-	const int index = staffDungeonSplashIndices[provinceID];
-
-	const auto &staffDungeonSplashes = exeData.travel.staffDungeonSplashes;
-	DebugAssertIndex(staffDungeonSplashes, index);
-	return String::toUppercase(staffDungeonSplashes[index]);
-}
-
 std::string MainQuestSplashUiModel::getDungeonText(Game &game, int provinceID)
 {
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();

@@ -6,6 +6,10 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
+class Game;
+
+struct TextureAssetReference;
+
 namespace MainQuestSplashUiView
 {
 	const std::string DescriptionFontName = ArenaFontName::Teeny;
@@ -23,6 +27,10 @@ namespace MainQuestSplashUiView
 	constexpr int ExitButtonY = 183;
 	constexpr int ExitButtonWidth = 43;
 	constexpr int ExitButtonHeight = 13;
+
+	TextureAssetReference getSplashTextureAssetRef(Game &game, int provinceID);
+
+	UiTextureID allocSplashTextureID(Game &game, int provinceID);
 }
 
 #endif

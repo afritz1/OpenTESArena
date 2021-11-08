@@ -166,49 +166,57 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	return str;
 }
 
-std::string GameWorldUiModel::getCharacterSheetTooltipText()
+std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
 {
-	return "Character Sheet";
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+	if (modernInterface)
+	{
+		return std::nullopt;
+	}
+
+	const auto &renderer = game.getRenderer();
+	const auto &inputManager = game.getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 classicPosition = renderer.nativeToOriginal(mousePosition);
+	for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
+	{
+		const ButtonType buttonType = static_cast<ButtonType>(i);
+		const Rect buttonRect = GameWorldUiView::getButtonRect(buttonType);
+		if (buttonRect.contains(classicPosition))
+		{
+			return buttonType;
+		}
+	}
+
+	return std::nullopt;
 }
 
-std::string GameWorldUiModel::getWeaponTooltipText()
+std::string GameWorldUiModel::getButtonTooltip(ButtonType buttonType)
 {
-	return "Draw/Sheathe Weapon";
-}
-
-std::string GameWorldUiModel::getMapTooltipText()
-{
-	return "Automap/World Map";
-}
-
-std::string GameWorldUiModel::getStealTooltipText()
-{
-	return "Steal";
-}
-
-std::string GameWorldUiModel::getStatusTooltipText()
-{
-	return "Status";
-}
-
-std::string GameWorldUiModel::getMagicTooltipText()
-{
-	return "Spells";
-}
-
-std::string GameWorldUiModel::getLogbookTooltipText()
-{
-	return "Logbook";
-}
-
-std::string GameWorldUiModel::getUseItemTooltipText()
-{
-	return "Use Item";
-}
-
-std::string GameWorldUiModel::getCampTooltipText()
-{
-	return "Camp";
+	switch (buttonType)
+	{
+	case ButtonType::CharacterSheet:
+		return "Character Sheet";
+	case ButtonType::ToggleWeapon:
+		return "Draw/Sheathe Weapon";
+	case ButtonType::Map:
+		return "Automap/World Map";
+	case ButtonType::Steal:
+		return "Steal";
+	case ButtonType::Status:
+		return "Status";
+	case ButtonType::Magic:
+		return "Spells";
+	case ButtonType::Logbook:
+		return "Logbook";
+	case ButtonType::UseItem:
+		return "Use Item";
+	case ButtonType::Camp:
+		return "Camp";
+	default:
+		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(buttonType)));
+	}
 }
 
 void GameWorldUiModel::setFreeLookActive(Game &game, bool active)

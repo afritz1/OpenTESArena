@@ -1,6 +1,9 @@
 #include "MainQuestSplashUiView.h"
+#include "../Game/Game.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontLibrary.h"
+
+#include "components/utilities/String.h"
 
 int MainQuestSplashUiView::getDescriptionTextBoxX(int textWidth)
 {
@@ -33,4 +36,32 @@ TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std
 		std::nullopt,
 		MainQuestSplashUiView::DescriptionLineSpacing,
 		fontLibrary);
+}
+
+TextureAssetReference MainQuestSplashUiView::getSplashTextureAssetRef(Game &game, int provinceID)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &staffDungeonSplashIndices = exeData.travel.staffDungeonSplashIndices;
+	DebugAssertIndex(staffDungeonSplashIndices, provinceID);
+	const int index = staffDungeonSplashIndices[provinceID];
+
+	const auto &staffDungeonSplashes = exeData.travel.staffDungeonSplashes;
+	DebugAssertIndex(staffDungeonSplashes, index);
+	return TextureAssetReference(String::toUppercase(staffDungeonSplashes[index]));
+}
+
+UiTextureID MainQuestSplashUiView::allocSplashTextureID(Game &game, int provinceID)
+{
+	TextureManager &textureManager = game.getTextureManager();
+	Renderer &renderer = game.getRenderer();
+	const TextureAssetReference textureAssetRef = MainQuestSplashUiView::getSplashTextureAssetRef(game, provinceID);
+	const TextureAssetReference paletteTextureAssetRef = textureAssetRef;
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for main quest splash \"" + textureAssetRef.filename + "\".");
+	}
+
+	return textureID;
 }

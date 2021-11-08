@@ -2,11 +2,19 @@
 
 #include "MainMenuUiModel.h"
 #include "../Assets/ExeData.h"
+#include "../Game/Game.h"
 #include "../Math/RandomUtils.h"
+#include "../World/MapType.h"
 #include "../WorldMap/LocationUtils.h"
 #include "../WorldMap/ProvinceDefinition.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
+
+std::string MainMenuUiModel::getTestButtonText()
+{
+	return "Test";
+}
 
 std::string MainMenuUiModel::getTestTypeName(int type)
 {
@@ -33,6 +41,119 @@ std::string MainMenuUiModel::getTestTypeName(int type)
 	else
 	{
 		DebugUnhandledReturnMsg(std::string, std::to_string(type));
+	}
+}
+
+std::string MainMenuUiModel::getSelectedTestName(Game &game, int testType, int testIndex, int testIndex2)
+{
+	if (testType == MainMenuUiModel::TestType_MainQuest)
+	{
+		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+		const auto &exeData = binaryAssetLibrary.getExeData();
+
+		// Decide how to get the main quest dungeon name.
+		if (testIndex == 0)
+		{
+			// Start dungeon.
+			return String::toUppercase(exeData.locations.startDungeonMifName);
+		}
+		else if (testIndex == (MainMenuUiModel::MainQuestLocationCount - 1))
+		{
+			// Final dungeon.
+			return String::toUppercase(exeData.locations.finalDungeonMifName);
+		}
+		else
+		{
+			// Generate the location from the executable data, fetching data from a
+			// global function.
+			int locationID, provinceID;
+			MainMenuUiModel::SpecialCaseType specialCaseType;
+			MainMenuUiModel::getMainQuestLocationFromIndex(testIndex, exeData, &locationID, &provinceID, &specialCaseType);
+			DebugAssert(specialCaseType == MainMenuUiModel::SpecialCaseType::None);
+
+			// Calculate the .MIF name from the dungeon seed.
+			const auto &cityData = binaryAssetLibrary.getCityDataFile();
+			const uint32_t dungeonSeed = [&cityData, locationID, provinceID]()
+			{
+				const auto &province = cityData.getProvinceData(provinceID);
+				const int localDungeonID = locationID - 32;
+				return LocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
+			}();
+
+			const std::string mifName = LocationUtils::getMainQuestDungeonMifName(dungeonSeed);
+			return String::toUppercase(mifName);
+		}
+	}
+	else if (testType == MainMenuUiModel::TestType_Interior)
+	{
+		const auto &interior = MainMenuUiModel::InteriorLocations.at(testIndex);
+		return std::get<0>(interior) + std::to_string(testIndex2) + ".MIF";
+	}
+	else if (testType == MainMenuUiModel::TestType_City)
+	{
+		return MainMenuUiModel::CityLocations.at(testIndex);
+	}
+	else if (testType == MainMenuUiModel::TestType_Wilderness)
+	{
+		return MainMenuUiModel::WildernessLocations.at(testIndex);
+	}
+	else if (testType == MainMenuUiModel::TestType_Dungeon)
+	{
+		return MainMenuUiModel::DungeonLocations.at(testIndex);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(std::string, std::to_string(testType));
+	}
+}
+
+std::optional<ArenaTypes::InteriorType> MainMenuUiModel::getSelectedTestInteriorType(int testType, int testIndex)
+{
+	if ((testType == MainMenuUiModel::TestType_MainQuest) || (testType == MainMenuUiModel::TestType_Dungeon))
+	{
+		return ArenaTypes::InteriorType::Dungeon;
+	}
+	else if (testType == MainMenuUiModel::TestType_Interior)
+	{
+		DebugAssertIndex(MainMenuUiModel::InteriorLocations, testIndex);
+		const auto &interior = MainMenuUiModel::InteriorLocations[testIndex];
+		return std::get<2>(interior);
+	}
+	else if ((testType == MainMenuUiModel::TestType_City) || (testType == MainMenuUiModel::TestType_Wilderness))
+	{
+		return std::nullopt;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(std::optional<ArenaTypes::InteriorType>, std::to_string(testType));
+	}
+}
+
+ArenaTypes::WeatherType MainMenuUiModel::getSelectedTestWeatherType(int testWeather)
+{
+	DebugAssertIndex(MainMenuUiModel::Weathers, testWeather);
+	return MainMenuUiModel::Weathers[testWeather];
+}
+
+MapType MainMenuUiModel::getSelectedTestMapType(int testType)
+{
+	if ((testType == MainMenuUiModel::TestType_MainQuest) ||
+		(testType == MainMenuUiModel::TestType_Interior) ||
+		(testType == MainMenuUiModel::TestType_Dungeon))
+	{
+		return MapType::Interior;
+	}
+	else if (testType == MainMenuUiModel::TestType_City)
+	{
+		return MapType::City;
+	}
+	else if (testType == MainMenuUiModel::TestType_Wilderness)
+	{
+		return MapType::Wilderness;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(MapType, std::to_string(testType));
 	}
 }
 

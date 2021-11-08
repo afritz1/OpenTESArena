@@ -8,6 +8,7 @@
 #include "../Media/Palette.h"
 #include "../UI/AnimationState.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 class LocationDefinition;
 class ProvinceDefinition;
@@ -18,43 +19,30 @@ class TextureManager;
 class ProvinceMapPanel : public Panel
 {
 private:
-	// Current is where the player is. Selected is which location (if any) has been selected.
-	enum class LocationHighlightType { Current, Selected };
+	struct LocationTextureRefGroup
+	{
+		ScopedUiTextureRef textureRef, playerCurrentTextureRef, travelDestinationTextureRef;
 
+		void init(UiTextureID textureID, UiTextureID playerCurrentTextureID, UiTextureID travelDestinationTextureID, Renderer &renderer);
+	};
+
+	TextBox hoveredLocationTextBox;
 	Button<Game&, ProvinceMapPanel&, int> searchButton;
 	Button<Game&, ProvinceMapPanel&> travelButton;
 	Button<Game&> backToWorldMapButton;
-	// @todo: store button for every location
-	TextureBuilderIdGroup staffDungeonIconTextureBuilderIDs; // For obtaining palette indices.
-	PaletteID backgroundPaletteID;
+	LocationTextureRefGroup cityStateTextureRefs, townTextureRefs, villageTextureRefs, dungeonTextureRefs, staffDungeonTextureRefs;
+	ScopedUiTextureRef backgroundTextureRef, cursorTextureRef;
 	AnimationState blinkState;
 	int provinceID;
+	int hoveredLocationID;
 
-	// Gets the location ID of the location closest to the mouse in 320x200 space.
-	int getClosestLocationID(const Int2 &originalPosition) const;
+	void initLocationIconUI(int provinceID);
+
+	// Updates the ID of the location closest to the mouse in 320x200 space.
+	void updateHoveredLocationID(const Int2 &originalPosition);
 
 	// @todo: makeDiseasedWarningPopUp().
 	// - Display when the player is diseased.
-
-	// Draws an icon (i.e., location or highlight) centered at the given point.
-	void drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer);
-	void drawCenteredIcon(TextureBuilderID textureBuilderID, PaletteID paletteID,
-		const Int2 &point, Renderer &renderer);
-
-	// Draws the icons of all visible locations in the province.
-	void drawVisibleLocations(PaletteID backgroundPaletteID, TextureManager &textureManager, Renderer &renderer);
-
-	// Draws a highlight icon over the given location. Useful for either the player's
-	// current location or the currently selected location for fast travel.
-	void drawLocationHighlight(const LocationDefinition &locationDef, LocationHighlightType highlightType,
-		PaletteID highlightPaletteID, TextureManager &textureManager, Renderer &renderer);
-
-	// Draws the name of a location in the current province. Intended for the location
-	// closest to the mouse cursor.
-	void drawLocationName(int locationID, Renderer &renderer);
-
-	// Draws a tooltip for one of the interface buttons (search, travel, back to world map).
-	void drawButtonTooltip(const std::string &text, Renderer &renderer);
 public:
 	ProvinceMapPanel(Game &game);
 	~ProvinceMapPanel() override = default;
@@ -71,10 +59,8 @@ public:
 	// Public for UI controller.
 	void handleFastTravel();
 
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void tick(double dt) override;
-	virtual void render(Renderer &renderer) override;
-	virtual void renderSecondary(Renderer &renderer) override;
+	void onPauseChanged(bool paused) override;
+	void tick(double dt) override;
 };
 
 #endif

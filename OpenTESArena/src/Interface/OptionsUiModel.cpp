@@ -42,6 +42,16 @@ std::string OptionsUiModel::BoolOption::getDisplayedValue() const
 	return this->value ? "true" : "false";
 }
 
+void OptionsUiModel::BoolOption::tryIncrement()
+{
+	this->toggle();
+}
+
+void OptionsUiModel::BoolOption::tryDecrement()
+{
+	this->toggle();
+}
+
 void OptionsUiModel::BoolOption::toggle()
 {
 	this->value = !this->value;
@@ -87,6 +97,16 @@ std::string OptionsUiModel::IntOption::getDisplayedValue() const
 		this->displayOverrides.at(this->value) : std::to_string(this->value);
 }
 
+void OptionsUiModel::IntOption::tryIncrement()
+{
+	this->set(this->getNext());
+}
+
+void OptionsUiModel::IntOption::tryDecrement()
+{
+	this->set(this->getPrev());
+}
+
 void OptionsUiModel::IntOption::set(int value)
 {
 	this->value = value;
@@ -123,6 +143,16 @@ std::string OptionsUiModel::DoubleOption::getDisplayedValue() const
 	return String::fixedPrecision(this->value, this->precision);
 }
 
+void OptionsUiModel::DoubleOption::tryIncrement()
+{
+	this->set(this->getNext());
+}
+
+void OptionsUiModel::DoubleOption::tryDecrement()
+{
+	this->set(this->getPrev());
+}
+
 void OptionsUiModel::DoubleOption::set(double value)
 {
 	this->value = value;
@@ -141,6 +171,16 @@ OptionsUiModel::StringOption::StringOption(const std::string &name, std::string 
 std::string OptionsUiModel::StringOption::getDisplayedValue() const
 {
 	return this->value;
+}
+
+void OptionsUiModel::StringOption::tryIncrement()
+{
+	// Do nothing.
+}
+
+void OptionsUiModel::StringOption::tryDecrement()
+{
+	// Do nothing.
 }
 
 void OptionsUiModel::StringOption::set(std::string &&value)
@@ -203,7 +243,7 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeResolutionScal
 	const auto &options = game.getOptions();
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::RESOLUTION_SCALE_NAME,
-		"Percent of the window resolution to use for software rendering.\nThis has a significant impact on performance.",
+		"Percent of the window resolution to use for game world rendering.\nThis has a significant impact on performance.",
 		options.getGraphics_ResolutionScale(),
 		0.050,
 		Options::MIN_RESOLUTION_SCALE,
@@ -266,7 +306,7 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCursorScaleOpt
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::CURSOR_SCALE_NAME,
 		options.getGraphics_CursorScale(),
-		0.10,
+		0.50,
 		Options::MIN_CURSOR_SCALE,
 		Options::MAX_CURSOR_SCALE,
 		1,
@@ -311,7 +351,7 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsMode
 	const auto &options = game.getOptions();
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::RENDER_THREADS_MODE_NAME,
-		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.\nVery Low: one, Low: 1/4, Medium: 1/2, High: 3/4,\nVery High: all but one, Max: all",
+		"Determines the number of CPU threads to use for game world\nrendering. This has a significant impact on performance. Max is not\nrecommended as it can cause a less responsive operating system\nin some cases.\n\nVery Low: one, Low: 1/4, Medium: 1/2, High: 3/4,\nVery High: all but one, Max: all",
 		options.getGraphics_RenderThreadsMode(),
 		1,
 		Options::MIN_RENDER_THREADS_MODE,
@@ -324,6 +364,20 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsMode
 		options.setGraphics_RenderThreadsMode(value);
 		renderer.setRenderThreadsMode(value);
 	});
+}
+
+OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
+{
+	OptionGroup group;
+	group.emplace_back(OptionsUiModel::makeWindowModeOption(game));
+	group.emplace_back(OptionsUiModel::makeFpsLimitOption(game));
+	group.emplace_back(OptionsUiModel::makeResolutionScaleOption(game));
+	group.emplace_back(OptionsUiModel::makeVerticalFovOption(game));
+	group.emplace_back(OptionsUiModel::makeLetterboxModeOption(game));
+	group.emplace_back(OptionsUiModel::makeCursorScaleOption(game));
+	group.emplace_back(OptionsUiModel::makeModernInterfaceOption(game));
+	group.emplace_back(OptionsUiModel::makeRenderThreadsModeOption(game));
+	return group;
 }
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeSoundChannelsOption(Game &game)
@@ -383,6 +437,15 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeIs3dAudioOption(
 		auto &audioManager = game.getAudioManager();
 		audioManager.set3D(value);
 	});
+}
+
+OptionsUiModel::OptionGroup OptionsUiModel::makeAudioOptionGroup(Game &game)
+{
+	OptionGroup group;
+	group.emplace_back(OptionsUiModel::makeSoundChannelsOption(game));
+	group.emplace_back(OptionsUiModel::makeSoundResamplingOption(game));
+	group.emplace_back(OptionsUiModel::makeIs3dAudioOption(game));
+	return group;
 }
 
 std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeHorizontalSensitivityOption(Game &game)
@@ -454,6 +517,16 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makePixelPerfectSele
 		auto &options = game.getOptions();
 		options.setInput_PixelPerfectSelection(value);
 	});
+}
+
+OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
+{
+	OptionGroup group;
+	group.emplace_back(OptionsUiModel::makeHorizontalSensitivityOption(game));
+	group.emplace_back(OptionsUiModel::makeVerticalSensitivityOption(game));
+	group.emplace_back(OptionsUiModel::makeCameraPitchLimitOption(game));
+	group.emplace_back(OptionsUiModel::makePixelPerfectSelectionOption(game));
+	return group;
 }
 
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeShowCompassOption(Game &game)
@@ -550,6 +623,18 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makePlayerHasLightOp
 	});
 }
 
+OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
+{
+	OptionGroup group;
+	group.emplace_back(OptionsUiModel::makeShowCompassOption(game));
+	group.emplace_back(OptionsUiModel::makeShowIntroOption(game));
+	group.emplace_back(OptionsUiModel::makeTimeScaleOption(game));
+	group.emplace_back(OptionsUiModel::makeChunkDistanceOption(game));
+	group.emplace_back(OptionsUiModel::makeStarDensityOption(game));
+	group.emplace_back(OptionsUiModel::makePlayerHasLightOption(game));
+	return group;
+}
+
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeCollisionOption(Game &game)
 {
 	const auto &options = game.getOptions();
@@ -579,4 +664,32 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeProfilerLevelOpti
 		auto &options = game.getOptions();
 		options.setMisc_ProfilerLevel(value);
 	});
+}
+
+OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
+{
+	OptionGroup group;
+	group.emplace_back(OptionsUiModel::makeCollisionOption(game));
+	group.emplace_back(OptionsUiModel::makeProfilerLevelOption(game));
+	return group;
+}
+
+OptionsUiModel::OptionGroup OptionsUiModel::makeOptionGroup(int index, Game &game)
+{
+	const Tab tab = static_cast<Tab>(index);
+	switch (tab)
+	{
+	case Tab::Graphics:
+		return OptionsUiModel::makeGraphicsOptionGroup(game);
+	case Tab::Audio:
+		return OptionsUiModel::makeAudioOptionGroup(game);
+	case Tab::Input:
+		return OptionsUiModel::makeInputOptionGroup(game);
+	case Tab::Misc:
+		return OptionsUiModel::makeMiscOptionGroup(game);
+	case Tab::Dev:
+		return OptionsUiModel::makeDevOptionGroup(game);
+	default:
+		DebugUnhandledReturnMsg(OptionsUiModel::OptionGroup, std::to_string(static_cast<int>(tab)));
+	}
 }

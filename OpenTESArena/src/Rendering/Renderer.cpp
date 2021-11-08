@@ -18,6 +18,7 @@
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/RenderSpace.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 
@@ -79,6 +80,16 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {
 	DebugLog("Closing.");
+
+	if (this->renderer2D)
+	{
+		this->renderer2D->shutdown();
+	}
+	
+	if (this->renderer3D)
+	{
+		this->renderer3D->shutdown();
+	}
 
 	SDL_DestroyWindow(this->window);
 
@@ -657,6 +668,11 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		}
 	}();
 
+	if (!this->renderer2D->init(this->window))
+	{
+		DebugCrash("Couldn't init 2D renderer.");
+	}
+
 	// Initialize 3D renderer resources.
 	this->renderer3D = [systemType3D]() -> std::unique_ptr<RendererSystem3D>
 	{
@@ -675,6 +691,8 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
 	DebugAssert(this->gameWorldTexture.get() == nullptr);
 	this->fullGameWindow = false;
+
+	DebugAssert(!this->renderer3D->isInited());
 
 	return true;
 }
@@ -761,7 +779,16 @@ void Renderer::warpMouse(int x, int y)
 
 void Renderer::setClipRect(const SDL_Rect *rect)
 {
-	SDL_RenderSetClipRect(this->renderer, rect);
+	if (rect != nullptr)
+	{
+		// @temp: assume in classic space
+		Rect nativeRect = this->originalToNative(Rect(rect->x, rect->y, rect->w, rect->h));
+		SDL_RenderSetClipRect(this->renderer, &nativeRect.getRect());
+	}
+	else
+	{
+		SDL_RenderSetClipRect(this->renderer, nullptr);
+	}
 }
 
 void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWindow,
@@ -813,9 +840,35 @@ bool Renderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
 	return this->renderer3D->tryCreateSkyTexture(textureAssetRef, textureManager);
 }
 
-bool Renderer::tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
+bool Renderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
 {
-	return this->renderer2D->tryCreateUiTexture(textureAssetRef, textureManager);
+	return this->renderer2D->tryCreateUiTexture(texels, outID);
+}
+
+bool Renderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID)
+{
+	return this->renderer2D->tryCreateUiTexture(texels, palette, outID);
+}
+
+bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
+{
+	return this->renderer2D->tryCreateUiTexture(width, height, outID);
+}
+
+bool Renderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
+	const TextureManager &textureManager, UiTextureID *outID)
+{
+	return this->renderer2D->tryCreateUiTexture(textureBuilderID, paletteID, textureManager, outID);
+}
+
+uint32_t *Renderer::lockUiTexture(UiTextureID textureID)
+{
+	return this->renderer2D->lockUiTexture(textureID);
+}
+
+void Renderer::unlockUiTexture(UiTextureID textureID)
+{
+	this->renderer2D->unlockUiTexture(textureID);
 }
 
 void Renderer::freeVoxelTexture(const TextureAssetReference &textureAssetRef)
@@ -833,9 +886,14 @@ void Renderer::freeSkyTexture(const TextureAssetReference &textureAssetRef)
 	this->renderer3D->freeSkyTexture(textureAssetRef);
 }
 
-void Renderer::freeUiTexture(const TextureAssetReference &textureAssetRef)
+void Renderer::freeUiTexture(UiTextureID id)
 {
-	this->renderer2D->freeUiTexture(textureAssetRef);
+	this->renderer2D->freeUiTexture(id);
+}
+
+std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
+{
+	return this->renderer2D->tryGetTextureDims(id);
 }
 
 void Renderer::setFogDistance(double fogDistance)
@@ -1196,6 +1254,39 @@ void Renderer::drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID 
 {
 	this->drawOriginalClipped(textureBuilderID, paletteID, srcRect,
 		Rect(x, y, srcRect.getWidth(), srcRect.getHeight()), textureManager);
+}
+
+void Renderer::draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	const SDL_Rect letterboxRect = this->getLetterboxDimensions();
+	this->renderer2D->draw(renderElements, count, renderSpace,
+		Rect(letterboxRect.x, letterboxRect.y, letterboxRect.w, letterboxRect.h));
+}
+
+void Renderer::drawOriginal(UiTextureID textureID, int x, int y, int w, int h)
+{
+	constexpr double screenWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+	constexpr double screenHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+	RendererSystem2D::RenderElement renderElement(
+		textureID,
+		static_cast<double>(x) / screenWidthReal,
+		static_cast<double>(y) / screenHeightReal,
+		static_cast<double>(w) / screenWidthReal,
+		static_cast<double>(h) / screenHeightReal);
+
+	this->draw(&renderElement, 1, RenderSpace::Classic);
+}
+
+void Renderer::drawOriginal(UiTextureID textureID, int x, int y)
+{
+	const std::optional<Int2> textureDims = this->tryGetUiTextureDims(textureID);
+	if (!textureDims.has_value())
+	{
+		DebugCrash("Couldn't get UI texture dimensions (ID " + std::to_string(textureID) + ").");
+	}
+
+	this->drawOriginal(textureID, x, y, textureDims->x, textureDims->y);
 }
 
 void Renderer::fill(const Texture &texture)

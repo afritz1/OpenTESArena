@@ -65,7 +65,7 @@ public:
 	static constexpr double MIN_VERTICAL_FOV = 40.0;
 	static constexpr double MAX_VERTICAL_FOV = 150.0;
 	static constexpr double MIN_CURSOR_SCALE = 0.50;
-	static constexpr double MAX_CURSOR_SCALE = 8.0;
+	static constexpr double MAX_CURSOR_SCALE = 12.0;
 	static constexpr int MIN_LETTERBOX_MODE = 0;
 	static constexpr int MAX_LETTERBOX_MODE = 2;
 	static constexpr int MIN_RENDER_THREADS_MODE = 0;

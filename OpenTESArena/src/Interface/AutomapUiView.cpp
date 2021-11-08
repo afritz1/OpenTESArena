@@ -1,12 +1,16 @@
 #include "AutomapUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Game/CardinalDirection.h"
+#include "../Game/GameState.h"
+#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../World/Chunk.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
+#include "../World/MapType.h"
 #include "../World/TransitionDefinition.h"
 #include "../World/TransitionType.h"
 #include "../World/VoxelDefinition.h"
@@ -293,25 +297,24 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 	}
 }
 
-Texture AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir, bool isWild,
-	const ChunkManager &chunkManager, Renderer &renderer)
+Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
+	bool isWild, const ChunkManager &chunkManager)
 {
 	// Create scratch surface triple the size of the voxel area so that all directions of the player's arrow
 	// are representable in the same texture. This may change in the future for memory optimization.
 	constexpr int automapDim = ChunkUtils::CHUNK_DIM * ((AutomapUiView::ChunkDistance * 2) + 1);
 	constexpr int surfaceDim = automapDim * AutomapUiView::PixelSize;
-	Surface surface = Surface::createWithFormat(surfaceDim, surfaceDim,
-		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+	Buffer2D<uint32_t> dstBuffer(surfaceDim, surfaceDim);
 
 	// Fill with transparent color first (used by floor voxels).
-	surface.fill(AutomapUiView::ColorFloor.toARGB());
+	dstBuffer.fill(AutomapUiView::ColorFloor.toARGB());
 
 	const ChunkInt2 &playerChunk = playerCoord.chunk;
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(playerChunk, AutomapUiView::ChunkDistance, &minChunk, &maxChunk);
 
 	// Lambda for filling in a chunk voxel in the map surface.
-	auto drawSquare = [&surface, &minChunk, &maxChunk](const CoordInt2 &coord, const Color &color)
+	auto drawSquare = [&dstBuffer, &minChunk, &maxChunk](const CoordInt2 &coord, const Color &color)
 	{
 		// The min chunk origin is at the top right corner of the texture. +X is south, +Z is west
 		// (strangely, flipping the horizontal coordinate here does not mirror the resulting texture,
@@ -319,11 +322,11 @@ Texture AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirecti
 		const int automapX = ((coord.chunk.y - minChunk.y) * ChunkUtils::CHUNK_DIM) + coord.voxel.y;
 		const int automapY = ((coord.chunk.x - minChunk.x) * ChunkUtils::CHUNK_DIM) + coord.voxel.x;
 
-		const int surfaceWidth = surface.getWidth();
+		const int surfaceWidth = dstBuffer.getWidth();
 		const int xOffset = automapX * AutomapUiView::PixelSize;
 		const int yOffset = automapY * AutomapUiView::PixelSize;
 		const uint32_t colorARGB = color.toARGB();
-		uint32_t *pixels = static_cast<uint32_t*>(surface.getPixels());
+		uint32_t *pixels = dstBuffer.get();
 
 		for (int h = 0; h < AutomapUiView::PixelSize; h++)
 		{
@@ -369,18 +372,18 @@ Texture AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirecti
 
 	// Lambda for drawing the player's arrow in the automap. It's drawn differently 
 	// depending on their direction.
-	auto drawPlayer = [&surface](SNInt x, WEInt z, CardinalDirectionName cardinalDirection)
+	auto drawPlayer = [&dstBuffer](SNInt x, WEInt z, CardinalDirectionName cardinalDirection)
 	{
-		const int surfaceX = surface.getWidth() - AutomapUiView::PixelSize - (z * AutomapUiView::PixelSize);
+		const int surfaceX = dstBuffer.getWidth() - AutomapUiView::PixelSize - (z * AutomapUiView::PixelSize);
 		const int surfaceY = x * AutomapUiView::PixelSize;
 
-		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
+		uint32_t *pixels = dstBuffer.get();
 
 		// Draw the player's arrow within the map pixel.
 		const std::vector<Int2> &offsets = AutomapUiView::PlayerArrowPatterns.at(cardinalDirection);
 		for (const auto &offset : offsets)
 		{
-			const int index = (surfaceX + offset.x) + ((surfaceY + offset.y) * surface.getWidth());
+			const int index = (surfaceX + offset.x) + ((surfaceY + offset.y) * dstBuffer.getWidth());
 			pixels[index] = AutomapUiView::ColorPlayer.toARGB();
 		}
 	};
@@ -390,5 +393,56 @@ Texture AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirecti
 	const WEInt playerLocalZ = (AutomapUiView::ChunkDistance * ChunkUtils::CHUNK_DIM) + playerCoord.voxel.y;
 	drawPlayer(playerLocalX, playerLocalZ, playerCompassDir);
 
-	return renderer.createTextureFromSurface(surface);
+	return dstBuffer;
+}
+
+UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,
+	const VoxelDouble2 &playerDirection, const ChunkManager &chunkManager, Renderer &renderer)
+{
+	const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
+	const bool isWild = [&gameState]()
+	{
+		const MapDefinition &activeMapDef = gameState.getActiveMapDef();
+		return activeMapDef.getMapType() == MapType::Wilderness;
+	}();
+
+	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, chunkManager);
+	const BufferView2D<const uint32_t> automapBufferView(
+		automapBuffer.get(), automapBuffer.getWidth(), automapBuffer.getHeight());
+
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(automapBufferView, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for automap.");
+	}
+
+	return textureID;
+}
+
+UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getBackgroundPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = AutomapUiView::getBackgroundTextureAssetRef();
+	
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for automap background.");
+	}
+
+	return textureID;
+}
+
+UiTextureID AutomapUiView::allocCursorTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getCursorPaletteTextureAssetRef();
+	const TextureAssetReference textureAssetRef = AutomapUiView::getCursorTextureAssetRef();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for automap cursor.");
+	}
+
+	return textureID;
 }

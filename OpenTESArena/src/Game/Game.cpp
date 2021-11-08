@@ -18,6 +18,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorData.h"
+#include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 
@@ -384,6 +385,11 @@ void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> cha
 	this->charCreationState = std::move(charCreationState);
 }
 
+void Game::setGameWorldRenderCallback(const GameWorldRenderCallback &callback)
+{
+	this->gameWorldRenderCallback = callback;
+}
+
 void Game::initOptions(const std::string &basePath, const std::string &optionsPath)
 {
 	// Load the default options first.
@@ -540,30 +546,61 @@ void Game::updateAudio(double dt)
 
 void Game::render()
 {
-	// Draw the panel's main content.
-	this->panel->render(this->renderer);
-
-	// Draw any sub-panels back to front.
+	// Get the draw calls from each UI panel/sub-panel and determine what to draw.
+	std::vector<Panel*> panelsToRender;
+	panelsToRender.emplace_back(this->panel.get());
 	for (auto &subPanel : this->subPanels)
 	{
-		subPanel->render(this->renderer);
+		panelsToRender.emplace_back(subPanel.get());
 	}
 
-	// Call the active panel's secondary render method. Secondary render items are those
-	// that are hidden on panels below the active one.
-	Panel *activePanel = this->getActivePanel();
-	activePanel->renderSecondary(this->renderer);
+	this->renderer.clear();
 
-	// Get the active panel's cursor texture and alignment.
-	const std::optional<CursorData> cursor = activePanel->getCurrentCursor();
-
-	// Draw cursor if valid. Some panels do not define a cursor (like cinematics), so their cursor is empty.
-	if (cursor.has_value())
+	if (this->gameWorldRenderCallback)
 	{
-		// The panel should not be drawing the cursor themselves. It's done here 
-		// just to make sure that the cursor is drawn only once and is always drawn last.
-		this->renderer.drawCursor(cursor->getTextureBuilderID(), cursor->getPaletteID(), cursor->getAlignment(),
-			this->inputManager.getMousePosition(), this->options.getGraphics_CursorScale(), this->textureManager);
+		if (!this->gameWorldRenderCallback(*this))
+		{
+			DebugLogError("Couldn't render game world.");
+		}
+	}
+
+	const Int2 windowDims = renderer.getWindowDimensions();
+
+	for (Panel *currentPanel : panelsToRender)
+	{
+		BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
+		for (int i = 0; i < drawCallsView.getCount(); i++)
+		{
+			const UiDrawCall &drawCall = drawCallsView.get(i);
+			if (!drawCall.isActive())
+			{
+				continue;
+			}
+
+			const std::optional<Rect> &clipRect = drawCall.getClipRect();
+			if (clipRect.has_value())
+			{
+				this->renderer.setClipRect(&clipRect->getRect());
+			}
+
+			const UiTextureID textureID = drawCall.getTextureID();
+			const Int2 position = drawCall.getPosition();
+			const Int2 size = drawCall.getSize();
+			const PivotType pivotType = drawCall.getPivotType();
+			const RenderSpace renderSpace = drawCall.getRenderSpace();
+
+			double xPercent, yPercent, wPercent, hPercent;
+			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
+
+			RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+			this->renderer.draw(&renderElement, 1, renderSpace);
+
+			if (clipRect.has_value())
+			{
+				this->renderer.setClipRect(nullptr);
+			}
+		}
 	}
 
 	this->renderer.present();

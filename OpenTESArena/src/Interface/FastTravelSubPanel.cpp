@@ -1,5 +1,4 @@
-#include <algorithm>
-
+#include "CommonUiView.h"
 #include "FastTravelSubPanel.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
@@ -21,41 +20,73 @@ bool FastTravelSubPanel::init()
 	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
 	DebugAssert(travelDataPtr != nullptr);
 	const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
-	this->targetSeconds = std::max(WorldMapUiModel::FastTravelAnimationMinSeconds,
-		static_cast<double>(travelData.travelDays) * WorldMapUiView::FastTravelAnimationSecondsPerFrame);
+	this->targetSeconds = std::max(FastTravelUiModel::AnimationMinSeconds,
+		static_cast<double>(travelData.travelDays) * FastTravelUiView::AnimationSecondsPerFrame);
 
 	this->frameIndex = 0;
 
-	return true;
-}
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
 
-std::optional<CursorData> FastTravelSubPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
+	const TextureAssetReference paletteTextureAssetRef = FastTravelUiView::getPaletteTextureAssetRef();
+	const std::string animFilename = FastTravelUiView::getAnimationFilename();
+
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogError("Couldn't get texture file metadata for \"" + animFilename + "\".");
+		return false;
+	}
+
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	DebugAssert(textureFileMetadata.getTextureCount() > 0);
+
+	this->animTextureRefs.init(textureFileMetadata.getTextureCount());
+	for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
+	{
+		const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(animFilename), i);
+
+		UiTextureID textureID;
+		if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+		{
+			DebugLogError("Couldn't create UI texture for sequence \"" + animFilename + "\" frame " + std::to_string(i) + ".");
+			return false;
+		}
+
+		this->animTextureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
+	}
+
+	UiDrawCall::TextureFunc animTextureFunc = [this]()
+	{
+		const ScopedUiTextureRef &textureRef = this->animTextureRefs.get(this->frameIndex);
+		return textureRef.get();
+	};
+
+	this->addDrawCall(
+		animTextureFunc,
+		FastTravelUiView::getAnimationTextureCenter(),
+		Int2(textureFileMetadata.getWidth(0), textureFileMetadata.getHeight(0)),
+		PivotType::Middle);
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
+
+	return true;
 }
 
 void FastTravelSubPanel::tick(double dt)
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	const std::string animFilename = WorldMapUiView::getFastTravelAnimationFilename();
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
-	if (!metadataID.has_value())
-	{
-		DebugLogError("Couldn't get texture file metadata for fast travel animation \"" + animFilename + "\".");
-		return;
-	}
-
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
 
 	// Update horse animation.
 	this->currentSeconds += dt;
-	while (this->currentSeconds >= WorldMapUiView::FastTravelAnimationSecondsPerFrame)
+	while (this->currentSeconds >= FastTravelUiView::AnimationSecondsPerFrame)
 	{
-		this->currentSeconds -= WorldMapUiView::FastTravelAnimationSecondsPerFrame;
+		this->currentSeconds -= FastTravelUiView::AnimationSecondsPerFrame;
 		this->frameIndex++;
 
-		if (this->frameIndex == textureFileMetadata.getTextureCount())
+		if (this->frameIndex == this->animTextureRefs.getCount())
 		{
 			this->frameIndex = 0;
 		}
@@ -70,35 +101,7 @@ void FastTravelSubPanel::tick(double dt)
 		DebugAssert(travelDataPtr != nullptr);
 		const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
 
-		WorldMapUiController::onFastTravelAnimationFinished(game, travelData.provinceID,
+		FastTravelUiController::onAnimationFinished(game, travelData.provinceID,
 			travelData.locationID, travelData.travelDays);
 	}
-}
-
-void FastTravelSubPanel::render(Renderer &renderer)
-{
-	// Draw horse animation.
-	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	const TextureAssetReference paletteTextureAssetRef = WorldMapUiView::getFastTravelPaletteTextureAssetRef();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
-	if (!paletteID.has_value())
-	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const std::string textureFilename = WorldMapUiView::getFastTravelAnimationFilename();
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
-	if (!textureBuilderIDs.has_value())
-	{
-		DebugCrash("Couldn't get texture builder IDs for \"" + textureFilename + "\".");
-	}
-
-	const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(static_cast<int>(this->frameIndex));
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-	const int x = WorldMapUiView::getFastTravelAnimationTextureX(textureBuilder.getWidth());
-	const int y = WorldMapUiView::getFastTravelAnimationTextureY(textureBuilder.getHeight());
-	renderer.drawOriginal(textureBuilderID, *paletteID, x, y, textureManager);
 }

@@ -3,10 +3,10 @@
 #include <cmath>
 #include <optional>
 
-#include "SDL.h"
-
+#include "CommonUiView.h"
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
+#include "ProvinceMapPanel.h"
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiView.h"
 #include "WorldMapPanel.h"
@@ -20,12 +20,28 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
+void ProvinceMapPanel::LocationTextureRefGroup::init(UiTextureID textureID, UiTextureID playerCurrentTextureID,
+	UiTextureID travelDestinationTextureID, Renderer &renderer)
+{
+	this->textureRef.init(textureID, renderer);
+	this->playerCurrentTextureRef.init(playerCurrentTextureID, renderer);
+	this->travelDestinationTextureRef.init(travelDestinationTextureID, renderer);
+}
+
 ProvinceMapPanel::ProvinceMapPanel(Game &game)
 	: Panel(game) { }
 
 bool ProvinceMapPanel::init(int provinceID)
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
+	const TextBox::InitInfo hoveredLocationTextBoxInitInfo = ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(fontLibrary);
+	if (!this->hoveredLocationTextBox.init(hoveredLocationTextBoxInitInfo, renderer))
+	{
+		DebugLogError("Couldn't init hovered location text box.");
+		return false;
+	}
 
 	this->searchButton = []()
 	{
@@ -85,8 +101,7 @@ bool ProvinceMapPanel::init(int provinceID)
 		{
 			// The closest location to the cursor was clicked. See if it can be set as the
 			// travel destination (depending on whether the player is already there).
-			const int closestLocationID = this->getClosestLocationID(classicPosition);
-			this->trySelectLocation(closestLocationID);
+			this->trySelectLocation(this->hoveredLocationID);
 		}
 	});
 
@@ -99,33 +114,364 @@ bool ProvinceMapPanel::init(int provinceID)
 		}
 	});
 
-	this->provinceID = provinceID;
-	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
+	this->addMouseMotionListener([this](Game &game, int dx, int dy)
+	{
+		const auto &renderer = game.getRenderer();
+		const auto &inputManager = game.getInputManager();
+		const Int2 mousePosition = inputManager.getMousePosition();
+		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
+		this->updateHoveredLocationID(originalPosition);
+	});
 
-	// Get the palette for the background image.
 	auto &textureManager = game.getTextureManager();
-	const TextureAssetReference provinceBgTextureAssetRef = ProvinceMapUiView::getProvinceBackgroundTextureAssetRef(game, provinceID);
-	const std::optional<PaletteID> optBackgroundPaletteID = textureManager.tryGetPaletteID(provinceBgTextureAssetRef);
-	if (!optBackgroundPaletteID.has_value())
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const UiTextureID backgroundTextureID = ProvinceMapUiView::allocBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
+	this->backgroundTextureRef.init(backgroundTextureID, renderer);
+	this->addDrawCall(
+		this->backgroundTextureRef.get(),
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
+
+	initLocationIconUI(provinceID);
+
+	UiDrawCall::TextureFunc hoveredLocationTextureFunc = [this]()
 	{
-		DebugLogError("Couldn't get province map background palette \"" + provinceBgTextureAssetRef.filename + "\".");
-		return false;
-	}
+		return this->hoveredLocationTextBox.getTextureID();
+	};
 
-	this->backgroundPaletteID = *optBackgroundPaletteID;
-
-	// Get the staff dungeon icons in case the province contains a staff dungeon (for flashing color swapping).
-	const std::string iconsFilename = ProvinceMapUiView::getStaffDungeonIconsFilename();
-	const std::optional<TextureBuilderIdGroup> iconIdGroup = textureManager.tryGetTextureBuilderIDs(iconsFilename.c_str());
-	if (!iconIdGroup.has_value())
+	UiDrawCall::PositionFunc hoveredLocationPositionFunc = [this, &game]()
 	{
-		DebugLogError("Couldn't get staff dungeon icon texture builder IDs for \"" + iconsFilename + "\".");
-		return false;
-	}
+		auto &gameState = game.getGameState();
+		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(this->provinceID);
+		const LocationDefinition &locationDef = provinceDef.getLocationDef(this->hoveredLocationID);
 
-	this->staffDungeonIconTextureBuilderIDs = *iconIdGroup;
+		const Int2 locationCenter = ProvinceMapUiView::getLocationCenterPoint(game, this->provinceID, this->hoveredLocationID);
+		const Int2 textBoxCenter = locationCenter - Int2(0, 10);
+
+		// Can't use the text box dimensions with clamping since it's allocated for worst-case location name now.
+		const auto &fontLibrary = game.getFontLibrary();
+		const std::string &fontName = ProvinceMapUiView::LocationFontName;
+		int fontDefIndex;
+		if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+		{
+			DebugCrash("Couldn't get hovered location font name \"" + fontName + "\".");
+		}
+
+		const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+
+		const std::string locationName = ProvinceMapUiModel::getLocationName(game, this->provinceID, this->hoveredLocationID);
+		TextRenderUtils::TextShadowInfo shadowInfo;
+		shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY,
+			ProvinceMapUiView::LocationTextShadowColor);
+		const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
+
+		// Clamp to screen edges, with some extra space on the left and right (note this clamped position
+		// is for the TopLeft pivot type).
+		const Rect textBoxRect(textBoxCenter, textureGenInfo.width, textureGenInfo.height);
+		const Int2 clampedCenter = ProvinceMapUiView::getLocationTextClampedCenter(textBoxRect);
+		return clampedCenter;
+	};
+
+	UiDrawCall::SizeFunc hoveredLocationSizeFunc = [this]()
+	{
+		const Rect &hoveredLocationTextBoxRect = this->hoveredLocationTextBox.getRect();
+		return Int2(hoveredLocationTextBoxRect.getWidth(), hoveredLocationTextBoxRect.getHeight());
+	};
+
+	UiDrawCall::PivotFunc hoveredLocationPivotFunc = []()
+	{
+		return PivotType::Middle;
+	};
+
+	UiDrawCall::ActiveFunc hoveredLocationActiveFunc = [this]()
+	{
+		return !this->isPaused();
+	};
+
+	this->addDrawCall(
+		hoveredLocationTextureFunc,
+		hoveredLocationPositionFunc,
+		hoveredLocationSizeFunc,
+		hoveredLocationPivotFunc,
+		hoveredLocationActiveFunc);
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, hoveredLocationActiveFunc);
+
+	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
+	this->provinceID = provinceID;
+	this->hoveredLocationID = -1;
+
+	const auto &inputManager = game.getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
+	this->updateHoveredLocationID(originalPosition);
 
 	return true;
+}
+
+void ProvinceMapPanel::initLocationIconUI(int provinceID)
+{
+	auto &game = this->getGame();
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+
+	// Location icon textures.
+	const TextureAssetReference backgroundPaletteTextureAssetRef = ProvinceMapUiView::getBackgroundPaletteTextureAssetRef(provinceID, binaryAssetLibrary);
+	this->cityStateTextureRefs.init(
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		renderer);
+	this->townTextureRefs.init(
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		renderer);
+	this->villageTextureRefs.init(
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		renderer);
+	this->dungeonTextureRefs.init(
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		renderer);
+
+	if (ProvinceMapUiView::provinceHasStaffDungeonIcon(provinceID))
+	{
+		this->staffDungeonTextureRefs.init(
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+			renderer);
+	}
+
+	auto &gameState = game.getGameState();
+	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
+	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
+	for (int i = 0; i < provinceInst.getLocationCount(); i++)
+	{
+		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+		if (locationInst.isVisible())
+		{
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			UiDrawCall::TextureFunc baseTextureFunc = [this, &provinceDef, locationDefIndex]()
+			{
+				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+				const LocationTextureRefGroup *textureRefGroupPtr = [this, &locationDef]() -> const LocationTextureRefGroup*
+				{
+					const LocationDefinition::Type locationDefType = locationDef.getType();
+					if (locationDefType == LocationDefinition::Type::City)
+					{
+						const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+						const ArenaTypes::CityType cityType = cityDef.type;
+						switch (cityType)
+						{
+						case ArenaTypes::CityType::CityState:
+							return &this->cityStateTextureRefs;
+						case ArenaTypes::CityType::Town:
+							return &this->townTextureRefs;
+						case ArenaTypes::CityType::Village:
+							return &this->villageTextureRefs;
+						default:
+							DebugCrash("Unhandled city type \"" + std::to_string(static_cast<int>(cityType)) + "\".");
+							return nullptr;
+						}
+					}
+					else if (locationDefType == LocationDefinition::Type::Dungeon)
+					{
+						return &this->dungeonTextureRefs;
+					}
+					else if (locationDefType == LocationDefinition::Type::MainQuestDungeon)
+					{
+						const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+						const LocationDefinition::MainQuestDungeonDefinition::Type mainQuestDungeonType = mainQuestDungeonDef.type;
+						switch (mainQuestDungeonType)
+						{
+						case LocationDefinition::MainQuestDungeonDefinition::Type::Start:
+						case LocationDefinition::MainQuestDungeonDefinition::Type::Map:
+							return &this->dungeonTextureRefs;
+						case LocationDefinition::MainQuestDungeonDefinition::Type::Staff:
+							return &this->staffDungeonTextureRefs;
+						default:
+							DebugCrash("Unhandled main quest dungeon type \"" + std::to_string(static_cast<int>(mainQuestDungeonType)) + "\".");
+							return nullptr;
+						}
+					}
+					else
+					{
+						DebugCrash("Unhandled location definition type \"" + std::to_string(static_cast<int>(locationDefType)) + "\".");
+						return nullptr;
+					}
+				}();
+
+				DebugAssert(textureRefGroupPtr != nullptr);
+				return textureRefGroupPtr->textureRef.get();
+			};
+
+			UiDrawCall::TextureFunc highlightTextureFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
+			{
+				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+				const ProvinceMapUiView::HighlightType highlightType = [this, provinceID, &gameState, &provinceDef, &playerProvinceDef, i, &locationDef]()
+				{
+					const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
+					if (provinceDef.matches(playerProvinceDef) && locationDef.matches(playerLocationDef))
+					{
+						return ProvinceMapUiView::HighlightType::PlayerLocation;
+					}
+					else
+					{
+						// If there is a currently-selected destination in this province, draw its blinking highlight
+						// if within the "blink on" interval.
+						const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+						if (travelDataPtr != nullptr)
+						{
+							const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
+							if ((travelData.provinceID == provinceID) && (travelData.locationID == i))
+							{
+								// See if the blink period percent lies within the "on" percent. Use less-than to compare them
+								// so the on-state appears before the off-state.
+								if (this->blinkState.getPercent() < ProvinceMapUiView::BlinkPeriodPercentOn)
+								{
+									return ProvinceMapUiView::HighlightType::TravelDestination;
+								}
+							}
+						}
+					}
+
+					return ProvinceMapUiView::HighlightType::None;
+				}();
+
+				const LocationTextureRefGroup *textureRefGroupPtr = [this, &locationDef]() -> const LocationTextureRefGroup*
+				{
+					const LocationDefinition::Type locationDefType = locationDef.getType();
+					if (locationDefType == LocationDefinition::Type::City)
+					{
+						const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+						const ArenaTypes::CityType cityType = cityDef.type;
+						switch (cityType)
+						{
+						case ArenaTypes::CityType::CityState:
+							return &this->cityStateTextureRefs;
+						case ArenaTypes::CityType::Town:
+							return &this->townTextureRefs;
+						case ArenaTypes::CityType::Village:
+							return &this->villageTextureRefs;
+						default:
+							DebugCrash("Unhandled city type \"" + std::to_string(static_cast<int>(cityType)) + "\".");
+							return nullptr;
+						}
+					}
+					else if (locationDefType == LocationDefinition::Type::Dungeon)
+					{
+						return &this->dungeonTextureRefs;
+					}
+					else if (locationDefType == LocationDefinition::Type::MainQuestDungeon)
+					{
+						const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+						const LocationDefinition::MainQuestDungeonDefinition::Type mainQuestDungeonType = mainQuestDungeonDef.type;
+						switch (mainQuestDungeonType)
+						{
+						case LocationDefinition::MainQuestDungeonDefinition::Type::Start:
+						case LocationDefinition::MainQuestDungeonDefinition::Type::Map:
+							return &this->dungeonTextureRefs;
+						case LocationDefinition::MainQuestDungeonDefinition::Type::Staff:
+							return &this->staffDungeonTextureRefs;
+						default:
+							DebugCrash("Unhandled main quest dungeon type \"" + std::to_string(static_cast<int>(mainQuestDungeonType)) + "\".");
+							return nullptr;
+						}
+					}
+					else
+					{
+						DebugCrash("Unhandled location definition type \"" + std::to_string(static_cast<int>(locationDefType)) + "\".");
+						return nullptr;
+					}
+				}();
+
+				DebugAssert(textureRefGroupPtr != nullptr);
+
+				switch (highlightType)
+				{
+				case ProvinceMapUiView::HighlightType::None:
+					return textureRefGroupPtr->textureRef.get();
+				case ProvinceMapUiView::HighlightType::PlayerLocation:
+					return textureRefGroupPtr->playerCurrentTextureRef.get();
+				case ProvinceMapUiView::HighlightType::TravelDestination:
+					return textureRefGroupPtr->travelDestinationTextureRef.get();
+				default:
+					DebugUnhandledReturnMsg(UiTextureID, std::to_string(static_cast<int>(highlightType)));
+				}
+			};
+
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const std::optional<Int2> baseTextureDims = renderer.tryGetUiTextureDims(baseTextureFunc());
+			DebugAssert(baseTextureDims.has_value());
+
+			const Int2 iconCenter(locationDef.getScreenX(), locationDef.getScreenY());
+			constexpr PivotType pivotType = PivotType::Middle;
+			this->addDrawCall(
+				baseTextureFunc,
+				iconCenter,
+				*baseTextureDims,
+				pivotType);
+
+			UiDrawCall::ActiveFunc highlightActiveFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
+			{
+				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+				const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
+				if (provinceDef.matches(playerProvinceDef) && locationDef.matches(playerLocationDef))
+				{
+					return true;
+				}
+				else
+				{
+					// If there is a currently-selected destination in this province, draw its blinking highlight
+					// if within the "blink on" interval.
+					const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+					if (travelDataPtr != nullptr)
+					{
+						const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
+						if ((travelData.provinceID == provinceID) && (travelData.locationID == i))
+						{
+							// See if the blink period percent lies within the "on" percent. Use less-than to compare them
+							// so the on-state appears before the off-state.
+							if (this->blinkState.getPercent() < ProvinceMapUiView::BlinkPeriodPercentOn)
+							{
+								return true;
+							}
+						}
+					}
+				}
+
+				return false;
+			};
+
+			UiDrawCall::SizeFunc highlightSizeFunc = [&renderer, highlightTextureFunc]()
+			{
+				const std::optional<Int2> highlightTextureDims = renderer.tryGetUiTextureDims(highlightTextureFunc());
+				DebugAssert(highlightTextureDims.has_value());
+				return *highlightTextureDims;
+			};
+
+			this->addDrawCall(
+				highlightTextureFunc,
+				[iconCenter]() { return iconCenter; },
+				highlightSizeFunc,
+				[pivotType]() { return pivotType; },
+				highlightActiveFunc);
+		}
+	}
 }
 
 void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
@@ -191,12 +537,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	}
 }
 
-std::optional<CursorData> ProvinceMapPanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
-
-int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
+void ProvinceMapPanel::updateHoveredLocationID(const Int2 &originalPosition)
 {
 	std::optional<Int2> closestPosition;
 
@@ -246,7 +587,31 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	}
 
 	DebugAssertMsg(closestIndex.has_value(), "No closest location ID found.");
-	return *closestIndex;
+
+	if (this->hoveredLocationID != *closestIndex)
+	{
+		this->hoveredLocationID = *closestIndex;
+
+		const std::string locationName = ProvinceMapUiModel::getLocationName(game, this->provinceID, this->hoveredLocationID);
+		this->hoveredLocationTextBox.setText(locationName);
+	}
+}
+
+void ProvinceMapPanel::onPauseChanged(bool paused)
+{
+	Panel::onPauseChanged(paused);
+
+	if (!paused)
+	{
+		// Make sure the hovered location matches where the pointer is now since mouse motion events
+		// aren't processed while this panel is paused.
+		auto &game = this->getGame();
+		const auto &renderer = game.getRenderer();
+		const auto &inputManager = game.getInputManager();
+		const Int2 mousePosition = inputManager.getMousePosition();
+		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
+		this->updateHoveredLocationID(originalPosition);
+	}
 }
 
 void ProvinceMapPanel::tick(double dt)
@@ -264,411 +629,4 @@ void ProvinceMapPanel::handleFastTravel()
 	auto &game = this->getGame();
 	game.pushSubPanel<FastTravelSubPanel>();
 	game.setPanel<WorldMapPanel>();
-}
-
-void ProvinceMapPanel::drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer)
-{
-	const int x = point.x - (texture.getWidth() / 2);
-	const int y = point.y - (texture.getHeight() / 2);
-	renderer.drawOriginal(texture, x, y);
-}
-
-void ProvinceMapPanel::drawCenteredIcon(TextureBuilderID textureBuilderID, PaletteID paletteID,
-	const Int2 &point, Renderer &renderer)
-{
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-	const int x = point.x - (textureBuilder.getWidth() / 2);
-	const int y = point.y - (textureBuilder.getHeight() / 2);
-	renderer.drawOriginal(textureBuilderID, paletteID, x, y, textureManager);
-}
-
-void ProvinceMapPanel::drawVisibleLocations(PaletteID backgroundPaletteID, TextureManager &textureManager,
-	Renderer &renderer)
-{
-	const TextureAssetReference cityStateIconTextureAssetRef = ProvinceMapUiView::getCityStateIconTextureAssetRef();
-	const TextureAssetReference townIconTextureAssetRef = ProvinceMapUiView::getTownIconTextureAssetRef();
-	const TextureAssetReference villageIconTextureAssetRef = ProvinceMapUiView::getVillageIconTextureAssetRef();
-	const TextureAssetReference dungeonIconTextureAssetRef = ProvinceMapUiView::getDungeonIconTextureAssetRef();	
-	const std::optional<TextureBuilderID> cityStateIconTextureBuilderID = textureManager.tryGetTextureBuilderID(cityStateIconTextureAssetRef);
-	const std::optional<TextureBuilderID> townIconTextureBuilderID = textureManager.tryGetTextureBuilderID(townIconTextureAssetRef);
-	const std::optional<TextureBuilderID> villageIconTextureBuilderID = textureManager.tryGetTextureBuilderID(villageIconTextureAssetRef);
-	const std::optional<TextureBuilderID> dungeonIconTextureBuilderID = textureManager.tryGetTextureBuilderID(dungeonIconTextureAssetRef);
-	DebugAssert(cityStateIconTextureBuilderID.has_value());
-	DebugAssert(townIconTextureBuilderID.has_value());
-	DebugAssert(villageIconTextureBuilderID.has_value());
-	DebugAssert(dungeonIconTextureBuilderID.has_value());
-
-	auto &game = this->getGame();
-	auto &gameState = game.getGameState();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
-	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
-
-	// Gets the displayed icon texture ID for a location.
-	auto getLocationIconTextureID = [this, &textureManager, &renderer, &cityStateIconTextureBuilderID,
-		&townIconTextureBuilderID, &villageIconTextureBuilderID,
-		&dungeonIconTextureBuilderID](const LocationDefinition &locationDef) -> TextureBuilderID
-	{
-		switch (locationDef.getType())
-		{
-		case LocationDefinition::Type::City:
-		{
-			switch (locationDef.getCityDefinition().type)
-			{
-			case ArenaTypes::CityType::CityState:
-				return *cityStateIconTextureBuilderID;
-			case ArenaTypes::CityType::Town:
-				return *townIconTextureBuilderID;
-			case ArenaTypes::CityType::Village:
-				return *villageIconTextureBuilderID;
-			default:
-				throw DebugException(std::to_string(static_cast<int>(locationDef.getCityDefinition().type)));
-			}
-		}
-		case LocationDefinition::Type::Dungeon:
-			return *dungeonIconTextureBuilderID;
-		case LocationDefinition::Type::MainQuestDungeon:
-		{
-			const LocationDefinition::MainQuestDungeonDefinition::Type mainQuestDungeonType =
-				locationDef.getMainQuestDungeonDefinition().type;
-
-			if (mainQuestDungeonType == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
-			{
-				const TextureAssetReference staffDungeonIconTextureAssetRef =
-					ProvinceMapUiView::getStaffDungeonIconTextureAssetRef(this->provinceID);
-				const std::optional<TextureBuilderID> staffDungeonIconTextureBuilderID =
-					textureManager.tryGetTextureBuilderID(staffDungeonIconTextureAssetRef);
-				if (!staffDungeonIconTextureBuilderID.has_value())
-				{
-					DebugCrash("Couldn't get staff dungeon icon texture builder ID for \"" + staffDungeonIconTextureAssetRef.filename + "\".");
-				}
-
-				return *staffDungeonIconTextureBuilderID;
-			}
-			else
-			{
-				return *dungeonIconTextureBuilderID;
-			}
-		}
-		default:
-			throw DebugException(std::to_string(static_cast<int>(locationDef.getType())));
-		}
-	};
-
-	auto drawIconIfVisible = [this, &textureManager, &renderer, &backgroundPaletteID, &provinceDef,
-		&getLocationIconTextureID](const LocationInstance &locationInst)
-	{
-		if (locationInst.isVisible())
-		{
-			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
-			const TextureBuilderID iconTextureBuilderID = getLocationIconTextureID(locationDef);
-			this->drawCenteredIcon(iconTextureBuilderID, backgroundPaletteID, point, renderer);
-		}
-	};
-
-	// Draw all visible location icons in the province.
-	for (int i = 0; i < provinceInst.getLocationCount(); i++)
-	{
-		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
-		drawIconIfVisible(locationInst);
-	}
-}
-
-void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationDef,
-	LocationHighlightType highlightType, PaletteID highlightPaletteID, TextureManager &textureManager,
-	Renderer &renderer)
-{
-	auto drawHighlightTextureBuilderID = [this, &locationDef, &renderer, highlightPaletteID](
-		TextureBuilderID highlightTextureBuilderID)
-	{
-		const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
-		this->drawCenteredIcon(highlightTextureBuilderID, highlightPaletteID, point, renderer);
-	};
-
-	auto drawHighlightTexture = [this, &locationDef, &renderer](const Texture &highlight)
-	{
-		const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
-		this->drawCenteredIcon(highlight, point, renderer);
-	};
-
-	// Generic highlights (city, town, village, and dungeon).
-	const std::string outlinesFilename = (highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
-		ProvinceMapUiView::getMapIconOutlinesFilename() : ProvinceMapUiView::getMapIconBlinkingOutlinesFilename();
-
-	const std::optional<TextureBuilderIdGroup> highlightTextureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(outlinesFilename.c_str());
-	if (!highlightTextureBuilderIDs.has_value())
-	{
-		DebugLogError("Couldn't get highlight texture builder IDs for \"" + outlinesFilename + "\".");
-		return;
-	}
-
-	auto handleCityHighlight = [&textureManager, &renderer, &locationDef, &drawHighlightTextureBuilderID,
-		&highlightTextureBuilderIDs]()
-	{
-		const int highlightIndex = [&locationDef, &highlightTextureBuilderIDs]()
-		{
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-
-			switch (cityDef.type)
-			{
-			case ArenaTypes::CityType::CityState:
-				return ProvinceMapUiView::CityStateIconHighlightIndex;
-			case ArenaTypes::CityType::Town:
-				return ProvinceMapUiView::TownIconHighlightIndex;
-			case ArenaTypes::CityType::Village:
-				return ProvinceMapUiView::VillageIconHighlightIndex;
-			default:
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(cityDef.type)));
-			}
-		}();
-
-		const TextureBuilderID highlightTextureBuilderID = highlightTextureBuilderIDs->getID(highlightIndex);
-		drawHighlightTextureBuilderID(highlightTextureBuilderID);
-	};
-
-	auto handleDungeonHighlight = [this, &textureManager, &drawHighlightTextureBuilderID,
-		&highlightTextureBuilderIDs]()
-	{
-		// Named dungeon (they all use the same icon).
-		const TextureBuilderID highlightTextureBuilderID =
-			highlightTextureBuilderIDs->getID(ProvinceMapUiView::DungeonIconHighlightIndex);
-		drawHighlightTextureBuilderID(highlightTextureBuilderID);
-	};
-
-	auto handleMainQuestDungeonHighlight = [this, &locationDef, highlightType, &textureManager,
-		&renderer, &drawHighlightTextureBuilderID, &drawHighlightTexture, &highlightTextureBuilderIDs]()
-	{
-		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-			locationDef.getMainQuestDungeonDefinition();
-
-		if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
-		{
-			// Start dungeon is not drawn.
-		}
-		else if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Map)
-		{
-			// Staff map dungeon.
-			const TextureBuilderID highlightTextureBuilderID =
-				highlightTextureBuilderIDs->getID(ProvinceMapUiView::DungeonIconHighlightIndex);
-			drawHighlightTextureBuilderID(highlightTextureBuilderID);
-		}
-		else if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
-		{
-			// Staff dungeon. It changes a value in the palette to give the icon's background
-			// its yellow color (since there are no highlight icons for staff dungeons).
-			// @todo: pre-allocate both textures of the flash state and pick the right one each frame.
-			const Texture highlightTexture = [this, highlightType, &textureManager, &renderer]()
-			{
-				const Palette &backgroundPalette = textureManager.getPaletteHandle(this->backgroundPaletteID);
-				const TextureBuilderID iconTextureBuilderID = this->staffDungeonIconTextureBuilderIDs.getID(this->provinceID);
-				const TextureBuilder &iconTextureBuilder = textureManager.getTextureBuilderHandle(iconTextureBuilderID);
-
-				// Make a copy of the staff dungeon icon with changes based on which
-				// pixels should be highlighted.
-				Surface surface = Surface::createWithFormat(iconTextureBuilder.getWidth(), iconTextureBuilder.getHeight(),
-					Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-
-				auto getColorFromIndex = [this, highlightType, &backgroundPalette, &surface](int paletteIndex)
-				{
-					DebugAssertIndex(backgroundPalette, paletteIndex);
-					const Color &color = backgroundPalette[paletteIndex];
-					return surface.mapRGBA(color.r, color.g, color.b, color.a);
-				};
-
-				const int highlightColorIndex = (highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
-					ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
-				const uint32_t highlightColor = getColorFromIndex(highlightColorIndex);
-
-				// Convert each palette index to its equivalent 32-bit color, changing background indices
-				// to highlight indices as they are found.
-				DebugAssert(iconTextureBuilder.getType() == TextureBuilder::Type::Paletted);
-				const uint8_t *srcPixels = iconTextureBuilder.getPaletted().texels.get();
-				uint32_t *dstPixels = static_cast<uint32_t*>(surface.get()->pixels);
-				const int pixelCount = surface.getWidth() * surface.getHeight();
-				std::transform(srcPixels, srcPixels + pixelCount, dstPixels,
-					[&getColorFromIndex, highlightColor](const uint8_t srcPixel)
-				{
-					return (srcPixel == ProvinceMapUiView::BackgroundPaletteIndex) ?
-						highlightColor : getColorFromIndex(srcPixel);
-				});
-
-				Texture texture = renderer.createTextureFromSurface(surface);
-				return texture;
-			}();
-
-			drawHighlightTexture(highlightTexture);
-		}
-		else
-		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(mainQuestDungeonDef.type)));
-		}
-	};
-
-	// Decide how to highlight the location.
-	switch (locationDef.getType())
-	{
-	case LocationDefinition::Type::City:
-		handleCityHighlight();
-		break;
-	case LocationDefinition::Type::Dungeon:
-		handleDungeonHighlight();
-		break;
-	case LocationDefinition::Type::MainQuestDungeon:
-		handleMainQuestDungeonHighlight();
-		break;
-	default:
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(locationDef.getType())));
-	}
-}
-
-void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
-{
-	auto &game = this->getGame();
-	const auto &fontLibrary = game.getFontLibrary();
-
-	const std::string text = ProvinceMapUiModel::getLocationName(game, this->provinceID, locationID);
-	const Int2 locationCenter = ProvinceMapUiView::getLocationCenterPoint(game, this->provinceID, locationID);
-	const Int2 textBoxCenter = locationCenter - Int2(0, 10);
-	const TextRenderUtils::TextShadowInfo shadow(
-		ProvinceMapUiView::LocationTextShadowOffsetX,
-		ProvinceMapUiView::LocationTextShadowOffsetY,
-		ProvinceMapUiView::LocationTextShadowColor);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
-		text,
-		textBoxCenter,
-		ProvinceMapUiView::LocationFontName,
-		ProvinceMapUiView::LocationTextColor,
-		ProvinceMapUiView::LocationTextAlignment,
-		shadow,
-		0,
-		fontLibrary);
-	
-	TextBox textBox;
-	if (!textBox.init(textBoxInitInfo, text, renderer))
-	{
-		DebugCrash("Couldn't init hovered location text box.");
-	}
-
-	// Clamp to screen edges, with some extra space on the left and right.
-	const Rect &textBoxRect = textBox.getRect();
-	const Int2 clampedPosition = ProvinceMapUiView::getLocationTextClampedPosition(
-		textBoxRect.getLeft(), textBoxRect.getTop(), textBoxRect.getWidth(), textBoxRect.getHeight());
-	renderer.drawOriginal(textBox.getTexture(), clampedPosition.x, clampedPosition.y);
-}
-
-void ProvinceMapPanel::drawButtonTooltip(const std::string &text, Renderer &renderer)
-{
-	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
-
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-	const int mouseX = originalPosition.x;
-	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
-		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
-		mouseY : (mouseY - tooltip.getHeight());
-
-	renderer.drawOriginal(tooltip, x, y);
-}
-
-void ProvinceMapPanel::render(Renderer &renderer)
-{
-	DebugAssert(this->getGame().gameStateIsActive());
-
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw province map background.
-	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	const TextureAssetReference paletteTextureAssetRef =
-		ProvinceMapUiView::getProvinceBackgroundPaletteTextureAssetRef(game, this->provinceID);
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
-	if (!backgroundPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get background palette ID for \"" + paletteTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const TextureAssetReference backgroundTextureAssetRef =
-		ProvinceMapUiView::getProvinceBackgroundTextureAssetRef(game, this->provinceID);
-	const std::optional<TextureBuilderID> mapBackgroundTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
-	if (!mapBackgroundTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get map background texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*mapBackgroundTextureBuilderID, *backgroundPaletteID, textureManager);
-
-	// Draw visible location icons.
-	this->drawVisibleLocations(*backgroundPaletteID, textureManager, renderer);
-
-	const auto &gameState = game.getGameState();
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(this->provinceID);
-	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
-
-	// If the player is in the current province, highlight their current location.
-	if (provinceDef.matches(playerProvinceDef))
-	{
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		const auto highlightType = ProvinceMapPanel::LocationHighlightType::Current;
-		this->drawLocationHighlight(locationDef, highlightType, *backgroundPaletteID, textureManager, renderer);
-	}
-
-	// If there is a currently selected location in this province, draw its blinking highlight
-	// if within the "blink on" interval.
-	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
-	if (travelDataPtr != nullptr)
-	{
-		const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
-		if (travelData.provinceID == this->provinceID)
-		{
-			// See if the blink period percent lies within the "on" percent. Use less-than to compare them
-			// so the on-state appears before the off-state.
-			if (this->blinkState.getPercent() < ProvinceMapUiView::BlinkPeriodPercentOn)
-			{
-				const LocationDefinition &selectedLocationDef = provinceDef.getLocationDef(travelData.locationID);
-				const auto highlightType = ProvinceMapPanel::LocationHighlightType::Selected;
-
-				this->drawLocationHighlight(selectedLocationDef, highlightType, *backgroundPaletteID,
-					textureManager, renderer);
-			}
-		}
-	}
-}
-
-void ProvinceMapPanel::renderSecondary(Renderer &renderer)
-{
-	// Draw the name of the location closest to the mouse cursor.
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-	const int closestLocationID = this->getClosestLocationID(originalPosition);
-	this->drawLocationName(closestLocationID, renderer);
-
-	// Draw a tooltip if the mouse is over a button.
-	if (ProvinceMapUiView::SearchButtonRect.contains(originalPosition))
-	{
-		this->drawButtonTooltip(ProvinceMapUiModel::SearchButtonTooltip, renderer);
-	}
-	else if (ProvinceMapUiView::TravelButtonRect.contains(originalPosition))
-	{
-		this->drawButtonTooltip(ProvinceMapUiModel::TravelButtonTooltip, renderer);
-	}
-	else if (ProvinceMapUiView::BackToWorldMapRect.contains(originalPosition))
-	{
-		this->drawButtonTooltip(ProvinceMapUiModel::BackToWorldMapButtonTooltip, renderer);
-	}
 }

@@ -1,7 +1,6 @@
 #include <algorithm>
 
-#include "SDL.h"
-
+#include "CommonUiView.h"
 #include "ProvinceMapPanel.h"
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiModel.h"
@@ -18,6 +17,7 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
+#include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextEntry.h"
 
@@ -34,13 +34,6 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
-	this->parchment = TextureUtils::generate(
-		ProvinceSearchUiView::TexturePattern,
-		ProvinceSearchUiView::TextureWidth,
-		ProvinceSearchUiView::TextureHeight,
-		game.getTextureManager(),
-		game.getRenderer());
-
 	const std::string textTitleText = ProvinceSearchUiModel::getTitleText(game);
 	const TextBox::InitInfo textTitleTextBoxInitInfo =
 		ProvinceSearchUiView::getTitleTextBoxInitInfo(textTitleText, fontLibrary);
@@ -143,6 +136,81 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		}
 	});
 
+	auto &textureManager = game.getTextureManager();
+	const UiTextureID parchmentTextureID = ProvinceSearchUiView::allocParchmentTexture(textureManager, renderer);
+	this->parchmentTextureRef.init(parchmentTextureID, renderer);
+
+	UiDrawCall::ActiveFunc textEntryActiveFunc = [this]()
+	{
+		return this->mode == ProvinceSearchUiModel::Mode::TextEntry;
+	};
+
+	this->addDrawCall(
+		[this]() { return this->parchmentTextureRef.get(); },
+		[]() { return Int2((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1); },
+		[]() { return Int2(ProvinceSearchUiView::TextureWidth, ProvinceSearchUiView::TextureHeight); },
+		[]() { return PivotType::Middle; },
+		textEntryActiveFunc);
+
+	const Rect &textTitleTextBoxRect = this->textTitleTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->textTitleTextBox.getTextureID(); },
+		[textTitleTextBoxRect]() { return textTitleTextBoxRect.getTopLeft(); },
+		[textTitleTextBoxRect]() { return Int2(textTitleTextBoxRect.getWidth(), textTitleTextBoxRect.getHeight()); },
+		[]() { return PivotType::TopLeft; },
+		textEntryActiveFunc);
+
+	const Rect &textEntryTextBoxRect = this->textEntryTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->textEntryTextBox.getTextureID(); },
+		[textEntryTextBoxRect]() { return textEntryTextBoxRect.getTopLeft(); },
+		[textEntryTextBoxRect]() { return Int2(textEntryTextBoxRect.getWidth(), textEntryTextBoxRect.getHeight()); },
+		[]() { return PivotType::TopLeft; },
+		textEntryActiveFunc);
+
+	// @todo: draw blinking cursor for text entry
+
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const UiTextureID listBackgroundTextureID = ProvinceSearchUiView::allocListBackgroundTexture(
+		provinceID, binaryAssetLibrary, textureManager, renderer);
+	listBackgroundTextureRef.init(listBackgroundTextureID, renderer);
+
+	UiDrawCall::ActiveFunc listActiveFunc = [this]()
+	{
+		return this->mode == ProvinceSearchUiModel::Mode::List;
+	};
+
+	this->addDrawCall(
+		[this]() { return this->listBackgroundTextureRef.get(); },
+		[]() { return Int2(ProvinceSearchUiView::ListTextureX, ProvinceSearchUiView::ListTextureY); },
+		[this]() { return Int2(this->listBackgroundTextureRef.getWidth(), this->listBackgroundTextureRef.getHeight()); },
+		[]() { return PivotType::TopLeft; },
+		listActiveFunc);
+
+	UiDrawCall::PositionFunc listBoxPositionFunc = [this]()
+	{
+		const Rect &locationsListBoxRect = this->locationsListBox.getRect();
+		return locationsListBoxRect.getTopLeft();
+	};
+
+	UiDrawCall::SizeFunc listBoxSizeFunc = [this]()
+	{
+		// Have to get the size dynamically due to the list not being initialized or populated yet.
+		const Rect &locationsListBoxRect = this->locationsListBox.getRect();
+		return Int2(locationsListBoxRect.getWidth(), locationsListBoxRect.getHeight());
+	};
+
+	this->addDrawCall(
+		[this]() { return this->locationsListBox.getTextureID(); },
+		listBoxPositionFunc,
+		listBoxSizeFunc,
+		[]() { return PivotType::TopLeft; },
+		listActiveFunc);
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, listActiveFunc);
+
 	this->provinceMapPanel = &provinceMapPanel;
 	this->mode = ProvinceSearchUiModel::Mode::TextEntry;
 	this->provinceID = provinceID;
@@ -152,19 +220,6 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	inputManager.setTextInputMode(true);
 
 	return true;
-}
-
-std::optional<CursorData> ProvinceSearchSubPanel::getCurrentCursor() const
-{
-	if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
-	{
-		// No mouse cursor when typing.
-		return std::nullopt;
-	}
-	else
-	{
-		return this->getDefaultCursor();
-	}
 }
 
 void ProvinceSearchSubPanel::initLocationsList()
@@ -232,65 +287,4 @@ void ProvinceSearchSubPanel::tick(double dt)
 {
 	// @todo: eventually blink text input cursor in text entry, and listen for scrolling in list box.
 	static_cast<void>(dt);
-}
-
-void ProvinceSearchSubPanel::renderTextEntry(Renderer &renderer)
-{
-	const int parchmentX = ProvinceSearchUiView::getTextEntryTextureX(this->parchment.getWidth());
-	const int parchmentY = ProvinceSearchUiView::getTextEntryTextureY(this->parchment.getHeight());
-	renderer.drawOriginal(this->parchment, parchmentX, parchmentY);
-
-	// Draw text: title, location name.
-	const Rect &titleTextBoxRect = this->textTitleTextBox.getRect();
-	const Rect &entryTextBoxRect = this->textEntryTextBox.getRect();
-	renderer.drawOriginal(this->textTitleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-	renderer.drawOriginal(this->textEntryTextBox.getTexture(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
-
-	// @todo: draw blinking cursor.
-}
-
-void ProvinceSearchSubPanel::renderList(Renderer &renderer)
-{
-	// Draw list background.
-	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	const TextureAssetReference listBackgroundPaletteTextureAssetRef =
-		ProvinceSearchUiView::getListPaletteTextureAssetRef(game, this->provinceID);
-	const std::optional<PaletteID> listBackgroundPaletteID =
-		textureManager.tryGetPaletteID(listBackgroundPaletteTextureAssetRef);
-	if (!listBackgroundPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get list background palette ID for \"" + listBackgroundPaletteTextureAssetRef.filename + "\".");
-		return;
-	}
-	
-	const TextureAssetReference listBackgroundTextureAssetRef = ProvinceSearchUiView::getListTextureAssetRef();
-	const std::optional<TextureBuilderID> listBackgroundTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(listBackgroundTextureAssetRef);
-	if (!listBackgroundTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get list background texture builder ID for \"" + listBackgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*listBackgroundTextureBuilderID, *listBackgroundPaletteID,
-		ProvinceSearchUiView::ListTextureX, ProvinceSearchUiView::ListTextureY,
-		textureManager);
-
-	// Draw list box text.
-	const Rect &locationsListBoxRect = this->locationsListBox.getRect();
-	renderer.drawOriginal(this->locationsListBox.getTexture(),
-		locationsListBoxRect.getLeft(), locationsListBoxRect.getTop());
-}
-
-void ProvinceSearchSubPanel::render(Renderer &renderer)
-{
-	if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
-	{
-		this->renderTextEntry(renderer);
-	}
-	else
-	{
-		this->renderList(renderer);
-	}
 }

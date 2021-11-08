@@ -13,6 +13,7 @@
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../GameLogic/PlayerLogicController.h"
+#include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
@@ -134,16 +135,25 @@ void GameWorldUiController::onStatusButtonSelected(Game &game)
 		GameWorldUiView::StatusPopUpTextLineSpacing,
 		game.getFontLibrary());
 
-	Texture texture = TextureUtils::generate(
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	Surface surface = TextureUtils::generate(
 		GameWorldUiView::StatusPopUpTexturePatternType,
 		GameWorldUiView::getStatusPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
 		GameWorldUiView::getStatusPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
 
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create status pop-up texture.");
+	}
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
 	const Int2 textureCenter = center;
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected,
-		std::move(texture), textureCenter);
+		std::move(textureRef), textureCenter);
 }
 
 void GameWorldUiController::onStatusPopUpSelected(Game &game)

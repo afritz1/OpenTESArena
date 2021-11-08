@@ -19,13 +19,10 @@ class ProvinceMapPanel;
 class ProvinceSearchSubPanel : public Panel
 {
 private:
-	Texture parchment;
 	TextBox textTitleTextBox, textEntryTextBox;
 	ListBox locationsListBox;
 	Button<ListBox&> listUpButton, listDownButton;
-
-	void renderTextEntry(Renderer &renderer);
-	void renderList(Renderer &renderer);
+	ScopedUiTextureRef parchmentTextureRef, listBackgroundTextureRef, cursorTextureRef;
 public:
 	// Public for UI controller.
 	// - @todo: probably don't leave these as public forever
@@ -44,9 +41,7 @@ public:
 	// - Public for UI controller
 	void initLocationsList();
 
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void tick(double dt) override;
-	virtual void render(Renderer &renderer) override;
+	void tick(double dt) override;
 };
 
 #endif

@@ -1,34 +1,10 @@
-#include <unordered_map>
-
-#include "SDL.h"
-
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
-#include "ChooseClassPanel.h"
-#include "ChooseGenderPanel.h"
 #include "ChooseNamePanel.h"
-#include "../Assets/ArenaTextureName.h"
-#include "../Assets/ExeData.h"
-#include "../Entities/CharacterClassDefinition.h"
-#include "../Entities/CharacterClassLibrary.h"
-#include "../Game/CharacterCreationState.h"
+#include "CommonUiView.h"
 #include "../Game/Game.h"
-#include "../Game/Options.h"
 #include "../Input/InputActionName.h"
-#include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureManager.h"
-#include "../Rendering/ArenaRenderUtils.h"
-#include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
-#include "../UI/FontLibrary.h"
-#include "../UI/Surface.h"
-#include "../UI/TextAlignment.h"
-#include "../UI/TextEntry.h"
-
-#include "components/utilities/String.h"
 
 ChooseNamePanel::ChooseNamePanel(Game &game)
 	: Panel(game) { }
@@ -37,13 +13,6 @@ bool ChooseNamePanel::init()
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-
-	this->parchment = TextureUtils::generate(
-		ChooseNameUiView::TexturePatternType,
-		ChooseNameUiView::TextureWidth,
-		ChooseNameUiView::TextureHeight,
-		game.getTextureManager(),
-		renderer);
 
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = ChooseNameUiModel::getTitleText(game);
@@ -94,46 +63,46 @@ bool ChooseNamePanel::init()
 	auto &inputManager = game.getInputManager();
 	inputManager.setTextInputMode(true);
 
-	return true;
-}
+	auto &textureManager = game.getTextureManager();
+	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
+	const UiTextureID parchmentTextureID = ChooseNameUiView::allocParchmentTexture(textureManager, renderer);
+	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
+	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-std::optional<CursorData> ChooseNamePanel::getCurrentCursor() const
-{
-	return this->getDefaultCursor();
-}
+	this->addDrawCall(
+		this->nightSkyTextureRef.get(),
+		Int2::Zero,
+		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		PivotType::TopLeft);
+	this->addDrawCall(
+		this->parchmentTextureRef.get(),
+		ChooseNameUiView::getTitleTextureCenter(),
+		Int2(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight()),
+		PivotType::Middle);
 
-void ChooseNamePanel::render(Renderer &renderer)
-{
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw background.
-	auto &textureManager = this->getGame().getTextureManager();
-	const TextureAssetReference backgroundTextureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundTextureAssetRef);
-	if (!backgroundPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get background palette ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
-	if (!backgroundTextureBuilderID.has_value())
-	{
-		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
-		return;
-	}
-
-	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
-
-	// Draw parchment: title.
-	const int titleParchmentX = ChooseNameUiView::getTitleTextureX(this->parchment.getWidth());
-	const int titleParchmentY = ChooseNameUiView::getTitleTextureY(this->parchment.getHeight());
-	renderer.drawOriginal(this->parchment, titleParchmentX, titleParchmentY);
-
-	// Draw text: title, name.
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	this->addDrawCall(
+		this->titleTextBox.getTextureID(),
+		titleTextBoxRect.getCenter(),
+		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
+		PivotType::Middle);
+
+	// Need a texture func for the name text box due to the non-constness of the getter.
+	UiDrawCall::TextureFunc entryTextureFunc = [this]()
+	{
+		return this->entryTextBox.getTextureID();
+	};
+
 	const Rect &entryTextBoxRect = this->entryTextBox.getRect();
-	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-	renderer.drawOriginal(this->entryTextBox.getTexture(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
+	this->addDrawCall(
+		entryTextureFunc,
+		entryTextBoxRect.getCenter(),
+		Int2(entryTextBoxRect.getWidth(), entryTextBoxRect.getHeight()),
+		PivotType::Middle);
+
+	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
+	this->cursorTextureRef.init(cursorTextureID, renderer);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
+
+	return true;
 }

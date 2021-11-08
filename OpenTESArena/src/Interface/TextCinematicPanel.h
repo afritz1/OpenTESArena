@@ -2,8 +2,6 @@
 #define TEXT_CINEMATIC_PANEL_H
 
 #include <functional>
-#include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -32,20 +30,22 @@ class TextCinematicPanel : public Panel
 public:
 	using OnFinishedFunction = std::function<void(Game&)>;
 private:
-	std::vector<TextBox> textBoxes; // One for every three new lines.
+	TextBox textBox;
 	Button<Game&> skipButton;
-	std::string animTextureFilename;
+	std::vector<std::string> textPages; // One string per page of text.
+	std::vector<ScopedUiTextureRef> animTextureRefs; // One per animation image.
 	TextCinematicUiModel::SpeechState speechState;
 	double secondsPerImage, currentImageSeconds;
 	int animImageIndex, textIndex, textCinematicDefIndex;
+
+	void updateSubtitles();
 public:
 	TextCinematicPanel(Game &game);
 	~TextCinematicPanel() override;
 
 	bool init(int textCinematicDefIndex, double secondsPerImage, const OnFinishedFunction &onFinished);
 
-	virtual void tick(double dt) override;
-	virtual void render(Renderer &renderer) override;
+	void tick(double dt) override;
 };
 
 #endif

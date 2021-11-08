@@ -12,15 +12,17 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
+#include "components/utilities/Buffer.h"
+
 class ExeData;
 class Game;
 class Rect;
 
 namespace CharacterCreationUiView
 {
-	constexpr int MaxTooltipLineLength = 14;
-
 	TextureAssetReference getNightSkyTextureAssetRef();
+
+	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseClassCreationUiView
@@ -53,16 +55,21 @@ namespace ChooseClassCreationUiView
 	constexpr int SelectButtonWidth = 175;
 	constexpr int SelectButtonHeight = 35;
 
-	int getTitleTextureX(int textureWidth);
-	int getTitleTextureY(int textureHeight);
+	Int2 getTitleTextureCenter();
+	Int2 getGenerateTextureCenter();
+	Int2 getSelectTextureCenter();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getGenerateTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getSelectTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
+	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseClassUiView
 {
+	constexpr int MaxTooltipLineLength = 40;
+
 	constexpr int TitleX = 89;
 	constexpr int TitleY = 32;
 	const std::string TitleFontName = ArenaFontName::C;
@@ -81,6 +88,9 @@ namespace ChooseClassUiView
 	TextureAssetReference getListBoxTextureAssetRef();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
+	
+	UiTextureID allocPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseGenderUiView
@@ -112,12 +122,15 @@ namespace ChooseGenderUiView
 	constexpr int FemaleButtonWidth = 175;
 	constexpr int FemaleButtonHeight = 35;
 
-	int getTitleTextureX(int textureWidth);
-	int getTitleTextureY(int textureHeight);
+	Int2 getTitleTextureCenter();
+	Int2 getMaleTextureCenter();
+	Int2 getFemaleTextureCenter();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getMaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getFemaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
+	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseNameUiView
@@ -138,11 +151,12 @@ namespace ChooseNameUiView
 	const Color EntryColor(48, 12, 12);
 	constexpr TextAlignment EntryAlignment = TextAlignment::TopLeft;
 
-	int getTitleTextureX(int textureWidth);
-	int getTitleTextureY(int textureHeight);
+	Int2 getTitleTextureCenter();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+
+	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseRaceUiView
@@ -221,10 +235,16 @@ namespace ChooseRaceUiView
 	Rect getProvinceConfirmedThirdTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedFourthTextureRect(int textWidth, int textHeight);
 
+	TextBox::InitInfo getInitialPopUpTextBoxInitInfo(const std::string_view &text, Game &game);
+
 	TextBox::InitInfo getProvinceConfirmedFirstTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getProvinceConfirmedSecondTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getProvinceConfirmedThirdTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getProvinceConfirmedFourthTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
+	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocNoExitTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocInitialPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseAttributesUiView
@@ -278,15 +298,22 @@ namespace ChooseAttributesUiView
 	int getAppearanceTextBoxTextureWidth(int textWidth);
 	int getAppearanceTextBoxTextureHeight(int textHeight);
 
-	int getBodyOffsetX(Game &game);
+	Int2 getBodyOffset(Game &game);
 	Int2 getHeadOffset(Game &game);
 	Int2 getShirtOffset(Game &game);
 	Int2 getPantsOffset(Game &game);
 
 	TextureAssetReference getBodyTextureAssetRef(Game &game);
-	TextureAssetReference getHeadTextureAssetRef(Game &game);
+	Buffer<TextureAssetReference> getHeadTextureAssetRefs(Game &game);
 	TextureAssetReference getShirtTextureAssetRef(Game &game);
 	TextureAssetReference getPantsTextureAssetRef(Game &game);
+
+	UiTextureID allocBodyTexture(Game &game);
+	UiTextureID allocShirtTexture(Game &game);
+	UiTextureID allocPantsTexture(Game &game);
+	UiTextureID allocHeadTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

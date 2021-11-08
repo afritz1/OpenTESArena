@@ -64,7 +64,7 @@ private:
 	struct Item
 	{
 		Rect backgroundTextureRect;
-		Texture backgroundTexture;
+		ScopedUiTextureRef backgroundTextureRef;
 		TextBox textBox;
 		ItemCallback callback;
 		std::string inputActionName; // Empty if no hotkey for this button.
@@ -72,13 +72,13 @@ private:
 
 		Item();
 
-		void init(const Rect &backgroundTextureRect, Texture &&backgroundTexture, TextBox &&textBox);
+		void init(const Rect &backgroundTextureRect, ScopedUiTextureRef &&backgroundTextureRef, TextBox &&textBox);
 	};
 
 	Rect titleBackgroundRect;
-	Texture titleBackgroundTexture;
 	TextBox titleTextBox;
 	Buffer<Item> items;
+	ScopedUiTextureRef titleBackgroundTextureRef, cursorTextureRef;
 	OnClosedFunction onClosed;
 public:
 	MessageBoxSubPanel(Game &game);
@@ -95,9 +95,6 @@ public:
 
 	void addOverrideColor(int itemIndex, int charIndex, const Color &overrideColor);
 	void clearOverrideColors(int itemIndex);
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif

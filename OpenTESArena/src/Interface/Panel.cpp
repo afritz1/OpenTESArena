@@ -23,7 +23,10 @@
 #include "components/vfs/manager.hpp"
 
 Panel::Panel(Game &game)
-	: game(game) { }
+	: game(game)
+{
+	this->paused = false;
+}
 
 Panel::~Panel()
 {
@@ -61,21 +64,21 @@ Panel::~Panel()
 	}
 }
 
-std::optional<CursorData> Panel::getCurrentCursor() const
-{
-	// Empty by default.
-	return std::nullopt;
-}
-
 BufferView<const ButtonProxy> Panel::getButtonProxies() const
 {
 	return BufferView<const ButtonProxy>(this->buttonProxies.data(), static_cast<int>(this->buttonProxies.size()));
 }
 
+BufferView<const UiDrawCall> Panel::getDrawCalls() const
+{
+	return BufferView<const UiDrawCall>(this->drawCalls.data(), static_cast<int>(this->drawCalls.size()));
+}
+
 void Panel::onPauseChanged(bool paused)
 {
-	InputManager &inputManager = this->game.getInputManager();
+	this->paused = paused;
 
+	InputManager &inputManager = this->game.getInputManager();
 	auto setListenersEnabled = [paused, &inputManager](std::vector<InputManager::ListenerID> &listenerIDs)
 	{
 		for (const InputManager::ListenerID listenerID : listenerIDs)
@@ -103,6 +106,11 @@ void Panel::resize(int windowWidth, int windowHeight)
 Game &Panel::getGame() const
 {
 	return this->game;
+}
+
+bool Panel::isPaused() const
+{
+	return this->paused;
 }
 
 CursorData Panel::getDefaultCursor() const
@@ -183,14 +191,99 @@ void Panel::clearButtonProxies()
 	this->buttonProxies.clear();
 }
 
+void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::PositionFunc &positionFunc,
+	const UiDrawCall::SizeFunc &sizeFunc, const UiDrawCall::PivotFunc &pivotFunc,
+	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect, RenderSpace renderSpace)
+{
+	this->drawCalls.emplace_back(textureFunc, positionFunc, sizeFunc, pivotFunc, activeFunc, clipRect, renderSpace);
+}
+
+void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Int2 &position, const Int2 &size,
+	PivotType pivotType, const std::optional<Rect> &clipRect)
+{
+	this->drawCalls.emplace_back(
+		textureFunc,
+		UiDrawCall::makePositionFunc(position),
+		UiDrawCall::makeSizeFunc(size),
+		UiDrawCall::makePivotFunc(pivotType),
+		UiDrawCall::defaultActiveFunc,
+		clipRect);
+}
+
+void Panel::addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
+	const std::optional<Rect> &clipRect)
+{
+	this->drawCalls.emplace_back(
+		UiDrawCall::makeTextureFunc(textureID),
+		UiDrawCall::makePositionFunc(position),
+		UiDrawCall::makeSizeFunc(size),
+		UiDrawCall::makePivotFunc(pivotType),
+		UiDrawCall::defaultActiveFunc,
+		clipRect);
+}
+
+void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCall::ActiveFunc &activeFunc)
+{
+	UiDrawCall::TextureFunc textureFunc = [textureID]()
+	{
+		return textureID;
+	};
+
+	UiDrawCall::PositionFunc positionFunc = [this]()
+	{
+		auto &game = this->getGame();
+		const auto &inputManager = game.getInputManager();
+		return inputManager.getMousePosition();
+	};
+
+	UiDrawCall::SizeFunc sizeFunc = [this, textureID]()
+	{
+		auto &game = this->getGame();
+		auto &renderer = game.getRenderer();
+		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(textureID);
+		if (!dims.has_value())
+		{
+			DebugCrash("Couldn't get cursor texture dimensions for UI draw call.");
+		}
+
+		const auto &options = game.getOptions();
+		const double scale = options.getGraphics_CursorScale();
+		const Int2 scaledDims(
+			static_cast<int>(static_cast<double>(dims->x) * scale),
+			static_cast<int>(static_cast<double>(dims->y) * scale));
+		return scaledDims;
+	};
+
+	UiDrawCall::PivotFunc pivotFunc = [pivotType]()
+	{
+		return pivotType;
+	};
+
+	const std::optional<Rect> clipRect = std::nullopt;
+	constexpr RenderSpace renderSpace = RenderSpace::Native;
+
+	this->drawCalls.emplace_back(
+		textureFunc,
+		positionFunc,
+		sizeFunc,
+		pivotFunc,
+		activeFunc,
+		clipRect,
+		renderSpace);
+}
+
+void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType)
+{
+	this->addCursorDrawCall(textureID, pivotType, UiDrawCall::defaultActiveFunc);
+}
+
+void Panel::clearDrawCalls()
+{
+	this->drawCalls.clear();
+}
+
 void Panel::tick(double dt)
 {
 	// Do nothing by default.
 	static_cast<void>(dt);
-}
-
-void Panel::renderSecondary(Renderer &renderer)
-{
-	// Do nothing by default.
-	static_cast<void>(renderer);
 }

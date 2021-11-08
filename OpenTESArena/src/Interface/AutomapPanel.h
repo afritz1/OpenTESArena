@@ -8,7 +8,6 @@
 #include "../Media/TextureUtils.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 #include "../World/VoxelUtils.h"
 
 // @todo: be able to click somewhere inside the drawable area of the automap and get a 2D voxel
@@ -20,37 +19,24 @@
 // - Int2 getChunkPixelPosition(??Int chunkX, ??Int chunkY); // position on-screen in original render coords
 // - just get the surrounding 3x3 chunks. Does it really matter that it's 2x2 like the original game?
 
-class Chunk;
 class ChunkManager;
-class Color;
 class Renderer;
-class TransitionDefinition;
-class VoxelDefinition;
-
-enum class CardinalDirectionName;
 
 class AutomapPanel : public Panel
 {
 private:
 	TextBox locationTextBox;
 	Button<Game&> backToGameButton;
-	Texture mapTexture;
-	TextureBuilderID backgroundTextureBuilderID;
-	PaletteID backgroundPaletteID;
+	ScopedUiTextureRef mapTextureRef, backgroundTextureRef, cursorTextureRef;
 
 	// XZ coordinate offset in automap space, stored as a real so scroll position can be sub-pixel.
 	Double2 automapOffset;
-
-	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	AutomapPanel(Game &game);
 	~AutomapPanel() override;
 
 	bool init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
 		const ChunkManager &chunkManager, const std::string &locationName);
-
-	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void render(Renderer &renderer) override;
 };
 
 #endif

@@ -45,24 +45,16 @@ bool ListBox::init(const Rect &rect, const Properties &properties, Renderer &ren
 
 	const int textureWidth = properties.textureGenInfo.width;
 	const int textureHeight = properties.textureGenInfo.height;
-	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
-
-	if (this->texture.get() == nullptr)
+	UiTextureID textureID;
+	if (!renderer.tryCreateUiTexture(textureWidth, textureHeight, &textureID))
 	{
-		DebugLogError("Couldn't create list box texture (" + std::to_string(textureWidth) + "x" +
+		DebugLogError("Couldn't create UI texture for list box (dims: " + std::to_string(textureWidth) + "x" +
 			std::to_string(textureHeight) + ").");
 		return false;
 	}
 
-	if (SDL_SetTextureBlendMode(this->texture.get(), SDL_BLENDMODE_BLEND) != 0)
-	{
-		DebugLogError("Couldn't set SDL texture blend mode.");
-		return false;
-	}
-
+	this->textureRef.init(textureID, renderer);
 	this->dirty = true;
-
 	return true;
 }
 
@@ -103,7 +95,7 @@ const ListBox::ItemCallback &ListBox::getCallback(int index) const
 	return this->items[index].callback;
 }
 
-const Texture &ListBox::getTexture()
+UiTextureID ListBox::getTextureID()
 {
 	if (this->dirty)
 	{
@@ -111,7 +103,7 @@ const Texture &ListBox::getTexture()
 		DebugAssert(!this->dirty);
 	}
 
-	return this->texture;
+	return this->textureRef.get();
 }
 
 double ListBox::getScrollDeltaPixels() const
@@ -169,7 +161,7 @@ void ListBox::scrollDown()
 	const int itemHeightSum = this->properties.itemHeight * itemCount;
 	const int itemPaddingSum = this->properties.itemSpacing * std::max(0, itemCount - 1);
 	const int totalItemSizeSum = itemHeightSum + itemPaddingSum;
-	const int textureHeight = this->texture.getHeight();
+	const int textureHeight = this->textureRef.getHeight();
 	const double maxScrollPixelOffset = std::max(0.0, static_cast<double>(totalItemSizeSum - textureHeight));
 
 	this->scrollPixelOffset = std::min(this->scrollPixelOffset + this->getScrollDeltaPixels(), maxScrollPixelOffset);
@@ -189,9 +181,8 @@ void ListBox::updateTexture()
 		return;
 	}
 
-	uint32_t *texturePixels;
-	int pitch;
-	if (SDL_LockTexture(this->texture.get(), nullptr, reinterpret_cast<void**>(&texturePixels), &pitch) != 0)
+	uint32_t *texels = this->textureRef.lockTexels();
+	if (texels == nullptr)
 	{
 		DebugLogError("Couldn't lock list box texture for updating.");
 		return;
@@ -203,7 +194,10 @@ void ListBox::updateTexture()
 	DebugAssert(fontLibrary != nullptr);
 
 	const FontDefinition &fontDef = fontLibrary->getDefinition(this->properties.fontDefIndex);
-	BufferView2D<uint32_t> textureView(texturePixels, this->texture.getWidth(), this->texture.getHeight());
+
+	const int width = this->textureRef.getWidth();
+	const int height = this->textureRef.getHeight();
+	BufferView2D<uint32_t> textureView(texels, width, height);
 
 	// Clear texture.
 	textureView.fill(0);
@@ -220,7 +214,6 @@ void ListBox::updateTexture()
 			itemColor, colorOverrideInfo, shadowInfo, textureView);
 	}
 
-	SDL_UnlockTexture(this->texture.get());
-
+	this->textureRef.unlockTexels();
 	this->dirty = false;
 }
