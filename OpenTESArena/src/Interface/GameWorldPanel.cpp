@@ -99,31 +99,36 @@ bool GameWorldPanel::init()
 		GameWorldUiView::getMapButtonRect(), GameWorldUiController::onMapButtonSelected);
 
 	auto &player = game.getGameState().getPlayer();
-
-	this->addButtonProxy(MouseButtonType::Left, this->characterSheetButton.getRect(),
-		[this, &game]() { this->characterSheetButton.click(game); });
-	this->addButtonProxy(MouseButtonType::Left, this->drawWeaponButton.getRect(),
-		[this, &player]() { this->drawWeaponButton.click(player); });
-	this->addButtonProxy(MouseButtonType::Left, this->stealButton.getRect(),
-		[this]() { this->stealButton.click(); });
-	this->addButtonProxy(MouseButtonType::Left, this->statusButton.getRect(),
-		[this, &game]() { this->statusButton.click(game); });
-	this->addButtonProxy(MouseButtonType::Left, this->magicButton.getRect(),
-		[this]() { this->magicButton.click(); });
-	this->addButtonProxy(MouseButtonType::Left, this->logbookButton.getRect(),
-		[this, &game]() { this->logbookButton.click(game); });
-	this->addButtonProxy(MouseButtonType::Left, this->useItemButton.getRect(),
-		[this]() { this->useItemButton.click(); });
-	this->addButtonProxy(MouseButtonType::Left, this->campButton.getRect(),
-		[this]() { this->campButton.click(); });
-	this->addButtonProxy(MouseButtonType::Left, this->scrollUpButton.getRect(),
-		[this]() { this->scrollUpButton.click(*this); });
-	this->addButtonProxy(MouseButtonType::Left, this->scrollDownButton.getRect(),
-		[this]() { this->scrollDownButton.click(*this); });
-	this->addButtonProxy(MouseButtonType::Left, this->mapButton.getRect(),
-		[this, &game]() { this->mapButton.click(game, true); });
-	this->addButtonProxy(MouseButtonType::Right, this->mapButton.getRect(),
-		[this, &game]() { this->mapButton.click(game, false); });
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+	if (!modernInterface)
+	{
+		// Classic interface buttons.
+		this->addButtonProxy(MouseButtonType::Left, this->characterSheetButton.getRect(),
+			[this, &game]() { this->characterSheetButton.click(game); });
+		this->addButtonProxy(MouseButtonType::Left, this->drawWeaponButton.getRect(),
+			[this, &player]() { this->drawWeaponButton.click(player); });
+		this->addButtonProxy(MouseButtonType::Left, this->stealButton.getRect(),
+			[this]() { this->stealButton.click(); });
+		this->addButtonProxy(MouseButtonType::Left, this->statusButton.getRect(),
+			[this, &game]() { this->statusButton.click(game); });
+		this->addButtonProxy(MouseButtonType::Left, this->magicButton.getRect(),
+			[this]() { this->magicButton.click(); });
+		this->addButtonProxy(MouseButtonType::Left, this->logbookButton.getRect(),
+			[this, &game]() { this->logbookButton.click(game); });
+		this->addButtonProxy(MouseButtonType::Left, this->useItemButton.getRect(),
+			[this]() { this->useItemButton.click(); });
+		this->addButtonProxy(MouseButtonType::Left, this->campButton.getRect(),
+			[this]() { this->campButton.click(); });
+		this->addButtonProxy(MouseButtonType::Left, this->scrollUpButton.getRect(),
+			[this]() { this->scrollUpButton.click(*this); });
+		this->addButtonProxy(MouseButtonType::Left, this->scrollDownButton.getRect(),
+			[this]() { this->scrollDownButton.click(*this); });
+		this->addButtonProxy(MouseButtonType::Left, this->mapButton.getRect(),
+			[this, &game]() { this->mapButton.click(game, true); });
+		this->addButtonProxy(MouseButtonType::Right, this->mapButton.getRect(),
+			[this, &game]() { this->mapButton.click(game, false); });
+	}
 
 	auto &inputManager = game.getInputManager();
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, true);
@@ -263,9 +268,6 @@ bool GameWorldPanel::init()
 		screenDims.x, screenDims.y);
 
 	// If in modern mode, lock mouse to center of screen for free-look.
-	const auto &options = game.getOptions();
-	const bool modernInterface = options.getGraphics_ModernInterface();
-
 	if (modernInterface)
 	{
 		GameWorldUiModel::setFreeLookActive(game, true);
