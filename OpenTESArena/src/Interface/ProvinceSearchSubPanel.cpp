@@ -81,6 +81,9 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	{
 		if (values.performed)
 		{
+			auto &inputManager = game.getInputManager();
+			inputManager.setTextInputMode(false);
+
 			// Return to the province map panel.
 			game.popSubPanel();
 		}
