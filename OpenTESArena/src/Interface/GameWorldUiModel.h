@@ -34,6 +34,7 @@ namespace GameWorldUiModel
 	std::string getPlayerPositionText(Game &game);
 
 	std::optional<ButtonType> getHoveredButtonType(Game &game);
+	bool isButtonTooltipAllowed(ButtonType buttonType, Game &game);
 	std::string getButtonTooltip(ButtonType buttonType);
 
 	void setFreeLookActive(Game &game, bool active);

@@ -699,8 +699,8 @@ void GameWorldPanel::initUiDrawCalls()
 				return false;
 			}
 
-			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
-			return buttonType.has_value();
+			const std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
+			return buttonType.has_value() && GameWorldUiModel::isButtonTooltipAllowed(*buttonType, game);
 		};
 
 		this->addDrawCall(

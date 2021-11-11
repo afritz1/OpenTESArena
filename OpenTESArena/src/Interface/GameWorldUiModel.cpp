@@ -192,6 +192,23 @@ std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonTy
 	return std::nullopt;
 }
 
+bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
+{
+	if (buttonType == ButtonType::Magic)
+	{
+		auto &gameState = game.getGameState();
+		const Player &player = gameState.getPlayer();
+		const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
+		const int charClassDefID = player.getCharacterClassDefID();
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+		return charClassDef.canCastMagic();
+	}
+	else
+	{
+		return true;
+	}
+}
+
 std::string GameWorldUiModel::getButtonTooltip(ButtonType buttonType)
 {
 	switch (buttonType)
