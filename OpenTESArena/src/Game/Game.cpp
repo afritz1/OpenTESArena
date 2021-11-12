@@ -573,10 +573,17 @@ void Game::renderDebugInfo()
 	{
 		// FPS.
 		const double averageFps = this->fpsCounter.getAverageFPS();
-		const double frameTimeMS = 1000.0 / averageFps;
+		const double highestFps = this->fpsCounter.getHighestFPS();
+		const double lowestFps = this->fpsCounter.getLowestFPS();
+		const double averageFrameTimeMS = 1000.0 / averageFps;
+		const double lowestFrameTimeMS = 1000.0 / highestFps;
+		const double highestFrameTimeMS = 1000.0 / lowestFps;
 		const std::string averageFpsText = String::fixedPrecision(averageFps, 0);
-		const std::string frameTimeText = String::fixedPrecision(frameTimeMS, 2);
-		debugText.append("FPS: " + averageFpsText + " (" + frameTimeText + "ms)");
+		const std::string averageFrameTimeText = String::fixedPrecision(averageFrameTimeMS, 1);
+		const std::string lowestFrameTimeText = String::fixedPrecision(lowestFrameTimeMS, 1);
+		const std::string highestFrameTimeText = String::fixedPrecision(highestFrameTimeMS, 1);
+		debugText.append("FPS: " + averageFpsText + " (" + averageFrameTimeText + "ms " + lowestFrameTimeText +
+			"ms " + highestFrameTimeText + "ms)");
 	}
 
 	const Int2 windowDims = this->renderer.getWindowDimensions();

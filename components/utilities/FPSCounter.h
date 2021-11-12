@@ -19,8 +19,9 @@ public:
 	// Gets the time in seconds of a particular frame in the counter's history.
 	double getFrameTime(int index) const;
 
-	// Gets the average frames per second based on recent data.
 	double getAverageFPS() const;
+	double getHighestFPS() const;
+	double getLowestFPS() const;
 
 	// Sets the frame time of the most recent frame. This should be called once
 	// per frame.

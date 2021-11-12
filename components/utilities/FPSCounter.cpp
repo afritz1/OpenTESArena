@@ -37,6 +37,28 @@ double FPSCounter::getAverageFPS() const
 	return 1.0 / this->getAverageFrameTime();
 }
 
+double FPSCounter::getHighestFPS() const
+{
+	const auto iter = std::min_element(this->frameTimes.begin(), this->frameTimes.end());
+	if (iter == this->frameTimes.end())
+	{
+		return 0.0;
+	}
+
+	return 1.0 / *iter;
+}
+
+double FPSCounter::getLowestFPS() const
+{
+	const auto iter = std::max_element(this->frameTimes.begin(), this->frameTimes.end());
+	if (iter == this->frameTimes.end())
+	{
+		return 0.0;
+	}
+
+	return 1.0 / *iter;
+}
+
 void FPSCounter::updateFrameTime(double dt)
 {
 	// Rotate the array right by one index (this puts the last value at the front).
