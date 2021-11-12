@@ -244,7 +244,6 @@ bool GameWorldPanel::init()
 	});
 
 	this->addInputActionListener(InputActionName::PauseMenu, GameWorldUiController::onPauseInputAction);
-	this->addInputActionListener(InputActionName::DebugProfiler, GameWorldUiController::onDebugInputAction);
 
 	this->addMouseButtonChangedListener([this](Game &game, MouseButtonType type, const Int2 &position, bool pressed)
 	{

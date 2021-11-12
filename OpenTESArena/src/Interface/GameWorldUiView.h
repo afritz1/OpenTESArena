@@ -179,7 +179,6 @@ namespace GameWorldUiView
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);
-	void DEBUG_DrawProfiler(Game &game, Renderer &renderer);
 }
 
 #endif

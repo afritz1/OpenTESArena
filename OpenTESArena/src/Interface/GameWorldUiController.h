@@ -38,7 +38,6 @@ namespace GameWorldUiController
 	void onToggleCompassInputAction(const InputActionCallbackValues &values);
 	void onPlayerPositionInputAction(const InputActionCallbackValues &values, TextBox &actionText);
 	void onPauseInputAction(const InputActionCallbackValues &values);
-	void onDebugInputAction(const InputActionCallbackValues &values);
 }
 
 #endif

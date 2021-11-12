@@ -22,6 +22,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/TextBox.h"
 
 #include "components/utilities/Allocator.h"
 #include "components/utilities/FPSCounter.h"
@@ -50,7 +51,7 @@ private:
 	// Listener IDs are optional in case of failed Game construction.
 	InputManager inputManager;
 	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
-		takeScreenshotListenerID;
+		takeScreenshotListenerID, debugProfilerListenerID;
 
 	FontLibrary fontLibrary;
 	CinematicLibrary cinematicLibrary;
@@ -70,6 +71,9 @@ private:
 	// A vector of sub-panels treated like a stack. The top of the stack is the back.
 	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
 	std::vector<std::unique_ptr<Panel>> subPanels;
+
+	// Displayed with varying profiler levels.
+	TextBox debugInfoTextBox;
 
 	BinaryAssetLibrary binaryAssetLibrary;
 	TextAssetLibrary textAssetLibrary;
@@ -106,6 +110,9 @@ private:
 
 	// Updates audio state and attempts to update the 3D audio listener (if any).
 	void updateAudio(double dt);
+
+	// Optionally displays debug profiler info on-screen.
+	void renderDebugInfo();
 
 	// Runs the current panel's render method for drawing to the screen.
 	void render();

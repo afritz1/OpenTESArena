@@ -13,6 +13,8 @@
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
 #include "../Input/InputActionName.h"
+#include "../Interface/CommonUiController.h"
+#include "../Interface/CommonUiView.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
 #include "../Media/TextureManager.h"
@@ -107,6 +109,9 @@ Game::Game()
 			this->saveScreenshot(screenshot);
 		}
 	});
+
+	this->debugProfilerListenerID = this->inputManager.addInputActionListener(
+		InputActionName::DebugProfiler, CommonUiController::onDebugInputAction);
 
 	// Determine which version of the game the Arena path is pointing to.
 	const bool isFloppyVersion = [this, arenaPathIsRelative]()
@@ -213,6 +218,12 @@ Game::Game()
 
 	this->audioManager.setMusic(mainMenuMusicDef);
 
+	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(this->fontLibrary);
+	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
+	{
+		DebugCrash("Couldn't init debug info text box.");
+	}
+
 	// Use a texture as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
 
@@ -246,6 +257,11 @@ Game::~Game()
 	if (this->takeScreenshotListenerID.has_value())
 	{
 		this->inputManager.removeListener(*this->takeScreenshotListenerID);
+	}
+
+	if (this->debugProfilerListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
 }
 
@@ -544,6 +560,101 @@ void Game::updateAudio(double dt)
 	}
 }
 
+void Game::renderDebugInfo()
+{
+	const int profilerLevel = this->options.getMisc_ProfilerLevel();
+	if (profilerLevel == Options::MIN_PROFILER_LEVEL)
+	{
+		return;
+	}
+
+	std::string debugText;
+	if (profilerLevel >= 1)
+	{
+		// FPS.
+		const double averageFps = this->fpsCounter.getAverageFPS();
+		const double frameTimeMS = 1000.0 / averageFps;
+		const std::string averageFpsText = String::fixedPrecision(averageFps, 0);
+		const std::string frameTimeText = String::fixedPrecision(frameTimeMS, 2);
+		debugText.append("FPS: " + averageFpsText + " (" + frameTimeText + "ms)");
+	}
+
+	const Int2 windowDims = this->renderer.getWindowDimensions();
+	if (profilerLevel >= 2)
+	{
+		// Renderer details (window res, render res, threads, frame times, etc.).
+		const std::string windowWidth = std::to_string(windowDims.x);
+		const std::string windowHeight = std::to_string(windowDims.y);
+		debugText.append("\nScreen: " + windowWidth + "x" + windowHeight);
+
+		const Renderer::ProfilerData &profilerData = this->renderer.getProfilerData();
+		const Int2 renderDims(profilerData.width, profilerData.height);
+		const bool profilerDataIsValid = (renderDims.x > 0) && (renderDims.y > 0);
+		if (profilerDataIsValid)
+		{
+			const double resolutionScale = this->options.getGraphics_ResolutionScale();
+			const std::string renderWidth = std::to_string(renderDims.x);
+			const std::string renderHeight = std::to_string(renderDims.y);
+			const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
+			const std::string renderThreadCount = std::to_string(profilerData.threadCount);
+			const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
+			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
+				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
+				"3D render: " + renderTime + "ms" + "\n" +
+				"Vis flats: " + std::to_string(profilerData.visFlatCount) + " (" +
+				std::to_string(profilerData.potentiallyVisFlatCount) + ")" +
+				", lights: " + std::to_string(profilerData.visLightCount));
+		}
+		else
+		{
+			debugText.append("\nNo profiler data available.");
+		}
+	}
+
+	if (profilerLevel >= 3)
+	{
+		if (this->gameStateIsActive())
+		{
+			// Player position, direction, etc.
+			const auto &player = this->gameState->getPlayer();
+			const CoordDouble3 &playerPosition = player.getPosition();
+			const Double3 &direction = player.getDirection();
+
+			const std::string chunkStr = playerPosition.chunk.toString();
+			const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
+			const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
+			const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
+			const std::string dirX = String::fixedPrecision(direction.x, 2);
+			const std::string dirY = String::fixedPrecision(direction.y, 2);
+			const std::string dirZ = String::fixedPrecision(direction.z, 2);
+
+			debugText.append("\nChunk: " + chunkStr + '\n' +
+				"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
+				"Dir: " + dirX + ", " + dirY + ", " + dirZ);
+		}
+		else
+		{
+			debugText.append("\nNo active game state.");
+		}
+	}
+
+	this->debugInfoTextBox.setText(debugText);
+
+	const UiTextureID textureID = this->debugInfoTextBox.getTextureID();
+	const Rect &debugInfoRect = this->debugInfoTextBox.getRect();
+	const Int2 position = debugInfoRect.getTopLeft();
+	const Int2 size(debugInfoRect.getWidth(), debugInfoRect.getHeight());
+	constexpr PivotType pivotType = PivotType::TopLeft;
+	constexpr RenderSpace renderSpace = RenderSpace::Classic;
+
+	double xPercent, yPercent, wPercent, hPercent;
+	GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+		renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
+
+	const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+	this->renderer.draw(&renderElement, 1, renderSpace);
+}
+
 void Game::render()
 {
 	// Get the draw calls from each UI panel/sub-panel and determine what to draw.
@@ -564,7 +675,7 @@ void Game::render()
 		}
 	}
 
-	const Int2 windowDims = renderer.getWindowDimensions();
+	const Int2 windowDims = this->renderer.getWindowDimensions();
 
 	for (Panel *currentPanel : panelsToRender)
 	{
@@ -593,7 +704,7 @@ void Game::render()
 			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
 				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
-			RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+			const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
 			this->renderer.draw(&renderElement, 1, renderSpace);
 
 			if (clipRect.has_value())
@@ -603,6 +714,7 @@ void Game::render()
 		}
 	}
 
+	this->renderDebugInfo();
 	this->renderer.present();
 }
 

@@ -72,6 +72,12 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_BACKSPACE)); // @todo: or SDLK_KP_BACKSPACE?
 
+			// Debug.
+			defs.emplace_back(makeKeyDef(
+				InputActionName::DebugProfiler,
+				InputStateType::BeginPerform,
+				SDLK_F4));
+
 			// Going to keep scroll up/down as pointer events since scrollable UI things need the pointer over them.
 		}
 		else if (StringView::equals(mapName, InputActionMapName::Automap))
@@ -207,12 +213,6 @@ namespace
 				InputActionName::WorldMap,
 				InputStateType::BeginPerform,
 				SDLK_m));
-
-			// Debug.
-			defs.emplace_back(makeKeyDef(
-				InputActionName::DebugProfiler,
-				InputStateType::BeginPerform,
-				SDLK_F4));
 		}
 		else if (StringView::equals(mapName, InputActionMapName::Logbook))
 		{

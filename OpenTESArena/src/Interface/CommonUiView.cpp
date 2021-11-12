@@ -19,3 +19,41 @@ UiTextureID CommonUiView::allocDefaultCursorTexture(TextureManager &textureManag
 
 	return textureID;
 }
+
+Color CommonUiView::getDebugInfoTextBoxColor()
+{
+	return Color::White;
+}
+
+Rect CommonUiView::getDebugInfoTextBoxRect()
+{
+	return Rect(2, 2, 200, 150);
+}
+
+TextBox::InitInfo CommonUiView::getDebugInfoTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	std::string dummyText;
+	for (int i = 0; i < 12; i++)
+	{
+		if (dummyText.length() > 0)
+		{
+			dummyText += '\n';
+		}
+
+		dummyText += std::string(30, TextRenderUtils::LARGEST_CHAR);
+	}
+
+	const TextRenderUtils::TextShadowInfo shadowInfo(1, 1, Color::Black);
+
+	const Rect rect = CommonUiView::getDebugInfoTextBoxRect();
+	return TextBox::InitInfo::makeWithXY(
+		dummyText,
+		rect.getLeft(),
+		rect.getTop(),
+		CommonUiView::DebugInfoFontName,
+		CommonUiView::getDebugInfoTextBoxColor(),
+		CommonUiView::DebugInfoTextAlignment,
+		shadowInfo,
+		0,
+		fontLibrary);
+}
