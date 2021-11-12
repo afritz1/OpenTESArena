@@ -71,22 +71,12 @@ public:
 			int visFlatCount, int visLightCount, double frameTime);
 	};
 private:
-	struct TextureInstance
-	{
-		TextureBuilderID textureBuilderID;
-		PaletteID paletteID;
-		Texture texture;
-
-		void init(TextureBuilderID textureBuilderID, PaletteID paletteID, Texture &&texture);
-	};
-
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
 	static const char *DEFAULT_TITLE;
 
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
 	std::vector<DisplayMode> displayModes;
-	std::vector<TextureInstance> textureInstances; // @temp placeholder until the renderer returns allocated texture handles.
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
@@ -99,11 +89,6 @@ private:
 
 	// Generates a renderer dimension while avoiding pitfalls of numeric imprecision.
 	static int makeRendererDimension(int value, double resolutionScale);
-
-	std::optional<int> tryGetTextureInstanceIndex(TextureBuilderID textureBuilderID, PaletteID paletteID) const;
-	void addTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
-	const Texture *getOrAddTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID,
-		const TextureManager &textureManager);
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();
@@ -269,40 +254,9 @@ public:
 		const WeatherInstance &weatherInst, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
 		const Palette &palette);
 
-	// Draws the given cursor texture to the native frame buffer. The exact position 
-	// of the cursor is modified by the cursor alignment.
-	void drawCursor(TextureBuilderID textureBuilderID, PaletteID paletteID, CursorAlignment alignment,
-		const Int2 &mousePosition, double scale, const TextureManager &textureManager);
-
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);
-	void draw(const Texture &texture, int x, int y);
-	void draw(const Texture &texture);
-	void drawClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect);
-	void drawClipped(const Texture &texture, const Rect &srcRect, int x, int y);
-	void drawOriginal(const Texture &texture, int x, int y, int w, int h);
-	void drawOriginal(const Texture &texture, int x, int y);
-	void drawOriginal(const Texture &texture);
-	// @todo: using temp compatibility function until renderer allows allocating of texture handles for users.
-	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y, int w, int h,
-		const TextureManager& textureManager);
-	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y,
-		const TextureManager &textureManager);
-	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
-	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect);
-	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, int x, int y);
-	void drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
-		const Rect &dstRect, const TextureManager &textureManager);
-	void drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
-		int x, int y, const TextureManager &textureManager);
 	void draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace);
-
-	// @temp for compatibility with old panel render() (remove once all are using UiDrawCall).
-	void drawOriginal(UiTextureID textureID, int x, int y, int w, int h);
-	void drawOriginal(UiTextureID textureID, int x, int y);
-
-	// Stretches a texture over the entire native frame buffer.
-	void fill(const Texture &texture);
 
 	// Refreshes the displayed frame buffer.
 	void present();

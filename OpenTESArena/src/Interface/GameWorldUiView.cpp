@@ -701,5 +701,6 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 	const int originalX = ArenaRenderUtils::SCREEN_WIDTH / 2;
 	const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;
-	renderer.drawOriginal(textBox.getTextureID(), originalX, originalY);
+	DebugNotImplemented(); // Disabled for now until I need it again
+	//renderer.drawOriginal(textBox.getTextureID(), originalX, originalY);
 }
