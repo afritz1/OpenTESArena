@@ -76,13 +76,13 @@ If you see a warning about `alcOpenDevice()` failing, or there is no sound, down
    1. The app will start. In the future, you can just double-click on the app without having to go through these steps.
 
 ### Linux (Debian/Ubuntu)
-Substitute `<version>` with the current version number (`0.#.0`), and `<arch>` with the desired architecture (`32` or `64`).
+Substitute `<version>` with the current version number (`0.#.0`).
 ```bash
 sudo apt-get install wget unzip rar
 wget https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip
-wget https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-<version>/opentesarena-<version>-Linux<arch>.tar.gz
-tar xvzf opentesarena-<version>-Linux<arch>.tar.gz
-cd opentesarena-<version>-Linux<arch>/data
+wget https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-<version>/opentesarena-<version>-Linux64.tar.gz
+tar xvzf opentesarena-<version>-Linux64.tar.gz
+cd opentesarena-<version>-Linux64/data
 unzip ../../Arena106Setup.zip
 rar x Arena106.exe
 cd ..
