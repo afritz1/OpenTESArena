@@ -75,7 +75,7 @@ If you see a warning about `alcOpenDevice()` failing, or there is no sound, down
    1. In the warning that appears saying that it is from an unidentified developer, choose "Open"
    1. The app will start. In the future, you can just double-click on the app without having to go through these steps.
 
-### Linux (Ubuntu 16.04)
+### Linux (Debian/Ubuntu)
 Substitute `<version>` with the current version number (`0.#.0`), and `<arch>` with the desired architecture (`32` or `64`).
 ```bash
 sudo apt-get install wget unzip rar
