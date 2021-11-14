@@ -46,7 +46,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		return false;
 	}
 
-	auto skipPageFunc = [this, onFinished](Game &game)
+	auto skipPageFunc = [this](Game &game)
 	{
 		// Only allow page skipping if there is no speech.
 		if (!TextCinematicUiModel::shouldPlaySpeech(game))
@@ -58,7 +58,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 			if (this->textIndex >= textBoxCount)
 			{
 				this->textIndex = textBoxCount - 1;
-				onFinished(game);
+				this->onFinished(game);
 			}
 
 			this->updateSubtitles();
@@ -76,11 +76,11 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		[this, &game]() { this->skipButton.click(game); });
 
 	this->addInputActionListener(InputActionName::Skip,
-		[onFinished, &game](const InputActionCallbackValues &values)
+		[this, &game](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
-			onFinished(game);
+			this->onFinished(game);
 		}
 	});
 
@@ -130,6 +130,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		this->speechState.init(textCinematicDef.getTemplateDatKey());
 	}
 
+	this->onFinished = onFinished;
 	this->secondsPerImage = secondsPerImage;
 	this->currentImageSeconds = 0.0;
 	this->textCinematicDefIndex = textCinematicDefIndex;
@@ -206,7 +207,7 @@ void TextCinematicPanel::tick(double dt)
 				else
 				{
 					// No remaining voices to play.
-					this->skipButton.click(game);
+					this->onFinished(game);
 				}
 			}
 		}

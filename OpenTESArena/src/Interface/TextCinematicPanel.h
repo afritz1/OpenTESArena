@@ -32,6 +32,7 @@ public:
 private:
 	TextBox textBox;
 	Button<Game&> skipButton;
+	OnFinishedFunction onFinished;
 	std::vector<std::string> textPages; // One string per page of text.
 	std::vector<ScopedUiTextureRef> animTextureRefs; // One per animation image.
 	TextCinematicUiModel::SpeechState speechState;
