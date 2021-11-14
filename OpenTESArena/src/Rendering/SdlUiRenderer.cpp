@@ -222,9 +222,9 @@ void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace r
 	auto originalPointToNative = [&letterboxRect](const Int2 &point)
 	{
 		const double originalXPercent = static_cast<double>(point.x) /
-			static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+			ArenaRenderUtils::SCREEN_WIDTH_REAL;
 		const double originalYPercent = static_cast<double>(point.y) /
-			static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+			ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
 		const double letterboxWidthReal = static_cast<double>(letterboxRect.getWidth());
 		const double letterboxHeightReal = static_cast<double>(letterboxRect.getHeight());
@@ -263,8 +263,8 @@ void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace r
 		SDL_Rect nativeRect;
 		if (renderSpace == RenderSpace::Classic)
 		{
-			constexpr double screenWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
-			constexpr double screenHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+			constexpr double screenWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
+			constexpr double screenHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
 			// Rect in classic 320x200 space.
 			SDL_Rect classicRect;

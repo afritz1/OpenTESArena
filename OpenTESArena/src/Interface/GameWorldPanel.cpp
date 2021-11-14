@@ -355,7 +355,7 @@ void GameWorldPanel::initUiDrawCalls()
 			auto &textureManager = game.getTextureManager();
 			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
 			const Double2 offsetPercents(
-				static_cast<double>(offset.x) / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH),
+				static_cast<double>(offset.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(offset.y) / static_cast<double>(classicViewHeight));
 
 			const auto &renderer = game.getRenderer();
@@ -374,7 +374,7 @@ void GameWorldPanel::initUiDrawCalls()
 			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
 			const Int2 textureDims(textureRef.getWidth(), textureRef.getHeight());
 			const Double2 texturePercents(
-				static_cast<double>(textureDims.x) / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH),
+				static_cast<double>(textureDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(textureDims.y) / static_cast<double>(classicViewHeight));
 
 			const auto &renderer = game.getRenderer();

@@ -8033,9 +8033,9 @@ void SoftwareRenderer::drawWeather(int threadStartX, int threadEndX, const Weath
 		constexpr double raindropTextureWidthReal = static_cast<double>(raindropTextureWidth);
 		constexpr double raindropTextureHeightReal = static_cast<double>(raindropTextureHeight);
 		constexpr double raindropBaseWidthPercent =
-			raindropTextureWidthReal / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+			raindropTextureWidthReal / ArenaRenderUtils::SCREEN_WIDTH_REAL;
 		constexpr double raindropBaseHeightPercent =
-			raindropTextureHeightReal / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+			raindropTextureHeightReal / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
 		// Make sure raindrops are scaled correctly for the current aspect ratio.
 		const double raindropScaledWidthPercent = raindropBaseWidthPercent * correctedAspectRatio;
@@ -8117,16 +8117,16 @@ void SoftwareRenderer::drawWeather(int threadStartX, int threadEndX, const Weath
 
 		constexpr std::array<double, 3> snowflakeBaseWidthPercents =
 		{
-			snowflakeRealDims[0] / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH),
-			snowflakeRealDims[1] / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH),
-			snowflakeRealDims[2] / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH)
+			snowflakeRealDims[0] / ArenaRenderUtils::SCREEN_WIDTH_REAL,
+			snowflakeRealDims[1] / ArenaRenderUtils::SCREEN_WIDTH_REAL,
+			snowflakeRealDims[2] / ArenaRenderUtils::SCREEN_WIDTH_REAL
 		};
 
 		constexpr std::array<double, 3> snowflakeBaseHeightPercents =
 		{
-			snowflakeRealDims[0] / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT),
-			snowflakeRealDims[1] / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT),
-			snowflakeRealDims[2] / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT)
+			snowflakeRealDims[0] / ArenaRenderUtils::SCREEN_HEIGHT_REAL,
+			snowflakeRealDims[1] / ArenaRenderUtils::SCREEN_HEIGHT_REAL,
+			snowflakeRealDims[2] / ArenaRenderUtils::SCREEN_HEIGHT_REAL
 		};
 
 		// Make sure snowflakes are scaled correctly for the current aspect ratio.

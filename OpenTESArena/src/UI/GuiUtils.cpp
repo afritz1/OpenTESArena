@@ -14,8 +14,8 @@ void GuiUtils::makeRenderElementPercents(int x, int y, int width, int height, in
 	double renderSpaceWidthReal, renderSpaceHeightReal;
 	if (renderSpace == RenderSpace::Classic)
 	{
-		renderSpaceWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
-		renderSpaceHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+		renderSpaceWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
+		renderSpaceHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 	}
 	else if (renderSpace == RenderSpace::Native)
 	{

@@ -187,8 +187,8 @@ void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double
 	constexpr int slowStartIndex = mediumEndIndex;
 	constexpr int slowEndIndex = slowStartIndex + ArenaWeatherUtils::RAINDROP_SLOW_COUNT;
 
-	constexpr double arenaScreenWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
-	constexpr double arenaScreenHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+	constexpr double arenaScreenWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
+	constexpr double arenaScreenHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 	constexpr int arenaFramesPerSecond = ArenaRenderUtils::FRAMES_PER_SECOND;
 
 	constexpr double fastVelocityPercentX = static_cast<double>(
@@ -290,8 +290,8 @@ void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random
 	constexpr int slowStartIndex = mediumEndIndex;
 	constexpr int slowEndIndex = slowStartIndex + ArenaWeatherUtils::SNOWFLAKE_SLOW_COUNT;
 
-	constexpr double arenaScreenWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
-	constexpr double arenaScreenHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+	constexpr double arenaScreenWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
+	constexpr double arenaScreenHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 	constexpr int arenaFramesPerSecond = ArenaRenderUtils::FRAMES_PER_SECOND;
 
 	constexpr double fastVelocityPercentX = static_cast<double>(

@@ -223,7 +223,7 @@ int Renderer::getViewHeight() const
 
 	// Ratio of the view height and window height in 320x200.
 	const double viewWindowRatio = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - 53) /
-		static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+		ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
 	// Actual view height to use.
 	const int viewHeight = this->fullGameWindow ? screenHeight :
@@ -366,8 +366,8 @@ Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
 	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) /
 		static_cast<double>(letterbox.h);
 
-	const double originalWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
-	const double originalHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+	const double originalWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
+	const double originalHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
 	const Int2 originalPoint(
 		static_cast<int>(originalWidthReal * letterboxXPercent),
@@ -391,9 +391,9 @@ Int2 Renderer::originalToNative(const Int2 &originalPoint) const
 {
 	// From original point to letterbox point.
 	const double originalXPercent = static_cast<double>(originalPoint.x) /
-		static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+		ArenaRenderUtils::SCREEN_WIDTH_REAL;
 	const double originalYPercent = static_cast<double>(originalPoint.y) /
-		static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+		ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
 	const SDL_Rect letterbox = this->getLetterboxDimensions();
 

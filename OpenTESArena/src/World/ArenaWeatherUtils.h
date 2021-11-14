@@ -23,11 +23,11 @@ namespace ArenaWeatherUtils
 	constexpr int RAINDROP_TOTAL_COUNT = RAINDROP_FAST_COUNT + RAINDROP_MEDIUM_COUNT + RAINDROP_SLOW_COUNT;
 
 	constexpr int RAINDROP_FAST_PIXELS_PER_FRAME_Y =
-		static_cast<int>((3.0 / 25.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+		static_cast<int>((3.0 / 25.0) * ArenaRenderUtils::SCREEN_HEIGHT_REAL);
 	constexpr int RAINDROP_MEDIUM_PIXELS_PER_FRAME_Y =
-		static_cast<int>((1.0 / 10.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+		static_cast<int>((1.0 / 10.0) * ArenaRenderUtils::SCREEN_HEIGHT_REAL);
 	constexpr int RAINDROP_SLOW_PIXELS_PER_FRAME_Y =
-		static_cast<int>((2.0 / 25.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+		static_cast<int>((2.0 / 25.0) * ArenaRenderUtils::SCREEN_HEIGHT_REAL);
 
 	constexpr int RAINDROP_FAST_PIXELS_PER_FRAME_X = -RAINDROP_FAST_PIXELS_PER_FRAME_Y / 2;
 	constexpr int RAINDROP_MEDIUM_PIXELS_PER_FRAME_X = -RAINDROP_MEDIUM_PIXELS_PER_FRAME_Y / 2;
@@ -42,11 +42,11 @@ namespace ArenaWeatherUtils
 	constexpr int SNOWFLAKE_TOTAL_COUNT = SNOWFLAKE_FAST_COUNT + SNOWFLAKE_MEDIUM_COUNT + SNOWFLAKE_SLOW_COUNT;
 
 	constexpr int SNOWFLAKE_FAST_PIXELS_PER_FRAME_Y =
-		static_cast<int>((1.0 / 25.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+		static_cast<int>((1.0 / 25.0) * ArenaRenderUtils::SCREEN_HEIGHT_REAL);
 	constexpr int SNOWFLAKE_MEDIUM_PIXELS_PER_FRAME_Y =
-		static_cast<int>((3.0 / 100.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+		static_cast<int>((3.0 / 100.0) * ArenaRenderUtils::SCREEN_HEIGHT_REAL);
 	constexpr int SNOWFLAKE_SLOW_PIXELS_PER_FRAME_Y =
-		static_cast<int>((1.0 / 50.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+		static_cast<int>((1.0 / 50.0) * ArenaRenderUtils::SCREEN_HEIGHT_REAL);
 
 	constexpr int SNOWFLAKE_PIXELS_PER_FRAME_X = 2; // Either left or right.
 
