@@ -7883,7 +7883,8 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 void SoftwareRenderer::drawWeather(int threadStartX, int threadEndX, const WeatherInstance &weatherInst,
 	const Camera &camera, const ShadingInfo &shadingInfo, Random &random, const FrameView &frame)
 {
-	if (weatherInst.hasFog())
+	// Disabled until the projection math is working.
+	if (false /*weatherInst.hasFog()*/)
 	{
 		// Make a new transform matrix centered at the origin.
 		const Matrix4d viewMatrix = Matrix4d::view(
