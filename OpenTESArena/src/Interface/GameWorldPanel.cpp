@@ -409,9 +409,10 @@ void GameWorldPanel::initUiDrawCalls()
 			return sliderPosition;
 		};
 
-		UiDrawCall::ActiveFunc compassActiveFunc = [this]()
+		UiDrawCall::ActiveFunc compassActiveFunc = [this, &game]()
 		{
-			return !this->isPaused();
+			const auto &options = game.getOptions();
+			return !this->isPaused() && options.getMisc_ShowCompass();
 		};
 
 		this->addDrawCall(
@@ -570,9 +571,10 @@ void GameWorldPanel::initUiDrawCalls()
 			return sliderPosition;
 		};
 
-		UiDrawCall::ActiveFunc compassActiveFunc = [this]()
+		UiDrawCall::ActiveFunc compassActiveFunc = [this, &game]()
 		{
-			return !this->isPaused();
+			const auto &options = game.getOptions();
+			return !this->isPaused() && options.getMisc_ShowCompass();
 		};
 
 		this->addDrawCall(
