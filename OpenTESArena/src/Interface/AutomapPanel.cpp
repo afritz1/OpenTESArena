@@ -2,8 +2,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "SDL.h"
-
 #include "AutomapPanel.h"
 #include "AutomapUiController.h"
 #include "AutomapUiModel.h"

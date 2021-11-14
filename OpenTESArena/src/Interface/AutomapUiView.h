@@ -108,7 +108,7 @@ namespace AutomapUiView
 
 	// Generates a texture of the automap.
 	Buffer2D<uint32_t> makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
-		bool isWild, const ChunkManager &chunkManager);
+		bool isWild, const LevelInt2 &levelDims, const ChunkManager &chunkManager);
 
 	// Texture allocation functions (must be freed when done).
 	UiTextureID allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,

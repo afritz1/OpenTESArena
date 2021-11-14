@@ -298,7 +298,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 }
 
 Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
-	bool isWild, const ChunkManager &chunkManager)
+	bool isWild, const LevelInt2 &levelDims, const ChunkManager &chunkManager)
 {
 	// Create scratch surface triple the size of the voxel area so that all directions of the player's arrow
 	// are representable in the same texture. This may change in the future for memory optimization.
@@ -307,7 +307,8 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 	Buffer2D<uint32_t> dstBuffer(surfaceDim, surfaceDim);
 
 	// Fill with transparent color first (used by floor voxels).
-	dstBuffer.fill(AutomapUiView::ColorFloor.toARGB());
+	const Color &floorColor = AutomapUiView::ColorFloor;
+	dstBuffer.fill(floorColor.toARGB());
 
 	const ChunkInt2 &playerChunk = playerCoord.chunk;
 	ChunkInt2 minChunk, maxChunk;
@@ -360,9 +361,28 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 					const TransitionDefinition *transitionDef = chunk->tryGetTransition(VoxelInt3(x, 1, z));
 
 					// Decide which color to use for the automap pixel.
-					const Color &color = !isWild ?
-						AutomapUiView::getPixelColor(floorVoxelDef, wallVoxelDef, transitionDef) :
-						AutomapUiView::getWildPixelColor(floorVoxelDef, wallVoxelDef, transitionDef);
+					Color color;
+					if (isWild)
+					{
+						color = AutomapUiView::getWildPixelColor(floorVoxelDef, wallVoxelDef, transitionDef);
+					}
+					else
+					{
+						// @todo: make a coord-to-level-voxel function for this
+						const LevelInt2 levelPos(
+							(chunkPos.x * ChunkUtils::CHUNK_DIM) + x,
+							(chunkPos.y * ChunkUtils::CHUNK_DIM) + z);
+						const bool isInsideLevelBounds = (chunkX >= 0) && (chunkZ >= 0) && (levelPos.x < levelDims.x) && (levelPos.y < levelDims.y);
+
+						if (isInsideLevelBounds)
+						{
+							color = AutomapUiView::getPixelColor(floorVoxelDef, wallVoxelDef, transitionDef);
+						}
+						else
+						{
+							color = floorColor;
+						}
+					}
 
 					drawSquare(CoordInt2(chunkPos, VoxelInt2(x, z)), color);
 				}
@@ -406,7 +426,12 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 		return activeMapDef.getMapType() == MapType::Wilderness;
 	}();
 
-	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, chunkManager);
+	const MapDefinition &mapDef = gameState.getActiveMapDef();
+	const MapInstance &mapInst = gameState.getActiveMapInst();
+	const LevelDefinition &activeLevelDef = mapDef.getLevel(mapInst.getActiveLevelIndex());
+	const LevelInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
+
+	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, levelDims, chunkManager);
 	const BufferView2D<const uint32_t> automapBufferView(
 		automapBuffer.get(), automapBuffer.getWidth(), automapBuffer.getHeight());
 
@@ -423,7 +448,7 @@ UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Render
 {
 	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getBackgroundPaletteTextureAssetRef();
 	const TextureAssetReference textureAssetRef = AutomapUiView::getBackgroundTextureAssetRef();
-	
+
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
 	{
