@@ -57,6 +57,17 @@ namespace ArenaTypes
 		Tower // TOWER
 	};
 
+	// Each location on a province map has a type.
+	enum class LocationType
+	{
+		CityState,
+		Town,
+		Village,
+		StaffDungeon,
+		StaffMapDungeon,
+		NamedDungeon
+	};
+
 	// Types of city locations in a world map province.
 	enum class CityType
 	{

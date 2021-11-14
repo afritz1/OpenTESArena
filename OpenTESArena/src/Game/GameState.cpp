@@ -29,7 +29,6 @@
 #include "../World/WeatherUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 #include "../WorldMap/LocationInstance.h"
-#include "../WorldMap/LocationType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

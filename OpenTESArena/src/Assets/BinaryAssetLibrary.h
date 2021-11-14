@@ -18,8 +18,6 @@
 
 class ArenaRandom;
 
-enum class LocationType;
-
 class BinaryAssetLibrary
 {
 public:
@@ -121,7 +119,7 @@ public:
 	const WorldMapTerrain &getWorldMapTerrain() const;
 
 	// Gets the ruler title associated with the given parameters.
-	const std::string &getRulerTitle(int provinceID, LocationType locationType,
+	const std::string &getRulerTitle(int provinceID, ArenaTypes::LocationType locationType,
 		bool isMale, ArenaRandom &random) const;
 };
 

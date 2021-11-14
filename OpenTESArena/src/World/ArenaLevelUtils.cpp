@@ -7,7 +7,6 @@
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
-#include "../WorldMap/LocationType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"

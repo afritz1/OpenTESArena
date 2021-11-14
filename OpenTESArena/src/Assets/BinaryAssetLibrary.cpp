@@ -4,7 +4,6 @@
 #include "MIFUtils.h"
 #include "../Math/Random.h"
 #include "../WorldMap/ArenaLocationUtils.h"
-#include "../WorldMap/LocationType.h"
 
 #include "components/debug/Debug.h"
 #include "components/dos/DOSUtils.h"
@@ -397,7 +396,7 @@ const BinaryAssetLibrary::WorldMapTerrain &BinaryAssetLibrary::getWorldMapTerrai
 }
 
 const std::string &BinaryAssetLibrary::getRulerTitle(int provinceID,
-	LocationType locationType, bool isMale, ArenaRandom &random) const
+	ArenaTypes::LocationType locationType, bool isMale, ArenaRandom &random) const
 {
 	// Get the index into the titles list.
 	const int titleIndex = [this, provinceID, locationType, &random, isMale]()
@@ -406,11 +405,11 @@ const std::string &BinaryAssetLibrary::getRulerTitle(int provinceID,
 		{
 			return isMale ? 6 : 13;
 		}
-		else if (locationType == LocationType::CityState)
+		else if (locationType == ArenaTypes::LocationType::CityState)
 		{
 			return isMale ? 5 : 12;
 		}
-		else if (locationType == LocationType::Village)
+		else if (locationType == ArenaTypes::LocationType::Village)
 		{
 			return isMale ? 0 : 7;
 		}

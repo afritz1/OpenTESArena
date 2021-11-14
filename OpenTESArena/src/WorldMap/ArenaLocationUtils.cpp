@@ -2,7 +2,6 @@
 #include <cmath>
 
 #include "ArenaLocationUtils.h"
-#include "LocationType.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Random.h"
@@ -48,39 +47,39 @@ std::pair<int, int> ArenaLocationUtils::getLocalCityAndProvinceID(int globalCity
 	return std::make_pair(globalCityID & 0x1F, globalCityID >> 5);
 }
 
-LocationType ArenaLocationUtils::getCityType(int localCityID)
+ArenaTypes::LocationType ArenaLocationUtils::getCityType(int localCityID)
 {
 	if (localCityID < 8)
 	{
-		return LocationType::CityState;
+		return ArenaTypes::LocationType::CityState;
 	}
 	else if (localCityID < 16)
 	{
-		return LocationType::Town;
+		return ArenaTypes::LocationType::Town;
 	}
 	else if (localCityID < 32)
 	{
-		return LocationType::Village;
+		return ArenaTypes::LocationType::Village;
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(LocationType, std::to_string(localCityID));
+		DebugUnhandledReturnMsg(ArenaTypes::LocationType, std::to_string(localCityID));
 	}
 }
 
-LocationType ArenaLocationUtils::getDungeonType(int localDungeonID)
+ArenaTypes::LocationType ArenaLocationUtils::getDungeonType(int localDungeonID)
 {
 	if (localDungeonID == 0)
 	{
-		return LocationType::StaffDungeon;
+		return ArenaTypes::LocationType::StaffDungeon;
 	}
 	else if (localDungeonID == 1)
 	{
-		return LocationType::StaffMapDungeon;
+		return ArenaTypes::LocationType::StaffMapDungeon;
 	}
 	else
 	{
-		return LocationType::NamedDungeon;
+		return ArenaTypes::LocationType::NamedDungeon;
 	}
 }
 
@@ -337,17 +336,17 @@ int ArenaLocationUtils::getCityTemplateCount(bool isCoastal, bool isCityState)
 	return isCoastal ? (isCityState ? 3 : 2) : 5;
 }
 
-int ArenaLocationUtils::getCityTemplateNameIndex(LocationType locationType, bool isCoastal)
+int ArenaLocationUtils::getCityTemplateNameIndex(ArenaTypes::LocationType locationType, bool isCoastal)
 {
-	if (locationType == LocationType::CityState)
+	if (locationType == ArenaTypes::LocationType::CityState)
 	{
 		return isCoastal ? 5 : 4;
 	}
-	else if (locationType == LocationType::Town)
+	else if (locationType == ArenaTypes::LocationType::Town)
 	{
 		return isCoastal ? 1 : 0;
 	}
-	else if (locationType == LocationType::Village)
+	else if (locationType == ArenaTypes::LocationType::Village)
 	{
 		return isCoastal ? 3 : 2;
 	}
@@ -357,18 +356,18 @@ int ArenaLocationUtils::getCityTemplateNameIndex(LocationType locationType, bool
 	}
 }
 
-int ArenaLocationUtils::getCityStartingPositionIndex(LocationType locationType,
+int ArenaLocationUtils::getCityStartingPositionIndex(ArenaTypes::LocationType locationType,
 	bool isCoastal, int templateID)
 {
-	if (locationType == LocationType::CityState)
+	if (locationType == ArenaTypes::LocationType::CityState)
 	{
 		return isCoastal ? (19 + templateID) : (14 + templateID);
 	}
-	else if (locationType == LocationType::Town)
+	else if (locationType == ArenaTypes::LocationType::Town)
 	{
 		return isCoastal ? (5 + templateID) : templateID;
 	}
-	else if (locationType == LocationType::Village)
+	else if (locationType == ArenaTypes::LocationType::Village)
 	{
 		return isCoastal ? (12 + templateID) : (7 + templateID);
 	}

@@ -2,7 +2,6 @@
 
 #include "ArenaLocationUtils.h"
 #include "LocationDefinition.h"
-#include "LocationType.h"
 #include "../Assets/BinaryAssetLibrary.h"
 
 #include "components/debug/Debug.h"
@@ -131,18 +130,18 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const int templateID = globalCityID % templateCount;
 
 	// @todo: deprecate LocationType in favor of CityDefinition::Type.
-	const LocationType locationType = [type]()
+	const ArenaTypes::LocationType locationType = [type]()
 	{
 		switch (type)
 		{
 		case ArenaTypes::CityType::CityState:
-			return LocationType::CityState;
+			return ArenaTypes::LocationType::CityState;
 		case ArenaTypes::CityType::Town:
-			return LocationType::Town;
+			return ArenaTypes::LocationType::Town;
 		case ArenaTypes::CityType::Village:
-			return LocationType::Village;
+			return ArenaTypes::LocationType::Village;
 		default:
-			DebugUnhandledReturnMsg(LocationType, std::to_string(static_cast<int>(type)));
+			DebugUnhandledReturnMsg(ArenaTypes::LocationType, std::to_string(static_cast<int>(type)));
 		}
 	}();
 

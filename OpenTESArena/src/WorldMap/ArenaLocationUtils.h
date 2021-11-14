@@ -13,8 +13,6 @@ class ArenaRandom;
 class BinaryAssetLibrary;
 class Rect;
 
-enum class LocationType;
-
 // Various functions for working with original game values like location IDs.
 
 namespace ArenaLocationUtils
@@ -39,8 +37,8 @@ namespace ArenaLocationUtils
 	std::pair<int, int> getLocalCityAndProvinceID(int globalCityID);
 
 	// Functions for obtaining the local location type from a local city/dungeon ID.
-	LocationType getCityType(int localCityID);
-	LocationType getDungeonType(int localDungeonID);
+	ArenaTypes::LocationType getCityType(int localCityID);
+	ArenaTypes::LocationType getDungeonType(int localDungeonID);
 
 	// Functions for getting the climate type of a location.
 	ArenaTypes::ClimateType getCityClimateType(int localCityID, int provinceID,
@@ -109,11 +107,11 @@ namespace ArenaLocationUtils
 	int getCityTemplateCount(bool isCoastal, bool isCityState);
 
 	// Gets an index into the template name array (town%d.mif, ..., cityw%d.mif).
-	int getCityTemplateNameIndex(LocationType locationType, bool isCoastal);
+	int getCityTemplateNameIndex(ArenaTypes::LocationType locationType, bool isCoastal);
 
 	// Gets an index into the city starting positions list. This determines how city blocks
 	// are offset within the city skeleton.
-	int getCityStartingPositionIndex(LocationType locationType, bool isCoastal, int templateID);
+	int getCityStartingPositionIndex(ArenaTypes::LocationType locationType, bool isCoastal, int templateID);
 
 	// Gets an index into the city reserved block list.
 	int getCityReservedBlockListIndex(bool isCoastal, int templateID);

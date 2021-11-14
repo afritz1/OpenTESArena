@@ -11,7 +11,6 @@
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../WorldMap/ArenaLocationUtils.h"
-#include "../WorldMap/LocationType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -175,7 +174,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 	const std::string locationDescriptionString = [&game, &gameState, &binaryAssetLibrary,
 		&textAssetLibrary, &exeData, provinceID, localCityID, &locationDef]()
 	{
-		const LocationType locationType = ArenaLocationUtils::getCityType(localCityID);
+		const ArenaTypes::LocationType locationType = ArenaLocationUtils::getCityType(localCityID);
 
 		// Get the description for the local location. If it's a town or village, choose
 		// one of the three substrings randomly. Otherwise, get the city description text
@@ -191,15 +190,15 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 				// Get the key that maps into TEMPLATE.DAT.
 				const int key = [provinceID, localCityID, locationType]()
 				{
-					if (locationType == LocationType::CityState)
+					if (locationType == ArenaTypes::LocationType::CityState)
 					{
 						return 600 + localCityID + (8 * provinceID);
 					}
-					else if (locationType == LocationType::Town)
+					else if (locationType == ArenaTypes::LocationType::Town)
 					{
 						return 1422;
 					}
-					else if (locationType == LocationType::Village)
+					else if (locationType == ArenaTypes::LocationType::Village)
 					{
 						return 1423;
 					}
@@ -215,7 +214,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 				return entry.values;
 			}();
 
-			if (locationType == LocationType::CityState)
+			if (locationType == ArenaTypes::LocationType::CityState)
 			{
 				return templateDatTexts.front();
 			}
