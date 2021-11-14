@@ -7,7 +7,6 @@
 #include "../Items/MetalType.h"
 #include "../Items/Shield.h"
 #include "../Items/ShieldType.h"
-#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

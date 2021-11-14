@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <optional>
 
-#include "LocationUtils.h"
+#include "ArenaLocationUtils.h"
 #include "ProvinceDefinition.h"
 #include "../Assets/BinaryAssetLibrary.h"
 
@@ -64,7 +64,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		}
 	};
 
-	const bool isCenterProvince = provinceID == LocationUtils::CENTER_PROVINCE_ID;
+	const bool isCenterProvince = provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID;
 	const ExeData::CityGeneration &cityGen = binaryAssetLibrary.getExeData().cityGen;
 
 	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](
@@ -72,7 +72,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 	{
 		auto isCoastal = [provinceID, &cityGen](int localCityID)
 		{
-			const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
+			const int globalCityID = ArenaLocationUtils::getGlobalCityID(localCityID, provinceID);
 			return std::find(cityGen.coastalCityList.begin(),
 				cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
 		};

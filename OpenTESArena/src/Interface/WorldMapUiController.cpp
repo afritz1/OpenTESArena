@@ -7,7 +7,7 @@
 #include "../Game/Game.h"
 #include "../World/ArenaWeatherUtils.h"
 #include "../World/SkyUtils.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 void WorldMapUiController::onBackToGameButtonSelected(Game &game)
 {
@@ -65,10 +65,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			&travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
 			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
-			const Int2 globalPoint = LocationUtils::getGlobalPoint(localPoint, travelProvinceDef.getGlobalRect());
+			const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, travelProvinceDef.getGlobalRect());
 
 			const auto &cityData = binaryAssetLibrary.getCityDataFile();
-			const int globalQuarter = LocationUtils::getGlobalQuarter(globalPoint, cityData);
+			const int globalQuarter = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityData);
 
 			const auto &weathersArray = gameState.getWeathersArray();
 			DebugAssertIndex(weathersArray, globalQuarter);

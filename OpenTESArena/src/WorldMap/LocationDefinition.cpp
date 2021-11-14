@@ -1,8 +1,8 @@
 #include <cstring>
 
+#include "ArenaLocationUtils.h"
 #include "LocationDefinition.h"
 #include "LocationType.h"
-#include "LocationUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
 
 #include "components/debug/Debug.h"
@@ -95,8 +95,8 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const Rect provinceRect = provinceData.getGlobalRect();
 	const double latitude = [&provinceData, &locationData, &localPoint, &provinceRect]()
 	{
-		const Int2 globalPoint = LocationUtils::getGlobalPoint(localPoint, provinceRect);
-		return LocationUtils::getLatitude(globalPoint);
+		const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceRect);
+		return ArenaLocationUtils::getLatitude(globalPoint);
 	}();
 
 	this->init(LocationDefinition::Type::City, locationData.name,
@@ -125,9 +125,9 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		return locationTypeNames[typeNameIndex];
 	}();
 
-	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
+	const int globalCityID = ArenaLocationUtils::getGlobalCityID(localCityID, provinceID);
 	const bool isCityState = type == ArenaTypes::CityType::CityState;
-	const int templateCount = LocationUtils::getCityTemplateCount(coastal, isCityState);
+	const int templateCount = ArenaLocationUtils::getCityTemplateCount(coastal, isCityState);
 	const int templateID = globalCityID % templateCount;
 
 	// @todo: deprecate LocationType in favor of CityDefinition::Type.
@@ -156,7 +156,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		else
 		{
 			// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
-			const int nameIndex = LocationUtils::getCityTemplateNameIndex(locationType, coastal);
+			const int nameIndex = ArenaLocationUtils::getCityTemplateNameIndex(locationType, coastal);
 
 			// Get the template name associated with the city ID.
 			const auto &templateFilenames = exeData.cityGen.templateFilenames;
@@ -169,26 +169,24 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		}
 	}();
 
-	const uint32_t citySeed = LocationUtils::getCitySeed(localCityID, provinceData);
-	const uint32_t wildSeed = LocationUtils::getWildernessSeed(localCityID, provinceData);
-	const uint32_t provinceSeed = LocationUtils::getProvinceSeed(provinceID, provinceData);
-	const uint32_t rulerSeed = LocationUtils::getRulerSeed(localPoint, provinceRect);
-	const uint32_t skySeed = LocationUtils::getSkySeed(
-		localPoint, provinceID, provinceRect);
-	const ArenaTypes::ClimateType climateType = LocationUtils::getCityClimateType(
-		localCityID, provinceID, binaryAssetLibrary);
+	const uint32_t citySeed = ArenaLocationUtils::getCitySeed(localCityID, provinceData);
+	const uint32_t wildSeed = ArenaLocationUtils::getWildernessSeed(localCityID, provinceData);
+	const uint32_t provinceSeed = ArenaLocationUtils::getProvinceSeed(provinceID, provinceData);
+	const uint32_t rulerSeed = ArenaLocationUtils::getRulerSeed(localPoint, provinceRect);
+	const uint32_t skySeed = ArenaLocationUtils::getSkySeed(localPoint, provinceID, provinceRect);
+	const ArenaTypes::ClimateType climateType = ArenaLocationUtils::getCityClimateType(localCityID, provinceID, binaryAssetLibrary);
 
 	const auto &cityGen = exeData.cityGen;
 	const std::vector<uint8_t> *reservedBlocks = [coastal, templateID, &cityGen]()
 	{
-		const int index = LocationUtils::getCityReservedBlockListIndex(coastal, templateID);
+		const int index = ArenaLocationUtils::getCityReservedBlockListIndex(coastal, templateID);
 		DebugAssertIndex(cityGen.reservedBlockLists, index);
 		return &cityGen.reservedBlockLists[index];
 	}();
 
 	const OriginalInt2 blockStartPosition = [coastal, templateID, locationType, &cityGen]()
 	{
-		const int index = LocationUtils::getCityStartingPositionIndex(locationType, coastal, templateID);
+		const int index = ArenaLocationUtils::getCityStartingPositionIndex(locationType, coastal, templateID);
 		DebugAssertIndex(cityGen.startingPositions, index);
 		const auto &pair = cityGen.startingPositions[index];
 		return OriginalInt2(pair.first, pair.second);
@@ -226,7 +224,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 
 	const bool rulerIsMale = (rulerSeed & 0x3) != 0;
 	const bool palaceIsMainQuestDungeon =
-		(provinceID == LocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
+		(provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
 
 	this->city.init(type, typeDisplayName.c_str(), mapFilename.c_str(), citySeed, wildSeed,
 		provinceSeed, rulerSeed, skySeed, climateType, reservedBlocks, blockStartPosition.x,
@@ -242,15 +240,15 @@ void LocationDefinition::initDungeon(int localDungeonID, int provinceID,
 
 	const double latitude = [&locationData, &provinceData]()
 	{
-		const Int2 globalPoint = LocationUtils::getGlobalPoint(
+		const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(
 			Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
-		return LocationUtils::getLatitude(globalPoint);
+		return ArenaLocationUtils::getLatitude(globalPoint);
 	}();
 
 	this->init(LocationDefinition::Type::Dungeon, locationData.name,
 		locationData.x, locationData.y, latitude);
 
-	const uint32_t dungeonSeed = LocationUtils::getDungeonSeed(localDungeonID, provinceID, provinceData);
+	const uint32_t dungeonSeed = ArenaLocationUtils::getDungeonSeed(localDungeonID, provinceID, provinceData);
 	const int widthChunkCount = 2;
 	const int heightChunkCount = 1;
 
@@ -277,7 +275,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 		case MainQuestDungeonDefinition::Type::Map:
 		case MainQuestDungeonDefinition::Type::Staff:
 		{
-			const int locationID = LocationUtils::dungeonToLocationID(*optLocalDungeonID);
+			const int locationID = ArenaLocationUtils::dungeonToLocationID(*optLocalDungeonID);
 			const auto &locationData = provinceData.getLocationData(locationID);
 			return locationData.name;
 		}
@@ -295,7 +293,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 	}
 	else
 	{
-		const int locationID = LocationUtils::dungeonToLocationID(*optLocalDungeonID);
+		const int locationID = ArenaLocationUtils::dungeonToLocationID(*optLocalDungeonID);
 		const auto &locationData = provinceData.getLocationData(locationID);
 		localPointX = locationData.x;
 		localPointY = locationData.y;
@@ -310,11 +308,11 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 		}
 		else
 		{
-			const int locationID = LocationUtils::dungeonToLocationID(*optLocalDungeonID);
+			const int locationID = ArenaLocationUtils::dungeonToLocationID(*optLocalDungeonID);
 			const auto &locationData = provinceData.getLocationData(locationID);
-			const Int2 globalPoint = LocationUtils::getGlobalPoint(
+			const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(
 				Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
-			return LocationUtils::getLatitude(globalPoint);
+			return ArenaLocationUtils::getLatitude(globalPoint);
 		}
 	}();
 
@@ -331,8 +329,8 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 		else if ((type == LocationDefinition::MainQuestDungeonDefinition::Type::Map) ||
 			(type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff))
 		{
-			const uint32_t dungeonSeed = LocationUtils::getDungeonSeed(*optLocalDungeonID, provinceID, provinceData);
-			const std::string mifName = LocationUtils::getMainQuestDungeonMifName(dungeonSeed);
+			const uint32_t dungeonSeed = ArenaLocationUtils::getDungeonSeed(*optLocalDungeonID, provinceID, provinceData);
+			const std::string mifName = ArenaLocationUtils::getMainQuestDungeonMifName(dungeonSeed);
 			return String::toUppercase(mifName);
 		}
 		else

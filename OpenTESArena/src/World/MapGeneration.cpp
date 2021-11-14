@@ -26,7 +26,7 @@
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/EntityType.h"
 #include "../Math/Random.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView2D.h"
@@ -1426,7 +1426,7 @@ namespace MapGeneration
 		LevelInfoDefinition *outLevelInfoDef)
 	{
 		const auto &exeData = binaryAssetLibrary.getExeData();
-		const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
+		const Int2 localCityPoint = ArenaLocationUtils::getLocalCityPoint(citySeed);
 
 		auto tryGetInteriorType = [outLevelDef, outLevelInfoDef](SNInt x, WEInt z)
 			-> std::optional<ArenaTypes::InteriorType>

@@ -25,7 +25,7 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
 #include "../World/SkyUtils.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"
 
@@ -527,7 +527,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		}();
 
 		// Find starting dungeon location definition.
-		const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
+		const int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
 		const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 		const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>

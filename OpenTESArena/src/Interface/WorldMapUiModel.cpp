@@ -10,8 +10,8 @@
 #include "../Math/Random.h"
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 #include "../WorldMap/LocationType.h"
-#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -38,7 +38,7 @@ std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosit
 	const int maskCount = static_cast<int>(worldMapMasks.size());
 	for (int maskID = 0; maskID < maskCount; maskID++)
 	{
-		constexpr int centerProvinceID = LocationUtils::CENTER_PROVINCE_ID;
+		constexpr int centerProvinceID = ArenaLocationUtils::CENTER_PROVINCE_ID;
 		constexpr int exitButtonID = WorldMapUiModel::EXIT_BUTTON_MASK_ID;
 		if ((ignoreCenterProvince && (maskID == centerProvinceID)) ||
 			(ignoreExitButton && (maskID == exitButtonID)))
@@ -111,7 +111,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 	const std::string locationString = [travelDays, &gameState, &exeData, provinceID,
 		localCityID, &provinceDef, &locationDef]()
 	{
-		if (provinceID != LocationUtils::CENTER_PROVINCE_ID)
+		if (provinceID != ArenaLocationUtils::CENTER_PROVINCE_ID)
 		{
 			// The <city type> of <city name> in <province> Province.
 			// Replace first %s with location type.
@@ -175,7 +175,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 	const std::string locationDescriptionString = [&game, &gameState, &binaryAssetLibrary,
 		&textAssetLibrary, &exeData, provinceID, localCityID, &locationDef]()
 	{
-		const LocationType locationType = LocationUtils::getCityType(localCityID);
+		const LocationType locationType = ArenaLocationUtils::getCityType(localCityID);
 
 		// Get the description for the local location. If it's a town or village, choose
 		// one of the three substrings randomly. Otherwise, get the city description text
@@ -239,10 +239,10 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 				{
 					const auto &location = province.getLocationData(localCityID);
 					const Int2 localPoint(location.x, location.y);
-					return LocationUtils::getRulerSeed(localPoint, province.getGlobalRect());
+					return ArenaLocationUtils::getRulerSeed(localPoint, province.getGlobalRect());
 				}();
 
-				const bool isMale = LocationUtils::isRulerMale(localCityID, province);
+				const bool isMale = ArenaLocationUtils::isRulerMale(localCityID, province);
 
 				// Replace %t with ruler title (if it exists).
 				random.srand(rulerSeed);

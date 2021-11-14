@@ -12,7 +12,6 @@
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../World/MapType.h"
-#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

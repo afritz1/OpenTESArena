@@ -3,8 +3,8 @@
 #include "BinaryAssetLibrary.h"
 #include "MIFUtils.h"
 #include "../Math/Random.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 #include "../WorldMap/LocationType.h"
-#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/dos/DOSUtils.h"
@@ -402,7 +402,7 @@ const std::string &BinaryAssetLibrary::getRulerTitle(int provinceID,
 	// Get the index into the titles list.
 	const int titleIndex = [this, provinceID, locationType, &random, isMale]()
 	{
-		if (provinceID == LocationUtils::CENTER_PROVINCE_ID)
+		if (provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID)
 		{
 			return isMale ? 6 : 13;
 		}

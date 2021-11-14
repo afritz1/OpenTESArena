@@ -5,7 +5,7 @@
 #include "../Game/Game.h"
 #include "../Math/RandomUtils.h"
 #include "../World/MapType.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 #include "../WorldMap/ProvinceDefinition.h"
 
 #include "components/debug/Debug.h"
@@ -77,10 +77,10 @@ std::string MainMenuUiModel::getSelectedTestName(Game &game, int testType, int t
 			{
 				const auto &province = cityData.getProvinceData(provinceID);
 				const int localDungeonID = locationID - 32;
-				return LocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
+				return ArenaLocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
 			}();
 
-			const std::string mifName = LocationUtils::getMainQuestDungeonMifName(dungeonSeed);
+			const std::string mifName = ArenaLocationUtils::getMainQuestDungeonMifName(dungeonSeed);
 			return String::toUppercase(mifName);
 		}
 	}
@@ -163,13 +163,13 @@ void MainMenuUiModel::getMainQuestLocationFromIndex(int testIndex, const ExeData
 	if (testIndex == 0)
 	{
 		*outLocationID = -1;
-		*outProvinceID = LocationUtils::CENTER_PROVINCE_ID;
+		*outProvinceID = ArenaLocationUtils::CENTER_PROVINCE_ID;
 		*outSpecialCaseType = SpecialCaseType::StartDungeon;
 	}
 	else if (testIndex == (MainQuestLocationCount - 1))
 	{
 		*outLocationID = 0;
-		*outProvinceID = LocationUtils::CENTER_PROVINCE_ID;
+		*outProvinceID = ArenaLocationUtils::CENTER_PROVINCE_ID;
 		*outSpecialCaseType = SpecialCaseType::None;
 	}
 	else
@@ -179,7 +179,7 @@ void MainMenuUiModel::getMainQuestLocationFromIndex(int testIndex, const ExeData
 		const int staffProvincesIndex = (testIndex - 1) / 2;
 		DebugAssertIndex(staffProvinces, staffProvincesIndex);
 		*outProvinceID = staffProvinces[staffProvincesIndex];
-		*outLocationID = LocationUtils::dungeonToLocationID(testIndex % 2);
+		*outLocationID = ArenaLocationUtils::dungeonToLocationID(testIndex % 2);
 		*outSpecialCaseType = SpecialCaseType::None;
 	}
 }

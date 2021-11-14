@@ -15,7 +15,7 @@
 #include "../Game/Game.h"
 #include "../World/MapType.h"
 #include "../World/SkyUtils.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 void MainMenuUiController::onLoadGameButtonSelected(Game &game)
 {
@@ -300,7 +300,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		if (mifName == MainMenuUiModel::ImperialMIF)
 		{
 			// Load city into game state.
-			const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
+			const int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
 			const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 			const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 			const std::optional<int> locationIndex = [&mifName, &provinceDef]() -> std::optional<int>

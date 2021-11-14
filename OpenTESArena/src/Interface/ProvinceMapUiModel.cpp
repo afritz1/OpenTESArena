@@ -9,7 +9,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"
 
@@ -135,7 +135,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 			const auto &locationFormatTexts = exeData.travel.locationFormatTexts;
 
 			// Decide the format based on whether it's the center province.
-			if (srcProvinceIndex != LocationUtils::CENTER_PROVINCE_ID)
+			if (srcProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_ID)
 			{
 				// Determine whether to use the city format or dungeon format.
 				if (dstLocationDef.getType() == LocationDefinition::Type::City)
@@ -276,11 +276,11 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 	{
 		const Rect srcProvinceRect = srcProvinceDef.getGlobalRect();
 		const Rect dstProvinceRect = dstProvinceDef.getGlobalRect();
-		const Int2 srcLocationGlobalPoint = LocationUtils::getGlobalPoint(
+		const Int2 srcLocationGlobalPoint = ArenaLocationUtils::getGlobalPoint(
 			Int2(srcLocationDef.getScreenX(), srcLocationDef.getScreenY()), srcProvinceRect);
-		const Int2 dstLocationGlobalPoint = LocationUtils::getGlobalPoint(
+		const Int2 dstLocationGlobalPoint = ArenaLocationUtils::getGlobalPoint(
 			Int2(dstLocationDef.getScreenX(), dstLocationDef.getScreenY()), dstProvinceRect);
-		return LocationUtils::getMapDistance(srcLocationGlobalPoint, dstLocationGlobalPoint);
+		return ArenaLocationUtils::getMapDistance(srcLocationGlobalPoint, dstLocationGlobalPoint);
 	}();
 
 	const std::string distanceString = [&exeData, travelDistance]()

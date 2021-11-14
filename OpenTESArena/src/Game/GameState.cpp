@@ -30,7 +30,6 @@
 #include "../WorldMap/LocationDefinition.h"
 #include "../WorldMap/LocationInstance.h"
 #include "../WorldMap/LocationType.h"
-#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

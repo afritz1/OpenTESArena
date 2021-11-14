@@ -1,5 +1,5 @@
-#ifndef LOCATION_UTILS_H
-#define LOCATION_UTILS_H
+#ifndef ARENA_LOCATION_UTILS_H
+#define ARENA_LOCATION_UTILS_H
 
 #include <array>
 #include <cstdint>
@@ -17,7 +17,7 @@ enum class LocationType;
 
 // Various functions for working with original game values like location IDs.
 
-namespace LocationUtils
+namespace ArenaLocationUtils
 {
 	// Required for handling the original game's special case with the center province's
 	// premade city.

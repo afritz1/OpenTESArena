@@ -6,7 +6,7 @@
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -62,7 +62,7 @@ int ProvinceMapUiView::getTextPopUpTextureHeight(int textHeight)
 
 bool ProvinceMapUiView::provinceHasStaffDungeonIcon(int provinceID)
 {
-	return provinceID != LocationUtils::CENTER_PROVINCE_ID;
+	return provinceID != ArenaLocationUtils::CENTER_PROVINCE_ID;
 }
 
 TextureAssetReference ProvinceMapUiView::getBackgroundTextureAssetRef(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)

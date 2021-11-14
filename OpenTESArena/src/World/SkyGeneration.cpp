@@ -19,7 +19,7 @@
 #include "../Math/Vector4.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -253,10 +253,10 @@ namespace SkyGeneration
 		// Position of animated land on province map; determines where it is on the horizon
 		// for each location.
 		const Int2 animLandGlobalPos(132, 52);
-		const Int2 locationGlobalPos = LocationUtils::getLocalCityPoint(citySeed);
+		const Int2 locationGlobalPos = ArenaLocationUtils::getLocalCityPoint(citySeed);
 
 		// Distance on province map from current location to the animated land.
-		const int dist = LocationUtils::getMapDistance(locationGlobalPos, animLandGlobalPos);
+		const int dist = ArenaLocationUtils::getMapDistance(locationGlobalPos, animLandGlobalPos);
 
 		// Use a different animation based on world map distance.
 		const int animIndex = [dist]()

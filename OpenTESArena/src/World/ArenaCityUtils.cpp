@@ -11,7 +11,7 @@
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Math/Random.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 #include "../WorldMap/ProvinceDefinition.h"
 
 #include "components/debug/Debug.h"
@@ -107,7 +107,7 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 	Buffer2D<ArenaTypes::VoxelID> &dstMap2)
 {
 	// Get the city's local X and Y, to be used later for building name generation.
-	const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
+	const Int2 localCityPoint = ArenaLocationUtils::getLocalCityPoint(citySeed);
 
 	const int citySize = cityDim * cityDim;
 	std::vector<MIFUtils::BlockType> plan(citySize, MIFUtils::BlockType::Empty);

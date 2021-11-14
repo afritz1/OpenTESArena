@@ -15,7 +15,7 @@
 #include "../UI/CursorData.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
-#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -503,12 +503,12 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
 		{
 			const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
-			return LocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
+			return ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
 		};
 
 		const Int2 srcGlobalPoint = makeGlobalPoint(currentLocationDef, currentProvinceDef);
 		const Int2 dstGlobalPoint = makeGlobalPoint(selectedLocationDef, selectedProvinceDef);
-		const int travelDays = LocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint,
+		const int travelDays = ArenaLocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint,
 			currentDate.getMonth(), gameState.getWeathersArray(), tempRandom, binaryAssetLibrary);
 
 		// Set selected map location.
