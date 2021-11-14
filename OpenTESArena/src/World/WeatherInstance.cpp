@@ -246,7 +246,10 @@ void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random
 			{
 				// Pick somewhere on the top edge to spawn.
 				particle.xPercent = random.nextReal();
-				particle.yPercent = 0.0;
+
+				// Don't set Y to 0 since it can result in snowflakes stacking up on the same horizontal
+				// line if multiple ones cross the bottom of the screen on the same frame.
+				particle.yPercent = -(particle.yPercent - 1.0);
 
 				this->directions.set(i, MakeSnowflakeDirection(random));
 			}
