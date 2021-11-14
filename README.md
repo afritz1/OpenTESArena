@@ -108,7 +108,7 @@ If you would like to use a different sound patches library like OPL3, edit `Midi
 - [CMake](https://cmake.org/download/)
 - [OpenAL Soft 1.18.2](https://openal-soft.org/#download)
 - [SDL 2.0.4](https://www.libsdl.org/download-2.0.php)
-- [WildMIDI 0.4.3](https://github.com/Mindwerks/wildmidi/releases) (optional; required for music)
+- [WildMIDI 0.4.4](https://github.com/Mindwerks/wildmidi/releases) (optional; required for music)
 
 ### Building the executable
 - Navigate to the root of the repository
