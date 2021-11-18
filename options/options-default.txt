@@ -26,7 +26,7 @@ VerticalFOV=60.0
 # 0: 16:10 (default), 1: 4:3, 2: stretch to fill
 LetterboxMode=0
 
-CursorScale=3.60
+CursorScale=5.0
 
 # If ModernInterface is false, the in-game interface uses Arena's classic 
 # layout. If true, it uses a minimalistic interface with free-look 
@@ -39,8 +39,8 @@ ModernInterface=false
 RenderThreadsMode=4
 
 [Audio]
-MusicVolume=0.50
-SoundVolume=0.50
+MusicVolume=1.0
+SoundVolume=1.0
 
 # Change "MidiConfig" to your desired .cfg file.
 MidiConfig=data/eawpats/timidity.cfg
