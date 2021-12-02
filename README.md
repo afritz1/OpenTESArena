@@ -32,7 +32,7 @@ Controls:
 
 ## Project Details
 
-Inspired by [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/), this started out as a simplistic ray tracing tech demo in early 2016, and is now steadily inching closer to something akin to the original game. I am using a clean-room approach for understanding Arena's algorithms and data structures, the details of which can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). It is a behavioral approximation project, not about matching machine instructions, and quality-of-life changes are made where they make sense.
+Inspired by [OpenXcom](https://openxcom.org/) and [OpenMW](https://openmw.org/en/), this started out as a simplistic ray tracing tech demo in early 2016, and is now steadily inching closer to something akin to the original game. I am using a clean-room approach for understanding Arena's algorithms and data structures, the details of which can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). It is a behavioral approximation project, not about matching machine instructions, and quality-of-life changes are made where they make sense.
 
 There are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is a standalone engine and does not contain content.
 
@@ -134,4 +134,4 @@ If there is a bug or technical problem in the program, check out the issues tab!
 
 ## Resources
 
-The [Unofficial Elder Scrolls Pages](http://en.uesp.net/wiki/Arena:Arena) are a great resource for information all about Arena. [Various tools](http://en.uesp.net/wiki/Arena:Files#Misc_Utilities) like WinArena and BSATool allow for browsing Arena's content, and there is a very detailed [manual](http://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities) as well. I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay.
+The [Unofficial Elder Scrolls Pages](https://en.uesp.net/wiki/Arena:Arena) are a great resource for information all about Arena. [Various tools](https://en.uesp.net/wiki/Arena:Files#Misc_Utilities) like WinArena and BSATool allow for browsing Arena's content, and there is a very detailed [manual](https://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities) as well. I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay.
