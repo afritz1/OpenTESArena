@@ -25,6 +25,65 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
+namespace
+{
+	int GetSdlWindowPosition(Renderer::WindowMode windowMode)
+	{
+		switch (windowMode)
+		{
+		case Renderer::WindowMode::Window:
+			return SDL_WINDOWPOS_CENTERED;
+		case Renderer::WindowMode::BorderlessFullscreen:
+		case Renderer::WindowMode::ExclusiveFullscreen:
+			return SDL_WINDOWPOS_UNDEFINED;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(windowMode)));
+		}
+	}
+
+	uint32_t GetSdlWindowFlags(Renderer::WindowMode windowMode)
+	{
+		uint32_t flags = SDL_WINDOW_ALLOW_HIGHDPI;
+		if (windowMode == Renderer::WindowMode::Window)
+		{
+			flags |= SDL_WINDOW_RESIZABLE;
+		}
+		else if (windowMode == Renderer::WindowMode::BorderlessFullscreen)
+		{
+			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+		}
+		else if (windowMode == Renderer::WindowMode::ExclusiveFullscreen)
+		{
+			flags |= SDL_WINDOW_FULLSCREEN;
+		}
+
+		return flags;
+	}
+
+	Int2 GetWindowDimsForMode(Renderer::WindowMode windowMode, int fallbackWidth, int fallbackHeight)
+	{
+		if (windowMode == Renderer::WindowMode::ExclusiveFullscreen)
+		{
+			// Use desktop resolution of the primary display device. In the future, the display index could be
+			// an option in the options menu.
+			constexpr int displayIndex = 0;
+			SDL_DisplayMode displayMode;
+			const int result = SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
+			if (result == 0)
+			{
+				return Int2(displayMode.w, displayMode.h);
+			}
+			else
+			{
+				DebugLogError("Couldn't get desktop " + std::to_string(displayIndex) + " display mode, using given window dimensions \"" +
+					std::to_string(fallbackWidth) + "x" + std::to_string(fallbackHeight) + "\" (" + std::string(SDL_GetError()) + ").");
+			}
+		}
+
+		return Int2(fallbackWidth, fallbackHeight);
+	}
+}
+
 Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
 {
 	this->width = width;
@@ -88,6 +147,8 @@ Renderer::~Renderer()
 
 	// This also destroys the frame buffer textures.
 	SDL_DestroyRenderer(this->renderer);
+
+	SDL_Quit();
 }
 
 SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
@@ -217,9 +278,10 @@ double Renderer::getDpiScale() const
 	}
 }
 
-int Renderer::getViewHeight() const
+Int2 Renderer::getViewDimensions() const
 {
-	const int screenHeight = this->getWindowDimensions().y;
+	const Int2 windowDims = this->getWindowDimensions();
+	const int screenHeight = windowDims.y;
 
 	// Ratio of the view height and window height in 320x200.
 	const double viewWindowRatio = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - 53) /
@@ -229,7 +291,7 @@ int Renderer::getViewHeight() const
 	const int viewHeight = this->fullGameWindow ? screenHeight :
 		static_cast<int>(std::ceil(screenHeight * viewWindowRatio));
 
-	return viewHeight;
+	return Int2(windowDims.x, viewHeight);
 }
 
 SDL_Rect Renderer::getLetterboxDimensions() const
@@ -459,9 +521,10 @@ Texture Renderer::createTextureFromSurface(const Surface &surface)
 }
 
 bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode,
-	RendererSystemType2D systemType2D, RendererSystemType3D systemType3D)
+	const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D)
 {
 	DebugLog("Initializing.");
+	SDL_Init(SDL_INIT_VIDEO); // Required for SDL_GetDesktopDisplayMode() to work for exclusive fullscreen.
 
 	if ((width <= 0) || (height <= 0))
 	{
@@ -470,32 +533,14 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	}
 
 	this->letterboxMode = letterboxMode;
+	this->resolutionScaleFunc = resolutionScaleFunc;
 
-	// Initialize window. The SDL_Surface is obtained from this window.
-	this->window = [width, height, windowMode]()
-	{
-		const char *title = Renderer::DEFAULT_TITLE;
-		const int position = [windowMode]() -> int
-		{
-			switch (windowMode)
-			{
-			case WindowMode::Window:
-				return SDL_WINDOWPOS_CENTERED;
-			case WindowMode::BorderlessFull:
-				return SDL_WINDOWPOS_UNDEFINED;
-			default:
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(windowMode)));
-			}
-		}();
-
-		const uint32_t flags = SDL_WINDOW_RESIZABLE |
-			((windowMode == WindowMode::BorderlessFull) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) |
-			SDL_WINDOW_ALLOW_HIGHDPI;
-
-		// If fullscreen is true, then width and height are ignored. They are stored
-		// behind the scenes for when the user changes to windowed mode, however.
-		return SDL_CreateWindow(title, position, position, width, height, flags);
-	}();
+	// Initialize window.
+	const char *title = Renderer::DEFAULT_TITLE;
+	const int position = GetSdlWindowPosition(windowMode);
+	const uint32_t flags = GetSdlWindowFlags(windowMode);
+	const Int2 windowDims = GetWindowDimsForMode(windowMode, width, height);
+	this->window = SDL_CreateWindow(title, position, position, windowDims.x, windowDims.y, flags);
 
 	if (this->window == nullptr)
 	{
@@ -513,6 +558,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	}
 
 	// Initialize display modes list for the current window.
+	// @todo: these display modes will only work on the display device the window was initialized on
 	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
 	const int displayModeCount = SDL_GetNumDisplayModes(displayIndex);
 	for (int i = 0; i < displayModeCount; i++)
@@ -607,18 +653,15 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	// Rebuild the 3D renderer if initialized.
 	if (this->renderer3D->isInited())
 	{
-		// Height of the game world view in pixels. Determined by whether the game 
-		// interface is visible or not.
-		const int viewHeight = this->getViewHeight();
-
-		const int renderWidth = Renderer::makeRendererDimension(width, resolutionScale);
-		const int renderHeight = Renderer::makeRendererDimension(viewHeight, resolutionScale);
+		const Int2 viewDims = this->getViewDimensions();
+		const int renderWidth = Renderer::makeRendererDimension(viewDims.x, resolutionScale);
+		const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
 
 		// Reinitialize the game world frame buffer.
 		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 			SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
 		DebugAssertMsg(this->gameWorldTexture.get() != nullptr,
-			"Couldn't recreate game world texture, " + std::string(SDL_GetError()));
+			"Couldn't recreate game world texture (" + std::string(SDL_GetError()) + ").");
 
 		this->renderer3D->resize(renderWidth, renderHeight);
 	}
@@ -631,24 +674,41 @@ void Renderer::setLetterboxMode(int letterboxMode)
 
 void Renderer::setWindowMode(WindowMode mode)
 {
-	const uint32_t flags = [mode]() -> uint32_t
+	int result = 0;
+	if (mode == WindowMode::ExclusiveFullscreen)
 	{
-		// Use fake fullscreen for now.
-		switch (mode)
+		SDL_DisplayMode displayMode; // @todo: may consider changing this to some GetDisplayModeForWindowMode()
+		result = SDL_GetDesktopDisplayMode(0, &displayMode);
+		if (result != 0)
 		{
-		case WindowMode::Window:
-			return 0;
-		case WindowMode::BorderlessFull:
-			return SDL_WINDOW_FULLSCREEN_DESKTOP;
-		default:
-			DebugUnhandledReturnMsg(uint32_t, std::to_string(static_cast<int>(mode)));
+			DebugLogError("Couldn't get desktop display mode for exclusive fullscreen (" + std::string(SDL_GetError()) + ").");
+			return;
 		}
-	}();
 
-	SDL_SetWindowFullscreen(this->window, flags);
+		result = SDL_SetWindowDisplayMode(this->window, &displayMode);
+		if (result != 0)
+		{
+			DebugLogError("Couldn't set window display mode to \"" + std::to_string(displayMode.w) + "x" +
+				std::to_string(displayMode.h) + " " + std::to_string(displayMode.refresh_rate) +
+				" Hz\" for exclusive fullscreen (" + std::string(SDL_GetError()) + ").");
+			return;
+		}
+	}
+
+	const uint32_t flags = GetSdlWindowFlags(mode);
+	result = SDL_SetWindowFullscreen(this->window, flags);
+	if (result != 0)
+	{
+		DebugLogError("Couldn't set window fullscreen flags to 0x" + String::toHexString(flags) +
+			" (" + std::string(SDL_GetError()) + ").");
+		return;
+	}
+
+	const Int2 windowDims = this->getWindowDimensions();
+	const double resolutionScale = this->resolutionScaleFunc();
+	this->resize(windowDims.x, windowDims.y, resolutionScale, this->fullGameWindow);
 
 	// Reset the cursor to the center of the screen for consistency.
-	const Int2 windowDims = this->getWindowDimensions();
 	this->warpMouse(windowDims.x / 2, windowDims.y / 2);
 }
 
@@ -686,15 +746,10 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 {
 	this->fullGameWindow = fullGameWindow;
 
-	const int screenWidth = this->getWindowDimensions().x;
-
-	// Height of the game world view in pixels, used in place of the screen height.
-	// Its value is a function of whether the game interface is visible or not.
-	const int viewHeight = this->getViewHeight();
-
 	// Make sure render dimensions are at least 1x1.
-	const int renderWidth = Renderer::makeRendererDimension(screenWidth, resolutionScale);
-	const int renderHeight = Renderer::makeRendererDimension(viewHeight, resolutionScale);
+	const Int2 viewDims = this->getViewDimensions();
+	const int renderWidth = Renderer::makeRendererDimension(viewDims.x, resolutionScale);
+	const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
 
 	// Initialize a new game world frame buffer, removing any previous game world frame buffer.
 	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
@@ -941,9 +996,8 @@ void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &direction, do
 	SDL_UnlockTexture(this->gameWorldTexture.get());
 
 	// Now copy to the native frame buffer (stretching if needed).
-	const int screenWidth = this->getWindowDimensions().x;
-	const int viewHeight = this->getViewHeight();
-	this->draw(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
+	const Int2 viewDims = this->getViewDimensions();
+	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)

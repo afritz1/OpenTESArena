@@ -519,9 +519,8 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const auto &player = gameState.getPlayer();
 	const CoordDouble3 &rayStart = player.getPosition();
 	const VoxelDouble3 &cameraDirection = player.getDirection();
-	const int viewWidth = windowDims.x;
-	const int viewHeight = renderer.getViewHeight();
-	const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
+	const Int2 viewDims = renderer.getViewDimensions();
+	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
 
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
@@ -596,10 +595,8 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const Double3 &cameraDirection = player.getDirection();
 
 	auto &renderer = game.getRenderer();
-	const Int2 windowDims = renderer.getWindowDimensions();
-	const int viewWidth = windowDims.x;
-	const int viewHeight = renderer.getViewHeight();
-	const Int2 viewCenterPoint(viewWidth / 2, viewHeight / 2);
+	const Int2 viewDims = renderer.getViewDimensions();
+	const Int2 viewCenterPoint(viewDims.x / 2, viewDims.y / 2);
 
 	const CoordDouble3 rayStart = player.getPosition();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, viewCenterPoint);

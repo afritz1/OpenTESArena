@@ -74,11 +74,17 @@ Game::Game()
 	}
 
 	// Initialize the renderer and window with the given settings.
+	auto resolutionScaleFunc = [this]()
+	{
+		const auto &options = this->getOptions();
+		return options.getGraphics_ResolutionScale();
+	};
+
 	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
 	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
 	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
 		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()),
-		this->options.getGraphics_LetterboxMode(), rendererSystemType2D, rendererSystemType3D))
+		this->options.getGraphics_LetterboxMode(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D))
 	{
 		throw DebugException("Couldn't init renderer.");
 	}
