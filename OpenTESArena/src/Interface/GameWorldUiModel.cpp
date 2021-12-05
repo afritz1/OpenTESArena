@@ -252,10 +252,8 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 {
 	const auto &options = game.getOptions();
 	const auto &renderer = game.getRenderer();
-	const Int2 windowDims = renderer.getWindowDimensions();
-	const int viewWidth = windowDims.x;
-	const int viewHeight = renderer.getViewHeight();
-	const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
+	const Int2 viewDims = renderer.getViewDimensions();
+	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
 
 	auto &gameState = game.getGameState();
 	const auto &player = gameState.getPlayer();
@@ -263,8 +261,8 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center
 	// of the pixel.
-	const double mouseXPercent = (static_cast<double>(windowPoint.x) + 0.50) / static_cast<double>(viewWidth);
-	const double mouseYPercent = (static_cast<double>(windowPoint.y) + 0.50) / static_cast<double>(viewHeight);
+	const double mouseXPercent = (static_cast<double>(windowPoint.x) + 0.50) / static_cast<double>(viewDims.x);
+	const double mouseYPercent = (static_cast<double>(windowPoint.y) + 0.50) / static_cast<double>(viewDims.y);
 
 	return renderer.screenPointToRay(mouseXPercent, mouseYPercent, cameraDirection,
 		options.getGraphics_VerticalFOV(), viewAspectRatio);

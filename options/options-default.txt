@@ -12,7 +12,7 @@ ScreenWidth=1280
 ScreenHeight=720
 
 # Determines how the game window is displayed.
-# 0: window, 1: borderless fullscreen
+# 0: window, 1: borderless fullscreen, 2: exclusive fullscreen
 WindowMode=0
 
 TargetFPS=60

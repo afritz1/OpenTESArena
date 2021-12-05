@@ -194,11 +194,12 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeWindowModeOption(
 	const auto &options = game.getOptions();
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::WINDOW_MODE_NAME,
+		"Determines the game window mode for the display device.\n\nWindow\nBorderless Fullscreen\nExclusive Fullscreen",
 		options.getGraphics_WindowMode(),
 		1,
 		Options::MIN_WINDOW_MODE,
 		Options::MAX_WINDOW_MODE,
-		std::vector<std::string> { "Window", "Borderless Full" },
+		std::vector<std::string> { "Window", "Borderless Fullscreen", "Exclusive Fullscreen" },
 		[&game](int value)
 	{
 		auto &options = game.getOptions();
@@ -212,7 +213,9 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeWindowModeOption(
 			case 0:
 				return Renderer::WindowMode::Window;
 			case 1:
-				return Renderer::WindowMode::BorderlessFull;
+				return Renderer::WindowMode::BorderlessFullscreen;
+			case 2:
+				return Renderer::WindowMode::ExclusiveFullscreen;
 			default:
 				DebugUnhandledReturnMsg(Renderer::WindowMode, std::to_string(value));
 			}

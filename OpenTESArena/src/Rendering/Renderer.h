@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -49,7 +50,8 @@ public:
 	enum class WindowMode
 	{
 		Window,
-		BorderlessFull
+		BorderlessFullscreen,
+		ExclusiveFullscreen
 	};
 
 	// Profiler information from the most recently rendered frame.
@@ -70,6 +72,8 @@ public:
 		void init(int width, int height, int threadCount, int potentiallyVisFlatCount,
 			int visFlatCount, int visLightCount, double frameTime);
 	};
+
+	using ResolutionScaleFunc = std::function<double()>;
 private:
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
 	static const char *DEFAULT_TITLE;
@@ -81,6 +85,7 @@ private:
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
 	ProfilerData profilerData;
+	ResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 
@@ -118,7 +123,7 @@ public:
 	// The "view height" is the height in pixels for the visible game world. This 
 	// depends on whether the whole screen is rendered or just the portion above 
 	// the interface. The game interface is 53 pixels tall in 320x200.
-	int getViewHeight() const;
+	Int2 getViewDimensions() const;
 
 	// This is for the "letterbox" part of the screen, scaled to fit the window 
 	// using the given letterbox aspect.
@@ -161,7 +166,7 @@ public:
 	Texture createTexture(uint32_t format, int access, int w, int h);
 	Texture createTextureFromSurface(const Surface &surface);
 
-	bool init(int width, int height, WindowMode windowMode, int letterboxMode,
+	bool init(int width, int height, WindowMode windowMode, int letterboxMode, const ResolutionScaleFunc &resolutionScaleFunc,
 		RendererSystemType2D systemType2D, RendererSystemType3D systemType3D);
 
 	// Resizes the renderer dimensions.

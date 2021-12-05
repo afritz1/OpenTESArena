@@ -59,7 +59,7 @@ public:
 	// Min/max/allowed values for the application.
 	static constexpr int MIN_FPS = 15;
 	static constexpr int MIN_WINDOW_MODE = 0;
-	static constexpr int MAX_WINDOW_MODE = 1;
+	static constexpr int MAX_WINDOW_MODE = 2;
 	static constexpr double MIN_RESOLUTION_SCALE = 0.10;
 	static constexpr double MAX_RESOLUTION_SCALE = 1.0;
 	static constexpr double MIN_VERTICAL_FOV = 40.0;
