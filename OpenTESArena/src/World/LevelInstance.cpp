@@ -54,7 +54,9 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	renderer.clearTextures();
+	// @todo: iterate over all stored ObjectTextureIDs and free them; the renderer doesn't have a clearTextures() anymore.
+	DebugNotImplementedMsg("trySetActive");
+	//renderer.clearTextures();
 
 	// Loaded texture caches for tracking which textures have already been loaded in the renderer.
 	// @todo: eventually don't preload all textures and let the chunk manager load them for new chunks.
@@ -77,10 +79,12 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 				if (cacheIter == loadedVoxelTextures.end())
 				{
 					loadedVoxelTextures.push_back(textureAssetRef);
-					if (!renderer.tryCreateVoxelTexture(textureAssetRef, textureManager))
+					
+					DebugNotImplementedMsg("trySetActive"); // @todo: store ObjectTextureID in member variable
+					/*if (!renderer.tryCreateVoxelTexture(textureAssetRef, textureManager))
 					{
 						DebugLogError("Couldn't create renderer voxel texture for \"" + textureAssetRef.filename + "\".");
-					}
+					}*/
 				}
 			}
 		}
@@ -115,11 +119,12 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 							RendererUtils::LoadedEntityTextureEntry loadedEntityTextureEntry;
 							loadedEntityTextureEntry.init(TextureAssetReference(textureAssetRef), flipped, reflective);
 							loadedEntityTextures.emplace_back(std::move(loadedEntityTextureEntry));
-							
-							if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
+
+							DebugNotImplementedMsg("trySetActive"); // @todo: store ObjectTextureID in member variable
+							/*if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
 							{
 								DebugLogError("Couldn't create renderer entity texture for \"" + textureAssetRef.filename + "\".");
-							}
+							}*/
 						}
 					}
 				}
@@ -167,7 +172,8 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 
 	// Load chasm textures (dry chasms are just a single color).
 	constexpr uint8_t dryChasmColor = ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR;
-	renderer.addChasmTexture(ArenaTypes::ChasmType::Dry, &dryChasmColor, 1, 1, palette);
+	DebugNotImplementedMsg("trySetActive"); // @todo: store ObjectTextureID in member variable
+	//renderer.addChasmTexture(ArenaTypes::ChasmType::Dry, &dryChasmColor, 1, 1, palette);
 
 	auto writeChasmTextures = [&textureManager, &renderer, &palette](ArenaTypes::ChasmType chasmType)
 	{
@@ -202,8 +208,10 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 
 			DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
 			const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
-			renderer.addChasmTexture(chasmType, palettedTexture.texels.get(),
-				textureBuilder.getWidth(), textureBuilder.getHeight(), palette);
+			
+			DebugNotImplementedMsg("trySetActive"); // @todo: store ObjectTextureID in member variable
+			/*renderer.addChasmTexture(chasmType, palettedTexture.texels.get(),
+				textureBuilder.getWidth(), textureBuilder.getHeight(), palette);*/
 		}
 	};
 
@@ -211,8 +219,8 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 	writeChasmTextures(ArenaTypes::ChasmType::Lava);
 
 	// Set renderer fog distance and night lights.
-	renderer.setFogDistance(weatherDef.getFogDistance());
-	renderer.setNightLightsActive(nightLightsAreActive, palette);
+	DebugNotImplementedMsg("trySetActive"); // @todo: only SceneGraph should care about whether night lights are active so it can pick the texture/shader params to give to the renderer.
+	//renderer.setNightLightsActive(nightLightsAreActive, palette);
 
 	return true;
 }

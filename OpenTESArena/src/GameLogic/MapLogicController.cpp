@@ -56,7 +56,9 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	renderer.setNightLightsActive(active, palette);
+	
+	DebugNotImplementedMsg("handleNightLightChange"); // @todo: make this night light value a bool in GameState or something so it can be given to RenderFrameSettings.
+	//renderer.setNightLightsActive(active, palette);
 }
 
 void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)

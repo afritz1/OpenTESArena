@@ -6,7 +6,9 @@
 #include "SDL.h"
 
 #include "ArenaRenderUtils.h"
+#include "RenderCamera.h"
 #include "Renderer.h"
+#include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
 #include "SdlUiRenderer.h"
 #include "SoftwareRenderer.h"
@@ -392,12 +394,15 @@ bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
 
 		// See if the ray successfully hit a point on the entity, and that point is considered
 		// selectable (i.e. it's not transparent).
-		bool isSelected;
-		const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAssetRef, flipped,
-			reflective, pixelPerfect, palette, &isSelected);
+		//bool isSelected;
+
+		// @todo: get the entity anim inst's texture ID instead of asset ref. Can probably remove 'palette' too.
+		DebugNotImplementedMsg("getEntityRayIntersection");
+		return false;
+		/*const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAssetRef, flipped, reflective, pixelPerfect, palette, &isSelected);
 
 		*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
-		return withinEntity && isSelected;
+		return withinEntity && isSelected;*/
 	}
 	else
 	{
@@ -500,19 +505,6 @@ Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
 	if (tex == nullptr)
 	{
 		DebugLogError("Could not create SDL_Texture.");
-	}
-
-	Texture texture;
-	texture.init(tex);
-	return texture;
-}
-
-Texture Renderer::createTextureFromSurface(const Surface &surface)
-{
-	SDL_Texture *tex = SDL_CreateTextureFromSurface(this->renderer, surface.get());
-	if (tex == nullptr)
-	{
-		DebugLogError("Could not create SDL_Texture from surface.");
 	}
 
 	Texture texture;
@@ -766,23 +758,20 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 void Renderer::setRenderThreadsMode(int mode)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setRenderThreadsMode(mode);
+	DebugNotImplementedMsg("setRenderThreadsMode");
+	//this->renderer3D->setRenderThreadsMode(mode); // @todo: figure out if this should be in RenderFrameSettings and obtained via Options
 }
 
-bool Renderer::tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
+bool Renderer::tryCreateObjectTexture(int width, int height, ObjectTextureID *outID)
 {
-	return this->renderer3D->tryCreateVoxelTexture(textureAssetRef, textureManager);
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateObjectTexture(width, height, outID);
 }
 
-bool Renderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
-	bool reflective, TextureManager &textureManager)
+bool Renderer::tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID)
 {
-	return this->renderer3D->tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager);
-}
-
-bool Renderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
-{
-	return this->renderer3D->tryCreateSkyTexture(textureAssetRef, textureManager);
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateObjectTexture(textureBuilder, outID);
 }
 
 bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
@@ -806,9 +795,26 @@ bool Renderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID p
 	return this->renderer2D->tryCreateUiTexture(textureBuilderID, paletteID, textureManager, outID);
 }
 
+std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
+{
+	return this->renderer2D->tryGetTextureDims(id);
+}
+
+uint32_t *Renderer::lockObjectTexture(ObjectTextureID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->lockObjectTexture(id);
+}
+
 uint32_t *Renderer::lockUiTexture(UiTextureID textureID)
 {
 	return this->renderer2D->lockUiTexture(textureID);
+}
+
+void Renderer::unlockObjectTexture(ObjectTextureID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->unlockObjectTexture(id);
 }
 
 void Renderer::unlockUiTexture(UiTextureID textureID)
@@ -816,71 +822,15 @@ void Renderer::unlockUiTexture(UiTextureID textureID)
 	this->renderer2D->unlockUiTexture(textureID);
 }
 
-void Renderer::freeVoxelTexture(const TextureAssetReference &textureAssetRef)
+void Renderer::freeObjectTexture(ObjectTextureID id)
 {
-	this->renderer3D->freeVoxelTexture(textureAssetRef);
-}
-
-void Renderer::freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective)
-{
-	this->renderer3D->freeEntityTexture(textureAssetRef, flipped, reflective);
-}
-
-void Renderer::freeSkyTexture(const TextureAssetReference &textureAssetRef)
-{
-	this->renderer3D->freeSkyTexture(textureAssetRef);
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->freeObjectTexture(id);
 }
 
 void Renderer::freeUiTexture(UiTextureID id)
 {
 	this->renderer2D->freeUiTexture(id);
-}
-
-std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
-{
-	return this->renderer2D->tryGetTextureDims(id);
-}
-
-void Renderer::setFogDistance(double fogDistance)
-{
-	this->renderer3D->setFogDistance(fogDistance);
-}
-
-void Renderer::addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
-	int width, int height, const Palette &palette)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->addChasmTexture(chasmType, colors, width, height, palette);
-}
-
-void Renderer::setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setSky(skyInstance, palette, textureManager);
-}
-
-void Renderer::setSkyColors(const uint32_t *colors, int count)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setSkyColors(colors, count);
-}
-
-void Renderer::setNightLightsActive(bool active, const Palette &palette)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setNightLightsActive(active, palette);
-}
-
-void Renderer::clearTextures()
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->clearTextures();
-}
-
-void Renderer::clearSky()
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->clearSky();
 }
 
 void Renderer::clear(const Color &color)
@@ -960,16 +910,18 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
-void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
-	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
-	bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-	const SkyInstance &skyInst, const WeatherInstance &weatherInst, Random &random, 
-	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette)
+void Renderer::renderWorld()
 {
-	// The 3D renderer must be initialized.
 	DebugAssert(this->renderer3D->isInited());
+
+	// @todo: rework this function for the new renderer design
+
+	RenderCamera renderCamera;
+	RenderFrameSettings renderFrameSettings;
+	this->renderer3D->submitFrame(renderCamera, renderFrameSettings);
+	this->renderer3D->present();
 	
-	// Lock the game world texture and give the pixel pointer to the software renderer.
+	/*// Lock the game world texture and give the pixel pointer to the software renderer.
 	// - Supposedly this is faster than SDL_UpdateTexture(). In any case, there's one
 	//   less frame buffer to take care of.
 	uint32_t *gameWorldPixels;
@@ -997,7 +949,7 @@ void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &direction, do
 
 	// Now copy to the native frame buffer (stretching if needed).
 	const Int2 viewDims = this->getViewDimensions();
-	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);
+	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);*/
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)

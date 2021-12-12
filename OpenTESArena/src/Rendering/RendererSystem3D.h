@@ -2,36 +2,19 @@
 #define RENDERER_SYSTEM_3D_H
 
 #include <cstdint>
-#include <optional>
 
 #include "RenderTextureUtils.h"
-#include "../Assets/ArenaTypes.h"
-#include "../Entities/EntityUtils.h" // @todo: remove dependency on this
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
 #include "../Media/Palette.h"
-#include "../World/VoxelDefinition.h"
 
 // Abstract base class for 3D renderer.
 
-// @todo: clean up this API since it currently contains leftovers from the previous design.
-
-class EntityAnimationDefinition;
-class EntityAnimationInstance;
-class EntityDefinitionLibrary;
-class LevelInstance;
 class Random;
 class RenderCamera;
-class RenderDefinitionGroup;
 class RenderFrameSettings;
 class RenderInitSettings;
-class RenderInstanceGroup;
-class SkyInstance;
 class TextureBuilder;
-class TextureManager;
-class WeatherInstance;
-
-struct TextureAssetReference;
 
 class RendererSystem3D
 {
@@ -54,29 +37,19 @@ public:
 
 	virtual bool isInited() const = 0;
 
-	// Texture handle allocation functions for each texture type.
-	// @todo: ideally these would take a TextureBuilder and return optional<VoxelTextureID/etc.>, but that
-	// would require a lot of renderer decoupling, such as binding VoxelTextureIDs/etc. to instance voxel
-	// geometry instead of relying on VoxelDefinition/etc. for texture look-ups.
-	virtual bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef,
-		TextureManager &textureManager) = 0;
-	virtual bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
-		bool reflective, TextureManager &textureManager) = 0;
-	virtual bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
-		TextureManager &textureManager) = 0;
-
-	// Texture handle freeing functions for each texture type.
-	// @todo: ideally these would take VoxelTextureID/etc..
-	virtual void freeVoxelTexture(const TextureAssetReference &textureAssetRef) = 0;
-	virtual void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) = 0;
-	virtual void freeSkyTexture(const TextureAssetReference &textureAssetRef) = 0;
-
 	virtual void resize(int width, int height) = 0;
+
+	// Texture management functions.
+	virtual bool tryCreateObjectTexture(int width, int height, ObjectTextureID *outID) = 0;
+	virtual bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) = 0;
+	virtual uint32_t *lockObjectTexture(ObjectTextureID id) = 0;
+	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
+	virtual void freeObjectTexture(ObjectTextureID id) = 0;
 
 	// Tries to write out selection data for the given entity. Returns whether selection data was
 	// successfully written.
-	virtual bool tryGetEntitySelectionData(const Double2 &uv, const TextureAssetReference &textureAssetRef,
-		bool flipped, bool reflective, bool pixelPerfect, const Palette &palette, bool *outIsSelected) const = 0;
+	virtual bool tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect,
+		bool *outIsSelected) const = 0;
 
 	// Converts a screen point into a ray in the game world.
 	virtual Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
@@ -84,27 +57,11 @@ public:
 
 	// Gets various profiler information about internal renderer state.
 	virtual ProfilerData getProfilerData() const = 0;
-
-	// Legacy functions (remove these eventually).
-	virtual void setRenderThreadsMode(int mode) = 0;
-	virtual void setFogDistance(double fogDistance) = 0;
-	virtual void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
-		int width, int height, const Palette &palette) = 0;
-	virtual void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager) = 0;
-	virtual void setSkyColors(const uint32_t *colors, int count) = 0;
-	virtual void setNightLightsActive(bool active, const Palette &palette) = 0;
-	virtual void clearTextures() = 0;
-	virtual void clearSky() = 0;
-	virtual void render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
-		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
-		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-		const SkyInstance &skyInst, const WeatherInstance &weatherInst, Random &random,
-		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) = 0;
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.
-	virtual void submitFrame(const RenderDefinitionGroup &defGroup, const RenderInstanceGroup &instGroup,
-		const RenderCamera &camera, const RenderFrameSettings &settings) = 0;
+	// @todo: this will take draw lists from SceneGraph eventually
+	virtual void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings) = 0;
 
 	// Presents the finished frame to the screen. This may just be a copy to the screen frame buffer that
 	// is then taken care of by the top-level rendering manager, since UI must be drawn afterwards.

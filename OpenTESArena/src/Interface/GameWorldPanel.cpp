@@ -854,11 +854,12 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
 
 	auto &renderer = game.getRenderer();
-	renderer.renderWorld(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
+	renderer.renderWorld(); // @todo: rework for the new renderer design
+	/*renderer.renderWorld(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
 		ambientPercent, gameState.getDaytimePercent(), gameState.getChasmAnimPercent(), latitude,
 		gameState.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
 		options.getMisc_ChunkDistance(), activeLevelInst.getCeilingScale(), activeLevelInst, activeSkyInst,
-		activeWeatherInst, game.getRandom(), game.getEntityDefinitionLibrary(), defaultPalette);
+		activeWeatherInst, game.getRandom(), game.getEntityDefinitionLibrary(), defaultPalette);*/
 
 	return true;
 }

@@ -164,7 +164,6 @@ public:
 
 	// Wrapper methods for SDL_CreateTexture.
 	Texture createTexture(uint32_t format, int access, int w, int h);
-	Texture createTextureFromSurface(const Surface &surface);
 
 	bool init(int width, int height, WindowMode windowMode, int letterboxMode, const ResolutionScaleFunc &resolutionScaleFunc,
 		RendererSystemType2D systemType2D, RendererSystemType3D systemType3D);
@@ -195,46 +194,31 @@ public:
 	// determines whether to render a "fullscreen" 3D image or just the part above 
 	// the game interface. If there is an existing renderer in memory, it will be 
 	// overwritten with the new one.
-	void initializeWorldRendering(double resolutionScale, bool fullGameWindow,
-		int renderThreadsMode);
+	void initializeWorldRendering(double resolutionScale, bool fullGameWindow, int renderThreadsMode);
 
 	// Sets which mode to use for software render threads (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);
 
 	// Texture handle allocation functions.
-	// @todo: see RendererSystem3D -- these should take TextureBuilders instead and return optional handles.
-	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
-	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
-		TextureManager &textureManager);
-	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateObjectTexture(int width, int height, ObjectTextureID *outID);
+	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID);
 	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID);
 	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID);
 
-	// Allows for updating all texels in the given UI texture. Must be unlocked to flush the changes.
-	uint32_t *lockUiTexture(UiTextureID textureID);
-	void unlockUiTexture(UiTextureID textureID);
-
-	// Texture handle freeing functions.
-	// @todo: see RendererSystem3D -- these should take texture IDs instead.
-	void freeVoxelTexture(const TextureAssetReference &textureAssetRef);
-	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective);
-	void freeSkyTexture(const TextureAssetReference &textureAssetRef);
-	void freeUiTexture(UiTextureID id);
-
 	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;
 
-	// Helper methods for changing data in the 3D renderer.
-	void setFogDistance(double fogDistance);
-	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
-		int width, int height, const Palette &palette);
-	void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager);
-	void setSkyColors(const uint32_t *colors, int count);
-	void setNightLightsActive(bool active, const Palette &palette);
-	void clearTextures();
-	void clearSky();
+	// Allows for updating all texels in the given texture. Must be unlocked to flush the changes.
+	uint32_t *lockObjectTexture(ObjectTextureID id);
+	uint32_t *lockUiTexture(UiTextureID id);
+	void unlockObjectTexture(ObjectTextureID id);
+	void unlockUiTexture(UiTextureID id);
+
+	// Texture handle freeing functions.
+	void freeObjectTexture(ObjectTextureID id);
+	void freeUiTexture(UiTextureID id);
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);
@@ -252,12 +236,8 @@ public:
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient, double daytimePercent,
-		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingScale, const LevelInstance &levelInst, const SkyInstance &skyInst,
-		const WeatherInstance &weatherInst, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
-		const Palette &palette);
+	// @todo: rework to be some submit3dFrame() maybe? Need to include SceneGraph interaction in here somewhere.
+	void renderWorld();
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

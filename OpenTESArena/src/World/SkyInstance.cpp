@@ -593,7 +593,10 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 	// Although the sky could be treated the same way as visible entities (regenerated every frame), keep it this
 	// way because the sky is not added to and removed from like entities are. The sky is baked once per level
 	// and that's it.
-	renderer.clearSky();
+	
+	// @todo: tell SceneGraph to clear its sky geometry
+	DebugNotImplementedMsg("trySetActive");
+	//renderer.clearSky();
 
 	const MapType mapType = mapDefinition.getMapType();
 	const SkyDefinition &skyDefinition = [&activeLevelIndex, &mapDefinition, mapType]() -> const SkyDefinition&
@@ -626,7 +629,8 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 		skyColors.set(i, color.toARGB());
 	}
 
-	renderer.setSkyColors(skyColors.get(), skyColors.getCount());
+	DebugNotImplementedMsg("trySetActive"); // @todo: give to SceneGraph to process into an object texture for RenderFrameSettings
+	//renderer.setSkyColors(skyColors.get(), skyColors.getCount());
 
 	// Set sky objects in the renderer.
 	const std::string &paletteName = ArenaPaletteName::Default;
@@ -638,7 +642,8 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	renderer.setSky(*this, palette, textureManager);
+	DebugNotImplementedMsg("trySetActive"); // @todo: this should set all the distant sky intermediate values in SceneGraph I think.
+	//renderer.setSky(*this, palette, textureManager);
 
 	return true;
 }

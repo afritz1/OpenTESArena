@@ -259,11 +259,12 @@ void CitizenUtils::writeCitizenTextures(const EntityDefinition &maleEntityDef, c
 					const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
 					const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
 					constexpr bool reflective = false; // Citizens are not puddles.
-					// @todo: duplicate texture check in some rendererEntityTextureCache
-					if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
+					
+					DebugNotImplementedMsg("writeCitizenTextures"); // @todo: store the texture IDs in LevelInstance probably
+					/*if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
 					{
 						DebugLogError("Couldn't create renderer entity texture for \"" + textureAssetRef.filename + "\".");
-					}
+					}*/
 				}
 			}
 		}

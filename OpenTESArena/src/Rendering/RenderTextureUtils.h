@@ -5,7 +5,7 @@
 // internal renderer format.
 
 using ObjectTextureID = int; // For all scene geometry (voxels/entities/sky/particles).
-using UiTextureID = int; // Used with all UI textures.
+using UiTextureID = int; // For all UI textures.
 
 class Renderer;
 
