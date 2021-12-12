@@ -1,9 +1,9 @@
 #ifndef RENDER_DATA_BUILDER_H
 #define RENDER_DATA_BUILDER_H
 
-#include "RenderCamera.h"
 #include "RenderDefinitionGroup.h"
 #include "RenderInstanceGroup.h"
+#include "../RenderCamera.h"
 
 // Generates bulk render data from gameplay data to be passed to a renderer.
 

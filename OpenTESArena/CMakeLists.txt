@@ -62,6 +62,10 @@ FILE(GLOB TES_RENDERING
     ${SRC_ROOT}/src/Rendering/*.h* 
     ${SRC_ROOT}/src/Rendering/*.c*)
 
+FILE(GLOB TES_RENDERING_SCENE_GRAPH
+    ${SRC_ROOT}/src/Rendering/SceneGraph/*.h* 
+    ${SRC_ROOT}/src/Rendering/SceneGraph/*.c*)
+
 FILE(GLOB TES_UI
     ${SRC_ROOT}/src/UI/*.h* 
     ${SRC_ROOT}/src/UI/*.c*)
@@ -92,6 +96,7 @@ SET(TES_SOURCES
     ${TES_MATH}
     ${TES_MEDIA}
     ${TES_RENDERING}
+    ${TES_RENDERING_SCENE_GRAPH}
     ${TES_UI}
     ${TES_UTILITIES}
     ${TES_WORLD}

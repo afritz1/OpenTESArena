@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "VoxelRenderDefinition.h"
-#include "../World/ChunkUtils.h"
-#include "../World/VoxelUtils.h"
+#include "../../World/ChunkUtils.h"
+#include "../../World/VoxelUtils.h"
 
 #include "components/utilities/Buffer3D.h"
 
