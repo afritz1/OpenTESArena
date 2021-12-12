@@ -7,7 +7,6 @@
 
 // Defines a rectangle and how to render it.
 
-template <typename T>
 class RectangleRenderDefinition
 {
 public:
@@ -17,16 +16,11 @@ public:
 		AlphaTested
 	};
 private:
-	static_assert(std::is_integral_v<T>);
-
 	// @todo: model space rectangle, independent of chunk space or ceiling height
-	T textureID;
+	ObjectTextureID textureID;
 	AlphaType alphaType;
 public:
 
 };
-
-using VoxelRectangleRenderDefinition = RectangleRenderDefinition<VoxelTextureID>;
-using EntityRectangleRenderDefinition = RectangleRenderDefinition<EntityTextureID>;
 
 #endif

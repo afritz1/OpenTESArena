@@ -24,7 +24,7 @@ public:
 private:
 	// @todo: shared voxel render data a renderer would care about
 	// - Make a render utils function for converting +/- {x,y,z} face/enum to index (like sky octants).
-	std::array<VoxelRectangleRenderDefinition, MAX_RECTS> rects;
+	std::array<RectangleRenderDefinition, MAX_RECTS> rects;
 	std::array<FaceIndicesDef, FACES> faceIndices; // X: 0, 1; Y: 2, 3; Z: 4, 5.
 public:
 
