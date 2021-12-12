@@ -785,6 +785,11 @@ bool Renderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
 	return this->renderer3D->tryCreateSkyTexture(textureAssetRef, textureManager);
 }
 
+bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
+{
+	return this->renderer2D->tryCreateUiTexture(width, height, outID);
+}
+
 bool Renderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(texels, outID);
@@ -793,11 +798,6 @@ bool Renderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, Ui
 bool Renderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(texels, palette, outID);
-}
-
-bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
-{
-	return this->renderer2D->tryCreateUiTexture(width, height, outID);
 }
 
 bool Renderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,

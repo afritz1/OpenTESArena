@@ -207,9 +207,9 @@ public:
 	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
 		TextureManager &textureManager);
 	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID);
-	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID);
 
