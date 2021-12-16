@@ -6,8 +6,7 @@
 #include "RectangleRenderDefinition.h"
 
 // Common voxel render data usable by all renderers. Can be pointed to by multiple voxel
-// render instances. Each voxel render definition's coordinate is implicitly defined by its
-// XYZ grid position in a chunk.
+// render instances.
 
 class VoxelRenderDefinition
 {
@@ -24,7 +23,7 @@ public:
 private:
 	// @todo: shared voxel render data a renderer would care about
 	// - Make a render utils function for converting +/- {x,y,z} face/enum to index (like sky octants).
-	std::array<RectangleRenderDefinition, MAX_RECTS> rects;
+	std::array<RectangleRenderDefinition, MAX_RECTS> rects; // Model-space geometry.
 	std::array<FaceIndicesDef, FACES> faceIndices; // X: 0, 1; Y: 2, 3; Z: 4, 5.
 public:
 

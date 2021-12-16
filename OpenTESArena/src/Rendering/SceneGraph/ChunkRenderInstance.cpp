@@ -2,14 +2,20 @@
 
 #include "components/debug/Debug.h"
 
-void ChunkRenderInstance::init(int defID)
+void ChunkRenderInstance::init(int defID, const ChunkInt2 &coord)
 {
 	this->defID = defID;
+	this->coord = coord;
 }
 
 int ChunkRenderInstance::getDefID() const
 {
 	return this->defID;
+}
+
+const ChunkInt2 &ChunkRenderInstance::getCoord() const
+{
+	return this->coord;
 }
 
 int ChunkRenderInstance::getVoxelRenderInstanceCount() const
