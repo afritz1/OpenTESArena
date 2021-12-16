@@ -7,9 +7,12 @@
 #include "ChunkRenderInstance.h"
 #include "EntityRenderDefinition.h"
 #include "EntityRenderInstance.h"
+#include "SkyObjectRenderDefinition.h"
+#include "SkyObjectRenderInstance.h"
 #include "VoxelRenderDefinition.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/BufferView.h"
 
 // Objectives:
 // - efficient visible voxel determination (use quadtree per chunk to find ranges of visible voxel columns)
@@ -29,6 +32,11 @@
 // - combined with a functioning occlusion culling system or hierarchical Z buffer, this could probably work.
 // - if anything, would probably order by render def IDs, not necessarily texture IDs
 
+class ChunkManager;
+class EntityManager;
+class RenderCamera;
+class SkyInstance;
+
 class SceneGraph
 {
 private:
@@ -42,8 +50,31 @@ private:
 	// @todo: might group entity render defs into citizens vs. non-citizens, or static and dynamic, since citizens
 	// and enemies are going to be changing animation frames frequently.
 
+	std::vector<SkyObjectRenderDefinition> skyObjectRenderDefs; // Shared render data for identical-looking sky objects.
+	std::vector<SkyObjectRenderInstance> skyObjectRenderInsts; // Instances of every renderable sky object in the scene.
+
 	// @todo: map EntityID to EntityRenderInstance for updating/freeing?
 	// @todo: might need some key -> value structure for determining how voxels/entities/sky map to render defs
+
+	// @todo: buffer(s) of visible geometry, lights, indices, texture IDs, etc.
+	// - sort of thinking like: static voxel geometry, dynamic voxel geometry, entity geometry, ...
+	// - presumably each open door voxel, etc. would be in its own separate draw list (can't remember how OpenGL would handle something like this. Uniforms?)
+
+	void clearVoxels();
+	void clearEntities();
+	void clearSky();
+public:
+	const BufferView<const int> getVisibleGeometry() const; // @todo: eventually an ordered list of geometry w/ render properties
+
+	void updateVoxels(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent);
+	void updateEntities(const EntityManager &entityManager, bool nightLightsAreActive, bool playerHasLight);
+	void updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude);
+
+	// Evaluates the scene graph's internal representation of voxels/entities/sky/etc. to re-populate its draw call lists.
+	void updateVisibleGeometry(const RenderCamera &camera);
+
+	// Clears all state from the game world (used on scene changes).
+	void clear();
 };
 
 #endif

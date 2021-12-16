@@ -18,6 +18,8 @@ private:
 
 	// @todo: std::optional citizen palette ObjectTextureID from renderer (this is here and not in the render inst in case
 	// two or more citizens look identical on the same frame, unlikely as it may be in practice)
+
+	// @todo: light properties? std::optional<double> lightRadius?
 public:
 
 };
