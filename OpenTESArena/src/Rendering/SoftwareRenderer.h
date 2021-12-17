@@ -23,6 +23,21 @@
 
 class SoftwareRenderer : public RendererSystem3D
 {
+private:
+	struct ObjectTexture
+	{
+		Buffer2D<uint8_t> texels;
+
+		void init(int width, int height);
+	};
+
+	Buffer2D<double> depthBuffer;
+
+	std::vector<ObjectTexture> objectTextures;
+	std::vector<ObjectTextureID> freedObjectTextureIDs;
+	ObjectTextureID nextObjectTextureID;
+
+	ObjectTextureID getNextObjectTextureID();
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer() override;
@@ -35,7 +50,7 @@ public:
 
 	bool tryCreateObjectTexture(int width, int height, ObjectTextureID *outID) override;
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) override;
-	uint32_t *lockObjectTexture(ObjectTextureID id) override;
+	LockedTexture lockObjectTexture(ObjectTextureID id) override;
 	void unlockObjectTexture(ObjectTextureID id) override;
 	void freeObjectTexture(ObjectTextureID id) override;
 

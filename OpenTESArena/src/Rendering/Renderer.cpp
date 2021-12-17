@@ -800,7 +800,7 @@ std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
 	return this->renderer2D->tryGetTextureDims(id);
 }
 
-uint32_t *Renderer::lockObjectTexture(ObjectTextureID id)
+RendererSystem3D::LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
 {
 	DebugAssert(this->renderer3D->isInited());
 	return this->renderer3D->lockObjectTexture(id);

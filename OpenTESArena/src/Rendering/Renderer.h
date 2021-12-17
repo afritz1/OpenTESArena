@@ -211,7 +211,7 @@ public:
 	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;
 
 	// Allows for updating all texels in the given texture. Must be unlocked to flush the changes.
-	uint32_t *lockObjectTexture(ObjectTextureID id);
+	RendererSystem3D::LockedTexture lockObjectTexture(ObjectTextureID id);
 	uint32_t *lockUiTexture(UiTextureID id);
 	void unlockObjectTexture(ObjectTextureID id);
 	void unlockUiTexture(UiTextureID id);

@@ -19,6 +19,16 @@ class TextureBuilder;
 class RendererSystem3D
 {
 public:
+	struct LockedTexture
+	{
+		void *texels;
+		bool isTrueColor;
+
+		LockedTexture(void *texels, bool isTrueColor);
+
+		bool isValid();
+	};
+
 	// Profiling info gathered from internal renderer state.
 	struct ProfilerData
 	{
@@ -42,7 +52,7 @@ public:
 	// Texture management functions.
 	virtual bool tryCreateObjectTexture(int width, int height, ObjectTextureID *outID) = 0;
 	virtual bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) = 0;
-	virtual uint32_t *lockObjectTexture(ObjectTextureID id) = 0;
+	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
 	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
 
