@@ -8,9 +8,8 @@
 // Common voxel render data usable by all renderers. Can be pointed to by multiple voxel
 // render instances.
 
-class VoxelRenderDefinition
+struct VoxelRenderDefinition
 {
-public:
 	static constexpr int MAX_RECTS = 8; // Max number of rectangles in the voxel.
 	static constexpr int FACES = 6; // Number of faces on the voxel.
 
@@ -19,14 +18,14 @@ public:
 	{
 		std::array<int, MAX_RECTS> indices;
 		int count;
+
+		FaceIndicesDef();
 	};
-private:
+
 	// @todo: shared voxel render data a renderer would care about
 	// - Make a render utils function for converting +/- {x,y,z} face/enum to index (like sky octants).
 	std::array<RectangleRenderDefinition, MAX_RECTS> rects; // Model-space geometry.
 	std::array<FaceIndicesDef, FACES> faceIndices; // X: 0, 1; Y: 2, 3; Z: 4, 5.
-public:
-
 };
 
 #endif

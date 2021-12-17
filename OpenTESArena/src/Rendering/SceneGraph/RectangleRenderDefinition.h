@@ -4,23 +4,24 @@
 #include <type_traits>
 
 #include "../RenderTextureUtils.h"
+#include "../../Math/Quad.h"
 
-// Defines a rectangle and how to render it.
+// Defines a rectangle whose rendering properties can be shared with any number of instances of geometry.
 
-class RectangleRenderDefinition
+struct RectangleRenderDefinition
 {
-public:
 	enum class AlphaType
 	{
 		Opaque,
 		AlphaTested
 	};
-private:
-	// @todo: model space rectangle, independent of chunk space or ceiling height
+
+	Quad quad; // Model-space rectangle.
 	ObjectTextureID textureID;
 	AlphaType alphaType;
-public:
 
+	void init(const Quad &quad, ObjectTextureID textureID, AlphaType alphaType);
+	void init(const Quad &quad, ObjectTextureID textureID);
 };
 
 #endif

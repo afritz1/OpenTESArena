@@ -10,7 +10,7 @@
 class VoxelRenderInstance
 {
 private:
-	// @todo: unique state values (open door percent, fade percent, etc.)
+	// @todo: unique state values (open door percent, fade percent, etc.). Will probably want a discriminated union?
 	VoxelInt3 position;
 	int defID;
 public:
