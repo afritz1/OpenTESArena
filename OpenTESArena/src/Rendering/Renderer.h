@@ -19,6 +19,7 @@
 
 // Container for 2D and 3D rendering operations.
 
+class Camera3D;
 class Color;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
@@ -236,8 +237,9 @@ public:
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	// @todo: rework to be some submit3dFrame() maybe? Need to include SceneGraph interaction in here somewhere.
-	void renderWorld();
+	void submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir, Degrees fovY,
+		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

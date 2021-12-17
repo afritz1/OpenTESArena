@@ -6,14 +6,13 @@
 
 // Common render camera usable by all renderers.
 
-class RenderCamera
+struct RenderCamera
 {
-private:
 	ChunkInt2 chunk;
-	VoxelDouble3 voxel, direction;
+	VoxelDouble3 point, direction;
 	double fovX, fovY;
-public:
-	// @todo
+
+	void init(const ChunkInt2 &chunk, const VoxelDouble3 &point, const VoxelDouble3 &direction, double fovX, double fovY);
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "ArenaRenderUtils.h"
+#include "LegacyRendererUtils.h"
 #include "RendererUtils.h"
 #include "RenderInitSettings.h"
 #include "SoftwareRenderer.h"
@@ -32,7 +33,7 @@ SoftwareRenderer::~SoftwareRenderer()
 
 void SoftwareRenderer::init(const RenderInitSettings &settings)
 {
-	this->depthBuffer.init(settings.getWidth(), settings.getHeight());
+	this->depthBuffer.init(settings.width, settings.height);
 	this->nextObjectTextureID = 0;
 }
 
@@ -135,28 +136,64 @@ void SoftwareRenderer::freeObjectTexture(ObjectTextureID id)
 
 bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect, bool *outIsSelected) const
 {
-	DebugNotImplemented(); // @todo: this is in LegacyRendererUtils
-	return false;
+	if (pixelPerfect)
+	{
+		// Get the texture list from the texture group at the given animation state and angle.
+		DebugAssertIndex(this->objectTextures, textureID);
+		const ObjectTexture &texture = this->objectTextures[textureID];
+		const int textureWidth = texture.texels.getWidth();
+		const int textureHeight = texture.texels.getHeight();
+
+		const int textureX = static_cast<int>(uv.x * static_cast<double>(textureWidth));
+		const int textureY = static_cast<int>(uv.y * static_cast<double>(textureHeight));
+
+		if ((textureX < 0) || (textureX >= textureWidth) ||
+			(textureY < 0) || (textureY >= textureHeight))
+		{
+			// Outside the texture; out of bounds.
+			return false;
+		}
+
+		// Check if the texel is non-transparent.
+		const uint8_t texel = texture.texels.get(textureX, textureY);
+		*outIsSelected = texel != 0;
+		return true;
+	}
+	else
+	{
+		// The entity's projected rectangle is hit if the texture coordinates are valid.
+		const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
+		*outIsSelected = withinEntity;
+		return true;
+	}
 }
 
-Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection, Degrees fovY, double aspect) const
+Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+	Degrees fovY, double aspect) const
 {
-	DebugNotImplemented(); // @todo: this is in LegacyRendererUtils
-	return Double3();
+	return LegacyRendererUtils::screenPointToRay(xPercent, yPercent, cameraDirection, fovY, aspect);
 }
 
 RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 {
-	DebugNotImplemented();
-	return ProfilerData(-1, -1, -1, -1, -1, -1);
+	const int renderWidth = this->depthBuffer.getWidth();
+	const int renderHeight = this->depthBuffer.getHeight();
+
+	// @todo
+	const int threadCount = 1;
+	const int potentiallyVisFlatCount = 0;
+	const int visFlatCount = 0;
+	const int visLightCount = 0;
+
+	return ProfilerData(renderWidth, renderHeight, threadCount, potentiallyVisFlatCount, visFlatCount, visLightCount);
 }
 
-void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings)
+void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
-	DebugNotImplemented();
+	// @todo: shade RGB directions into frame buffer
 }
 
 void SoftwareRenderer::present()
 {
-	DebugNotImplemented();
+	// Do nothing for now, might change later.
 }

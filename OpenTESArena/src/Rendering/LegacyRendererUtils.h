@@ -5,6 +5,7 @@
 
 #include "ArenaRenderUtils.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
 #include "../Media/Palette.h"
 
@@ -17,10 +18,10 @@ namespace LegacyRendererUtils
 	constexpr double FAR_PLANE = 1000.0;
 
 	// Angle of the sky gradient above the horizon, in degrees.
-	constexpr double SKY_GRADIENT_ANGLE = 30.0;
+	constexpr Degrees SKY_GRADIENT_ANGLE = 30.0;
 
 	// Max angle of distant clouds above the horizon, in degrees.
-	constexpr double DISTANT_CLOUDS_MAX_ANGLE = 25.0;
+	constexpr Degrees DISTANT_CLOUDS_MAX_ANGLE = 25.0;
 
 	constexpr double DEPTH_BUFFER_INFINITY = std::numeric_limits<double>::infinity();
 
@@ -86,10 +87,7 @@ namespace LegacyRendererUtils
 	/*void sampleChasmTexture(const ChasmTexture &texture, double screenXPercent, double screenYPercent,
 		double *r, double *g, double *b);*/
 
-	/*bool tryGetEntitySelectionData(const Double2 &uv, const TextureAssetReference &textureAssetRef,
-		bool flipped, bool reflective, bool pixelPerfect, const Palette &palette, bool *outIsSelected);*/
-
-	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection, double fovY, double aspect);
+	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection, Degrees fovY, double aspect);
 }
 
 #endif

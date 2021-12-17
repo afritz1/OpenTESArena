@@ -62,7 +62,7 @@ public:
 
 	ProfilerData getProfilerData() const override;
 
-	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings) override;
+	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, uint32_t *outputBuffer) override;
 	void present() override;
 };
 

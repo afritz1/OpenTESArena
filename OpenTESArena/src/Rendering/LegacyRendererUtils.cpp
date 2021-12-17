@@ -900,47 +900,8 @@ uint8_t LegacyRendererUtils::sampleFogMatrixTexture(const ArenaRenderUtils::FogM
 	*b = texel.b;
 }*/
 
-/*bool LegacyRendererUtils::tryGetEntitySelectionData(const Double2 &uv, const TextureAssetReference &textureAssetRef,
-	bool flipped, bool reflective, bool pixelPerfect, const Palette &palette, bool *outIsSelected)
-{
-	// Branch depending on whether the selection request needs to include texture data.
-	if (pixelPerfect)
-	{
-		// Get the texture list from the texture group at the given animation state and angle.
-		const FlatTexture &texture = this->entityTextures.getTexture(textureAssetRef, flipped, reflective);
-
-		// Convert texture coordinates to a texture index. Don't need to clamp; just return
-		// failure if it's out-of-bounds.
-		const int textureX = static_cast<int>(uv.x * static_cast<double>(texture.width));
-		const int textureY = static_cast<int>(uv.y * static_cast<double>(texture.height));
-
-		if ((textureX < 0) || (textureX >= texture.width) ||
-			(textureY < 0) || (textureY >= texture.height))
-		{
-			// Outside the texture.
-			return false;
-		}
-
-		const int textureIndex = textureX + (textureY * texture.width);
-
-		// Check if the texel is non-transparent.
-		const FlatTexel &texel = texture.texels[textureIndex];
-		const Color &texelColor = palette[texel.value];
-		*outIsSelected = texelColor.a > 0;
-		return true;
-	}
-	else
-	{
-		// If not pixel perfect, the entity's projected rectangle is hit if the texture coordinates
-		// are valid.
-		const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
-		*outIsSelected = withinEntity;
-		return true;
-	}
-}*/
-
 Double3 LegacyRendererUtils::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
-	double fovY, double aspect)
+	Degrees fovY, double aspect)
 {
 	// The basic components are the forward, up, and right vectors.
 	const Double3 up = Double3::UnitY;

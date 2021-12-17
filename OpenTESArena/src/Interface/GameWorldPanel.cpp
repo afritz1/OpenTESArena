@@ -853,13 +853,18 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
 
+	// @todo: update the scene graph's voxels/entities/sky/particles here or inside the Renderer function?
+
+	// @todo: get object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
+	const ObjectTextureID paletteTextureID = -1;
+	const ObjectTextureID lightTableTextureID = -1;
+	const ObjectTextureID skyColorsTextureID = -1;
+	const ObjectTextureID thunderstormColorsTextureID = -1;
+
 	auto &renderer = game.getRenderer();
-	renderer.renderWorld(); // @todo: rework for the new renderer design
-	/*renderer.renderWorld(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
-		ambientPercent, gameState.getDaytimePercent(), gameState.getChasmAnimPercent(), latitude,
-		gameState.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
-		options.getMisc_ChunkDistance(), activeLevelInst.getCeilingScale(), activeLevelInst, activeSkyInst,
-		activeWeatherInst, game.getRandom(), game.getEntityDefinitionLibrary(), defaultPalette);*/
+	renderer.submitFrame(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
+		ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID,
+		options.getGraphics_RenderThreadsMode());
 
 	return true;
 }

@@ -910,31 +910,32 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
-void Renderer::renderWorld()
+void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir, Degrees fovY,
+	double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+	ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode)
 {
 	DebugAssert(this->renderer3D->isInited());
 
-	// @todo: rework this function for the new renderer design
+	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
+	const double renderAspectRatio = static_cast<double>(renderDims.x) / static_cast<double>(renderDims.y);
+	const Degrees fovX = MathUtils::verticalFovToHorizontalFov(fovY, renderAspectRatio);
 
 	RenderCamera renderCamera;
+	renderCamera.init(cameraPos.chunk, cameraPos.point, cameraDir, fovX, fovY);
+
 	RenderFrameSettings renderFrameSettings;
-	this->renderer3D->submitFrame(renderCamera, renderFrameSettings);
-	this->renderer3D->present();
-	
-	/*// Lock the game world texture and give the pixel pointer to the software renderer.
-	// - Supposedly this is faster than SDL_UpdateTexture(). In any case, there's one
-	//   less frame buffer to take care of.
-	uint32_t *gameWorldPixels;
+	renderFrameSettings.init(renderCamera, ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
+		thunderstormColorsTextureID, renderDims.x, renderDims.y, renderThreadsMode);
+
+	uint32_t *outputBuffer;
 	int gameWorldPitch;
 	int status = SDL_LockTexture(this->gameWorldTexture.get(), nullptr,
-		reinterpret_cast<void**>(&gameWorldPixels), &gameWorldPitch);
-	DebugAssertMsg(status == 0, "Couldn't lock game world texture, " + std::string(SDL_GetError()));
+		reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
+	DebugAssertMsg(status == 0, "Couldn't lock game world texture for scene rendering (" + std::string(SDL_GetError()) + ").");
 
-	// Render the game world to the game world frame buffer.
+	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->render(eye, direction, fovY, ambient, daytimePercent, chasmAnimPercent, latitude,
-		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingScale, levelInst,
-		skyInst, weatherInst, random, entityDefLibrary, palette, gameWorldPixels);
+	this->renderer3D->submitFrame(renderCamera, renderFrameSettings, outputBuffer);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 
@@ -944,12 +945,9 @@ void Renderer::renderWorld()
 		swProfilerData.potentiallyVisFlatCount, swProfilerData.visFlatCount, swProfilerData.visLightCount,
 		frameTime);
 
-	// Update the game world texture with the new ARGB8888 pixels.
+	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
 	SDL_UnlockTexture(this->gameWorldTexture.get());
-
-	// Now copy to the native frame buffer (stretching if needed).
-	const Int2 viewDims = this->getViewDimensions();
-	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);*/
+	this->draw(this->gameWorldTexture, 0, 0, renderDims.x, renderDims.y);
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)
@@ -975,6 +973,8 @@ void Renderer::draw(const RendererSystem2D::RenderElement *renderElements, int c
 
 void Renderer::present()
 {
+	this->renderer3D->present(); // @todo: maybe this call will do the below at some point? Not sure
+
 	SDL_SetRenderTarget(this->renderer, nullptr);
 	SDL_RenderCopy(this->renderer, this->nativeTexture.get(), nullptr, nullptr);
 	SDL_RenderPresent(this->renderer);
