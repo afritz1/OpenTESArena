@@ -201,7 +201,7 @@ public:
 	void setRenderThreadsMode(int mode);
 
 	// Texture handle allocation functions.
-	bool tryCreateObjectTexture(int width, int height, ObjectTextureID *outID);
+	bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID);
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID);
 	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID);

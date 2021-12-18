@@ -51,7 +51,7 @@ private:
 	EntityManager entityManager;
 	std::vector<LoadedVoxelTextureEntry> loadedVoxelTextures;
 	std::vector<LoadedEntityTextureEntry> loadedEntityTextures;
-	std::unordered_map<ArenaTypes::ChasmType, ScopedObjectTextureRef> loadedChasmTextures;
+	std::unordered_map<ArenaTypes::ChasmType, std::vector<ScopedObjectTextureRef>> loadedChasmTextures;
 	double ceilingScale;
 public:
 	LevelInstance();

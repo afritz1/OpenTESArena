@@ -27,8 +27,12 @@ private:
 	struct ObjectTexture
 	{
 		Buffer2D<uint8_t> texels;
+		Buffer<uint32_t> paletteTexels;
 
-		void init(int width, int height);
+		void init8Bit(int width, int height);
+		void initPalette(int count);
+
+		void clear();
 	};
 
 	Buffer2D<double> depthBuffer;
@@ -36,8 +40,6 @@ private:
 	std::vector<ObjectTexture> objectTextures;
 	std::vector<ObjectTextureID> freedObjectTextureIDs;
 	ObjectTextureID nextObjectTextureID;
-
-	ObjectTextureID getNextObjectTextureID();
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer() override;
@@ -48,7 +50,7 @@ public:
 
 	void resize(int width, int height) override;
 
-	bool tryCreateObjectTexture(int width, int height, ObjectTextureID *outID) override;
+	bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID) override;
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) override;
 	LockedTexture lockObjectTexture(ObjectTextureID id) override;
 	void unlockObjectTexture(ObjectTextureID id) override;

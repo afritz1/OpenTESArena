@@ -762,10 +762,10 @@ void Renderer::setRenderThreadsMode(int mode)
 	//this->renderer3D->setRenderThreadsMode(mode); // @todo: figure out if this should be in RenderFrameSettings and obtained via Options
 }
 
-bool Renderer::tryCreateObjectTexture(int width, int height, ObjectTextureID *outID)
+bool Renderer::tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateObjectTexture(width, height, outID);
+	return this->renderer3D->tryCreateObjectTexture(width, height, isPalette, outID);
 }
 
 bool Renderer::tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID)

@@ -251,14 +251,21 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 				}
 
 				ScopedObjectTextureRef chasmTextureRef(chasmTextureID, renderer);
-				this->loadedChasmTextures.emplace(chasmType, std::move(chasmTextureRef));
+				auto cacheIter = this->loadedChasmTextures.find(chasmType);
+				if (cacheIter == this->loadedChasmTextures.end())
+				{
+					cacheIter = this->loadedChasmTextures.emplace(chasmType, std::vector<ScopedObjectTextureRef>()).first;
+				}
+
+				std::vector<ScopedObjectTextureRef> &entries = cacheIter->second;
+				entries.emplace_back(std::move(chasmTextureRef));
 			}
 		}
 		else
 		{
 			// Dry chasms are just a single color, no texture asset available.
 			ObjectTextureID dryChasmTextureID;
-			if (!renderer.tryCreateObjectTexture(1, 1, &dryChasmTextureID))
+			if (!renderer.tryCreateObjectTexture(1, 1, false, &dryChasmTextureID))
 			{
 				DebugLogWarning("Couldn't create dry chasm texture.");
 				return;
@@ -277,7 +284,9 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 			renderer.unlockObjectTexture(dryChasmTextureID);
 
 			ScopedObjectTextureRef dryChasmTextureRef(dryChasmTextureID, renderer);
-			this->loadedChasmTextures.emplace(chasmType, std::move(dryChasmTextureRef));
+			std::vector<ScopedObjectTextureRef> entries;
+			entries.emplace_back(std::move(dryChasmTextureRef));
+			this->loadedChasmTextures.emplace(chasmType, std::move(entries));
 		}
 	};
 

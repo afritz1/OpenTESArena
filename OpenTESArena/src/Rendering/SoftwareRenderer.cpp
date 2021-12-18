@@ -5,6 +5,7 @@
 #include "ArenaRenderUtils.h"
 #include "LegacyRendererUtils.h"
 #include "RendererUtils.h"
+#include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
 #include "SoftwareRenderer.h"
 #include "../Math/Constants.h"
@@ -16,9 +17,20 @@
 
 #include "components/debug/Debug.h"
 
-void SoftwareRenderer::ObjectTexture::init(int width, int height)
+void SoftwareRenderer::ObjectTexture::init8Bit(int width, int height)
 {
 	this->texels.init(width, height);
+}
+
+void SoftwareRenderer::ObjectTexture::initPalette(int count)
+{
+	this->paletteTexels.init(count);
+}
+
+void SoftwareRenderer::ObjectTexture::clear()
+{
+	this->texels.clear();
+	this->paletteTexels.clear();
 }
 
 SoftwareRenderer::SoftwareRenderer()
@@ -56,31 +68,33 @@ void SoftwareRenderer::resize(int width, int height)
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
 }
 
-ObjectTextureID SoftwareRenderer::getNextObjectTextureID()
+bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID)
 {
-	ObjectTextureID id;
-	if (!this->freedObjectTextureIDs.empty())
+	ObjectTexture texture;
+	if (!isPalette)
 	{
-		id = this->freedObjectTextureIDs.back();
-		this->freedObjectTextureIDs.pop_back();
+		texture.init8Bit(width, height);
+		texture.texels.fill(0);
 	}
 	else
 	{
-		id = this->nextObjectTextureID;
-		this->nextObjectTextureID++;
+		texture.initPalette(width * height);
+		texture.paletteTexels.fill(0);
 	}
 
-	return id;
-}
-
-bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, ObjectTextureID *outID)
-{
-	ObjectTexture texture;
-	texture.init(width, height);
-	texture.texels.fill(0);
-
-	this->objectTextures.emplace_back(std::move(texture));
-	*outID = this->getNextObjectTextureID();
+	if (!this->freedObjectTextureIDs.empty())
+	{
+		*outID = this->freedObjectTextureIDs.back();
+		this->freedObjectTextureIDs.pop_back();
+		this->objectTextures[*outID] = std::move(texture);
+	}
+	else
+	{
+		*outID = this->nextObjectTextureID;
+		this->nextObjectTextureID++;
+		this->objectTextures.emplace_back(std::move(texture));
+	}
+	
 	return true;
 }
 
@@ -88,9 +102,14 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 {
 	const int width = textureBuilder.getWidth();
 	const int height = textureBuilder.getHeight();
+	if (!this->tryCreateObjectTexture(width, height, false, outID))
+	{
+		DebugLogWarning("Couldn't create " + std::to_string(width) + "x" + std::to_string(height) + " object texture.");
+		return false;
+	}
 
-	ObjectTexture texture;
-	texture.init(width, height);
+	DebugAssertIndex(this->objectTextures, *outID);
+	ObjectTexture &texture = this->objectTextures[*outID];
 
 	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
@@ -108,8 +127,6 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(textureBuilderType)));
 	}
 
-	this->objectTextures.emplace_back(std::move(texture));
-	*outID = this->getNextObjectTextureID();
 	return true;
 }
 
@@ -117,7 +134,19 @@ LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
 {
 	DebugAssertIndex(this->objectTextures, id);
 	ObjectTexture &texture = this->objectTextures[id];
-	return LockedTexture(texture.texels.get(), false);
+	if (texture.texels.isValid())
+	{
+		return LockedTexture(texture.texels.get(), false);
+	}
+	else if (texture.paletteTexels.isValid())
+	{
+		return LockedTexture(texture.paletteTexels.get(), true);
+	}
+	else
+	{
+		DebugNotImplemented();
+		return LockedTexture(nullptr, false);
+	}
 }
 
 void SoftwareRenderer::unlockObjectTexture(ObjectTextureID id)
@@ -130,7 +159,7 @@ void SoftwareRenderer::freeObjectTexture(ObjectTextureID id)
 {
 	DebugAssertIndex(this->objectTextures, id);
 	ObjectTexture &texture = this->objectTextures[id];
-	texture.texels.clear();
+	texture.clear();
 	this->freedObjectTextureIDs.emplace_back(id);
 }
 
@@ -197,6 +226,9 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
+	const int outputWidth = this->depthBuffer.getWidth();
+	const int outputHeight = this->depthBuffer.getHeight();
+	const ObjectTexture &paletteTexture = this->objectTextures[settings.paletteTextureID];
 	// @todo: shade RGB directions into frame buffer
 }
 

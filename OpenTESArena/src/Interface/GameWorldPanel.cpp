@@ -855,15 +855,40 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	// @todo: update the scene graph's voxels/entities/sky/particles here or inside the Renderer function?
 
+	auto &renderer = game.getRenderer();
+
+	ObjectTextureID paletteTextureID;
+	if (!renderer.tryCreateObjectTexture(static_cast<int>(defaultPalette.size()), 1, true, &paletteTextureID))
+	{
+		DebugLogError("Couldn't create default palette texture \"" + defaultPaletteFilename + "\".");
+		return false;
+	}
+
+	ScopedObjectTextureRef paletteTextureRef(paletteTextureID, renderer); // @todo: store this as a member instead of creating/destroying every frame
+	LockedTexture lockedPaletteTexture = paletteTextureRef.lockTexels();
+	if (!lockedPaletteTexture.isValid())
+	{
+		DebugLogError("Couldn't lock palette texture \"" + defaultPaletteFilename + "\" for writing.");
+		return false;
+	}
+
+	DebugAssert(lockedPaletteTexture.isTrueColor);
+	uint32_t *paletteTexels = static_cast<uint32_t*>(lockedPaletteTexture.texels);
+	std::transform(defaultPalette.begin(), defaultPalette.end(), paletteTexels,
+		[](const Color &paletteColor)
+	{
+		return paletteColor.toARGB();
+	});
+
+	paletteTextureRef.unlockTexels();
+
 	// @todo: get object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
-	const ObjectTextureID paletteTextureID = -1;
 	const ObjectTextureID lightTableTextureID = -1;
 	const ObjectTextureID skyColorsTextureID = -1;
 	const ObjectTextureID thunderstormColorsTextureID = -1;
 
-	auto &renderer = game.getRenderer();
 	renderer.submitFrame(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
-		ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID,
+		ambientPercent, paletteTextureRef.get(), lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID,
 		options.getGraphics_RenderThreadsMode());
 
 	return true;
