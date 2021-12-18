@@ -2,6 +2,8 @@
 #define LEVEL_INSTANCE_H
 
 #include <optional>
+#include <unordered_map>
+#include <vector>
 
 #include "ChunkManager.h"
 #include "../Assets/ArenaTypes.h"
@@ -23,8 +25,33 @@ enum class MapType;
 class LevelInstance
 {
 private:
+	// @todo: problem to consider here:
+	// - why do we load voxel and entity textures before they are instantiated in the world?
+	// - we make the assumption that "a level has voxel and entity textures" but that is decoupled from actual voxel and entity instances.
+	// - feels like all voxel/entity/sky/particle object texture loading should be on demand...? Might simplify enemy spawning code.
+	struct LoadedVoxelTextureEntry
+	{
+		TextureAssetReference textureAssetRef;
+		ScopedObjectTextureRef objectTextureRef;
+
+		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef);
+	};
+
+	struct LoadedEntityTextureEntry
+	{
+		TextureAssetReference textureAssetRef;
+		bool flipped;
+		bool reflective;
+		ScopedObjectTextureRef objectTextureRef;
+
+		void init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective, ScopedObjectTextureRef &&objectTextureRef);
+	};
+
 	ChunkManager chunkManager;
 	EntityManager entityManager;
+	std::vector<LoadedVoxelTextureEntry> loadedVoxelTextures;
+	std::vector<LoadedEntityTextureEntry> loadedEntityTextures;
+	std::unordered_map<ArenaTypes::ChasmType, ScopedObjectTextureRef> loadedChasmTextures;
 	double ceilingScale;
 public:
 	LevelInstance();

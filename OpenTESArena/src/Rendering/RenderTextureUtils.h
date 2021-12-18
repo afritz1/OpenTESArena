@@ -9,6 +9,16 @@ using UiTextureID = int; // For all UI textures.
 
 class Renderer;
 
+struct LockedTexture
+{
+	void *texels;
+	bool isTrueColor;
+
+	LockedTexture(void *texels, bool isTrueColor);
+
+	bool isValid();
+};
+
 class ScopedObjectTextureRef
 {
 private:
@@ -31,8 +41,8 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 
-	// Texture updating functions. The returned pointer allows for changing any texels in the texture.
-	uint32_t *lockTexels();
+	// Texture updating functions.
+	LockedTexture lockTexels();
 	void unlockTexels();
 };
 

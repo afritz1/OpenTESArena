@@ -795,12 +795,17 @@ bool Renderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID p
 	return this->renderer2D->tryCreateUiTexture(textureBuilderID, paletteID, textureManager, outID);
 }
 
+std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
+{
+	return this->renderer3D->tryGetObjectTextureDims(id);
+}
+
 std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
 {
 	return this->renderer2D->tryGetTextureDims(id);
 }
 
-RendererSystem3D::LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
+LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
 {
 	DebugAssert(this->renderer3D->isInited());
 	return this->renderer3D->lockObjectTexture(id);

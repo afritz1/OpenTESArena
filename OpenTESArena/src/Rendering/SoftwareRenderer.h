@@ -53,6 +53,7 @@ public:
 	LockedTexture lockObjectTexture(ObjectTextureID id) override;
 	void unlockObjectTexture(ObjectTextureID id) override;
 	void freeObjectTexture(ObjectTextureID id) override;
+	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
 
 	bool tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect,
 		bool *outIsSelected) const override;

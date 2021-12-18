@@ -3,6 +3,17 @@
 
 #include "components/debug/Debug.h"
 
+LockedTexture::LockedTexture(void *texels, bool isTrueColor)
+{
+	this->texels = texels;
+	this->isTrueColor = isTrueColor;
+}
+
+bool LockedTexture::isValid()
+{
+	return this->texels != nullptr;
+}
+
 ScopedObjectTextureRef::ScopedObjectTextureRef(ObjectTextureID id, Renderer &renderer)
 {
 	DebugAssert(id >= 0);
@@ -35,8 +46,7 @@ ScopedObjectTextureRef::~ScopedObjectTextureRef()
 {
 	if (this->renderer != nullptr)
 	{
-		DebugNotImplemented();
-		//this->renderer->freeUiTexture(this->id);
+		this->renderer->freeObjectTexture(this->id);
 	}
 }
 
@@ -69,15 +79,14 @@ void ScopedObjectTextureRef::init(ObjectTextureID id, Renderer &renderer)
 
 void ScopedObjectTextureRef::setDims()
 {
-	DebugNotImplemented();
-	/*const std::optional<Int2> dims = this->renderer->tryGetUiTextureDims(this->id);
+	const std::optional<Int2> dims = this->renderer->tryGetObjectTextureDims(this->id);
 	if (!dims.has_value())
 	{
 		DebugCrash("Couldn't get object texture dimensions (ID " + std::to_string(this->id) + ").");
 	}
 
 	this->width = dims->x;
-	this->height = dims->y;*/
+	this->height = dims->y;
 }
 
 ObjectTextureID ScopedObjectTextureRef::get() const
@@ -95,16 +104,14 @@ int ScopedObjectTextureRef::getHeight() const
 	return this->height;
 }
 
-uint32_t *ScopedObjectTextureRef::lockTexels()
+LockedTexture ScopedObjectTextureRef::lockTexels()
 {
-	DebugUnhandledReturn(nullptr_t);
-	//return this->renderer->lockUiTexture(this->id);
+	return this->renderer->lockObjectTexture(this->id);
 }
 
 void ScopedObjectTextureRef::unlockTexels()
 {
-	DebugNotImplemented();
-	//this->renderer->unlockUiTexture(this->id);
+	this->renderer->unlockObjectTexture(this->id);
 }
 
 ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, Renderer &renderer)

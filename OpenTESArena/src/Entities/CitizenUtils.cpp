@@ -239,41 +239,6 @@ bool CitizenUtils::trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenIn
 	return true;
 }
 
-void CitizenUtils::writeCitizenTextures(const EntityDefinition &maleEntityDef, const EntityDefinition &femaleEntityDef,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	auto writeTextures = [&maleEntityDef, &femaleEntityDef , &textureManager, &renderer](bool male)
-	{
-		const EntityDefinition &entityDef = male ? maleEntityDef : femaleEntityDef;
-		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-
-		for (int i = 0; i < animDef.getStateCount(); i++)
-		{
-			const EntityAnimationDefinition::State &state = animDef.getState(i);
-			for (int j = 0; j < state.getKeyframeListCount(); j++)
-			{
-				const EntityAnimationDefinition::KeyframeList &keyframeList = state.getKeyframeList(j);
-				const bool flipped = keyframeList.isFlipped();
-				for (int k = 0; k < keyframeList.getKeyframeCount(); k++)
-				{
-					const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
-					const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
-					constexpr bool reflective = false; // Citizens are not puddles.
-					
-					DebugNotImplementedMsg("writeCitizenTextures"); // @todo: store the texture IDs in LevelInstance probably
-					/*if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
-					{
-						DebugLogError("Couldn't create renderer entity texture for \"" + textureAssetRef.filename + "\".");
-					}*/
-				}
-			}
-		}
-	};
-
-	writeTextures(true);
-	writeTextures(false);
-}
-
 void CitizenUtils::clearCitizens(EntityManager &entityManager)
 {
 	constexpr EntityType entityType = EntityType::Dynamic;

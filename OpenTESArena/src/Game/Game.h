@@ -57,12 +57,14 @@ private:
 	CinematicLibrary cinematicLibrary;
 	CharacterClassLibrary charClassLibrary;
 	EntityDefinitionLibrary entityDefLibrary;
-	std::unique_ptr<GameState> gameState;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	GameWorldRenderCallback gameWorldRenderCallback;
 	Options options;
 	Renderer renderer;
 	TextureManager textureManager;
+
+	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
+	std::unique_ptr<GameState> gameState;
 	
 	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
 	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).

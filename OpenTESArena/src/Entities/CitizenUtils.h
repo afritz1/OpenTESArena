@@ -60,10 +60,6 @@ namespace CitizenUtils
 	bool trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityManager &entityManager);
 
-	// Writes the citizen textures to the renderer. This is done once for all citizens in a level.
-	void writeCitizenTextures(const EntityDefinition &maleEntityDef, const EntityDefinition &femaleEntityDef,
-		TextureManager &textureManager, Renderer &renderer);
-
 	// Used when the player commits a crime and the guards are called.
 	void clearCitizens(EntityManager &entityManager);
 }

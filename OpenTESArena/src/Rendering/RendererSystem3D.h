@@ -20,16 +20,6 @@ struct RenderInitSettings;
 class RendererSystem3D
 {
 public:
-	struct LockedTexture
-	{
-		void *texels;
-		bool isTrueColor;
-
-		LockedTexture(void *texels, bool isTrueColor);
-
-		bool isValid();
-	};
-
 	// Profiling info gathered from internal renderer state.
 	struct ProfilerData
 	{
@@ -56,6 +46,9 @@ public:
 	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
 	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
+
+	// Returns the texture's dimensions, if it exists.
+	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
 
 	// Tries to write out selection data for the given entity. Returns whether selection data was
 	// successfully written.

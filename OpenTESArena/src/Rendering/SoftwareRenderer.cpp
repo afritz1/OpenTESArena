@@ -113,7 +113,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 	return true;
 }
 
-RendererSystem3D::LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
+LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
 {
 	DebugAssertIndex(this->objectTextures, id);
 	ObjectTexture &texture = this->objectTextures[id];
@@ -132,6 +132,13 @@ void SoftwareRenderer::freeObjectTexture(ObjectTextureID id)
 	ObjectTexture &texture = this->objectTextures[id];
 	texture.texels.clear();
 	this->freedObjectTextureIDs.emplace_back(id);
+}
+
+std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
+{
+	DebugAssertIndex(this->objectTextures, id);
+	const ObjectTexture &texture = this->objectTextures[id];
+	return Int2(texture.texels.getWidth(), texture.texels.getHeight());
 }
 
 bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect, bool *outIsSelected) const

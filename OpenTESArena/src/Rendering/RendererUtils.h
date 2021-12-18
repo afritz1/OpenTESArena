@@ -19,21 +19,6 @@ class WeatherInstance;
 
 namespace RendererUtils
 {
-	struct LoadedEntityTextureEntry
-	{
-		TextureAssetReference textureAssetRef;
-		bool flipped;
-		bool reflective;
-
-		void init(TextureAssetReference &&textureAssetRef, bool flipped, bool reflective);
-	};
-
-	// Loaded texture asset caches so the rest of the engine can see what texture assets are already loaded
-	// in the renderer.
-	// @todo: this should eventually be a hash table of texture asset refs to texture handles
-	using LoadedVoxelTextureCache = std::vector<TextureAssetReference>;
-	using LoadedEntityTextureCache = std::vector<LoadedEntityTextureEntry>;
-
 	// Vertices used with fog geometry in screen-space around the player.
 	constexpr int FOG_GEOMETRY_VERTEX_COUNT = 8;
 	constexpr int FOG_GEOMETRY_INDEX_COUNT = 16;

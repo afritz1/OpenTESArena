@@ -11,14 +11,6 @@
 
 #include "components/debug/Debug.h"
 
-void RendererUtils::LoadedEntityTextureEntry::init(TextureAssetReference &&textureAssetRef, bool flipped,
-	bool reflective)
-{
-	this->textureAssetRef = std::move(textureAssetRef);
-	this->flipped = flipped;
-	this->reflective = reflective;
-}
-
 int RendererUtils::getRenderThreadsFromMode(int mode)
 {
 	if (mode == 0)
