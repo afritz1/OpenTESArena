@@ -952,7 +952,9 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 
 	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
 	SDL_UnlockTexture(this->gameWorldTexture.get());
-	this->draw(this->gameWorldTexture, 0, 0, renderDims.x, renderDims.y);
+
+	const Int2 viewDims = this->getViewDimensions();
+	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)
