@@ -929,7 +929,7 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 	renderCamera.init(cameraPos.chunk, cameraPos.point, cameraDir, fovX, fovY);
 
 	RenderFrameSettings renderFrameSettings;
-	renderFrameSettings.init(renderCamera, ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
+	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
 		thunderstormColorsTextureID, renderDims.x, renderDims.y, renderThreadsMode);
 
 	uint32_t *outputBuffer;

@@ -9,14 +9,13 @@
 
 struct RenderFrameSettings
 {
-	RenderCamera camera;
 	double ambientPercent;
 	ObjectTextureID paletteTextureID, lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID;
 	int renderWidth, renderHeight, renderThreadsMode;
 
-	void init(const RenderCamera &camera, double ambientPercent, ObjectTextureID paletteTextureID,
-		ObjectTextureID lightTableTextureID, ObjectTextureID skyColorsTextureID,
-		ObjectTextureID thunderstormColorsTextureID, int renderWidth, int renderHeight, int renderThreadsMode);
+	void init(double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderWidth, int renderHeight,
+		int renderThreadsMode);
 };
 
 #endif
