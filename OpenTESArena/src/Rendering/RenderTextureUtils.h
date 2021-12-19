@@ -26,6 +26,7 @@ private:
 	Renderer *renderer;
 	int width, height;
 
+	void destroy();
 	void setDims();
 public:
 	ScopedObjectTextureRef(ObjectTextureID id, Renderer &renderer);

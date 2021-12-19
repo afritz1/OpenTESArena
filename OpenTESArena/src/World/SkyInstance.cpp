@@ -15,46 +15,41 @@
 #include "WeatherInstance.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Math/Random.h"
-#include "../Media/TextureBuilder.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
 
 #include "components/debug/Debug.h"
 
-SkyInstance::ObjectInstance::ObjectInstance()
+void SkyInstance::LoadedSkyObjectTextureEntry::init(const TextureAssetReference &textureAssetRef,
+	ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->type = static_cast<ObjectInstance::Type>(-1);
-	this->width = 0.0;
-	this->height = 0.0;
+	this->textureAssetRef = textureAssetRef;
+	this->objectTextureRef = std::move(objectTextureRef);
 }
 
-void SkyInstance::ObjectInstance::init(Type type, const Double3 &baseDirection, double width, double height)
+void SkyInstance::LoadedSmallStarTextureEntry::init(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->type = type;
+	this->paletteIndex = paletteIndex;
+	this->objectTextureRef = std::move(objectTextureRef);
+}
+
+SkyInstance::ObjectInstance::ObjectInstance()
+{
+	this->width = 0.0;
+	this->height = 0.0;
+	this->objectTextureID = -1;
+	this->emissive = false;
+}
+
+void SkyInstance::ObjectInstance::init(const Double3 &baseDirection, double width, double height,
+	ObjectTextureID objectTextureID, bool emissive)
+{
 	this->baseDirection = baseDirection;
 	this->width = width;
 	this->height = height;
-}
-
-void SkyInstance::ObjectInstance::initGeneral(const Double3 &baseDirection, double width, double height,
-	TextureBuilderID textureBuilderID, bool emissive)
-{
-	this->init(ObjectInstance::Type::General, baseDirection, width, height);
-	this->general.textureBuilderID = textureBuilderID;
-	this->general.emissive = emissive;
-}
-
-void SkyInstance::ObjectInstance::initSmallStar(const Double3 &baseDirection, double width, double height,
-	uint8_t paletteIndex)
-{
-	this->init(ObjectInstance::Type::SmallStar, baseDirection, width, height);
-	this->smallStar.paletteIndex = paletteIndex;
-}
-
-SkyInstance::ObjectInstance::Type SkyInstance::ObjectInstance::getType() const
-{
-	return this->type;
+	this->objectTextureID = objectTextureID;
+	this->emissive = emissive;
 }
 
 const Double3 &SkyInstance::ObjectInstance::getBaseDirection() const
@@ -77,22 +72,14 @@ double SkyInstance::ObjectInstance::getHeight() const
 	return this->height;
 }
 
-SkyInstance::ObjectInstance::General &SkyInstance::ObjectInstance::getGeneral()
+ObjectTextureID SkyInstance::ObjectInstance::getObjectTextureID() const
 {
-	DebugAssert(this->type == ObjectInstance::Type::General);
-	return this->general;
+	return this->objectTextureID;
 }
 
-const SkyInstance::ObjectInstance::General &SkyInstance::ObjectInstance::getGeneral() const
+bool SkyInstance::ObjectInstance::isEmissive() const
 {
-	DebugAssert(this->type == ObjectInstance::Type::General);
-	return this->general;
-}
-
-const SkyInstance::ObjectInstance::SmallStar &SkyInstance::ObjectInstance::getSmallStar() const
-{
-	DebugAssert(this->type == ObjectInstance::Type::SmallStar);
-	return this->smallStar;
+	return this->emissive;
 }
 
 void SkyInstance::ObjectInstance::setTransformedDirection(const Double3 &direction)
@@ -106,11 +93,15 @@ void SkyInstance::ObjectInstance::setDimensions(double width, double height)
 	this->height = height;
 }
 
-SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs,
-	double targetSeconds)
+void SkyInstance::ObjectInstance::setObjectTextureID(ObjectTextureID id)
+{
+	this->objectTextureID = id;
+}
+
+SkyInstance::AnimInstance::AnimInstance(int objectIndex, Buffer<ObjectTextureID> &&objectTextureIDs, double targetSeconds)
+	: objectTextureIDs(std::move(objectTextureIDs))
 {
 	this->objectIndex = objectIndex;
-	this->textureBuilderIDs = textureBuilderIDs;
 	this->targetSeconds = targetSeconds;
 	this->currentSeconds = 0.0;
 }
@@ -132,28 +123,131 @@ SkyInstance::SkyInstance()
 }
 
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
-	int currentDay, TextureManager &textureManager)
+	int currentDay, TextureManager &textureManager, Renderer &renderer)
 {
-	auto addGeneralObjectInst = [this](const Double3 &baseDirection, double width, double height,
-		TextureBuilderID textureBuilderID, bool emissive)
+	auto addGeneralObjectInst = [this, &textureManager, &renderer](const Double3 &baseDirection,
+		const TextureAssetReference &textureAssetRef, bool emissive)
 	{
+		const auto cacheIter = std::find_if(this->loadedSkyObjectTextures.begin(), this->loadedSkyObjectTextures.end(),
+			[&textureAssetRef](const LoadedSkyObjectTextureEntry &entry)
+		{
+			return entry.textureAssetRef == textureAssetRef;
+		});
+
+		ObjectTextureID objectTextureID;
+		int textureWidth, textureHeight;
+		if (cacheIter == this->loadedSkyObjectTextures.end())
+		{
+			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+			if (!textureBuilderID.has_value())
+			{
+				DebugLogWarning("Couldn't load sky object texture \"" + textureAssetRef.filename + "\".");
+				return;
+			}
+
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+			if (!renderer.tryCreateObjectTexture(textureBuilder, &objectTextureID))
+			{
+				DebugLogWarning("Couldn't create sky object texture \"" + textureAssetRef.filename + "\".");
+				return;
+			}
+
+			textureWidth = textureBuilder.getWidth();
+			textureHeight = textureBuilder.getHeight();
+
+			ScopedObjectTextureRef skyObjectTextureRef(objectTextureID, renderer);
+			LoadedSkyObjectTextureEntry newEntry;
+			newEntry.init(textureAssetRef, std::move(skyObjectTextureRef));
+			this->loadedSkyObjectTextures.emplace_back(std::move(newEntry));
+		}
+		else
+		{
+			const ScopedObjectTextureRef &objectTextureRef = cacheIter->objectTextureRef;
+			objectTextureID = objectTextureRef.get();
+			textureWidth = objectTextureRef.getWidth();
+			textureHeight = objectTextureRef.getHeight();
+		}
+
+		double width, height;
+		SkyUtils::getSkyObjectDimensions(textureWidth, textureHeight, &width, &height);
+
 		ObjectInstance objectInst;
-		objectInst.initGeneral(baseDirection, width, height, textureBuilderID, emissive);
+		objectInst.init(baseDirection, width, height, objectTextureID, emissive);
 		this->objectInsts.emplace_back(std::move(objectInst));
 	};
 
-	auto addSmallStarObjectInst = [this](const Double3 &baseDirection, double width, double height,
-		uint8_t paletteIndex)
+	auto addSmallStarObjectInst = [this, &renderer](const Double3 &baseDirection, uint8_t paletteIndex)
 	{
+		const auto cacheIter = std::find_if(this->loadedSmallStarTextures.begin(), this->loadedSmallStarTextures.end(),
+			[paletteIndex](const LoadedSmallStarTextureEntry &entry)
+		{
+			return entry.paletteIndex == paletteIndex;
+		});
+
+		constexpr int textureWidth = 1;
+		constexpr int textureHeight = textureWidth;
+
+		ObjectTextureID objectTextureID;
+		if (cacheIter == this->loadedSmallStarTextures.end())
+		{
+			if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, false, &objectTextureID))
+			{
+				DebugLogWarning("Couldn't create small star texture.");
+				return;
+			}
+
+			LockedTexture lockedSmallStarTexture = renderer.lockObjectTexture(objectTextureID);
+			if (!lockedSmallStarTexture.isValid())
+			{
+				DebugLogWarning("Couldn't lock small star texture for writing.");
+				renderer.freeObjectTexture(objectTextureID);
+				return;
+			}
+
+			DebugAssert(!lockedSmallStarTexture.isTrueColor);
+			uint8_t *lockedSmallStarTexels = static_cast<uint8_t*>(lockedSmallStarTexture.texels);
+			*lockedSmallStarTexels = paletteIndex;
+			renderer.unlockObjectTexture(objectTextureID);
+
+			ScopedObjectTextureRef smallStarTextureRef(objectTextureID, renderer);
+			LoadedSmallStarTextureEntry newEntry;
+			newEntry.init(paletteIndex, std::move(smallStarTextureRef));
+			this->loadedSmallStarTextures.emplace_back(std::move(newEntry));
+		}
+		else
+		{
+			objectTextureID = cacheIter->objectTextureRef.get();
+		}
+
+		double width, height;
+		SkyUtils::getSkyObjectDimensions(textureWidth, textureHeight, &width, &height);
+
+		constexpr bool emissive = true;
 		ObjectInstance objectInst;
-		objectInst.initSmallStar(baseDirection, width, height, paletteIndex);
+		objectInst.init(baseDirection, width, height, objectTextureID, emissive);
 		this->objectInsts.emplace_back(std::move(objectInst));
 	};
 
-	auto addAnimInst = [this](int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs,
-		double targetSeconds)
+	auto addAnimInst = [this](int objectIndex, const Buffer<TextureAssetReference> &textureAssetRefs, double targetSeconds)
 	{
-		this->animInsts.emplace_back(objectIndex, textureBuilderIDs, targetSeconds);
+		// It is assumed that only general sky objects (not small stars) can have animations, and that their
+		// textures have already been loaded earlier in SkyInstance::init().
+		Buffer<ObjectTextureID> objectTextureIDs(textureAssetRefs.getCount());
+		for (int i = 0; i < textureAssetRefs.getCount(); i++)
+		{
+			const TextureAssetReference &textureAssetRef = textureAssetRefs.get(i);
+			const auto cacheIter = std::find_if(this->loadedSkyObjectTextures.begin(), this->loadedSkyObjectTextures.end(),
+				[&textureAssetRef](const LoadedSkyObjectTextureEntry &entry)
+			{
+				return entry.textureAssetRef == textureAssetRef;
+			});
+
+			DebugAssert(cacheIter != this->loadedSkyObjectTextures.end());
+			const ObjectTextureID objectTextureID = cacheIter->objectTextureRef.get();
+			objectTextureIDs.set(i, objectTextureID);
+		}
+
+		this->animInsts.emplace_back(objectIndex, std::move(objectTextureIDs), targetSeconds);
 	};
 
 	// Spawn all sky objects from the ready-to-bake format. Any animated objects start on their first frame.
@@ -166,18 +260,6 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 
 		DebugAssert(skyLandDef.getTextureCount() > 0);
 		const TextureAssetReference &textureAssetRef = skyLandDef.getTextureAssetRef(0);
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef);
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
-
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-
-		double width, height;
-		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 		for (const Radians position : placementDef.positions)
 		{
@@ -185,17 +267,20 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Radians angleY = 0.0;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(position, angleY);
 			const bool emissive = skyLandDef.getShadingType() == SkyLandDefinition::ShadingType::Bright;
-			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
+			addGeneralObjectInst(direction, textureAssetRef, emissive);
 
 			// Only land objects support animations (for now).
 			if (skyLandDef.hasAnimation())
 			{
 				const int objectIndex = static_cast<int>(this->objectInsts.size()) - 1;
-				// @todo: these texture builder IDs should come from iterating the SkyLandDefinition's texture asset refs.
-				const TextureBuilderIdGroup textureBuilderIDs(*textureBuilderID, skyLandDef.getTextureCount());
-				const double targetSeconds = static_cast<double>(textureBuilderIDs.getCount()) *
-					ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME;
-				addAnimInst(objectIndex, textureBuilderIDs, targetSeconds);
+				Buffer<TextureAssetReference> textureAssetRefs(skyLandDef.getTextureCount());
+				for (int assetRefIndex = 0; assetRefIndex < skyLandDef.getTextureCount(); assetRefIndex++)
+				{
+					textureAssetRefs.set(assetRefIndex, skyLandDef.getTextureAssetRef(assetRefIndex));
+				}
+
+				const double targetSeconds = static_cast<double>(skyLandDef.getTextureCount()) * ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME;
+				addAnimInst(objectIndex, textureAssetRefs, targetSeconds);
 			}
 
 			// Do position transform since it's only needed once at initialization for land objects.
@@ -216,18 +301,6 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::AirDefID defID = placementDef.id;
 		const SkyAirDefinition &skyAirDef = skyInfoDefinition.getAir(defID);
 		const TextureAssetReference &textureAssetRef = skyAirDef.getTextureAssetRef();
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef);
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
-
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-
-		double width, height;
-		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 		for (const std::pair<Radians, Radians> &position : placementDef.positions)
 		{
@@ -236,7 +309,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Radians angleY = position.second;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(angleX, angleY);
 			constexpr bool emissive = false;
-			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
+			addGeneralObjectInst(direction, textureAssetRef, emissive);
 
 			// Do position transform since it's only needed once at initialization for air objects.
 			ObjectInstance &objectInst = this->objectInsts.back();
@@ -259,20 +332,6 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		// Get the image from the current day.
 		DebugAssert(skyMoonDef.getTextureCount() > 0);
 		const TextureAssetReference &textureAssetRef = skyMoonDef.getTextureAssetRef(currentDay);
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef);
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
-
-		// @todo: maybe move this into the per-moon-position loop below.
-		// @todo: use SkyDefinition::MoonPlacementDef::Position::imageIndex
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-
-		double width, height;
-		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
 		{
@@ -287,8 +346,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			direction4D = moonOrbitPercentRotation * direction4D;
 
 			constexpr bool emissive = true;
-			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z), width, height,
-				*textureBuilderID, emissive);
+			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z), textureAssetRef, emissive);
 		}
 
 		moonInstCount += static_cast<int>(placementDef.positions.size());
@@ -304,18 +362,6 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::SunDefID defID = placementDef.id;
 		const SkySunDefinition &skySunDef = skyInfoDefinition.getSun(defID);
 		const TextureAssetReference &textureAssetRef = skySunDef.getTextureAssetRef();
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef);
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
-
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-
-		double width, height;
-		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 		for (const double position : placementDef.positions)
 		{
@@ -325,8 +371,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Double4 direction4D = sunLatitudeRotation *
 				Double4(baseDirection.x, baseDirection.y, baseDirection.z, 0.0);
 			constexpr bool emissive = true;
-			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z),
-				width, height, *textureBuilderID, emissive);
+			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z), textureAssetRef, emissive);
 		}
 
 		sunInstCount += static_cast<int>(placementDef.positions.size());
@@ -351,40 +396,23 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Small stars are 1x1 pixels.
 			const SkyStarDefinition::SmallStar &smallStar = skyStarDef.getSmallStar();
 			const uint8_t paletteIndex = smallStar.paletteIndex;
-			constexpr int imageWidth = 1;
-			constexpr int imageHeight = imageWidth;
-
-			double width, height;
-			SkyUtils::getSkyObjectDimensions(imageWidth, imageHeight, &width, &height);
 
 			for (const Double3 &position : placementDef.positions)
 			{
 				// Use star direction directly.
-				addSmallStarObjectInst(position, width, height, paletteIndex);
+				addSmallStarObjectInst(position, paletteIndex);
 			}
 		}
 		else if (starType == SkyStarDefinition::Type::Large)
 		{
 			const SkyStarDefinition::LargeStar &largeStar = skyStarDef.getLargeStar();
 			const TextureAssetReference &textureAssetRef = largeStar.textureAssetRef;
-			const std::optional<TextureBuilderID> textureBuilderID =
-				textureManager.tryGetTextureBuilderID(textureAssetRef);
-			if (!textureBuilderID.has_value())
-			{
-				DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-				continue;
-			}
-
-			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-
-			double width, height;
-			SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 			for (const Double3 &position : placementDef.positions)
 			{
 				// Use star direction directly.
 				constexpr bool emissive = true;
-				addGeneralObjectInst(position, width, height, *textureBuilderID, emissive);
+				addGeneralObjectInst(position, textureAssetRef, emissive);
 			}
 		}
 		else
@@ -407,32 +435,18 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		for (int i = 0; i < lightningBoltDefCount; i++)
 		{
 			const SkyLightningDefinition &skyLightningDef = skyInfoDefinition.getLightning(i);
-			const TextureBuilderIdGroup idGroup = [&textureManager, &skyLightningDef]()
+			DebugAssert(skyLightningDef.getTextureCount() > 0);
+			const TextureAssetReference &firstTextureAssetRef = skyLightningDef.getTextureAssetRef(0);
+
+			addGeneralObjectInst(Double3::Zero, firstTextureAssetRef, true);
+			
+			Buffer<TextureAssetReference> textureAssetRefs(skyLightningDef.getTextureCount());
+			for (int assetRefIndex = 0; assetRefIndex < skyLightningDef.getTextureCount(); assetRefIndex++)
 			{
-				DebugAssert(skyLightningDef.getTextureCount() > 0);
-				const TextureAssetReference &firstTextureAssetRef = skyLightningDef.getTextureAssetRef(0);
-				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(firstTextureAssetRef);
-				if (!textureBuilderID.has_value())
-				{
-					DebugLogError("Couldn't get texture builder ID for \"" + firstTextureAssetRef.filename + "\".");
-					return TextureBuilderIdGroup();
-				}
+				textureAssetRefs.set(assetRefIndex, skyLightningDef.getTextureAssetRef(assetRefIndex));
+			}
 
-				// Load the remaining frames so they are all sequential in the texture manager.
-				for (int frameIndex = 1; frameIndex < skyLightningDef.getTextureCount(); frameIndex++)
-				{
-					textureManager.tryGetTextureBuilderID(skyLightningDef.getTextureAssetRef(frameIndex));
-				}
-
-				return TextureBuilderIdGroup(*textureBuilderID, skyLightningDef.getTextureCount());
-			}();
-
-			const TextureBuilder &firstTextureBuilder = textureManager.getTextureBuilderHandle(idGroup.getID(0));
-			double width, height;
-			SkyUtils::getSkyObjectDimensions(firstTextureBuilder.getWidth(), firstTextureBuilder.getHeight(), &width, &height);
-
-			addGeneralObjectInst(Double3::Zero, width, height, idGroup.getID(0), true);
-			addAnimInst(static_cast<int>(this->objectInsts.size()) - 1, idGroup, skyLightningDef.getAnimationSeconds());
+			addAnimInst(static_cast<int>(this->objectInsts.size()) - 1, textureAssetRefs, skyLightningDef.getAnimationSeconds());
 
 			this->lightningAnimIndices.set(i, static_cast<int>(this->animInsts.size()) - 1);
 		}
@@ -502,73 +516,25 @@ int SkyInstance::getLightningEndIndex() const
 	return this->lightningEnd;
 }
 
-bool SkyInstance::isObjectSmallStar(int objectIndex) const
-{
-	DebugAssertIndex(this->objectInsts, objectIndex);
-	const ObjectInstance &objectInst = this->objectInsts[objectIndex];
-	return objectInst.getType() == SkyInstance::ObjectInstance::Type::SmallStar;
-}
-
 bool SkyInstance::isLightningVisible(int objectIndex) const
 {
 	return this->currentLightningBoltObjectIndex == objectIndex;
 }
 
-void SkyInstance::getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID,
+void SkyInstance::getSkyObject(int index, Double3 *outDirection, ObjectTextureID *outObjectTextureID,
 	bool *outEmissive, double *outWidth, double *outHeight) const
 {
 	DebugAssertIndex(this->objectInsts, index);
 	const ObjectInstance &objectInst = this->objectInsts[index];
 	*outDirection = objectInst.getTransformedDirection();
-
-	DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::General);
-	const SkyInstance::ObjectInstance::General &generalInst = objectInst.getGeneral();
-	*outTextureBuilderID = generalInst.textureBuilderID;
-	*outEmissive = generalInst.emissive;
-
+	*outObjectTextureID = objectInst.getObjectTextureID();
+	*outEmissive = objectInst.isEmissive();
 	*outWidth = objectInst.getWidth();
 	*outHeight = objectInst.getHeight();
-}
-
-void SkyInstance::getObjectSmallStar(int index, Double3 *outDirection, uint8_t *outPaletteIndex,
-	double *outWidth, double *outHeight) const
-{
-	DebugAssertIndex(this->objectInsts, index);
-	const ObjectInstance &objectInst = this->objectInsts[index];
-	*outDirection = objectInst.getTransformedDirection();
-
-	DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::SmallStar);
-	*outPaletteIndex = objectInst.getSmallStar().paletteIndex;
-
-	*outWidth = objectInst.getWidth();
-	*outHeight = objectInst.getHeight();
-}
-
-TextureBuilderIdGroup SkyInstance::getObjectTextureBuilderIDs(int index) const
-{
-	DebugAssert(!this->isObjectSmallStar(index));
-
-	// See if there's an animation with the texture builder IDs.
-	for (int i = 0; i < static_cast<int>(this->animInsts.size()); i++)
-	{
-		const SkyInstance::AnimInstance &animInst = this->animInsts[i];
-		if (animInst.objectIndex == index)
-		{
-			return animInst.textureBuilderIDs;
-		}
-	}
-
-	// Just get the object's texture builder ID directly.
-	DebugAssertIndex(this->objectInsts, index);
-	const SkyInstance::ObjectInstance &objectInst = this->objectInsts[index];
-	const SkyInstance::ObjectInstance::General &generalInst = objectInst.getGeneral();
-	return TextureBuilderIdGroup(generalInst.textureBuilderID, 1);
 }
 
 std::optional<double> SkyInstance::tryGetObjectAnimPercent(int index) const
 {
-	DebugAssert(!this->isObjectSmallStar(index));
-
 	// See if the object has an animation.
 	for (int i = 0; i < static_cast<int>(this->animInsts.size()); i++)
 	{
@@ -583,19 +549,20 @@ std::optional<double> SkyInstance::tryGetObjectAnimPercent(int index) const
 	return std::nullopt;
 }
 
+ObjectTextureID SkyInstance::getSkyColorsTextureID() const
+{
+	return this->skyColorsTextureRef.get();
+}
+
 bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	// Note: this method relies on LevelInstance::trySetActive() being called first (for texture clearing).
-	// @todo: do we want separation of "level" and "sky" in the renderer or no?
-	// - I.e. clearLevelTextures()/clearSkyTextures(). Might evolve into level/sky/UI.
-
 	// Although the sky could be treated the same way as visible entities (regenerated every frame), keep it this
 	// way because the sky is not added to and removed from like entities are. The sky is baked once per level
 	// and that's it.
 	
 	// @todo: tell SceneGraph to clear its sky geometry
-	DebugNotImplementedMsg("trySetActive");
+	//DebugNotImplementedMsg("trySetActive");
 	//renderer.clearSky();
 
 	const MapType mapType = mapDefinition.getMapType();
@@ -629,21 +596,25 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 		skyColors.set(i, color.toARGB());
 	}
 
-	DebugNotImplementedMsg("trySetActive"); // @todo: give to SceneGraph to process into an object texture for RenderFrameSettings
-	//renderer.setSkyColors(skyColors.get(), skyColors.getCount());
-
-	// Set sky objects in the renderer.
-	const std::string &paletteName = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
+	ObjectTextureID skyColorsTextureID;
+	if (!renderer.tryCreateObjectTexture(skyColors.getCount(), 1, false, &skyColorsTextureID))
 	{
-		DebugLogError("Couldn't get palette \"" + paletteName + "\".");
+		DebugLogError("Couldn't create sky colors texture.");
 		return false;
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	DebugNotImplementedMsg("trySetActive"); // @todo: this should set all the distant sky intermediate values in SceneGraph I think.
-	//renderer.setSky(*this, palette, textureManager);
+	this->skyColorsTextureRef = ScopedObjectTextureRef(skyColorsTextureID, renderer);
+	LockedTexture lockedSkyColorsTexture = renderer.lockObjectTexture(this->skyColorsTextureRef.get());
+	DebugAssert(!lockedSkyColorsTexture.isTrueColor);
+	uint8_t *lockedSkyColorsTexels = static_cast<uint8_t*>(lockedSkyColorsTexture.texels);
+	// @todo: change SkyDefinition sky colors to be 8-bit, or a TextureBuilder maybe in case of modding
+	std::fill(lockedSkyColorsTexels, lockedSkyColorsTexels + skyColors.getCount(), 0);
+	renderer.unlockObjectTexture(this->skyColorsTextureRef.get());
+
+	// Set sky objects in the renderer.
+	// @todo: I think we're going to be leaking/making duplicates of textures for every new sky instance we create
+	// unless the sky instances get deleted automatically when MapInstance goes out of scope. Need to investigate.
+	//renderer.setSky(*this, palette, textureManager); // @todo: this should set all the distant sky intermediate values in SceneGraph I think.
 
 	return true;
 }
@@ -698,12 +669,6 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 	{
 		AnimInstance &animInst = this->animInsts[i];
 
-		// Small stars don't have animations.
-		if (this->isObjectSmallStar(animInst.objectIndex))
-		{
-			continue;
-		}
-
 		// Don't update if it's an inactive lightning bolt.
 		const bool isLightningAnim = [this, i]()
 		{
@@ -727,18 +692,14 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 			animInst.currentSeconds = std::fmod(animInst.currentSeconds, animInst.targetSeconds);
 		}
 
-		const int imageCount = animInst.textureBuilderIDs.getCount();
+		const int imageCount = animInst.objectTextureIDs.getCount();
 		const double animPercent = animInst.currentSeconds / animInst.targetSeconds;
-		const int animIndex = std::clamp(
-			static_cast<int>(static_cast<double>(imageCount) * animPercent), 0, imageCount - 1);
-		const TextureBuilderID newTextureBuilderID = animInst.textureBuilderIDs.getID(animIndex);
+		const int animIndex = std::clamp(static_cast<int>(static_cast<double>(imageCount) * animPercent), 0, imageCount - 1);
+		const ObjectTextureID newObjectTextureID = animInst.objectTextureIDs.get(animIndex);
 
 		DebugAssertIndex(this->objectInsts, animInst.objectIndex);
 		ObjectInstance &objectInst = this->objectInsts[animInst.objectIndex];
-
-		DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::General);
-		ObjectInstance::General &objectInstGeneral = objectInst.getGeneral();
-		objectInstGeneral.textureBuilderID = newTextureBuilderID;
+		objectInst.setObjectTextureID(newObjectTextureID);
 	}
 
 	const Matrix4d timeOfDayRotation = RendererUtils::getTimeOfDayRotation(daytimePercent);

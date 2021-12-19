@@ -25,75 +25,70 @@ class WeatherInstance;
 class SkyInstance
 {
 private:
+	struct LoadedSkyObjectTextureEntry
+	{
+		TextureAssetReference textureAssetRef;
+		ScopedObjectTextureRef objectTextureRef;
+
+		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef);
+	};
+
+	struct LoadedSmallStarTextureEntry
+	{
+		uint8_t paletteIndex;
+		ScopedObjectTextureRef objectTextureRef;
+
+		void init(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
+	};
+
 	class ObjectInstance
 	{
-	public:
-		// Slight breakage of the design since small stars don't have a 'texture'. In the future this should
-		// allocate a renderer texture ID.
-		enum class Type
-		{
-			General,
-			SmallStar
-		};
-
-		struct General
-		{
-			// Current texture of object (may change due to animation).
-			TextureBuilderID textureBuilderID;
-			bool emissive;
-		};
-
-		struct SmallStar
-		{
-			uint8_t paletteIndex;
-		};
 	private:
 		Double3 baseDirection; // Position in sky before transformation.
 		Double3 transformedDirection; // Position in sky usable by other systems (may be updated frequently).
 		double width, height;
-		Type type;
-
-		union
-		{
-			General general;
-			SmallStar smallStar;
-		};
-
-		void init(Type type, const Double3 &baseDirection, double width, double height);
+		
+		// Current texture of object (may change due to animation).
+		ObjectTextureID objectTextureID;
+		bool emissive;
 	public:
 		ObjectInstance();
 
-		void initGeneral(const Double3 &baseDirection, double width, double height, TextureBuilderID textureBuilderID,
-			bool emissive);
-		void initSmallStar(const Double3 &baseDirection, double width, double height, uint8_t paletteIndex);
+		void init(const Double3 &baseDirection, double width, double height, ObjectTextureID objectTextureID, bool emissive);
 
-		Type getType() const;
 		const Double3 &getBaseDirection() const;
 		const Double3 &getTransformedDirection() const;
 		double getWidth() const;
 		double getHeight() const;
-		General &getGeneral();
-		const General &getGeneral() const;
-		const SmallStar &getSmallStar() const;
+		ObjectTextureID getObjectTextureID() const;
+		bool isEmissive() const;
 
 		void setTransformedDirection(const Double3 &direction);
 
 		// Intended for lightning bolt updating.
 		void setDimensions(double width, double height);
+
+		// Set when updating this sky object's animation.
+		void setObjectTextureID(ObjectTextureID id);
 	};
 
 	// Animation data for each sky object with an animation.
 	struct AnimInstance
 	{
 		int objectIndex;
-		TextureBuilderIdGroup textureBuilderIDs; // All texture IDs for the animation.
+		Buffer<ObjectTextureID> objectTextureIDs; // All object textures for the animation.
 		double targetSeconds, currentSeconds;
 
-		AnimInstance(int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs, double targetSeconds);
+		AnimInstance(int objectIndex, Buffer<ObjectTextureID> &&objectTextureIDs, double targetSeconds);
 	};
+
+	std::vector<LoadedSkyObjectTextureEntry> loadedSkyObjectTextures;
+	std::vector<LoadedSmallStarTextureEntry> loadedSmallStarTextures;
+	ScopedObjectTextureRef skyColorsTextureRef; // Renderer-allocated colors for all times during the day.
 
 	std::vector<ObjectInstance> objectInsts; // Each sky object instance.
 	std::vector<AnimInstance> animInsts; // Data for each sky object with an animation.
+
 	int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd,
 		lightningStart, lightningEnd;
 	Buffer<int> lightningAnimIndices; // Non-empty during thunderstorm so animations can be updated.
@@ -102,7 +97,7 @@ public:
 	SkyInstance();
 
 	void init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
-		int currentDay, TextureManager &textureManager);
+		int currentDay, TextureManager &textureManager, Renderer &renderer);
 
 	// Start (inclusive) and end (exclusive) indices of each sky object type.
 	int getLandStartIndex() const;
@@ -118,25 +113,15 @@ public:
 	int getLightningStartIndex() const;
 	int getLightningEndIndex() const;
 
-	// @todo: this is bad design; there should not be a small star type.
-	bool isObjectSmallStar(int objectIndex) const;
-
 	// Whether the lightning bolt is currently visible due to thunderstorm state.
 	bool isLightningVisible(int objectIndex) const;
 
-	void getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID, bool *outEmissive,
+	void getSkyObject(int index, Double3 *outDirection, ObjectTextureID *outObjectTextureID, bool *outEmissive,
 		double *outWidth, double *outHeight) const;
 
-	// @todo: this is bad design; there should not be a small star type. Eventually get renderer
-	// resource IDs instead probably.
-	void getObjectSmallStar(int index, Double3 *outDirection, uint8_t *outPaletteIndex, double *outWidth,
-		double *outHeight) const;
-
-	// @todo: this is public for the renderer for now. Remove this once public texture handles are being allocated.
-	// Gets the texture builder ID(s) for a non-small-star object. If it doesn't have an animation then there is only
-	// one ID.
-	TextureBuilderIdGroup getObjectTextureBuilderIDs(int index) const;
 	std::optional<double> tryGetObjectAnimPercent(int index) const;
+
+	ObjectTextureID getSkyColorsTextureID() const;
 
 	// Attempts to set this sky active in the renderer.
 	// @todo: maybe this and LevelInstance::trySetActive() should be replaced by some MapInstance::trySetLevelActive(int)

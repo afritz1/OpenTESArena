@@ -44,16 +44,18 @@ ScopedObjectTextureRef::ScopedObjectTextureRef(ScopedObjectTextureRef &&other)
 
 ScopedObjectTextureRef::~ScopedObjectTextureRef()
 {
-	if (this->renderer != nullptr)
-	{
-		this->renderer->freeObjectTexture(this->id);
-	}
+	this->destroy();
 }
 
 ScopedObjectTextureRef &ScopedObjectTextureRef::operator=(ScopedObjectTextureRef &&other)
 {
 	if (this != &other)
 	{
+		if (this->id >= 0)
+		{
+			this->destroy();
+		}
+
 		this->id = other.id;
 		this->renderer = other.renderer;
 		this->width = other.width;
@@ -75,6 +77,15 @@ void ScopedObjectTextureRef::init(ObjectTextureID id, Renderer &renderer)
 	this->id = id;
 	this->renderer = &renderer;
 	this->setDims();
+}
+
+void ScopedObjectTextureRef::destroy()
+{
+	if (this->renderer != nullptr)
+	{
+		this->renderer->freeObjectTexture(this->id);
+		this->id = -1;
+	}
 }
 
 void ScopedObjectTextureRef::setDims()

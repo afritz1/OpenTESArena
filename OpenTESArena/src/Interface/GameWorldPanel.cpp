@@ -884,7 +884,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	// @todo: get object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
 	const ObjectTextureID lightTableTextureID = -1;
-	const ObjectTextureID skyColorsTextureID = -1;
+	const ObjectTextureID skyColorsTextureID = activeSkyInst.getSkyColorsTextureID();
 	const ObjectTextureID thunderstormColorsTextureID = -1;
 
 	renderer.submitFrame(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),

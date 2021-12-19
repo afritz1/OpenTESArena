@@ -22,13 +22,13 @@ private:
 	int activeLevelIndex;
 	int activeSkyIndex;
 
-	void initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager);
-	void initCity(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
-	void initWild(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
+	void initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager, Renderer &renderer);
+	void initCity(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
+	void initWild(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
 public:
 	MapInstance();
 
-	void init(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
+	void init(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
 
 	int getLevelCount() const;
 	LevelInstance &getLevel(int index);
