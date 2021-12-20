@@ -57,19 +57,17 @@ namespace RendererUtils
 	// and the zoom of the camera (dependent on vertical field of view).
 	double getYShear(Radians angleRadians, double zoom);
 
-	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
-	double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
+	// Converts a 3D point or vector in world space to camera space (where Z distance to vertices is relevant).
+	// The W component of the point/vector matters (point=1, vector=0)!
+	Double4 worldSpaceToCameraSpace(const Double4 &point, const Matrix4d &view);
 
-	// Converts a 3D point in world space to camera space (where Z distance to vertices is relevant).
-	Double3 worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view);
+	// Projects a 3D point or vector in camera space to clip space (homogeneous coordinates; does not divide by W).
+	Double4 cameraSpaceToClipSpace(const Double4 &point, const Matrix4d &perspective);
 
-	// Projects a 3D point in camera space to clip space (homogeneous coordinates; does not divide by W).
-	Double4 cameraSpaceToClipSpace(const Double3 &point, const Matrix4d &perspective);
-
-	// Projects a 3D point in world space to clip space (homogeneous coordinates; does not divide by W). The given
-	// transformation matrix is the product of a model, view, and perspective matrix. This function combines the 
-	// camera space step for convenience.
-	Double4 worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform);
+	// Projects a 3D point or vector in world space to clip space (homogeneous coordinates; does not divide by W).
+	// The given transformation matrix is the product of a model, view, and perspective matrix. This function
+	// combines the camera space step for convenience.
+	Double4 worldSpaceToClipSpace(const Double4 &point, const Matrix4d &transform);
 
 	// Converts a point in homogeneous coordinates to normalized device coordinates by dividing by W.
 	Double3 clipSpaceToNDC(const Double4 &point);

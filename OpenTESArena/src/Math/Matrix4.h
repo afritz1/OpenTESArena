@@ -29,6 +29,9 @@ public:
 	static Matrix4<T> xRotation(T radians);
 	static Matrix4<T> yRotation(T radians);
 	static Matrix4<T> zRotation(T radians);
+	static Matrix4<T> transpose(const Matrix4<T> &m);
+	static Matrix4<T> inverseTranslation(const Matrix4<T> &t);
+	static Matrix4<T> inverseRotation(const Matrix4<T> &r);
 	static Matrix4<T> view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 		const Vector3f<T> &right, const Vector3f<T> &up);
 	static Matrix4<T> projection(T near, T far, T width, T height);
@@ -36,11 +39,6 @@ public:
 
 	Matrix4<T> operator*(const Matrix4<T> &m) const;
 	Vector4f<T> operator*(const Vector4f<T> &v) const;
-
-	// A partial vector multiplication, calculating only the Y and W values instead
-	// of all four (X, Y, Z, W). Intended for use with ray casted columns. The
-	// fourth input component (W) is omitted since it's a constant.
-	void ywMultiply(const Vector3f<T> &v, T &outY, T &outW) const;
 
 	std::string toString() const;
 };

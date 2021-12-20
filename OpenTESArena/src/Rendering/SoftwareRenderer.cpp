@@ -220,9 +220,9 @@ namespace swRender
 			const Double3 &v1 = triangle.v1;
 			const Double3 &v2 = triangle.v2;
 
-			const Double3 view0 = RendererUtils::worldSpaceToCameraSpace(v0, viewMatrix);
-			const Double3 view1 = RendererUtils::worldSpaceToCameraSpace(v1, viewMatrix);
-			const Double3 view2 = RendererUtils::worldSpaceToCameraSpace(v2, viewMatrix);
+			const Double4 view0 = RendererUtils::worldSpaceToCameraSpace(Double4(v0, 1.0), viewMatrix);
+			const Double4 view1 = RendererUtils::worldSpaceToCameraSpace(Double4(v1, 1.0), viewMatrix);
+			const Double4 view2 = RendererUtils::worldSpaceToCameraSpace(Double4(v2, 1.0), viewMatrix);
 
 			// Nearest and farthest Z values (note these may be negative - behind the camera).
 			const double zMin = std::min(view0.z, std::min(view1.z, view2.z));

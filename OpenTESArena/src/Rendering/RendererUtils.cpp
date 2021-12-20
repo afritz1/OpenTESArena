@@ -145,36 +145,19 @@ double RendererUtils::getYShear(Radians angleRadians, double zoom)
 	return std::tan(angleRadians) * zoom;
 }
 
-double RendererUtils::getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear)
+Double4 RendererUtils::worldSpaceToCameraSpace(const Double4 &point, const Matrix4d &view)
 {
-	// Just do 3D projection for the Y and W coordinates instead of a whole
-	// matrix * vector4 multiplication to keep from doing some unnecessary work.
-	double projectedY, projectedW;
-	transform.ywMultiply(point, projectedY, projectedW);
-
-	// Convert the projected Y to normalized coordinates.
-	projectedY /= projectedW;
-
-	// Calculate the Y position relative to the center row of the screen, and offset it by 
-	// the Y-shear. Multiply by 0.5 for the correct aspect ratio.
-	return (0.50 + yShear) - (projectedY * 0.50);
+	return view * point;
 }
 
-Double3 RendererUtils::worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view)
+Double4 RendererUtils::cameraSpaceToClipSpace(const Double4 &point, const Matrix4d &perspective)
 {
-	// Technically the view matrix would be fine as 3x3 but this isn't a big deal.
-	const Double4 viewPoint = view * Double4(point, 1.0);
-	return Double3(viewPoint.x, viewPoint.y, viewPoint.z);
+	return perspective * point;
 }
 
-Double4 RendererUtils::cameraSpaceToClipSpace(const Double3 &point, const Matrix4d &perspective)
+Double4 RendererUtils::worldSpaceToClipSpace(const Double4 &point, const Matrix4d &transform)
 {
-	return perspective * Double4(point, 1.0);
-}
-
-Double4 RendererUtils::worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform)
-{
-	return transform * Double4(point, 1.0);
+	return transform * point;
 }
 
 Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
