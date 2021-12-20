@@ -220,6 +220,13 @@ namespace swRender
 			const Double3 &v1 = triangle.v1;
 			const Double3 &v2 = triangle.v2;
 
+			// Discard back-facing.
+			const Double3 v0ToEye = eye - v0;
+			if (v0ToEye.dot(triangle.normal) <= 0.0)
+			{
+				continue;
+			}
+
 			const Double4 view0 = RendererUtils::worldSpaceToCameraSpace(Double4(v0, 1.0), viewMatrix);
 			const Double4 view1 = RendererUtils::worldSpaceToCameraSpace(Double4(v1, 1.0), viewMatrix);
 			const Double4 view2 = RendererUtils::worldSpaceToCameraSpace(Double4(v2, 1.0), viewMatrix);
