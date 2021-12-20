@@ -169,8 +169,8 @@ Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
 Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double yShear, double frameWidth, double frameHeight)
 {
 	const Double3 screenSpacePoint(
-		0.50 + point.x,
-		(0.50 + yShear) - (point.y * 0.50),
+		0.50 - (point.x * 0.50),
+		(0.50 + yShear) + (point.y * 0.50),
 		point.z);
 
 	return Double3(

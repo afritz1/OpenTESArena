@@ -133,25 +133,19 @@ Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 }
 
 template <typename T>
-Matrix4<T> Matrix4<T>::projection(T near, T far, T width, T height)
-{
-	Matrix4<T> m = Matrix4<T>::identity();
-	m.x.x = (static_cast<T>(2.0) * near) / width;
-	m.y.y = (static_cast<T>(2.0) * near) / height;
-	m.z.z = -(far + near) / (far - near);
-	m.z.w = static_cast<T>(-1.0);
-	m.w.z = ((static_cast<T>(-2.0) * far) * near) / (far - near);
-	m.w.w = static_cast<T>(0.0);
-	return m;
-}
-
-template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
-	const T height = (static_cast<T>(2.0) * near) * static_cast<T>(
-		std::tan((fovY * 0.50) * Constants::DegToRad));
-	const T width = height * aspect;
-	return Matrix4<T>::projection(near, far, width, height);
+	const T zoom = static_cast<T>(1.0 / std::tan((fovY * 0.50) * Constants::DegToRad));
+	const T farNearDiff = far - near;
+
+	Matrix4<T> m = Matrix4<T>::identity();
+	m.x.x = zoom / aspect;
+	m.y.y = zoom;
+	m.z.z = -(far + near) / farNearDiff;
+	m.z.w = static_cast<T>(-1.0);
+	m.w.z = ((static_cast<T>(-2.0) * far) * near) / farNearDiff;
+	m.w.w = static_cast<T>(0.0);
+	return m;
 }
 
 template <typename T>

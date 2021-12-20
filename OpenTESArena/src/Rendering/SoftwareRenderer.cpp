@@ -249,9 +249,9 @@ namespace swRender
 			const Double2 screenSpace01 = screenSpace1_2D - screenSpace0_2D;
 			const Double2 screenSpace12 = screenSpace2_2D - screenSpace1_2D;
 			const Double2 screenSpace20 = screenSpace0_2D - screenSpace2_2D;
-			const Double2 screenSpace01Perp = screenSpace01.leftPerp(); // @todo: might need right perp instead
-			const Double2 screenSpace12Perp = screenSpace12.leftPerp();
-			const Double2 screenSpace20Perp = screenSpace20.leftPerp();
+			const Double2 screenSpace01Perp = screenSpace01.rightPerp();
+			const Double2 screenSpace12Perp = screenSpace12.rightPerp();
+			const Double2 screenSpace20Perp = screenSpace20.rightPerp();
 
 			// Naive screen-space bounding box around triangle.
 			const double xMin = std::min(screenSpace0.x, std::min(screenSpace1.x, screenSpace2.x));
@@ -281,7 +281,7 @@ namespace swRender
 					const bool inHalfSpace0 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace0_2D, screenSpace01Perp);
 					const bool inHalfSpace1 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace1_2D, screenSpace12Perp);
 					const bool inHalfSpace2 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace2_2D, screenSpace20Perp);
-					//if (inHalfSpace0 && inHalfSpace1 && inHalfSpace2)
+					if (inHalfSpace0 && inHalfSpace1 && inHalfSpace2)
 					{
 						const int outputIndex = x + (y * frameBufferWidth);
 						colorBufferPtr[outputIndex] = colorInteger;

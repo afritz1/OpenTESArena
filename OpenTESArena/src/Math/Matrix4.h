@@ -34,7 +34,6 @@ public:
 	static Matrix4<T> inverseRotation(const Matrix4<T> &r);
 	static Matrix4<T> view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 		const Vector3f<T> &right, const Vector3f<T> &up);
-	static Matrix4<T> projection(T near, T far, T width, T height);
 	static Matrix4<T> perspective(T fovY, T aspect, T near, T far);
 
 	Matrix4<T> operator*(const Matrix4<T> &m) const;
