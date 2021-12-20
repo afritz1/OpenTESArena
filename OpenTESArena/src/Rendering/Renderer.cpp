@@ -926,7 +926,7 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 	const Degrees fovX = MathUtils::verticalFovToHorizontalFov(fovY, renderAspectRatio);
 
 	RenderCamera renderCamera;
-	renderCamera.init(cameraPos.chunk, cameraPos.point, cameraDir, fovX, fovY);
+	renderCamera.init(cameraPos.chunk, cameraPos.point, cameraDir, fovX, fovY, renderAspectRatio);
 
 	RenderFrameSettings renderFrameSettings;
 	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
