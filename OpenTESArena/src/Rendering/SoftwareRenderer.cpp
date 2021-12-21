@@ -25,6 +25,16 @@ namespace swConstants
 	constexpr double FAR_PLANE = 100.0;
 }
 
+namespace swCamera
+{
+	Double3 GetCameraEye(const RenderCamera &camera)
+	{
+		// @todo: eventually I think the chunk should be zeroed out and everything should always treat
+		// the player's chunk as the origin chunk.
+		return VoxelUtils::chunkPointToNewPoint(camera.chunk, camera.point);
+	}
+}
+
 // Internal geometry types/functions.
 namespace swGeometry
 {
@@ -60,8 +70,185 @@ namespace swGeometry
 
 	TriangleClipResult ClipTriangle(const RenderTriangle &triangle, const Double3 &planePoint, const Double3 &planeNormal)
 	{
-		// @todo
-		return TriangleClipResult::zero();
+		std::array<const Double3*, 3> insidePoints, outsidePoints;
+		std::array<const Double2*, 3> insideUVs, outsideUVs;
+		int insidePointCount = 0;
+		int outsidePointCount = 0;
+
+		const std::array<const Double3*, 3> vertexPtrs = { &triangle.v0, &triangle.v1, &triangle.v2 };
+		const std::array<const Double2*, 3> uvPtrs = { &triangle.uv0, &triangle.uv1, &triangle.uv2 };
+
+		// Determine which vertices are in the positive half-space of the clipping plane.
+		for (int i = 0; i < static_cast<int>(vertexPtrs.size()); i++)
+		{
+			const Double3 *vertexPtr = vertexPtrs[i];
+			const double dist = MathUtils::distanceToPlane(*vertexPtr, planePoint, planeNormal);
+			if (dist >= 0.0)
+			{
+				insidePoints[insidePointCount] = vertexPtr;
+				insideUVs[insidePointCount] = uvPtrs[i];
+				insidePointCount++;
+			}
+			else
+			{
+				outsidePoints[outsidePointCount] = vertexPtr;
+				outsideUVs[outsidePointCount] = uvPtrs[i];
+				outsidePointCount++;
+			}
+		}
+
+		// Clip triangle depending on the inside/outside vertex case.
+		const bool isCompletelyOutside = insidePointCount == 0;
+		const bool isCompletelyInside = insidePointCount == 3;
+		const bool becomesSmallerTriangle = insidePointCount == 1;
+		const bool becomesQuad = insidePointCount == 2;
+		if (isCompletelyOutside)
+		{
+			return TriangleClipResult::zero();
+		}
+		else if (isCompletelyInside)
+		{
+			return TriangleClipResult::one(triangle);
+		}
+		else if (becomesSmallerTriangle)
+		{
+			const Double3 &insidePoint = *insidePoints[0];
+			const Double2 &insideUV = *insideUVs[0];
+			const Double3 &outsidePoint0 = *outsidePoints[0];
+			const Double3 &outsidePoint1 = *outsidePoints[1];
+
+			// @todo: replace ray-plane intersection with one that get T value internally
+			Double3 newInsidePoint1, newInsidePoint2;
+			MathUtils::rayPlaneIntersection(insidePoint, (outsidePoint0 - insidePoint).normalized(),
+				planePoint, planeNormal, &newInsidePoint1);
+			MathUtils::rayPlaneIntersection(insidePoint, (outsidePoint1 - insidePoint).normalized(),
+				planePoint, planeNormal, &newInsidePoint2);
+
+			const double t0 = (newInsidePoint1 - insidePoint).length();
+			const double t1 = (newInsidePoint2 - insidePoint).length();
+
+			const Double2 outsideUV0 = *outsideUVs[0];
+			const Double2 outsideUV1 = *outsideUVs[1];
+			const Double2 newInsideUV0 = insideUV.lerp(outsideUV0, t0);
+			const Double2 newInsideUV1 = insideUV.lerp(outsideUV1, t1);
+
+			return TriangleClipResult::one(RenderTriangle(insidePoint, newInsidePoint1, newInsidePoint2,
+				insideUV, newInsideUV0, newInsideUV1, Color::Blue.toARGB()));
+		}
+		else if (becomesQuad)
+		{
+			const Double3 &insidePoint0 = *insidePoints[0];
+			const Double3 &insidePoint1 = *insidePoints[1];
+			const Double3 &outsidePoint0 = *outsidePoints[0];
+			const Double2 &insideUV0 = *insideUVs[0];
+			const Double2 &insideUV1 = *insideUVs[1];
+			const Double2 &outsideUV0 = *outsideUVs[0];
+
+			const Double3 &newTriangle0V0 = insidePoint0;
+			const Double3 &newTriangle0V1 = insidePoint1;
+			const Double2 &newTriangle0UV0 = insideUV0;
+			const Double2 &newTriangle0UV1 = insideUV1;
+
+			// @todo: replace ray-plane intersection with one that get T value internally
+			Double3 newTriangle0V2;
+			MathUtils::rayPlaneIntersection(newTriangle0V0, (outsidePoint0 - newTriangle0V0).normalized(),
+				planePoint, planeNormal, &newTriangle0V2);
+			const double newTriangle0T = (newTriangle0V2 - newTriangle0V0).length();
+			const Double2 newTriangle0UV2 = newTriangle0UV0.lerp(outsideUV0, newTriangle0T);
+
+			const Double3 &newTriangle1V0 = insidePoint1;
+			const Double3 &newTriangle1V1 = newTriangle0V2;
+			const Double2 &newTriangle1UV0 = insideUV1;
+			const Double2 &newTriangle1UV1 = newTriangle0UV2;
+
+			// @todo: replace ray-plane intersection with one that get T value internally
+			Double3 newTriangle1V2;
+			MathUtils::rayPlaneIntersection(newTriangle1V0, (outsidePoint0 - newTriangle1V0).normalized(),
+				planePoint, planeNormal, &newTriangle1V2);
+			const double newTriangle1T = (newTriangle1V2 - newTriangle1V0).length();
+			const Double2 newTriangle1UV2 = newTriangle1UV0.lerp(outsideUV0, newTriangle1T);
+
+			const RenderTriangle newTriangle0(
+				newTriangle0V0, newTriangle0V1, newTriangle0V2,
+				newTriangle0UV0, newTriangle0UV1, newTriangle0UV2,
+				Color::Red.toARGB());
+			const RenderTriangle newTriangle1(
+				newTriangle1V0, newTriangle1V1, newTriangle1V2,
+				newTriangle1UV0, newTriangle1UV1, newTriangle1UV2,
+				Color::Green.toARGB());
+
+			return TriangleClipResult::two(newTriangle0, newTriangle1);
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(TriangleClipResult, "Unhandled triangle clip case (inside: " +
+				std::to_string(insidePointCount) + ", outside: " + std::to_string(outsidePointCount) + ").");
+		}
+	}
+
+	// 1) Back-face culling
+	// 2) Frustum culling
+	// 3) Clipping
+	std::vector<RenderTriangle> ProcessTrianglesForRasterization(const BufferView<const RenderTriangle> &triangles, const RenderCamera &camera)
+	{
+		// @todo: camera frustum planes
+
+		const Double3 eye = swCamera::GetCameraEye(camera);
+
+		// Plane point and normal pairs in camera space.
+		// @todo: if clipping at THIS stage in the pipeline, these should be world space, not camera space.
+		// - probably need a camera -> world space transform.
+		const std::array<std::pair<Double3, Double3>, 1> clipPlanes =
+		{
+			{
+				// Near plane
+				std::make_pair(eye + (camera.forward * swConstants::NEAR_PLANE), camera.forward),
+
+				// Far plane
+				//std::make_pair(Double3(0.0, 0.0, swConstants::FAR_PLANE), -Double3::UnitZ),
+
+				// Left
+				//std::make_pair(Double3::Zero,) // @todo: probably combination of camera fwd/right/up normalized, accounting for fov and aspect
+
+				// Right
+
+				// Bottom
+
+				// Top
+
+			}
+		};
+
+		std::vector<RenderTriangle> clippedTriangles;
+
+		for (int i = 0; i < triangles.getCount(); i++)
+		{
+			const RenderTriangle &triangle = triangles.get(i);
+			const Double3 &v0 = triangle.v0;
+			const Double3 &v1 = triangle.v1;
+			const Double3 &v2 = triangle.v2;
+
+			// Discard back-facing and almost-back-facing.
+			const Double3 v0ToEye = eye - v0;
+			if (v0ToEye.dot(triangle.normal) < Constants::Epsilon)
+			{
+				continue;
+			}
+
+			// @todo: when adding more clipping planes, probably need some kind of queue here, and then
+			// the clippedTriangles.emplace_back() will be in a loop for all the final-clipped triangles
+			// from the queue (since a triangle might be clipped multiple times).
+			const auto &planePair = clipPlanes[0];
+			const Double3 &planePoint = planePair.first;
+			const Double3 &planeNormal = planePair.second;
+			const TriangleClipResult clipResult = ClipTriangle(triangle, planePoint, planeNormal);
+			for (int k = 0; k < clipResult.triangleCount; k++)
+			{
+				clippedTriangles.emplace_back(clipResult.triangles[k]);
+			}
+		}
+
+		return clippedTriangles;
 	}
 
 	std::vector<RenderTriangle> MakeDebugCube(const Double3 &point)
@@ -73,25 +260,32 @@ namespace swGeometry
 			return point + Double3(x, y, z);
 		};
 
+		const Double2 uvTL(0.0, 0.0);
+		const Double2 uvTR(1.0, 0.0);
+		const Double2 uvBL(0.0, 1.0);
+		const Double2 uvBR(1.0, 1.0);
+
+		const uint32_t color = Color::White.toARGB();
+
 		// Cube
 		// X=0
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 0.0), p(0.0, 0.0, 0.0), p(0.0, 0.0, 1.0)));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 1.0), p(0.0, 1.0, 1.0), p(0.0, 1.0, 0.0)));
+		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 0.0), p(0.0, 0.0, 0.0), p(0.0, 0.0, 1.0), uvTL, uvBL, uvBR, color));
+		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 1.0), p(0.0, 1.0, 1.0), p(0.0, 1.0, 0.0), uvBR, uvTR, uvTL, color));
 		// X=1
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 1.0), p(1.0, 0.0, 1.0), p(1.0, 0.0, 0.0)));
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 0.0), p(1.0, 1.0, 0.0), p(1.0, 1.0, 1.0)));
+		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 1.0), p(1.0, 0.0, 1.0), p(1.0, 0.0, 0.0), uvTL, uvBL, uvBR, color));
+		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 0.0), p(1.0, 1.0, 0.0), p(1.0, 1.0, 1.0), uvBR, uvTR, uvTL, color));
 		// Y=0
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(0.0, 0.0, 1.0), p(0.0, 0.0, 0.0)));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(1.0, 0.0, 0.0), p(1.0, 0.0, 1.0)));
+		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(0.0, 0.0, 1.0), p(0.0, 0.0, 0.0), uvTL, uvBL, uvBR, color));
+		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(1.0, 0.0, 0.0), p(1.0, 0.0, 1.0), uvBR, uvTR, uvTL, color));
 		// Y=1
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(0.0, 1.0, 0.0), p(0.0, 1.0, 1.0)));
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(1.0, 1.0, 1.0), p(1.0, 1.0, 0.0)));
+		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(0.0, 1.0, 0.0), p(0.0, 1.0, 1.0), uvTL, uvBL, uvBR, color));
+		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(1.0, 1.0, 1.0), p(1.0, 1.0, 0.0), uvBR, uvTR, uvTL, color));
 		// Z=0
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(1.0, 0.0, 0.0), p(0.0, 0.0, 0.0)));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(0.0, 1.0, 0.0), p(1.0, 1.0, 0.0)));
+		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(1.0, 0.0, 0.0), p(0.0, 0.0, 0.0), uvTL, uvBL, uvBR, color));
+		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(0.0, 1.0, 0.0), p(1.0, 1.0, 0.0), uvBR, uvTR, uvTL, color));
 		// Z=1
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(0.0, 0.0, 1.0), p(1.0, 0.0, 1.0)));
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(1.0, 1.0, 1.0), p(0.0, 1.0, 1.0)));
+		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(0.0, 0.0, 1.0), p(1.0, 0.0, 1.0), uvTL, uvBL, uvBR, color));
+		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(1.0, 1.0, 1.0), p(0.0, 1.0, 1.0), uvBR, uvTR, uvTL, color));
 
 		return triangles;
 	}
@@ -185,6 +379,7 @@ namespace swRender
 		depthBuffer.fill(std::numeric_limits<double>::infinity());
 	}
 
+	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles, const RenderCamera &camera,
 		BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
 	{
@@ -193,22 +388,12 @@ namespace swRender
 		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 
-		const Double3 eye = VoxelUtils::chunkPointToNewPoint(camera.chunk, camera.point);
+		const Double3 eye = swCamera::GetCameraEye(camera);
 		const Matrix4d viewMatrix = Matrix4d::view(eye, camera.forward, camera.right, camera.up);
 		const Matrix4d perspectiveMatrix = Matrix4d::perspective(camera.fovY, camera.aspectRatio,
 			swConstants::NEAR_PLANE, swConstants::FAR_PLANE);
 
 		constexpr double yShear = 0.0;
-
-		const std::array<Double3, 6> colors =
-		{
-			Double3::fromRGB(Color::Red.toARGB()),
-			Double3::fromRGB(Color::Green.toARGB()),
-			Double3::fromRGB(Color::Blue.toARGB()),
-			Double3::fromRGB(Color::Cyan.toARGB()),
-			Double3::fromRGB(Color::Magenta.toARGB()),
-			Double3::fromRGB(Color::Yellow.toARGB())
-		};
 
 		uint32_t *colorBufferPtr = colorBuffer.get();
 		double *depthBufferPtr = depthBuffer.get();
@@ -220,13 +405,6 @@ namespace swRender
 			const Double3 &v1 = triangle.v1;
 			const Double3 &v2 = triangle.v2;
 
-			// Discard back-facing.
-			const Double3 v0ToEye = eye - v0;
-			if (v0ToEye.dot(triangle.normal) <= 0.0)
-			{
-				continue;
-			}
-
 			const Double4 view0 = RendererUtils::worldSpaceToCameraSpace(Double4(v0, 1.0), viewMatrix);
 			const Double4 view1 = RendererUtils::worldSpaceToCameraSpace(Double4(v1, 1.0), viewMatrix);
 			const Double4 view2 = RendererUtils::worldSpaceToCameraSpace(Double4(v2, 1.0), viewMatrix);
@@ -235,11 +413,11 @@ namespace swRender
 			const double zMin = std::min(view0.z, std::min(view1.z, view2.z));
 			const double zMax = std::max(view0.z, std::max(view1.z, view2.z));
 
-			if ((zMin < swConstants::NEAR_PLANE) || (zMin > swConstants::FAR_PLANE) ||
+			/*if ((zMin < swConstants::NEAR_PLANE) || (zMin > swConstants::FAR_PLANE) ||
 				(zMax < swConstants::NEAR_PLANE) || (zMax > swConstants::FAR_PLANE))
 			{
 				continue;
-			}
+			}*/
 
 			const Double4 clip0 = RendererUtils::cameraSpaceToClipSpace(view0, perspectiveMatrix);
 			const Double4 clip1 = RendererUtils::cameraSpaceToClipSpace(view1, perspectiveMatrix);
@@ -270,9 +448,11 @@ namespace swRender
 			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, frameBufferHeight);
 			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
 
-			const Double3 &color = colors[(i / 2) % static_cast<int>(colors.size())];
-			const uint32_t colorInteger = color.toRGB();
-			
+			/*const Double3 color = Double3::fromRGB(triangle.color);
+			const double depthPercent = (v0 - eye).length() / 20.0;
+			const Double3 shadedColor = color * std::clamp(1.0 - depthPercent, 0.0, 1.0);
+			const uint32_t colorInteger = shadedColor.toRGB();*/
+
 			for (int y = yStart; y < yEnd; y++)
 			{
 				const double yScreenPercent = (static_cast<double>(y) + 0.50) / frameBufferHeightReal;
@@ -290,6 +470,24 @@ namespace swRender
 					const bool inHalfSpace2 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace2_2D, screenSpace20Perp);
 					if (inHalfSpace0 && inHalfSpace1 && inHalfSpace2)
 					{
+						const Double2 &ss0 = screenSpace01;
+						const Double2 ss1 = screenSpace2_2D - screenSpace0_2D;
+						const Double2 ss2 = pixelCenter - screenSpace0_2D;
+
+						const double dot00 = ss0.dot(ss0);
+						const double dot01 = ss0.dot(ss1);
+						const double dot11 = ss1.dot(ss1);
+						const double dot20 = ss2.dot(ss0);
+						const double dot21 = ss2.dot(ss1);
+						const double denominator = (dot00 * dot11) - (dot01 * dot01);
+
+						const double v = ((dot11 * dot20) - (dot01 * dot21)) / denominator;
+						const double w = ((dot00 * dot21) - (dot01 * dot20)) / denominator;
+						const double u = 1.0 - v - w;
+
+						const Double3 color(u, v, w);
+						const uint32_t colorInteger = triangle.color;
+
 						const int outputIndex = x + (y * frameBufferWidth);
 						colorBufferPtr[outputIndex] = colorInteger;
 					}
@@ -522,7 +720,10 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 
 	const std::vector<RenderTriangle> triangles = swGeometry::MakeDebugMesh2();
 	const BufferView<const RenderTriangle> trianglesView(triangles.data(), static_cast<int>(triangles.size()));
-	swRender::RasterizeTriangles(trianglesView, camera, colorBufferView, depthBufferView);
+
+	const std::vector<RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(trianglesView, camera);
+	const BufferView<const RenderTriangle> clippedTrianglesView(clippedTriangles.data(), static_cast<int>(clippedTriangles.size()));
+	swRender::RasterizeTriangles(clippedTrianglesView, camera, colorBufferView, depthBufferView);
 }
 
 void SoftwareRenderer::present()
