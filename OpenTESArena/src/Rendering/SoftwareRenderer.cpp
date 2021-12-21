@@ -21,8 +21,8 @@
 
 namespace swConstants
 {
-	constexpr double NEAR_PLANE = 0.1;
-	constexpr double FAR_PLANE = 100.0;
+	constexpr double NEAR_PLANE = 1.0;
+	constexpr double FAR_PLANE = 4.0;
 }
 
 namespace swCamera
@@ -412,12 +412,6 @@ namespace swRender
 			// Nearest and farthest Z values (note these may be negative - behind the camera).
 			const double zMin = std::min(view0.z, std::min(view1.z, view2.z));
 			const double zMax = std::max(view0.z, std::max(view1.z, view2.z));
-
-			/*if ((zMin < swConstants::NEAR_PLANE) || (zMin > swConstants::FAR_PLANE) ||
-				(zMax < swConstants::NEAR_PLANE) || (zMax > swConstants::FAR_PLANE))
-			{
-				continue;
-			}*/
 
 			const Double4 clip0 = RendererUtils::cameraSpaceToClipSpace(view0, perspectiveMatrix);
 			const Double4 clip1 = RendererUtils::cameraSpaceToClipSpace(view1, perspectiveMatrix);
