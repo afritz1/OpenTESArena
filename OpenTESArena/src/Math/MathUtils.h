@@ -72,6 +72,9 @@ namespace MathUtils
 	bool rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint);
 
+	// Returns the signed distance of the point to the plane (can be negative).
+	double distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal);
+
 	// Finds the shortest distance between points p0 and p1 and between points q0 and q1.
 	// - s is the percent distance along p0p1 that's nearest to q0q1
 	// - t is the percent distance along q0q1 that's nearest to p0p1

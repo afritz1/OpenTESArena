@@ -209,6 +209,11 @@ bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayD
 	return false;
 }
 
+double MathUtils::distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal)
+{
+	return point.dot(planeNormal) - planePoint.dot(planeNormal);
+}
+
 double MathUtils::distanceBetweenLineSegments(const Double3 &p0, const Double3 &p1,
 	const Double3 &q0, const Double3 &q1, double &s, double &t)
 {
