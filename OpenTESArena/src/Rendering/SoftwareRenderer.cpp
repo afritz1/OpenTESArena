@@ -21,7 +21,7 @@
 
 namespace swConstants
 {
-	constexpr double NEAR_PLANE = 1.0;
+	constexpr double NEAR_PLANE = 0.001;
 	constexpr double FAR_PLANE = 4.0;
 }
 
@@ -380,8 +380,9 @@ namespace swRender
 	}
 
 	// The provided triangles are assumed to be back-face culled and clipped.
-	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles, const RenderCamera &camera,
-		BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
+	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles, const SoftwareRenderer::ObjectTexture &texture,
+		const SoftwareRenderer::ObjectTexture &paletteTexture, const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer,
+		BufferView2D<double> &depthBuffer)
 	{
 		const int frameBufferWidth = colorBuffer.getWidth();
 		const int frameBufferHeight = colorBuffer.getHeight();
@@ -394,6 +395,11 @@ namespace swRender
 			swConstants::NEAR_PLANE, swConstants::FAR_PLANE);
 
 		constexpr double yShear = 0.0;
+
+		const int textureWidth = texture.texels.getWidth();
+		const int textureHeight = texture.texels.getHeight();
+		const uint8_t *textureTexels = texture.texels.get();
+		const uint32_t *paletteTexels = paletteTexture.paletteTexels.get();
 
 		uint32_t *colorBufferPtr = colorBuffer.get();
 		double *depthBufferPtr = depthBuffer.get();
@@ -428,9 +434,12 @@ namespace swRender
 			const Double2 screenSpace01 = screenSpace1_2D - screenSpace0_2D;
 			const Double2 screenSpace12 = screenSpace2_2D - screenSpace1_2D;
 			const Double2 screenSpace20 = screenSpace0_2D - screenSpace2_2D;
-			const Double2 screenSpace01Perp = screenSpace01.rightPerp();
-			const Double2 screenSpace12Perp = screenSpace12.rightPerp();
-			const Double2 screenSpace20Perp = screenSpace20.rightPerp();
+
+			// @todo: this condition is only a temp fix; need to change vertex winding order in the triangle clipping function instead.
+			const bool isFrontFacing = (eye - v0).dot(triangle.normal) >= 0.0;
+			Double2 screenSpace01Perp = isFrontFacing ? screenSpace01.rightPerp() : screenSpace01.leftPerp();
+			Double2 screenSpace12Perp = isFrontFacing ? screenSpace12.rightPerp() : screenSpace12.leftPerp();
+			Double2 screenSpace20Perp = isFrontFacing ? screenSpace20.rightPerp() : screenSpace20.leftPerp();
 
 			// Naive screen-space bounding box around triangle.
 			const double xMin = std::min(screenSpace0.x, std::min(screenSpace1.x, screenSpace2.x));
@@ -441,11 +450,6 @@ namespace swRender
 			const int xEnd = RendererUtils::getUpperBoundedPixel(xMax, frameBufferWidth);
 			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, frameBufferHeight);
 			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
-
-			/*const Double3 color = Double3::fromRGB(triangle.color);
-			const double depthPercent = (v0 - eye).length() / 20.0;
-			const Double3 shadedColor = color * std::clamp(1.0 - depthPercent, 0.0, 1.0);
-			const uint32_t colorInteger = shadedColor.toRGB();*/
 
 			for (int y = yStart; y < yEnd; y++)
 			{
@@ -479,11 +483,16 @@ namespace swRender
 						const double w = ((dot00 * dot21) - (dot01 * dot20)) / denominator;
 						const double u = 1.0 - v - w;
 
-						const Double3 color(u, v, w);
-						const uint32_t colorInteger = triangle.color;
+						const Double2 texelPercents(
+							(u * triangle.uv0.x) + (v * triangle.uv1.x) + (w * triangle.uv2.x),
+							(u * triangle.uv0.y) + (v * triangle.uv1.y) + (w * triangle.uv2.y));
+						const int texelX = std::clamp(static_cast<int>(texelPercents.x * textureWidth), 0, textureWidth - 1);
+						const int texelY = std::clamp(static_cast<int>(texelPercents.y * textureHeight), 0, textureHeight - 1);
+						const int texelIndex = texelX + (texelY * textureWidth);
+						const uint32_t texelColor = paletteTexels[textureTexels[texelIndex]];
 
 						const int outputIndex = x + (y * frameBufferWidth);
-						colorBufferPtr[outputIndex] = colorInteger;
+						colorBufferPtr[outputIndex] = texelColor;
 					}
 				}
 			}
@@ -509,7 +518,7 @@ void SoftwareRenderer::ObjectTexture::clear()
 
 SoftwareRenderer::SoftwareRenderer()
 {
-	
+
 }
 
 SoftwareRenderer::~SoftwareRenderer()
@@ -688,18 +697,19 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	BufferView2D<double> depthBufferView(this->depthBuffer.get(), frameBufferWidth, frameBufferHeight);
 
 	// Palette for 8-bit -> 32-bit color conversion.
-	//const ObjectTexture &paletteTexture = this->objectTextures[settings.paletteTextureID];
+	const ObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
 
 	const uint32_t clearColor = Color::Gray.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 	swRender::DrawDebugRGB(camera, colorBufferView);
 
-	const std::vector<RenderTriangle> triangles = swGeometry::MakeDebugMesh2();
+	const std::vector<RenderTriangle> triangles = swGeometry::MakeDebugMesh3();
 	const BufferView<const RenderTriangle> trianglesView(triangles.data(), static_cast<int>(triangles.size()));
 
 	const std::vector<RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(trianglesView, camera);
 	const BufferView<const RenderTriangle> clippedTrianglesView(clippedTriangles.data(), static_cast<int>(clippedTriangles.size()));
-	swRender::RasterizeTriangles(clippedTrianglesView, camera, colorBufferView, depthBufferView);
+	swRender::RasterizeTriangles(clippedTrianglesView, this->objectTextures.get(1), paletteTexture, camera,
+		colorBufferView, depthBufferView);
 }
 
 void SoftwareRenderer::present()
