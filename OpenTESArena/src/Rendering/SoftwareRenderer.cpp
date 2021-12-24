@@ -509,7 +509,7 @@ void SoftwareRenderer::ObjectTexture::clear()
 
 SoftwareRenderer::SoftwareRenderer()
 {
-	this->nextObjectTextureID = -1;
+	
 }
 
 SoftwareRenderer::~SoftwareRenderer()
@@ -520,15 +520,12 @@ SoftwareRenderer::~SoftwareRenderer()
 void SoftwareRenderer::init(const RenderInitSettings &settings)
 {
 	this->depthBuffer.init(settings.width, settings.height);
-	this->nextObjectTextureID = 0;
 }
 
 void SoftwareRenderer::shutdown()
 {
 	this->depthBuffer.clear();
 	this->objectTextures.clear();
-	this->freedObjectTextureIDs.clear();
-	this->nextObjectTextureID = -1;
 }
 
 bool SoftwareRenderer::isInited() const
@@ -544,7 +541,13 @@ void SoftwareRenderer::resize(int width, int height)
 
 bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID)
 {
-	ObjectTexture texture;
+	if (!this->objectTextures.tryAlloc(outID))
+	{
+		DebugLogError("Couldn't allocate object texture ID.");
+		return false;
+	}
+
+	ObjectTexture &texture = this->objectTextures.get(*outID);
 	if (!isPalette)
 	{
 		texture.init8Bit(width, height);
@@ -554,19 +557,6 @@ bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, bool isPale
 	{
 		texture.initPalette(width * height);
 		texture.paletteTexels.fill(0);
-	}
-
-	if (!this->freedObjectTextureIDs.empty())
-	{
-		*outID = this->freedObjectTextureIDs.back();
-		this->freedObjectTextureIDs.pop_back();
-		this->objectTextures[*outID] = std::move(texture);
-	}
-	else
-	{
-		*outID = this->nextObjectTextureID;
-		this->nextObjectTextureID++;
-		this->objectTextures.emplace_back(std::move(texture));
 	}
 
 	return true;
@@ -582,9 +572,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 		return false;
 	}
 
-	DebugAssertIndex(this->objectTextures, *outID);
-	ObjectTexture &texture = this->objectTextures[*outID];
-
+	ObjectTexture &texture = this->objectTextures.get(*outID);
 	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
@@ -606,8 +594,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 
 LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
 {
-	DebugAssertIndex(this->objectTextures, id);
-	ObjectTexture &texture = this->objectTextures[id];
+	ObjectTexture &texture = this->objectTextures.get(id);
 	if (texture.texels.isValid())
 	{
 		return LockedTexture(texture.texels.get(), false);
@@ -631,16 +618,12 @@ void SoftwareRenderer::unlockObjectTexture(ObjectTextureID id)
 
 void SoftwareRenderer::freeObjectTexture(ObjectTextureID id)
 {
-	DebugAssertIndex(this->objectTextures, id);
-	ObjectTexture &texture = this->objectTextures[id];
-	texture.clear();
-	this->freedObjectTextureIDs.emplace_back(id);
+	this->objectTextures.free(id);
 }
 
 std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
 {
-	DebugAssertIndex(this->objectTextures, id);
-	const ObjectTexture &texture = this->objectTextures[id];
+	const ObjectTexture &texture = this->objectTextures.get(id);
 	return Int2(texture.texels.getWidth(), texture.texels.getHeight());
 }
 
@@ -649,8 +632,7 @@ bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, ObjectTextur
 	if (pixelPerfect)
 	{
 		// Get the texture list from the texture group at the given animation state and angle.
-		DebugAssertIndex(this->objectTextures, textureID);
-		const ObjectTexture &texture = this->objectTextures[textureID];
+		const ObjectTexture &texture = this->objectTextures.get(textureID);
 		const int textureWidth = texture.texels.getWidth();
 		const int textureHeight = texture.texels.getHeight();
 

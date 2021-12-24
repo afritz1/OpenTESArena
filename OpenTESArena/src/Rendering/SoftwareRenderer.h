@@ -21,10 +21,11 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
 #include "components/utilities/BufferView3D.h"
+#include "components/utilities/RecyclablePool.h"
 
 class SoftwareRenderer : public RendererSystem3D
 {
-private:
+public:
 	struct ObjectTexture
 	{
 		Buffer2D<uint8_t> texels;
@@ -35,12 +36,9 @@ private:
 
 		void clear();
 	};
-
+private:
 	Buffer2D<double> depthBuffer;
-
-	std::vector<ObjectTexture> objectTextures;
-	std::vector<ObjectTextureID> freedObjectTextureIDs;
-	ObjectTextureID nextObjectTextureID;
+	RecyclablePool<ObjectTexture, ObjectTextureID> objectTextures;
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer() override;
