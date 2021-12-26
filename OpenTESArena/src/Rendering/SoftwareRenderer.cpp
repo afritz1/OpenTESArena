@@ -316,21 +316,26 @@ namespace swGeometry
 	{
 		std::vector<RenderTriangle> triangles;
 
-		for (int z = 0; z < 64; z += 2)
+		for (int z = 0; z < 64; z++)
 		{
-			for (int x = 0; x < 64; x += 2)
+			for (int y = 0; y < 4; y += 2)
 			{
-				const Double3 point(
-					static_cast<double>(x),
-					0.0,
-					static_cast<double>(z));
-				std::vector<RenderTriangle> cubeTriangles = MakeDebugCube(point);
-				triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
-			}
+				for (int x = 0; x < 64; x++)
+				{
+					const Double3 point(
+						static_cast<double>(x),
+						static_cast<double>(y),
+						static_cast<double>(z));
+					std::vector<RenderTriangle> cubeTriangles = MakeDebugCube(point);
+					triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
+				}
+			}			
 		}
 
 		return triangles;
 	}
+
+	static const std::vector<RenderTriangle> DebugTriangles = swGeometry::MakeDebugMesh3();
 }
 
 // Rendering functions, per-pixel work.
@@ -483,6 +488,8 @@ namespace swRender
 						const double w = ((dot00 * dot21) - (dot01 * dot20)) / denominator;
 						const double u = 1.0 - v - w;
 
+						const double depth = (u * view0.z) + (v * view1.z) + (w * view2.z);
+
 						const Double2 texelPercents(
 							(u * triangle.uv0.x) + (v * triangle.uv1.x) + (w * triangle.uv2.x),
 							(u * triangle.uv0.y) + (v * triangle.uv1.y) + (w * triangle.uv2.y));
@@ -492,7 +499,11 @@ namespace swRender
 						const uint32_t texelColor = paletteTexels[textureTexels[texelIndex]];
 
 						const int outputIndex = x + (y * frameBufferWidth);
-						colorBufferPtr[outputIndex] = texelColor;
+						if (depth < depthBufferPtr[outputIndex])
+						{
+							colorBufferPtr[outputIndex] = texelColor;
+							depthBufferPtr[outputIndex] = depth;
+						}
 					}
 				}
 			}
@@ -701,9 +712,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 
 	const uint32_t clearColor = Color::Gray.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
-	swRender::DrawDebugRGB(camera, colorBufferView);
 
-	const std::vector<RenderTriangle> triangles = swGeometry::MakeDebugMesh3();
+	const std::vector<RenderTriangle> &triangles = swGeometry::DebugTriangles;
 	const BufferView<const RenderTriangle> trianglesView(triangles.data(), static_cast<int>(triangles.size()));
 
 	const std::vector<RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(trianglesView, camera);
