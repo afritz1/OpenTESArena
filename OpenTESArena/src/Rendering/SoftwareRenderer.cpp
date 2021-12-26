@@ -316,11 +316,11 @@ namespace swGeometry
 	{
 		std::vector<RenderTriangle> triangles;
 
-		for (int z = 0; z < 64; z++)
+		for (int z = 0; z < 32; z++)
 		{
 			for (int y = 0; y < 4; y += 2)
 			{
-				for (int x = 0; x < 64; x++)
+				for (int x = 0; x < 32; x++)
 				{
 					const Double3 point(
 						static_cast<double>(x),
@@ -456,6 +456,20 @@ namespace swRender
 			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, frameBufferHeight);
 			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
 
+			const double z0 = view0.z;
+			const double z1 = view1.z;
+			const double z2 = view2.z;
+			const double z0Recip = 1.0 / z0;
+			const double z1Recip = 1.0 / z1;
+			const double z2Recip = 1.0 / z2;
+
+			const Double2 uv0 = triangle.uv0;
+			const Double2 uv1 = triangle.uv1;
+			const Double2 uv2 = triangle.uv2;
+			const Double2 uv0Recip(uv0.x * z0Recip, uv0.y * z0Recip);
+			const Double2 uv1Recip(uv1.x * z1Recip, uv1.y * z1Recip);
+			const Double2 uv2Recip(uv2.x * z2Recip, uv2.y * z2Recip);
+
 			for (int y = yStart; y < yEnd; y++)
 			{
 				const double yScreenPercent = (static_cast<double>(y) + 0.50) / frameBufferHeightReal;
@@ -488,11 +502,15 @@ namespace swRender
 						const double w = ((dot00 * dot21) - (dot01 * dot20)) / denominator;
 						const double u = 1.0 - v - w;
 
-						const double depth = (u * view0.z) + (v * view1.z) + (w * view2.z);
+						const double uRecip = u * z0Recip;
+						const double vRecip = v * z1Recip;
+						const double wRecip = w * z2Recip;
+
+						const double depth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 
 						const Double2 texelPercents(
-							(u * triangle.uv0.x) + (v * triangle.uv1.x) + (w * triangle.uv2.x),
-							(u * triangle.uv0.y) + (v * triangle.uv1.y) + (w * triangle.uv2.y));
+							((u * uv0Recip.x) + (v * uv1Recip.x) + (w * uv2Recip.x)) * depth,
+							((u * uv0Recip.y) + (v * uv1Recip.y) + (w * uv2Recip.y)) * depth);
 						const int texelX = std::clamp(static_cast<int>(texelPercents.x * textureWidth), 0, textureWidth - 1);
 						const int texelY = std::clamp(static_cast<int>(texelPercents.y * textureHeight), 0, textureHeight - 1);
 						const int texelIndex = texelX + (texelY * textureWidth);
@@ -501,7 +519,8 @@ namespace swRender
 						const int outputIndex = x + (y * frameBufferWidth);
 						if (depth < depthBufferPtr[outputIndex])
 						{
-							colorBufferPtr[outputIndex] = texelColor;
+							const double shading = 1.0;
+							colorBufferPtr[outputIndex] = (Double3::fromRGB(texelColor) * shading).toRGB();
 							depthBufferPtr[outputIndex] = depth;
 						}
 					}
