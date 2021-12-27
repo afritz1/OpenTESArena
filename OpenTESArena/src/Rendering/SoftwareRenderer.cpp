@@ -363,8 +363,6 @@ namespace swRender
 		const int frameBufferHeight = colorBuffer.getHeight();
 		uint32_t *colorBufferPtr = colorBuffer.get();
 
-		const Double3 cameraRightScaledDir = camera.right * camera.aspectRatio;
-
 		for (int y = 0; y < frameBufferHeight; y++)
 		{
 			const double yPercent = (static_cast<double>(y) + 0.50) / static_cast<double>(frameBufferHeight);
@@ -373,9 +371,8 @@ namespace swRender
 			{
 				const double xPercent = (static_cast<double>(x) + 0.50) / static_cast<double>(frameBufferWidth);
 
-				const Double3 pixelDir = ((camera.forward - cameraRightScaledDir + camera.up) +
-					(cameraRightScaledDir * (xPercent * 2.0)) -
-					(camera.up * (yPercent * 2.0))).normalized();
+				const Double3 pixelDir = ((camera.forwardScaled - camera.rightScaled + camera.up) +
+					(camera.rightScaled * (xPercent * 2.0)) - (camera.up * (yPercent * 2.0))).normalized();
 
 				const Double3 pixelDirClamped(
 					std::max(pixelDir.x, 0.0),
