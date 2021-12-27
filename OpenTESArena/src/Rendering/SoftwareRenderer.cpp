@@ -187,6 +187,7 @@ namespace swGeometry
 		}
 	}
 
+	// Processes the given world space triangles in the following ways:
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
@@ -194,22 +195,38 @@ namespace swGeometry
 	{
 		const Double3 eye = swCamera::GetCameraEye(camera);
 
+		// Frustum directions pointing away from the camera eye.
+		const Double3 leftFrustumDir = (camera.forwardScaled - camera.rightScaled).normalized();
+		const Double3 rightFrustumDir = (camera.forwardScaled + camera.rightScaled).normalized();
+		const Double3 bottomFrustumDir = (camera.forwardScaled - camera.up).normalized();
+		const Double3 topFrustumDir = (camera.forwardScaled + camera.up).normalized();
+
+		// Frustum plane normals pointing towards the inside of the frustum volume.
+		const Double3 leftFrustumNormal = leftFrustumDir.cross(camera.up).normalized();
+		const Double3 rightFrustumNormal = camera.up.cross(rightFrustumDir).normalized();
+		const Double3 bottomFrustumNormal = camera.right.cross(bottomFrustumDir).normalized();
+		const Double3 topFrustumNormal = topFrustumDir.cross(camera.right).normalized();
+
+		struct ClippingPlane
+		{
+			Double3 point;
+			Double3 normal;
+		};
+
 		// Plane point and normal pairs in world space.
-		const std::array<std::pair<Double3, Double3>, 6> clipPlanes =
+		const std::array<ClippingPlane, 5> clippingPlanes =
 		{
 			{
-				// Near plane
-				std::make_pair(eye + (camera.forward * swConstants::NEAR_PLANE), camera.forward),
-				// Far plane
-				std::make_pair(eye + (camera.forward * swConstants::FAR_PLANE), -camera.forward),
+				// Near plane (far plane is not necessary due to how chunks are managed - it only matters if a view distance slider exists)
+				{ eye + (camera.forward * swConstants::NEAR_PLANE), camera.forward },
 				// Left
-				std::make_pair(eye, (camera.forwardScaled + camera.rightScaled).normalized()),
+				{ eye, leftFrustumNormal },
 				// Right
-				std::make_pair(eye, (camera.forwardScaled - camera.rightScaled).normalized()),
+				{ eye, rightFrustumNormal },
 				// Bottom
-				std::make_pair(eye, (camera.forwardScaled + camera.up).normalized()),
+				{ eye, bottomFrustumNormal },
 				// Top
-				std::make_pair(eye, (camera.forwardScaled - camera.up).normalized())
+				{ eye, topFrustumNormal }
 			}
 		};
 
@@ -231,15 +248,12 @@ namespace swGeometry
 			std::deque<RenderTriangle> clipList = { triangle };
 			int remainingTrianglesToClipCount = 1; // One to bootstrap the clipping loop.
 
-			for (const auto &planePair : clipPlanes)
+			for (const ClippingPlane &plane : clippingPlanes)
 			{
-				const Double3 &planePoint = planePair.first;
-				const Double3 &planeNormal = planePair.second;
-
 				for (int j = remainingTrianglesToClipCount; j > 0; j--)
 				{
 					const RenderTriangle &clipListTriangle = clipList.front();
-					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, planePoint, planeNormal);
+					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, plane.point, plane.normal);
 					for (int k = 0; k < clipResult.triangleCount; k++)
 					{
 						clipList.emplace_back(clipResult.triangles[k]);
@@ -335,7 +349,7 @@ namespace swGeometry
 					std::vector<RenderTriangle> cubeTriangles = MakeDebugCube(point);
 					triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
 				}
-			}			
+			}
 		}
 
 		return triangles;
