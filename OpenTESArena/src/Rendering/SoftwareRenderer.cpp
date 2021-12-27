@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <deque>
 #include <limits>
 
 #include "ArenaRenderUtils.h"
@@ -191,36 +192,28 @@ namespace swGeometry
 	// 3) Clipping
 	std::vector<RenderTriangle> ProcessTrianglesForRasterization(const BufferView<const RenderTriangle> &triangles, const RenderCamera &camera)
 	{
-		// @todo: camera frustum planes
-
 		const Double3 eye = swCamera::GetCameraEye(camera);
 
-		// Plane point and normal pairs in camera space.
-		// @todo: if clipping at THIS stage in the pipeline, these should be world space, not camera space.
-		// - probably need a camera -> world space transform.
-		const std::array<std::pair<Double3, Double3>, 1> clipPlanes =
+		// Plane point and normal pairs in world space.
+		const std::array<std::pair<Double3, Double3>, 6> clipPlanes =
 		{
 			{
 				// Near plane
 				std::make_pair(eye + (camera.forward * swConstants::NEAR_PLANE), camera.forward),
-
 				// Far plane
-				//std::make_pair(Double3(0.0, 0.0, swConstants::FAR_PLANE), -Double3::UnitZ),
-
+				std::make_pair(eye + (camera.forward * swConstants::FAR_PLANE), -camera.forward),
 				// Left
-				//std::make_pair(Double3::Zero,) // @todo: probably combination of camera fwd/right/up normalized, accounting for fov and aspect
-
+				std::make_pair(eye, (camera.forwardScaled + camera.rightScaled).normalized()),
 				// Right
-
+				std::make_pair(eye, (camera.forwardScaled - camera.rightScaled).normalized()),
 				// Bottom
-
+				std::make_pair(eye, (camera.forwardScaled + camera.up).normalized()),
 				// Top
-
+				std::make_pair(eye, (camera.forwardScaled - camera.up).normalized())
 			}
 		};
 
-		std::vector<RenderTriangle> clippedTriangles;
-
+		std::vector<RenderTriangle> visibleTriangles;
 		for (int i = 0; i < triangles.getCount(); i++)
 		{
 			const RenderTriangle &triangle = triangles.get(i);
@@ -235,20 +228,33 @@ namespace swGeometry
 				continue;
 			}
 
-			// @todo: when adding more clipping planes, probably need some kind of queue here, and then
-			// the clippedTriangles.emplace_back() will be in a loop for all the final-clipped triangles
-			// from the queue (since a triangle might be clipped multiple times).
-			const auto &planePair = clipPlanes[0];
-			const Double3 &planePoint = planePair.first;
-			const Double3 &planeNormal = planePair.second;
-			const TriangleClipResult clipResult = ClipTriangle(triangle, planePoint, planeNormal);
-			for (int k = 0; k < clipResult.triangleCount; k++)
+			std::deque<RenderTriangle> clipList = { triangle };
+			int remainingTrianglesToClipCount = 1; // One to bootstrap the clipping loop.
+
+			for (const auto &planePair : clipPlanes)
 			{
-				clippedTriangles.emplace_back(clipResult.triangles[k]);
+				const Double3 &planePoint = planePair.first;
+				const Double3 &planeNormal = planePair.second;
+
+				for (int j = remainingTrianglesToClipCount; j > 0; j--)
+				{
+					const RenderTriangle &clipListTriangle = clipList.front();
+					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, planePoint, planeNormal);
+					for (int k = 0; k < clipResult.triangleCount; k++)
+					{
+						clipList.emplace_back(clipResult.triangles[k]);
+					}
+
+					clipList.pop_front();
+				}
+
+				remainingTrianglesToClipCount = static_cast<int>(clipList.size());
 			}
+
+			visibleTriangles.insert(visibleTriangles.end(), clipList.begin(), clipList.end());
 		}
 
-		return clippedTriangles;
+		return visibleTriangles;
 	}
 
 	std::vector<RenderTriangle> MakeDebugCube(const Double3 &point)
@@ -409,21 +415,16 @@ namespace swRender
 		uint32_t *colorBufferPtr = colorBuffer.get();
 		double *depthBufferPtr = depthBuffer.get();
 
-		for (int i = 0; i < triangles.getCount(); i++)
+		const int triangleCount = triangles.getCount();
+		for (int i = 0; i < triangleCount; i++)
 		{
 			const RenderTriangle &triangle = triangles.get(i);
 			const Double3 &v0 = triangle.v0;
 			const Double3 &v1 = triangle.v1;
 			const Double3 &v2 = triangle.v2;
-
 			const Double4 view0 = RendererUtils::worldSpaceToCameraSpace(Double4(v0, 1.0), viewMatrix);
 			const Double4 view1 = RendererUtils::worldSpaceToCameraSpace(Double4(v1, 1.0), viewMatrix);
 			const Double4 view2 = RendererUtils::worldSpaceToCameraSpace(Double4(v2, 1.0), viewMatrix);
-
-			// Nearest and farthest Z values (note these may be negative - behind the camera).
-			const double zMin = std::min(view0.z, std::min(view1.z, view2.z));
-			const double zMax = std::max(view0.z, std::max(view1.z, view2.z));
-
 			const Double4 clip0 = RendererUtils::cameraSpaceToClipSpace(view0, perspectiveMatrix);
 			const Double4 clip1 = RendererUtils::cameraSpaceToClipSpace(view1, perspectiveMatrix);
 			const Double4 clip2 = RendererUtils::cameraSpaceToClipSpace(view2, perspectiveMatrix);
@@ -501,10 +502,6 @@ namespace swRender
 						const double v = ((dot11 * dot20) - (dot01 * dot21)) / denominator;
 						const double w = ((dot00 * dot21) - (dot01 * dot20)) / denominator;
 						const double u = 1.0 - v - w;
-
-						const double uRecip = u * z0Recip;
-						const double vRecip = v * z1Recip;
-						const double wRecip = w * z2Recip;
 
 						const double depth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 
