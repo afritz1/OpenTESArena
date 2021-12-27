@@ -246,11 +246,9 @@ namespace swGeometry
 			}
 
 			std::deque<RenderTriangle> clipList = { triangle };
-			int remainingTrianglesToClipCount = 1; // One to bootstrap the clipping loop.
-
 			for (const ClippingPlane &plane : clippingPlanes)
 			{
-				for (int j = remainingTrianglesToClipCount; j > 0; j--)
+				for (int j = static_cast<int>(clipList.size()); j > 0; j--)
 				{
 					const RenderTriangle &clipListTriangle = clipList.front();
 					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, plane.point, plane.normal);
@@ -261,8 +259,6 @@ namespace swGeometry
 
 					clipList.pop_front();
 				}
-
-				remainingTrianglesToClipCount = static_cast<int>(clipList.size());
 			}
 
 			visibleTriangles.insert(visibleTriangles.end(), clipList.begin(), clipList.end());
