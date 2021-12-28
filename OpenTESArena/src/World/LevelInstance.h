@@ -52,6 +52,10 @@ private:
 	std::vector<LoadedVoxelTextureEntry> loadedVoxelTextures;
 	std::vector<LoadedEntityTextureEntry> loadedEntityTextures;
 	std::unordered_map<ArenaTypes::ChasmType, std::vector<ScopedObjectTextureRef>> loadedChasmTextures;
+	
+	// Texture handles for the active game world palette and light table.
+	ScopedObjectTextureRef paletteTextureRef, lightTableTextureRef;
+	
 	double ceilingScale;
 public:
 	LevelInstance();
@@ -62,6 +66,8 @@ public:
 	const ChunkManager &getChunkManager() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
+	ObjectTextureID getPaletteTextureID() const;
+	ObjectTextureID getLightTableTextureID() const;
 	double getCeilingScale() const;
 
 	bool trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,

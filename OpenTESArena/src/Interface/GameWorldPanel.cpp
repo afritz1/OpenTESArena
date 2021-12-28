@@ -842,53 +842,18 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
 
-	auto &textureManager = game.getTextureManager();
-	const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
-	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
-	if (!defaultPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteFilename + "\".");
-		return false;
-	}
-
-	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
-
 	// @todo: update the scene graph's voxels/entities/sky/particles here or inside the Renderer function?
 
 	auto &renderer = game.getRenderer();
 
-	ObjectTextureID paletteTextureID;
-	if (!renderer.tryCreateObjectTexture(static_cast<int>(defaultPalette.size()), 1, true, &paletteTextureID))
-	{
-		DebugLogError("Couldn't create default palette texture \"" + defaultPaletteFilename + "\".");
-		return false;
-	}
-
-	ScopedObjectTextureRef paletteTextureRef(paletteTextureID, renderer); // @todo: store this as a member instead of creating/destroying every frame
-	LockedTexture lockedPaletteTexture = paletteTextureRef.lockTexels();
-	if (!lockedPaletteTexture.isValid())
-	{
-		DebugLogError("Couldn't lock palette texture \"" + defaultPaletteFilename + "\" for writing.");
-		return false;
-	}
-
-	DebugAssert(lockedPaletteTexture.isTrueColor);
-	uint32_t *paletteTexels = static_cast<uint32_t*>(lockedPaletteTexture.texels);
-	std::transform(defaultPalette.begin(), defaultPalette.end(), paletteTexels,
-		[](const Color &paletteColor)
-	{
-		return paletteColor.toARGB();
-	});
-
-	paletteTextureRef.unlockTexels();
-
-	// @todo: get object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
-	const ObjectTextureID lightTableTextureID = -1;
+	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
+	const ObjectTextureID paletteTextureID = activeLevelInst.getPaletteTextureID();
+	const ObjectTextureID lightTableTextureID = activeLevelInst.getLightTableTextureID();
 	const ObjectTextureID skyColorsTextureID = activeSkyInst.getSkyColorsTextureID();
 	const ObjectTextureID thunderstormColorsTextureID = -1;
 
 	renderer.submitFrame(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
-		ambientPercent, paletteTextureRef.get(), lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID,
+		ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID,
 		options.getGraphics_RenderThreadsMode());
 
 	return true;

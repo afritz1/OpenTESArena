@@ -24,6 +24,7 @@ namespace swConstants
 {
 	constexpr double NEAR_PLANE = 0.001;
 	constexpr double FAR_PLANE = 4.0;
+	constexpr double PLAYER_LIGHT_DISTANCE = 2.0;
 }
 
 namespace swCamera
@@ -399,8 +400,8 @@ namespace swRender
 
 	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles, const SoftwareRenderer::ObjectTexture &texture,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer,
-		BufferView2D<double> &depthBuffer)
+		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
+		const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
 	{
 		const int frameBufferWidth = colorBuffer.getWidth();
 		const int frameBufferHeight = colorBuffer.getHeight();
@@ -408,6 +409,7 @@ namespace swRender
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 
 		const Double3 eye = swCamera::GetCameraEye(camera);
+		const Double2 eye2D(eye.x, eye.z); // For 2D lighting.
 		const Matrix4d viewMatrix = Matrix4d::view(eye, camera.forward, camera.right, camera.up);
 		const Matrix4d perspectiveMatrix = Matrix4d::perspective(camera.fovY, camera.aspectRatio,
 			swConstants::NEAR_PLANE, swConstants::FAR_PLANE);
@@ -418,6 +420,11 @@ namespace swRender
 		const int textureHeight = texture.texels.getHeight();
 		const uint8_t *textureTexels = texture.texels.get();
 		const uint32_t *paletteTexels = paletteTexture.paletteTexels.get();
+
+		const int lightLevelTexelCount = lightTableTexture.texels.getWidth(); // Per light level, not the whole table.
+		const int lightLevelCount = lightTableTexture.texels.getHeight();
+		const double lightLevelCountReal = static_cast<double>(lightLevelCount);
+		const uint8_t *lightLevelTexels = lightTableTexture.texels.get();
 
 		uint32_t *colorBufferPtr = colorBuffer.get();
 		double *depthBufferPtr = depthBuffer.get();
@@ -512,21 +519,38 @@ namespace swRender
 
 						const double depth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 
-						const double texelPercentX = ((u * uv0Perspective.x) + (v * uv1Perspective.x) + (w * uv2Perspective.x)) /
-							((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
-						const double texelPercentY = ((u * uv0Perspective.y) + (v * uv1Perspective.y) + (w * uv2Perspective.y)) /
-							((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
-
-						const int texelX = std::clamp(static_cast<int>(texelPercentX * textureWidth), 0, textureWidth - 1);
-						const int texelY = std::clamp(static_cast<int>(texelPercentY * textureHeight), 0, textureHeight - 1);
-						const int texelIndex = texelX + (texelY * textureWidth);
-						const uint32_t texelColor = paletteTexels[textureTexels[texelIndex]];
-
 						const int outputIndex = x + (y * frameBufferWidth);
 						if (depth < depthBufferPtr[outputIndex])
 						{
-							const double shading = 1.0;
-							colorBufferPtr[outputIndex] = texelColor;
+							const double texelPercentX = ((u * uv0Perspective.x) + (v * uv1Perspective.x) + (w * uv2Perspective.x)) /
+								((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
+							const double texelPercentY = ((u * uv0Perspective.y) + (v * uv1Perspective.y) + (w * uv2Perspective.y)) /
+								((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
+
+							const int texelX = std::clamp(static_cast<int>(texelPercentX * textureWidth), 0, textureWidth - 1);
+							const int texelY = std::clamp(static_cast<int>(texelPercentY * textureHeight), 0, textureHeight - 1);
+							const int texelIndex = texelX + (texelY * textureWidth);
+							const uint8_t texel = textureTexels[texelIndex];
+
+							// XZ position of pixel center in world space.
+							const Double2 v2D(
+								(u * v0.x) + (v * v1.x) + (w * v2.x),
+								(u * v0.z) + (v * v1.z) + (w * v2.z));
+							const double distanceToLight = (v2D - eye2D).length();
+							const double shadingPercent = std::clamp(distanceToLight / swConstants::PLAYER_LIGHT_DISTANCE, 0.0, 1.0);
+							const double lightLevelValue = shadingPercent * lightLevelCountReal;
+
+							// Index into light table palettes.
+							const int lightLevelIndex = std::clamp(static_cast<int>(lightLevelValue), 0, lightLevelCount - 1);
+
+							// Percent through the current light level.
+							const double lightLevelPercent = std::clamp(lightLevelValue - std::floor(lightLevelValue), 0.0, Constants::JustBelowOne);
+
+							const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
+							const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
+							const uint32_t shadedTexelColor = paletteTexels[shadedTexel];
+
+							colorBufferPtr[outputIndex] = shadedTexelColor;
 							depthBufferPtr[outputIndex] = depth;
 						}
 					}
@@ -735,7 +759,10 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	// Palette for 8-bit -> 32-bit color conversion.
 	const ObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
 
-	const uint32_t clearColor = Color::Gray.toARGB();
+	// Light table for shading/transparency look-ups.
+	const ObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
+
+	const uint32_t clearColor = Color::Black.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 
 	const std::vector<RenderTriangle> &triangles = swGeometry::DebugTriangles;
@@ -743,8 +770,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 
 	const std::vector<RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(trianglesView, camera);
 	const BufferView<const RenderTriangle> clippedTrianglesView(clippedTriangles.data(), static_cast<int>(clippedTriangles.size()));
-	swRender::RasterizeTriangles(clippedTrianglesView, this->objectTextures.get(1), paletteTexture, camera,
-		colorBufferView, depthBufferView);
+	swRender::RasterizeTriangles(clippedTrianglesView, this->objectTextures.get(1), paletteTexture, lightTableTexture,
+		camera, colorBufferView, depthBufferView);
 }
 
 void SoftwareRenderer::present()

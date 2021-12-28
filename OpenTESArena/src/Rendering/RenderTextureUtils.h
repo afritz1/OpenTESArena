@@ -26,7 +26,6 @@ private:
 	Renderer *renderer;
 	int width, height;
 
-	void destroy();
 	void setDims();
 public:
 	ScopedObjectTextureRef(ObjectTextureID id, Renderer &renderer);
@@ -45,6 +44,8 @@ public:
 	// Texture updating functions.
 	LockedTexture lockTexels();
 	void unlockTexels();
+
+	void destroy();
 };
 
 class ScopedUiTextureRef

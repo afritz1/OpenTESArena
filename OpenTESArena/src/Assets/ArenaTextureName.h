@@ -62,6 +62,10 @@ namespace ArenaTextureName
 	const std::string UpDown = "UPDOWN.IMG";
 	const std::string YesNoCancel = "YESNO.IMG";
 
+	// Light tables.
+	const std::string NormalLightTable = "NORMAL.LGT";
+	const std::string FogLightTable = "FOG.LGT";
+
 	// Maps (province maps are stored in a separate container).
 	const std::string Automap = "AUTOMAP.IMG";
 	const std::string WorldMap = "TAMRIEL.MNU";

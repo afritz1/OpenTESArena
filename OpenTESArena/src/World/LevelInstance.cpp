@@ -6,6 +6,7 @@
 #include "MapType.h"
 #include "WeatherDefinition.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Entities/CitizenUtils.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -60,6 +61,16 @@ const EntityManager &LevelInstance::getEntityManager() const
 	return this->entityManager;
 }
 
+ObjectTextureID LevelInstance::getPaletteTextureID() const
+{
+	return this->paletteTextureRef.get();
+}
+
+ObjectTextureID LevelInstance::getLightTableTextureID() const
+{
+	return this->lightTableTextureRef.get();
+}
+
 double LevelInstance::getCeilingScale() const
 {
 	return this->ceilingScale;
@@ -74,6 +85,8 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 	this->loadedVoxelTextures.clear();
 	this->loadedEntityTextures.clear();
 	this->loadedChasmTextures.clear();
+	this->paletteTextureRef.destroy();
+	this->lightTableTextureRef.destroy();
 
 	auto loadVoxelDefTextures = [this, &textureManager, &renderer](const VoxelDefinition &voxelDef)
 	{
@@ -293,6 +306,80 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 	loadChasmTextures(ArenaTypes::ChasmType::Dry);
 	loadChasmTextures(ArenaTypes::ChasmType::Wet);
 	loadChasmTextures(ArenaTypes::ChasmType::Lava);
+
+	auto loadPaletteTexture = [this, &textureManager, &renderer]()
+	{
+		const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
+		const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
+		if (!defaultPaletteID.has_value())
+		{
+			DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteFilename + "\".");
+			return false;
+		}
+
+		const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
+
+		ObjectTextureID paletteTextureID;
+		if (!renderer.tryCreateObjectTexture(static_cast<int>(defaultPalette.size()), 1, true, &paletteTextureID))
+		{
+			DebugLogError("Couldn't create default palette texture \"" + defaultPaletteFilename + "\".");
+			return false;
+		}
+
+		this->paletteTextureRef.init(paletteTextureID, renderer);
+		LockedTexture lockedPaletteTexture = this->paletteTextureRef.lockTexels();
+		if (!lockedPaletteTexture.isValid())
+		{
+			DebugLogError("Couldn't lock palette texture \"" + defaultPaletteFilename + "\" for writing.");
+			return false;
+		}
+
+		DebugAssert(lockedPaletteTexture.isTrueColor);
+		uint32_t *paletteTexels = static_cast<uint32_t*>(lockedPaletteTexture.texels);
+		std::transform(defaultPalette.begin(), defaultPalette.end(), paletteTexels,
+			[](const Color &paletteColor)
+		{
+			return paletteColor.toARGB();
+		});
+
+		this->paletteTextureRef.unlockTexels();
+		return true;
+	};
+
+	auto loadLightTableTexture = [this, &textureManager, &renderer]()
+	{
+		const std::string &lightTableFilename = ArenaTextureName::NormalLightTable;
+		const std::optional<TextureBuilderID> lightTableTextureBuilderID = textureManager.tryGetTextureBuilderID(lightTableFilename.c_str());
+		if (!lightTableTextureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get light table texture builder ID from \"" + lightTableFilename + "\".");
+			return false;
+		}
+
+		const TextureBuilder &lightTableTextureBuilder = textureManager.getTextureBuilderHandle(*lightTableTextureBuilderID);
+
+		ObjectTextureID lightTableTextureID;
+		if (!renderer.tryCreateObjectTexture(lightTableTextureBuilder, &lightTableTextureID))
+		{
+			DebugLogError("Couldn't create light table texture \"" + lightTableFilename + "\".");
+			return false;
+		}
+
+		this->lightTableTextureRef.init(lightTableTextureID, renderer);
+		return true;
+	};
+
+	if (!loadPaletteTexture())
+	{
+		DebugLogError("Couldn't load palette texture.");
+		return false;
+	}
+
+	if (!loadLightTableTexture())
+	{
+		DebugLogError("Couldn't load light table texture.");
+		return false;
+	}
 
 	return true;
 }

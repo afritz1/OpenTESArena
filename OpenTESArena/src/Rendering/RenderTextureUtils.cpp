@@ -79,15 +79,6 @@ void ScopedObjectTextureRef::init(ObjectTextureID id, Renderer &renderer)
 	this->setDims();
 }
 
-void ScopedObjectTextureRef::destroy()
-{
-	if (this->renderer != nullptr)
-	{
-		this->renderer->freeObjectTexture(this->id);
-		this->id = -1;
-	}
-}
-
 void ScopedObjectTextureRef::setDims()
 {
 	const std::optional<Int2> dims = this->renderer->tryGetObjectTextureDims(this->id);
@@ -123,6 +114,18 @@ LockedTexture ScopedObjectTextureRef::lockTexels()
 void ScopedObjectTextureRef::unlockTexels()
 {
 	this->renderer->unlockObjectTexture(this->id);
+}
+
+void ScopedObjectTextureRef::destroy()
+{
+	if (this->renderer != nullptr)
+	{
+		this->renderer->freeObjectTexture(this->id);
+		this->renderer = nullptr;
+		this->id = -1;
+		this->width = -1;
+		this->height = -1;
+	}
 }
 
 ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, Renderer &renderer)
