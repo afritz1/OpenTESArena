@@ -32,3 +32,8 @@ BufferView<const uint8_t> LGTFile::getLightPalette(int index) const
 	const uint8_t *ptr = this->palettes.get() + (index * this->palettes.getWidth());
 	return BufferView(ptr, LGTFile::ELEMENTS_PER_PALETTE);
 }
+
+BufferView2D<const uint8_t> LGTFile::getAllLightPalettes() const
+{
+	return BufferView2D<const uint8_t>(this->palettes.get(), this->palettes.getWidth(), this->palettes.getHeight());
+}
