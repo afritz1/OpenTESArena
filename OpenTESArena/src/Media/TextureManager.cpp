@@ -299,25 +299,15 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outTextures != nullptr)
 		{
-			outTextures->init(LGTFile::PALETTE_COUNT);
-			for (int i = 0; i < outTextures->getCount(); i++)
-			{
-				const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
-				TextureBuilder textureBuilder = makePaletted(lightPalette.getCount(), 1, lightPalette.get());
-				outTextures->set(i, std::move(textureBuilder));
-			}
+			const BufferView2D<const uint8_t> lightPalettes = lgt.getAllLightPalettes();
+			TextureBuilder textureBuilder = makePaletted(lightPalettes.getWidth(), lightPalettes.getHeight(), lightPalettes.get());
+			outTextures->init(1);
+			outTextures->set(0, std::move(textureBuilder));
 		}
 
 		if (outMetadata != nullptr)
 		{
-			Buffer<Int2> dimensions(LGTFile::PALETTE_COUNT);
-			for (int i = 0; i < LGTFile::PALETTE_COUNT; i++)
-			{
-				const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
-				dimensions.set(i, Int2(lightPalette.getCount(), 1));
-			}
-
-			outMetadata->init(std::string(filename), std::move(dimensions));
+			outMetadata->init(std::string(filename), makeDimensions(LGTFile::ELEMENTS_PER_PALETTE, LGTFile::PALETTE_COUNT));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_RCI))
