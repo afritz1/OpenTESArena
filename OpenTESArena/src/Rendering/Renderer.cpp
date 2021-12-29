@@ -928,6 +928,8 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 	RenderCamera renderCamera;
 	renderCamera.init(cameraPos.chunk, cameraPos.point, cameraDir, fovX, fovY, renderAspectRatio);
 
+	const BufferView<const RenderTriangle> triangles = this->sceneGraph.getAllGeometry();
+
 	RenderFrameSettings renderFrameSettings;
 	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
 		thunderstormColorsTextureID, renderDims.x, renderDims.y, renderThreadsMode);
@@ -940,7 +942,7 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 
 	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(renderCamera, renderFrameSettings, outputBuffer);
+	this->renderer3D->submitFrame(renderCamera, triangles, renderFrameSettings, outputBuffer);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 

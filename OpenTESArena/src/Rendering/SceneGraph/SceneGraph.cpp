@@ -7,9 +7,97 @@
 
 #include "components/debug/Debug.h"
 
-const BufferView<const int> SceneGraph::getVisibleGeometry() const
+namespace sgGeometry
 {
-	DebugUnhandledReturn(BufferView<const int>);
+	std::vector<RenderTriangle> MakeCube(const Double3 &point, ObjectTextureID textureID)
+	{
+		std::vector<RenderTriangle> triangles;
+
+		auto p = [&point](double x, double y, double z)
+		{
+			return point + Double3(x, y, z);
+		};
+
+		const Double2 uvTL(0.0, 0.0);
+		const Double2 uvTR(1.0, 0.0);
+		const Double2 uvBL(0.0, 1.0);
+		const Double2 uvBR(1.0, 1.0);
+
+		// Cube
+		// X=0
+		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 0.0), p(0.0, 0.0, 0.0), p(0.0, 0.0, 1.0), uvTL, uvBL, uvBR, textureID));
+		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 1.0), p(0.0, 1.0, 1.0), p(0.0, 1.0, 0.0), uvBR, uvTR, uvTL, textureID));
+		// X=1
+		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 1.0), p(1.0, 0.0, 1.0), p(1.0, 0.0, 0.0), uvTL, uvBL, uvBR, textureID));
+		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 0.0), p(1.0, 1.0, 0.0), p(1.0, 1.0, 1.0), uvBR, uvTR, uvTL, textureID));
+		// Y=0
+		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(0.0, 0.0, 1.0), p(0.0, 0.0, 0.0), uvTL, uvBL, uvBR, textureID));
+		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(1.0, 0.0, 0.0), p(1.0, 0.0, 1.0), uvBR, uvTR, uvTL, textureID));
+		// Y=1
+		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(0.0, 1.0, 0.0), p(0.0, 1.0, 1.0), uvTL, uvBL, uvBR, textureID));
+		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(1.0, 1.0, 1.0), p(1.0, 1.0, 0.0), uvBR, uvTR, uvTL, textureID));
+		// Z=0
+		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(1.0, 0.0, 0.0), p(0.0, 0.0, 0.0), uvTL, uvBL, uvBR, textureID));
+		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(0.0, 1.0, 0.0), p(1.0, 1.0, 0.0), uvBR, uvTR, uvTL, textureID));
+		// Z=1
+		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(0.0, 0.0, 1.0), p(1.0, 0.0, 1.0), uvTL, uvBL, uvBR, textureID));
+		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(1.0, 1.0, 1.0), p(0.0, 1.0, 1.0), uvBR, uvTR, uvTL, textureID));
+
+		return triangles;
+	}
+
+	std::vector<RenderTriangle> MakeDebugMesh1(ObjectTextureID textureID)
+	{
+		return MakeCube(Double3::Zero, textureID);
+	}
+
+	std::vector<RenderTriangle> MakeDebugMesh2(ObjectTextureID textureID)
+	{
+		std::vector<RenderTriangle> triangles;
+
+		for (int y = 0; y < 3; y += 2)
+		{
+			const Double3 point(
+				24.0,
+				static_cast<double>(y),
+				0.0);
+			std::vector<RenderTriangle> cubeTriangles = MakeCube(point, textureID);
+			triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
+		}
+
+		return triangles;
+	}
+
+	std::vector<RenderTriangle> MakeDebugMesh3(ObjectTextureID textureID)
+	{
+		std::vector<RenderTriangle> triangles;
+
+		for (int z = 0; z < 32; z += 2)
+		{
+			for (int y = 0; y < 4; y += 2)
+			{
+				for (int x = 0; x < 32; x += 2)
+				{
+					const Double3 point(
+						static_cast<double>(x),
+						static_cast<double>(y),
+						static_cast<double>(z));
+					std::vector<RenderTriangle> cubeTriangles = MakeCube(point, textureID);
+					triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
+				}
+			}
+		}
+
+		return triangles;
+	}
+
+	static const std::vector<RenderTriangle> DebugTriangles = sgGeometry::MakeDebugMesh2(0);
+}
+
+BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
+{
+	const auto &triangles = sgGeometry::DebugTriangles;
+	return BufferView<const RenderTriangle>(triangles.data(), static_cast<int>(triangles.size()));
 }
 
 void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent)

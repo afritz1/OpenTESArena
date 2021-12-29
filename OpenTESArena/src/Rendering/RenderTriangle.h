@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+#include "RenderTextureUtils.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
@@ -14,14 +15,14 @@ struct RenderTriangle
 	Double3 v0v1, v1v2, v2v0;
 	Double3 normal;
 	Double2 uv0, uv1, uv2;
-	uint32_t color;
+	ObjectTextureID textureID;
 
 	RenderTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0,
-		const Double2 &uv1, const Double2 &uv2, uint32_t color);
+		const Double2 &uv1, const Double2 &uv2, ObjectTextureID textureID);
 	RenderTriangle();
 
 	void init(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0,
-		const Double2 &uv1, const Double2 &uv2, uint32_t color);
+		const Double2 &uv1, const Double2 &uv2, ObjectTextureID textureID);
 };
 
 #endif

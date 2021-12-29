@@ -10,6 +10,7 @@
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
+#include "SceneGraph/SceneGraph.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Entities/EntityManager.h"
 #include "../Math/Vector2.h"
@@ -81,7 +82,8 @@ private:
 
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	std::vector<DisplayMode> displayModes;
+	SceneGraph sceneGraph;
+	std::vector<DisplayMode> displayModes;	
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.

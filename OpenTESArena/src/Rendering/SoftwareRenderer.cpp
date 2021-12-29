@@ -267,92 +267,6 @@ namespace swGeometry
 
 		return visibleTriangles;
 	}
-
-	std::vector<RenderTriangle> MakeDebugCube(const Double3 &point)
-	{
-		std::vector<RenderTriangle> triangles;
-
-		auto p = [&point](double x, double y, double z)
-		{
-			return point + Double3(x, y, z);
-		};
-
-		const Double2 uvTL(0.0, 0.0);
-		const Double2 uvTR(1.0, 0.0);
-		const Double2 uvBL(0.0, 1.0);
-		const Double2 uvBR(1.0, 1.0);
-
-		const uint32_t color = Color::White.toARGB();
-
-		// Cube
-		// X=0
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 0.0), p(0.0, 0.0, 0.0), p(0.0, 0.0, 1.0), uvTL, uvBL, uvBR, color));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 1.0), p(0.0, 1.0, 1.0), p(0.0, 1.0, 0.0), uvBR, uvTR, uvTL, color));
-		// X=1
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 1.0), p(1.0, 0.0, 1.0), p(1.0, 0.0, 0.0), uvTL, uvBL, uvBR, color));
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 0.0), p(1.0, 1.0, 0.0), p(1.0, 1.0, 1.0), uvBR, uvTR, uvTL, color));
-		// Y=0
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(0.0, 0.0, 1.0), p(0.0, 0.0, 0.0), uvTL, uvBL, uvBR, color));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(1.0, 0.0, 0.0), p(1.0, 0.0, 1.0), uvBR, uvTR, uvTL, color));
-		// Y=1
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(0.0, 1.0, 0.0), p(0.0, 1.0, 1.0), uvTL, uvBL, uvBR, color));
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(1.0, 1.0, 1.0), p(1.0, 1.0, 0.0), uvBR, uvTR, uvTL, color));
-		// Z=0
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(1.0, 0.0, 0.0), p(0.0, 0.0, 0.0), uvTL, uvBL, uvBR, color));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(0.0, 1.0, 0.0), p(1.0, 1.0, 0.0), uvBR, uvTR, uvTL, color));
-		// Z=1
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(0.0, 0.0, 1.0), p(1.0, 0.0, 1.0), uvTL, uvBL, uvBR, color));
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(1.0, 1.0, 1.0), p(0.0, 1.0, 1.0), uvBR, uvTR, uvTL, color));
-
-		return triangles;
-	}
-
-	std::vector<RenderTriangle> MakeDebugMesh1()
-	{
-		return MakeDebugCube(Double3::Zero);
-	}
-
-	std::vector<RenderTriangle> MakeDebugMesh2()
-	{
-		std::vector<RenderTriangle> triangles;
-
-		for (int y = 0; y < 3; y += 2)
-		{
-			const Double3 point(
-				24.0,
-				static_cast<double>(y),
-				0.0);
-			std::vector<RenderTriangle> cubeTriangles = MakeDebugCube(point);
-			triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
-		}
-
-		return triangles;
-	}
-
-	std::vector<RenderTriangle> MakeDebugMesh3()
-	{
-		std::vector<RenderTriangle> triangles;
-
-		for (int z = 0; z < 32; z++)
-		{
-			for (int y = 0; y < 4; y += 2)
-			{
-				for (int x = 0; x < 32; x++)
-				{
-					const Double3 point(
-						static_cast<double>(x),
-						static_cast<double>(y),
-						static_cast<double>(z));
-					std::vector<RenderTriangle> cubeTriangles = MakeDebugCube(point);
-					triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
-				}
-			}
-		}
-
-		return triangles;
-	}
-
-	static const std::vector<RenderTriangle> DebugTriangles = swGeometry::MakeDebugMesh3();
 }
 
 // Rendering functions, per-pixel work.
@@ -749,7 +663,8 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	return ProfilerData(renderWidth, renderHeight, threadCount, potentiallyVisFlatCount, visFlatCount, visLightCount);
 }
 
-void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, uint32_t *outputBuffer)
+void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &triangles,
+	const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
 	const int frameBufferWidth = this->depthBuffer.getWidth();
 	const int frameBufferHeight = this->depthBuffer.getHeight();
@@ -765,10 +680,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	const uint32_t clearColor = Color::Black.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 
-	const std::vector<RenderTriangle> &triangles = swGeometry::DebugTriangles;
-	const BufferView<const RenderTriangle> trianglesView(triangles.data(), static_cast<int>(triangles.size()));
-
-	const std::vector<RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(trianglesView, camera);
+	const std::vector<RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(triangles, camera);
 	const BufferView<const RenderTriangle> clippedTrianglesView(clippedTriangles.data(), static_cast<int>(clippedTriangles.size()));
 	swRender::RasterizeTriangles(clippedTrianglesView, this->objectTextures.get(1), paletteTexture, lightTableTexture,
 		camera, colorBufferView, depthBufferView);

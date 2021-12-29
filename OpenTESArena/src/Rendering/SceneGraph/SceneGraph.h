@@ -10,6 +10,7 @@
 #include "SkyObjectRenderDefinition.h"
 #include "SkyObjectRenderInstance.h"
 #include "VoxelRenderDefinition.h"
+#include "../RenderTriangle.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
@@ -34,8 +35,9 @@
 
 class ChunkManager;
 class EntityManager;
-class RenderCamera;
 class SkyInstance;
+
+struct RenderCamera;
 
 class SceneGraph
 {
@@ -64,7 +66,7 @@ private:
 	void clearEntities();
 	void clearSky();
 public:
-	const BufferView<const int> getVisibleGeometry() const; // @todo: eventually an ordered list of geometry w/ render properties
+	BufferView<const RenderTriangle> getAllGeometry() const; // @todo: eventually an ordered list of geometry w/ render properties
 
 	void updateVoxels(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent);
 	void updateEntities(const EntityManager &entityManager, bool nightLightsAreActive, bool playerHasLight);
