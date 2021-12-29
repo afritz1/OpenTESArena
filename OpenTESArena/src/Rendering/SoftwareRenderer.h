@@ -36,9 +36,11 @@ public:
 
 		void clear();
 	};
+
+	using ObjectTexturePool = RecyclablePool<ObjectTexture, ObjectTextureID>;
 private:
 	Buffer2D<double> depthBuffer;
-	RecyclablePool<ObjectTexture, ObjectTextureID> objectTextures;
+	ObjectTexturePool objectTextures;
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer() override;

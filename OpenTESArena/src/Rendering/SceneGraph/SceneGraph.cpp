@@ -91,7 +91,7 @@ namespace sgGeometry
 		return triangles;
 	}
 
-	static const std::vector<RenderTriangle> DebugTriangles = sgGeometry::MakeDebugMesh2(0);
+	static const std::vector<RenderTriangle> DebugTriangles = sgGeometry::MakeDebugMesh3(0);
 }
 
 BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const

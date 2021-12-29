@@ -23,8 +23,8 @@
 namespace swConstants
 {
 	constexpr double NEAR_PLANE = 0.001;
-	constexpr double FAR_PLANE = 4.0;
-	constexpr double PLAYER_LIGHT_DISTANCE = 2.0;
+	constexpr double FAR_PLANE = 1000.0;
+	constexpr double PLAYER_LIGHT_DISTANCE = 3.0;
 }
 
 namespace swCamera
@@ -135,7 +135,7 @@ namespace swGeometry
 			const Double2 newInsideUV1 = insideUV.lerp(outsideUV1, t1);
 
 			return TriangleClipResult::one(RenderTriangle(insidePoint, newInsidePoint1, newInsidePoint2,
-				insideUV, newInsideUV0, newInsideUV1, Color::Blue.toARGB()));
+				insideUV, newInsideUV0, newInsideUV1, triangle.textureID));
 		}
 		else if (becomesQuad)
 		{
@@ -173,11 +173,11 @@ namespace swGeometry
 			const RenderTriangle newTriangle0(
 				newTriangle0V0, newTriangle0V1, newTriangle0V2,
 				newTriangle0UV0, newTriangle0UV1, newTriangle0UV2,
-				Color::Red.toARGB());
+				triangle.textureID);
 			const RenderTriangle newTriangle1(
 				newTriangle1V0, newTriangle1V1, newTriangle1V2,
 				newTriangle1UV0, newTriangle1UV1, newTriangle1UV2,
-				Color::Green.toARGB());
+				triangle.textureID);
 
 			return TriangleClipResult::two(newTriangle0, newTriangle1);
 		}
@@ -313,9 +313,10 @@ namespace swRender
 	}
 
 	// The provided triangles are assumed to be back-face culled and clipped.
-	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles, const SoftwareRenderer::ObjectTexture &texture,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
+	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles,
+		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
+		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera,
+		BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
 	{
 		const int frameBufferWidth = colorBuffer.getWidth();
 		const int frameBufferHeight = colorBuffer.getHeight();
@@ -330,9 +331,6 @@ namespace swRender
 
 		constexpr double yShear = 0.0;
 
-		const int textureWidth = texture.texels.getWidth();
-		const int textureHeight = texture.texels.getHeight();
-		const uint8_t *textureTexels = texture.texels.get();
 		const uint32_t *paletteTexels = paletteTexture.paletteTexels.get();
 
 		const int lightLevelTexelCount = lightTableTexture.texels.getWidth(); // Per light level, not the whole table.
@@ -398,6 +396,11 @@ namespace swRender
 			const Double2 uv0Perspective = uv0 * z0Recip;
 			const Double2 uv1Perspective = uv1 * z1Recip;
 			const Double2 uv2Perspective = uv2 * z2Recip;
+
+			const SoftwareRenderer::ObjectTexture &texture = textures.get(triangle.textureID);
+			const int textureWidth = texture.texels.getWidth();
+			const int textureHeight = texture.texels.getHeight();
+			const uint8_t *textureTexels = texture.texels.get();
 
 			for (int y = yStart; y < yEnd; y++)
 			{
@@ -682,8 +685,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 
 	const std::vector<RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(triangles, camera);
 	const BufferView<const RenderTriangle> clippedTrianglesView(clippedTriangles.data(), static_cast<int>(clippedTriangles.size()));
-	swRender::RasterizeTriangles(clippedTrianglesView, this->objectTextures.get(1), paletteTexture, lightTableTexture,
-		camera, colorBufferView, depthBufferView);
+	swRender::RasterizeTriangles(clippedTrianglesView, this->objectTextures, paletteTexture, lightTableTexture, camera,
+		colorBufferView, depthBufferView);
 }
 
 void SoftwareRenderer::present()
