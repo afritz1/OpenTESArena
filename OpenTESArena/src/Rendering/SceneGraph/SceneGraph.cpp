@@ -91,7 +91,55 @@ namespace sgGeometry
 		return triangles;
 	}
 
-	static const std::vector<RenderTriangle> DebugTriangles = sgGeometry::MakeDebugMesh3(0);
+	std::vector<RenderTriangle> MakeDebugMesh4(ObjectTextureID textureID)
+	{
+		std::vector<RenderTriangle> triangles;
+
+		auto add = [textureID, &triangles](int x, int y, int z)
+		{
+			const Double3 point(
+				22.0 + static_cast<double>(x),
+				static_cast<double>(y),
+				-1.0 + static_cast<double>(z));
+			std::vector<RenderTriangle> cubeTriangles = MakeCube(point, textureID);
+			triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
+		};
+
+		constexpr SNInt width = 6;
+		constexpr int height = 3;
+		constexpr WEInt depth = 6;
+
+		for (WEInt z = 0; z < depth; z++)
+		{
+			for (int y = 0; y < height; y++)
+			{
+				add(0, y, z);
+				add(width - 1, y, z);
+			}
+		}
+
+		for (int y = 0; y < height; y++)
+		{
+			for (SNInt x = 2; x < (width - 2); x++)
+			{
+				add(x, y, 0);
+				add(x, y, depth - 1);
+			}
+		}
+
+		for (WEInt z = 1; z < (depth - 1); z++)
+		{
+			for (SNInt x = 1; x < (width - 1); x++)
+			{
+				add(x, 0, z);
+				add(x, height - 1, z);
+			}
+		}
+
+		return triangles;
+	}
+
+	static const std::vector<RenderTriangle> DebugTriangles = sgGeometry::MakeDebugMesh4(0);
 }
 
 BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
