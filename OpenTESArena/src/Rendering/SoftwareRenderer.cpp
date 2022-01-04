@@ -70,7 +70,7 @@ namespace swGeometry
 		}
 	};
 
-	TriangleClipResult ClipTriangle(const RenderTriangle &triangle, const Double3 &planePoint, const Double3 &planeNormal)
+	TriangleClipResult ClipTriangle(const RenderTriangle &triangle, const Double3 &eye, const Double3 &planePoint, const Double3 &planeNormal)
 	{
 		std::array<const Double3*, 3> insidePoints, outsidePoints;
 		std::array<const Double2*, 3> insideUVs, outsideUVs;
@@ -134,8 +134,21 @@ namespace swGeometry
 			const Double2 newInsideUV0 = insideUV.lerp(outsideUV0, t0);
 			const Double2 newInsideUV1 = insideUV.lerp(outsideUV1, t1);
 
-			return TriangleClipResult::one(RenderTriangle(insidePoint, newInsidePoint1, newInsidePoint2,
-				insideUV, newInsideUV0, newInsideUV1, triangle.textureID));
+			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
+			const Double3 unormal = (insidePoint - newInsidePoint2).cross(newInsidePoint1 - insidePoint);
+			RenderTriangle newTriangle;
+			if ((eye - insidePoint).dot(unormal) >= Constants::Epsilon)
+			{
+				newTriangle.init(insidePoint, newInsidePoint1, newInsidePoint2, insideUV, newInsideUV0,
+					newInsideUV1, triangle.textureID);
+			}
+			else
+			{
+				newTriangle.init(newInsidePoint2, newInsidePoint1, insidePoint, newInsideUV1, newInsideUV0,
+					insideUV, triangle.textureID);
+			}
+
+			return TriangleClipResult::one(newTriangle);
 		}
 		else if (becomesQuad)
 		{
@@ -170,14 +183,32 @@ namespace swGeometry
 			const double newTriangle1T = (newTriangle1V2 - newTriangle1V0).length();
 			const Double2 newTriangle1UV2 = newTriangle1UV0.lerp(outsideUV0, newTriangle1T);
 
-			const RenderTriangle newTriangle0(
-				newTriangle0V0, newTriangle0V1, newTriangle0V2,
-				newTriangle0UV0, newTriangle0UV1, newTriangle0UV2,
-				triangle.textureID);
-			const RenderTriangle newTriangle1(
-				newTriangle1V0, newTriangle1V1, newTriangle1V2,
-				newTriangle1UV0, newTriangle1UV1, newTriangle1UV2,
-				triangle.textureID);
+			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
+			const Double3 unormal0 = (newTriangle0V0 - newTriangle0V2).cross(newTriangle0V1 - newTriangle0V0);
+			RenderTriangle newTriangle0;
+			if ((eye - newTriangle0V0).dot(unormal0) >= Constants::Epsilon)
+			{
+				newTriangle0.init(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0UV0, newTriangle0UV1,
+					newTriangle0UV2, triangle.textureID);
+			}
+			else
+			{
+				newTriangle0.init(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0UV2, newTriangle0UV1,
+					newTriangle0UV0, triangle.textureID);
+			}
+
+			const Double3 unormal1 = (newTriangle1V0 - newTriangle1V2).cross(newTriangle1V1 - newTriangle1V0);
+			RenderTriangle newTriangle1;
+			if ((eye - newTriangle1V0).dot(unormal1) >= Constants::Epsilon)
+			{
+				newTriangle1.init(newTriangle1V0, newTriangle1V1, newTriangle1V2, newTriangle1UV0, newTriangle1UV1,
+					newTriangle1UV2, triangle.textureID);
+			}
+			else
+			{
+				newTriangle1.init(newTriangle1V2, newTriangle1V1, newTriangle1V0, newTriangle1UV2, newTriangle1UV1,
+					newTriangle1UV0, triangle.textureID);
+			}
 
 			return TriangleClipResult::two(newTriangle0, newTriangle1);
 		}
@@ -252,7 +283,7 @@ namespace swGeometry
 				for (int j = static_cast<int>(clipList.size()); j > 0; j--)
 				{
 					const RenderTriangle &clipListTriangle = clipList.front();
-					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, plane.point, plane.normal);
+					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, eye, plane.point, plane.normal);
 					for (int k = 0; k < clipResult.triangleCount; k++)
 					{
 						clipList.emplace_back(clipResult.triangles[k]);
@@ -366,12 +397,9 @@ namespace swRender
 			const Double2 screenSpace01 = screenSpace1_2D - screenSpace0_2D;
 			const Double2 screenSpace12 = screenSpace2_2D - screenSpace1_2D;
 			const Double2 screenSpace20 = screenSpace0_2D - screenSpace2_2D;
-
-			// @todo: this condition is only a temp fix; need to change vertex winding order in the triangle clipping function instead.
-			const bool isFrontFacing = (eye - v0).dot(triangle.normal) >= 0.0;
-			Double2 screenSpace01Perp = isFrontFacing ? screenSpace01.rightPerp() : screenSpace01.leftPerp();
-			Double2 screenSpace12Perp = isFrontFacing ? screenSpace12.rightPerp() : screenSpace12.leftPerp();
-			Double2 screenSpace20Perp = isFrontFacing ? screenSpace20.rightPerp() : screenSpace20.leftPerp();
+			const Double2 screenSpace01Perp = screenSpace01.rightPerp();
+			const Double2 screenSpace12Perp = screenSpace12.rightPerp();
+			const Double2 screenSpace20Perp = screenSpace20.rightPerp();
 
 			// Naive screen-space bounding box around triangle.
 			const double xMin = std::min(screenSpace0.x, std::min(screenSpace1.x, screenSpace2.x));
