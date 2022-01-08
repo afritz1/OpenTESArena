@@ -483,7 +483,8 @@ namespace swRender
 							const int texelIndex = texelX + (texelY * textureWidth);
 							const uint8_t texel = textureTexels[texelIndex];
 
-							// XZ position of pixel center in world space.
+							// @temp: shading is disabled until the interpolated world space point is calculated correctly.
+							/*// XZ position of pixel center in world space.
 							const Double2 v2D(
 								(u * v0.x) + (v * v1.x) + (w * v2.x),
 								(u * v0.z) + (v * v1.z) + (w * v2.z));
@@ -499,9 +500,9 @@ namespace swRender
 
 							const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
 							const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
-							const uint32_t shadedTexelColor = paletteTexels[shadedTexel];
+							const uint32_t shadedTexelColor = paletteTexels[shadedTexel];*/
 
-							colorBufferPtr[outputIndex] = shadedTexelColor;
+							colorBufferPtr[outputIndex] = paletteTexels[texel];
 							depthBufferPtr[outputIndex] = depth;
 						}
 					}
