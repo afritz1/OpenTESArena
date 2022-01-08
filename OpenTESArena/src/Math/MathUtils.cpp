@@ -73,7 +73,7 @@ Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint,
 	const Double2 &normal)
 {
-	return (point - dividerPoint).normalized().dot(normal) >= 0.0;
+	return (point - dividerPoint).dot(normal) >= 0.0;
 }
 
 bool MathUtils::triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
