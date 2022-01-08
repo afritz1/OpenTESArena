@@ -593,16 +593,22 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 	}
 
 	ObjectTexture &texture = this->objectTextures.get(*outID);
+	uint8_t *dstTexels = texture.texels.get();
+
 	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
 		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
-		std::copy(palettedTexture.texels.get(), palettedTexture.texels.end(), texture.texels.get());
+		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
+		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
 	{
 		DebugLogWarning("True color texture (dimensions " + std::to_string(width) + "x" + std::to_string(height) + ") not supported.");
 		texture.texels.fill(0);
+		const TextureBuilder::TrueColorTexture &trueColorTexture = textureBuilder.getTrueColor();
+		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
+		//std::transform(srcTexels.get(), srcTexels.end(), dstTexels, ...)
 	}
 	else
 	{
