@@ -403,6 +403,36 @@ std::optional<double> RendererUtils::getLightningBoltPercent(const WeatherInstan
 	return thunderstorm->getLightningBoltPercent();
 }
 
+int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette &palette)
+{
+	const Double3 colorRGB = Double3::fromRGB(color.toRGB());
+
+	std::optional<int> nearestIndex;
+	for (int i = 0; i < static_cast<int>(palette.size()); i++)
+	{
+		const Color &paletteColor = palette[i];
+		const Double3 paletteColorRGB = Double3::fromRGB(paletteColor.toRGB());
+
+		if (!nearestIndex.has_value())
+		{
+			nearestIndex = i;
+		}
+		else
+		{
+			const Color &currentNearestColor = palette[*nearestIndex];
+			const Double3 currentNearestColorRGB = Double3::fromRGB(currentNearestColor.toRGB());
+
+			if ((colorRGB - paletteColorRGB).length() < (colorRGB - currentNearestColorRGB).length())
+			{
+				nearestIndex = i;
+			}
+		}
+	}
+
+	DebugAssert(nearestIndex.has_value());
+	return *nearestIndex;
+}
+
 void RendererUtils::getFogGeometry(FogVertexArray *outVertices, FogIndexArray *outIndices)
 {
 	// Working with a cube with 4 faces (no top/bottom).

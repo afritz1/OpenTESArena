@@ -9,6 +9,8 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector3.h"
+#include "../Media/Color.h"
+#include "../Media/Palette.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelUtils.h"
 
@@ -116,6 +118,9 @@ namespace RendererUtils
 
 	// Gets the lightning bolt percent if it's a thunderstorm and a lightning bolt is present.
 	std::optional<double> getLightningBoltPercent(const WeatherInstance &weatherInst);
+
+	// Gets the palette index of the color that most closely matches the given one.
+	int getNearestPaletteColorIndex(const Color &color, const Palette &palette);
 
 	// Gets the vertex buffer and index buffer for screen-space fog. Every quad is ordered in
 	// UV space, where (0, 0) is the top left and (1, 0) is the top right.
