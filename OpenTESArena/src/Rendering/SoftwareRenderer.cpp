@@ -126,13 +126,15 @@ namespace swGeometry
 			MathUtils::rayPlaneIntersection(insidePoint, (outsidePoint1 - insidePoint).normalized(),
 				planePoint, planeNormal, &newInsidePoint2);
 
-			const double t0 = (newInsidePoint1 - insidePoint).length();
-			const double t1 = (newInsidePoint2 - insidePoint).length();
+			const double t0 = (outsidePoint0 - insidePoint).length();
+			const double t1 = (outsidePoint1 - insidePoint).length();
+			const double newT0 = (newInsidePoint1 - insidePoint).length();
+			const double newT1 = (newInsidePoint2 - insidePoint).length();
 
 			const Double2 outsideUV0 = *outsideUVs[0];
 			const Double2 outsideUV1 = *outsideUVs[1];
-			const Double2 newInsideUV0 = insideUV.lerp(outsideUV0, t0);
-			const Double2 newInsideUV1 = insideUV.lerp(outsideUV1, t1);
+			const Double2 newInsideUV0 = insideUV.lerp(outsideUV0, newT0 / t0);
+			const Double2 newInsideUV1 = insideUV.lerp(outsideUV1, newT1 / t1);
 
 			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
 			const Double3 unormal = (insidePoint - newInsidePoint2).cross(newInsidePoint1 - insidePoint);
@@ -164,24 +166,28 @@ namespace swGeometry
 			const Double2 &newTriangle0UV0 = insideUV0;
 			const Double2 &newTriangle0UV1 = insideUV1;
 
+			const double t0 = (outsidePoint0 - newTriangle0V0).length();
+
 			// @todo: replace ray-plane intersection with one that get T value internally
 			Double3 newTriangle0V2;
 			MathUtils::rayPlaneIntersection(newTriangle0V0, (outsidePoint0 - newTriangle0V0).normalized(),
 				planePoint, planeNormal, &newTriangle0V2);
 			const double newTriangle0T = (newTriangle0V2 - newTriangle0V0).length();
-			const Double2 newTriangle0UV2 = newTriangle0UV0.lerp(outsideUV0, newTriangle0T);
+			const Double2 newTriangle0UV2 = newTriangle0UV0.lerp(outsideUV0, newTriangle0T / t0);
 
 			const Double3 &newTriangle1V0 = insidePoint1;
 			const Double3 &newTriangle1V1 = newTriangle0V2;
 			const Double2 &newTriangle1UV0 = insideUV1;
 			const Double2 &newTriangle1UV1 = newTriangle0UV2;
 
+			const double t1 = (outsidePoint0 - newTriangle1V0).length();
+
 			// @todo: replace ray-plane intersection with one that get T value internally
 			Double3 newTriangle1V2;
 			MathUtils::rayPlaneIntersection(newTriangle1V0, (outsidePoint0 - newTriangle1V0).normalized(),
 				planePoint, planeNormal, &newTriangle1V2);
 			const double newTriangle1T = (newTriangle1V2 - newTriangle1V0).length();
-			const Double2 newTriangle1UV2 = newTriangle1UV0.lerp(outsideUV0, newTriangle1T);
+			const Double2 newTriangle1UV2 = newTriangle1UV0.lerp(outsideUV0, newTriangle1T / t1);
 
 			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
 			const Double3 unormal0 = (newTriangle0V0 - newTriangle0V2).cross(newTriangle0V1 - newTriangle0V0);
