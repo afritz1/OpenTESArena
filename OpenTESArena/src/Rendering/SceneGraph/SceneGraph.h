@@ -61,6 +61,9 @@ private:
 	// @todo: buffer(s) of visible geometry, lights, indices, texture IDs, etc.
 	// - sort of thinking like: static voxel geometry, dynamic voxel geometry, entity geometry, ...
 	// - presumably each open door voxel, etc. would be in its own separate draw list (can't remember how OpenGL would handle something like this. Uniforms?)
+	std::vector<RenderTriangle> voxelTriangles;
+	std::vector<RenderTriangle> entityTriangles;
+	std::vector<RenderTriangle> skyTriangles;
 
 	void clearVoxels();
 	void clearEntities();
@@ -73,7 +76,7 @@ public:
 	void updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude);
 
 	// Evaluates the scene graph's internal representation of voxels/entities/sky/etc. to re-populate its draw call lists.
-	void updateVisibleGeometry(const RenderCamera &camera);
+	//void updateVisibleGeometry(const RenderCamera &camera);
 
 	// Clears all state from the game world (used on scene changes).
 	void clear();

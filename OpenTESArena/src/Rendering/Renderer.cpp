@@ -23,6 +23,7 @@
 #include "../UI/RenderSpace.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
+#include "../World/LevelInstance.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -838,6 +839,15 @@ void Renderer::freeUiTexture(UiTextureID id)
 	this->renderer2D->freeUiTexture(id);
 }
 
+void Renderer::updateSceneGraph(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,
+	const LevelInstance &levelInst, const SkyInstance &skyInst, double daytimePercent, double latitude,
+	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight)
+{
+	this->sceneGraph.updateVoxels(levelInst.getChunkManager(), levelInst.getCeilingScale(), chasmAnimPercent);
+	this->sceneGraph.updateEntities(levelInst.getEntityManager(), nightLightsAreActive, playerHasLight);
+	this->sceneGraph.updateSky(skyInst, daytimePercent, latitude);
+}
+
 void Renderer::clear(const Color &color)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
@@ -928,6 +938,7 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 	RenderCamera renderCamera;
 	renderCamera.init(cameraPos.chunk, cameraPos.point, cameraDir, fovX, fovY, renderAspectRatio);
 
+	// @todo: need to call sceneGraph.updateVoxels/Entities/Sky() somewhere before this, either in this submitFrame() or in GameWorldPanel::gameWorldRenderCallback()
 	const BufferView<const RenderTriangle> triangles = this->sceneGraph.getAllGeometry();
 
 	RenderFrameSettings renderFrameSettings;

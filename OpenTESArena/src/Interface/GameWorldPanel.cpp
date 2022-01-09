@@ -825,15 +825,18 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
 	auto &gameState = game.getGameState();
-	auto &player = gameState.getPlayer();
+	
+	const auto &player = gameState.getPlayer();
+	const CoordDouble3 &playerPos = player.getPosition();
+	const VoxelDouble3 &playerDir = player.getDirection();
+
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const MapInstance &activeMapInst = gameState.getActiveMapInst();
 	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 	const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
-	const auto &options = game.getOptions();
-	const double ambientPercent = gameState.getAmbientPercent();
 
+	const double ambientPercent = gameState.getAmbientPercent();
 	const double latitude = [&gameState]()
 	{
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
@@ -842,9 +845,10 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
 
-	// @todo: update the scene graph's voxels/entities/sky/particles here or inside the Renderer function?
-
 	auto &renderer = game.getRenderer();
+	const auto &options = game.getOptions();
+	renderer.updateSceneGraph(playerPos, playerDir, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
+		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight());
 
 	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
 	const ObjectTextureID paletteTextureID = activeLevelInst.getPaletteTextureID();
@@ -852,9 +856,8 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const ObjectTextureID skyColorsTextureID = activeSkyInst.getSkyColorsTextureID();
 	const ObjectTextureID thunderstormColorsTextureID = -1;
 
-	renderer.submitFrame(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
-		ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID,
-		options.getGraphics_RenderThreadsMode());
+	renderer.submitFrame(playerPos, playerDir, options.getGraphics_VerticalFOV(), ambientPercent, paletteTextureID,
+		lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
 
 	return true;
 }

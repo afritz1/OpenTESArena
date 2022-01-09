@@ -9,143 +9,114 @@
 
 namespace sgGeometry
 {
-	std::vector<RenderTriangle> MakeCube(const Double3 &point, ObjectTextureID textureID)
+	constexpr int MAX_TRIANGLES_PER_VOXEL = 12;
+
+	// Quad texture coordinates (top left, top right, etc.).
+	const Double2 UV_TL(0.0, 0.0);
+	const Double2 UV_TR(1.0, 0.0);
+	const Double2 UV_BL(0.0, 1.0);
+	const Double2 UV_BR(1.0, 1.0);
+
+	// Makes the world space position of where a voxel should be.
+	Double3 MakeVoxelPosition(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale)
 	{
-		std::vector<RenderTriangle> triangles;
+		const Int3 absoluteVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunk, voxel);
+		return Double3(
+			static_cast<double>(absoluteVoxel.x),
+			static_cast<double>(absoluteVoxel.y) * ceilingScale,
+			static_cast<double>(absoluteVoxel.z));
+	}
 
-		auto p = [&point](double x, double y, double z)
-		{
-			return point + Double3(x, y, z);
-		};
+	// Makes a world space triangle. The given vertices are in model space and contain the 0->1 values where 1 is
+	// a voxel corner.
+	void MakeWorldSpaceVertices(const Double3 &voxelPosition, const Double3 &v0, const Double3 &v1, const Double3 &v2,
+		double ceilingScale, Double3 *outV0, Double3 *outV1, Double3 *outV2)
+	{
+		outV0->x = voxelPosition.x + v0.x;
+		outV0->y = voxelPosition.y + (v0.y * ceilingScale);
+		outV0->z = voxelPosition.z + v0.z;
 
-		const Double2 uvTL(0.0, 0.0);
-		const Double2 uvTR(1.0, 0.0);
-		const Double2 uvBL(0.0, 1.0);
-		const Double2 uvBR(1.0, 1.0);
+		outV1->x = voxelPosition.x + v1.x;
+		outV1->y = voxelPosition.y + (v1.y * ceilingScale);
+		outV1->z = voxelPosition.z + v1.z;
 
-		// Cube
+		outV2->x = voxelPosition.x + v2.x;
+		outV2->y = voxelPosition.y + (v2.y * ceilingScale);
+		outV2->z = voxelPosition.z + v2.z;
+	}
+
+	// Translates a model space triangle into world space and writes it into the output buffer at the given index.
+	void WriteTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0, const Double2 &uv1,
+		const Double2 &uv2, ObjectTextureID textureID, const Double3 &voxelPosition, double ceilingScale, int index,
+		BufferView<RenderTriangle> &outTriangles)
+	{
+		Double3 worldV0, worldV1, worldV2;
+		MakeWorldSpaceVertices(voxelPosition, v0, v1, v2, ceilingScale, &worldV0, &worldV1, &worldV2);
+
+		RenderTriangle &triangle = outTriangles.get(index);
+		triangle.init(worldV0, worldV1, worldV2, uv0, uv1, uv2, textureID);
+	}
+
+	// Geometry generation functions (currently in world space, might be chunk space or something else later).
+	int WriteWall(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID textureID,
+		BufferView<RenderTriangle> &outTriangles)
+	{
+		constexpr int triangleCount = 12;
+		DebugAssert(outTriangles.getCount() == triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
+
 		// X=0
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 0.0), p(0.0, 0.0, 0.0), p(0.0, 0.0, 1.0), uvTL, uvBL, uvBR, textureID));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 1.0), p(0.0, 1.0, 1.0), p(0.0, 1.0, 0.0), uvBR, uvTR, uvTL, textureID));
+		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 1, outTriangles);
 		// X=1
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 1.0), p(1.0, 0.0, 1.0), p(1.0, 0.0, 0.0), uvTL, uvBL, uvBR, textureID));
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 0.0), p(1.0, 1.0, 0.0), p(1.0, 1.0, 1.0), uvBR, uvTR, uvTL, textureID));
+		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 2, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 3, outTriangles);
 		// Y=0
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(0.0, 0.0, 1.0), p(0.0, 0.0, 0.0), uvTL, uvBL, uvBR, textureID));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(1.0, 0.0, 0.0), p(1.0, 0.0, 1.0), uvBR, uvTR, uvTL, textureID));
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 4, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 5, outTriangles);
 		// Y=1
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(0.0, 1.0, 0.0), p(0.0, 1.0, 1.0), uvTL, uvBL, uvBR, textureID));
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(1.0, 1.0, 1.0), p(1.0, 1.0, 0.0), uvBR, uvTR, uvTL, textureID));
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 6, outTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 7, outTriangles);
 		// Z=0
-		triangles.emplace_back(RenderTriangle(p(1.0, 1.0, 0.0), p(1.0, 0.0, 0.0), p(0.0, 0.0, 0.0), uvTL, uvBL, uvBR, textureID));
-		triangles.emplace_back(RenderTriangle(p(0.0, 0.0, 0.0), p(0.0, 1.0, 0.0), p(1.0, 1.0, 0.0), uvBR, uvTR, uvTL, textureID));
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 8, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 9, outTriangles);
 		// Z=1
-		triangles.emplace_back(RenderTriangle(p(0.0, 1.0, 1.0), p(0.0, 0.0, 1.0), p(1.0, 0.0, 1.0), uvTL, uvBL, uvBR, textureID));
-		triangles.emplace_back(RenderTriangle(p(1.0, 0.0, 1.0), p(1.0, 1.0, 1.0), p(0.0, 1.0, 1.0), uvBR, uvTR, uvTL, textureID));
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 10, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 11, outTriangles);
 
-		return triangles;
+		return triangleCount;
 	}
 
-	std::vector<RenderTriangle> MakeDebugMesh1(ObjectTextureID textureID)
+	int WriteFloor(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID textureID,
+		BufferView<RenderTriangle> &outTriangles)
 	{
-		return MakeCube(Double3::Zero, textureID);
+		constexpr int triangleCount = 2;
+		DebugAssert(outTriangles.getCount() == triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
+
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 1, outTriangles);
+
+		return triangleCount;
 	}
 
-	std::vector<RenderTriangle> MakeDebugMesh2(ObjectTextureID textureID)
+	int WriteCeiling(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID textureID,
+		BufferView<RenderTriangle> &outTriangles)
 	{
-		std::vector<RenderTriangle> triangles;
+		constexpr int triangleCount = 2;
+		DebugAssert(outTriangles.getCount() == triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
-		for (int y = 0; y < 3; y += 2)
-		{
-			const Double3 point(
-				24.0,
-				static_cast<double>(y),
-				0.0);
-			std::vector<RenderTriangle> cubeTriangles = MakeCube(point, textureID);
-			triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
-		}
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 1, outTriangles);
 
-		return triangles;
+		return triangleCount;
 	}
-
-	std::vector<RenderTriangle> MakeDebugMesh3(ObjectTextureID textureID)
-	{
-		std::vector<RenderTriangle> triangles;
-
-		for (int z = 0; z < 32; z += 2)
-		{
-			for (int y = 0; y < 4; y += 2)
-			{
-				for (int x = 0; x < 32; x += 2)
-				{
-					const Double3 point(
-						static_cast<double>(x),
-						static_cast<double>(y),
-						static_cast<double>(z));
-					std::vector<RenderTriangle> cubeTriangles = MakeCube(point, textureID);
-					triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
-				}
-			}
-		}
-
-		return triangles;
-	}
-
-	std::vector<RenderTriangle> MakeDebugMesh4(ObjectTextureID textureID)
-	{
-		std::vector<RenderTriangle> triangles;
-
-		auto add = [textureID, &triangles](int x, int y, int z)
-		{
-			const Double3 point(
-				22.0 + static_cast<double>(x),
-				static_cast<double>(y),
-				-1.0 + static_cast<double>(z));
-			std::vector<RenderTriangle> cubeTriangles = MakeCube(point, textureID);
-			triangles.insert(triangles.end(), cubeTriangles.begin(), cubeTriangles.end());
-		};
-
-		constexpr SNInt width = 6;
-		constexpr int height = 3;
-		constexpr WEInt depth = 6;
-
-		for (WEInt z = 0; z < depth; z++)
-		{
-			for (int y = 0; y < height; y++)
-			{
-				add(0, y, z);
-				add(width - 1, y, z);
-			}
-		}
-
-		for (int y = 0; y < height; y++)
-		{
-			for (SNInt x = 2; x < (width - 2); x++)
-			{
-				add(x, y, 0);
-				add(x, y, depth - 1);
-			}
-		}
-
-		for (WEInt z = 1; z < (depth - 1); z++)
-		{
-			for (SNInt x = 1; x < (width - 1); x++)
-			{
-				add(x, 0, z);
-				add(x, height - 1, z);
-			}
-		}
-
-		return triangles;
-	}
-
-	static const std::vector<RenderTriangle> DebugTriangles = sgGeometry::MakeDebugMesh4(0);
 }
 
 BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
 {
-	const auto &triangles = sgGeometry::DebugTriangles;
-	return BufferView<const RenderTriangle>(triangles.data(), static_cast<int>(triangles.size()));
+	return BufferView<const RenderTriangle>(this->voxelTriangles.data(), static_cast<int>(this->voxelTriangles.size()));
 }
 
 void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent)
@@ -154,10 +125,10 @@ void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingSc
 
 	// Compare chunk manager chunk count w/ our grid size and resize if needed.
 	const int chunkCount = chunkManager.getChunkCount();
-	if (this->chunkRenderInsts.size() != chunkCount)
+	/*if (this->chunkRenderInsts.size() != chunkCount)
 	{
 		this->chunkRenderInsts.resize(chunkCount);
-	}
+	}*/
 
 	// Populate render defs and insts for each chunk.
 	for (int i = 0; i < chunkCount; i++)
@@ -167,8 +138,8 @@ void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingSc
 		const int chunkHeight = chunk.getHeight();
 		const WEInt chunkDepth = Chunk::DEPTH;
 
-		ChunkRenderDefinition chunkRenderDef;
-		chunkRenderDef.init(chunkWidth, chunkHeight, chunkDepth);
+		/*ChunkRenderDefinition chunkRenderDef;
+		chunkRenderDef.init(chunkWidth, chunkHeight, chunkDepth);*/
 
 		for (WEInt z = 0; z < chunkDepth; z++)
 		{
@@ -178,13 +149,13 @@ void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingSc
 				{
 					const Chunk::VoxelID voxelID = chunk.getVoxel(x, y, z);
 					const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-					const VoxelInstance *voxelInst = nullptr; // @todo: need to get the voxel inst for this voxel (if any).
+					//const VoxelInstance *voxelInst = nullptr; // @todo: need to get the voxel inst for this voxel (if any).
 
 					// @todo: looks like VoxelGeometry::getQuads() isn't aware that we want ALL geometry all the time;
 					// so like chasm walls, diagonals, and edge voxels need to be handled differently than this. I don't think
 					// passing a VoxelInstance would help. We need the "total possible geometry" for the voxel so certain faces
 					// can be enabled/disabled by the voxel render def logic type.
-					std::array<Quad, VoxelRenderDefinition::MAX_RECTS> quads;
+					/*std::array<Quad, VoxelRenderDefinition::MAX_RECTS> quads;
 					const int quadCount = VoxelGeometry::getQuads(voxelDef, VoxelInt3::Zero, ceilingScale,
 						voxelInst, quads.data(), static_cast<int>(quads.size()));
 
@@ -214,12 +185,39 @@ void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingSc
 					// @todo: map the Chunk::VoxelID to VoxelRenderDefID (I think?)
 
 					this->voxelRenderDefs.emplace_back(std::move(voxelRenderDef));
-					chunkRenderDef.voxelRenderDefIDs.set(x, y, z, static_cast<VoxelRenderDefID>(this->voxelRenderDefs.size()) - 1);
+					chunkRenderDef.voxelRenderDefIDs.set(x, y, z, static_cast<VoxelRenderDefID>(this->voxelRenderDefs.size()) - 1);*/
+
+					const ChunkInt2 chunkPos = chunk.getCoord();
+					const VoxelInt3 voxelPos(x, y, z);
+					const ObjectTextureID textureID = voxelID;
+					std::array<RenderTriangle, sgGeometry::MAX_TRIANGLES_PER_VOXEL> trianglesBuffer;
+					int triangleCount;
+					if (voxelDef.type == ArenaTypes::VoxelType::Wall)
+					{
+						triangleCount = sgGeometry::WriteWall(chunkPos, voxelPos, ceilingScale, textureID,
+							BufferView<RenderTriangle>(trianglesBuffer.data(), 12));
+					}
+					else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
+					{
+						triangleCount = sgGeometry::WriteFloor(chunkPos, voxelPos, ceilingScale, textureID,
+							BufferView<RenderTriangle>(trianglesBuffer.data(), 2));
+					}
+					else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
+					{
+						triangleCount = sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, textureID,
+							BufferView<RenderTriangle>(trianglesBuffer.data(), 2));
+					}
+					else
+					{
+						triangleCount = 0;
+					}
+
+					this->voxelTriangles.insert(this->voxelTriangles.end(), trianglesBuffer.cbegin(), trianglesBuffer.cbegin() + triangleCount);
 				}
 			}
 		}
 
-		this->chunkRenderDefs.emplace_back(std::move(chunkRenderDef));
+		/*this->chunkRenderDefs.emplace_back(std::move(chunkRenderDef));
 
 		ChunkRenderInstance chunkRenderInst;
 		for (int i = 0; i < chunk.getVoxelInstCount(); i++)
@@ -231,10 +229,8 @@ void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingSc
 			chunkRenderInst.addVoxelRenderInstance(std::move(voxelRenderInst));
 		}
 
-		this->chunkRenderInsts.emplace_back(std::move(chunkRenderInst));
+		this->chunkRenderInsts.emplace_back(std::move(chunkRenderInst));*/
 	}
-
-	DebugNotImplemented();
 }
 
 void SceneGraph::updateEntities(const EntityManager &entityManager, bool nightLightsAreActive, bool playerHasLight)
@@ -244,39 +240,42 @@ void SceneGraph::updateEntities(const EntityManager &entityManager, bool nightLi
 	const int entityCount = entityManager.getCount();
 	Buffer<const Entity*> entityPtrs(entityCount);
 
-	DebugNotImplemented();
+	//DebugNotImplemented();
 }
 
 void SceneGraph::updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude)
 {
 	this->clearSky();
-	DebugNotImplemented();
+	//DebugNotImplemented();
 }
 
-void SceneGraph::updateVisibleGeometry(const RenderCamera &camera)
+/*void SceneGraph::updateVisibleGeometry(const RenderCamera &camera)
 {
 	// @todo: clear current geometry/light/etc. buffers
 
 	DebugNotImplemented();
-}
+}*/
 
 void SceneGraph::clearVoxels()
 {
 	this->voxelRenderDefs.clear();
 	this->chunkRenderDefs.clear();
 	this->chunkRenderInsts.clear();
+	this->voxelTriangles.clear();
 }
 
 void SceneGraph::clearEntities()
 {
 	this->entityRenderDefs.clear();
 	this->entityRenderInsts.clear();
+	this->entityTriangles.clear();
 }
 
 void SceneGraph::clearSky()
 {
 	this->skyObjectRenderDefs.clear();
 	this->skyObjectRenderInsts.clear();
+	this->skyTriangles.clear();
 }
 
 void SceneGraph::clear()
