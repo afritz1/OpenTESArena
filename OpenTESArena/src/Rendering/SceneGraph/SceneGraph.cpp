@@ -282,6 +282,63 @@ namespace sgGeometry
 
 		return triangleCount;
 	}
+
+	// @todo: chasm walls effectively have two textures; will need to work with that and have a dedicated pixel shader that takes two textures.
+	int WriteChasm(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, bool north, bool south, bool east, bool west,
+		bool isDry, ObjectTextureID floorTextureID, ObjectTextureID sideTextureID, BufferView<RenderTriangle> &outTriangles)
+	{
+		auto countFace = [](bool faceExists)
+		{
+			return faceExists ? 2 : 0;
+		};
+
+		// Variable number of walls based on the chasm instance.
+		const int triangleCount = 2 + countFace(north) + countFace(south) + countFace(east) + countFace(west);
+		DebugAssert(outTriangles.getCount() >= triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
+
+		// @todo: Water and lava chasms should not be scaled by ceilingScale.
+		const double yBottom = 0.0; //isDry ? 0.0 : (1.0 - (1.0 / ceilingScale)); // @todo: verify math
+
+		// Y=bottom (always present)
+		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, yBottom, 1.0), Double3(1.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, floorTextureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, yBottom, 0.0), Double3(0.0, yBottom, 0.0), UV_BR, UV_TR, UV_TL, floorTextureID, voxelPosition, ceilingScale, 1, outTriangles);
+
+		int triangleIndex = 2;
+		if (north)
+		{
+			// X=0
+			WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, yBottom, 1.0), Double3(0.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, sideTextureID, voxelPosition, ceilingScale, triangleIndex, outTriangles);
+			WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideTextureID, voxelPosition, ceilingScale, triangleIndex + 1, outTriangles);
+			triangleIndex += 2;
+		}
+
+		if (south)
+		{
+			// X=1
+			WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, yBottom, 0.0), Double3(1.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, sideTextureID, voxelPosition, ceilingScale, triangleIndex, outTriangles);
+			WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideTextureID, voxelPosition, ceilingScale, triangleIndex + 1, outTriangles);
+			triangleIndex += 2;
+		}
+
+		if (east)
+		{
+			// Z=0
+			WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, yBottom, 0.0), Double3(1.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, sideTextureID, voxelPosition, ceilingScale, triangleIndex, outTriangles);
+			WriteTriangle(Double3(1.0, yBottom, 0.0), Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideTextureID, voxelPosition, ceilingScale, triangleIndex + 1, outTriangles);
+			triangleIndex += 2;
+		}
+
+		if (west)
+		{
+			// Z=1
+			WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, yBottom, 1.0), Double3(0.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, sideTextureID, voxelPosition, ceilingScale, triangleIndex, outTriangles);
+			WriteTriangle(Double3(0.0, yBottom, 1.0), Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideTextureID, voxelPosition, ceilingScale, triangleIndex + 1, outTriangles);
+			triangleIndex += 2;
+		}
+
+		return triangleIndex;
+	}
 }
 
 BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
@@ -417,6 +474,19 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 						const ObjectTextureID textureID = levelInst.getVoxelTextureID(edge.textureAssetRef);
 						triangleCount = sgGeometry::WriteEdge(chunkPos, voxelPos, ceilingScale, edge.facing, edge.yOffset,
 							edge.flipped, textureID, BufferView<RenderTriangle>(trianglesBuffer.data(), 4));
+					}
+					else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
+					{
+						const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
+						const bool north = false; // @todo: need voxel instance
+						const bool south = false;
+						const bool east = false;
+						const bool west = false;
+						const bool isDry = chasm.type == ArenaTypes::ChasmType::Dry;
+						const ObjectTextureID floorTextureID = levelInst.getChasmTextureID(chasm.type, chasmAnimPercent);
+						const ObjectTextureID sideTextureID = levelInst.getVoxelTextureID(chasm.textureAssetRef);
+						triangleCount = sgGeometry::WriteChasm(chunkPos, voxelPos, ceilingScale, north, south, east, west,
+							isDry, floorTextureID, sideTextureID, BufferView<RenderTriangle>(trianglesBuffer.data(), 10));
 					}
 					else
 					{

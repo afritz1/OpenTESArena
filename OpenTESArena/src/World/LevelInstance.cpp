@@ -89,6 +89,18 @@ ObjectTextureID LevelInstance::getVoxelTextureID(const TextureAssetReference &te
 	return objectTextureRef.get();
 }
 
+ObjectTextureID LevelInstance::getChasmTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const
+{
+	const auto iter = this->loadedChasmTextures.find(chasmType);
+	DebugAssertMsg(iter != this->loadedChasmTextures.end(), "No loaded chasm texture for type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
+
+	const std::vector<ScopedObjectTextureRef> &objectTextureRefs = iter->second;
+	const int textureCount = static_cast<int>(objectTextureRefs.size());
+	const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
+	DebugAssertIndex(objectTextureRefs, index);
+	return objectTextureRefs[index].get();
+}
+
 bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
