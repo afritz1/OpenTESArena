@@ -151,6 +151,40 @@ namespace sgGeometry
 
 		return triangleCount;
 	}
+
+	int WriteDiagonal(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, bool flipped, ObjectTextureID textureID,
+		BufferView<RenderTriangle> &outTriangles)
+	{
+		constexpr int triangleCount = 4; // @todo: might change to 2 in the future if a back-face culling bool is added.
+		DebugAssert(outTriangles.getCount() == triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
+
+		double startX, endX;
+		double startZ, endZ;
+		if (flipped)
+		{
+			startX = 0.0;
+			endX = 1.0;
+			startZ = 0.0;
+			endZ = 1.0;
+		}
+		else
+		{
+			startX = 0.0;
+			endX = 1.0;
+			startZ = 1.0;
+			endZ = 0.0;
+		}
+
+		// Front side
+		WriteTriangle(Double3(startX, 1.0, startZ), Double3(startX, 0.0, startZ), Double3(endX, 0.0, endZ), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(endX, 0.0, endZ), Double3(endX, 1.0, endZ), Double3(startX, 1.0, startZ), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 1, outTriangles);
+		// Back side
+		WriteTriangle(Double3(endX, 1.0, endZ), Double3(endX, 0.0, endZ), Double3(startX, 0.0, startZ), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 2, outTriangles);
+		WriteTriangle(Double3(startX, 0.0, startZ), Double3(startX, 1.0, startZ), Double3(endX, 1.0, endZ), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 3, outTriangles);
+
+		return triangleCount;
+	}
 }
 
 BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
@@ -265,6 +299,13 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 						triangleCount = sgGeometry::WriteRaised(chunkPos, voxelPos, ceilingScale, raised.yOffset, raised.ySize,
 							raised.vTop, raised.vBottom, sideTextureID, floorTextureID, ceilingTextureID,
 							BufferView<RenderTriangle>(trianglesBuffer.data(), 12));
+					}
+					else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
+					{
+						const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
+						const ObjectTextureID textureID = levelInst.getVoxelTextureID(diagonal.textureAssetRef);
+						triangleCount = sgGeometry::WriteDiagonal(chunkPos, voxelPos, ceilingScale, diagonal.type1, textureID,
+							BufferView<RenderTriangle>(trianglesBuffer.data(), 4));
 					}
 					else
 					{
