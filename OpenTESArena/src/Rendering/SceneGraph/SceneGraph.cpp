@@ -11,7 +11,7 @@
 
 namespace sgGeometry
 {
-	constexpr int MAX_TRIANGLES_PER_VOXEL = 12;
+	constexpr int MAX_TRIANGLES_PER_VOXEL = 16;
 
 	// Quad texture coordinates (top left, top right, etc.).
 	const Double2 UV_TL(0.0, 0.0);
@@ -339,6 +339,46 @@ namespace sgGeometry
 
 		return triangleIndex;
 	}
+
+	int WriteDoor(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ArenaTypes::DoorType doorType,
+		double animPercent, ObjectTextureID textureID, BufferView<RenderTriangle> &outTriangles)
+	{
+		const int triangleCount = [doorType]()
+		{
+			switch (doorType)
+			{
+			case ArenaTypes::DoorType::Swinging:
+				return 8;
+			case ArenaTypes::DoorType::Sliding:
+				return 8;
+			case ArenaTypes::DoorType::Raising:
+				return 8;
+			case ArenaTypes::DoorType::Splitting:
+				return 16;
+			default:
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(doorType)));
+			}
+		}();
+		
+		DebugAssert(outTriangles.getCount() >= triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
+
+		// @todo: transform vertices by anim percent; each door type has its own transform behavior
+		// X=0
+		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 1, outTriangles);
+		// X=1
+		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 2, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 3, outTriangles);
+		// Z=0
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 4, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 5, outTriangles);
+		// Z=1
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 6, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 7, outTriangles);
+
+		return triangleCount;
+	}
 }
 
 BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
@@ -487,6 +527,14 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 						const ObjectTextureID sideTextureID = levelInst.getVoxelTextureID(chasm.textureAssetRef);
 						triangleCount = sgGeometry::WriteChasm(chunkPos, voxelPos, ceilingScale, north, south, east, west,
 							isDry, floorTextureID, sideTextureID, BufferView<RenderTriangle>(trianglesBuffer.data(), 10));
+					}
+					else if (voxelDef.type == ArenaTypes::VoxelType::Door)
+					{
+						const VoxelDefinition::DoorData &door = voxelDef.door;
+						const double animPercent = 0.0; // @todo: need voxel instance
+						const ObjectTextureID textureID = levelInst.getVoxelTextureID(door.textureAssetRef);
+						triangleCount = sgGeometry::WriteDoor(chunkPos, voxelPos, ceilingScale, door.type, animPercent,
+							textureID, BufferView<RenderTriangle>(trianglesBuffer.data(), 16));
 					}
 					else
 					{
