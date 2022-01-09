@@ -113,6 +113,44 @@ namespace sgGeometry
 
 		return triangleCount;
 	}
+
+	int WriteRaised(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, double yOffset, double ySize,
+		double vTop, double vBottom, ObjectTextureID sideTextureID, ObjectTextureID floorTextureID,
+		ObjectTextureID ceilingTextureID, BufferView<RenderTriangle> &outTriangles)
+	{
+		constexpr int triangleCount = 12;
+		DebugAssert(outTriangles.getCount() == triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
+
+		const double yBottom = yOffset;
+		const double yTop = yOffset + ySize;
+
+		const Double2 sideUvTL(0.0, vTop);
+		const Double2 sideUvTR(1.0, vTop);
+		const Double2 sideUvBL(0.0, vBottom);
+		const Double2 sideUvBR(1.0, vBottom);
+
+		// X=0
+		WriteTriangle(Double3(0.0, yTop, 0.0), Double3(0.0, yBottom, 0.0), Double3(0.0, yBottom, 1.0), sideUvTL, sideUvBL, sideUvBR, sideTextureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(0.0, yBottom, 1.0), Double3(0.0, yTop, 1.0), Double3(0.0, yTop, 0.0), sideUvBR, sideUvTR, sideUvTL, sideTextureID, voxelPosition, ceilingScale, 1, outTriangles);
+		// X=1
+		WriteTriangle(Double3(1.0, yTop, 1.0), Double3(1.0, yBottom, 1.0), Double3(1.0, yBottom, 0.0), sideUvTL, sideUvBL, sideUvBR, sideTextureID, voxelPosition, ceilingScale, 2, outTriangles);
+		WriteTriangle(Double3(1.0, yBottom, 0.0), Double3(1.0, yTop, 0.0), Double3(1.0, yTop, 1.0), sideUvBR, sideUvTR, sideUvTL, sideTextureID, voxelPosition, ceilingScale, 3, outTriangles);
+		// Y=bottom
+		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(0.0, yBottom, 1.0), Double3(0.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, floorTextureID, voxelPosition, ceilingScale, 4, outTriangles);
+		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(1.0, yBottom, 0.0), Double3(1.0, yBottom, 1.0), UV_BR, UV_TR, UV_TL, floorTextureID, voxelPosition, ceilingScale, 5, outTriangles);
+		// Y=top
+		WriteTriangle(Double3(1.0, yTop, 0.0), Double3(0.0, yTop, 0.0), Double3(0.0, yTop, 1.0), UV_TL, UV_BL, UV_BR, ceilingTextureID, voxelPosition, ceilingScale, 6, outTriangles);
+		WriteTriangle(Double3(0.0, yTop, 1.0), Double3(1.0, yTop, 1.0), Double3(1.0, yTop, 0.0), UV_BR, UV_TR, UV_TL, ceilingTextureID, voxelPosition, ceilingScale, 7, outTriangles);
+		// Z=0
+		WriteTriangle(Double3(1.0, yTop, 0.0), Double3(1.0, yBottom, 0.0), Double3(0.0, yBottom, 0.0), sideUvTL, sideUvBL, sideUvBR, sideTextureID, voxelPosition, ceilingScale, 8, outTriangles);
+		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, yTop, 0.0), Double3(1.0, yTop, 0.0), sideUvBR, sideUvTR, sideUvTL, sideTextureID, voxelPosition, ceilingScale, 9, outTriangles);
+		// Z=1
+		WriteTriangle(Double3(0.0, yTop, 1.0), Double3(0.0, yBottom, 1.0), Double3(1.0, yBottom, 1.0), sideUvTL, sideUvBL, sideUvBR, sideTextureID, voxelPosition, ceilingScale, 10, outTriangles);
+		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, yTop, 1.0), Double3(0.0, yTop, 1.0), sideUvBR, sideUvTR, sideUvTL, sideTextureID, voxelPosition, ceilingScale, 11, outTriangles);
+
+		return triangleCount;
+	}
 }
 
 BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
@@ -217,6 +255,16 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 						const ObjectTextureID textureID = levelInst.getVoxelTextureID(ceiling.textureAssetRef);
 						triangleCount = sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, textureID,
 							BufferView<RenderTriangle>(trianglesBuffer.data(), 2));
+					}
+					else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
+					{
+						const VoxelDefinition::RaisedData &raised = voxelDef.raised;
+						const ObjectTextureID sideTextureID = levelInst.getVoxelTextureID(raised.sideTextureAssetRef);
+						const ObjectTextureID floorTextureID = levelInst.getVoxelTextureID(raised.floorTextureAssetRef);
+						const ObjectTextureID ceilingTextureID = levelInst.getVoxelTextureID(raised.ceilingTextureAssetRef);
+						triangleCount = sgGeometry::WriteRaised(chunkPos, voxelPos, ceilingScale, raised.yOffset, raised.ySize,
+							raised.vTop, raised.vBottom, sideTextureID, floorTextureID, ceilingTextureID,
+							BufferView<RenderTriangle>(trianglesBuffer.data(), 12));
 					}
 					else
 					{
