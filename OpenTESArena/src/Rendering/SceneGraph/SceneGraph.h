@@ -35,6 +35,7 @@
 
 class ChunkManager;
 class EntityManager;
+class LevelInstance;
 class SkyInstance;
 
 struct RenderCamera;
@@ -71,7 +72,7 @@ private:
 public:
 	BufferView<const RenderTriangle> getAllGeometry() const; // @todo: eventually an ordered list of geometry w/ render properties
 
-	void updateVoxels(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive);
+	void updateVoxels(const LevelInstance &levelInst, double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive);
 	void updateEntities(const EntityManager &entityManager, bool nightLightsAreActive, bool playerHasLight);
 	void updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude);
 

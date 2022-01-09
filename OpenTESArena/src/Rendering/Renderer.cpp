@@ -843,7 +843,7 @@ void Renderer::updateSceneGraph(const CoordDouble3 &cameraPos, const VoxelDouble
 	const LevelInstance &levelInst, const SkyInstance &skyInst, double daytimePercent, double latitude,
 	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight)
 {
-	this->sceneGraph.updateVoxels(levelInst.getChunkManager(), levelInst.getCeilingScale(), chasmAnimPercent, nightLightsAreActive);
+	this->sceneGraph.updateVoxels(levelInst, levelInst.getCeilingScale(), chasmAnimPercent, nightLightsAreActive);
 	this->sceneGraph.updateEntities(levelInst.getEntityManager(), nightLightsAreActive, playerHasLight);
 	this->sceneGraph.updateSky(skyInst, daytimePercent, latitude);
 }

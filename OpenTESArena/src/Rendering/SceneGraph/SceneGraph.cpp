@@ -3,6 +3,7 @@
 #include "SceneGraph.h"
 #include "../../Entities/EntityManager.h"
 #include "../../World/ChunkManager.h"
+#include "../../World/LevelInstance.h"
 #include "../../World/VoxelGeometry.h"
 
 #include "components/debug/Debug.h"
@@ -58,31 +59,31 @@ namespace sgGeometry
 	}
 
 	// Geometry generation functions (currently in world space, might be chunk space or something else later).
-	int WriteWall(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID textureID,
-		BufferView<RenderTriangle> &outTriangles)
+	int WriteWall(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID sideTextureID,
+		ObjectTextureID floorTextureID, ObjectTextureID ceilingTextureID, BufferView<RenderTriangle> &outTriangles)
 	{
 		constexpr int triangleCount = 12;
 		DebugAssert(outTriangles.getCount() == triangleCount);
 		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
 		// X=0
-		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 0, outTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 1, outTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, sideTextureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideTextureID, voxelPosition, ceilingScale, 1, outTriangles);
 		// X=1
-		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 2, outTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 3, outTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, sideTextureID, voxelPosition, ceilingScale, 2, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideTextureID, voxelPosition, ceilingScale, 3, outTriangles);
 		// Y=0
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 4, outTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 5, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, floorTextureID, voxelPosition, ceilingScale, 4, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, floorTextureID, voxelPosition, ceilingScale, 5, outTriangles);
 		// Y=1
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 6, outTriangles);
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 7, outTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, ceilingTextureID, voxelPosition, ceilingScale, 6, outTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, ceilingTextureID, voxelPosition, ceilingScale, 7, outTriangles);
 		// Z=0
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 8, outTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 9, outTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, sideTextureID, voxelPosition, ceilingScale, 8, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideTextureID, voxelPosition, ceilingScale, 9, outTriangles);
 		// Z=1
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 10, outTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 11, outTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, sideTextureID, voxelPosition, ceilingScale, 10, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideTextureID, voxelPosition, ceilingScale, 11, outTriangles);
 
 		return triangleCount;
 	}
@@ -119,10 +120,12 @@ BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
 	return BufferView<const RenderTriangle>(this->voxelTriangles.data(), static_cast<int>(this->voxelTriangles.size()));
 }
 
-void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent,
+void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScale, double chasmAnimPercent,
 	bool nightLightsAreActive)
 {
 	this->clearVoxels();
+
+	const ChunkManager &chunkManager = levelInst.getChunkManager();
 
 	// Compare chunk manager chunk count w/ our grid size and resize if needed.
 	const int chunkCount = chunkManager.getChunkCount();
@@ -190,21 +193,28 @@ void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingSc
 
 					const ChunkInt2 chunkPos = chunk.getCoord();
 					const VoxelInt3 voxelPos(x, y, z);
-					const ObjectTextureID textureID = voxelID;
 					std::array<RenderTriangle, sgGeometry::MAX_TRIANGLES_PER_VOXEL> trianglesBuffer;
 					int triangleCount;
 					if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 					{
-						triangleCount = sgGeometry::WriteWall(chunkPos, voxelPos, ceilingScale, textureID,
-							BufferView<RenderTriangle>(trianglesBuffer.data(), 12));
+						const VoxelDefinition::WallData &wall = voxelDef.wall;
+						const ObjectTextureID sideTextureID = levelInst.getVoxelTextureID(wall.sideTextureAssetRef);
+						const ObjectTextureID floorTextureID = levelInst.getVoxelTextureID(wall.floorTextureAssetRef);
+						const ObjectTextureID ceilingTextureID = levelInst.getVoxelTextureID(wall.ceilingTextureAssetRef);
+						triangleCount = sgGeometry::WriteWall(chunkPos, voxelPos, ceilingScale, sideTextureID,
+							floorTextureID, ceilingTextureID, BufferView<RenderTriangle>(trianglesBuffer.data(), 12));
 					}
 					else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 					{
+						const VoxelDefinition::FloorData &floor = voxelDef.floor;
+						const ObjectTextureID textureID = levelInst.getVoxelTextureID(floor.textureAssetRef);
 						triangleCount = sgGeometry::WriteFloor(chunkPos, voxelPos, ceilingScale, textureID,
 							BufferView<RenderTriangle>(trianglesBuffer.data(), 2));
 					}
 					else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 					{
+						const VoxelDefinition::CeilingData &ceiling = voxelDef.ceiling;
+						const ObjectTextureID textureID = levelInst.getVoxelTextureID(ceiling.textureAssetRef);
 						triangleCount = sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, textureID,
 							BufferView<RenderTriangle>(trianglesBuffer.data(), 2));
 					}

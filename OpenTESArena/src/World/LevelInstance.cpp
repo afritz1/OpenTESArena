@@ -76,6 +76,19 @@ double LevelInstance::getCeilingScale() const
 	return this->ceilingScale;
 }
 
+ObjectTextureID LevelInstance::getVoxelTextureID(const TextureAssetReference &textureAssetRef) const
+{
+	const auto iter = std::find_if(this->loadedVoxelTextures.begin(), this->loadedVoxelTextures.end(),
+		[&textureAssetRef](const LoadedVoxelTextureEntry &entry)
+	{
+		return entry.textureAssetRef == textureAssetRef;
+	});
+
+	DebugAssertMsg(iter != this->loadedVoxelTextures.end(), "No loaded voxel texture for \"" + textureAssetRef.filename + "\".");
+	const ScopedObjectTextureRef &objectTextureRef = iter->objectTextureRef;
+	return objectTextureRef.get();
+}
+
 bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
