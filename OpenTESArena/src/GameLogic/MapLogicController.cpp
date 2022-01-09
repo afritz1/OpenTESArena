@@ -57,7 +57,7 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	
-	DebugNotImplementedMsg("handleNightLightChange"); // @todo: make this night light value a bool in GameState or something so it can be given to RenderFrameSettings.
+	DebugLogError("Not implemented: handleNightLightChange"); // @todo: make this night light value a bool in GameState or something so it can be given to RenderFrameSettings.
 	//renderer.setNightLightsActive(active, palette);
 }
 

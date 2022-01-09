@@ -119,7 +119,8 @@ BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
 	return BufferView<const RenderTriangle>(this->voxelTriangles.data(), static_cast<int>(this->voxelTriangles.size()));
 }
 
-void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent)
+void SceneGraph::updateVoxels(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent,
+	bool nightLightsAreActive)
 {
 	this->clearVoxels();
 
