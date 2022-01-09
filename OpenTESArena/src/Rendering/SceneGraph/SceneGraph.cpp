@@ -4,6 +4,7 @@
 #include "../../Entities/EntityManager.h"
 #include "../../World/ChunkManager.h"
 #include "../../World/LevelInstance.h"
+#include "../../World/VoxelFacing2D.h"
 #include "../../World/VoxelGeometry.h"
 
 #include "components/debug/Debug.h"
@@ -185,6 +186,102 @@ namespace sgGeometry
 
 		return triangleCount;
 	}
+
+	int WriteTransparentWall(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID textureID,
+		BufferView<RenderTriangle> &outTriangles)
+	{
+		constexpr int triangleCount = 8;
+		DebugAssert(outTriangles.getCount() == triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
+
+		// X=0
+		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 1, outTriangles);
+		// X=1
+		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 2, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 3, outTriangles);
+		// Z=0
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 4, outTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 5, outTriangles);
+		// Z=1
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, textureID, voxelPosition, ceilingScale, 6, outTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, textureID, voxelPosition, ceilingScale, 7, outTriangles);
+
+		return triangleCount;
+	}
+
+	int WriteEdge(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, VoxelFacing2D facing, double yOffset,
+		bool flipped, ObjectTextureID textureID, BufferView<RenderTriangle> &outTriangles)
+	{
+		constexpr int triangleCount = 4; // @todo: might change to 2 in the future if a back-face culling bool is added.
+		DebugAssert(outTriangles.getCount() == triangleCount);
+		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
+
+		double startX, endX;
+		double startZ, endZ;
+		switch (facing)
+		{
+		case VoxelFacing2D::PositiveX:
+			startX = 1.0;
+			endX = 1.0;
+			startZ = 1.0;
+			endZ = 0.0;
+			break;
+		case VoxelFacing2D::NegativeX:
+			startX = 0.0;
+			endX = 0.0;
+			startZ = 0.0;
+			endZ = 1.0;
+			break;
+		case VoxelFacing2D::PositiveZ:
+			startX = 0.0;
+			endX = 1.0;
+			startZ = 1.0;
+			endZ = 1.0;
+			break;
+		case VoxelFacing2D::NegativeZ:
+			startX = 1.0;
+			endX = 0.0;
+			startZ = 0.0;
+			endZ = 0.0;
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
+		}
+
+		Double2 frontUvTL, frontUvTR, frontUvBL, frontUvBR;
+		if (!flipped)
+		{
+			frontUvTL = UV_TL;
+			frontUvTR = UV_TR;
+			frontUvBL = UV_BL;
+			frontUvBR = UV_BR;
+		}
+		else
+		{
+			frontUvTL = UV_TR;
+			frontUvTR = UV_TL;
+			frontUvBL = UV_BR;
+			frontUvBR = UV_BL;
+		}
+
+		const Double2 backUvTL = frontUvTR;
+		const Double2 backUvTR = frontUvTL;
+		const Double2 backUvBL = frontUvBR;
+		const Double2 backUvBR = frontUvBL;
+
+		const double yBottom = yOffset;
+		const double yTop = yBottom + 1.0;
+
+		// Front side
+		WriteTriangle(Double3(startX, yTop, startZ), Double3(startX, yBottom, startZ), Double3(endX, yBottom, endZ), frontUvTL, frontUvBL, frontUvBR, textureID, voxelPosition, ceilingScale, 0, outTriangles);
+		WriteTriangle(Double3(endX, yBottom, endZ), Double3(endX, yTop, endZ), Double3(startX, yTop, startZ), frontUvBR, frontUvTR, frontUvTL, textureID, voxelPosition, ceilingScale, 1, outTriangles);
+		// Back side
+		WriteTriangle(Double3(endX, yTop, endZ), Double3(endX, yBottom, endZ), Double3(startX, yBottom, startZ), backUvTL, backUvBL, backUvBR, textureID, voxelPosition, ceilingScale, 2, outTriangles);
+		WriteTriangle(Double3(startX, yBottom, startZ), Double3(startX, yTop, startZ), Double3(endX, yTop, endZ), backUvBR, backUvTR, backUvTL, textureID, voxelPosition, ceilingScale, 3, outTriangles);
+
+		return triangleCount;
+	}
 }
 
 BufferView<const RenderTriangle> SceneGraph::getAllGeometry() const
@@ -306,6 +403,20 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 						const ObjectTextureID textureID = levelInst.getVoxelTextureID(diagonal.textureAssetRef);
 						triangleCount = sgGeometry::WriteDiagonal(chunkPos, voxelPos, ceilingScale, diagonal.type1, textureID,
 							BufferView<RenderTriangle>(trianglesBuffer.data(), 4));
+					}
+					else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
+					{
+						const VoxelDefinition::TransparentWallData &transparentWall = voxelDef.transparentWall;
+						const ObjectTextureID textureID = levelInst.getVoxelTextureID(transparentWall.textureAssetRef);
+						triangleCount = sgGeometry::WriteTransparentWall(chunkPos, voxelPos, ceilingScale, textureID,
+							BufferView<RenderTriangle>(trianglesBuffer.data(), 8));
+					}
+					else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
+					{
+						const VoxelDefinition::EdgeData &edge = voxelDef.edge;
+						const ObjectTextureID textureID = levelInst.getVoxelTextureID(edge.textureAssetRef);
+						triangleCount = sgGeometry::WriteEdge(chunkPos, voxelPos, ceilingScale, edge.facing, edge.yOffset,
+							edge.flipped, textureID, BufferView<RenderTriangle>(trianglesBuffer.data(), 4));
 					}
 					else
 					{
