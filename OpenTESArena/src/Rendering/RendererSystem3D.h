@@ -68,8 +68,9 @@ public:
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.
 	// @todo: this will take draw lists from SceneGraph eventually
-	virtual void submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &triangles,
-		const RenderFrameSettings &settings, uint32_t *outputBuffer) = 0;
+	virtual void submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &opaqueVoxelTriangles,
+		const BufferView<const RenderTriangle> &alphaTestedVoxelTriangles, const RenderFrameSettings &settings,
+		uint32_t *outputBuffer) = 0;
 
 	// Presents the finished frame to the screen. This may just be a copy to the screen frame buffer that
 	// is then taken care of by the top-level rendering manager, since UI must be drawn afterwards.

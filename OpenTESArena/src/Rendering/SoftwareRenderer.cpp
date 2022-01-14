@@ -350,7 +350,7 @@ namespace swRender
 	}
 
 	// The provided triangles are assumed to be back-face culled and clipped.
-	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles,
+	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles, bool debug_alphaTest, // @temp
 		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
 		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera,
 		BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
@@ -482,6 +482,15 @@ namespace swRender
 							const int texelY = std::clamp(static_cast<int>(texelPercentY * textureHeight), 0, textureHeight - 1);
 							const int texelIndex = texelX + (texelY * textureWidth);
 							const uint8_t texel = textureTexels[texelIndex];
+							
+							if (debug_alphaTest)
+							{
+								const bool isTransparent = texel == 0;
+								if (isTransparent)
+								{
+									continue;
+								}
+							}
 
 							// @temp: shading is disabled until the interpolated world space point is calculated correctly.
 							/*// XZ position of pixel center in world space.
@@ -707,8 +716,9 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	return ProfilerData(renderWidth, renderHeight, threadCount, potentiallyVisFlatCount, visFlatCount, visLightCount);
 }
 
-void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &triangles,
-	const RenderFrameSettings &settings, uint32_t *outputBuffer)
+void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &opaqueVoxelTriangles,
+	const BufferView<const RenderTriangle> &alphaTestedVoxelTriangles, const RenderFrameSettings &settings,
+	uint32_t *outputBuffer)
 {
 	const int frameBufferWidth = this->depthBuffer.getWidth();
 	const int frameBufferHeight = this->depthBuffer.getHeight();
@@ -724,9 +734,14 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	const uint32_t clearColor = Color::Black.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 
-	const std::vector<RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(triangles, camera);
-	const BufferView<const RenderTriangle> clippedTrianglesView(clippedTriangles.data(), static_cast<int>(clippedTriangles.size()));
-	swRender::RasterizeTriangles(clippedTrianglesView, this->objectTextures, paletteTexture, lightTableTexture, camera,
+	const std::vector<RenderTriangle> clippedOpaqueVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(opaqueVoxelTriangles, camera);
+	const BufferView<const RenderTriangle> clippedOpaqueVoxelTrianglesView(clippedOpaqueVoxelTriangles.data(), static_cast<int>(clippedOpaqueVoxelTriangles.size()));
+	swRender::RasterizeTriangles(clippedOpaqueVoxelTrianglesView, false, this->objectTextures, paletteTexture, lightTableTexture, camera,
+		colorBufferView, depthBufferView);
+
+	const std::vector<RenderTriangle> clippedAlphaTestedVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(alphaTestedVoxelTriangles, camera);
+	const BufferView<const RenderTriangle> clippedAlphaTestedVoxelTrianglesView(clippedAlphaTestedVoxelTriangles.data(), static_cast<int>(clippedAlphaTestedVoxelTriangles.size()));
+	swRender::RasterizeTriangles(clippedAlphaTestedVoxelTrianglesView, true, this->objectTextures, paletteTexture, lightTableTexture, camera,
 		colorBufferView, depthBufferView);
 }
 

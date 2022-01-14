@@ -62,15 +62,19 @@ private:
 	// @todo: buffer(s) of visible geometry, lights, indices, texture IDs, etc.
 	// - sort of thinking like: static voxel geometry, dynamic voxel geometry, entity geometry, ...
 	// - presumably each open door voxel, etc. would be in its own separate draw list (can't remember how OpenGL would handle something like this. Uniforms?)
-	std::vector<RenderTriangle> voxelTriangles;
+	std::vector<RenderTriangle> opaqueVoxelTriangles;
+	std::vector<RenderTriangle> alphaTestedVoxelTriangles;
+
 	std::vector<RenderTriangle> entityTriangles;
-	std::vector<RenderTriangle> skyTriangles;
+	std::vector<RenderTriangle> skyTriangles; // @todo: will the main difference with opaque voxel geometry be the lack of depth writes?
 
 	void clearVoxels();
 	void clearEntities();
 	void clearSky();
 public:
-	BufferView<const RenderTriangle> getAllGeometry() const; // @todo: eventually an ordered list of geometry w/ render properties
+	// Visible geometry getters. These should only provide geometry that touch the view frustum.
+	BufferView<const RenderTriangle> getVisibleOpaqueVoxelGeometry() const;
+	BufferView<const RenderTriangle> getVisibleAlphaTestedVoxelGeometry() const;
 
 	void updateVoxels(const LevelInstance &levelInst, double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive);
 	void updateEntities(const EntityManager &entityManager, bool nightLightsAreActive, bool playerHasLight);

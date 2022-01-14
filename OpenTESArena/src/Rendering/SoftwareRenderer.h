@@ -66,8 +66,9 @@ public:
 
 	ProfilerData getProfilerData() const override;
 
-	void submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &triangles,
-		const RenderFrameSettings &settings, uint32_t *outputBuffer) override;
+	void submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &opaqueVoxelTriangles,
+		const BufferView<const RenderTriangle> &alphaTestedVoxelTriangles, const RenderFrameSettings &settings,
+		uint32_t *outputBuffer) override;
 	void present() override;
 };
 

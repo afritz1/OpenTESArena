@@ -939,7 +939,8 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 	renderCamera.init(cameraPos.chunk, cameraPos.point, cameraDir, fovX, fovY, renderAspectRatio);
 
 	// @todo: need to call sceneGraph.updateVoxels/Entities/Sky() somewhere before this, either in this submitFrame() or in GameWorldPanel::gameWorldRenderCallback()
-	const BufferView<const RenderTriangle> triangles = this->sceneGraph.getAllGeometry();
+	const BufferView<const RenderTriangle> opaqueVoxelTriangles = this->sceneGraph.getVisibleOpaqueVoxelGeometry();
+	const BufferView<const RenderTriangle> alphaTestedVoxelTriangles = this->sceneGraph.getVisibleAlphaTestedVoxelGeometry();
 
 	RenderFrameSettings renderFrameSettings;
 	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
@@ -953,7 +954,7 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 
 	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(renderCamera, triangles, renderFrameSettings, outputBuffer);
+	this->renderer3D->submitFrame(renderCamera, opaqueVoxelTriangles, alphaTestedVoxelTriangles, renderFrameSettings, outputBuffer);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 
