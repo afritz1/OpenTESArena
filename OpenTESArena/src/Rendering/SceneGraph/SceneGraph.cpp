@@ -1,7 +1,10 @@
 #include <numeric>
+#include <optional>
 
 #include "SceneGraph.h"
+#include "../../Assets/MIFUtils.h"
 #include "../../Entities/EntityManager.h"
+#include "../../Entities/EntityVisibilityState.h"
 #include "../../World/ChunkManager.h"
 #include "../../World/LevelInstance.h"
 #include "../../World/VoxelFacing2D.h"
@@ -27,6 +30,13 @@ namespace sgGeometry
 			static_cast<double>(absoluteVoxel.x),
 			static_cast<double>(absoluteVoxel.y) * ceilingScale,
 			static_cast<double>(absoluteVoxel.z));
+	}
+
+	// Makes the world space position of where an entity's bottom center should be. The ceiling scale is already
+	// in the 3D point.
+	Double3 MakeEntityPosition(const ChunkInt2 &chunk, const VoxelDouble3 &point)
+	{
+		return VoxelUtils::chunkPointToNewPoint(chunk, point);
 	}
 
 	// Makes a world space triangle. The given vertices are in model space and contain the 0->1 values where 1 is
@@ -62,7 +72,7 @@ namespace sgGeometry
 	// Geometry generation functions (currently in world space, might be chunk space or something else later).
 	// @todo: these functions should not assume opaque/alpha-tested per face, they should query the texture associated
 	// with each face for that, and then write to the appropriate out buffer.
-	void WriteWall(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID sideTextureID,
+	void WriteWall(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectTextureID sideTextureID,
 		ObjectTextureID floorTextureID, ObjectTextureID ceilingTextureID, BufferView<RenderTriangle> &outOpaqueTriangles,
 		int *outOpaqueTriangleCount)
 	{
@@ -92,7 +102,7 @@ namespace sgGeometry
 		*outOpaqueTriangleCount = triangleCount;
 	}
 
-	void WriteFloor(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID textureID,
+	void WriteFloor(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectTextureID textureID,
 		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
 	{
 		constexpr int triangleCount = 2;
@@ -105,7 +115,7 @@ namespace sgGeometry
 		*outOpaqueTriangleCount = triangleCount;
 	}
 
-	void WriteCeiling(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID textureID,
+	void WriteCeiling(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectTextureID textureID,
 		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
 	{
 		constexpr int triangleCount = 2;
@@ -118,7 +128,7 @@ namespace sgGeometry
 		*outOpaqueTriangleCount = triangleCount;
 	}
 
-	void WriteRaised(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, double yOffset, double ySize,
+	void WriteRaised(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, double yOffset, double ySize,
 		double vTop, double vBottom, ObjectTextureID sideTextureID, ObjectTextureID floorTextureID,
 		ObjectTextureID ceilingTextureID, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount,
 		BufferView<RenderTriangle> &outAlphaTestedTriangles, int *outAlphaTestedTriangleCount)
@@ -163,7 +173,7 @@ namespace sgGeometry
 		*outAlphaTestedTriangleCount = alphaTestedTriangleCount;
 	}
 
-	void WriteDiagonal(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, bool flipped, ObjectTextureID textureID,
+	void WriteDiagonal(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, bool flipped, ObjectTextureID textureID,
 		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
 	{
 		constexpr int triangleCount = 4; // @todo: might change to 2 in the future if a back-face culling bool is added.
@@ -197,7 +207,7 @@ namespace sgGeometry
 		*outOpaqueTriangleCount = triangleCount;
 	}
 
-	void WriteTransparentWall(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ObjectTextureID textureID,
+	void WriteTransparentWall(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectTextureID textureID,
 		BufferView<RenderTriangle> &outAlphaTestedTriangles, int *outAlphaTestedTriangleCount)
 	{
 		constexpr int triangleCount = 8;
@@ -220,7 +230,7 @@ namespace sgGeometry
 		*outAlphaTestedTriangleCount = triangleCount;
 	}
 
-	void WriteEdge(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, VoxelFacing2D facing, double yOffset,
+	void WriteEdge(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, VoxelFacing2D facing, double yOffset,
 		bool flipped, ObjectTextureID textureID, BufferView<RenderTriangle> &outAlphaTestedTriangles, int *outAlphaTestedTriangleCount)
 	{
 		constexpr int triangleCount = 4; // @todo: might change to 2 in the future if a back-face culling bool is added.
@@ -294,7 +304,7 @@ namespace sgGeometry
 	}
 
 	// @todo: chasm walls effectively have two textures; will need to work with that and have a dedicated pixel shader that takes two textures.
-	void WriteChasm(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, bool north, bool south, bool east, bool west,
+	void WriteChasm(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, bool north, bool south, bool east, bool west,
 		bool isDry, ObjectTextureID floorTextureID, ObjectTextureID sideTextureID, BufferView<RenderTriangle> &outOpaqueTriangles,
 		int *outOpaqueTriangleCount)
 	{
@@ -351,7 +361,7 @@ namespace sgGeometry
 		*outOpaqueTriangleCount = triangleIndex;
 	}
 
-	void WriteDoor(const ChunkInt2 &chunk, const Int3 &voxel, double ceilingScale, ArenaTypes::DoorType doorType,
+	void WriteDoor(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ArenaTypes::DoorType doorType,
 		double animPercent, ObjectTextureID textureID, BufferView<RenderTriangle> &outAlphaTestedTriangles,
 		int *outAlphaTestedTriangleCount)
 	{
@@ -371,7 +381,7 @@ namespace sgGeometry
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(doorType)));
 			}
 		}();
-		
+
 		DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
 		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
@@ -391,6 +401,22 @@ namespace sgGeometry
 
 		*outAlphaTestedTriangleCount = triangleCount;
 	}
+
+	void WriteEntity(const ChunkInt2 &chunk, const VoxelDouble3 &point, ObjectTextureID textureID,
+		double width, double height, const Double3 &entityForward, BufferView<RenderTriangle> &outEntityTriangles)
+	{
+		DebugAssert(outEntityTriangles.getCount() == 2);
+
+		const Double3 entityPosition = MakeEntityPosition(chunk, point);
+		const Double3 &entityUp = Double3::UnitY;
+		const Double3 entityRight = entityForward.cross(entityUp).normalized();
+		const Double3 entityHalfWidth = entityRight * (width * 0.50);
+		const Double3 entityHeight = entityUp * height;
+
+		constexpr double ceilingScale = 1.0; // Unused/already baked into position.
+		WriteTriangle(entityHalfWidth + entityHeight, entityHalfWidth, -entityHalfWidth, UV_TL, UV_BL, UV_BR, textureID, entityPosition, ceilingScale, 0, outEntityTriangles);
+		WriteTriangle(-entityHalfWidth, -entityHalfWidth + entityHeight, entityHalfWidth + entityHeight, UV_BR, UV_TR, UV_TL, textureID, entityPosition, ceilingScale, 1, outEntityTriangles);
+	}
 }
 
 BufferView<const RenderTriangle> SceneGraph::getVisibleOpaqueVoxelGeometry() const
@@ -401,6 +427,11 @@ BufferView<const RenderTriangle> SceneGraph::getVisibleOpaqueVoxelGeometry() con
 BufferView<const RenderTriangle> SceneGraph::getVisibleAlphaTestedVoxelGeometry() const
 {
 	return BufferView<const RenderTriangle>(this->alphaTestedVoxelTriangles.data(), static_cast<int>(this->alphaTestedVoxelTriangles.size()));
+}
+
+BufferView<const RenderTriangle> SceneGraph::getVisibleEntityGeometry() const
+{
+	return BufferView<const RenderTriangle>(this->entityTriangles.data(), static_cast<int>(this->entityTriangles.size()));
 }
 
 void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScale, double chasmAnimPercent,
@@ -589,14 +620,62 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 	}
 }
 
-void SceneGraph::updateEntities(const EntityManager &entityManager, bool nightLightsAreActive, bool playerHasLight)
+void SceneGraph::updateEntities(const LevelInstance &levelInst, const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,
+	const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive, bool playerHasLight)
 {
 	this->clearEntities();
 
-	const int entityCount = entityManager.getCount();
-	Buffer<const Entity*> entityPtrs(entityCount);
+	const ChunkManager &chunkManager = levelInst.getChunkManager();
+	const int chunkCount = chunkManager.getChunkCount();
 
-	//DebugNotImplemented();
+	const EntityManager &entityManager = levelInst.getEntityManager();
+	std::vector<const Entity*> entityPtrs;
+
+	const CoordDouble2 cameraPos2D(cameraPos.chunk, VoxelDouble2(cameraPos.point.x, cameraPos.point.z));
+	const VoxelDouble3 entityDir = -cameraDir;
+
+	for (int i = 0; i < chunkCount; i++)
+	{
+		const Chunk &chunk = chunkManager.getChunk(i);
+		const ChunkInt2 &chunkCoord = chunk.getCoord();
+		const int entityCountInChunk = entityManager.getCountInChunk(chunkCoord);
+		entityPtrs.resize(entityCountInChunk);
+		const int writtenEntityCount = entityManager.getEntitiesInChunk(
+			chunkCoord, entityPtrs.data(), static_cast<int>(entityPtrs.size()));
+		DebugAssert(writtenEntityCount == entityCountInChunk);
+
+		for (const Entity *entityPtr : entityPtrs)
+		{
+			if (entityPtr != nullptr)
+			{
+				const Entity &entity = *entityPtr;
+				const CoordDouble2 &entityCoord = entity.getPosition();
+				const EntityDefID entityDefID = entity.getDefinitionID();
+				const EntityDefinition &entityDef = entityManager.getEntityDef(entityDefID, entityDefLibrary);
+				const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+				//const EntityAnimationInstance &animInst = entity.getAnimInstance();
+
+				EntityVisibilityState3D visState;
+				entityManager.getEntityVisibilityState3D(entity, cameraPos2D, ceilingScale, chunkManager, entityDefLibrary, visState);
+				const EntityAnimationDefinition::State &animState = animDef.getState(visState.stateIndex);
+				const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visState.angleIndex);
+				const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visState.keyframeIndex);
+				const TextureAssetReference &textureAssetRef = animKeyframe.getTextureAssetRef();
+				const bool flipped = animKeyframeList.isFlipped();
+				const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && (entityDef.getDoodad().puddle);
+				const ObjectTextureID textureID = levelInst.getEntityTextureID(textureAssetRef, flipped, reflective);
+
+				std::array<RenderTriangle, 2> entityTrianglesBuffer;
+				sgGeometry::WriteEntity(visState.flatPosition.chunk, visState.flatPosition.point, textureID,
+					animKeyframe.getWidth(), animKeyframe.getHeight(), entityDir,
+					BufferView<RenderTriangle>(entityTrianglesBuffer.data(), static_cast<int>(entityTrianglesBuffer.size())));
+
+				const auto srcStart = entityTrianglesBuffer.cbegin();
+				const auto srcEnd = srcStart + 2;
+				this->entityTriangles.insert(this->entityTriangles.end(), srcStart, srcEnd);
+			}
+		}
+	}
 }
 
 void SceneGraph::updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude)

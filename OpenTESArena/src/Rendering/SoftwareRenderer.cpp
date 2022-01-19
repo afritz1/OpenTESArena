@@ -717,8 +717,8 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 }
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &opaqueVoxelTriangles,
-	const BufferView<const RenderTriangle> &alphaTestedVoxelTriangles, const RenderFrameSettings &settings,
-	uint32_t *outputBuffer)
+	const BufferView<const RenderTriangle> &alphaTestedVoxelTriangles, const BufferView<const RenderTriangle> &entityTriangles,
+	const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
 	const int frameBufferWidth = this->depthBuffer.getWidth();
 	const int frameBufferHeight = this->depthBuffer.getHeight();
@@ -742,6 +742,11 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	const std::vector<RenderTriangle> clippedAlphaTestedVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(alphaTestedVoxelTriangles, camera);
 	const BufferView<const RenderTriangle> clippedAlphaTestedVoxelTrianglesView(clippedAlphaTestedVoxelTriangles.data(), static_cast<int>(clippedAlphaTestedVoxelTriangles.size()));
 	swRender::RasterizeTriangles(clippedAlphaTestedVoxelTrianglesView, true, this->objectTextures, paletteTexture, lightTableTexture, camera,
+		colorBufferView, depthBufferView);
+
+	const std::vector<RenderTriangle> clippedEntityTriangles = swGeometry::ProcessTrianglesForRasterization(entityTriangles, camera);
+	const BufferView<const RenderTriangle> clippedEntityTrianglesView(clippedEntityTriangles.data(), static_cast<int>(clippedEntityTriangles.size()));
+	swRender::RasterizeTriangles(clippedEntityTrianglesView, true, this->objectTextures, paletteTexture, lightTableTexture, camera,
 		colorBufferView, depthBufferView);
 }
 

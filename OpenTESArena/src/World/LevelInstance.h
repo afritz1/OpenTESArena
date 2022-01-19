@@ -71,6 +71,7 @@ public:
 	double getCeilingScale() const;
 
 	ObjectTextureID getVoxelTextureID(const TextureAssetReference &textureAssetRef) const;
+	ObjectTextureID getEntityTextureID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
 	ObjectTextureID getChasmTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
 
 	bool trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,

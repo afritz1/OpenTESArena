@@ -89,6 +89,19 @@ ObjectTextureID LevelInstance::getVoxelTextureID(const TextureAssetReference &te
 	return objectTextureRef.get();
 }
 
+ObjectTextureID LevelInstance::getEntityTextureID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const
+{
+	const auto iter = std::find_if(this->loadedEntityTextures.begin(), this->loadedEntityTextures.end(),
+		[&textureAssetRef, flipped, reflective](const LoadedEntityTextureEntry &entry)
+	{
+		return (entry.textureAssetRef == textureAssetRef) && (entry.flipped == flipped) && (entry.reflective == reflective);
+	});
+
+	DebugAssertMsg(iter != this->loadedEntityTextures.end(), "No loaded entity texture for \"" + textureAssetRef.filename + "\".");
+	const ScopedObjectTextureRef &objectTextureRef = iter->objectTextureRef;
+	return objectTextureRef.get();
+}
+
 ObjectTextureID LevelInstance::getChasmTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const
 {
 	const auto iter = this->loadedChasmTextures.find(chasmType);
@@ -181,7 +194,7 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 						}
 
 						const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-						ObjectTextureID entityTextureID;
+						ObjectTextureID entityTextureID; // @todo: I think the texels need 'flipped' implemented here
 						if (!renderer.tryCreateObjectTexture(textureBuilder, &entityTextureID))
 						{
 							DebugLogWarning("Couldn't create entity texture \"" + textureAssetRef.filename + "\".");

@@ -841,10 +841,12 @@ void Renderer::freeUiTexture(UiTextureID id)
 
 void Renderer::updateSceneGraph(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,
 	const LevelInstance &levelInst, const SkyInstance &skyInst, double daytimePercent, double latitude,
-	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight)
+	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight, const EntityDefinitionLibrary &entityDefLibrary)
 {
-	this->sceneGraph.updateVoxels(levelInst, levelInst.getCeilingScale(), chasmAnimPercent, nightLightsAreActive);
-	this->sceneGraph.updateEntities(levelInst.getEntityManager(), nightLightsAreActive, playerHasLight);
+	const double ceilingScale = levelInst.getCeilingScale();
+	this->sceneGraph.updateVoxels(levelInst, ceilingScale, chasmAnimPercent, nightLightsAreActive);
+	this->sceneGraph.updateEntities(levelInst, cameraPos, cameraDir, entityDefLibrary, ceilingScale,
+		nightLightsAreActive, playerHasLight);
 	this->sceneGraph.updateSky(skyInst, daytimePercent, latitude);
 }
 
@@ -941,6 +943,7 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 	// @todo: need to call sceneGraph.updateVoxels/Entities/Sky() somewhere before this, either in this submitFrame() or in GameWorldPanel::gameWorldRenderCallback()
 	const BufferView<const RenderTriangle> opaqueVoxelTriangles = this->sceneGraph.getVisibleOpaqueVoxelGeometry();
 	const BufferView<const RenderTriangle> alphaTestedVoxelTriangles = this->sceneGraph.getVisibleAlphaTestedVoxelGeometry();
+	const BufferView<const RenderTriangle> entityTriangles = this->sceneGraph.getVisibleEntityGeometry();
 
 	RenderFrameSettings renderFrameSettings;
 	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
@@ -954,7 +957,8 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 
 	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(renderCamera, opaqueVoxelTriangles, alphaTestedVoxelTriangles, renderFrameSettings, outputBuffer);
+	this->renderer3D->submitFrame(renderCamera, opaqueVoxelTriangles, alphaTestedVoxelTriangles, entityTriangles,
+		renderFrameSettings, outputBuffer);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 

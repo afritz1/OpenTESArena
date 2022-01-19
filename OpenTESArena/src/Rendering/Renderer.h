@@ -226,7 +226,7 @@ public:
 
 	void updateSceneGraph(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir, const LevelInstance &levelInst,
 		const SkyInstance &skyInst, double daytimePercent, double latitude, double chasmAnimPercent,
-		bool nightLightsAreActive, bool playerHasLight);
+		bool nightLightsAreActive, bool playerHasLight, const EntityDefinitionLibrary &entityDefLibrary);
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);

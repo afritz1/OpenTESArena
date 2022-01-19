@@ -848,7 +848,8 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	auto &renderer = game.getRenderer();
 	const auto &options = game.getOptions();
 	renderer.updateSceneGraph(playerPos, playerDir, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
-		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight());
+		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight(),
+		game.getEntityDefinitionLibrary());
 
 	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
 	const ObjectTextureID paletteTextureID = activeLevelInst.getPaletteTextureID();

@@ -34,6 +34,7 @@
 // - if anything, would probably order by render def IDs, not necessarily texture IDs
 
 class ChunkManager;
+class EntityDefinitionLibrary;
 class EntityManager;
 class LevelInstance;
 class SkyInstance;
@@ -75,9 +76,11 @@ public:
 	// Visible geometry getters. These should only provide geometry that touch the view frustum.
 	BufferView<const RenderTriangle> getVisibleOpaqueVoxelGeometry() const;
 	BufferView<const RenderTriangle> getVisibleAlphaTestedVoxelGeometry() const;
+	BufferView<const RenderTriangle> getVisibleEntityGeometry() const;
 
 	void updateVoxels(const LevelInstance &levelInst, double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive);
-	void updateEntities(const EntityManager &entityManager, bool nightLightsAreActive, bool playerHasLight);
+	void updateEntities(const LevelInstance &levelInst, const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,
+		const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive, bool playerHasLight);
 	void updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude);
 
 	// Evaluates the scene graph's internal representation of voxels/entities/sky/etc. to re-populate its draw call lists.
