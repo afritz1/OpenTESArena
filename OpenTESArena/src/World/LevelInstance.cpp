@@ -194,12 +194,36 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 						}
 
 						const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-						ObjectTextureID entityTextureID; // @todo: I think the texels need 'flipped' implemented here
-						if (!renderer.tryCreateObjectTexture(textureBuilder, &entityTextureID))
+						const int textureWidth = textureBuilder.getWidth();
+						const int textureHeight = textureBuilder.getHeight();
+
+						ObjectTextureID entityTextureID;
+						if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, false, &entityTextureID))
 						{
 							DebugLogWarning("Couldn't create entity texture \"" + textureAssetRef.filename + "\".");
 							continue;
 						}
+
+						DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+						const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+						const uint8_t *srcTexels = srcTexture.texels.get();
+
+						LockedTexture lockedEntityTexture = renderer.lockObjectTexture(entityTextureID);
+						DebugAssert(!lockedEntityTexture.isTrueColor);
+						uint8_t *dstTexels = static_cast<uint8_t*>(lockedEntityTexture.texels);
+
+						for (int y = 0; y < textureHeight; y++)
+						{
+							for (int x = 0; x < textureWidth; x++)
+							{
+								// Mirror texture if this texture is for an angle that gets mirrored.
+								const int srcIndex = x + (y * textureWidth);
+								const int dstIndex = (!flipped ? x : (textureWidth - 1 - x)) + (y * textureWidth);
+								dstTexels[dstIndex] = srcTexels[srcIndex];
+							}
+						}
+
+						renderer.unlockObjectTexture(entityTextureID);
 
 						ScopedObjectTextureRef entityTextureRef(entityTextureID, renderer);
 						LoadedEntityTextureEntry newEntry;
