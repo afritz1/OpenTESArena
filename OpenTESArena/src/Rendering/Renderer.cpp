@@ -775,6 +775,18 @@ bool Renderer::tryCreateObjectTexture(const TextureBuilder &textureBuilder, Obje
 	return this->renderer3D->tryCreateObjectTexture(textureBuilder, outID);
 }
 
+bool Renderer::tryCreateObjectMaterial(ObjectTextureID id0, ObjectTextureID id1, ObjectMaterialID *outID)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateObjectMaterial(id0, id1, outID);
+}
+
+bool Renderer::tryCreateObjectMaterial(ObjectTextureID id, ObjectMaterialID *outID)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateObjectMaterial(id, outID);
+}
+
 bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(width, height, outID);
@@ -832,6 +844,12 @@ void Renderer::freeObjectTexture(ObjectTextureID id)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->freeObjectTexture(id);
+}
+
+void Renderer::freeObjectMaterial(ObjectMaterialID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->freeObjectMaterial(id);
 }
 
 void Renderer::freeUiTexture(UiTextureID id)

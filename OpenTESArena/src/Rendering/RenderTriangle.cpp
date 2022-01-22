@@ -1,18 +1,18 @@
 #include "RenderTriangle.h"
 
 RenderTriangle::RenderTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0,
-	const Double2 &uv1, const Double2 &uv2, ObjectTextureID textureID)
+	const Double2 &uv1, const Double2 &uv2, ObjectMaterialID materialID)
 {
-	this->init(v0, v1, v2, uv0, uv1, uv2, textureID);
+	this->init(v0, v1, v2, uv0, uv1, uv2, materialID);
 }
 
 RenderTriangle::RenderTriangle()
 {
-	this->textureID = -1;
+	this->materialID = -1;
 }
 
 void RenderTriangle::init(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0,
-	const Double2 &uv1, const Double2 &uv2, ObjectTextureID textureID)
+	const Double2 &uv1, const Double2 &uv2, ObjectMaterialID materialID)
 {
 	this->v0 = v0;
 	this->v1 = v1;
@@ -24,5 +24,5 @@ void RenderTriangle::init(const Double3 &v0, const Double3 &v1, const Double3 &v
 	this->uv0 = uv0;
 	this->uv1 = uv1;
 	this->uv2 = uv2;
-	this->textureID = textureID;
+	this->materialID = materialID;
 }

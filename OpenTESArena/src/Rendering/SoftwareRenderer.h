@@ -38,9 +38,11 @@ public:
 	};
 
 	using ObjectTexturePool = RecyclablePool<ObjectTexture, ObjectTextureID>;
+	using ObjectMaterialPool = RecyclablePool<ObjectMaterial, ObjectMaterialID>;
 private:
 	Buffer2D<double> depthBuffer;
 	ObjectTexturePool objectTextures;
+	ObjectMaterialPool objectMaterials;
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer() override;
@@ -53,10 +55,14 @@ public:
 
 	bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID) override;
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) override;
+	bool tryCreateObjectMaterial(ObjectTextureID id0, ObjectTextureID id1, ObjectMaterialID *outID) override;
+	bool tryCreateObjectMaterial(ObjectTextureID id, ObjectMaterialID *outID) override;
 	LockedTexture lockObjectTexture(ObjectTextureID id) override;
 	void unlockObjectTexture(ObjectTextureID id) override;
 	void freeObjectTexture(ObjectTextureID id) override;
+	void freeObjectMaterial(ObjectMaterialID id) override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
+	bool tryGetObjectMaterialTextures(ObjectMaterialID id, ObjectTextureID *outID0, ObjectTextureID *outID1) const override;
 
 	bool tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect,
 		bool *outIsSelected) const override;

@@ -15,14 +15,14 @@ struct RenderTriangle
 	Double3 v0v1, v1v2, v2v0;
 	Double3 normal;
 	Double2 uv0, uv1, uv2;
-	ObjectTextureID textureID;
+	ObjectMaterialID materialID;
 
 	RenderTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0,
-		const Double2 &uv1, const Double2 &uv2, ObjectTextureID textureID);
+		const Double2 &uv1, const Double2 &uv2, ObjectMaterialID materialID);
 	RenderTriangle();
 
 	void init(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0,
-		const Double2 &uv1, const Double2 &uv2, ObjectTextureID textureID);
+		const Double2 &uv1, const Double2 &uv2, ObjectMaterialID materialID);
 };
 
 #endif

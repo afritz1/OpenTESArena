@@ -46,12 +46,18 @@ public:
 	// Texture management functions.
 	virtual bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID) = 0;
 	virtual bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) = 0;
+	virtual bool tryCreateObjectMaterial(ObjectTextureID id0, ObjectTextureID id1, ObjectMaterialID *outID) = 0;
+	virtual bool tryCreateObjectMaterial(ObjectTextureID id, ObjectMaterialID *outID) = 0;
 	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
 	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
+	virtual void freeObjectMaterial(ObjectMaterialID id) = 0;
 
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
+
+	// Gets the material's texture IDs if it exists (used with code that tries reusing materials).
+	virtual bool tryGetObjectMaterialTextures(ObjectMaterialID id, ObjectTextureID *outID0, ObjectTextureID *outID1) const = 0;
 
 	// Tries to write out selection data for the given entity. Returns whether selection data was
 	// successfully written.

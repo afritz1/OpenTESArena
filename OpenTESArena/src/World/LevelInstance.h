@@ -29,29 +29,59 @@ private:
 	// - why do we load voxel and entity textures before they are instantiated in the world?
 	// - we make the assumption that "a level has voxel and entity textures" but that is decoupled from actual voxel and entity instances.
 	// - feels like all voxel/entity/sky/particle object texture loading should be on demand...? Might simplify enemy spawning code.
-	struct LoadedVoxelTextureEntry
+
+	struct LoadedVoxelMaterial
 	{
 		TextureAssetReference textureAssetRef;
-		ScopedObjectTextureRef objectTextureRef;
 
-		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef);
+		// One texture per material.
+		ScopedObjectTextureRef objectTextureRef;
+		ScopedObjectMaterialRef objectMaterialRef;
+
+		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef,
+			ScopedObjectMaterialRef &&objectMaterialRef);
 	};
 
-	struct LoadedEntityTextureEntry
+	struct LoadedEntityMaterial
 	{
 		TextureAssetReference textureAssetRef;
 		bool flipped;
 		bool reflective;
-		ScopedObjectTextureRef objectTextureRef;
 
-		void init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective, ScopedObjectTextureRef &&objectTextureRef);
+		// One texture per material.
+		ScopedObjectTextureRef objectTextureRef;
+		ScopedObjectMaterialRef objectMaterialRef;
+
+		void init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
+			ScopedObjectTextureRef &&objectTextureRef, ScopedObjectMaterialRef &&objectMaterialRef);
+	};
+
+	struct LoadedChasmMaterialList
+	{
+		struct Entry
+		{
+			// Two textures per material.
+			ScopedObjectTextureRef objectTextureRef0, objectTextureRef1;
+			ScopedObjectMaterialRef objectMaterialRef;
+
+			void init(ScopedObjectTextureRef &&objectTextureRef0, ScopedObjectTextureRef &&objectTextureRef1,
+				ScopedObjectMaterialRef &&objectMaterialRef);
+		};
+
+		ArenaTypes::ChasmType chasmType;
+		std::vector<Entry> entries; // One per animation frame.
+		
+		void init(ArenaTypes::ChasmType chasmType);
+		void add(Entry &&entry);
 	};
 
 	ChunkManager chunkManager;
 	EntityManager entityManager;
-	std::vector<LoadedVoxelTextureEntry> loadedVoxelTextures;
-	std::vector<LoadedEntityTextureEntry> loadedEntityTextures;
-	std::unordered_map<ArenaTypes::ChasmType, std::vector<ScopedObjectTextureRef>> loadedChasmTextures;
+
+	// Renderer resources.
+	std::vector<LoadedVoxelMaterial> voxelMaterials;
+	std::vector<LoadedEntityMaterial> entityMaterials;
+	std::vector<LoadedChasmMaterialList> chasmMaterialLists;
 
 	// Texture handles for the active game world palette and light table.
 	ScopedObjectTextureRef paletteTextureRef, lightTableTextureRef;
@@ -70,9 +100,9 @@ public:
 	ObjectTextureID getLightTableTextureID() const;
 	double getCeilingScale() const;
 
-	ObjectTextureID getVoxelTextureID(const TextureAssetReference &textureAssetRef) const;
-	ObjectTextureID getEntityTextureID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
-	ObjectTextureID getChasmTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
+	ObjectMaterialID getVoxelMaterialID(const TextureAssetReference &textureAssetRef) const;
+	ObjectMaterialID getEntityMaterialID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
+	ObjectMaterialID getChasmMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
 
 	bool trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,

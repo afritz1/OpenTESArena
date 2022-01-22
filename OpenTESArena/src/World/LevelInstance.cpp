@@ -15,20 +15,40 @@
 
 #include "components/debug/Debug.h"
 
-void LevelInstance::LoadedVoxelTextureEntry::init(const TextureAssetReference &textureAssetRef,
-	ScopedObjectTextureRef &&objectTextureRef)
+void LevelInstance::LoadedVoxelMaterial::init(const TextureAssetReference &textureAssetRef,
+	ScopedObjectTextureRef &&objectTextureRef, ScopedObjectMaterialRef &&objectMaterialRef)
 {
 	this->textureAssetRef = textureAssetRef;
 	this->objectTextureRef = std::move(objectTextureRef);
+	this->objectMaterialRef = std::move(objectMaterialRef);
 }
 
-void LevelInstance::LoadedEntityTextureEntry::init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
-	ScopedObjectTextureRef &&objectTextureRef)
+void LevelInstance::LoadedEntityMaterial::init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
+	ScopedObjectTextureRef &&objectTextureRef, ScopedObjectMaterialRef &&objectMaterialRef)
 {
 	this->textureAssetRef = textureAssetRef;
 	this->flipped = flipped;
 	this->reflective = reflective;
 	this->objectTextureRef = std::move(objectTextureRef);
+	this->objectMaterialRef = std::move(objectMaterialRef);
+}
+
+void LevelInstance::LoadedChasmMaterialList::Entry::init(ScopedObjectTextureRef &&objectTextureRef0,
+	ScopedObjectTextureRef &&objectTextureRef1, ScopedObjectMaterialRef &&objectMaterialRef)
+{
+	this->objectTextureRef0 = std::move(objectTextureRef0);
+	this->objectTextureRef1 = std::move(objectTextureRef1);
+	this->objectMaterialRef = std::move(objectMaterialRef);
+}
+
+void LevelInstance::LoadedChasmMaterialList::init(ArenaTypes::ChasmType chasmType)
+{
+	this->chasmType = chasmType;
+}
+
+void LevelInstance::LoadedChasmMaterialList::add(Entry &&entry)
+{
+	this->entries.emplace_back(std::move(entry));
 }
 
 LevelInstance::LevelInstance()
@@ -76,42 +96,48 @@ double LevelInstance::getCeilingScale() const
 	return this->ceilingScale;
 }
 
-ObjectTextureID LevelInstance::getVoxelTextureID(const TextureAssetReference &textureAssetRef) const
+ObjectMaterialID LevelInstance::getVoxelMaterialID(const TextureAssetReference &textureAssetRef) const
 {
-	const auto iter = std::find_if(this->loadedVoxelTextures.begin(), this->loadedVoxelTextures.end(),
-		[&textureAssetRef](const LoadedVoxelTextureEntry &entry)
+	const auto iter = std::find_if(this->voxelMaterials.begin(), this->voxelMaterials.end(),
+		[&textureAssetRef](const LoadedVoxelMaterial &loadedMaterial)
 	{
-		return entry.textureAssetRef == textureAssetRef;
+		return loadedMaterial.textureAssetRef == textureAssetRef;
 	});
 
-	DebugAssertMsg(iter != this->loadedVoxelTextures.end(), "No loaded voxel texture for \"" + textureAssetRef.filename + "\".");
-	const ScopedObjectTextureRef &objectTextureRef = iter->objectTextureRef;
-	return objectTextureRef.get();
+	DebugAssertMsg(iter != this->voxelMaterials.end(), "No loaded voxel material for \"" + textureAssetRef.filename + "\".");
+	const ScopedObjectMaterialRef &objectMaterialRef = iter->objectMaterialRef;
+	return objectMaterialRef.get();
 }
 
-ObjectTextureID LevelInstance::getEntityTextureID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const
+ObjectMaterialID LevelInstance::getEntityMaterialID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const
 {
-	const auto iter = std::find_if(this->loadedEntityTextures.begin(), this->loadedEntityTextures.end(),
-		[&textureAssetRef, flipped, reflective](const LoadedEntityTextureEntry &entry)
+	const auto iter = std::find_if(this->entityMaterials.begin(), this->entityMaterials.end(),
+		[&textureAssetRef, flipped, reflective](const LoadedEntityMaterial &loadedMaterial)
 	{
-		return (entry.textureAssetRef == textureAssetRef) && (entry.flipped == flipped) && (entry.reflective == reflective);
+		return (loadedMaterial.textureAssetRef == textureAssetRef) && (loadedMaterial.flipped == flipped) &&
+			(loadedMaterial.reflective == reflective);
 	});
 
-	DebugAssertMsg(iter != this->loadedEntityTextures.end(), "No loaded entity texture for \"" + textureAssetRef.filename + "\".");
-	const ScopedObjectTextureRef &objectTextureRef = iter->objectTextureRef;
-	return objectTextureRef.get();
+	DebugAssertMsg(iter != this->entityMaterials.end(), "No loaded entity material for \"" + textureAssetRef.filename + "\".");
+	const ScopedObjectMaterialRef &objectMaterialRef = iter->objectMaterialRef;
+	return objectMaterialRef.get();
 }
 
-ObjectTextureID LevelInstance::getChasmTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const
+ObjectMaterialID LevelInstance::getChasmMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const
 {
-	const auto iter = this->loadedChasmTextures.find(chasmType);
-	DebugAssertMsg(iter != this->loadedChasmTextures.end(), "No loaded chasm texture for type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
+	const auto iter = std::find_if(this->chasmMaterialLists.begin(), this->chasmMaterialLists.end(),
+		[chasmType](const LoadedChasmMaterialList &loadedMaterialList)
+	{
+		return loadedMaterialList.chasmType == chasmType;
+	});
 
-	const std::vector<ScopedObjectTextureRef> &objectTextureRefs = iter->second;
-	const int textureCount = static_cast<int>(objectTextureRefs.size());
+	DebugAssertMsg(iter != this->chasmMaterialLists.end(), "No loaded chasm material list for type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
+	const std::vector<LoadedChasmMaterialList::Entry> &entries = iter->entries;
+	const int textureCount = static_cast<int>(entries.size());
 	const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
-	DebugAssertIndex(objectTextureRefs, index);
-	return objectTextureRefs[index].get();
+	DebugAssertIndex(entries, index);
+	const LoadedChasmMaterialList::Entry &entry = entries[index];
+	return entry.objectMaterialRef.get();
 }
 
 bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
@@ -120,9 +146,9 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear stored object texture refs, freeing them from the renderer.
-	this->loadedVoxelTextures.clear();
-	this->loadedEntityTextures.clear();
-	this->loadedChasmTextures.clear();
+	this->voxelMaterials.clear();
+	this->entityMaterials.clear();
+	this->chasmMaterialLists.clear();
 	this->paletteTextureRef.destroy();
 	this->lightTableTextureRef.destroy();
 
@@ -131,13 +157,13 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 		for (int i = 0; i < voxelDef.getTextureAssetReferenceCount(); i++)
 		{
 			const TextureAssetReference &textureAssetRef = voxelDef.getTextureAssetReference(i);
-			const auto cacheIter = std::find_if(this->loadedVoxelTextures.begin(), this->loadedVoxelTextures.end(),
-				[&textureAssetRef](const LoadedVoxelTextureEntry &entry)
+			const auto cacheIter = std::find_if(this->voxelMaterials.begin(), this->voxelMaterials.end(),
+				[&textureAssetRef](const LoadedVoxelMaterial &loadedMaterial)
 			{
-				return entry.textureAssetRef == textureAssetRef;
+				return loadedMaterial.textureAssetRef == textureAssetRef;
 			});
 
-			if (cacheIter == this->loadedVoxelTextures.end())
+			if (cacheIter == this->voxelMaterials.end())
 			{
 				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
 				if (!textureBuilderID.has_value())
@@ -155,9 +181,17 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 				}
 
 				ScopedObjectTextureRef voxelTextureRef(voxelTextureID, renderer);
-				LoadedVoxelTextureEntry newEntry;
-				newEntry.init(textureAssetRef, std::move(voxelTextureRef));
-				this->loadedVoxelTextures.emplace_back(std::move(newEntry));
+				ObjectMaterialID voxelMaterialID;
+				if (!renderer.tryCreateObjectMaterial(voxelTextureID, &voxelMaterialID))
+				{
+					DebugLogWarning("Couldn't create voxel material \"" + textureAssetRef.filename + "\".");
+					continue;
+				}
+
+				ScopedObjectMaterialRef voxelMaterialRef(voxelMaterialID, renderer);
+				LoadedVoxelMaterial newMaterial;
+				newMaterial.init(textureAssetRef, std::move(voxelTextureRef), std::move(voxelMaterialRef));
+				this->voxelMaterials.emplace_back(std::move(newMaterial));
 			}
 		}
 	};
@@ -178,13 +212,14 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 				{
 					const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
 					const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
-					const auto cacheIter = std::find_if(this->loadedEntityTextures.begin(), this->loadedEntityTextures.end(),
-						[&textureAssetRef, flipped, reflective](const LoadedEntityTextureEntry &entry)
+					const auto cacheIter = std::find_if(this->entityMaterials.begin(), this->entityMaterials.end(),
+						[&textureAssetRef, flipped, reflective](const LoadedEntityMaterial &loadedMaterial)
 					{
-						return (entry.textureAssetRef == textureAssetRef) && (entry.flipped == flipped) && (entry.reflective == reflective);
+						return (loadedMaterial.textureAssetRef == textureAssetRef) && (loadedMaterial.flipped == flipped) &&
+							(loadedMaterial.reflective == reflective);
 					});
 
-					if (cacheIter == loadedEntityTextures.end())
+					if (cacheIter == entityMaterials.end())
 					{
 						const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
 						if (!textureBuilderID.has_value())
@@ -204,11 +239,18 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 							continue;
 						}
 
+						ScopedObjectTextureRef entityTextureRef(entityTextureID, renderer);
 						DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
 						const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
 						const uint8_t *srcTexels = srcTexture.texels.get();
 
 						LockedTexture lockedEntityTexture = renderer.lockObjectTexture(entityTextureID);
+						if (!lockedEntityTexture.isValid())
+						{
+							DebugLogWarning("Couldn't lock entity texture \"" + textureAssetRef.filename + "\".");
+							continue;
+						}
+
 						DebugAssert(!lockedEntityTexture.isTrueColor);
 						uint8_t *dstTexels = static_cast<uint8_t*>(lockedEntityTexture.texels);
 
@@ -225,10 +267,17 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 
 						renderer.unlockObjectTexture(entityTextureID);
 
-						ScopedObjectTextureRef entityTextureRef(entityTextureID, renderer);
-						LoadedEntityTextureEntry newEntry;
-						newEntry.init(textureAssetRef, flipped, reflective, std::move(entityTextureRef));
-						this->loadedEntityTextures.emplace_back(std::move(newEntry));
+						ObjectMaterialID entityMaterialID;
+						if (!renderer.tryCreateObjectMaterial(entityTextureID, &entityMaterialID))
+						{
+							DebugLogWarning("Couldn't create entity material \"" + textureAssetRef.filename + "\".");
+							continue;
+						}
+
+						ScopedObjectMaterialRef entityMaterialRef(entityMaterialID, renderer);
+						LoadedEntityMaterial newMaterial;
+						newMaterial.init(textureAssetRef, flipped, reflective, std::move(entityTextureRef), std::move(entityMaterialRef));
+						this->entityMaterials.emplace_back(std::move(newMaterial));
 					}
 				}
 			}
@@ -287,6 +336,15 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 
 	auto loadChasmTextures = [this, &textureManager, &renderer](ArenaTypes::ChasmType chasmType)
 	{
+		const auto cacheIter = std::find_if(this->chasmMaterialLists.begin(), this->chasmMaterialLists.end(),
+			[chasmType](const LoadedChasmMaterialList &loadedMaterialList)
+		{
+			return loadedMaterialList.chasmType == chasmType;
+		});
+
+		DebugAssertMsg(cacheIter == this->chasmMaterialLists.end(), "Already loaded chasm material for type \"" +
+			std::to_string(static_cast<int>(chasmType)) + "\".");
+
 		const bool hasTexturedAnim = chasmType != ArenaTypes::ChasmType::Dry;
 		if (hasTexturedAnim)
 		{
@@ -305,6 +363,9 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 					DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(chasmType)));
 				}
 			}();
+
+			LoadedChasmMaterialList newMaterialList;
+			newMaterialList.init(chasmType);
 
 			const Buffer<TextureAssetReference> textureAssetRefs = TextureUtils::makeTextureAssetRefs(chasmFilename, textureManager);
 			for (int i = 0; i < textureAssetRefs.getCount(); i++)
@@ -325,16 +386,21 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 					continue;
 				}
 
-				ScopedObjectTextureRef chasmTextureRef(chasmTextureID, renderer);
-				auto cacheIter = this->loadedChasmTextures.find(chasmType);
-				if (cacheIter == this->loadedChasmTextures.end())
+				ScopedObjectTextureRef chasmTextureRef(chasmTextureID, renderer);				
+				ObjectMaterialID chasmMaterialID;
+				if (!renderer.tryCreateObjectMaterial(chasmTextureID, chasmTextureID, &chasmMaterialID)) // @todo: give side texture ID as well
 				{
-					cacheIter = this->loadedChasmTextures.emplace(chasmType, std::vector<ScopedObjectTextureRef>()).first;
+					DebugLogWarning("Couldn't create chasm material \"" + textureAssetRef.filename + "\".");
+					return;
 				}
 
-				std::vector<ScopedObjectTextureRef> &entries = cacheIter->second;
-				entries.emplace_back(std::move(chasmTextureRef));
+				ScopedObjectMaterialRef chasmMaterialRef(chasmMaterialID, renderer);
+				LoadedChasmMaterialList::Entry newMaterialListEntry;
+				newMaterialListEntry.init(std::move(chasmTextureRef), ScopedObjectTextureRef(), std::move(chasmMaterialRef)); // @todo: allocate side texture ref
+				newMaterialList.add(std::move(newMaterialListEntry));
 			}
+
+			this->chasmMaterialLists.emplace_back(std::move(newMaterialList));
 		}
 		else
 		{
@@ -346,6 +412,7 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 				return;
 			}
 
+			ScopedObjectTextureRef dryChasmTextureRef(dryChasmTextureID, renderer);
 			LockedTexture lockedTexture = renderer.lockObjectTexture(dryChasmTextureID);
 			if (!lockedTexture.isValid())
 			{
@@ -358,10 +425,22 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 			*texels = ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR;
 			renderer.unlockObjectTexture(dryChasmTextureID);
 
-			ScopedObjectTextureRef dryChasmTextureRef(dryChasmTextureID, renderer);
-			std::vector<ScopedObjectTextureRef> entries;
-			entries.emplace_back(std::move(dryChasmTextureRef));
-			this->loadedChasmTextures.emplace(chasmType, std::move(entries));
+			ObjectMaterialID chasmMaterialID;
+			if (!renderer.tryCreateObjectMaterial(dryChasmTextureID, dryChasmTextureID, &chasmMaterialID)) // @todo: give side texture ID as well
+			{
+				DebugLogWarning("Couldn't create dry chasm material.");
+				return;
+			}
+
+			ScopedObjectMaterialRef dryChasmMaterialRef(chasmMaterialID, renderer);
+
+			LoadedChasmMaterialList newMaterialList;
+			newMaterialList.init(chasmType);
+
+			LoadedChasmMaterialList::Entry newMaterialListEntry;
+			newMaterialListEntry.init(std::move(dryChasmTextureRef), ScopedObjectTextureRef(), std::move(dryChasmMaterialRef)); // @todo: allocate side texture ref
+			newMaterialList.add(std::move(newMaterialListEntry));
+			this->chasmMaterialLists.emplace_back(std::move(newMaterialList));
 		}
 	};
 

@@ -205,6 +205,8 @@ public:
 	// Texture handle allocation functions.
 	bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID);
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID);
+	bool tryCreateObjectMaterial(ObjectTextureID id0, ObjectTextureID id1, ObjectMaterialID *outID);
+	bool tryCreateObjectMaterial(ObjectTextureID id, ObjectMaterialID *outID);
 	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID);
@@ -222,6 +224,7 @@ public:
 
 	// Texture handle freeing functions.
 	void freeObjectTexture(ObjectTextureID id);
+	void freeObjectMaterial(ObjectMaterialID id);
 	void freeUiTexture(UiTextureID id);
 
 	void updateSceneGraph(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir, const LevelInstance &levelInst,
