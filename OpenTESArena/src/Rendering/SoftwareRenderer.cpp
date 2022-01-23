@@ -432,10 +432,17 @@ namespace swRender
 			const Double2 uv2Perspective = uv2 * z2Recip;
 
 			const ObjectMaterial &material = materials.get(triangle.materialID);
-			const SoftwareRenderer::ObjectTexture &texture = textures.get(material.id0);
-			const int textureWidth = texture.texels.getWidth();
-			const int textureHeight = texture.texels.getHeight();
-			const uint8_t *textureTexels = texture.texels.get();
+			const bool isMultiTextured = material.id1 >= 0;
+			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(material.id0);
+			const SoftwareRenderer::ObjectTexture &texture1 = isMultiTextured ? textures.get(material.id1) : texture0;
+			
+			const int texture0Width = texture0.texels.getWidth();
+			const int texture0Height = texture0.texels.getHeight();
+			const uint8_t *texture0Texels = texture0.texels.get();
+
+			const int texture1Width = texture1.texels.getWidth();
+			const int texture1Height = texture1.texels.getHeight();
+			const uint8_t *texture1Texels = texture1.texels.get();
 
 			for (int y = yStart; y < yEnd; y++)
 			{
@@ -479,10 +486,31 @@ namespace swRender
 							const double texelPercentY = ((u * uv0Perspective.y) + (v * uv1Perspective.y) + (w * uv2Perspective.y)) /
 								((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 
-							const int texelX = std::clamp(static_cast<int>(texelPercentX * textureWidth), 0, textureWidth - 1);
-							const int texelY = std::clamp(static_cast<int>(texelPercentY * textureHeight), 0, textureHeight - 1);
-							const int texelIndex = texelX + (texelY * textureWidth);
-							const uint8_t texel = textureTexels[texelIndex];
+							// @todo: move this into two separate pixel shaders
+							uint8_t texel;
+							if (isMultiTextured)
+							{
+								const int layerTexelX = std::clamp(static_cast<int>(texelPercentX * texture1Width), 0, texture1Width - 1);
+								const int layerTexelY = std::clamp(static_cast<int>(texelPercentY * texture1Height), 0, texture1Height - 1);
+								const int layerTexelIndex = layerTexelX + (layerTexelY * texture1Width);
+								texel = texture1Texels[layerTexelIndex];
+
+								const bool isTransparent = texel == 0;
+								if (isTransparent)
+								{
+									const int texelX = std::clamp(static_cast<int>(texelPercentX * texture0Width), 0, texture0Width - 1);
+									const int texelY = std::clamp(static_cast<int>(texelPercentY * texture0Height), 0, texture0Height - 1);
+									const int texelIndex = texelX + (texelY * texture0Width);
+									texel = texture0Texels[texelIndex];
+								}
+							}
+							else
+							{
+								const int texelX = std::clamp(static_cast<int>(texelPercentX * texture0Width), 0, texture0Width - 1);
+								const int texelY = std::clamp(static_cast<int>(texelPercentY * texture0Height), 0, texture0Height - 1);
+								const int texelIndex = texelX + (texelY * texture0Width);
+								texel = texture0Texels[texelIndex];
+							}
 							
 							if (debug_alphaTest)
 							{

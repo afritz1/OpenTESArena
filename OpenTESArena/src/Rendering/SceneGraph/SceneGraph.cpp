@@ -568,13 +568,13 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 					else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 					{
 						const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
-						const bool north = false; // @todo: need voxel instance
-						const bool south = false;
-						const bool east = false;
-						const bool west = false;
+						const bool north = true; // @todo: need voxel instance
+						const bool south = true;
+						const bool east = true;
+						const bool west = true;
 						const bool isDry = chasm.type == ArenaTypes::ChasmType::Dry;
-						const ObjectMaterialID floorMaterialID = levelInst.getChasmMaterialID(chasm.type, chasmAnimPercent);
-						const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(chasm.textureAssetRef);
+						const ObjectMaterialID floorMaterialID = levelInst.getChasmFloorMaterialID(chasm.type, chasmAnimPercent);
+						const ObjectMaterialID sideMaterialID = levelInst.getChasmWallMaterialID(chasm.type, chasmAnimPercent, chasm.textureAssetRef);
 						sgGeometry::WriteChasm(chunkPos, voxelPos, ceilingScale, north, south, east, west, isDry, floorMaterialID, sideMaterialID,
 							BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 10), &opaqueTriangleCount);
 					}
