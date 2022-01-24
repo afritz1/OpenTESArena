@@ -398,7 +398,7 @@ bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
 		//bool isSelected;
 
 		// @todo: get the entity anim inst's texture ID instead of asset ref. Can probably remove 'palette' too.
-		DebugNotImplementedMsg("getEntityRayIntersection");
+		DebugLogError("Not implemented: getEntityRayIntersection");
 		return false;
 		/*const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAssetRef, flipped, reflective, pixelPerfect, palette, &isSelected);
 
