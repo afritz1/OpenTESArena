@@ -58,6 +58,9 @@ namespace MathUtils
 	// Returns whether the given point lies in the half space divided at the given divider point.
 	bool isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint, const Double2 &normal);
 
+	// Returns whether the two line segments intersect.
+	bool lineSegmentIntersection(const Double2 &a0, const Double2 &a1, const Double2 &b0, const Double2 &b1);
+
 	// Returns whether the given triangle and circle intersect each other. Assumes triangle points
 	// are ordered counter-clockwise.
 	bool triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,

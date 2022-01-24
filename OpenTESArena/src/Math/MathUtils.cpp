@@ -76,6 +76,35 @@ bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &dividerP
 	return (point - dividerPoint).dot(normal) >= 0.0;
 }
 
+bool MathUtils::lineSegmentIntersection(const Double2 &a0, const Double2 &a1, const Double2 &b0, const Double2 &b1)
+{
+	const Double2 aDiff = a1 - a0;
+	const Double2 bDiff = b1 - b0;
+	const double dotPerp = (aDiff.x * bDiff.y) - (aDiff.y * bDiff.x);
+	if (std::abs(dotPerp) < Constants::Epsilon)
+	{
+		// Line segments are parallel.
+		return false;
+	}
+
+	const Double2 abDiff = b0 - a0;
+	const double s = ((abDiff.x * aDiff.y) - (abDiff.y * aDiff.x)) / dotPerp;
+	if ((s < 0.0) || (s > 1.0))
+	{
+		// Intersection is outside line segment A.
+		return false;
+	}
+
+	const double t = ((abDiff.x * bDiff.y) - (abDiff.y * bDiff.x)) / dotPerp;
+	if ((t < 0.0) || (t > 1.0))
+	{
+		// Intersection is outside line segment B.
+		return false;
+	}
+
+	return true;
+}
+
 bool MathUtils::triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
 	const Double2 &triangleP2, const Double2 &circlePoint, double circleRadius)
 {
