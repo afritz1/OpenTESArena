@@ -183,6 +183,71 @@ bool MathUtils::triangleCircleIntersection(const Double2 &triangleP0, const Doub
 	return false;
 }
 
+bool MathUtils::triangleRectangleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
+	const Double2 &triangleP2, const Double2 &rectLow, const Double2 &rectHigh)
+{
+	const Double2 triangleP0P1 = triangleP1 - triangleP0;
+	const Double2 triangleP1P2 = triangleP2 - triangleP1;
+	const Double2 triangleP2P0 = triangleP0 - triangleP2;
+
+	const Double2 trianglePerp0 = triangleP0P1.leftPerp();
+	const Double2 trianglePerp1 = triangleP1P2.leftPerp();
+	const Double2 trianglePerp2 = triangleP2P0.leftPerp();
+
+	const Double2 rectP0 = rectLow;
+	const Double2 rectP1(rectP0.x + (rectHigh.x - rectLow.x), rectP0.y);
+	const Double2 rectP2 = rectHigh;
+	const Double2 rectP3(rectP0.x, rectP0.y + (rectHigh.y - rectLow.y));
+
+	auto isInTriangle = [&triangleP0, &triangleP1, &triangleP2, &trianglePerp0, &trianglePerp1, &trianglePerp2](const Double2 &p)
+	{
+		return MathUtils::isPointInHalfSpace(p, triangleP0, trianglePerp0) &&
+			MathUtils::isPointInHalfSpace(p, triangleP1, trianglePerp1) &&
+			MathUtils::isPointInHalfSpace(p, triangleP2, trianglePerp2);
+	};
+
+	// Check if rectangle is completely inside triangle.
+	if (isInTriangle(rectP0) && isInTriangle(rectP1) && isInTriangle(rectP2) && isInTriangle(rectP3))
+	{
+		return true;
+	}
+
+	auto isInRect = [&rectLow, &rectHigh](const Double2 &p)
+	{
+		return (p.x >= rectLow.x) && (p.x <= rectHigh.x) && (p.y >= rectLow.y) && (p.y <= rectHigh.y);
+	};
+
+	// Check if triangle is completely inside rectangle.
+	if (isInRect(triangleP0) && isInRect(triangleP1) && isInRect(triangleP2))
+	{
+		return true;
+	}
+
+	// Check if any triangle line segment intersects any rectangle line segment.
+	const bool isTriangleP0P1Intersecting =
+		MathUtils::lineSegmentIntersection(triangleP0, triangleP1, rectP0, rectP1) ||
+		MathUtils::lineSegmentIntersection(triangleP0, triangleP1, rectP1, rectP2) ||
+		MathUtils::lineSegmentIntersection(triangleP0, triangleP1, rectP2, rectP3) ||
+		MathUtils::lineSegmentIntersection(triangleP0, triangleP1, rectP3, rectP0);
+	const bool isTriangleP1P2Intersecting =
+		MathUtils::lineSegmentIntersection(triangleP1, triangleP2, rectP0, rectP1) ||
+		MathUtils::lineSegmentIntersection(triangleP1, triangleP2, rectP1, rectP2) ||
+		MathUtils::lineSegmentIntersection(triangleP1, triangleP2, rectP2, rectP3) ||
+		MathUtils::lineSegmentIntersection(triangleP1, triangleP2, rectP3, rectP0);
+	const bool isTriangleP2P0Intersecting =
+		MathUtils::lineSegmentIntersection(triangleP2, triangleP0, rectP0, rectP1) ||
+		MathUtils::lineSegmentIntersection(triangleP2, triangleP0, rectP1, rectP2) ||
+		MathUtils::lineSegmentIntersection(triangleP2, triangleP0, rectP2, rectP3) ||
+		MathUtils::lineSegmentIntersection(triangleP2, triangleP0, rectP3, rectP0);
+
+	if (isTriangleP0P1Intersecting || isTriangleP1P2Intersecting || isTriangleP2P0Intersecting)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 	const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint)
 {

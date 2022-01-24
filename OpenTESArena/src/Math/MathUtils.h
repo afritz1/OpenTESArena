@@ -66,6 +66,11 @@ namespace MathUtils
 	bool triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
 		const Double2 &triangleP2, const Double2 &circlePoint, double circleRadius);
 
+	// Returns whether the given triangle and rectangle intersect each other. Assumes triangle points
+	// are ordered counter-clockwise.
+	bool triangleRectangleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
+		const Double2 &triangleP2, const Double2 &rectLow, const Double2 &rectHigh);
+
 	// Finds the intersection of a ray on the given plane. Returns success.
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint);
