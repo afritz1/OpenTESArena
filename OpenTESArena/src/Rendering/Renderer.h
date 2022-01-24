@@ -227,9 +227,9 @@ public:
 	void freeObjectMaterial(ObjectMaterialID id);
 	void freeUiTexture(UiTextureID id);
 
-	void updateSceneGraph(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir, const LevelInstance &levelInst,
-		const SkyInstance &skyInst, double daytimePercent, double latitude, double chasmAnimPercent,
-		bool nightLightsAreActive, bool playerHasLight, const EntityDefinitionLibrary &entityDefLibrary);
+	void updateSceneGraph(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
+		double daytimePercent, double latitude, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+		const EntityDefinitionLibrary &entityDefLibrary);
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);
@@ -247,9 +247,9 @@ public:
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	void submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir, Degrees fovY,
-		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode);
+	void submitFrame(const RenderCamera &camera, double ambientPercent, ObjectTextureID paletteTextureID,
+		ObjectTextureID lightTableTextureID, ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID,
+		int renderThreadsMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

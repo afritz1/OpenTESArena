@@ -190,9 +190,9 @@ bool MathUtils::triangleRectangleIntersection(const Double2 &triangleP0, const D
 	const Double2 triangleP1P2 = triangleP2 - triangleP1;
 	const Double2 triangleP2P0 = triangleP0 - triangleP2;
 
-	const Double2 trianglePerp0 = triangleP0P1.leftPerp();
-	const Double2 trianglePerp1 = triangleP1P2.leftPerp();
-	const Double2 trianglePerp2 = triangleP2P0.leftPerp();
+	const Double2 trianglePerp0 = triangleP0P1.rightPerp();
+	const Double2 trianglePerp1 = triangleP1P2.rightPerp();
+	const Double2 trianglePerp2 = triangleP2P0.rightPerp();
 
 	const Double2 rectP0 = rectLow;
 	const Double2 rectP1(rectP0.x + (rectHigh.x - rectLow.x), rectP0.y);

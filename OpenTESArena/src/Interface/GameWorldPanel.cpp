@@ -17,6 +17,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Media/PortraitFile.h"
+#include "../Rendering/RenderCamera.h"
 #include "../UI/CursorData.h"
 #include "../World/MapType.h"
 
@@ -846,8 +847,17 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
 
 	auto &renderer = game.getRenderer();
+	const Int2 viewDims = renderer.getViewDimensions();
+	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
+
 	const auto &options = game.getOptions();
-	renderer.updateSceneGraph(playerPos, playerDir, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
+	const Degrees fovY = options.getGraphics_VerticalFOV();
+	const Degrees fovX = MathUtils::verticalFovToHorizontalFov(fovY, viewAspectRatio);
+
+	RenderCamera renderCamera;
+	renderCamera.init(playerPos.chunk, playerPos.point, playerDir, fovX, fovY, viewAspectRatio);
+
+	renderer.updateSceneGraph(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
 		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight(),
 		game.getEntityDefinitionLibrary());
 
@@ -857,8 +867,8 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const ObjectTextureID skyColorsTextureID = activeSkyInst.getSkyColorsTextureID();
 	const ObjectTextureID thunderstormColorsTextureID = -1;
 
-	renderer.submitFrame(playerPos, playerDir, options.getGraphics_VerticalFOV(), ambientPercent, paletteTextureID,
-		lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
+	renderer.submitFrame(renderCamera, ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
+		thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
 
 	return true;
 }

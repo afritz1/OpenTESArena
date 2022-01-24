@@ -2,6 +2,7 @@
 #include <optional>
 
 #include "SceneGraph.h"
+#include "../RenderCamera.h"
 #include "../../Assets/MIFUtils.h"
 #include "../../Entities/EntityManager.h"
 #include "../../Entities/EntityVisibilityState.h"
@@ -434,10 +435,22 @@ BufferView<const RenderTriangle> SceneGraph::getVisibleEntityGeometry() const
 	return BufferView<const RenderTriangle>(this->entityTriangles.data(), static_cast<int>(this->entityTriangles.size()));
 }
 
-void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScale, double chasmAnimPercent,
-	bool nightLightsAreActive)
+void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
+	double chasmAnimPercent, bool nightLightsAreActive)
 {
 	this->clearVoxels();
+
+	// Arbitrary value, just needs to be long enough to touch the farthest chunks in practice.
+	// - @todo: maybe use far clipping plane value?
+	constexpr double frustumLength = 1000.0;
+
+	const Double2 cameraEye2D(camera.point.x, camera.point.z);
+	const Double2 cameraFrustumLeftPoint2D(
+		camera.point.x + ((camera.forwardScaled.x - camera.rightScaled.x) * frustumLength),
+		camera.point.z + ((camera.forwardScaled.z - camera.rightScaled.z) * frustumLength));
+	const Double2 cameraFrustumRightPoint2D(
+		camera.point.x + ((camera.forwardScaled.x + camera.rightScaled.x) * frustumLength),
+		camera.point.z + ((camera.forwardScaled.z + camera.rightScaled.z) * frustumLength));
 
 	const ChunkManager &chunkManager = levelInst.getChunkManager();
 
@@ -458,6 +471,21 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 
 		/*ChunkRenderDefinition chunkRenderDef;
 		chunkRenderDef.init(chunkWidth, chunkHeight, chunkDepth);*/
+
+		const ChunkInt2 chunkPos = chunk.getCoord();
+		const ChunkInt2 relativeChunkPos = chunkPos - camera.chunk; // Relative to camera chunk.
+		constexpr double chunkDimReal = static_cast<double>(ChunkUtils::CHUNK_DIM);
+
+		// Top right and bottom left world space corners of this chunk.
+		const NewDouble2 chunkTR2D = VoxelUtils::chunkPointToNewPoint(relativeChunkPos, VoxelDouble2::Zero);
+		const NewDouble2 chunkBL2D = VoxelUtils::chunkPointToNewPoint(relativeChunkPos, VoxelDouble2(chunkDimReal, chunkDimReal));
+
+		const bool isChunkVisible = MathUtils::triangleRectangleIntersection(
+			cameraEye2D, cameraFrustumRightPoint2D, cameraFrustumLeftPoint2D, chunkTR2D, chunkBL2D);
+		if (!isChunkVisible)
+		{
+			continue;
+		}
 
 		for (WEInt z = 0; z < chunkDepth; z++)
 		{
@@ -505,7 +533,6 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, double ceilingScal
 					this->voxelRenderDefs.emplace_back(std::move(voxelRenderDef));
 					chunkRenderDef.voxelRenderDefIDs.set(x, y, z, static_cast<VoxelRenderDefID>(this->voxelRenderDefs.size()) - 1);*/
 
-					const ChunkInt2 chunkPos = chunk.getCoord();
 					const VoxelInt3 voxelPos(x, y, z);
 					std::array<RenderTriangle, sgGeometry::MAX_TRIANGLES_PER_VOXEL> opaqueTrianglesBuffer, alphaTestedTrianglesBuffer;
 					int opaqueTriangleCount = 0;

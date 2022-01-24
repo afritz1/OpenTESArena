@@ -78,7 +78,8 @@ public:
 	BufferView<const RenderTriangle> getVisibleAlphaTestedVoxelGeometry() const;
 	BufferView<const RenderTriangle> getVisibleEntityGeometry() const;
 
-	void updateVoxels(const LevelInstance &levelInst, double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive);
+	void updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
+		double chasmAnimPercent, bool nightLightsAreActive);
 	void updateEntities(const LevelInstance &levelInst, const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,
 		const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive, bool playerHasLight);
 	void updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude);

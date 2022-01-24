@@ -857,12 +857,14 @@ void Renderer::freeUiTexture(UiTextureID id)
 	this->renderer2D->freeUiTexture(id);
 }
 
-void Renderer::updateSceneGraph(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,
-	const LevelInstance &levelInst, const SkyInstance &skyInst, double daytimePercent, double latitude,
-	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight, const EntityDefinitionLibrary &entityDefLibrary)
+void Renderer::updateSceneGraph(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
+	double daytimePercent, double latitude, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+	const EntityDefinitionLibrary &entityDefLibrary)
 {
+	const CoordDouble3 cameraPos(camera.chunk, camera.point);
+	const VoxelDouble3 &cameraDir = camera.forward;
 	const double ceilingScale = levelInst.getCeilingScale();
-	this->sceneGraph.updateVoxels(levelInst, ceilingScale, chasmAnimPercent, nightLightsAreActive);
+	this->sceneGraph.updateVoxels(levelInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive);
 	this->sceneGraph.updateEntities(levelInst, cameraPos, cameraDir, entityDefLibrary, ceilingScale,
 		nightLightsAreActive, playerHasLight);
 	this->sceneGraph.updateSky(skyInst, daytimePercent, latitude);
@@ -945,23 +947,18 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
-void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir, Degrees fovY,
-	double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-	ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode)
+void Renderer::submitFrame(const RenderCamera &camera, double ambientPercent, ObjectTextureID paletteTextureID,
+	ObjectTextureID lightTableTextureID, ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID,
+	int renderThreadsMode)
 {
 	DebugAssert(this->renderer3D->isInited());
-
-	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
-	const double renderAspectRatio = static_cast<double>(renderDims.x) / static_cast<double>(renderDims.y);
-	const Degrees fovX = MathUtils::verticalFovToHorizontalFov(fovY, renderAspectRatio);
-
-	RenderCamera renderCamera;
-	renderCamera.init(cameraPos.chunk, cameraPos.point, cameraDir, fovX, fovY, renderAspectRatio);
 
 	// @todo: need to call sceneGraph.updateVoxels/Entities/Sky() somewhere before this, either in this submitFrame() or in GameWorldPanel::gameWorldRenderCallback()
 	const BufferView<const RenderTriangle> opaqueVoxelTriangles = this->sceneGraph.getVisibleOpaqueVoxelGeometry();
 	const BufferView<const RenderTriangle> alphaTestedVoxelTriangles = this->sceneGraph.getVisibleAlphaTestedVoxelGeometry();
 	const BufferView<const RenderTriangle> entityTriangles = this->sceneGraph.getVisibleEntityGeometry();
+
+	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
 
 	RenderFrameSettings renderFrameSettings;
 	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
@@ -975,7 +972,7 @@ void Renderer::submitFrame(const CoordDouble3 &cameraPos, const VoxelDouble3 &ca
 
 	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(renderCamera, opaqueVoxelTriangles, alphaTestedVoxelTriangles, entityTriangles,
+	this->renderer3D->submitFrame(camera, opaqueVoxelTriangles, alphaTestedVoxelTriangles, entityTriangles,
 		renderFrameSettings, outputBuffer);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
