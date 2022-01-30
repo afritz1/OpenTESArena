@@ -332,10 +332,12 @@ void Chunk::clear()
 	this->triggerDefs.clear();
 	this->lockDefs.clear();
 	this->buildingNames.clear();
+	this->doorDefs.clear();
 	this->transitionDefIndices.clear();
 	this->triggerDefIndices.clear();
 	this->lockDefIndices.clear();
 	this->buildingNameIndices.clear();
+	this->doorDefIndices.clear();
 	this->position = ChunkInt2();
 }
 
