@@ -644,7 +644,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							auto &audioManager = game.getAudioManager();
 							const std::string &soundFilename = openSoundDef.soundFilename;
 
-							const CoordDouble3 soundCoord(chunkPtr->getCoord(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+							const CoordDouble3 soundCoord(chunkPtr->getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 							const NewDouble3 soundPosition = VoxelUtils::coordToNewPoint(soundCoord);
 							audioManager.playSound(soundFilename, soundPosition);
 						}

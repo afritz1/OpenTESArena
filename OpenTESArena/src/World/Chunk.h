@@ -70,7 +70,7 @@ private:
 	std::unordered_map<VoxelInt3, DoorID> doorDefIndices;
 
 	// Chunk coordinates in the world.
-	ChunkInt2 coord;
+	ChunkInt2 position;
 
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	// This is slightly different than the chunk manager's version since it is chunk-independent (but as
@@ -96,12 +96,12 @@ public:
 	static constexpr WEInt DEPTH = WIDTH;
 	static_assert(MathUtils::isPowerOf2(WIDTH));
 
-	void init(const ChunkInt2 &coord, int height);
+	void init(const ChunkInt2 &position, int height);
 
 	int getHeight() const;
 
 	// Gets the chunk's XY coordinate in the world.
-	const ChunkInt2 &getCoord() const; // @todo: rename to position or something; Coord has different meaning now.
+	const ChunkInt2 &getPosition() const; // @todo: rename to position or something; Coord has different meaning now.
 
 	// Returns whether the given voxel coordinate is in the chunk.
 	bool isValidVoxel(SNInt x, int y, WEInt z) const;

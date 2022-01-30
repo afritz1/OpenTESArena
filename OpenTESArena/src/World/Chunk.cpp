@@ -5,7 +5,7 @@
 
 #include "components/debug/Debug.h"
 
-void Chunk::init(const ChunkInt2 &coord, int height)
+void Chunk::init(const ChunkInt2 &position, int height)
 {
 	// Set all voxels to air and unused.
 	this->voxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
@@ -18,12 +18,12 @@ void Chunk::init(const ChunkInt2 &coord, int height)
 	// point to it.
 	this->activeVoxelDefs.front() = true;
 
-	this->coord = coord;
+	this->position = position;
 }
 
-const ChunkInt2 &Chunk::getCoord() const
+const ChunkInt2 &Chunk::getPosition() const
 {
-	return this->coord;
+	return this->position;
 }
 
 bool Chunk::isValidVoxel(SNInt x, int y, WEInt z) const
@@ -336,7 +336,7 @@ void Chunk::clear()
 	this->triggerDefIndices.clear();
 	this->lockDefIndices.clear();
 	this->buildingNameIndices.clear();
-	this->coord = ChunkInt2();
+	this->position = ChunkInt2();
 }
 
 void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord,
@@ -350,7 +350,7 @@ void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &p
 			// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
 			// the voxel if it is defined for the door.
 			const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
-			const CoordDouble3 voxelCoord(this->coord, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+			const CoordDouble3 voxelCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 			const VoxelDouble3 diff = playerCoord - voxelCoord;
 
 			constexpr double closeDistSqr = ArenaLevelUtils::DOOR_CLOSE_DISTANCE * ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
@@ -386,7 +386,7 @@ void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScal
 		const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef->getCloseSound();
 		if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosed)
 		{
-			const CoordDouble3 soundCoord(this->coord, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+			const CoordDouble3 soundCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 			const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
 			audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
 		}

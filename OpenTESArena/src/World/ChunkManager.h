@@ -34,7 +34,7 @@ private:
 
 	std::vector<ChunkPtr> chunkPool;
 	std::vector<ChunkPtr> activeChunks;
-	ChunkInt2 centerChunk;
+	ChunkInt2 centerChunkPos;
 
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	void getAdjacentVoxelDefs(const CoordInt3 &coord, const VoxelDefinition **outNorth,
@@ -74,7 +74,7 @@ private:
 		TextureManager &textureManager, EntityManager &entityManager);
 
 	// Fills the chunk with the data required based on its position and the world type.
-	void populateChunk(int index, const ChunkInt2 &chunkCoord, const std::optional<int> &activeLevelIndex,
+	void populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -87,11 +87,11 @@ public:
 	int getChunkCount() const;
 	Chunk &getChunk(int index);
 	const Chunk &getChunk(int index) const;
-	std::optional<int> tryGetChunkIndex(const ChunkInt2 &coord) const;
+	std::optional<int> tryGetChunkIndex(const ChunkInt2 &position) const;
 
 	// Convenience functions for attempting to obtain a chunk from the given chunk coordinate.
-	Chunk *tryGetChunk(const ChunkInt2 &coord);
-	const Chunk *tryGetChunk(const ChunkInt2 &coord) const;
+	Chunk *tryGetChunk(const ChunkInt2 &position);
+	const Chunk *tryGetChunk(const ChunkInt2 &position) const;
 
 	// Index of the chunk all other active chunks surround.
 	int getCenterChunkIndex() const;
@@ -101,7 +101,7 @@ public:
 	// whether to update the real-time state of chunks; this should be false during the frame of a level's
 	// initialization, and true for all other cases (otherwise the world would be one update step ahead of the
 	// player, which isn't a big deal but is poor design).
-	void update(double dt, const ChunkInt2 &centerChunk, const CoordDouble3 &playerCoord,
+	void update(double dt, const ChunkInt2 &centerChunkPos, const CoordDouble3 &playerCoord,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,

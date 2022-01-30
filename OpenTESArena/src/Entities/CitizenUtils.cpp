@@ -163,10 +163,10 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 bool CitizenUtils::trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityManager &entityManager)
 {
-	const ChunkInt2 &chunkCoord = chunk.getCoord();
-	if (!entityManager.hasChunk(chunkCoord))
+	const ChunkInt2 &chunkPosition = chunk.getPosition();
+	if (!entityManager.hasChunk(chunkPosition))
 	{
-		DebugLogWarning("Can't spawn a citizen in untracked chunk \"" + chunkCoord.toString() + "\".");
+		DebugLogWarning("Can't spawn a citizen in untracked chunk \"" + chunkPosition.toString() + "\".");
 		return false;
 	}
 
@@ -233,7 +233,7 @@ bool CitizenUtils::trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenIn
 
 	// Note: since the entity pointer is being used directly, update the position last
 	// in scope to avoid a dangling pointer problem in case it changes chunks.
-	const CoordDouble2 spawnCoordReal(chunkCoord, VoxelUtils::getVoxelCenter(*spawnVoxel));
+	const CoordDouble2 spawnCoordReal(chunkPosition, VoxelUtils::getVoxelCenter(*spawnVoxel));
 	dynamicEntity->setPosition(spawnCoordReal, entityManager);
 
 	return true;

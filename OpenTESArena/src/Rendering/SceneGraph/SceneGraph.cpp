@@ -472,7 +472,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 		/*ChunkRenderDefinition chunkRenderDef;
 		chunkRenderDef.init(chunkWidth, chunkHeight, chunkDepth);*/
 
-		const ChunkInt2 chunkPos = chunk.getCoord();
+		const ChunkInt2 chunkPos = chunk.getPosition();
 		const ChunkInt2 relativeChunkPos = chunkPos - camera.chunk; // Relative to camera chunk.
 		constexpr double chunkDimReal = static_cast<double>(ChunkUtils::CHUNK_DIM);
 
@@ -664,11 +664,11 @@ void SceneGraph::updateEntities(const LevelInstance &levelInst, const CoordDoubl
 	for (int i = 0; i < chunkCount; i++)
 	{
 		const Chunk &chunk = chunkManager.getChunk(i);
-		const ChunkInt2 &chunkCoord = chunk.getCoord();
-		const int entityCountInChunk = entityManager.getCountInChunk(chunkCoord);
+		const ChunkInt2 &chunkPosition = chunk.getPosition();
+		const int entityCountInChunk = entityManager.getCountInChunk(chunkPosition);
 		entityPtrs.resize(entityCountInChunk);
 		const int writtenEntityCount = entityManager.getEntitiesInChunk(
-			chunkCoord, entityPtrs.data(), static_cast<int>(entityPtrs.size()));
+			chunkPosition, entityPtrs.data(), static_cast<int>(entityPtrs.size()));
 		DebugAssert(writtenEntityCount == entityCountInChunk);
 
 		for (const Entity *entityPtr : entityPtrs)

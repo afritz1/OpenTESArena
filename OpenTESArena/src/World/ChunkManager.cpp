@@ -82,12 +82,12 @@ const Chunk &ChunkManager::getChunk(int index) const
 	return *chunkPtr;
 }
 
-std::optional<int> ChunkManager::tryGetChunkIndex(const ChunkInt2 &coord) const
+std::optional<int> ChunkManager::tryGetChunkIndex(const ChunkInt2 &position) const
 {
 	const auto iter = std::find_if(this->activeChunks.begin(), this->activeChunks.end(),
-		[&coord](const ChunkPtr &chunkPtr)
+		[&position](const ChunkPtr &chunkPtr)
 	{
-		return chunkPtr->getCoord() == coord;
+		return chunkPtr->getPosition() == position;
 	});
 
 	if (iter != this->activeChunks.end())
@@ -100,21 +100,21 @@ std::optional<int> ChunkManager::tryGetChunkIndex(const ChunkInt2 &coord) const
 	}
 }
 
-Chunk *ChunkManager::tryGetChunk(const ChunkInt2 &coord)
+Chunk *ChunkManager::tryGetChunk(const ChunkInt2 &position)
 {
-	const std::optional<int> chunkIndex = this->tryGetChunkIndex(coord);
+	const std::optional<int> chunkIndex = this->tryGetChunkIndex(position);
 	return chunkIndex.has_value() ? &this->getChunk(*chunkIndex) : nullptr;
 }
 
-const Chunk *ChunkManager::tryGetChunk(const ChunkInt2 &coord) const
+const Chunk *ChunkManager::tryGetChunk(const ChunkInt2 &position) const
 {
-	const std::optional<int> chunkIndex = this->tryGetChunkIndex(coord);
+	const std::optional<int> chunkIndex = this->tryGetChunkIndex(position);
 	return chunkIndex.has_value() ? &this->getChunk(*chunkIndex) : nullptr;
 }
 
 int ChunkManager::getCenterChunkIndex() const
 {
-	const std::optional<int> index = this->tryGetChunkIndex(this->centerChunk);
+	const std::optional<int> index = this->tryGetChunkIndex(this->centerChunkPos);
 	DebugAssert(index.has_value());
 	return *index;
 }
@@ -175,7 +175,7 @@ void ChunkManager::recycleChunk(int index)
 {
 	DebugAssertIndex(this->activeChunks, index);
 	ChunkPtr &chunkPtr = this->activeChunks[index];
-	const ChunkInt2 coord = chunkPtr->getCoord();
+	const ChunkInt2 chunkPos = chunkPtr->getPosition();
 
 	// @todo: save chunk changes
 
@@ -417,7 +417,7 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 				if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 				{
 					const VoxelInt3 voxel(x, y, z);
-					const CoordInt3 coord(chunk.getCoord(), voxel);
+					const CoordInt3 coord(chunk.getPosition(), voxel);
 					DebugAssert(chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::Chasm) == nullptr);
 
 					const VoxelDefinition *northDef, *eastDef, *southDef, *westDef;
@@ -482,7 +482,7 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 
 				// Set entity position in chunk last. This has the potential to change the entity's chunk
 				// and invalidate the local entity pointer.
-				const CoordDouble2 coord(chunk.getCoord(), VoxelDouble2(point.x, point.z));
+				const CoordDouble2 coord(chunk.getPosition(), VoxelDouble2(point.x, point.z));
 				entity->setPosition(coord, entityManager);
 			}
 		}
@@ -500,13 +500,13 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 			if (!CitizenUtils::trySpawnCitizenInChunk(chunk, *citizenGenInfo, random, binaryAssetLibrary,
 				textureManager, entityManager))
 			{
-				DebugLogWarning("Couldn't spawn citizen in chunk \"" + chunk.getCoord().toString() + "\".");
+				DebugLogWarning("Couldn't spawn citizen in chunk \"" + chunk.getPosition().toString() + "\".");
 			}
 		}
 	}
 }
 
-void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const std::optional<int> &activeLevelIndex,
+void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
 	const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -515,7 +515,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 	Chunk &chunk = this->getChunk(index);
 	
 	// Notify the entity manager about the new chunk so entities can be spawned in it.
-	entityManager.addChunk(chunkCoord);
+	entityManager.addChunk(chunkPos);
 
 	// Populate all or part of the chunk from a level definition depending on the world type.
 	const MapType mapType = mapDefinition.getMapType();
@@ -525,7 +525,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 		DebugAssert(!citizenGenInfo.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(*activeLevelIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(*activeLevelIndex);
-		chunk.init(chunkCoord, levelDefinition.getHeight());
+		chunk.init(chunkPos, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// @todo: populate chunk entirely from default empty chunk (fast copy).
@@ -560,10 +560,10 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 			}
 		}
 
-		if (ChunkUtils::touchesLevelDimensions(chunkCoord, levelDefinition.getWidth(), levelDefinition.getDepth()))
+		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
-			const LevelInt2 levelOffset = chunkCoord * ChunkUtils::CHUNK_DIM;
+			const LevelInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
@@ -577,7 +577,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 		DebugAssert(citizenGenInfo.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
-		chunk.init(chunkCoord, levelDefinition.getHeight());
+		chunk.init(chunkPos, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// Chunks outside the level are wrapped but only have floor voxels.		
@@ -601,7 +601,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 				const WEInt levelDepth = levelDefinition.getDepth();
 
 				// Convert chunk voxel to level voxel, then wrap that between 0 and level width/depth.
-				const LevelInt2 levelVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunkCoord, VoxelInt2(x, z));
+				const LevelInt2 levelVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
 				const LevelInt2 wrappedLevelVoxel(
 					wrapLevelVoxel(levelVoxel.x, levelWidth),
 					wrapLevelVoxel(levelVoxel.y, levelDepth));
@@ -613,10 +613,10 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 			}
 		}
 
-		if (ChunkUtils::touchesLevelDimensions(chunkCoord, levelDefinition.getWidth(), levelDefinition.getDepth()))
+		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
-			const LevelInt2 levelOffset = chunkCoord * ChunkUtils::CHUNK_DIM;
+			const LevelInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
@@ -631,10 +631,10 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 
 		DebugAssert(citizenGenInfo.has_value());
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
-		const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkCoord);
+		const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkPos);
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(levelDefIndex);
-		chunk.init(chunkCoord, levelDefinition.getHeight());
+		chunk.init(chunkPos, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// Copy level definition directly into chunk.
@@ -646,7 +646,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 
 		// Load building names for the given chunk. The wilderness might use the same level definition in
 		// multiple places, so the building names have to be generated separately.
-		const MapGeneration::WildChunkBuildingNameInfo *buildingNameInfo = mapDefWild.getBuildingNameInfo(chunkCoord);
+		const MapGeneration::WildChunkBuildingNameInfo *buildingNameInfo = mapDefWild.getBuildingNameInfo(chunkPos);
 		if (buildingNameInfo != nullptr)
 		{
 			this->populateWildChunkBuildingNames(chunk, *buildingNameInfo, levelInfoDefinition);
@@ -666,7 +666,7 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 {
 	auto tryUpdateChasm = [this, &chunk](const VoxelInt3 &voxel)
 	{
-		const CoordInt3 coord(chunk.getCoord(), voxel);
+		const CoordInt3 coord(chunk.getPosition(), voxel);
 		auto getChasmFaces = [this, &coord](bool *outNorth, bool *outEast, bool *outSouth, bool *outWest)
 		{
 			const VoxelDefinition *northDef, *eastDef, *southDef, *westDef;
@@ -742,7 +742,7 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 	}
 }
 
-void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const CoordDouble3 &playerCoord,
+void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const CoordDouble3 &playerCoord,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const EntityGeneration::EntityGenInfo &entityGenInfo,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
@@ -750,37 +750,37 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const CoordDo
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,
 	EntityManager &entityManager)
 {
-	this->centerChunk = centerChunk;
+	this->centerChunkPos = centerChunkPos;
 
 	// Free any out-of-range chunks.
 	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		const ChunkInt2 coord = chunkPtr->getCoord();
-		if (!ChunkUtils::isWithinActiveRange(centerChunk, coord, chunkDistance))
+		const ChunkInt2 chunkPos = chunkPtr->getPosition();
+		if (!ChunkUtils::isWithinActiveRange(centerChunkPos, chunkPos, chunkDistance))
 		{
 			this->recycleChunk(i);
 
 			// Notify entity manager that the chunk is being recycled.
-			entityManager.removeChunk(coord);
+			entityManager.removeChunk(chunkPos);
 		}
 	}
 
 	// Add new chunks until the area around the center chunk is filled.
-	ChunkInt2 minCoord, maxCoord;
-	ChunkUtils::getSurroundingChunks(centerChunk, chunkDistance, &minCoord, &maxCoord);
+	ChunkInt2 minChunkPos, maxChunkPos;
+	ChunkUtils::getSurroundingChunks(centerChunkPos, chunkDistance, &minChunkPos, &maxChunkPos);
 
-	for (WEInt y = minCoord.y; y <= maxCoord.y; y++)
+	for (WEInt y = minChunkPos.y; y <= maxChunkPos.y; y++)
 	{
-		for (SNInt x = minCoord.x; x <= maxCoord.x; x++)
+		for (SNInt x = minChunkPos.x; x <= maxChunkPos.x; x++)
 		{
-			const ChunkInt2 coord(x, y);
-			const std::optional<int> index = this->tryGetChunkIndex(coord);
+			const ChunkInt2 curChunkPos(x, y);
+			const std::optional<int> index = this->tryGetChunkIndex(curChunkPos);
 			if (!index.has_value())
 			{
 				const int spawnIndex = this->spawnChunk();
-				this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo,
-					entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
+				this->populateChunk(spawnIndex, curChunkPos, activeLevelIndex, mapDefinition, entityGenInfo,
+					citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 			}
 		}
 	}
