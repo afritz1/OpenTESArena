@@ -118,6 +118,9 @@ private:
 
 	// Runs the current panel's render method for drawing to the screen.
 	void render();
+
+	// Runs end-of-frame clean-up operations.
+	void cleanUp();
 public:
 	Game();
 	Game(const Game&) = delete;

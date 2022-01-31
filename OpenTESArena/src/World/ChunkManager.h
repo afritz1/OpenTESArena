@@ -108,6 +108,9 @@ public:
 		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,
 		EntityManager &entityManager);
+
+	// Run at the end of a frame to reset certain frame data like dirty voxels.
+	void cleanUp();
 };
 
 #endif

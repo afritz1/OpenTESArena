@@ -41,6 +41,17 @@ Chunk::VoxelID Chunk::getVoxel(SNInt x, int y, WEInt z) const
 	return this->voxels.get(x, y, z);
 }
 
+int Chunk::getDirtyVoxelCount() const
+{
+	return static_cast<int>(this->dirtyVoxels.size());
+}
+
+const VoxelInt3 &Chunk::getDirtyVoxel(int index) const
+{
+	DebugAssertIndex(this->dirtyVoxels, index);
+	return this->dirtyVoxels[index];
+}
+
 int Chunk::getVoxelDefCount() const
 {
 	return static_cast<int>(std::count(this->activeVoxelDefs.begin(),
@@ -211,6 +222,13 @@ void Chunk::getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition *
 void Chunk::setVoxel(SNInt x, int y, WEInt z, VoxelID value)
 {
 	this->voxels.set(x, y, z, value);
+
+	const VoxelInt3 pos(x, y, z);
+	const auto dirtyIter = std::find(this->dirtyVoxels.begin(), this->dirtyVoxels.end(), pos);
+	if (dirtyIter == this->dirtyVoxels.end())
+	{
+		this->dirtyVoxels.emplace_back(pos);
+	}
 }
 
 bool Chunk::tryAddVoxelDef(VoxelDefinition &&voxelDef, Chunk::VoxelID *outID)
@@ -325,6 +343,7 @@ void Chunk::removeVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
 void Chunk::clear()
 {
 	this->voxels.clear();
+	this->dirtyVoxels.clear();
 	this->voxelDefs.fill(VoxelDefinition());
 	this->activeVoxelDefs.fill(false);
 	this->voxelInsts.clear();
@@ -339,6 +358,11 @@ void Chunk::clear()
 	this->buildingNameIndices.clear();
 	this->doorDefIndices.clear();
 	this->position = ChunkInt2();
+}
+
+void Chunk::clearDirtyVoxels()
+{
+	this->dirtyVoxels.clear();
 }
 
 void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord,

@@ -116,6 +116,8 @@ public:
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, AudioManager &audioManager);
+
+	void cleanUp();
 };
 
 #endif

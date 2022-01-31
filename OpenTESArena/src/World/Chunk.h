@@ -47,6 +47,9 @@ private:
 	// Indices into voxel definitions.
 	Buffer3D<VoxelID> voxels;
 
+	// Positions of voxels that have changed this frame. Reset at end-of-frame.
+	std::vector<VoxelInt3> dirtyVoxels;
+
 	// Voxel definitions, pointed to by voxel IDs. If the associated bool is true,
 	// the voxel data is in use by the voxel grid.
 	std::array<VoxelDefinition, MAX_VOXEL_DEFS> voxelDefs;
@@ -109,6 +112,9 @@ public:
 	// Gets the voxel ID at the given coordinate.
 	VoxelID getVoxel(SNInt x, int y, WEInt z) const;
 
+	int getDirtyVoxelCount() const;
+	const VoxelInt3 &getDirtyVoxel(int index) const;
+
 	// Gets the number of active voxel definitions.
 	int getVoxelDefCount() const;
 
@@ -165,6 +171,9 @@ public:
 
 	// Clears all chunk state.
 	void clear();
+
+	// Clears the dirty voxels list, meant to be done at the end of a frame.
+	void clearDirtyVoxels();
 
 	// Animates the chunk's voxels by delta time.
 	// @todo: evaluate just letting the chunk manager do all the updating for the chunk, due to the complexity

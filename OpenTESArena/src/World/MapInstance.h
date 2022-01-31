@@ -51,6 +51,8 @@ public:
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, AudioManager &audioManager);
+
+	void cleanUp();
 };
 
 #endif

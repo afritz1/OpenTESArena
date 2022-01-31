@@ -640,3 +640,8 @@ void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoor
 
 	this->entityManager.tick(game, dt);
 }
+
+void LevelInstance::cleanUp()
+{
+	this->chunkManager.cleanUp();
+}

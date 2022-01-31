@@ -731,6 +731,15 @@ void Game::render()
 	this->renderer.present();
 }
 
+void Game::cleanUp()
+{
+	if (this->gameStateIsActive())
+	{
+		MapInstance &mapInst = this->gameState->getActiveMapInst();
+		mapInst.cleanUp();
+	}
+}
+
 void Game::loop()
 {
 	// Nanoseconds per second. Only using this much precision because it's what
@@ -829,6 +838,16 @@ void Game::loop()
 		catch (const std::exception &e)
 		{
 			DebugCrash("render() exception: " + std::string(e.what()));
+		}
+
+		// Run end-of-frame clean-up.
+		try
+		{
+			this->cleanUp();
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrash("cleanUp() exception: " + std::string(e.what()));
 		}
 	}
 

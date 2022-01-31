@@ -807,3 +807,12 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const Coor
 		this->updateChunkPerimeter(*chunkPtr);
 	}
 }
+
+void ChunkManager::cleanUp()
+{
+	for (int i = 0; i < this->getChunkCount(); i++)
+	{
+		Chunk &chunk = this->getChunk(i);
+		chunk.clearDirtyVoxels();
+	}
+}

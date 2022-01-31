@@ -185,3 +185,9 @@ void MapInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord,
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
 	skyInst.update(dt, latitude, daytimePercent, weatherInst, game.getRandom(), textureManager);
 }
+
+void MapInstance::cleanUp()
+{
+	LevelInstance &levelInst = this->getActiveLevel();
+	levelInst.cleanUp();
+}
