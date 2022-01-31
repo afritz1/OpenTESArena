@@ -438,7 +438,58 @@ BufferView<const RenderTriangle> SceneGraph::getVisibleEntityGeometry() const
 void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
 	double chasmAnimPercent, bool nightLightsAreActive)
 {
-	this->clearVoxels();
+	const ChunkManager &chunkManager = levelInst.getChunkManager();
+	const int chunkCount = chunkManager.getChunkCount();
+
+	// Remove stale graph chunks.
+	for (int i = static_cast<int>(this->graphChunks.size()) - 1; i >= 0; i--)
+	{
+		const SceneGraphChunk &graphChunk = this->graphChunks[i];
+		const ChunkInt2 &graphChunkPos = graphChunk.position;
+		
+		bool isStale = true;
+		for (int j = 0; j < chunkCount; j++)
+		{
+			const Chunk &chunk = chunkManager.getChunk(j);
+			const ChunkInt2 &chunkPos = chunk.getPosition();
+			if (chunkPos == graphChunkPos)
+			{
+				isStale = false;
+				break;
+			}
+		}
+
+		if (isStale)
+		{
+			this->graphChunks.erase(this->graphChunks.begin() + i);
+		}
+	}
+
+	// Insert new empty graph chunks (to have their voxels updated by the associated chunk's dirty voxels).
+	for (int i = 0; i < chunkCount; i++)
+	{
+		const Chunk &chunk = chunkManager.getChunk(i);
+		const ChunkInt2 &chunkPos = chunk.getPosition();
+
+		bool shouldInsert = true;
+		for (int j = 0; j < static_cast<int>(this->graphChunks.size()); j++)
+		{
+			const SceneGraphChunk &graphChunk = this->graphChunks[j];
+			const ChunkInt2 &graphChunkPos = graphChunk.position;
+			if (graphChunkPos == chunkPos)
+			{
+				shouldInsert = false;
+				break;
+			}
+		}
+
+		if (shouldInsert)
+		{
+			SceneGraphChunk graphChunk;
+			graphChunk.init(chunkPos, chunk.getHeight());
+			this->graphChunks.emplace_back(std::move(graphChunk));
+		}
+	}
 
 	// Arbitrary value, just needs to be long enough to touch the farthest chunks in practice.
 	// - @todo: maybe use far clipping plane value?
@@ -452,25 +503,13 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 		camera.point.x + ((camera.forwardScaled.x + camera.rightScaled.x) * frustumLength),
 		camera.point.z + ((camera.forwardScaled.z + camera.rightScaled.z) * frustumLength));
 
-	const ChunkManager &chunkManager = levelInst.getChunkManager();
-
-	// Compare chunk manager chunk count w/ our grid size and resize if needed.
-	const int chunkCount = chunkManager.getChunkCount();
-	/*if (this->chunkRenderInsts.size() != chunkCount)
-	{
-		this->chunkRenderInsts.resize(chunkCount);
-	}*/
-
-	// Populate render defs and insts for each chunk.
+	// Update geometry in each scene graph chunk.
 	for (int i = 0; i < chunkCount; i++)
 	{
 		const Chunk &chunk = chunkManager.getChunk(i);
 		const SNInt chunkWidth = Chunk::WIDTH;
 		const int chunkHeight = chunk.getHeight();
 		const WEInt chunkDepth = Chunk::DEPTH;
-
-		/*ChunkRenderDefinition chunkRenderDef;
-		chunkRenderDef.init(chunkWidth, chunkHeight, chunkDepth);*/
 
 		const ChunkInt2 chunkPos = chunk.getPosition();
 		const ChunkInt2 relativeChunkPos = chunkPos - camera.chunk; // Relative to camera chunk.
@@ -482,169 +521,145 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 
 		const bool isChunkVisible = MathUtils::triangleRectangleIntersection(
 			cameraEye2D, cameraFrustumRightPoint2D, cameraFrustumLeftPoint2D, chunkTR2D, chunkBL2D);
+		
+		// @todo: need to allow the graph chunk geometry to update, otherwise the dirty voxels are lost; just want the chunk's geometry to not get to this frame's draw list.
+		// - just move this into another loop where we find which chunks are visible. Leave this loop purely for geometry updating.
 		if (!isChunkVisible)
 		{
 			continue;
 		}
 
-		for (WEInt z = 0; z < chunkDepth; z++)
+		// Get the scene graph chunk associated with the world space chunk.
+		const auto graphChunkIter = std::find_if(this->graphChunks.begin(), this->graphChunks.end(),
+			[&chunkPos](const SceneGraphChunk &graphChunk)
 		{
-			for (int y = 0; y < chunkHeight; y++)
+			return graphChunk.position == chunkPos;
+		});
+
+		DebugAssertMsg(graphChunkIter != this->graphChunks.end(), "Expected scene graph chunk (" + chunkPos.toString() + ") to have been added.");
+		SceneGraphChunk &graphChunk = *graphChunkIter;
+
+		// @todo: these two buffers could probably be removed if SceneGraphVoxel is going to store them instead.
+		std::array<RenderTriangle, sgGeometry::MAX_TRIANGLES_PER_VOXEL> opaqueTrianglesBuffer, alphaTestedTrianglesBuffer;
+		int opaqueTriangleCount = 0;
+		int alphaTestedTriangleCount = 0;
+
+		for (int dirtyVoxelIndex = 0; dirtyVoxelIndex < chunk.getDirtyVoxelCount(); dirtyVoxelIndex++)
+		{
+			const VoxelInt3 &voxelPos = chunk.getDirtyVoxel(dirtyVoxelIndex);
+			const Chunk::VoxelID voxelID = chunk.getVoxel(voxelPos.x, voxelPos.y, voxelPos.z);
+			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
+			//const VoxelInstance *voxelInst = nullptr; // @todo: need to get the voxel inst for this voxel (if any).
+
+			opaqueTriangleCount = 0;
+			alphaTestedTriangleCount = 0;
+			if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 			{
-				for (SNInt x = 0; x < chunkWidth; x++)
-				{
-					const Chunk::VoxelID voxelID = chunk.getVoxel(x, y, z);
-					const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-					//const VoxelInstance *voxelInst = nullptr; // @todo: need to get the voxel inst for this voxel (if any).
+				const VoxelDefinition::WallData &wall = voxelDef.wall;
+				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(wall.sideTextureAssetRef);
+				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(wall.floorTextureAssetRef);
+				const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(wall.ceilingTextureAssetRef);
+				sgGeometry::WriteWall(chunkPos, voxelPos, ceilingScale, sideMaterialID, floorMaterialID, ceilingMaterialID,
+					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 12), &opaqueTriangleCount);
+			}
+			else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
+			{
+				const VoxelDefinition::FloorData &floor = voxelDef.floor;
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(floor.textureAssetRef);
+				sgGeometry::WriteFloor(chunkPos, voxelPos, ceilingScale, materialID,
+					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 2), &opaqueTriangleCount);
+			}
+			else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
+			{
+				const VoxelDefinition::CeilingData &ceiling = voxelDef.ceiling;
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(ceiling.textureAssetRef);
+				sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, materialID,
+					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 2), &opaqueTriangleCount);
+			}
+			else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
+			{
+				const VoxelDefinition::RaisedData &raised = voxelDef.raised;
+				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(raised.sideTextureAssetRef);
+				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(raised.floorTextureAssetRef);
+				const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(raised.ceilingTextureAssetRef);
+				sgGeometry::WriteRaised(chunkPos, voxelPos, ceilingScale, raised.yOffset, raised.ySize,
+					raised.vTop, raised.vBottom, sideMaterialID, floorMaterialID, ceilingMaterialID,
+					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 4), &opaqueTriangleCount,
+					BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 8), &alphaTestedTriangleCount);
+			}
+			else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
+			{
+				const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(diagonal.textureAssetRef);
+				sgGeometry::WriteDiagonal(chunkPos, voxelPos, ceilingScale, diagonal.type1, materialID,
+					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 4), &opaqueTriangleCount);
+			}
+			else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
+			{
+				const VoxelDefinition::TransparentWallData &transparentWall = voxelDef.transparentWall;
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(transparentWall.textureAssetRef);
+				sgGeometry::WriteTransparentWall(chunkPos, voxelPos, ceilingScale, materialID,
+					BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 8), &alphaTestedTriangleCount);
+			}
+			else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
+			{
+				const VoxelDefinition::EdgeData &edge = voxelDef.edge;
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(edge.textureAssetRef);
+				sgGeometry::WriteEdge(chunkPos, voxelPos, ceilingScale, edge.facing, edge.yOffset, edge.flipped, materialID,
+					BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 4), &alphaTestedTriangleCount);
+			}
+			else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
+			{
+				const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
+				const bool north = true; // @todo: need voxel instance
+				const bool south = true;
+				const bool east = true;
+				const bool west = true;
+				const bool isDry = chasm.type == ArenaTypes::ChasmType::Dry;
+				const ObjectMaterialID floorMaterialID = levelInst.getChasmFloorMaterialID(chasm.type, chasmAnimPercent);
+				const ObjectMaterialID sideMaterialID = levelInst.getChasmWallMaterialID(chasm.type, chasmAnimPercent, chasm.textureAssetRef);
+				sgGeometry::WriteChasm(chunkPos, voxelPos, ceilingScale, north, south, east, west, isDry, floorMaterialID, sideMaterialID,
+					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 10), &opaqueTriangleCount);
+			}
+			else if (voxelDef.type == ArenaTypes::VoxelType::Door)
+			{
+				const VoxelDefinition::DoorData &door = voxelDef.door;
+				const double animPercent = 0.0; // @todo: need voxel instance
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(door.textureAssetRef);
+				sgGeometry::WriteDoor(chunkPos, voxelPos, ceilingScale, door.type, animPercent,
+					materialID, BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 16), &alphaTestedTriangleCount);
+			}
 
-					// @todo: looks like VoxelGeometry::getQuads() isn't aware that we want ALL geometry all the time;
-					// so like chasm walls, diagonals, and edge voxels need to be handled differently than this. I don't think
-					// passing a VoxelInstance would help. We need the "total possible geometry" for the voxel so certain faces
-					// can be enabled/disabled by the voxel render def logic type.
-					/*std::array<Quad, VoxelRenderDefinition::MAX_RECTS> quads;
-					const int quadCount = VoxelGeometry::getQuads(voxelDef, VoxelInt3::Zero, ceilingScale,
-						voxelInst, quads.data(), static_cast<int>(quads.size()));
+			SceneGraphVoxel &graphVoxel = graphChunk.voxels.get(voxelPos.x, voxelPos.y, voxelPos.z);
+			if (opaqueTriangleCount > 0)
+			{
+				const auto srcStart = opaqueTrianglesBuffer.cbegin();
+				const auto srcEnd = srcStart + opaqueTriangleCount;
 
-					VoxelRenderDefinition voxelRenderDef;
-					for (int i = 0; i < quadCount; i++)
-					{
-						const ObjectTextureID textureID = -1; // @todo: get from ChunkManager or Chunk.
+				Buffer<RenderTriangle> &dstTriangles = graphVoxel.opaqueTriangles;
+				dstTriangles.init(opaqueTriangleCount);
+				std::copy(srcStart, srcEnd, dstTriangles.get());
+			}
 
-						RectangleRenderDefinition &rectRenderDef = voxelRenderDef.rects[i];
-						rectRenderDef.init(quads[i], textureID);
-					}
-
-					auto &faceIndicesDefs = voxelRenderDef.faceIndices;
-					for (int i = 0; i < static_cast<int>(faceIndicesDefs.size()); i++)
-					{
-						VoxelRenderDefinition::FaceIndicesDef &faceIndicesDef = faceIndicesDefs[i];
-						faceIndicesDef.count = quadCount;
-						std::iota(faceIndicesDef.indices.begin(), faceIndicesDef.indices.end(), 0); // (naive) All faces visible all the time. Optimize if needed
-						// @todo: to calculate properly, would we do a dot product check from the rect's center to each corner of a face to make sure it's front-facing?
-						// Would have to do differently for chasms.
-					}
-
-					// @todo: once we are properly sharing voxel render defs instead of naively making a new one for each voxel,
-					// probably need some get-or-add pattern for VoxelRenderDefIDs. Given some VoxelDefinition + VoxelInstance pair,
-					// is there a VoxelRenderDefID for them or should we make a new render def?
-
-					// @todo: map the Chunk::VoxelID to VoxelRenderDefID (I think?)
-
-					this->voxelRenderDefs.emplace_back(std::move(voxelRenderDef));
-					chunkRenderDef.voxelRenderDefIDs.set(x, y, z, static_cast<VoxelRenderDefID>(this->voxelRenderDefs.size()) - 1);*/
-
-					const VoxelInt3 voxelPos(x, y, z);
-					std::array<RenderTriangle, sgGeometry::MAX_TRIANGLES_PER_VOXEL> opaqueTrianglesBuffer, alphaTestedTrianglesBuffer;
-					int opaqueTriangleCount = 0;
-					int alphaTestedTriangleCount = 0;
-					if (voxelDef.type == ArenaTypes::VoxelType::Wall)
-					{
-						const VoxelDefinition::WallData &wall = voxelDef.wall;
-						const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(wall.sideTextureAssetRef);
-						const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(wall.floorTextureAssetRef);
-						const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(wall.ceilingTextureAssetRef);
-						sgGeometry::WriteWall(chunkPos, voxelPos, ceilingScale, sideMaterialID, floorMaterialID, ceilingMaterialID,
-							BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 12), &opaqueTriangleCount);
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
-					{
-						const VoxelDefinition::FloorData &floor = voxelDef.floor;
-						const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(floor.textureAssetRef);
-						sgGeometry::WriteFloor(chunkPos, voxelPos, ceilingScale, materialID,
-							BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 2), &opaqueTriangleCount);
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
-					{
-						const VoxelDefinition::CeilingData &ceiling = voxelDef.ceiling;
-						const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(ceiling.textureAssetRef);
-						sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, materialID,
-							BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 2), &opaqueTriangleCount);
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
-					{
-						const VoxelDefinition::RaisedData &raised = voxelDef.raised;
-						const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(raised.sideTextureAssetRef);
-						const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(raised.floorTextureAssetRef);
-						const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(raised.ceilingTextureAssetRef);
-						sgGeometry::WriteRaised(chunkPos, voxelPos, ceilingScale, raised.yOffset, raised.ySize,
-							raised.vTop, raised.vBottom, sideMaterialID, floorMaterialID, ceilingMaterialID,
-							BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 4), &opaqueTriangleCount,
-							BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 8), &alphaTestedTriangleCount);
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
-					{
-						const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
-						const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(diagonal.textureAssetRef);
-						sgGeometry::WriteDiagonal(chunkPos, voxelPos, ceilingScale, diagonal.type1, materialID,
-							BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 4), &opaqueTriangleCount);
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
-					{
-						const VoxelDefinition::TransparentWallData &transparentWall = voxelDef.transparentWall;
-						const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(transparentWall.textureAssetRef);
-						sgGeometry::WriteTransparentWall(chunkPos, voxelPos, ceilingScale, materialID,
-							BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 8), &alphaTestedTriangleCount);
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
-					{
-						const VoxelDefinition::EdgeData &edge = voxelDef.edge;
-						const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(edge.textureAssetRef);
-						sgGeometry::WriteEdge(chunkPos, voxelPos, ceilingScale, edge.facing, edge.yOffset, edge.flipped, materialID,
-							BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 4), &alphaTestedTriangleCount);
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
-					{
-						const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
-						const bool north = true; // @todo: need voxel instance
-						const bool south = true;
-						const bool east = true;
-						const bool west = true;
-						const bool isDry = chasm.type == ArenaTypes::ChasmType::Dry;
-						const ObjectMaterialID floorMaterialID = levelInst.getChasmFloorMaterialID(chasm.type, chasmAnimPercent);
-						const ObjectMaterialID sideMaterialID = levelInst.getChasmWallMaterialID(chasm.type, chasmAnimPercent, chasm.textureAssetRef);
-						sgGeometry::WriteChasm(chunkPos, voxelPos, ceilingScale, north, south, east, west, isDry, floorMaterialID, sideMaterialID,
-							BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 10), &opaqueTriangleCount);
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Door)
-					{
-						const VoxelDefinition::DoorData &door = voxelDef.door;
-						const double animPercent = 0.0; // @todo: need voxel instance
-						const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(door.textureAssetRef);
-						sgGeometry::WriteDoor(chunkPos, voxelPos, ceilingScale, door.type, animPercent,
-							materialID, BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 16), &alphaTestedTriangleCount);
-					}
-
-					if (opaqueTriangleCount > 0)
-					{
-						const auto srcStart = opaqueTrianglesBuffer.cbegin();
-						const auto srcEnd = srcStart + opaqueTriangleCount;
-						this->opaqueVoxelTriangles.insert(this->opaqueVoxelTriangles.end(), srcStart, srcEnd);
-					}
-
-					if (alphaTestedTriangleCount > 0)
-					{
-						const auto srcStart = alphaTestedTrianglesBuffer.cbegin();
-						const auto srcEnd = srcStart + alphaTestedTriangleCount;
-						this->alphaTestedVoxelTriangles.insert(this->alphaTestedVoxelTriangles.end(), srcStart, srcEnd);
-					}
-				}
+			if (alphaTestedTriangleCount > 0)
+			{
+				const auto srcStart = alphaTestedTrianglesBuffer.cbegin();
+				const auto srcEnd = srcStart + alphaTestedTriangleCount;
+				
+				Buffer<RenderTriangle> &dstTriangles = graphVoxel.alphaTestedTriangles;
+				dstTriangles.init(alphaTestedTriangleCount);
+				std::copy(srcStart, srcEnd, dstTriangles.get());
 			}
 		}
-
-		/*this->chunkRenderDefs.emplace_back(std::move(chunkRenderDef));
-
-		ChunkRenderInstance chunkRenderInst;
-		for (int i = 0; i < chunk.getVoxelInstCount(); i++)
-		{
-			const VoxelInstance &voxelInst = chunk.getVoxelInst(i);
-			VoxelRenderInstance voxelRenderInst;
-			// @todo
-
-			chunkRenderInst.addVoxelRenderInstance(std::move(voxelRenderInst));
-		}
-
-		this->chunkRenderInsts.emplace_back(std::move(chunkRenderInst));*/
 	}
+
+	// @todo: sort opaque chunk geometry near to far
+	// @todo: sort alpha-tested chunk geometry far to near
+	// ^ for both of these, the goal is so we can essentially just memcpy each chunk's geometry into the scene graph's draw lists.
+
+	// @todo: write chunk geometry to opaque/alphaTestedVoxelTriangles lists
+	//this->opaqueVoxelTriangles.insert(this->opaqueVoxelTriangles.end(), srcStart, srcEnd);
+	//this->alphaTestedVoxelTriangles.insert(this->alphaTestedVoxelTriangles.end(), srcStart, srcEnd);
 }
 
 void SceneGraph::updateEntities(const LevelInstance &levelInst, const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,

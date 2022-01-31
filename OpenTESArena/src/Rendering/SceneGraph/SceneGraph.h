@@ -7,6 +7,7 @@
 #include "ChunkRenderInstance.h"
 #include "EntityRenderDefinition.h"
 #include "EntityRenderInstance.h"
+#include "SceneGraphChunk.h"
 #include "SkyObjectRenderDefinition.h"
 #include "SkyObjectRenderInstance.h"
 #include "VoxelRenderDefinition.h"
@@ -59,6 +60,9 @@ private:
 
 	// @todo: map EntityID to EntityRenderInstance for updating/freeing?
 	// @todo: might need some key -> value structure for determining how voxels/entities/sky map to render defs
+
+	// Chunks with data for geometry storage, visibility calculation, etc..
+	std::vector<SceneGraphChunk> graphChunks;
 
 	// @todo: buffer(s) of visible geometry, lights, indices, texture IDs, etc.
 	// - sort of thinking like: static voxel geometry, dynamic voxel geometry, entity geometry, ...

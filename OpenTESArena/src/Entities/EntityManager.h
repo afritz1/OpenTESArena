@@ -196,10 +196,10 @@ public:
 	void clear();
 
 	// Adds a new chunk entry to the manager.
-	void addChunk(const ChunkInt2 &chunk);
+	void addChunk(const ChunkInt2 &chunkPos);
 
 	// Deletes all entities in the given chunk and removes it from the manager.
-	void removeChunk(const ChunkInt2 &chunk);
+	void removeChunk(const ChunkInt2 &chunkPos);
 
 	// Ticks the entity manager by delta time.
 	void tick(Game &game, double dt);

@@ -991,26 +991,26 @@ void EntityManager::clear()
 	this->nextID = 0;
 }
 
-void EntityManager::addChunk(const ChunkInt2 &chunk)
+void EntityManager::addChunk(const ChunkInt2 &chunkPos)
 {
-	if (this->tryGetChunkIndex(chunk).has_value())
+	if (this->tryGetChunkIndex(chunkPos).has_value())
 	{
-		DebugLogWarning("Entity chunk \"" + chunk.toString() + "\" already exists.");
+		DebugLogWarning("Entity chunk \"" + chunkPos.toString() + "\" already exists.");
 		return;
 	}
 
 	// Add a new empty entity chunk.
 	EntityChunk entityChunk;
-	entityChunk.init(chunk);
+	entityChunk.init(chunkPos);
 	this->entityChunks.emplace_back(std::move(entityChunk));
 }
 
-void EntityManager::removeChunk(const ChunkInt2 &chunk)
+void EntityManager::removeChunk(const ChunkInt2 &chunkPos)
 {
-	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunk);
+	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
 	if (!chunkIndex.has_value())
 	{
-		DebugLogWarning("No entity chunk \"" + chunk.toString() + "\" to remove.");
+		DebugLogWarning("No entity chunk \"" + chunkPos.toString() + "\" to remove.");
 		return;
 	}
 
