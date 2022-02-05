@@ -226,15 +226,21 @@ namespace swGeometry
 	}
 
 	// Caches for visible triangle processing/clipping.
-	std::vector<RenderTriangle> g_visibleTrianglesCache;
-	std::vector<RenderTriangle> g_clipListCache;
+	std::vector<RenderTriangle> g_visibleOpaqueVoxelTriangles, g_visibleOpaqueVoxelClipList;
+	std::vector<RenderTriangle> g_visibleAlphaTestedVoxelTriangles, g_visibleAlphaTestedVoxelClipList;
+	std::vector<RenderTriangle> g_visibleEntityTriangles, g_visibleEntityClipList;
+	int g_totalOpaqueVoxelTriangleCount = 0;
+	int g_totalAlphaTestedVoxelTriangleCount = 0;
+	int g_totalEntityTriangleCount = 0;
 
 	// Processes the given world space triangles in the following ways, and returns a view to a geometry cache
 	// that is invalidated the next time this function is called.
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
-	BufferView<const RenderTriangle> ProcessTrianglesForRasterization(const BufferView<const RenderTriangle> &triangles, const RenderCamera &camera)
+	BufferView<const RenderTriangle> ProcessTrianglesForRasterization(const BufferView<const RenderTriangle> &triangles,
+		const RenderCamera &camera, std::vector<RenderTriangle> &outVisibleTriangles, std::vector<RenderTriangle> &outClipList,
+		int *outTotalTriangleCount)
 	{
 		const Double3 eye = swCamera::GetCameraEye(camera);
 
@@ -273,7 +279,7 @@ namespace swGeometry
 			}
 		};
 
-		g_visibleTrianglesCache.clear();
+		outVisibleTriangles.clear();
 		for (int i = 0; i < triangles.getCount(); i++)
 		{
 			const RenderTriangle &triangle = triangles.get(i);
@@ -288,27 +294,28 @@ namespace swGeometry
 				continue;
 			}
 
-			g_clipListCache.clear();
-			g_clipListCache.emplace_back(triangle);
+			outClipList.clear();
+			outClipList.emplace_back(triangle);
 			for (const ClippingPlane &plane : clippingPlanes)
 			{
-				for (int j = static_cast<int>(g_clipListCache.size()); j > 0; j--)
+				for (int j = static_cast<int>(outClipList.size()); j > 0; j--)
 				{
-					const RenderTriangle &clipListTriangle = g_clipListCache.front();
+					const RenderTriangle &clipListTriangle = outClipList.front();
 					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, eye, plane.point, plane.normal);
 					for (int k = 0; k < clipResult.triangleCount; k++)
 					{
-						g_clipListCache.emplace_back(clipResult.triangles[k]);
+						outClipList.emplace_back(clipResult.triangles[k]);
 					}
 
-					g_clipListCache.erase(g_clipListCache.begin());
+					outClipList.erase(outClipList.begin());
 				}
 			}
 
-			g_visibleTrianglesCache.insert(g_visibleTrianglesCache.end(), g_clipListCache.begin(), g_clipListCache.end());
+			outVisibleTriangles.insert(outVisibleTriangles.end(), outClipList.begin(), outClipList.end());
 		}
 
-		return BufferView<const RenderTriangle>(g_visibleTrianglesCache.data(), static_cast<int>(g_visibleTrianglesCache.size()));
+		*outTotalTriangleCount = triangles.getCount();
+		return BufferView<const RenderTriangle>(outVisibleTriangles.data(), static_cast<int>(outVisibleTriangles.size()));
 	}
 }
 
@@ -801,13 +808,16 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	const int renderWidth = this->depthBuffer.getWidth();
 	const int renderHeight = this->depthBuffer.getHeight();
 
-	// @todo
 	const int threadCount = 1;
-	const int potentiallyVisFlatCount = 0;
-	const int visFlatCount = 0;
+	const int potentiallyVisTriangleCount = swGeometry::g_totalOpaqueVoxelTriangleCount +
+		swGeometry::g_totalAlphaTestedVoxelTriangleCount + swGeometry::g_totalEntityTriangleCount;
+	const int visTriangleCount = static_cast<int>(
+		swGeometry::g_visibleOpaqueVoxelTriangles.size() +
+		swGeometry::g_visibleAlphaTestedVoxelTriangles.size() +
+		swGeometry::g_visibleEntityTriangles.size());
 	const int visLightCount = 0;
 
-	return ProfilerData(renderWidth, renderHeight, threadCount, potentiallyVisFlatCount, visFlatCount, visLightCount);
+	return ProfilerData(renderWidth, renderHeight, threadCount, potentiallyVisTriangleCount, visTriangleCount, visLightCount);
 }
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &opaqueVoxelTriangles,
@@ -828,17 +838,23 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	const uint32_t clearColor = Color::Black.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 
-	const BufferView<const RenderTriangle> clippedOpaqueVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(opaqueVoxelTriangles, camera);
-	swRender::RasterizeTriangles(clippedOpaqueVoxelTriangles, false, this->objectMaterials, this->objectTextures, paletteTexture,
-		lightTableTexture, camera, colorBufferView, depthBufferView);
+	// @optimization: these processing functions could be on separate threads
+	const BufferView<const RenderTriangle> clippedOpaqueVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(
+		opaqueVoxelTriangles, camera, swGeometry::g_visibleOpaqueVoxelTriangles, swGeometry::g_visibleOpaqueVoxelClipList,
+		&swGeometry::g_totalOpaqueVoxelTriangleCount);
+	const BufferView<const RenderTriangle> clippedAlphaTestedVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(
+		alphaTestedVoxelTriangles, camera, swGeometry::g_visibleAlphaTestedVoxelTriangles, swGeometry::g_visibleAlphaTestedVoxelClipList,
+		&swGeometry::g_totalAlphaTestedVoxelTriangleCount);
+	const BufferView<const RenderTriangle> clippedEntityTriangles = swGeometry::ProcessTrianglesForRasterization(
+		entityTriangles, camera, swGeometry::g_visibleEntityTriangles, swGeometry::g_visibleEntityClipList,
+		&swGeometry::g_totalEntityTriangleCount);
 
-	const BufferView<const RenderTriangle> clippedAlphaTestedVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(alphaTestedVoxelTriangles, camera);
-	swRender::RasterizeTriangles(clippedAlphaTestedVoxelTriangles, true, this->objectMaterials, this->objectTextures, paletteTexture,
-		lightTableTexture, camera, colorBufferView, depthBufferView);
-
-	const BufferView<const RenderTriangle> clippedEntityTriangles = swGeometry::ProcessTrianglesForRasterization(entityTriangles, camera);
-	swRender::RasterizeTriangles(clippedEntityTriangles, true, this->objectMaterials, this->objectTextures, paletteTexture,
-		lightTableTexture, camera, colorBufferView, depthBufferView);
+	swRender::RasterizeTriangles(clippedOpaqueVoxelTriangles, false, this->objectMaterials, this->objectTextures,
+		paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
+	swRender::RasterizeTriangles(clippedAlphaTestedVoxelTriangles, true, this->objectMaterials, this->objectTextures,
+		paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
+	swRender::RasterizeTriangles(clippedEntityTriangles, true, this->objectMaterials, this->objectTextures,
+		paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
 }
 
 void SoftwareRenderer::present()

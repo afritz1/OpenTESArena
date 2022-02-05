@@ -1,13 +1,13 @@
 #include "RendererSystem3D.h"
 
-RendererSystem3D::ProfilerData::ProfilerData(int width, int height, int threadCount, int potentiallyVisFlatCount,
-	int visFlatCount, int visLightCount)
+RendererSystem3D::ProfilerData::ProfilerData(int width, int height, int threadCount, int potentiallyVisTriangleCount,
+	int visTriangleCount, int visLightCount)
 {
 	this->width = width;
 	this->height = height;
 	this->threadCount = threadCount;
-	this->potentiallyVisFlatCount = potentiallyVisFlatCount;
-	this->visFlatCount = visFlatCount;
+	this->potentiallyVisTriangleCount = potentiallyVisTriangleCount;
+	this->visTriangleCount = visTriangleCount;
 	this->visLightCount = visLightCount;
 }
 

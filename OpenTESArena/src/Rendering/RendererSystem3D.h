@@ -28,10 +28,10 @@ public:
 	{
 		int width, height;
 		int threadCount;
-		int potentiallyVisFlatCount, visFlatCount, visLightCount;
+		int potentiallyVisTriangleCount, visTriangleCount, visLightCount;
 
-		ProfilerData(int width, int height, int threadCount, int potentiallyVisFlatCount,
-			int visFlatCount, int visLightCount);
+		ProfilerData(int width, int height, int threadCount, int potentiallyVisTriangleCount,
+			int visTriangleCount, int visLightCount);
 	};
 
 	virtual ~RendererSystem3D();

@@ -614,8 +614,7 @@ void Game::renderDebugInfo()
 			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
 				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
 				"3D render: " + renderTime + "ms" + "\n" +
-				"Vis flats: " + std::to_string(profilerData.visFlatCount) + " (" +
-				std::to_string(profilerData.potentiallyVisFlatCount) + ")" +
+				"Vis triangles: " + std::to_string(profilerData.visTriangleCount) + " (" + std::to_string(profilerData.potentiallyVisTriangleCount) + ")" +
 				", lights: " + std::to_string(profilerData.visLightCount));
 		}
 		else

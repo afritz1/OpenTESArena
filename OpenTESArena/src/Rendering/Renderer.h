@@ -64,15 +64,15 @@ public:
 
 		int threadCount;
 
-		// Visible flats and lights.
-		int potentiallyVisFlatCount, visFlatCount, visLightCount;
+		// Visible triangles and lights.
+		int potentiallyVisTriangleCount, visTriangleCount, visLightCount;
 
 		double frameTime;
 
 		ProfilerData();
 
-		void init(int width, int height, int threadCount, int potentiallyVisFlatCount,
-			int visFlatCount, int visLightCount, double frameTime);
+		void init(int width, int height, int threadCount, int potentiallyVisTriangleCount,
+			int visTriangleCount, int visLightCount, double frameTime);
 	};
 
 	using ResolutionScaleFunc = std::function<double()>;
