@@ -225,11 +225,16 @@ namespace swGeometry
 		}
 	}
 
-	// Processes the given world space triangles in the following ways:
+	// Caches for visible triangle processing/clipping.
+	std::vector<RenderTriangle> g_visibleTrianglesCache;
+	std::vector<RenderTriangle> g_clipListCache;
+
+	// Processes the given world space triangles in the following ways, and returns a view to a geometry cache
+	// that is invalidated the next time this function is called.
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
-	std::vector<RenderTriangle> ProcessTrianglesForRasterization(const BufferView<const RenderTriangle> &triangles, const RenderCamera &camera)
+	BufferView<const RenderTriangle> ProcessTrianglesForRasterization(const BufferView<const RenderTriangle> &triangles, const RenderCamera &camera)
 	{
 		const Double3 eye = swCamera::GetCameraEye(camera);
 
@@ -268,7 +273,7 @@ namespace swGeometry
 			}
 		};
 
-		std::vector<RenderTriangle> visibleTriangles;
+		g_visibleTrianglesCache.clear();
 		for (int i = 0; i < triangles.getCount(); i++)
 		{
 			const RenderTriangle &triangle = triangles.get(i);
@@ -283,26 +288,27 @@ namespace swGeometry
 				continue;
 			}
 
-			std::deque<RenderTriangle> clipList = { triangle };
+			g_clipListCache.clear();
+			g_clipListCache.emplace_back(triangle);
 			for (const ClippingPlane &plane : clippingPlanes)
 			{
-				for (int j = static_cast<int>(clipList.size()); j > 0; j--)
+				for (int j = static_cast<int>(g_clipListCache.size()); j > 0; j--)
 				{
-					const RenderTriangle &clipListTriangle = clipList.front();
+					const RenderTriangle &clipListTriangle = g_clipListCache.front();
 					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, eye, plane.point, plane.normal);
 					for (int k = 0; k < clipResult.triangleCount; k++)
 					{
-						clipList.emplace_back(clipResult.triangles[k]);
+						g_clipListCache.emplace_back(clipResult.triangles[k]);
 					}
 
-					clipList.pop_front();
+					g_clipListCache.erase(g_clipListCache.begin());
 				}
 			}
 
-			visibleTriangles.insert(visibleTriangles.end(), clipList.begin(), clipList.end());
+			g_visibleTrianglesCache.insert(g_visibleTrianglesCache.end(), g_clipListCache.begin(), g_clipListCache.end());
 		}
 
-		return visibleTriangles;
+		return BufferView<const RenderTriangle>(g_visibleTrianglesCache.data(), static_cast<int>(g_visibleTrianglesCache.size()));
 	}
 }
 
@@ -822,19 +828,16 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	const uint32_t clearColor = Color::Black.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 
-	const std::vector<RenderTriangle> clippedOpaqueVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(opaqueVoxelTriangles, camera);
-	const BufferView<const RenderTriangle> clippedOpaqueVoxelTrianglesView(clippedOpaqueVoxelTriangles.data(), static_cast<int>(clippedOpaqueVoxelTriangles.size()));
-	swRender::RasterizeTriangles(clippedOpaqueVoxelTrianglesView, false, this->objectMaterials, this->objectTextures, paletteTexture,
+	const BufferView<const RenderTriangle> clippedOpaqueVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(opaqueVoxelTriangles, camera);
+	swRender::RasterizeTriangles(clippedOpaqueVoxelTriangles, false, this->objectMaterials, this->objectTextures, paletteTexture,
 		lightTableTexture, camera, colorBufferView, depthBufferView);
 
-	const std::vector<RenderTriangle> clippedAlphaTestedVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(alphaTestedVoxelTriangles, camera);
-	const BufferView<const RenderTriangle> clippedAlphaTestedVoxelTrianglesView(clippedAlphaTestedVoxelTriangles.data(), static_cast<int>(clippedAlphaTestedVoxelTriangles.size()));
-	swRender::RasterizeTriangles(clippedAlphaTestedVoxelTrianglesView, true, this->objectMaterials, this->objectTextures, paletteTexture,
+	const BufferView<const RenderTriangle> clippedAlphaTestedVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(alphaTestedVoxelTriangles, camera);
+	swRender::RasterizeTriangles(clippedAlphaTestedVoxelTriangles, true, this->objectMaterials, this->objectTextures, paletteTexture,
 		lightTableTexture, camera, colorBufferView, depthBufferView);
 
-	const std::vector<RenderTriangle> clippedEntityTriangles = swGeometry::ProcessTrianglesForRasterization(entityTriangles, camera);
-	const BufferView<const RenderTriangle> clippedEntityTrianglesView(clippedEntityTriangles.data(), static_cast<int>(clippedEntityTriangles.size()));
-	swRender::RasterizeTriangles(clippedEntityTrianglesView, true, this->objectMaterials, this->objectTextures, paletteTexture,
+	const BufferView<const RenderTriangle> clippedEntityTriangles = swGeometry::ProcessTrianglesForRasterization(entityTriangles, camera);
+	swRender::RasterizeTriangles(clippedEntityTriangles, true, this->objectMaterials, this->objectTextures, paletteTexture,
 		lightTableTexture, camera, colorBufferView, depthBufferView);
 }
 
