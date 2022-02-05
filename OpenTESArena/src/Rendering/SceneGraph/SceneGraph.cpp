@@ -616,24 +616,30 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			}
 
 			SceneGraphVoxel &graphVoxel = graphChunk.voxels.get(voxelPos.x, voxelPos.y, voxelPos.z);
+			Buffer<RenderTriangle> &dstOpaqueTriangles = graphVoxel.opaqueTriangles;
+			Buffer<RenderTriangle> &dstAlphaTestedTriangles = graphVoxel.alphaTestedTriangles;
 			if (opaqueTriangleCount > 0)
 			{
 				const auto srcStart = opaqueTrianglesBuffer.cbegin();
 				const auto srcEnd = srcStart + opaqueTriangleCount;
-
-				Buffer<RenderTriangle> &dstTriangles = graphVoxel.opaqueTriangles;
-				dstTriangles.init(opaqueTriangleCount);
-				std::copy(srcStart, srcEnd, dstTriangles.get());
+				dstOpaqueTriangles.init(opaqueTriangleCount);
+				std::copy(srcStart, srcEnd, dstOpaqueTriangles.get());
+			}
+			else if ((opaqueTriangleCount == 0) && (dstOpaqueTriangles.getCount() > 0))
+			{
+				dstOpaqueTriangles.clear();
 			}
 
 			if (alphaTestedTriangleCount > 0)
 			{
 				const auto srcStart = alphaTestedTrianglesBuffer.cbegin();
-				const auto srcEnd = srcStart + alphaTestedTriangleCount;
-				
-				Buffer<RenderTriangle> &dstTriangles = graphVoxel.alphaTestedTriangles;
-				dstTriangles.init(alphaTestedTriangleCount);
-				std::copy(srcStart, srcEnd, dstTriangles.get());
+				const auto srcEnd = srcStart + alphaTestedTriangleCount;				
+				dstAlphaTestedTriangles.init(alphaTestedTriangleCount);
+				std::copy(srcStart, srcEnd, dstAlphaTestedTriangles.get());
+			}
+			else if ((alphaTestedTriangleCount == 0) && (dstAlphaTestedTriangles.getCount() > 0))
+			{
+				dstAlphaTestedTriangles.clear();
 			}
 		}
 	}
