@@ -219,16 +219,20 @@ void Chunk::getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition *
 	tryWriteVoxelDef(westVoxel, outWest);
 }
 
-void Chunk::setVoxel(SNInt x, int y, WEInt z, VoxelID value)
+void Chunk::setVoxelDirty(SNInt x, int y, WEInt z)
 {
-	this->voxels.set(x, y, z, value);
-
 	const VoxelInt3 pos(x, y, z);
 	const auto dirtyIter = std::find(this->dirtyVoxels.begin(), this->dirtyVoxels.end(), pos);
 	if (dirtyIter == this->dirtyVoxels.end())
 	{
 		this->dirtyVoxels.emplace_back(pos);
 	}
+}
+
+void Chunk::setVoxel(SNInt x, int y, WEInt z, VoxelID value)
+{
+	this->voxels.set(x, y, z, value);
+	this->setVoxelDirty(x, y, z);
 }
 
 bool Chunk::tryAddVoxelDef(VoxelDefinition &&voxelDef, Chunk::VoxelID *outID)
@@ -611,6 +615,8 @@ void Chunk::update(double dt, const CoordDouble3 &playerCoord, double ceilingSca
 
 			voxelInstIndicesToDestroy.push_back(i);
 		}
+
+		this->setVoxelDirty(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
 	}
 
 	for (VoxelInstance *voxelInst : voxelInstsToPostFinish)

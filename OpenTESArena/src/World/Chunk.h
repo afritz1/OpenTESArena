@@ -81,6 +81,9 @@ private:
 	void getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition **outNorth,
 		const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest);
 
+	// Sets this voxel dirty for geometry updating, etc. if not already.
+	void setVoxelDirty(SNInt x, int y, WEInt z);
+
 	// Runs any voxel instance behavior based on its current state that cannot be done by the voxel
 	// instance itself.
 	void handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord,
