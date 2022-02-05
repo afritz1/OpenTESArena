@@ -675,9 +675,27 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 
 		for (WEInt z = 0; z < graphChunkVoxels.getDepth(); z++)
 		{
-			for (int y = 0; y < graphChunkVoxels.getHeight(); y++)
+			for (SNInt x = 0; x < graphChunkVoxels.getWidth(); x++)
 			{
-				for (SNInt x = 0; x < graphChunkVoxels.getWidth(); x++)
+				const VoxelInt2 voxelColumnPos(x, z);
+				const VoxelDouble2 voxelColumnPoint(
+					static_cast<SNDouble>(voxelColumnPos.x),
+					static_cast<WEDouble>(voxelColumnPos.y));
+				const NewDouble2 voxelTR2D = VoxelUtils::chunkPointToNewPoint(relativeChunkPos, voxelColumnPoint);
+				const NewDouble2 voxelBL2D = VoxelUtils::chunkPointToNewPoint(relativeChunkPos, voxelColumnPoint + VoxelDouble2(1.0, 1.0));
+
+				// See if this voxel's geometry should reach the draw list.
+				// @todo: the 2D camera triangle here is not correct when looking up or down, currently results in missing triangles on-screen; need a larger triangle based on the angle to compensate.
+				// @todo: replace this per-voxel-column operation with a quadtree look-up that can do large groups of voxel columns at once
+				const bool isVoxelColumnVisible = MathUtils::triangleRectangleIntersection(
+					cameraEye2D, cameraFrustumRightPoint2D, cameraFrustumLeftPoint2D, voxelTR2D, voxelBL2D);
+
+				if (!isVoxelColumnVisible)
+				{
+					continue;
+				}
+
+				for (int y = 0; y < graphChunkVoxels.getHeight(); y++)
 				{
 					const SceneGraphVoxel &graphVoxel = graphChunkVoxels.get(x, y, z);
 					const Buffer<RenderTriangle> &srcOpaqueTriangles = graphVoxel.opaqueTriangles;
