@@ -503,7 +503,8 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 		camera.point.x + ((camera.forwardScaled.x + camera.rightScaled.x) * frustumLength),
 		camera.point.z + ((camera.forwardScaled.z + camera.rightScaled.z) * frustumLength));
 
-	// Update geometry in each scene graph chunk.
+	// Update dirty voxels in each scene graph chunk.
+	// @todo: animating voxel instances should be set dirty every frame in Chunk::update() or whatever
 	for (int i = 0; i < chunkCount; i++)
 	{
 		const Chunk &chunk = chunkManager.getChunk(i);
@@ -512,22 +513,6 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 		const WEInt chunkDepth = Chunk::DEPTH;
 
 		const ChunkInt2 chunkPos = chunk.getPosition();
-		const ChunkInt2 relativeChunkPos = chunkPos - camera.chunk; // Relative to camera chunk.
-		constexpr double chunkDimReal = static_cast<double>(ChunkUtils::CHUNK_DIM);
-
-		// Top right and bottom left world space corners of this chunk.
-		const NewDouble2 chunkTR2D = VoxelUtils::chunkPointToNewPoint(relativeChunkPos, VoxelDouble2::Zero);
-		const NewDouble2 chunkBL2D = VoxelUtils::chunkPointToNewPoint(relativeChunkPos, VoxelDouble2(chunkDimReal, chunkDimReal));
-
-		const bool isChunkVisible = MathUtils::triangleRectangleIntersection(
-			cameraEye2D, cameraFrustumRightPoint2D, cameraFrustumLeftPoint2D, chunkTR2D, chunkBL2D);
-		
-		// @todo: need to allow the graph chunk geometry to update, otherwise the dirty voxels are lost; just want the chunk's geometry to not get to this frame's draw list.
-		// - just move this into another loop where we find which chunks are visible. Leave this loop purely for geometry updating.
-		if (!isChunkVisible)
-		{
-			continue;
-		}
 
 		// Get the scene graph chunk associated with the world space chunk.
 		const auto graphChunkIter = std::find_if(this->graphChunks.begin(), this->graphChunks.end(),
@@ -653,13 +638,67 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 		}
 	}
 
+	// @todo: only call this on a scene change? the dirty voxels above should be keeping everything good now.
+	this->clearVoxels();
+
+	// Regenerate draw lists.
+	// @todo: maybe this is where we need to call the voxel animation logic functions so we know what material ID
+	// to use for chasms, etc.? Might be good to finally bring in the VoxelRenderDefinition, etc..
+	for (int i = 0; i < static_cast<int>(this->graphChunks.size()); i++)
+	{
+		const Chunk &chunk = chunkManager.getChunk(i);
+		const ChunkInt2 &chunkPos = chunk.getPosition();
+		const ChunkInt2 relativeChunkPos = chunkPos - camera.chunk; // Relative to camera chunk.
+		constexpr double chunkDimReal = static_cast<double>(ChunkUtils::CHUNK_DIM);
+
+		// Top right and bottom left world space corners of this chunk.
+		const NewDouble2 chunkTR2D = VoxelUtils::chunkPointToNewPoint(relativeChunkPos, VoxelDouble2::Zero);
+		const NewDouble2 chunkBL2D = VoxelUtils::chunkPointToNewPoint(relativeChunkPos, VoxelDouble2(chunkDimReal, chunkDimReal));
+
+		// See if this chunk's geometry should reach the draw list.
+		const bool isChunkVisible = MathUtils::triangleRectangleIntersection(
+			cameraEye2D, cameraFrustumRightPoint2D, cameraFrustumLeftPoint2D, chunkTR2D, chunkBL2D);
+
+		if (!isChunkVisible)
+		{
+			continue;
+		}
+
+		const SceneGraphChunk &graphChunk = this->graphChunks[i];
+		const Buffer3D<SceneGraphVoxel> &graphChunkVoxels = graphChunk.voxels;
+
+		for (WEInt z = 0; z < graphChunkVoxels.getDepth(); z++)
+		{
+			for (int y = 0; y < graphChunkVoxels.getHeight(); y++)
+			{
+				for (SNInt x = 0; x < graphChunkVoxels.getWidth(); x++)
+				{
+					const SceneGraphVoxel &graphVoxel = graphChunkVoxels.get(x, y, z);
+					const Buffer<RenderTriangle> &srcOpaqueTriangles = graphVoxel.opaqueTriangles;
+					const Buffer<RenderTriangle> &srcAlphaTestedTriangles = graphVoxel.alphaTestedTriangles;
+					const int srcOpaqueTriangleCount = srcOpaqueTriangles.getCount();
+					const int srcAlphaTestedTriangleCount = srcAlphaTestedTriangles.getCount();
+					if (srcOpaqueTriangleCount > 0)
+					{
+						const RenderTriangle *srcStart = srcOpaqueTriangles.get();
+						const RenderTriangle *srcEnd = srcOpaqueTriangles.end();
+						this->opaqueVoxelTriangles.insert(this->opaqueVoxelTriangles.end(), srcStart, srcEnd);
+					}
+
+					if (srcAlphaTestedTriangleCount > 0)
+					{
+						const RenderTriangle *srcStart = srcAlphaTestedTriangles.get();
+						const RenderTriangle *srcEnd = srcAlphaTestedTriangles.end();
+						this->alphaTestedVoxelTriangles.insert(this->alphaTestedVoxelTriangles.end(), srcStart, srcEnd);
+					}
+				}
+			}
+		}
+	}
+
 	// @todo: sort opaque chunk geometry near to far
 	// @todo: sort alpha-tested chunk geometry far to near
 	// ^ for both of these, the goal is so we can essentially just memcpy each chunk's geometry into the scene graph's draw lists.
-
-	// @todo: write chunk geometry to opaque/alphaTestedVoxelTriangles lists
-	//this->opaqueVoxelTriangles.insert(this->opaqueVoxelTriangles.end(), srcStart, srcEnd);
-	//this->alphaTestedVoxelTriangles.insert(this->alphaTestedVoxelTriangles.end(), srcStart, srcEnd);
 }
 
 void SceneGraph::updateEntities(const LevelInstance &levelInst, const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,
