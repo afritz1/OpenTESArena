@@ -13,6 +13,13 @@ class VoxelInstance
 public:
 	enum class Type { Chasm, OpenDoor, Fading, Trigger };
 
+	// @todo: break VoxelInstance into more pieces because each type is very different from each other system-wise.
+	// Chunk should have chasmInsts, openDoorInsts, fadingInsts, etc..
+	// - Chasm: turns geometry on/off
+	// - OpenDoor: transforms geometry position/rotation
+	// - Fading: pixel shader variable
+	// - Trigger: one-shot lore text presentation
+
 	// @todo: maybe a BashState?
 
 	class ChasmState

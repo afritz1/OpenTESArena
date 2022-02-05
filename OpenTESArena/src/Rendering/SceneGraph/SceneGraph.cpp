@@ -534,12 +534,14 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			const VoxelInt3 &voxelPos = chunk.getDirtyVoxel(dirtyVoxelIndex);
 			const Chunk::VoxelID voxelID = chunk.getVoxel(voxelPos.x, voxelPos.y, voxelPos.z);
 			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-			//const VoxelInstance *voxelInst = nullptr; // @todo: need to get the voxel inst for this voxel (if any).
 
 			opaqueTriangleCount = 0;
 			alphaTestedTriangleCount = 0;
 			if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 			{
+				// @todo: set fade percent in RenderTriangle for now; don't have the concept of mesh parameters yet.
+				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
+
 				const VoxelDefinition::WallData &wall = voxelDef.wall;
 				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(wall.sideTextureAssetRef);
 				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(wall.floorTextureAssetRef);
@@ -549,6 +551,8 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 			{
+				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
+
 				const VoxelDefinition::FloorData &floor = voxelDef.floor;
 				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(floor.textureAssetRef);
 				sgGeometry::WriteFloor(chunkPos, voxelPos, ceilingScale, materialID,
@@ -556,6 +560,8 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 			{
+				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
+
 				const VoxelDefinition::CeilingData &ceiling = voxelDef.ceiling;
 				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(ceiling.textureAssetRef);
 				sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, materialID,
@@ -563,6 +569,8 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 			{
+				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
+
 				const VoxelDefinition::RaisedData &raised = voxelDef.raised;
 				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(raised.sideTextureAssetRef);
 				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(raised.floorTextureAssetRef);
@@ -574,6 +582,8 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 			{
+				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
+
 				const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
 				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(diagonal.textureAssetRef);
 				sgGeometry::WriteDiagonal(chunkPos, voxelPos, ceilingScale, diagonal.type1, materialID,
@@ -595,19 +605,31 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 			{
+				const VoxelInstance *chasmVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Chasm);
+				bool hasNorthFace = false;
+				bool hasSouthFace = false;
+				bool hasEastFace = false;
+				bool hasWestFace = false;
+				if (chasmVoxelInst != nullptr)
+				{
+					const VoxelInstance::ChasmState &chasmState = chasmVoxelInst->getChasmState();
+					hasNorthFace = chasmState.getNorth();
+					hasSouthFace = chasmState.getSouth();
+					hasEastFace = chasmState.getEast();
+					hasWestFace = chasmState.getWest();
+				}
+
 				const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
-				const bool north = true; // @todo: need voxel instance
-				const bool south = true;
-				const bool east = true;
-				const bool west = true;
 				const bool isDry = chasm.type == ArenaTypes::ChasmType::Dry;
 				const ObjectMaterialID floorMaterialID = levelInst.getChasmFloorMaterialID(chasm.type, chasmAnimPercent);
 				const ObjectMaterialID sideMaterialID = levelInst.getChasmWallMaterialID(chasm.type, chasmAnimPercent, chasm.textureAssetRef);
-				sgGeometry::WriteChasm(chunkPos, voxelPos, ceilingScale, north, south, east, west, isDry, floorMaterialID, sideMaterialID,
-					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 10), &opaqueTriangleCount);
+				sgGeometry::WriteChasm(chunkPos, voxelPos, ceilingScale, hasNorthFace, hasSouthFace, hasEastFace, hasWestFace,
+					isDry, floorMaterialID, sideMaterialID, BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 10), &opaqueTriangleCount);
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 			{
+				//const VoxelInstance *openDoorVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::OpenDoor);
+
 				const VoxelDefinition::DoorData &door = voxelDef.door;
 				const double animPercent = 0.0; // @todo: need voxel instance
 				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(door.textureAssetRef);
