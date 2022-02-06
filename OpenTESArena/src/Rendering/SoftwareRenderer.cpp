@@ -142,12 +142,12 @@ namespace swGeometry
 			if ((eye - insidePoint).dot(unormal) >= Constants::Epsilon)
 			{
 				newTriangle.init(insidePoint, newInsidePoint1, newInsidePoint2, insideUV, newInsideUV0,
-					newInsideUV1, triangle.materialID);
+					newInsideUV1, triangle.materialID, triangle.param0);
 			}
 			else
 			{
 				newTriangle.init(newInsidePoint2, newInsidePoint1, insidePoint, newInsideUV1, newInsideUV0,
-					insideUV, triangle.materialID);
+					insideUV, triangle.materialID, triangle.param0);
 			}
 
 			return TriangleClipResult::one(newTriangle);
@@ -195,12 +195,12 @@ namespace swGeometry
 			if ((eye - newTriangle0V0).dot(unormal0) >= Constants::Epsilon)
 			{
 				newTriangle0.init(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0UV0, newTriangle0UV1,
-					newTriangle0UV2, triangle.materialID);
+					newTriangle0UV2, triangle.materialID, triangle.param0);
 			}
 			else
 			{
 				newTriangle0.init(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0UV2, newTriangle0UV1,
-					newTriangle0UV0, triangle.materialID);
+					newTriangle0UV0, triangle.materialID, triangle.param0);
 			}
 
 			const Double3 unormal1 = (newTriangle1V0 - newTriangle1V2).cross(newTriangle1V1 - newTriangle1V0);
@@ -208,12 +208,12 @@ namespace swGeometry
 			if ((eye - newTriangle1V0).dot(unormal1) >= Constants::Epsilon)
 			{
 				newTriangle1.init(newTriangle1V0, newTriangle1V1, newTriangle1V2, newTriangle1UV0, newTriangle1UV1,
-					newTriangle1UV2, triangle.materialID);
+					newTriangle1UV2, triangle.materialID, triangle.param0);
 			}
 			else
 			{
 				newTriangle1.init(newTriangle1V2, newTriangle1V1, newTriangle1V0, newTriangle1UV2, newTriangle1UV1,
-					newTriangle1UV0, triangle.materialID);
+					newTriangle1UV0, triangle.materialID, triangle.param0);
 			}
 
 			return TriangleClipResult::two(newTriangle0, newTriangle1);
@@ -457,6 +457,9 @@ namespace swRender
 			const int texture1Height = texture1.texels.getHeight();
 			const uint8_t *texture1Texels = texture1.texels.get();
 
+			const double fadePercent = triangle.param0;
+			const bool isFading = fadePercent > 0.0;
+
 			for (int y = yStart; y < yEnd; y++)
 			{
 				const double yScreenPercent = (static_cast<double>(y) + 0.50) / frameBufferHeightReal;
@@ -534,13 +537,22 @@ namespace swRender
 								}
 							}
 
-							// @temp: shading is disabled until the interpolated world space point is calculated correctly.
-							/*// XZ position of pixel center in world space.
-							const Double2 v2D(
-								(u * v0.x) + (v * v1.x) + (w * v2.x),
-								(u * v0.z) + (v * v1.z) + (w * v2.z));
-							const double distanceToLight = (v2D - eye2D).length();
-							const double shadingPercent = std::clamp(distanceToLight / swConstants::PLAYER_LIGHT_DISTANCE, 0.0, 1.0);
+							double shadingPercent;
+							if (isFading)
+							{
+								shadingPercent = fadePercent;
+							}
+							else
+							{
+								// @todo: fix interpolated world space point calculation
+								// XZ position of pixel center in world space.
+								const Double2 v2D(
+									(u * v0.x) + (v * v1.x) + (w * v2.x),
+									(u * v0.z) + (v * v1.z) + (w * v2.z));
+								const double distanceToLight = (v2D - eye2D).length();
+								shadingPercent = std::clamp(distanceToLight / swConstants::PLAYER_LIGHT_DISTANCE, 0.0, 1.0);
+							}
+							
 							const double lightLevelValue = shadingPercent * lightLevelCountReal;
 
 							// Index into light table palettes.
@@ -551,9 +563,9 @@ namespace swRender
 
 							const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
 							const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
-							const uint32_t shadedTexelColor = paletteTexels[shadedTexel];*/
+							const uint32_t shadedTexelColor = paletteTexels[shadedTexel];
 
-							colorBufferPtr[outputIndex] = paletteTexels[texel];
+							colorBufferPtr[outputIndex] = shadedTexelColor;
 							depthBufferPtr[outputIndex] = depth;
 						}
 					}

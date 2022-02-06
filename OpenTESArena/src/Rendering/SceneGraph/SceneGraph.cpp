@@ -60,78 +60,78 @@ namespace sgGeometry
 
 	// Translates a model space triangle into world space and writes it into the output buffer at the given index.
 	void WriteTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0, const Double2 &uv1,
-		const Double2 &uv2, ObjectMaterialID materialID, const Double3 &voxelPosition, double ceilingScale, int index,
-		BufferView<RenderTriangle> &outTriangles)
+		const Double2 &uv2, ObjectMaterialID materialID, double param0, const Double3 &voxelPosition, double ceilingScale,
+		int index, BufferView<RenderTriangle> &outTriangles)
 	{
 		Double3 worldV0, worldV1, worldV2;
 		MakeWorldSpaceVertices(voxelPosition, v0, v1, v2, ceilingScale, &worldV0, &worldV1, &worldV2);
 
 		RenderTriangle &triangle = outTriangles.get(index);
-		triangle.init(worldV0, worldV1, worldV2, uv0, uv1, uv2, materialID);
+		triangle.init(worldV0, worldV1, worldV2, uv0, uv1, uv2, materialID, param0);
 	}
 
 	// Geometry generation functions (currently in world space, might be chunk space or something else later).
 	// @todo: these functions should not assume opaque/alpha-tested per face, they should query the texture associated
 	// with each face for that, and then write to the appropriate out buffer.
 	void WriteWall(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectMaterialID sideMaterialID,
-		ObjectMaterialID floorMaterialID, ObjectMaterialID ceilingMaterialID, BufferView<RenderTriangle> &outOpaqueTriangles,
-		int *outOpaqueTriangleCount)
+		ObjectMaterialID floorMaterialID, ObjectMaterialID ceilingMaterialID, double fadePercent,
+		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
 	{
 		constexpr int triangleCount = 12;
 		DebugAssert(outOpaqueTriangles.getCount() == triangleCount);
 		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
 		// X=0
-		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
 		// X=1
-		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
 		// Y=0
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, floorMaterialID, voxelPosition, ceilingScale, 4, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, floorMaterialID, voxelPosition, ceilingScale, 5, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, floorMaterialID, fadePercent, voxelPosition, ceilingScale, 4, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, floorMaterialID, fadePercent, voxelPosition, ceilingScale, 5, outOpaqueTriangles);
 		// Y=1
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, ceilingMaterialID, voxelPosition, ceilingScale, 6, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, ceilingMaterialID, voxelPosition, ceilingScale, 7, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, ceilingMaterialID, fadePercent, voxelPosition, ceilingScale, 6, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, ceilingMaterialID, fadePercent, voxelPosition, ceilingScale, 7, outOpaqueTriangles);
 		// Z=0
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, voxelPosition, ceilingScale, 8, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, voxelPosition, ceilingScale, 9, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 8, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 9, outOpaqueTriangles);
 		// Z=1
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, voxelPosition, ceilingScale, 10, outOpaqueTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, voxelPosition, ceilingScale, 11, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 10, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 11, outOpaqueTriangles);
 
 		*outOpaqueTriangleCount = triangleCount;
 	}
 
 	void WriteFloor(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectMaterialID materialID,
-		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
+		double fadePercent, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
 	{
 		constexpr int triangleCount = 2;
 		DebugAssert(outOpaqueTriangles.getCount() == triangleCount);
 		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
-		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
 
 		*outOpaqueTriangleCount = triangleCount;
 	}
 
 	void WriteCeiling(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectMaterialID materialID,
-		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
+		double fadePercent, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
 	{
 		constexpr int triangleCount = 2;
 		DebugAssert(outOpaqueTriangles.getCount() == triangleCount);
 		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
 
 		*outOpaqueTriangleCount = triangleCount;
 	}
 
 	void WriteRaised(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, double yOffset, double ySize,
 		double vTop, double vBottom, ObjectMaterialID sideMaterialID, ObjectMaterialID floorMaterialID, ObjectMaterialID ceilingMaterialID,
-		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount,
+		double fadePercent, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount,
 		BufferView<RenderTriangle> &outAlphaTestedTriangles, int *outAlphaTestedTriangleCount)
 	{
 		constexpr int opaqueTriangleCount = 4;
@@ -150,32 +150,32 @@ namespace sgGeometry
 
 		// Opaque
 		// Y=bottom
-		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(0.0, yBottom, 1.0), Double3(0.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, floorMaterialID, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(1.0, yBottom, 0.0), Double3(1.0, yBottom, 1.0), UV_BR, UV_TR, UV_TL, floorMaterialID, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(0.0, yBottom, 1.0), Double3(0.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, floorMaterialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(1.0, yBottom, 0.0), Double3(1.0, yBottom, 1.0), UV_BR, UV_TR, UV_TL, floorMaterialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
 		// Y=top
-		WriteTriangle(Double3(1.0, yTop, 0.0), Double3(0.0, yTop, 0.0), Double3(0.0, yTop, 1.0), UV_TL, UV_BL, UV_BR, ceilingMaterialID, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, yTop, 1.0), Double3(1.0, yTop, 1.0), Double3(1.0, yTop, 0.0), UV_BR, UV_TR, UV_TL, ceilingMaterialID, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, yTop, 0.0), Double3(0.0, yTop, 0.0), Double3(0.0, yTop, 1.0), UV_TL, UV_BL, UV_BR, ceilingMaterialID, fadePercent, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, yTop, 1.0), Double3(1.0, yTop, 1.0), Double3(1.0, yTop, 0.0), UV_BR, UV_TR, UV_TL, ceilingMaterialID, fadePercent, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
 
 		// Alpha-tested
 		// X=0
-		WriteTriangle(Double3(0.0, yTop, 0.0), Double3(0.0, yBottom, 0.0), Double3(0.0, yBottom, 1.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, yBottom, 1.0), Double3(0.0, yTop, 1.0), Double3(0.0, yTop, 0.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, yTop, 0.0), Double3(0.0, yBottom, 0.0), Double3(0.0, yBottom, 1.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, yBottom, 1.0), Double3(0.0, yTop, 1.0), Double3(0.0, yTop, 0.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
 		// X=1
-		WriteTriangle(Double3(1.0, yTop, 1.0), Double3(1.0, yBottom, 1.0), Double3(1.0, yBottom, 0.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, yBottom, 0.0), Double3(1.0, yTop, 0.0), Double3(1.0, yTop, 1.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, yTop, 1.0), Double3(1.0, yBottom, 1.0), Double3(1.0, yBottom, 0.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, yBottom, 0.0), Double3(1.0, yTop, 0.0), Double3(1.0, yTop, 1.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
 		// Z=0
-		WriteTriangle(Double3(1.0, yTop, 0.0), Double3(1.0, yBottom, 0.0), Double3(0.0, yBottom, 0.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, yTop, 0.0), Double3(1.0, yTop, 0.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, yTop, 0.0), Double3(1.0, yBottom, 0.0), Double3(0.0, yBottom, 0.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, yTop, 0.0), Double3(1.0, yTop, 0.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
 		// Z=1
-		WriteTriangle(Double3(0.0, yTop, 1.0), Double3(0.0, yBottom, 1.0), Double3(1.0, yBottom, 1.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, yTop, 1.0), Double3(0.0, yTop, 1.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, yTop, 1.0), Double3(0.0, yBottom, 1.0), Double3(1.0, yBottom, 1.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, yTop, 1.0), Double3(0.0, yTop, 1.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
 
 		*outOpaqueTriangleCount = opaqueTriangleCount;
 		*outAlphaTestedTriangleCount = alphaTestedTriangleCount;
 	}
 
 	void WriteDiagonal(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, bool flipped, ObjectMaterialID materialID,
-		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
+		double fadePercent, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
 	{
 		constexpr int triangleCount = 4; // @todo: might change to 2 in the future if a back-face culling bool is added.
 		DebugAssert(outOpaqueTriangles.getCount() == triangleCount);
@@ -199,11 +199,11 @@ namespace sgGeometry
 		}
 
 		// Front side
-		WriteTriangle(Double3(startX, 1.0, startZ), Double3(startX, 0.0, startZ), Double3(endX, 0.0, endZ), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(endX, 0.0, endZ), Double3(endX, 1.0, endZ), Double3(startX, 1.0, startZ), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
+		WriteTriangle(Double3(startX, 1.0, startZ), Double3(startX, 0.0, startZ), Double3(endX, 0.0, endZ), UV_TL, UV_BL, UV_BR, materialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
+		WriteTriangle(Double3(endX, 0.0, endZ), Double3(endX, 1.0, endZ), Double3(startX, 1.0, startZ), UV_BR, UV_TR, UV_TL, materialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
 		// Back side
-		WriteTriangle(Double3(endX, 1.0, endZ), Double3(endX, 0.0, endZ), Double3(startX, 0.0, startZ), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
-		WriteTriangle(Double3(startX, 0.0, startZ), Double3(startX, 1.0, startZ), Double3(endX, 1.0, endZ), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
+		WriteTriangle(Double3(endX, 1.0, endZ), Double3(endX, 0.0, endZ), Double3(startX, 0.0, startZ), UV_TL, UV_BL, UV_BR, materialID, fadePercent, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
+		WriteTriangle(Double3(startX, 0.0, startZ), Double3(startX, 1.0, startZ), Double3(endX, 1.0, endZ), UV_BR, UV_TR, UV_TL, materialID, fadePercent, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
 
 		*outOpaqueTriangleCount = triangleCount;
 	}
@@ -215,18 +215,20 @@ namespace sgGeometry
 		DebugAssert(outAlphaTestedTriangles.getCount() == triangleCount);
 		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
+		constexpr double param0 = 0.0; // Unused.
+
 		// X=0
-		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
 		// X=1
-		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
 		// Z=0
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
 		// Z=1
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
 
 		*outAlphaTestedTriangleCount = triangleCount;
 	}
@@ -294,12 +296,14 @@ namespace sgGeometry
 		const double yBottom = yOffset;
 		const double yTop = yBottom + 1.0;
 
+		constexpr double param0 = 0.0; // Unused.
+
 		// Front side
-		WriteTriangle(Double3(startX, yTop, startZ), Double3(startX, yBottom, startZ), Double3(endX, yBottom, endZ), frontUvTL, frontUvBL, frontUvBR, materialID, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-		WriteTriangle(Double3(endX, yBottom, endZ), Double3(endX, yTop, endZ), Double3(startX, yTop, startZ), frontUvBR, frontUvTR, frontUvTL, materialID, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+		WriteTriangle(Double3(startX, yTop, startZ), Double3(startX, yBottom, startZ), Double3(endX, yBottom, endZ), frontUvTL, frontUvBL, frontUvBR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
+		WriteTriangle(Double3(endX, yBottom, endZ), Double3(endX, yTop, endZ), Double3(startX, yTop, startZ), frontUvBR, frontUvTR, frontUvTL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
 		// Back side
-		WriteTriangle(Double3(endX, yTop, endZ), Double3(endX, yBottom, endZ), Double3(startX, yBottom, startZ), backUvTL, backUvBL, backUvBR, materialID, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-		WriteTriangle(Double3(startX, yBottom, startZ), Double3(startX, yTop, startZ), Double3(endX, yTop, endZ), backUvBR, backUvTR, backUvTL, materialID, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+		WriteTriangle(Double3(endX, yTop, endZ), Double3(endX, yBottom, endZ), Double3(startX, yBottom, startZ), backUvTL, backUvBL, backUvBR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
+		WriteTriangle(Double3(startX, yBottom, startZ), Double3(startX, yTop, startZ), Double3(endX, yTop, endZ), backUvBR, backUvTR, backUvTL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
 
 		*outAlphaTestedTriangleCount = triangleCount;
 	}
@@ -322,40 +326,42 @@ namespace sgGeometry
 		// @todo: Water and lava chasms should not be scaled by ceilingScale.
 		const double yBottom = 0.0; //isDry ? 0.0 : (1.0 - (1.0 / ceilingScale)); // @todo: verify math
 
+		constexpr double param0 = 0.0; // Unused.
+
 		// Y=bottom (always present)
-		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, yBottom, 1.0), Double3(1.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, floorMaterialID, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, yBottom, 0.0), Double3(0.0, yBottom, 0.0), UV_BR, UV_TR, UV_TL, floorMaterialID, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
+		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, yBottom, 1.0), Double3(1.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, floorMaterialID, param0, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
+		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, yBottom, 0.0), Double3(0.0, yBottom, 0.0), UV_BR, UV_TR, UV_TL, floorMaterialID, param0, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
 
 		int triangleIndex = 2;
 		if (north)
 		{
 			// X=0
-			WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, yBottom, 1.0), Double3(0.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
-			WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
+			WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, yBottom, 1.0), Double3(0.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
+			WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
 			triangleIndex += 2;
 		}
 
 		if (south)
 		{
 			// X=1
-			WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, yBottom, 0.0), Double3(1.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
-			WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
+			WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, yBottom, 0.0), Double3(1.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
+			WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
 			triangleIndex += 2;
 		}
 
 		if (east)
 		{
 			// Z=0
-			WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, yBottom, 0.0), Double3(1.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
-			WriteTriangle(Double3(1.0, yBottom, 0.0), Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
+			WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, yBottom, 0.0), Double3(1.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
+			WriteTriangle(Double3(1.0, yBottom, 0.0), Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
 			triangleIndex += 2;
 		}
 
 		if (west)
 		{
 			// Z=1
-			WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, yBottom, 1.0), Double3(0.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
-			WriteTriangle(Double3(0.0, yBottom, 1.0), Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
+			WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, yBottom, 1.0), Double3(0.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
+			WriteTriangle(Double3(0.0, yBottom, 1.0), Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
 			triangleIndex += 2;
 		}
 
@@ -386,19 +392,21 @@ namespace sgGeometry
 		DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
 		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
+		constexpr double param0 = 0.0; // Unused.
+
 		// @todo: transform vertices by anim percent; each door type has its own transform behavior
 		// X=0
-		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
 		// X=1
-		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
 		// Z=0
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
 		// Z=1
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
+		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
+		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
 
 		*outAlphaTestedTriangleCount = triangleCount;
 	}
@@ -414,9 +422,11 @@ namespace sgGeometry
 		const Double3 entityHalfWidth = entityRight * (width * 0.50);
 		const Double3 entityHeight = entityUp * height;
 
+		constexpr double param0 = 0.0; // Unused.
+
 		constexpr double ceilingScale = 1.0; // Unused/already baked into position.
-		WriteTriangle(entityHalfWidth + entityHeight, entityHalfWidth, -entityHalfWidth, UV_TL, UV_BL, UV_BR, materialID, entityPosition, ceilingScale, 0, outEntityTriangles);
-		WriteTriangle(-entityHalfWidth, -entityHalfWidth + entityHeight, entityHalfWidth + entityHeight, UV_BR, UV_TR, UV_TL, materialID, entityPosition, ceilingScale, 1, outEntityTriangles);
+		WriteTriangle(entityHalfWidth + entityHeight, entityHalfWidth, -entityHalfWidth, UV_TL, UV_BL, UV_BR, materialID, param0, entityPosition, ceilingScale, 0, outEntityTriangles);
+		WriteTriangle(-entityHalfWidth, -entityHalfWidth + entityHeight, entityHalfWidth + entityHeight, UV_BR, UV_TR, UV_TL, materialID, param0, entityPosition, ceilingScale, 1, outEntityTriangles);
 	}
 }
 
@@ -514,6 +524,12 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 
 		const ChunkInt2 chunkPos = chunk.getPosition();
 
+		auto getVoxelFadePercentOrDefault = [&chunk](const VoxelInt3 &voxelPos)
+		{
+			const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
+			return (fadingVoxelInst != nullptr) ? fadingVoxelInst->getFadeState().getPercentFaded() : 0.0;
+		};
+
 		// Get the scene graph chunk associated with the world space chunk.
 		const auto graphChunkIter = std::find_if(this->graphChunks.begin(), this->graphChunks.end(),
 			[&chunkPos](const SceneGraphChunk &graphChunk)
@@ -539,54 +555,48 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			alphaTestedTriangleCount = 0;
 			if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 			{
-				// @todo: set fade percent in RenderTriangle for now; don't have the concept of mesh parameters yet.
-				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
-
 				const VoxelDefinition::WallData &wall = voxelDef.wall;
 				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(wall.sideTextureAssetRef);
 				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(wall.floorTextureAssetRef);
 				const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(wall.ceilingTextureAssetRef);
-				sgGeometry::WriteWall(chunkPos, voxelPos, ceilingScale, sideMaterialID, floorMaterialID, ceilingMaterialID,
+				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
+				sgGeometry::WriteWall(chunkPos, voxelPos, ceilingScale, sideMaterialID, floorMaterialID, ceilingMaterialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 12), &opaqueTriangleCount);
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 			{
-				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
-
 				const VoxelDefinition::FloorData &floor = voxelDef.floor;
 				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(floor.textureAssetRef);
-				sgGeometry::WriteFloor(chunkPos, voxelPos, ceilingScale, materialID,
+				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
+				sgGeometry::WriteFloor(chunkPos, voxelPos, ceilingScale, materialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 2), &opaqueTriangleCount);
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 			{
-				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
-
 				const VoxelDefinition::CeilingData &ceiling = voxelDef.ceiling;
 				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(ceiling.textureAssetRef);
-				sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, materialID,
+				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
+				sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, materialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 2), &opaqueTriangleCount);
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 			{
-				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
-
 				const VoxelDefinition::RaisedData &raised = voxelDef.raised;
 				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(raised.sideTextureAssetRef);
 				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(raised.floorTextureAssetRef);
 				const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(raised.ceilingTextureAssetRef);
+				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
 				sgGeometry::WriteRaised(chunkPos, voxelPos, ceilingScale, raised.yOffset, raised.ySize,
-					raised.vTop, raised.vBottom, sideMaterialID, floorMaterialID, ceilingMaterialID,
+					raised.vTop, raised.vBottom, sideMaterialID, floorMaterialID, ceilingMaterialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 4), &opaqueTriangleCount,
 					BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 8), &alphaTestedTriangleCount);
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 			{
-				//const VoxelInstance *fadingVoxelInst = chunk.tryGetVoxelInst(voxelPos, VoxelInstance::Type::Fading);
-
 				const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
 				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(diagonal.textureAssetRef);
-				sgGeometry::WriteDiagonal(chunkPos, voxelPos, ceilingScale, diagonal.type1, materialID,
+				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
+				sgGeometry::WriteDiagonal(chunkPos, voxelPos, ceilingScale, diagonal.type1, materialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 4), &opaqueTriangleCount);
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
