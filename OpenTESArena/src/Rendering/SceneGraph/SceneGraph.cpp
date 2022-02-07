@@ -2,6 +2,7 @@
 #include <optional>
 
 #include "SceneGraph.h"
+#include "../ArenaRenderUtils.h"
 #include "../RenderCamera.h"
 #include "../../Assets/MIFUtils.h"
 #include "../../Entities/EntityManager.h"
@@ -376,6 +377,20 @@ namespace sgGeometry
 	{
 		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
 
+		// Base vertices and face offsets (distance from origin for rotation transform) used by all doors.
+		const Double3 v0(0.0, 1.0, 0.0);
+		const Double3 v1(0.0, 0.0, 0.0);
+		const Double3 v2(0.0, 0.0, 1.0);
+		const Double3 v3(0.0, 1.0, 1.0);
+		const Double3 v4(1.0, 1.0, 1.0);
+		const Double3 v5(1.0, 0.0, 1.0);
+		const Double3 v6(1.0, 0.0, 0.0);
+		const Double3 v7(1.0, 1.0, 0.0);
+		const Double3 face0Offset = Double3::Zero;
+		const Double3 face1Offset(1.0, 0.0, 1.0);
+		const Double3 face2Offset(1.0, 0.0, 0.0);
+		const Double3 face3Offset(0.0, 0.0, 1.0);
+
 		constexpr double param0 = 0.0; // Unused.
 
 		// Generate and transform vertices by anim percent; each door type has its own transform behavior.
@@ -388,59 +403,49 @@ namespace sgGeometry
 			// Swings counter-clockwise. The "hinge flip" occurs when crossing the south face or west face.
 			// By default, the hinge is at (nearX, farZ). When flipped, it's at (farX, nearZ).
 			const Radians angle = -Constants::HalfPi * animPercent;
-			const Matrix4d rotationMat = Matrix4d::yRotation(angle);
+			const Matrix4d rotationMatrix = Matrix4d::yRotation(angle);
 
-			auto transformDoorPoint = [&rotationMat](const Double3 &point, const Double3 &offset)
+			auto transformSwingingPoint = [&rotationMatrix](const Double3 &point, const Double3 &offset)
 			{
 				// Need to translate vertex to the origin before rotating.
 				const Double3 basePoint = point - offset;
-				const Double4 rotatedPoint = rotationMat * Double4(basePoint.x, basePoint.y, basePoint.z, 1.0);
+				const Double4 rotatedPoint = rotationMatrix * Double4(basePoint.x, basePoint.y, basePoint.z, 1.0);
 				const Double3 rotatedPoint3D(rotatedPoint.x, rotatedPoint.y, rotatedPoint.z);
 				return rotatedPoint3D + offset;
 			};
 
-			const Double3 v0(0.0, 1.0, 0.0);
-			const Double3 v1(0.0, 0.0, 0.0);
-			const Double3 v2(0.0, 0.0, 1.0);
-			const Double3 v3(0.0, 1.0, 1.0);
-			const Double3 v4(1.0, 1.0, 1.0);
-			const Double3 v5(1.0, 0.0, 1.0);
-			const Double3 v6(1.0, 0.0, 0.0);
-			const Double3 v7(1.0, 1.0, 0.0);
+			// @todo: update hinge position depending on camera eye position
+			// @todo: make face offsets depend on camera eye position being left of the left edge, or south of the south edge.
 
 			// X=0
-			const Double3 face0Offset = Double3::Zero;
-			const Double3 face0_v0 = transformDoorPoint(v0, face0Offset);
-			const Double3 face0_v1 = transformDoorPoint(v1, face0Offset);
-			const Double3 face0_v2 = transformDoorPoint(v2, face0Offset);
-			const Double3 face0_v3 = transformDoorPoint(v3, face0Offset);
+			const Double3 face0_v0 = transformSwingingPoint(v0, face0Offset);
+			const Double3 face0_v1 = transformSwingingPoint(v1, face0Offset);
+			const Double3 face0_v2 = transformSwingingPoint(v2, face0Offset);
+			const Double3 face0_v3 = transformSwingingPoint(v3, face0Offset);
 			WriteTriangle(face0_v0, face0_v1, face0_v2, UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
 			WriteTriangle(face0_v2, face0_v3, face0_v0, UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
 
 			// X=1
-			const Double3 face1Offset(1.0, 0.0, 1.0);
-			const Double3 face1_v0 = transformDoorPoint(v4, face1Offset);
-			const Double3 face1_v1 = transformDoorPoint(v5, face1Offset);
-			const Double3 face1_v2 = transformDoorPoint(v6, face1Offset);
-			const Double3 face1_v3 = transformDoorPoint(v7, face1Offset);
+			const Double3 face1_v0 = transformSwingingPoint(v4, face1Offset);
+			const Double3 face1_v1 = transformSwingingPoint(v5, face1Offset);
+			const Double3 face1_v2 = transformSwingingPoint(v6, face1Offset);
+			const Double3 face1_v3 = transformSwingingPoint(v7, face1Offset);
 			WriteTriangle(face1_v0, face1_v1, face1_v2, UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
 			WriteTriangle(face1_v2, face1_v3, face1_v0, UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
 
 			// Z=0
-			const Double3 face2Offset(1.0, 0.0, 0.0);
-			const Double3 face2_v0 = transformDoorPoint(v7, face2Offset);
-			const Double3 face2_v1 = transformDoorPoint(v6, face2Offset);
-			const Double3 face2_v2 = transformDoorPoint(v1, face2Offset);
-			const Double3 face2_v3 = transformDoorPoint(v0, face2Offset);
+			const Double3 face2_v0 = transformSwingingPoint(v7, face2Offset);
+			const Double3 face2_v1 = transformSwingingPoint(v6, face2Offset);
+			const Double3 face2_v2 = transformSwingingPoint(v1, face2Offset);
+			const Double3 face2_v3 = transformSwingingPoint(v0, face2Offset);
 			WriteTriangle(face2_v0, face2_v1, face2_v2, UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
 			WriteTriangle(face2_v2, face2_v3, face2_v0, UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
 
 			// Z=1
-			const Double3 face3Offset(0.0, 0.0, 1.0);
-			const Double3 face3_v0 = transformDoorPoint(v3, face3Offset);
-			const Double3 face3_v1 = transformDoorPoint(v2, face3Offset);
-			const Double3 face3_v2 = transformDoorPoint(v5, face3Offset);
-			const Double3 face3_v3 = transformDoorPoint(v4, face3Offset);
+			const Double3 face3_v0 = transformSwingingPoint(v3, face3Offset);
+			const Double3 face3_v1 = transformSwingingPoint(v2, face3Offset);
+			const Double3 face3_v2 = transformSwingingPoint(v5, face3Offset);
+			const Double3 face3_v3 = transformSwingingPoint(v4, face3Offset);
 			WriteTriangle(face3_v0, face3_v1, face3_v2, UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
 			WriteTriangle(face3_v2, face3_v3, face3_v0, UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
 		}
@@ -449,19 +454,47 @@ namespace sgGeometry
 			triangleCount = 8;
 			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
 
+			// Percent of voxel side length the sliding door can go.
+			constexpr double maxSlidePercent = std::clamp(1.0 - ArenaRenderUtils::DOOR_MIN_VISIBLE, 0.0, 1.0);
+
+			const double slideAmount = std::clamp(animPercent * maxSlidePercent, 0.0, 1.0);
+			const Double2 uvTL(slideAmount, 0.0);
+			const Double2 uvTR(1.0, 0.0);
+			const Double2 uvBL(uvTL.x, 1.0);
+			const Double2 uvBR(1.0, 1.0);
+
 			// Slides to the left.
 			// X=0
-			WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-			WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+			const Double3 face0_v0 = v0;
+			const Double3 face0_v1 = v1;
+			const Double3 face0_v2 = v2 + ((v1 - v2) * slideAmount);
+			const Double3 face0_v3 = v3 + ((v0 - v3) * slideAmount);
+			WriteTriangle(face0_v0, face0_v1, face0_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
+			WriteTriangle(face0_v2, face0_v3, face0_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+
 			// X=1
-			WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-			WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+			const Double3 face1_v0 = v4;
+			const Double3 face1_v1 = v5;
+			const Double3 face1_v2 = v6 + ((v5 - v6) * slideAmount);
+			const Double3 face1_v3 = v7 + ((v4 - v7) * slideAmount);
+			WriteTriangle(face1_v0, face1_v1, face1_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
+			WriteTriangle(face1_v2, face1_v3, face1_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+
 			// Z=0
-			WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-			WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+			const Double3 face2_v0 = v7;
+			const Double3 face2_v1 = v6;
+			const Double3 face2_v2 = v1 + ((v6 - v1) * slideAmount);
+			const Double3 face2_v3 = v0 + ((v7 - v0) * slideAmount);
+			WriteTriangle(face2_v0, face2_v1, face2_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
+			WriteTriangle(face2_v2, face2_v3, face2_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+
 			// Z=1
-			WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-			WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
+			const Double3 face3_v0 = v3;
+			const Double3 face3_v1 = v2;
+			const Double3 face3_v2 = v5 + ((v2 - v5) * slideAmount);
+			const Double3 face3_v3 = v4 + ((v3 - v4) * slideAmount);
+			WriteTriangle(face3_v0, face3_v1, face3_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
+			WriteTriangle(face3_v2, face3_v3, face3_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
 		}
 		else if (doorType == ArenaTypes::DoorType::Raising)
 		{
