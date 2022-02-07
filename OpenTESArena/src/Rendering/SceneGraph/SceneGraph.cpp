@@ -401,11 +401,11 @@ namespace sgGeometry
 		int triangleCount = 0;
 		if (doorType == ArenaTypes::DoorType::Swinging)
 		{
+			// Swings counter-clockwise. The "hinge flip" occurs when crossing the south face or west face.
+			// By default, the hinge is at (nearX, farZ). When flipped, it's at (farX, nearZ).
 			triangleCount = 8;
 			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
 
-			// Swings counter-clockwise. The "hinge flip" occurs when crossing the south face or west face.
-			// By default, the hinge is at (nearX, farZ). When flipped, it's at (farX, nearZ).
 			const Radians angle = -Constants::HalfPi * animPercent;
 			const Matrix4d rotationMatrix = Matrix4d::yRotation(angle);
 
@@ -455,6 +455,7 @@ namespace sgGeometry
 		}
 		else if (doorType == ArenaTypes::DoorType::Sliding)
 		{
+			// Slides to the left.
 			triangleCount = 8;
 			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
 			
@@ -463,7 +464,6 @@ namespace sgGeometry
 			const Double2 uvBL(uvTL.x, 1.0);
 			const Double2 uvBR(1.0, 1.0);
 
-			// Slides to the left.
 			// X=0
 			const Double3 face0_v0 = v0;
 			const Double3 face0_v1 = v1;
@@ -498,6 +498,7 @@ namespace sgGeometry
 		}
 		else if (doorType == ArenaTypes::DoorType::Raising)
 		{
+			// Raises up.
 			triangleCount = 8;
 			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
 
@@ -506,7 +507,6 @@ namespace sgGeometry
 			const Double2 uvBL(0.0, 1.0);
 			const Double2 uvBR(1.0, 1.0);
 
-			// Raises up.
 			// X=0
 			const Double3 face0_v0 = v0;
 			const Double3 face0_v1 = v1 + ((v0 - v1) * slideAmount);
@@ -541,22 +541,78 @@ namespace sgGeometry
 		}
 		else if (doorType == ArenaTypes::DoorType::Splitting)
 		{
+			// Similar to Sliding but half goes left, half goes right.
 			triangleCount = 16;
 			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
 
-			// Similar to Sliding but half goes left, half goes right.
+			const double splitAmount = slideAmount * 0.50;
+			const double leftSplitAmount = 0.50 - splitAmount;
+			const double rightSplitAmount = 0.50 + splitAmount;
+
+			const Double2 leftUvTL(splitAmount, 0.0);
+			const Double2 leftUvTR(0.5, 0.0);
+			const Double2 leftUvBL(leftUvTL.x, 1.0);
+			const Double2 leftUvBR(0.5, 1.0);
+			const Double2 rightUvTL(0.5, 0.0);
+			const Double2 rightUvTR(std::clamp(1.0 - splitAmount, 0.0, 1.0), 0.0);
+			const Double2 rightUvBL(0.5, 1.0);
+			const Double2 rightUvBR(rightUvTR.x, 1.0);
+
 			// X=0
-			WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-			WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+			const Double3 face0Left_v0 = v0;
+			const Double3 face0Left_v1 = v1;
+			const Double3 face0Left_v2 = v1 + ((v2 - v1) * leftSplitAmount);
+			const Double3 face0Left_v3 = v0 + ((v3 - v0) * leftSplitAmount);
+			const Double3 face0Right_v0 = v0 + ((v3 - v0) * rightSplitAmount);
+			const Double3 face0Right_v1 = v1 + ((v2 - v1) * rightSplitAmount);
+			const Double3 face0Right_v2 = v2;
+			const Double3 face0Right_v3 = v3;
+			WriteTriangle(face0Left_v0, face0Left_v1, face0Left_v2, leftUvTL, leftUvBL, leftUvBR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
+			WriteTriangle(face0Left_v2, face0Left_v3, face0Left_v0, leftUvBR, leftUvTR, leftUvTL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+			WriteTriangle(face0Right_v0, face0Right_v1, face0Right_v2, rightUvTL, rightUvBL, rightUvBR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
+			WriteTriangle(face0Right_v2, face0Right_v3, face0Right_v0, rightUvBR, rightUvTR, rightUvTL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+
 			// X=1
-			WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-			WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+			const Double3 face1Left_v0 = v4;
+			const Double3 face1Left_v1 = v5;
+			const Double3 face1Left_v2 = v5 + ((v6 - v5) * leftSplitAmount);
+			const Double3 face1Left_v3 = v4 + ((v7 - v4) * leftSplitAmount);
+			const Double3 face1Right_v0 = v4 + ((v7 - v4) * rightSplitAmount);
+			const Double3 face1Right_v1 = v5 + ((v6 - v5) * rightSplitAmount);
+			const Double3 face1Right_v2 = v6;
+			const Double3 face1Right_v3 = v7;
+			WriteTriangle(face1Left_v0, face1Left_v1, face1Left_v2, leftUvTL, leftUvBL, leftUvBR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
+			WriteTriangle(face1Left_v2, face1Left_v3, face1Left_v0, leftUvBR, leftUvTR, leftUvTL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+			WriteTriangle(face1Right_v0, face1Right_v1, face1Right_v2, rightUvTL, rightUvBL, rightUvBR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
+			WriteTriangle(face1Right_v2, face1Right_v3, face1Right_v0, rightUvBR, rightUvTR, rightUvTL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
+
 			// Z=0
-			WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-			WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+			const Double3 face2Left_v0 = v7;
+			const Double3 face2Left_v1 = v6;
+			const Double3 face2Left_v2 = v6 + ((v1 - v6) * leftSplitAmount);
+			const Double3 face2Left_v3 = v7 + ((v0 - v7) * leftSplitAmount);
+			const Double3 face2Right_v0 = v7 + ((v0 - v7) * rightSplitAmount);
+			const Double3 face2Right_v1 = v6 + ((v1 - v6) * rightSplitAmount);
+			const Double3 face2Right_v2 = v1;
+			const Double3 face2Right_v3 = v0;
+			WriteTriangle(face2Left_v0, face2Left_v1, face2Left_v2, leftUvTL, leftUvBL, leftUvBR, materialID, param0, voxelPosition, ceilingScale, 8, outAlphaTestedTriangles);
+			WriteTriangle(face2Left_v2, face2Left_v3, face2Left_v0, leftUvBR, leftUvTR, leftUvTL, materialID, param0, voxelPosition, ceilingScale, 9, outAlphaTestedTriangles);
+			WriteTriangle(face2Right_v0, face2Right_v1, face2Right_v2, rightUvTL, rightUvBL, rightUvBR, materialID, param0, voxelPosition, ceilingScale, 10, outAlphaTestedTriangles);
+			WriteTriangle(face2Right_v2, face2Right_v3, face2Right_v0, rightUvBR, rightUvTR, rightUvTL, materialID, param0, voxelPosition, ceilingScale, 11, outAlphaTestedTriangles);
+
 			// Z=1
-			WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-			WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
+			const Double3 face3Left_v0 = v3;
+			const Double3 face3Left_v1 = v2;
+			const Double3 face3Left_v2 = v2 + ((v5 - v2) * leftSplitAmount);
+			const Double3 face3Left_v3 = v3 + ((v4 - v3) * leftSplitAmount);
+			const Double3 face3Right_v0 = v3 + ((v4 - v3) * rightSplitAmount);
+			const Double3 face3Right_v1 = v2 + ((v5 - v2) * rightSplitAmount);
+			const Double3 face3Right_v2 = v5;
+			const Double3 face3Right_v3 = v4;
+			WriteTriangle(face3Left_v0, face3Left_v1, face3Left_v2, leftUvTL, leftUvBL, leftUvBR, materialID, param0, voxelPosition, ceilingScale, 12, outAlphaTestedTriangles);
+			WriteTriangle(face3Left_v2, face3Left_v3, face3Left_v0, leftUvBR, leftUvTR, leftUvTL, materialID, param0, voxelPosition, ceilingScale, 13, outAlphaTestedTriangles);
+			WriteTriangle(face3Right_v0, face3Right_v1, face3Right_v2, rightUvTL, rightUvBL, rightUvBR, materialID, param0, voxelPosition, ceilingScale, 14, outAlphaTestedTriangles);
+			WriteTriangle(face3Right_v2, face3Right_v3, face3Right_v0, rightUvBR, rightUvTR, rightUvTL, materialID, param0, voxelPosition, ceilingScale, 15, outAlphaTestedTriangles);
 		}
 		else
 		{
