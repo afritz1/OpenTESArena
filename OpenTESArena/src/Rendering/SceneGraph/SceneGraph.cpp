@@ -391,6 +391,10 @@ namespace sgGeometry
 		const Double3 face2Offset(1.0, 0.0, 0.0);
 		const Double3 face3Offset(0.0, 0.0, 1.0);
 
+		// Percent of voxel side length a sliding/raising door can go.
+		constexpr double maxSlidePercent = std::clamp(1.0 - ArenaRenderUtils::DOOR_MIN_VISIBLE, 0.0, 1.0);
+		const double slideAmount = std::clamp(animPercent * maxSlidePercent, 0.0, 1.0);
+
 		constexpr double param0 = 0.0; // Unused.
 
 		// Generate and transform vertices by anim percent; each door type has its own transform behavior.
@@ -453,11 +457,7 @@ namespace sgGeometry
 		{
 			triangleCount = 8;
 			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
-
-			// Percent of voxel side length the sliding door can go.
-			constexpr double maxSlidePercent = std::clamp(1.0 - ArenaRenderUtils::DOOR_MIN_VISIBLE, 0.0, 1.0);
-
-			const double slideAmount = std::clamp(animPercent * maxSlidePercent, 0.0, 1.0);
+			
 			const Double2 uvTL(slideAmount, 0.0);
 			const Double2 uvTR(1.0, 0.0);
 			const Double2 uvBL(uvTL.x, 1.0);
@@ -501,19 +501,43 @@ namespace sgGeometry
 			triangleCount = 8;
 			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
 
+			const Double2 uvTL(0.0, slideAmount);
+			const Double2 uvTR(1.0, slideAmount);
+			const Double2 uvBL(0.0, 1.0);
+			const Double2 uvBR(1.0, 1.0);
+
 			// Raises up.
 			// X=0
-			WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-			WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+			const Double3 face0_v0 = v0;
+			const Double3 face0_v1 = v1 + ((v0 - v1) * slideAmount);
+			const Double3 face0_v2 = v2 + ((v3 - v2) * slideAmount);
+			const Double3 face0_v3 = v3;
+			WriteTriangle(face0_v0, face0_v1, face0_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
+			WriteTriangle(face0_v2, face0_v3, face0_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
+
 			// X=1
-			WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-			WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+			const Double3 face1_v0 = v4;
+			const Double3 face1_v1 = v5 + ((v4 - v5) * slideAmount);
+			const Double3 face1_v2 = v6 + ((v7 - v6) * slideAmount);
+			const Double3 face1_v3 = v7;
+			WriteTriangle(face1_v0, face1_v1, face1_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
+			WriteTriangle(face1_v2, face1_v3, face1_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
+
 			// Z=0
-			WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-			WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+			const Double3 face2_v0 = v7;
+			const Double3 face2_v1 = v6 + ((v7 - v6) * slideAmount);
+			const Double3 face2_v2 = v1 + ((v0 - v1) * slideAmount);
+			const Double3 face2_v3 = v0;
+			WriteTriangle(face2_v0, face2_v1, face2_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
+			WriteTriangle(face2_v2, face2_v3, face2_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
+
 			// Z=1
-			WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-			WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
+			const Double3 face3_v0 = v3;
+			const Double3 face3_v1 = v2 + ((v3 - v2) * slideAmount);
+			const Double3 face3_v2 = v5 + ((v4 - v5) * slideAmount);
+			const Double3 face3_v3 = v4;
+			WriteTriangle(face3_v0, face3_v1, face3_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
+			WriteTriangle(face3_v2, face3_v3, face3_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
 		}
 		else if (doorType == ArenaTypes::DoorType::Splitting)
 		{
