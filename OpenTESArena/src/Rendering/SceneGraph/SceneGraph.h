@@ -73,7 +73,7 @@ private:
 	std::vector<RenderTriangle> entityTriangles;
 	std::vector<RenderTriangle> skyTriangles; // @todo: will the main difference with opaque voxel geometry be the lack of depth writes?
 
-	void clearVoxels();
+	void clearVoxels(bool includeGraphChunks);
 	void clearEntities();
 	void clearSky();
 public:

@@ -550,6 +550,17 @@ void Game::tick(double dt)
 	this->handlePanelChanges();
 }
 
+void Game::lateTick(double dt)
+{
+	if (this->gameStateIsActive())
+	{
+		// Check if we need to apply a map transition. This can happen due to the current tick() design
+		// where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this frame, causing us to
+		// miss updating the renderer.
+		this->gameState->tryUpdatePendingMapTransition(*this, dt);
+	}
+}
+
 void Game::updateAudio(double dt)
 {
 	if (this->gameStateIsActive())
@@ -815,18 +826,29 @@ void Game::loop()
 			DebugCrash("handleInput() exception: " + std::string(e.what()));
 		}
 
+		// Multiply delta time by the time scale. I settled on having the effects of this
+		// be application-wide rather than just in the game world since it's intended to
+		// simulate lower DOSBox cycles.
+		const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
+
 		// Animate the current game state by delta time.
 		try
 		{
-			// Multiply delta time by the time scale. I settled on having the effects of this
-			// be application-wide rather than just in the game world since it's intended to
-			// simulate lower DOSBox cycles.
-			const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
 			this->tick(timeScaledDt);
 		}
 		catch (const std::exception &e)
 		{
 			DebugCrash("tick() exception: " + std::string(e.what()));
+		}
+
+		// Run any extra logic needed after tick() and before render() (i.e. during map transitions).
+		try
+		{
+			this->lateTick(timeScaledDt);
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrash("lateTick() exception: " + std::string(e.what()));
 		}
 
 		// Draw to the screen.

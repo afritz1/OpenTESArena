@@ -230,6 +230,9 @@ public:
 	void updateSceneGraph(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
 		double daytimePercent, double latitude, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
 		const EntityDefinitionLibrary &entityDefLibrary);
+	
+	// Unloads all world geometry from the scene graph, used on scene changes.
+	void clearSceneGraph();
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);

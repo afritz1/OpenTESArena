@@ -892,7 +892,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 	}
 
 	// @todo: only call this on a scene change? the dirty voxels above should be keeping everything good now.
-	this->clearVoxels();
+	this->clearVoxels(false);
 
 	// Regenerate draw lists.
 	// @todo: maybe this is where we need to call the voxel animation logic functions so we know what material ID
@@ -1043,13 +1043,18 @@ void SceneGraph::updateSky(const SkyInstance &skyInst, double daytimePercent, do
 	DebugNotImplemented();
 }*/
 
-void SceneGraph::clearVoxels()
+void SceneGraph::clearVoxels(bool includeGraphChunks)
 {
 	this->voxelRenderDefs.clear();
 	this->chunkRenderDefs.clear();
 	this->chunkRenderInsts.clear();
 	this->opaqueVoxelTriangles.clear();
 	this->alphaTestedVoxelTriangles.clear();
+
+	if (includeGraphChunks)
+	{
+		this->graphChunks.clear();
+	}
 }
 
 void SceneGraph::clearEntities()
@@ -1068,7 +1073,7 @@ void SceneGraph::clearSky()
 
 void SceneGraph::clear()
 {
-	this->clearVoxels();
+	this->clearVoxels(true);
 	this->clearEntities();
 	this->clearSky();
 }

@@ -110,6 +110,9 @@ private:
 	// Animates the game state by delta time.
 	void tick(double dt);
 
+	// Runs after tick() and handles some edge cases with the game loop during map transitions, etc..
+	void lateTick(double dt);
+
 	// Updates audio state and attempts to update the 3D audio listener (if any).
 	void updateAudio(double dt);
 

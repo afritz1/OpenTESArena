@@ -870,6 +870,11 @@ void Renderer::updateSceneGraph(const RenderCamera &camera, const LevelInstance 
 	this->sceneGraph.updateSky(skyInst, daytimePercent, latitude);
 }
 
+void Renderer::clearSceneGraph()
+{
+	this->sceneGraph.clear();
+}
+
 void Renderer::clear(const Color &color)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
