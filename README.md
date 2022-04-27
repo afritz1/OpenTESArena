@@ -46,7 +46,7 @@ If you would like music played in-game, see **Music setup** below after installi
 1. Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
 1. Get the Arena data files from one of:
    1. [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website (floppy disk version)
-   1. Bethesda Launcher: `C:/Program Files (x86)/Bethesda.net Launcher/Games/The Elder Scrolls Arena` (floppy disk version)
+   1. [Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/) (floppy disk version)
    1. [GOG](https://www.gog.com/wishlist/games/the_elder_scrolls_arena) (CD version)
 1. Extract Arena106Setup.zip and run Arena106.exe.
 1. Pick a destination folder to install into. This can be anywhere on your hard drive or in the OpenTESArena `data` folder.
