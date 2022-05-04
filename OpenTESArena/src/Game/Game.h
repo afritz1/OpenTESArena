@@ -83,7 +83,6 @@ private:
 	ScratchAllocator scratchAllocator;
 	Profiler profiler;
 	FPSCounter fpsCounter;
-	std::string basePath, optionsPath;
 	bool requestedSubPanelPop;
 	bool running;
 
@@ -132,6 +131,8 @@ public:
 
 	Game &operator=(const Game&) = delete;
 	Game &operator=(Game&&) = delete;
+
+	bool init();
 
 	// Gets the audio manager for changing the current music and sound.
 	AudioManager &getAudioManager();

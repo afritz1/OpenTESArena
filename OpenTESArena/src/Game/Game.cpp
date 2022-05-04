@@ -34,44 +34,102 @@ namespace
 {
 	// Size of scratch buffer in bytes, reset each frame.
 	constexpr int SCRATCH_BUFFER_SIZE = 65536;
+
+	bool TryMakeValidArenaExePath(const std::string &vfsFolderPath, std::string *outExePath, bool *outIsFloppyDiskVersion)
+	{
+		// Check for CD version first.
+		const std::string &cdExeName = ExeData::CD_VERSION_EXE_FILENAME;
+		std::string cdExePath = vfsFolderPath + cdExeName;
+		if (File::exists(cdExePath.c_str()))
+		{
+			DebugLog("CD executable \"" + cdExeName + "\" found in \"" + vfsFolderPath + "\".");
+			*outExePath = std::move(cdExePath);
+			*outIsFloppyDiskVersion = false;
+			return true;
+		}
+
+		const std::string &floppyDiskExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
+		std::string floppyDiskExePath = vfsFolderPath + floppyDiskExeName;
+		if (File::exists(floppyDiskExePath.c_str()))
+		{
+			DebugLog("Floppy disk executable \"" + floppyDiskExeName + "\" found in \"" + vfsFolderPath + "\".");
+			*outExePath = std::move(floppyDiskExePath);
+			*outIsFloppyDiskVersion = true;
+			return true;
+		}
+
+		// No valid Arena .exe found.
+		return false;
+	}
 }
 
 Game::Game()
 {
+	// Keeps us from deleting a sub-panel the same frame it's in use. The pop is delayed until the
+	// beginning of the next frame.
+	this->requestedSubPanelPop = false;
+
+	this->running = true;
+}
+
+Game::~Game()
+{
+	if (this->applicationExitListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->applicationExitListenerID);
+	}
+
+	if (this->windowResizedListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->windowResizedListenerID);
+	}
+
+	if (this->takeScreenshotListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->takeScreenshotListenerID);
+	}
+
+	if (this->debugProfilerListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->debugProfilerListenerID);
+	}
+}
+
+bool Game::init()
+{
 	DebugLog("Initializing (Platform: " + Platform::getPlatform() + ").");
 
-	// Get the current working directory. This is most relevant for platforms
-	// like macOS, where the base path might be in the app's own "Resources" folder.
-	this->basePath = Platform::getBasePath();
+	// Current working directory (in most cases). This is most relevant for platforms like macOS, where
+	// the base path might be in the app's own "Resources" folder.
+	const std::string basePath = Platform::getBasePath();
+	const std::string dataFolderPath = basePath + "data/";
 
-	// Get the path to the options folder. This is platform-dependent and points inside 
-	// the "preferences directory" so it's always writable.
-	this->optionsPath = Platform::getOptionsPath();
-
-	// Parse options-default.txt and options-changes.txt (if it exists). Always prefer the
-	// default file before the "changes" file.
-	this->initOptions(this->basePath, this->optionsPath);
+	// Initialize options from default and changes files if present. The path is platform-dependent
+	// and points inside the "preferences directory" so it's always writable.
+	const std::string optionsPath = Platform::getOptionsPath();
+	this->initOptions(basePath, optionsPath);
 
 	// Initialize virtual file system using the Arena path in the options file.
 	const bool arenaPathIsRelative = File::pathIsRelative(this->options.getMisc_ArenaPath().c_str());
-	VFS::Manager::get().initialize(std::string(
-		(arenaPathIsRelative ? this->basePath : "") + this->options.getMisc_ArenaPath()));
+	const std::string vfsFolderPath = String::addTrailingSlashIfMissing(
+		(arenaPathIsRelative ? basePath : "") + this->options.getMisc_ArenaPath());
+	VFS::Manager::get().initialize(std::string(vfsFolderPath));
 
-	// Initialize the OpenAL Soft audio manager.
+	// Determine which game version the data path is pointing to.
+	std::string arenaExePath;
+	bool isFloppyDiskVersion;
+	if (!TryMakeValidArenaExePath(vfsFolderPath, &arenaExePath, &isFloppyDiskVersion))
+	{
+		DebugLogError("\"" + vfsFolderPath + "\" does not contain an Arena executable.");
+		return false;
+	}
+
+	// Initialize audio manager.
 	const bool midiPathIsRelative = File::pathIsRelative(this->options.getAudio_MidiConfig().c_str());
-	const std::string midiPath = (midiPathIsRelative ? this->basePath : "") +
-		this->options.getAudio_MidiConfig();
-
+	const std::string midiFilePath = (midiPathIsRelative ? basePath : "") + this->options.getAudio_MidiConfig();
 	this->audioManager.init(this->options.getAudio_MusicVolume(),
 		this->options.getAudio_SoundVolume(), this->options.getAudio_SoundChannels(),
-		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiPath);
-
-	// Initialize music library from file.
-	const std::string musicLibraryPath = this->basePath + "data/audio/MusicDefinitions.txt";
-	if (!this->musicLibrary.init(musicLibraryPath.c_str()))
-	{
-		DebugLogError("Couldn't init music library at \"" + musicLibraryPath + "\".");
-	}
+		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiFilePath);
 
 	// Initialize the renderer and window with the given settings.
 	auto resolutionScaleFunc = [this]()
@@ -86,7 +144,9 @@ Game::Game()
 		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()),
 		this->options.getGraphics_LetterboxMode(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D))
 	{
-		throw DebugException("Couldn't init renderer.");
+		DebugLogError("Couldn't init renderer (2D: " + std::to_string(static_cast<int>(rendererSystemType2D)) +
+			", 3D: " + std::to_string(static_cast<int>(rendererSystemType3D)) + ").");
+		return false;
 	}
 
 	this->inputManager.init();
@@ -119,48 +179,13 @@ Game::Game()
 	this->debugProfilerListenerID = this->inputManager.addInputActionListener(
 		InputActionName::DebugProfiler, CommonUiController::onDebugInputAction);
 
-	// Determine which version of the game the Arena path is pointing to.
-	const bool isFloppyVersion = [this, arenaPathIsRelative]()
-	{
-		// Path to the Arena folder.
-		const std::string fullArenaPath = [this, arenaPathIsRelative]()
-		{
-			// Include the base path if the ArenaPath is relative.
-			const std::string path = (arenaPathIsRelative ? this->basePath : "") +
-				this->options.getMisc_ArenaPath();
-			return String::addTrailingSlashIfMissing(path);
-		}();
-
-		// Check for the CD version first.
-		const std::string &acdExeName = ExeData::CD_VERSION_EXE_FILENAME;
-		const std::string acdExePath = fullArenaPath + acdExeName;
-		if (File::exists(acdExePath.c_str()))
-		{
-			DebugLog("CD version.");
-			return false;
-		}
-
-		// If that's not there, check for the floppy disk version.
-		const std::string &aExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
-		const std::string aExePath = fullArenaPath + aExeName;
-		if (File::exists(aExePath.c_str()))
-		{
-			DebugLog("Floppy disk version.");
-			return true;
-		}
-
-		// If neither exist, it's not a valid Arena directory.
-		throw DebugException("\"" + fullArenaPath + "\" does not have an Arena executable.");
-	}();
-
-	// Load fonts.
+	// Load various asset libraries.
 	if (!this->fontLibrary.init())
 	{
 		DebugCrash("Couldn't init font library.");
 	}
 
-	// Load various asset libraries.
-	if (!this->binaryAssetLibrary.init(isFloppyVersion))
+	if (!this->binaryAssetLibrary.init(isFloppyDiskVersion))
 	{
 		DebugCrash("Couldn't init binary asset library.");
 	}
@@ -170,30 +195,24 @@ Game::Game()
 		DebugCrash("Couldn't init text asset library.");
 	}
 
-	// Load character classes (dependent on original game's data).
-	this->charClassLibrary.init(this->binaryAssetLibrary.getExeData());
+	const std::string audioFolderPath = dataFolderPath + "audio/";
+	const std::string musicLibraryPath = audioFolderPath + "MusicDefinitions.txt";
+	if (!this->musicLibrary.init(musicLibraryPath.c_str()))
+	{
+		DebugLogError("Couldn't init music library with path \"" + musicLibraryPath + "\".");
+		return false;
+	}
 
 	this->cinematicLibrary.init();
 
-	// Load entity definitions (dependent on original game's data).
-	this->entityDefLibrary.init(this->binaryAssetLibrary.getExeData(), this->textureManager);
+	const ExeData &exeData = this->binaryAssetLibrary.getExeData();
+	this->charClassLibrary.init(exeData);
+	this->entityDefLibrary.init(exeData, this->textureManager);
 
-	// Load and set window icon.
-	const Surface icon = [this]()
-	{
-		const std::string iconPath = this->basePath + "data/icon.bmp";
-		Surface surface = Surface::loadBMP(iconPath.c_str(), Renderer::DEFAULT_PIXELFORMAT);
-
-		// Treat black as transparent.
-		const uint32_t black = surface.mapRGBA(0, 0, 0, 255);
-		SDL_SetColorKey(surface.get(), SDL_TRUE, black);
-
-		return surface;
-	}();
-
-	// Load single-instance sounds file for the audio manager.
+	// Load single-instance sounds file for the audio manager (new feature with this engine since
+	// the one-sound-at-a-time limit no longer exists).
 	TextLinesFile singleInstanceSoundsFile;
-	const std::string singleInstanceSoundsPath = this->basePath + "data/audio/SingleInstanceSounds.txt";
+	const std::string singleInstanceSoundsPath = audioFolderPath + "SingleInstanceSounds.txt";
 	if (singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
 	{
 		for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
@@ -207,74 +226,41 @@ Game::Game()
 		DebugLogWarning("Missing single instance sounds file at \"" + singleInstanceSoundsPath + "\".");
 	}
 
-	this->renderer.setWindowIcon(icon);
+	// Initialize window icon.
+	const std::string windowIconPath = dataFolderPath + "icon.bmp";
+	const Surface windowIconSurface = Surface::loadBMP(windowIconPath.c_str(), Renderer::DEFAULT_PIXELFORMAT);
+	if (windowIconSurface.get() == nullptr)
+	{
+		DebugLogError("Couldn't load window icon with path \"" + windowIconPath + "\".");
+		return false;
+	}
 
+	const uint32_t windowIconColorKey = windowIconSurface.mapRGBA(0, 0, 0, 255);
+	SDL_SetColorKey(windowIconSurface.get(), SDL_TRUE, windowIconColorKey);
+	this->renderer.setWindowIcon(windowIconSurface);
+
+	// Random seed.
 	this->random.init();
+
 	this->scratchAllocator.init(SCRATCH_BUFFER_SIZE);
 
-	// Initialize panel and music to default.
-	this->panel = IntroUiModel::makeStartupPanel(*this);
-	
-	const MusicDefinition *mainMenuMusicDef = this->musicLibrary.getRandomMusicDefinition(
-		MusicDefinition::Type::MainMenu, this->random);
-	if (mainMenuMusicDef == nullptr)
-	{
-		DebugLogWarning("Missing main menu music.");
-	}
-
-	this->audioManager.setMusic(mainMenuMusicDef);
-
-	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(this->fontLibrary);
-	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
-	{
-		DebugCrash("Couldn't init debug info text box.");
-	}
-
-	// Use a texture as the cursor instead.
+	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
 
 	// Leave some members null for now. The game state is initialized when the player 
 	// enters the game world, and the "next panel" is a temporary used by the game
 	// to avoid corruption between panel events which change the panel.
-	this->gameState = nullptr;
-	this->charCreationState = nullptr;
-	this->nextPanel = nullptr;
-	this->nextSubPanel = nullptr;
+	DebugAssert(this->gameState == nullptr);
+	DebugAssert(this->charCreationState == nullptr);
+	DebugAssert(this->nextPanel == nullptr);
+	DebugAssert(this->nextSubPanel == nullptr);
 
-	// This keeps the programmer from deleting a sub-panel the same frame it's in use.
-	// The pop is delayed until the beginning of the next frame.
-	this->requestedSubPanelPop = false;
-
-	this->running = true;
-}
-
-Game::~Game()
-{
-	if (this->applicationExitListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->applicationExitListenerID);
-	}
-
-	if (this->windowResizedListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->windowResizedListenerID);
-	}
-
-	if (this->takeScreenshotListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->takeScreenshotListenerID);
-	}
-
-	if (this->debugProfilerListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->debugProfilerListenerID);
-	}
+	return true;
 }
 
 Panel *Game::getActivePanel() const
 {
-	return (this->subPanels.size() > 0) ?
-		this->subPanels.back().get() : this->panel.get();
+	return (this->subPanels.size() > 0) ? this->subPanels.back().get() : this->panel.get();
 }
 
 AudioManager &Game::getAudioManager()
@@ -752,6 +738,24 @@ void Game::cleanUp()
 
 void Game::loop()
 {
+	// Initialize panel and music to default (bootstrapping the first game frame).
+	this->panel = IntroUiModel::makeStartupPanel(*this);
+
+	const MusicDefinition *mainMenuMusicDef = this->musicLibrary.getRandomMusicDefinition(
+		MusicDefinition::Type::MainMenu, this->random);
+	if (mainMenuMusicDef == nullptr)
+	{
+		DebugLogWarning("Missing main menu music.");
+	}
+
+	this->audioManager.setMusic(mainMenuMusicDef);
+
+	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(this->fontLibrary);
+	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
+	{
+		DebugCrash("Couldn't init debug info text box.");
+	}
+
 	// Nanoseconds per second. Only using this much precision because it's what
 	// high_resolution_clock gives back. Microseconds would be fine too.
 	constexpr int64_t timeUnits = 1000000000;
