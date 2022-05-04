@@ -667,9 +667,9 @@ void Game::renderDebugInfo()
 void Game::render()
 {
 	// Get the draw calls from each UI panel/sub-panel and determine what to draw.
-	std::vector<Panel*> panelsToRender;
+	std::vector<const Panel*> panelsToRender;
 	panelsToRender.emplace_back(this->panel.get());
-	for (auto &subPanel : this->subPanels)
+	for (const auto &subPanel : this->subPanels)
 	{
 		panelsToRender.emplace_back(subPanel.get());
 	}
@@ -686,9 +686,9 @@ void Game::render()
 
 	const Int2 windowDims = this->renderer.getWindowDimensions();
 
-	for (Panel *currentPanel : panelsToRender)
+	for (const Panel *currentPanel : panelsToRender)
 	{
-		BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
+		const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
 		for (int i = 0; i < drawCallsView.getCount(); i++)
 		{
 			const UiDrawCall &drawCall = drawCallsView.get(i);
