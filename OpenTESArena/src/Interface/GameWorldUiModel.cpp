@@ -12,8 +12,7 @@
 
 std::string GameWorldUiModel::getPlayerNameText(Game &game)
 {
-	auto &gameState = game.getGameState();
-	const auto &player = gameState.getPlayer();
+	const Player &player = game.getPlayer();
 	return player.getFirstName();
 }
 
@@ -128,7 +127,7 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	GameState &gameState = game.getGameState();
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const Player &player = gameState.getPlayer();
+	const Player &player = game.getPlayer();
 
 	const MapType mapType = mapDef.getMapType();
 	const OriginalInt2 displayedCoords = [&player, mapType]()
@@ -196,8 +195,7 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 {
 	if (buttonType == ButtonType::Magic)
 	{
-		auto &gameState = game.getGameState();
-		const Player &player = gameState.getPlayer();
+		const Player &player = game.getPlayer();
 		const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
 		const int charClassDefID = player.getCharacterClassDefID();
 		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
@@ -255,8 +253,7 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 	const Int2 viewDims = renderer.getViewDimensions();
 	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
 
-	auto &gameState = game.getGameState();
-	const auto &player = gameState.getPlayer();
+	const Player &player = game.getPlayer();
 	const Double3 &cameraDirection = player.getDirection();
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center

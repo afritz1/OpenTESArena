@@ -148,8 +148,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 
 		// Leave the interior and go to the saved exterior.
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-		if (!gameState.tryPopMap(game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
-			textureManager, renderer))
+		if (!gameState.tryPopMap(game.getPlayer(), game.getEntityDefinitionLibrary(),
+			game.getBinaryAssetLibrary(), textureManager, renderer))
 		{
 			DebugCrash("Couldn't leave interior.");
 		}
@@ -540,7 +540,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			}();
 
 			// Player destination after going through a level up/down voxel.
-			auto &player = gameState.getPlayer();
+			auto &player = game.getPlayer();
 			const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
 			const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(
 				transitionCoord.chunk, transitionVoxelCenter + dirToNewVoxel);

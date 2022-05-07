@@ -3,8 +3,6 @@
 #include <cmath>
 #include <tuple>
 
-#include "SDL.h"
-
 #include "ArenaClockUtils.h"
 #include "Game.h"
 #include "GameState.h"
@@ -60,12 +58,21 @@ void GameState::MapTransitionState::init(MapState &&mapState,
 	this->enteringInteriorFromExterior = enteringInteriorFromExterior;
 }
 
-GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
-	: player(std::move(player))
+GameState::GameState()
 {
-	// Most values need to be initialized elsewhere in the program in order to determine
-	// the world state, etc..
 	DebugLog("Initializing.");
+
+	this->clearSession();
+}
+
+GameState::~GameState()
+{
+	DebugLog("Closing.");
+}
+
+void GameState::init(const BinaryAssetLibrary &binaryAssetLibrary)
+{
+	// @todo: might want a clearSession()? Seems weird.
 
 	// Initialize world map definition and instance to default.
 	this->worldMapDef.init(binaryAssetLibrary);
@@ -101,20 +108,28 @@ GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibra
 	// Do initial weather update (to set each value to a valid state).
 	this->updateWeatherList(binaryAssetLibrary.getExeData());
 
+	this->date = Date();
+	this->weatherInst = WeatherInstance();
+}
+
+void GameState::clearSession()
+{
+	// @todo: this function doesn't clear everything, i.e. weather state. Might want to revise later.
+
+	// Don't have to clear on-screen text box durations.
 	this->provinceIndex = -1;
 	this->locationIndex = -1;
 
-	this->triggerTextRemainingSeconds = 0.0;
-	this->actionTextRemainingSeconds = 0.0;
-	this->effectTextRemainingSeconds = 0.0;
-
 	this->isCamping = false;
 	this->chasmAnimSeconds = 0.0;
-}
 
-GameState::~GameState()
-{
-	DebugLog("Closing.");
+	this->travelData = nullptr;
+	this->nextMap = nullptr;
+	this->clearMaps();
+	
+	this->onLevelUpVoxelEnter = std::function<void(Game&)>();
+
+	this->weatherDef.initClear();
 }
 
 /*bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
@@ -576,7 +591,7 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	return true;
 }
 
-bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
+bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
 	if (this->maps.size() == 0)
@@ -637,8 +652,8 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 	}();
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, std::move(activeWeatherDef), startCoord,
-		citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, player, std::move(activeWeatherDef),
+		startCoord, citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for previously active level.");
 		return false;
@@ -653,11 +668,6 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 	return true;
 }
 
-Player &GameState::getPlayer()
-{
-	return this->player;
-}
-
 const MapDefinition &GameState::getActiveMapDef() const
 {
 	if (this->nextMap != nullptr)
@@ -670,6 +680,11 @@ const MapDefinition &GameState::getActiveMapDef() const
 		const MapState &activeMapState = this->maps.top();
 		return activeMapState.definition;
 	}
+}
+
+bool GameState::hasActiveMapInst() const
+{
+	return !this->maps.empty();
 }
 
 MapInstance &GameState::getActiveMapInst()
@@ -948,14 +963,8 @@ void GameState::resetEffectTextDuration()
 	this->effectTextRemainingSeconds = 0.0;
 }
 
-void GameState::setTransitionedPlayerPosition(const CoordDouble3 &position)
-{
-	this->player.teleport(position);
-	this->player.setVelocityToZero();
-}
-
 bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-	WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
+	Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
@@ -964,7 +973,11 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	const CoordDouble3 playerPos(
 		startCoord.chunk,
 		VoxelDouble3(startVoxelReal.x, levelInst.getCeilingScale() + Player::HEIGHT, startVoxelReal.y));
-	this->setTransitionedPlayerPosition(playerPos);
+
+	// Set transitioned position.
+	player.teleport(playerPos);
+	player.setVelocityToZero();
+
 	this->weatherDef = std::move(weatherDef);
 
 	Random weatherRandom; // Cosmetic random.
@@ -1000,7 +1013,7 @@ bool GameState::trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &
 	return true;
 }
 
-bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
+bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
 {
@@ -1027,7 +1040,7 @@ bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
 	LevelInstance &newLevelInst = newMapInst.getActiveLevel();
 	SkyInstance &newSkyInst = newMapInst.getActiveSky();
 
-	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, std::move(nextWeatherDef),
+	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, player, std::move(nextWeatherDef),
 		transitionState.startCoord, transitionState.citizenGenInfo, entityDefLibrary, binaryAssetLibrary,
 		textureManager, renderer))
 	{
@@ -1097,9 +1110,10 @@ void GameState::updateWeatherList(const ExeData &exeData)
 
 void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 {
+	Player &player = game.getPlayer();
 	if (this->nextMap != nullptr)
 	{
-		if (!this->tryApplyMapTransition(std::move(*this->nextMap), game.getEntityDefinitionLibrary(),
+		if (!this->tryApplyMapTransition(std::move(*this->nextMap), player, game.getEntityDefinitionLibrary(),
 			game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugLogError("Couldn't apply map transition.");

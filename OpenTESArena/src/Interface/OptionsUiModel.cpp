@@ -337,7 +337,7 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeModernInterfaceO
 		const bool isModernMode = value;
 		if (!isModernMode)
 		{
-			auto &player = game.getGameState().getPlayer();
+			auto &player = game.getPlayer();
 			player.setDirectionToHorizon();
 		}
 
@@ -503,7 +503,7 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCameraPitchLim
 		options.setInput_CameraPitchLimit(value);
 
 		// Reset player view to forward.
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 		player.setDirectionToHorizon();
 	});
 }

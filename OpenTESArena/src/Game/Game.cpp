@@ -246,10 +246,8 @@ bool Game::init()
 	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
 
-	// Leave some members null for now. The game state is initialized when the player 
-	// enters the game world, and the "next panel" is a temporary used by the game
+	// Leave some members null for now. The "next panel" is a temporary used by the game
 	// to avoid corruption between panel events which change the panel.
-	DebugAssert(this->gameState == nullptr);
 	DebugAssert(this->charCreationState == nullptr);
 	DebugAssert(this->nextPanel == nullptr);
 	DebugAssert(this->nextSubPanel == nullptr);
@@ -297,15 +295,14 @@ const EntityDefinitionLibrary &Game::getEntityDefinitionLibrary() const
 	return this->entityDefLibrary;
 }
 
-bool Game::gameStateIsActive() const
+GameState &Game::getGameState()
 {
-	return this->gameState.get() != nullptr;
+	return this->gameState;
 }
 
-GameState &Game::getGameState() const
+Player &Game::getPlayer()
 {
-	DebugAssert(this->gameStateIsActive());
-	return *this->gameState.get();
+	return this->player;
 }
 
 bool Game::characterCreationIsActive() const
@@ -375,11 +372,6 @@ void Game::popSubPanel()
 	DebugAssertMsg(this->subPanels.size() > 0, "No sub-panels to pop.");
 
 	this->requestedSubPanelPop = true;
-}
-
-void Game::setGameState(std::unique_ptr<GameState> gameState)
-{
-	this->gameState = std::move(gameState);
 }
 
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
@@ -566,29 +558,21 @@ void Game::renderDebugInfo()
 
 	if (profilerLevel >= 3)
 	{
-		if (this->gameStateIsActive())
-		{
-			// Player position, direction, etc.
-			const auto &player = this->gameState->getPlayer();
-			const CoordDouble3 &playerPosition = player.getPosition();
-			const Double3 &direction = player.getDirection();
+		// Player position, direction, etc.
+		const CoordDouble3 &playerPosition = this->player.getPosition();
+		const Double3 &direction = this->player.getDirection();
 
-			const std::string chunkStr = playerPosition.chunk.toString();
-			const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
-			const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
-			const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
-			const std::string dirX = String::fixedPrecision(direction.x, 2);
-			const std::string dirY = String::fixedPrecision(direction.y, 2);
-			const std::string dirZ = String::fixedPrecision(direction.z, 2);
+		const std::string chunkStr = playerPosition.chunk.toString();
+		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
+		const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
+		const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
+		const std::string dirX = String::fixedPrecision(direction.x, 2);
+		const std::string dirY = String::fixedPrecision(direction.y, 2);
+		const std::string dirZ = String::fixedPrecision(direction.z, 2);
 
-			debugText.append("\nChunk: " + chunkStr + '\n' +
-				"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
-				"Dir: " + dirX + ", " + dirY + ", " + dirZ);
-		}
-		else
-		{
-			debugText.append("\nNo active game state.");
-		}
+		debugText.append("\nChunk: " + chunkStr + '\n' +
+			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
+			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
 	}
 
 	this->debugInfoTextBox.setText(debugText);
@@ -717,18 +701,13 @@ void Game::loop()
 			// See if the panel tick requested any changes in active panels.
 			this->handlePanelChanges();
 
-			// Update audio listener (if active) and check for finished sounds.
-			if (this->gameStateIsActive())
+			// Update audio listener and check for finished sounds.
+			const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(this->player.getPosition());
+			const NewDouble3 &direction = this->player.getDirection();
+			if (direction.isNormalized()) // Checks against uninitialized player.
 			{
-				const Player &player = this->gameState->getPlayer();
-				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
-				const NewDouble3 &direction = player.getDirection();
 				const AudioManager::ListenerData listenerData(absolutePosition, direction);
 				this->audioManager.update(dt, &listenerData);
-			}
-			else
-			{
-				this->audioManager.update(dt, nullptr);
 			}
 		}
 		catch (const std::exception &e)
@@ -739,14 +718,10 @@ void Game::loop()
 		// Late tick.
 		try
 		{
-			// Handle an edge case with the game loop during map transitions, etc..
-			if (this->gameStateIsActive())
-			{
-				// Check if we need to apply a map transition. This can happen due to the current tick() design
-				// where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this frame, causing us to
-				// miss updating the renderer.
-				this->gameState->tryUpdatePendingMapTransition(*this, timeScaledDt);
-			}
+			// Handle an edge case with the game loop during map transitions, etc.. This can happen due to the
+			// current tick() design where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this
+			// frame, causing us to miss updating the renderer.
+			this->gameState.tryUpdatePendingMapTransition(*this, timeScaledDt);
 		}
 		catch (const std::exception &e)
 		{
@@ -824,9 +799,9 @@ void Game::loop()
 		// End-of-frame clean up.
 		try
 		{
-			if (this->gameStateIsActive())
+			if (this->gameState.hasActiveMapInst())
 			{
-				MapInstance &mapInst = this->gameState->getActiveMapInst();
+				MapInstance &mapInst = this->gameState.getActiveMapInst();
 				mapInst.cleanUp();
 			}
 		}

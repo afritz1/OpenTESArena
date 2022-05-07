@@ -510,18 +510,17 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	constexpr int xOffset = 16;
 	constexpr int yOffset = 16;
 
-	auto &gameState = game.getGameState();
-
 	const auto &options = game.getOptions();
 	const double verticalFOV = options.getGraphics_VerticalFOV();
 	const bool pixelPerfect = options.getInput_PixelPerfectSelection();
 
-	const auto &player = gameState.getPlayer();
+	const auto &player = game.getPlayer();
 	const CoordDouble3 &rayStart = player.getPosition();
 	const VoxelDouble3 &cameraDirection = player.getDirection();
 	const Int2 viewDims = renderer.getViewDimensions();
 	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
 
+	const auto &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
 	const ChunkManager &chunkManager = levelInst.getChunkManager();
@@ -589,9 +588,8 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	// ray cast out from center and display hit info (faster/better than console logging).
 	GameWorldUiView::DEBUG_ColorRaycastPixel(game);
 
-	auto &gameState = game.getGameState();
 	const auto &options = game.getOptions();
-	const auto &player = gameState.getPlayer();
+	const auto &player = game.getPlayer();
 	const Double3 &cameraDirection = player.getDirection();
 
 	auto &renderer = game.getRenderer();
@@ -601,6 +599,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const CoordDouble3 rayStart = player.getPosition();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, viewCenterPoint);
 
+	const auto &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
 	const ChunkManager &chunkManager = levelInst.getChunkManager();

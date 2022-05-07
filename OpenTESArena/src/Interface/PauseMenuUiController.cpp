@@ -13,7 +13,7 @@
 
 void PauseMenuUiController::onNewGameButtonSelected(Game &game)
 {
-	game.setGameState(nullptr);
+	game.getGameState().clearSession();
 	game.setPanel<MainMenuPanel>();
 
 	const MusicLibrary &musicLibrary = game.getMusicLibrary();

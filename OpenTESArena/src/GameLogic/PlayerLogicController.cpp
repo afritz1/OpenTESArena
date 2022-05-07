@@ -23,7 +23,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
 	if (!modernInterface)
 	{
 		// Classic interface mode.
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
@@ -105,7 +105,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
 		const int dy = mouseDelta.y;
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 		const auto &weaponAnim = player.getWeaponAnimation();
 		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
 
@@ -132,7 +132,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
 void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
 {
 	const auto &options = game.getOptions();
-	auto &player = game.getGameState().getPlayer();
+	auto &player = game.getPlayer();
 	player.rotate(dx, dy, options.getInput_HorizontalSensitivity(),
 		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 }
@@ -181,7 +181,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -328,7 +328,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -393,7 +393,7 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	// maybe the game loop could call a "Panel::fixedTick()" method.
 
 	// Only handle attacking if the player's weapon is currently idle.
-	auto &weaponAnimation = game.getGameState().getPlayer().getWeaponAnimation();
+	auto &weaponAnimation = game.getPlayer().getWeaponAnimation();
 	if (weaponAnimation.isIdle())
 	{
 		const auto &inputManager = game.getInputManager();
@@ -524,10 +524,8 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint,
 	bool primaryInteraction, bool debugFadeVoxel, TextBox &actionTextBox)
 {
-	auto &gameState = game.getGameState();
 	const auto &options = game.getOptions();
-	auto &player = gameState.getPlayer();
-	const Double3 &cameraDirection = player.getDirection();
+	auto &gameState = game.getGameState();
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
@@ -535,6 +533,8 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	const EntityManager &entityManager = levelInst.getEntityManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
+	auto &player = game.getPlayer();
+	const Double3 &cameraDirection = player.getDirection();
 	const CoordDouble3 rayStart = player.getPosition();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 

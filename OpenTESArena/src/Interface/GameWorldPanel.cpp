@@ -47,7 +47,6 @@ GameWorldPanel::~GameWorldPanel()
 bool GameWorldPanel::init()
 {
 	auto &game = this->getGame();
-	DebugAssert(game.gameStateIsActive());
 
 	auto &renderer = game.getRenderer();
 	const auto &fontLibrary = game.getFontLibrary();
@@ -99,7 +98,7 @@ bool GameWorldPanel::init()
 	this->mapButton = Button<Game&, bool>(
 		GameWorldUiView::getMapButtonRect(), GameWorldUiController::onMapButtonSelected);
 
-	auto &player = game.getGameState().getPlayer();
+	auto &player = game.getPlayer();
 	const auto &options = game.getOptions();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
@@ -296,7 +295,7 @@ void GameWorldPanel::initUiDrawCalls()
 		GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
 	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
 
-	const auto &player = game.getGameState().getPlayer();
+	const auto &player = game.getPlayer();
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
 		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
@@ -825,12 +824,11 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 {
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-	auto &gameState = game.getGameState();
-	
-	const auto &player = gameState.getPlayer();
+	const auto &player = game.getPlayer();
 	const CoordDouble3 &playerPos = player.getPosition();
 	const VoxelDouble3 &playerDir = player.getDirection();
 
+	auto &gameState = game.getGameState();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const MapInstance &activeMapInst = gameState.getActiveMapInst();
 	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
@@ -876,7 +874,6 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 void GameWorldPanel::tick(double dt)
 {
 	auto &game = this->getGame();
-	DebugAssert(game.gameStateIsActive());
 
 	// Handle input for player motion.
 	const BufferView<const Rect> nativeCursorRegionsView(
@@ -961,7 +958,7 @@ void GameWorldPanel::tick(double dt)
 	}
 
 	// Tick the player.
-	auto &player = gameState.getPlayer();
+	auto &player = game.getPlayer();
 	const CoordDouble3 oldPlayerCoord = player.getPosition();
 	player.tick(game, dt);
 	const CoordDouble3 newPlayerCoord = player.getPosition();

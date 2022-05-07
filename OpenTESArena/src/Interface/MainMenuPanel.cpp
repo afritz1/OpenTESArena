@@ -226,9 +226,10 @@ bool MainMenuPanel::init()
 	this->cursorTextureRef.init(cursorTextureID, renderer);
 	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
 
-	if (game.gameStateIsActive())
+	GameState &gameState = game.getGameState();
+	if (gameState.hasActiveMapInst())
 	{
-		DebugLogError("An active game state should not exist when on the main menu.");
+		DebugLogError("An active map instance should not exist when on the main menu."); // @todo: this will be okay eventually if empty chunks are created in Game::init().
 		return false;
 	}
 

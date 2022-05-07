@@ -200,9 +200,9 @@ void DynamicEntity::setDestination(const NewDouble2 *point)
 
 void DynamicEntity::updateCitizenState(Game &game, double dt)
 {
-	auto &gameState = game.getGameState();
+	const auto &player = game.getPlayer();
 	auto &random = game.getRandom();
-	const auto &player = gameState.getPlayer();
+	auto &gameState = game.getGameState();
 	const MapInstance &activeMapInst = gameState.getActiveMapInst();
 	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 	const auto &entityManager = activeLevelInst.getEntityManager();
@@ -292,7 +292,7 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 	if (this->secondsTillCreatureSound <= 0.0)
 	{
 		// See if the NPC is withing hearing distance of the player.
-		const CoordDouble3 &playerPosition = gameState.getPlayer().getPosition();
+		const CoordDouble3 &playerPosition = game.getPlayer().getPosition();
 		if (this->withinHearingDistance(playerPosition, ceilingScale))
 		{
 			// See if the NPC has a creature sound.

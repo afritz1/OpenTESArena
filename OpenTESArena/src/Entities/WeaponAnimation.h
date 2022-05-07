@@ -49,7 +49,9 @@ private:
 	// Gets the range of indices associated with the current animation state.
 	const std::vector<int> &getCurrentRange() const;
 public:
-	WeaponAnimation(int weaponID, const ExeData &exeData);
+	WeaponAnimation();
+
+	void init(int weaponID, const ExeData &exeData);
 
 	// Returns whether the animation is for a ranged weapon.
 	bool isRanged() const;

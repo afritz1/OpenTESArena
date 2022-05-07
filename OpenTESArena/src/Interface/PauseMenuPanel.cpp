@@ -131,8 +131,7 @@ bool PauseMenuPanel::init()
 		Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight()),
 		PivotType::TopLeft);
 
-	auto &gameState = game.getGameState();
-	const auto &player = gameState.getPlayer();
+	const auto &player = game.getPlayer();
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
 		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);

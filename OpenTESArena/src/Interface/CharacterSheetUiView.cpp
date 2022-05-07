@@ -63,7 +63,7 @@ Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 
 Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 {
-	const Player &player = game.getGameState().getPlayer();
+	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 	const int raceID = player.getRaceID();
 
@@ -84,7 +84,7 @@ Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 
 Int2 CharacterSheetUiView::getShirtOffset(Game &game)
 {
-	const Player &player = game.getGameState().getPlayer();
+	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 
 	const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
@@ -97,7 +97,7 @@ Int2 CharacterSheetUiView::getShirtOffset(Game &game)
 
 Int2 CharacterSheetUiView::getPantsOffset(Game &game)
 {
-	const Player &player = game.getGameState().getPlayer();
+	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 	return PortraitFile::getPantsOffset(isMale);
 }
@@ -129,7 +129,7 @@ TextureAssetReference CharacterSheetUiView::getNextPageButtonTextureAssetRef()
 
 TextureAssetReference CharacterSheetUiView::getBodyTextureAssetRef(Game &game)
 {
-	const Player &player = game.getGameState().getPlayer();
+	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 	const int raceID = player.getRaceID();
 
@@ -139,7 +139,7 @@ TextureAssetReference CharacterSheetUiView::getBodyTextureAssetRef(Game &game)
 
 TextureAssetReference CharacterSheetUiView::getHeadTextureAssetRef(Game &game)
 {
-	const Player &player = game.getGameState().getPlayer();
+	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 	const int raceID = player.getRaceID();
 
@@ -151,7 +151,7 @@ TextureAssetReference CharacterSheetUiView::getHeadTextureAssetRef(Game &game)
 
 TextureAssetReference CharacterSheetUiView::getShirtTextureAssetRef(Game &game)
 {
-	const Player &player = game.getGameState().getPlayer();
+	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 
 	const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
@@ -165,7 +165,7 @@ TextureAssetReference CharacterSheetUiView::getShirtTextureAssetRef(Game &game)
 
 TextureAssetReference CharacterSheetUiView::getPantsTextureAssetRef(Game &game)
 {
-	const Player &player = game.getGameState().getPlayer();
+	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 
 	std::string pantsFilename = PortraitFile::getPants(isMale);

@@ -50,7 +50,15 @@ namespace
 	};
 }
 
-WeaponAnimation::WeaponAnimation(int weaponID, const ExeData &exeData)
+WeaponAnimation::WeaponAnimation()
+{
+	this->state = static_cast<WeaponAnimation::State>(-1);
+	this->weaponID = -1;
+	this->currentTime = 0.0;
+	this->rangeIndex = 0;
+}
+
+void WeaponAnimation::init(int weaponID, const ExeData &exeData)
 {
 	this->state = WeaponAnimation::State::Sheathed;
 	this->weaponID = weaponID;
@@ -58,7 +66,7 @@ WeaponAnimation::WeaponAnimation(int weaponID, const ExeData &exeData)
 	{
 		// Get the filename associated with the weapon ID. These indices point into the
 		// filenames list.
-		const std::array<int, 18> WeaponFilenameIndices =
+		constexpr std::array<int, 18> WeaponFilenameIndices =
 		{
 			0, // Staff
 			1, // Dagger

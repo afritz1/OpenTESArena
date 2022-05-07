@@ -481,47 +481,13 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 {
 	auto gameStateFunction = [](Game &game)
 	{
+		GameState &gameState = game.getGameState();
 		auto &renderer = game.getRenderer();
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 
-		std::unique_ptr<GameState> gameState = [&game, &renderer, &binaryAssetLibrary]()
-		{
-			const auto &exeData = binaryAssetLibrary.getExeData();
-
-			// Initialize player data (independent of the world).
-			Player player = [&game, &exeData]()
-			{
-				const CoordDouble3 dummyPosition(ChunkInt2::Zero, VoxelDouble3::Zero);
-				const Double3 direction(
-					CardinalDirection::North.x,
-					0.0,
-					CardinalDirection::North.y);
-				const Double3 velocity = Double3::Zero;
-
-				const auto &charCreationState = game.getCharacterCreationState();
-				const std::string_view name = charCreationState.getName();
-				const bool male = charCreationState.isMale();
-				const int raceIndex = charCreationState.getRaceIndex();
-
-				const auto &charClassLibrary = game.getCharacterClassLibrary();
-				const int charClassDefID = charCreationState.getClassDefID();
-				const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-
-				const int portraitIndex = charCreationState.getPortraitIndex();
-
-				const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
-				const int weaponID = charClassDef.getAllowedWeapon(game.getRandom().next(allowedWeaponCount));
-
-				return Player(std::string(name), male, raceIndex, charClassDefID, portraitIndex, dummyPosition,
-					direction, velocity, Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
-			}();
-
-			return std::make_unique<GameState>(std::move(player), binaryAssetLibrary);
-		}();
-
 		// Find starting dungeon location definition.
-		const int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
-		const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
+		constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
+		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 		const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>
 		{
@@ -558,15 +524,41 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const std::optional<VoxelInt2> playerStartOffset; // Unused for start dungeon.
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-		if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
+
+		gameState.init(binaryAssetLibrary); // @todo: not sure about this; should we init really early in the engine?
+		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
 			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
 			game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
 		}
 
-		// Set the game state before constructing the game world panel.
-		game.setGameState(std::move(gameState));
+		// Initialize player.
+		const auto &exeData = binaryAssetLibrary.getExeData();
+		const CoordDouble3 dummyPosition(ChunkInt2::Zero, VoxelDouble3::Zero);
+		const Double3 direction(
+			CardinalDirection::North.x,
+			0.0,
+			CardinalDirection::North.y);
+		const Double3 velocity = Double3::Zero;
+
+		const auto &charCreationState = game.getCharacterCreationState();
+		const std::string_view name = charCreationState.getName();
+		const bool male = charCreationState.isMale();
+		const int raceIndex = charCreationState.getRaceIndex();
+
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const int charClassDefID = charCreationState.getClassDefID();
+		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+
+		const int portraitIndex = charCreationState.getPortraitIndex();
+
+		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
+		const int weaponID = charClassDef.getAllowedWeapon(game.getRandom().next(allowedWeaponCount));
+
+		Player &player = game.getPlayer();
+		player.init(std::string(name), male, raceIndex, charClassDefID, portraitIndex, dummyPosition,
+			direction, velocity, Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 	};
 
 	gameStateFunction(game);
@@ -705,11 +697,11 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 	auto onLevelUpVoxelEnter = [](Game &game)
 	{
 		// Teleport the player to a random location based on their race.
-		auto &gameState = game.getGameState();
-		auto &player = gameState.getPlayer();
+		auto &player = game.getPlayer();
 		player.setVelocityToZero();
 
-		const int provinceID = gameState.getPlayer().getRaceID();
+		auto &gameState = game.getGameState();
+		const int provinceID = player.getRaceID();
 		const int locationID = game.getRandom().next(32);
 
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();

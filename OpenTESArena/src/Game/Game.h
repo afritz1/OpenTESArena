@@ -62,9 +62,6 @@ private:
 	Renderer renderer;
 	TextureManager textureManager;
 
-	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
-	std::unique_ptr<GameState> gameState;
-	
 	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
 	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
@@ -81,6 +78,11 @@ private:
 	Random random; // Convenience random for ease of use.
 	Profiler profiler;
 	FPSCounter fpsCounter;
+
+	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
+	GameState gameState;
+	Player player;
+
 	bool requestedSubPanelPop;
 	bool running;
 
@@ -137,12 +139,11 @@ public:
 	// Gets the entity definition library for obtaining various entity definitions.
 	const EntityDefinitionLibrary &getEntityDefinitionLibrary() const;
 
-	// Determines if a game session is currently running. This is true when a player is loaded into memory.
-	bool gameStateIsActive() const;
-
 	// The game state holds the "session" for the game. If no session is active, do not call this method.
 	// Verify beforehand by calling Game::gameStateIsActive().
-	GameState &getGameState() const;
+	GameState &getGameState();
+
+	Player &getPlayer();
 
 	// Returns whether a new character is currently being created.
 	bool characterCreationIsActive() const;
@@ -213,9 +214,6 @@ public:
 	// then the old sub-panel is popped and replaced by the new sub-panel. Panels should 
 	// never call this, because if they are active, then there are no sub-panels to pop.
 	void popSubPanel();
-
-	// Sets the current game state. A game session is active if the game state is not null.
-	void setGameState(std::unique_ptr<GameState> gameState);
 
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.

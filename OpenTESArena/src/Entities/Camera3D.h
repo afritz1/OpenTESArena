@@ -26,9 +26,8 @@ private:
 public:
 	CoordDouble3 position;
 
-	// Default constructor for the player's camera. The axes are generated based on 
-	// the given normalized direction.
-	Camera3D(const CoordDouble3 &position, const Double3 &direction);
+	// The camera axes are generated based on the given normalized direction.
+	void init(const CoordDouble3 &position, const Double3 &direction);
 
 	// Gets where the camera is looking towards.
 	const Double3 &getDirection() const;

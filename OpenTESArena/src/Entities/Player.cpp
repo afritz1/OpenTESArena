@@ -15,14 +15,82 @@
 #include "../World/VoxelDefinition.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Buffer.h"
 #include "components/utilities/String.h"
 
-Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
-	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData)
-	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID),
-	portraitID(portraitID), camera(position, direction), velocity(velocity),
-	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
+namespace // @todo: could be in a PlayerUtils instead
+{
+	constexpr double STEPPING_HEIGHT = 0.25; // Allowed change in height for stepping on stairs.
+	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
+
+	// Magnitude of -Y acceleration in the air.
+	constexpr double GRAVITY = 9.81;
+
+	// Friction for slowing the player down on ground.
+	constexpr double FRICTION = 4.0;
+}
+
+Player::Player()
+{
+	this->male = false;
+	this->raceID = -1;
+	this->charClassDefID = -1;
+	this->portraitID = -1;
+	this->maxWalkSpeed = 0.0;
+	this->maxRunSpeed = 0.0;
+}
+
+void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID,
+	const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
+	double maxRunSpeed, int weaponID, const ExeData &exeData)
+{
+	this->displayName = displayName;
+	this->male = male;
+	this->raceID = raceID;
+	this->charClassDefID = charClassDefID;
+	this->portraitID = portraitID;
+	this->camera.init(position, direction);
+	this->velocity = velocity;
+	this->maxWalkSpeed = maxWalkSpeed;
+	this->maxRunSpeed = maxRunSpeed;
+	this->weaponAnimation.init(weaponID, exeData);
+}
+
+void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, Random &random)
+{
+	this->displayName = "Player";
+	this->male = random.next(2) == 0;
+	this->raceID = random.next(8);
+	this->charClassDefID = random.next(charClassLibrary.getDefinitionCount());
+	this->portraitID = random.next(10);
+
+	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
+	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
+	this->camera.init(position, direction);
+	this->velocity = Double3::Zero;
+	this->maxWalkSpeed = Player::DEFAULT_WALK_SPEED;
+	this->maxRunSpeed = Player::DEFAULT_RUN_SPEED;
+
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
+	const int weaponID = [&random, &charClassDef]()
+	{
+		// Generate weapons available for this class and pick a random one.
+		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
+		Buffer<int> weapons(allowedWeaponCount + 1);
+		for (int i = 0; i < allowedWeaponCount; i++)
+		{
+			weapons.set(i, charClassDef.getAllowedWeapon(i));
+		}
+
+		// Add fists.
+		weapons.set(allowedWeaponCount, -1);
+
+		const int randIndex = random.next(weapons.getCount());
+		return weapons.get(randIndex);
+	}();
+
+	this->weaponAnimation.init(weaponID, exeData);
+}
 
 const CoordDouble3 &Player::getPosition() const
 {
@@ -60,37 +128,6 @@ int Player::getCharacterClassDefID() const
 	return this->charClassDefID;
 }
 
-Player Player::makeRandom(const CharacterClassLibrary &charClassLibrary,
-	const ExeData &exeData, Random &random)
-{
-	const std::string name("Player");
-	const bool isMale = random.next(2) == 0;
-	const int raceID = random.next(8);
-	const int charClassDefID = random.next(charClassLibrary.getDefinitionCount());
-	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	const int portraitID = random.next(10);
-	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
-	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
-	const Double3 velocity = Double3::Zero;
-	const int weaponID = [&random, &charClassDef]()
-	{
-		// Pick a random weapon available to the player's class.
-		std::vector<int> weapons(charClassDef.getAllowedWeaponCount());
-		for (int i = 0; i < static_cast<int>(weapons.size()); i++)
-		{
-			weapons[i] = charClassDef.getAllowedWeapon(i);
-		}
-
-		// Add fists.
-		weapons.push_back(-1);
-
-		return weapons.at(random.next(static_cast<int>(weapons.size())));
-	}();
-
-	return Player(name, isMale, raceID, charClassDefID, portraitID, position, direction, velocity,
-		Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
-}
-
 const Double3 &Player::getDirection() const
 {
 	return this->camera.getDirection();
@@ -114,7 +151,7 @@ const VoxelDouble3 &Player::getVelocity() const
 
 double Player::getJumpMagnitude() const
 {
-	return Player::JUMP_VELOCITY;
+	return JUMP_VELOCITY;
 }
 
 WeaponAnimation &Player::getWeaponAnimation()
@@ -380,7 +417,7 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, double dt)
 {
 	// Acceleration from gravity (always).
-	this->accelerate(-Double3::UnitY, Player::GRAVITY, false, dt);
+	this->accelerate(-Double3::UnitY, GRAVITY, false, dt);
 
 	// Temp: get floor Y until Y collision is implemented.
 	const double floorY = activeLevel.getCeilingScale();
@@ -414,7 +451,7 @@ void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, dou
 		// Slow down the player's horizontal velocity with some friction.
 		Double2 velocityXZ(this->velocity.x, this->velocity.z);
 		Double2 frictionDirection = Double2(-velocityXZ.x, -velocityXZ.y).normalized();
-		double frictionMagnitude = velocityXZ.length() * Player::FRICTION;
+		double frictionMagnitude = velocityXZ.length() * FRICTION;
 
 		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
 		{

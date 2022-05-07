@@ -75,7 +75,7 @@ std::string TextCinematicUiModel::getSubtitleText(Game &game, const TextCinemati
 	// Replace substitution tokens. The original game wraps text onto the next screen if the
 	// player's name is too long, which may push the text for every subsequent screen forward
 	// by a little bit.
-	const auto &player = game.getGameState().getPlayer();
+	const auto &player = game.getPlayer();
 	const std::string playerFirstName = player.getFirstName();
 	cinematicText = String::replace(cinematicText, "%pcf", playerFirstName);
 

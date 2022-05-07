@@ -90,8 +90,6 @@ private:
 	// twenty in-game seconds.
 	static constexpr double GAME_TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
-	Player player;
-
 	// Stack of map definitions and instances. Multiple ones can exist at the same time when the player is
 	// inside an interior in a city or wilderness, but ultimately the size should never exceed 2.
 	std::stack<MapState> maps;
@@ -136,11 +134,9 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapState *outMapState);*/
 
-	void setTransitionedPlayerPosition(const CoordDouble3 &position);
-
 	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
 	bool trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-		WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
+		Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
@@ -151,16 +147,20 @@ private:
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Attempts to apply the map transition state saved from the previous frame to the current game state.
-	bool tryApplyMapTransition(MapTransitionState &&transitionState,
+	bool tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
 
 	void clearMaps();
 public:
 	// Creates incomplete game state with no active world, to be further initialized later.
-	GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary);
+	GameState();
 	GameState(GameState&&) = default;
 	~GameState();
+
+	void init(const BinaryAssetLibrary &binaryAssetLibrary);
+	
+	void clearSession();
 
 	// Clears all maps and attempts to generate one and set it active based on the given province + location pair.
 	// The map type can only be an interior (world map dungeon, etc.) or a city, as viewed from the world map.
@@ -200,11 +200,11 @@ public:
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// Pops the top-most map from the stack and sets the next map active if there is one available.
-	bool tryPopMap(const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+	bool tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
-	Player &getPlayer();
 	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
+	bool hasActiveMapInst() const; // @todo: don't rely on this forever - we want the engine to always have chunks active (even if empty) at some point.
 	MapInstance &getActiveMapInst(); // @todo: this is bad practice since it becomes dangling when changing the active map.
 	const MapInstance &getActiveMapInst() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
 	bool isActiveMapNested() const; // True if the active interior is inside an exterior.
