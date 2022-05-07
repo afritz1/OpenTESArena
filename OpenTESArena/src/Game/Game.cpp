@@ -680,20 +680,6 @@ void Game::loop()
 		const double dt = static_cast<double>(frameTime.count()) / timeUnitsReal;
 		const double clampedDt = std::fmin(frameTime.count(), maxFrameTime.count()) / timeUnitsReal;
 
-		// Update audio listener (if active) and check for finished sounds.
-		if (this->gameStateIsActive())
-		{
-			const Player &player = this->gameState->getPlayer();
-			const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
-			const NewDouble3 &direction = player.getDirection();
-			const AudioManager::ListenerData listenerData(absolutePosition, direction);
-			this->audioManager.update(dt, &listenerData);
-		}
-		else
-		{
-			this->audioManager.update(dt, nullptr);
-		}
-
 		// Update FPS counter.
 		this->fpsCounter.updateFrameTime(dt);
 
@@ -727,6 +713,20 @@ void Game::loop()
 
 			// See if the panel tick requested any changes in active panels.
 			this->handlePanelChanges();
+
+			// Update audio listener (if active) and check for finished sounds.
+			if (this->gameStateIsActive())
+			{
+				const Player &player = this->gameState->getPlayer();
+				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
+				const NewDouble3 &direction = player.getDirection();
+				const AudioManager::ListenerData listenerData(absolutePosition, direction);
+				this->audioManager.update(dt, &listenerData);
+			}
+			else
+			{
+				this->audioManager.update(dt, nullptr);
+			}
 		}
 		catch (const std::exception &e)
 		{
