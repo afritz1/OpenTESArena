@@ -495,19 +495,6 @@ void Game::handlePanelChanges()
 	}
 }
 
-void Game::handleInput(double dt)
-{
-	// Handle input listener callbacks and general input updating.
-	const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
-	auto onFinishedProcessingEventFunc = [this]()
-	{
-		// See if the event requested any changes in active panels.
-		this->handlePanelChanges();
-	};
-
-	this->inputManager.update(*this, dt, buttonProxies, onFinishedProcessingEventFunc);
-}
-
 void Game::handleApplicationExit()
 {
 	this->running = false;
@@ -524,42 +511,6 @@ void Game::handleWindowResized(int width, int height)
 	for (auto &subPanel : this->subPanels)
 	{
 		subPanel->resize(width, height);
-	}
-}
-
-void Game::tick(double dt)
-{
-	// Tick the active panel.
-	this->getActivePanel()->tick(dt);
-
-	// See if the panel tick requested any changes in active panels.
-	this->handlePanelChanges();
-}
-
-void Game::lateTick(double dt)
-{
-	if (this->gameStateIsActive())
-	{
-		// Check if we need to apply a map transition. This can happen due to the current tick() design
-		// where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this frame, causing us to
-		// miss updating the renderer.
-		this->gameState->tryUpdatePendingMapTransition(*this, dt);
-	}
-}
-
-void Game::updateAudio(double dt)
-{
-	if (this->gameStateIsActive())
-	{
-		const Player &player = this->getGameState().getPlayer();
-		const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
-		const NewDouble3 &direction = player.getDirection();
-		const AudioManager::ListenerData listenerData(absolutePosition, direction);
-		this->audioManager.update(dt, &listenerData);
-	}
-	else
-	{
-		this->audioManager.update(dt, nullptr);
 	}
 }
 
@@ -664,78 +615,6 @@ void Game::renderDebugInfo()
 	this->renderer.draw(&renderElement, 1, renderSpace);
 }
 
-void Game::render()
-{
-	// Get the draw calls from each UI panel/sub-panel and determine what to draw.
-	std::vector<const Panel*> panelsToRender;
-	panelsToRender.emplace_back(this->panel.get());
-	for (const auto &subPanel : this->subPanels)
-	{
-		panelsToRender.emplace_back(subPanel.get());
-	}
-
-	this->renderer.clear();
-
-	if (this->gameWorldRenderCallback)
-	{
-		if (!this->gameWorldRenderCallback(*this))
-		{
-			DebugLogError("Couldn't render game world.");
-		}
-	}
-
-	const Int2 windowDims = this->renderer.getWindowDimensions();
-
-	for (const Panel *currentPanel : panelsToRender)
-	{
-		const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
-		for (int i = 0; i < drawCallsView.getCount(); i++)
-		{
-			const UiDrawCall &drawCall = drawCallsView.get(i);
-			if (!drawCall.isActive())
-			{
-				continue;
-			}
-
-			const std::optional<Rect> &clipRect = drawCall.getClipRect();
-			if (clipRect.has_value())
-			{
-				this->renderer.setClipRect(&clipRect->getRect());
-			}
-
-			const UiTextureID textureID = drawCall.getTextureID();
-			const Int2 position = drawCall.getPosition();
-			const Int2 size = drawCall.getSize();
-			const PivotType pivotType = drawCall.getPivotType();
-			const RenderSpace renderSpace = drawCall.getRenderSpace();
-
-			double xPercent, yPercent, wPercent, hPercent;
-			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-			const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
-			this->renderer.draw(&renderElement, 1, renderSpace);
-
-			if (clipRect.has_value())
-			{
-				this->renderer.setClipRect(nullptr);
-			}
-		}
-	}
-
-	this->renderDebugInfo();
-	this->renderer.present();
-}
-
-void Game::cleanUp()
-{
-	if (this->gameStateIsActive())
-	{
-		MapInstance &mapInst = this->gameState->getActiveMapInst();
-		mapInst.cleanUp();
-	}
-}
-
 void Game::loop()
 {
 	// Initialize panel and music to default (bootstrapping the first game frame).
@@ -814,20 +693,38 @@ void Game::loop()
 		// Reset scratch allocator for use with this frame.
 		this->scratchAllocator.clear();
 
-		// Update the audio manager listener (if any) and check for finished sounds.
-		this->updateAudio(dt);
+		// Update audio listener (if active) and check for finished sounds.
+		if (this->gameStateIsActive())
+		{
+			const Player &player = this->gameState->getPlayer();
+			const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
+			const NewDouble3 &direction = player.getDirection();
+			const AudioManager::ListenerData listenerData(absolutePosition, direction);
+			this->audioManager.update(dt, &listenerData);
+		}
+		else
+		{
+			this->audioManager.update(dt, nullptr);
+		}
 
 		// Update FPS counter.
 		this->fpsCounter.updateFrameTime(dt);
 
-		// Listen for input events.
+		// User input.
 		try
 		{
-			this->handleInput(dt);
+			const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
+			auto onFinishedProcessingEventFunc = [this]()
+			{
+				// See if the event requested any changes in active panels.
+				this->handlePanelChanges();
+			};
+
+			this->inputManager.update(*this, dt, buttonProxies, onFinishedProcessingEventFunc);
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("handleInput() exception: " + std::string(e.what()));
+			DebugCrash("User input exception: " + std::string(e.what()));
 		}
 
 		// Multiply delta time by the time scale. I settled on having the effects of this
@@ -835,48 +732,120 @@ void Game::loop()
 		// simulate lower DOSBox cycles.
 		const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
 
-		// Animate the current game state by delta time.
+		// Tick.
 		try
 		{
-			this->tick(timeScaledDt);
+			// Animate the current game state by delta time.
+			this->getActivePanel()->tick(timeScaledDt);
+
+			// See if the panel tick requested any changes in active panels.
+			this->handlePanelChanges();
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("tick() exception: " + std::string(e.what()));
+			DebugCrash("Tick exception: " + std::string(e.what()));
 		}
 
-		// Run any extra logic needed after tick() and before render() (i.e. during map transitions).
+		// Late tick.
 		try
 		{
-			this->lateTick(timeScaledDt);
+			// Handle an edge case with the game loop during map transitions, etc..
+			if (this->gameStateIsActive())
+			{
+				// Check if we need to apply a map transition. This can happen due to the current tick() design
+				// where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this frame, causing us to
+				// miss updating the renderer.
+				this->gameState->tryUpdatePendingMapTransition(*this, timeScaledDt);
+			}
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("lateTick() exception: " + std::string(e.what()));
+			DebugCrash("Late tick exception: " + std::string(e.what()));
 		}
 
-		// Draw to the screen.
+		// Render.
 		try
 		{
-			this->render();
+			// Get the draw calls from each UI panel/sub-panel and determine what to draw.
+			std::vector<const Panel*> panelsToRender;
+			panelsToRender.emplace_back(this->panel.get());
+			for (const auto &subPanel : this->subPanels)
+			{
+				panelsToRender.emplace_back(subPanel.get());
+			}
+
+			this->renderer.clear();
+
+			if (this->gameWorldRenderCallback)
+			{
+				if (!this->gameWorldRenderCallback(*this))
+				{
+					DebugLogError("Couldn't render game world.");
+				}
+			}
+
+			const Int2 windowDims = this->renderer.getWindowDimensions();
+
+			for (const Panel *currentPanel : panelsToRender)
+			{
+				const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
+				for (int i = 0; i < drawCallsView.getCount(); i++)
+				{
+					const UiDrawCall &drawCall = drawCallsView.get(i);
+					if (!drawCall.isActive())
+					{
+						continue;
+					}
+
+					const std::optional<Rect> &clipRect = drawCall.getClipRect();
+					if (clipRect.has_value())
+					{
+						this->renderer.setClipRect(&clipRect->getRect());
+					}
+
+					const UiTextureID textureID = drawCall.getTextureID();
+					const Int2 position = drawCall.getPosition();
+					const Int2 size = drawCall.getSize();
+					const PivotType pivotType = drawCall.getPivotType();
+					const RenderSpace renderSpace = drawCall.getRenderSpace();
+
+					double xPercent, yPercent, wPercent, hPercent;
+					GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+						renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
+
+					const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+					this->renderer.draw(&renderElement, 1, renderSpace);
+
+					if (clipRect.has_value())
+					{
+						this->renderer.setClipRect(nullptr);
+					}
+				}
+			}
+
+			this->renderDebugInfo();
+			this->renderer.present();
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("render() exception: " + std::string(e.what()));
+			DebugCrash("Render exception: " + std::string(e.what()));
 		}
 
-		// Run end-of-frame clean-up.
+		// End-of-frame clean up.
 		try
 		{
-			this->cleanUp();
+			if (this->gameStateIsActive())
+			{
+				MapInstance &mapInst = this->gameState->getActiveMapInst();
+				mapInst.cleanUp();
+			}
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("cleanUp() exception: " + std::string(e.what()));
+			DebugCrash("Clean-up exception: " + std::string(e.what()));
 		}
 	}
 
-	// At this point, the program has received an exit signal, and is now 
-	// quitting peacefully.
+	// At this point, the engine has received an exit signal and is now quitting peacefully.
 	this->options.saveChanges();
 }

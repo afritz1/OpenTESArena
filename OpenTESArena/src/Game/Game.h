@@ -101,28 +101,11 @@ private:
 	// Handles any changes in panels after an SDL event or game tick.
 	void handlePanelChanges();
 
-	// Handles SDL events for the current frame.
-	void handleInput(double dt);
 	void handleApplicationExit();
 	void handleWindowResized(int width, int height);
 
-	// Animates the game state by delta time.
-	void tick(double dt);
-
-	// Runs after tick() and handles some edge cases with the game loop during map transitions, etc..
-	void lateTick(double dt);
-
-	// Updates audio state and attempts to update the 3D audio listener (if any).
-	void updateAudio(double dt);
-
 	// Optionally displays debug profiler info on-screen.
 	void renderDebugInfo();
-
-	// Runs the current panel's render method for drawing to the screen.
-	void render();
-
-	// Runs end-of-frame clean-up operations.
-	void cleanUp();
 public:
 	Game();
 	Game(const Game&) = delete;
