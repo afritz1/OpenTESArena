@@ -180,17 +180,20 @@ bool Game::init()
 	// Load various asset libraries.
 	if (!this->fontLibrary.init())
 	{
-		DebugCrash("Couldn't init font library.");
+		DebugLogError("Couldn't init font library.");
+		return false;
 	}
 
 	if (!this->binaryAssetLibrary.init(isFloppyDiskVersion))
 	{
-		DebugCrash("Couldn't init binary asset library.");
+		DebugLogError("Couldn't init binary asset library.");
+		return false;
 	}
 
 	if (!this->textAssetLibrary.init())
 	{
-		DebugCrash("Couldn't init text asset library.");
+		DebugLogError("Couldn't init text asset library.");
+		return false;
 	}
 
 	const std::string audioFolderPath = dataFolderPath + "audio/";
@@ -453,8 +456,7 @@ void Game::saveScreenshot(const Surface &surface)
 	}
 	else
 	{
-		DebugCrash("Failed to save screenshot to \"" + screenshotPath + "\": " +
-			std::string(SDL_GetError()));
+		DebugLogError("Failed to save screenshot to \"" + screenshotPath + "\": " + std::string(SDL_GetError()));
 	}
 }
 
