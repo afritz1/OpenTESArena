@@ -169,7 +169,7 @@ public:
 	Texture createTexture(uint32_t format, int access, int w, int h);
 
 	bool init(int width, int height, WindowMode windowMode, int letterboxMode, const ResolutionScaleFunc &resolutionScaleFunc,
-		RendererSystemType2D systemType2D, RendererSystemType3D systemType3D);
+		RendererSystemType2D systemType2D, RendererSystemType3D systemType3D, int renderThreadsMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
@@ -192,12 +192,6 @@ public:
 	// Sets the clip rectangle of the renderer so that pixels outside the specified area
 	// will not be rendered. If rect is null, then clipping is disabled.
 	void setClipRect(const SDL_Rect *rect);
-
-	// Initialize the renderer for the game world. The "fullGameWindow" argument 
-	// determines whether to render a "fullscreen" 3D image or just the part above 
-	// the game interface. If there is an existing renderer in memory, it will be 
-	// overwritten with the new one.
-	void initializeWorldRendering(double resolutionScale, bool fullGameWindow, int renderThreadsMode);
 
 	// Sets which mode to use for software render threads (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);

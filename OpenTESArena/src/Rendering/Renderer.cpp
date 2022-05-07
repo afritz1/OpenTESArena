@@ -514,10 +514,16 @@ Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
 }
 
 bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode,
-	const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D)
+	const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
+	int renderThreadsMode)
 {
 	DebugLog("Initializing.");
-	SDL_Init(SDL_INIT_VIDEO); // Required for SDL_GetDesktopDisplayMode() to work for exclusive fullscreen.
+	const int result = SDL_Init(SDL_INIT_VIDEO); // Required for SDL_GetDesktopDisplayMode() to work for exclusive fullscreen.
+	if (result != 0)
+	{
+		DebugLogError("Couldn't init SDL video subsystem (result: " + std::to_string(result) + ", " + std::string(SDL_GetError()) + ").");
+		return false;
+	}
 
 	if ((width <= 0) || (height <= 0))
 	{
@@ -528,13 +534,12 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	this->letterboxMode = letterboxMode;
 	this->resolutionScaleFunc = resolutionScaleFunc;
 
-	// Initialize window.
-	const char *title = Renderer::DEFAULT_TITLE;
-	const int position = GetSdlWindowPosition(windowMode);
-	const uint32_t flags = GetSdlWindowFlags(windowMode);
+	// Initialize SDL window.
+	const char *windowTitle = Renderer::DEFAULT_TITLE;
+	const int windowPosition = GetSdlWindowPosition(windowMode);
+	const uint32_t windowFlags = GetSdlWindowFlags(windowMode);
 	const Int2 windowDims = GetWindowDimsForMode(windowMode, width, height);
-	this->window = SDL_CreateWindow(title, position, position, windowDims.x, windowDims.y, flags);
-
+	this->window = SDL_CreateWindow(windowTitle, windowPosition, windowPosition, windowDims.x, windowDims.y, windowFlags);
 	if (this->window == nullptr)
 	{
 		DebugLogError("Couldn't create SDL_Window (dimensions: " + std::to_string(width) + "x" + std::to_string(height) +
@@ -542,7 +547,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		return false;
 	}
 
-	// Initialize renderer context.
+	// Initialize SDL renderer context.
 	this->renderer = Renderer::createRenderer(this->window);
 	if (this->renderer == nullptr)
 	{
@@ -582,7 +587,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		return false;
 	}
 
-	// Initialize 2D renderer resources.
+	// Initialize 2D renderer.
 	this->renderer2D = [systemType2D]() -> std::unique_ptr<RendererSystem2D>
 	{
 		if (systemType2D == RendererSystemType2D::SDL2)
@@ -602,7 +607,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		DebugCrash("Couldn't init 2D renderer.");
 	}
 
-	// Initialize 3D renderer resources.
+	// Initialize 3D renderer.
 	this->renderer3D = [systemType3D]() -> std::unique_ptr<RendererSystem3D>
 	{
 		if (systemType3D == RendererSystemType3D::SoftwareClassic)
@@ -617,11 +622,22 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		}
 	}();
 
-	// Don't initialize the game world buffer until the 3D renderer is initialized.
-	DebugAssert(this->gameWorldTexture.get() == nullptr);
-	this->fullGameWindow = false;
+	// Make sure render dimensions are at least 1x1.
+	const Int2 viewDims = this->getViewDimensions();
+	const double resolutionScale = resolutionScaleFunc();
+	const int renderWidth = Renderer::makeRendererDimension(viewDims.x, resolutionScale);
+	const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
 
-	DebugAssert(!this->renderer3D->isInited());
+	// Initialize game world destination frame buffer.
+	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
+		SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
+	DebugAssertMsg(this->gameWorldTexture.get() != nullptr,
+		"Couldn't create game world texture (" + std::string(SDL_GetError()) + ").");
+
+	RenderInitSettings initSettings;
+	initSettings.init(renderWidth, renderHeight, renderThreadsMode);
+	this->renderer3D->init(initSettings);
+	this->fullGameWindow = fullGameWindow;
 
 	return true;
 }
@@ -639,7 +655,7 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, width, height);
 	DebugAssertMsg(this->nativeTexture.get() != nullptr,
-		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));
+		"Couldn't recreate native frame buffer (" + std::string(SDL_GetError()) + ").");
 
 	this->fullGameWindow = fullGameWindow;
 
@@ -732,28 +748,6 @@ void Renderer::setClipRect(const SDL_Rect *rect)
 	{
 		SDL_RenderSetClipRect(this->renderer, nullptr);
 	}
-}
-
-void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWindow,
-	int renderThreadsMode)
-{
-	this->fullGameWindow = fullGameWindow;
-
-	// Make sure render dimensions are at least 1x1.
-	const Int2 viewDims = this->getViewDimensions();
-	const int renderWidth = Renderer::makeRendererDimension(viewDims.x, resolutionScale);
-	const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
-
-	// Initialize a new game world frame buffer, removing any previous game world frame buffer.
-	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-	DebugAssertMsg(this->gameWorldTexture.get() != nullptr,
-		"Couldn't create game world texture, " + std::string(SDL_GetError()));
-
-	// Initialize 3D rendering.
-	RenderInitSettings initSettings;
-	initSettings.init(renderWidth, renderHeight, renderThreadsMode);
-	this->renderer3D->init(initSettings);
 }
 
 void Renderer::setRenderThreadsMode(int mode)

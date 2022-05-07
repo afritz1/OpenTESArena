@@ -109,13 +109,6 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	const std::string &mifName, const std::optional<ArenaTypes::InteriorType> &optInteriorType,
 	ArenaTypes::WeatherType weatherType, MapType mapType)
 {
-	// Initialize 3D renderer.
-	auto &renderer = game.getRenderer();
-	const auto &options = game.getOptions();
-	const bool fullGameWindow = options.getGraphics_ModernInterface();
-	renderer.initializeWorldRendering(options.getGraphics_ResolutionScale(),
-		fullGameWindow, options.getGraphics_RenderThreadsMode());
-
 	// Game data instance, to be initialized further by one of the loading methods below.
 	// Create a player with random data for testing.
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
@@ -123,6 +116,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		game.getCharacterClassLibrary(), binaryAssetLibrary.getExeData(), game.getRandom()),
 		binaryAssetLibrary);
 
+	auto &renderer = game.getRenderer();
+	const auto &options = game.getOptions();
 	const int starCount = SkyUtils::getStarCountFromDensity(options.getMisc_StarDensity());
 	const int currentDay = gameState->getDate().getDay();
 

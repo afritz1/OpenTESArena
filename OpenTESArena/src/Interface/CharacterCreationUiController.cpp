@@ -481,15 +481,8 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 {
 	auto gameStateFunction = [](Game &game)
 	{
-		// Initialize 3D renderer.
 		auto &renderer = game.getRenderer();
-		const auto &options = game.getOptions();
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-		const bool fullGameWindow = options.getGraphics_ModernInterface();
-		renderer.initializeWorldRendering(
-			options.getGraphics_ResolutionScale(),
-			fullGameWindow,
-			options.getGraphics_RenderThreadsMode());
 
 		std::unique_ptr<GameState> gameState = [&game, &renderer, &binaryAssetLibrary]()
 		{
