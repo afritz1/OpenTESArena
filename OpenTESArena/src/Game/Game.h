@@ -24,7 +24,6 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/TextBox.h"
 
-#include "components/utilities/Allocator.h"
 #include "components/utilities/FPSCounter.h"
 #include "components/utilities/Profiler.h"
 
@@ -80,7 +79,6 @@ private:
 	BinaryAssetLibrary binaryAssetLibrary;
 	TextAssetLibrary textAssetLibrary;
 	Random random; // Convenience random for ease of use.
-	ScratchAllocator scratchAllocator;
 	Profiler profiler;
 	FPSCounter fpsCounter;
 	bool requestedSubPanelPop;
@@ -167,9 +165,6 @@ public:
 
 	// Gets the global RNG initialized at program start.
 	Random &getRandom();
-
-	// Gets the scratch buffer that is reset each frame.
-	ScratchAllocator &getScratchAllocator();
 
 	// Gets the profiler instance for measuring precise time spans.
 	Profiler &getProfiler();

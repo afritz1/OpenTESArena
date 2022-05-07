@@ -32,9 +32,6 @@
 
 namespace
 {
-	// Size of scratch buffer in bytes, reset each frame.
-	constexpr int SCRATCH_BUFFER_SIZE = 65536;
-
 	bool TryMakeValidArenaExePath(const std::string &vfsFolderPath, std::string *outExePath, bool *outIsFloppyDiskVersion)
 	{
 		// Check for CD version first.
@@ -242,8 +239,6 @@ bool Game::init()
 	// Random seed.
 	this->random.init();
 
-	this->scratchAllocator.init(SCRATCH_BUFFER_SIZE);
-
 	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
 
@@ -348,11 +343,6 @@ const TextAssetLibrary &Game::getTextAssetLibrary() const
 Random &Game::getRandom()
 {
 	return this->random;
-}
-
-ScratchAllocator &Game::getScratchAllocator()
-{
-	return this->scratchAllocator;
 }
 
 Profiler &Game::getProfiler()
@@ -689,9 +679,6 @@ void Game::loop()
 		constexpr double timeUnitsReal = static_cast<double>(timeUnits);
 		const double dt = static_cast<double>(frameTime.count()) / timeUnitsReal;
 		const double clampedDt = std::fmin(frameTime.count(), maxFrameTime.count()) / timeUnitsReal;
-
-		// Reset scratch allocator for use with this frame.
-		this->scratchAllocator.clear();
 
 		// Update audio listener (if active) and check for finished sounds.
 		if (this->gameStateIsActive())
