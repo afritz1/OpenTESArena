@@ -704,11 +704,8 @@ void Game::loop()
 			// Update audio listener and check for finished sounds.
 			const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(this->player.getPosition());
 			const NewDouble3 &direction = this->player.getDirection();
-			if (direction.isNormalized()) // Checks against uninitialized player.
-			{
-				const AudioManager::ListenerData listenerData(absolutePosition, direction);
-				this->audioManager.update(dt, &listenerData);
-			}
+			const AudioManager::ListenerData listenerData(absolutePosition, direction);
+			this->audioManager.update(dt, &listenerData);
 		}
 		catch (const std::exception &e)
 		{

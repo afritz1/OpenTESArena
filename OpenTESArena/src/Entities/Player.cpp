@@ -36,6 +36,7 @@ Player::Player()
 	this->raceID = -1;
 	this->charClassDefID = -1;
 	this->portraitID = -1;
+	this->camera.init(CoordDouble3(), -Double3::UnitX); // To avoid audio listener normalization issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
 	this->maxRunSpeed = 0.0;
 }
