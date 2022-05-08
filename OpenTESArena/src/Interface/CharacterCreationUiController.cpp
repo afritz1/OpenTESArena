@@ -482,8 +482,10 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	auto gameStateFunction = [](Game &game)
 	{
 		GameState &gameState = game.getGameState();
-		auto &renderer = game.getRenderer();
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+		gameState.init(binaryAssetLibrary);
+
+		auto &renderer = game.getRenderer();
 
 		// Find starting dungeon location definition.
 		constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
