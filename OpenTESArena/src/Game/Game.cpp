@@ -746,11 +746,14 @@ void Game::loop()
 			// See if the panel tick requested any changes in active panels.
 			this->handlePanelChanges();
 
-			// Update audio listener and check for finished sounds.
-			const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(this->player.getPosition());
-			const NewDouble3 &direction = this->player.getDirection();
-			const AudioManager::ListenerData listenerData(absolutePosition, direction);
-			this->audioManager.update(dt, &listenerData);
+			if (this->isSimulatingScene())
+			{
+				// Update audio listener and check for finished sounds.
+				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(this->player.getPosition());
+				const NewDouble3 &direction = this->player.getDirection();
+				const AudioManager::ListenerData listenerData(absolutePosition, direction);
+				this->audioManager.update(dt, &listenerData);
+			}
 		}
 		catch (const std::exception &e)
 		{
