@@ -66,6 +66,7 @@ Game::Game()
 	// beginning of the next frame.
 	this->requestedSubPanelPop = false;
 
+	this->shouldSimulateScene = false;
 	this->running = true;
 }
 
@@ -303,6 +304,16 @@ GameState &Game::getGameState()
 Player &Game::getPlayer()
 {
 	return this->player;
+}
+
+bool Game::isSimulatingScene() const
+{
+	return this->shouldSimulateScene;
+}
+
+void Game::setIsSimulatingScene(bool active)
+{
+	this->shouldSimulateScene = active;
 }
 
 bool Game::characterCreationIsActive() const

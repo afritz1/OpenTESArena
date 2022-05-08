@@ -41,6 +41,7 @@ GameWorldPanel::~GameWorldPanel()
 		GameWorldUiModel::setFreeLookActive(game, false);
 	}
 
+	game.setIsSimulatingScene(false);
 	game.setGameWorldRenderCallback([](Game&) { return true; });
 }
 
@@ -273,6 +274,7 @@ bool GameWorldPanel::init()
 	}
 
 	game.setGameWorldRenderCallback(GameWorldPanel::gameWorldRenderCallback);
+	game.setIsSimulatingScene(true);
 
 	return true;
 }
@@ -810,6 +812,8 @@ void GameWorldPanel::onPauseChanged(bool paused)
 	{
 		GameWorldUiModel::setFreeLookActive(game, !paused);
 	}
+
+	game.setIsSimulatingScene(!paused);
 }
 
 void GameWorldPanel::resize(int windowWidth, int windowHeight)
@@ -874,6 +878,11 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 void GameWorldPanel::tick(double dt)
 {
 	auto &game = this->getGame();
+
+	if (!game.isSimulatingScene())
+	{
+		return;
+	}
 
 	// Handle input for player motion.
 	const BufferView<const Rect> nativeCursorRegionsView(

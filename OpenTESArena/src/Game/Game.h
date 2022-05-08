@@ -83,6 +83,9 @@ private:
 	GameState gameState;
 	Player player;
 
+	// Engine variables for what kinds of simulation should be attempted each frame.
+	bool shouldSimulateScene;
+
 	bool requestedSubPanelPop;
 	bool running;
 
@@ -144,6 +147,12 @@ public:
 	GameState &getGameState();
 
 	Player &getPlayer();
+
+	// Whether the game loop should animate voxels, entities, and sky that can change over time.
+	// Used when determining if the player is actively in the game world or in menus. This does 
+	// not affect immediate operations like chunk management or scene transitions.
+	bool isSimulatingScene() const;
+	void setIsSimulatingScene(bool active);
 
 	// Returns whether a new character is currently being created.
 	bool characterCreationIsActive() const;
