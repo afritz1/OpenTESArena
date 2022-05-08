@@ -1,9 +1,6 @@
 #ifndef GAME_WORLD_PANEL_H
 #define GAME_WORLD_PANEL_H
 
-#include <array>
-#include <vector>
-
 #include "Panel.h"
 #include "../Game/Physics.h"
 #include "../Math/Rect.h"
@@ -32,7 +29,6 @@ private:
 	Button<> stealButton, magicButton, useItemButton, campButton;
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
-	std::array<Rect, 9> nativeCursorRegions;
 	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, tooltipTextureRefs;
 	ScopedUiTextureRef gameWorldInterfaceTextureRef, statusGradientTextureRef, playerPortraitTextureRef,
 		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef;
@@ -48,7 +44,6 @@ public:
 	bool init();
 
 	virtual void onPauseChanged(bool paused) override;
-	virtual void resize(int windowWidth, int windowHeight) override;
 	virtual void tick(double dt) override;
 };
 

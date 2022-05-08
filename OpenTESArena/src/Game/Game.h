@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <array>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -70,6 +71,9 @@ private:
 	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
 	std::vector<std::unique_ptr<Panel>> subPanels;
 
+	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
+	std::array<Rect, 9> nativeCursorRegions;
+
 	// Displayed with varying profiler levels.
 	TextBox debugInfoTextBox;
 
@@ -106,6 +110,7 @@ private:
 
 	void handleApplicationExit();
 	void handleWindowResized(int width, int height);
+	void updateNativeCursorRegions(int windowWidth, int windowHeight);
 
 	// Optionally displays debug profiler info on-screen.
 	void renderDebugInfo();
@@ -181,6 +186,9 @@ public:
 
 	// Gets the frames-per-second counter. This is updated in the game loop.
 	const FPSCounter &getFPSCounter() const;
+
+	// Gets a UI rectangle used with classic game world interface for player movement.
+	const Rect &getNativeCursorRegion(int index) const;
 
 	// Sets the panel after the current SDL event has been processed (to avoid 
 	// interfering with the current panel). This uses template parameters for

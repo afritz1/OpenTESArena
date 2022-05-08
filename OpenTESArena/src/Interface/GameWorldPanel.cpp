@@ -248,24 +248,18 @@ bool GameWorldPanel::init()
 
 	this->addMouseButtonChangedListener([this](Game &game, MouseButtonType type, const Int2 &position, bool pressed)
 	{
-		const Rect &centerCursorRegion = this->nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
+		const Rect &centerCursorRegion = game.getNativeCursorRegion(GameWorldUiView::CursorMiddleIndex);
 		GameWorldUiController::onMouseButtonChanged(game, type, position, pressed, centerCursorRegion, this->actionText);
 	});
 
 	this->addMouseButtonHeldListener([this](Game &game, MouseButtonType type, const Int2 &position, double dt)
 	{
-		const Rect &centerCursorRegion = this->nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
+		const Rect &centerCursorRegion = game.getNativeCursorRegion(GameWorldUiView::CursorMiddleIndex);
 		GameWorldUiController::onMouseButtonHeld(game, type, position, dt, centerCursorRegion);
 	});
 
 	// Moved into a method for better organization due to extra complexity from classic/modern mode.
 	this->initUiDrawCalls();
-
-	// Set all of the cursor regions relative to the current window.
-	const Int2 screenDims = game.getRenderer().getWindowDimensions();
-	GameWorldUiModel::updateNativeCursorRegions(
-		BufferView<Rect>(this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size())),
-		screenDims.x, screenDims.y);
 
 	// If in modern mode, lock mouse to center of screen for free-look.
 	if (modernInterface)
@@ -719,14 +713,15 @@ void GameWorldPanel::initUiDrawCalls()
 			return inputManager.getMousePosition();
 		};
 
-		auto getCursorRegionIndex = [this, cursorPositionFunc]() -> std::optional<int>
+		auto getCursorRegionIndex = [this, &game, cursorPositionFunc]() -> std::optional<int>
 		{
 			const Int2 cursorPosition = cursorPositionFunc();
 
 			// See which arrow cursor region the native mouse is in.
-			for (int i = 0; i < this->nativeCursorRegions.size(); i++)
+			for (int i = 0; i < GameWorldUiView::ArrowCursorRegionCount; i++)
 			{
-				if (this->nativeCursorRegions[i].contains(cursorPosition))
+				const Rect &nativeCursorRegion = game.getNativeCursorRegion(i);
+				if (nativeCursorRegion.contains(cursorPosition))
 				{
 					return i;
 				}
@@ -816,14 +811,6 @@ void GameWorldPanel::onPauseChanged(bool paused)
 	game.setIsSimulatingScene(!paused);
 }
 
-void GameWorldPanel::resize(int windowWidth, int windowHeight)
-{
-	// Update the cursor's regions for camera motion.
-	GameWorldUiModel::updateNativeCursorRegions(
-		BufferView<Rect>(this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size())),
-		windowWidth, windowHeight);
-}
-
 bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 {
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
@@ -883,13 +870,6 @@ void GameWorldPanel::tick(double dt)
 	{
 		return;
 	}
-
-	// Handle input for player motion.
-	const BufferView<const Rect> nativeCursorRegionsView(
-		this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
-	const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(game, dt, nativeCursorRegionsView);
-	PlayerLogicController::turnPlayer(game, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
-	PlayerLogicController::handlePlayerMovement(game, dt, nativeCursorRegionsView);
 
 	// Tick the game world clock time.
 	auto &gameState = game.getGameState();

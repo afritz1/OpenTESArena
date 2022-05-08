@@ -12,9 +12,11 @@
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
+#include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CommonUiController.h"
 #include "../Interface/CommonUiView.h"
+#include "../Interface/GameWorldUiModel.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
 #include "../Media/TextureManager.h"
@@ -241,6 +243,10 @@ bool Game::init()
 	SDL_SetColorKey(windowIconSurface.get(), SDL_TRUE, windowIconColorKey);
 	this->renderer.setWindowIcon(windowIconSurface);
 
+	// Initialize click regions for player movement in classic interface mode.
+	const Int2 windowDims = this->renderer.getWindowDimensions();
+	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
+
 	// Random seed.
 	this->random.init();
 
@@ -367,6 +373,12 @@ const FPSCounter &Game::getFPSCounter() const
 	return this->fpsCounter;
 }
 
+const Rect &Game::getNativeCursorRegion(int index) const
+{
+	DebugAssertIndex(this->nativeCursorRegions, index);
+	return this->nativeCursorRegions[index];
+}
+
 void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
 {
 	this->nextSubPanel = std::move(nextSubPanel);
@@ -417,12 +429,15 @@ void Game::initOptions(const std::string &basePath, const std::string &optionsPa
 	}
 }
 
-void Game::resizeWindow(int width, int height)
+void Game::resizeWindow(int windowWidth, int windowHeight)
 {
 	// Resize the window, and the 3D renderer if initialized.
 	const bool fullGameWindow = this->options.getGraphics_ModernInterface();
-	this->renderer.resize(width, height,
+	this->renderer.resize(windowWidth, windowHeight,
 		this->options.getGraphics_ResolutionScale(), fullGameWindow);
+
+	// Update where the mouse can click for player movement in the classic interface.
+	this->updateNativeCursorRegions(windowWidth, windowHeight);
 }
 
 void Game::saveScreenshot(const Surface &surface)
@@ -508,6 +523,14 @@ void Game::handleWindowResized(int width, int height)
 	{
 		subPanel->resize(width, height);
 	}
+}
+
+void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
+{
+	// Update screen regions for classic interface player movement.
+	BufferView<Rect> nativeCursorRegionsView(
+		this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
+	GameWorldUiModel::updateNativeCursorRegions(nativeCursorRegionsView, windowWidth, windowHeight);
 }
 
 void Game::renderDebugInfo()
@@ -680,6 +703,11 @@ void Game::loop()
 
 		// Update FPS counter.
 		this->fpsCounter.updateFrameTime(dt);
+		
+		// Multiply delta time by the time scale. I settled on having the effects of this
+		// be application-wide rather than just in the game world since it's intended to
+		// simulate lower DOSBox cycles.
+		const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
 
 		// User input.
 		try
@@ -692,16 +720,22 @@ void Game::loop()
 			};
 
 			this->inputManager.update(*this, dt, buttonProxies, onFinishedProcessingEventFunc);
+
+			if (this->isSimulatingScene())
+			{
+				// Handle input for player motion.
+				const BufferView<const Rect> nativeCursorRegionsView(
+					this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
+				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(
+					*this, timeScaledDt, nativeCursorRegionsView);
+				PlayerLogicController::turnPlayer(*this, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
+				PlayerLogicController::handlePlayerMovement(*this, timeScaledDt, nativeCursorRegionsView);
+			}
 		}
 		catch (const std::exception &e)
 		{
 			DebugCrash("User input exception: " + std::string(e.what()));
 		}
-
-		// Multiply delta time by the time scale. I settled on having the effects of this
-		// be application-wide rather than just in the game world since it's intended to
-		// simulate lower DOSBox cycles.
-		const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
 
 		// Tick.
 		try
