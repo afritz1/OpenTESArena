@@ -14,6 +14,8 @@
 #include "../Entities/Entity.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
+#include "../GameLogic/MapLogicController.h"
+#include "../GameLogic/PlayerLogicController.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../Math/Constants.h"
 #include "../Media/TextureManager.h"
@@ -1170,13 +1172,14 @@ void GameState::tick(double dt, Game &game)
 	DebugAssert(dt >= 0.0);
 
 	// Tick the game clock.
-	const int oldHour = this->clock.getHours24();
+	const Clock prevClock = this->clock;
 	const double timeScale = GameState::GAME_TIME_SCALE * (this->isCamping ? 250.0 : 1.0);
 	this->clock.tick(dt * timeScale);
-	const int newHour = this->clock.getHours24();
 
 	// Check if the hour changed.
-	if (newHour != oldHour)
+	const int prevHour = prevClock.getHours24();
+	const int newHour = this->clock.getHours24();
+	if (newHour != prevHour)
 	{
 		// Update the weather list that's used for selecting the current one.
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
@@ -1184,10 +1187,27 @@ void GameState::tick(double dt, Game &game)
 	}
 
 	// Check if the clock hour looped back around.
-	if (newHour < oldHour)
+	if (newHour < prevHour)
 	{
 		// Increment the day.
 		this->date.incrementDay();
+	}
+
+	// See if the clock passed the boundary between night and day, and vice versa.
+	const double oldClockTime = prevClock.getPreciseTotalSeconds();
+	const double newClockTime = this->clock.getPreciseTotalSeconds();
+	const double lamppostActivateTime = ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
+	const double lamppostDeactivateTime = ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
+	const bool activateNightLights = (oldClockTime < lamppostActivateTime) && (newClockTime >= lamppostActivateTime);
+	const bool deactivateNightLights = (oldClockTime < lamppostDeactivateTime) && (newClockTime >= lamppostDeactivateTime);
+
+	if (activateNightLights)
+	{
+		MapLogicController::handleNightLightChange(game, true);
+	}
+	else if (deactivateNightLights)
+	{
+		MapLogicController::handleNightLightChange(game, false);
 	}
 
 	// Tick chasm animation.
@@ -1215,5 +1235,118 @@ void GameState::tick(double dt, Game &game)
 	if (this->effectTextIsVisible())
 	{
 		this->effectTextRemainingSeconds -= dt;
+	}
+
+	// Tick the player.
+	auto &player = game.getPlayer();
+	const CoordDouble3 oldPlayerCoord = player.getPosition();
+	player.tick(game, dt);
+	const CoordDouble3 newPlayerCoord = player.getPosition();
+
+	// Handle input for the player's attack.
+	const auto &inputManager = game.getInputManager();
+	const Int2 mouseDelta = inputManager.getMouseDelta();
+	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
+
+	auto &gameState = game.getGameState();
+	MapInstance &mapInst = gameState.getActiveMapInst();
+	const double latitude = [&gameState]()
+	{
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
+		return locationDef.getLatitude();
+	}();
+
+	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
+	TextureManager &textureManager = game.getTextureManager();
+
+	EntityGeneration::EntityGenInfo entityGenInfo;
+	entityGenInfo.init(gameState.nightLightsAreActive());
+
+	// Tick active map (entities, animated distant land, etc.).
+	const MapDefinition &mapDef = gameState.getActiveMapDef();
+	const MapType mapType = mapDef.getMapType();
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&game, &gameState, mapType,
+		&entityDefLibrary, &textureManager]() -> std::optional<CitizenUtils::CitizenGenInfo>
+	{
+		if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
+		{
+			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+			const LocationDefinition &locationDef = gameState.getLocationDefinition();
+			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
+				entityDefLibrary, textureManager);
+		}
+		else
+		{
+			return std::nullopt;
+		}
+	}();
+
+	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, gameState.getDaytimePercent(),
+		game.getOptions().getMisc_ChunkDistance(), entityGenInfo, citizenGenInfo, entityDefLibrary,
+		game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
+
+	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
+	// and handle any level transition.
+	const LevelInstance &levelInst = mapInst.getActiveLevel();
+	const double ceilingScale = levelInst.getCeilingScale();
+	const CoordInt3 oldPlayerVoxelCoord(
+		oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
+	const CoordInt3 newPlayerVoxelCoord(
+		newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
+	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
+	{
+		TextBox *triggerTextBox = game.getTriggerTextBox();
+		DebugAssert(triggerTextBox != nullptr);
+		MapLogicController::handleTriggers(game, newPlayerVoxelCoord, *triggerTextBox);
+
+		if (mapType == MapType::Interior)
+		{
+			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
+		}
+	}
+
+	// Check for changes in exterior music depending on the time.
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	const MapType activeMapType = activeMapDef.getMapType();
+	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
+	{
+		AudioManager &audioManager = game.getAudioManager();
+		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
+		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
+		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);
+		const bool changeToNightMusic = (oldClockTime < nightMusicStartTime) && (newClockTime >= nightMusicStartTime);
+		
+		const MusicDefinition *musicDef = nullptr;
+		if (changeToDayMusic)
+		{
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather, game.getRandom(),
+				[this](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+				return weatherMusicDef.weatherDef == this->weatherDef;
+			});
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing weather music.");
+			}
+		}
+		else if (changeToNightMusic)
+		{
+			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing night music.");
+			}
+		}
+
+		if (musicDef != nullptr)
+		{
+			audioManager.setMusic(musicDef);
+		}
 	}
 }

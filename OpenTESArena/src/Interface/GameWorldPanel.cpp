@@ -793,24 +793,6 @@ void GameWorldPanel::initUiDrawCalls()
 	}
 }
 
-void GameWorldPanel::onPauseChanged(bool paused)
-{
-	Panel::onPauseChanged(paused);
-
-	auto &game = this->getGame();
-
-	// If in modern mode, set free-look to the given value.
-	const auto &options = game.getOptions();
-	const bool modernInterface = options.getGraphics_ModernInterface();
-
-	if (modernInterface)
-	{
-		GameWorldUiModel::setFreeLookActive(game, !paused);
-	}
-
-	game.setIsSimulatingScene(!paused);
-}
-
 bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 {
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
@@ -862,151 +844,26 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	return true;
 }
 
-void GameWorldPanel::tick(double dt)
+
+TextBox &GameWorldPanel::getTriggerTextBox()
 {
+	return this->triggerText;
+}
+
+void GameWorldPanel::onPauseChanged(bool paused)
+{
+	Panel::onPauseChanged(paused);
+
 	auto &game = this->getGame();
 
-	if (!game.isSimulatingScene())
+	// If in modern mode, set free-look to the given value.
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+
+	if (modernInterface)
 	{
-		return;
+		GameWorldUiModel::setFreeLookActive(game, !paused);
 	}
 
-	// Tick the game world clock time.
-	auto &gameState = game.getGameState();
-	const Clock oldClock = gameState.getClock();
-	gameState.tick(dt, game);
-	const Clock newClock = gameState.getClock();
-
-	Renderer &renderer = game.getRenderer();
-
-	// See if the clock passed the boundary between night and day, and vice versa.
-	const double oldClockTime = oldClock.getPreciseTotalSeconds();
-	const double newClockTime = newClock.getPreciseTotalSeconds();
-	const double lamppostActivateTime = ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
-	const double lamppostDeactivateTime = ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool activateNightLights =
-		(oldClockTime < lamppostActivateTime) &&
-		(newClockTime >= lamppostActivateTime);
-	const bool deactivateNightLights =
-		(oldClockTime < lamppostDeactivateTime) &&
-		(newClockTime >= lamppostDeactivateTime);
-
-	if (activateNightLights)
-	{
-		MapLogicController::handleNightLightChange(game, true);
-	}
-	else if (deactivateNightLights)
-	{
-		MapLogicController::handleNightLightChange(game, false);
-	}
-
-	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const MapType mapType = mapDef.getMapType();
-
-	// Check for changes in exterior music depending on the time.
-	if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
-	{
-		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
-		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
-		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);
-		const bool changeToNightMusic = (oldClockTime < nightMusicStartTime) && (newClockTime >= nightMusicStartTime);
-
-		AudioManager &audioManager = game.getAudioManager();
-		const MusicLibrary &musicLibrary = game.getMusicLibrary();
-
-		if (changeToDayMusic)
-		{
-			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Weather, game.getRandom(), [&weatherDef](const MusicDefinition &def)
-			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-				return weatherMusicDef.weatherDef == weatherDef;
-			});
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing weather music.");
-			}
-
-			audioManager.setMusic(musicDef);
-		}
-		else if (changeToNightMusic)
-		{
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-				MusicDefinition::Type::Night, game.getRandom());
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing night music.");
-			}
-
-			audioManager.setMusic(musicDef);
-		}
-	}
-
-	// Tick the player.
-	auto &player = game.getPlayer();
-	const CoordDouble3 oldPlayerCoord = player.getPosition();
-	player.tick(game, dt);
-	const CoordDouble3 newPlayerCoord = player.getPosition();
-
-	// Handle input for the player's attack.
-	const auto &inputManager = game.getInputManager();
-	const Int2 mouseDelta = inputManager.getMouseDelta();
-	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
-
-	MapInstance &mapInst = gameState.getActiveMapInst();
-	const double latitude = [&gameState]()
-	{
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		return locationDef.getLatitude();
-	}();
-
-	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
-	TextureManager &textureManager = game.getTextureManager();
-
-	EntityGeneration::EntityGenInfo entityGenInfo;
-	entityGenInfo.init(gameState.nightLightsAreActive());
-
-	// Tick active map (entities, animated distant land, etc.).
-	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&game, &gameState, mapType,
-		&entityDefLibrary, &textureManager]() -> std::optional<CitizenUtils::CitizenGenInfo>
-	{
-		if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
-		{
-			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
-			const LocationDefinition &locationDef = gameState.getLocationDefinition();
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
-				entityDefLibrary, textureManager);
-		}
-		else
-		{
-			return std::nullopt;
-		}
-	}();
-
-	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, gameState.getDaytimePercent(),
-		game.getOptions().getMisc_ChunkDistance(), entityGenInfo, citizenGenInfo, entityDefLibrary,
-		game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
-
-	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
-	// and handle any level transition.
-	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const double ceilingScale = levelInst.getCeilingScale();
-	const CoordInt3 oldPlayerVoxelCoord(
-		oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
-	const CoordInt3 newPlayerVoxelCoord(
-		newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
-	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
-	{
-		MapLogicController::handleTriggers(game, newPlayerVoxelCoord, this->triggerText);
-
-		if (mapType == MapType::Interior)
-		{
-			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
-		}
-	}
+	game.setIsSimulatingScene(!paused);
 }

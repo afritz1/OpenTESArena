@@ -16,6 +16,7 @@
 #include "../Input/InputActionName.h"
 #include "../Interface/CommonUiController.h"
 #include "../Interface/CommonUiView.h"
+#include "../Interface/GameWorldPanel.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
@@ -379,6 +380,25 @@ const Rect &Game::getNativeCursorRegion(int index) const
 	return this->nativeCursorRegions[index];
 }
 
+TextBox *Game::getTriggerTextBox()
+{
+	Panel *panel = this->getActivePanel();
+	if (panel == nullptr)
+	{
+		DebugLogError("No active panel for trigger text box getter.");
+		return nullptr;
+	}
+
+	GameWorldPanel *gameWorldPanel = dynamic_cast<GameWorldPanel*>(panel);
+	if (gameWorldPanel == nullptr)
+	{
+		DebugLogError("Active panel is not game world panel for trigger text box getter.");
+		return nullptr;
+	}
+
+	return &gameWorldPanel->getTriggerTextBox();
+}
+
 void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
 {
 	this->nextSubPanel = std::move(nextSubPanel);
@@ -740,7 +760,7 @@ void Game::loop()
 		// Tick.
 		try
 		{
-			// Animate the current game state by delta time.
+			// Animate the current UI panel by delta time.
 			this->getActivePanel()->tick(timeScaledDt);
 
 			// See if the panel tick requested any changes in active panels.
@@ -748,6 +768,9 @@ void Game::loop()
 
 			if (this->isSimulatingScene())
 			{
+				// Tick game world state (voxels, entities, daytime clock, etc.).
+				this->gameState.tick(timeScaledDt, *this);
+
 				// Update audio listener and check for finished sounds.
 				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(this->player.getPosition());
 				const NewDouble3 &direction = this->player.getDirection();

@@ -43,8 +43,10 @@ public:
 
 	bool init();
 
+	// @temp workaround until there are listener callbacks or something for updating text boxes from game logic
+	TextBox &getTriggerTextBox();
+
 	virtual void onPauseChanged(bool paused) override;
-	virtual void tick(double dt) override;
 };
 
 #endif

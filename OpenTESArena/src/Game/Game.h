@@ -190,6 +190,9 @@ public:
 	// Gets a UI rectangle used with classic game world interface for player movement.
 	const Rect &getNativeCursorRegion(int index) const;
 
+	// @todo: find a cleaner way to do this via listener callbacks or something.
+	TextBox *getTriggerTextBox();
+
 	// Sets the panel after the current SDL event has been processed (to avoid 
 	// interfering with the current panel). This uses template parameters for
 	// convenience (to avoid writing a unique_ptr at each callsite).
