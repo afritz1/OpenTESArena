@@ -34,7 +34,7 @@ Controls:
 
 Inspired by [OpenXcom](https://openxcom.org/) and [OpenMW](https://openmw.org/en/), this started out as a simplistic ray tracing tech demo in early 2016, and is now steadily inching closer to something akin to the original game. I am using a clean-room approach for understanding Arena's algorithms and data structures, the details of which can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). It is a behavioral approximation project, not about matching machine instructions, and quality-of-life changes are made where they make sense.
 
-There are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is a standalone engine and does not contain content.
+There are two versions of Arena (both available for free): the floppy disk version and the CD one. The user must acquire their own copy of Arena because OpenTESArena is a standalone engine and does not contain content.
 
 Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
