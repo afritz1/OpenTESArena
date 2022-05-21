@@ -591,6 +591,23 @@ void SoftwareRenderer::ObjectTexture::clear()
 	this->paletteTexels.clear();
 }
 
+void SoftwareRenderer::VertexBuffer::init(int vertexCount, int componentsPerVertex)
+{
+	const int valueCount = vertexCount * componentsPerVertex;
+	this->vertices.init(valueCount);
+}
+
+void SoftwareRenderer::AttributeBuffer::init(int vertexCount, int componentsPerVertex)
+{
+	const int valueCount = vertexCount * componentsPerVertex;
+	this->attributes.init(valueCount);
+}
+
+void SoftwareRenderer::IndexBuffer::init(int indexCount)
+{
+	this->indices.init(indexCount);
+}
+
 SoftwareRenderer::SoftwareRenderer()
 {
 
@@ -609,6 +626,9 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 void SoftwareRenderer::shutdown()
 {
 	this->depthBuffer.clear();
+	this->vertexBuffers.clear();
+	this->attributeBuffers.clear();
+	this->indexBuffers.clear();
 	this->objectTextures.clear();
 }
 
@@ -621,6 +641,120 @@ void SoftwareRenderer::resize(int width, int height)
 {
 	this->depthBuffer.init(width, height);
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
+}
+
+bool SoftwareRenderer::tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID)
+{
+	DebugAssert(vertexCount > 0);
+	DebugAssert(componentsPerVertex >= 2);
+
+	if (!this->vertexBuffers.tryAlloc(outID))
+	{
+		DebugLogError("Couldn't allocate vertex buffer ID.");
+		return false;
+	}
+
+	VertexBuffer &buffer = this->vertexBuffers.get(*outID);
+	buffer.init(vertexCount, componentsPerVertex);
+	return true;
+}
+
+bool SoftwareRenderer::tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID)
+{
+	DebugAssert(vertexCount > 0);
+	DebugAssert(componentsPerVertex >= 2);
+
+	if (!this->attributeBuffers.tryAlloc(outID))
+	{
+		DebugLogError("Couldn't allocate attribute buffer ID.");
+		return false;
+	}
+
+	AttributeBuffer &buffer = this->attributeBuffers.get(*outID);
+	buffer.init(vertexCount, componentsPerVertex);
+	return true;
+}
+
+bool SoftwareRenderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID)
+{
+	DebugAssert(indexCount > 0);
+	DebugAssert((indexCount % 3) == 0);
+
+	if (!this->indexBuffers.tryAlloc(outID))
+	{
+		DebugLogError("Couldn't allocate index buffer ID.");
+		return false;
+	}
+
+	IndexBuffer &buffer = this->indexBuffers.get(*outID);
+	buffer.init(indexCount);
+	return true;
+}
+
+void SoftwareRenderer::populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices)
+{
+	VertexBuffer &buffer = this->vertexBuffers.get(id);
+	const int srcCount = vertices.getCount();
+	const int dstCount = buffer.vertices.getCount();
+	if (srcCount != dstCount)
+	{
+		DebugLogError("Mismatched vertex buffer sizes for ID " + std::to_string(id) + ": " +
+			std::to_string(srcCount) + " != " + std::to_string(dstCount));
+		return;
+	}
+
+	const auto srcBegin = vertices.get();
+	const auto srcEnd = srcBegin + srcCount;
+	std::copy(srcBegin, srcEnd, buffer.vertices.get());
+}
+
+void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes)
+{
+	AttributeBuffer &buffer = this->attributeBuffers.get(id);
+	const int srcCount = attributes.getCount();
+	const int dstCount = buffer.attributes.getCount();
+	if (srcCount != dstCount)
+	{
+		DebugLogError("Mismatched attribute buffer sizes for ID " + std::to_string(id) + ": " +
+			std::to_string(srcCount) + " != " + std::to_string(dstCount));
+		return;
+	}
+
+	const auto srcBegin = attributes.get();
+	const auto srcEnd = srcBegin + srcCount;
+	std::copy(srcBegin, srcEnd, buffer.attributes.get());
+}
+
+void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices)
+{
+	IndexBuffer &buffer = this->indexBuffers.get(id);
+	const int srcCount = indices.getCount();
+	const int dstCount = buffer.indices.getCount();
+	if (srcCount != dstCount)
+	{
+		DebugLogError("Mismatched index buffer sizes for ID " + std::to_string(id) + ": " +
+			std::to_string(srcCount) + " != " + std::to_string(dstCount));
+		return;
+	}
+
+	const auto srcBegin = indices.get();
+	const auto srcEnd = srcBegin + srcCount;
+	std::copy(srcBegin, srcEnd, buffer.indices.get());
+}
+
+void SoftwareRenderer::freeVertexBuffer(VertexBufferID id)
+{
+	this->vertexBuffers.free(id);
+}
+
+void SoftwareRenderer::freeAttributeBuffer(AttributeBufferID id)
+{
+	this->attributeBuffers.free(id);
+}
+
+void SoftwareRenderer::freeIndexBuffer(IndexBufferID id)
+{
+	this->indexBuffers.free(id);
 }
 
 bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID)

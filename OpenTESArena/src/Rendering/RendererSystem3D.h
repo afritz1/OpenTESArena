@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+#include "RenderGeometryUtils.h"
 #include "RenderTextureUtils.h"
 #include "RenderTriangle.h"
 #include "../Math/MathUtils.h"
@@ -42,6 +43,17 @@ public:
 	virtual bool isInited() const = 0;
 
 	virtual void resize(int width, int height) = 0;
+
+	// Geometry management functions.
+	virtual bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID) = 0;
+	virtual bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID) = 0;
+	virtual bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID) = 0;
+	virtual void populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices) = 0;
+	virtual void populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes) = 0;
+	virtual void populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices) = 0;
+	virtual void freeVertexBuffer(VertexBufferID id) = 0;
+	virtual void freeAttributeBuffer(AttributeBufferID id) = 0;
+	virtual void freeIndexBuffer(IndexBufferID id) = 0;
 
 	// Texture management functions.
 	virtual bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID) = 0;

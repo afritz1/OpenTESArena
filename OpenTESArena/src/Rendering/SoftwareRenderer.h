@@ -40,7 +40,35 @@ public:
 	using ObjectTexturePool = RecyclablePool<ObjectTexture, ObjectTextureID>;
 	using ObjectMaterialPool = RecyclablePool<ObjectMaterial, ObjectMaterialID>;
 private:
+	struct VertexBuffer
+	{
+		Buffer<double> vertices;
+
+		void init(int vertexCount, int componentsPerVertex);
+	};
+
+	struct AttributeBuffer
+	{
+		Buffer<double> attributes;
+
+		void init(int vertexCount, int componentsPerVertex);
+	};
+
+	struct IndexBuffer
+	{
+		Buffer<int32_t> indices;
+
+		void init(int indexCount);
+	};
+
+	using VertexBufferPool = RecyclablePool<VertexBuffer, VertexBufferID>;
+	using AttributeBufferPool = RecyclablePool<AttributeBuffer, AttributeBufferID>;
+	using IndexBufferPool = RecyclablePool<IndexBuffer, IndexBufferID>;
+
 	Buffer2D<double> depthBuffer;
+	VertexBufferPool vertexBuffers;
+	AttributeBufferPool attributeBuffers;
+	IndexBufferPool indexBuffers;
 	ObjectTexturePool objectTextures;
 	ObjectMaterialPool objectMaterials;
 public:
@@ -52,6 +80,16 @@ public:
 	bool isInited() const override;
 
 	void resize(int width, int height) override;
+
+	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID) override;
+	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID) override;
+	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID) override;
+	void populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices) override;
+	void populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes) override;
+	void populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices) override;
+	void freeVertexBuffer(VertexBufferID id) override;
+	void freeAttributeBuffer(AttributeBufferID id) override;
+	void freeIndexBuffer(IndexBufferID id) override;
 
 	bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID) override;
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) override;
