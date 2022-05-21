@@ -47,7 +47,7 @@ If you would like music played in-game, see **Music setup** below after installi
 1. Get the Arena data files from one of:
    1. [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website (floppy disk version)
    1. [Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/) (floppy disk version)
-   1. [GOG](https://www.gog.com/wishlist/games/the_elder_scrolls_arena) (CD version)
+   1. [GOG](https://www.gog.com/game/the_elder_scrolls_arena) (CD version)
 1. Extract Arena106Setup.zip and run Arena106.exe.
 1. Pick a destination folder to install into. This can be anywhere on your hard drive or in the OpenTESArena `data` folder.
 1. Open `options-default.txt` in the `options` folder and change `ArenaPath` to where you put the `ARENA`/`ARENACD` folder.
