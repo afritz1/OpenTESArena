@@ -1,0 +1,13 @@
+#ifndef RENDER_GEOMETRY_UTILS_H
+#define RENDER_GEOMETRY_UTILS_H
+
+// Unique ID for a mesh allocated in the renderer's internal format.
+using VertexBufferID = int;
+
+// Unique ID for a set of mesh indices allocated in the renderer's internal format.
+using IndexBufferID = int;
+
+// Unique ID for mesh attributes allocated in the renderer's internal format.
+using AttribBufferID = int;
+
+#endif
