@@ -45,7 +45,7 @@ If you would like music played in-game, see **Music setup** below after installi
 ### Windows
 1. Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
 1. Get the Arena data files from one of:
-   1. [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website (floppy disk version)
+   1. [Download the full game](https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website (floppy disk version)
    1. [Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/) (floppy disk version)
    1. [GOG](https://www.gog.com/game/the_elder_scrolls_arena) (CD version)
 1. Extract Arena106Setup.zip and run Arena106.exe.
@@ -61,7 +61,7 @@ If you see a warning about `alcOpenDevice()` failing, or there is no sound, down
 
 ### macOS
 #### Get the data files for *The Elder Scrolls: Arena*
-1. [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
+1. [Download the full game](https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
 1. Unzip `Arena106Setup.zip`
 1. `Arena106.exe` is a self-extracting RAR file. Use a tool such as [The Unarchiver](https://theunarchiver.com) to extract it into a folder of data files.
 
