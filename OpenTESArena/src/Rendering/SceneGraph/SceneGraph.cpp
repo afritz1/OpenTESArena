@@ -656,6 +656,12 @@ BufferView<const RenderTriangle> SceneGraph::getVisibleEntityGeometry() const
 	return BufferView<const RenderTriangle>(this->entityTriangles.data(), static_cast<int>(this->entityTriangles.size()));
 }
 
+BufferView<const RenderDrawCall> SceneGraph::getDrawCalls() const
+{
+	// @todo: populate each frame; this is getting the actual valuable results of the scene graph
+	return BufferView<const RenderDrawCall>(this->drawCalls.data(), static_cast<int>(this->drawCalls.size()));
+}
+
 void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
 	double chasmAnimPercent, bool nightLightsAreActive)
 {

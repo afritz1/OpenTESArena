@@ -39,7 +39,7 @@ public:
 
 	using ObjectTexturePool = RecyclablePool<ObjectTexture, ObjectTextureID>;
 	using ObjectMaterialPool = RecyclablePool<ObjectMaterial, ObjectMaterialID>;
-private:
+
 	struct VertexBuffer
 	{
 		Buffer<double> vertices;
@@ -60,7 +60,7 @@ private:
 
 		void init(int indexCount);
 	};
-
+private:
 	using VertexBufferPool = RecyclablePool<VertexBuffer, VertexBufferID>;
 	using AttributeBufferPool = RecyclablePool<AttributeBuffer, AttributeBufferID>;
 	using IndexBufferPool = RecyclablePool<IndexBuffer, IndexBufferID>;
@@ -110,8 +110,7 @@ public:
 
 	ProfilerData getProfilerData() const override;
 
-	void submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &opaqueVoxelTriangles,
-		const BufferView<const RenderTriangle> &alphaTestedVoxelTriangles, const BufferView<const RenderTriangle> &entityTriangles,
+	void submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer) override;
 	void present() override;
 };

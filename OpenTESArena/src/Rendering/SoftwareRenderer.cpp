@@ -6,6 +6,7 @@
 #include "ArenaRenderUtils.h"
 #include "LegacyRendererUtils.h"
 #include "RenderCamera.h"
+#include "RenderDrawCall.h"
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
@@ -226,22 +227,23 @@ namespace swGeometry
 	}
 
 	// Caches for visible triangle processing/clipping.
-	std::vector<RenderTriangle> g_visibleOpaqueVoxelTriangles, g_visibleOpaqueVoxelClipList;
-	std::vector<RenderTriangle> g_visibleAlphaTestedVoxelTriangles, g_visibleAlphaTestedVoxelClipList;
-	std::vector<RenderTriangle> g_visibleEntityTriangles, g_visibleEntityClipList;
-	int g_totalOpaqueVoxelTriangleCount = 0;
-	int g_totalAlphaTestedVoxelTriangleCount = 0;
-	int g_totalEntityTriangleCount = 0;
+	// @optimization: make N of these caches to allow for multi-threaded clipping
+	std::vector<RenderTriangle> g_visibleTriangles, g_visibleClipList;
+	int g_totalTriangleCount = 0;
 
 	// Processes the given world space triangles in the following ways, and returns a view to a geometry cache
 	// that is invalidated the next time this function is called.
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
-	BufferView<const RenderTriangle> ProcessTrianglesForRasterization(const BufferView<const RenderTriangle> &triangles,
-		const RenderCamera &camera, std::vector<RenderTriangle> &outVisibleTriangles, std::vector<RenderTriangle> &outClipList,
-		int *outTotalTriangleCount)
+	BufferView<const RenderTriangle> ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
+		const SoftwareRenderer::AttributeBuffer &attributeBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
+		const Double3 &worldOffset, const RenderCamera &camera)
 	{
+		std::vector<RenderTriangle> &outVisibleTriangles = swGeometry::g_visibleTriangles;
+		std::vector<RenderTriangle> &outClipList = swGeometry::g_visibleClipList;
+		int *outTotalTriangleCount = &swGeometry::g_totalTriangleCount;
+
 		const Double3 eye = swCamera::GetCameraEye(camera);
 
 		// Frustum directions pointing away from the camera eye.
@@ -280,12 +282,44 @@ namespace swGeometry
 		};
 
 		outVisibleTriangles.clear();
-		for (int i = 0; i < triangles.getCount(); i++)
+
+		const double *verticesPtr = vertexBuffer.vertices.get();
+		const double *attributesPtr = attributeBuffer.attributes.get();
+		const int32_t *indicesPtr = indexBuffer.indices.get();
+		const int triangleCount = indexBuffer.indices.getCount() / 3;
+		for (int i = 0; i < triangleCount; i++)
 		{
-			const RenderTriangle &triangle = triangles.get(i);
-			const Double3 &v0 = triangle.v0;
-			const Double3 &v1 = triangle.v1;
-			const Double3 &v2 = triangle.v2;
+			const int indexBufferBase = i * 3;
+			const int32_t index0 = indicesPtr[indexBufferBase];
+			const int32_t index1 = indicesPtr[indexBufferBase + 1];
+			const int32_t index2 = indicesPtr[indexBufferBase + 2];
+
+			const Double3 v0(
+				*(verticesPtr + index0) + worldOffset.x,
+				*(verticesPtr + index0 + 1) + worldOffset.y,
+				*(verticesPtr + index0 + 2) + worldOffset.z);
+			const Double3 v1(
+				*(verticesPtr + index1) + worldOffset.x,
+				*(verticesPtr + index1 + 1) + worldOffset.y,
+				*(verticesPtr + index1 + 2) + worldOffset.z);
+			const Double3 v2(
+				*(verticesPtr + index2) + worldOffset.x,
+				*(verticesPtr + index2 + 1) + worldOffset.y,
+				*(verticesPtr + index2 + 2) + worldOffset.z);
+			const Double2 uv0(
+				*(attributesPtr + index0),
+				*(attributesPtr + index0 + 1));
+			const Double2 uv1(
+				*(attributesPtr + index1),
+				*(attributesPtr + index1 + 1));
+			const Double2 uv2(
+				*(attributesPtr + index2),
+				*(attributesPtr + index2 + 1));
+
+			// @todo: don't construct the RenderTriangle, just use the vertices/etc. directly throughout
+			// - also compute the normal in advance and pass with the UVs like [uv0.x, uv0.y, norm.x, norm.y, norm.z, uv1.x, ...]
+			RenderTriangle triangle;
+			triangle.init(v0, v1, v2, uv0, uv1, uv2, -1, 0.0); // @todo: remove ObjectMaterialID and param0, put in draw call instead
 
 			// Discard back-facing and almost-back-facing.
 			const Double3 v0ToEye = eye - v0;
@@ -314,7 +348,7 @@ namespace swGeometry
 			outVisibleTriangles.insert(outVisibleTriangles.end(), outClipList.begin(), outClipList.end());
 		}
 
-		*outTotalTriangleCount = triangles.getCount();
+		*outTotalTriangleCount = triangleCount;
 		return BufferView<const RenderTriangle>(outVisibleTriangles.data(), static_cast<int>(outVisibleTriangles.size()));
 	}
 }
@@ -955,19 +989,14 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	const int renderHeight = this->depthBuffer.getHeight();
 
 	const int threadCount = 1;
-	const int potentiallyVisTriangleCount = swGeometry::g_totalOpaqueVoxelTriangleCount +
-		swGeometry::g_totalAlphaTestedVoxelTriangleCount + swGeometry::g_totalEntityTriangleCount;
-	const int visTriangleCount = static_cast<int>(
-		swGeometry::g_visibleOpaqueVoxelTriangles.size() +
-		swGeometry::g_visibleAlphaTestedVoxelTriangles.size() +
-		swGeometry::g_visibleEntityTriangles.size());
+	const int potentiallyVisTriangleCount = swGeometry::g_totalTriangleCount;
+	const int visTriangleCount = static_cast<int>(swGeometry::g_visibleTriangles.size());
 	const int visLightCount = 0;
 
 	return ProfilerData(renderWidth, renderHeight, threadCount, potentiallyVisTriangleCount, visTriangleCount, visLightCount);
 }
 
-void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &opaqueVoxelTriangles,
-	const BufferView<const RenderTriangle> &alphaTestedVoxelTriangles, const BufferView<const RenderTriangle> &entityTriangles,
+void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,
 	const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
 	const int frameBufferWidth = this->depthBuffer.getWidth();
@@ -984,23 +1013,20 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	const uint32_t clearColor = Color::Black.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 
-	// @optimization: these processing functions could be on separate threads
-	const BufferView<const RenderTriangle> clippedOpaqueVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(
-		opaqueVoxelTriangles, camera, swGeometry::g_visibleOpaqueVoxelTriangles, swGeometry::g_visibleOpaqueVoxelClipList,
-		&swGeometry::g_totalOpaqueVoxelTriangleCount);
-	const BufferView<const RenderTriangle> clippedAlphaTestedVoxelTriangles = swGeometry::ProcessTrianglesForRasterization(
-		alphaTestedVoxelTriangles, camera, swGeometry::g_visibleAlphaTestedVoxelTriangles, swGeometry::g_visibleAlphaTestedVoxelClipList,
-		&swGeometry::g_totalAlphaTestedVoxelTriangleCount);
-	const BufferView<const RenderTriangle> clippedEntityTriangles = swGeometry::ProcessTrianglesForRasterization(
-		entityTriangles, camera, swGeometry::g_visibleEntityTriangles, swGeometry::g_visibleEntityClipList,
-		&swGeometry::g_totalEntityTriangleCount);
+	for (int i = 0; i < drawCalls.getCount(); i++)
+	{
+		const RenderDrawCall &drawCall = drawCalls.get(i);
+		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
+		const AttributeBuffer &attributeBuffer = this->attributeBuffers.get(drawCall.attributeBufferID);
+		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
+		const Double3 &worldOffset = drawCall.position;
+		const BufferView<const RenderTriangle> clippedTriangles =
+			swGeometry::ProcessTrianglesForRasterization(vertexBuffer, attributeBuffer, indexBuffer, worldOffset, camera);
 
-	swRender::RasterizeTriangles(clippedOpaqueVoxelTriangles, false, this->objectMaterials, this->objectTextures,
-		paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
-	swRender::RasterizeTriangles(clippedAlphaTestedVoxelTriangles, true, this->objectMaterials, this->objectTextures,
-		paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
-	swRender::RasterizeTriangles(clippedEntityTriangles, true, this->objectMaterials, this->objectTextures,
-		paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
+		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
+		swRender::RasterizeTriangles(clippedTriangles, isAlphaTested, this->objectMaterials, this->objectTextures,
+			paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
+	}
 }
 
 void SoftwareRenderer::present()

@@ -952,11 +952,6 @@ void Renderer::submitFrame(const RenderCamera &camera, double ambientPercent, Ob
 {
 	DebugAssert(this->renderer3D->isInited());
 
-	// @todo: need to call sceneGraph.updateVoxels/Entities/Sky() somewhere before this, either in this submitFrame() or in GameWorldPanel::gameWorldRenderCallback()
-	const BufferView<const RenderTriangle> opaqueVoxelTriangles = this->sceneGraph.getVisibleOpaqueVoxelGeometry();
-	const BufferView<const RenderTriangle> alphaTestedVoxelTriangles = this->sceneGraph.getVisibleAlphaTestedVoxelGeometry();
-	const BufferView<const RenderTriangle> entityTriangles = this->sceneGraph.getVisibleEntityGeometry();
-
 	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
 
 	RenderFrameSettings renderFrameSettings;
@@ -969,10 +964,11 @@ void Renderer::submitFrame(const RenderCamera &camera, double ambientPercent, Ob
 		reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
 	DebugAssertMsg(status == 0, "Couldn't lock game world texture for scene rendering (" + std::string(SDL_GetError()) + ").");
 
+	const BufferView<const RenderDrawCall> drawCalls = this->sceneGraph.getDrawCalls();
+
 	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(camera, opaqueVoxelTriangles, alphaTestedVoxelTriangles, entityTriangles,
-		renderFrameSettings, outputBuffer);
+	this->renderer3D->submitFrame(camera, drawCalls, renderFrameSettings, outputBuffer);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 

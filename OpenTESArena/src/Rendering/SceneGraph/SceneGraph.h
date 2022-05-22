@@ -11,6 +11,7 @@
 #include "SkyObjectRenderDefinition.h"
 #include "SkyObjectRenderInstance.h"
 #include "VoxelRenderDefinition.h"
+#include "../RenderDrawCall.h"
 #include "../RenderTriangle.h"
 
 #include "components/utilities/Buffer.h"
@@ -73,6 +74,8 @@ private:
 	std::vector<RenderTriangle> entityTriangles;
 	std::vector<RenderTriangle> skyTriangles; // @todo: will the main difference with opaque voxel geometry be the lack of depth writes?
 
+	std::vector<RenderDrawCall> drawCalls;
+
 	void clearVoxels(bool includeGraphChunks);
 	void clearEntities();
 	void clearSky();
@@ -81,6 +84,7 @@ public:
 	BufferView<const RenderTriangle> getVisibleOpaqueVoxelGeometry() const;
 	BufferView<const RenderTriangle> getVisibleAlphaTestedVoxelGeometry() const;
 	BufferView<const RenderTriangle> getVisibleEntityGeometry() const;
+	BufferView<const RenderDrawCall> getDrawCalls() const;
 
 	void updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
 		double chasmAnimPercent, bool nightLightsAreActive);

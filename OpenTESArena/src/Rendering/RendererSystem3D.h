@@ -18,6 +18,7 @@ class Random;
 class TextureBuilder;
 
 struct RenderCamera;
+struct RenderDrawCall;
 struct RenderFrameSettings;
 struct RenderInitSettings;
 
@@ -86,8 +87,7 @@ public:
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.
 	// @todo: this will take draw lists from SceneGraph eventually
-	virtual void submitFrame(const RenderCamera &camera, const BufferView<const RenderTriangle> &opaqueVoxelTriangles,
-		const BufferView<const RenderTriangle> &alphaTestedVoxelTriangles, const BufferView<const RenderTriangle> &entityTriangles,
+	virtual void submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer) = 0;
 
 	// Presents the finished frame to the screen. This may just be a copy to the screen frame buffer that

@@ -8,7 +8,8 @@ enum class VertexShaderType
 
 enum class PixelShaderType
 {
-	Default
+	Opaque,
+	AlphaTested
 };
 
 #endif
