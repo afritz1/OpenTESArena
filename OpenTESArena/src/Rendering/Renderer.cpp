@@ -851,22 +851,30 @@ void Renderer::freeUiTexture(UiTextureID id)
 	this->renderer2D->freeUiTexture(id);
 }
 
-void Renderer::updateSceneGraph(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
+void Renderer::loadScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
 	double daytimePercent, double latitude, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
 	const EntityDefinitionLibrary &entityDefLibrary)
 {
-	const CoordDouble3 cameraPos(camera.chunk, camera.point);
-	const VoxelDouble3 &cameraDir = camera.forward;
+	DebugAssert(this->renderer3D != nullptr);
 	const double ceilingScale = levelInst.getCeilingScale();
-	this->sceneGraph.updateVoxels(levelInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive);
-	this->sceneGraph.updateEntities(levelInst, cameraPos, cameraDir, entityDefLibrary, ceilingScale,
-		nightLightsAreActive, playerHasLight);
-	this->sceneGraph.updateSky(skyInst, daytimePercent, latitude);
+	this->sceneGraph.loadScene(levelInst, skyInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive,
+		playerHasLight, daytimePercent, latitude, entityDefLibrary, *this->renderer3D);
 }
 
-void Renderer::clearSceneGraph()
+void Renderer::updateScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
+	double daytimePercent, double latitude, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+	const EntityDefinitionLibrary &entityDefLibrary)
 {
-	this->sceneGraph.clear();
+	DebugAssert(this->renderer3D != nullptr);
+	const double ceilingScale = levelInst.getCeilingScale();
+	this->sceneGraph.updateScene(levelInst, skyInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive,
+		playerHasLight, daytimePercent, latitude, entityDefLibrary, *this->renderer3D);
+}
+
+void Renderer::unloadScene()
+{
+	DebugAssert(this->renderer3D != nullptr);
+	this->sceneGraph.unloadScene(*this->renderer3D);
 }
 
 void Renderer::clear(const Color &color)

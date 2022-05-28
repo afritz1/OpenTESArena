@@ -25,6 +25,7 @@ enum class MapType;
 class LevelInstance
 {
 public:
+	// @todo: I think we want the scene graph to own all these object textures?
 	struct LoadedVoxelMaterial
 	{
 		TextureAssetReference textureAssetRef;

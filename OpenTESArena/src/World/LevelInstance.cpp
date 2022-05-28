@@ -550,7 +550,7 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 	this->paletteTextureRef.destroy();
 	this->lightTableTextureRef.destroy();
 
-	renderer.clearSceneGraph();
+	renderer.unloadScene();
 
 	// Load chasm floor textures, independent of voxels in the level. Do this before chasm wall texture loading
 	// because walls are multi-textured and depend on the chasm animation textures.

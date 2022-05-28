@@ -828,7 +828,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	RenderCamera renderCamera;
 	renderCamera.init(playerPos.chunk, playerPos.point, playerDir, fovX, fovY, viewAspectRatio);
 
-	renderer.updateSceneGraph(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
+	renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
 		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight(),
 		game.getEntityDefinitionLibrary());
 

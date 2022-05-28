@@ -1,9 +1,12 @@
+#include <array>
 #include <numeric>
 #include <optional>
 
 #include "SceneGraph.h"
 #include "../ArenaRenderUtils.h"
 #include "../RenderCamera.h"
+#include "../RendererSystem3D.h"
+#include "../RenderTriangle.h"
 #include "../../Assets/MIFUtils.h"
 #include "../../Entities/EntityManager.h"
 #include "../../Entities/EntityVisibilityState.h"
@@ -458,7 +461,7 @@ namespace sgGeometry
 			// Slides to the left.
 			triangleCount = 8;
 			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
-			
+
 			const Double2 uvTL(slideAmount, 0.0);
 			const Double2 uvTR(1.0, 0.0);
 			const Double2 uvBL(uvTL.x, 1.0);
@@ -641,29 +644,495 @@ namespace sgGeometry
 	}
 }
 
-BufferView<const RenderTriangle> SceneGraph::getVisibleOpaqueVoxelGeometry() const
+namespace sgMesh
 {
-	return BufferView<const RenderTriangle>(this->opaqueVoxelTriangles.data(), static_cast<int>(this->opaqueVoxelTriangles.size()));
-}
+	constexpr int MAX_VERTICES_PER_VOXEL = 8;
+	constexpr int MAX_INDICES_PER_VOXEL = 36;
+	constexpr int INDICES_PER_TRIANGLE = 3;
+	constexpr int COMPONENTS_PER_VERTEX = 3; // XYZ
+	constexpr int ATTRIBUTES_PER_VERTEX = 4; // XY texture coordinates
 
-BufferView<const RenderTriangle> SceneGraph::getVisibleAlphaTestedVoxelGeometry() const
-{
-	return BufferView<const RenderTriangle>(this->alphaTestedVoxelTriangles.data(), static_cast<int>(this->alphaTestedVoxelTriangles.size()));
-}
+	constexpr int GetVoxelVertexCount(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+			return 0;
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Raised:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Chasm:
+		case ArenaTypes::VoxelType::Door:
+			return 8;
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::Edge:
+			return 4;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
 
-BufferView<const RenderTriangle> SceneGraph::getVisibleEntityGeometry() const
-{
-	return BufferView<const RenderTriangle>(this->entityTriangles.data(), static_cast<int>(this->entityTriangles.size()));
+	constexpr int GetVoxelOpaqueIndexCount(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Door:
+		case ArenaTypes::VoxelType::Edge:
+			return 0;
+		case ArenaTypes::VoxelType::Wall:
+			return 12 * INDICES_PER_TRIANGLE;
+		case ArenaTypes::VoxelType::Raised:
+			return 4 * INDICES_PER_TRIANGLE;
+		case ArenaTypes::VoxelType::Chasm:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Diagonal:
+			return 2 * INDICES_PER_TRIANGLE;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	constexpr int GetVoxelAlphaTestedIndexCount(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Diagonal:
+			return 0;
+		case ArenaTypes::VoxelType::Raised:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Chasm:
+		case ArenaTypes::VoxelType::Door:
+			return 12 * INDICES_PER_TRIANGLE;
+		case ArenaTypes::VoxelType::Edge:
+			return 2 * INDICES_PER_TRIANGLE;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	void WriteWallMeshBuffers(const VoxelDefinition::WallData &wall, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
+	{
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Wall) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Y=0
+
+			// Y=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteFloorMeshBuffers(const VoxelDefinition::FloorData &floor, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
+	{
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Floor) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteCeilingMeshBuffers(const VoxelDefinition::CeilingData &ceiling, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
+	{
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Ceiling) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteRaisedMeshBuffers(const VoxelDefinition::RaisedData &raised, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices)
+	{
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Raised) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Y=0
+
+			// Y=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteDiagonalMeshBuffers(const VoxelDefinition::DiagonalData &diagonal, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
+	{
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Diagonal) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteTransparentWallMeshBuffers(const VoxelDefinition::TransparentWallData &transparentWall,
+		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
+	{
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::TransparentWall) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Y=0
+
+			// Y=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteEdgeMeshBuffers(const VoxelDefinition::EdgeData &edge, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
+	{
+		// @todo: four different vertex buffers depending on the side? The vertical size is always the same.
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Edge) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Y=0
+
+			// Y=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteChasmMeshBuffers(const VoxelDefinition::ChasmData &chasm, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices)
+	{
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Chasm) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Y=0
+
+			// Y=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteDoorMeshBuffers(const VoxelDefinition::DoorData &door, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
+	{
+		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Door) * 3> vertices =
+		{
+			// X=0
+
+			// X=1
+
+			// Y=0
+
+			// Y=1
+
+			// Z=0
+
+			// Z=1
+
+		};
+
+		// @todo
+		DebugNotImplemented();
+	}
+
+	void WriteVoxelMeshBuffers(const VoxelDefinition &voxelDef, BufferView<double> outVertices,
+		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices,
+		BufferView<int32_t> outAlphaTestedIndices)
+	{
+		const ArenaTypes::VoxelType voxelType = voxelDef.type;
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::Wall:
+			WriteWallMeshBuffers(voxelDef.wall, outVertices, outAttributes, outOpaqueIndices);
+			break;
+		case ArenaTypes::VoxelType::Floor:
+			WriteFloorMeshBuffers(voxelDef.floor, outVertices, outAttributes, outOpaqueIndices);
+			break;
+		case ArenaTypes::VoxelType::Ceiling:
+			WriteCeilingMeshBuffers(voxelDef.ceiling, outVertices, outAttributes, outOpaqueIndices);
+			break;
+		case ArenaTypes::VoxelType::Raised:
+			WriteRaisedMeshBuffers(voxelDef.raised, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
+			break;
+		case ArenaTypes::VoxelType::Diagonal:
+			WriteDiagonalMeshBuffers(voxelDef.diagonal, outVertices, outAttributes, outOpaqueIndices);
+			break;
+		case ArenaTypes::VoxelType::TransparentWall:
+			WriteTransparentWallMeshBuffers(voxelDef.transparentWall, outVertices, outAttributes, outAlphaTestedIndices);
+			break;
+		case ArenaTypes::VoxelType::Edge:
+			WriteEdgeMeshBuffers(voxelDef.edge, outVertices, outAttributes, outAlphaTestedIndices);
+			break;
+		case ArenaTypes::VoxelType::Chasm:
+			WriteChasmMeshBuffers(voxelDef.chasm, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
+			break;
+		case ArenaTypes::VoxelType::Door:
+			WriteDoorMeshBuffers(voxelDef.door, outVertices, outAttributes, outAlphaTestedIndices);
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
+		}
+	}
 }
 
 BufferView<const RenderDrawCall> SceneGraph::getDrawCalls() const
 {
-	// @todo: populate each frame; this is getting the actual valuable results of the scene graph
 	return BufferView<const RenderDrawCall>(this->drawCalls.data(), static_cast<int>(this->drawCalls.size()));
 }
 
+void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
+	double chasmAnimPercent, bool nightLightsAreActive, RendererSystem3D &renderer)
+{
+	// Expect empty chunks to have been created just now (it's done before this in the edge case
+	// there are no voxels at all since entities rely on chunks existing).
+	DebugAssert(!this->graphChunks.empty());
+
+	const ChunkManager &chunkManager = levelInst.getChunkManager();
+	for (int chunkIndex = 0; chunkIndex < chunkManager.getChunkCount(); chunkIndex++)
+	{
+		const Chunk &chunk = chunkManager.getChunk(chunkIndex);
+		SceneGraphChunk &graphChunk = this->graphChunks[chunkIndex];
+
+		// Add voxel definitions to the scene graph.
+		for (int voxelDefIndex = 0; voxelDefIndex < chunk.getVoxelDefCount(); voxelDefIndex++)
+		{
+			const Chunk::VoxelID voxelID = static_cast<Chunk::VoxelID>(voxelDefIndex);
+			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
+			const ArenaTypes::VoxelType voxelType = voxelDef.type;
+
+			SceneGraphVoxelDefinition graphVoxelDef;
+			if (voxelType != ArenaTypes::VoxelType::None) // Only attempt to create buffers for non-air voxels.
+			{
+				const int vertexCount = sgMesh::GetVoxelVertexCount(voxelType);
+				if (!renderer.tryCreateVertexBuffer(vertexCount, sgMesh::COMPONENTS_PER_VERTEX, &graphVoxelDef.vertexBufferID))
+				{
+					DebugLogError("Couldn't create vertex buffer for voxel ID " + std::to_string(voxelID) +
+						" in chunk (" + chunk.getPosition().toString() + ").");
+					continue;
+				}
+
+				if (!renderer.tryCreateAttributeBuffer(vertexCount, sgMesh::COMPONENTS_PER_VERTEX, &graphVoxelDef.attributeBufferID))
+				{
+					DebugLogError("Couldn't create attribute buffer for voxel ID " + std::to_string(voxelID) +
+						" in chunk (" + chunk.getPosition().toString() + ").");
+					graphVoxelDef.freeBuffers(renderer);
+					continue;
+				}
+
+				std::array<double, sgMesh::MAX_VERTICES_PER_VOXEL * sgMesh::COMPONENTS_PER_VERTEX> vertices;
+				std::array<double, sgMesh::MAX_VERTICES_PER_VOXEL * sgMesh::ATTRIBUTES_PER_VERTEX> attributes;
+				std::array<int32_t, sgMesh::MAX_INDICES_PER_VOXEL> opaqueIndices, alphaTestedIndices;
+				vertices.fill(0.0);
+				attributes.fill(0.0);
+				opaqueIndices.fill(0);
+				alphaTestedIndices.fill(0);
+
+				// Generate mesh data for this voxel definition.
+				sgMesh::WriteVoxelMeshBuffers(voxelDef,
+					BufferView<double>(vertices.data(), vertices.size()),
+					BufferView<double>(attributes.data(), attributes.size()),
+					BufferView<int32_t>(opaqueIndices.data(), opaqueIndices.size()),
+					BufferView<int32_t>(alphaTestedIndices.data(), alphaTestedIndices.size()));
+
+				renderer.populateVertexBuffer(graphVoxelDef.vertexBufferID, BufferView<const double>(vertices.data(), vertexCount));
+				renderer.populateAttributeBuffer(graphVoxelDef.attributeBufferID, BufferView<const double>(attributes.data(), vertexCount));
+
+				const int opaqueIndexCount = sgMesh::GetVoxelOpaqueIndexCount(voxelType);
+				if (opaqueIndexCount > 0)
+				{
+					if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &graphVoxelDef.opaqueIndexBufferID))
+					{
+						DebugLogError("Couldn't create opaque index buffer for voxel ID " + std::to_string(voxelID) +
+							" in chunk (" + chunk.getPosition().toString() + ").");
+						graphVoxelDef.freeBuffers(renderer);
+						continue;
+					}
+
+					renderer.populateIndexBuffer(graphVoxelDef.opaqueIndexBufferID,
+						BufferView<const int32_t>(opaqueIndices.data(), opaqueIndexCount));
+				}
+
+				const int alphaTestedIndexCount = sgMesh::GetVoxelAlphaTestedIndexCount(voxelType);
+				if (alphaTestedIndexCount > 0)
+				{
+					if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &graphVoxelDef.alphaTestedIndexBufferID))
+					{
+						DebugLogError("Couldn't create alpha-tested index buffer for voxel ID " + std::to_string(voxelID) +
+							" in chunk (" + chunk.getPosition().toString() + ").");
+						graphVoxelDef.freeBuffers(renderer);
+						continue;
+					}
+
+					renderer.populateIndexBuffer(graphVoxelDef.alphaTestedIndexBufferID,
+						BufferView<const int32_t>(alphaTestedIndices.data(), alphaTestedIndexCount));
+				}
+			}
+
+			graphChunk.voxelDefs.emplace_back(std::move(graphVoxelDef));
+		}
+
+		// Assign voxel definition indices for each graph voxel.
+		for (WEInt z = 0; z < Chunk::DEPTH; z++)
+		{
+			for (int y = 0; y < chunk.getHeight(); y++)
+			{
+				for (SNInt x = 0; x < Chunk::WIDTH; x++)
+				{
+					// Get the voxel def mapping's index and use it for this voxel.
+					const Chunk::VoxelID voxelID = chunk.getVoxel(x, y, z);
+					const auto defIter = graphChunk.voxelDefMappings.find(voxelID);
+					DebugAssert(defIter != graphChunk.voxelDefMappings.end());
+					graphChunk.voxels.set(x, y, z, defIter->second);
+				}
+			}
+		}
+	}
+}
+
+void SceneGraph::loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
+	const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive,
+	bool playerHasLight, RendererSystem3D &renderer)
+{
+	DebugAssert(!this->graphChunks.empty());
+
+	// @todo
+	DebugNotImplemented();
+}
+
+void SceneGraph::loadSky(const SkyInstance &skyInst, double daytimePercent, double latitude, RendererSystem3D &renderer)
+{
+	// @todo
+	DebugNotImplemented();
+}
+
+void SceneGraph::loadWeather(const SkyInstance &skyInst, double daytimePercent, RendererSystem3D &renderer)
+{
+	// @todo
+	DebugNotImplemented();
+}
+
+void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst, const RenderCamera &camera,
+	double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight, double daytimePercent,
+	double latitude, const EntityDefinitionLibrary &entityDefLibrary, RendererSystem3D &renderer)
+{
+	DebugAssert(this->graphChunks.empty());
+	DebugAssert(this->drawCalls.empty());
+
+	// Create empty graph chunks using the chunk manager's chunks as a reference.
+	const ChunkManager &chunkManager = levelInst.getChunkManager();
+	for (int i = 0; i < chunkManager.getChunkCount(); i++)
+	{
+		const Chunk &chunk = chunkManager.getChunk(i);
+		SceneGraphChunk graphChunk;
+		graphChunk.init(chunk.getPosition(), chunk.getHeight());
+	}
+
+	// @todo: load textures somewhere in here and in a way that their draw calls can be generated; maybe want to store
+	// TextureAssetReferences with SceneGraphVoxelDefinition? Might want textures to be ref-counted if reused between chunks.
+
+	this->loadVoxels(levelInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive, renderer);
+	this->loadEntities(levelInst, camera, entityDefLibrary, ceilingScale, nightLightsAreActive, playerHasLight, renderer);
+	this->loadSky(skyInst, daytimePercent, latitude, renderer);
+	this->loadWeather(skyInst, daytimePercent, renderer);
+
+	// @todo: populate draw calls since update() only operates on dirty stuff from chunk manager/entity manager/etc.
+	DebugNotImplemented();
+}
+
+void SceneGraph::unloadScene(RendererSystem3D &renderer)
+{
+	// Free vertex/attribute/index buffer IDs from renderer.
+	for (SceneGraphChunk &chunk : this->graphChunks)
+	{
+		chunk.freeBuffers(renderer);
+	}
+
+	this->graphChunks.clear();
+	this->drawCalls.clear();
+}
+
 void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
-	double chasmAnimPercent, bool nightLightsAreActive)
+	double chasmAnimPercent, bool nightLightsAreActive, RendererSystem3D &renderer)
 {
 	const ChunkManager &chunkManager = levelInst.getChunkManager();
 	const int chunkCount = chunkManager.getChunkCount();
@@ -673,7 +1142,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 	{
 		const SceneGraphChunk &graphChunk = this->graphChunks[i];
 		const ChunkInt2 &graphChunkPos = graphChunk.position;
-		
+
 		bool isStale = true;
 		for (int j = 0; j < chunkCount; j++)
 		{
@@ -718,7 +1187,10 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 		}
 	}
 
-	// Arbitrary value, just needs to be long enough to touch the farthest chunks in practice.
+	// @todo: decide how to load voxels into these new graph chunks - maybe want to do the chunk adding/removing
+	// before updateVoxels(), same as how loadVoxels() expects the chunks to already be there (albeit empty).
+
+	/*// Arbitrary value, just needs to be long enough to touch the farthest chunks in practice.
 	// - @todo: maybe use far clipping plane value?
 	constexpr double frustumLength = 1000.0;
 
@@ -886,7 +1358,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			if (alphaTestedTriangleCount > 0)
 			{
 				const auto srcStart = alphaTestedTrianglesBuffer.cbegin();
-				const auto srcEnd = srcStart + alphaTestedTriangleCount;				
+				const auto srcEnd = srcStart + alphaTestedTriangleCount;
 				dstAlphaTestedTriangles.init(alphaTestedTriangleCount);
 				std::copy(srcStart, srcEnd, dstAlphaTestedTriangles.get());
 			}
@@ -896,9 +1368,6 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			}
 		}
 	}
-
-	// @todo: only call this on a scene change? the dirty voxels above should be keeping everything good now.
-	this->clearVoxels(false);
 
 	// Regenerate draw lists.
 	// @todo: maybe this is where we need to call the voxel animation logic functions so we know what material ID
@@ -971,26 +1440,26 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 				}
 			}
 		}
-	}
+	}*/
 
 	// @todo: sort opaque chunk geometry near to far
 	// @todo: sort alpha-tested chunk geometry far to near
 	// ^ for both of these, the goal is so we can essentially just memcpy each chunk's geometry into the scene graph's draw lists.
 }
 
-void SceneGraph::updateEntities(const LevelInstance &levelInst, const CoordDouble3 &cameraPos, const VoxelDouble3 &cameraDir,
-	const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive, bool playerHasLight)
+void SceneGraph::updateEntities(const LevelInstance &levelInst, const RenderCamera &camera,
+	const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive,
+	bool playerHasLight, RendererSystem3D &renderer)
 {
-	this->clearEntities();
-
-	const ChunkManager &chunkManager = levelInst.getChunkManager();
+	DebugNotImplemented();
+	/*const ChunkManager &chunkManager = levelInst.getChunkManager();
 	const int chunkCount = chunkManager.getChunkCount();
 
 	const EntityManager &entityManager = levelInst.getEntityManager();
 	std::vector<const Entity*> entityPtrs;
 
-	const CoordDouble2 cameraPos2D(cameraPos.chunk, VoxelDouble2(cameraPos.point.x, cameraPos.point.z));
-	const VoxelDouble3 entityDir = -cameraDir;
+	const CoordDouble2 cameraPos2D(camera.chunk, VoxelDouble2(camera.point.x, camera.point.z));
+	const VoxelDouble3 entityDir = -camera.forward;
 
 	for (int i = 0; i < chunkCount; i++)
 	{
@@ -1033,53 +1502,30 @@ void SceneGraph::updateEntities(const LevelInstance &levelInst, const CoordDoubl
 				this->entityTriangles.insert(this->entityTriangles.end(), srcStart, srcEnd);
 			}
 		}
-	}
+	}*/
 }
 
 void SceneGraph::updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude)
 {
-	this->clearSky();
-	//DebugNotImplemented();
-}
-
-/*void SceneGraph::updateVisibleGeometry(const RenderCamera &camera)
-{
-	// @todo: clear current geometry/light/etc. buffers
-
+	//this->clearSky();
 	DebugNotImplemented();
-}*/
-
-void SceneGraph::clearVoxels(bool includeGraphChunks)
-{
-	this->voxelRenderDefs.clear();
-	this->chunkRenderDefs.clear();
-	this->chunkRenderInsts.clear();
-	this->opaqueVoxelTriangles.clear();
-	this->alphaTestedVoxelTriangles.clear();
-
-	if (includeGraphChunks)
-	{
-		this->graphChunks.clear();
-	}
 }
 
-void SceneGraph::clearEntities()
+void SceneGraph::updateWeather(const SkyInstance &skyInst)
 {
-	this->entityRenderDefs.clear();
-	this->entityRenderInsts.clear();
-	this->entityTriangles.clear();
+	// @todo
+	DebugNotImplemented();
 }
 
-void SceneGraph::clearSky()
+void SceneGraph::updateScene(const LevelInstance &levelInst, const SkyInstance &skyInst, const RenderCamera &camera,
+	double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+	double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary, RendererSystem3D &renderer)
 {
-	this->skyObjectRenderDefs.clear();
-	this->skyObjectRenderInsts.clear();
-	this->skyTriangles.clear();
-}
+	// @todo: update chunks first so we know which chunks need to be fully loaded in with loadVoxels(), etc..
+	DebugNotImplemented();
 
-void SceneGraph::clear()
-{
-	this->clearVoxels(true);
-	this->clearEntities();
-	this->clearSky();
+	this->updateVoxels(levelInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive, renderer);
+	this->updateEntities(levelInst, camera, entityDefLibrary, ceilingScale, nightLightsAreActive, playerHasLight, renderer);
+	this->updateSky(skyInst, daytimePercent, latitude);
+	this->updateWeather(skyInst);
 }
