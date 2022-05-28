@@ -166,7 +166,8 @@ public:
 	void addDoorPosition(DoorID id, const VoxelInt3 &voxel);
 
 	// Removes a voxel definition so its corresponding voxel ID can be reused.
-	void removeVoxelDef(VoxelID id);
+	// - Only uncomment this if support is needed since it would require support in the scene graph
+	//void removeVoxelDef(VoxelID id);
 
 	// Removes a certain type of voxel instance from the given voxel (if any). This might be useful when
 	// updating a chunk edge due to adjacent chunks changing.

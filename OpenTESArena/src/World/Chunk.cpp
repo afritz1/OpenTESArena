@@ -323,12 +323,12 @@ void Chunk::addDoorPosition(DoorID id, const VoxelInt3 &voxel)
 	this->doorDefIndices.emplace(voxel, id);
 }
 
-void Chunk::removeVoxelDef(VoxelID id)
+/*void Chunk::removeVoxelDef(VoxelID id)
 {
 	DebugAssert(id < this->voxelDefs.size());
 	this->voxelDefs[id] = VoxelDefinition();
 	this->activeVoxelDefs[id] = false;
-}
+}*/
 
 void Chunk::removeVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
 {
