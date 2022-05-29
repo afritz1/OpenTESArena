@@ -858,10 +858,9 @@ void Renderer::loadScene(const RenderCamera &camera, const LevelInstance &levelI
 	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
 {
 	DebugAssert(this->renderer3D != nullptr);
-	const double ceilingScale = levelInst.getCeilingScale();
 	this->sceneGraph.loadScene(levelInst, skyInst, activeLevelIndex, mapDefinition, citizenGenInfo, camera,
-		ceilingScale, chasmAnimPercent, nightLightsAreActive, playerHasLight, daytimePercent, latitude,
-		entityDefLibrary, textureManager, *this, *this->renderer3D);
+		chasmAnimPercent, nightLightsAreActive, playerHasLight, daytimePercent, latitude, entityDefLibrary,
+		textureManager, *this, *this->renderer3D);
 }
 
 /*void Renderer::updateScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,

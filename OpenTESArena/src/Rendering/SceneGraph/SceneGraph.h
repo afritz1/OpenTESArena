@@ -110,24 +110,24 @@ private:
 	void loadTextures(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, TextureManager &textureManager,
 		Renderer &renderer);
-	void loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
-		double chasmAnimPercent, bool nightLightsAreActive, RendererSystem3D &renderer);
+	void loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
+		bool nightLightsAreActive, RendererSystem3D &renderer);
 	void loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
-		const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive,
-		bool playerHasLight, RendererSystem3D &renderer);
+		const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
+		RendererSystem3D &renderer);
 	void loadSky(const SkyInstance &skyInst, double daytimePercent, double latitude,
 		RendererSystem3D &renderer);
 	void loadWeather(const SkyInstance &skyInst, double daytimePercent, RendererSystem3D &renderer);
 
 	// Updates dirty voxels (open doors, fading voxels, chasm animations, etc.), adds new ones,
 	// and removes deleted ones.
-	void updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
-		double chasmAnimPercent, bool nightLightsAreActive, RendererSystem3D &renderer);
+	void updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
+		bool nightLightsAreActive, RendererSystem3D &renderer);
 
 	// Updates entities that changed between frames, adds new entities, and removes deleted ones.
 	// @todo: EntityManager should keep public lists of newEntityIDs and deletedEntityIDs and clear them each frame.
 	void updateEntities(const LevelInstance &levelInst, const RenderCamera &camera,
-		const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive,
+		const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive,
 		bool playerHasLight, RendererSystem3D &renderer);
 
 	// Updates sky rotation, animations, and thunderstorm resources.
@@ -143,7 +143,7 @@ public:
 	void loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
-		double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+		double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
 		double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary,
 		TextureManager &textureManager, Renderer &renderer, RendererSystem3D &renderer3D);
 
@@ -156,7 +156,7 @@ public:
 	/*void updateScene(const LevelInstance &levelInst, const SkyInstance &skyInst, 
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
-		double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+		double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
 		double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary,
 		TextureManager &textureManager, RendererSystem3D &renderer);*/
 };

@@ -1448,8 +1448,8 @@ void SceneGraph::loadTextures(const std::optional<int> &activeLevelIndex, const 
 	}
 }
 
-void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
-	double chasmAnimPercent, bool nightLightsAreActive, RendererSystem3D &renderer)
+void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
+	bool nightLightsAreActive, RendererSystem3D &renderer)
 {
 	// Expect empty chunks to have been created just now (it's done before this in the edge case
 	// there are no voxels at all since entities rely on chunks existing).
@@ -1558,8 +1558,8 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 }
 
 void SceneGraph::loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
-	const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive,
-	bool playerHasLight, RendererSystem3D &renderer)
+	const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
+	RendererSystem3D &renderer)
 {
 	DebugAssert(!this->graphChunks.empty());
 
@@ -1582,9 +1582,9 @@ void SceneGraph::loadWeather(const SkyInstance &skyInst, double daytimePercent, 
 void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
-	double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-	double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary,
-	TextureManager &textureManager, Renderer &renderer, RendererSystem3D &renderer3D)
+	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight, double daytimePercent,
+	double latitude, const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager,
+	Renderer &renderer, RendererSystem3D &renderer3D)
 {
 	DebugAssert(this->graphChunks.empty());
 	DebugAssert(this->drawCalls.empty());
@@ -1601,9 +1601,10 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 	// @todo: load textures somewhere in here and in a way that their draw calls can be generated; maybe want to store
 	// TextureAssetReferences with SceneGraphVoxelDefinition? Might want textures to be ref-counted if reused between chunks.
 
+	const double ceilingScale = levelInst.getCeilingScale();
 	this->loadTextures(activeLevelIndex, mapDefinition, citizenGenInfo, textureManager, renderer);
-	this->loadVoxels(levelInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive, renderer3D);
-	this->loadEntities(levelInst, camera, entityDefLibrary, ceilingScale, nightLightsAreActive, playerHasLight, renderer3D);
+	this->loadVoxels(levelInst, camera, chasmAnimPercent, nightLightsAreActive, renderer3D);
+	this->loadEntities(levelInst, camera, entityDefLibrary, nightLightsAreActive, playerHasLight, renderer3D);
 	this->loadSky(skyInst, daytimePercent, latitude, renderer3D);
 	this->loadWeather(skyInst, daytimePercent, renderer3D);
 
@@ -1623,8 +1624,8 @@ void SceneGraph::unloadScene(RendererSystem3D &renderer)
 	this->drawCalls.clear();
 }
 
-void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
-	double chasmAnimPercent, bool nightLightsAreActive, RendererSystem3D &renderer)
+void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
+	bool nightLightsAreActive, RendererSystem3D &renderer)
 {
 	const ChunkManager &chunkManager = levelInst.getChunkManager();
 	const int chunkCount = chunkManager.getChunkCount();
@@ -1940,8 +1941,8 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 }
 
 void SceneGraph::updateEntities(const LevelInstance &levelInst, const RenderCamera &camera,
-	const EntityDefinitionLibrary &entityDefLibrary, double ceilingScale, bool nightLightsAreActive,
-	bool playerHasLight, RendererSystem3D &renderer)
+	const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
+	RendererSystem3D &renderer)
 {
 	DebugNotImplemented();
 	/*const ChunkManager &chunkManager = levelInst.getChunkManager();
@@ -2012,15 +2013,15 @@ void SceneGraph::updateWeather(const SkyInstance &skyInst)
 /*void SceneGraph::updateScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
-	double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
 	double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary,
 	TextureManager &textureManager, RendererSystem3D &renderer)
 {
 	// @todo: update chunks first so we know which chunks need to be fully loaded in with loadVoxels(), etc..
 	DebugNotImplemented();
 
-	this->updateVoxels(levelInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive, renderer);
-	this->updateEntities(levelInst, camera, entityDefLibrary, ceilingScale, nightLightsAreActive, playerHasLight, renderer);
+	this->updateVoxels(levelInst, camera, chasmAnimPercent, nightLightsAreActive, renderer);
+	this->updateEntities(levelInst, camera, entityDefLibrary, nightLightsAreActive, playerHasLight, renderer);
 	this->updateSky(skyInst, daytimePercent, latitude);
 	this->updateWeather(skyInst);
 }*/
