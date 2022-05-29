@@ -1,10 +1,12 @@
 #ifndef SCENE_GRAPH_H
 #define SCENE_GRAPH_H
 
+#include <optional>
 #include <vector>
 
 #include "SceneGraphChunk.h"
 #include "../RenderDrawCall.h"
+#include "../../Entities/CitizenUtils.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
@@ -24,15 +26,67 @@ class ChunkManager;
 class EntityDefinitionLibrary;
 class EntityManager;
 class LevelInstance;
+class MapDefinition;
+class Renderer;
 class SkyInstance;
+class TextureManager;
 
 struct RenderCamera;
 
 class SceneGraph
 {
+public:
+	struct LoadedVoxelMaterial
+	{
+		TextureAssetReference textureAssetRef;
+
+		// One texture per material.
+		ScopedObjectTextureRef objectTextureRef;
+		ScopedObjectMaterialRef objectMaterialRef;
+
+		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef,
+			ScopedObjectMaterialRef &&objectMaterialRef);
+	};
+
+	struct LoadedEntityMaterial
+	{
+		TextureAssetReference textureAssetRef;
+		bool flipped;
+		bool reflective;
+
+		// One texture per material.
+		ScopedObjectTextureRef objectTextureRef;
+		ScopedObjectMaterialRef objectMaterialRef;
+
+		void init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
+			ScopedObjectTextureRef &&objectTextureRef, ScopedObjectMaterialRef &&objectMaterialRef);
+	};
+
+	struct LoadedChasmMaterialList
+	{
+		struct Entry
+		{
+			TextureAssetReference wallTextureAssetRef;
+			ScopedObjectTextureRef wallTextureRef;
+			std::vector<ScopedObjectMaterialRef> wallMaterialRefs;
+		};
+
+		ArenaTypes::ChasmType chasmType;
+
+		// One texture per floor material and two textures per side material. One material per animation frame.
+		std::vector<ScopedObjectTextureRef> chasmTextureRefs;
+		std::vector<ScopedObjectMaterialRef> floorMaterialRefs;
+		std::vector<Entry> entries;
+
+		void init(ArenaTypes::ChasmType chasmType);
+	};
 private:
 	// Chunks with data for geometry storage, visibility calculation, etc..
 	std::vector<SceneGraphChunk> graphChunks;
+
+	std::vector<LoadedVoxelMaterial> voxelMaterials;
+	std::vector<LoadedEntityMaterial> entityMaterials;
+	std::vector<LoadedChasmMaterialList> chasmMaterialLists;
 
 	// @todo: sky rendering resources
 	// - hemisphere geometry w/ texture IDs and coordinates for colors (use some trig functions for vertex generation?)
@@ -47,6 +101,15 @@ private:
 
 	std::vector<RenderDrawCall> drawCalls;
 
+	ObjectMaterialID getVoxelMaterialID(const TextureAssetReference &textureAssetRef) const;
+	ObjectMaterialID getEntityMaterialID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
+	ObjectMaterialID getChasmFloorMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
+	ObjectMaterialID getChasmWallMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent,
+		const TextureAssetReference &textureAssetRef) const;
+
+	void loadTextures(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, TextureManager &textureManager,
+		Renderer &renderer);
 	void loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double ceilingScale,
 		double chasmAnimPercent, bool nightLightsAreActive, RendererSystem3D &renderer);
 	void loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
@@ -77,20 +140,25 @@ public:
 	BufferView<const RenderDrawCall> getDrawCalls() const;
 
 	// Loads all the rendering resources of the given scene into the scene graph.
-	void loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst, const RenderCamera &camera,
+	void loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
+		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
 		double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
 		double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary,
-		RendererSystem3D &renderer);
+		TextureManager &textureManager, Renderer &renderer, RendererSystem3D &renderer3D);
 
 	// Clears all rendering resources from the scene graph (voxels, entities, sky, weather).
 	void unloadScene(RendererSystem3D &renderer);
 
 	// Updates rendering resources for anything in the scene that changed between frames.
 	// I.e. dirty voxels, entities, sky rotation and animations, and weather particles.
-	void updateScene(const LevelInstance &levelInst, const SkyInstance &skyInst, const RenderCamera &camera,
+	// @todo: get loadScene()/unloadScene() pattern working well before attempting to work with dirty voxels, etc.
+	/*void updateScene(const LevelInstance &levelInst, const SkyInstance &skyInst, 
+		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
 		double ceilingScale, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
 		double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary,
-		RendererSystem3D &renderer);
+		TextureManager &textureManager, RendererSystem3D &renderer);*/
 };
 
 #endif

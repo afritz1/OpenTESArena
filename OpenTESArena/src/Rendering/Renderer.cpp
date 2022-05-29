@@ -852,24 +852,30 @@ void Renderer::freeUiTexture(UiTextureID id)
 }
 
 void Renderer::loadScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
-	double daytimePercent, double latitude, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-	const EntityDefinitionLibrary &entityDefLibrary)
+	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double daytimePercent, double latitude,
+	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
 {
 	DebugAssert(this->renderer3D != nullptr);
 	const double ceilingScale = levelInst.getCeilingScale();
-	this->sceneGraph.loadScene(levelInst, skyInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive,
-		playerHasLight, daytimePercent, latitude, entityDefLibrary, *this->renderer3D);
+	this->sceneGraph.loadScene(levelInst, skyInst, activeLevelIndex, mapDefinition, citizenGenInfo, camera,
+		ceilingScale, chasmAnimPercent, nightLightsAreActive, playerHasLight, daytimePercent, latitude,
+		entityDefLibrary, textureManager, *this, *this->renderer3D);
 }
 
-void Renderer::updateScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
-	double daytimePercent, double latitude, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-	const EntityDefinitionLibrary &entityDefLibrary)
+/*void Renderer::updateScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
+	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double daytimePercent, double latitude,
+	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
+	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
 {
 	DebugAssert(this->renderer3D != nullptr);
 	const double ceilingScale = levelInst.getCeilingScale();
-	this->sceneGraph.updateScene(levelInst, skyInst, camera, ceilingScale, chasmAnimPercent, nightLightsAreActive,
-		playerHasLight, daytimePercent, latitude, entityDefLibrary, *this->renderer3D);
-}
+	this->sceneGraph.updateScene(levelInst, skyInst, activeLevelIndex, mapDefinition, citizenGenInfo, camera,
+		ceilingScale, chasmAnimPercent, nightLightsAreActive, playerHasLight, daytimePercent, latitude,
+		entityDefLibrary, textureManager, *this->renderer3D);
+}*/
 
 void Renderer::unloadScene()
 {

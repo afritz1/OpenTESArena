@@ -828,9 +828,11 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	RenderCamera renderCamera;
 	renderCamera.init(playerPos.chunk, playerPos.point, playerDir, fovX, fovY, viewAspectRatio);
 
-	renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
+	DebugNotImplemented();
+	// @todo: shore up loadScene() and that overall design before attempting to change dirty voxels and entities between frames.
+	/*renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
 		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight(),
-		game.getEntityDefinitionLibrary());
+		game.getEntityDefinitionLibrary());*/
 
 	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
 	const ObjectTextureID paletteTextureID = activeLevelInst.getPaletteTextureID();

@@ -24,52 +24,6 @@ enum class MapType;
 
 class LevelInstance
 {
-public:
-	// @todo: I think we want the scene graph to own all these object textures?
-	struct LoadedVoxelMaterial
-	{
-		TextureAssetReference textureAssetRef;
-
-		// One texture per material.
-		ScopedObjectTextureRef objectTextureRef;
-		ScopedObjectMaterialRef objectMaterialRef;
-
-		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef,
-			ScopedObjectMaterialRef &&objectMaterialRef);
-	};
-
-	struct LoadedEntityMaterial
-	{
-		TextureAssetReference textureAssetRef;
-		bool flipped;
-		bool reflective;
-
-		// One texture per material.
-		ScopedObjectTextureRef objectTextureRef;
-		ScopedObjectMaterialRef objectMaterialRef;
-
-		void init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
-			ScopedObjectTextureRef &&objectTextureRef, ScopedObjectMaterialRef &&objectMaterialRef);
-	};
-
-	struct LoadedChasmMaterialList
-	{
-		struct Entry
-		{
-			TextureAssetReference wallTextureAssetRef;
-			ScopedObjectTextureRef wallTextureRef;
-			std::vector<ScopedObjectMaterialRef> wallMaterialRefs;
-		};
-
-		ArenaTypes::ChasmType chasmType;
-
-		// One texture per floor material and two textures per side material. One material per animation frame.
-		std::vector<ScopedObjectTextureRef> chasmTextureRefs;
-		std::vector<ScopedObjectMaterialRef> floorMaterialRefs;
-		std::vector<Entry> entries;
-
-		void init(ArenaTypes::ChasmType chasmType);
-	};
 private:
 	// @todo: problem to consider here:
 	// - why do we load voxel and entity textures before they are instantiated in the world?
@@ -78,11 +32,6 @@ private:
 
 	ChunkManager chunkManager;
 	EntityManager entityManager;
-
-	// Renderer resources.
-	std::vector<LoadedVoxelMaterial> voxelMaterials;
-	std::vector<LoadedEntityMaterial> entityMaterials;
-	std::vector<LoadedChasmMaterialList> chasmMaterialLists;
 
 	// Texture handles for the active game world palette and light table.
 	ScopedObjectTextureRef paletteTextureRef, lightTableTextureRef;
@@ -100,12 +49,6 @@ public:
 	ObjectTextureID getPaletteTextureID() const;
 	ObjectTextureID getLightTableTextureID() const;
 	double getCeilingScale() const;
-
-	ObjectMaterialID getVoxelMaterialID(const TextureAssetReference &textureAssetRef) const;
-	ObjectMaterialID getEntityMaterialID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
-	ObjectMaterialID getChasmFloorMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
-	ObjectMaterialID getChasmWallMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent,
-		const TextureAssetReference &textureAssetRef) const;
 
 	bool trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
