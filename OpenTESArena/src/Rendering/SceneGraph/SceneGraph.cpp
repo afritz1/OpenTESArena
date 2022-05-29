@@ -384,21 +384,21 @@ namespace sgTexture
 	void LoadVoxelDefTextures(const VoxelDefinition &voxelDef, std::vector<SceneGraph::LoadedVoxelTexture> &voxelTextures,
 		TextureManager &textureManager, Renderer &renderer)
 	{
-		for (int i = 0; i < voxelDef.getTextureAssetReferenceCount(); i++)
+		for (int i = 0; i < voxelDef.getTextureAssetCount(); i++)
 		{
-			const TextureAssetReference &textureAssetRef = voxelDef.getTextureAssetReference(i);
+			const TextureAsset &textureAsset = voxelDef.getTextureAsset(i);
 			const auto cacheIter = std::find_if(voxelTextures.begin(), voxelTextures.end(),
-				[&textureAssetRef](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+				[&textureAsset](const SceneGraph::LoadedVoxelTexture &loadedTexture)
 			{
-				return loadedTexture.textureAssetRef == textureAssetRef;
+				return loadedTexture.textureAsset == textureAsset;
 			});
 
 			if (cacheIter == voxelTextures.end())
 			{
-				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 				if (!textureBuilderID.has_value())
 				{
-					DebugLogWarning("Couldn't load voxel texture \"" + textureAssetRef.filename + "\".");
+					DebugLogWarning("Couldn't load voxel texture \"" + textureAsset.filename + "\".");
 					continue;
 				}
 
@@ -406,13 +406,13 @@ namespace sgTexture
 				ObjectTextureID voxelTextureID;
 				if (!renderer.tryCreateObjectTexture(textureBuilder, &voxelTextureID))
 				{
-					DebugLogWarning("Couldn't create voxel texture \"" + textureAssetRef.filename + "\".");
+					DebugLogWarning("Couldn't create voxel texture \"" + textureAsset.filename + "\".");
 					continue;
 				}
 
 				ScopedObjectTextureRef voxelTextureRef(voxelTextureID, renderer);
 				SceneGraph::LoadedVoxelTexture newTexture;
-				newTexture.init(textureAssetRef, std::move(voxelTextureRef));
+				newTexture.init(textureAsset, std::move(voxelTextureRef));
 				voxelTextures.emplace_back(std::move(newTexture));
 			}
 		}
@@ -428,20 +428,20 @@ namespace sgTexture
 		auto processKeyframe = [&entityTextures, &textureManager, &renderer, reflective](
 			const EntityAnimationDefinition::Keyframe &keyframe, bool flipped)
 		{
-			const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
+			const TextureAsset &textureAsset = keyframe.getTextureAsset();
 			const auto cacheIter = std::find_if(entityTextures.begin(), entityTextures.end(),
-				[&textureAssetRef, flipped, reflective](const SceneGraph::LoadedEntityTexture &loadedTexture)
+				[&textureAsset, flipped, reflective](const SceneGraph::LoadedEntityTexture &loadedTexture)
 			{
-				return (loadedTexture.textureAssetRef == textureAssetRef) && (loadedTexture.flipped == flipped) &&
+				return (loadedTexture.textureAsset == textureAsset) && (loadedTexture.flipped == flipped) &&
 					(loadedTexture.reflective == reflective);
 			});
 
 			if (cacheIter == entityTextures.end())
 			{
-				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 				if (!textureBuilderID.has_value())
 				{
-					DebugLogWarning("Couldn't load entity texture \"" + textureAssetRef.filename + "\".");
+					DebugLogWarning("Couldn't load entity texture \"" + textureAsset.filename + "\".");
 					return;
 				}
 
@@ -452,7 +452,7 @@ namespace sgTexture
 				ObjectTextureID entityTextureID;
 				if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, false, &entityTextureID))
 				{
-					DebugLogWarning("Couldn't create entity texture \"" + textureAssetRef.filename + "\".");
+					DebugLogWarning("Couldn't create entity texture \"" + textureAsset.filename + "\".");
 					return;
 				}
 
@@ -464,7 +464,7 @@ namespace sgTexture
 				LockedTexture lockedEntityTexture = renderer.lockObjectTexture(entityTextureID);
 				if (!lockedEntityTexture.isValid())
 				{
-					DebugLogWarning("Couldn't lock entity texture \"" + textureAssetRef.filename + "\".");
+					DebugLogWarning("Couldn't lock entity texture \"" + textureAsset.filename + "\".");
 					return;
 				}
 
@@ -485,7 +485,7 @@ namespace sgTexture
 				renderer.unlockObjectTexture(entityTextureID);
 
 				SceneGraph::LoadedEntityTexture newTexture;
-				newTexture.init(textureAssetRef, flipped, reflective, std::move(entityTextureRef));
+				newTexture.init(textureAsset, flipped, reflective, std::move(entityTextureRef));
 				entityTextures.emplace_back(std::move(newTexture));
 			}
 		};
@@ -542,14 +542,14 @@ namespace sgTexture
 			SceneGraph::LoadedChasmTextureList newTextureList;
 			newTextureList.init(chasmType);
 
-			const Buffer<TextureAssetReference> textureAssetRefs = TextureUtils::makeTextureAssetRefs(chasmFilename, textureManager);
-			for (int i = 0; i < textureAssetRefs.getCount(); i++)
+			const Buffer<TextureAsset> textureAssets = TextureUtils::makeTextureAssets(chasmFilename, textureManager);
+			for (int i = 0; i < textureAssets.getCount(); i++)
 			{
-				const TextureAssetReference &textureAssetRef = textureAssetRefs.get(i);
-				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+				const TextureAsset &textureAsset = textureAssets.get(i);
+				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 				if (!textureBuilderID.has_value())
 				{
-					DebugLogWarning("Couldn't load chasm texture \"" + textureAssetRef.filename + "\".");
+					DebugLogWarning("Couldn't load chasm texture \"" + textureAsset.filename + "\".");
 					continue;
 				}
 
@@ -557,7 +557,7 @@ namespace sgTexture
 				ObjectTextureID chasmTextureID;
 				if (!renderer.tryCreateObjectTexture(textureBuilder, &chasmTextureID))
 				{
-					DebugLogWarning("Couldn't create chasm texture \"" + textureAssetRef.filename + "\".");
+					DebugLogWarning("Couldn't create chasm texture \"" + textureAsset.filename + "\".");
 					continue;
 				}
 
@@ -603,7 +603,7 @@ namespace sgTexture
 
 	// Loads the chasm wall material for the given chasm and texture asset. This expects the chasm floor material to
 	// already be loaded and available for sharing.
-	void LoadChasmWallTextures(ArenaTypes::ChasmType chasmType, const TextureAssetReference &textureAssetRef,
+	void LoadChasmWallTextures(ArenaTypes::ChasmType chasmType, const TextureAsset &textureAsset,
 		std::vector<SceneGraph::LoadedChasmTextureList> &chasmTextureLists, TextureManager &textureManager, Renderer &renderer)
 	{
 		const auto listIter = std::find_if(chasmTextureLists.begin(), chasmTextureLists.end(),
@@ -617,17 +617,17 @@ namespace sgTexture
 
 		std::vector<SceneGraph::LoadedChasmTextureList::WallEntry> &wallEntries = listIter->wallEntries;
 		const auto entryIter = std::find_if(wallEntries.begin(), wallEntries.end(),
-			[&textureAssetRef](const SceneGraph::LoadedChasmTextureList::WallEntry &wallEntry)
+			[&textureAsset](const SceneGraph::LoadedChasmTextureList::WallEntry &wallEntry)
 		{
-			return wallEntry.wallTextureAssetRef == textureAssetRef;
+			return wallEntry.wallTextureAsset == textureAsset;
 		});
 
 		if (entryIter == wallEntries.end())
 		{
-			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 			if (!textureBuilderID.has_value())
 			{
-				DebugLogWarning("Couldn't load chasm wall texture \"" + textureAssetRef.filename + "\".");
+				DebugLogWarning("Couldn't load chasm wall texture \"" + textureAsset.filename + "\".");
 				return;
 			}
 
@@ -635,29 +635,29 @@ namespace sgTexture
 			ObjectTextureID wallTextureID;
 			if (!renderer.tryCreateObjectTexture(textureBuilder, &wallTextureID))
 			{
-				DebugLogWarning("Couldn't create chasm wall texture \"" + textureAssetRef.filename + "\".");
+				DebugLogWarning("Couldn't create chasm wall texture \"" + textureAsset.filename + "\".");
 				return;
 			}
 
 			SceneGraph::LoadedChasmTextureList::WallEntry newWallEntry;
-			newWallEntry.wallTextureAssetRef = textureAssetRef;
+			newWallEntry.wallTextureAsset = textureAsset;
 			newWallEntry.wallTextureRef.init(wallTextureID, renderer);
 			wallEntries.emplace_back(std::move(newWallEntry));
 		}
 	}
 }
 
-void SceneGraph::LoadedVoxelTexture::init(const TextureAssetReference &textureAssetRef,
+void SceneGraph::LoadedVoxelTexture::init(const TextureAsset &textureAsset,
 	ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->textureAssetRef = textureAssetRef;
+	this->textureAsset = textureAsset;
 	this->objectTextureRef = std::move(objectTextureRef);
 }
 
-void SceneGraph::LoadedEntityTexture::init(const TextureAssetReference &textureAssetRef, bool flipped,
+void SceneGraph::LoadedEntityTexture::init(const TextureAsset &textureAsset, bool flipped,
 	bool reflective, ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->textureAssetRef = textureAssetRef;
+	this->textureAsset = textureAsset;
 	this->flipped = flipped;
 	this->reflective = reflective;
 	this->objectTextureRef = std::move(objectTextureRef);
@@ -668,29 +668,29 @@ void SceneGraph::LoadedChasmTextureList::init(ArenaTypes::ChasmType chasmType)
 	this->chasmType = chasmType;
 }
 
-ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAssetReference &textureAssetRef) const
+ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAsset &textureAsset) const
 {
 	const auto iter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
-		[&textureAssetRef](const LoadedVoxelTexture &loadedTexture)
+		[&textureAsset](const LoadedVoxelTexture &loadedTexture)
 	{
-		return loadedTexture.textureAssetRef == textureAssetRef;
+		return loadedTexture.textureAsset == textureAsset;
 	});
 
-	DebugAssertMsg(iter != this->voxelTextures.end(), "No loaded voxel texture for \"" + textureAssetRef.filename + "\".");
+	DebugAssertMsg(iter != this->voxelTextures.end(), "No loaded voxel texture for \"" + textureAsset.filename + "\".");
 	const ScopedObjectTextureRef &objectTextureRef = iter->objectTextureRef;
 	return objectTextureRef.get();
 }
 
-ObjectTextureID SceneGraph::getEntityTextureID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const
+ObjectTextureID SceneGraph::getEntityTextureID(const TextureAsset &textureAsset, bool flipped, bool reflective) const
 {
 	const auto iter = std::find_if(this->entityTextures.begin(), this->entityTextures.end(),
-		[&textureAssetRef, flipped, reflective](const LoadedEntityTexture &loadedTexture)
+		[&textureAsset, flipped, reflective](const LoadedEntityTexture &loadedTexture)
 	{
-		return (loadedTexture.textureAssetRef == textureAssetRef) && (loadedTexture.flipped == flipped) &&
+		return (loadedTexture.textureAsset == textureAsset) && (loadedTexture.flipped == flipped) &&
 			(loadedTexture.reflective == reflective);
 	});
 
-	DebugAssertMsg(iter != this->entityTextures.end(), "No loaded entity texture for \"" + textureAssetRef.filename + "\".");
+	DebugAssertMsg(iter != this->entityTextures.end(), "No loaded entity texture for \"" + textureAsset.filename + "\".");
 	const ScopedObjectTextureRef &objectTextureRef = iter->objectTextureRef;
 	return objectTextureRef.get();
 }
@@ -713,10 +713,10 @@ ObjectTextureID SceneGraph::getChasmFloorTextureID(ArenaTypes::ChasmType chasmTy
 	return floorTextureRef.get();
 }
 
-ObjectTextureID SceneGraph::getChasmWallTextureID(ArenaTypes::ChasmType chasmType, const TextureAssetReference &textureAssetRef) const
+ObjectTextureID SceneGraph::getChasmWallTextureID(ArenaTypes::ChasmType chasmType, const TextureAsset &textureAsset) const
 {
 	const auto listIter = std::find_if(this->chasmTextureLists.begin(), this->chasmTextureLists.end(),
-		[chasmType, &textureAssetRef](const LoadedChasmTextureList &loadedTextureList)
+		[chasmType, &textureAsset](const LoadedChasmTextureList &loadedTextureList)
 	{
 		return loadedTextureList.chasmType == chasmType;
 	});
@@ -726,13 +726,13 @@ ObjectTextureID SceneGraph::getChasmWallTextureID(ArenaTypes::ChasmType chasmTyp
 
 	const std::vector<LoadedChasmTextureList::WallEntry> &entries = listIter->wallEntries;
 	const auto entryIter = std::find_if(entries.begin(), entries.end(),
-		[&textureAssetRef](const LoadedChasmTextureList::WallEntry &entry)
+		[&textureAsset](const LoadedChasmTextureList::WallEntry &entry)
 	{
-		return entry.wallTextureAssetRef == textureAssetRef;
+		return entry.wallTextureAsset == textureAsset;
 	});
 
 	DebugAssertMsg(entryIter != entries.end(), "No loaded chasm wall texture for type \"" +
-		std::to_string(static_cast<int>(chasmType)) + "\" and texture \"" + textureAssetRef.filename + "\".");
+		std::to_string(static_cast<int>(chasmType)) + "\" and texture \"" + textureAsset.filename + "\".");
 
 	const ScopedObjectTextureRef &wallTextureRef = entryIter->wallTextureRef;
 	return wallTextureRef.get();
@@ -767,7 +767,7 @@ void SceneGraph::loadTextures(const std::optional<int> &activeLevelIndex, const 
 			if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 			{
 				const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
-				sgTexture::LoadChasmWallTextures(chasm.type, chasm.textureAssetRef, this->chasmTextureLists, textureManager, renderer);
+				sgTexture::LoadChasmWallTextures(chasm.type, chasm.textureAsset, this->chasmTextureLists, textureManager, renderer);
 			}
 		}
 
@@ -960,7 +960,7 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 	}
 
 	// @todo: load textures somewhere in here and in a way that their draw calls can be generated; maybe want to store
-	// TextureAssetReferences with SceneGraphVoxelDefinition? Might want textures to be ref-counted if reused between chunks.
+	// TextureAssets with SceneGraphVoxelDefinition? Might want textures to be ref-counted if reused between chunks.
 
 	const double ceilingScale = levelInst.getCeilingScale();
 	this->loadTextures(activeLevelIndex, mapDefinition, citizenGenInfo, textureManager, renderer);
@@ -1105,9 +1105,9 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 			{
 				const VoxelDefinition::WallData &wall = voxelDef.wall;
-				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(wall.sideTextureAssetRef);
-				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(wall.floorTextureAssetRef);
-				const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(wall.ceilingTextureAssetRef);
+				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(wall.sideTextureAsset);
+				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(wall.floorTextureAsset);
+				const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(wall.ceilingTextureAsset);
 				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
 				sgGeometry::WriteWall(chunkPos, voxelPos, ceilingScale, sideMaterialID, floorMaterialID, ceilingMaterialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 12), &opaqueTriangleCount);
@@ -1115,7 +1115,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 			{
 				const VoxelDefinition::FloorData &floor = voxelDef.floor;
-				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(floor.textureAssetRef);
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(floor.textureAsset);
 				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
 				sgGeometry::WriteFloor(chunkPos, voxelPos, ceilingScale, materialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 2), &opaqueTriangleCount);
@@ -1123,7 +1123,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 			{
 				const VoxelDefinition::CeilingData &ceiling = voxelDef.ceiling;
-				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(ceiling.textureAssetRef);
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(ceiling.textureAsset);
 				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
 				sgGeometry::WriteCeiling(chunkPos, voxelPos, ceilingScale, materialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 2), &opaqueTriangleCount);
@@ -1131,9 +1131,9 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 			{
 				const VoxelDefinition::RaisedData &raised = voxelDef.raised;
-				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(raised.sideTextureAssetRef);
-				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(raised.floorTextureAssetRef);
-				const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(raised.ceilingTextureAssetRef);
+				const ObjectMaterialID sideMaterialID = levelInst.getVoxelMaterialID(raised.sideTextureAsset);
+				const ObjectMaterialID floorMaterialID = levelInst.getVoxelMaterialID(raised.floorTextureAsset);
+				const ObjectMaterialID ceilingMaterialID = levelInst.getVoxelMaterialID(raised.ceilingTextureAsset);
 				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
 				sgGeometry::WriteRaised(chunkPos, voxelPos, ceilingScale, raised.yOffset, raised.ySize,
 					raised.vTop, raised.vBottom, sideMaterialID, floorMaterialID, ceilingMaterialID, fadePercent,
@@ -1143,7 +1143,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 			{
 				const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
-				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(diagonal.textureAssetRef);
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(diagonal.textureAsset);
 				const double fadePercent = getVoxelFadePercentOrDefault(voxelPos);
 				sgGeometry::WriteDiagonal(chunkPos, voxelPos, ceilingScale, diagonal.type1, materialID, fadePercent,
 					BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 4), &opaqueTriangleCount);
@@ -1151,14 +1151,14 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 			{
 				const VoxelDefinition::TransparentWallData &transparentWall = voxelDef.transparentWall;
-				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(transparentWall.textureAssetRef);
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(transparentWall.textureAsset);
 				sgGeometry::WriteTransparentWall(chunkPos, voxelPos, ceilingScale, materialID,
 					BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 8), &alphaTestedTriangleCount);
 			}
 			else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 			{
 				const VoxelDefinition::EdgeData &edge = voxelDef.edge;
-				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(edge.textureAssetRef);
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(edge.textureAsset);
 				sgGeometry::WriteEdge(chunkPos, voxelPos, ceilingScale, edge.facing, edge.yOffset, edge.flipped, materialID,
 					BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 4), &alphaTestedTriangleCount);
 			}
@@ -1181,7 +1181,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 				const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
 				const bool isDry = chasm.type == ArenaTypes::ChasmType::Dry;
 				const ObjectMaterialID floorMaterialID = levelInst.getChasmFloorMaterialID(chasm.type, chasmAnimPercent);
-				const ObjectMaterialID sideMaterialID = levelInst.getChasmWallMaterialID(chasm.type, chasmAnimPercent, chasm.textureAssetRef);
+				const ObjectMaterialID sideMaterialID = levelInst.getChasmWallMaterialID(chasm.type, chasmAnimPercent, chasm.textureAsset);
 				sgGeometry::WriteChasm(chunkPos, voxelPos, ceilingScale, hasNorthFace, hasSouthFace, hasEastFace, hasWestFace,
 					isDry, floorMaterialID, sideMaterialID, BufferView<RenderTriangle>(opaqueTrianglesBuffer.data(), 10), &opaqueTriangleCount);
 			}
@@ -1189,7 +1189,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 			{
 				const VoxelDefinition::DoorData &door = voxelDef.door;
 				const double animPercent = getVoxelOpenDoorPercentOrDefault(voxelPos);
-				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(door.textureAssetRef);
+				const ObjectMaterialID materialID = levelInst.getVoxelMaterialID(door.textureAsset);
 				sgGeometry::WriteDoor(chunkPos, voxelPos, ceilingScale, door.type, animPercent,
 					materialID, BufferView<RenderTriangle>(alphaTestedTrianglesBuffer.data(), 16), &alphaTestedTriangleCount);
 			}
@@ -1341,10 +1341,10 @@ void SceneGraph::updateEntities(const LevelInstance &levelInst, const RenderCame
 				const EntityAnimationDefinition::State &animState = animDef.getState(visState.stateIndex);
 				const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visState.angleIndex);
 				const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visState.keyframeIndex);
-				const TextureAssetReference &textureAssetRef = animKeyframe.getTextureAssetRef();
+				const TextureAsset &textureAsset = animKeyframe.getTextureAsset();
 				const bool flipped = animKeyframeList.isFlipped();
 				const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && (entityDef.getDoodad().puddle);
-				const ObjectMaterialID materialID = levelInst.getEntityMaterialID(textureAssetRef, flipped, reflective);
+				const ObjectMaterialID materialID = levelInst.getEntityMaterialID(textureAsset, flipped, reflective);
 
 				std::array<RenderTriangle, 2> entityTrianglesBuffer;
 				sgGeometry::WriteEntity(visState.flatPosition.chunk, visState.flatPosition.point, materialID,

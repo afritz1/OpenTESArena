@@ -35,11 +35,11 @@ bool ImagePanel::init(const std::string &paletteName, const std::string &texture
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(textureName));
-	const TextureAssetReference paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
+	const TextureAsset textureAsset = TextureAsset(std::string(textureName));
+	const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugLogError("Couldn't create UI texture for image \"" + textureName + "\" with palette \"" + paletteName + "\".");
 		return false;

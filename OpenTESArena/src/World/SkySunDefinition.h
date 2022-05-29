@@ -1,16 +1,16 @@
 #ifndef SKY_SUN_DEFINITION_H
 #define SKY_SUN_DEFINITION_H
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 
 class SkySunDefinition
 {
 private:
-	TextureAssetReference textureAssetRef;
+	TextureAsset textureAsset;
 public:
-	void init(TextureAssetReference &&textureAssetRef);
+	void init(TextureAsset &&textureAsset);
 
-	const TextureAssetReference &getTextureAssetRef() const;
+	const TextureAsset &getTextureAsset() const;
 };
 
 #endif

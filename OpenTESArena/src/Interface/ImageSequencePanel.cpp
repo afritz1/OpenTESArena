@@ -66,11 +66,11 @@ bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 	{
 		const std::string &textureName = textureNames[i]; // Assume single-image file.
 		const std::string &paletteName = paletteNames[i];
-		const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(textureName));
-		const TextureAssetReference paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
+		const TextureAsset textureAsset = TextureAsset(std::string(textureName));
+		const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
 
 		UiTextureID textureID;
-		if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+		if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 		{
 			DebugLogError("Couldn't create texture for image " + std::to_string(i) + " from \"" +
 				textureName + "\" with palette \"" + paletteName + "\".");

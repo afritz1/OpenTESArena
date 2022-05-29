@@ -13,25 +13,25 @@ TextBox::InitInfo LogbookUiView::getTitleTextBoxInitInfo(const std::string_view 
 		fontLibrary);
 }
 
-TextureAssetReference LogbookUiView::getBackgroundPaletteTextureAssetRef()
+TextureAsset LogbookUiView::getBackgroundPaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::Logbook));
+	return TextureAsset(std::string(ArenaTextureName::Logbook));
 }
 
-TextureAssetReference LogbookUiView::getBackgroundTextureAssetRef()
+TextureAsset LogbookUiView::getBackgroundTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::Logbook));
+	return TextureAsset(std::string(ArenaTextureName::Logbook));
 }
 
 UiTextureID LogbookUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = LogbookUiView::getBackgroundTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = LogbookUiView::getBackgroundPaletteTextureAssetRef();
+	const TextureAsset textureAsset = LogbookUiView::getBackgroundTextureAsset();
+	const TextureAsset paletteTextureAsset = LogbookUiView::getBackgroundPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
-		DebugCrash("Couldn't create UI texture for logbook background \"" + textureAssetRef.filename + "\".");
+		DebugCrash("Couldn't create UI texture for logbook background \"" + textureAsset.filename + "\".");
 	}
 
 	return textureID;

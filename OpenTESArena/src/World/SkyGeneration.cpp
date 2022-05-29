@@ -139,7 +139,7 @@ namespace SkyGeneration
 		const Radians angleX = ArenaSkyUtils::arenaAngleToRadians(arenaAngle);
 
 		// The object is either a mountain or cloud.
-		TextureAssetReference textureAssetRef = TextureAssetReference(std::string(imageFilename)); // Most vexing parse.
+		TextureAsset textureAsset = TextureAsset(std::string(imageFilename)); // Most vexing parse.
 		if (isLandObject)
 		{
 			SkyDefinition::LandDefID landDefID;
@@ -151,7 +151,7 @@ namespace SkyGeneration
 			else
 			{
 				SkyLandDefinition skyLandDef;
-				skyLandDef.init(std::move(textureAssetRef), SkyLandDefinition::ShadingType::Ambient);
+				skyLandDef.init(std::move(textureAsset), SkyLandDefinition::ShadingType::Ambient);
 				landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
 				landCache->emplace(imageFilename, landDefID);
 			}
@@ -178,7 +178,7 @@ namespace SkyGeneration
 			else
 			{
 				SkyAirDefinition skyAirDef;
-				skyAirDef.init(std::move(textureAssetRef));
+				skyAirDef.init(std::move(textureAsset));
 				airDefID = outSkyInfoDef->addAir(std::move(skyAirDef));
 				airCache->emplace(imageFilename, airDefID);
 			}
@@ -281,8 +281,8 @@ namespace SkyGeneration
 
 		// Determine which frames the animation will have. DFAs have multiple frames while
 		// IMGs do not, although we can use the same texture manager function for both.
-		Buffer<TextureAssetReference> textureAssetRefs =
-			TextureUtils::makeTextureAssetRefs(animFilename, textureManager);
+		Buffer<TextureAsset> textureAssets =
+			TextureUtils::makeTextureAssets(animFilename, textureManager);
 
 		// Position on the horizon.
 		const Radians angleX = std::atan2(
@@ -290,10 +290,10 @@ namespace SkyGeneration
 			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
 
 		const double animSeconds = ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME *
-			static_cast<double>(textureAssetRefs.getCount());
+			static_cast<double>(textureAssets.getCount());
 
 		SkyLandDefinition skyLandDef;
-		skyLandDef.init(std::move(textureAssetRefs), animSeconds, SkyLandDefinition::ShadingType::Bright);
+		skyLandDef.init(std::move(textureAssets), animSeconds, SkyLandDefinition::ShadingType::Bright);
 		const SkyDefinition::LandDefID landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
 		outSkyDef->addLand(landDefID, angleX);
 	}
@@ -453,7 +453,7 @@ namespace SkyGeneration
 					return String::toUppercase(filename);
 				}();
 
-				TextureAssetReference textureAssetRef = TextureAssetReference(std::string(starFilename)); // Most vexing parse.
+				TextureAsset textureAsset = TextureAsset(std::string(starFilename)); // Most vexing parse.
 				SkyDefinition::StarDefID starDefID;
 				const auto iter = largeStarCache.find(starFilename);
 				if (iter != largeStarCache.end())
@@ -463,7 +463,7 @@ namespace SkyGeneration
 				else
 				{
 					SkyStarDefinition skyStarDef;
-					skyStarDef.initLarge(std::move(textureAssetRef));
+					skyStarDef.initLarge(std::move(textureAsset));
 					starDefID = outSkyInfoDef->addStar(std::move(skyStarDef));
 					largeStarCache.emplace(starFilename, starDefID);
 				}
@@ -477,10 +477,10 @@ namespace SkyGeneration
 		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 	{
 		std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);
-		TextureAssetReference textureAssetRef(std::move(sunFilename));
+		TextureAsset textureAsset(std::move(sunFilename));
 
 		SkySunDefinition skySunDef;
-		skySunDef.init(std::move(textureAssetRef));
+		skySunDef.init(std::move(textureAsset));
 		const SkyDefinition::SunDefID sunDefID = outSkyInfoDef->addSun(std::move(skySunDef));
 		outSkyDef->addSun(sunDefID, ArenaSkyUtils::SUN_BONUS_LATITUDE / 100.0);
 	}
@@ -498,8 +498,8 @@ namespace SkyGeneration
 			const auto &moonFilenames = exeData.locations.moonFilenames;
 			DebugAssertIndex(moonFilenames, moonFilenameIndex);
 			std::string moonFilename = String::toUppercase(moonFilenames[moonFilenameIndex]);
-			Buffer<TextureAssetReference> textureAssetRefs =
-				TextureUtils::makeTextureAssetRefs(moonFilename, textureManager);
+			Buffer<TextureAsset> textureAssets =
+				TextureUtils::makeTextureAssets(moonFilename, textureManager);
 
 			// Base direction from original game values.
 			// @todo: move to ArenaSkyUtils
@@ -511,7 +511,7 @@ namespace SkyGeneration
 				ArenaSkyUtils::MOON_1_BONUS_LATITUDE : ArenaSkyUtils::MOON_2_BONUS_LATITUDE;
 
 			SkyMoonDefinition skyMoonDef;
-			skyMoonDef.init(std::move(textureAssetRefs));
+			skyMoonDef.init(std::move(textureAssets));
 			const SkyDefinition::MoonDefID moonDefID = outSkyInfoDef->addMoon(std::move(skyMoonDef));
 			outSkyDef->addMoon(moonDefID, baseDir, orbitPercent, bonusLatitude, phaseIndex);
 		};
@@ -522,13 +522,13 @@ namespace SkyGeneration
 
 	void generateArenaLightning(TextureManager &textureManager, SkyInfoDefinition *outSkyInfoDef)
 	{
-		Buffer<Buffer<TextureAssetReference>> lightningBoltTextureAssetRefs =
-			ArenaWeatherUtils::makeLightningBoltTextureAssetRefs(textureManager);
+		Buffer<Buffer<TextureAsset>> lightningBoltTextureAssets =
+			ArenaWeatherUtils::makeLightningBoltTextureAssets(textureManager);
 
-		for (int i = 0; i < lightningBoltTextureAssetRefs.getCount(); i++)
+		for (int i = 0; i < lightningBoltTextureAssets.getCount(); i++)
 		{
 			SkyLightningDefinition skyLightningDef;
-			skyLightningDef.init(std::move(lightningBoltTextureAssetRefs.get(i)),
+			skyLightningDef.init(std::move(lightningBoltTextureAssets.get(i)),
 				ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS);
 
 			// Don't need to store any ID -- lightning bolts are placed randomly.

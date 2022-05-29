@@ -4,7 +4,7 @@
 #include <string>
 
 #include "Panel.h"
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 

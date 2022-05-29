@@ -1,7 +1,7 @@
 #include "PauseMenuUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Media/TextureUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/Surface.h"
@@ -100,22 +100,22 @@ Rect PauseMenuUiView::getMusicDownButtonRect()
 	return Rect(119, 104, 17, 9);
 }
 
-TextureAssetReference PauseMenuUiView::getBackgroundPaletteTextureAssetRef()
+TextureAsset PauseMenuUiView::getBackgroundPaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaPaletteName::Default));
+	return TextureAsset(std::string(ArenaPaletteName::Default));
 }
 
-TextureAssetReference PauseMenuUiView::getBackgroundTextureAssetRef()
+TextureAsset PauseMenuUiView::getBackgroundTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::PauseBackground));
+	return TextureAsset(std::string(ArenaTextureName::PauseBackground));
 }
 
 UiTextureID PauseMenuUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = PauseMenuUiView::getBackgroundTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = PauseMenuUiView::getBackgroundPaletteTextureAssetRef();
+	const TextureAsset textureAsset = PauseMenuUiView::getBackgroundTextureAsset();
+	const TextureAsset paletteTextureAsset = PauseMenuUiView::getBackgroundPaletteTextureAsset();
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create background texture for pause menu.");
 	}

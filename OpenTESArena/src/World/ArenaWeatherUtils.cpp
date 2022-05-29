@@ -4,7 +4,7 @@
 #include "ArenaWeatherUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Math/Random.h"
 #include "../Media/TextureFileMetadata.h"
 #include "../Media/TextureManager.h"
@@ -111,20 +111,20 @@ Buffer<uint8_t> ArenaWeatherUtils::makeThunderstormColors(const ExeData &exeData
 	return colors;
 }
 
-Buffer<Buffer<TextureAssetReference>> ArenaWeatherUtils::makeLightningBoltTextureAssetRefs(TextureManager &textureManager)
+Buffer<Buffer<TextureAsset>> ArenaWeatherUtils::makeLightningBoltTextureAssets(TextureManager &textureManager)
 {
 	constexpr int fileCount = 6;
-	Buffer<Buffer<TextureAssetReference>> textureAssetRefBuffers(fileCount);
+	Buffer<Buffer<TextureAsset>> textureAssetBuffers(fileCount);
 
 	for (int i = 0; i < fileCount; i++)
 	{
 		DOSUtils::FilenameBuffer filename;
 		std::snprintf(filename.data(), filename.size(), "LGLIT0%d.CFA", i + 1);
 
-		Buffer<TextureAssetReference> textureAssetRefs = TextureUtils::makeTextureAssetRefs(
+		Buffer<TextureAsset> textureAssets = TextureUtils::makeTextureAssets(
 			std::string(filename.data()), textureManager);
-		textureAssetRefBuffers.set(i, std::move(textureAssetRefs));
+		textureAssetBuffers.set(i, std::move(textureAssets));
 	}
 
-	return textureAssetRefBuffers;
+	return textureAssetBuffers;
 }

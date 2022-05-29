@@ -188,35 +188,35 @@ Rect MainMenuUiView::getTestWeatherDownButtonRect()
 		baseRect.getHeight());
 }
 
-TextureAssetReference MainMenuUiView::getBackgroundTextureAssetRef()
+TextureAsset MainMenuUiView::getBackgroundTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::MainMenu));
+	return TextureAsset(std::string(ArenaTextureName::MainMenu));
 }
 
-TextureAssetReference MainMenuUiView::getPaletteTextureAssetRef()
+TextureAsset MainMenuUiView::getPaletteTextureAsset()
 {
-	return MainMenuUiView::getBackgroundTextureAssetRef();
+	return MainMenuUiView::getBackgroundTextureAsset();
 }
 
-TextureAssetReference MainMenuUiView::getTestArrowsTextureAssetRef()
+TextureAsset MainMenuUiView::getTestArrowsTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::UpDown));
+	return TextureAsset(std::string(ArenaTextureName::UpDown));
 }
 
-TextureAssetReference MainMenuUiView::getTestArrowsPaletteTextureAssetRef()
+TextureAsset MainMenuUiView::getTestArrowsPaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaPaletteName::CharSheet));
+	return TextureAsset(std::string(ArenaPaletteName::CharSheet));
 }
 
 UiTextureID MainMenuUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = MainMenuUiView::getBackgroundTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = MainMenuUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = MainMenuUiView::getBackgroundTextureAsset();
+	const TextureAsset paletteTextureAsset = MainMenuUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
-		DebugCrash("Couldn't create UI texture for main menu background \"" + textureAssetRef.filename + "\".");
+		DebugCrash("Couldn't create UI texture for main menu background \"" + textureAsset.filename + "\".");
 	}
 
 	return textureID;
@@ -224,13 +224,13 @@ UiTextureID MainMenuUiView::allocBackgroundTexture(TextureManager &textureManage
 
 UiTextureID MainMenuUiView::allocTestArrowsTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = MainMenuUiView::getTestArrowsTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = MainMenuUiView::getTestArrowsPaletteTextureAssetRef();
+	const TextureAsset textureAsset = MainMenuUiView::getTestArrowsTextureAsset();
+	const TextureAsset paletteTextureAsset = MainMenuUiView::getTestArrowsPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
-		DebugCrash("Couldn't create UI texture for main menu test arrows \"" + textureAssetRef.filename + "\".");
+		DebugCrash("Couldn't create UI texture for main menu test arrows \"" + textureAsset.filename + "\".");
 	}
 
 	return textureID;

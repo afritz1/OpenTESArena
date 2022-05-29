@@ -8,7 +8,7 @@
 
 class Game;
 
-struct TextureAssetReference;
+struct TextureAsset;
 
 namespace MainQuestSplashUiView
 {
@@ -28,7 +28,7 @@ namespace MainQuestSplashUiView
 	constexpr int ExitButtonWidth = 43;
 	constexpr int ExitButtonHeight = 13;
 
-	TextureAssetReference getSplashTextureAssetRef(Game &game, int provinceID);
+	TextureAsset getSplashTextureAsset(Game &game, int provinceID);
 
 	UiTextureID allocSplashTextureID(Game &game, int provinceID);
 }

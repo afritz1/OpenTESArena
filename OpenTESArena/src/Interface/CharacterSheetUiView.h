@@ -1,7 +1,7 @@
 #ifndef CHARACTER_SHEET_UI_VIEW_H
 #define CHARACTER_SHEET_UI_VIEW_H
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -77,14 +77,14 @@ namespace CharacterSheetUiView
 
 	Int2 getNextPageOffset();
 
-	TextureAssetReference getPaletteTextureAssetRef();
-	TextureAssetReference getStatsBackgroundTextureAssetRef();
-	TextureAssetReference getEquipmentBackgroundTextureAssetRef();
-	TextureAssetReference getNextPageButtonTextureAssetRef();
-	TextureAssetReference getBodyTextureAssetRef(Game &game);
-	TextureAssetReference getHeadTextureAssetRef(Game &game);
-	TextureAssetReference getShirtTextureAssetRef(Game &game);
-	TextureAssetReference getPantsTextureAssetRef(Game &game);
+	TextureAsset getPaletteTextureAsset();
+	TextureAsset getStatsBackgroundTextureAsset();
+	TextureAsset getEquipmentBackgroundTextureAsset();
+	TextureAsset getNextPageButtonTextureAsset();
+	TextureAsset getBodyTextureAsset(Game &game);
+	TextureAsset getHeadTextureAsset(Game &game);
+	TextureAsset getShirtTextureAsset(Game &game);
+	TextureAsset getPantsTextureAsset(Game &game);
 
 	UiTextureID allocBodyTexture(Game &game);
 	UiTextureID allocShirtTexture(Game &game);

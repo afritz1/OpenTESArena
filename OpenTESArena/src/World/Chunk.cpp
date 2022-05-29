@@ -449,7 +449,7 @@ void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScal
 				// No existing water chasm voxel definition. Make a new one?
 				// @todo: This could be handled better, since walls are just one choice for the texture.
 				// - maybe need a 'fallbackWaterChasm' texture asset ref in LevelInfoDefinition.
-				const TextureAssetReference *replacementTextureAssetRef = [this]() -> const TextureAssetReference*
+				const TextureAsset *replacementTextureAsset = [this]() -> const TextureAsset*
 				{
 					for (int i = 0; i < static_cast<int>(this->voxelDefs.size()); i++)
 					{
@@ -459,7 +459,7 @@ void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScal
 							if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 							{
 								const VoxelDefinition::WallData &wallData = voxelDef.wall;
-								return &wallData.sideTextureAssetRef;
+								return &wallData.sideTextureAsset;
 							}
 						}
 					}
@@ -467,9 +467,9 @@ void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScal
 					return nullptr;
 				}();
 
-				DebugAssert(replacementTextureAssetRef != nullptr);
+				DebugAssert(replacementTextureAsset != nullptr);
 				VoxelDefinition voxelDef = VoxelDefinition::makeChasm(
-					TextureAssetReference(*replacementTextureAssetRef), ArenaTypes::ChasmType::Wet);
+					TextureAsset(*replacementTextureAsset), ArenaTypes::ChasmType::Wet);
 
 				VoxelID voxelID;
 				if (this->tryAddVoxelDef(std::move(voxelDef), &voxelID))

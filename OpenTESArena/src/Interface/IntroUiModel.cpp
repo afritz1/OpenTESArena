@@ -25,10 +25,10 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 	const bool isFloppyVersion = exeData.isFloppyVersion();
 	if (isFloppyVersion)
 	{
-		const TextureAssetReference paletteTextureAssetRef = IntroUiView::getIntroTitlePaletteTextureAssetReference();
-		const TextureAssetReference textureAssetRef = IntroUiView::getIntroTitleTextureAssetReference();
+		const TextureAsset paletteTextureAsset = IntroUiView::getIntroTitlePaletteTextureAsset();
+		const TextureAsset textureAsset = IntroUiView::getIntroTitleTextureAsset();
 		std::unique_ptr<ImagePanel> panel = std::make_unique<ImagePanel>(game);
-		if (!panel->init(paletteTextureAssetRef.filename, textureAssetRef.filename, IntroUiView::IntroTitleSeconds,
+		if (!panel->init(paletteTextureAsset.filename, textureAsset.filename, IntroUiView::IntroTitleSeconds,
 			IntroUiController::onIntroTitleFinished))
 		{
 			DebugLogError("Couldn't init start-up ImagePanel.");

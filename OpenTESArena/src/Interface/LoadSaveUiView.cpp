@@ -14,25 +14,25 @@ Int2 LoadSaveUiView::getEntryCenterPoint(int index)
 	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 8 + (index * 14));
 }
 
-TextureAssetReference LoadSaveUiView::getPaletteTextureAssetRef()
+TextureAsset LoadSaveUiView::getPaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaPaletteName::Default));
+	return TextureAsset(std::string(ArenaPaletteName::Default));
 }
 
-TextureAssetReference LoadSaveUiView::getLoadSaveTextureAssetRef()
+TextureAsset LoadSaveUiView::getLoadSaveTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::LoadSave));
+	return TextureAsset(std::string(ArenaTextureName::LoadSave));
 }
 
 UiTextureID LoadSaveUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = LoadSaveUiView::getLoadSaveTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = LoadSaveUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = LoadSaveUiView::getLoadSaveTextureAsset();
+	const TextureAsset paletteTextureAsset = LoadSaveUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
-		DebugCrash("Couldn't create UI texture for load/save background \"" + textureAssetRef.filename + "\".");
+		DebugCrash("Couldn't create UI texture for load/save background \"" + textureAsset.filename + "\".");
 	}
 
 	return textureID;

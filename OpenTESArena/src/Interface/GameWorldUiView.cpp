@@ -318,60 +318,60 @@ Int2 GameWorldUiView::getNativeWindowCenter(const Renderer &renderer)
 	return nativeCenter;
 }
 
-TextureAssetReference GameWorldUiView::getPaletteTextureAssetRef()
+TextureAsset GameWorldUiView::getPaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaPaletteName::Default));
+	return TextureAsset(std::string(ArenaPaletteName::Default));
 }
 
-TextureAssetReference GameWorldUiView::getGameWorldInterfaceTextureAssetRef()
+TextureAsset GameWorldUiView::getGameWorldInterfaceTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::GameWorldInterface));
+	return TextureAsset(std::string(ArenaTextureName::GameWorldInterface));
 }
 
-TextureAssetReference GameWorldUiView::getStatusGradientTextureAssetRef(StatusGradientType gradientType)
+TextureAsset GameWorldUiView::getStatusGradientTextureAsset(StatusGradientType gradientType)
 {
 	const int gradientID = static_cast<int>(gradientType);
-	return TextureAssetReference(std::string(ArenaTextureName::StatusGradients), gradientID);
+	return TextureAsset(std::string(ArenaTextureName::StatusGradients), gradientID);
 }
 
-TextureAssetReference GameWorldUiView::getPlayerPortraitTextureAssetRef(bool isMale, int raceID, int portraitID)
+TextureAsset GameWorldUiView::getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID)
 {
 	const std::string &headsFilename = PortraitFile::getHeads(isMale, raceID, true);
-	return TextureAssetReference(std::string(headsFilename), portraitID);
+	return TextureAsset(std::string(headsFilename), portraitID);
 }
 
-TextureAssetReference GameWorldUiView::getNoMagicTextureAssetRef()
+TextureAsset GameWorldUiView::getNoMagicTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::NoSpell));
+	return TextureAsset(std::string(ArenaTextureName::NoSpell));
 }
 
-TextureAssetReference GameWorldUiView::getWeaponAnimTextureAssetRef(const std::string &weaponFilename, int index)
+TextureAsset GameWorldUiView::getWeaponAnimTextureAsset(const std::string &weaponFilename, int index)
 {
-	return TextureAssetReference(std::string(weaponFilename), index);
+	return TextureAsset(std::string(weaponFilename), index);
 }
 
-TextureAssetReference GameWorldUiView::getCompassFrameTextureAssetRef()
+TextureAsset GameWorldUiView::getCompassFrameTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::CompassFrame));
+	return TextureAsset(std::string(ArenaTextureName::CompassFrame));
 }
 
-TextureAssetReference GameWorldUiView::getCompassSliderTextureAssetRef()
+TextureAsset GameWorldUiView::getCompassSliderTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::CompassSlider));
+	return TextureAsset(std::string(ArenaTextureName::CompassSlider));
 }
 
-TextureAssetReference GameWorldUiView::getArrowCursorTextureAssetRef(int cursorIndex)
+TextureAsset GameWorldUiView::getArrowCursorTextureAsset(int cursorIndex)
 {
-	return TextureAssetReference(std::string(ArenaTextureName::ArrowCursors), cursorIndex);
+	return TextureAsset(std::string(ArenaTextureName::ArrowCursors), cursorIndex);
 }
 
 UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getGameWorldInterfaceTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for game world interface.");
 	}
@@ -382,11 +382,11 @@ UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &text
 UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradientType,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getStatusGradientTextureAssetRef(gradientType);
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getStatusGradientTextureAsset(gradientType);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for status gradient " + std::to_string(static_cast<int>(gradientType)) + ".");
 	}
@@ -397,11 +397,11 @@ UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradi
 UiTextureID GameWorldUiView::allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getPlayerPortraitTextureAssetRef(isMale, raceID, portraitID);
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(isMale, raceID, portraitID);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for player portrait (male: " + std::to_string(static_cast<int>(isMale)) +
 			", race: " + std::to_string(raceID) + ", portrait: " + std::to_string(portraitID) + ").");
@@ -412,11 +412,11 @@ UiTextureID GameWorldUiView::allocPlayerPortraitTexture(bool isMale, int raceID,
 
 UiTextureID GameWorldUiView::allocNoMagicTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getNoMagicTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getNoMagicTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for no magic icon.");
 	}
@@ -427,11 +427,11 @@ UiTextureID GameWorldUiView::allocNoMagicTexture(TextureManager &textureManager,
 UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFilename, int index,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getWeaponAnimTextureAssetRef(weaponFilename, index);
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getWeaponAnimTextureAsset(weaponFilename, index);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for weapon animation \"" + weaponFilename +
 			"\" index " + std::to_string(index) + ".");
@@ -442,11 +442,11 @@ UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFil
 
 UiTextureID GameWorldUiView::allocCompassFrameTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getCompassFrameTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getCompassFrameTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for compass frame.");
 	}
@@ -456,11 +456,11 @@ UiTextureID GameWorldUiView::allocCompassFrameTexture(TextureManager &textureMan
 
 UiTextureID GameWorldUiView::allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getCompassSliderTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getCompassSliderTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for compass frame.");
 	}
@@ -487,11 +487,11 @@ UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType bu
 
 UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getArrowCursorTextureAssetRef(cursorIndex);
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getArrowCursorTextureAsset(cursorIndex);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for arrow cursor " + std::to_string(cursorIndex) + ".");
 	}

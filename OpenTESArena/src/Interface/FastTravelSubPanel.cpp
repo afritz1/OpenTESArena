@@ -28,7 +28,7 @@ bool FastTravelSubPanel::init()
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
-	const TextureAssetReference paletteTextureAssetRef = FastTravelUiView::getPaletteTextureAssetRef();
+	const TextureAsset paletteTextureAsset = FastTravelUiView::getPaletteTextureAsset();
 	const std::string animFilename = FastTravelUiView::getAnimationFilename();
 
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
@@ -44,10 +44,10 @@ bool FastTravelSubPanel::init()
 	this->animTextureRefs.init(textureFileMetadata.getTextureCount());
 	for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
 	{
-		const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(animFilename), i);
+		const TextureAsset textureAsset = TextureAsset(std::string(animFilename), i);
 
 		UiTextureID textureID;
-		if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+		if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 		{
 			DebugLogError("Couldn't create UI texture for sequence \"" + animFilename + "\" frame " + std::to_string(i) + ".");
 			return false;

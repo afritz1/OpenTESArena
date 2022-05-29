@@ -327,49 +327,49 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 	return surface;
 }
 
-Buffer<TextureAssetReference> TextureUtils::makeTextureAssetRefs(const std::string &filename,
+Buffer<TextureAsset> TextureUtils::makeTextureAssets(const std::string &filename,
 	TextureManager &textureManager)
 {
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(filename.c_str());
 	if (!metadataID.has_value())
 	{
 		DebugLogError("Couldn't get texture file metadata for \"" + filename + "\".");
-		return Buffer<TextureAssetReference>();
+		return Buffer<TextureAsset>();
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
 	const int textureCount = textureFileMetadata.getTextureCount();
-	Buffer<TextureAssetReference> textureAssetRefs(textureCount);
+	Buffer<TextureAsset> textureAssets(textureCount);
 	for (int i = 0; i < textureCount; i++)
 	{
-		TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), i);
-		textureAssetRefs.set(i, std::move(textureAssetRef));
+		TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), i);
+		textureAssets.set(i, std::move(textureAsset));
 	}
 
-	return textureAssetRefs;
+	return textureAssets;
 }
 
-bool TextureUtils::tryAllocUiTexture(const TextureAssetReference &textureAssetRef,
-	const TextureAssetReference &paletteTextureAssetRef, TextureManager &textureManager, Renderer &renderer,
+bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset,
+	const TextureAsset &paletteTextureAsset, TextureManager &textureManager, Renderer &renderer,
 	UiTextureID *outID)
 {
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
 	if (!paletteID.has_value())
 	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
+		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAsset.filename + "\".");
 		return false;
 	}
 
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+		DebugLogError("Couldn't get texture builder ID for \"" + textureAsset.filename + "\".");
 		return false;
 	}
 
 	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, outID))
 	{
-		DebugLogError("Couldn't create UI texture for \"" + textureAssetRef.filename + "\".");
+		DebugLogError("Couldn't create UI texture for \"" + textureAsset.filename + "\".");
 		return false;
 	}
 

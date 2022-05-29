@@ -8,7 +8,7 @@
 
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationUtils.h"
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Media/TextureUtils.h"
 
 #include "components/utilities/BufferView.h"

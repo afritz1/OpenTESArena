@@ -100,12 +100,12 @@ bool ChooseAttributesPanel::init()
 	this->shirtTextureRef.init(shirtTextureID, renderer);
 	this->statsBgTextureRef.init(statsBgTextureID, renderer);
 
-	const Buffer<TextureAssetReference> headTextureAssetRefs = ChooseAttributesUiView::getHeadTextureAssetRefs(game);
-	this->headTextureRefs.init(headTextureAssetRefs.getCount());
-	for (int i = 0; i < headTextureAssetRefs.getCount(); i++)
+	const Buffer<TextureAsset> headTextureAssets = ChooseAttributesUiView::getHeadTextureAssets(game);
+	this->headTextureRefs.init(headTextureAssets.getCount());
+	for (int i = 0; i < headTextureAssets.getCount(); i++)
 	{
-		const TextureAssetReference &headTextureAssetRef = headTextureAssetRefs.get(i);
-		const UiTextureID headTextureID = ChooseAttributesUiView::allocHeadTexture(headTextureAssetRef, textureManager, renderer);
+		const TextureAsset &headTextureAsset = headTextureAssets.get(i);
+		const UiTextureID headTextureID = ChooseAttributesUiView::allocHeadTexture(headTextureAsset, textureManager, renderer);
 		this->headTextureRefs.set(i, ScopedUiTextureRef(headTextureID, renderer));
 	}
 

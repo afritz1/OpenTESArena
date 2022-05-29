@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -42,10 +42,10 @@ namespace MainMenuUiView
 	Rect getTestWeatherUpButtonRect();
 	Rect getTestWeatherDownButtonRect();
 
-	TextureAssetReference getBackgroundTextureAssetRef();
-	TextureAssetReference getPaletteTextureAssetRef();
-	TextureAssetReference getTestArrowsTextureAssetRef();
-	TextureAssetReference getTestArrowsPaletteTextureAssetRef();
+	TextureAsset getBackgroundTextureAsset();
+	TextureAsset getPaletteTextureAsset();
+	TextureAsset getTestArrowsTextureAsset();
+	TextureAsset getTestArrowsPaletteTextureAsset();
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocTestArrowsTexture(TextureManager &textureManager, Renderer &renderer);

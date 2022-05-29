@@ -21,7 +21,7 @@ class Surface;
 class Texture;
 class TextureManager;
 
-struct TextureAssetReference;
+struct TextureAsset;
 
 namespace TextureUtils
 {
@@ -79,10 +79,10 @@ namespace TextureUtils
 
 	// Generates individual texture asset references from the given filename. This should be used for filenames
 	// that point to a set of textures.
-	Buffer<TextureAssetReference> makeTextureAssetRefs(const std::string &filename, TextureManager &textureManager);
+	Buffer<TextureAsset> makeTextureAssets(const std::string &filename, TextureManager &textureManager);
 
 	// Convenience function for allocating a UI texture. The returned handle must be eventually freed.
-	bool tryAllocUiTexture(const TextureAssetReference &textureAssetRef, const TextureAssetReference &paletteTextureAssetRef,
+	bool tryAllocUiTexture(const TextureAsset &textureAsset, const TextureAsset &paletteTextureAsset,
 		TextureManager &textureManager, Renderer &renderer, UiTextureID *outID);
 
 	// Convenience function for allocating a UI texture from an SDL surface. Note that the usage of this generally

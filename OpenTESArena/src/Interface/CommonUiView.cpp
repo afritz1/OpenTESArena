@@ -8,11 +8,11 @@
 
 UiTextureID CommonUiView::allocDefaultCursorTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference paletteTextureAssetRef = TextureAssetReference(std::string(ArenaPaletteName::Default));
-	const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(ArenaTextureName::SwordCursor));
+	const TextureAsset paletteTextureAsset = TextureAsset(std::string(ArenaPaletteName::Default));
+	const TextureAsset textureAsset = TextureAsset(std::string(ArenaTextureName::SwordCursor));
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for default cursor.");
 	}

@@ -389,7 +389,7 @@ bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
 		const EntityAnimationDefinition::State &animState = animDef.getState(visState.stateIndex);
 		const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visState.angleIndex);
 		const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visState.keyframeIndex);
-		const TextureAssetReference &textureAssetRef = animKeyframe.getTextureAssetRef();
+		const TextureAsset &textureAsset = animKeyframe.getTextureAsset();
 		const bool flipped = animKeyframeList.isFlipped();
 		const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
 
@@ -400,7 +400,7 @@ bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
 		// @todo: get the entity anim inst's texture ID instead of asset ref. Can probably remove 'palette' too.
 		DebugLogError("Not implemented: getEntityRayIntersection");
 		return false;
-		/*const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAssetRef, flipped, reflective, pixelPerfect, palette, &isSelected);
+		/*const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAsset, flipped, reflective, pixelPerfect, palette, &isSelected);
 
 		*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
 		return withinEntity && isSelected;*/

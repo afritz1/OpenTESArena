@@ -11,7 +11,7 @@ class ExeData;
 class Random;
 class TextureManager;
 
-struct TextureAssetReference;
+struct TextureAsset;
 
 // Various functions for working with the original game's weather.
 
@@ -87,7 +87,7 @@ namespace ArenaWeatherUtils
 	Buffer<uint8_t> makeThunderstormColors(const ExeData &exeData);
 
 	// Creates a buffer of texture asset references for lightning bolts.
-	Buffer<Buffer<TextureAssetReference>> makeLightningBoltTextureAssetRefs(TextureManager &textureManager);
+	Buffer<Buffer<TextureAsset>> makeLightningBoltTextureAssets(TextureManager &textureManager);
 }
 
 #endif

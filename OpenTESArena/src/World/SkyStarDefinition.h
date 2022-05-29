@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 
 class SkyStarDefinition
 {
@@ -23,9 +23,9 @@ public:
 
 	struct LargeStar
 	{
-		TextureAssetReference textureAssetRef;
+		TextureAsset textureAsset;
 
-		void init(TextureAssetReference &&textureAssetRef);
+		void init(TextureAsset &&textureAsset);
 	};
 private:
 	Type type;
@@ -35,7 +35,7 @@ private:
 	void init(Type type);
 public:
 	void initSmall(uint8_t paletteIndex);
-	void initLarge(TextureAssetReference &&textureAssetRef);
+	void initLarge(TextureAsset &&textureAsset);
 	
 	Type getType() const;
 	const SmallStar &getSmallStar() const;

@@ -1,19 +1,19 @@
 #include "SkyLightningDefinition.h"
 
-void SkyLightningDefinition::init(Buffer<TextureAssetReference> &&textureAssetRefs, double animSeconds)
+void SkyLightningDefinition::init(Buffer<TextureAsset> &&textureAssets, double animSeconds)
 {
-	this->textureAssetRefs = std::move(textureAssetRefs);
+	this->textureAssets = std::move(textureAssets);
 	this->animSeconds = animSeconds;
 }
 
 int SkyLightningDefinition::getTextureCount() const
 {
-	return static_cast<int>(this->textureAssetRefs.getCount());
+	return static_cast<int>(this->textureAssets.getCount());
 }
 
-const TextureAssetReference &SkyLightningDefinition::getTextureAssetRef(int index) const
+const TextureAsset &SkyLightningDefinition::getTextureAsset(int index) const
 {
-	return this->textureAssetRefs.get(index);
+	return this->textureAssets.get(index);
 }
 
 double SkyLightningDefinition::getAnimationSeconds() const

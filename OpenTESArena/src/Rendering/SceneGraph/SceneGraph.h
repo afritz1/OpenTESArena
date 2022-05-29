@@ -38,20 +38,20 @@ class SceneGraph
 public:
 	struct LoadedVoxelTexture
 	{
-		TextureAssetReference textureAssetRef;
+		TextureAsset textureAsset;
 		ScopedObjectTextureRef objectTextureRef;
 
-		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef);
+		void init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
 	struct LoadedEntityTexture
 	{
-		TextureAssetReference textureAssetRef;
+		TextureAsset textureAsset;
 		bool flipped;
 		bool reflective;
 		ScopedObjectTextureRef objectTextureRef;
 
-		void init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
+		void init(const TextureAsset &textureAsset, bool flipped, bool reflective,
 			ScopedObjectTextureRef &&objectTextureRef);
 	};
 
@@ -61,7 +61,7 @@ public:
 		// The draw call and pixel shader need two textures in order to support chasm wall rendering.
 		struct WallEntry
 		{
-			TextureAssetReference wallTextureAssetRef;
+			TextureAsset wallTextureAsset;
 			ScopedObjectTextureRef wallTextureRef;
 		};
 
@@ -92,10 +92,10 @@ private:
 
 	std::vector<RenderDrawCall> drawCalls;
 
-	ObjectTextureID getVoxelTextureID(const TextureAssetReference &textureAssetRef) const;
-	ObjectTextureID getEntityTextureID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
+	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
+	ObjectTextureID getEntityTextureID(const TextureAsset &textureAsset, bool flipped, bool reflective) const;
 	ObjectTextureID getChasmFloorTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
-	ObjectTextureID getChasmWallTextureID(ArenaTypes::ChasmType chasmType, const TextureAssetReference &textureAssetRef) const;
+	ObjectTextureID getChasmWallTextureID(ArenaTypes::ChasmType chasmType, const TextureAsset &textureAsset) const;
 
 	void loadTextures(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, TextureManager &textureManager,

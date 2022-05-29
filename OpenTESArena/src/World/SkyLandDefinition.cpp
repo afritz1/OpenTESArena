@@ -2,31 +2,31 @@
 
 #include "components/debug/Debug.h"
 
-void SkyLandDefinition::init(Buffer<TextureAssetReference> &&textureAssetRefs, double animSeconds,
+void SkyLandDefinition::init(Buffer<TextureAsset> &&textureAssets, double animSeconds,
 	ShadingType shadingType)
 {
-	this->textureAssetRefs = std::move(textureAssetRefs);
+	this->textureAssets = std::move(textureAssets);
 	this->animSeconds = animSeconds;
 	this->shadingType = shadingType;
 }
 
-void SkyLandDefinition::init(TextureAssetReference &&textureAssetRef, ShadingType shadingType)
+void SkyLandDefinition::init(TextureAsset &&textureAsset, ShadingType shadingType)
 {
-	Buffer<TextureAssetReference> textureAssetRefs(1);
-	textureAssetRefs.set(0, std::move(textureAssetRef));
+	Buffer<TextureAsset> textureAssets(1);
+	textureAssets.set(0, std::move(textureAsset));
 
 	constexpr double animSeconds = 0.0;
-	this->init(std::move(textureAssetRefs), animSeconds, shadingType);
+	this->init(std::move(textureAssets), animSeconds, shadingType);
 }
 
 int SkyLandDefinition::getTextureCount() const
 {
-	return static_cast<int>(this->textureAssetRefs.getCount());
+	return static_cast<int>(this->textureAssets.getCount());
 }
 
-const TextureAssetReference &SkyLandDefinition::getTextureAssetRef(int index) const
+const TextureAsset &SkyLandDefinition::getTextureAsset(int index) const
 {
-	return this->textureAssetRefs.get(index);
+	return this->textureAssets.get(index);
 }
 
 bool SkyLandDefinition::hasAnimation() const

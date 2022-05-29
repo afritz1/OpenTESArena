@@ -36,24 +36,24 @@ TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_vi
 		fontLibrary);
 }
 
-TextureAssetReference AutomapUiView::getBackgroundTextureAssetRef()
+TextureAsset AutomapUiView::getBackgroundTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::Automap));
+	return TextureAsset(std::string(ArenaTextureName::Automap));
 }
 
-TextureAssetReference AutomapUiView::getBackgroundPaletteTextureAssetRef()
+TextureAsset AutomapUiView::getBackgroundPaletteTextureAsset()
 {
-	return AutomapUiView::getBackgroundTextureAssetRef();
+	return AutomapUiView::getBackgroundTextureAsset();
 }
 
-TextureAssetReference AutomapUiView::getCursorTextureAssetRef()
+TextureAsset AutomapUiView::getCursorTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::QuillCursor));
+	return TextureAsset(std::string(ArenaTextureName::QuillCursor));
 }
 
-TextureAssetReference AutomapUiView::getCursorPaletteTextureAssetRef()
+TextureAsset AutomapUiView::getCursorPaletteTextureAsset()
 {
-	return AutomapUiView::getBackgroundPaletteTextureAssetRef();
+	return AutomapUiView::getBackgroundPaletteTextureAsset();
 }
 
 const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
@@ -446,11 +446,11 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 
 UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getBackgroundPaletteTextureAssetRef();
-	const TextureAssetReference textureAssetRef = AutomapUiView::getBackgroundTextureAssetRef();
+	const TextureAsset paletteTextureAsset = AutomapUiView::getBackgroundPaletteTextureAsset();
+	const TextureAsset textureAsset = AutomapUiView::getBackgroundTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for automap background.");
 	}
@@ -460,11 +460,11 @@ UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Render
 
 UiTextureID AutomapUiView::allocCursorTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getCursorPaletteTextureAssetRef();
-	const TextureAssetReference textureAssetRef = AutomapUiView::getCursorTextureAssetRef();
+	const TextureAsset paletteTextureAsset = AutomapUiView::getCursorPaletteTextureAsset();
+	const TextureAsset textureAsset = AutomapUiView::getCursorTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for automap cursor.");
 	}

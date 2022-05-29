@@ -1,7 +1,7 @@
 #ifndef SKY_LIGHTNING_DEFINITION_H
 #define SKY_LIGHTNING_DEFINITION_H
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 
 #include "components/utilities/Buffer.h"
 
@@ -10,13 +10,13 @@
 class SkyLightningDefinition
 {
 private:
-	Buffer<TextureAssetReference> textureAssetRefs;
+	Buffer<TextureAsset> textureAssets;
 	double animSeconds;
 public:
-	void init(Buffer<TextureAssetReference> &&textureAssetRefs, double animSeconds);
+	void init(Buffer<TextureAsset> &&textureAssets, double animSeconds);
 
 	int getTextureCount() const;
-	const TextureAssetReference &getTextureAssetRef(int index) const;
+	const TextureAsset &getTextureAsset(int index) const;
 
 	double getAnimationSeconds() const;
 };

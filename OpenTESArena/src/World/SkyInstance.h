@@ -27,10 +27,10 @@ class SkyInstance
 private:
 	struct LoadedSkyObjectTextureEntry
 	{
-		TextureAssetReference textureAssetRef;
+		TextureAsset textureAsset;
 		ScopedObjectTextureRef objectTextureRef;
 
-		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef);
+		void init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
 	struct LoadedSmallStarTextureEntry

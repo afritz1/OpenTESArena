@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
@@ -93,10 +93,10 @@ namespace AutomapUiView
 		{ CardinalDirectionName::NorthWest, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(0, 1), Int2(0, 2) } }
 	};
 
-	TextureAssetReference getBackgroundTextureAssetRef();
-	TextureAssetReference getBackgroundPaletteTextureAssetRef();
-	TextureAssetReference getCursorTextureAssetRef();
-	TextureAssetReference getCursorPaletteTextureAssetRef();
+	TextureAsset getBackgroundTextureAsset();
+	TextureAsset getBackgroundPaletteTextureAsset();
+	TextureAsset getCursorTextureAsset();
+	TextureAsset getCursorPaletteTextureAsset();
 
 	// Gets the display color for a pixel on the automap, given its associated floor and wall voxel definitions.
 	// The color depends on a couple factors, like whether the voxel is a wall, door, water, etc., and some

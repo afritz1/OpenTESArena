@@ -489,12 +489,12 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 					// requirements here.
 					auto &textureManager = game.getTextureManager();
 					auto &renderer = game.getRenderer();
-					const TextureAssetReference gameWorldInterfaceTextureAssetRef = GameWorldUiView::getGameWorldInterfaceTextureAssetRef();
+					const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
 					const std::optional<TextureFileMetadataID> metadataID =
-						textureManager.tryGetMetadataID(gameWorldInterfaceTextureAssetRef.filename.c_str());
+						textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
 					if (!metadataID.has_value())
 					{
-						DebugCrash("Couldn't get game world interface metadata ID for \"" + gameWorldInterfaceTextureAssetRef.filename + "\".");
+						DebugCrash("Couldn't get game world interface metadata ID for \"" + gameWorldInterfaceTextureAsset.filename + "\".");
 					}
 
 					const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);

@@ -8,7 +8,7 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
-struct TextureAssetReference;
+struct TextureAsset;
 
 namespace PauseMenuUiView
 {
@@ -44,8 +44,8 @@ namespace PauseMenuUiView
 	Rect getMusicUpButtonRect();
 	Rect getMusicDownButtonRect();
 
-	TextureAssetReference getBackgroundPaletteTextureAssetRef();
-	TextureAssetReference getBackgroundTextureAssetRef();
+	TextureAsset getBackgroundPaletteTextureAsset();
+	TextureAsset getBackgroundTextureAsset();
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocOptionsButtonTexture(TextureManager &textureManager, Renderer &renderer);

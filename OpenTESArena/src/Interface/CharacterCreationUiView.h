@@ -1,7 +1,7 @@
 #ifndef CHARACTER_CREATION_UI_VIEW_H
 #define CHARACTER_CREATION_UI_VIEW_H
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Interface/MessageBoxSubPanel.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -20,7 +20,7 @@ class Rect;
 
 namespace CharacterCreationUiView
 {
-	TextureAssetReference getNightSkyTextureAssetRef();
+	TextureAsset getNightSkyTextureAsset();
 
 	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
 }
@@ -85,7 +85,7 @@ namespace ChooseClassUiView
 
 	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
 
-	TextureAssetReference getListBoxTextureAssetRef();
+	TextureAsset getListBoxTextureAsset();
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
@@ -217,8 +217,8 @@ namespace ChooseRaceUiView
 	constexpr int ProvinceConfirmedFourthTextLineSpacing = 1;
 	constexpr TextureUtils::PatternType ProvinceConfirmedFourthTextPatternType = TextureUtils::PatternType::Parchment;
 
-	TextureAssetReference getBackgroundTextureAssetRef();
-	TextureAssetReference getNoExitTextureAssetRef(); // Covers up the exit button since character creation doesn't use it.
+	TextureAsset getBackgroundTextureAsset();
+	TextureAsset getNoExitTextureAsset(); // Covers up the exit button since character creation doesn't use it.
 
 	int getNoExitTextureX(int textureWidth);
 	int getNoExitTextureY(int textureHeight);
@@ -303,15 +303,15 @@ namespace ChooseAttributesUiView
 	Int2 getShirtOffset(Game &game);
 	Int2 getPantsOffset(Game &game);
 
-	TextureAssetReference getBodyTextureAssetRef(Game &game);
-	Buffer<TextureAssetReference> getHeadTextureAssetRefs(Game &game);
-	TextureAssetReference getShirtTextureAssetRef(Game &game);
-	TextureAssetReference getPantsTextureAssetRef(Game &game);
+	TextureAsset getBodyTextureAsset(Game &game);
+	Buffer<TextureAsset> getHeadTextureAssets(Game &game);
+	TextureAsset getShirtTextureAsset(Game &game);
+	TextureAsset getPantsTextureAsset(Game &game);
 
 	UiTextureID allocBodyTexture(Game &game);
 	UiTextureID allocShirtTexture(Game &game);
 	UiTextureID allocPantsTexture(Game &game);
-	UiTextureID allocHeadTexture(const TextureAssetReference &textureAssetRef,
+	UiTextureID allocHeadTexture(const TextureAsset &textureAsset,
 		TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
 }

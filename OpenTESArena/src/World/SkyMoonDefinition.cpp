@@ -2,17 +2,17 @@
 
 #include "components/debug/Debug.h"
 
-void SkyMoonDefinition::init(Buffer<TextureAssetReference> &&textureAssetRefs)
+void SkyMoonDefinition::init(Buffer<TextureAsset> &&textureAssets)
 {
-	this->textureAssetRefs = std::move(textureAssetRefs);
+	this->textureAssets = std::move(textureAssets);
 }
 
 int SkyMoonDefinition::getTextureCount() const
 {
-	return static_cast<int>(this->textureAssetRefs.getCount());
+	return static_cast<int>(this->textureAssets.getCount());
 }
 
-const TextureAssetReference &SkyMoonDefinition::getTextureAssetRef(int index) const
+const TextureAsset &SkyMoonDefinition::getTextureAsset(int index) const
 {
-	return this->textureAssetRefs.get(index);
+	return this->textureAssets.get(index);
 }

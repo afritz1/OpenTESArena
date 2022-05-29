@@ -116,8 +116,8 @@ namespace ArenaAnimUtils
 		{
 			const double width = MakeStaticKeyframeDimension(textureFileMetadata.getWidth(i), dimensionModifier);
 			const double height = MakeStaticKeyframeDimension(textureFileMetadata.getHeight(i), dimensionModifier);
-			TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), i);
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
+			TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), i);
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAsset), width, height));
 		}
 
 		const int keyframeCount = defKeyframeList.getKeyframeCount();
@@ -178,8 +178,8 @@ namespace ArenaAnimUtils
 				MakeCreatureKeyframeDimensions(creatureIndex, textureFileMetadata.getWidth(correctedFrameIndex),
 					textureFileMetadata.getHeight(correctedFrameIndex), exeData, &width, &height);
 
-				TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), correctedFrameIndex);
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
+				TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), correctedFrameIndex);
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAsset), width, height));
 			}
 
 			outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -285,8 +285,8 @@ namespace ArenaAnimUtils
 				MakeHumanKeyframeDimensions(textureFileMetadata.getWidth(frameIndex),
 					textureFileMetadata.getHeight(frameIndex), &width, &height);
 
-				TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), frameIndex);
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
+				TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), frameIndex);
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAsset), width, height));
 			}
 
 			outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -354,8 +354,8 @@ namespace ArenaAnimUtils
 			MakeCreatureKeyframeDimensions(creatureIndex, textureFileMetadata.getWidth(frameIndex),
 				textureFileMetadata.getHeight(frameIndex), exeData, &width, &height);
 
-			TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), frameIndex);
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
+			TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), frameIndex);
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAsset), width, height));
 		}
 
 		outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -431,8 +431,8 @@ namespace ArenaAnimUtils
 			MakeHumanKeyframeDimensions(textureFileMetadata.getWidth(i),
 				textureFileMetadata.getHeight(i), &width, &height);
 
-			TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), i);
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
+			TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), i);
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAsset), width, height));
 		}
 
 		outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -480,8 +480,8 @@ namespace ArenaAnimUtils
 			ArenaAnimUtils::MakeCreatureKeyframeDimensions(creatureIndex, textureFileMetadata.getWidth(i),
 				textureFileMetadata.getHeight(i), exeData, &width, &height);
 
-			TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), i);
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
+			TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), i);
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAsset), width, height));
 		}
 
 		outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -523,8 +523,8 @@ namespace ArenaAnimUtils
 
 		const double width = MakeDefaultKeyframeDimension(textureFileMetadata.getWidth(0));
 		const double height = MakeDefaultKeyframeDimension(textureFileMetadata.getHeight(0));
-		TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()));
-		defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
+		TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()));
+		defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAsset), width, height));
 		outDefState->addKeyframeList(std::move(defKeyframeList));
 
 		const int keyframeCount = outDefState->getKeyframeList(0).getKeyframeCount();
@@ -581,8 +581,8 @@ namespace ArenaAnimUtils
 				MakeCitizenKeyframeDimensions(textureFileMetadata.getWidth(correctedFrameIndex),
 					textureFileMetadata.getHeight(correctedFrameIndex), &width, &height);
 
-				TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), correctedFrameIndex);
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
+				TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), correctedFrameIndex);
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAsset), width, height));
 			}
 
 			outDefState->addKeyframeList(std::move(defKeyframeList));

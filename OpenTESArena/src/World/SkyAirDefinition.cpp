@@ -1,11 +1,11 @@
 #include "SkyAirDefinition.h"
 
-void SkyAirDefinition::init(TextureAssetReference &&textureAssetRef)
+void SkyAirDefinition::init(TextureAsset &&textureAsset)
 {
-	this->textureAssetRef = std::move(textureAssetRef);
+	this->textureAsset = std::move(textureAsset);
 }
 
-const TextureAssetReference &SkyAirDefinition::getTextureAssetRef() const
+const TextureAsset &SkyAirDefinition::getTextureAsset() const
 {
-	return this->textureAssetRef;
+	return this->textureAsset;
 }
