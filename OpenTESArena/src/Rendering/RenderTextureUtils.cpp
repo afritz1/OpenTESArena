@@ -14,30 +14,6 @@ bool LockedTexture::isValid()
 	return this->texels != nullptr;
 }
 
-ObjectMaterial::ObjectMaterial(ObjectTextureID id0, ObjectTextureID id1)
-{
-	this->init(id0, id1);
-}
-
-ObjectMaterial::ObjectMaterial(ObjectTextureID id)
-{
-	this->init(id);
-}
-
-ObjectMaterial::ObjectMaterial()
-	: ObjectMaterial(-1, -1) { }
-
-void ObjectMaterial::init(ObjectTextureID id0, ObjectTextureID id1)
-{
-	this->id0 = id0;
-	this->id1 = id1;
-}
-
-void ObjectMaterial::init(ObjectTextureID id)
-{
-	this->init(id, -1);
-}
-
 ScopedObjectTextureRef::ScopedObjectTextureRef(ObjectTextureID id, Renderer &renderer)
 {
 	DebugAssert(id >= 0);
@@ -149,74 +125,6 @@ void ScopedObjectTextureRef::destroy()
 		this->id = -1;
 		this->width = -1;
 		this->height = -1;
-	}
-}
-
-ScopedObjectMaterialRef::ScopedObjectMaterialRef(ObjectMaterialID id, Renderer &renderer)
-{
-	DebugAssert(id >= 0);
-	this->id = id;
-	this->renderer = &renderer;
-}
-
-ScopedObjectMaterialRef::ScopedObjectMaterialRef()
-{
-	this->id = -1;
-	this->renderer = nullptr;
-}
-
-ScopedObjectMaterialRef::ScopedObjectMaterialRef(ScopedObjectMaterialRef &&other)
-{
-	this->id = other.id;
-	this->renderer = other.renderer;
-	other.id = -1;
-	other.renderer = nullptr;
-}
-
-ScopedObjectMaterialRef::~ScopedObjectMaterialRef()
-{
-	this->destroy();
-}
-
-ScopedObjectMaterialRef &ScopedObjectMaterialRef::operator=(ScopedObjectMaterialRef &&other)
-{
-	if (this != &other)
-	{
-		if (this->id >= 0)
-		{
-			this->destroy();
-		}
-
-		this->id = other.id;
-		this->renderer = other.renderer;
-		other.id = -1;
-		other.renderer = nullptr;
-	}
-
-	return *this;
-}
-
-void ScopedObjectMaterialRef::init(ObjectMaterialID id, Renderer &renderer)
-{
-	DebugAssert(this->id == -1);
-	DebugAssert(this->renderer == nullptr);
-	DebugAssert(id >= 0);
-	this->id = id;
-	this->renderer = &renderer;
-}
-
-ObjectMaterialID ScopedObjectMaterialRef::get() const
-{
-	return this->id;
-}
-
-void ScopedObjectMaterialRef::destroy()
-{
-	if (this->renderer != nullptr)
-	{
-		this->renderer->freeObjectMaterial(this->id);
-		this->renderer = nullptr;
-		this->id = -1;
 	}
 }
 

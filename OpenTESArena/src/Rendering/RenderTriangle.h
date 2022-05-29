@@ -15,15 +15,15 @@ struct RenderTriangle
 	Double3 v0v1, v1v2, v2v0;
 	Double3 normal;
 	Double2 uv0, uv1, uv2;
-	ObjectMaterialID materialID;
+	ObjectTextureID textureID; // @todo: this is only around until RenderTriangle is erased completely
 	double param0;
 
 	RenderTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0,
-		const Double2 &uv1, const Double2 &uv2, ObjectMaterialID materialID, double param0);
+		const Double2 &uv1, const Double2 &uv2, ObjectTextureID textureID, double param0);
 	RenderTriangle();
 
 	void init(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0,
-		const Double2 &uv1, const Double2 &uv2, ObjectMaterialID materialID, double param0);
+		const Double2 &uv1, const Double2 &uv2, ObjectTextureID textureID, double param0);
 };
 
 #endif

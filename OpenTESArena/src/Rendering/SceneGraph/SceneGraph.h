@@ -36,47 +36,38 @@ struct RenderCamera;
 class SceneGraph
 {
 public:
-	struct LoadedVoxelMaterial
+	struct LoadedVoxelTexture
 	{
 		TextureAssetReference textureAssetRef;
-
-		// One texture per material.
 		ScopedObjectTextureRef objectTextureRef;
-		ScopedObjectMaterialRef objectMaterialRef;
 
-		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef,
-			ScopedObjectMaterialRef &&objectMaterialRef);
+		void init(const TextureAssetReference &textureAssetRef, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
-	struct LoadedEntityMaterial
+	struct LoadedEntityTexture
 	{
 		TextureAssetReference textureAssetRef;
 		bool flipped;
 		bool reflective;
-
-		// One texture per material.
 		ScopedObjectTextureRef objectTextureRef;
-		ScopedObjectMaterialRef objectMaterialRef;
 
 		void init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
-			ScopedObjectTextureRef &&objectTextureRef, ScopedObjectMaterialRef &&objectMaterialRef);
+			ScopedObjectTextureRef &&objectTextureRef);
 	};
 
-	struct LoadedChasmMaterialList
+	struct LoadedChasmTextureList
 	{
-		struct Entry
+		// Chasm walls are multi-textured. They use the chasm animation and a separate wall texture.
+		// The draw call and pixel shader need two textures in order to support chasm wall rendering.
+		struct WallEntry
 		{
 			TextureAssetReference wallTextureAssetRef;
 			ScopedObjectTextureRef wallTextureRef;
-			std::vector<ScopedObjectMaterialRef> wallMaterialRefs;
 		};
 
 		ArenaTypes::ChasmType chasmType;
-
-		// One texture per floor material and two textures per side material. One material per animation frame.
 		std::vector<ScopedObjectTextureRef> chasmTextureRefs;
-		std::vector<ScopedObjectMaterialRef> floorMaterialRefs;
-		std::vector<Entry> entries;
+		std::vector<WallEntry> wallEntries;
 
 		void init(ArenaTypes::ChasmType chasmType);
 	};
@@ -84,9 +75,9 @@ private:
 	// Chunks with data for geometry storage, visibility calculation, etc..
 	std::vector<SceneGraphChunk> graphChunks;
 
-	std::vector<LoadedVoxelMaterial> voxelMaterials;
-	std::vector<LoadedEntityMaterial> entityMaterials;
-	std::vector<LoadedChasmMaterialList> chasmMaterialLists;
+	std::vector<LoadedVoxelTexture> voxelTextures;
+	std::vector<LoadedEntityTexture> entityTextures;
+	std::vector<LoadedChasmTextureList> chasmTextureLists;
 
 	// @todo: sky rendering resources
 	// - hemisphere geometry w/ texture IDs and coordinates for colors (use some trig functions for vertex generation?)
@@ -101,11 +92,10 @@ private:
 
 	std::vector<RenderDrawCall> drawCalls;
 
-	ObjectMaterialID getVoxelMaterialID(const TextureAssetReference &textureAssetRef) const;
-	ObjectMaterialID getEntityMaterialID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
-	ObjectMaterialID getChasmFloorMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
-	ObjectMaterialID getChasmWallMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent,
-		const TextureAssetReference &textureAssetRef) const;
+	ObjectTextureID getVoxelTextureID(const TextureAssetReference &textureAssetRef) const;
+	ObjectTextureID getEntityTextureID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
+	ObjectTextureID getChasmFloorTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
+	ObjectTextureID getChasmWallTextureID(ArenaTypes::ChasmType chasmType, const TextureAssetReference &textureAssetRef) const;
 
 	void loadTextures(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, TextureManager &textureManager,

@@ -25,8 +25,6 @@
 
 namespace sgGeometry
 {
-	constexpr int MAX_TRIANGLES_PER_VOXEL = 16;
-
 	// Quad texture coordinates (top left, top right, etc.).
 	const Double2 UV_TL(0.0, 0.0);
 	const Double2 UV_TR(1.0, 0.0);
@@ -66,585 +64,6 @@ namespace sgGeometry
 		outV2->x = voxelPosition.x + v2.x;
 		outV2->y = voxelPosition.y + (v2.y * ceilingScale);
 		outV2->z = voxelPosition.z + v2.z;
-	}
-
-	// Translates a model space triangle into world space and writes it into the output buffer at the given index.
-	void WriteTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double2 &uv0, const Double2 &uv1,
-		const Double2 &uv2, ObjectMaterialID materialID, double param0, const Double3 &voxelPosition, double ceilingScale,
-		int index, BufferView<RenderTriangle> &outTriangles)
-	{
-		Double3 worldV0, worldV1, worldV2;
-		MakeWorldSpaceVertices(voxelPosition, v0, v1, v2, ceilingScale, &worldV0, &worldV1, &worldV2);
-
-		RenderTriangle &triangle = outTriangles.get(index);
-		triangle.init(worldV0, worldV1, worldV2, uv0, uv1, uv2, materialID, param0);
-	}
-
-	// Geometry generation functions (currently in world space, might be chunk space or something else later).
-	// @todo: these functions should not assume opaque/alpha-tested per face, they should query the texture associated
-	// with each face for that, and then write to the appropriate out buffer.
-	void WriteWall(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectMaterialID sideMaterialID,
-		ObjectMaterialID floorMaterialID, ObjectMaterialID ceilingMaterialID, double fadePercent,
-		BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
-	{
-		constexpr int triangleCount = 12;
-		DebugAssert(outOpaqueTriangles.getCount() == triangleCount);
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		// X=0
-		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
-		// X=1
-		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
-		// Y=0
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, floorMaterialID, fadePercent, voxelPosition, ceilingScale, 4, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, floorMaterialID, fadePercent, voxelPosition, ceilingScale, 5, outOpaqueTriangles);
-		// Y=1
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, ceilingMaterialID, fadePercent, voxelPosition, ceilingScale, 6, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, ceilingMaterialID, fadePercent, voxelPosition, ceilingScale, 7, outOpaqueTriangles);
-		// Z=0
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 8, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 9, outOpaqueTriangles);
-		// Z=1
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 10, outOpaqueTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 11, outOpaqueTriangles);
-
-		*outOpaqueTriangleCount = triangleCount;
-	}
-
-	void WriteFloor(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectMaterialID materialID,
-		double fadePercent, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
-	{
-		constexpr int triangleCount = 2;
-		DebugAssert(outOpaqueTriangles.getCount() == triangleCount);
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
-
-		*outOpaqueTriangleCount = triangleCount;
-	}
-
-	void WriteCeiling(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectMaterialID materialID,
-		double fadePercent, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
-	{
-		constexpr int triangleCount = 2;
-		DebugAssert(outOpaqueTriangles.getCount() == triangleCount);
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(1.0, 0.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
-
-		*outOpaqueTriangleCount = triangleCount;
-	}
-
-	void WriteRaised(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, double yOffset, double ySize,
-		double vTop, double vBottom, ObjectMaterialID sideMaterialID, ObjectMaterialID floorMaterialID, ObjectMaterialID ceilingMaterialID,
-		double fadePercent, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount,
-		BufferView<RenderTriangle> &outAlphaTestedTriangles, int *outAlphaTestedTriangleCount)
-	{
-		constexpr int opaqueTriangleCount = 4;
-		constexpr int alphaTestedTriangleCount = 8;
-		DebugAssert(outOpaqueTriangles.getCount() == opaqueTriangleCount);
-		DebugAssert(outAlphaTestedTriangles.getCount() == alphaTestedTriangleCount);
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		const double yBottom = yOffset;
-		const double yTop = yOffset + ySize;
-
-		const Double2 sideUvTL(0.0, vTop);
-		const Double2 sideUvTR(1.0, vTop);
-		const Double2 sideUvBL(0.0, vBottom);
-		const Double2 sideUvBR(1.0, vBottom);
-
-		// Opaque
-		// Y=bottom
-		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(0.0, yBottom, 1.0), Double3(0.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, floorMaterialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(1.0, yBottom, 0.0), Double3(1.0, yBottom, 1.0), UV_BR, UV_TR, UV_TL, floorMaterialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
-		// Y=top
-		WriteTriangle(Double3(1.0, yTop, 0.0), Double3(0.0, yTop, 0.0), Double3(0.0, yTop, 1.0), UV_TL, UV_BL, UV_BR, ceilingMaterialID, fadePercent, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
-		WriteTriangle(Double3(0.0, yTop, 1.0), Double3(1.0, yTop, 1.0), Double3(1.0, yTop, 0.0), UV_BR, UV_TR, UV_TL, ceilingMaterialID, fadePercent, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
-
-		// Alpha-tested
-		// X=0
-		WriteTriangle(Double3(0.0, yTop, 0.0), Double3(0.0, yBottom, 0.0), Double3(0.0, yBottom, 1.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, yBottom, 1.0), Double3(0.0, yTop, 1.0), Double3(0.0, yTop, 0.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
-		// X=1
-		WriteTriangle(Double3(1.0, yTop, 1.0), Double3(1.0, yBottom, 1.0), Double3(1.0, yBottom, 0.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, yBottom, 0.0), Double3(1.0, yTop, 0.0), Double3(1.0, yTop, 1.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
-		// Z=0
-		WriteTriangle(Double3(1.0, yTop, 0.0), Double3(1.0, yBottom, 0.0), Double3(0.0, yBottom, 0.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, yTop, 0.0), Double3(1.0, yTop, 0.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
-		// Z=1
-		WriteTriangle(Double3(0.0, yTop, 1.0), Double3(0.0, yBottom, 1.0), Double3(1.0, yBottom, 1.0), sideUvTL, sideUvBL, sideUvBR, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, yTop, 1.0), Double3(0.0, yTop, 1.0), sideUvBR, sideUvTR, sideUvTL, sideMaterialID, fadePercent, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
-
-		*outOpaqueTriangleCount = opaqueTriangleCount;
-		*outAlphaTestedTriangleCount = alphaTestedTriangleCount;
-	}
-
-	void WriteDiagonal(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, bool flipped, ObjectMaterialID materialID,
-		double fadePercent, BufferView<RenderTriangle> &outOpaqueTriangles, int *outOpaqueTriangleCount)
-	{
-		constexpr int triangleCount = 4; // @todo: might change to 2 in the future if a back-face culling bool is added.
-		DebugAssert(outOpaqueTriangles.getCount() == triangleCount);
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		double startX, endX;
-		double startZ, endZ;
-		if (flipped)
-		{
-			startX = 0.0;
-			endX = 1.0;
-			startZ = 0.0;
-			endZ = 1.0;
-		}
-		else
-		{
-			startX = 0.0;
-			endX = 1.0;
-			startZ = 1.0;
-			endZ = 0.0;
-		}
-
-		// Front side
-		WriteTriangle(Double3(startX, 1.0, startZ), Double3(startX, 0.0, startZ), Double3(endX, 0.0, endZ), UV_TL, UV_BL, UV_BR, materialID, fadePercent, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(endX, 0.0, endZ), Double3(endX, 1.0, endZ), Double3(startX, 1.0, startZ), UV_BR, UV_TR, UV_TL, materialID, fadePercent, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
-		// Back side
-		WriteTriangle(Double3(endX, 1.0, endZ), Double3(endX, 0.0, endZ), Double3(startX, 0.0, startZ), UV_TL, UV_BL, UV_BR, materialID, fadePercent, voxelPosition, ceilingScale, 2, outOpaqueTriangles);
-		WriteTriangle(Double3(startX, 0.0, startZ), Double3(startX, 1.0, startZ), Double3(endX, 1.0, endZ), UV_BR, UV_TR, UV_TL, materialID, fadePercent, voxelPosition, ceilingScale, 3, outOpaqueTriangles);
-
-		*outOpaqueTriangleCount = triangleCount;
-	}
-
-	void WriteTransparentWall(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ObjectMaterialID materialID,
-		BufferView<RenderTriangle> &outAlphaTestedTriangles, int *outAlphaTestedTriangleCount)
-	{
-		constexpr int triangleCount = 8;
-		DebugAssert(outAlphaTestedTriangles.getCount() == triangleCount);
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		constexpr double param0 = 0.0; // Unused.
-
-		// X=0
-		WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, 0.0, 0.0), Double3(0.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 1.0), Double3(0.0, 1.0, 1.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
-		// X=1
-		WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, 0.0, 1.0), Double3(1.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 0.0), Double3(1.0, 1.0, 0.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
-		// Z=0
-		WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, 0.0, 0.0), Double3(0.0, 0.0, 0.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-		WriteTriangle(Double3(0.0, 0.0, 0.0), Double3(0.0, 1.0, 0.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
-		// Z=1
-		WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, 0.0, 1.0), Double3(1.0, 0.0, 1.0), UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-		WriteTriangle(Double3(1.0, 0.0, 1.0), Double3(1.0, 1.0, 1.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
-
-		*outAlphaTestedTriangleCount = triangleCount;
-	}
-
-	void WriteEdge(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, VoxelFacing2D facing, double yOffset,
-		bool flipped, ObjectMaterialID materialID, BufferView<RenderTriangle> &outAlphaTestedTriangles, int *outAlphaTestedTriangleCount)
-	{
-		constexpr int triangleCount = 4; // @todo: might change to 2 in the future if a back-face culling bool is added.
-		DebugAssert(outAlphaTestedTriangles.getCount() == triangleCount);
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		double startX, endX;
-		double startZ, endZ;
-		switch (facing)
-		{
-		case VoxelFacing2D::PositiveX:
-			startX = 1.0;
-			endX = 1.0;
-			startZ = 1.0;
-			endZ = 0.0;
-			break;
-		case VoxelFacing2D::NegativeX:
-			startX = 0.0;
-			endX = 0.0;
-			startZ = 0.0;
-			endZ = 1.0;
-			break;
-		case VoxelFacing2D::PositiveZ:
-			startX = 0.0;
-			endX = 1.0;
-			startZ = 1.0;
-			endZ = 1.0;
-			break;
-		case VoxelFacing2D::NegativeZ:
-			startX = 1.0;
-			endX = 0.0;
-			startZ = 0.0;
-			endZ = 0.0;
-			break;
-		default:
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
-		}
-
-		Double2 frontUvTL, frontUvTR, frontUvBL, frontUvBR;
-		if (!flipped)
-		{
-			frontUvTL = UV_TL;
-			frontUvTR = UV_TR;
-			frontUvBL = UV_BL;
-			frontUvBR = UV_BR;
-		}
-		else
-		{
-			frontUvTL = UV_TR;
-			frontUvTR = UV_TL;
-			frontUvBL = UV_BR;
-			frontUvBR = UV_BL;
-		}
-
-		const Double2 backUvTL = frontUvTR;
-		const Double2 backUvTR = frontUvTL;
-		const Double2 backUvBL = frontUvBR;
-		const Double2 backUvBR = frontUvBL;
-
-		const double yBottom = yOffset;
-		const double yTop = yBottom + 1.0;
-
-		constexpr double param0 = 0.0; // Unused.
-
-		// Front side
-		WriteTriangle(Double3(startX, yTop, startZ), Double3(startX, yBottom, startZ), Double3(endX, yBottom, endZ), frontUvTL, frontUvBL, frontUvBR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-		WriteTriangle(Double3(endX, yBottom, endZ), Double3(endX, yTop, endZ), Double3(startX, yTop, startZ), frontUvBR, frontUvTR, frontUvTL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
-		// Back side
-		WriteTriangle(Double3(endX, yTop, endZ), Double3(endX, yBottom, endZ), Double3(startX, yBottom, startZ), backUvTL, backUvBL, backUvBR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-		WriteTriangle(Double3(startX, yBottom, startZ), Double3(startX, yTop, startZ), Double3(endX, yTop, endZ), backUvBR, backUvTR, backUvTL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
-
-		*outAlphaTestedTriangleCount = triangleCount;
-	}
-
-	// @todo: chasm walls effectively have two textures; will need to work with that and have a dedicated pixel shader that takes two textures.
-	void WriteChasm(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, bool north, bool south, bool east, bool west,
-		bool isDry, ObjectMaterialID floorMaterialID, ObjectMaterialID sideMaterialID, BufferView<RenderTriangle> &outOpaqueTriangles,
-		int *outOpaqueTriangleCount)
-	{
-		auto countFace = [](bool faceExists)
-		{
-			return faceExists ? 2 : 0;
-		};
-
-		// Variable number of walls based on the chasm instance.
-		const int triangleCount = 2 + countFace(north) + countFace(south) + countFace(east) + countFace(west);
-		DebugAssert(outOpaqueTriangles.getCount() >= triangleCount);
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		// @todo: Water and lava chasms should not be scaled by ceilingScale.
-		const double yBottom = 0.0; //isDry ? 0.0 : (1.0 - (1.0 / ceilingScale)); // @todo: verify math
-
-		constexpr double param0 = 0.0; // Unused.
-
-		// Y=bottom (always present)
-		WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, yBottom, 1.0), Double3(1.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, floorMaterialID, param0, voxelPosition, ceilingScale, 0, outOpaqueTriangles);
-		WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, yBottom, 0.0), Double3(0.0, yBottom, 0.0), UV_BR, UV_TR, UV_TL, floorMaterialID, param0, voxelPosition, ceilingScale, 1, outOpaqueTriangles);
-
-		int triangleIndex = 2;
-		if (north)
-		{
-			// X=0
-			WriteTriangle(Double3(0.0, 1.0, 1.0), Double3(0.0, yBottom, 1.0), Double3(0.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
-			WriteTriangle(Double3(0.0, yBottom, 0.0), Double3(0.0, 1.0, 0.0), Double3(0.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
-			triangleIndex += 2;
-		}
-
-		if (south)
-		{
-			// X=1
-			WriteTriangle(Double3(1.0, 1.0, 0.0), Double3(1.0, yBottom, 0.0), Double3(1.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
-			WriteTriangle(Double3(1.0, yBottom, 1.0), Double3(1.0, 1.0, 1.0), Double3(1.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
-			triangleIndex += 2;
-		}
-
-		if (east)
-		{
-			// Z=0
-			WriteTriangle(Double3(0.0, 1.0, 0.0), Double3(0.0, yBottom, 0.0), Double3(1.0, yBottom, 0.0), UV_TL, UV_BL, UV_BR, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
-			WriteTriangle(Double3(1.0, yBottom, 0.0), Double3(1.0, 1.0, 0.0), Double3(0.0, 1.0, 0.0), UV_BR, UV_TR, UV_TL, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
-			triangleIndex += 2;
-		}
-
-		if (west)
-		{
-			// Z=1
-			WriteTriangle(Double3(1.0, 1.0, 1.0), Double3(1.0, yBottom, 1.0), Double3(0.0, yBottom, 1.0), UV_TL, UV_BL, UV_BR, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex, outOpaqueTriangles);
-			WriteTriangle(Double3(0.0, yBottom, 1.0), Double3(0.0, 1.0, 1.0), Double3(1.0, 1.0, 1.0), UV_BR, UV_TR, UV_TL, sideMaterialID, param0, voxelPosition, ceilingScale, triangleIndex + 1, outOpaqueTriangles);
-			triangleIndex += 2;
-		}
-
-		*outOpaqueTriangleCount = triangleIndex;
-	}
-
-	void WriteDoor(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale, ArenaTypes::DoorType doorType,
-		double animPercent, ObjectMaterialID materialID, BufferView<RenderTriangle> &outAlphaTestedTriangles,
-		int *outAlphaTestedTriangleCount)
-	{
-		const Double3 voxelPosition = MakeVoxelPosition(chunk, voxel, ceilingScale);
-
-		// Base vertices and face offsets (distance from origin for rotation transform) used by all doors.
-		const Double3 v0(0.0, 1.0, 0.0);
-		const Double3 v1(0.0, 0.0, 0.0);
-		const Double3 v2(0.0, 0.0, 1.0);
-		const Double3 v3(0.0, 1.0, 1.0);
-		const Double3 v4(1.0, 1.0, 1.0);
-		const Double3 v5(1.0, 0.0, 1.0);
-		const Double3 v6(1.0, 0.0, 0.0);
-		const Double3 v7(1.0, 1.0, 0.0);
-		const Double3 face0Offset = Double3::Zero;
-		const Double3 face1Offset(1.0, 0.0, 1.0);
-		const Double3 face2Offset(1.0, 0.0, 0.0);
-		const Double3 face3Offset(0.0, 0.0, 1.0);
-
-		// Percent of voxel side length a sliding/raising door can go.
-		constexpr double maxSlidePercent = std::clamp(1.0 - ArenaRenderUtils::DOOR_MIN_VISIBLE, 0.0, 1.0);
-		const double slideAmount = std::clamp(animPercent * maxSlidePercent, 0.0, 1.0);
-
-		constexpr double param0 = 0.0; // Unused.
-
-		// Generate and transform vertices by anim percent; each door type has its own transform behavior.
-		int triangleCount = 0;
-		if (doorType == ArenaTypes::DoorType::Swinging)
-		{
-			// Swings counter-clockwise. The "hinge flip" occurs when crossing the south face or west face.
-			// By default, the hinge is at (nearX, farZ). When flipped, it's at (farX, nearZ).
-			triangleCount = 8;
-			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
-
-			const Radians angle = -Constants::HalfPi * animPercent;
-			const Matrix4d rotationMatrix = Matrix4d::yRotation(angle);
-
-			auto transformSwingingPoint = [&rotationMatrix](const Double3 &point, const Double3 &offset)
-			{
-				// Need to translate vertex to the origin before rotating.
-				const Double3 basePoint = point - offset;
-				const Double4 rotatedPoint = rotationMatrix * Double4(basePoint.x, basePoint.y, basePoint.z, 1.0);
-				const Double3 rotatedPoint3D(rotatedPoint.x, rotatedPoint.y, rotatedPoint.z);
-				return rotatedPoint3D + offset;
-			};
-
-			// @todo: update hinge position depending on camera eye position
-			// @todo: make face offsets depend on camera eye position being left of the left edge, or south of the south edge.
-
-			// X=0
-			const Double3 face0_v0 = transformSwingingPoint(v0, face0Offset);
-			const Double3 face0_v1 = transformSwingingPoint(v1, face0Offset);
-			const Double3 face0_v2 = transformSwingingPoint(v2, face0Offset);
-			const Double3 face0_v3 = transformSwingingPoint(v3, face0Offset);
-			WriteTriangle(face0_v0, face0_v1, face0_v2, UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-			WriteTriangle(face0_v2, face0_v3, face0_v0, UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
-
-			// X=1
-			const Double3 face1_v0 = transformSwingingPoint(v4, face1Offset);
-			const Double3 face1_v1 = transformSwingingPoint(v5, face1Offset);
-			const Double3 face1_v2 = transformSwingingPoint(v6, face1Offset);
-			const Double3 face1_v3 = transformSwingingPoint(v7, face1Offset);
-			WriteTriangle(face1_v0, face1_v1, face1_v2, UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-			WriteTriangle(face1_v2, face1_v3, face1_v0, UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
-
-			// Z=0
-			const Double3 face2_v0 = transformSwingingPoint(v7, face2Offset);
-			const Double3 face2_v1 = transformSwingingPoint(v6, face2Offset);
-			const Double3 face2_v2 = transformSwingingPoint(v1, face2Offset);
-			const Double3 face2_v3 = transformSwingingPoint(v0, face2Offset);
-			WriteTriangle(face2_v0, face2_v1, face2_v2, UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-			WriteTriangle(face2_v2, face2_v3, face2_v0, UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
-
-			// Z=1
-			const Double3 face3_v0 = transformSwingingPoint(v3, face3Offset);
-			const Double3 face3_v1 = transformSwingingPoint(v2, face3Offset);
-			const Double3 face3_v2 = transformSwingingPoint(v5, face3Offset);
-			const Double3 face3_v3 = transformSwingingPoint(v4, face3Offset);
-			WriteTriangle(face3_v0, face3_v1, face3_v2, UV_TL, UV_BL, UV_BR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-			WriteTriangle(face3_v2, face3_v3, face3_v0, UV_BR, UV_TR, UV_TL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
-		}
-		else if (doorType == ArenaTypes::DoorType::Sliding)
-		{
-			// Slides to the left.
-			triangleCount = 8;
-			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
-
-			const Double2 uvTL(slideAmount, 0.0);
-			const Double2 uvTR(1.0, 0.0);
-			const Double2 uvBL(uvTL.x, 1.0);
-			const Double2 uvBR(1.0, 1.0);
-
-			// X=0
-			const Double3 face0_v0 = v0;
-			const Double3 face0_v1 = v1;
-			const Double3 face0_v2 = v2 + ((v1 - v2) * slideAmount);
-			const Double3 face0_v3 = v3 + ((v0 - v3) * slideAmount);
-			WriteTriangle(face0_v0, face0_v1, face0_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-			WriteTriangle(face0_v2, face0_v3, face0_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
-
-			// X=1
-			const Double3 face1_v0 = v4;
-			const Double3 face1_v1 = v5;
-			const Double3 face1_v2 = v6 + ((v5 - v6) * slideAmount);
-			const Double3 face1_v3 = v7 + ((v4 - v7) * slideAmount);
-			WriteTriangle(face1_v0, face1_v1, face1_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-			WriteTriangle(face1_v2, face1_v3, face1_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
-
-			// Z=0
-			const Double3 face2_v0 = v7;
-			const Double3 face2_v1 = v6;
-			const Double3 face2_v2 = v1 + ((v6 - v1) * slideAmount);
-			const Double3 face2_v3 = v0 + ((v7 - v0) * slideAmount);
-			WriteTriangle(face2_v0, face2_v1, face2_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-			WriteTriangle(face2_v2, face2_v3, face2_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
-
-			// Z=1
-			const Double3 face3_v0 = v3;
-			const Double3 face3_v1 = v2;
-			const Double3 face3_v2 = v5 + ((v2 - v5) * slideAmount);
-			const Double3 face3_v3 = v4 + ((v3 - v4) * slideAmount);
-			WriteTriangle(face3_v0, face3_v1, face3_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-			WriteTriangle(face3_v2, face3_v3, face3_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
-		}
-		else if (doorType == ArenaTypes::DoorType::Raising)
-		{
-			// Raises up.
-			triangleCount = 8;
-			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
-
-			const Double2 uvTL(0.0, slideAmount);
-			const Double2 uvTR(1.0, slideAmount);
-			const Double2 uvBL(0.0, 1.0);
-			const Double2 uvBR(1.0, 1.0);
-
-			// X=0
-			const Double3 face0_v0 = v0;
-			const Double3 face0_v1 = v1 + ((v0 - v1) * slideAmount);
-			const Double3 face0_v2 = v2 + ((v3 - v2) * slideAmount);
-			const Double3 face0_v3 = v3;
-			WriteTriangle(face0_v0, face0_v1, face0_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-			WriteTriangle(face0_v2, face0_v3, face0_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
-
-			// X=1
-			const Double3 face1_v0 = v4;
-			const Double3 face1_v1 = v5 + ((v4 - v5) * slideAmount);
-			const Double3 face1_v2 = v6 + ((v7 - v6) * slideAmount);
-			const Double3 face1_v3 = v7;
-			WriteTriangle(face1_v0, face1_v1, face1_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-			WriteTriangle(face1_v2, face1_v3, face1_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
-
-			// Z=0
-			const Double3 face2_v0 = v7;
-			const Double3 face2_v1 = v6 + ((v7 - v6) * slideAmount);
-			const Double3 face2_v2 = v1 + ((v0 - v1) * slideAmount);
-			const Double3 face2_v3 = v0;
-			WriteTriangle(face2_v0, face2_v1, face2_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-			WriteTriangle(face2_v2, face2_v3, face2_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
-
-			// Z=1
-			const Double3 face3_v0 = v3;
-			const Double3 face3_v1 = v2 + ((v3 - v2) * slideAmount);
-			const Double3 face3_v2 = v5 + ((v4 - v5) * slideAmount);
-			const Double3 face3_v3 = v4;
-			WriteTriangle(face3_v0, face3_v1, face3_v2, uvTL, uvBL, uvBR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-			WriteTriangle(face3_v2, face3_v3, face3_v0, uvBR, uvTR, uvTL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
-		}
-		else if (doorType == ArenaTypes::DoorType::Splitting)
-		{
-			// Similar to Sliding but half goes left, half goes right.
-			triangleCount = 16;
-			DebugAssert(outAlphaTestedTriangles.getCount() >= triangleCount);
-
-			const double splitAmount = slideAmount * 0.50;
-			const double leftSplitAmount = 0.50 - splitAmount;
-			const double rightSplitAmount = 0.50 + splitAmount;
-
-			const Double2 leftUvTL(splitAmount, 0.0);
-			const Double2 leftUvTR(0.5, 0.0);
-			const Double2 leftUvBL(leftUvTL.x, 1.0);
-			const Double2 leftUvBR(0.5, 1.0);
-			const Double2 rightUvTL(0.5, 0.0);
-			const Double2 rightUvTR(std::clamp(1.0 - splitAmount, 0.0, 1.0), 0.0);
-			const Double2 rightUvBL(0.5, 1.0);
-			const Double2 rightUvBR(rightUvTR.x, 1.0);
-
-			// X=0
-			const Double3 face0Left_v0 = v0;
-			const Double3 face0Left_v1 = v1;
-			const Double3 face0Left_v2 = v1 + ((v2 - v1) * leftSplitAmount);
-			const Double3 face0Left_v3 = v0 + ((v3 - v0) * leftSplitAmount);
-			const Double3 face0Right_v0 = v0 + ((v3 - v0) * rightSplitAmount);
-			const Double3 face0Right_v1 = v1 + ((v2 - v1) * rightSplitAmount);
-			const Double3 face0Right_v2 = v2;
-			const Double3 face0Right_v3 = v3;
-			WriteTriangle(face0Left_v0, face0Left_v1, face0Left_v2, leftUvTL, leftUvBL, leftUvBR, materialID, param0, voxelPosition, ceilingScale, 0, outAlphaTestedTriangles);
-			WriteTriangle(face0Left_v2, face0Left_v3, face0Left_v0, leftUvBR, leftUvTR, leftUvTL, materialID, param0, voxelPosition, ceilingScale, 1, outAlphaTestedTriangles);
-			WriteTriangle(face0Right_v0, face0Right_v1, face0Right_v2, rightUvTL, rightUvBL, rightUvBR, materialID, param0, voxelPosition, ceilingScale, 2, outAlphaTestedTriangles);
-			WriteTriangle(face0Right_v2, face0Right_v3, face0Right_v0, rightUvBR, rightUvTR, rightUvTL, materialID, param0, voxelPosition, ceilingScale, 3, outAlphaTestedTriangles);
-
-			// X=1
-			const Double3 face1Left_v0 = v4;
-			const Double3 face1Left_v1 = v5;
-			const Double3 face1Left_v2 = v5 + ((v6 - v5) * leftSplitAmount);
-			const Double3 face1Left_v3 = v4 + ((v7 - v4) * leftSplitAmount);
-			const Double3 face1Right_v0 = v4 + ((v7 - v4) * rightSplitAmount);
-			const Double3 face1Right_v1 = v5 + ((v6 - v5) * rightSplitAmount);
-			const Double3 face1Right_v2 = v6;
-			const Double3 face1Right_v3 = v7;
-			WriteTriangle(face1Left_v0, face1Left_v1, face1Left_v2, leftUvTL, leftUvBL, leftUvBR, materialID, param0, voxelPosition, ceilingScale, 4, outAlphaTestedTriangles);
-			WriteTriangle(face1Left_v2, face1Left_v3, face1Left_v0, leftUvBR, leftUvTR, leftUvTL, materialID, param0, voxelPosition, ceilingScale, 5, outAlphaTestedTriangles);
-			WriteTriangle(face1Right_v0, face1Right_v1, face1Right_v2, rightUvTL, rightUvBL, rightUvBR, materialID, param0, voxelPosition, ceilingScale, 6, outAlphaTestedTriangles);
-			WriteTriangle(face1Right_v2, face1Right_v3, face1Right_v0, rightUvBR, rightUvTR, rightUvTL, materialID, param0, voxelPosition, ceilingScale, 7, outAlphaTestedTriangles);
-
-			// Z=0
-			const Double3 face2Left_v0 = v7;
-			const Double3 face2Left_v1 = v6;
-			const Double3 face2Left_v2 = v6 + ((v1 - v6) * leftSplitAmount);
-			const Double3 face2Left_v3 = v7 + ((v0 - v7) * leftSplitAmount);
-			const Double3 face2Right_v0 = v7 + ((v0 - v7) * rightSplitAmount);
-			const Double3 face2Right_v1 = v6 + ((v1 - v6) * rightSplitAmount);
-			const Double3 face2Right_v2 = v1;
-			const Double3 face2Right_v3 = v0;
-			WriteTriangle(face2Left_v0, face2Left_v1, face2Left_v2, leftUvTL, leftUvBL, leftUvBR, materialID, param0, voxelPosition, ceilingScale, 8, outAlphaTestedTriangles);
-			WriteTriangle(face2Left_v2, face2Left_v3, face2Left_v0, leftUvBR, leftUvTR, leftUvTL, materialID, param0, voxelPosition, ceilingScale, 9, outAlphaTestedTriangles);
-			WriteTriangle(face2Right_v0, face2Right_v1, face2Right_v2, rightUvTL, rightUvBL, rightUvBR, materialID, param0, voxelPosition, ceilingScale, 10, outAlphaTestedTriangles);
-			WriteTriangle(face2Right_v2, face2Right_v3, face2Right_v0, rightUvBR, rightUvTR, rightUvTL, materialID, param0, voxelPosition, ceilingScale, 11, outAlphaTestedTriangles);
-
-			// Z=1
-			const Double3 face3Left_v0 = v3;
-			const Double3 face3Left_v1 = v2;
-			const Double3 face3Left_v2 = v2 + ((v5 - v2) * leftSplitAmount);
-			const Double3 face3Left_v3 = v3 + ((v4 - v3) * leftSplitAmount);
-			const Double3 face3Right_v0 = v3 + ((v4 - v3) * rightSplitAmount);
-			const Double3 face3Right_v1 = v2 + ((v5 - v2) * rightSplitAmount);
-			const Double3 face3Right_v2 = v5;
-			const Double3 face3Right_v3 = v4;
-			WriteTriangle(face3Left_v0, face3Left_v1, face3Left_v2, leftUvTL, leftUvBL, leftUvBR, materialID, param0, voxelPosition, ceilingScale, 12, outAlphaTestedTriangles);
-			WriteTriangle(face3Left_v2, face3Left_v3, face3Left_v0, leftUvBR, leftUvTR, leftUvTL, materialID, param0, voxelPosition, ceilingScale, 13, outAlphaTestedTriangles);
-			WriteTriangle(face3Right_v0, face3Right_v1, face3Right_v2, rightUvTL, rightUvBL, rightUvBR, materialID, param0, voxelPosition, ceilingScale, 14, outAlphaTestedTriangles);
-			WriteTriangle(face3Right_v2, face3Right_v3, face3Right_v0, rightUvBR, rightUvTR, rightUvTL, materialID, param0, voxelPosition, ceilingScale, 15, outAlphaTestedTriangles);
-		}
-		else
-		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(doorType)));
-		}
-
-		*outAlphaTestedTriangleCount = triangleCount;
-	}
-
-	void WriteEntity(const ChunkInt2 &chunk, const VoxelDouble3 &point, ObjectMaterialID materialID,
-		double width, double height, const Double3 &entityForward, BufferView<RenderTriangle> &outEntityTriangles)
-	{
-		DebugAssert(outEntityTriangles.getCount() == 2);
-
-		const Double3 entityPosition = MakeEntityPosition(chunk, point);
-		const Double3 &entityUp = Double3::UnitY;
-		const Double3 entityRight = entityForward.cross(entityUp).normalized();
-		const Double3 entityHalfWidth = entityRight * (width * 0.50);
-		const Double3 entityHeight = entityUp * height;
-
-		constexpr double param0 = 0.0; // Unused.
-
-		constexpr double ceilingScale = 1.0; // Unused/already baked into position.
-		WriteTriangle(entityHalfWidth + entityHeight, entityHalfWidth, -entityHalfWidth, UV_TL, UV_BL, UV_BR, materialID, param0, entityPosition, ceilingScale, 0, outEntityTriangles);
-		WriteTriangle(-entityHalfWidth, -entityHalfWidth + entityHeight, entityHalfWidth + entityHeight, UV_BR, UV_TR, UV_TL, materialID, param0, entityPosition, ceilingScale, 1, outEntityTriangles);
 	}
 }
 
@@ -961,20 +380,20 @@ namespace sgMesh
 
 namespace sgTexture
 {
-	// Loads the given voxel definition's textures into the voxel materials list if they haven't been loaded yet.
-	void LoadVoxelDefTextures(const VoxelDefinition &voxelDef, std::vector<SceneGraph::LoadedVoxelMaterial> &voxelMaterials,
+	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
+	void LoadVoxelDefTextures(const VoxelDefinition &voxelDef, std::vector<SceneGraph::LoadedVoxelTexture> &voxelTextures,
 		TextureManager &textureManager, Renderer &renderer)
 	{
 		for (int i = 0; i < voxelDef.getTextureAssetReferenceCount(); i++)
 		{
 			const TextureAssetReference &textureAssetRef = voxelDef.getTextureAssetReference(i);
-			const auto cacheIter = std::find_if(voxelMaterials.begin(), voxelMaterials.end(),
-				[&textureAssetRef](const SceneGraph::LoadedVoxelMaterial &loadedMaterial)
+			const auto cacheIter = std::find_if(voxelTextures.begin(), voxelTextures.end(),
+				[&textureAssetRef](const SceneGraph::LoadedVoxelTexture &loadedTexture)
 			{
-				return loadedMaterial.textureAssetRef == textureAssetRef;
+				return loadedTexture.textureAssetRef == textureAssetRef;
 			});
 
-			if (cacheIter == voxelMaterials.end())
+			if (cacheIter == voxelTextures.end())
 			{
 				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
 				if (!textureBuilderID.has_value())
@@ -992,40 +411,32 @@ namespace sgTexture
 				}
 
 				ScopedObjectTextureRef voxelTextureRef(voxelTextureID, renderer);
-				ObjectMaterialID voxelMaterialID;
-				if (!renderer.tryCreateObjectMaterial(voxelTextureID, &voxelMaterialID))
-				{
-					DebugLogWarning("Couldn't create voxel material \"" + textureAssetRef.filename + "\".");
-					continue;
-				}
-
-				ScopedObjectMaterialRef voxelMaterialRef(voxelMaterialID, renderer);
-				SceneGraph::LoadedVoxelMaterial newMaterial;
-				newMaterial.init(textureAssetRef, std::move(voxelTextureRef), std::move(voxelMaterialRef));
-				voxelMaterials.emplace_back(std::move(newMaterial));
+				SceneGraph::LoadedVoxelTexture newTexture;
+				newTexture.init(textureAssetRef, std::move(voxelTextureRef));
+				voxelTextures.emplace_back(std::move(newTexture));
 			}
 		}
 	}
 
-	// Loads the given entity definition's textures into the entity materials list if they haven't been loaded yet.
-	void LoadEntityDefTextures(const EntityDefinition &entityDef, std::vector<SceneGraph::LoadedEntityMaterial> &entityMaterials,
+	// Loads the given entity definition's textures into the entity textures list if they haven't been loaded yet.
+	void LoadEntityDefTextures(const EntityDefinition &entityDef, std::vector<SceneGraph::LoadedEntityTexture> &entityTextures,
 		TextureManager &textureManager, Renderer &renderer)
 	{
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 		const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
 
-		auto processKeyframe = [&entityMaterials, &textureManager, &renderer, reflective](
+		auto processKeyframe = [&entityTextures, &textureManager, &renderer, reflective](
 			const EntityAnimationDefinition::Keyframe &keyframe, bool flipped)
 		{
 			const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
-			const auto cacheIter = std::find_if(entityMaterials.begin(), entityMaterials.end(),
-				[&textureAssetRef, flipped, reflective](const SceneGraph::LoadedEntityMaterial &loadedMaterial)
+			const auto cacheIter = std::find_if(entityTextures.begin(), entityTextures.end(),
+				[&textureAssetRef, flipped, reflective](const SceneGraph::LoadedEntityTexture &loadedTexture)
 			{
-				return (loadedMaterial.textureAssetRef == textureAssetRef) && (loadedMaterial.flipped == flipped) &&
-					(loadedMaterial.reflective == reflective);
+				return (loadedTexture.textureAssetRef == textureAssetRef) && (loadedTexture.flipped == flipped) &&
+					(loadedTexture.reflective == reflective);
 			});
 
-			if (cacheIter == entityMaterials.end())
+			if (cacheIter == entityTextures.end())
 			{
 				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
 				if (!textureBuilderID.has_value())
@@ -1073,17 +484,9 @@ namespace sgTexture
 
 				renderer.unlockObjectTexture(entityTextureID);
 
-				ObjectMaterialID entityMaterialID;
-				if (!renderer.tryCreateObjectMaterial(entityTextureID, &entityMaterialID))
-				{
-					DebugLogWarning("Couldn't create entity material \"" + textureAssetRef.filename + "\".");
-					return;
-				}
-
-				ScopedObjectMaterialRef entityMaterialRef(entityMaterialID, renderer);
-				SceneGraph::LoadedEntityMaterial newMaterial;
-				newMaterial.init(textureAssetRef, flipped, reflective, std::move(entityTextureRef), std::move(entityMaterialRef));
-				entityMaterials.emplace_back(std::move(newMaterial));
+				SceneGraph::LoadedEntityTexture newTexture;
+				newTexture.init(textureAssetRef, flipped, reflective, std::move(entityTextureRef));
+				entityTextures.emplace_back(std::move(newTexture));
 			}
 		};
 
@@ -1105,16 +508,16 @@ namespace sgTexture
 
 	// Loads the chasm floor materials for the given chasm. This should be done before loading the chasm wall
 	// as each wall material has a dependency on the floor texture.
-	void LoadChasmFloorTextures(ArenaTypes::ChasmType chasmType, std::vector<SceneGraph::LoadedChasmMaterialList> &chasmMaterialLists,
+	void LoadChasmFloorTextures(ArenaTypes::ChasmType chasmType, std::vector<SceneGraph::LoadedChasmTextureList> &chasmTextureLists,
 		TextureManager &textureManager, Renderer &renderer)
 	{
-		const auto cacheIter = std::find_if(chasmMaterialLists.begin(), chasmMaterialLists.end(),
-			[chasmType](const SceneGraph::LoadedChasmMaterialList &loadedMaterialList)
+		const auto cacheIter = std::find_if(chasmTextureLists.begin(), chasmTextureLists.end(),
+			[chasmType](const SceneGraph::LoadedChasmTextureList &loadedTextureList)
 		{
-			return loadedMaterialList.chasmType == chasmType;
+			return loadedTextureList.chasmType == chasmType;
 		});
 
-		DebugAssertMsg(cacheIter == chasmMaterialLists.end(), "Already loaded chasm floor materials for type \"" +
+		DebugAssertMsg(cacheIter == chasmTextureLists.end(), "Already loaded chasm floor textures for type \"" +
 			std::to_string(static_cast<int>(chasmType)) + "\".");
 
 		const bool hasTexturedAnim = chasmType != ArenaTypes::ChasmType::Dry;
@@ -1136,8 +539,8 @@ namespace sgTexture
 				}
 			}();
 
-			SceneGraph::LoadedChasmMaterialList newMaterialList;
-			newMaterialList.init(chasmType);
+			SceneGraph::LoadedChasmTextureList newTextureList;
+			newTextureList.init(chasmType);
 
 			const Buffer<TextureAssetReference> textureAssetRefs = TextureUtils::makeTextureAssetRefs(chasmFilename, textureManager);
 			for (int i = 0; i < textureAssetRefs.getCount(); i++)
@@ -1159,21 +562,12 @@ namespace sgTexture
 				}
 
 				ScopedObjectTextureRef chasmTextureRef(chasmTextureID, renderer);
-				ObjectMaterialID chasmMaterialID;
-				if (!renderer.tryCreateObjectMaterial(chasmTextureID, &chasmMaterialID))
-				{
-					DebugLogWarning("Couldn't create chasm floor material \"" + textureAssetRef.filename + "\".");
-					return;
-				}
 
-				ScopedObjectMaterialRef chasmMaterialRef(chasmMaterialID, renderer);
-
-				// Populate chasmTextureRefs and floorMaterialRefs, leave entries empty.
-				newMaterialList.chasmTextureRefs.emplace_back(std::move(chasmTextureRef));
-				newMaterialList.floorMaterialRefs.emplace_back(std::move(chasmMaterialRef));
+				// Populate chasmTextureRefs, leave wall entries empty since they're populated next.
+				newTextureList.chasmTextureRefs.emplace_back(std::move(chasmTextureRef));
 			}
 
-			chasmMaterialLists.emplace_back(std::move(newMaterialList));
+			chasmTextureLists.emplace_back(std::move(newTextureList));
 		}
 		else
 		{
@@ -1198,46 +592,37 @@ namespace sgTexture
 			*texels = ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR;
 			renderer.unlockObjectTexture(dryChasmTextureID);
 
-			ObjectMaterialID chasmMaterialID;
-			if (!renderer.tryCreateObjectMaterial(dryChasmTextureID, &chasmMaterialID))
-			{
-				DebugLogWarning("Couldn't create dry chasm floor material.");
-				return;
-			}
+			SceneGraph::LoadedChasmTextureList newTextureList;
+			newTextureList.init(chasmType);
 
-			ScopedObjectMaterialRef dryChasmMaterialRef(chasmMaterialID, renderer);
-			SceneGraph::LoadedChasmMaterialList newMaterialList;
-			newMaterialList.init(chasmType);
-
-			// Populate chasmTextureRefs and floorMaterialRefs, leave entries empty.
-			newMaterialList.chasmTextureRefs.emplace_back(std::move(dryChasmTextureRef));
-			newMaterialList.floorMaterialRefs.emplace_back(std::move(dryChasmMaterialRef));
-			chasmMaterialLists.emplace_back(std::move(newMaterialList));
+			// Populate chasmTextureRefs, leave wall entries empty since they're populated next.
+			newTextureList.chasmTextureRefs.emplace_back(std::move(dryChasmTextureRef));
+			chasmTextureLists.emplace_back(std::move(newTextureList));
 		}
 	}
 
 	// Loads the chasm wall material for the given chasm and texture asset. This expects the chasm floor material to
 	// already be loaded and available for sharing.
 	void LoadChasmWallTextures(ArenaTypes::ChasmType chasmType, const TextureAssetReference &textureAssetRef,
-		std::vector<SceneGraph::LoadedChasmMaterialList> &chasmMaterialLists, TextureManager &textureManager, Renderer &renderer)
+		std::vector<SceneGraph::LoadedChasmTextureList> &chasmTextureLists, TextureManager &textureManager, Renderer &renderer)
 	{
-		const auto listIter = std::find_if(chasmMaterialLists.begin(), chasmMaterialLists.end(),
-			[chasmType](const SceneGraph::LoadedChasmMaterialList &loadedMaterialList)
+		const auto listIter = std::find_if(chasmTextureLists.begin(), chasmTextureLists.end(),
+			[chasmType](const SceneGraph::LoadedChasmTextureList &loadedTextureList)
 		{
-			return loadedMaterialList.chasmType == chasmType;
+			return loadedTextureList.chasmType == chasmType;
 		});
 
-		DebugAssertMsg(listIter != chasmMaterialLists.end() && listIter->floorMaterialRefs.size() > 0,
-			"Expected loaded chasm floor material list for type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
+		DebugAssertMsg(listIter != chasmTextureLists.end(), "Expected loaded chasm floor texture list for type \"" +
+			std::to_string(static_cast<int>(chasmType)) + "\".");
 
-		std::vector<SceneGraph::LoadedChasmMaterialList::Entry> &entries = listIter->entries;
-		const auto entryIter = std::find_if(entries.begin(), entries.end(),
-			[&textureAssetRef](const SceneGraph::LoadedChasmMaterialList::Entry &entry)
+		std::vector<SceneGraph::LoadedChasmTextureList::WallEntry> &wallEntries = listIter->wallEntries;
+		const auto entryIter = std::find_if(wallEntries.begin(), wallEntries.end(),
+			[&textureAssetRef](const SceneGraph::LoadedChasmTextureList::WallEntry &wallEntry)
 		{
-			return entry.wallTextureAssetRef == textureAssetRef;
+			return wallEntry.wallTextureAssetRef == textureAssetRef;
 		});
 
-		if (entryIter == entries.end())
+		if (entryIter == wallEntries.end())
 		{
 			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
 			if (!textureBuilderID.has_value())
@@ -1254,127 +639,103 @@ namespace sgTexture
 				return;
 			}
 
-			SceneGraph::LoadedChasmMaterialList::Entry newEntry;
-			newEntry.wallTextureAssetRef = textureAssetRef;
-			newEntry.wallTextureRef.init(wallTextureID, renderer);
-
-			const std::vector<ScopedObjectTextureRef> &chasmTextureRefs = listIter->chasmTextureRefs;
-			const int chasmTextureCount = static_cast<int>(chasmTextureRefs.size());
-			for (int i = 0; i < chasmTextureCount; i++)
-			{
-				const ObjectTextureID floorTextureID = chasmTextureRefs[i].get();
-				ObjectMaterialID wallMaterialID;
-				if (!renderer.tryCreateObjectMaterial(floorTextureID, wallTextureID, &wallMaterialID))
-				{
-					DebugLogWarning("Couldn't create chasm wall material \"" + textureAssetRef.filename + "\".");
-					continue;
-				}
-
-				ScopedObjectMaterialRef wallMaterialRef(wallMaterialID, renderer);
-				newEntry.wallMaterialRefs.emplace_back(std::move(wallMaterialRef));
-			}
-
-			entries.emplace_back(std::move(newEntry));
+			SceneGraph::LoadedChasmTextureList::WallEntry newWallEntry;
+			newWallEntry.wallTextureAssetRef = textureAssetRef;
+			newWallEntry.wallTextureRef.init(wallTextureID, renderer);
+			wallEntries.emplace_back(std::move(newWallEntry));
 		}
 	}
 }
 
-void SceneGraph::LoadedVoxelMaterial::init(const TextureAssetReference &textureAssetRef,
-	ScopedObjectTextureRef &&objectTextureRef, ScopedObjectMaterialRef &&objectMaterialRef)
+void SceneGraph::LoadedVoxelTexture::init(const TextureAssetReference &textureAssetRef,
+	ScopedObjectTextureRef &&objectTextureRef)
 {
 	this->textureAssetRef = textureAssetRef;
 	this->objectTextureRef = std::move(objectTextureRef);
-	this->objectMaterialRef = std::move(objectMaterialRef);
 }
 
-void SceneGraph::LoadedEntityMaterial::init(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
-	ScopedObjectTextureRef &&objectTextureRef, ScopedObjectMaterialRef &&objectMaterialRef)
+void SceneGraph::LoadedEntityTexture::init(const TextureAssetReference &textureAssetRef, bool flipped,
+	bool reflective, ScopedObjectTextureRef &&objectTextureRef)
 {
 	this->textureAssetRef = textureAssetRef;
 	this->flipped = flipped;
 	this->reflective = reflective;
 	this->objectTextureRef = std::move(objectTextureRef);
-	this->objectMaterialRef = std::move(objectMaterialRef);
 }
 
-void SceneGraph::LoadedChasmMaterialList::init(ArenaTypes::ChasmType chasmType)
+void SceneGraph::LoadedChasmTextureList::init(ArenaTypes::ChasmType chasmType)
 {
 	this->chasmType = chasmType;
 }
 
-ObjectMaterialID SceneGraph::getVoxelMaterialID(const TextureAssetReference &textureAssetRef) const
+ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAssetReference &textureAssetRef) const
 {
-	const auto iter = std::find_if(this->voxelMaterials.begin(), this->voxelMaterials.end(),
-		[&textureAssetRef](const LoadedVoxelMaterial &loadedMaterial)
+	const auto iter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
+		[&textureAssetRef](const LoadedVoxelTexture &loadedTexture)
 	{
-		return loadedMaterial.textureAssetRef == textureAssetRef;
+		return loadedTexture.textureAssetRef == textureAssetRef;
 	});
 
-	DebugAssertMsg(iter != this->voxelMaterials.end(), "No loaded voxel material for \"" + textureAssetRef.filename + "\".");
-	const ScopedObjectMaterialRef &objectMaterialRef = iter->objectMaterialRef;
-	return objectMaterialRef.get();
+	DebugAssertMsg(iter != this->voxelTextures.end(), "No loaded voxel texture for \"" + textureAssetRef.filename + "\".");
+	const ScopedObjectTextureRef &objectTextureRef = iter->objectTextureRef;
+	return objectTextureRef.get();
 }
 
-ObjectMaterialID SceneGraph::getEntityMaterialID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const
+ObjectTextureID SceneGraph::getEntityTextureID(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const
 {
-	const auto iter = std::find_if(this->entityMaterials.begin(), this->entityMaterials.end(),
-		[&textureAssetRef, flipped, reflective](const LoadedEntityMaterial &loadedMaterial)
+	const auto iter = std::find_if(this->entityTextures.begin(), this->entityTextures.end(),
+		[&textureAssetRef, flipped, reflective](const LoadedEntityTexture &loadedTexture)
 	{
-		return (loadedMaterial.textureAssetRef == textureAssetRef) && (loadedMaterial.flipped == flipped) &&
-			(loadedMaterial.reflective == reflective);
+		return (loadedTexture.textureAssetRef == textureAssetRef) && (loadedTexture.flipped == flipped) &&
+			(loadedTexture.reflective == reflective);
 	});
 
-	DebugAssertMsg(iter != this->entityMaterials.end(), "No loaded entity material for \"" + textureAssetRef.filename + "\".");
-	const ScopedObjectMaterialRef &objectMaterialRef = iter->objectMaterialRef;
-	return objectMaterialRef.get();
+	DebugAssertMsg(iter != this->entityTextures.end(), "No loaded entity texture for \"" + textureAssetRef.filename + "\".");
+	const ScopedObjectTextureRef &objectTextureRef = iter->objectTextureRef;
+	return objectTextureRef.get();
 }
 
-ObjectMaterialID SceneGraph::getChasmFloorMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const
+ObjectTextureID SceneGraph::getChasmFloorTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const
 {
-	const auto iter = std::find_if(this->chasmMaterialLists.begin(), this->chasmMaterialLists.end(),
-		[chasmType](const LoadedChasmMaterialList &loadedMaterialList)
+	const auto iter = std::find_if(this->chasmTextureLists.begin(), this->chasmTextureLists.end(),
+		[chasmType](const LoadedChasmTextureList &loadedTextureList)
 	{
-		return loadedMaterialList.chasmType == chasmType;
+		return loadedTextureList.chasmType == chasmType;
 	});
 
-	DebugAssertMsg(iter != this->chasmMaterialLists.end(), "No loaded chasm floor material for type \"" +
+	DebugAssertMsg(iter != this->chasmTextureLists.end(), "No loaded chasm floor texture for type \"" +
 		std::to_string(static_cast<int>(chasmType)) + "\".");
-	const std::vector<ScopedObjectMaterialRef> &floorMaterialRefs = iter->floorMaterialRefs;
-	const int textureCount = static_cast<int>(floorMaterialRefs.size());
+	const std::vector<ScopedObjectTextureRef> &floorTextureRefs = iter->chasmTextureRefs;
+	const int textureCount = static_cast<int>(floorTextureRefs.size());
 	const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
-	DebugAssertIndex(floorMaterialRefs, index);
-	const ScopedObjectMaterialRef &floorMaterialRef = floorMaterialRefs[index];
-	return floorMaterialRef.get();
+	DebugAssertIndex(floorTextureRefs, index);
+	const ScopedObjectTextureRef &floorTextureRef = floorTextureRefs[index];
+	return floorTextureRef.get();
 }
 
-ObjectMaterialID SceneGraph::getChasmWallMaterialID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent,
-	const TextureAssetReference &textureAssetRef) const
+ObjectTextureID SceneGraph::getChasmWallTextureID(ArenaTypes::ChasmType chasmType, const TextureAssetReference &textureAssetRef) const
 {
-	const auto listIter = std::find_if(this->chasmMaterialLists.begin(), this->chasmMaterialLists.end(),
-		[chasmType, &textureAssetRef](const LoadedChasmMaterialList &loadedMaterialList)
+	const auto listIter = std::find_if(this->chasmTextureLists.begin(), this->chasmTextureLists.end(),
+		[chasmType, &textureAssetRef](const LoadedChasmTextureList &loadedTextureList)
 	{
-		return (loadedMaterialList.chasmType == chasmType);
+		return loadedTextureList.chasmType == chasmType;
 	});
 
-	DebugAssertMsg(listIter != this->chasmMaterialLists.end(), "No loaded chasm floor material for type \"" +
+	DebugAssertMsg(listIter != this->chasmTextureLists.end(), "No loaded chasm floor texture for type \"" +
 		std::to_string(static_cast<int>(chasmType)) + "\".");
 
-	const std::vector<LoadedChasmMaterialList::Entry> &entries = listIter->entries;
+	const std::vector<LoadedChasmTextureList::WallEntry> &entries = listIter->wallEntries;
 	const auto entryIter = std::find_if(entries.begin(), entries.end(),
-		[&textureAssetRef](const LoadedChasmMaterialList::Entry &entry)
+		[&textureAssetRef](const LoadedChasmTextureList::WallEntry &entry)
 	{
 		return entry.wallTextureAssetRef == textureAssetRef;
 	});
 
-	DebugAssertMsg(entryIter != entries.end(), "No loaded chasm wall material for type \"" +
+	DebugAssertMsg(entryIter != entries.end(), "No loaded chasm wall texture for type \"" +
 		std::to_string(static_cast<int>(chasmType)) + "\" and texture \"" + textureAssetRef.filename + "\".");
 
-	const std::vector<ScopedObjectMaterialRef> &wallMaterialRefs = entryIter->wallMaterialRefs;
-	const int textureCount = static_cast<int>(wallMaterialRefs.size());
-	const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
-	DebugAssertIndex(wallMaterialRefs, index);
-	const ScopedObjectMaterialRef &wallMaterialRef = wallMaterialRefs[index];
-	return wallMaterialRef.get();
+	const ScopedObjectTextureRef &wallTextureRef = entryIter->wallTextureRef;
+	return wallTextureRef.get();
 }
 
 BufferView<const RenderDrawCall> SceneGraph::getDrawCalls() const
@@ -1388,9 +749,9 @@ void SceneGraph::loadTextures(const std::optional<int> &activeLevelIndex, const 
 {
 	// Load chasm floor textures, independent of voxels in the level. Do this before chasm wall texture loading
 	// because walls are multi-textured and depend on the chasm animation textures.
-	sgTexture::LoadChasmFloorTextures(ArenaTypes::ChasmType::Dry, this->chasmMaterialLists, textureManager, renderer);
-	sgTexture::LoadChasmFloorTextures(ArenaTypes::ChasmType::Wet, this->chasmMaterialLists, textureManager, renderer);
-	sgTexture::LoadChasmFloorTextures(ArenaTypes::ChasmType::Lava, this->chasmMaterialLists, textureManager, renderer);
+	sgTexture::LoadChasmFloorTextures(ArenaTypes::ChasmType::Dry, this->chasmTextureLists, textureManager, renderer);
+	sgTexture::LoadChasmFloorTextures(ArenaTypes::ChasmType::Wet, this->chasmTextureLists, textureManager, renderer);
+	sgTexture::LoadChasmFloorTextures(ArenaTypes::ChasmType::Lava, this->chasmTextureLists, textureManager, renderer);
 
 	// Load textures known at level load time. Note that none of the object texture IDs allocated here are
 	// matched with voxel/entity instances until the chunks containing them are created.
@@ -1401,19 +762,19 @@ void SceneGraph::loadTextures(const std::optional<int> &activeLevelIndex, const 
 		for (int i = 0; i < levelInfoDef.getVoxelDefCount(); i++)
 		{
 			const VoxelDefinition &voxelDef = levelInfoDef.getVoxelDef(i);
-			sgTexture::LoadVoxelDefTextures(voxelDef, this->voxelMaterials, textureManager, renderer);
+			sgTexture::LoadVoxelDefTextures(voxelDef, this->voxelTextures, textureManager, renderer);
 
 			if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 			{
 				const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
-				sgTexture::LoadChasmWallTextures(chasm.type, chasm.textureAssetRef, this->chasmMaterialLists, textureManager, renderer);
+				sgTexture::LoadChasmWallTextures(chasm.type, chasm.textureAssetRef, this->chasmTextureLists, textureManager, renderer);
 			}
 		}
 
 		for (int i = 0; i < levelInfoDef.getEntityDefCount(); i++)
 		{
 			const EntityDefinition &entityDef = levelInfoDef.getEntityDef(i);
-			sgTexture::LoadEntityDefTextures(entityDef, this->entityMaterials, textureManager, renderer);
+			sgTexture::LoadEntityDefTextures(entityDef, this->entityTextures, textureManager, renderer);
 		}
 	};
 
@@ -1443,8 +804,8 @@ void SceneGraph::loadTextures(const std::optional<int> &activeLevelIndex, const 
 		DebugAssert(citizenGenInfo.has_value());
 		const EntityDefinition &maleEntityDef = *citizenGenInfo->maleEntityDef;
 		const EntityDefinition &femaleEntityDef = *citizenGenInfo->femaleEntityDef;
-		sgTexture::LoadEntityDefTextures(maleEntityDef, this->entityMaterials, textureManager, renderer);
-		sgTexture::LoadEntityDefTextures(femaleEntityDef, this->entityMaterials, textureManager, renderer);
+		sgTexture::LoadEntityDefTextures(maleEntityDef, this->entityTextures, textureManager, renderer);
+		sgTexture::LoadEntityDefTextures(femaleEntityDef, this->entityTextures, textureManager, renderer);
 	}
 }
 

@@ -143,12 +143,12 @@ namespace swGeometry
 			if ((eye - insidePoint).dot(unormal) >= Constants::Epsilon)
 			{
 				newTriangle.init(insidePoint, newInsidePoint1, newInsidePoint2, insideUV, newInsideUV0,
-					newInsideUV1, triangle.materialID, triangle.param0);
+					newInsideUV1, triangle.textureID, triangle.param0);
 			}
 			else
 			{
 				newTriangle.init(newInsidePoint2, newInsidePoint1, insidePoint, newInsideUV1, newInsideUV0,
-					insideUV, triangle.materialID, triangle.param0);
+					insideUV, triangle.textureID, triangle.param0);
 			}
 
 			return TriangleClipResult::one(newTriangle);
@@ -196,12 +196,12 @@ namespace swGeometry
 			if ((eye - newTriangle0V0).dot(unormal0) >= Constants::Epsilon)
 			{
 				newTriangle0.init(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0UV0, newTriangle0UV1,
-					newTriangle0UV2, triangle.materialID, triangle.param0);
+					newTriangle0UV2, triangle.textureID, triangle.param0);
 			}
 			else
 			{
 				newTriangle0.init(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0UV2, newTriangle0UV1,
-					newTriangle0UV0, triangle.materialID, triangle.param0);
+					newTriangle0UV0, triangle.textureID, triangle.param0);
 			}
 
 			const Double3 unormal1 = (newTriangle1V0 - newTriangle1V2).cross(newTriangle1V1 - newTriangle1V0);
@@ -209,12 +209,12 @@ namespace swGeometry
 			if ((eye - newTriangle1V0).dot(unormal1) >= Constants::Epsilon)
 			{
 				newTriangle1.init(newTriangle1V0, newTriangle1V1, newTriangle1V2, newTriangle1UV0, newTriangle1UV1,
-					newTriangle1UV2, triangle.materialID, triangle.param0);
+					newTriangle1UV2, triangle.textureID, triangle.param0);
 			}
 			else
 			{
 				newTriangle1.init(newTriangle1V2, newTriangle1V1, newTriangle1V0, newTriangle1UV2, newTriangle1UV1,
-					newTriangle1UV0, triangle.materialID, triangle.param0);
+					newTriangle1UV0, triangle.textureID, triangle.param0);
 			}
 
 			return TriangleClipResult::two(newTriangle0, newTriangle1);
@@ -398,9 +398,9 @@ namespace swRender
 
 	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles, bool debug_alphaTest, // @temp
-		const SoftwareRenderer::ObjectMaterialPool &materials, const SoftwareRenderer::ObjectTexturePool &textures,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
+		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
+		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera,
+		BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
 	{
 		const int frameBufferWidth = colorBuffer.getWidth();
 		const int frameBufferHeight = colorBuffer.getHeight();
@@ -478,10 +478,10 @@ namespace swRender
 			const Double2 uv1Perspective = uv1 * z1Recip;
 			const Double2 uv2Perspective = uv2 * z2Recip;
 
-			const ObjectMaterial &material = materials.get(triangle.materialID);
-			const bool isMultiTextured = material.id1 >= 0;
-			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(material.id0);
-			const SoftwareRenderer::ObjectTexture &texture1 = isMultiTextured ? textures.get(material.id1) : texture0;
+			// @todo: add support for multiple ObjectTextureIDs - they'll come from the draw call this time, not an object material.
+			const bool isMultiTextured = false;// material.id1 >= 0;
+			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(triangle.textureID);
+			const SoftwareRenderer::ObjectTexture &texture1 = texture0;// isMultiTextured ? textures.get(material.id1) : texture0;
 			
 			const int texture0Width = texture0.texels.getWidth();
 			const int texture0Height = texture0.texels.getHeight();
@@ -850,52 +850,6 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 	return true;
 }
 
-bool SoftwareRenderer::tryCreateObjectMaterial(ObjectTextureID id0, ObjectTextureID id1, ObjectMaterialID *outID)
-{
-	if (id0 < 0)
-	{
-		DebugLogError("Invalid main object texture ID \"" + std::to_string(id0) + "\" to initialize material with.");
-		return false;
-	}
-
-	if (id1 < 0)
-	{
-		DebugLogError("Invalid optional object texture ID \"" + std::to_string(id1) + "\" to initialize material with.");
-		return false;
-	}
-
-	if (!this->objectMaterials.tryAlloc(outID))
-	{
-		DebugLogError("Couldn't allocate object material ID.");
-		return false;
-	}
-
-	ObjectMaterial &material = this->objectMaterials.get(*outID);
-	material.init(id0, id1);
-
-	return true;
-}
-
-bool SoftwareRenderer::tryCreateObjectMaterial(ObjectTextureID id, ObjectMaterialID *outID)
-{
-	if (id < 0)
-	{
-		DebugLogError("Invalid main object texture ID \"" + std::to_string(id) + "\" to initialize material with.");
-		return false;
-	}
-
-	if (!this->objectMaterials.tryAlloc(outID))
-	{
-		DebugLogError("Couldn't allocate object material ID.");
-		return false;
-	}
-
-	ObjectMaterial &material = this->objectMaterials.get(*outID);
-	material.init(id);
-
-	return true;
-}
-
 LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
 {
 	ObjectTexture &texture = this->objectTextures.get(id);
@@ -925,23 +879,10 @@ void SoftwareRenderer::freeObjectTexture(ObjectTextureID id)
 	this->objectTextures.free(id);
 }
 
-void SoftwareRenderer::freeObjectMaterial(ObjectMaterialID id)
-{
-	this->objectMaterials.free(id);
-}
-
 std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
 {
 	const ObjectTexture &texture = this->objectTextures.get(id);
 	return Int2(texture.texels.getWidth(), texture.texels.getHeight());
-}
-
-bool SoftwareRenderer::tryGetObjectMaterialTextures(ObjectMaterialID id, ObjectTextureID *outID0, ObjectTextureID *outID1) const
-{
-	const ObjectMaterial &material = this->objectMaterials.get(id);
-	*outID0 = material.id0;
-	*outID1 = material.id1;
-	return true;
 }
 
 bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect, bool *outIsSelected) const
@@ -1024,8 +965,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 			swGeometry::ProcessTrianglesForRasterization(vertexBuffer, attributeBuffer, indexBuffer, worldOffset, camera);
 
 		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
-		swRender::RasterizeTriangles(clippedTriangles, isAlphaTested, this->objectMaterials, this->objectTextures,
-			paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
+		swRender::RasterizeTriangles(clippedTriangles, isAlphaTested, this->objectTextures, paletteTexture,
+			lightTableTexture, camera, colorBufferView, depthBufferView);
 	}
 }
 
