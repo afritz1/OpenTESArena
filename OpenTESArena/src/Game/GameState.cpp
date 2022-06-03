@@ -990,6 +990,7 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	DebugAssert(this->maps.size() > 0);
 	const MapDefinition &mapDefinition = this->maps.top().definition;
 
+	// @todo: need to combine setting level and sky active into a renderer.loadScene() call I think.
 	if (!levelInst.trySetActive(this->weatherDef, this->nightLightsAreActive(), activeLevelIndex,
 		mapDefinition, citizenGenInfo, textureManager, renderer))
 	{

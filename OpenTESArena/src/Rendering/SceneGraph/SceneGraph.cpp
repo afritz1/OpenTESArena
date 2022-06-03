@@ -918,7 +918,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 	}
 }
 
-void SceneGraph::loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
+/*void SceneGraph::loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
 	const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
 	RendererSystem3D &renderer)
 {
@@ -938,7 +938,7 @@ void SceneGraph::loadWeather(const SkyInstance &skyInst, double daytimePercent, 
 {
 	// @todo
 	DebugNotImplemented();
-}
+}*/
 
 void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
@@ -965,12 +965,11 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 	const double ceilingScale = levelInst.getCeilingScale();
 	this->loadTextures(activeLevelIndex, mapDefinition, citizenGenInfo, textureManager, renderer);
 	this->loadVoxels(levelInst, camera, chasmAnimPercent, nightLightsAreActive, renderer3D);
-	this->loadEntities(levelInst, camera, entityDefLibrary, nightLightsAreActive, playerHasLight, renderer3D);
+	/*this->loadEntities(levelInst, camera, entityDefLibrary, nightLightsAreActive, playerHasLight, renderer3D);
 	this->loadSky(skyInst, daytimePercent, latitude, renderer3D);
-	this->loadWeather(skyInst, daytimePercent, renderer3D);
+	this->loadWeather(skyInst, daytimePercent, renderer3D);*/
 
 	// @todo: populate draw calls since update() only operates on dirty stuff from chunk manager/entity manager/etc.
-	DebugNotImplemented();
 }
 
 void SceneGraph::unloadScene(RendererSystem3D &renderer)
@@ -985,7 +984,7 @@ void SceneGraph::unloadScene(RendererSystem3D &renderer)
 	this->drawCalls.clear();
 }
 
-void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
+/*void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
 	bool nightLightsAreActive, RendererSystem3D &renderer)
 {
 	const ChunkManager &chunkManager = levelInst.getChunkManager();
@@ -1044,7 +1043,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 	// @todo: decide how to load voxels into these new graph chunks - maybe want to do the chunk adding/removing
 	// before updateVoxels(), same as how loadVoxels() expects the chunks to already be there (albeit empty).
 
-	/*// Arbitrary value, just needs to be long enough to touch the farthest chunks in practice.
+	// Arbitrary value, just needs to be long enough to touch the farthest chunks in practice.
 	// - @todo: maybe use far clipping plane value?
 	constexpr double frustumLength = 1000.0;
 
@@ -1294,7 +1293,7 @@ void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera
 				}
 			}
 		}
-	}*/
+	}
 
 	// @todo: sort opaque chunk geometry near to far
 	// @todo: sort alpha-tested chunk geometry far to near
@@ -1356,7 +1355,7 @@ void SceneGraph::updateEntities(const LevelInstance &levelInst, const RenderCame
 				this->entityTriangles.insert(this->entityTriangles.end(), srcStart, srcEnd);
 			}
 		}
-	}*/
+	}
 }
 
 void SceneGraph::updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude)

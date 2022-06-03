@@ -102,7 +102,7 @@ private:
 		Renderer &renderer);
 	void loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
 		bool nightLightsAreActive, RendererSystem3D &renderer);
-	void loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
+	/*void loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
 		const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
 		RendererSystem3D &renderer);
 	void loadSky(const SkyInstance &skyInst, double daytimePercent, double latitude,
@@ -124,7 +124,7 @@ private:
 	void updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude);
 
 	// Updates weather particles.
-	void updateWeather(const SkyInstance &skyInst);
+	void updateWeather(const SkyInstance &skyInst);*/
 public:
 	// Gets the list of draw calls for visible geometry this frame.
 	BufferView<const RenderDrawCall> getDrawCalls() const;
