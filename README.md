@@ -48,7 +48,7 @@ Download the full game from one of:
 - [Bethesda website](https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) (floppy disk version)
   1. Extract `Arena106Setup.zip` and run `Arena106.exe`.
   1. Pick a destination folder to install anywhere on your hard drive. You can copy installed files to the OpenTESArena `data` folder later.
-- [Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/) (floppy disk version)
+- [Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/) (CD version)
 - [GOG](https://www.gog.com/game/the_elder_scrolls_arena) (CD version)
 
 #### Install OpenTESArena
