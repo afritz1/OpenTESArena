@@ -73,7 +73,7 @@ namespace sgMesh
 	constexpr int MAX_INDICES_PER_VOXEL = 36;
 	constexpr int INDICES_PER_TRIANGLE = 3;
 	constexpr int COMPONENTS_PER_VERTEX = 3; // XYZ
-	constexpr int ATTRIBUTES_PER_VERTEX = 4; // XY texture coordinates
+	constexpr int ATTRIBUTES_PER_VERTEX = 2; // XY texture coordinates
 
 	constexpr int GetVoxelVertexCount(ArenaTypes::VoxelType voxelType)
 	{
@@ -858,10 +858,10 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 
 				// Generate mesh data for this voxel definition.
 				sgMesh::WriteVoxelMeshBuffers(voxelDef,
-					BufferView<double>(vertices.data(), vertices.size()),
-					BufferView<double>(attributes.data(), attributes.size()),
-					BufferView<int32_t>(opaqueIndices.data(), opaqueIndices.size()),
-					BufferView<int32_t>(alphaTestedIndices.data(), alphaTestedIndices.size()));
+					BufferView<double>(vertices.data(), static_cast<int>(vertices.size())),
+					BufferView<double>(attributes.data(), static_cast<int>(attributes.size())),
+					BufferView<int32_t>(opaqueIndices.data(), static_cast<int>(opaqueIndices.size())),
+					BufferView<int32_t>(alphaTestedIndices.data(), static_cast<int>(alphaTestedIndices.size())));
 
 				renderer.populateVertexBuffer(graphVoxelDef.vertexBufferID, BufferView<const double>(vertices.data(), vertexCount));
 				renderer.populateAttributeBuffer(graphVoxelDef.attributeBufferID, BufferView<const double>(attributes.data(), vertexCount));
@@ -957,6 +957,7 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 		const Chunk &chunk = chunkManager.getChunk(i);
 		SceneGraphChunk graphChunk;
 		graphChunk.init(chunk.getPosition(), chunk.getHeight());
+		this->graphChunks.emplace_back(std::move(graphChunk));
 	}
 
 	// @todo: load textures somewhere in here and in a way that their draw calls can be generated; maybe want to store
@@ -964,7 +965,92 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 
 	const double ceilingScale = levelInst.getCeilingScale();
 	this->loadTextures(activeLevelIndex, mapDefinition, citizenGenInfo, textureManager, renderer);
-	this->loadVoxels(levelInst, camera, chasmAnimPercent, nightLightsAreActive, renderer3D);
+
+	SceneGraphChunk &graphChunk = this->graphChunks.at(0);
+	const Buffer3D<SceneGraphVoxelID> &graphChunkVoxels = graphChunk.voxels;
+	for (WEInt z = 0; z < graphChunkVoxels.getDepth(); z++)
+	{
+		for (int y = 0; y < graphChunkVoxels.getHeight(); y++)
+		{
+			for (SNInt x = 0; x < graphChunkVoxels.getWidth(); x++)
+			{
+				SceneGraphVoxelDefinition graphVoxelDef;
+
+				const int vertexCount = 3;
+				if (!renderer3D.tryCreateVertexBuffer(vertexCount, sgMesh::COMPONENTS_PER_VERTEX, &graphVoxelDef.vertexBufferID))
+				{
+					DebugLogError("Couldn't create vertex buffer.");
+					return;
+				}
+
+				if (!renderer3D.tryCreateAttributeBuffer(vertexCount, sgMesh::ATTRIBUTES_PER_VERTEX, &graphVoxelDef.attributeBufferID))
+				{
+					DebugLogError("Couldn't create attribute buffer.");
+					return;
+				}
+
+				const int indexCount = 3;
+				if (!renderer3D.tryCreateIndexBuffer(indexCount, &graphVoxelDef.opaqueIndexBufferID))
+				{
+					DebugLogError("Couldn't create index buffer.");
+					return;
+				}
+
+				const Double3 v0(
+					static_cast<double>(x),
+					static_cast<double>(y),
+					static_cast<double>(z));
+				const Double3 v1(
+					v0.x,
+					v0.y + ceilingScale,
+					v0.z);
+				const Double3 v2(
+					v0.x,
+					v0.y,
+					v0.z + 1.0);
+
+				const double v[9] =
+				{
+					v0.x, v0.y, v0.z,
+					v1.x, v1.y, v1.z,
+					v2.x, v2.y, v2.z
+				};
+
+				const BufferView<const double> vView(v, static_cast<int>(std::size(v)));
+				renderer3D.populateVertexBuffer(graphVoxelDef.vertexBufferID, vView);
+
+				constexpr double a[6] =
+				{
+					0.0, 1.0, // Bottom left
+					0.0, 0.0, // Top left
+					1.0, 1.0  // Bottom right
+				};
+
+				const BufferView<const double> aView(a, static_cast<int>(std::size(a)));
+				renderer3D.populateAttributeBuffer(graphVoxelDef.attributeBufferID, aView);
+
+				const int32_t i[3] = { 1, 0, 2 }; // Counter-clockwise
+				const BufferView<const int32_t> iView(i, static_cast<int>(std::size(i)));
+				renderer3D.populateIndexBuffer(graphVoxelDef.opaqueIndexBufferID, iView);
+
+				const SceneGraphVoxelID graphVoxelID = graphChunk.addVoxelDef(std::move(graphVoxelDef));
+				graphChunk.voxels.set(x, y, z, graphVoxelID);
+
+				RenderDrawCall drawCall;
+				drawCall.vertexBufferID = graphVoxelDef.vertexBufferID;
+				drawCall.attributeBufferID = graphVoxelDef.attributeBufferID;
+				drawCall.indexBufferID = graphVoxelDef.opaqueIndexBufferID;
+				drawCall.textureIDs[0] = 5;
+				drawCall.vertexShaderType = VertexShaderType::Default;
+				drawCall.pixelShaderType = PixelShaderType::Opaque;
+
+				this->drawCalls.emplace_back(std::move(drawCall));
+			}
+		}
+	}
+
+	//this->loadVoxels(levelInst, camera, chasmAnimPercent, nightLightsAreActive, renderer3D);
+
 	/*this->loadEntities(levelInst, camera, entityDefLibrary, nightLightsAreActive, playerHasLight, renderer3D);
 	this->loadSky(skyInst, daytimePercent, latitude, renderer3D);
 	this->loadWeather(skyInst, daytimePercent, renderer3D);*/

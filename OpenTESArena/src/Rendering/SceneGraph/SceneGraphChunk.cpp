@@ -41,14 +41,26 @@ void SceneGraphVoxelDefinition::freeBuffers(RendererSystem3D &renderer3D)
 
 void SceneGraphChunk::init(const ChunkInt2 &position, int height)
 {
+	this->voxelDefs.clear();
+	this->voxelDefMappings.clear();
 	this->voxels.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->position = position;
+
+	// Add one voxel def for air.
+	this->addVoxelDef(SceneGraphVoxelDefinition());
 }
 
 void SceneGraphChunk::update(EntityManager &entityManager)
 {
 	// @todo: refresh bounding box for the whole chunk; needs to iterate all entities in the EntityManager's chunk every frame.
 	DebugNotImplemented();
+}
+
+SceneGraphVoxelID SceneGraphChunk::addVoxelDef(SceneGraphVoxelDefinition &&voxelDef)
+{
+	const SceneGraphVoxelID id = static_cast<SceneGraphVoxelID>(this->voxelDefs.size());
+	this->voxelDefs.emplace_back(std::move(voxelDef));
+	return id;
 }
 
 void SceneGraphChunk::freeBuffers(RendererSystem3D &renderer)

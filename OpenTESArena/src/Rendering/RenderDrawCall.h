@@ -18,7 +18,7 @@ struct RenderDrawCall
 	std::optional<ObjectTextureID> textureIDs[MAX_TEXTURE_COUNT];
 	VertexShaderType vertexShaderType;
 	PixelShaderType pixelShaderType;
-	Double3 position; // World space offset.
+	Double3 worldSpaceOffset;
 
 	RenderDrawCall();
 

@@ -21,5 +21,5 @@ void RenderDrawCall::clear()
 
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
-	this->position = Double3::Zero;
+	this->worldSpaceOffset = Double3::Zero;
 }

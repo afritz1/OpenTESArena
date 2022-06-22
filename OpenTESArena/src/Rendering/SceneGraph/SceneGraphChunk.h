@@ -43,6 +43,7 @@ struct SceneGraphChunk
 
 	void init(const ChunkInt2 &position, int height);
 	void update(EntityManager &entityManager);
+	SceneGraphVoxelID addVoxelDef(SceneGraphVoxelDefinition &&voxelDef);
 	void freeBuffers(RendererSystem3D &renderer);
 };
 

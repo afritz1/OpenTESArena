@@ -238,7 +238,7 @@ namespace swGeometry
 	// 3) Clipping
 	BufferView<const RenderTriangle> ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
 		const SoftwareRenderer::AttributeBuffer &attributeBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
-		const Double3 &worldOffset, const RenderCamera &camera)
+		ObjectTextureID textureID, const Double3 &worldOffset, const RenderCamera &camera)
 	{
 		std::vector<RenderTriangle> &outVisibleTriangles = swGeometry::g_visibleTriangles;
 		std::vector<RenderTriangle> &outClipList = swGeometry::g_visibleClipList;
@@ -295,31 +295,31 @@ namespace swGeometry
 			const int32_t index2 = indicesPtr[indexBufferBase + 2];
 
 			const Double3 v0(
-				*(verticesPtr + index0) + worldOffset.x,
-				*(verticesPtr + index0 + 1) + worldOffset.y,
-				*(verticesPtr + index0 + 2) + worldOffset.z);
+				*(verticesPtr + (index0 * 3)) + worldOffset.x,
+				*(verticesPtr + (index0 * 3) + 1) + worldOffset.y,
+				*(verticesPtr + (index0 * 3) + 2) + worldOffset.z);
 			const Double3 v1(
-				*(verticesPtr + index1) + worldOffset.x,
-				*(verticesPtr + index1 + 1) + worldOffset.y,
-				*(verticesPtr + index1 + 2) + worldOffset.z);
+				*(verticesPtr + (index1 * 3)) + worldOffset.x,
+				*(verticesPtr + (index1 * 3) + 1) + worldOffset.y,
+				*(verticesPtr + (index1 * 3) + 2) + worldOffset.z);
 			const Double3 v2(
-				*(verticesPtr + index2) + worldOffset.x,
-				*(verticesPtr + index2 + 1) + worldOffset.y,
-				*(verticesPtr + index2 + 2) + worldOffset.z);
+				*(verticesPtr + (index2 * 3)) + worldOffset.x,
+				*(verticesPtr + (index2 * 3) + 1) + worldOffset.y,
+				*(verticesPtr + (index2 * 3) + 2) + worldOffset.z);
 			const Double2 uv0(
-				*(attributesPtr + index0),
-				*(attributesPtr + index0 + 1));
+				*(attributesPtr + (index0 * 2)),
+				*(attributesPtr + (index0 * 2) + 1));
 			const Double2 uv1(
-				*(attributesPtr + index1),
-				*(attributesPtr + index1 + 1));
+				*(attributesPtr + (index1 * 2)),
+				*(attributesPtr + (index1 * 2) + 1));
 			const Double2 uv2(
-				*(attributesPtr + index2),
-				*(attributesPtr + index2 + 1));
+				*(attributesPtr + (index2 * 2)),
+				*(attributesPtr + (index2 * 2) + 1));
 
 			// @todo: don't construct the RenderTriangle, just use the vertices/etc. directly throughout
 			// - also compute the normal in advance and pass with the UVs like [uv0.x, uv0.y, norm.x, norm.y, norm.z, uv1.x, ...]
 			RenderTriangle triangle;
-			triangle.init(v0, v1, v2, uv0, uv1, uv2, -1, 0.0); // @todo: remove ObjectMaterialID and param0, put in draw call instead
+			triangle.init(v0, v1, v2, uv0, uv1, uv2, textureID, 0.0); // @todo: remove ObjectTextureID and param0, put in draw call instead
 
 			// Discard back-facing and almost-back-facing.
 			const Double3 v0ToEye = eye - v0;
@@ -580,11 +580,12 @@ namespace swRender
 							{
 								// @todo: fix interpolated world space point calculation
 								// XZ position of pixel center in world space.
-								const Double2 v2D(
+								/*const Double2 v2D(
 									(u * v0.x) + (v * v1.x) + (w * v2.x),
 									(u * v0.z) + (v * v1.z) + (w * v2.z));
 								const double distanceToLight = (v2D - eye2D).length();
-								shadingPercent = std::clamp(distanceToLight / swConstants::PLAYER_LIGHT_DISTANCE, 0.0, 1.0);
+								shadingPercent = std::clamp(distanceToLight / swConstants::PLAYER_LIGHT_DISTANCE, 0.0, 1.0);*/
+								shadingPercent = 0.0; // Full-bright
 							}
 							
 							const double lightLevelValue = shadingPercent * lightLevelCountReal;
@@ -960,9 +961,10 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
 		const AttributeBuffer &attributeBuffer = this->attributeBuffers.get(drawCall.attributeBufferID);
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
-		const Double3 &worldOffset = drawCall.position;
+		const ObjectTextureID textureID = drawCall.textureIDs[0].value(); // @todo: do better error handling
+		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
 		const BufferView<const RenderTriangle> clippedTriangles =
-			swGeometry::ProcessTrianglesForRasterization(vertexBuffer, attributeBuffer, indexBuffer, worldOffset, camera);
+			swGeometry::ProcessTrianglesForRasterization(vertexBuffer, attributeBuffer, indexBuffer, textureID, worldSpaceOffset, camera);
 
 		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
 		swRender::RasterizeTriangles(clippedTriangles, isAlphaTested, this->objectTextures, paletteTexture,

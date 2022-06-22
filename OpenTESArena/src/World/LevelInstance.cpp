@@ -123,6 +123,10 @@ double LevelInstance::getCeilingScale() const
 	return this->ceilingScale;
 }
 
+// @temp for renderer.loadScene(); remove once we know where to properly use loadScene() and with what parameters.
+#include "../Rendering/RenderCamera.h"
+#include "../World/SkyInstance.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
@@ -134,7 +138,9 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 
 	renderer.unloadScene();
 
-	// @todo: should we loadScene() here?
+	DebugLogWarning("renderer.loadScene() is taking temp arguments.");
+	renderer.loadScene(RenderCamera(), *this, SkyInstance(), 0, mapDefinition, citizenGenInfo,
+		0.0, 0.0, 0.0, false, true, EntityDefinitionLibrary(), textureManager);
 
 	if (!TryPopulatePaletteTexture(this->paletteTextureRef, textureManager, renderer))
 	{
