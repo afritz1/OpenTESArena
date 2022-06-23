@@ -513,7 +513,7 @@ Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
 	return texture;
 }
 
-bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode,
+bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
 	const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
 	int renderThreadsMode)
 {
@@ -532,6 +532,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	}
 
 	this->letterboxMode = letterboxMode;
+	this->fullGameWindow = fullGameWindow;
 	this->resolutionScaleFunc = resolutionScaleFunc;
 
 	// Initialize SDL window.
@@ -637,7 +638,6 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	RenderInitSettings initSettings;
 	initSettings.init(renderWidth, renderHeight, renderThreadsMode);
 	this->renderer3D->init(initSettings);
-	this->fullGameWindow = fullGameWindow;
 
 	return true;
 }

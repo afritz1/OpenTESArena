@@ -168,8 +168,9 @@ public:
 	// Wrapper methods for SDL_CreateTexture.
 	Texture createTexture(uint32_t format, int access, int w, int h);
 
-	bool init(int width, int height, WindowMode windowMode, int letterboxMode, const ResolutionScaleFunc &resolutionScaleFunc,
-		RendererSystemType2D systemType2D, RendererSystemType3D systemType3D, int renderThreadsMode);
+	bool init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
+		const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
+		RendererSystemType3D systemType3D, int renderThreadsMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
