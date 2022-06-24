@@ -100,8 +100,8 @@ private:
 	void loadTextures(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, TextureManager &textureManager,
 		Renderer &renderer);
-	void loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
-		bool nightLightsAreActive, RendererSystem3D &renderer);
+	void loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, bool nightLightsAreActive,
+		RendererSystem3D &renderer);
 	/*void loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
 		const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
 		RendererSystem3D &renderer);
