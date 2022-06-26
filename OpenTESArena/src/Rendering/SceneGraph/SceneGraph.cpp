@@ -168,8 +168,8 @@ namespace sgMesh
 		}
 	}
 
-	void WriteWallMeshBuffers(const VoxelDefinition::WallData &wall, BufferView<double> outVertices,
-		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
+	void WriteWallMeshBuffers(const VoxelDefinition::WallData &wall, double ceilingScale,
+		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
 		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Wall);
 
@@ -264,7 +264,21 @@ namespace sgMesh
 			22, 23, 20
 		};
 
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
+		// Transform vertices by ceiling scale.
+		for (int i = 0; i < vertexCount; i++)
+		{
+			const int index = i * 3;
+			const double srcX = vertices[index];
+			const double srcY = vertices[index + 1];
+			const double srcZ = vertices[index + 2];
+			const double dstX = srcX;
+			const double dstY = srcY * ceilingScale;
+			const double dstZ = srcZ;
+			outVertices.set(index, dstX);
+			outVertices.set(index + 1, dstY);
+			outVertices.set(index + 2, dstZ);
+		}
+
 		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
 		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 	}
@@ -442,15 +456,15 @@ namespace sgMesh
 		//DebugNotImplemented();
 	}
 
-	void WriteVoxelMeshBuffers(const VoxelDefinition &voxelDef, BufferView<double> outVertices,
-		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices,
+	void WriteVoxelMeshBuffers(const VoxelDefinition &voxelDef, double ceilingScale,
+		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices,
 		BufferView<int32_t> outAlphaTestedIndices)
 	{
 		const ArenaTypes::VoxelType voxelType = voxelDef.type;
 		switch (voxelType)
 		{
 		case ArenaTypes::VoxelType::Wall:
-			WriteWallMeshBuffers(voxelDef.wall, outVertices, outAttributes, outOpaqueIndices);
+			WriteWallMeshBuffers(voxelDef.wall, ceilingScale, outVertices, outAttributes, outOpaqueIndices);
 			break;
 		case ArenaTypes::VoxelType::Floor:
 			WriteFloorMeshBuffers(voxelDef.floor, outVertices, outAttributes, outOpaqueIndices);
@@ -922,6 +936,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 	// there are no voxels at all since entities rely on chunks existing).
 	DebugAssert(!this->graphChunks.empty());
 
+	const double ceilingScale = levelInst.getCeilingScale();
 	const ChunkManager &chunkManager = levelInst.getChunkManager();
 	for (int chunkIndex = 0; chunkIndex < chunkManager.getChunkCount(); chunkIndex++)
 	{
@@ -963,7 +978,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 				alphaTestedIndices.fill(0);
 
 				// Generate mesh data for this voxel definition.
-				sgMesh::WriteVoxelMeshBuffers(voxelDef,
+				sgMesh::WriteVoxelMeshBuffers(voxelDef, ceilingScale,
 					BufferView<double>(vertices.data(), static_cast<int>(vertices.size())),
 					BufferView<double>(attributes.data(), static_cast<int>(attributes.size())),
 					BufferView<int32_t>(opaqueIndices.data(), static_cast<int>(opaqueIndices.size())),
@@ -1009,8 +1024,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 			graphChunk.voxelDefMappings.emplace(voxelID, graphVoxelID);
 		}
 
-		auto makeDrawCall = [](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID, AttributeBufferID attributeBufferID,
-			IndexBufferID indexBufferID, ObjectTextureID textureID, PixelShaderType pixelShaderType)
+		auto makeDrawCall = [ceilingScale](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID,
+			AttributeBufferID attributeBufferID, IndexBufferID indexBufferID, ObjectTextureID textureID,
+			PixelShaderType pixelShaderType)
 		{
 			RenderDrawCall drawCall;
 			drawCall.vertexBufferID = vertexBufferID;
@@ -1020,7 +1036,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 			drawCall.vertexShaderType = VertexShaderType::Default;
 			drawCall.worldSpaceOffset = Double3(
 				static_cast<SNDouble>(x),
-				static_cast<double>(y), // @todo: probably needs ceilingScale
+				static_cast<double>(y) * ceilingScale,
 				static_cast<WEDouble>(z));
 			return drawCall;
 		};
