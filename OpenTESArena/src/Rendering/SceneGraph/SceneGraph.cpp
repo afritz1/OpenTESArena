@@ -310,7 +310,7 @@ namespace sgMesh
 	{
 		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Ceiling);
 
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
+		constexpr std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
 		{
 			// Y=0
 			0.0, 0.0, 0.0,
@@ -454,20 +454,43 @@ namespace sgMesh
 	void WriteDiagonalMeshBuffers(const VoxelDefinition::DiagonalData &diagonal, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
-		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Diagonal) * 3> vertices =
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Diagonal);
+
+		constexpr std::array<double, vertexCount * COMPONENTS_PER_VERTEX> type1Vertices =
 		{
-			// X=0
-
-			// X=1
-
-			// Z=0
-
-			// Z=1
-
+			0.0, 1.0, 0.0,
+			0.0, 0.0, 0.0,
+			1.0, 0.0, 1.0,
+			1.0, 1.0, 1.0,
 		};
 
-		// @todo
-		//DebugNotImplemented();
+		constexpr std::array<double, vertexCount * COMPONENTS_PER_VERTEX> type2Vertices =
+		{
+			1.0, 1.0, 0.0,
+			1.0, 0.0, 0.0,
+			0.0, 0.0, 1.0,
+			0.0, 1.0, 1.0,
+		};
+
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> &vertices = diagonal.type1 ? type1Vertices : type2Vertices;
+
+		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
+		{
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(ArenaTypes::VoxelType::Diagonal)> indices =
+		{
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		std::copy(vertices.begin(), vertices.end(), outVertices.get());
+		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 	}
 
 	void WriteTransparentWallMeshBuffers(const VoxelDefinition::TransparentWallData &transparentWall,
