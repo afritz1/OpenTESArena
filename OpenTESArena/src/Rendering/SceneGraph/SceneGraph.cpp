@@ -174,41 +174,41 @@ namespace sgMesh
 		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Wall);
 
 		// One quad per face (results in duplication; necessary for correct texture mapping).
-		constexpr std::array<double, vertexCount * 3> vertices =
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
 		{
 			// X=0
-			0.0, 1.0, 0.0,
+			0.0, ceilingScale, 0.0,
 			0.0, 0.0, 0.0,
 			0.0, 0.0, 1.0,
-			0.0, 1.0, 1.0,
+			0.0, ceilingScale, 1.0,
 			// X=1
-			1.0, 1.0, 1.0,
+			1.0, ceilingScale, 1.0,
 			1.0, 0.0, 1.0,
 			1.0, 0.0, 0.0,
-			1.0, 1.0, 0.0,
+			1.0, ceilingScale, 0.0,
 			// Y=0
 			0.0, 0.0, 0.0,
 			1.0, 0.0, 0.0,
 			1.0, 0.0, 1.0,
 			0.0, 0.0, 1.0,
 			// Y=1
-			0.0, 1.0, 1.0,
-			1.0, 1.0, 1.0,
-			1.0, 1.0, 0.0,
-			0.0, 1.0, 0.0,
+			0.0, ceilingScale, 1.0,
+			1.0, ceilingScale, 1.0,
+			1.0, ceilingScale, 0.0,
+			0.0, ceilingScale, 0.0,
 			// Z=0
-			1.0, 1.0, 0.0,
+			1.0, ceilingScale, 0.0,
 			1.0, 0.0, 0.0,
 			0.0, 0.0, 0.0,
-			0.0, 1.0, 0.0,
+			0.0, ceilingScale, 0.0,
 			// Z=1
-			0.0, 1.0, 1.0,
+			0.0, ceilingScale, 1.0,
 			0.0, 0.0, 1.0,
 			1.0, 0.0, 1.0,
-			1.0, 1.0, 1.0
+			1.0, ceilingScale, 1.0
 		};
 
-		constexpr std::array<double, vertexCount * 2> attributes =
+		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
 		{
 			// X=0
 			0.0, 0.0,
@@ -264,21 +264,7 @@ namespace sgMesh
 			22, 23, 20
 		};
 
-		// Transform vertices by ceiling scale.
-		for (int i = 0; i < vertexCount; i++)
-		{
-			const int index = i * 3;
-			const double srcX = vertices[index];
-			const double srcY = vertices[index + 1];
-			const double srcZ = vertices[index + 2];
-			const double dstX = srcX;
-			const double dstY = srcY * ceilingScale;
-			const double dstZ = srcZ;
-			outVertices.set(index, dstX);
-			outVertices.set(index + 1, dstY);
-			outVertices.set(index + 2, dstZ);
-		}
-
+		std::copy(vertices.begin(), vertices.end(), outVertices.get());
 		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
 		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 	}
@@ -321,27 +307,115 @@ namespace sgMesh
 		//DebugNotImplemented();
 	}
 
-	void WriteRaisedMeshBuffers(const VoxelDefinition::RaisedData &raised, BufferView<double> outVertices,
-		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices)
+	void WriteRaisedMeshBuffers(const VoxelDefinition::RaisedData &raised, double ceilingScale,
+		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices,
+		BufferView<int32_t> outAlphaTestedIndices)
 	{
-		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Raised) * 3> vertices =
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Raised);
+		const double yBottom = raised.yOffset * ceilingScale;
+		const double yTop = (raised.yOffset + raised.ySize) * ceilingScale;
+		const double vBottom = raised.vBottom;
+		const double vTop = raised.vTop;
+
+		// One quad per face (results in duplication; necessary for correct texture mapping).
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
 		{
 			// X=0
-
+			0.0, yTop, 0.0,
+			0.0, yBottom, 0.0,
+			0.0, yBottom, 1.0,
+			0.0, yTop, 1.0,
 			// X=1
-
+			1.0, yTop, 1.0,
+			1.0, yBottom, 1.0,
+			1.0, yBottom, 0.0,
+			1.0, yTop, 0.0,
 			// Y=0
-
+			0.0, yBottom, 0.0,
+			1.0, yBottom, 0.0,
+			1.0, yBottom, 1.0,
+			0.0, yBottom, 1.0,
 			// Y=1
-
+			0.0, yTop, 1.0,
+			1.0, yTop, 1.0,
+			1.0, yTop, 0.0,
+			0.0, yTop, 0.0,
 			// Z=0
-
+			1.0, yTop, 0.0,
+			1.0, yBottom, 0.0,
+			0.0, yBottom, 0.0,
+			0.0, yTop, 0.0,
 			// Z=1
-
+			0.0, yTop, 1.0,
+			0.0, yBottom, 1.0,
+			1.0, yBottom, 1.0,
+			1.0, yTop, 1.0
 		};
 
-		// @todo
-		//DebugNotImplemented();
+		const std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
+		{
+			// X=0
+			0.0, vBottom,
+			0.0, vTop,
+			1.0, vTop,
+			1.0, vBottom,
+			// X=1
+			0.0, vBottom,
+			0.0, vTop,
+			1.0, vTop,
+			1.0, vBottom,
+			// Y=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// Y=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// Z=0
+			0.0, vBottom,
+			0.0, vTop,
+			1.0, vTop,
+			1.0, vBottom,
+			// Z=1
+			0.0, vBottom,
+			0.0, vTop,
+			1.0, vTop,
+			1.0, vBottom
+		};
+
+		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(ArenaTypes::VoxelType::Raised)> opaqueIndices =
+		{
+			// Y=0
+			8, 9, 10,
+			10, 11, 8,
+			// Y=1
+			12, 13, 14,
+			14, 15, 12
+		};
+
+		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(ArenaTypes::VoxelType::Raised)> alphaTestedIndices =
+		{
+			// X=0
+			0, 1, 2,
+			2, 3, 0,
+			// X=1
+			4, 5, 6,
+			6, 7, 4,
+			// Z=0
+			16, 17, 18,
+			18, 19, 16,
+			// Z=1
+			20, 21, 22,
+			22, 23, 20
+		};
+
+		std::copy(vertices.begin(), vertices.end(), outVertices.get());
+		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+		std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.get());
+		std::copy(alphaTestedIndices.begin(), alphaTestedIndices.end(), outAlphaTestedIndices.get());
 	}
 
 	void WriteDiagonalMeshBuffers(const VoxelDefinition::DiagonalData &diagonal, BufferView<double> outVertices,
@@ -473,7 +547,7 @@ namespace sgMesh
 			WriteCeilingMeshBuffers(voxelDef.ceiling, outVertices, outAttributes, outOpaqueIndices);
 			break;
 		case ArenaTypes::VoxelType::Raised:
-			WriteRaisedMeshBuffers(voxelDef.raised, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
+			WriteRaisedMeshBuffers(voxelDef.raised, ceilingScale, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Diagonal:
 			WriteDiagonalMeshBuffers(voxelDef.diagonal, outVertices, outAttributes, outOpaqueIndices);
