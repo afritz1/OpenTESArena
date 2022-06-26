@@ -69,13 +69,14 @@ namespace sgGeometry
 
 namespace sgMesh
 {
-	constexpr int MAX_VERTICES_PER_VOXEL = 8;
+	constexpr int MAX_VERTICES_PER_VOXEL = 24;
 	constexpr int MAX_INDICES_PER_VOXEL = 36;
 	constexpr int INDICES_PER_TRIANGLE = 3;
 	constexpr int COMPONENTS_PER_VERTEX = 3; // XYZ
 	constexpr int ATTRIBUTES_PER_VERTEX = 2; // XY texture coordinates
 
-	constexpr int GetVoxelVertexCount(ArenaTypes::VoxelType voxelType)
+	// The "ideal" vertices per voxel (no duplication).
+	constexpr int GetVoxelUniqueVertexCount(ArenaTypes::VoxelType voxelType)
 	{
 		switch (voxelType)
 		{
@@ -87,6 +88,31 @@ namespace sgMesh
 		case ArenaTypes::VoxelType::Chasm:
 		case ArenaTypes::VoxelType::Door:
 			return 8;
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::Edge:
+			return 4;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	// The actual vertices per voxel used by the renderer due to how vertex attributes work.
+	constexpr int GetVoxelActualVertexCount(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+			return 0;
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Raised:
+			return 24;
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Door:
+			return 16;
+		case ArenaTypes::VoxelType::Chasm:
+			return 20;
 		case ArenaTypes::VoxelType::Floor:
 		case ArenaTypes::VoxelType::Ceiling:
 		case ArenaTypes::VoxelType::Diagonal:
@@ -145,65 +171,97 @@ namespace sgMesh
 	void WriteWallMeshBuffers(const VoxelDefinition::WallData &wall, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
-		constexpr int vertexCount = GetVoxelVertexCount(ArenaTypes::VoxelType::Wall);
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Wall);
 
+		// One quad per face (results in duplication; necessary for correct texture mapping).
 		constexpr std::array<double, vertexCount * 3> vertices =
 		{
-			// Near Z
+			// X=0
+			0.0, 1.0, 0.0,
+			0.0, 0.0, 0.0,
+			0.0, 0.0, 1.0,
+			0.0, 1.0, 1.0,
+			// X=1
+			1.0, 1.0, 1.0,
+			1.0, 0.0, 1.0,
+			1.0, 0.0, 0.0,
+			1.0, 1.0, 0.0,
+			// Y=0
 			0.0, 0.0, 0.0,
 			1.0, 0.0, 0.0,
-			0.0, 1.0, 0.0,
+			1.0, 0.0, 1.0,
+			0.0, 0.0, 1.0,
+			// Y=1
+			0.0, 1.0, 1.0,
+			1.0, 1.0, 1.0,
 			1.0, 1.0, 0.0,
-
-			// Far Z
+			0.0, 1.0, 0.0,
+			// Z=0
+			1.0, 1.0, 0.0,
+			1.0, 0.0, 0.0,
+			0.0, 0.0, 0.0,
+			0.0, 1.0, 0.0,
+			// Z=1
+			0.0, 1.0, 1.0,
 			0.0, 0.0, 1.0,
 			1.0, 0.0, 1.0,
-			0.0, 1.0, 1.0,
 			1.0, 1.0, 1.0
 		};
 
-		// @todo: do we need copies of vertices for each set of texture coordinates?
 		constexpr std::array<double, vertexCount * 2> attributes =
 		{
-			// Near Z
-			0.0, 1.0,
-			1.0, 1.0,
+			// X=0
 			0.0, 0.0,
-			1.0, 0.0,
-
-			// Far Z
-			1.0, 1.0,
 			0.0, 1.0,
+			1.0, 1.0,
 			1.0, 0.0,
+			// X=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,			
+			// Y=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,			
+			// Y=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,			
+			// Z=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,			
+			// Z=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
 			1.0, 0.0
 		};
 
-		// @todo: each group of indices is going to reference 4 new vertices?
 		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(ArenaTypes::VoxelType::Wall)> indices =
 		{
-			// Near X
-			2, 0, 4,
-			4, 6, 2,
-
-			// Far X
-			7, 5, 1,
-			1, 3, 7,
-
-			// Near Y
-			0, 1, 5,
-			5, 4, 0,
-			
-			// Far Y
-			6, 7, 3,
-			3, 2, 6,
-
-			// Near Z
-			3, 1, 0,
-			0, 2, 3,
-
-			// Far Z
-			6, 4, 5,
-			5, 7, 6
+			// X=0
+			0, 1, 2,
+			2, 3, 0,
+			// X=1
+			4, 5, 6,
+			6, 7, 4,
+			// Y=0
+			8, 9, 10,
+			10, 11, 8,			
+			// Y=1
+			12, 13, 14,
+			14, 15, 12,
+			// Z=0
+			16, 17, 18,
+			18, 19, 16,
+			// Z=1
+			20, 21, 22,
+			22, 23, 20
 		};
 
 		std::copy(vertices.begin(), vertices.end(), outVertices.get());
@@ -214,7 +272,7 @@ namespace sgMesh
 	void WriteFloorMeshBuffers(const VoxelDefinition::FloorData &floor, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
-		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Floor) * 3> vertices =
+		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Floor) * 3> vertices =
 		{
 			// X=0
 
@@ -233,7 +291,7 @@ namespace sgMesh
 	void WriteCeilingMeshBuffers(const VoxelDefinition::CeilingData &ceiling, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
-		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Ceiling) * 3> vertices =
+		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Ceiling) * 3> vertices =
 		{
 			// X=0
 
@@ -252,7 +310,7 @@ namespace sgMesh
 	void WriteRaisedMeshBuffers(const VoxelDefinition::RaisedData &raised, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices)
 	{
-		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Raised) * 3> vertices =
+		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Raised) * 3> vertices =
 		{
 			// X=0
 
@@ -275,7 +333,7 @@ namespace sgMesh
 	void WriteDiagonalMeshBuffers(const VoxelDefinition::DiagonalData &diagonal, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
-		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Diagonal) * 3> vertices =
+		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Diagonal) * 3> vertices =
 		{
 			// X=0
 
@@ -294,7 +352,7 @@ namespace sgMesh
 	void WriteTransparentWallMeshBuffers(const VoxelDefinition::TransparentWallData &transparentWall,
 		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
 	{
-		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::TransparentWall) * 3> vertices =
+		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::TransparentWall) * 3> vertices =
 		{
 			// X=0
 
@@ -318,7 +376,7 @@ namespace sgMesh
 		BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
 	{
 		// @todo: four different vertex buffers depending on the side? The vertical size is always the same.
-		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Edge) * 3> vertices =
+		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Edge) * 3> vertices =
 		{
 			// X=0
 
@@ -341,7 +399,7 @@ namespace sgMesh
 	void WriteChasmMeshBuffers(const VoxelDefinition::ChasmData &chasm, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices)
 	{
-		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Chasm) * 3> vertices =
+		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Chasm) * 3> vertices =
 		{
 			// X=0
 
@@ -364,7 +422,7 @@ namespace sgMesh
 	void WriteDoorMeshBuffers(const VoxelDefinition::DoorData &door, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
 	{
-		constexpr std::array<double, GetVoxelVertexCount(ArenaTypes::VoxelType::Door) * 3> vertices =
+		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Door) * 3> vertices =
 		{
 			// X=0
 
@@ -880,7 +938,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 			SceneGraphVoxelDefinition graphVoxelDef;
 			if (voxelType != ArenaTypes::VoxelType::None) // Only attempt to create buffers for non-air voxels.
 			{
-				const int vertexCount = sgMesh::GetVoxelVertexCount(voxelType);
+				const int vertexCount = sgMesh::GetVoxelActualVertexCount(voxelType);
 				if (!renderer.tryCreateVertexBuffer(vertexCount, sgMesh::COMPONENTS_PER_VERTEX, &graphVoxelDef.vertexBufferID))
 				{
 					DebugLogError("Couldn't create vertex buffer for voxel ID " + std::to_string(voxelID) +
