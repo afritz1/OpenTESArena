@@ -168,6 +168,7 @@ namespace sgMesh
 		}
 	}
 
+	// Mesh writing functions. All of these are in model space, scaled by the ceiling scale.
 	void WriteWallMeshBuffers(const VoxelDefinition::WallData &wall, double ceilingScale,
 		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
@@ -269,42 +270,74 @@ namespace sgMesh
 		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 	}
 
-	void WriteFloorMeshBuffers(const VoxelDefinition::FloorData &floor, BufferView<double> outVertices,
-		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
+	void WriteFloorMeshBuffers(const VoxelDefinition::FloorData &floor, double ceilingScale,
+		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
-		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Floor) * 3> vertices =
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Floor);
+
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
 		{
-			// X=0
-
-			// X=1
-
-			// Z=0
-
-			// Z=1
-
+			// Y=1
+			0.0, ceilingScale, 1.0,
+			1.0, ceilingScale, 1.0,
+			1.0, ceilingScale, 0.0,
+			0.0, ceilingScale, 0.0
 		};
 
-		// @todo
-		//DebugNotImplemented();
+		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
+		{
+			// Y=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(ArenaTypes::VoxelType::Floor)> indices =
+		{
+			// Y=1
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		std::copy(vertices.begin(), vertices.end(), outVertices.get());
+		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 	}
 
 	void WriteCeilingMeshBuffers(const VoxelDefinition::CeilingData &ceiling, BufferView<double> outVertices,
 		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices)
 	{
-		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Ceiling) * 3> vertices =
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Ceiling);
+
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
 		{
-			// X=0
-
-			// X=1
-
-			// Z=0
-
-			// Z=1
-
+			// Y=0
+			0.0, 0.0, 0.0,
+			1.0, 0.0, 0.0,
+			1.0, 0.0, 1.0,
+			0.0, 0.0, 1.0,
 		};
 
-		// @todo
-		//DebugNotImplemented();
+		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
+		{
+			// Y=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(ArenaTypes::VoxelType::Ceiling)> indices =
+		{
+			// Y=0
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		std::copy(vertices.begin(), vertices.end(), outVertices.get());
+		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 	}
 
 	void WriteRaisedMeshBuffers(const VoxelDefinition::RaisedData &raised, double ceilingScale,
@@ -541,7 +574,7 @@ namespace sgMesh
 			WriteWallMeshBuffers(voxelDef.wall, ceilingScale, outVertices, outAttributes, outOpaqueIndices);
 			break;
 		case ArenaTypes::VoxelType::Floor:
-			WriteFloorMeshBuffers(voxelDef.floor, outVertices, outAttributes, outOpaqueIndices);
+			WriteFloorMeshBuffers(voxelDef.floor, ceilingScale, outVertices, outAttributes, outOpaqueIndices);
 			break;
 		case ArenaTypes::VoxelType::Ceiling:
 			WriteCeilingMeshBuffers(voxelDef.ceiling, outVertices, outAttributes, outOpaqueIndices);
