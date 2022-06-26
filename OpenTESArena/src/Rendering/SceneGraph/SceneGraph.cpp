@@ -571,28 +571,100 @@ namespace sgMesh
 		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 	}
 
-	void WriteEdgeMeshBuffers(const VoxelDefinition::EdgeData &edge, BufferView<double> outVertices,
-		BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
+	void WriteEdgeMeshBuffers(const VoxelDefinition::EdgeData &edge, double ceilingScale,
+		BufferView<double> outVertices, BufferView<double> outAttributes,
+		BufferView<int32_t> outAlphaTestedIndices)
 	{
-		// @todo: four different vertex buffers depending on the side? The vertical size is always the same.
-		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Edge) * 3> vertices =
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Edge);
+		const double yBottom = edge.yOffset * ceilingScale;
+		const double yTop = (edge.yOffset + 1.0) * ceilingScale;
+
+		constexpr int componentCount = vertexCount * COMPONENTS_PER_VERTEX;
+
+		// @todo: might want to bias these towards the center of the voxel to avoid z-fighting.
+		const std::array<double, componentCount> nearXVertices =
 		{
 			// X=0
-
-			// X=1
-
-			// Y=0
-
-			// Y=1
-
-			// Z=0
-
-			// Z=1
-
+			0.0, yTop, 0.0,
+			0.0, yBottom, 0.0,
+			0.0, yBottom, 1.0,
+			0.0, yTop, 1.0
 		};
 
-		// @todo
-		//DebugNotImplemented();
+		const std::array<double, componentCount> farXVertices =
+		{
+			// X=1
+			1.0, yTop, 1.0,
+			1.0, yBottom, 1.0,
+			1.0, yBottom, 0.0,
+			1.0, yTop, 0.0
+		};
+
+		const std::array<double, componentCount> nearZVertices =
+		{
+			// Z=0
+			1.0, yTop, 0.0,
+			1.0, yBottom, 0.0,
+			0.0, yBottom, 0.0,
+			0.0, yTop, 0.0
+		};
+
+		const std::array<double, componentCount> farZVertices =
+		{
+			// Z=1
+			0.0, yTop, 1.0,
+			0.0, yBottom, 1.0,
+			1.0, yBottom, 1.0,
+			1.0, yTop, 1.0
+		};
+
+		const std::array<double, componentCount> *vertices = nullptr;
+		switch (edge.facing)
+		{
+		case VoxelFacing2D::PositiveX:
+			vertices = &farXVertices;
+			break;
+		case VoxelFacing2D::NegativeX:
+			vertices = &nearXVertices;
+			break;
+		case VoxelFacing2D::PositiveZ:
+			vertices = &farZVertices;
+			break;
+		case VoxelFacing2D::NegativeZ:
+			vertices = &nearZVertices;
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(edge.facing)));
+		}
+
+		constexpr int attributeCount = vertexCount * ATTRIBUTES_PER_VERTEX;
+		constexpr std::array<double, attributeCount> unflippedAttributes =
+		{
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		constexpr std::array<double, attributeCount> flippedAttributes =
+		{
+			1.0, 0.0,
+			1.0, 1.0,
+			0.0, 1.0,
+			0.0, 0.0
+		};
+
+		const std::array<double, attributeCount> &attributes = edge.flipped ? flippedAttributes : unflippedAttributes;
+
+		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(ArenaTypes::VoxelType::Edge)> indices =
+		{
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		std::copy(vertices->begin(), vertices->end(), outVertices.get());
+		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 	}
 
 	void WriteChasmMeshBuffers(const VoxelDefinition::ChasmData &chasm, BufferView<double> outVertices,
@@ -667,7 +739,7 @@ namespace sgMesh
 			WriteTransparentWallMeshBuffers(voxelDef.transparentWall, ceilingScale, outVertices, outAttributes, outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Edge:
-			WriteEdgeMeshBuffers(voxelDef.edge, outVertices, outAttributes, outAlphaTestedIndices);
+			WriteEdgeMeshBuffers(voxelDef.edge, ceilingScale, outVertices, outAttributes, outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Chasm:
 			WriteChasmMeshBuffers(voxelDef.chasm, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
