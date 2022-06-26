@@ -157,10 +157,12 @@ namespace sgMesh
 		case ArenaTypes::VoxelType::Diagonal:
 			return 0;
 		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Chasm:
-		case ArenaTypes::VoxelType::Door:
 			return 12 * INDICES_PER_TRIANGLE;
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Door:
+			return 8 * INDICES_PER_TRIANGLE;
+		case ArenaTypes::VoxelType::Chasm:
+			return 10 * INDICES_PER_TRIANGLE;
 		case ArenaTypes::VoxelType::Edge:
 			return 2 * INDICES_PER_TRIANGLE;
 		default:
@@ -494,26 +496,79 @@ namespace sgMesh
 	}
 
 	void WriteTransparentWallMeshBuffers(const VoxelDefinition::TransparentWallData &transparentWall,
-		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
+		double ceilingScale, BufferView<double> outVertices, BufferView<double> outAttributes,
+		BufferView<int32_t> outAlphaTestedIndices)
 	{
-		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::TransparentWall) * 3> vertices =
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::TransparentWall);
+
+		// One quad per face (results in duplication; necessary for correct texture mapping).
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
 		{
 			// X=0
-
+			0.0, ceilingScale, 0.0,
+			0.0, 0.0, 0.0,
+			0.0, 0.0, 1.0,
+			0.0, ceilingScale, 1.0,
 			// X=1
-
-			// Y=0
-
-			// Y=1
-
+			1.0, ceilingScale, 1.0,
+			1.0, 0.0, 1.0,
+			1.0, 0.0, 0.0,
+			1.0, ceilingScale, 0.0,
 			// Z=0
-
+			1.0, ceilingScale, 0.0,
+			1.0, 0.0, 0.0,
+			0.0, 0.0, 0.0,
+			0.0, ceilingScale, 0.0,
 			// Z=1
-
+			0.0, ceilingScale, 1.0,
+			0.0, 0.0, 1.0,
+			1.0, 0.0, 1.0,
+			1.0, ceilingScale, 1.0
 		};
 
-		// @todo
-		//DebugNotImplemented();
+		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
+		{
+			// X=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// X=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// Z=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// Z=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(ArenaTypes::VoxelType::TransparentWall)> indices =
+		{
+			// X=0
+			0, 1, 2,
+			2, 3, 0,
+			// X=1
+			4, 5, 6,
+			6, 7, 4,
+			// Z=0
+			8, 9, 10,
+			10, 11, 8,
+			// Z=1
+			12, 13, 14,
+			14, 15, 12
+		};
+
+		std::copy(vertices.begin(), vertices.end(), outVertices.get());
+		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 	}
 
 	void WriteEdgeMeshBuffers(const VoxelDefinition::EdgeData &edge, BufferView<double> outVertices,
@@ -609,7 +664,7 @@ namespace sgMesh
 			WriteDiagonalMeshBuffers(voxelDef.diagonal, outVertices, outAttributes, outOpaqueIndices);
 			break;
 		case ArenaTypes::VoxelType::TransparentWall:
-			WriteTransparentWallMeshBuffers(voxelDef.transparentWall, outVertices, outAttributes, outAlphaTestedIndices);
+			WriteTransparentWallMeshBuffers(voxelDef.transparentWall, ceilingScale, outVertices, outAttributes, outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Edge:
 			WriteEdgeMeshBuffers(voxelDef.edge, outVertices, outAttributes, outAlphaTestedIndices);
