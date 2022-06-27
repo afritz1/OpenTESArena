@@ -763,27 +763,82 @@ namespace sgMesh
 		std::copy(alphaTestedIndices.begin(), alphaTestedIndices.end(), outAlphaTestedIndices.get());
 	}
 
-	void WriteDoorMeshBuffers(const VoxelDefinition::DoorData &door, BufferView<double> outVertices,
-		BufferView<double> outAttributes, BufferView<int32_t> outAlphaTestedIndices)
+	void WriteDoorMeshBuffers(const VoxelDefinition::DoorData &door, double ceilingScale,
+		BufferView<double> outVertices, BufferView<double> outAttributes,
+		BufferView<int32_t> outAlphaTestedIndices)
 	{
-		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Door) * 3> vertices =
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Door);
+
+		// @todo: does this need to care about the door type or can we do all that in the vertex shader?
+
+		// One quad per face (results in duplication; necessary for correct texture mapping).
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
 		{
 			// X=0
-
+			0.0, ceilingScale, 0.0,
+			0.0, 0.0, 0.0,
+			0.0, 0.0, 1.0,
+			0.0, ceilingScale, 1.0,
 			// X=1
-
-			// Y=0
-
-			// Y=1
-
+			1.0, ceilingScale, 1.0,
+			1.0, 0.0, 1.0,
+			1.0, 0.0, 0.0,
+			1.0, ceilingScale, 0.0,
 			// Z=0
-
+			1.0, ceilingScale, 0.0,
+			1.0, 0.0, 0.0,
+			0.0, 0.0, 0.0,
+			0.0, ceilingScale, 0.0,
 			// Z=1
-
+			0.0, ceilingScale, 1.0,
+			0.0, 0.0, 1.0,
+			1.0, 0.0, 1.0,
+			1.0, ceilingScale, 1.0
 		};
 
-		// @todo
-		//DebugNotImplemented();
+		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
+		{
+			// X=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// X=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// Z=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// Z=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(ArenaTypes::VoxelType::Door)> indices =
+		{
+			// X=0
+			0, 1, 2,
+			2, 3, 0,
+			// X=1
+			4, 5, 6,
+			6, 7, 4,
+			// Z=0
+			8, 9, 10,
+			10, 11, 8,
+			// Z=1
+			12, 13, 14,
+			14, 15, 12
+		};
+
+		std::copy(vertices.begin(), vertices.end(), outVertices.get());
+		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 	}
 
 	void WriteVoxelMeshBuffers(const VoxelDefinition &voxelDef, double ceilingScale,
@@ -818,7 +873,7 @@ namespace sgMesh
 			WriteChasmMeshBuffers(voxelDef.chasm, ceilingScale, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Door:
-			WriteDoorMeshBuffers(voxelDef.door, outVertices, outAttributes, outAlphaTestedIndices);
+			WriteDoorMeshBuffers(voxelDef.door, ceilingScale, outVertices, outAttributes, outAlphaTestedIndices);
 			break;
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
