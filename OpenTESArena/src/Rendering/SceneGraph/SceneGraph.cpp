@@ -760,7 +760,7 @@ namespace sgMesh
 		std::copy(vertices.begin(), vertices.end(), outVertices.get());
 		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
 		std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.get());
-		std::copy(alphaTestedIndices.begin(), alphaTestedIndices.end(), outAlphaTestedIndices.get());
+		//std::copy(alphaTestedIndices.begin(), alphaTestedIndices.end(), outAlphaTestedIndices.get()); // @todo: figure out override index buffer support (allocate all combinations ahead of time, use bitwise lookup to get the right index buffer ID?).
 	}
 
 	void WriteDoorMeshBuffers(const VoxelDefinition::DoorData &door, double ceilingScale,
