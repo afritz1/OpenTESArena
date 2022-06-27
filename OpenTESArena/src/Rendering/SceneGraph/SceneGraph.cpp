@@ -1419,6 +1419,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 			drawCall.indexBufferID = indexBufferID;
 			drawCall.textureIDs[0] = textureID; // @todo: add another parameter for multi-texturing for chasm walls
 			drawCall.vertexShaderType = VertexShaderType::Default;
+			drawCall.pixelShaderType = pixelShaderType;
 			drawCall.worldSpaceOffset = Double3(
 				static_cast<SNDouble>(x),
 				static_cast<double>(y) * ceilingScale,
