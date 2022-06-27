@@ -159,10 +159,9 @@ namespace sgMesh
 		case ArenaTypes::VoxelType::Raised:
 			return 12 * INDICES_PER_TRIANGLE;
 		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Chasm:
 		case ArenaTypes::VoxelType::Door:
 			return 8 * INDICES_PER_TRIANGLE;
-		case ArenaTypes::VoxelType::Chasm:
-			return 10 * INDICES_PER_TRIANGLE;
 		case ArenaTypes::VoxelType::Edge:
 			return 2 * INDICES_PER_TRIANGLE;
 		default:
@@ -667,27 +666,101 @@ namespace sgMesh
 		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 	}
 
-	void WriteChasmMeshBuffers(const VoxelDefinition::ChasmData &chasm, BufferView<double> outVertices,
-		BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices)
+	void WriteChasmMeshBuffers(const VoxelDefinition::ChasmData &chasm, double ceilingScale,
+		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices,
+		BufferView<int32_t> outAlphaTestedIndices)
 	{
-		constexpr std::array<double, GetVoxelActualVertexCount(ArenaTypes::VoxelType::Chasm) * 3> vertices =
+		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Chasm);
+		const double yBottom = (chasm.type != ArenaTypes::ChasmType::Dry) ? (ceilingScale - 1.0) : 0.0;
+		const double yTop = ceilingScale;
+
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
 		{
+			// Y=0 (guaranteed to exist)
+			0.0, yBottom, 1.0,
+			1.0, yBottom, 1.0,
+			1.0, yBottom, 0.0,
+			0.0, yBottom, 0.0,
+
 			// X=0
-
+			0.0, yTop, 1.0,
+			0.0, yBottom, 1.0,
+			0.0, yBottom, 0.0,
+			0.0, yTop, 0.0,			
 			// X=1
-
-			// Y=0
-
-			// Y=1
-
+			1.0, yTop, 0.0,
+			1.0, yBottom, 0.0,
+			1.0, yBottom, 1.0,
+			1.0, yTop, 1.0,
 			// Z=0
-
+			0.0, yTop, 0.0,
+			0.0, yBottom, 0.0,
+			1.0, yBottom, 0.0,
+			1.0, yTop, 0.0,
 			// Z=1
-
+			1.0, yTop, 1.0,
+			1.0, yBottom, 1.0,
+			0.0, yBottom, 1.0,
+			0.0, yTop, 1.0
 		};
 
-		// @todo
-		//DebugNotImplemented();
+		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
+		{
+			// Y=0 (guaranteed to exist)
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+
+			// X=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// X=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// Z=0
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+			// Z=1
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(ArenaTypes::VoxelType::Chasm)> opaqueIndices =
+		{
+			// Y=0
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(ArenaTypes::VoxelType::Chasm)> alphaTestedIndices =
+		{
+			// X=0
+			4, 5, 6,
+			6, 7, 4,
+			// X=1
+			8, 9, 10,
+			10, 11, 8,
+			// Z=0
+			12, 13, 14,
+			14, 15, 12,
+			// Z=1
+			16, 17, 18,
+			18, 19, 16
+		};
+
+		std::copy(vertices.begin(), vertices.end(), outVertices.get());
+		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+		std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.get());
+		std::copy(alphaTestedIndices.begin(), alphaTestedIndices.end(), outAlphaTestedIndices.get());
 	}
 
 	void WriteDoorMeshBuffers(const VoxelDefinition::DoorData &door, BufferView<double> outVertices,
@@ -742,7 +815,7 @@ namespace sgMesh
 			WriteEdgeMeshBuffers(voxelDef.edge, ceilingScale, outVertices, outAttributes, outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Chasm:
-			WriteChasmMeshBuffers(voxelDef.chasm, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
+			WriteChasmMeshBuffers(voxelDef.chasm, ceilingScale, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Door:
 			WriteDoorMeshBuffers(voxelDef.door, outVertices, outAttributes, outAlphaTestedIndices);
