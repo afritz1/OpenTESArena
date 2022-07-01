@@ -229,6 +229,7 @@ namespace swGeometry
 	// Caches for visible triangle processing/clipping.
 	// @optimization: make N of these caches to allow for multi-threaded clipping
 	std::vector<RenderTriangle> g_visibleTriangles, g_visibleClipList;
+	int g_visibleTriangleCount = 0; // Note this includes new triangles from clipping.
 	int g_totalTriangleCount = 0;
 
 	// Processes the given world space triangles in the following ways, and returns a view to a geometry cache
@@ -240,9 +241,10 @@ namespace swGeometry
 		const SoftwareRenderer::AttributeBuffer &attributeBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
 		ObjectTextureID textureID, const Double3 &worldOffset, const RenderCamera &camera)
 	{
-		std::vector<RenderTriangle> &outVisibleTriangles = swGeometry::g_visibleTriangles;
-		std::vector<RenderTriangle> &outClipList = swGeometry::g_visibleClipList;
-		int *outTotalTriangleCount = &swGeometry::g_totalTriangleCount;
+		std::vector<RenderTriangle> &outVisibleTriangles = g_visibleTriangles;
+		std::vector<RenderTriangle> &outClipList = g_visibleClipList;
+		int *outVisibleTriangleCount = &g_visibleTriangleCount;
+		int *outTotalTriangleCount = &g_totalTriangleCount;
 
 		const Double3 eye = swCamera::GetCameraEye(camera);
 
@@ -348,8 +350,10 @@ namespace swGeometry
 			outVisibleTriangles.insert(outVisibleTriangles.end(), outClipList.begin(), outClipList.end());
 		}
 
-		*outTotalTriangleCount = triangleCount;
-		return BufferView<const RenderTriangle>(outVisibleTriangles.data(), static_cast<int>(outVisibleTriangles.size()));
+		const int visibleTriangleCount = static_cast<int>(outVisibleTriangles.size());
+		*outVisibleTriangleCount += visibleTriangleCount;
+		*outTotalTriangleCount += triangleCount;
+		return BufferView<const RenderTriangle>(outVisibleTriangles.data(), visibleTriangleCount);
 	}
 }
 
@@ -394,6 +398,14 @@ namespace swRender
 	{
 		colorBuffer.fill(clearColor);
 		depthBuffer.fill(std::numeric_limits<double>::infinity());
+	}
+
+	void ClearGeometryCache()
+	{
+		swGeometry::g_visibleTriangles.clear();
+		swGeometry::g_visibleClipList.clear();
+		swGeometry::g_visibleTriangleCount = 0;
+		swGeometry::g_totalTriangleCount = 0;
 	}
 
 	// The provided triangles are assumed to be back-face culled and clipped.
@@ -932,7 +944,7 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 
 	const int threadCount = 1;
 	const int potentiallyVisTriangleCount = swGeometry::g_totalTriangleCount;
-	const int visTriangleCount = static_cast<int>(swGeometry::g_visibleTriangles.size());
+	const int visTriangleCount = swGeometry::g_visibleTriangleCount;
 	const int visLightCount = 0;
 
 	return ProfilerData(renderWidth, renderHeight, threadCount, potentiallyVisTriangleCount, visTriangleCount, visLightCount);
@@ -954,6 +966,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 
 	const uint32_t clearColor = Color::Black.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
+	swRender::ClearGeometryCache();
 
 	for (int i = 0; i < drawCalls.getCount(); i++)
 	{
