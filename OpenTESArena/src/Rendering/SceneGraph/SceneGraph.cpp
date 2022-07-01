@@ -1409,7 +1409,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 			graphChunk.voxelDefMappings.emplace(voxelID, graphVoxelID);
 		}
 
-		auto makeDrawCall = [ceilingScale](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID,
+		auto addDrawCall = [this, ceilingScale](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID,
 			AttributeBufferID attributeBufferID, IndexBufferID indexBufferID, ObjectTextureID textureID,
 			PixelShaderType pixelShaderType)
 		{
@@ -1424,10 +1424,13 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 				static_cast<SNDouble>(x),
 				static_cast<double>(y) * ceilingScale,
 				static_cast<WEDouble>(z));
-			return drawCall;
+			
+			this->drawCalls.emplace_back(std::move(drawCall));
 		};
 
-		// Assign voxel definition indices for each graph voxel and generate draw calls.
+		// Generate draw calls for each non-air voxel.
+		// @todo: draw calls should be stored per chunk; that way it's easier to sort by distance,
+		// add an entire chunk, cull an entire chunk, etc.
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
 			for (int y = 0; y < chunk.getHeight(); y++)
@@ -1436,6 +1439,12 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 				{
 					// Get the voxel def mapping's index and use it for this voxel.
 					const Chunk::VoxelID voxelID = chunk.getVoxel(x, y, z);
+					const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
+					if (voxelDef.type == ArenaTypes::VoxelType::None)
+					{
+						continue;
+					}
+
 					const auto defIter = graphChunk.voxelDefMappings.find(voxelID);
 					DebugAssert(defIter != graphChunk.voxelDefMappings.end());
 					const SceneGraphVoxelID graphVoxelID = defIter->second;
@@ -1445,21 +1454,112 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunk.getPosition(), VoxelInt2(x, z));
 					const int worldY = y;
 
+					// @todo: need to split this into N draw calls based on texture asset ref count in VoxelDefinition
+					// - need some kind of "unique # of textures" count in VoxelDefinition so we know how many draw calls
+					//   it needs. Maybe have it provide some index mapping like "texture asset ref 0 and 2 use texture ID
+					//   0, texture asset ref 1 uses texture id 1".
+
+					// @todo: since a Wall voxel can have 1 to 3 unique textures, we need 1 to 3 draw calls, and
+					// 1 to 3 opaque index buffers.
+					// - need like "# of unique textures" and "indices for each texture asset ref to those texture IDs"
+
+					const bool usesVoxelTextures = voxelDef.type != ArenaTypes::VoxelType::Chasm;
+
 					const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
 					if (graphVoxelDef.opaqueIndexBufferID >= 0)
 					{
-						const ObjectTextureID textureID = 15; // @todo: get from this->voxelTextures?
-						this->drawCalls.emplace_back(makeDrawCall(worldXZ.x, worldY, worldXZ.y,
-							graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID, graphVoxelDef.opaqueIndexBufferID,
-							textureID, PixelShaderType::Opaque));
+						ObjectTextureID textureID = -1;
+
+						if (usesVoxelTextures)
+						{
+							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
+								[&voxelDef](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+							{
+								return loadedTexture.textureAsset == voxelDef.getTextureAsset(0); // @todo: this index should be provided by the voxel def
+							});
+
+							if (voxelTextureIter != this->voxelTextures.end())
+							{
+								textureID = voxelTextureIter->objectTextureRef.get();
+							}
+						}
+						else
+						{
+							const ArenaTypes::ChasmType chasmType = voxelDef.chasm.type;
+							const auto chasmIter = std::find_if(this->chasmTextureLists.begin(), this->chasmTextureLists.end(),
+								[chasmType](const SceneGraph::LoadedChasmTextureList &loadedTextureList)
+							{
+								return loadedTextureList.chasmType == chasmType;
+							});
+
+							if (chasmIter != this->chasmTextureLists.end())
+							{
+								const auto &chasmTextureRefs = chasmIter->chasmTextureRefs;
+								DebugAssert(!chasmTextureRefs.empty());
+								const ScopedObjectTextureRef &chasmTextureRef = chasmTextureRefs[0]; // @todo: daytimePercent? chasmAnimPercent?
+								textureID = chasmTextureRef.get();
+							}
+						}
+
+						if (textureID < 0)
+						{
+							DebugLogError("Couldn't find texture ID for opaque voxel texture.");
+							continue;
+						}
+
+						addDrawCall(worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID,
+							graphVoxelDef.opaqueIndexBufferID, textureID, PixelShaderType::Opaque);
 					}
 
 					if (graphVoxelDef.alphaTestedIndexBufferID >= 0)
 					{
-						const ObjectTextureID textureID = 15; // @todo: get from this->voxelTextures?
-						this->drawCalls.emplace_back(makeDrawCall(worldXZ.x, worldY, worldXZ.y,
-							graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID, graphVoxelDef.alphaTestedIndexBufferID,
-							textureID, PixelShaderType::AlphaTested));
+						ObjectTextureID textureID = -1;
+
+						if (usesVoxelTextures)
+						{
+							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
+								[&voxelDef](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+							{
+								return loadedTexture.textureAsset == voxelDef.getTextureAsset(0); // @todo: this index should be provided by the voxel def
+							});
+
+							if (voxelTextureIter != this->voxelTextures.end())
+							{
+								textureID = voxelTextureIter->objectTextureRef.get();
+							}
+						}
+						else
+						{
+							const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
+							const ArenaTypes::ChasmType chasmType = chasm.type;
+							const auto chasmIter = std::find_if(this->chasmTextureLists.begin(), this->chasmTextureLists.end(),
+								[chasmType](const SceneGraph::LoadedChasmTextureList &loadedTextureList)
+							{
+								return loadedTextureList.chasmType == chasmType;
+							});
+
+							if (chasmIter != this->chasmTextureLists.end())
+							{
+								const auto &wallEntries = chasmIter->wallEntries;
+								const auto wallTextureIter = std::find_if(wallEntries.begin(), wallEntries.end(),
+									[&chasm](const SceneGraph::LoadedChasmTextureList::WallEntry &wallEntry)
+								{
+									return wallEntry.wallTextureAsset == chasm.textureAsset;
+								});
+
+								DebugAssert(wallTextureIter != wallEntries.end());
+								textureID = wallTextureIter->wallTextureRef.get();
+							}
+						}
+
+						if (textureID < 0)
+						{
+							DebugLogError("Couldn't find texture ID for opaque voxel texture.");
+							continue;
+						}
+
+						addDrawCall(worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID,
+							graphVoxelDef.alphaTestedIndexBufferID, textureID, PixelShaderType::AlphaTested);
 					}
 				}
 			}

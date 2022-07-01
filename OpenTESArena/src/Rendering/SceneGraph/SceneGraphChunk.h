@@ -14,11 +14,14 @@
 class EntityManager;
 class RendererSystem3D;
 
-struct SceneGraphVoxelDefinition
+struct SceneGraphVoxelDefinition // @todo: either rename this to "geometry/mesh definition" or add texture IDs to it
 {
 	VertexBufferID vertexBufferID;
 	AttributeBufferID attributeBufferID;
-	IndexBufferID opaqueIndexBufferID, alphaTestedIndexBufferID;
+	IndexBufferID opaqueIndexBufferID;
+	//IndexBufferID opaqueIndexBufferIDs[3]; // @todo: For supporting multiple opaque textures (i.e. wall top/bottom).
+	IndexBufferID alphaTestedIndexBufferID;
+	
 	// @todo: index buffers for voxel instances (i.e. chasm walls) will likely be separately stored in the scene graph like a default + override
 
 	SceneGraphVoxelDefinition();
