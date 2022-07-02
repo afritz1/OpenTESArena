@@ -8,7 +8,8 @@ SceneGraphVoxelDefinition::SceneGraphVoxelDefinition()
 {
 	this->vertexBufferID = -1;
 	this->attributeBufferID = -1;
-	this->opaqueIndexBufferID = -1;
+	std::fill(std::begin(this->opaqueIndexBufferIDs), std::end(this->opaqueIndexBufferIDs), -1);
+	this->opaqueIndexBufferIdCount = 0;
 	this->alphaTestedIndexBufferID = -1;
 }
 
@@ -26,10 +27,15 @@ void SceneGraphVoxelDefinition::freeBuffers(RendererSystem3D &renderer3D)
 		this->attributeBufferID = -1;
 	}
 
-	if (this->opaqueIndexBufferID >= 0)
+	if (this->opaqueIndexBufferIdCount > 0)
 	{
-		renderer3D.freeIndexBuffer(this->opaqueIndexBufferID);
-		this->opaqueIndexBufferID = -1;
+		for (int i = 0; i < this->opaqueIndexBufferIdCount; i++)
+		{
+			renderer3D.freeIndexBuffer(this->opaqueIndexBufferIDs[i]);
+		}
+
+		std::fill(std::begin(this->opaqueIndexBufferIDs), std::end(this->opaqueIndexBufferIDs), -1);
+		this->opaqueIndexBufferIdCount = 0;
 	}
 
 	if (this->alphaTestedIndexBufferID >= 0)

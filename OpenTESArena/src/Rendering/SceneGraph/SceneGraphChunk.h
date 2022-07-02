@@ -16,10 +16,12 @@ class RendererSystem3D;
 
 struct SceneGraphVoxelDefinition // @todo: either rename this to "geometry/mesh definition" or add texture IDs to it
 {
+	static constexpr int MAX_TEXTURES = 3; // Based on VoxelDefinition subtypes (wall and raised).
+
 	VertexBufferID vertexBufferID;
 	AttributeBufferID attributeBufferID;
-	IndexBufferID opaqueIndexBufferID;
-	//IndexBufferID opaqueIndexBufferIDs[3]; // @todo: For supporting multiple opaque textures (i.e. wall top/bottom).
+	IndexBufferID opaqueIndexBufferIDs[MAX_TEXTURES];
+	int opaqueIndexBufferIdCount;
 	IndexBufferID alphaTestedIndexBufferID;
 	
 	// @todo: index buffers for voxel instances (i.e. chasm walls) will likely be separately stored in the scene graph like a default + override
