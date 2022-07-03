@@ -614,25 +614,25 @@ namespace sgMesh
 		std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.get());
 	}
 
-	void WriteDiagonalMeshGeometryBuffers(const VoxelDefinition::DiagonalData &diagonal,
+	void WriteDiagonalMeshGeometryBuffers(const VoxelDefinition::DiagonalData &diagonal, double ceilingScale,
 		BufferView<double> outVertices, BufferView<double> outAttributes)
 	{
 		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Diagonal);
 
-		constexpr std::array<double, vertexCount * COMPONENTS_PER_VERTEX> type1Vertices =
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> type1Vertices =
 		{
-			0.0, 1.0, 0.0,
+			0.0, ceilingScale, 0.0,
 			0.0, 0.0, 0.0,
 			1.0, 0.0, 1.0,
-			1.0, 1.0, 1.0,
+			1.0, ceilingScale, 1.0,
 		};
 
-		constexpr std::array<double, vertexCount * COMPONENTS_PER_VERTEX> type2Vertices =
+		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> type2Vertices =
 		{
-			1.0, 1.0, 0.0,
+			1.0, ceilingScale, 0.0,
 			1.0, 0.0, 0.0,
 			0.0, 0.0, 1.0,
-			0.0, 1.0, 1.0,
+			0.0, ceilingScale, 1.0,
 		};
 
 		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> &vertices = diagonal.type1 ? type1Vertices : type2Vertices;
@@ -1059,7 +1059,7 @@ namespace sgMesh
 			WriteRaisedMeshGeometryBuffers(voxelDef.raised, ceilingScale, outVertices, outAttributes);
 			break;
 		case ArenaTypes::VoxelType::Diagonal:
-			WriteDiagonalMeshGeometryBuffers(voxelDef.diagonal, outVertices, outAttributes);
+			WriteDiagonalMeshGeometryBuffers(voxelDef.diagonal, ceilingScale, outVertices, outAttributes);
 			break;
 		case ArenaTypes::VoxelType::TransparentWall:
 			WriteTransparentWallMeshGeometryBuffers(voxelDef.transparentWall, ceilingScale, outVertices, outAttributes);
