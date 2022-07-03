@@ -1040,39 +1040,77 @@ namespace sgMesh
 		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 	}
 
-	void WriteVoxelMeshBuffers(const VoxelDefinition &voxelDef, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes, BufferView<int32_t> outOpaqueIndices,
+	void WriteVoxelMeshGeometryBuffers(const VoxelDefinition &voxelDef, double ceilingScale,
+		BufferView<double> outVertices, BufferView<double> outAttributes)
+	{
+		const ArenaTypes::VoxelType voxelType = voxelDef.type;
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::Wall:
+			WriteWallMeshGeometryBuffers(voxelDef.wall, ceilingScale, outVertices, outAttributes);
+			break;
+		case ArenaTypes::VoxelType::Floor:
+			WriteFloorMeshGeometryBuffers(voxelDef.floor, ceilingScale, outVertices, outAttributes);
+			break;
+		case ArenaTypes::VoxelType::Ceiling:
+			WriteCeilingMeshGeometryBuffers(voxelDef.ceiling, outVertices, outAttributes);
+			break;
+		case ArenaTypes::VoxelType::Raised:
+			WriteRaisedMeshGeometryBuffers(voxelDef.raised, ceilingScale, outVertices, outAttributes);
+			break;
+		case ArenaTypes::VoxelType::Diagonal:
+			WriteDiagonalMeshGeometryBuffers(voxelDef.diagonal, outVertices, outAttributes);
+			break;
+		case ArenaTypes::VoxelType::TransparentWall:
+			WriteTransparentWallMeshGeometryBuffers(voxelDef.transparentWall, ceilingScale, outVertices, outAttributes);
+			break;
+		case ArenaTypes::VoxelType::Edge:
+			WriteEdgeMeshGeometryBuffers(voxelDef.edge, ceilingScale, outVertices, outAttributes);
+			break;
+		case ArenaTypes::VoxelType::Chasm:
+			WriteChasmMeshGeometryBuffers(voxelDef.chasm, ceilingScale, outVertices, outAttributes);
+			break;
+		case ArenaTypes::VoxelType::Door:
+			WriteDoorMeshGeometryBuffers(voxelDef.door, ceilingScale, outVertices, outAttributes);
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	void WriteVoxelMeshIndexBuffers(const VoxelDefinition &voxelDef, BufferView<int32_t> outOpaqueIndices0, 
+		BufferView<int32_t> outOpaqueIndices1, BufferView<int32_t> outOpaqueIndices2, 
 		BufferView<int32_t> outAlphaTestedIndices)
 	{
 		const ArenaTypes::VoxelType voxelType = voxelDef.type;
 		switch (voxelType)
 		{
 		case ArenaTypes::VoxelType::Wall:
-			WriteWallMeshBuffers(voxelDef.wall, ceilingScale, outVertices, outAttributes, outOpaqueIndices);
+			WriteWallMeshIndexBuffers(outOpaqueIndices0, outOpaqueIndices1, outOpaqueIndices2);
 			break;
 		case ArenaTypes::VoxelType::Floor:
-			WriteFloorMeshBuffers(voxelDef.floor, ceilingScale, outVertices, outAttributes, outOpaqueIndices);
+			WriteFloorMeshIndexBuffers(outOpaqueIndices0);
 			break;
 		case ArenaTypes::VoxelType::Ceiling:
-			WriteCeilingMeshBuffers(voxelDef.ceiling, outVertices, outAttributes, outOpaqueIndices);
+			WriteCeilingMeshIndexBuffers(outOpaqueIndices0);
 			break;
 		case ArenaTypes::VoxelType::Raised:
-			WriteRaisedMeshBuffers(voxelDef.raised, ceilingScale, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
+			WriteRaisedMeshIndexBuffers(outAlphaTestedIndices, outOpaqueIndices0, outOpaqueIndices1);
 			break;
 		case ArenaTypes::VoxelType::Diagonal:
-			WriteDiagonalMeshBuffers(voxelDef.diagonal, outVertices, outAttributes, outOpaqueIndices);
+			WriteDiagonalMeshIndexBuffers(outOpaqueIndices0);
 			break;
 		case ArenaTypes::VoxelType::TransparentWall:
-			WriteTransparentWallMeshBuffers(voxelDef.transparentWall, ceilingScale, outVertices, outAttributes, outAlphaTestedIndices);
+			WriteTransparentWallMeshIndexBuffers(outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Edge:
-			WriteEdgeMeshBuffers(voxelDef.edge, ceilingScale, outVertices, outAttributes, outAlphaTestedIndices);
+			WriteEdgeMeshIndexBuffers(outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Chasm:
-			WriteChasmMeshBuffers(voxelDef.chasm, ceilingScale, outVertices, outAttributes, outOpaqueIndices, outAlphaTestedIndices);
+			WriteChasmMeshIndexBuffers(outOpaqueIndices0, outAlphaTestedIndices);
 			break;
 		case ArenaTypes::VoxelType::Door:
-			WriteDoorMeshBuffers(voxelDef.door, ceilingScale, outVertices, outAttributes, outAlphaTestedIndices);
+			WriteDoorMeshIndexBuffers(outAlphaTestedIndices);
 			break;
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
@@ -1555,29 +1593,41 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 
 				std::array<double, sgMesh::MAX_VERTICES_PER_VOXEL * sgMesh::COMPONENTS_PER_VERTEX> vertices;
 				std::array<double, sgMesh::MAX_VERTICES_PER_VOXEL * sgMesh::ATTRIBUTES_PER_VERTEX> attributes;
-				std::array<int32_t, sgMesh::MAX_INDICES_PER_VOXEL> opaqueIndices, alphaTestedIndices;
+				std::array<int32_t, sgMesh::MAX_INDICES_PER_VOXEL> opaqueIndices0, opaqueIndices1, opaqueIndices2;
+				std::array<int32_t, sgMesh::MAX_INDICES_PER_VOXEL> alphaTestedIndices0;
 				vertices.fill(0.0);
 				attributes.fill(0.0);
-				opaqueIndices.fill(0);
-				alphaTestedIndices.fill(0);
+				opaqueIndices0.fill(-1);
+				opaqueIndices1.fill(-1);
+				opaqueIndices2.fill(-1);
+				alphaTestedIndices0.fill(-1);
 
-				// Generate mesh data for this voxel definition.
-				sgMesh::WriteVoxelMeshBuffers(voxelDef, ceilingScale,
+				const std::array<const decltype(opaqueIndices0)*, 3> opaqueIndicesPtrs =
+				{
+					&opaqueIndices0, &opaqueIndices1, &opaqueIndices2
+				};
+
+				// Generate mesh geometry and indices for this voxel definition.
+				sgMesh::WriteVoxelMeshGeometryBuffers(voxelDef, ceilingScale,
 					BufferView<double>(vertices.data(), static_cast<int>(vertices.size())),
-					BufferView<double>(attributes.data(), static_cast<int>(attributes.size())),
-					BufferView<int32_t>(opaqueIndices.data(), static_cast<int>(opaqueIndices.size())),
-					BufferView<int32_t>(alphaTestedIndices.data(), static_cast<int>(alphaTestedIndices.size())));
+					BufferView<double>(attributes.data(), static_cast<int>(attributes.size())));
+				sgMesh::WriteVoxelMeshIndexBuffers(voxelDef,
+					BufferView<int32_t>(opaqueIndices0.data(), static_cast<int>(opaqueIndices0.size())),
+					BufferView<int32_t>(opaqueIndices1.data(), static_cast<int>(opaqueIndices1.size())),
+					BufferView<int32_t>(opaqueIndices2.data(), static_cast<int>(opaqueIndices2.size())),
+					BufferView<int32_t>(alphaTestedIndices0.data(), static_cast<int>(alphaTestedIndices0.size())));
 
 				renderer.populateVertexBuffer(graphVoxelDef.vertexBufferID,
 					BufferView<const double>(vertices.data(), vertexCount * sgMesh::COMPONENTS_PER_VERTEX));
 				renderer.populateAttributeBuffer(graphVoxelDef.attributeBufferID,
 					BufferView<const double>(attributes.data(), vertexCount * sgMesh::ATTRIBUTES_PER_VERTEX));
 
-				// @todo: allocate multiple index buffers based on what the voxel definition requests
-				const int opaqueIndexCount = sgMesh::GetVoxelOpaqueIndexCount(voxelType);
-				if (opaqueIndexCount > 0)
+				const int opaqueIndexBufferCount = sgMesh::GetVoxelOpaqueIndexBufferCount(voxelType);				
+				for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
 				{
-					if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &graphVoxelDef.opaqueIndexBufferID))
+					const int opaqueIndexCount = sgMesh::GetVoxelOpaqueIndexCount(voxelType, bufferIndex);
+					IndexBufferID &opaqueIndexBufferID = graphVoxelDef.opaqueIndexBufferIDs[bufferIndex];
+					if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 					{
 						DebugLogError("Couldn't create opaque index buffer for voxel ID " + std::to_string(voxelID) +
 							" in chunk (" + chunk.getPosition().toString() + ").");
@@ -1585,13 +1635,17 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 						continue;
 					}
 
-					renderer.populateIndexBuffer(graphVoxelDef.opaqueIndexBufferID,
-						BufferView<const int32_t>(opaqueIndices.data(), opaqueIndexCount));
+					graphVoxelDef.opaqueIndexBufferIdCount++;
+
+					const auto &indices = *opaqueIndicesPtrs[bufferIndex];
+					renderer.populateIndexBuffer(opaqueIndexBufferID,
+						BufferView<const int32_t>(indices.data(), opaqueIndexCount));
 				}
 
-				const int alphaTestedIndexCount = sgMesh::GetVoxelAlphaTestedIndexCount(voxelType);
-				if (alphaTestedIndexCount > 0)
+				const bool hasAlphaTestedIndexBuffer = sgMesh::GetVoxelAlphaTestedIndexBufferCount(voxelType) > 0;
+				if (hasAlphaTestedIndexBuffer)
 				{
+					const int alphaTestedIndexCount = sgMesh::GetVoxelAlphaTestedIndexCount(voxelType, 0);
 					if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &graphVoxelDef.alphaTestedIndexBufferID))
 					{
 						DebugLogError("Couldn't create alpha-tested index buffer for voxel ID " + std::to_string(voxelID) +
@@ -1601,7 +1655,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					}
 
 					renderer.populateIndexBuffer(graphVoxelDef.alphaTestedIndexBufferID,
-						BufferView<const int32_t>(alphaTestedIndices.data(), alphaTestedIndexCount));
+						BufferView<const int32_t>(alphaTestedIndices0.data(), alphaTestedIndexCount));
 				}
 			}
 
@@ -1654,19 +1708,10 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunk.getPosition(), VoxelInt2(x, z));
 					const int worldY = y;
 
-					// @todo: need to split this into N draw calls based on texture asset ref count in VoxelDefinition
-					// - need some kind of "unique # of textures" count in VoxelDefinition so we know how many draw calls
-					//   it needs. Maybe have it provide some index mapping like "texture asset ref 0 and 2 use texture ID
-					//   0, texture asset ref 1 uses texture id 1".
-
-					// @todo: since a Wall voxel can have 1 to 3 unique textures, we need 1 to 3 draw calls, and
-					// 1 to 3 opaque index buffers.
-					// - need like "# of unique textures" and "indices for each texture asset ref to those texture IDs"
-
 					const bool usesVoxelTextures = voxelDef.type != ArenaTypes::VoxelType::Chasm;
 
 					const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
-					if (graphVoxelDef.opaqueIndexBufferID >= 0)
+					for (int bufferIndex = 0; bufferIndex < graphVoxelDef.opaqueIndexBufferIdCount; bufferIndex++)
 					{
 						ObjectTextureID textureID = -1;
 
@@ -1707,8 +1752,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 							continue;
 						}
 
+						const IndexBufferID opaqueIndexBufferID = graphVoxelDef.opaqueIndexBufferIDs[bufferIndex];
 						addDrawCall(worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID,
-							graphVoxelDef.opaqueIndexBufferID, textureID, PixelShaderType::Opaque);
+							opaqueIndexBufferID, textureID, PixelShaderType::Opaque);
 					}
 
 					if (graphVoxelDef.alphaTestedIndexBufferID >= 0)
