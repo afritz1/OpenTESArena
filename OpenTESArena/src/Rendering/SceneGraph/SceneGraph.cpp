@@ -537,15 +537,15 @@ namespace sgMesh
 		const std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
 		{
 			// X=0
-			0.0, vBottom,
 			0.0, vTop,
-			1.0, vTop,
+			0.0, vBottom,
 			1.0, vBottom,
+			1.0, vTop,
 			// X=1
-			0.0, vBottom,
 			0.0, vTop,
-			1.0, vTop,
+			0.0, vBottom,
 			1.0, vBottom,
+			1.0, vTop,
 			// Y=0
 			0.0, 0.0,
 			0.0, 1.0,
@@ -557,15 +557,15 @@ namespace sgMesh
 			1.0, 1.0,
 			1.0, 0.0,
 			// Z=0
-			0.0, vBottom,
 			0.0, vTop,
-			1.0, vTop,
+			0.0, vBottom,
 			1.0, vBottom,
-			// Z=1
-			0.0, vBottom,
-			0.0, vTop,
 			1.0, vTop,
-			1.0, vBottom
+			// Z=1
+			0.0, vTop,
+			0.0, vBottom,
+			1.0, vBottom,
+			1.0, vTop
 		};
 
 		std::copy(vertices.begin(), vertices.end(), outVertices.get());
