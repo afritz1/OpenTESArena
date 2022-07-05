@@ -421,10 +421,10 @@ namespace sgMesh
 		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
 		{
 			// Y=1
-			0.0, 0.0,
 			0.0, 1.0,
 			1.0, 1.0,
-			1.0, 0.0
+			1.0, 0.0,
+			0.0, 0.0
 		};
 
 		std::copy(vertices.begin(), vertices.end(), outVertices.get());
