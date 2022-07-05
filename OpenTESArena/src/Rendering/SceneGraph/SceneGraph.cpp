@@ -1120,6 +1120,68 @@ namespace sgMesh
 
 namespace sgTexture
 {
+	// Indices for looking up VoxelDefinition textures based on which index buffer is being used.
+	int GetVoxelOpaqueTextureAssetIndex(ArenaTypes::VoxelType voxelType, int indexBufferIndex)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Diagonal:
+			return indexBufferIndex;
+		case ArenaTypes::VoxelType::Raised:
+			if (indexBufferIndex == sgMesh::VOXEL_RAISED_INDEX_BUFFER_INDEX_BOTTOM)
+			{
+				return 1;
+			}
+			else if (indexBufferIndex == sgMesh::VOXEL_RAISED_INDEX_BUFFER_INDEX_TOP)
+			{
+				return 2;
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(indexBufferIndex));
+			}
+		case ArenaTypes::VoxelType::Chasm:
+			if (indexBufferIndex == 0)
+			{
+				return 0;
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(indexBufferIndex));
+			}
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Edge:
+		case ArenaTypes::VoxelType::Door:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(indexBufferIndex));
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	int GetVoxelAlphaTestedTextureAssetIndex(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Diagonal:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		case ArenaTypes::VoxelType::Raised:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Edge:
+		case ArenaTypes::VoxelType::Door:
+			return 0;
+		case ArenaTypes::VoxelType::Chasm:
+			return 1;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
 	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
 	void LoadVoxelDefTextures(const VoxelDefinition &voxelDef, std::vector<SceneGraph::LoadedVoxelTexture> &voxelTextures,
 		TextureManager &textureManager, Renderer &renderer)
@@ -1694,7 +1756,8 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					// Get the voxel def mapping's index and use it for this voxel.
 					const Chunk::VoxelID voxelID = chunk.getVoxel(x, y, z);
 					const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-					if (voxelDef.type == ArenaTypes::VoxelType::None)
+					const ArenaTypes::VoxelType voxelType = voxelDef.type;
+					if (voxelType == ArenaTypes::VoxelType::None)
 					{
 						continue;
 					}
@@ -1708,7 +1771,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunk.getPosition(), VoxelInt2(x, z));
 					const int worldY = y;
 
-					const bool usesVoxelTextures = voxelDef.type != ArenaTypes::VoxelType::Chasm;
+					const bool usesVoxelTextures = voxelType != ArenaTypes::VoxelType::Chasm;
 
 					const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
 					for (int bufferIndex = 0; bufferIndex < graphVoxelDef.opaqueIndexBufferIdCount; bufferIndex++)
@@ -1717,10 +1780,11 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 
 						if (usesVoxelTextures)
 						{
+							const int textureAssetIndex = sgTexture::GetVoxelOpaqueTextureAssetIndex(voxelType, bufferIndex);
 							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
-								[&voxelDef](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+								[&voxelDef, textureAssetIndex](const SceneGraph::LoadedVoxelTexture &loadedTexture)
 							{
-								return loadedTexture.textureAsset == voxelDef.getTextureAsset(0); // @todo: this index should be provided by the voxel def
+								return loadedTexture.textureAsset == voxelDef.getTextureAsset(textureAssetIndex);
 							});
 
 							if (voxelTextureIter != this->voxelTextures.end())
@@ -1763,6 +1827,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 
 						if (usesVoxelTextures)
 						{
+							const int textureAssetIndex = sgTexture::GetVoxelAlphaTestedTextureAssetIndex(voxelType);
 							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
 								[&voxelDef](const SceneGraph::LoadedVoxelTexture &loadedTexture)
 							{
