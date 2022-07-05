@@ -111,7 +111,19 @@ namespace swGeometry
 		}
 		else if (isCompletelyInside)
 		{
-			return TriangleClipResult::one(triangle);
+			// Reverse vertex order if back-facing.
+			if ((eye - triangle.v0).dot(triangle.normal) >= Constants::Epsilon)
+			{
+				return TriangleClipResult::one(triangle);
+			}
+			else
+			{
+				RenderTriangle newTriangle;
+				newTriangle.init(triangle.v0, triangle.v2, triangle.v1, triangle.uv0, triangle.uv2,
+					triangle.uv1, triangle.textureID, triangle.param0);
+
+				return TriangleClipResult::one(newTriangle);
+			}
 		}
 		else if (becomesSmallerTriangle)
 		{
@@ -239,7 +251,7 @@ namespace swGeometry
 	// 3) Clipping
 	BufferView<const RenderTriangle> ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
 		const SoftwareRenderer::AttributeBuffer &attributeBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
-		ObjectTextureID textureID, const Double3 &worldOffset, const RenderCamera &camera)
+		ObjectTextureID textureID, const Double3 &worldOffset, bool allowBackFaces, const RenderCamera &camera)
 	{
 		std::vector<RenderTriangle> &outVisibleTriangles = g_visibleTriangles;
 		std::vector<RenderTriangle> &outClipList = g_visibleClipList;
@@ -325,9 +337,20 @@ namespace swGeometry
 
 			// Discard back-facing and almost-back-facing.
 			const Double3 v0ToEye = eye - v0;
-			if (v0ToEye.dot(triangle.normal) < Constants::Epsilon)
+			const double visibilityDot = v0ToEye.dot(triangle.normal);
+			if (!allowBackFaces)
 			{
-				continue;
+				if (visibilityDot < Constants::Epsilon)
+				{
+					continue;
+				}
+			}
+			else
+			{
+				if (std::abs(visibilityDot) < Constants::Epsilon)
+				{
+					continue;
+				}
 			}
 
 			outClipList.clear();
@@ -976,8 +999,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
 		const ObjectTextureID textureID = drawCall.textureIDs[0].value(); // @todo: do better error handling
 		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
-		const BufferView<const RenderTriangle> clippedTriangles =
-			swGeometry::ProcessTrianglesForRasterization(vertexBuffer, attributeBuffer, indexBuffer, textureID, worldSpaceOffset, camera);
+		const bool allowBackFaces = drawCall.allowBackFaces;
+		const BufferView<const RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(
+			vertexBuffer, attributeBuffer, indexBuffer, textureID, worldSpaceOffset, allowBackFaces, camera);
 
 		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
 		swRender::RasterizeTriangles(clippedTriangles, isAlphaTested, this->objectTextures, paletteTexture,

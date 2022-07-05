@@ -279,8 +279,29 @@ namespace sgMesh
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
 		}
-		
+
 		return triangleCount * INDICES_PER_TRIANGLE;
+	}
+
+	bool AllowsBackFacingGeometry(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Raised:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Door:
+			return false;
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::Edge:
+		case ArenaTypes::VoxelType::Chasm:
+			return true;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
 	}
 
 	// Mesh writing functions. All of these are in model space, scaled by the ceiling scale.
@@ -335,22 +356,22 @@ namespace sgMesh
 			0.0, 0.0,
 			0.0, 1.0,
 			1.0, 1.0,
-			1.0, 0.0,			
+			1.0, 0.0,
 			// Y=0
 			0.0, 0.0,
 			0.0, 1.0,
 			1.0, 1.0,
-			1.0, 0.0,			
+			1.0, 0.0,
 			// Y=1
 			0.0, 0.0,
 			0.0, 1.0,
 			1.0, 1.0,
-			1.0, 0.0,			
+			1.0, 0.0,
 			// Z=0
 			0.0, 0.0,
 			0.0, 1.0,
 			1.0, 1.0,
-			1.0, 0.0,			
+			1.0, 0.0,
 			// Z=1
 			0.0, 0.0,
 			0.0, 1.0,
@@ -869,7 +890,7 @@ namespace sgMesh
 			0.0, yTop, 1.0,
 			0.0, yBottom, 1.0,
 			0.0, yBottom, 0.0,
-			0.0, yTop, 0.0,			
+			0.0, yTop, 0.0,
 			// X=1
 			1.0, yTop, 0.0,
 			1.0, yBottom, 0.0,
@@ -1078,8 +1099,8 @@ namespace sgMesh
 		}
 	}
 
-	void WriteVoxelMeshIndexBuffers(const VoxelDefinition &voxelDef, BufferView<int32_t> outOpaqueIndices0, 
-		BufferView<int32_t> outOpaqueIndices1, BufferView<int32_t> outOpaqueIndices2, 
+	void WriteVoxelMeshIndexBuffers(const VoxelDefinition &voxelDef, BufferView<int32_t> outOpaqueIndices0,
+		BufferView<int32_t> outOpaqueIndices1, BufferView<int32_t> outOpaqueIndices2,
 		BufferView<int32_t> outAlphaTestedIndices)
 	{
 		const ArenaTypes::VoxelType voxelType = voxelDef.type;
@@ -1684,7 +1705,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 				renderer.populateAttributeBuffer(graphVoxelDef.attributeBufferID,
 					BufferView<const double>(attributes.data(), vertexCount * sgMesh::ATTRIBUTES_PER_VERTEX));
 
-				const int opaqueIndexBufferCount = sgMesh::GetVoxelOpaqueIndexBufferCount(voxelType);				
+				const int opaqueIndexBufferCount = sgMesh::GetVoxelOpaqueIndexBufferCount(voxelType);
 				for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
 				{
 					const int opaqueIndexCount = sgMesh::GetVoxelOpaqueIndexCount(voxelType, bufferIndex);
@@ -1727,7 +1748,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 
 		auto addDrawCall = [this, ceilingScale](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID,
 			AttributeBufferID attributeBufferID, IndexBufferID indexBufferID, ObjectTextureID textureID,
-			PixelShaderType pixelShaderType)
+			PixelShaderType pixelShaderType, bool allowsBackFaces)
 		{
 			RenderDrawCall drawCall;
 			drawCall.vertexBufferID = vertexBufferID;
@@ -1740,7 +1761,8 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 				static_cast<SNDouble>(x),
 				static_cast<double>(y) * ceilingScale,
 				static_cast<WEDouble>(z));
-			
+			drawCall.allowBackFaces = allowsBackFaces;
+
 			this->drawCalls.emplace_back(std::move(drawCall));
 		};
 
@@ -1771,6 +1793,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunk.getPosition(), VoxelInt2(x, z));
 					const int worldY = y;
 
+					const bool allowsBackFaces = sgMesh::AllowsBackFacingGeometry(voxelType);
 					const bool usesVoxelTextures = voxelType != ArenaTypes::VoxelType::Chasm;
 
 					const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
@@ -1818,7 +1841,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 
 						const IndexBufferID opaqueIndexBufferID = graphVoxelDef.opaqueIndexBufferIDs[bufferIndex];
 						addDrawCall(worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID,
-							opaqueIndexBufferID, textureID, PixelShaderType::Opaque);
+							opaqueIndexBufferID, textureID, PixelShaderType::Opaque, allowsBackFaces);
 					}
 
 					if (graphVoxelDef.alphaTestedIndexBufferID >= 0)
@@ -1870,7 +1893,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 						}
 
 						addDrawCall(worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID,
-							graphVoxelDef.alphaTestedIndexBufferID, textureID, PixelShaderType::AlphaTested);
+							graphVoxelDef.alphaTestedIndexBufferID, textureID, PixelShaderType::AlphaTested, allowsBackFaces);
 					}
 				}
 			}

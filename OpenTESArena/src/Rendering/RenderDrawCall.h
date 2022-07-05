@@ -19,6 +19,7 @@ struct RenderDrawCall
 	VertexShaderType vertexShaderType;
 	PixelShaderType pixelShaderType;
 	Double3 worldSpaceOffset;
+	bool allowBackFaces;
 
 	RenderDrawCall();
 
