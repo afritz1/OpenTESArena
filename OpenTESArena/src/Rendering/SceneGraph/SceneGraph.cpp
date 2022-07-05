@@ -1829,9 +1829,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 						{
 							const int textureAssetIndex = sgTexture::GetVoxelAlphaTestedTextureAssetIndex(voxelType);
 							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
-								[&voxelDef](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+								[&voxelDef, textureAssetIndex](const SceneGraph::LoadedVoxelTexture &loadedTexture)
 							{
-								return loadedTexture.textureAsset == voxelDef.getTextureAsset(0); // @todo: this index should be provided by the voxel def
+								return loadedTexture.textureAsset == voxelDef.getTextureAsset(textureAssetIndex);
 							});
 
 							if (voxelTextureIter != this->voxelTextures.end())
