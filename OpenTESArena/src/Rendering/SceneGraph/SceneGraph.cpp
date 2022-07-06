@@ -1604,9 +1604,13 @@ void SceneGraph::loadTextures(const std::optional<int> &activeLevelIndex, const 
 	const MapType mapType = mapDefinition.getMapType();
 	if ((mapType == MapType::Interior) || (mapType == MapType::City))
 	{
-		// Load textures for the active level.
-		DebugAssert(activeLevelIndex.has_value());
-		loadLevelDefTextures(*activeLevelIndex);
+		// Load textures for all levels in the map definition. Note this was changed from only
+		// loading for the active level due to an issue with BS#.MIF maps apparently having some
+		// levels with textures specified in other levels' .INF files.
+		for (int i = 0; i < mapDefinition.getLevelCount(); i++)
+		{
+			loadLevelDefTextures(i);
+		}
 	}
 	else if (mapType == MapType::Wilderness)
 	{
