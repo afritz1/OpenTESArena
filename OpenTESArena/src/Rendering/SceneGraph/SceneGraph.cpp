@@ -1814,6 +1814,10 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 							{
 								textureID = voxelTextureIter->objectTextureRef.get();
 							}
+							else
+							{
+								DebugLogError("Couldn't find opaque texture asset \"" + voxelDef.getTextureAsset(textureAssetIndex).filename + "\".");
+							}
 						}
 						else
 						{
@@ -1831,11 +1835,14 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 								const ScopedObjectTextureRef &chasmTextureRef = chasmTextureRefs[0]; // @todo: daytimePercent? chasmAnimPercent?
 								textureID = chasmTextureRef.get();
 							}
+							else
+							{
+								DebugLogError("Couldn't find chasm textures for chasm type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
+							}
 						}
 
 						if (textureID < 0)
 						{
-							DebugLogError("Couldn't find texture ID for opaque voxel texture.");
 							continue;
 						}
 
@@ -1861,6 +1868,10 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 							{
 								textureID = voxelTextureIter->objectTextureRef.get();
 							}
+							else
+							{
+								DebugLogError("Couldn't find alpha-tested texture asset \"" + voxelDef.getTextureAsset(textureAssetIndex).filename + "\".");
+							}
 						}
 						else
 						{
@@ -1884,11 +1895,14 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 								DebugAssert(wallTextureIter != wallEntries.end());
 								textureID = wallTextureIter->wallTextureRef.get();
 							}
+							else
+							{
+								DebugLogError("Couldn't find chasm wall texture asset \"" + chasm.textureAsset.filename + "\".");
+							}
 						}
 
 						if (textureID < 0)
 						{
-							DebugLogError("Couldn't find texture ID for opaque voxel texture.");
 							continue;
 						}
 
