@@ -1985,6 +1985,10 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 
 void SceneGraph::unloadScene(RendererSystem3D &renderer)
 {
+	this->voxelTextures.clear();
+	this->entityTextures.clear();
+	this->chasmTextureLists.clear();
+
 	// Free vertex/attribute/index buffer IDs from renderer.
 	for (SceneGraphChunk &chunk : this->graphChunks)
 	{
