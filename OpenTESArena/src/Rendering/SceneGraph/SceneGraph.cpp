@@ -23,50 +23,6 @@
 
 #include "components/debug/Debug.h"
 
-namespace sgGeometry
-{
-	// Quad texture coordinates (top left, top right, etc.).
-	const Double2 UV_TL(0.0, 0.0);
-	const Double2 UV_TR(1.0, 0.0);
-	const Double2 UV_BL(0.0, 1.0);
-	const Double2 UV_BR(1.0, 1.0);
-
-	// Makes the world space position of where a voxel should be.
-	Double3 MakeVoxelPosition(const ChunkInt2 &chunk, const VoxelInt3 &voxel, double ceilingScale)
-	{
-		const Int3 absoluteVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunk, voxel);
-		return Double3(
-			static_cast<double>(absoluteVoxel.x),
-			static_cast<double>(absoluteVoxel.y) * ceilingScale,
-			static_cast<double>(absoluteVoxel.z));
-	}
-
-	// Makes the world space position of where an entity's bottom center should be. The ceiling scale is already
-	// in the 3D point.
-	Double3 MakeEntityPosition(const ChunkInt2 &chunk, const VoxelDouble3 &point)
-	{
-		return VoxelUtils::chunkPointToNewPoint(chunk, point);
-	}
-
-	// Makes a world space triangle. The given vertices are in model space and contain the 0->1 values where 1 is
-	// a voxel corner.
-	void MakeWorldSpaceVertices(const Double3 &voxelPosition, const Double3 &v0, const Double3 &v1, const Double3 &v2,
-		double ceilingScale, Double3 *outV0, Double3 *outV1, Double3 *outV2)
-	{
-		outV0->x = voxelPosition.x + v0.x;
-		outV0->y = voxelPosition.y + (v0.y * ceilingScale);
-		outV0->z = voxelPosition.z + v0.z;
-
-		outV1->x = voxelPosition.x + v1.x;
-		outV1->y = voxelPosition.y + (v1.y * ceilingScale);
-		outV1->z = voxelPosition.z + v1.z;
-
-		outV2->x = voxelPosition.x + v2.x;
-		outV2->y = voxelPosition.y + (v2.y * ceilingScale);
-		outV2->z = voxelPosition.z + v2.z;
-	}
-}
-
 namespace sgMesh
 {
 	constexpr int MAX_VERTICES_PER_VOXEL = 24;
