@@ -1563,7 +1563,7 @@ ObjectTextureID SceneGraph::getChasmWallTextureID(ArenaTypes::ChasmType chasmTyp
 
 BufferView<const RenderDrawCall> SceneGraph::getDrawCalls() const
 {
-	return BufferView<const RenderDrawCall>(this->drawCalls.data(), static_cast<int>(this->drawCalls.size()));
+	return BufferView<const RenderDrawCall>(this->drawCallsCache.data(), static_cast<int>(this->drawCallsCache.size()));
 }
 
 void SceneGraph::loadTextures(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
@@ -1750,9 +1750,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 			graphChunk.voxelDefMappings.emplace(voxelID, graphVoxelID);
 		}
 
-		auto addDrawCall = [this, ceilingScale](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID,
-			AttributeBufferID attributeBufferID, IndexBufferID indexBufferID, ObjectTextureID textureID,
-			PixelShaderType pixelShaderType, bool allowsBackFaces)
+		auto addDrawCall = [this, ceilingScale](SceneGraphChunk &graphChunk, SNInt x, int y, WEInt z,
+			VertexBufferID vertexBufferID, AttributeBufferID attributeBufferID, IndexBufferID indexBufferID,
+			ObjectTextureID textureID, PixelShaderType pixelShaderType, bool allowsBackFaces)
 		{
 			RenderDrawCall drawCall;
 			drawCall.vertexBufferID = vertexBufferID;
@@ -1767,7 +1767,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 				static_cast<WEDouble>(z));
 			drawCall.allowBackFaces = allowsBackFaces;
 
-			this->drawCalls.emplace_back(std::move(drawCall));
+			graphChunk.voxelDrawCalls.emplace_back(std::move(drawCall));
 		};
 
 		// Generate draw calls for each non-air voxel.
@@ -1851,8 +1851,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 						}
 
 						const IndexBufferID opaqueIndexBufferID = graphVoxelDef.opaqueIndexBufferIDs[bufferIndex];
-						addDrawCall(worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID,
-							opaqueIndexBufferID, textureID, PixelShaderType::Opaque, allowsBackFaces);
+						addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID,
+							graphVoxelDef.attributeBufferID, opaqueIndexBufferID, textureID, PixelShaderType::Opaque,
+							allowsBackFaces);
 					}
 
 					if (graphVoxelDef.alphaTestedIndexBufferID >= 0)
@@ -1910,8 +1911,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 							continue;
 						}
 
-						addDrawCall(worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID, graphVoxelDef.attributeBufferID,
-							graphVoxelDef.alphaTestedIndexBufferID, textureID, PixelShaderType::AlphaTested, allowsBackFaces);
+						addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID,
+							graphVoxelDef.attributeBufferID, graphVoxelDef.alphaTestedIndexBufferID, textureID,
+							PixelShaderType::AlphaTested, allowsBackFaces);
 					}
 				}
 			}
@@ -1949,7 +1951,6 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 	Renderer &renderer, RendererSystem3D &renderer3D)
 {
 	DebugAssert(this->graphChunks.empty());
-	DebugAssert(this->drawCalls.empty());
 
 	// Create empty graph chunks using the chunk manager's chunks as a reference.
 	const ChunkManager &chunkManager = levelInst.getChunkManager();
@@ -1972,7 +1973,14 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 	this->loadSky(skyInst, daytimePercent, latitude, renderer3D);
 	this->loadWeather(skyInst, daytimePercent, renderer3D);*/
 
-	// @todo: populate draw calls since update() only operates on dirty stuff from chunk manager/entity manager/etc.
+	// Gather draw calls from each chunk.
+	// @todo: do this in update() so it can operate on dirty stuff from chunk manager/entity manager/etc.
+	this->drawCallsCache.clear();
+	for (size_t i = 0; i < this->graphChunks.size(); i++)
+	{
+		const SceneGraphChunk &graphChunk = this->graphChunks[i];
+		this->drawCallsCache.insert(this->drawCallsCache.end(), graphChunk.voxelDrawCalls.begin(), graphChunk.voxelDrawCalls.end());
+	}
 }
 
 void SceneGraph::unloadScene(RendererSystem3D &renderer)
@@ -1984,7 +1992,7 @@ void SceneGraph::unloadScene(RendererSystem3D &renderer)
 	}
 
 	this->graphChunks.clear();
-	this->drawCalls.clear();
+	this->drawCallsCache.clear();
 }
 
 /*void SceneGraph::updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,

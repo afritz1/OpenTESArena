@@ -50,6 +50,7 @@ void SceneGraphChunk::init(const ChunkInt2 &position, int height)
 	this->voxelDefs.clear();
 	this->voxelDefMappings.clear();
 	this->voxels.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
+	this->voxelDrawCalls.clear();
 	this->position = position;
 
 	// Add one voxel def for air.

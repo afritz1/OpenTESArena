@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 
+#include "../RenderDrawCall.h"
 #include "../RenderGeometryUtils.h"
 #include "../RenderTriangle.h"
 #include "../../World/Chunk.h"
@@ -38,6 +39,7 @@ struct SceneGraphChunk
 	std::vector<SceneGraphVoxelDefinition> voxelDefs;
 	std::unordered_map<Chunk::VoxelID, SceneGraphVoxelID> voxelDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if Chunk::removeVoxelDef() is ever in use).
 	Buffer3D<SceneGraphVoxelID> voxels; // Points into voxel defs.
+	std::vector<RenderDrawCall> voxelDrawCalls;
 	ChunkInt2 position;
 
 	// @todo: quadtree

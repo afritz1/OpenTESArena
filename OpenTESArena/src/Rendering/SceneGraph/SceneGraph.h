@@ -90,7 +90,8 @@ private:
 	// - list of vertex buffer ids (all in 2D and in model space)
 	// - list of transforms for screen positions
 
-	std::vector<RenderDrawCall> drawCalls;
+	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
+	std::vector<RenderDrawCall> drawCallsCache;
 
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
 	ObjectTextureID getEntityTextureID(const TextureAsset &textureAsset, bool flipped, bool reflective) const;
