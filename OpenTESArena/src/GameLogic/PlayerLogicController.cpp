@@ -569,7 +569,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
+			const Chunk::VoxelID voxelID = chunkPtr->getVoxelID(voxel.x, voxel.y, voxel.z);
 			const VoxelDefinition &voxelDef = chunkPtr->getVoxelDef(voxelID);
 
 			// Primary interaction handles selection in the game world. Secondary interaction handles

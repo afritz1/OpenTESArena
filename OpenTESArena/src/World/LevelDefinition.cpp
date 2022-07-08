@@ -42,33 +42,46 @@ LevelDefinition::DoorPlacementDef::DoorPlacementDef(DoorDefID id, std::vector<Le
 
 void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
-	this->voxels.init(width, height, depth);
-	this->voxels.fill(0);
+	this->voxelIDs.init(width, height, depth);
+	this->voxelIDs.fill(0);
+
+	this->voxelMeshIDs.init(width, height, depth);
+	this->voxelMeshIDs.fill(0);
 }
 
 SNInt LevelDefinition::getWidth() const
 {
-	return this->voxels.getWidth();
+	return this->voxelIDs.getWidth();
 }
 
 int LevelDefinition::getHeight() const
 {
-	return this->voxels.getHeight();
+	return this->voxelIDs.getHeight();
 }
 
 WEInt LevelDefinition::getDepth() const
 {
-	return this->voxels.getDepth();
+	return this->voxelIDs.getDepth();
 }
 
-LevelDefinition::VoxelDefID LevelDefinition::getVoxel(SNInt x, int y, WEInt z) const
+LevelDefinition::VoxelDefID LevelDefinition::getVoxelID(SNInt x, int y, WEInt z) const
 {
-	return this->voxels.get(x, y, z);
+	return this->voxelIDs.get(x, y, z);
 }
 
-void LevelDefinition::setVoxel(SNInt x, int y, WEInt z, VoxelDefID voxel)
+LevelDefinition::VoxelMeshDefID LevelDefinition::getVoxelMeshID(SNInt x, int y, WEInt z) const
 {
-	this->voxels.set(x, y, z, voxel);
+	return this->voxelMeshIDs.get(x, y, z);
+}
+
+void LevelDefinition::setVoxelID(SNInt x, int y, WEInt z, VoxelDefID id)
+{
+	this->voxelIDs.set(x, y, z, id);
+}
+
+void LevelDefinition::setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
+{
+	this->voxelMeshIDs.set(x, y, z, id);
 }
 
 int LevelDefinition::getEntityPlacementDefCount() const

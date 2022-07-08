@@ -13,11 +13,17 @@ void LevelInfoDefinition::init(double ceilingScale)
 	
 	// Add air voxel by default.
 	this->addVoxelDef(VoxelDefinition());
+	this->addVoxelMeshDef(VoxelMeshDefinition());
 }
 
 int LevelInfoDefinition::getVoxelDefCount() const
 {
 	return static_cast<int>(this->voxelDefs.size());
+}
+
+int LevelInfoDefinition::getVoxelMeshDefCount() const
+{
+	return static_cast<int>(this->voxelMeshDefs.size());
 }
 
 int LevelInfoDefinition::getEntityDefCount() const
@@ -54,6 +60,12 @@ const VoxelDefinition &LevelInfoDefinition::getVoxelDef(LevelDefinition::VoxelDe
 {
 	DebugAssertIndex(this->voxelDefs, id);
 	return this->voxelDefs[id];
+}
+
+const VoxelMeshDefinition &LevelInfoDefinition::getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const
+{
+	DebugAssertIndex(this->voxelMeshDefs, id);
+	return this->voxelMeshDefs[id];
 }
 
 const EntityDefinition &LevelInfoDefinition::getEntityDef(LevelDefinition::EntityDefID id) const
@@ -109,6 +121,12 @@ LevelDefinition::VoxelDefID LevelInfoDefinition::addVoxelDef(VoxelDefinition &&d
 {
 	this->voxelDefs.emplace_back(std::move(def));
 	return static_cast<LevelDefinition::VoxelDefID>(this->voxelDefs.size()) - 1;
+}
+
+LevelDefinition::VoxelMeshDefID LevelInfoDefinition::addVoxelMeshDef(VoxelMeshDefinition &&def)
+{
+	this->voxelMeshDefs.emplace_back(std::move(def));
+	return static_cast<LevelDefinition::VoxelMeshDefID>(this->voxelMeshDefs.size()) - 1;
 }
 
 LevelDefinition::EntityDefID LevelInfoDefinition::addEntityDef(EntityDefinition &&def)

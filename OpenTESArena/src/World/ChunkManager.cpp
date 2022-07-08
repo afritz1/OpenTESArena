@@ -57,6 +57,12 @@ namespace
 		// Chunks have an air definition at ID 0.
 		return static_cast<Chunk::VoxelID>(voxelDefID + 1);
 	}
+
+	Chunk::VoxelMeshID LevelVoxelMeshDefIdToChunkVoxelMeshID(LevelDefinition::VoxelMeshDefID voxelMeshDefID)
+	{
+		// Chunks have an air definition at ID 0.
+		return static_cast<Chunk::VoxelMeshID>(voxelMeshDefID + 1);
+	}
 }
 
 int ChunkManager::getChunkCount() const
@@ -132,7 +138,7 @@ void ChunkManager::getAdjacentVoxelDefs(const CoordInt3 &coord, const VoxelDefin
 	{
 		if (chunkPtr != nullptr)
 		{
-			const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
+			const Chunk::VoxelID voxelID = chunkPtr->getVoxelID(voxel.x, voxel.y, voxel.z);
 			*outDef = &chunkPtr->getVoxelDef(voxelID);
 		}
 		else
@@ -192,12 +198,22 @@ void ChunkManager::populateChunkVoxelDefs(Chunk &chunk, const LevelInfoDefinitio
 	for (int i = 0; i < levelInfoDefinition.getVoxelDefCount(); i++)
 	{
 		VoxelDefinition voxelDefinition = levelInfoDefinition.getVoxelDef(i);
+		const ArenaTypes::VoxelType voxelType = voxelDefinition.type;
+
 		Chunk::VoxelID dummyID;
 		if (!chunk.tryAddVoxelDef(std::move(voxelDefinition), &dummyID))
 		{
 			DebugLogError("Couldn't add voxel definition \"" + std::to_string(i) + "\" to chunk (voxel type \"" +
-				std::to_string(static_cast<int>(voxelDefinition.type)) + "\".");
+				std::to_string(static_cast<int>(voxelType)) + "\".");
 		}
+	}
+
+	// Add voxel mesh definitions.
+	for (int i = 0; i < levelInfoDefinition.getVoxelMeshDefCount(); i++)
+	{
+		VoxelMeshDefinition voxelMeshDef = levelInfoDefinition.getVoxelMeshDef(i);
+		chunk.addVoxelMeshDef(std::move(voxelMeshDef));
+		// @todo: doesn't this need to iterate all XYZ of the LevelDefinition to know what the voxel mesh def IDs should be?
 	}
 }
 
@@ -221,7 +237,7 @@ void ChunkManager::populateChunkVoxels(Chunk &chunk, const LevelDefinition &leve
 
 				// Convert the voxel definition ID to a chunk voxel ID. If they don't match then the
 				// chunk doesn't support that high of a voxel definition ID.
-				const LevelDefinition::VoxelDefID voxelDefID = levelDefinition.getVoxel(x, y, z);
+				const LevelDefinition::VoxelDefID voxelDefID = levelDefinition.getVoxelID(x, y, z);
 				const Chunk::VoxelID voxelID = static_cast<Chunk::VoxelID>(voxelDefID);
 				if (static_cast<LevelDefinition::VoxelDefID>(voxelID) != voxelDefID)
 				{
@@ -230,7 +246,13 @@ void ChunkManager::populateChunkVoxels(Chunk &chunk, const LevelDefinition &leve
 
 				// Add one to account for the air voxel definition being ID 0.
 				const Chunk::VoxelID correctedVoxelID = LevelVoxelDefIdToChunkVoxelID(voxelDefID);
-				chunk.setVoxel(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, correctedVoxelID);
+				chunk.setVoxelID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, correctedVoxelID);
+
+				const LevelDefinition::VoxelMeshDefID voxelMeshDefID = levelDefinition.getVoxelMeshID(x, y, z);
+
+				// Add one to account for the air voxel definition being ID 0.
+				const Chunk::VoxelMeshID voxelMeshID = LevelVoxelMeshDefIdToChunkVoxelMeshID(voxelMeshDefID);
+				chunk.setVoxelMeshID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelMeshID);
 			}
 		}
 	}
@@ -412,7 +434,7 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				const Chunk::VoxelID voxelID = chunk.getVoxel(x, y, z);
+				const Chunk::VoxelID voxelID = chunk.getVoxelID(x, y, z);
 				const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 				if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 				{
@@ -547,15 +569,20 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 			return Chunk::AIR_VOXEL_ID;
 		}();
 
+		constexpr Chunk::VoxelMeshID floorVoxelMeshID = floorVoxelID; // @todo: this is probably brittle; can't assume exact voxel def -> mesh def mapping.
+		const Chunk::VoxelMeshID ceilingVoxelMeshID = ceilingVoxelID; // @todo: this is probably brittle; can't assume exact voxel def -> mesh def mapping.
+
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				chunk.setVoxel(x, 0, z, floorVoxelID);
+				chunk.setVoxelID(x, 0, z, floorVoxelID);
+				chunk.setVoxelMeshID(x, 0, z, floorVoxelMeshID);
 
 				if (chunk.getHeight() > 2)
 				{
-					chunk.setVoxel(x, 2, z, ceilingVoxelID);
+					chunk.setVoxelID(x, 2, z, ceilingVoxelID);
+					chunk.setVoxelMeshID(x, 2, z, ceilingVoxelMeshID);
 				}
 			}
 		}
@@ -605,11 +632,16 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 				const LevelInt2 wrappedLevelVoxel(
 					wrapLevelVoxel(levelVoxel.x, levelWidth),
 					wrapLevelVoxel(levelVoxel.y, levelDepth));
-				const LevelDefinition::VoxelDefID voxelDefID = levelDefinition.getVoxel(
-					wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const LevelDefinition::VoxelDefID voxelDefID =
+					levelDefinition.getVoxelID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
 
 				const Chunk::VoxelID voxelID = LevelVoxelDefIdToChunkVoxelID(voxelDefID);
-				chunk.setVoxel(x, 0, z, voxelID);
+				chunk.setVoxelID(x, 0, z, voxelID);
+
+				const LevelDefinition::VoxelMeshDefID voxelMeshDefID =
+					levelDefinition.getVoxelMeshID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const Chunk::VoxelMeshID voxelMeshID = LevelVoxelMeshDefIdToChunkVoxelMeshID(voxelMeshDefID);
+				chunk.setVoxelMeshID(x, 0, z, voxelMeshID);
 			}
 		}
 
@@ -700,7 +732,7 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 		else
 		{
 			// No voxel instance yet. If it's a chasm, add a new voxel instance.
-			const Chunk::VoxelID voxelID = chunk.getVoxel(voxel.x, voxel.y, voxel.z);
+			const Chunk::VoxelID voxelID = chunk.getVoxelID(voxel.x, voxel.y, voxel.z);
 			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 			if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 			{

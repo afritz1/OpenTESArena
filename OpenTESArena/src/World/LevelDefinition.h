@@ -18,6 +18,7 @@ class LevelDefinition
 public:
 	// Points to various definitions in a level info definition.
 	using VoxelDefID = int;
+	using VoxelMeshDefID = int;
 	using EntityDefID = int;
 	using LockDefID = int;
 	using TriggerDefID = int;
@@ -73,7 +74,8 @@ public:
 		DoorPlacementDef(DoorDefID id, std::vector<LevelInt3> &&positions);
 	};
 private:
-	Buffer3D<VoxelDefID> voxels;
+	Buffer3D<VoxelDefID> voxelIDs;
+	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
 	std::vector<EntityPlacementDef> entityPlacementDefs;
 	std::vector<LockPlacementDef> lockPlacementDefs;
 	std::vector<TriggerPlacementDef> triggerPlacementDefs;
@@ -87,8 +89,10 @@ public:
 	int getHeight() const;
 	WEInt getDepth() const;
 
-	VoxelDefID getVoxel(SNInt x, int y, WEInt z) const;
-	void setVoxel(SNInt x, int y, WEInt z, VoxelDefID voxel);
+	VoxelDefID getVoxelID(SNInt x, int y, WEInt z) const;
+	VoxelMeshDefID getVoxelMeshID(SNInt x, int y, WEInt z) const;
+	void setVoxelID(SNInt x, int y, WEInt z, VoxelDefID id);
+	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
 
 	int getEntityPlacementDefCount() const;
 	const EntityPlacementDef &getEntityPlacementDef(int index) const;

@@ -17,6 +17,7 @@
 #include "TriggerDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelInstance.h"
+#include "VoxelMeshDefinition.h"
 #include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
 
@@ -32,6 +33,7 @@ public:
 	// This type must always support at least as many bits as are needed per voxel.
 	using VoxelID = uint8_t;
 
+	using VoxelMeshID = int;
 	using TransitionID = int;
 	using TriggerID = int;
 	using LockID = int;
@@ -45,7 +47,8 @@ private:
 	static constexpr int MAX_VOXEL_DEFS = 1 << BITS_PER_VOXEL;
 
 	// Indices into voxel definitions.
-	Buffer3D<VoxelID> voxels;
+	Buffer3D<VoxelID> voxelIDs;
+	Buffer3D<VoxelMeshID> voxelMeshIDs;
 
 	// Positions of voxels that have changed this frame. Reset at end-of-frame.
 	std::vector<VoxelInt3> dirtyVoxels;
@@ -54,6 +57,7 @@ private:
 	// the voxel data is in use by the voxel grid.
 	std::array<VoxelDefinition, MAX_VOXEL_DEFS> voxelDefs;
 	std::array<bool, MAX_VOXEL_DEFS> activeVoxelDefs;
+	std::vector<VoxelMeshDefinition> voxelMeshDefs;
 
 	// Instance data for voxels that are uniquely different in some way.
 	std::vector<VoxelInstance> voxelInsts;
@@ -113,7 +117,8 @@ public:
 	bool isValidVoxel(SNInt x, int y, WEInt z) const;
 
 	// Gets the voxel ID at the given coordinate.
-	VoxelID getVoxel(SNInt x, int y, WEInt z) const;
+	VoxelID getVoxelID(SNInt x, int y, WEInt z) const;
+	VoxelMeshID getVoxelMeshID(SNInt x, int y, WEInt z) const;
 
 	int getDirtyVoxelCount() const;
 	const VoxelInt3 &getDirtyVoxel(int index) const;
@@ -123,6 +128,9 @@ public:
 
 	// Gets the voxel definition associated with a voxel ID.
 	const VoxelDefinition &getVoxelDef(VoxelID id) const;
+
+	int getVoxelMeshDefCount() const;
+	const VoxelMeshDefinition &getVoxelMeshDef(int index) const;
 
 	// Gets the number of voxel instances.
 	int getVoxelInstCount() const;
@@ -143,10 +151,12 @@ public:
 	const DoorDefinition *tryGetDoor(const VoxelInt3 &voxel) const;
 
 	// Sets the voxel at the given coordinate.
-	void setVoxel(SNInt x, int y, WEInt z, VoxelID id);
+	void setVoxelID(SNInt x, int y, WEInt z, VoxelID id);
+	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshID id);
 
 	// Attempts to add a voxel definition and returns its assigned ID.
 	bool tryAddVoxelDef(VoxelDefinition &&voxelDef, VoxelID *outID);
+	VoxelMeshID addVoxelMeshDef(VoxelMeshDefinition &&voxelMeshDef);
 
 	// Adds a voxel instance to the chunk.
 	void addVoxelInst(VoxelInstance &&voxelInst);

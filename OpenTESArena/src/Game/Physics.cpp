@@ -235,7 +235,7 @@ namespace Physics
 			return false;
 		}
 
-		const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
+		const Chunk::VoxelID voxelID = chunk->getVoxelID(voxel.x, voxel.y, voxel.z);
 
 		// Get the voxel definition associated with the voxel.
 		const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
@@ -626,7 +626,7 @@ namespace Physics
 			return false;
 		}
 
-		const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
+		const Chunk::VoxelID voxelID = chunk->getVoxelID(voxel.x, voxel.y, voxel.z);
 
 		// Get the voxel definition associated with the voxel.
 		const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);

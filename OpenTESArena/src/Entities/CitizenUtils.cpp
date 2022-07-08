@@ -178,8 +178,8 @@ bool CitizenUtils::trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenIn
 		for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
 		{
 			const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
-			const Chunk::VoxelID voxelID = chunk.getVoxel(spawnVoxel.x, 1, spawnVoxel.y);
-			const Chunk::VoxelID groundVoxelID = chunk.getVoxel(spawnVoxel.x, 0, spawnVoxel.y);
+			const Chunk::VoxelID voxelID = chunk.getVoxelID(spawnVoxel.x, 1, spawnVoxel.y);
+			const Chunk::VoxelID groundVoxelID = chunk.getVoxelID(spawnVoxel.x, 0, spawnVoxel.y);
 			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 			const VoxelDefinition &groundVoxelDef = chunk.getVoxelDef(groundVoxelID);
 

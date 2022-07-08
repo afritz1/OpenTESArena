@@ -490,7 +490,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	// Get the voxel definition associated with the voxel.
 	const VoxelDefinition &voxelDef = [chunkPtr, &transitionVoxel]()
 	{
-		const Chunk::VoxelID voxelID = chunkPtr->getVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
+		const Chunk::VoxelID voxelID = chunkPtr->getVoxelID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
 		return chunkPtr->getVoxelDef(voxelID);
 	}();
 

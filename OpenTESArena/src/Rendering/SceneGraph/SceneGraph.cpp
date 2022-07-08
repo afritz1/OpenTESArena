@@ -25,1074 +25,7 @@
 
 namespace sgMesh
 {
-	constexpr int MAX_VERTICES_PER_VOXEL = 24;
-	constexpr int MAX_INDICES_PER_VOXEL = 36;
-	constexpr int INDICES_PER_TRIANGLE = 3;
-	constexpr int COMPONENTS_PER_VERTEX = 3; // XYZ
-	constexpr int ATTRIBUTES_PER_VERTEX = 2; // UV texture coordinates
 
-	// The "ideal" vertices per voxel (no duplication).
-	constexpr int GetVoxelUniqueVertexCount(ArenaTypes::VoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::None:
-			return 0;
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Chasm:
-		case ArenaTypes::VoxelType::Door:
-			return 8;
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Edge:
-			return 4;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	// The actual vertices per voxel used by the renderer due to how vertex attributes work.
-	constexpr int GetVoxelActualVertexCount(ArenaTypes::VoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::None:
-			return 0;
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Raised:
-			return 24;
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
-			return 16;
-		case ArenaTypes::VoxelType::Chasm:
-			return 20;
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Edge:
-			return 4;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	static constexpr int VOXEL_WALL_INDEX_BUFFER_INDEX_SIDE = 0;
-	static constexpr int VOXEL_WALL_INDEX_BUFFER_INDEX_BOTTOM = 1;
-	static constexpr int VOXEL_WALL_INDEX_BUFFER_INDEX_TOP = 2;
-
-	static constexpr int VOXEL_RAISED_INDEX_BUFFER_INDEX_SIDE = 0;
-	static constexpr int VOXEL_RAISED_INDEX_BUFFER_INDEX_BOTTOM = 0;
-	static constexpr int VOXEL_RAISED_INDEX_BUFFER_INDEX_TOP = 1;
-
-	constexpr int GetVoxelOpaqueIndexBufferCount(ArenaTypes::VoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::Wall:
-			return 3;
-		case ArenaTypes::VoxelType::Raised:
-			return 2;
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Chasm:
-			return 1;
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Door:
-			return 0;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	constexpr int GetVoxelOpaqueIndexCount(ArenaTypes::VoxelType voxelType, int bufferIndex)
-	{
-		int triangleCount = -1;
-
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
-		case ArenaTypes::VoxelType::Edge:
-			// @todo: should this static_assert false instead?
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-		case ArenaTypes::VoxelType::Wall:
-			if (bufferIndex == VOXEL_WALL_INDEX_BUFFER_INDEX_SIDE)
-			{
-				triangleCount = 8;
-			}
-			else if ((bufferIndex == VOXEL_WALL_INDEX_BUFFER_INDEX_BOTTOM) || (bufferIndex == VOXEL_WALL_INDEX_BUFFER_INDEX_TOP))
-			{
-				triangleCount = 2;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaTypes::VoxelType::Raised:
-			if ((bufferIndex == VOXEL_RAISED_INDEX_BUFFER_INDEX_BOTTOM) ||
-				(bufferIndex == VOXEL_RAISED_INDEX_BUFFER_INDEX_TOP))
-			{
-				triangleCount = 4;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaTypes::VoxelType::Chasm:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 2;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-
-		return triangleCount * INDICES_PER_TRIANGLE;
-	}
-
-	constexpr int GetVoxelAlphaTestedIndexBufferCount(ArenaTypes::VoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Chasm:
-			return 0;
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Door:
-			return 1;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	constexpr int GetVoxelAlphaTestedIndexCount(ArenaTypes::VoxelType voxelType, int bufferIndex)
-	{
-		int triangleCount = -1;
-
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Chasm:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-		case ArenaTypes::VoxelType::Raised:
-			if (bufferIndex == VOXEL_RAISED_INDEX_BUFFER_INDEX_SIDE)
-			{
-				triangleCount = 12;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 8;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaTypes::VoxelType::Edge:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 2;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-
-		return triangleCount * INDICES_PER_TRIANGLE;
-	}
-
-	bool AllowsBackFacingGeometry(ArenaTypes::VoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
-			return false;
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Chasm:
-			return true;
-		default:
-			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	// Mesh writing functions. All of these are in model space, scaled by the ceiling scale.
-	void WriteWallMeshGeometryBuffers(const VoxelDefinition::WallData &wall, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Wall);
-
-		// One quad per face (results in duplication; necessary for correct texture mapping).
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
-		{
-			// X=0
-			0.0, ceilingScale, 0.0,
-			0.0, 0.0, 0.0,
-			0.0, 0.0, 1.0,
-			0.0, ceilingScale, 1.0,
-			// X=1
-			1.0, ceilingScale, 1.0,
-			1.0, 0.0, 1.0,
-			1.0, 0.0, 0.0,
-			1.0, ceilingScale, 0.0,
-			// Y=0
-			0.0, 0.0, 0.0,
-			1.0, 0.0, 0.0,
-			1.0, 0.0, 1.0,
-			0.0, 0.0, 1.0,
-			// Y=1
-			0.0, ceilingScale, 1.0,
-			1.0, ceilingScale, 1.0,
-			1.0, ceilingScale, 0.0,
-			0.0, ceilingScale, 0.0,
-			// Z=0
-			1.0, ceilingScale, 0.0,
-			1.0, 0.0, 0.0,
-			0.0, 0.0, 0.0,
-			0.0, ceilingScale, 0.0,
-			// Z=1
-			0.0, ceilingScale, 1.0,
-			0.0, 0.0, 1.0,
-			1.0, 0.0, 1.0,
-			1.0, ceilingScale, 1.0
-		};
-
-		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
-		{
-			// X=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// X=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Y=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Y=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0
-		};
-
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices,
-		BufferView<int32_t> outOpaqueTopIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Wall;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 3);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 0);
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, VOXEL_WALL_INDEX_BUFFER_INDEX_SIDE)> sideIndices =
-		{
-			// X=0
-			0, 1, 2,
-			2, 3, 0,
-			// X=1
-			4, 5, 6,
-			6, 7, 4,
-			// Z=0
-			16, 17, 18,
-			18, 19, 16,
-			// Z=1
-			20, 21, 22,
-			22, 23, 20
-		};
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, VOXEL_WALL_INDEX_BUFFER_INDEX_BOTTOM)> bottomIndices =
-		{
-			// Y=0
-			8, 9, 10,
-			10, 11, 8
-		};
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, VOXEL_WALL_INDEX_BUFFER_INDEX_TOP)> topIndices =
-		{
-			// Y=1
-			12, 13, 14,
-			14, 15, 12
-		};
-
-		std::copy(sideIndices.begin(), sideIndices.end(), outOpaqueSideIndices.get());
-		std::copy(bottomIndices.begin(), bottomIndices.end(), outOpaqueBottomIndices.get());
-		std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.get());
-	}
-
-	void WriteFloorMeshGeometryBuffers(const VoxelDefinition::FloorData &floor, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Floor);
-
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
-		{
-			// Y=1
-			0.0, ceilingScale, 1.0,
-			1.0, ceilingScale, 1.0,
-			1.0, ceilingScale, 0.0,
-			0.0, ceilingScale, 0.0
-		};
-
-		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
-		{
-			// Y=1
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			0.0, 0.0
-		};
-
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Floor;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 1);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 0);
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, 0)> indices =
-		{
-			// Y=1
-			0, 1, 2,
-			2, 3, 0
-		};
-
-		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
-	}
-
-	void WriteCeilingMeshGeometryBuffers(const VoxelDefinition::CeilingData &ceiling,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Ceiling);
-
-		constexpr std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
-		{
-			// Y=0
-			0.0, 0.0, 0.0,
-			1.0, 0.0, 0.0,
-			1.0, 0.0, 1.0,
-			0.0, 0.0, 1.0,
-		};
-
-		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
-		{
-			// Y=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0
-		};
-
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteCeilingMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Ceiling;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 1);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 0);
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, 0)> indices =
-		{
-			// Y=0
-			0, 1, 2,
-			2, 3, 0
-		};
-
-		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
-	}
-
-	void WriteRaisedMeshGeometryBuffers(const VoxelDefinition::RaisedData &raised, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Raised);
-		const double yBottom = raised.yOffset * ceilingScale;
-		const double yTop = (raised.yOffset + raised.ySize) * ceilingScale;
-		const double vBottom = raised.vBottom;
-		const double vTop = raised.vTop;
-
-		// One quad per face (results in duplication; necessary for correct texture mapping).
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
-		{
-			// X=0
-			0.0, yTop, 0.0,
-			0.0, yBottom, 0.0,
-			0.0, yBottom, 1.0,
-			0.0, yTop, 1.0,
-			// X=1
-			1.0, yTop, 1.0,
-			1.0, yBottom, 1.0,
-			1.0, yBottom, 0.0,
-			1.0, yTop, 0.0,
-			// Y=0
-			0.0, yBottom, 0.0,
-			1.0, yBottom, 0.0,
-			1.0, yBottom, 1.0,
-			0.0, yBottom, 1.0,
-			// Y=1
-			0.0, yTop, 1.0,
-			1.0, yTop, 1.0,
-			1.0, yTop, 0.0,
-			0.0, yTop, 0.0,
-			// Z=0
-			1.0, yTop, 0.0,
-			1.0, yBottom, 0.0,
-			0.0, yBottom, 0.0,
-			0.0, yTop, 0.0,
-			// Z=1
-			0.0, yTop, 1.0,
-			0.0, yBottom, 1.0,
-			1.0, yBottom, 1.0,
-			1.0, yTop, 1.0
-		};
-
-		const std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
-		{
-			// X=0
-			0.0, vTop,
-			0.0, vBottom,
-			1.0, vBottom,
-			1.0, vTop,
-			// X=1
-			0.0, vTop,
-			0.0, vBottom,
-			1.0, vBottom,
-			1.0, vTop,
-			// Y=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Y=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=0
-			0.0, vTop,
-			0.0, vBottom,
-			1.0, vBottom,
-			1.0, vTop,
-			// Z=1
-			0.0, vTop,
-			0.0, vBottom,
-			1.0, vBottom,
-			1.0, vTop
-		};
-
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
-		BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Raised;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 2);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 1);
-
-		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(voxelType, VOXEL_RAISED_INDEX_BUFFER_INDEX_SIDE)> sideIndices =
-		{
-			// X=0
-			0, 1, 2,
-			2, 3, 0,
-			// X=1
-			4, 5, 6,
-			6, 7, 4,
-			// Z=0
-			16, 17, 18,
-			18, 19, 16,
-			// Z=1
-			20, 21, 22,
-			22, 23, 20
-		};
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, VOXEL_RAISED_INDEX_BUFFER_INDEX_BOTTOM)> bottomIndices =
-		{
-			// Y=0
-			8, 9, 10,
-			10, 11, 8
-		};
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, VOXEL_RAISED_INDEX_BUFFER_INDEX_TOP)> topIndices =
-		{
-			// Y=1
-			12, 13, 14,
-			14, 15, 12
-		};
-
-		std::copy(sideIndices.begin(), sideIndices.end(), outAlphaTestedSideIndices.get());
-		std::copy(bottomIndices.begin(), bottomIndices.end(), outOpaqueBottomIndices.get());
-		std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.get());
-	}
-
-	void WriteDiagonalMeshGeometryBuffers(const VoxelDefinition::DiagonalData &diagonal, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Diagonal);
-
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> type1Vertices =
-		{
-			0.0, ceilingScale, 0.0,
-			0.0, 0.0, 0.0,
-			1.0, 0.0, 1.0,
-			1.0, ceilingScale, 1.0,
-		};
-
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> type2Vertices =
-		{
-			1.0, ceilingScale, 0.0,
-			1.0, 0.0, 0.0,
-			0.0, 0.0, 1.0,
-			0.0, ceilingScale, 1.0,
-		};
-
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> &vertices = diagonal.type1 ? type1Vertices : type2Vertices;
-
-		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
-		{
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0
-		};
-
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteDiagonalMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Diagonal;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 1);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 0);
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, 0)> indices =
-		{
-			0, 1, 2,
-			2, 3, 0
-		};
-
-		std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
-	}
-
-	void WriteTransparentWallMeshGeometryBuffers(const VoxelDefinition::TransparentWallData &transparentWall,
-		double ceilingScale, BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::TransparentWall);
-
-		// One quad per face (results in duplication; necessary for correct texture mapping).
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
-		{
-			// X=0
-			0.0, ceilingScale, 0.0,
-			0.0, 0.0, 0.0,
-			0.0, 0.0, 1.0,
-			0.0, ceilingScale, 1.0,
-			// X=1
-			1.0, ceilingScale, 1.0,
-			1.0, 0.0, 1.0,
-			1.0, 0.0, 0.0,
-			1.0, ceilingScale, 0.0,
-			// Z=0
-			1.0, ceilingScale, 0.0,
-			1.0, 0.0, 0.0,
-			0.0, 0.0, 0.0,
-			0.0, ceilingScale, 0.0,
-			// Z=1
-			0.0, ceilingScale, 1.0,
-			0.0, 0.0, 1.0,
-			1.0, 0.0, 1.0,
-			1.0, ceilingScale, 1.0
-		};
-
-		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
-		{
-			// X=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// X=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0
-		};
-
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteTransparentWallMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::TransparentWall;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 0);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 1);
-
-		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(voxelType, 0)> indices =
-		{
-			// X=0
-			0, 1, 2,
-			2, 3, 0,
-			// X=1
-			4, 5, 6,
-			6, 7, 4,
-			// Z=0
-			8, 9, 10,
-			10, 11, 8,
-			// Z=1
-			12, 13, 14,
-			14, 15, 12
-		};
-
-		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
-	}
-
-	void WriteEdgeMeshGeometryBuffers(const VoxelDefinition::EdgeData &edge, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Edge);
-		const double yBottom = edge.yOffset * ceilingScale;
-		const double yTop = (edge.yOffset + 1.0) * ceilingScale;
-
-		constexpr int componentCount = vertexCount * COMPONENTS_PER_VERTEX;
-
-		// @todo: might want to bias these towards the center of the voxel to avoid z-fighting.
-		const std::array<double, componentCount> nearXVertices =
-		{
-			// X=0
-			0.0, yTop, 0.0,
-			0.0, yBottom, 0.0,
-			0.0, yBottom, 1.0,
-			0.0, yTop, 1.0
-		};
-
-		const std::array<double, componentCount> farXVertices =
-		{
-			// X=1
-			1.0, yTop, 1.0,
-			1.0, yBottom, 1.0,
-			1.0, yBottom, 0.0,
-			1.0, yTop, 0.0
-		};
-
-		const std::array<double, componentCount> nearZVertices =
-		{
-			// Z=0
-			1.0, yTop, 0.0,
-			1.0, yBottom, 0.0,
-			0.0, yBottom, 0.0,
-			0.0, yTop, 0.0
-		};
-
-		const std::array<double, componentCount> farZVertices =
-		{
-			// Z=1
-			0.0, yTop, 1.0,
-			0.0, yBottom, 1.0,
-			1.0, yBottom, 1.0,
-			1.0, yTop, 1.0
-		};
-
-		const std::array<double, componentCount> *vertices = nullptr;
-		switch (edge.facing)
-		{
-		case VoxelFacing2D::PositiveX:
-			vertices = &farXVertices;
-			break;
-		case VoxelFacing2D::NegativeX:
-			vertices = &nearXVertices;
-			break;
-		case VoxelFacing2D::PositiveZ:
-			vertices = &farZVertices;
-			break;
-		case VoxelFacing2D::NegativeZ:
-			vertices = &nearZVertices;
-			break;
-		default:
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(edge.facing)));
-		}
-
-		constexpr int attributeCount = vertexCount * ATTRIBUTES_PER_VERTEX;
-		constexpr std::array<double, attributeCount> unflippedAttributes =
-		{
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0
-		};
-
-		constexpr std::array<double, attributeCount> flippedAttributes =
-		{
-			1.0, 0.0,
-			1.0, 1.0,
-			0.0, 1.0,
-			0.0, 0.0
-		};
-
-		const std::array<double, attributeCount> &attributes = edge.flipped ? flippedAttributes : unflippedAttributes;
-
-		std::copy(vertices->begin(), vertices->end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteEdgeMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Edge;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 0);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 1);
-
-		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(voxelType, 0)> indices =
-		{
-			0, 1, 2,
-			2, 3, 0
-		};
-
-		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
-	}
-
-	void WriteChasmMeshGeometryBuffers(const VoxelDefinition::ChasmData &chasm, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Chasm);
-		const double yBottom = (chasm.type != ArenaTypes::ChasmType::Dry) ? (ceilingScale - 1.0) : 0.0;
-		const double yTop = ceilingScale;
-
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
-		{
-			// Y=0 (guaranteed to exist)
-			0.0, yBottom, 1.0,
-			1.0, yBottom, 1.0,
-			1.0, yBottom, 0.0,
-			0.0, yBottom, 0.0,
-
-			// X=0
-			0.0, yTop, 1.0,
-			0.0, yBottom, 1.0,
-			0.0, yBottom, 0.0,
-			0.0, yTop, 0.0,
-			// X=1
-			1.0, yTop, 0.0,
-			1.0, yBottom, 0.0,
-			1.0, yBottom, 1.0,
-			1.0, yTop, 1.0,
-			// Z=0
-			0.0, yTop, 0.0,
-			0.0, yBottom, 0.0,
-			1.0, yBottom, 0.0,
-			1.0, yTop, 0.0,
-			// Z=1
-			1.0, yTop, 1.0,
-			1.0, yBottom, 1.0,
-			0.0, yBottom, 1.0,
-			0.0, yTop, 1.0
-		};
-
-		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
-		{
-			// Y=0 (guaranteed to exist)
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-
-			// X=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// X=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0
-		};
-
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteChasmMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Chasm;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 1);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 0); // @temp
-
-		constexpr std::array<int32_t, GetVoxelOpaqueIndexCount(voxelType, 0)> opaqueIndices =
-		{
-			// Y=0
-			0, 1, 2,
-			2, 3, 0
-		};
-
-		// @temp: not writing chasm walls until later
-		/*constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(ArenaTypes::VoxelType::Chasm)> alphaTestedIndices =
-		{
-			// X=0
-			4, 5, 6,
-			6, 7, 4,
-			// X=1
-			8, 9, 10,
-			10, 11, 8,
-			// Z=0
-			12, 13, 14,
-			14, 15, 12,
-			// Z=1
-			16, 17, 18,
-			18, 19, 16
-		};*/
-
-		std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.get());
-		//std::copy(alphaTestedIndices.begin(), alphaTestedIndices.end(), outAlphaTestedIndices.get()); // @todo: figure out override index buffer support (allocate all combinations ahead of time, use bitwise lookup to get the right index buffer ID?).
-	}
-
-	void WriteDoorMeshGeometryBuffers(const VoxelDefinition::DoorData &door, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		constexpr int vertexCount = GetVoxelActualVertexCount(ArenaTypes::VoxelType::Door);
-
-		// @todo: does this need to care about the door type or can we do all that in the vertex shader?
-
-		// One quad per face (results in duplication; necessary for correct texture mapping).
-		const std::array<double, vertexCount * COMPONENTS_PER_VERTEX> vertices =
-		{
-			// X=0
-			0.0, ceilingScale, 0.0,
-			0.0, 0.0, 0.0,
-			0.0, 0.0, 1.0,
-			0.0, ceilingScale, 1.0,
-			// X=1
-			1.0, ceilingScale, 1.0,
-			1.0, 0.0, 1.0,
-			1.0, 0.0, 0.0,
-			1.0, ceilingScale, 0.0,
-			// Z=0
-			1.0, ceilingScale, 0.0,
-			1.0, 0.0, 0.0,
-			0.0, 0.0, 0.0,
-			0.0, ceilingScale, 0.0,
-			// Z=1
-			0.0, ceilingScale, 1.0,
-			0.0, 0.0, 1.0,
-			1.0, 0.0, 1.0,
-			1.0, ceilingScale, 1.0
-		};
-
-		constexpr std::array<double, vertexCount * ATTRIBUTES_PER_VERTEX> attributes =
-		{
-			// X=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// X=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=0
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0,
-			// Z=1
-			0.0, 0.0,
-			0.0, 1.0,
-			1.0, 1.0,
-			1.0, 0.0
-		};
-
-		std::copy(vertices.begin(), vertices.end(), outVertices.get());
-		std::copy(attributes.begin(), attributes.end(), outAttributes.get());
-	}
-
-	void WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
-	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Door;
-		static_assert(GetVoxelOpaqueIndexBufferCount(voxelType) == 0);
-		static_assert(GetVoxelAlphaTestedIndexBufferCount(voxelType) == 1);
-
-		constexpr std::array<int32_t, GetVoxelAlphaTestedIndexCount(voxelType, 0)> indices =
-		{
-			// X=0
-			0, 1, 2,
-			2, 3, 0,
-			// X=1
-			4, 5, 6,
-			6, 7, 4,
-			// Z=0
-			8, 9, 10,
-			10, 11, 8,
-			// Z=1
-			12, 13, 14,
-			14, 15, 12
-		};
-
-		std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
-	}
-
-	void WriteVoxelMeshGeometryBuffers(const VoxelDefinition &voxelDef, double ceilingScale,
-		BufferView<double> outVertices, BufferView<double> outAttributes)
-	{
-		const ArenaTypes::VoxelType voxelType = voxelDef.type;
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::Wall:
-			WriteWallMeshGeometryBuffers(voxelDef.wall, ceilingScale, outVertices, outAttributes);
-			break;
-		case ArenaTypes::VoxelType::Floor:
-			WriteFloorMeshGeometryBuffers(voxelDef.floor, ceilingScale, outVertices, outAttributes);
-			break;
-		case ArenaTypes::VoxelType::Ceiling:
-			WriteCeilingMeshGeometryBuffers(voxelDef.ceiling, outVertices, outAttributes);
-			break;
-		case ArenaTypes::VoxelType::Raised:
-			WriteRaisedMeshGeometryBuffers(voxelDef.raised, ceilingScale, outVertices, outAttributes);
-			break;
-		case ArenaTypes::VoxelType::Diagonal:
-			WriteDiagonalMeshGeometryBuffers(voxelDef.diagonal, ceilingScale, outVertices, outAttributes);
-			break;
-		case ArenaTypes::VoxelType::TransparentWall:
-			WriteTransparentWallMeshGeometryBuffers(voxelDef.transparentWall, ceilingScale, outVertices, outAttributes);
-			break;
-		case ArenaTypes::VoxelType::Edge:
-			WriteEdgeMeshGeometryBuffers(voxelDef.edge, ceilingScale, outVertices, outAttributes);
-			break;
-		case ArenaTypes::VoxelType::Chasm:
-			WriteChasmMeshGeometryBuffers(voxelDef.chasm, ceilingScale, outVertices, outAttributes);
-			break;
-		case ArenaTypes::VoxelType::Door:
-			WriteDoorMeshGeometryBuffers(voxelDef.door, ceilingScale, outVertices, outAttributes);
-			break;
-		default:
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	void WriteVoxelMeshIndexBuffers(const VoxelDefinition &voxelDef, BufferView<int32_t> outOpaqueIndices0,
-		BufferView<int32_t> outOpaqueIndices1, BufferView<int32_t> outOpaqueIndices2,
-		BufferView<int32_t> outAlphaTestedIndices)
-	{
-		const ArenaTypes::VoxelType voxelType = voxelDef.type;
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::Wall:
-			WriteWallMeshIndexBuffers(outOpaqueIndices0, outOpaqueIndices1, outOpaqueIndices2);
-			break;
-		case ArenaTypes::VoxelType::Floor:
-			WriteFloorMeshIndexBuffers(outOpaqueIndices0);
-			break;
-		case ArenaTypes::VoxelType::Ceiling:
-			WriteCeilingMeshIndexBuffers(outOpaqueIndices0);
-			break;
-		case ArenaTypes::VoxelType::Raised:
-			WriteRaisedMeshIndexBuffers(outAlphaTestedIndices, outOpaqueIndices0, outOpaqueIndices1);
-			break;
-		case ArenaTypes::VoxelType::Diagonal:
-			WriteDiagonalMeshIndexBuffers(outOpaqueIndices0);
-			break;
-		case ArenaTypes::VoxelType::TransparentWall:
-			WriteTransparentWallMeshIndexBuffers(outAlphaTestedIndices);
-			break;
-		case ArenaTypes::VoxelType::Edge:
-			WriteEdgeMeshIndexBuffers(outAlphaTestedIndices);
-			break;
-		case ArenaTypes::VoxelType::Chasm:
-			WriteChasmMeshIndexBuffers(outOpaqueIndices0, outAlphaTestedIndices);
-			break;
-		case ArenaTypes::VoxelType::Door:
-			WriteDoorMeshIndexBuffers(outAlphaTestedIndices);
-			break;
-		default:
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
-		}
-	}
 }
 
 namespace sgTexture
@@ -1108,11 +41,11 @@ namespace sgTexture
 		case ArenaTypes::VoxelType::Diagonal:
 			return indexBufferIndex;
 		case ArenaTypes::VoxelType::Raised:
-			if (indexBufferIndex == sgMesh::VOXEL_RAISED_INDEX_BUFFER_INDEX_BOTTOM)
+			if (indexBufferIndex == 0)
 			{
 				return 1;
 			}
-			else if (indexBufferIndex == sgMesh::VOXEL_RAISED_INDEX_BUFFER_INDEX_TOP)
+			else if (indexBufferIndex == 1)
 			{
 				return 2;
 			}
@@ -1608,36 +541,38 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 		const Chunk &chunk = chunkManager.getChunk(chunkIndex);
 		SceneGraphChunk &graphChunk = this->graphChunks[chunkIndex];
 
-		// Add voxel definitions to the scene graph and create mappings to them.
-		for (int voxelDefIndex = 0; voxelDefIndex < chunk.getVoxelDefCount(); voxelDefIndex++)
+		// Add scene graph voxel definitions and create mappings to them.
+		for (int meshDefIndex = 0; meshDefIndex < chunk.getVoxelMeshDefCount(); meshDefIndex++)
 		{
-			const Chunk::VoxelID voxelID = static_cast<Chunk::VoxelID>(voxelDefIndex);
-			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-			const ArenaTypes::VoxelType voxelType = voxelDef.type;
+			const Chunk::VoxelMeshID voxelMeshID = static_cast<Chunk::VoxelID>(meshDefIndex);
+			const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshID);
 
 			SceneGraphVoxelDefinition graphVoxelDef;
-			if (voxelType != ArenaTypes::VoxelType::None) // Only attempt to create buffers for non-air voxels.
+			if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
 			{
-				const int vertexCount = sgMesh::GetVoxelActualVertexCount(voxelType);
-				if (!renderer.tryCreateVertexBuffer(vertexCount, sgMesh::COMPONENTS_PER_VERTEX, &graphVoxelDef.vertexBufferID))
+				constexpr int componentsPerVertex = VoxelMeshDefinition::COMPONENTS_PER_VERTEX;
+				constexpr int attributesPerVertex = VoxelMeshDefinition::ATTRIBUTES_PER_VERTEX;
+
+				const int vertexCount = voxelMeshDef.rendererVertexCount;
+				if (!renderer.tryCreateVertexBuffer(vertexCount, componentsPerVertex, &graphVoxelDef.vertexBufferID))
 				{
-					DebugLogError("Couldn't create vertex buffer for voxel ID " + std::to_string(voxelID) +
+					DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshID) +
 						" in chunk (" + chunk.getPosition().toString() + ").");
 					continue;
 				}
 
-				if (!renderer.tryCreateAttributeBuffer(vertexCount, sgMesh::ATTRIBUTES_PER_VERTEX, &graphVoxelDef.attributeBufferID))
+				if (!renderer.tryCreateAttributeBuffer(vertexCount, attributesPerVertex, &graphVoxelDef.attributeBufferID))
 				{
-					DebugLogError("Couldn't create attribute buffer for voxel ID " + std::to_string(voxelID) +
+					DebugLogError("Couldn't create attribute buffer for voxel mesh ID " + std::to_string(voxelMeshID) +
 						" in chunk (" + chunk.getPosition().toString() + ").");
 					graphVoxelDef.freeBuffers(renderer);
 					continue;
 				}
 
-				std::array<double, sgMesh::MAX_VERTICES_PER_VOXEL * sgMesh::COMPONENTS_PER_VERTEX> vertices;
-				std::array<double, sgMesh::MAX_VERTICES_PER_VOXEL * sgMesh::ATTRIBUTES_PER_VERTEX> attributes;
-				std::array<int32_t, sgMesh::MAX_INDICES_PER_VOXEL> opaqueIndices0, opaqueIndices1, opaqueIndices2;
-				std::array<int32_t, sgMesh::MAX_INDICES_PER_VOXEL> alphaTestedIndices0;
+				std::array<double, VoxelMeshDefinition::MAX_VERTICES * componentsPerVertex> vertices;
+				std::array<double, VoxelMeshDefinition::MAX_VERTICES * attributesPerVertex> attributes;
+				std::array<int32_t, VoxelMeshDefinition::MAX_INDICES> opaqueIndices0, opaqueIndices1, opaqueIndices2;
+				std::array<int32_t, VoxelMeshDefinition::MAX_INDICES> alphaTestedIndices0;
 				vertices.fill(0.0);
 				attributes.fill(0.0);
 				opaqueIndices0.fill(-1);
@@ -1651,29 +586,29 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 				};
 
 				// Generate mesh geometry and indices for this voxel definition.
-				sgMesh::WriteVoxelMeshGeometryBuffers(voxelDef, ceilingScale,
+				voxelMeshDef.writeRendererGeometryBuffers(ceilingScale,
 					BufferView<double>(vertices.data(), static_cast<int>(vertices.size())),
 					BufferView<double>(attributes.data(), static_cast<int>(attributes.size())));
-				sgMesh::WriteVoxelMeshIndexBuffers(voxelDef,
+				voxelMeshDef.writeRendererIndexBuffers(
 					BufferView<int32_t>(opaqueIndices0.data(), static_cast<int>(opaqueIndices0.size())),
 					BufferView<int32_t>(opaqueIndices1.data(), static_cast<int>(opaqueIndices1.size())),
 					BufferView<int32_t>(opaqueIndices2.data(), static_cast<int>(opaqueIndices2.size())),
 					BufferView<int32_t>(alphaTestedIndices0.data(), static_cast<int>(alphaTestedIndices0.size())));
 
 				renderer.populateVertexBuffer(graphVoxelDef.vertexBufferID,
-					BufferView<const double>(vertices.data(), vertexCount * sgMesh::COMPONENTS_PER_VERTEX));
+					BufferView<const double>(vertices.data(), vertexCount * VoxelMeshDefinition::COMPONENTS_PER_VERTEX));
 				renderer.populateAttributeBuffer(graphVoxelDef.attributeBufferID,
-					BufferView<const double>(attributes.data(), vertexCount * sgMesh::ATTRIBUTES_PER_VERTEX));
+					BufferView<const double>(attributes.data(), vertexCount * VoxelMeshDefinition::ATTRIBUTES_PER_VERTEX));
 
-				const int opaqueIndexBufferCount = sgMesh::GetVoxelOpaqueIndexBufferCount(voxelType);
+				const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
 				for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
 				{
-					const int opaqueIndexCount = sgMesh::GetVoxelOpaqueIndexCount(voxelType, bufferIndex);
+					const int opaqueIndexCount = static_cast<int>(voxelMeshDef.getOpaqueIndicesList(bufferIndex).size());
 					IndexBufferID &opaqueIndexBufferID = graphVoxelDef.opaqueIndexBufferIDs[bufferIndex];
 					if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 					{
-						DebugLogError("Couldn't create opaque index buffer for voxel ID " + std::to_string(voxelID) +
-							" in chunk (" + chunk.getPosition().toString() + ").");
+						DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
+							std::to_string(voxelMeshID) + " in chunk (" + chunk.getPosition().toString() + ").");
 						graphVoxelDef.freeBuffers(renderer);
 						continue;
 					}
@@ -1685,14 +620,14 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 						BufferView<const int32_t>(indices.data(), opaqueIndexCount));
 				}
 
-				const bool hasAlphaTestedIndexBuffer = sgMesh::GetVoxelAlphaTestedIndexBufferCount(voxelType) > 0;
+				const bool hasAlphaTestedIndexBuffer = voxelMeshDef.alphaTestedIndicesListCount > 0;
 				if (hasAlphaTestedIndexBuffer)
 				{
-					const int alphaTestedIndexCount = sgMesh::GetVoxelAlphaTestedIndexCount(voxelType, 0);
+					const int alphaTestedIndexCount = static_cast<int>(voxelMeshDef.alphaTestedIndices.size());
 					if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &graphVoxelDef.alphaTestedIndexBufferID))
 					{
-						DebugLogError("Couldn't create alpha-tested index buffer for voxel ID " + std::to_string(voxelID) +
-							" in chunk (" + chunk.getPosition().toString() + ").");
+						DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
+							std::to_string(voxelMeshID) + " in chunk (" + chunk.getPosition().toString() + ").");
 						graphVoxelDef.freeBuffers(renderer);
 						continue;
 					}
@@ -1703,7 +638,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 			}
 
 			const SceneGraphVoxelID graphVoxelID = graphChunk.addVoxelDef(std::move(graphVoxelDef));
-			graphChunk.voxelDefMappings.emplace(voxelID, graphVoxelID);
+			graphChunk.voxelDefMappings.emplace(voxelMeshID, graphVoxelID);
 		}
 
 		auto addDrawCall = [this, ceilingScale](SceneGraphChunk &graphChunk, SNInt x, int y, WEInt z,
@@ -1727,8 +662,6 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 		};
 
 		// Generate draw calls for each non-air voxel.
-		// @todo: draw calls should be stored per chunk; that way it's easier to sort by distance,
-		// add an entire chunk, cull an entire chunk, etc.
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
 			for (int y = 0; y < chunk.getHeight(); y++)
@@ -1736,15 +669,16 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 				for (SNInt x = 0; x < Chunk::WIDTH; x++)
 				{
 					// Get the voxel def mapping's index and use it for this voxel.
-					const Chunk::VoxelID voxelID = chunk.getVoxel(x, y, z);
+					const Chunk::VoxelID voxelID = chunk.getVoxelID(x, y, z);
+					const Chunk::VoxelMeshID voxelMeshID = chunk.getVoxelMeshID(x, y, z);
 					const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-					const ArenaTypes::VoxelType voxelType = voxelDef.type;
-					if (voxelType == ArenaTypes::VoxelType::None)
+					const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshID);
+					if (voxelMeshDef.isEmpty())
 					{
 						continue;
 					}
 
-					const auto defIter = graphChunk.voxelDefMappings.find(voxelID);
+					const auto defIter = graphChunk.voxelDefMappings.find(voxelMeshID);
 					DebugAssert(defIter != graphChunk.voxelDefMappings.end());
 					const SceneGraphVoxelID graphVoxelID = defIter->second;
 					graphChunk.voxels.set(x, y, z, graphVoxelID);
@@ -1753,7 +687,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunk.getPosition(), VoxelInt2(x, z));
 					const int worldY = y;
 
-					const bool allowsBackFaces = sgMesh::AllowsBackFacingGeometry(voxelType);
+					const bool allowsBackFaces = voxelMeshDef.allowsBackFaces;
+
+					const ArenaTypes::VoxelType voxelType = voxelDef.type;
 					const bool usesVoxelTextures = voxelType != ArenaTypes::VoxelType::Chasm;
 
 					const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];

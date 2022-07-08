@@ -8,8 +8,11 @@
 void Chunk::init(const ChunkInt2 &position, int height)
 {
 	// Set all voxels to air and unused.
-	this->voxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->voxels.fill(Chunk::AIR_VOXEL_ID);
+	this->voxelIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->voxelIDs.fill(Chunk::AIR_VOXEL_ID);
+
+	this->voxelMeshIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->voxelMeshIDs.fill(Chunk::AIR_VOXEL_ID);
 
 	this->voxelDefs.fill(VoxelDefinition());
 	this->activeVoxelDefs.fill(false);
@@ -17,6 +20,7 @@ void Chunk::init(const ChunkInt2 &position, int height)
 	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely
 	// point to it.
 	this->activeVoxelDefs.front() = true;
+	this->voxelMeshDefs.emplace_back(VoxelMeshDefinition());
 
 	this->position = position;
 }
@@ -33,12 +37,17 @@ bool Chunk::isValidVoxel(SNInt x, int y, WEInt z) const
 
 int Chunk::getHeight() const
 {
-	return this->voxels.getHeight();
+	return this->voxelIDs.getHeight();
 }
 
-Chunk::VoxelID Chunk::getVoxel(SNInt x, int y, WEInt z) const
+Chunk::VoxelID Chunk::getVoxelID(SNInt x, int y, WEInt z) const
 {
-	return this->voxels.get(x, y, z);
+	return this->voxelIDs.get(x, y, z);
+}
+
+Chunk::VoxelMeshID Chunk::getVoxelMeshID(SNInt x, int y, WEInt z) const
+{
+	return this->voxelMeshIDs.get(x, y, z);
 }
 
 int Chunk::getDirtyVoxelCount() const
@@ -63,6 +72,17 @@ const VoxelDefinition &Chunk::getVoxelDef(VoxelID id) const
 	DebugAssert(id < this->voxelDefs.size());
 	DebugAssert(this->activeVoxelDefs[id]);
 	return this->voxelDefs[id];
+}
+
+int Chunk::getVoxelMeshDefCount() const
+{
+	return static_cast<int>(this->voxelMeshDefs.size());
+}
+
+const VoxelMeshDefinition &Chunk::getVoxelMeshDef(int index) const
+{
+	DebugAssertIndex(this->voxelMeshDefs, index);
+	return this->voxelMeshDefs[index];
 }
 
 int Chunk::getVoxelInstCount() const
@@ -200,7 +220,7 @@ void Chunk::getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition *
 
 		if (isValidVoxel)
 		{
-			const Chunk::VoxelID voxelID = this->getVoxel(voxel.x, voxel.y, voxel.z);
+			const Chunk::VoxelID voxelID = this->getVoxelID(voxel.x, voxel.y, voxel.z);
 			*outDef = &this->getVoxelDef(voxelID);
 		}
 		else
@@ -229,9 +249,15 @@ void Chunk::setVoxelDirty(SNInt x, int y, WEInt z)
 	}
 }
 
-void Chunk::setVoxel(SNInt x, int y, WEInt z, VoxelID value)
+void Chunk::setVoxelID(SNInt x, int y, WEInt z, VoxelID id)
 {
-	this->voxels.set(x, y, z, value);
+	this->voxelIDs.set(x, y, z, id);
+	this->setVoxelDirty(x, y, z);
+}
+
+void Chunk::setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshID id)
+{
+	this->voxelMeshIDs.set(x, y, z, id);
 	this->setVoxelDirty(x, y, z);
 }
 
@@ -251,6 +277,13 @@ bool Chunk::tryAddVoxelDef(VoxelDefinition &&voxelDef, Chunk::VoxelID *outID)
 	this->activeVoxelDefs[id] = true;
 	*outID = id;
 	return true;
+}
+
+Chunk::VoxelMeshID Chunk::addVoxelMeshDef(VoxelMeshDefinition &&voxelMeshDef)
+{
+	const VoxelMeshID id = static_cast<VoxelMeshID>(this->voxelMeshDefs.size());
+	this->voxelMeshDefs.emplace_back(std::move(voxelMeshDef));
+	return id;
 }
 
 void Chunk::addVoxelInst(VoxelInstance &&voxelInst)
@@ -346,10 +379,12 @@ void Chunk::removeVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
 
 void Chunk::clear()
 {
-	this->voxels.clear();
+	this->voxelIDs.clear();
+	this->voxelMeshIDs.clear();
 	this->dirtyVoxels.clear();
 	this->voxelDefs.fill(VoxelDefinition());
 	this->activeVoxelDefs.fill(false);
+	this->voxelMeshDefs.clear();
 	this->voxelInsts.clear();
 	this->transitionDefs.clear();
 	this->triggerDefs.clear();
@@ -483,12 +518,14 @@ void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScal
 			}();
 
 			DebugAssertMsg(replacementVoxelID.has_value(), "Couldn't find replacement for faded chasm voxel.");
-			this->setVoxel(voxel.x, voxel.y, voxel.z, *replacementVoxelID);
+			this->setVoxelID(voxel.x, voxel.y, voxel.z, *replacementVoxelID);
+			DebugNotImplementedMsg("Need to implement for voxel mesh def.");
 		}
 		else
 		{
 			// Air voxel.
-			this->setVoxel(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_ID);
+			this->setVoxelID(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_ID);
+			this->setVoxelMeshID(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_ID);
 		}
 	}
 }
@@ -512,7 +549,7 @@ void Chunk::handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<in
 				
 				if (isValidVoxel)
 				{
-					const Chunk::VoxelID voxelID = this->getVoxel(voxel.x, voxel.y, voxel.z);
+					const Chunk::VoxelID voxelID = this->getVoxelID(voxel.x, voxel.y, voxel.z);
 					const VoxelDefinition &voxelDef = this->getVoxelDef(voxelID);
 					if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 					{

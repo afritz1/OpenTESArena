@@ -12,6 +12,7 @@
 #include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
 #include "VoxelDefinition.h"
+#include "VoxelMeshDefinition.h"
 #include "VoxelUtils.h"
 #include "../Entities/EntityDefinition.h"
 
@@ -22,11 +23,10 @@
 class LevelInfoDefinition
 {
 private:
-	// Definitions pointed to by a level definition.
-	// @todo: eventually want a strictly engine-independent representation for all of these,
-	// since currently voxel and entity definitions rely on runtime texture manager handles.
-	// - Consider using TextureDefinition for each voxel texture/animation frame.
+	// Definitions pointed to by a level definition. These should all be engine-independent now
+	// (meaning that they could theoretically work with a standalone editor).
 	std::vector<VoxelDefinition> voxelDefs;
+	std::vector<VoxelMeshDefinition> voxelMeshDefs; // @todo: make sure a player-created chasm voxel mesh exists
 	std::vector<EntityDefinition> entityDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<TriggerDefinition> triggerDefs;
@@ -44,6 +44,7 @@ public:
 	void init(double ceilingScale);
 
 	int getVoxelDefCount() const;
+	int getVoxelMeshDefCount() const;
 	int getEntityDefCount() const;
 	int getLockDefCount() const;
 	int getTriggerDefCount() const;
@@ -52,6 +53,7 @@ public:
 	int getDoorDefCount() const;
 
 	const VoxelDefinition &getVoxelDef(LevelDefinition::VoxelDefID id) const;
+	const VoxelMeshDefinition &getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const;
 	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
 	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
 	const TriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
@@ -61,6 +63,7 @@ public:
 	double getCeilingScale() const;
 
 	LevelDefinition::VoxelDefID addVoxelDef(VoxelDefinition &&def);
+	LevelDefinition::VoxelMeshDefID addVoxelMeshDef(VoxelMeshDefinition &&def);
 	LevelDefinition::EntityDefID addEntityDef(EntityDefinition &&def);
 	LevelDefinition::LockDefID addLockDef(LockDefinition &&def);
 	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);

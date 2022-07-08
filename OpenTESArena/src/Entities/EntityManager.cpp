@@ -822,7 +822,7 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 			return 0.0;
 		}
 
-		const Chunk::VoxelID voxelID = chunk->getVoxel(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
+		const Chunk::VoxelID voxelID = chunk->getVoxelID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
 		const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 
 		if (voxelDef.type == ArenaTypes::VoxelType::Raised)

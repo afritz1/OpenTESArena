@@ -238,7 +238,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 		const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
 		if (chunk != nullptr)
 		{
-			const Chunk::VoxelID voxelID = chunk->getVoxel(coord.voxel.x, coord.voxel.y, coord.voxel.z);
+			const Chunk::VoxelID voxelID = chunk->getVoxelID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
 			const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 			return &voxelDef;
 		}
