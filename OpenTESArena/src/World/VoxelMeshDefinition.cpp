@@ -236,6 +236,27 @@ namespace
 		}
 	}
 
+	bool EnablesNeighborVoxelGeometry(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+		case ArenaTypes::VoxelType::Chasm:
+			return false;
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Raised:
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Edge:
+		case ArenaTypes::VoxelType::Door:
+			return true;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
 	// Mesh writing functions. All of these are in model space, and are eventually scaled by ceilingScale.
 	void WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes)
 	{
@@ -1081,6 +1102,7 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 	this->opaqueIndicesListCount = 0;
 	this->alphaTestedIndicesListCount = 0;
 	this->allowsBackFaces = false;
+	this->enablesNeighborGeometry = false;
 }
 
 void VoxelMeshDefinition::initClassic(const VoxelDefinition &voxelDef)
@@ -1092,6 +1114,7 @@ void VoxelMeshDefinition::initClassic(const VoxelDefinition &voxelDef)
 	this->opaqueIndicesListCount = GetOpaqueIndexBufferCount(voxelType);
 	this->alphaTestedIndicesListCount = GetAlphaTestedIndexBufferCount(voxelType);
 	this->allowsBackFaces = AllowsBackFacingGeometry(voxelType);
+	this->enablesNeighborGeometry = EnablesNeighborVoxelGeometry(voxelType);
 
 	if (voxelType != ArenaTypes::VoxelType::None)
 	{

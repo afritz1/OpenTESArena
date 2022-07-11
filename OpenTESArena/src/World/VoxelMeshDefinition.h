@@ -27,6 +27,7 @@ struct VoxelMeshDefinition
 	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
 	int opaqueIndicesListCount, alphaTestedIndicesListCount;
 	bool allowsBackFaces;
+	bool enablesNeighborGeometry; // For adjacent context-sensitive voxels like chasms.
 
 	VoxelMeshDefinition();
 
