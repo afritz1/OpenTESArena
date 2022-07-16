@@ -19,6 +19,7 @@ public:
 	// Points to various definitions in a level info definition.
 	using VoxelDefID = int;
 	using VoxelMeshDefID = int;
+	using VoxelTextureDefID = int;
 	using EntityDefID = int;
 	using LockDefID = int;
 	using TriggerDefID = int;
@@ -76,6 +77,7 @@ public:
 private:
 	Buffer3D<VoxelDefID> voxelIDs;
 	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
+	Buffer3D<VoxelTextureDefID> voxelTextureIDs;
 	std::vector<EntityPlacementDef> entityPlacementDefs;
 	std::vector<LockPlacementDef> lockPlacementDefs;
 	std::vector<TriggerPlacementDef> triggerPlacementDefs;
@@ -91,8 +93,10 @@ public:
 
 	VoxelDefID getVoxelID(SNInt x, int y, WEInt z) const;
 	VoxelMeshDefID getVoxelMeshID(SNInt x, int y, WEInt z) const;
+	VoxelTextureDefID getVoxelTextureID(SNInt x, int y, WEInt z) const;
 	void setVoxelID(SNInt x, int y, WEInt z, VoxelDefID id);
 	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
+	void setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
 
 	int getEntityPlacementDefCount() const;
 	const EntityPlacementDef &getEntityPlacementDef(int index) const;

@@ -47,6 +47,9 @@ void LevelDefinition::init(SNInt width, int height, WEInt depth)
 
 	this->voxelMeshIDs.init(width, height, depth);
 	this->voxelMeshIDs.fill(0);
+
+	this->voxelTextureIDs.init(width, height, depth);
+	this->voxelTextureIDs.fill(0);
 }
 
 SNInt LevelDefinition::getWidth() const
@@ -74,6 +77,11 @@ LevelDefinition::VoxelMeshDefID LevelDefinition::getVoxelMeshID(SNInt x, int y, 
 	return this->voxelMeshIDs.get(x, y, z);
 }
 
+LevelDefinition::VoxelTextureDefID LevelDefinition::getVoxelTextureID(SNInt x, int y, WEInt z) const
+{
+	return this->voxelTextureIDs.get(x, y, z);
+}
+
 void LevelDefinition::setVoxelID(SNInt x, int y, WEInt z, VoxelDefID id)
 {
 	this->voxelIDs.set(x, y, z, id);
@@ -82,6 +90,11 @@ void LevelDefinition::setVoxelID(SNInt x, int y, WEInt z, VoxelDefID id)
 void LevelDefinition::setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
 {
 	this->voxelMeshIDs.set(x, y, z, id);
+}
+
+void LevelDefinition::setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
+{
+	this->voxelTextureIDs.set(x, y, z, id);
 }
 
 int LevelDefinition::getEntityPlacementDefCount() const
