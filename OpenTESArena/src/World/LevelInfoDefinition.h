@@ -14,6 +14,7 @@
 #include "VoxelDefinition.h"
 #include "VoxelMeshDefinition.h"
 #include "VoxelTextureDefinition.h"
+#include "VoxelTraitsDefinition.h"
 #include "VoxelUtils.h"
 #include "../Entities/EntityDefinition.h"
 
@@ -29,6 +30,7 @@ private:
 	std::vector<VoxelDefinition> voxelDefs;
 	std::vector<VoxelMeshDefinition> voxelMeshDefs; // @todo: make sure a player-created chasm voxel mesh exists
 	std::vector<VoxelTextureDefinition> voxelTextureDefs; // @todo: make sure a player-created chasm voxel texture exists
+	std::vector<VoxelTraitsDefinition> voxelTraitsDefs;
 	std::vector<EntityDefinition> entityDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<TriggerDefinition> triggerDefs;
@@ -48,6 +50,7 @@ public:
 	int getVoxelDefCount() const;
 	int getVoxelMeshDefCount() const;
 	int getVoxelTextureDefCount() const;
+	int getVoxelTraitsDefCount() const;
 	int getEntityDefCount() const;
 	int getLockDefCount() const;
 	int getTriggerDefCount() const;
@@ -58,6 +61,7 @@ public:
 	const VoxelDefinition &getVoxelDef(LevelDefinition::VoxelDefID id) const;
 	const VoxelMeshDefinition &getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const;
 	const VoxelTextureDefinition &getVoxelTextureDef(LevelDefinition::VoxelTextureDefID id) const;
+	const VoxelTraitsDefinition &getVoxelTraitsDef(LevelDefinition::VoxelTraitsDefID id) const;
 	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
 	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
 	const TriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
@@ -69,6 +73,7 @@ public:
 	LevelDefinition::VoxelDefID addVoxelDef(VoxelDefinition &&def);
 	LevelDefinition::VoxelMeshDefID addVoxelMeshDef(VoxelMeshDefinition &&def);
 	LevelDefinition::VoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&def);
+	LevelDefinition::VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&def);
 	LevelDefinition::EntityDefID addEntityDef(EntityDefinition &&def);
 	LevelDefinition::LockDefID addLockDef(LockDefinition &&def);
 	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);

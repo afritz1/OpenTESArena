@@ -20,6 +20,7 @@ public:
 	using VoxelDefID = int;
 	using VoxelMeshDefID = int;
 	using VoxelTextureDefID = int;
+	using VoxelTraitsDefID = int;
 	using EntityDefID = int;
 	using LockDefID = int;
 	using TriggerDefID = int;
@@ -78,6 +79,7 @@ private:
 	Buffer3D<VoxelDefID> voxelIDs;
 	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
 	Buffer3D<VoxelTextureDefID> voxelTextureIDs;
+	Buffer3D<VoxelTraitsDefID> voxelTraitsIDs;
 	std::vector<EntityPlacementDef> entityPlacementDefs;
 	std::vector<LockPlacementDef> lockPlacementDefs;
 	std::vector<TriggerPlacementDef> triggerPlacementDefs;
@@ -94,9 +96,11 @@ public:
 	VoxelDefID getVoxelID(SNInt x, int y, WEInt z) const;
 	VoxelMeshDefID getVoxelMeshID(SNInt x, int y, WEInt z) const;
 	VoxelTextureDefID getVoxelTextureID(SNInt x, int y, WEInt z) const;
+	VoxelTraitsDefID getVoxelTraitsID(SNInt x, int y, WEInt z) const;
 	void setVoxelID(SNInt x, int y, WEInt z, VoxelDefID id);
 	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
 	void setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
+	void setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
 
 	int getEntityPlacementDefCount() const;
 	const EntityPlacementDef &getEntityPlacementDef(int index) const;
