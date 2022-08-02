@@ -10,7 +10,6 @@
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
-#include "../Math/Quad.h"
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ChunkUtils.h"
 #include "../World/LevelInstance.h"

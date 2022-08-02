@@ -377,13 +377,6 @@ void Chunk::addDoorPosition(DoorID id, const VoxelInt3 &voxel)
 	this->doorDefIndices.emplace(voxel, id);
 }
 
-/*void Chunk::removeVoxelDef(VoxelID id)
-{
-	DebugAssert(id < this->voxelDefs.size());
-	this->voxelDefs[id] = VoxelDefinition();
-	this->activeVoxelDefs[id] = false;
-}*/
-
 void Chunk::removeVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
 {
 	for (int i = 0; i < static_cast<int>(this->voxelInsts.size()); i++)
@@ -562,7 +555,7 @@ void Chunk::handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<in
 		{
 			// Need to handle the voxel instance for the new chasm in this voxel, and update any adjacent
 			// chasms too.
-			DebugNotImplemented("handleVoxelInstPostFinished() chasm voxel.");
+			DebugNotImplementedMsg("handleVoxelInstPostFinished() chasm voxel.");
 			/*auto tryUpdateAdjacentVoxel = [this, &voxelInst, &voxelInstIndicesToDestroy](const VoxelInt2 &direction)
 			{
 				const VoxelInt3 voxel(
