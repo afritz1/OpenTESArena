@@ -62,6 +62,11 @@ int LevelInfoDefinition::getDoorDefCount() const
 	return static_cast<int>(this->doorDefs.size());
 }
 
+int LevelInfoDefinition::getChasmDefCount() const
+{
+	return static_cast<int>(this->chasmDefs.size());
+}
+
 const VoxelMeshDefinition &LevelInfoDefinition::getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const
 {
 	DebugAssertIndex(this->voxelMeshDefs, id);
@@ -124,6 +129,12 @@ const DoorDefinition &LevelInfoDefinition::getDoorDef(LevelDefinition::DoorDefID
 	return this->doorDefs[id];
 }
 
+const ChasmDefinition &LevelInfoDefinition::getChasmDef(LevelDefinition::ChasmDefID id) const
+{
+	DebugAssertIndex(this->chasmDefs, id);
+	return this->chasmDefs[id];
+}
+
 double LevelInfoDefinition::getCeilingScale() const
 {
 	return this->ceilingScale;
@@ -131,56 +142,72 @@ double LevelInfoDefinition::getCeilingScale() const
 
 LevelDefinition::VoxelMeshDefID LevelInfoDefinition::addVoxelMeshDef(VoxelMeshDefinition &&def)
 {
+	const LevelDefinition::VoxelMeshDefID id = static_cast<LevelDefinition::VoxelMeshDefID>(this->voxelMeshDefs.size());
 	this->voxelMeshDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::VoxelMeshDefID>(this->voxelMeshDefs.size()) - 1;
+	return id;
 }
 
 LevelDefinition::VoxelTextureDefID LevelInfoDefinition::addVoxelTextureDef(VoxelTextureDefinition &&def)
 {
+	const LevelDefinition::VoxelTextureDefID id = static_cast<LevelDefinition::VoxelTextureDefID>(this->voxelTextureDefs.size());
 	this->voxelTextureDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::VoxelTextureDefID>(this->voxelTextureDefs.size()) - 1;
+	return id;
 }
 
 LevelDefinition::VoxelTraitsDefID LevelInfoDefinition::addVoxelTraitsDef(VoxelTraitsDefinition &&def)
 {
+	const LevelDefinition::VoxelTraitsDefID id = static_cast<LevelDefinition::VoxelTraitsDefID>(this->voxelTraitsDefs.size());
 	this->voxelTraitsDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::VoxelTraitsDefID>(this->voxelTraitsDefs.size()) - 1;
+	return id;
 }
 
 LevelDefinition::EntityDefID LevelInfoDefinition::addEntityDef(EntityDefinition &&def)
 {
+	const LevelDefinition::EntityDefID id = static_cast<LevelDefinition::EntityDefID>(this->entityDefs.size());
 	this->entityDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::EntityDefID>(this->entityDefs.size()) - 1;
+	return id;
 }
 
 LevelDefinition::LockDefID LevelInfoDefinition::addLockDef(LockDefinition &&def)
 {
+	const LevelDefinition::LockDefID id = static_cast<LevelDefinition::LockDefID>(this->lockDefs.size());
 	this->lockDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::LockDefID>(this->lockDefs.size()) - 1;
+	return id;
 }
 
 LevelDefinition::TriggerDefID LevelInfoDefinition::addTriggerDef(TriggerDefinition &&def)
 {
+	const LevelDefinition::TriggerDefID id = static_cast<LevelDefinition::TriggerDefID>(this->triggerDefs.size());
 	this->triggerDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::TriggerDefID>(this->triggerDefs.size()) - 1;
+	return id;
 }
 
 LevelDefinition::TransitionDefID LevelInfoDefinition::addTransitionDef(TransitionDefinition &&def)
 {
+	const LevelDefinition::TransitionDefID id = static_cast<LevelDefinition::TransitionDefID>(this->transitionDefs.size());
 	this->transitionDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::TransitionDefID>(this->transitionDefs.size()) - 1;
+	return id;
 }
 
 LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string &&name)
 {
+	const LevelDefinition::BuildingNameID id = static_cast<LevelDefinition::BuildingNameID>(this->buildingNames.size());
 	this->buildingNames.emplace_back(std::move(name));
-	return static_cast<LevelDefinition::BuildingNameID>(this->buildingNames.size()) - 1;
+	return id;
 }
 
 LevelDefinition::DoorDefID LevelInfoDefinition::addDoorDef(DoorDefinition &&def)
 {
+	const LevelDefinition::DoorDefID id = static_cast<LevelDefinition::DoorDefID>(this->doorDefs.size());
 	this->doorDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::DoorDefID>(this->doorDefs.size()) - 1;
+	return id;
+}
+
+LevelDefinition::ChasmDefID LevelInfoDefinition::addChasmDef(ChasmDefinition &&def)
+{
+	const LevelDefinition::ChasmDefID id = static_cast<LevelDefinition::ChasmDefID>(this->chasmDefs.size());
+	this->chasmDefs.emplace_back(std::move(def));
+	return id;
 }
 
 void LevelInfoDefinition::setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name)

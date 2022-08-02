@@ -26,6 +26,7 @@ public:
 	using BuildingNameID = int;
 	using TransitionDefID = int;
 	using DoorDefID = int;
+	using ChasmDefID = int;
 
 	struct EntityPlacementDef
 	{
@@ -74,6 +75,14 @@ public:
 
 		DoorPlacementDef(DoorDefID id, std::vector<LevelInt3> &&positions);
 	};
+
+	struct ChasmPlacementDef
+	{
+		ChasmDefID id;
+		std::vector<LevelInt3> positions;
+
+		ChasmPlacementDef(ChasmDefID id, std::vector<LevelInt3> &&positions);
+	};
 private:
 	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
 	Buffer3D<VoxelTextureDefID> voxelTextureIDs;
@@ -84,6 +93,7 @@ private:
 	std::vector<TransitionPlacementDef> transitionPlacementDefs;
 	std::vector<BuildingNamePlacementDef> buildingNamePlacementDefs;
 	std::vector<DoorPlacementDef> doorPlacementDefs;
+	std::vector<ChasmPlacementDef> chasmPlacementDefs;
 public:
 	void init(SNInt width, int height, WEInt depth);
 
@@ -110,6 +120,8 @@ public:
 	const BuildingNamePlacementDef &getBuildingNamePlacementDef(int index) const;
 	int getDoorPlacementDefCount() const;
 	const DoorPlacementDef &getDoorPlacementDef(int index) const;
+	int getChasmPlacementDefCount() const;
+	const ChasmPlacementDef &getChasmPlacementDef(int index) const;
 
 	void addEntity(EntityDefID id, const LevelDouble3 &position);
 	void addLock(LockDefID id, const LevelInt3 &position);
@@ -117,6 +129,7 @@ public:
 	void addTransition(TransitionDefID id, const LevelInt3 &position);
 	void addBuildingName(BuildingNameID id, const LevelInt3 &position);
 	void addDoor(DoorDefID id, const LevelInt3 &position);
+	void addChasm(ChasmDefID id, const LevelInt3 &position);
 };
 
 #endif

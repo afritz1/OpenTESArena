@@ -40,6 +40,12 @@ LevelDefinition::DoorPlacementDef::DoorPlacementDef(DoorDefID id, std::vector<Le
 	this->id = id;
 }
 
+LevelDefinition::ChasmPlacementDef::ChasmPlacementDef(ChasmDefID id, std::vector<LevelInt3>&& positions)
+	: positions(std::move(positions))
+{
+	this->id = id;
+}
+
 void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
 	this->voxelMeshIDs.init(width, height, depth);
@@ -163,6 +169,17 @@ const LevelDefinition::DoorPlacementDef &LevelDefinition::getDoorPlacementDef(in
 	return this->doorPlacementDefs[index];
 }
 
+int LevelDefinition::getChasmPlacementDefCount() const
+{
+	return static_cast<int>(this->chasmPlacementDefs.size());
+}
+
+const LevelDefinition::ChasmPlacementDef &LevelDefinition::getChasmPlacementDef(int index) const
+{
+	DebugAssertIndex(this->chasmPlacementDefs, index);
+	return this->chasmPlacementDefs[index];
+}
+
 void LevelDefinition::addEntity(EntityDefID id, const LevelDouble3 &position)
 {
 	const auto iter = std::find_if(this->entityPlacementDefs.begin(), this->entityPlacementDefs.end(),
@@ -274,5 +291,24 @@ void LevelDefinition::addDoor(DoorDefID id, const LevelInt3 &position)
 	else
 	{
 		this->doorPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+	}
+}
+
+void LevelDefinition::addChasm(ChasmDefID id, const LevelInt3 &position)
+{
+	const auto iter = std::find_if(this->chasmPlacementDefs.begin(),
+		this->chasmPlacementDefs.end(), [id](const ChasmPlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->chasmPlacementDefs.end())
+	{
+		std::vector<LevelInt3> &positions = iter->positions;
+		positions.push_back(position);
+	}
+	else
+	{
+		this->chasmPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
 	}
 }

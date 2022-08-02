@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ChasmDefinition.h"
 #include "DoorDefinition.h"
 #include "LevelDefinition.h"
 #include "LockDefinition.h"
@@ -36,6 +37,7 @@ private:
 	std::vector<std::string> buildingNames;
 	std::unordered_map<LevelDefinition::BuildingNameID, std::string> buildingNameOverrides;
 	std::vector<DoorDefinition> doorDefs;
+	std::vector<ChasmDefinition> chasmDefs;
 
 	// @todo: interior gen info ID for when player creates a wall on water.
 
@@ -54,6 +56,7 @@ public:
 	int getTransitionDefCount() const;
 	int getBuildingNameCount() const;
 	int getDoorDefCount() const;
+	int getChasmDefCount() const;
 
 	const VoxelMeshDefinition &getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const;
 	const VoxelTextureDefinition &getVoxelTextureDef(LevelDefinition::VoxelTextureDefID id) const;
@@ -64,6 +67,7 @@ public:
 	const TransitionDefinition &getTransitionDef(LevelDefinition::TransitionDefID id) const;
 	const std::string &getBuildingName(LevelDefinition::BuildingNameID id) const;
 	const DoorDefinition &getDoorDef(LevelDefinition::DoorDefID id) const;
+	const ChasmDefinition &getChasmDef(LevelDefinition::ChasmDefID id) const;
 	double getCeilingScale() const;
 
 	LevelDefinition::VoxelMeshDefID addVoxelMeshDef(VoxelMeshDefinition &&def);
@@ -75,6 +79,7 @@ public:
 	LevelDefinition::TransitionDefID addTransitionDef(TransitionDefinition &&def);
 	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
 	LevelDefinition::DoorDefID addDoorDef(DoorDefinition &&def);
+	LevelDefinition::ChasmDefID addChasmDef(ChasmDefinition &&def);
 
 	// Handles some special cases in main quest cities.
 	void setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name);
