@@ -7,20 +7,20 @@
 
 void Chunk::init(const ChunkInt2 &position, int height)
 {
-	// Set all voxels to air and unused.
-	this->voxelIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->voxelIDs.fill(Chunk::AIR_VOXEL_ID);
+	// Set all voxels to air.
+	this->voxelMeshDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->voxelMeshDefIDs.fill(Chunk::AIR_VOXEL_MESH_DEF_ID);
 
-	this->voxelMeshIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->voxelMeshIDs.fill(Chunk::AIR_VOXEL_ID);
+	this->voxelTextureDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->voxelTextureDefIDs.fill(Chunk::AIR_VOXEL_TEXTURE_DEF_ID);
 
-	this->voxelDefs.fill(VoxelDefinition());
-	this->activeVoxelDefs.fill(false);
+	this->voxelTraitsDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->voxelTraitsDefIDs.fill(Chunk::AIR_VOXEL_TRAITS_DEF_ID);
 
-	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely
-	// point to it.
-	this->activeVoxelDefs.front() = true;
+	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely point to it.
 	this->voxelMeshDefs.emplace_back(VoxelMeshDefinition());
+	this->voxelTextureDefs.emplace_back(VoxelTextureDefinition());
+	this->voxelTraitsDefs.emplace_back(VoxelTraitsDefinition());
 
 	this->position = position;
 }
@@ -37,17 +37,57 @@ bool Chunk::isValidVoxel(SNInt x, int y, WEInt z) const
 
 int Chunk::getHeight() const
 {
-	return this->voxelIDs.getHeight();
+	DebugAssert(this->voxelMeshDefIDs.getHeight() == this->voxelTextureDefIDs.getHeight());
+	DebugAssert(this->voxelMeshDefIDs.getHeight() == this->voxelTraitsDefIDs.getHeight());
+	return this->voxelMeshDefIDs.getHeight();
 }
 
-Chunk::VoxelID Chunk::getVoxelID(SNInt x, int y, WEInt z) const
+Chunk::VoxelMeshDefID Chunk::getVoxelMeshDefID(SNInt x, int y, WEInt z) const
 {
-	return this->voxelIDs.get(x, y, z);
+	return this->voxelMeshDefIDs.get(x, y, z);
 }
 
-Chunk::VoxelMeshID Chunk::getVoxelMeshID(SNInt x, int y, WEInt z) const
+Chunk::VoxelTextureDefID Chunk::getVoxelTextureDefID(SNInt x, int y, WEInt z) const
 {
-	return this->voxelMeshIDs.get(x, y, z);
+	return this->voxelTextureDefIDs.get(x, y, z);
+}
+
+Chunk::VoxelTraitsDefID Chunk::getVoxelTraitsDefID(SNInt x, int y, WEInt z) const
+{
+	return this->voxelTraitsDefIDs.get(x, y, z);
+}
+
+int Chunk::getVoxelMeshDefCount() const
+{
+	return static_cast<int>(this->voxelMeshDefs.size());
+}
+
+int Chunk::getVoxelTextureDefCount() const
+{
+	return static_cast<int>(this->voxelTextureDefs.size());
+}
+
+int Chunk::getVoxelTraitsDefCount() const
+{
+	return static_cast<int>(this->voxelTraitsDefs.size());
+}
+
+const VoxelMeshDefinition &Chunk::getVoxelMeshDef(int index) const
+{
+	DebugAssertIndex(this->voxelMeshDefs, index);
+	return this->voxelMeshDefs[index];
+}
+
+const VoxelTextureDefinition &Chunk::getVoxelTextureDef(int index) const
+{
+	DebugAssertIndex(this->voxelTextureDefs, index);
+	return this->voxelTextureDefs[index];
+}
+
+const VoxelTraitsDefinition &Chunk::getVoxelTraitsDef(int index) const
+{
+	DebugAssertIndex(this->voxelTraitsDefs, index);
+	return this->voxelTraitsDefs[index];
 }
 
 int Chunk::getDirtyVoxelCount() const
@@ -59,30 +99,6 @@ const VoxelInt3 &Chunk::getDirtyVoxel(int index) const
 {
 	DebugAssertIndex(this->dirtyVoxels, index);
 	return this->dirtyVoxels[index];
-}
-
-int Chunk::getVoxelDefCount() const
-{
-	return static_cast<int>(std::count(this->activeVoxelDefs.begin(),
-		this->activeVoxelDefs.end(), true));
-}
-
-const VoxelDefinition &Chunk::getVoxelDef(VoxelID id) const
-{
-	DebugAssert(id < this->voxelDefs.size());
-	DebugAssert(this->activeVoxelDefs[id]);
-	return this->voxelDefs[id];
-}
-
-int Chunk::getVoxelMeshDefCount() const
-{
-	return static_cast<int>(this->voxelMeshDefs.size());
-}
-
-const VoxelMeshDefinition &Chunk::getVoxelMeshDef(int index) const
-{
-	DebugAssertIndex(this->voxelMeshDefs, index);
-	return this->voxelMeshDefs[index];
 }
 
 int Chunk::getVoxelInstCount() const
@@ -204,39 +220,42 @@ const DoorDefinition *Chunk::tryGetDoor(const VoxelInt3 &voxel) const
 	}
 }
 
-void Chunk::getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition **outNorth,
-	const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest)
+template <typename VoxelIdType>
+void Chunk::getAdjacentVoxelIDsInternal(const VoxelInt3 &voxel, const Buffer3D<VoxelIdType> &voxelIDs,
+	VoxelIdType defaultID, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
+	VoxelIdType *outWestID)
 {
-	auto getAdjacentVoxel = [&voxel](const VoxelInt2 &direction)
+	auto getIdOrDefault = [this, &voxelIDs, defaultID](const VoxelInt3 &voxel)
 	{
-		const VoxelInt3 diff(direction.x, 0, direction.y);
-		return voxel + diff;
+		return this->isValidVoxel(voxel.x, voxel.y, voxel.z) ? voxelIDs.get(voxel.x, voxel.y, voxel.z) : defaultID;
 	};
 
-	auto tryWriteVoxelDef = [this](const VoxelInt3 &voxel, const VoxelDefinition **outDef)
-	{
-		const bool isValidVoxel = (voxel.x >= 0) && (voxel.x < Chunk::WIDTH) && (voxel.y >= 0) &&
-			(voxel.y < this->getHeight()) && (voxel.z >= 0) && (voxel.z < Chunk::DEPTH);
+	const VoxelInt3 northVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::North);
+	const VoxelInt3 eastVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::East);
+	const VoxelInt3 southVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::South);
+	const VoxelInt3 westVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::West);
+	*outNorthID = getIdOrDefault(northVoxel);
+	*outEastID = getIdOrDefault(eastVoxel);
+	*outSouthID = getIdOrDefault(southVoxel);
+	*outWestID = getIdOrDefault(westVoxel);
+}
 
-		if (isValidVoxel)
-		{
-			const Chunk::VoxelID voxelID = this->getVoxelID(voxel.x, voxel.y, voxel.z);
-			*outDef = &this->getVoxelDef(voxelID);
-		}
-		else
-		{
-			*outDef = nullptr;
-		}
-	};
+void Chunk::getAdjacentVoxelMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID, VoxelMeshDefID *outEastID,
+	VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID)
+{
+	this->getAdjacentVoxelIDsInternal(voxel, this->voxelMeshDefIDs, Chunk::AIR_VOXEL_MESH_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+}
 
-	const VoxelInt3 northVoxel = getAdjacentVoxel(VoxelUtils::North);
-	const VoxelInt3 eastVoxel = getAdjacentVoxel(VoxelUtils::East);
-	const VoxelInt3 southVoxel = getAdjacentVoxel(VoxelUtils::South);
-	const VoxelInt3 westVoxel = getAdjacentVoxel(VoxelUtils::West);
-	tryWriteVoxelDef(northVoxel, outNorth);
-	tryWriteVoxelDef(eastVoxel, outEast);
-	tryWriteVoxelDef(southVoxel, outSouth);
-	tryWriteVoxelDef(westVoxel, outWest);
+void Chunk::getAdjacentVoxelTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID,
+	VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID)
+{
+	this->getAdjacentVoxelIDsInternal(voxel, this->voxelTextureDefIDs, Chunk::AIR_VOXEL_TEXTURE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+}
+
+void Chunk::getAdjacentVoxelTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID,
+	VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID)
+{
+	this->getAdjacentVoxelIDsInternal(voxel, this->voxelTraitsDefIDs, Chunk::AIR_VOXEL_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 void Chunk::setVoxelDirty(SNInt x, int y, WEInt z)
@@ -249,40 +268,42 @@ void Chunk::setVoxelDirty(SNInt x, int y, WEInt z)
 	}
 }
 
-void Chunk::setVoxelID(SNInt x, int y, WEInt z, VoxelID id)
+void Chunk::setVoxelMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
 {
-	this->voxelIDs.set(x, y, z, id);
+	this->voxelMeshDefIDs.set(x, y, z, id);
 	this->setVoxelDirty(x, y, z);
 }
 
-void Chunk::setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshID id)
+void Chunk::setVoxelTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
 {
-	this->voxelMeshIDs.set(x, y, z, id);
+	this->voxelTextureDefIDs.set(x, y, z, id);
 	this->setVoxelDirty(x, y, z);
 }
 
-bool Chunk::tryAddVoxelDef(VoxelDefinition &&voxelDef, Chunk::VoxelID *outID)
+void Chunk::setVoxelTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 {
-	// Find a place to add the voxel data.
-	const auto iter = std::find(this->activeVoxelDefs.begin(), this->activeVoxelDefs.end(), false);
-
-	// If this is ever true, we need more bits per voxel.
-	if (iter == this->activeVoxelDefs.end())
-	{
-		return false;
-	}
-
-	const VoxelID id = static_cast<VoxelID>(std::distance(this->activeVoxelDefs.begin(), iter));
-	this->voxelDefs[id] = std::move(voxelDef);
-	this->activeVoxelDefs[id] = true;
-	*outID = id;
-	return true;
+	this->voxelTraitsDefIDs.set(x, y, z, id);
+	this->setVoxelDirty(x, y, z);
 }
 
-Chunk::VoxelMeshID Chunk::addVoxelMeshDef(VoxelMeshDefinition &&voxelMeshDef)
+Chunk::VoxelMeshDefID Chunk::addVoxelMeshDef(VoxelMeshDefinition &&voxelMeshDef)
 {
-	const VoxelMeshID id = static_cast<VoxelMeshID>(this->voxelMeshDefs.size());
+	const VoxelMeshDefID id = static_cast<VoxelMeshDefID>(this->voxelMeshDefs.size());
 	this->voxelMeshDefs.emplace_back(std::move(voxelMeshDef));
+	return id;
+}
+
+Chunk::VoxelTextureDefID Chunk::addVoxelTextureDef(VoxelTextureDefinition &&voxelTextureDef)
+{
+	const VoxelTextureDefID id = static_cast<VoxelTextureDefID>(this->voxelTextureDefs.size());
+	this->voxelTextureDefs.emplace_back(std::move(voxelTextureDef));
+	return id;
+}
+
+Chunk::VoxelTraitsDefID Chunk::addVoxelTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef)
+{
+	const VoxelTraitsDefID id = static_cast<VoxelTraitsDefID>(this->voxelTraitsDefs.size());
+	this->voxelTraitsDefs.emplace_back(std::move(voxelTraitsDef));
 	return id;
 }
 
@@ -379,12 +400,13 @@ void Chunk::removeVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
 
 void Chunk::clear()
 {
-	this->voxelIDs.clear();
-	this->voxelMeshIDs.clear();
-	this->dirtyVoxels.clear();
-	this->voxelDefs.fill(VoxelDefinition());
-	this->activeVoxelDefs.fill(false);
 	this->voxelMeshDefs.clear();
+	this->voxelTextureDefs.clear();
+	this->voxelTraitsDefs.clear();
+	this->voxelMeshDefIDs.clear();
+	this->voxelTextureDefIDs.clear();
+	this->voxelTraitsDefIDs.clear();
+	this->dirtyVoxels.clear();
 	this->voxelInsts.clear();
 	this->transitionDefs.clear();
 	this->triggerDefs.clear();
@@ -462,7 +484,8 @@ void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScal
 		if (voxel.y == 0)
 		{
 			// Replace floor voxel with chasm.
-			const std::optional<VoxelID> replacementVoxelID = [this]() -> std::optional<VoxelID>
+			DebugNotImplementedMsg("Floor voxel replacement.");
+			/*const std::optional<VoxelID> replacementVoxelID = [this]() -> std::optional<VoxelID>
 			{
 				// Try to get from existing voxel defs.
 				for (int i = 0; i < static_cast<int>(this->voxelDefs.size()); i++)
@@ -519,13 +542,14 @@ void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScal
 
 			DebugAssertMsg(replacementVoxelID.has_value(), "Couldn't find replacement for faded chasm voxel.");
 			this->setVoxelID(voxel.x, voxel.y, voxel.z, *replacementVoxelID);
-			DebugNotImplementedMsg("Need to implement for voxel mesh def.");
+			DebugNotImplementedMsg("Need to implement for voxel mesh def.");*/
 		}
 		else
 		{
 			// Air voxel.
-			this->setVoxelID(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_ID);
-			this->setVoxelMeshID(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_ID);
+			this->setVoxelMeshDefID(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_MESH_DEF_ID);
+			this->setVoxelTextureDefID(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_TEXTURE_DEF_ID);
+			this->setVoxelTraitsDefID(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_TRAITS_DEF_ID);
 		}
 	}
 }
@@ -538,7 +562,8 @@ void Chunk::handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<in
 		{
 			// Need to handle the voxel instance for the new chasm in this voxel, and update any adjacent
 			// chasms too.
-			auto tryUpdateAdjacentVoxel = [this, &voxelInst, &voxelInstIndicesToDestroy](const VoxelInt2 &direction)
+			DebugNotImplemented("handleVoxelInstPostFinished() chasm voxel.");
+			/*auto tryUpdateAdjacentVoxel = [this, &voxelInst, &voxelInstIndicesToDestroy](const VoxelInt2 &direction)
 			{
 				const VoxelInt3 voxel(
 					voxelInst.getX() + direction.x,
@@ -614,7 +639,7 @@ void Chunk::handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<in
 			tryUpdateAdjacentVoxel(VoxelUtils::North);
 			tryUpdateAdjacentVoxel(VoxelUtils::East);
 			tryUpdateAdjacentVoxel(VoxelUtils::South);
-			tryUpdateAdjacentVoxel(VoxelUtils::West);
+			tryUpdateAdjacentVoxel(VoxelUtils::West);*/
 		}
 	}
 }

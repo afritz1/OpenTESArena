@@ -24,9 +24,10 @@ class GameState;
 class Renderer;
 class Texture;
 class TransitionDefinition;
-class VoxelDefinition;
 
 enum class CardinalDirectionName;
+
+struct VoxelTraitsDefinition;
 
 namespace AutomapUiView
 {
@@ -101,9 +102,9 @@ namespace AutomapUiView
 	// Gets the display color for a pixel on the automap, given its associated floor and wall voxel definitions.
 	// The color depends on a couple factors, like whether the voxel is a wall, door, water, etc., and some
 	// context-sensitive cases like whether a dry chasm has a wall over it.
-	const Color &getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+	const Color &getPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 		const TransitionDefinition *transitionDef);
-	const Color &getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+	const Color &getWildPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 		const TransitionDefinition *transitionDef);
 
 	// Generates a texture of the automap.

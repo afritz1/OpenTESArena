@@ -36,9 +36,27 @@ private:
 	std::vector<ChunkPtr> activeChunks;
 	ChunkInt2 centerChunkPos;
 
+	template <typename VoxelIdType>
+	using VoxelIdFunc = VoxelIdType(*)(const Chunk &chunk, const VoxelInt3 &voxel);
+
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
-	void getAdjacentVoxelDefs(const CoordInt3 &coord, const VoxelDefinition **outNorth,
-		const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest);
+	template <typename VoxelIdType>
+	void getAdjacentVoxelIDsInternal(const CoordInt3 &coord, VoxelIdFunc<VoxelIdType> voxelIdFunc, VoxelIdType defaultID,
+		std::optional<int> *outNorthChunkIndex, std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex,
+		std::optional<int> *outWestChunkIndex, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
+		VoxelIdType *outWestID);
+	void getAdjacentVoxelMeshDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
+		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
+		Chunk::VoxelMeshDefID *outNorthID, Chunk::VoxelMeshDefID *outEastID, Chunk::VoxelMeshDefID *outSouthID,
+		Chunk::VoxelMeshDefID *outWestID);
+	void getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
+		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
+		Chunk::VoxelTextureDefID *outNorthID, Chunk::VoxelTextureDefID *outEastID, Chunk::VoxelTextureDefID *outSouthID,
+		Chunk::VoxelTextureDefID *outWestID);
+	void getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
+		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
+		Chunk::VoxelTraitsDefID *outNorthID, Chunk::VoxelTraitsDefID *outEastID, Chunk::VoxelTraitsDefID *outSouthID,
+		Chunk::VoxelTraitsDefID *outWestID);
 
 	// Takes a chunk from the chunk pool, moves it to the active chunks, and returns its index.
 	int spawnChunk();

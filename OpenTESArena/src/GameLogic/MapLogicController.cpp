@@ -488,14 +488,14 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	}
 
 	// Get the voxel definition associated with the voxel.
-	const VoxelDefinition &voxelDef = [chunkPtr, &transitionVoxel]()
+	const VoxelTraitsDefinition &voxelTraitsDef = [chunkPtr, &transitionVoxel]()
 	{
-		const Chunk::VoxelID voxelID = chunkPtr->getVoxelID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
-		return chunkPtr->getVoxelDef(voxelID);
+		const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
+		return chunkPtr->getVoxelTraitsDef(voxelTraitsDefID);
 	}();
 
 	// If the associated voxel data is a wall, then it might be a transition voxel.
-	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
+	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		const TransitionDefinition *transitionDef = chunkPtr->tryGetTransition(transitionCoord.voxel);
 		if (transitionDef != nullptr)

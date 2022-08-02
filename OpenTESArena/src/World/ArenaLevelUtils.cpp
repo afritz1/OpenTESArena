@@ -2,7 +2,6 @@
 
 #include "ArenaLevelUtils.h"
 #include "ArenaVoxelUtils.h"
-#include "VoxelDefinition.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"

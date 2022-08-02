@@ -52,16 +52,22 @@ namespace
 			levelPosition.z - static_cast<WEDouble>(chunkStartZ));
 	}
 
-	Chunk::VoxelID LevelVoxelDefIdToChunkVoxelID(LevelDefinition::VoxelDefID voxelDefID)
+	Chunk::VoxelMeshDefID LevelVoxelMeshDefIdToChunkVoxelMeshDefID(LevelDefinition::VoxelMeshDefID levelVoxelDefID)
 	{
 		// Chunks have an air definition at ID 0.
-		return static_cast<Chunk::VoxelID>(voxelDefID + 1);
+		return static_cast<Chunk::VoxelMeshDefID>(levelVoxelDefID + 1);
 	}
 
-	Chunk::VoxelMeshID LevelVoxelMeshDefIdToChunkVoxelMeshID(LevelDefinition::VoxelMeshDefID voxelMeshDefID)
+	Chunk::VoxelTextureDefID LevelVoxelTextureDefIdToChunkVoxelTextureDefID(LevelDefinition::VoxelTextureDefID levelVoxelDefID)
 	{
 		// Chunks have an air definition at ID 0.
-		return static_cast<Chunk::VoxelMeshID>(voxelMeshDefID + 1);
+		return static_cast<Chunk::VoxelTextureDefID>(levelVoxelDefID + 1);
+	}
+
+	Chunk::VoxelTraitsDefID LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(LevelDefinition::VoxelTraitsDefID levelVoxelDefID)
+	{
+		// Chunks have an air definition at ID 0.
+		return static_cast<Chunk::VoxelTraitsDefID>(levelVoxelDefID + 1);
 	}
 }
 
@@ -125,40 +131,79 @@ int ChunkManager::getCenterChunkIndex() const
 	return *index;
 }
 
-void ChunkManager::getAdjacentVoxelDefs(const CoordInt3 &coord, const VoxelDefinition **outNorth,
-	const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest)
+template <typename VoxelIdType>
+void ChunkManager::getAdjacentVoxelIDsInternal(const CoordInt3 &coord, VoxelIdFunc<VoxelIdType> voxelIdFunc,
+	VoxelIdType defaultID, std::optional<int> *outNorthChunkIndex, std::optional<int> *outEastChunkIndex,
+	std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex, VoxelIdType *outNorthID,
+	VoxelIdType *outEastID, VoxelIdType *outSouthID, VoxelIdType *outWestID)
 {
-	auto getAdjacentCoord = [&coord](const VoxelInt2 &direction)
+	auto getIdOrDefault = [this, &voxelIdFunc, defaultID](const std::optional<int> &chunkIndex, const VoxelInt3 &voxel)
 	{
-		const VoxelInt3 diff(direction.x, 0, direction.y);
-		return ChunkUtils::recalculateCoord(coord.chunk, coord.voxel + diff);
-	};
-
-	auto tryWriteVoxelDef = [](const Chunk *chunkPtr, const VoxelInt3 &voxel, const VoxelDefinition **outDef)
-	{
-		if (chunkPtr != nullptr)
+		if (chunkIndex.has_value())
 		{
-			const Chunk::VoxelID voxelID = chunkPtr->getVoxelID(voxel.x, voxel.y, voxel.z);
-			*outDef = &chunkPtr->getVoxelDef(voxelID);
+			const Chunk &chunk = this->getChunk(*chunkIndex);
+			return voxelIdFunc(chunk, voxel);
 		}
 		else
 		{
-			*outDef = nullptr;
+			return defaultID;
 		}
 	};
 
-	const CoordInt3 northCoord = getAdjacentCoord(VoxelUtils::North);
-	const CoordInt3 eastCoord = getAdjacentCoord(VoxelUtils::East);
-	const CoordInt3 southCoord = getAdjacentCoord(VoxelUtils::South);
-	const CoordInt3 westCoord = getAdjacentCoord(VoxelUtils::West);
-	const Chunk *northChunkPtr = this->tryGetChunk(northCoord.chunk);
-	const Chunk *eastChunkPtr = this->tryGetChunk(eastCoord.chunk);
-	const Chunk *southChunkPtr = this->tryGetChunk(southCoord.chunk);
-	const Chunk *westChunkPtr = this->tryGetChunk(westCoord.chunk);
-	tryWriteVoxelDef(northChunkPtr, northCoord.voxel, outNorth);
-	tryWriteVoxelDef(eastChunkPtr, eastCoord.voxel, outEast);
-	tryWriteVoxelDef(southChunkPtr, southCoord.voxel, outSouth);
-	tryWriteVoxelDef(westChunkPtr, westCoord.voxel, outWest);
+	const CoordInt3 northCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::North);
+	const CoordInt3 eastCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::East);
+	const CoordInt3 southCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::South);
+	const CoordInt3 westCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::West);
+	*outNorthChunkIndex = this->tryGetChunkIndex(northCoord.chunk);
+	*outEastChunkIndex = this->tryGetChunkIndex(eastCoord.chunk);
+	*outSouthChunkIndex = this->tryGetChunkIndex(southCoord.chunk);
+	*outWestChunkIndex = this->tryGetChunkIndex(westCoord.chunk);
+	*outNorthID = getIdOrDefault(*outNorthChunkIndex, northCoord.voxel);
+	*outEastID = getIdOrDefault(*outEastChunkIndex, eastCoord.voxel);
+	*outSouthID = getIdOrDefault(*outSouthChunkIndex, southCoord.voxel);
+	*outWestID = getIdOrDefault(*outWestChunkIndex, westCoord.voxel);
+}
+
+void ChunkManager::getAdjacentVoxelMeshDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
+	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
+	Chunk::VoxelMeshDefID *outNorthID, Chunk::VoxelMeshDefID *outEastID, Chunk::VoxelMeshDefID *outSouthID,
+	Chunk::VoxelMeshDefID *outWestID)
+{
+	auto voxelIdFunc = [](const Chunk &chunk, const VoxelInt3 &voxel)
+	{
+		return chunk.getVoxelMeshDefID(voxel.x, voxel.y, voxel.z);
+	};
+
+	ChunkManager::getAdjacentVoxelIDsInternal<Chunk::VoxelMeshDefID>(coord, voxelIdFunc, Chunk::AIR_VOXEL_MESH_DEF_ID,
+		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
+}
+
+void ChunkManager::getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
+	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
+	Chunk::VoxelTextureDefID *outNorthID, Chunk::VoxelTextureDefID *outEastID, Chunk::VoxelTextureDefID *outSouthID,
+	Chunk::VoxelTextureDefID *outWestID)
+{
+	auto voxelIdFunc = [](const Chunk &chunk, const VoxelInt3 &voxel)
+	{
+		return chunk.getVoxelTextureDefID(voxel.x, voxel.y, voxel.z);
+	};
+
+	ChunkManager::getAdjacentVoxelIDsInternal<Chunk::VoxelTextureDefID>(coord, voxelIdFunc, Chunk::AIR_VOXEL_TEXTURE_DEF_ID,
+		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
+}
+
+void ChunkManager::getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
+	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
+	Chunk::VoxelTraitsDefID *outNorthID, Chunk::VoxelTraitsDefID *outEastID, Chunk::VoxelTraitsDefID *outSouthID,
+	Chunk::VoxelTraitsDefID *outWestID)
+{
+	auto voxelIdFunc = [](const Chunk &chunk, const VoxelInt3 &voxel)
+	{
+		return chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+	};
+
+	ChunkManager::getAdjacentVoxelIDsInternal<Chunk::VoxelTraitsDefID>(coord, voxelIdFunc, Chunk::AIR_VOXEL_TRAITS_DEF_ID,
+		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 int ChunkManager::spawnChunk()
@@ -194,26 +239,22 @@ void ChunkManager::recycleChunk(int index)
 
 void ChunkManager::populateChunkVoxelDefs(Chunk &chunk, const LevelInfoDefinition &levelInfoDefinition)
 {
-	// Add voxel definitions.
-	for (int i = 0; i < levelInfoDefinition.getVoxelDefCount(); i++)
-	{
-		VoxelDefinition voxelDefinition = levelInfoDefinition.getVoxelDef(i);
-		const ArenaTypes::VoxelType voxelType = voxelDefinition.type;
-
-		Chunk::VoxelID dummyID;
-		if (!chunk.tryAddVoxelDef(std::move(voxelDefinition), &dummyID))
-		{
-			DebugLogError("Couldn't add voxel definition \"" + std::to_string(i) + "\" to chunk (voxel type \"" +
-				std::to_string(static_cast<int>(voxelType)) + "\".");
-		}
-	}
-
-	// Add voxel mesh definitions.
 	for (int i = 0; i < levelInfoDefinition.getVoxelMeshDefCount(); i++)
 	{
 		VoxelMeshDefinition voxelMeshDef = levelInfoDefinition.getVoxelMeshDef(i);
 		chunk.addVoxelMeshDef(std::move(voxelMeshDef));
-		// @todo: doesn't this need to iterate all XYZ of the LevelDefinition to know what the voxel mesh def IDs should be?
+	}
+
+	for (int i = 0; i < levelInfoDefinition.getVoxelTextureDefCount(); i++)
+	{
+		VoxelTextureDefinition voxelTextureDef = levelInfoDefinition.getVoxelTextureDef(i);
+		chunk.addVoxelTextureDef(std::move(voxelTextureDef));
+	}
+
+	for (int i = 0; i < levelInfoDefinition.getVoxelTraitsDefCount(); i++)
+	{
+		VoxelTraitsDefinition voxelTraitsDef = levelInfoDefinition.getVoxelTraitsDef(i);
+		chunk.addVoxelTraitsDef(std::move(voxelTraitsDef));
 	}
 }
 
@@ -234,25 +275,15 @@ void ChunkManager::populateChunkVoxels(Chunk &chunk, const LevelDefinition &leve
 			for (SNInt x = startX; x < endX; x++)
 			{
 				const VoxelInt3 chunkVoxel(x - startX, y - startY, z - startZ);
-
-				// Convert the voxel definition ID to a chunk voxel ID. If they don't match then the
-				// chunk doesn't support that high of a voxel definition ID.
-				const LevelDefinition::VoxelDefID voxelDefID = levelDefinition.getVoxelID(x, y, z);
-				const Chunk::VoxelID voxelID = static_cast<Chunk::VoxelID>(voxelDefID);
-				if (static_cast<LevelDefinition::VoxelDefID>(voxelID) != voxelDefID)
-				{
-					continue;
-				}
-
-				// Add one to account for the air voxel definition being ID 0.
-				const Chunk::VoxelID correctedVoxelID = LevelVoxelDefIdToChunkVoxelID(voxelDefID);
-				chunk.setVoxelID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, correctedVoxelID);
-
-				const LevelDefinition::VoxelMeshDefID voxelMeshDefID = levelDefinition.getVoxelMeshID(x, y, z);
-
-				// Add one to account for the air voxel definition being ID 0.
-				const Chunk::VoxelMeshID voxelMeshID = LevelVoxelMeshDefIdToChunkVoxelMeshID(voxelMeshDefID);
-				chunk.setVoxelMeshID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelMeshID);
+				const LevelDefinition::VoxelMeshDefID levelVoxelMeshDefID = levelDefinition.getVoxelMeshID(x, y, z);
+				const LevelDefinition::VoxelTextureDefID levelVoxelTextureDefID = levelDefinition.getVoxelTextureID(x, y, z);
+				const LevelDefinition::VoxelTraitsDefID levelVoxelTraitsDefID = levelDefinition.getVoxelTraitsID(x, y, z);
+				const Chunk::VoxelMeshDefID voxelMeshDefID = LevelVoxelMeshDefIdToChunkVoxelMeshDefID(levelVoxelMeshDefID);
+				const Chunk::VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
+				const Chunk::VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
+				chunk.setVoxelMeshDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelMeshDefID);
+				chunk.setVoxelTextureDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelTextureDefID);
+				chunk.setVoxelTraitsDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelTraitsDefID);
 			}
 		}
 	}
@@ -428,13 +459,15 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 {
 	// @todo: only iterate over chunk writing ranges
 
+	DebugLogError("Not implemented: ChunkManager::populateChunkVoxelInsts()");
+
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				const Chunk::VoxelID voxelID = chunk.getVoxelID(x, y, z);
+				/*const Chunk::VoxelID voxelID = chunk.getVoxelID(x, y, z);
 				const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 				if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 				{
@@ -455,7 +488,7 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 							x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
 						chunk.addVoxelInst(std::move(voxelInst));
 					}
-				}
+				}*/
 			}
 		}
 	}
@@ -552,37 +585,43 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 
 		// @todo: populate chunk entirely from default empty chunk (fast copy).
 		// - probably get from MapDefinition::Interior eventually.
-		constexpr Chunk::VoxelID floorVoxelID = 2;
-		const Chunk::VoxelID ceilingVoxelID = [&levelInfoDefinition]()
+		constexpr Chunk::VoxelMeshDefID floorVoxelMeshDefID = 2;
+		const Chunk::VoxelMeshDefID ceilingVoxelMeshDefID = [&levelInfoDefinition]()
 		{
-			// Find ceiling voxel definition.
-			for (int i = 0; i < levelInfoDefinition.getVoxelDefCount(); i++)
+			for (int i = 0; i < levelInfoDefinition.getVoxelTraitsDefCount(); i++)
 			{
-				const VoxelDefinition &voxelDef = levelInfoDefinition.getVoxelDef(i);
-				if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
+				// @todo: from the looks of this, the engine needs to care about the concept of a "ceiling"?
+				const VoxelTraitsDefinition &voxelTraitsDef = levelInfoDefinition.getVoxelTraitsDef(i);
+				if (voxelTraitsDef.type == ArenaTypes::VoxelType::Ceiling)
 				{
-					return LevelVoxelDefIdToChunkVoxelID(i);
+					return LevelVoxelMeshDefIdToChunkVoxelMeshDefID(i); // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
 				}
 			}
 
 			// No ceiling found, use air instead.
-			return Chunk::AIR_VOXEL_ID;
+			return Chunk::AIR_VOXEL_MESH_DEF_ID;
 		}();
 
-		constexpr Chunk::VoxelMeshID floorVoxelMeshID = floorVoxelID; // @todo: this is probably brittle; can't assume exact voxel def -> mesh def mapping.
-		const Chunk::VoxelMeshID ceilingVoxelMeshID = ceilingVoxelID; // @todo: this is probably brittle; can't assume exact voxel def -> mesh def mapping.
+		constexpr Chunk::VoxelTextureDefID floorVoxelTextureDefID = floorVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> texture def ID mapping.
+		const Chunk::VoxelTextureDefID ceilingVoxelTextureDefID = ceilingVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> texture def ID mapping.
 
+		constexpr Chunk::VoxelTraitsDefID floorVoxelTraitsDefID = floorVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
+		const Chunk::VoxelTraitsDefID ceilingVoxelTraitsDefID = ceilingVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
+
+		const int chunkHeight = chunk.getHeight();
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				chunk.setVoxelID(x, 0, z, floorVoxelID);
-				chunk.setVoxelMeshID(x, 0, z, floorVoxelMeshID);
+				chunk.setVoxelMeshDefID(x, 0, z, floorVoxelMeshDefID);
+				chunk.setVoxelTextureDefID(x, 0, z, floorVoxelTextureDefID);
+				chunk.setVoxelTraitsDefID(x, 0, z, floorVoxelTraitsDefID);
 
-				if (chunk.getHeight() > 2)
+				if (chunkHeight > 2)
 				{
-					chunk.setVoxelID(x, 2, z, ceilingVoxelID);
-					chunk.setVoxelMeshID(x, 2, z, ceilingVoxelMeshID);
+					chunk.setVoxelMeshDefID(x, 2, z, ceilingVoxelMeshDefID);
+					chunk.setVoxelTextureDefID(x, 2, z, ceilingVoxelTextureDefID);
+					chunk.setVoxelTraitsDefID(x, 2, z, ceilingVoxelTraitsDefID);
 				}
 			}
 		}
@@ -632,16 +671,16 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 				const LevelInt2 wrappedLevelVoxel(
 					wrapLevelVoxel(levelVoxel.x, levelWidth),
 					wrapLevelVoxel(levelVoxel.y, levelDepth));
-				const LevelDefinition::VoxelDefID voxelDefID =
-					levelDefinition.getVoxelID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
 
-				const Chunk::VoxelID voxelID = LevelVoxelDefIdToChunkVoxelID(voxelDefID);
-				chunk.setVoxelID(x, 0, z, voxelID);
-
-				const LevelDefinition::VoxelMeshDefID voxelMeshDefID =
-					levelDefinition.getVoxelMeshID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
-				const Chunk::VoxelMeshID voxelMeshID = LevelVoxelMeshDefIdToChunkVoxelMeshID(voxelMeshDefID);
-				chunk.setVoxelMeshID(x, 0, z, voxelMeshID);
+				const LevelDefinition::VoxelMeshDefID levelVoxelMeshDefID = levelDefinition.getVoxelMeshID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const LevelDefinition::VoxelTextureDefID levelVoxelTextureDefID = levelDefinition.getVoxelTextureID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const LevelDefinition::VoxelTraitsDefID levelVoxelTraitsDefID = levelDefinition.getVoxelTraitsID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const Chunk::VoxelMeshDefID voxelMeshDefID = LevelVoxelMeshDefIdToChunkVoxelMeshDefID(levelVoxelMeshDefID);
+				const Chunk::VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
+				const Chunk::VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
+				chunk.setVoxelMeshDefID(x, 0, z, voxelMeshDefID);
+				chunk.setVoxelTextureDefID(x, 0, z, voxelTextureDefID);
+				chunk.setVoxelTraitsDefID(x, 0, z, voxelTraitsDefID);
 			}
 		}
 
@@ -701,12 +740,29 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 		const CoordInt3 coord(chunk.getPosition(), voxel);
 		auto getChasmFaces = [this, &coord](bool *outNorth, bool *outEast, bool *outSouth, bool *outWest)
 		{
-			const VoxelDefinition *northDef, *eastDef, *southDef, *westDef;
-			this->getAdjacentVoxelDefs(coord, &northDef, &eastDef, &southDef, &westDef);
-			*outNorth = (northDef != nullptr) && northDef->allowsChasmFace();
-			*outEast = (eastDef != nullptr) && eastDef->allowsChasmFace();
-			*outSouth = (southDef != nullptr) && southDef->allowsChasmFace();
-			*outWest = (westDef != nullptr) && westDef->allowsChasmFace();
+			auto getChasmFace = [this](const std::optional<int> &chunkIndex, Chunk::VoxelMeshDefID meshDefID)
+			{
+				if (chunkIndex.has_value())
+				{
+					const Chunk &chunk = this->getChunk(*chunkIndex);
+					const VoxelMeshDefinition &meshDef = chunk.getVoxelMeshDef(meshDefID);
+					return meshDef.enablesNeighborGeometry;
+				}
+				else
+				{
+					return false;
+				}
+			};
+
+			std::optional<int> outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex;
+			Chunk::VoxelMeshDefID northDefID, eastDefID, southDefID, westDefID;
+			this->getAdjacentVoxelMeshDefIDs(coord, &outNorthChunkIndex, &outEastChunkIndex, &outSouthChunkIndex,
+				&outWestChunkIndex, &northDefID, &eastDefID, &southDefID, &westDefID);
+
+			*outNorth = getChasmFace(outNorthChunkIndex, northDefID);
+			*outEast = getChasmFace(outEastChunkIndex, eastDefID);
+			*outSouth = getChasmFace(outSouthChunkIndex, southDefID);
+			*outWest = getChasmFace(outWestChunkIndex, westDefID);
 		};
 		
 		constexpr VoxelInstance::Type voxelInstType = VoxelInstance::Type::Chasm;
@@ -732,9 +788,9 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 		else
 		{
 			// No voxel instance yet. If it's a chasm, add a new voxel instance.
-			const Chunk::VoxelID voxelID = chunk.getVoxelID(voxel.x, voxel.y, voxel.z);
-			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-			if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
+			const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
+			if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
 			{
 				bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
 				getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);

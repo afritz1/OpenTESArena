@@ -4,7 +4,6 @@
 #include "CityDataFile.h"
 #include "ExeData.h"
 #include "../Math/Random.h"
-#include "../World/VoxelDefinition.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"

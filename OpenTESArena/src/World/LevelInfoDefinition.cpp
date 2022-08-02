@@ -12,15 +12,9 @@ void LevelInfoDefinition::init(double ceilingScale)
 	this->ceilingScale = ceilingScale;
 	
 	// Add air voxel by default.
-	this->addVoxelDef(VoxelDefinition());
 	this->addVoxelMeshDef(VoxelMeshDefinition());
 	this->addVoxelTextureDef(VoxelTextureDefinition());
 	this->addVoxelTraitsDef(VoxelTraitsDefinition());
-}
-
-int LevelInfoDefinition::getVoxelDefCount() const
-{
-	return static_cast<int>(this->voxelDefs.size());
 }
 
 int LevelInfoDefinition::getVoxelMeshDefCount() const
@@ -66,12 +60,6 @@ int LevelInfoDefinition::getBuildingNameCount() const
 int LevelInfoDefinition::getDoorDefCount() const
 {
 	return static_cast<int>(this->doorDefs.size());
-}
-
-const VoxelDefinition &LevelInfoDefinition::getVoxelDef(LevelDefinition::VoxelDefID id) const
-{
-	DebugAssertIndex(this->voxelDefs, id);
-	return this->voxelDefs[id];
 }
 
 const VoxelMeshDefinition &LevelInfoDefinition::getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const
@@ -139,12 +127,6 @@ const DoorDefinition &LevelInfoDefinition::getDoorDef(LevelDefinition::DoorDefID
 double LevelInfoDefinition::getCeilingScale() const
 {
 	return this->ceilingScale;
-}
-
-LevelDefinition::VoxelDefID LevelInfoDefinition::addVoxelDef(VoxelDefinition &&def)
-{
-	this->voxelDefs.emplace_back(std::move(def));
-	return static_cast<LevelDefinition::VoxelDefID>(this->voxelDefs.size()) - 1;
 }
 
 LevelDefinition::VoxelMeshDefID LevelInfoDefinition::addVoxelMeshDef(VoxelMeshDefinition &&def)

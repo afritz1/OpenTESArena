@@ -5,7 +5,6 @@
 #include "ArenaWeatherUtils.h"
 #include "ArenaWildUtils.h"
 #include "MapType.h"
-#include "VoxelDefinition.h"
 #include "WeatherDefinition.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"

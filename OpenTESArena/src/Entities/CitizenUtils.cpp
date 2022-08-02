@@ -178,13 +178,14 @@ bool CitizenUtils::trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenIn
 		for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
 		{
 			const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
-			const Chunk::VoxelID voxelID = chunk.getVoxelID(spawnVoxel.x, 1, spawnVoxel.y);
-			const Chunk::VoxelID groundVoxelID = chunk.getVoxelID(spawnVoxel.x, 0, spawnVoxel.y);
-			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-			const VoxelDefinition &groundVoxelDef = chunk.getVoxelDef(groundVoxelID);
+			const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
+			const Chunk::VoxelTraitsDefID groundVoxelTraitsDefID = chunk.getVoxelTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
+			const VoxelTraitsDefinition &groundVoxelTraitsDef = chunk.getVoxelTraitsDef(groundVoxelTraitsDefID);
 
-			if ((voxelDef.type == ArenaTypes::VoxelType::None) &&
-				(groundVoxelDef.type == ArenaTypes::VoxelType::Floor))
+			// @todo: this type check could ostensibly be replaced with some "allowsCitizenSpawn".
+			if ((voxelTraitsDef.type == ArenaTypes::VoxelType::None) &&
+				(groundVoxelTraitsDef.type == ArenaTypes::VoxelType::Floor))
 			{
 				return spawnVoxel;
 			}

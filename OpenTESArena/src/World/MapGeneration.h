@@ -10,7 +10,6 @@
 #include "DoorDefinition.h"
 #include "LevelDefinition.h"
 #include "TransitionType.h"
-#include "VoxelDefinition.h"
 #include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"

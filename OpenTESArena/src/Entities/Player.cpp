@@ -12,7 +12,6 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
-#include "../World/VoxelDefinition.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -220,8 +219,7 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 	double pitchLimit)
 {
 	// Multiply sensitivities by 100 so the values in the options are nicer.
-	this->camera.rotate(dx * (100.0 * hSensitivity),
-		dy * (100.0 * vSensitivity), pitchLimit);
+	this->camera.rotate(dx * (100.0 * hSensitivity), dy * (100.0 * vSensitivity), pitchLimit);
 }
 
 void Player::lookAt(const CoordDouble3 &point)
@@ -233,14 +231,14 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 {
 	const ChunkManager &chunkManager = activeLevel.getChunkManager();
 
-	auto tryGetVoxelDef = [&activeLevel, &chunkManager](const CoordInt3 &coord) -> const VoxelDefinition*
+	auto tryGetVoxelTraitsDef = [&activeLevel, &chunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
 	{
 		const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
 		if (chunk != nullptr)
 		{
-			const Chunk::VoxelID voxelID = chunk->getVoxelID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
-			const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
-			return &voxelDef;
+			const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
+			return &voxelTraitsDef;
 		}
 		else
 		{
@@ -251,8 +249,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 
 	// Coordinates of the base of the voxel the feet are in.
 	// - @todo: add delta velocity Y?
-	const int feetVoxelY = static_cast<int>(std::floor(
-		this->getFeetY() / activeLevel.getCeilingScale()));
+	const int feetVoxelY = static_cast<int>(std::floor(this->getFeetY() / activeLevel.getCeilingScale()));
 
 	// Regular old Euler integration in XZ plane.
 	const CoordDouble3 curPlayerCoord = this->getPosition();
@@ -275,28 +272,29 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 	const CoordInt3 nextXCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextXVoxel);
 	const CoordInt3 nextYCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextYVoxel);
 	const CoordInt3 nextZCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextZVoxel);
-	const VoxelDefinition *xVoxelDef = tryGetVoxelDef(nextXCoord);
-	const VoxelDefinition *yVoxelDef = tryGetVoxelDef(nextYCoord);
-	const VoxelDefinition *zVoxelDef = tryGetVoxelDef(nextZCoord);
+	const VoxelTraitsDefinition *xVoxelTraitsDef = tryGetVoxelTraitsDef(nextXCoord);
+	const VoxelTraitsDefinition *yVoxelTraitsDef = tryGetVoxelTraitsDef(nextYCoord);
+	const VoxelTraitsDefinition *zVoxelTraitsDef = tryGetVoxelTraitsDef(nextZCoord);
 
 	// Check horizontal collisions.
 
 	// -- Temp hack until Y collision detection is implemented --
 	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [&chunkManager](const CoordInt3 &coord, const VoxelDefinition &voxelDef)
+	auto wouldCollideWithVoxel = [&chunkManager](const CoordInt3 &coord, const VoxelTraitsDefinition &voxelTraitsDef)
 	{
-		if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
+		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
+
+		if (voxelType == ArenaTypes::VoxelType::TransparentWall)
 		{
-			// Transparent wall collision.
-			const VoxelDefinition::TransparentWallData &transparent = voxelDef.transparentWall;
+			const VoxelTraitsDefinition::TransparentWall &transparent = voxelTraitsDef.transparentWall;
 			return transparent.collider;
 		}
-		else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
+		else if (voxelType == ArenaTypes::VoxelType::Edge)
 		{
 			// Edge collision.
 			// - @todo: treat as edge, not solid voxel.
-			const VoxelDefinition::EdgeData &edge = voxelDef.edge;
+			const VoxelTraitsDefinition::Edge &edge = voxelTraitsDef.edge;
 			return edge.collider;
 		}
 		else
@@ -305,10 +303,10 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 			DebugAssert(chunk != nullptr);
 
 			// General voxel collision.
-			const bool isEmpty = voxelDef.type == ArenaTypes::VoxelType::None;
-			const bool isOpenDoor = [&coord, &voxelDef, chunk]()
+			const bool isEmpty = voxelType == ArenaTypes::VoxelType::None;
+			const bool isOpenDoor = [&coord, voxelType, chunk]()
 			{
-				if (voxelDef.type == ArenaTypes::VoxelType::Door)
+				if (voxelType == ArenaTypes::VoxelType::Door)
 				{
 					const VoxelInstance *doorInst = chunk->tryGetVoxelInst(coord.voxel, VoxelInstance::Type::OpenDoor);
 					const bool isClosed = doorInst == nullptr;
@@ -322,9 +320,9 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - @todo: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelTransition = [&coord, &voxelDef, chunk]()
+			const bool isLevelTransition = [&coord, voxelType, chunk]()
 			{
-				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
+				if (voxelType == ArenaTypes::VoxelType::Wall)
 				{
 					// Check if there is a level change transition definition for this voxel.
 					const TransitionDefinition *transitionDef = chunk->tryGetTransition(coord.voxel);
@@ -340,12 +338,12 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 		}
 	};
 
-	if ((xVoxelDef != nullptr) && wouldCollideWithVoxel(nextXCoord, *xVoxelDef))
+	if ((xVoxelTraitsDef != nullptr) && wouldCollideWithVoxel(nextXCoord, *xVoxelTraitsDef))
 	{
 		this->velocity.x = 0.0;
 	}
 
-	if ((zVoxelDef != nullptr) && wouldCollideWithVoxel(nextZCoord, *zVoxelDef))
+	if ((zVoxelTraitsDef != nullptr) && wouldCollideWithVoxel(nextZCoord, *zVoxelTraitsDef))
 	{
 		this->velocity.z = 0.0;
 	}

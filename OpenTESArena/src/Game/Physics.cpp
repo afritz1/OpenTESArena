@@ -15,7 +15,6 @@
 #include "../World/ChunkUtils.h"
 #include "../World/LevelInstance.h"
 #include "../World/VoxelFacing3D.h"
-#include "../World/VoxelGeometry.h"
 
 #include "components/debug/Debug.h"
 
@@ -235,14 +234,17 @@ namespace Physics
 			return false;
 		}
 
-		const Chunk::VoxelID voxelID = chunk->getVoxelID(voxel.x, voxel.y, voxel.z);
+		const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
+		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
-		// Get the voxel definition associated with the voxel.
-		const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
-		const ArenaTypes::VoxelType voxelType = voxelDef.type;
+		// @todo
+		DebugLogError("Not implemented: Physics::testInitialVoxelRay()");
+
+		return false;
 
 		// Determine which type the voxel data is and run the associated calculation.
-		if (voxelType == ArenaTypes::VoxelType::None)
+		/*if (voxelType == ArenaTypes::VoxelType::None)
 		{
 			// Do nothing.
 			return false;
@@ -602,7 +604,7 @@ namespace Physics
 		else
 		{
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
-		}
+		}*/
 	}
 
 	// Checks a voxel for ray hits and writes them into the output parameter. The near point and far point
@@ -626,11 +628,9 @@ namespace Physics
 			return false;
 		}
 
-		const Chunk::VoxelID voxelID = chunk->getVoxelID(voxel.x, voxel.y, voxel.z);
-
-		// Get the voxel definition associated with the voxel.
-		const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
-		const ArenaTypes::VoxelType voxelType = voxelDef.type;
+		const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
+		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
 		// Use absolute voxel when generating quads for ray intersection.
 		const NewInt3 absoluteVoxel = VoxelUtils::coordToNewVoxel(voxelCoord);
@@ -638,7 +638,12 @@ namespace Physics
 		// @todo: decide later if all voxel types can just use one VoxelGeometry block of code
 		// instead of branching on type here.
 
-		// Determine which type the voxel data is and run the associated calculation.
+		// @todo
+		DebugLogError("Not implemented: Physics::testVoxelRay()");
+
+		return false;
+
+		/*// Determine which type the voxel data is and run the associated calculation.
 		if (voxelType == ArenaTypes::VoxelType::None)
 		{
 			// Do nothing.
@@ -998,7 +1003,7 @@ namespace Physics
 		else
 		{
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
-		}
+		}*/
 	}
 
 	// Helper function for testing which entities in a voxel are intersected by a ray.

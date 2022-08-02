@@ -14,12 +14,12 @@
 #include "../../Math/Constants.h"
 #include "../../Math/Matrix4.h"
 #include "../../Media/TextureManager.h"
+#include "../../World/ArenaMeshUtils.h"
 #include "../../World/ChunkManager.h"
 #include "../../World/LevelInstance.h"
 #include "../../World/MapDefinition.h"
 #include "../../World/MapType.h"
 #include "../../World/VoxelFacing2D.h"
-#include "../../World/VoxelGeometry.h"
 
 #include "components/debug/Debug.h"
 
@@ -93,12 +93,12 @@ namespace sgTexture
 	}
 
 	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
-	void LoadVoxelDefTextures(const VoxelDefinition &voxelDef, std::vector<SceneGraph::LoadedVoxelTexture> &voxelTextures,
+	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef, std::vector<SceneGraph::LoadedVoxelTexture> &voxelTextures,
 		TextureManager &textureManager, Renderer &renderer)
 	{
-		for (int i = 0; i < voxelDef.getTextureAssetCount(); i++)
+		for (int i = 0; i < voxelTextureDef.textureCount; i++)
 		{
-			const TextureAsset &textureAsset = voxelDef.getTextureAsset(i);
+			const TextureAsset &textureAsset = voxelTextureDef.getTextureAsset(i);
 			const auto cacheIter = std::find_if(voxelTextures.begin(), voxelTextures.end(),
 				[&textureAsset](const SceneGraph::LoadedVoxelTexture &loadedTexture)
 			{
@@ -471,16 +471,18 @@ void SceneGraph::loadTextures(const std::optional<int> &activeLevelIndex, const 
 	{
 		const LevelInfoDefinition &levelInfoDef = mapDefinition.getLevelInfoForLevel(levelIndex);
 
-		for (int i = 0; i < levelInfoDef.getVoxelDefCount(); i++)
+		for (int i = 0; i < levelInfoDef.getVoxelTextureDefCount(); i++)
 		{
-			const VoxelDefinition &voxelDef = levelInfoDef.getVoxelDef(i);
-			sgTexture::LoadVoxelDefTextures(voxelDef, this->voxelTextures, textureManager, renderer);
+			const VoxelTextureDefinition &voxelTextureDef = levelInfoDef.getVoxelTextureDef(i);
+			sgTexture::LoadVoxelDefTextures(voxelTextureDef, this->voxelTextures, textureManager, renderer);
 
-			if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
+			// @todo: add ChasmDefinition support to LevelInfoDefinition and move chasm texture loading into its own loop below this loop
+			/*if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 			{
 				const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
 				sgTexture::LoadChasmWallTextures(chasm.type, chasm.textureAsset, this->chasmTextureLists, textureManager, renderer);
-			}
+			}*/
+			DebugNotImplementedMsg("ChasmDefinition");
 		}
 
 		for (int i = 0; i < levelInfoDef.getEntityDefCount(); i++)
@@ -544,61 +546,42 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 		// Add scene graph voxel definitions and create mappings to them.
 		for (int meshDefIndex = 0; meshDefIndex < chunk.getVoxelMeshDefCount(); meshDefIndex++)
 		{
-			const Chunk::VoxelMeshID voxelMeshID = static_cast<Chunk::VoxelID>(meshDefIndex);
-			const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshID);
+			const Chunk::VoxelMeshDefID voxelMeshDefID = static_cast<Chunk::VoxelMeshDefID>(meshDefIndex);
+			const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
 
 			SceneGraphVoxelDefinition graphVoxelDef;
 			if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
 			{
-				constexpr int componentsPerVertex = VoxelMeshDefinition::COMPONENTS_PER_VERTEX;
-				constexpr int attributesPerVertex = VoxelMeshDefinition::ATTRIBUTES_PER_VERTEX;
+				constexpr int componentsPerVertex = MeshUtils::COMPONENTS_PER_VERTEX;
+				constexpr int attributesPerVertex = MeshUtils::ATTRIBUTES_PER_VERTEX;
 
 				const int vertexCount = voxelMeshDef.rendererVertexCount;
 				if (!renderer.tryCreateVertexBuffer(vertexCount, componentsPerVertex, &graphVoxelDef.vertexBufferID))
 				{
-					DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshID) +
+					DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 						" in chunk (" + chunk.getPosition().toString() + ").");
 					continue;
 				}
 
 				if (!renderer.tryCreateAttributeBuffer(vertexCount, attributesPerVertex, &graphVoxelDef.attributeBufferID))
 				{
-					DebugLogError("Couldn't create attribute buffer for voxel mesh ID " + std::to_string(voxelMeshID) +
+					DebugLogError("Couldn't create attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 						" in chunk (" + chunk.getPosition().toString() + ").");
 					graphVoxelDef.freeBuffers(renderer);
 					continue;
 				}
 
-				std::array<double, VoxelMeshDefinition::MAX_VERTICES * componentsPerVertex> vertices;
-				std::array<double, VoxelMeshDefinition::MAX_VERTICES * attributesPerVertex> attributes;
-				std::array<int32_t, VoxelMeshDefinition::MAX_INDICES> opaqueIndices0, opaqueIndices1, opaqueIndices2;
-				std::array<int32_t, VoxelMeshDefinition::MAX_INDICES> alphaTestedIndices0;
-				vertices.fill(0.0);
-				attributes.fill(0.0);
-				opaqueIndices0.fill(-1);
-				opaqueIndices1.fill(-1);
-				opaqueIndices2.fill(-1);
-				alphaTestedIndices0.fill(-1);
-
-				const std::array<const decltype(opaqueIndices0)*, 3> opaqueIndicesPtrs =
-				{
-					&opaqueIndices0, &opaqueIndices1, &opaqueIndices2
-				};
+				ArenaMeshUtils::InitCache meshInitCache;
 
 				// Generate mesh geometry and indices for this voxel definition.
-				voxelMeshDef.writeRendererGeometryBuffers(ceilingScale,
-					BufferView<double>(vertices.data(), static_cast<int>(vertices.size())),
-					BufferView<double>(attributes.data(), static_cast<int>(attributes.size())));
-				voxelMeshDef.writeRendererIndexBuffers(
-					BufferView<int32_t>(opaqueIndices0.data(), static_cast<int>(opaqueIndices0.size())),
-					BufferView<int32_t>(opaqueIndices1.data(), static_cast<int>(opaqueIndices1.size())),
-					BufferView<int32_t>(opaqueIndices2.data(), static_cast<int>(opaqueIndices2.size())),
-					BufferView<int32_t>(alphaTestedIndices0.data(), static_cast<int>(alphaTestedIndices0.size())));
+				voxelMeshDef.writeRendererGeometryBuffers(ceilingScale, meshInitCache.verticesView, meshInitCache.attributesView);
+				voxelMeshDef.writeRendererIndexBuffers(meshInitCache.opaqueIndices0View,meshInitCache.opaqueIndices1View,
+					meshInitCache.opaqueIndices2View, meshInitCache.alphaTestedIndices0View);
 
 				renderer.populateVertexBuffer(graphVoxelDef.vertexBufferID,
-					BufferView<const double>(vertices.data(), vertexCount * VoxelMeshDefinition::COMPONENTS_PER_VERTEX));
+					BufferView<const double>(meshInitCache.vertices.data(), vertexCount * MeshUtils::COMPONENTS_PER_VERTEX));
 				renderer.populateAttributeBuffer(graphVoxelDef.attributeBufferID,
-					BufferView<const double>(attributes.data(), vertexCount * VoxelMeshDefinition::ATTRIBUTES_PER_VERTEX));
+					BufferView<const double>(meshInitCache.attributes.data(), vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX));
 
 				const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
 				for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
@@ -608,14 +591,14 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 					{
 						DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
-							std::to_string(voxelMeshID) + " in chunk (" + chunk.getPosition().toString() + ").");
+							std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
 						graphVoxelDef.freeBuffers(renderer);
 						continue;
 					}
 
 					graphVoxelDef.opaqueIndexBufferIdCount++;
 
-					const auto &indices = *opaqueIndicesPtrs[bufferIndex];
+					const auto &indices = *meshInitCache.opaqueIndicesPtrs[bufferIndex];
 					renderer.populateIndexBuffer(opaqueIndexBufferID,
 						BufferView<const int32_t>(indices.data(), opaqueIndexCount));
 				}
@@ -627,18 +610,18 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 					if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &graphVoxelDef.alphaTestedIndexBufferID))
 					{
 						DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
-							std::to_string(voxelMeshID) + " in chunk (" + chunk.getPosition().toString() + ").");
+							std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
 						graphVoxelDef.freeBuffers(renderer);
 						continue;
 					}
 
 					renderer.populateIndexBuffer(graphVoxelDef.alphaTestedIndexBufferID,
-						BufferView<const int32_t>(alphaTestedIndices0.data(), alphaTestedIndexCount));
+						BufferView<const int32_t>(meshInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
 				}
 			}
 
 			const SceneGraphVoxelID graphVoxelID = graphChunk.addVoxelDef(std::move(graphVoxelDef));
-			graphChunk.voxelDefMappings.emplace(voxelMeshID, graphVoxelID);
+			graphChunk.voxelDefMappings.emplace(voxelMeshDefID, graphVoxelID);
 		}
 
 		auto addDrawCall = [this, ceilingScale](SceneGraphChunk &graphChunk, SNInt x, int y, WEInt z,
@@ -668,17 +651,18 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 			{
 				for (SNInt x = 0; x < Chunk::WIDTH; x++)
 				{
-					// Get the voxel def mapping's index and use it for this voxel.
-					const Chunk::VoxelID voxelID = chunk.getVoxelID(x, y, z);
-					const Chunk::VoxelMeshID voxelMeshID = chunk.getVoxelMeshID(x, y, z);
-					const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
-					const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshID);
+					const Chunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
+					const Chunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
+					const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(x, y, z);
+					const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
+					const VoxelTextureDefinition &voxelTextureDef = chunk.getVoxelTextureDef(voxelTextureDefID);
+					const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
 					if (voxelMeshDef.isEmpty())
 					{
 						continue;
 					}
 
-					const auto defIter = graphChunk.voxelDefMappings.find(voxelMeshID);
+					const auto defIter = graphChunk.voxelDefMappings.find(voxelMeshDefID);
 					DebugAssert(defIter != graphChunk.voxelDefMappings.end());
 					const SceneGraphVoxelID graphVoxelID = defIter->second;
 					graphChunk.voxels.set(x, y, z, graphVoxelID);
@@ -689,7 +673,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 
 					const bool allowsBackFaces = voxelMeshDef.allowsBackFaces;
 
-					const ArenaTypes::VoxelType voxelType = voxelDef.type;
+					const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 					const bool usesVoxelTextures = voxelType != ArenaTypes::VoxelType::Chasm;
 
 					const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
@@ -701,9 +685,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 						{
 							const int textureAssetIndex = sgTexture::GetVoxelOpaqueTextureAssetIndex(voxelType, bufferIndex);
 							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
-								[&voxelDef, textureAssetIndex](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+								[&voxelTextureDef, textureAssetIndex](const SceneGraph::LoadedVoxelTexture &loadedTexture)
 							{
-								return loadedTexture.textureAsset == voxelDef.getTextureAsset(textureAssetIndex);
+								return loadedTexture.textureAsset == voxelTextureDef.getTextureAsset(textureAssetIndex);
 							});
 
 							if (voxelTextureIter != this->voxelTextures.end())
@@ -712,12 +696,13 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 							}
 							else
 							{
-								DebugLogError("Couldn't find opaque texture asset \"" + voxelDef.getTextureAsset(textureAssetIndex).filename + "\".");
+								DebugLogError("Couldn't find opaque texture asset \"" + voxelTextureDef.getTextureAsset(textureAssetIndex).filename + "\".");
 							}
 						}
 						else
 						{
-							const ArenaTypes::ChasmType chasmType = voxelDef.chasm.type;
+							const VoxelTraitsDefinition::Chasm &chasm = voxelTraitsDef.chasm;
+							const ArenaTypes::ChasmType chasmType = chasm.type;
 							const auto chasmIter = std::find_if(this->chasmTextureLists.begin(), this->chasmTextureLists.end(),
 								[chasmType](const SceneGraph::LoadedChasmTextureList &loadedTextureList)
 							{
@@ -756,9 +741,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 						{
 							const int textureAssetIndex = sgTexture::GetVoxelAlphaTestedTextureAssetIndex(voxelType);
 							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
-								[&voxelDef, textureAssetIndex](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+								[&voxelTextureDef, textureAssetIndex](const SceneGraph::LoadedVoxelTexture &loadedTexture)
 							{
-								return loadedTexture.textureAsset == voxelDef.getTextureAsset(textureAssetIndex);
+								return loadedTexture.textureAsset == voxelTextureDef.getTextureAsset(textureAssetIndex);
 							});
 
 							if (voxelTextureIter != this->voxelTextures.end())
@@ -767,12 +752,12 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 							}
 							else
 							{
-								DebugLogError("Couldn't find alpha-tested texture asset \"" + voxelDef.getTextureAsset(textureAssetIndex).filename + "\".");
+								DebugLogError("Couldn't find alpha-tested texture asset \"" + voxelTextureDef.getTextureAsset(textureAssetIndex).filename + "\".");
 							}
 						}
 						else
 						{
-							const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
+							const VoxelTraitsDefinition::Chasm &chasm = voxelTraitsDef.chasm;
 							const ArenaTypes::ChasmType chasmType = chasm.type;
 							const auto chasmIter = std::find_if(this->chasmTextureLists.begin(), this->chasmTextureLists.end(),
 								[chasmType](const SceneGraph::LoadedChasmTextureList &loadedTextureList)
@@ -784,9 +769,9 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 							{
 								const auto &wallEntries = chasmIter->wallEntries;
 								const auto wallTextureIter = std::find_if(wallEntries.begin(), wallEntries.end(),
-									[&chasm](const SceneGraph::LoadedChasmTextureList::WallEntry &wallEntry)
+									[&voxelTextureDef](const SceneGraph::LoadedChasmTextureList::WallEntry &wallEntry)
 								{
-									return wallEntry.wallTextureAsset == chasm.textureAsset;
+									return wallEntry.wallTextureAsset == voxelTextureDef.getTextureAsset(0); // @todo: verify; we want the wall texture, not chasm anim
 								});
 
 								DebugAssert(wallTextureIter != wallEntries.end());
@@ -794,7 +779,7 @@ void SceneGraph::loadVoxels(const LevelInstance &levelInst, const RenderCamera &
 							}
 							else
 							{
-								DebugLogError("Couldn't find chasm wall texture asset \"" + chasm.textureAsset.filename + "\".");
+								DebugLogError("Couldn't find chasm wall texture asset \"" + voxelTextureDef.getTextureAsset(0).filename + "\"."); // @todo: verify; we want the wall texture, not chasm anim
 							}
 						}
 

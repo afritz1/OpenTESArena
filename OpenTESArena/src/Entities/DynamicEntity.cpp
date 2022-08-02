@@ -370,17 +370,17 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 					auto isPassableVoxel = [&coord, chunk]()
 					{
 						const VoxelInt3 voxel(coord.voxel.x, 1, coord.voxel.y);
-						const Chunk::VoxelID voxelID = chunk->getVoxelID(voxel.x, voxel.y, voxel.z);
-						const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
-						return voxelDef.type == ArenaTypes::VoxelType::None;
+						const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+						const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
+						return voxelTraitsDef.type == ArenaTypes::VoxelType::None;
 					};
 
 					auto isWalkableVoxel = [&coord, chunk]()
 					{
 						const VoxelInt3 voxel(coord.voxel.x, 0, coord.voxel.y);
-						const Chunk::VoxelID voxelID = chunk->getVoxelID(voxel.x, voxel.y, voxel.z);
-						const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
-						return voxelDef.type == ArenaTypes::VoxelType::Floor;
+						const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+						const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
+						return voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
 					};
 
 					return isValidVoxel() && isPassableVoxel() && isWalkableVoxel();

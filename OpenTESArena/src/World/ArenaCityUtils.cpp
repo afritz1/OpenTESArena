@@ -5,7 +5,6 @@
 #include "ArenaVoxelUtils.h"
 #include "ArenaWeatherUtils.h"
 #include "MapType.h"
-#include "VoxelDefinition.h"
 #include "WeatherDefinition.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"

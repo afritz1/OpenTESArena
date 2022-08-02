@@ -569,8 +569,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const Chunk::VoxelID voxelID = chunkPtr->getVoxelID(voxel.x, voxel.y, voxel.z);
-			const VoxelDefinition &voxelDef = chunkPtr->getVoxelDef(voxelID);
+			const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunkPtr->getVoxelTraitsDef(voxelTraitsDefID);
+			const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
 			// Primary interaction handles selection in the game world. Secondary interaction handles
 			// reading names of things.
@@ -582,19 +583,19 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 				if (hit.getT() <= maxSelectionDist)
 				{
-					if (voxelDef.type == ArenaTypes::VoxelType::Wall ||
-						voxelDef.type == ArenaTypes::VoxelType::Floor ||
-						voxelDef.type == ArenaTypes::VoxelType::Raised ||
-						voxelDef.type == ArenaTypes::VoxelType::Diagonal ||
-						voxelDef.type == ArenaTypes::VoxelType::TransparentWall ||
-						voxelDef.type == ArenaTypes::VoxelType::Edge)
+					if (voxelType == ArenaTypes::VoxelType::Wall ||
+						voxelType == ArenaTypes::VoxelType::Floor ||
+						voxelType == ArenaTypes::VoxelType::Raised ||
+						voxelType == ArenaTypes::VoxelType::Diagonal ||
+						voxelType == ArenaTypes::VoxelType::TransparentWall ||
+						voxelType == ArenaTypes::VoxelType::Edge)
 					{
 						if (!debugFadeVoxel)
 						{
-							const bool isWall = voxelDef.type == ArenaTypes::VoxelType::Wall;
+							const bool isWall = voxelType == ArenaTypes::VoxelType::Wall;
 
 							// The only edge voxels with a transition should be should be palace entrances (with collision).
-							const bool isEdge = (voxelDef.type == ArenaTypes::VoxelType::Edge) && voxelDef.edge.collider;
+							const bool isEdge = (voxelType == ArenaTypes::VoxelType::Edge) && voxelTraitsDef.edge.collider;
 
 							if (isWall || isEdge)
 							{
@@ -620,13 +621,10 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							}
 						}
 					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Door)
+					else if (voxelType == ArenaTypes::VoxelType::Door)
 					{
-						const VoxelDefinition::DoorData &doorData = voxelDef.door;
-
 						// If the door is closed, then open it.
-						const VoxelInstance *existingOpenDoorInst =
-							chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
+						const VoxelInstance *existingOpenDoorInst = chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
 						const bool isClosed = existingOpenDoorInst == nullptr;
 
 						if (isClosed)
@@ -654,7 +652,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			else
 			{
 				// Handle secondary click (i.e., right click).
-				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
+				if (voxelType == ArenaTypes::VoxelType::Wall)
 				{
 					const std::string *buildingName = chunkPtr->tryGetBuildingName(voxel);
 					if (buildingName != nullptr)
@@ -705,8 +703,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				else
 				{
 					// Placeholder text for testing.
-					text = "Entity " + std::to_string(entityHit.id) + " (" +
-						EntityUtils::defTypeToString(entityDef) + ")";
+					text = "Entity " + std::to_string(entityHit.id) + " (" + EntityUtils::defTypeToString(entityDef) + ")";
 				}
 
 				actionTextBox.setText(text);

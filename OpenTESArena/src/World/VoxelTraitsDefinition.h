@@ -6,6 +6,8 @@
 // Grab-bag traits that don't fit into other existing categories.
 // @todo: eventually split this up into dedicated definitions
 
+enum class VoxelFacing2D;
+
 struct VoxelTraitsDefinition
 {
 	struct Floor
@@ -13,6 +15,11 @@ struct VoxelTraitsDefinition
 		// Wild automap floor coloring to make roads, etc. easier to see.
 		// @todo: maybe put in some VoxelVisibilityDefinition/VoxelAutomapTraitsDefinition?
 		bool isWildWallColored;
+	};
+
+	struct Raised
+	{
+		double yOffset, ySize;
 	};
 
 	struct TransparentWall
@@ -24,6 +31,7 @@ struct VoxelTraitsDefinition
 	struct Edge
 	{
 		// @todo: maybe put in some VoxelCollisionTraitsDefinition?
+		VoxelFacing2D facing;
 		bool collider;
 	};
 
@@ -41,6 +49,7 @@ struct VoxelTraitsDefinition
 	union
 	{
 		Floor floor;
+		Raised raised;
 		TransparentWall transparentWall;
 		Edge edge;
 		Chasm chasm;
@@ -50,8 +59,9 @@ struct VoxelTraitsDefinition
 
 	void initGeneral(ArenaTypes::VoxelType type); // @todo: ideally this function wouldn't be needed
 	void initFloor(bool isWildWallColored);
+	void initRaised(double yOffset, double ySize);
 	void initTransparentWall(bool collider);
-	void initEdge(bool collider);
+	void initEdge(VoxelFacing2D facing, bool collider);
 	void initChasm(ArenaTypes::ChasmType chasmType);
 };
 

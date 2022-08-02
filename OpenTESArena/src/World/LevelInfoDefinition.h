@@ -11,7 +11,6 @@
 #include "MapGeneration.h"
 #include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
-#include "VoxelDefinition.h"
 #include "VoxelMeshDefinition.h"
 #include "VoxelTextureDefinition.h"
 #include "VoxelTraitsDefinition.h"
@@ -27,7 +26,6 @@ class LevelInfoDefinition
 private:
 	// Definitions pointed to by a level definition. These should all be engine-independent now
 	// (meaning that they could theoretically work with a standalone editor).
-	std::vector<VoxelDefinition> voxelDefs;
 	std::vector<VoxelMeshDefinition> voxelMeshDefs; // @todo: make sure a player-created chasm voxel mesh exists
 	std::vector<VoxelTextureDefinition> voxelTextureDefs; // @todo: make sure a player-created chasm voxel texture exists
 	std::vector<VoxelTraitsDefinition> voxelTraitsDefs;
@@ -47,7 +45,6 @@ public:
 
 	void init(double ceilingScale);
 
-	int getVoxelDefCount() const;
 	int getVoxelMeshDefCount() const;
 	int getVoxelTextureDefCount() const;
 	int getVoxelTraitsDefCount() const;
@@ -58,7 +55,6 @@ public:
 	int getBuildingNameCount() const;
 	int getDoorDefCount() const;
 
-	const VoxelDefinition &getVoxelDef(LevelDefinition::VoxelDefID id) const;
 	const VoxelMeshDefinition &getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const;
 	const VoxelTextureDefinition &getVoxelTextureDef(LevelDefinition::VoxelTextureDefID id) const;
 	const VoxelTraitsDefinition &getVoxelTraitsDef(LevelDefinition::VoxelTraitsDefID id) const;
@@ -70,7 +66,6 @@ public:
 	const DoorDefinition &getDoorDef(LevelDefinition::DoorDefID id) const;
 	double getCeilingScale() const;
 
-	LevelDefinition::VoxelDefID addVoxelDef(VoxelDefinition &&def);
 	LevelDefinition::VoxelMeshDefID addVoxelMeshDef(VoxelMeshDefinition &&def);
 	LevelDefinition::VoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&def);
 	LevelDefinition::VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&def);

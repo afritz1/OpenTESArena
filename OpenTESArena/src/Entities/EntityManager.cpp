@@ -822,12 +822,12 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 			return 0.0;
 		}
 
-		const Chunk::VoxelID voxelID = chunk->getVoxelID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
-		const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+		const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
+		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
 
-		if (voxelDef.type == ArenaTypes::VoxelType::Raised)
+		if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
 		{
-			const VoxelDefinition::RaisedData &raised = voxelDef.raised;
+			const VoxelTraitsDefinition::Raised &raised = voxelTraitsDef.raised;
 			return (raised.yOffset + raised.ySize) * ceilingScale;
 		}
 		else

@@ -13,8 +13,8 @@
 #include "../World/MapType.h"
 #include "../World/TransitionDefinition.h"
 #include "../World/TransitionType.h"
-#include "../World/VoxelDefinition.h"
 #include "../World/VoxelFacing2D.h"
+#include "../World/VoxelTraitsDefinition.h"
 
 #include "components/debug/Debug.h"
 
@@ -56,7 +56,7 @@ TextureAsset AutomapUiView::getCursorPaletteTextureAsset()
 	return AutomapUiView::getBackgroundPaletteTextureAsset();
 }
 
-const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 	const TransitionDefinition *transitionDef)
 {
 	const ArenaTypes::VoxelType floorType = floorDef.type;
@@ -83,8 +83,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized chasm type \"" +
-				std::to_string(static_cast<int>(chasmType)) + "\".");
+			DebugLogWarning("Unrecognized chasm type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
@@ -119,8 +118,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const
 				}
 				else
 				{
-					DebugLogWarning("Unrecognized transition type \"" +
-						std::to_string(static_cast<int>(transitionType)) + "\".");
+					DebugLogWarning("Unrecognized transition type \"" + std::to_string(static_cast<int>(transitionType)) + "\".");
 					return AutomapUiView::ColorNotImplemented;
 				}
 			}
@@ -139,10 +137,9 @@ const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const
 		}
 		else if (wallType == ArenaTypes::VoxelType::TransparentWall)
 		{
-			// Transparent walls with collision (hedges) are shown, while
-			// ones without collision (archways) are not.
-			const VoxelDefinition::TransparentWallData &transparentWallData = wallDef.transparentWall;
-			return transparentWallData.collider ? AutomapUiView::ColorWall : AutomapUiView::ColorFloor;
+			// Transparent walls with collision (hedges) are shown, while ones without collision (archways) are not.
+			const VoxelTraitsDefinition::TransparentWall &transparentWall = wallDef.transparentWall;
+			return transparentWall.collider ? AutomapUiView::ColorWall : AutomapUiView::ColorFloor;
 		}
 		else if (wallType == ArenaTypes::VoxelType::Edge)
 		{
@@ -150,20 +147,18 @@ const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized wall data type \"" +
-				std::to_string(static_cast<int>(wallType)) + "\".");
+			DebugLogWarning("Unrecognized wall data type \"" + std::to_string(static_cast<int>(wallType)) + "\".");
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
 	else
 	{
-		DebugLogWarning("Unrecognized floor data type \"" +
-			std::to_string(static_cast<int>(floorType)) + "\".");
+		DebugLogWarning("Unrecognized floor data type \"" + std::to_string(static_cast<int>(floorType)) + "\".");
 		return AutomapUiView::ColorNotImplemented;
 	}
 }
 
-const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 	const TransitionDefinition *transitionDef)
 {
 	// The wilderness automap focuses more on displaying floor voxels than wall voxels.
@@ -194,8 +189,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized chasm type \"" +
-				std::to_string(static_cast<int>(chasmType)) + "\".");
+			DebugLogWarning("Unrecognized chasm type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
@@ -204,8 +198,8 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 		if (wallType == ArenaTypes::VoxelType::None)
 		{
 			// Regular ground is transparent; all other grounds are wall color.
-			const VoxelDefinition::FloorData &floorData = floorDef.floor;
-			const bool isRegularGround = !floorData.isWildWallColored;
+			const VoxelTraitsDefinition::Floor &floor = floorDef.floor;
+			const bool isRegularGround = !floor.isWildWallColored;
 
 			if (isRegularGround)
 			{
@@ -242,8 +236,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 				}
 				else
 				{
-					DebugLogWarning("Unrecognized transition type \"" +
-						std::to_string(static_cast<int>(transitionType)) + "\".");
+					DebugLogWarning("Unrecognized transition type \"" + std::to_string(static_cast<int>(transitionType)) + "\".");
 					return AutomapUiView::ColorNotImplemented;
 				}
 			}
@@ -266,12 +259,12 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 		}
 		else if (wallType == ArenaTypes::VoxelType::Edge)
 		{
-			const VoxelDefinition::EdgeData &edgeData = wallDef.edge;
+			const VoxelTraitsDefinition::Edge &edge = wallDef.edge;
 
 			// For some reason, most edges are hidden.
-			const bool isHiddenEdge = (edgeData.facing == VoxelFacing2D::PositiveX) ||
-				(edgeData.facing == VoxelFacing2D::NegativeX) ||
-				(edgeData.facing == VoxelFacing2D::NegativeZ);
+			const bool isHiddenEdge = (edge.facing == VoxelFacing2D::PositiveX) ||
+				(edge.facing == VoxelFacing2D::NegativeX) ||
+				(edge.facing == VoxelFacing2D::NegativeZ);
 
 			if (isHiddenEdge)
 			{
@@ -354,17 +347,17 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 			{
 				for (WEInt z = 0; z < ChunkUtils::CHUNK_DIM; z++)
 				{
-					const Chunk::VoxelID floorVoxelID = chunk->getVoxelID(x, 0, z);
-					const Chunk::VoxelID wallVoxelID = chunk->getVoxelID(x, 1, z);
-					const VoxelDefinition &floorVoxelDef = chunk->getVoxelDef(floorVoxelID);
-					const VoxelDefinition &wallVoxelDef = chunk->getVoxelDef(wallVoxelID);
+					const Chunk::VoxelTraitsDefID floorVoxelTraitsDefID = chunk->getVoxelTraitsDefID(x, 0, z);
+					const Chunk::VoxelTraitsDefID wallVoxelTraitsDefID = chunk->getVoxelTraitsDefID(x, 1, z);
+					const VoxelTraitsDefinition &floorVoxelTraitsDef = chunk->getVoxelTraitsDef(floorVoxelTraitsDefID);
+					const VoxelTraitsDefinition &wallVoxelTraitsDef = chunk->getVoxelTraitsDef(wallVoxelTraitsDefID);
 					const TransitionDefinition *transitionDef = chunk->tryGetTransition(VoxelInt3(x, 1, z));
 
 					// Decide which color to use for the automap pixel.
 					Color color;
 					if (isWild)
 					{
-						color = AutomapUiView::getWildPixelColor(floorVoxelDef, wallVoxelDef, transitionDef);
+						color = AutomapUiView::getWildPixelColor(floorVoxelTraitsDef, wallVoxelTraitsDef, transitionDef);
 					}
 					else
 					{
@@ -376,7 +369,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 
 						if (isInsideLevelBounds)
 						{
-							color = AutomapUiView::getPixelColor(floorVoxelDef, wallVoxelDef, transitionDef);
+							color = AutomapUiView::getPixelColor(floorVoxelTraitsDef, wallVoxelTraitsDef, transitionDef);
 						}
 						else
 						{

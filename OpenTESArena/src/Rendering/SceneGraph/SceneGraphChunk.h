@@ -37,7 +37,7 @@ using SceneGraphVoxelID = int;
 struct SceneGraphChunk
 {
 	std::vector<SceneGraphVoxelDefinition> voxelDefs;
-	std::unordered_map<Chunk::VoxelMeshID, SceneGraphVoxelID> voxelDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if Chunk::removeVoxelDef() is ever in use).
+	std::unordered_map<Chunk::VoxelMeshDefID, SceneGraphVoxelID> voxelDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if Chunk::removeVoxelDef() is ever in use).
 	Buffer3D<SceneGraphVoxelID> voxels; // Points into voxel defs.
 	std::vector<RenderDrawCall> voxelDrawCalls;
 	ChunkInt2 position;

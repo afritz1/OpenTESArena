@@ -7,7 +7,6 @@
 #include "../Media/TextureUtils.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../World/VoxelDefinition.h"
 #include "../World/VoxelUtils.h"
 
 // When the GameWorldPanel is active, the game world is ticking.

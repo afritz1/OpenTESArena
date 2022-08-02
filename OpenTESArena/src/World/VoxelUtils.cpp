@@ -156,6 +156,19 @@ ChunkInt2 VoxelUtils::newVoxelToChunk(const NewInt2 &voxel)
 	return chunkCoord.chunk;
 }
 
+VoxelInt3 VoxelUtils::getAdjacentVoxelXZ(const VoxelInt3 &voxel, const VoxelInt2 &direction)
+{
+	DebugAssert(std::abs(direction.x) <= 1);
+	DebugAssert(std::abs(direction.y) <= 1);
+	const VoxelInt3 diff(direction.x, 0, direction.y);
+	return voxel + diff;
+}
+
+CoordInt3 VoxelUtils::getAdjacentCoordXZ(const CoordInt3 &coord, const VoxelInt2 &direction)
+{
+	return ChunkUtils::recalculateCoord(coord.chunk, VoxelUtils::getAdjacentVoxelXZ(coord.voxel, direction));
+}
+
 VoxelInt2 VoxelUtils::wrapVoxelCoord(const VoxelInt2 &voxel)
 {
 	// @todo: handle negative numbers

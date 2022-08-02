@@ -17,7 +17,6 @@ class LevelDefinition
 {
 public:
 	// Points to various definitions in a level info definition.
-	using VoxelDefID = int;
 	using VoxelMeshDefID = int;
 	using VoxelTextureDefID = int;
 	using VoxelTraitsDefID = int;
@@ -76,7 +75,6 @@ public:
 		DoorPlacementDef(DoorDefID id, std::vector<LevelInt3> &&positions);
 	};
 private:
-	Buffer3D<VoxelDefID> voxelIDs;
 	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
 	Buffer3D<VoxelTextureDefID> voxelTextureIDs;
 	Buffer3D<VoxelTraitsDefID> voxelTraitsIDs;
@@ -93,11 +91,9 @@ public:
 	int getHeight() const;
 	WEInt getDepth() const;
 
-	VoxelDefID getVoxelID(SNInt x, int y, WEInt z) const;
 	VoxelMeshDefID getVoxelMeshID(SNInt x, int y, WEInt z) const;
 	VoxelTextureDefID getVoxelTextureID(SNInt x, int y, WEInt z) const;
 	VoxelTraitsDefID getVoxelTraitsID(SNInt x, int y, WEInt z) const;
-	void setVoxelID(SNInt x, int y, WEInt z, VoxelDefID id);
 	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
 	void setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
 	void setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);

@@ -22,7 +22,7 @@ public:
 
 	// @todo: maybe a BashState?
 
-	class ChasmState
+	class ChasmState // @todo: is this necessary? Can't we just query adjacent voxels' VoxelMeshDefinitions for enablesNeighborGeometry?
 	{
 	private:
 		// Visible chasm faces.

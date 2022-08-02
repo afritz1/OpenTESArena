@@ -15,9 +15,10 @@
 #include "LockDefinition.h"
 #include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
-#include "VoxelDefinition.h"
 #include "VoxelInstance.h"
 #include "VoxelMeshDefinition.h"
+#include "VoxelTextureDefinition.h"
+#include "VoxelTraitsDefinition.h"
 #include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
 
@@ -30,34 +31,27 @@ class AudioManager;
 class Chunk
 {
 public:
-	// This type must always support at least as many bits as are needed per voxel.
-	using VoxelID = uint8_t;
-
-	using VoxelMeshID = int;
+	using VoxelMeshDefID = int;
+	using VoxelTextureDefID = int;
+	using VoxelTraitsDefID = int;
 	using TransitionID = int;
 	using TriggerID = int;
 	using LockID = int;
 	using BuildingNameID = int;
 	using DoorID = int;
 private:
-	// Determines the allowed number of voxel types per chunk.
-	static constexpr int BITS_PER_VOXEL = 8;
-	static_assert((sizeof(VoxelID) * CHAR_BIT) >= BITS_PER_VOXEL);
-
-	static constexpr int MAX_VOXEL_DEFS = 1 << BITS_PER_VOXEL;
+	// Voxel definitions, pointed to by voxel IDs.
+	std::vector<VoxelMeshDefinition> voxelMeshDefs;
+	std::vector<VoxelTextureDefinition> voxelTextureDefs;
+	std::vector<VoxelTraitsDefinition> voxelTraitsDefs;
 
 	// Indices into voxel definitions.
-	Buffer3D<VoxelID> voxelIDs;
-	Buffer3D<VoxelMeshID> voxelMeshIDs;
+	Buffer3D<VoxelMeshDefID> voxelMeshDefIDs;
+	Buffer3D<VoxelTextureDefID> voxelTextureDefIDs;
+	Buffer3D<VoxelTraitsDefID> voxelTraitsDefIDs;
 
 	// Positions of voxels that have changed this frame. Reset at end-of-frame.
 	std::vector<VoxelInt3> dirtyVoxels;
-
-	// Voxel definitions, pointed to by voxel IDs. If the associated bool is true,
-	// the voxel data is in use by the voxel grid.
-	std::array<VoxelDefinition, MAX_VOXEL_DEFS> voxelDefs;
-	std::array<bool, MAX_VOXEL_DEFS> activeVoxelDefs;
-	std::vector<VoxelMeshDefinition> voxelMeshDefs;
 
 	// Instance data for voxels that are uniquely different in some way.
 	std::vector<VoxelInstance> voxelInsts;
@@ -82,10 +76,19 @@ private:
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	// This is slightly different than the chunk manager's version since it is chunk-independent (but as
 	// a result, voxels on a chunk edge must be updated by the chunk manager).
-	void getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition **outNorth,
-		const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest);
+	template <typename VoxelIdType>
+	void getAdjacentVoxelIDsInternal(const VoxelInt3 &voxel, const Buffer3D<VoxelIdType> &voxelIDs,
+		VoxelIdType defaultID, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
+		VoxelIdType *outWestID);
+	void getAdjacentVoxelMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID,
+		VoxelMeshDefID *outEastID, VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID);
+	void getAdjacentVoxelTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID,
+		VoxelTextureDefID *outEastID, VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID);
+	void getAdjacentVoxelTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID,
+		VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID);
 
 	// Sets this voxel dirty for geometry updating, etc. if not already.
+	// @todo: should this take flags instead?
 	void setVoxelDirty(SNInt x, int y, WEInt z);
 
 	// Runs any voxel instance behavior based on its current state that cannot be done by the voxel
@@ -101,36 +104,40 @@ private:
 	// for which chasm faces they have.
 	void handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<int> &voxelInstIndicesToDestroy);
 public:
-	static constexpr VoxelID AIR_VOXEL_ID = 0;
 	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
 	static constexpr WEInt DEPTH = WIDTH;
 	static_assert(MathUtils::isPowerOf2(WIDTH));
+
+	static constexpr VoxelMeshDefID AIR_VOXEL_MESH_DEF_ID = 0;
+	static constexpr VoxelTextureDefID AIR_VOXEL_TEXTURE_DEF_ID = 0;
+	static constexpr VoxelTraitsDefID AIR_VOXEL_TRAITS_DEF_ID = 0;
 
 	void init(const ChunkInt2 &position, int height);
 
 	int getHeight() const;
 
 	// Gets the chunk's XY coordinate in the world.
-	const ChunkInt2 &getPosition() const; // @todo: rename to position or something; Coord has different meaning now.
+	const ChunkInt2 &getPosition() const;
 
 	// Returns whether the given voxel coordinate is in the chunk.
 	bool isValidVoxel(SNInt x, int y, WEInt z) const;
 
 	// Gets the voxel ID at the given coordinate.
-	VoxelID getVoxelID(SNInt x, int y, WEInt z) const;
-	VoxelMeshID getVoxelMeshID(SNInt x, int y, WEInt z) const;
+	VoxelMeshDefID getVoxelMeshDefID(SNInt x, int y, WEInt z) const;
+	VoxelTextureDefID getVoxelTextureDefID(SNInt x, int y, WEInt z) const;
+	VoxelTraitsDefID getVoxelTraitsDefID(SNInt x, int y, WEInt z) const;
+
+	int getVoxelMeshDefCount() const;
+	int getVoxelTextureDefCount() const;
+	int getVoxelTraitsDefCount() const;
+
+	// Gets the voxel definition associated with a voxel ID.
+	const VoxelMeshDefinition &getVoxelMeshDef(int index) const;
+	const VoxelTextureDefinition &getVoxelTextureDef(int index) const;
+	const VoxelTraitsDefinition &getVoxelTraitsDef(int index) const;
 
 	int getDirtyVoxelCount() const;
 	const VoxelInt3 &getDirtyVoxel(int index) const;
-
-	// Gets the number of active voxel definitions.
-	int getVoxelDefCount() const;
-
-	// Gets the voxel definition associated with a voxel ID.
-	const VoxelDefinition &getVoxelDef(VoxelID id) const;
-
-	int getVoxelMeshDefCount() const;
-	const VoxelMeshDefinition &getVoxelMeshDef(int index) const;
 
 	// Gets the number of voxel instances.
 	int getVoxelInstCount() const;
@@ -151,12 +158,14 @@ public:
 	const DoorDefinition *tryGetDoor(const VoxelInt3 &voxel) const;
 
 	// Sets the voxel at the given coordinate.
-	void setVoxelID(SNInt x, int y, WEInt z, VoxelID id);
-	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshID id);
+	void setVoxelMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
+	void setVoxelTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
+	void setVoxelTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
 
-	// Attempts to add a voxel definition and returns its assigned ID.
-	bool tryAddVoxelDef(VoxelDefinition &&voxelDef, VoxelID *outID);
-	VoxelMeshID addVoxelMeshDef(VoxelMeshDefinition &&voxelMeshDef);
+	// Adds a voxel definition and returns its assigned ID.
+	VoxelMeshDefID addVoxelMeshDef(VoxelMeshDefinition &&voxelMeshDef);
+	VoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&voxelTextureDef);
+	VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef);
 
 	// Adds a voxel instance to the chunk.
 	void addVoxelInst(VoxelInstance &&voxelInst);
@@ -174,10 +183,6 @@ public:
 	void addLockPosition(LockID id, const VoxelInt3 &voxel);
 	void addBuildingNamePosition(BuildingNameID id, const VoxelInt3 &voxel);
 	void addDoorPosition(DoorID id, const VoxelInt3 &voxel);
-
-	// Removes a voxel definition so its corresponding voxel ID can be reused.
-	// - Only uncomment this if support is needed since it would require support in the scene graph
-	//void removeVoxelDef(VoxelID id);
 
 	// Removes a certain type of voxel instance from the given voxel (if any). This might be useful when
 	// updating a chunk edge due to adjacent chunks changing.
