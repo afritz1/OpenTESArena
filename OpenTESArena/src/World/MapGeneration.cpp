@@ -65,6 +65,7 @@ namespace MapGeneration
 	using ArenaTransitionMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::TransitionDefID>;
 	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelDefinition::BuildingNameID>;
 	using ArenaDoorMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::DoorDefID>;
+	using ArenaChasmMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::ChasmDefID>;
 
 	// Converts the given Arena *MENU ID to a modern interior type, if any.
 	std::optional<ArenaTypes::InteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, MapType mapType)
@@ -1127,7 +1128,8 @@ namespace MapGeneration
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
-		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache)
+		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache,
+		ArenaChasmMappingCache *chasmCache)
 	{
 		for (SNInt florZ = 0; florZ < flor.getHeight(); florZ++)
 		{
@@ -1202,6 +1204,32 @@ namespace MapGeneration
 						1.0, // Will probably be ignored in favor of raised platform top face.
 						static_cast<WEDouble>(levelZ) + 0.50);
 					outLevelDef->addEntity(entityDefID, entityPos);
+				}
+
+				// Add chasm definition if any.
+				// @todo: the traits def look-up should be replaced by just getting an isChasm from the florVoxel decoding function,
+				// because all users of chasm look-ups in the engine should go through ChasmDefinition, not VoxelTraitsDefinition.
+				const VoxelTraitsDefinition &traitsDef = outLevelInfoDef->getVoxelTraitsDef(voxelTraitsDefID);
+				if (traitsDef.type == ArenaTypes::VoxelType::Chasm)
+				{
+					const VoxelTraitsDefinition::Chasm &chasm = traitsDef.chasm;
+
+					LevelDefinition::ChasmDefID chasmDefID;
+					const auto chasmIter = chasmCache->find(florVoxel);
+					if (chasmIter != chasmCache->end())
+					{
+						chasmDefID = chasmIter->second;
+					}
+					else
+					{
+						ChasmDefinition chasmDef;
+						chasmDef.initClassic(chasm.type, textureManager);
+
+						chasmDefID = outLevelInfoDef->addChasmDef(std::move(chasmDef));
+						chasmCache->emplace(florVoxel, chasmDefID);
+					}
+
+					outLevelDef->addChasm(chasmDefID, VoxelInt3(levelX, levelY, levelZ));
 				}
 			}
 		}
@@ -1515,7 +1543,7 @@ namespace MapGeneration
 		ArenaVoxelMappingCache *florMappings, ArenaVoxelMappingCache *map1Mappings,
 		ArenaEntityMappingCache *entityMappings, ArenaLockMappingCache *lockMappings,
 		ArenaTriggerMappingCache *triggerMappings, ArenaTransitionMappingCache *transitionMappings,
-		ArenaDoorMappingCache *doorMappings)
+		ArenaDoorMappingCache *doorMappings, ArenaChasmMappingCache *chasmMappings)
 	{
 		// Create buffers for level blocks.
 		Buffer2D<ArenaTypes::VoxelID> levelFLOR(mif.getWidth() * widthChunks, mif.getDepth() * depthChunks);
@@ -1625,7 +1653,7 @@ namespace MapGeneration
 			levelMAP1.get(), levelMAP1.getWidth(), levelMAP1.getHeight());
 		MapGeneration::readArenaFLOR(levelFlorView, mapType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
-			outLevelInfoDef, florMappings, entityMappings);
+			outLevelInfoDef, florMappings, entityMappings, chasmMappings);
 
 		constexpr std::optional<uint32_t> rulerSeed; // Not necessary for dungeons.
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for dungeons.
@@ -2275,6 +2303,7 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 	ArenaEntityMappingCache entityMappings;
 	ArenaTransitionMappingCache transitionMappings;
 	ArenaDoorMappingCache doorMappings;
+	ArenaChasmMappingCache chasmMappings;
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
@@ -2282,7 +2311,7 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 		MapGeneration::readArenaFLOR(level.getFLOR(), mapType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
-			outLevelInfoDef, &florMappings, &entityMappings);
+			outLevelInfoDef, &florMappings, &entityMappings, &chasmMappings);
 		MapGeneration::readArenaMAP1(level.getMAP1(), mapType, interiorType, rulerSeed, rulerIsMale,
 			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef, &map1Mappings,
@@ -2315,6 +2344,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	ArenaTriggerMappingCache triggerMappings;
 	ArenaTransitionMappingCache transitionMappings;
 	ArenaDoorMappingCache doorMappings;
+	ArenaChasmMappingCache chasmMappings;
 
 	// Store the seed for later, to be used with block selection.
 	const uint32_t seed2 = random.getSeed();
@@ -2373,7 +2403,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 			levelDownBlock, random, mapType, interiorType, rulerIsMale, isArtifactDungeon,
 			inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &map1Mappings, &entityMappings, &lockMappings,
-			&triggerMappings, &transitionMappings, &doorMappings);
+			&triggerMappings, &transitionMappings, &doorMappings, &chasmMappings);
 	}
 
 	// The start point depends on where the level up voxel is on the first level.
@@ -2405,6 +2435,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	ArenaEntityMappingCache entityMappings;
 	ArenaTransitionMappingCache transitionMappings;
 	ArenaDoorMappingCache doorMappings;
+	ArenaChasmMappingCache chasmMappings;
 
 	// Only one level in a city .MIF.
 	const MIFFile::Level &mifLevel = mif.getLevel(0);
@@ -2447,7 +2478,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 
 	MapGeneration::readArenaFLOR(tempFlorConstView, mapType, interiorType, rulerIsMale, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
-		outLevelInfoDef, &florMappings, &entityMappings);
+		outLevelInfoDef, &florMappings, &entityMappings, &chasmMappings);
 	MapGeneration::readArenaMAP1(tempMap1ConstView, mapType, interiorType, rulerSeed, rulerIsMale,
 		palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 		entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef, outLevelInfoDef, &map1Mappings,
@@ -2472,6 +2503,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 	ArenaTransitionMappingCache transitionMappings;
 	ArenaBuildingNameMappingCache buildingNameMappings;
 	ArenaDoorMappingCache doorMappings;
+	ArenaChasmMappingCache chasmMappings;
 
 	// Create temp voxel data buffers to be used by each wilderness chunk.
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
@@ -2538,7 +2570,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 
 		MapGeneration::readArenaFLOR(tempFlorConstView, mapType, interiorType, cityDef.rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
-			outLevelInfoDef, &florMappings, &entityMappings);
+			outLevelInfoDef, &florMappings, &entityMappings, &chasmMappings);
 		MapGeneration::readArenaMAP1(tempMap1ConstView, mapType, interiorType, cityDef.rulerSeed, cityDef.rulerIsMale,
 			cityDef.palaceIsMainQuestDungeon, cityDef.type, &dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef, &map1Mappings,
