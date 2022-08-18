@@ -220,6 +220,27 @@ const DoorDefinition *Chunk::tryGetDoor(const VoxelInt3 &voxel) const
 	}
 }
 
+const ChasmDefinition &Chunk::getChasm(ChasmID id) const
+{
+	DebugAssertIndex(this->chasmDefs, id);
+	return this->chasmDefs[id];
+}
+
+const ChasmDefinition *Chunk::tryGetChasm(const VoxelInt3 &voxel) const
+{
+	const auto iter = this->chasmDefIndices.find(voxel);
+	if (iter != this->chasmDefIndices.end())
+	{
+		const int index = iter->second;
+		DebugAssertIndex(this->chasmDefs, index);
+		return &this->chasmDefs[index];
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
 template <typename VoxelIdType>
 void Chunk::getAdjacentVoxelIDsInternal(const VoxelInt3 &voxel, const Buffer3D<VoxelIdType> &voxelIDs,
 	VoxelIdType defaultID, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
@@ -347,6 +368,13 @@ Chunk::DoorID Chunk::addDoorDef(DoorDefinition &&door)
 	return id;
 }
 
+Chunk::ChasmID Chunk::addChasmDef(ChasmDefinition &&chasm)
+{
+	const ChasmID id = static_cast<int>(this->chasmDefs.size());
+	this->chasmDefs.emplace_back(std::move(chasm));
+	return id;
+}
+
 void Chunk::addTransitionPosition(Chunk::TransitionID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->transitionDefIndices.find(voxel) == this->transitionDefIndices.end());
@@ -375,6 +403,12 @@ void Chunk::addDoorPosition(DoorID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->doorDefIndices.find(voxel) == this->doorDefIndices.end());
 	this->doorDefIndices.emplace(voxel, id);
+}
+
+void Chunk::addChasmPosition(ChasmID id, const VoxelInt3 &voxel)
+{
+	DebugAssert(this->chasmDefIndices.find(voxel) == this->chasmDefIndices.end());
+	this->chasmDefIndices.emplace(voxel, id);
 }
 
 void Chunk::removeVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
@@ -406,11 +440,13 @@ void Chunk::clear()
 	this->lockDefs.clear();
 	this->buildingNames.clear();
 	this->doorDefs.clear();
+	this->chasmDefs.clear();
 	this->transitionDefIndices.clear();
 	this->triggerDefIndices.clear();
 	this->lockDefIndices.clear();
 	this->buildingNameIndices.clear();
 	this->doorDefIndices.clear();
+	this->chasmDefIndices.clear();
 	this->position = ChunkInt2();
 }
 

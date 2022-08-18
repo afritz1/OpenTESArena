@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ChasmDefinition.h"
 #include "ChunkUtils.h"
 #include "Coord.h"
 #include "DoorDefinition.h"
@@ -39,6 +40,7 @@ public:
 	using LockID = int;
 	using BuildingNameID = int;
 	using DoorID = int;
+	using ChasmID = int;
 private:
 	// Voxel definitions, pointed to by voxel IDs.
 	std::vector<VoxelMeshDefinition> voxelMeshDefs;
@@ -56,19 +58,21 @@ private:
 	// Instance data for voxels that are uniquely different in some way.
 	std::vector<VoxelInstance> voxelInsts;
 
-	// Chunk decorators.
+	// Decorators.
 	std::vector<TransitionDefinition> transitionDefs;
 	std::vector<TriggerDefinition> triggerDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<std::string> buildingNames;
 	std::vector<DoorDefinition> doorDefs;
+	std::vector<ChasmDefinition> chasmDefs;
 
-	// Indices into chunk decorators.
+	// Indices into decorators (generally sparse in comparison to voxels themselves).
 	std::unordered_map<VoxelInt3, TransitionID> transitionDefIndices;
 	std::unordered_map<VoxelInt3, TriggerID> triggerDefIndices;
 	std::unordered_map<VoxelInt3, LockID> lockDefIndices;
 	std::unordered_map<VoxelInt3, BuildingNameID> buildingNameIndices;
 	std::unordered_map<VoxelInt3, DoorID> doorDefIndices;
+	std::unordered_map<VoxelInt3, ChasmID> chasmDefIndices;
 
 	// Chunk coordinates in the world.
 	ChunkInt2 position;
@@ -156,6 +160,8 @@ public:
 	const LockDefinition *tryGetLock(const VoxelInt3 &voxel) const;
 	const std::string *tryGetBuildingName(const VoxelInt3 &voxel) const;
 	const DoorDefinition *tryGetDoor(const VoxelInt3 &voxel) const;
+	const ChasmDefinition &getChasm(ChasmID id) const;
+	const ChasmDefinition *tryGetChasm(const VoxelInt3 &voxel) const;
 
 	// Sets the voxel at the given coordinate.
 	void setVoxelMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
@@ -176,6 +182,7 @@ public:
 	LockID addLock(LockDefinition &&lock);
 	BuildingNameID addBuildingName(std::string &&buildingName);
 	DoorID addDoorDef(DoorDefinition &&door);
+	ChasmID addChasmDef(ChasmDefinition &&chasm);
 
 	// Adds a mapping of the chunk decorator definition ID to the given voxel.
 	void addTransitionPosition(TransitionID id, const VoxelInt3 &voxel);
@@ -183,6 +190,7 @@ public:
 	void addLockPosition(LockID id, const VoxelInt3 &voxel);
 	void addBuildingNamePosition(BuildingNameID id, const VoxelInt3 &voxel);
 	void addDoorPosition(DoorID id, const VoxelInt3 &voxel);
+	void addChasmPosition(ChasmID id, const VoxelInt3 &voxel);
 
 	// Removes a certain type of voxel instance from the given voxel (if any). This might be useful when
 	// updating a chunk edge due to adjacent chunks changing.
