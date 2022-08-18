@@ -17,6 +17,7 @@ struct TextureAsset
 	TextureAsset();
 
 	bool operator==(const TextureAsset &other) const;
+	bool operator!=(const TextureAsset &other) const;
 };
 
 #endif
