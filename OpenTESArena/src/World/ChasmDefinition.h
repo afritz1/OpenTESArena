@@ -30,6 +30,8 @@ struct ChasmDefinition
 	struct Animated
 	{
 		Buffer<TextureAsset> textureAssets; // Texture for each animation frame.
+
+		void init(Buffer<TextureAsset> &&textureAssets);
 	};
 	
 	bool allowsSwimming;
@@ -40,6 +42,7 @@ struct ChasmDefinition
 	Animated animated;
 
 	ChasmDefinition();
+	ChasmDefinition(const ChasmDefinition &other);
 
 	void initClassic(ArenaTypes::ChasmType chasmType, TextureManager &textureManager);
 };

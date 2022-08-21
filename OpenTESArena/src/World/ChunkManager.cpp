@@ -408,6 +408,28 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 			}
 		}
 	}
+	
+	// Add chasm definitions.
+	for (int i = 0; i < levelDefinition.getChasmPlacementDefCount(); i++)
+	{
+		const LevelDefinition::ChasmPlacementDef &placementDef = levelDefinition.getChasmPlacementDef(i);
+		const ChasmDefinition &chasmDef = levelInfoDefinition.getChasmDef(placementDef.id);
+
+		std::optional<Chunk::ChasmID> chasmID;
+		for (const LevelInt3 &position : placementDef.positions)
+		{
+			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
+			{
+				if (!chasmID.has_value())
+				{
+					chasmID = chunk.addChasmDef(ChasmDefinition(chasmDef));
+				}
+
+				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
+				chunk.addChasmPosition(*chasmID, voxel);
+			}
+		}
+	}
 }
 
 void ChunkManager::populateWildChunkBuildingNames(Chunk &chunk,
