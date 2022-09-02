@@ -220,24 +220,30 @@ const DoorDefinition *Chunk::tryGetDoor(const VoxelInt3 &voxel) const
 	}
 }
 
+int Chunk::getChasmCount() const
+{
+	return static_cast<int>(this->chasmDefs.size());
+}
+
 const ChasmDefinition &Chunk::getChasm(ChasmID id) const
 {
 	DebugAssertIndex(this->chasmDefs, id);
 	return this->chasmDefs[id];
 }
 
-const ChasmDefinition *Chunk::tryGetChasm(const VoxelInt3 &voxel) const
+bool Chunk::tryGetChasmID(SNInt x, int y, WEInt z, ChasmID *outID) const
 {
-	const auto iter = this->chasmDefIndices.find(voxel);
+	const auto iter = this->chasmDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->chasmDefIndices.end())
 	{
-		const int index = iter->second;
-		DebugAssertIndex(this->chasmDefs, index);
-		return &this->chasmDefs[index];
+		const ChasmID id = iter->second;
+		DebugAssertIndex(this->chasmDefs, id);
+		*outID = id;
+		return true;
 	}
 	else
 	{
-		return nullptr;
+		return false;
 	}
 }
 

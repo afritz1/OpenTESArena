@@ -160,8 +160,10 @@ public:
 	const LockDefinition *tryGetLock(const VoxelInt3 &voxel) const;
 	const std::string *tryGetBuildingName(const VoxelInt3 &voxel) const;
 	const DoorDefinition *tryGetDoor(const VoxelInt3 &voxel) const;
+
+	int getChasmCount() const;
 	const ChasmDefinition &getChasm(ChasmID id) const;
-	const ChasmDefinition *tryGetChasm(const VoxelInt3 &voxel) const;
+	bool tryGetChasmID(SNInt x, int y, WEInt z, ChasmID *outID) const;
 
 	// Sets the voxel at the given coordinate.
 	void setVoxelMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);

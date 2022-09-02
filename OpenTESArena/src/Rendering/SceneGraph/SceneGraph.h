@@ -55,21 +55,39 @@ public:
 			ScopedObjectTextureRef &&objectTextureRef);
 	};
 
-	struct LoadedChasmTextureList
+	// Chasm walls are multi-textured. They use the chasm animation and a separate wall texture.
+	// The draw call and pixel shader need two textures in order to support chasm wall rendering.
+	struct LoadedChasmFloorTextureList
 	{
-		// Chasm walls are multi-textured. They use the chasm animation and a separate wall texture.
-		// The draw call and pixel shader need two textures in order to support chasm wall rendering.
-		struct WallEntry
+		enum class Type
 		{
-			TextureAsset wallTextureAsset;
-			ScopedObjectTextureRef wallTextureRef;
+			Color,
+			Textured
 		};
 
-		ArenaTypes::ChasmType chasmType;
-		std::vector<ScopedObjectTextureRef> chasmTextureRefs;
-		std::vector<WallEntry> wallEntries;
+		Type type;
 
-		void init(ArenaTypes::ChasmType chasmType);
+		uint8_t paletteIndex;
+		std::vector<TextureAsset> textureAssets;
+
+		std::vector<ScopedObjectTextureRef> objectTextureRefs; // If textured, then accessed via chasm anim percent.
+
+		LoadedChasmFloorTextureList();
+
+		void initColor(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
+		void initTextured(std::vector<TextureAsset> &&textureAssets, std::vector<ScopedObjectTextureRef> &&objectTextureRefs);
+	};
+
+	using LoadedChasmWallTexture = LoadedVoxelTexture;
+
+	struct LoadedChasmTextureKey
+	{
+		ChunkInt2 chunkPos;
+		Chunk::ChasmID chasmID;
+		int chasmFloorListIndex;
+		int chasmWallIndex;
+
+		void init(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID, int chasmFloorListIndex, int chasmWallIndex);
 	};
 private:
 	// Chunks with data for geometry storage, visibility calculation, etc..
@@ -77,7 +95,10 @@ private:
 
 	std::vector<LoadedVoxelTexture> voxelTextures;
 	std::vector<LoadedEntityTexture> entityTextures;
-	std::vector<LoadedChasmTextureList> chasmTextureLists;
+
+	std::vector<LoadedChasmFloorTextureList> chasmFloorTextureLists;
+	std::vector<LoadedChasmWallTexture> chasmWallTextures;
+	std::vector<LoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
 
 	// @todo: sky rendering resources
 	// - hemisphere geometry w/ texture IDs and coordinates for colors (use some trig functions for vertex generation?)
@@ -95,14 +116,19 @@ private:
 
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
 	ObjectTextureID getEntityTextureID(const TextureAsset &textureAsset, bool flipped, bool reflective) const;
-	ObjectTextureID getChasmFloorTextureID(ArenaTypes::ChasmType chasmType, double chasmAnimPercent) const;
-	ObjectTextureID getChasmWallTextureID(ArenaTypes::ChasmType chasmType, const TextureAsset &textureAsset) const;
+	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID, double chasmAnimPercent) const;
+	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID) const;
 
-	void loadTextures(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, TextureManager &textureManager,
-		Renderer &renderer);
-	void loadVoxels(const LevelInstance &levelInst, const RenderCamera &camera, bool nightLightsAreActive,
-		RendererSystem3D &renderer);
+	std::optional<int> tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) const;
+
+	void loadVoxelTextures(const Chunk &chunk, TextureManager &textureManager, Renderer &renderer);
+	void loadEntityTextures(const Chunk &chunk, TextureManager &textureManager, Renderer &renderer);
+
+	void loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const Chunk &chunk, const RenderCamera &camera,
+		double ceilingScale, bool nightLightsAreActive, RendererSystem3D &renderer);
+	void loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &chunk, double ceilingScale,
+		double chasmAnimPercent);
+
 	/*void loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
 		const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
 		RendererSystem3D &renderer);
@@ -131,6 +157,8 @@ public:
 	BufferView<const RenderDrawCall> getDrawCalls() const;
 
 	// Loads all the rendering resources of the given scene into the scene graph.
+	// @todo: eventually I think a better way would be to simply treat scene graph chunks like allocated textures;
+	// via function calls and operations on a returned handle/ID.
 	void loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
