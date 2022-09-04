@@ -65,6 +65,8 @@ public:
 
 		void initColor(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
 		void initTextured(std::vector<TextureAsset> &&textureAssets, std::vector<ScopedObjectTextureRef> &&objectTextureRefs);
+
+		int getTextureIndex(double chasmAnimPercent) const;
 	};
 
 	using LoadedChasmWallTexture = LoadedVoxelTexture;

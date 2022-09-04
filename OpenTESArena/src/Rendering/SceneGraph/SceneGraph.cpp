@@ -155,6 +155,26 @@ void SceneGraph::LoadedChasmFloorTextureList::initTextured(std::vector<TextureAs
 	this->objectTextureRefs = std::move(objectTextureRefs);
 }
 
+int SceneGraph::LoadedChasmFloorTextureList::getTextureIndex(double chasmAnimPercent) const
+{
+	const int textureCount = static_cast<int>(this->objectTextureRefs.size());
+	DebugAssert(textureCount >= 1);
+
+	if (this->type == LoadedChasmFloorTextureList::Type::Color)
+	{
+		return 0;
+	}
+	else if (this->type == LoadedChasmFloorTextureList::Type::Textured)
+	{
+		const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
+		return index;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
 void SceneGraph::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID,
 	int chasmFloorListIndex, int chasmWallIndex)
 {
@@ -194,8 +214,7 @@ ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, Ch
 	const int floorListIndex = keyIter->chasmFloorListIndex;
 	const LoadedChasmFloorTextureList &textureList = this->chasmFloorTextureLists[floorListIndex];
 	const std::vector<ScopedObjectTextureRef> &objectTextureRefs = textureList.objectTextureRefs;
-	const int textureCount = static_cast<int>(objectTextureRefs.size());
-	const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
+	const int index = textureList.getTextureIndex(chasmAnimPercent);
 	DebugAssertIndex(objectTextureRefs, index);
 	const ScopedObjectTextureRef &objectTextureRef = objectTextureRefs[index];
 	return objectTextureRef.get();
