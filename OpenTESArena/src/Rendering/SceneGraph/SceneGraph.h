@@ -44,17 +44,6 @@ public:
 		void init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
-	struct LoadedEntityTexture
-	{
-		TextureAsset textureAsset;
-		bool flipped;
-		bool reflective;
-		ScopedObjectTextureRef objectTextureRef;
-
-		void init(const TextureAsset &textureAsset, bool flipped, bool reflective,
-			ScopedObjectTextureRef &&objectTextureRef);
-	};
-
 	// Chasm walls are multi-textured. They use the chasm animation and a separate wall texture.
 	// The draw call and pixel shader need two textures in order to support chasm wall rendering.
 	struct LoadedChasmFloorTextureList
@@ -94,11 +83,11 @@ private:
 	std::vector<SceneGraphChunk> graphChunks;
 
 	std::vector<LoadedVoxelTexture> voxelTextures;
-	std::vector<LoadedEntityTexture> entityTextures;
-
 	std::vector<LoadedChasmFloorTextureList> chasmFloorTextureLists;
 	std::vector<LoadedChasmWallTexture> chasmWallTextures;
 	std::vector<LoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
+
+	// @todo: entity rendering resources
 
 	// @todo: sky rendering resources
 	// - hemisphere geometry w/ texture IDs and coordinates for colors (use some trig functions for vertex generation?)
@@ -114,44 +103,17 @@ private:
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
 
+	std::optional<int> tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) const;
+
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
-	ObjectTextureID getEntityTextureID(const TextureAsset &textureAsset, bool flipped, bool reflective) const;
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID, double chasmAnimPercent) const;
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID) const;
 
-	std::optional<int> tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) const;
-
 	void loadVoxelTextures(const Chunk &chunk, TextureManager &textureManager, Renderer &renderer);
-	void loadEntityTextures(const Chunk &chunk, TextureManager &textureManager, Renderer &renderer);
-
 	void loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const Chunk &chunk, const RenderCamera &camera,
 		double ceilingScale, bool nightLightsAreActive, RendererSystem3D &renderer);
 	void loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &chunk, double ceilingScale,
 		double chasmAnimPercent);
-
-	/*void loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
-		const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
-		RendererSystem3D &renderer);
-	void loadSky(const SkyInstance &skyInst, double daytimePercent, double latitude,
-		RendererSystem3D &renderer);
-	void loadWeather(const SkyInstance &skyInst, double daytimePercent, RendererSystem3D &renderer);
-
-	// Updates dirty voxels (open doors, fading voxels, chasm animations, etc.), adds new ones,
-	// and removes deleted ones.
-	void updateVoxels(const LevelInstance &levelInst, const RenderCamera &camera, double chasmAnimPercent,
-		bool nightLightsAreActive, RendererSystem3D &renderer);
-
-	// Updates entities that changed between frames, adds new entities, and removes deleted ones.
-	// @todo: EntityManager should keep public lists of newEntityIDs and deletedEntityIDs and clear them each frame.
-	void updateEntities(const LevelInstance &levelInst, const RenderCamera &camera,
-		const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive,
-		bool playerHasLight, RendererSystem3D &renderer);
-
-	// Updates sky rotation, animations, and thunderstorm resources.
-	void updateSky(const SkyInstance &skyInst, double daytimePercent, double latitude);
-
-	// Updates weather particles.
-	void updateWeather(const SkyInstance &skyInst);*/
 public:
 	// Gets the list of draw calls for visible geometry this frame.
 	BufferView<const RenderDrawCall> getDrawCalls() const;
@@ -168,16 +130,6 @@ public:
 
 	// Clears all rendering resources from the scene graph (voxels, entities, sky, weather).
 	void unloadScene(RendererSystem3D &renderer);
-
-	// Updates rendering resources for anything in the scene that changed between frames.
-	// I.e. dirty voxels, entities, sky rotation and animations, and weather particles.
-	// @todo: get loadScene()/unloadScene() pattern working well before attempting to work with dirty voxels, etc.
-	/*void updateScene(const LevelInstance &levelInst, const SkyInstance &skyInst, 
-		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
-		double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-		double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary,
-		TextureManager &textureManager, RendererSystem3D &renderer);*/
 };
 
 #endif
