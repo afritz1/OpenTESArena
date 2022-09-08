@@ -498,28 +498,6 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &ch
 	}
 }
 
-/*void SceneGraph::loadEntities(const LevelInstance &levelInst, const RenderCamera &camera,
-	const EntityDefinitionLibrary &entityDefLibrary, bool nightLightsAreActive, bool playerHasLight,
-	RendererSystem3D &renderer)
-{
-	DebugAssert(!this->graphChunks.empty());
-
-	// @todo
-	DebugNotImplemented();
-}
-
-void SceneGraph::loadSky(const SkyInstance &skyInst, double daytimePercent, double latitude, RendererSystem3D &renderer)
-{
-	// @todo
-	DebugNotImplemented();
-}
-
-void SceneGraph::loadWeather(const SkyInstance &skyInst, double daytimePercent, RendererSystem3D &renderer)
-{
-	// @todo
-	DebugNotImplemented();
-}*/
-
 void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
