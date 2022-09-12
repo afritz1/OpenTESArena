@@ -124,6 +124,157 @@ namespace sgTexture
 			}
 		}
 	}
+
+	bool LoadedChasmFloorComparer(const SceneGraph::LoadedChasmFloorTextureList &textureList, const ChasmDefinition &chasmDef)
+	{
+		if (textureList.animType != chasmDef.animType)
+		{
+			return false;
+		}
+
+		if (textureList.animType == ChasmDefinition::AnimationType::SolidColor)
+		{
+			return textureList.paletteIndex == chasmDef.solidColor.paletteIndex;
+		}
+		else if (textureList.animType == ChasmDefinition::AnimationType::Animated)
+		{
+			const int textureAssetCount = static_cast<int>(textureList.textureAssets.size());
+			const ChasmDefinition::Animated &chasmDefAnimated = chasmDef.animated;
+
+			if (textureAssetCount != chasmDefAnimated.textureAssets.getCount())
+			{
+				return false;
+			}
+
+			for (int i = 0; i < textureAssetCount; i++)
+			{
+				if (textureList.textureAssets[i] != chasmDefAnimated.textureAssets.get(i))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(textureList.animType)));
+		}
+	}
+
+	void LoadChasmDefTextures(Chunk::ChasmID chasmID, const Chunk &chunk, std::vector<SceneGraph::LoadedChasmFloorTextureList> &chasmTextureLists,
+		std::vector<SceneGraph::LoadedChasmTextureKey> &chasmTextureKeys, TextureManager &textureManager, Renderer &renderer)
+	{
+		const ChunkInt2 chunkPos = chunk.getPosition();
+		const ChasmDefinition &chasmDef = chunk.getChasm(chasmID);
+
+		// Check if this chasm already has a mapping.
+		const auto keyIter = std::find_if(chasmTextureKeys.begin(), chasmTextureKeys.end(),
+			[chasmID, &chunkPos](const SceneGraph::LoadedChasmTextureKey &loadedKey)
+		{
+			return (loadedKey.chasmID == chasmID) && (loadedKey.chunkPos == chunkPos);
+		});
+
+		if (keyIter != chasmTextureKeys.end())
+		{
+			DebugLog("Chasm texture key already loaded for chasm \"" + std::to_string(chasmID) + "\" in chunk (" + chunkPos.toString() + ").");
+			return;
+		}
+
+		// Check if any loaded chasms reference the same assets.
+		const auto chasmIter = std::find_if(chasmTextureLists.begin(), chasmTextureLists.end(),
+			[&chasmDef](const SceneGraph::LoadedChasmFloorTextureList &textureList)
+		{
+			return LoadedChasmFloorComparer(textureList, chasmDef);
+		});
+
+		SceneGraph::LoadedChasmTextureKey key;
+		if (chasmIter != chasmTextureLists.end())
+		{
+			// Add a key referencing that same mapping for this chasmID + chunkPos.
+			DebugLog("Chasm texture(s) already loaded for chasm \"" + std::to_string(chasmID) + "\" in chunk (" + chunkPos.toString() + ").");
+
+			const int loadedChasmFloorListIndex = static_cast<int>(std::distance(chasmTextureLists.begin(), chasmIter));
+			const int loadedChasmWallIndex = loadedChasmFloorListIndex; // @todo
+			DebugLogError("Not implemented: loadedChasmWallIndex");
+			key.init(chunkPos, chasmID, loadedChasmFloorListIndex, loadedChasmWallIndex);
+		}
+		else
+		{
+			// Load the required textures and add a key for them.
+			SceneGraph::LoadedChasmFloorTextureList newTextureList;
+			if (chasmDef.animType == ChasmDefinition::AnimationType::SolidColor)
+			{
+				// Dry chasms are a single color, no texture asset.
+				ObjectTextureID dryChasmTextureID;
+				if (!renderer.tryCreateObjectTexture(1, 1, false, &dryChasmTextureID))
+				{
+					DebugLogWarning("Couldn't create dry chasm texture.");
+					return;
+				}
+
+				ScopedObjectTextureRef dryChasmTextureRef(dryChasmTextureID, renderer);
+				LockedTexture lockedTexture = renderer.lockObjectTexture(dryChasmTextureID);
+				if (!lockedTexture.isValid())
+				{
+					DebugLogWarning("Couldn't lock dry chasm texture for writing.");
+					return;
+				}
+
+				const uint8_t paletteIndex = chasmDef.solidColor.paletteIndex;
+
+				DebugAssert(!lockedTexture.isTrueColor);
+				uint8_t *texels = static_cast<uint8_t*>(lockedTexture.texels);
+				*texels = paletteIndex;
+				renderer.unlockObjectTexture(dryChasmTextureID);
+
+				newTextureList.initColor(paletteIndex, std::move(dryChasmTextureRef));
+				chasmTextureLists.emplace_back(std::move(newTextureList));
+			}
+			else if (chasmDef.animType == ChasmDefinition::AnimationType::Animated)
+			{
+				std::vector<TextureAsset> newTextureAssets;
+				std::vector<ScopedObjectTextureRef> newObjectTextureRefs;
+
+				const Buffer<TextureAsset> &textureAssets = chasmDef.animated.textureAssets;
+				for (int i = 0; i < textureAssets.getCount(); i++)
+				{
+					const TextureAsset &textureAsset = textureAssets.get(i);
+					const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
+					if (!textureBuilderID.has_value())
+					{
+						DebugLogWarning("Couldn't load chasm texture \"" + textureAsset.filename + "\".");
+						continue;
+					}
+
+					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+					ObjectTextureID chasmTextureID;
+					if (!renderer.tryCreateObjectTexture(textureBuilder, &chasmTextureID))
+					{
+						DebugLogWarning("Couldn't create chasm texture \"" + textureAsset.filename + "\".");
+						continue;
+					}
+
+					ScopedObjectTextureRef chasmTextureRef(chasmTextureID, renderer);
+					newTextureAssets.emplace_back(textureAsset);
+					newObjectTextureRefs.emplace_back(std::move(chasmTextureRef));
+				}
+
+				newTextureList.initTextured(std::move(newTextureAssets), std::move(newObjectTextureRefs));
+				chasmTextureLists.emplace_back(std::move(newTextureList));
+			}
+			else
+			{
+				DebugNotImplementedMsg(std::to_string(static_cast<int>(chasmDef.animType)));
+			}
+
+			const int chasmFloorListIndex = static_cast<int>(chasmTextureLists.size()) - 1;
+			const int chasmWallIndex = chasmFloorListIndex; // @todo
+			key.init(chunkPos, chasmID, chasmFloorListIndex, chasmWallIndex);
+		}
+
+		chasmTextureKeys.emplace_back(std::move(key));
+	}
 }
 
 void SceneGraph::LoadedVoxelTexture::init(const TextureAsset &textureAsset,
@@ -135,14 +286,14 @@ void SceneGraph::LoadedVoxelTexture::init(const TextureAsset &textureAsset,
 
 SceneGraph::LoadedChasmFloorTextureList::LoadedChasmFloorTextureList()
 {
-	this->type = static_cast<LoadedChasmFloorTextureList::Type>(-1);
+	this->animType = static_cast<ChasmDefinition::AnimationType>(-1);
 	this->paletteIndex = 0;
 }
 
 void SceneGraph::LoadedChasmFloorTextureList::initColor(uint8_t paletteIndex,
 	ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->type = LoadedChasmFloorTextureList::Type::Color;
+	this->animType = ChasmDefinition::AnimationType::SolidColor;
 	this->paletteIndex = paletteIndex;
 	this->objectTextureRefs.emplace_back(std::move(objectTextureRef));
 }
@@ -150,7 +301,7 @@ void SceneGraph::LoadedChasmFloorTextureList::initColor(uint8_t paletteIndex,
 void SceneGraph::LoadedChasmFloorTextureList::initTextured(std::vector<TextureAsset> &&textureAssets,
 	std::vector<ScopedObjectTextureRef> &&objectTextureRefs)
 {
-	this->type = LoadedChasmFloorTextureList::Type::Textured;
+	this->animType = ChasmDefinition::AnimationType::Animated;
 	this->textureAssets = std::move(textureAssets);
 	this->objectTextureRefs = std::move(objectTextureRefs);
 }
@@ -160,18 +311,18 @@ int SceneGraph::LoadedChasmFloorTextureList::getTextureIndex(double chasmAnimPer
 	const int textureCount = static_cast<int>(this->objectTextureRefs.size());
 	DebugAssert(textureCount >= 1);
 
-	if (this->type == LoadedChasmFloorTextureList::Type::Color)
+	if (this->animType == ChasmDefinition::AnimationType::SolidColor)
 	{
 		return 0;
 	}
-	else if (this->type == LoadedChasmFloorTextureList::Type::Textured)
+	else if (this->animType == ChasmDefinition::AnimationType::Animated)
 	{
 		const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
 		return index;
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->animType)));
 	}
 }
 
@@ -266,10 +417,9 @@ void SceneGraph::loadVoxelTextures(const Chunk &chunk, TextureManager &textureMa
 	
 	for (int i = 0; i < chunk.getChasmCount(); i++)
 	{
-		const ChasmDefinition &chasmDef = chunk.getChasm(i);
-		//sgTexture::LoadVoxelDefTextures(chasmDef.) // @todo: handle dry and not-dry chasm texture loading
-		
-		DebugLogError("loadVoxelTextures() chasms not implemented.");
+		const Chunk::ChasmID chasmID = static_cast<Chunk::ChasmID>(i);
+		sgTexture::LoadChasmDefTextures(chasmID, chunk, this->chasmFloorTextureLists, this->chasmTextureKeys,
+			textureManager, renderer);
 	}
 }
 
