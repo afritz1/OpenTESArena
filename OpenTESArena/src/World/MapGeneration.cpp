@@ -720,8 +720,6 @@ namespace MapGeneration
 		outMeshDef->initClassic(voxelType, meshInitCache);
 
 		const std::array<const TextureAsset*, 3> textureAssetPtrs = { &textureAsset0, &textureAsset1, &textureAsset2 };
-
-		VoxelTextureDefinition voxelTextureDef;
 		for (const TextureAsset *textureAsset : textureAssetPtrs)
 		{
 			if (!textureAsset->filename.empty())
@@ -748,7 +746,8 @@ namespace MapGeneration
 	}
 
 	void writeVoxelInfoForMAP2(ArenaTypes::VoxelID map2Voxel, const INFFile &inf, ArenaTypes::VoxelType *outVoxelType,
-		ArenaMeshUtils::InitCache *outMeshInitCache, TextureAsset *outTextureAsset)
+		ArenaMeshUtils::InitCache *outMeshInitCache, TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1,
+		TextureAsset *outTextureAsset2)
 	{
 		*outVoxelType = ArenaTypes::VoxelType::Wall;
 		ArenaMeshUtils::WriteWallMeshGeometryBuffers(outMeshInitCache->verticesView, outMeshInitCache->attributesView);
@@ -757,9 +756,11 @@ namespace MapGeneration
 
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
 		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
-		*outTextureAsset = TextureAsset(
+		*outTextureAsset0 = TextureAsset(
 			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+		*outTextureAsset1 = *outTextureAsset0;
+		*outTextureAsset2 = *outTextureAsset0;
 	}
 
 	void writeDefsForMAP2(ArenaTypes::VoxelID map2Voxel, const INFFile &inf, VoxelMeshDefinition *outMeshDef,
@@ -767,11 +768,13 @@ namespace MapGeneration
 	{
 		ArenaTypes::VoxelType voxelType;
 		ArenaMeshUtils::InitCache meshInitCache;
-		TextureAsset textureAsset;
-		MapGeneration::writeVoxelInfoForMAP2(map2Voxel, inf, &voxelType, &meshInitCache, &textureAsset);
+		TextureAsset textureAsset0, textureAsset1, textureAsset2;
+		MapGeneration::writeVoxelInfoForMAP2(map2Voxel, inf, &voxelType, &meshInitCache, &textureAsset0, &textureAsset1, &textureAsset2);
 
 		outMeshDef->initClassic(voxelType, meshInitCache);
-		outTextureDef->addTextureAsset(std::move(textureAsset));
+		outTextureDef->addTextureAsset(std::move(textureAsset0));
+		outTextureDef->addTextureAsset(std::move(textureAsset1));
+		outTextureDef->addTextureAsset(std::move(textureAsset2));
 		outTraitsDef->initGeneral(voxelType);
 	}
 
