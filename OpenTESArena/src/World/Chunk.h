@@ -52,8 +52,9 @@ private:
 	Buffer3D<VoxelTextureDefID> voxelTextureDefIDs;
 	Buffer3D<VoxelTraitsDefID> voxelTraitsDefIDs;
 
-	// Positions of voxels that have changed this frame. Reset at end-of-frame.
-	std::vector<VoxelInt3> dirtyVoxels;
+	// Voxels that changed this frame. Reset at end-of-frame.
+	Buffer3D<bool> dirtyVoxels;
+	std::vector<VoxelInt3> dirtyVoxelPositions;
 
 	// Instance data for voxels that are uniquely different in some way.
 	std::vector<VoxelInstance> voxelInsts;

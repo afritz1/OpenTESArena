@@ -22,6 +22,10 @@ void Chunk::init(const ChunkInt2 &position, int height)
 	this->voxelTextureDefs.emplace_back(VoxelTextureDefinition());
 	this->voxelTraitsDefs.emplace_back(VoxelTraitsDefinition());
 
+	this->dirtyVoxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->dirtyVoxels.fill(false);
+	this->dirtyVoxelPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
+
 	this->position = position;
 }
 
@@ -39,6 +43,7 @@ int Chunk::getHeight() const
 {
 	DebugAssert(this->voxelMeshDefIDs.getHeight() == this->voxelTextureDefIDs.getHeight());
 	DebugAssert(this->voxelMeshDefIDs.getHeight() == this->voxelTraitsDefIDs.getHeight());
+	DebugAssert(this->voxelMeshDefIDs.getHeight() == this->dirtyVoxels.getHeight());
 	return this->voxelMeshDefIDs.getHeight();
 }
 
@@ -92,13 +97,13 @@ const VoxelTraitsDefinition &Chunk::getVoxelTraitsDef(int index) const
 
 int Chunk::getDirtyVoxelCount() const
 {
-	return static_cast<int>(this->dirtyVoxels.size());
+	return static_cast<int>(this->dirtyVoxelPositions.size());
 }
 
 const VoxelInt3 &Chunk::getDirtyVoxel(int index) const
 {
-	DebugAssertIndex(this->dirtyVoxels, index);
-	return this->dirtyVoxels[index];
+	DebugAssertIndex(this->dirtyVoxelPositions, index);
+	return this->dirtyVoxelPositions[index];
 }
 
 int Chunk::getVoxelInstCount() const
@@ -287,11 +292,10 @@ void Chunk::getAdjacentVoxelTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefI
 
 void Chunk::setVoxelDirty(SNInt x, int y, WEInt z)
 {
-	const VoxelInt3 pos(x, y, z);
-	const auto dirtyIter = std::find(this->dirtyVoxels.begin(), this->dirtyVoxels.end(), pos);
-	if (dirtyIter == this->dirtyVoxels.end())
+	if (!this->dirtyVoxels.get(x, y, z))
 	{
-		this->dirtyVoxels.emplace_back(pos);
+		this->dirtyVoxels.set(x, y, z, true);
+		this->dirtyVoxelPositions.emplace_back(VoxelInt3(x, y, z));
 	}
 }
 
@@ -440,6 +444,7 @@ void Chunk::clear()
 	this->voxelTextureDefIDs.clear();
 	this->voxelTraitsDefIDs.clear();
 	this->dirtyVoxels.clear();
+	this->dirtyVoxelPositions.clear();
 	this->voxelInsts.clear();
 	this->transitionDefs.clear();
 	this->triggerDefs.clear();
@@ -458,7 +463,8 @@ void Chunk::clear()
 
 void Chunk::clearDirtyVoxels()
 {
-	this->dirtyVoxels.clear();
+	this->dirtyVoxels.fill(false);
+	this->dirtyVoxelPositions.clear();
 }
 
 void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord,
