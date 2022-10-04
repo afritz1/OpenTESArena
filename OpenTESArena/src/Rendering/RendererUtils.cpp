@@ -6,7 +6,7 @@
 #include "../Game/CardinalDirection.h"
 #include "../Math/Constants.h"
 #include "../Utilities/Platform.h"
-#include "../World/Chunk.h"
+#include "../World/VoxelChunk.h"
 #include "../World/WeatherInstance.h"
 
 #include "components/debug/Debug.h"
@@ -110,7 +110,7 @@ void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *out
 	*outEnd = *outStart + (diff * Constants::JustBelowOne);
 }
 
-double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Chunk &chunk)
+double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const VoxelChunk &chunk)
 {
 	const VoxelInt3 voxel(voxelX, 1, voxelZ);
 	const VoxelInstance *voxelInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
@@ -125,7 +125,7 @@ double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Chunk
 	}
 }
 
-double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const Chunk &chunk)
+double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const VoxelChunk &chunk)
 {
 	const VoxelInt3 voxel(voxelX, voxelY, voxelZ);
 	const VoxelInstance *voxelInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::Fading);

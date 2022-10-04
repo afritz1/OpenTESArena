@@ -12,7 +12,7 @@
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../World/Chunk.h"
+#include "../World/VoxelChunk.h"
 
 #include "components/utilities/Buffer.h"
 
@@ -160,7 +160,7 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 	return citizenGenInfo;
 }
 
-bool CitizenUtils::trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
+bool CitizenUtils::trySpawnCitizenInChunk(const VoxelChunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityManager &entityManager)
 {
 	const ChunkInt2 &chunkPosition = chunk.getPosition();
@@ -177,9 +177,9 @@ bool CitizenUtils::trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenIn
 		constexpr int spawnTriesCount = 20;
 		for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
 		{
-			const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
-			const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
-			const Chunk::VoxelTraitsDefID groundVoxelTraitsDefID = chunk.getVoxelTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
+			const VoxelInt2 spawnVoxel(random.next(VoxelChunk::WIDTH), random.next(VoxelChunk::DEPTH));
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
+			const VoxelChunk::VoxelTraitsDefID groundVoxelTraitsDefID = chunk.getVoxelTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
 			const VoxelTraitsDefinition &groundVoxelTraitsDef = chunk.getVoxelTraitsDef(groundVoxelTraitsDefID);
 

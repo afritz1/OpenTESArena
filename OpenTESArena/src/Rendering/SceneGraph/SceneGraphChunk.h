@@ -6,7 +6,7 @@
 #include "../RenderDrawCall.h"
 #include "../RenderGeometryUtils.h"
 #include "../RenderTriangle.h"
-#include "../../World/Chunk.h"
+#include "../../World/VoxelChunk.h"
 #include "../../World/VoxelUtils.h"
 
 #include "components/utilities/Buffer.h"
@@ -37,7 +37,7 @@ using SceneGraphVoxelID = int;
 struct SceneGraphChunk
 {
 	std::vector<SceneGraphVoxelDefinition> voxelDefs;
-	std::unordered_map<Chunk::VoxelMeshDefID, SceneGraphVoxelID> voxelDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if Chunk::removeVoxelDef() is ever in use).
+	std::unordered_map<VoxelChunk::VoxelMeshDefID, SceneGraphVoxelID> voxelDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
 	Buffer3D<SceneGraphVoxelID> voxels; // Points into voxel defs.
 	std::vector<RenderDrawCall> voxelDrawCalls;
 	ChunkInt2 position;

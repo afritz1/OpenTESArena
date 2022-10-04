@@ -1,5 +1,5 @@
-#ifndef CHUNK_H
-#define CHUNK_H
+#ifndef VOXEL_CHUNK_H
+#define VOXEL_CHUNK_H
 
 #include <array>
 #include <climits>
@@ -29,7 +29,7 @@
 
 class AudioManager;
 
-class Chunk
+class VoxelChunk
 {
 public:
 	using VoxelMeshDefID = int;

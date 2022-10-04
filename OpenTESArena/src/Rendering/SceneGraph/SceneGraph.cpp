@@ -162,7 +162,7 @@ namespace sgTexture
 		}
 	}
 
-	void LoadChasmDefTextures(Chunk::ChasmDefID chasmDefID, const Chunk &chunk, std::vector<SceneGraph::LoadedChasmFloorTextureList> &chasmTextureLists,
+	void LoadChasmDefTextures(VoxelChunk::ChasmDefID chasmDefID, const VoxelChunk &chunk, std::vector<SceneGraph::LoadedChasmFloorTextureList> &chasmTextureLists,
 		std::vector<SceneGraph::LoadedChasmTextureKey> &chasmTextureKeys, TextureManager &textureManager, Renderer &renderer)
 	{
 		const ChunkInt2 chunkPos = chunk.getPosition();
@@ -326,7 +326,7 @@ int SceneGraph::LoadedChasmFloorTextureList::getTextureIndex(double chasmAnimPer
 	}
 }
 
-void SceneGraph::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID,
+void SceneGraph::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID,
 	int chasmFloorListIndex, int chasmWallIndex)
 {
 	DebugAssert(chasmFloorListIndex >= 0);
@@ -350,7 +350,7 @@ ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAsset &textureAsset) 
 	return objectTextureRef.get();
 }
 
-ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID,
+ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID,
 	double chasmAnimPercent) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
@@ -371,7 +371,7 @@ ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, Ch
 	return objectTextureRef.get();
 }
 
-ObjectTextureID SceneGraph::getChasmWallTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID) const
+ObjectTextureID SceneGraph::getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
 		[&chunkPos, chasmDefID](const LoadedChasmTextureKey &key)
@@ -407,7 +407,7 @@ BufferView<const RenderDrawCall> SceneGraph::getDrawCalls() const
 	return BufferView<const RenderDrawCall>(this->drawCallsCache.data(), static_cast<int>(this->drawCallsCache.size()));
 }
 
-void SceneGraph::loadVoxelTextures(const Chunk &chunk, TextureManager &textureManager, Renderer &renderer)
+void SceneGraph::loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer)
 {
 	for (int i = 0; i < chunk.getVoxelTextureDefCount(); i++)
 	{
@@ -417,13 +417,13 @@ void SceneGraph::loadVoxelTextures(const Chunk &chunk, TextureManager &textureMa
 	
 	for (int i = 0; i < chunk.getChasmDefCount(); i++)
 	{
-		const Chunk::ChasmDefID chasmDefID = static_cast<Chunk::ChasmDefID>(i);
+		const VoxelChunk::ChasmDefID chasmDefID = static_cast<VoxelChunk::ChasmDefID>(i);
 		sgTexture::LoadChasmDefTextures(chasmDefID, chunk, this->chasmFloorTextureLists, this->chasmTextureKeys,
 			textureManager, renderer);
 	}
 }
 
-void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const Chunk &chunk, const RenderCamera &camera,
+void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, const RenderCamera &camera,
 	double ceilingScale, bool nightLightsAreActive, RendererSystem3D &renderer)
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
@@ -431,7 +431,7 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const Chunk &
 	// Add scene graph voxel definitions and create mappings to them.
 	for (int meshDefIndex = 0; meshDefIndex < chunk.getVoxelMeshDefCount(); meshDefIndex++)
 	{
-		const Chunk::VoxelMeshDefID voxelMeshDefID = static_cast<Chunk::VoxelMeshDefID>(meshDefIndex);
+		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = static_cast<VoxelChunk::VoxelMeshDefID>(meshDefIndex);
 		const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
 
 		SceneGraphVoxelDefinition graphVoxelDef;
@@ -510,7 +510,7 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const Chunk &
 	}
 }
 
-void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &chunk, double ceilingScale,
+void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale,
 	double chasmAnimPercent)
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
@@ -536,15 +536,15 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &ch
 	};
 
 	// Generate draw calls for each non-air voxel.
-	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
 			{
-				const Chunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
-				const Chunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
-				const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(x, y, z);
+				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
+				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
+				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(x, y, z);
 				const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
 				const VoxelTextureDefinition &voxelTextureDef = chunk.getVoxelTextureDef(voxelTextureDefID);
 				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
@@ -565,7 +565,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &ch
 				const bool allowsBackFaces = voxelMeshDef.allowsBackFaces;
 				const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
-				Chunk::ChasmDefID chasmDefID;
+				VoxelChunk::ChasmDefID chasmDefID;
 				const bool usesVoxelTextures = !chunk.tryGetChasmDefID(x, y, z, &chasmDefID);
 
 				const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
@@ -661,7 +661,7 @@ void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &sk
 	const ChunkManager &chunkManager = levelInst.getChunkManager();
 	for (int i = 0; i < chunkManager.getChunkCount(); i++)
 	{
-		const Chunk &chunk = chunkManager.getChunk(i);
+		const VoxelChunk &chunk = chunkManager.getChunk(i);
 		
 		SceneGraphChunk graphChunk;
 		graphChunk.init(chunk.getPosition(), chunk.getHeight());

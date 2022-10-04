@@ -8,11 +8,11 @@
 #include "../World/Coord.h"
 
 class BinaryAssetLibrary;
-class Chunk;
 class EntityDefinition;
 class EntityDefinitionLibrary;
 class EntityManager;
 class Random;
+class VoxelChunk;
 
 enum class CardinalDirectionName;
 
@@ -57,7 +57,7 @@ namespace CitizenUtils
 	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
 		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
 
-	bool trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
+	bool trySpawnCitizenInChunk(const VoxelChunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityManager &entityManager);
 
 	// Used when the player commits a crime and the guards are called.

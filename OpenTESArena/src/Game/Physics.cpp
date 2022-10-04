@@ -220,7 +220,7 @@ namespace Physics
 		Physics::Hit &hit)
 	{
 		const ChunkManager &chunkManager = levelInst.getChunkManager();
-		const Chunk *chunk = chunkManager.tryGetChunk(rayCoord.chunk);
+		const VoxelChunk *chunk = chunkManager.tryGetChunk(rayCoord.chunk);
 		if (chunk == nullptr)
 		{
 			// Nothing to intersect with.
@@ -233,7 +233,7 @@ namespace Physics
 			return false;
 		}
 
-		const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
 		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
@@ -613,7 +613,7 @@ namespace Physics
 		double ceilingScale, const LevelInstance &levelInst, Physics::Hit &hit)
 	{
 		const ChunkManager &chunkManager = levelInst.getChunkManager();
-		const Chunk *chunk = chunkManager.tryGetChunk(voxelCoord.chunk);
+		const VoxelChunk *chunk = chunkManager.tryGetChunk(voxelCoord.chunk);
 		if (chunk == nullptr)
 		{
 			// Nothing to intersect with.
@@ -627,7 +627,7 @@ namespace Physics
 			return false;
 		}
 
-		const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
 		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
@@ -1146,7 +1146,7 @@ namespace Physics
 
 		// Check whether the initial voxel is in a loaded chunk.
 		ChunkInt2 currentChunk = rayCoord.chunk;
-		const Chunk *currentChunkPtr = chunkManager.tryGetChunk(currentChunk);
+		const VoxelChunk *currentChunkPtr = chunkManager.tryGetChunk(currentChunk);
 
 		// The initial DDA step is a special case, so it's brought outside the DDA loop. This complicates things
 		// a little bit, but it's important enough that it should be kept.

@@ -67,11 +67,11 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
 	ChunkManager &chunkManager = levelInst.getChunkManager();
-	Chunk *chunkPtr = chunkManager.tryGetChunk(coord.chunk);
+	VoxelChunk *chunkPtr = chunkManager.tryGetChunk(coord.chunk);
 	DebugAssert(chunkPtr != nullptr);
 
 	const VoxelInt3 &voxel = coord.voxel;
-	Chunk::TriggerDefID triggerDefID;
+	VoxelChunk::TriggerDefID triggerDefID;
 	if (!chunkPtr->tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
 	{
 		return;
@@ -481,7 +481,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	MapInstance &interiorMapInst = gameState.getActiveMapInst();
 	const LevelInstance &level = interiorMapInst.getActiveLevel();
 	const ChunkManager &chunkManager = level.getChunkManager();
-	const Chunk *chunkPtr = chunkManager.tryGetChunk(transitionCoord.chunk);
+	const VoxelChunk *chunkPtr = chunkManager.tryGetChunk(transitionCoord.chunk);
 	DebugAssert(chunkPtr != nullptr);
 
 	const VoxelInt3 &transitionVoxel = transitionCoord.voxel;
@@ -494,7 +494,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	// Get the voxel definition associated with the voxel.
 	const VoxelTraitsDefinition &voxelTraitsDef = [chunkPtr, &transitionVoxel]()
 	{
-		const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
 		return chunkPtr->getVoxelTraitsDef(voxelTraitsDefID);
 	}();
 
@@ -502,7 +502,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		const VoxelInt3 &voxel = transitionCoord.voxel;
-		Chunk::TransitionDefID transitionDefID;
+		VoxelChunk::TransitionDefID transitionDefID;
 		if (!chunkPtr->tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 		{
 			return;

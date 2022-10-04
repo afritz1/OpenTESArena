@@ -415,11 +415,11 @@ bool LegacyRendererUtils::findInitialDoorIntersection(const CoordInt2 &coord, Ar
 		// Check adjacent voxels on the X axis for air.
 		auto voxelIsAir = [&chunkManager](const CoordInt2 &checkCoord)
 		{
-			const Chunk *chunk = chunkManager.tryGetChunk(checkCoord.chunk);
+			const VoxelChunk *chunk = chunkManager.tryGetChunk(checkCoord.chunk);
 			if (chunk != nullptr)
 			{
 				const VoxelInt2 &voxel = checkCoord.voxel;
-				const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, 1, voxel.y);
+				const VoxelChunk::VoxelID voxelID = chunk->getVoxel(voxel.x, 1, voxel.y);
 				const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 				return voxelDef.type == ArenaTypes::VoxelType::None;
 			}

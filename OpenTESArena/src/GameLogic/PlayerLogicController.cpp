@@ -564,12 +564,12 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 		if (hit.getType() == Physics::Hit::Type::Voxel)
 		{
 			const ChunkInt2 chunk = hit.getCoord().chunk;
-			Chunk *chunkPtr = chunkManager.tryGetChunk(chunk);
+			VoxelChunk *chunkPtr = chunkManager.tryGetChunk(chunk);
 			DebugAssert(chunkPtr != nullptr);
 
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunkPtr->getVoxelTraitsDef(voxelTraitsDefID);
 			const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
@@ -599,7 +599,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 							if (isWall || isEdge)
 							{
-								Chunk::TransitionDefID transitionDefID;
+								VoxelChunk::TransitionDefID transitionDefID;
 								if (chunkPtr->tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 								{
 									const TransitionDefinition &transitionDef = chunkPtr->getTransitionDef(transitionDefID);
@@ -637,7 +637,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							chunkPtr->addVoxelInst(std::move(newOpenDoorInst));
 
 							// Get the door's opening sound and play it at the center of the voxel.
-							Chunk::DoorDefID doorDefID;
+							VoxelChunk::DoorDefID doorDefID;
 							if (!chunkPtr->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
 							{
 								DebugCrash("Expected door def ID to exist.");
@@ -661,7 +661,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				// Handle secondary click (i.e., right click).
 				if (voxelType == ArenaTypes::VoxelType::Wall)
 				{
-					Chunk::BuildingNameID buildingNameID;
+					VoxelChunk::BuildingNameID buildingNameID;
 					if (chunkPtr->tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
 					{
 						const std::string &buildingName = chunkPtr->getBuildingName(buildingNameID);

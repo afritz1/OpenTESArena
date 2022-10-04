@@ -7,12 +7,12 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
-#include "../World/Chunk.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MapType.h"
 #include "../World/TransitionDefinition.h"
 #include "../World/TransitionType.h"
+#include "../World/VoxelChunk.h"
 #include "../World/VoxelFacing2D.h"
 #include "../World/VoxelTraitsDefinition.h"
 
@@ -340,19 +340,19 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 		for (WEInt chunkZ = minChunk.y; chunkZ <= maxChunk.y; chunkZ++)
 		{
 			const ChunkInt2 chunkPos(chunkX, chunkZ);
-			const Chunk *chunk = chunkManager.tryGetChunk(chunkPos);
+			const VoxelChunk *chunk = chunkManager.tryGetChunk(chunkPos);
 			DebugAssert(chunk != nullptr);
 
 			for (SNInt x = 0; x < ChunkUtils::CHUNK_DIM; x++)
 			{
 				for (WEInt z = 0; z < ChunkUtils::CHUNK_DIM; z++)
 				{
-					const Chunk::VoxelTraitsDefID floorVoxelTraitsDefID = chunk->getVoxelTraitsDefID(x, 0, z);
-					const Chunk::VoxelTraitsDefID wallVoxelTraitsDefID = chunk->getVoxelTraitsDefID(x, 1, z);
+					const VoxelChunk::VoxelTraitsDefID floorVoxelTraitsDefID = chunk->getVoxelTraitsDefID(x, 0, z);
+					const VoxelChunk::VoxelTraitsDefID wallVoxelTraitsDefID = chunk->getVoxelTraitsDefID(x, 1, z);
 					const VoxelTraitsDefinition &floorVoxelTraitsDef = chunk->getVoxelTraitsDef(floorVoxelTraitsDefID);
 					const VoxelTraitsDefinition &wallVoxelTraitsDef = chunk->getVoxelTraitsDef(wallVoxelTraitsDefID);
 					
-					Chunk::TransitionDefID transitionDefID;
+					VoxelChunk::TransitionDefID transitionDefID;
 					const TransitionDefinition *transitionDef = nullptr;
 					if (chunk->tryGetTransitionDefID(x, 1, z, &transitionDefID))
 					{

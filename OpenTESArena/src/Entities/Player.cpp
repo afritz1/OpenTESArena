@@ -233,10 +233,10 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 
 	auto tryGetVoxelTraitsDef = [&activeLevel, &chunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
 	{
-		const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+		const VoxelChunk *chunk = chunkManager.tryGetChunk(coord.chunk);
 		if (chunk != nullptr)
 		{
-			const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
 			return &voxelTraitsDef;
 		}
@@ -299,7 +299,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 		}
 		else
 		{
-			const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+			const VoxelChunk *chunk = chunkManager.tryGetChunk(coord.chunk);
 			DebugAssert(chunk != nullptr);
 
 			// General voxel collision.
@@ -327,7 +327,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 					const VoxelInt3 &voxel = coord.voxel;
 
 					// Check if there is a level change transition definition for this voxel.
-					Chunk::TransitionDefID transitionDefID;
+					VoxelChunk::TransitionDefID transitionDefID;
 					if (!chunk->tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 					{
 						return false;

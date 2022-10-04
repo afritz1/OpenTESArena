@@ -22,11 +22,11 @@ namespace
 		SNInt *outStartX, int *outStartY, WEInt *outStartZ, SNInt *outEndX, int *outEndY, WEInt *outEndZ)
 	{
 		*outStartX = levelOffset.x;
-		*outEndX = std::min(*outStartX + Chunk::WIDTH, levelWidth);
+		*outEndX = std::min(*outStartX + VoxelChunk::WIDTH, levelWidth);
 		*outStartY = 0;
 		*outEndY = levelHeight;
 		*outStartZ = levelOffset.y;
-		*outEndZ = std::min(*outStartZ + Chunk::DEPTH, levelDepth);
+		*outEndZ = std::min(*outStartZ + VoxelChunk::DEPTH, levelDepth);
 	}
 
 	bool IsInChunkWritingRange(const LevelInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
@@ -52,22 +52,22 @@ namespace
 			levelPosition.z - static_cast<WEDouble>(chunkStartZ));
 	}
 
-	Chunk::VoxelMeshDefID LevelVoxelMeshDefIdToChunkVoxelMeshDefID(LevelDefinition::VoxelMeshDefID levelVoxelDefID)
+	VoxelChunk::VoxelMeshDefID LevelVoxelMeshDefIdToChunkVoxelMeshDefID(LevelDefinition::VoxelMeshDefID levelVoxelDefID)
 	{
 		// Chunks have an air definition at ID 0.
-		return static_cast<Chunk::VoxelMeshDefID>(levelVoxelDefID + 1);
+		return static_cast<VoxelChunk::VoxelMeshDefID>(levelVoxelDefID + 1);
 	}
 
-	Chunk::VoxelTextureDefID LevelVoxelTextureDefIdToChunkVoxelTextureDefID(LevelDefinition::VoxelTextureDefID levelVoxelDefID)
+	VoxelChunk::VoxelTextureDefID LevelVoxelTextureDefIdToChunkVoxelTextureDefID(LevelDefinition::VoxelTextureDefID levelVoxelDefID)
 	{
 		// Chunks have an air definition at ID 0.
-		return static_cast<Chunk::VoxelTextureDefID>(levelVoxelDefID + 1);
+		return static_cast<VoxelChunk::VoxelTextureDefID>(levelVoxelDefID + 1);
 	}
 
-	Chunk::VoxelTraitsDefID LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(LevelDefinition::VoxelTraitsDefID levelVoxelDefID)
+	VoxelChunk::VoxelTraitsDefID LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(LevelDefinition::VoxelTraitsDefID levelVoxelDefID)
 	{
 		// Chunks have an air definition at ID 0.
-		return static_cast<Chunk::VoxelTraitsDefID>(levelVoxelDefID + 1);
+		return static_cast<VoxelChunk::VoxelTraitsDefID>(levelVoxelDefID + 1);
 	}
 }
 
@@ -76,19 +76,19 @@ int ChunkManager::getChunkCount() const
 	return static_cast<int>(this->activeChunks.size());
 }
 
-Chunk &ChunkManager::getChunk(int index)
+VoxelChunk &ChunkManager::getChunk(int index)
 {
 	DebugAssertIndex(this->activeChunks, index);
-	const ChunkPtr &chunkPtr = this->activeChunks[index];
+	const VoxelChunkPtr &chunkPtr = this->activeChunks[index];
 
 	DebugAssert(chunkPtr != nullptr);
 	return *chunkPtr;
 }
 
-const Chunk &ChunkManager::getChunk(int index) const
+const VoxelChunk &ChunkManager::getChunk(int index) const
 {
 	DebugAssertIndex(this->activeChunks, index);
-	const ChunkPtr &chunkPtr = this->activeChunks[index];
+	const VoxelChunkPtr &chunkPtr = this->activeChunks[index];
 
 	DebugAssert(chunkPtr != nullptr);
 	return *chunkPtr;
@@ -97,7 +97,7 @@ const Chunk &ChunkManager::getChunk(int index) const
 std::optional<int> ChunkManager::tryGetChunkIndex(const ChunkInt2 &position) const
 {
 	const auto iter = std::find_if(this->activeChunks.begin(), this->activeChunks.end(),
-		[&position](const ChunkPtr &chunkPtr)
+		[&position](const VoxelChunkPtr &chunkPtr)
 	{
 		return chunkPtr->getPosition() == position;
 	});
@@ -112,13 +112,13 @@ std::optional<int> ChunkManager::tryGetChunkIndex(const ChunkInt2 &position) con
 	}
 }
 
-Chunk *ChunkManager::tryGetChunk(const ChunkInt2 &position)
+VoxelChunk *ChunkManager::tryGetChunk(const ChunkInt2 &position)
 {
 	const std::optional<int> chunkIndex = this->tryGetChunkIndex(position);
 	return chunkIndex.has_value() ? &this->getChunk(*chunkIndex) : nullptr;
 }
 
-const Chunk *ChunkManager::tryGetChunk(const ChunkInt2 &position) const
+const VoxelChunk *ChunkManager::tryGetChunk(const ChunkInt2 &position) const
 {
 	const std::optional<int> chunkIndex = this->tryGetChunkIndex(position);
 	return chunkIndex.has_value() ? &this->getChunk(*chunkIndex) : nullptr;
@@ -141,7 +141,7 @@ void ChunkManager::getAdjacentVoxelIDsInternal(const CoordInt3 &coord, VoxelIdFu
 	{
 		if (chunkIndex.has_value())
 		{
-			const Chunk &chunk = this->getChunk(*chunkIndex);
+			const VoxelChunk &chunk = this->getChunk(*chunkIndex);
 			return voxelIdFunc(chunk, voxel);
 		}
 		else
@@ -166,43 +166,43 @@ void ChunkManager::getAdjacentVoxelIDsInternal(const CoordInt3 &coord, VoxelIdFu
 
 void ChunkManager::getAdjacentVoxelMeshDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-	Chunk::VoxelMeshDefID *outNorthID, Chunk::VoxelMeshDefID *outEastID, Chunk::VoxelMeshDefID *outSouthID,
-	Chunk::VoxelMeshDefID *outWestID)
+	VoxelChunk::VoxelMeshDefID *outNorthID, VoxelChunk::VoxelMeshDefID *outEastID, VoxelChunk::VoxelMeshDefID *outSouthID,
+	VoxelChunk::VoxelMeshDefID *outWestID)
 {
-	auto voxelIdFunc = [](const Chunk &chunk, const VoxelInt3 &voxel)
+	auto voxelIdFunc = [](const VoxelChunk &chunk, const VoxelInt3 &voxel)
 	{
 		return chunk.getVoxelMeshDefID(voxel.x, voxel.y, voxel.z);
 	};
 
-	ChunkManager::getAdjacentVoxelIDsInternal<Chunk::VoxelMeshDefID>(coord, voxelIdFunc, Chunk::AIR_VOXEL_MESH_DEF_ID,
+	ChunkManager::getAdjacentVoxelIDsInternal<VoxelChunk::VoxelMeshDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_MESH_DEF_ID,
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 void ChunkManager::getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-	Chunk::VoxelTextureDefID *outNorthID, Chunk::VoxelTextureDefID *outEastID, Chunk::VoxelTextureDefID *outSouthID,
-	Chunk::VoxelTextureDefID *outWestID)
+	VoxelChunk::VoxelTextureDefID *outNorthID, VoxelChunk::VoxelTextureDefID *outEastID, VoxelChunk::VoxelTextureDefID *outSouthID,
+	VoxelChunk::VoxelTextureDefID *outWestID)
 {
-	auto voxelIdFunc = [](const Chunk &chunk, const VoxelInt3 &voxel)
+	auto voxelIdFunc = [](const VoxelChunk &chunk, const VoxelInt3 &voxel)
 	{
 		return chunk.getVoxelTextureDefID(voxel.x, voxel.y, voxel.z);
 	};
 
-	ChunkManager::getAdjacentVoxelIDsInternal<Chunk::VoxelTextureDefID>(coord, voxelIdFunc, Chunk::AIR_VOXEL_TEXTURE_DEF_ID,
+	ChunkManager::getAdjacentVoxelIDsInternal<VoxelChunk::VoxelTextureDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_TEXTURE_DEF_ID,
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 void ChunkManager::getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-	Chunk::VoxelTraitsDefID *outNorthID, Chunk::VoxelTraitsDefID *outEastID, Chunk::VoxelTraitsDefID *outSouthID,
-	Chunk::VoxelTraitsDefID *outWestID)
+	VoxelChunk::VoxelTraitsDefID *outNorthID, VoxelChunk::VoxelTraitsDefID *outEastID, VoxelChunk::VoxelTraitsDefID *outSouthID,
+	VoxelChunk::VoxelTraitsDefID *outWestID)
 {
-	auto voxelIdFunc = [](const Chunk &chunk, const VoxelInt3 &voxel)
+	auto voxelIdFunc = [](const VoxelChunk &chunk, const VoxelInt3 &voxel)
 	{
 		return chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
 	};
 
-	ChunkManager::getAdjacentVoxelIDsInternal<Chunk::VoxelTraitsDefID>(coord, voxelIdFunc, Chunk::AIR_VOXEL_TRAITS_DEF_ID,
+	ChunkManager::getAdjacentVoxelIDsInternal<VoxelChunk::VoxelTraitsDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID,
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
@@ -216,7 +216,7 @@ int ChunkManager::spawnChunk()
 	else
 	{
 		// Always allow expanding in the event that chunk distance is increased.
-		this->activeChunks.emplace_back(std::make_unique<Chunk>());
+		this->activeChunks.emplace_back(std::make_unique<VoxelChunk>());
 	}
 
 	return static_cast<int>(this->activeChunks.size()) - 1;
@@ -225,7 +225,7 @@ int ChunkManager::spawnChunk()
 void ChunkManager::recycleChunk(int index)
 {
 	DebugAssertIndex(this->activeChunks, index);
-	ChunkPtr &chunkPtr = this->activeChunks[index];
+	VoxelChunkPtr &chunkPtr = this->activeChunks[index];
 	const ChunkInt2 chunkPos = chunkPtr->getPosition();
 
 	// @todo: save chunk changes
@@ -237,7 +237,7 @@ void ChunkManager::recycleChunk(int index)
 	this->activeChunks.erase(this->activeChunks.begin() + index);
 }
 
-void ChunkManager::populateChunkVoxelDefs(Chunk &chunk, const LevelInfoDefinition &levelInfoDefinition)
+void ChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelInfoDefinition &levelInfoDefinition)
 {
 	for (int i = 0; i < levelInfoDefinition.getVoxelMeshDefCount(); i++)
 	{
@@ -258,7 +258,7 @@ void ChunkManager::populateChunkVoxelDefs(Chunk &chunk, const LevelInfoDefinitio
 	}
 }
 
-void ChunkManager::populateChunkVoxels(Chunk &chunk, const LevelDefinition &levelDefinition,
+void ChunkManager::populateChunkVoxels(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
 	const LevelInt2 &levelOffset)
 {
 	SNInt startX, endX;
@@ -278,9 +278,9 @@ void ChunkManager::populateChunkVoxels(Chunk &chunk, const LevelDefinition &leve
 				const LevelDefinition::VoxelMeshDefID levelVoxelMeshDefID = levelDefinition.getVoxelMeshID(x, y, z);
 				const LevelDefinition::VoxelTextureDefID levelVoxelTextureDefID = levelDefinition.getVoxelTextureID(x, y, z);
 				const LevelDefinition::VoxelTraitsDefID levelVoxelTraitsDefID = levelDefinition.getVoxelTraitsID(x, y, z);
-				const Chunk::VoxelMeshDefID voxelMeshDefID = LevelVoxelMeshDefIdToChunkVoxelMeshDefID(levelVoxelMeshDefID);
-				const Chunk::VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
-				const Chunk::VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
+				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = LevelVoxelMeshDefIdToChunkVoxelMeshDefID(levelVoxelMeshDefID);
+				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
+				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
 				chunk.setVoxelMeshDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelMeshDefID);
 				chunk.setVoxelTextureDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelTextureDefID);
 				chunk.setVoxelTraitsDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelTraitsDefID);
@@ -289,7 +289,7 @@ void ChunkManager::populateChunkVoxels(Chunk &chunk, const LevelDefinition &leve
 	}
 }
 
-void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &levelDefinition,
+void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
 	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset)
 {
 	SNInt startX, endX;
@@ -304,7 +304,7 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::TransitionPlacementDef &placementDef = levelDefinition.getTransitionPlacementDef(i);
 		const TransitionDefinition &transitionDef = levelInfoDefinition.getTransitionDef(placementDef.id);
 		
-		std::optional<Chunk::TransitionDefID> transitionDefID;
+		std::optional<VoxelChunk::TransitionDefID> transitionDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
@@ -326,7 +326,7 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::TriggerPlacementDef &placementDef = levelDefinition.getTriggerPlacementDef(i);
 		const TriggerDefinition &triggerDef = levelInfoDefinition.getTriggerDef(placementDef.id);
 		
-		std::optional<Chunk::TriggerDefID> triggerDefID;
+		std::optional<VoxelChunk::TriggerDefID> triggerDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
@@ -348,7 +348,7 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::LockPlacementDef &placementDef = levelDefinition.getLockPlacementDef(i);
 		const LockDefinition &lockDef = levelInfoDefinition.getLockDef(placementDef.id);
 		
-		std::optional<Chunk::LockDefID> lockDefID;
+		std::optional<VoxelChunk::LockDefID> lockDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
@@ -371,7 +371,7 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::BuildingNamePlacementDef &placementDef = levelDefinition.getBuildingNamePlacementDef(i);
 		const std::string &buildingName = levelInfoDefinition.getBuildingName(placementDef.id);
 		
-		std::optional<Chunk::BuildingNameID> buildingNameID;
+		std::optional<VoxelChunk::BuildingNameID> buildingNameID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
@@ -393,7 +393,7 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::DoorPlacementDef &placementDef = levelDefinition.getDoorPlacementDef(i);
 		const DoorDefinition &doorDef = levelInfoDefinition.getDoorDef(placementDef.id);
 
-		std::optional<Chunk::DoorDefID> doorDefID;
+		std::optional<VoxelChunk::DoorDefID> doorDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
@@ -415,7 +415,7 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::ChasmPlacementDef &placementDef = levelDefinition.getChasmPlacementDef(i);
 		const ChasmDefinition &chasmDef = levelInfoDefinition.getChasmDef(placementDef.id);
 
-		std::optional<Chunk::ChasmDefID> chasmDefID;
+		std::optional<VoxelChunk::ChasmDefID> chasmDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
@@ -432,19 +432,19 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 	}
 }
 
-void ChunkManager::populateWildChunkBuildingNames(Chunk &chunk,
+void ChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
 	const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo, const LevelInfoDefinition &levelInfoDefinition)
 {
 	// Cache of level building names that have been added to the chunk.
-	std::unordered_map<LevelDefinition::BuildingNameID, Chunk::BuildingNameID> buildingNameIDs;
+	std::unordered_map<LevelDefinition::BuildingNameID, VoxelChunk::BuildingNameID> buildingNameIDs;
 
-	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
 			{
-				Chunk::TransitionDefID transitionDefID;
+				VoxelChunk::TransitionDefID transitionDefID;
 				if (!chunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
 				{
 					continue;
@@ -467,7 +467,7 @@ void ChunkManager::populateWildChunkBuildingNames(Chunk &chunk,
 				}
 
 				const std::string &buildingName = levelInfoDefinition.getBuildingName(buildingNameID);
-				Chunk::BuildingNameID chunkBuildingNameID;
+				VoxelChunk::BuildingNameID chunkBuildingNameID;
 				const auto nameIter = buildingNameIDs.find(buildingNameID);
 				if (nameIter != buildingNameIDs.end())
 				{
@@ -485,19 +485,19 @@ void ChunkManager::populateWildChunkBuildingNames(Chunk &chunk,
 	}
 }
 
-void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
+void ChunkManager::populateChunkVoxelInsts(VoxelChunk &chunk)
 {
 	// @todo: only iterate over chunk writing ranges
 
 	DebugLogError("Not implemented: ChunkManager::populateChunkVoxelInsts()");
 
-	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
 			{
-				/*const Chunk::VoxelID voxelID = chunk.getVoxelID(x, y, z);
+				/*const VoxelChunk::VoxelID voxelID = chunk.getVoxelID(x, y, z);
 				const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 				if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 				{
@@ -524,7 +524,7 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 	}
 }
 
-void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &levelDefinition,
+void ChunkManager::populateChunkEntities(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
 	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
 	const EntityGeneration::EntityGenInfo &entityGenInfo,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
@@ -597,7 +597,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, EntityManager &entityManager)
 {
-	Chunk &chunk = this->getChunk(index);
+	VoxelChunk &chunk = this->getChunk(index);
 	
 	// Notify the entity manager about the new chunk so entities can be spawned in it.
 	entityManager.addChunk(chunkPos);
@@ -615,8 +615,8 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 
 		// @todo: populate chunk entirely from default empty chunk (fast copy).
 		// - probably get from MapDefinition::Interior eventually.
-		constexpr Chunk::VoxelMeshDefID floorVoxelMeshDefID = 2;
-		const Chunk::VoxelMeshDefID ceilingVoxelMeshDefID = [&levelInfoDefinition]()
+		constexpr VoxelChunk::VoxelMeshDefID floorVoxelMeshDefID = 2;
+		const VoxelChunk::VoxelMeshDefID ceilingVoxelMeshDefID = [&levelInfoDefinition]()
 		{
 			for (int i = 0; i < levelInfoDefinition.getVoxelTraitsDefCount(); i++)
 			{
@@ -629,19 +629,19 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 			}
 
 			// No ceiling found, use air instead.
-			return Chunk::AIR_VOXEL_MESH_DEF_ID;
+			return VoxelChunk::AIR_VOXEL_MESH_DEF_ID;
 		}();
 
-		constexpr Chunk::VoxelTextureDefID floorVoxelTextureDefID = floorVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> texture def ID mapping.
-		const Chunk::VoxelTextureDefID ceilingVoxelTextureDefID = ceilingVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> texture def ID mapping.
+		constexpr VoxelChunk::VoxelTextureDefID floorVoxelTextureDefID = floorVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> texture def ID mapping.
+		const VoxelChunk::VoxelTextureDefID ceilingVoxelTextureDefID = ceilingVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> texture def ID mapping.
 
-		constexpr Chunk::VoxelTraitsDefID floorVoxelTraitsDefID = floorVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
-		const Chunk::VoxelTraitsDefID ceilingVoxelTraitsDefID = ceilingVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
+		constexpr VoxelChunk::VoxelTraitsDefID floorVoxelTraitsDefID = floorVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
+		const VoxelChunk::VoxelTraitsDefID ceilingVoxelTraitsDefID = ceilingVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
 
 		const int chunkHeight = chunk.getHeight();
-		for (WEInt z = 0; z < Chunk::DEPTH; z++)
+		for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
 		{
-			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
 			{
 				chunk.setVoxelMeshDefID(x, 0, z, floorVoxelMeshDefID);
 				chunk.setVoxelTextureDefID(x, 0, z, floorVoxelTextureDefID);
@@ -677,9 +677,9 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// Chunks outside the level are wrapped but only have floor voxels.		
-		for (WEInt z = 0; z < Chunk::DEPTH; z++)
+		for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
 		{
-			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
 			{
 				auto wrapLevelVoxel = [](int voxel, int levelDim)
 				{
@@ -705,9 +705,9 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 				const LevelDefinition::VoxelMeshDefID levelVoxelMeshDefID = levelDefinition.getVoxelMeshID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
 				const LevelDefinition::VoxelTextureDefID levelVoxelTextureDefID = levelDefinition.getVoxelTextureID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
 				const LevelDefinition::VoxelTraitsDefID levelVoxelTraitsDefID = levelDefinition.getVoxelTraitsID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
-				const Chunk::VoxelMeshDefID voxelMeshDefID = LevelVoxelMeshDefIdToChunkVoxelMeshDefID(levelVoxelMeshDefID);
-				const Chunk::VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
-				const Chunk::VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
+				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = LevelVoxelMeshDefIdToChunkVoxelMeshDefID(levelVoxelMeshDefID);
+				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
+				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
 				chunk.setVoxelMeshDefID(x, 0, z, voxelMeshDefID);
 				chunk.setVoxelTextureDefID(x, 0, z, voxelTextureDefID);
 				chunk.setVoxelTraitsDefID(x, 0, z, voxelTraitsDefID);
@@ -739,8 +739,8 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// Copy level definition directly into chunk.
-		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
-		DebugAssert(levelDefinition.getDepth() == Chunk::DEPTH);
+		DebugAssert(levelDefinition.getWidth() == VoxelChunk::WIDTH);
+		DebugAssert(levelDefinition.getDepth() == VoxelChunk::DEPTH);
 		const LevelInt2 levelOffset = LevelInt2::Zero;
 		this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 		this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
@@ -763,18 +763,18 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std
 	}
 }
 
-void ChunkManager::updateChunkPerimeter(Chunk &chunk)
+void ChunkManager::updateChunkPerimeter(VoxelChunk &chunk)
 {
 	auto tryUpdateChasm = [this, &chunk](const VoxelInt3 &voxel)
 	{
 		const CoordInt3 coord(chunk.getPosition(), voxel);
 		auto getChasmFaces = [this, &coord](bool *outNorth, bool *outEast, bool *outSouth, bool *outWest)
 		{
-			auto getChasmFace = [this](const std::optional<int> &chunkIndex, Chunk::VoxelMeshDefID meshDefID)
+			auto getChasmFace = [this](const std::optional<int> &chunkIndex, VoxelChunk::VoxelMeshDefID meshDefID)
 			{
 				if (chunkIndex.has_value())
 				{
-					const Chunk &chunk = this->getChunk(*chunkIndex);
+					const VoxelChunk &chunk = this->getChunk(*chunkIndex);
 					const VoxelMeshDefinition &meshDef = chunk.getVoxelMeshDef(meshDefID);
 					return meshDef.enablesNeighborGeometry;
 				}
@@ -785,7 +785,7 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 			};
 
 			std::optional<int> outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex;
-			Chunk::VoxelMeshDefID northDefID, eastDefID, southDefID, westDefID;
+			VoxelChunk::VoxelMeshDefID northDefID, eastDefID, southDefID, westDefID;
 			this->getAdjacentVoxelMeshDefIDs(coord, &outNorthChunkIndex, &outEastChunkIndex, &outSouthChunkIndex,
 				&outWestChunkIndex, &northDefID, &eastDefID, &southDefID, &westDefID);
 
@@ -818,7 +818,7 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 		else
 		{
 			// No voxel instance yet. If it's a chasm, add a new voxel instance.
-			const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
 			if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
 			{
@@ -836,24 +836,24 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 	};
 
 	// North and south sides.
-	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
 			constexpr SNInt northX = 0;
-			constexpr SNInt southX = Chunk::WIDTH - 1;
+			constexpr SNInt southX = VoxelChunk::WIDTH - 1;
 			tryUpdateChasm(VoxelInt3(northX, y, z));
 			tryUpdateChasm(VoxelInt3(southX, y, z));
 		}
 	}
 
 	// East and west sides, minus the corners.
-	for (SNInt x = 1; x < (Chunk::WIDTH - 1); x++)
+	for (SNInt x = 1; x < (VoxelChunk::WIDTH - 1); x++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
 			constexpr WEInt eastZ = 0;
-			constexpr WEInt westZ = Chunk::DEPTH - 1;
+			constexpr WEInt westZ = VoxelChunk::DEPTH - 1;
 			tryUpdateChasm(VoxelInt3(x, y, eastZ));
 			tryUpdateChasm(VoxelInt3(x, y, westZ));
 		}
@@ -873,7 +873,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const Coor
 	// Free any out-of-range chunks.
 	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
 	{
-		const ChunkPtr &chunkPtr = this->activeChunks[i];
+		const VoxelChunkPtr &chunkPtr = this->activeChunks[i];
 		const ChunkInt2 chunkPos = chunkPtr->getPosition();
 		if (!ChunkUtils::isWithinActiveRange(centerChunkPos, chunkPos, chunkDistance))
 		{
@@ -911,7 +911,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const Coor
 	const int activeChunkCount = static_cast<int>(this->activeChunks.size());
 	for (int i = 0; i < activeChunkCount; i++)
 	{
-		ChunkPtr &chunkPtr = this->activeChunks[i];
+		VoxelChunkPtr &chunkPtr = this->activeChunks[i];
 		chunkPtr->update(dt, playerCoord, ceilingScale, audioManager);
 	}
 
@@ -921,7 +921,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const Coor
 	// edges, so it should be very fast.
 	for (int i = 0; i < activeChunkCount; i++)
 	{
-		ChunkPtr &chunkPtr = this->activeChunks[i];
+		VoxelChunkPtr &chunkPtr = this->activeChunks[i];
 		this->updateChunkPerimeter(*chunkPtr);
 	}
 }
@@ -930,7 +930,7 @@ void ChunkManager::cleanUp()
 {
 	for (int i = 0; i < this->getChunkCount(); i++)
 	{
-		Chunk &chunk = this->getChunk(i);
+		VoxelChunk &chunk = this->getChunk(i);
 		chunk.clearDirtyVoxels();
 	}
 }

@@ -15,7 +15,7 @@
 
 #include "components/utilities/BufferView.h"
 
-class Chunk;
+class VoxelChunk;
 class WeatherInstance;
 
 namespace RendererUtils
@@ -49,10 +49,10 @@ namespace RendererUtils
 		NewDouble2 *outMiddle, NewDouble2 *outEnd);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
-	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Chunk &chunk);
+	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const VoxelChunk &chunk);
 
 	// Gets the percent fade of a voxel, or 1 if the given voxel is not fading.
-	double getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const Chunk &chunk);
+	double getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const VoxelChunk &chunk);
 
 	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
 	// and the zoom of the camera (dependent on vertical field of view).

@@ -815,14 +815,14 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 		const CoordInt2 entityVoxelCoord(
 			visState2D.flatPosition.chunk,
 			VoxelUtils::pointToVoxel(visState2D.flatPosition.point));
-		const Chunk *chunk = chunkManager.tryGetChunk(entityVoxelCoord.chunk);
+		const VoxelChunk *chunk = chunkManager.tryGetChunk(entityVoxelCoord.chunk);
 		if (chunk == nullptr)
 		{
 			// Not sure this is ever reachable, but handle just in case.
 			return 0.0;
 		}
 
-		const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
 		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
 
 		if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)

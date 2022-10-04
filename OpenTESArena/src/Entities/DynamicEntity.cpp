@@ -360,7 +360,7 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 			{
 				auto isSuitableVoxel = [&chunkManager](const CoordInt2 &coord)
 				{
-					const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+					const VoxelChunk *chunk = chunkManager.tryGetChunk(coord.chunk);
 
 					auto isValidVoxel = [chunk]()
 					{
@@ -370,7 +370,7 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 					auto isPassableVoxel = [&coord, chunk]()
 					{
 						const VoxelInt3 voxel(coord.voxel.x, 1, coord.voxel.y);
-						const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+						const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
 						const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
 						return voxelTraitsDef.type == ArenaTypes::VoxelType::None;
 					};
@@ -378,7 +378,7 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 					auto isWalkableVoxel = [&coord, chunk]()
 					{
 						const VoxelInt3 voxel(coord.voxel.x, 0, coord.voxel.y);
-						const Chunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+						const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
 						const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
 						return voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
 					};
