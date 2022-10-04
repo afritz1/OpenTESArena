@@ -17,41 +17,6 @@
 
 namespace
 {
-	// For iterating only the portion of a level that the chunk overlaps.
-	void GetChunkWritingRanges(const LevelInt2 &levelOffset, SNInt levelWidth, int levelHeight, WEInt levelDepth,
-		SNInt *outStartX, int *outStartY, WEInt *outStartZ, SNInt *outEndX, int *outEndY, WEInt *outEndZ)
-	{
-		*outStartX = levelOffset.x;
-		*outEndX = std::min(*outStartX + VoxelChunk::WIDTH, levelWidth);
-		*outStartY = 0;
-		*outEndY = levelHeight;
-		*outStartZ = levelOffset.y;
-		*outEndZ = std::min(*outStartZ + VoxelChunk::DEPTH, levelDepth);
-	}
-
-	bool IsInChunkWritingRange(const LevelInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
-		WEInt startZ, WEInt endZ)
-	{
-		return (position.x >= startX) && (position.x < endX) && (position.y >= startY) && (position.y < endY) &&
-			(position.z >= startZ) && (position.z < endZ);
-	}
-
-	VoxelInt3 MakeChunkVoxelFromLevel(const LevelInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
-	{
-		return VoxelInt3(
-			levelPosition.x - chunkStartX,
-			levelPosition.y - chunkStartY,
-			levelPosition.z - chunkStartZ);
-	}
-
-	VoxelDouble3 MakeChunkPointFromLevel(const LevelDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
-	{
-		return VoxelDouble3(
-			levelPosition.x - static_cast<SNDouble>(chunkStartX),
-			levelPosition.y - static_cast<double>(chunkStartY),
-			levelPosition.z - static_cast<WEDouble>(chunkStartZ));
-	}
-
 	VoxelChunk::VoxelMeshDefID LevelVoxelMeshDefIdToChunkVoxelMeshDefID(LevelDefinition::VoxelMeshDefID levelVoxelDefID)
 	{
 		// Chunks have an air definition at ID 0.
@@ -264,7 +229,7 @@ void ChunkManager::populateChunkVoxels(VoxelChunk &chunk, const LevelDefinition 
 	SNInt startX, endX;
 	int startY, endY;
 	WEInt startZ, endZ;
-	GetChunkWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
+	ChunkUtils::GetWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
 		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
 
 	// Set voxels.
@@ -295,7 +260,7 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 	SNInt startX, endX;
 	int startY, endY;
 	WEInt startZ, endZ;
-	GetChunkWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
+	ChunkUtils::GetWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
 		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
 
 	// Add transitions.
@@ -307,14 +272,14 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 		std::optional<VoxelChunk::TransitionDefID> transitionDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
+			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!transitionDefID.has_value())
 				{
 					transitionDefID = chunk.addTransition(TransitionDefinition(transitionDef));
 				}
 
-				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
+				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addTransitionPosition(*transitionDefID, voxel);
 			}
 		}
@@ -329,14 +294,14 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 		std::optional<VoxelChunk::TriggerDefID> triggerDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
+			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!triggerDefID.has_value())
 				{
 					triggerDefID = chunk.addTrigger(TriggerDefinition(triggerDef));
 				}
 
-				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
+				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addTriggerPosition(*triggerDefID, voxel);
 			}
 		}
@@ -351,14 +316,14 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 		std::optional<VoxelChunk::LockDefID> lockDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
+			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!lockDefID.has_value())
 				{
 					lockDefID = chunk.addLock(LockDefinition(lockDef));
 				}
 
-				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
+				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addLockPosition(*lockDefID, voxel);
 			}
 		}
@@ -374,14 +339,14 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 		std::optional<VoxelChunk::BuildingNameID> buildingNameID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
+			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!buildingNameID.has_value())
 				{
 					buildingNameID = chunk.addBuildingName(std::string(buildingName));
 				}
 
-				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
+				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addBuildingNamePosition(*buildingNameID, voxel);
 			}
 		}
@@ -396,14 +361,14 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 		std::optional<VoxelChunk::DoorDefID> doorDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
+			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!doorDefID.has_value())
 				{
 					doorDefID = chunk.addDoorDef(DoorDefinition(doorDef));
 				}
 
-				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
+				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addDoorPosition(*doorDefID, voxel);
 			}
 		}
@@ -418,14 +383,14 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 		std::optional<VoxelChunk::ChasmDefID> chasmDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
+			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!chasmDefID.has_value())
 				{
 					chasmDefID = chunk.addChasmDef(ChasmDefinition(chasmDef));
 				}
 
-				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
+				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addChasmPosition(*chasmDefID, voxel);
 			}
 		}
@@ -534,7 +499,7 @@ void ChunkManager::populateChunkEntities(VoxelChunk &chunk, const LevelDefinitio
 	SNInt startX, endX;
 	int startY, endY;
 	WEInt startZ, endZ;
-	GetChunkWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
+	ChunkUtils::GetWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
 		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
 
 	// Cosmetic random (initial creature sound timing, etc.).
@@ -554,14 +519,14 @@ void ChunkManager::populateChunkEntities(VoxelChunk &chunk, const LevelDefinitio
 		{
 			const double ceilingScale = levelInfoDefinition.getCeilingScale();
 			const LevelInt3 voxelPosition = VoxelUtils::pointToVoxel(position, ceilingScale);
-			if (IsInChunkWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
+			if (ChunkUtils::IsInWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!entityDefID.has_value())
 				{
 					entityDefID = entityManager.addEntityDef(EntityDefinition(entityDef), entityDefLibrary);
 				}
 
-				const VoxelDouble3 point = MakeChunkPointFromLevel(position, startX, startY, startZ);
+				const VoxelDouble3 point = ChunkUtils::MakeChunkPointFromLevel(position, startX, startY, startZ);
 				Entity *entity = EntityGeneration::makeEntity(entityType, entityDefType, *entityDefID,
 					entityDef, animDef, entityGenInfo, random, entityManager);
 
