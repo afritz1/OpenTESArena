@@ -162,22 +162,22 @@ namespace sgTexture
 		}
 	}
 
-	void LoadChasmDefTextures(Chunk::ChasmID chasmID, const Chunk &chunk, std::vector<SceneGraph::LoadedChasmFloorTextureList> &chasmTextureLists,
+	void LoadChasmDefTextures(Chunk::ChasmDefID chasmDefID, const Chunk &chunk, std::vector<SceneGraph::LoadedChasmFloorTextureList> &chasmTextureLists,
 		std::vector<SceneGraph::LoadedChasmTextureKey> &chasmTextureKeys, TextureManager &textureManager, Renderer &renderer)
 	{
 		const ChunkInt2 chunkPos = chunk.getPosition();
-		const ChasmDefinition &chasmDef = chunk.getChasm(chasmID);
+		const ChasmDefinition &chasmDef = chunk.getChasmDef(chasmDefID);
 
 		// Check if this chasm already has a mapping.
 		const auto keyIter = std::find_if(chasmTextureKeys.begin(), chasmTextureKeys.end(),
-			[chasmID, &chunkPos](const SceneGraph::LoadedChasmTextureKey &loadedKey)
+			[chasmDefID, &chunkPos](const SceneGraph::LoadedChasmTextureKey &loadedKey)
 		{
-			return (loadedKey.chasmID == chasmID) && (loadedKey.chunkPos == chunkPos);
+			return (loadedKey.chasmDefID == chasmDefID) && (loadedKey.chunkPos == chunkPos);
 		});
 
 		if (keyIter != chasmTextureKeys.end())
 		{
-			DebugLog("Chasm texture key already loaded for chasm \"" + std::to_string(chasmID) + "\" in chunk (" + chunkPos.toString() + ").");
+			DebugLog("Chasm texture key already loaded for chasm def ID \"" + std::to_string(chasmDefID) + "\" in chunk (" + chunkPos.toString() + ").");
 			return;
 		}
 
@@ -192,12 +192,12 @@ namespace sgTexture
 		if (chasmIter != chasmTextureLists.end())
 		{
 			// Add a key referencing that same mapping for this chasmID + chunkPos.
-			DebugLog("Chasm texture(s) already loaded for chasm \"" + std::to_string(chasmID) + "\" in chunk (" + chunkPos.toString() + ").");
+			DebugLog("Chasm texture(s) already loaded for chasm def ID \"" + std::to_string(chasmDefID) + "\" in chunk (" + chunkPos.toString() + ").");
 
 			const int loadedChasmFloorListIndex = static_cast<int>(std::distance(chasmTextureLists.begin(), chasmIter));
 			const int loadedChasmWallIndex = loadedChasmFloorListIndex; // @todo
 			DebugLogError("Not implemented: loadedChasmWallIndex");
-			key.init(chunkPos, chasmID, loadedChasmFloorListIndex, loadedChasmWallIndex);
+			key.init(chunkPos, chasmDefID, loadedChasmFloorListIndex, loadedChasmWallIndex);
 		}
 		else
 		{
@@ -270,7 +270,7 @@ namespace sgTexture
 
 			const int chasmFloorListIndex = static_cast<int>(chasmTextureLists.size()) - 1;
 			const int chasmWallIndex = chasmFloorListIndex; // @todo
-			key.init(chunkPos, chasmID, chasmFloorListIndex, chasmWallIndex);
+			key.init(chunkPos, chasmDefID, chasmFloorListIndex, chasmWallIndex);
 		}
 
 		chasmTextureKeys.emplace_back(std::move(key));
@@ -326,13 +326,13 @@ int SceneGraph::LoadedChasmFloorTextureList::getTextureIndex(double chasmAnimPer
 	}
 }
 
-void SceneGraph::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID,
+void SceneGraph::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID,
 	int chasmFloorListIndex, int chasmWallIndex)
 {
 	DebugAssert(chasmFloorListIndex >= 0);
 	DebugAssert(chasmWallIndex >= 0);
 	this->chunkPos = chunkPos;
-	this->chasmID = chasmID;
+	this->chasmDefID = chasmDefID;
 	this->chasmFloorListIndex = chasmFloorListIndex;
 	this->chasmWallIndex = chasmWallIndex;
 }
@@ -350,17 +350,17 @@ ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAsset &textureAsset) 
 	return objectTextureRef.get();
 }
 
-ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID,
+ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID,
 	double chasmAnimPercent) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
-		[&chunkPos, chasmID](const LoadedChasmTextureKey &key)
+		[&chunkPos, chasmDefID](const LoadedChasmTextureKey &key)
 	{
-		return (key.chunkPos == chunkPos) && (key.chasmID == chasmID);
+		return (key.chunkPos == chunkPos) && (key.chasmDefID == chasmDefID);
 	});
 
-	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm ID \"" +
-		std::to_string(chasmID) + "\" in chunk (" + chunkPos.toString() + ").");
+	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm def ID \"" +
+		std::to_string(chasmDefID) + "\" in chunk (" + chunkPos.toString() + ").");
 
 	const int floorListIndex = keyIter->chasmFloorListIndex;
 	const LoadedChasmFloorTextureList &textureList = this->chasmFloorTextureLists[floorListIndex];
@@ -371,16 +371,16 @@ ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, Ch
 	return objectTextureRef.get();
 }
 
-ObjectTextureID SceneGraph::getChasmWallTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID) const
+ObjectTextureID SceneGraph::getChasmWallTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
-		[&chunkPos, chasmID](const LoadedChasmTextureKey &key)
+		[&chunkPos, chasmDefID](const LoadedChasmTextureKey &key)
 	{
-		return (key.chunkPos == chunkPos) && (key.chasmID == chasmID);
+		return (key.chunkPos == chunkPos) && (key.chasmDefID == chasmDefID);
 	});
 
-	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm ID \"" +
-		std::to_string(chasmID) + "\" in chunk (" + chunkPos.toString() + ").");
+	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm def ID \"" +
+		std::to_string(chasmDefID) + "\" in chunk (" + chunkPos.toString() + ").");
 
 	const int wallIndex = keyIter->chasmWallIndex;
 	const LoadedChasmWallTexture &wallTexture = this->chasmWallTextures[wallIndex];
@@ -415,10 +415,10 @@ void SceneGraph::loadVoxelTextures(const Chunk &chunk, TextureManager &textureMa
 		sgTexture::LoadVoxelDefTextures(voxelTextureDef, this->voxelTextures, textureManager, renderer);
 	}
 	
-	for (int i = 0; i < chunk.getChasmCount(); i++)
+	for (int i = 0; i < chunk.getChasmDefCount(); i++)
 	{
-		const Chunk::ChasmID chasmID = static_cast<Chunk::ChasmID>(i);
-		sgTexture::LoadChasmDefTextures(chasmID, chunk, this->chasmFloorTextureLists, this->chasmTextureKeys,
+		const Chunk::ChasmDefID chasmDefID = static_cast<Chunk::ChasmDefID>(i);
+		sgTexture::LoadChasmDefTextures(chasmDefID, chunk, this->chasmFloorTextureLists, this->chasmTextureKeys,
 			textureManager, renderer);
 	}
 }
@@ -565,8 +565,8 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &ch
 				const bool allowsBackFaces = voxelMeshDef.allowsBackFaces;
 				const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
-				Chunk::ChasmID chasmID;
-				const bool usesVoxelTextures = !chunk.tryGetChasmID(x, y, z, &chasmID);
+				Chunk::ChasmDefID chasmDefID;
+				const bool usesVoxelTextures = !chunk.tryGetChasmDefID(x, y, z, &chasmDefID);
 
 				const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
 				for (int bufferIndex = 0; bufferIndex < graphVoxelDef.opaqueIndexBufferIdCount; bufferIndex++)
@@ -593,7 +593,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &ch
 					}
 					else
 					{
-						textureID = this->getChasmFloorTextureID(chunkPos, chasmID, chasmAnimPercent);
+						textureID = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
 					}
 
 					if (textureID < 0)
@@ -631,7 +631,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const Chunk &ch
 					}
 					else
 					{
-						textureID = this->getChasmWallTextureID(chunkPos, chasmID);
+						textureID = this->getChasmWallTextureID(chunkPos, chasmDefID);
 					}
 
 					if (textureID < 0)

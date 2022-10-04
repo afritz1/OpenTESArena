@@ -150,98 +150,92 @@ const VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstanc
 	return index.has_value() ? &this->voxelInsts[*index] : nullptr;
 }
 
-const TransitionDefinition *Chunk::tryGetTransition(const VoxelInt3 &voxel) const
+bool Chunk::tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID *outID) const
 {
-	const auto iter = this->transitionDefIndices.find(voxel);
+	const auto iter = this->transitionDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->transitionDefIndices.end())
 	{
-		const int index = iter->second;
-		DebugAssertIndex(this->transitionDefs, index);
-		return &this->transitionDefs[index];
+		const TransitionDefID id = iter->second;
+		DebugAssertIndex(this->transitionDefs, id);
+		*outID = id;
+		return true;
 	}
 	else
 	{
-		return nullptr;
+		return false;
 	}
 }
 
-const TriggerDefinition *Chunk::tryGetTrigger(const VoxelInt3 &voxel) const
+bool Chunk::tryGetTriggerDefID(SNInt x, int y, WEInt z, TriggerDefID *outID) const
 {
-	const auto iter = this->triggerDefIndices.find(voxel);
+	const auto iter = this->triggerDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->triggerDefIndices.end())
 	{
-		const int index = iter->second;
-		DebugAssertIndex(this->triggerDefs, index);
-		return &this->triggerDefs[index];
+		const TriggerDefID id = iter->second;
+		DebugAssertIndex(this->triggerDefs, id);
+		*outID = id;
+		return true;
 	}
 	else
 	{
-		return nullptr;
+		return false;
 	}
 }
 
-const LockDefinition *Chunk::tryGetLock(const VoxelInt3 &voxel) const
+bool Chunk::tryGetLockDefID(SNInt x, int y, WEInt z, LockDefID *outID) const
 {
-	const auto iter = this->lockDefIndices.find(voxel);
+	const auto iter = this->lockDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->lockDefIndices.end())
 	{
-		const int index = iter->second;
-		DebugAssertIndex(this->lockDefs, index);
-		return &this->lockDefs[index];
+		const LockDefID id = iter->second;
+		DebugAssertIndex(this->lockDefs, id);
+		*outID = id;
+		return true;
 	}
 	else
 	{
-		return nullptr;
+		return false;
 	}
 }
 
-const std::string *Chunk::tryGetBuildingName(const VoxelInt3 &voxel) const
+bool Chunk::tryGetBuildingNameID(SNInt x, int y, WEInt z, BuildingNameID *outID) const
 {
-	const auto iter = this->buildingNameIndices.find(voxel);
+	const auto iter = this->buildingNameIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->buildingNameIndices.end())
 	{
-		const int index = iter->second;
-		DebugAssertIndex(this->buildingNames, index);
-		return &this->buildingNames[index];
+		const BuildingNameID id = iter->second;
+		DebugAssertIndex(this->buildingNames, id);
+		*outID = id;
+		return true;
 	}
 	else
 	{
-		return nullptr;
+		return false;
 	}
 }
 
-const DoorDefinition *Chunk::tryGetDoor(const VoxelInt3 &voxel) const
+bool Chunk::tryGetDoorDefID(SNInt x, int y, WEInt z, DoorDefID *outID) const
 {
-	const auto iter = this->doorDefIndices.find(voxel);
+	const auto iter = this->doorDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->doorDefIndices.end())
 	{
-		const int index = iter->second;
-		DebugAssertIndex(this->doorDefs, index);
-		return &this->doorDefs[index];
+		const DoorDefID id = iter->second;
+		DebugAssertIndex(this->doorDefs, id);
+		*outID = id;
+		return true;
 	}
 	else
 	{
-		return nullptr;
+		return false;
 	}
 }
 
-int Chunk::getChasmCount() const
-{
-	return static_cast<int>(this->chasmDefs.size());
-}
-
-const ChasmDefinition &Chunk::getChasm(ChasmID id) const
-{
-	DebugAssertIndex(this->chasmDefs, id);
-	return this->chasmDefs[id];
-}
-
-bool Chunk::tryGetChasmID(SNInt x, int y, WEInt z, ChasmID *outID) const
+bool Chunk::tryGetChasmDefID(SNInt x, int y, WEInt z, ChasmDefID *outID) const
 {
 	const auto iter = this->chasmDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->chasmDefIndices.end())
 	{
-		const ChasmID id = iter->second;
+		const ChasmDefID id = iter->second;
 		DebugAssertIndex(this->chasmDefs, id);
 		*outID = id;
 		return true;
@@ -250,6 +244,72 @@ bool Chunk::tryGetChasmID(SNInt x, int y, WEInt z, ChasmID *outID) const
 	{
 		return false;
 	}
+}
+
+int Chunk::getTransitionDefCount() const
+{
+	return static_cast<int>(this->transitionDefs.size());
+}
+
+int Chunk::getTriggerDefCount() const
+{
+	return static_cast<int>(this->triggerDefs.size());
+}
+
+int Chunk::getLockDefCount() const
+{
+	return static_cast<int>(this->lockDefs.size());
+}
+
+int Chunk::getBuildingNameDefCount() const
+{
+	return static_cast<int>(this->buildingNames.size());
+}
+
+int Chunk::getDoorDefCount() const
+{
+	return static_cast<int>(this->doorDefs.size());
+}
+
+int Chunk::getChasmDefCount() const
+{
+	return static_cast<int>(this->chasmDefs.size());
+}
+
+const TransitionDefinition &Chunk::getTransitionDef(TransitionDefID id) const
+{
+	DebugAssertIndex(this->transitionDefs, id);
+	return this->transitionDefs[id];
+}
+
+const TriggerDefinition &Chunk::getTriggerDef(TriggerDefID id) const
+{
+	DebugAssertIndex(this->triggerDefs, id);
+	return this->triggerDefs[id];
+}
+
+const LockDefinition &Chunk::getLockDef(LockDefID id) const
+{
+	DebugAssertIndex(this->lockDefs, id);
+	return this->lockDefs[id];
+}
+
+const std::string &Chunk::getBuildingName(BuildingNameID id) const
+{
+	DebugAssertIndex(this->buildingNames, id);
+	return this->buildingNames[id];
+}
+
+const DoorDefinition &Chunk::getDoorDef(DoorDefID id) const
+{
+	DebugAssertIndex(this->doorDefs, id);
+	return this->doorDefs[id];
+}
+
+const ChasmDefinition &Chunk::getChasmDef(ChasmDefID id) const
+{
+	DebugAssertIndex(this->chasmDefs, id);
+	return this->chasmDefs[id];
 }
 
 template <typename VoxelIdType>
@@ -343,23 +403,23 @@ void Chunk::addVoxelInst(VoxelInstance &&voxelInst)
 	this->voxelInsts.emplace_back(std::move(voxelInst));
 }
 
-Chunk::TransitionID Chunk::addTransition(TransitionDefinition &&transition)
+Chunk::TransitionDefID Chunk::addTransition(TransitionDefinition &&transition)
 {
-	const TransitionID id = static_cast<int>(this->transitionDefs.size());
+	const TransitionDefID id = static_cast<int>(this->transitionDefs.size());
 	this->transitionDefs.emplace_back(std::move(transition));
 	return id;
 }
 
-Chunk::TriggerID Chunk::addTrigger(TriggerDefinition &&trigger)
+Chunk::TriggerDefID Chunk::addTrigger(TriggerDefinition &&trigger)
 {
-	const TriggerID id = static_cast<int>(this->triggerDefs.size());
+	const TriggerDefID id = static_cast<int>(this->triggerDefs.size());
 	this->triggerDefs.emplace_back(std::move(trigger));
 	return id;
 }
 
-Chunk::LockID Chunk::addLock(LockDefinition &&lock)
+Chunk::LockDefID Chunk::addLock(LockDefinition &&lock)
 {
-	const LockID id = static_cast<int>(this->lockDefs.size());
+	const LockDefID id = static_cast<int>(this->lockDefs.size());
 	this->lockDefs.emplace_back(std::move(lock));
 	return id;
 }
@@ -371,33 +431,33 @@ Chunk::BuildingNameID Chunk::addBuildingName(std::string &&buildingName)
 	return id;
 }
 
-Chunk::DoorID Chunk::addDoorDef(DoorDefinition &&door)
+Chunk::DoorDefID Chunk::addDoorDef(DoorDefinition &&door)
 {
-	const DoorID id = static_cast<int>(this->doorDefs.size());
+	const DoorDefID id = static_cast<int>(this->doorDefs.size());
 	this->doorDefs.emplace_back(std::move(door));
 	return id;
 }
 
-Chunk::ChasmID Chunk::addChasmDef(ChasmDefinition &&chasm)
+Chunk::ChasmDefID Chunk::addChasmDef(ChasmDefinition &&chasm)
 {
-	const ChasmID id = static_cast<int>(this->chasmDefs.size());
+	const ChasmDefID id = static_cast<int>(this->chasmDefs.size());
 	this->chasmDefs.emplace_back(std::move(chasm));
 	return id;
 }
 
-void Chunk::addTransitionPosition(Chunk::TransitionID id, const VoxelInt3 &voxel)
+void Chunk::addTransitionPosition(Chunk::TransitionDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->transitionDefIndices.find(voxel) == this->transitionDefIndices.end());
 	this->transitionDefIndices.emplace(voxel, id);
 }
 
-void Chunk::addTriggerPosition(Chunk::TriggerID id, const VoxelInt3 &voxel)
+void Chunk::addTriggerPosition(Chunk::TriggerDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->triggerDefIndices.find(voxel) == this->triggerDefIndices.end());
 	this->triggerDefIndices.emplace(voxel, id);
 }
 
-void Chunk::addLockPosition(Chunk::LockID id, const VoxelInt3 &voxel)
+void Chunk::addLockPosition(Chunk::LockDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->lockDefIndices.find(voxel) == this->lockDefIndices.end());
 	this->lockDefIndices.emplace(voxel, id);
@@ -409,13 +469,13 @@ void Chunk::addBuildingNamePosition(Chunk::BuildingNameID id, const VoxelInt3 &v
 	this->buildingNameIndices.emplace(voxel, id);
 }
 
-void Chunk::addDoorPosition(DoorID id, const VoxelInt3 &voxel)
+void Chunk::addDoorPosition(DoorDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->doorDefIndices.find(voxel) == this->doorDefIndices.end());
 	this->doorDefIndices.emplace(voxel, id);
 }
 
-void Chunk::addChasmPosition(ChasmID id, const VoxelInt3 &voxel)
+void Chunk::addChasmPosition(ChasmDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->chasmDefIndices.find(voxel) == this->chasmDefIndices.end());
 	this->chasmDefIndices.emplace(voxel, id);
@@ -489,9 +549,14 @@ void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &p
 				doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
 
 				// Play closing sound if it is defined for the door.
-				const DoorDefinition *doorDef = this->tryGetDoor(voxel);
-				DebugAssert(doorDef != nullptr);
-				const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef->getCloseSound();
+				Chunk::DoorDefID doorDefID;
+				if (!this->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+				{
+					DebugCrash("Expected door def ID to exist.");
+				}
+				
+				const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
+				const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
 				if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosing)
 				{
 					const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(voxelCoord);
@@ -509,9 +574,14 @@ void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScal
 	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
 	{
 		// Play closed sound if it is defined for the door.
-		const DoorDefinition *doorDef = this->tryGetDoor(voxel);
-		DebugAssert(doorDef != nullptr);
-		const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef->getCloseSound();
+		Chunk::DoorDefID doorDefID;
+		if (!this->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+		{
+			DebugCrash("Expected door def ID to exist.");
+		}
+
+		const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
+		const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
 		if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosed)
 		{
 			const CoordDouble3 soundCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));

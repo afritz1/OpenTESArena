@@ -324,9 +324,17 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 			{
 				if (voxelType == ArenaTypes::VoxelType::Wall)
 				{
+					const VoxelInt3 &voxel = coord.voxel;
+
 					// Check if there is a level change transition definition for this voxel.
-					const TransitionDefinition *transitionDef = chunk->tryGetTransition(coord.voxel);
-					return (transitionDef != nullptr) && (transitionDef->getType() == TransitionType::LevelChange);
+					Chunk::TransitionDefID transitionDefID;
+					if (!chunk->tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
+					{
+						return false;
+					}
+
+					const TransitionDefinition &transitionDef = chunk->getTransitionDef(transitionDefID);
+					return transitionDef.getType() == TransitionType::LevelChange;
 				}
 				else
 				{

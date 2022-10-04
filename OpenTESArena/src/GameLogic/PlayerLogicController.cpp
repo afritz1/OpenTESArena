@@ -599,19 +599,21 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 							if (isWall || isEdge)
 							{
-								const TransitionDefinition *transitionDef = chunkPtr->tryGetTransition(voxel);
-								if ((transitionDef != nullptr) &&
-									(transitionDef->getType() != TransitionType::LevelChange))
+								Chunk::TransitionDefID transitionDefID;
+								if (chunkPtr->tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 								{
-									MapLogicController::handleMapTransition(game, hit, *transitionDef);
+									const TransitionDefinition &transitionDef = chunkPtr->getTransitionDef(transitionDefID);
+									if (transitionDef.getType() != TransitionType::LevelChange)
+									{
+										MapLogicController::handleMapTransition(game, hit, transitionDef);
+									}
 								}
 							}
 						}
 						else
 						{
 							// @temp: add to fading voxels if it doesn't already exist.
-							const VoxelInstance *existingFadingVoxelInst =
-								chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::Fading);
+							const VoxelInstance *existingFadingVoxelInst = chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::Fading);
 							const bool isFading = existingFadingVoxelInst != nullptr;
 							if (!isFading)
 							{
@@ -635,9 +637,14 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							chunkPtr->addVoxelInst(std::move(newOpenDoorInst));
 
 							// Get the door's opening sound and play it at the center of the voxel.
-							const DoorDefinition *doorDefPtr = chunkPtr->tryGetDoor(voxel);
-							DebugAssert(doorDefPtr != nullptr);
-							const DoorDefinition::OpenSoundDef &openSoundDef = doorDefPtr->getOpenSound();
+							Chunk::DoorDefID doorDefID;
+							if (!chunkPtr->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+							{
+								DebugCrash("Expected door def ID to exist.");
+							}
+
+							const DoorDefinition &doorDef = chunkPtr->getDoorDef(doorDefID);
+							const DoorDefinition::OpenSoundDef &openSoundDef = doorDef.getOpenSound();
 
 							auto &audioManager = game.getAudioManager();
 							const std::string &soundFilename = openSoundDef.soundFilename;
@@ -654,13 +661,14 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				// Handle secondary click (i.e., right click).
 				if (voxelType == ArenaTypes::VoxelType::Wall)
 				{
-					const std::string *buildingName = chunkPtr->tryGetBuildingName(voxel);
-					if (buildingName != nullptr)
+					Chunk::BuildingNameID buildingNameID;
+					if (chunkPtr->tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
 					{
-						actionTextBox.setText(*buildingName);
+						const std::string &buildingName = chunkPtr->getBuildingName(buildingNameID);
+						actionTextBox.setText(buildingName);
 
 						auto &gameState = game.getGameState();
-						gameState.setActionTextDuration(*buildingName);
+						gameState.setActionTextDuration(buildingName);
 					}
 				}
 			}

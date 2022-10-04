@@ -304,18 +304,18 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::TransitionPlacementDef &placementDef = levelDefinition.getTransitionPlacementDef(i);
 		const TransitionDefinition &transitionDef = levelInfoDefinition.getTransitionDef(placementDef.id);
 		
-		std::optional<Chunk::TransitionID> transitionID;
+		std::optional<Chunk::TransitionDefID> transitionDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
-				if (!transitionID.has_value())
+				if (!transitionDefID.has_value())
 				{
-					transitionID = chunk.addTransition(TransitionDefinition(transitionDef));
+					transitionDefID = chunk.addTransition(TransitionDefinition(transitionDef));
 				}
 
 				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addTransitionPosition(*transitionID, voxel);
+				chunk.addTransitionPosition(*transitionDefID, voxel);
 			}
 		}
 	}
@@ -326,18 +326,18 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::TriggerPlacementDef &placementDef = levelDefinition.getTriggerPlacementDef(i);
 		const TriggerDefinition &triggerDef = levelInfoDefinition.getTriggerDef(placementDef.id);
 		
-		std::optional<Chunk::TriggerID> triggerID;
+		std::optional<Chunk::TriggerDefID> triggerDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
-				if (!triggerID.has_value())
+				if (!triggerDefID.has_value())
 				{
-					triggerID = chunk.addTrigger(TriggerDefinition(triggerDef));
+					triggerDefID = chunk.addTrigger(TriggerDefinition(triggerDef));
 				}
 
 				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addTriggerPosition(*triggerID, voxel);
+				chunk.addTriggerPosition(*triggerDefID, voxel);
 			}
 		}
 	}
@@ -348,18 +348,18 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::LockPlacementDef &placementDef = levelDefinition.getLockPlacementDef(i);
 		const LockDefinition &lockDef = levelInfoDefinition.getLockDef(placementDef.id);
 		
-		std::optional<Chunk::LockID> lockID;
+		std::optional<Chunk::LockDefID> lockDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
-				if (!lockID.has_value())
+				if (!lockDefID.has_value())
 				{
-					lockID = chunk.addLock(LockDefinition(lockDef));
+					lockDefID = chunk.addLock(LockDefinition(lockDef));
 				}
 
 				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addLockPosition(*lockID, voxel);
+				chunk.addLockPosition(*lockDefID, voxel);
 			}
 		}
 	}
@@ -393,18 +393,18 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::DoorPlacementDef &placementDef = levelDefinition.getDoorPlacementDef(i);
 		const DoorDefinition &doorDef = levelInfoDefinition.getDoorDef(placementDef.id);
 
-		std::optional<Chunk::DoorID> doorID;
+		std::optional<Chunk::DoorDefID> doorDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
-				if (!doorID.has_value())
+				if (!doorDefID.has_value())
 				{
-					doorID = chunk.addDoorDef(DoorDefinition(doorDef));
+					doorDefID = chunk.addDoorDef(DoorDefinition(doorDef));
 				}
 
 				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addDoorPosition(*doorID, voxel);
+				chunk.addDoorPosition(*doorDefID, voxel);
 			}
 		}
 	}
@@ -415,18 +415,18 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		const LevelDefinition::ChasmPlacementDef &placementDef = levelDefinition.getChasmPlacementDef(i);
 		const ChasmDefinition &chasmDef = levelInfoDefinition.getChasmDef(placementDef.id);
 
-		std::optional<Chunk::ChasmID> chasmID;
+		std::optional<Chunk::ChasmDefID> chasmDefID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
 			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
-				if (!chasmID.has_value())
+				if (!chasmDefID.has_value())
 				{
-					chasmID = chunk.addChasmDef(ChasmDefinition(chasmDef));
+					chasmDefID = chunk.addChasmDef(ChasmDefinition(chasmDef));
 				}
 
 				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addChasmPosition(*chasmID, voxel);
+				chunk.addChasmPosition(*chasmDefID, voxel);
 			}
 		}
 	}
@@ -444,34 +444,42 @@ void ChunkManager::populateWildChunkBuildingNames(Chunk &chunk,
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				const VoxelInt3 voxel(x, y, z);
-				const TransitionDefinition *transitionDef = chunk.tryGetTransition(voxel);
-				if ((transitionDef != nullptr) && (transitionDef->getType() == TransitionType::EnterInterior))
+				Chunk::TransitionDefID transitionDefID;
+				if (!chunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
 				{
-					const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef->getInteriorEntrance();
-					const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-					const ArenaTypes::InteriorType interiorType = interiorGenInfo.getInteriorType();
-
-					LevelDefinition::BuildingNameID buildingNameID;
-					if (buildingNameInfo.tryGetBuildingNameID(interiorType, &buildingNameID))
-					{
-						const std::string &buildingName = levelInfoDefinition.getBuildingName(buildingNameID);
-
-						Chunk::BuildingNameID chunkBuildingNameID;
-						const auto nameIter = buildingNameIDs.find(buildingNameID);
-						if (nameIter != buildingNameIDs.end())
-						{
-							chunkBuildingNameID = nameIter->second;
-						}
-						else
-						{
-							chunkBuildingNameID = chunk.addBuildingName(std::string(buildingName));
-							buildingNameIDs.emplace(std::make_pair(buildingNameID, chunkBuildingNameID));
-						}
-
-						chunk.addBuildingNamePosition(chunkBuildingNameID, voxel);
-					}
+					continue;
 				}
+
+				const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
+				if (transitionDef.getType() != TransitionType::EnterInterior)
+				{
+					continue;
+				}
+
+				const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef.getInteriorEntrance();
+				const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+				const ArenaTypes::InteriorType interiorType = interiorGenInfo.getInteriorType();
+
+				LevelDefinition::BuildingNameID buildingNameID;
+				if (!buildingNameInfo.tryGetBuildingNameID(interiorType, &buildingNameID))
+				{
+					continue;
+				}
+
+				const std::string &buildingName = levelInfoDefinition.getBuildingName(buildingNameID);
+				Chunk::BuildingNameID chunkBuildingNameID;
+				const auto nameIter = buildingNameIDs.find(buildingNameID);
+				if (nameIter != buildingNameIDs.end())
+				{
+					chunkBuildingNameID = nameIter->second;
+				}
+				else
+				{
+					chunkBuildingNameID = chunk.addBuildingName(std::string(buildingName));
+					buildingNameIDs.emplace(std::make_pair(buildingNameID, chunkBuildingNameID));
+				}
+
+				chunk.addBuildingNamePosition(chunkBuildingNameID, VoxelInt3(x, y, z));
 			}
 		}
 	}

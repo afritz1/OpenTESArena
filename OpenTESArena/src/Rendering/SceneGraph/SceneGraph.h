@@ -68,11 +68,11 @@ public:
 	struct LoadedChasmTextureKey
 	{
 		ChunkInt2 chunkPos;
-		Chunk::ChasmID chasmID;
+		Chunk::ChasmDefID chasmDefID;
 		int chasmFloorListIndex;
 		int chasmWallIndex;
 
-		void init(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID, int chasmFloorListIndex, int chasmWallIndex);
+		void init(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 	};
 private:
 	// Chunks with data for geometry storage, visibility calculation, etc..
@@ -102,8 +102,8 @@ private:
 	std::optional<int> tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) const;
 
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
-	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID, double chasmAnimPercent) const;
-	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmID chasmID) const;
+	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
+	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, Chunk::ChasmDefID chasmDefID) const;
 
 	void loadVoxelTextures(const Chunk &chunk, TextureManager &textureManager, Renderer &renderer);
 	void loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const Chunk &chunk, const RenderCamera &camera,

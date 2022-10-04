@@ -351,7 +351,13 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 					const Chunk::VoxelTraitsDefID wallVoxelTraitsDefID = chunk->getVoxelTraitsDefID(x, 1, z);
 					const VoxelTraitsDefinition &floorVoxelTraitsDef = chunk->getVoxelTraitsDef(floorVoxelTraitsDefID);
 					const VoxelTraitsDefinition &wallVoxelTraitsDef = chunk->getVoxelTraitsDef(wallVoxelTraitsDefID);
-					const TransitionDefinition *transitionDef = chunk->tryGetTransition(VoxelInt3(x, 1, z));
+					
+					Chunk::TransitionDefID transitionDefID;
+					const TransitionDefinition *transitionDef = nullptr;
+					if (chunk->tryGetTransitionDefID(x, 1, z, &transitionDefID))
+					{
+						transitionDef = &chunk->getTransitionDef(transitionDefID);
+					}
 
 					// Decide which color to use for the automap pixel.
 					Color color;

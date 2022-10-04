@@ -35,12 +35,12 @@ public:
 	using VoxelMeshDefID = int;
 	using VoxelTextureDefID = int;
 	using VoxelTraitsDefID = int;
-	using TransitionID = int;
-	using TriggerID = int;
-	using LockID = int;
+	using TransitionDefID = int;
+	using TriggerDefID = int;
+	using LockDefID = int;
 	using BuildingNameID = int;
-	using DoorID = int;
-	using ChasmID = int;
+	using DoorDefID = int;
+	using ChasmDefID = int;
 private:
 	// Voxel definitions, pointed to by voxel IDs.
 	std::vector<VoxelMeshDefinition> voxelMeshDefs;
@@ -68,12 +68,12 @@ private:
 	std::vector<ChasmDefinition> chasmDefs;
 
 	// Indices into decorators (generally sparse in comparison to voxels themselves).
-	std::unordered_map<VoxelInt3, TransitionID> transitionDefIndices;
-	std::unordered_map<VoxelInt3, TriggerID> triggerDefIndices;
-	std::unordered_map<VoxelInt3, LockID> lockDefIndices;
+	std::unordered_map<VoxelInt3, TransitionDefID> transitionDefIndices;
+	std::unordered_map<VoxelInt3, TriggerDefID> triggerDefIndices;
+	std::unordered_map<VoxelInt3, LockDefID> lockDefIndices;
 	std::unordered_map<VoxelInt3, BuildingNameID> buildingNameIndices;
-	std::unordered_map<VoxelInt3, DoorID> doorDefIndices;
-	std::unordered_map<VoxelInt3, ChasmID> chasmDefIndices;
+	std::unordered_map<VoxelInt3, DoorDefID> doorDefIndices;
+	std::unordered_map<VoxelInt3, ChasmDefID> chasmDefIndices;
 
 	// Chunk coordinates in the world.
 	ChunkInt2 position;
@@ -136,18 +136,15 @@ public:
 	int getVoxelTextureDefCount() const;
 	int getVoxelTraitsDefCount() const;
 
-	// Gets the voxel definition associated with a voxel ID.
-	const VoxelMeshDefinition &getVoxelMeshDef(int index) const;
-	const VoxelTextureDefinition &getVoxelTextureDef(int index) const;
-	const VoxelTraitsDefinition &getVoxelTraitsDef(int index) const;
+	// Gets the voxel definition associated with a voxel def ID (equivalent to an index).
+	const VoxelMeshDefinition &getVoxelMeshDef(VoxelMeshDefID id) const;
+	const VoxelTextureDefinition &getVoxelTextureDef(VoxelTextureDefID id) const;
+	const VoxelTraitsDefinition &getVoxelTraitsDef(VoxelTraitsDefID id) const;
 
 	int getDirtyVoxelCount() const;
 	const VoxelInt3 &getDirtyVoxel(int index) const;
 
-	// Gets the number of voxel instances.
 	int getVoxelInstCount() const;
-
-	// Gets the voxel instance at the given index.
 	VoxelInstance &getVoxelInst(int index);
 	const VoxelInstance &getVoxelInst(int index) const;
 
@@ -156,15 +153,26 @@ public:
 	VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type);
 	const VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type) const;
 
-	const TransitionDefinition *tryGetTransition(const VoxelInt3 &voxel) const;
-	const TriggerDefinition *tryGetTrigger(const VoxelInt3 &voxel) const;
-	const LockDefinition *tryGetLock(const VoxelInt3 &voxel) const;
-	const std::string *tryGetBuildingName(const VoxelInt3 &voxel) const;
-	const DoorDefinition *tryGetDoor(const VoxelInt3 &voxel) const;
+	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID *outID) const;
+	bool tryGetTriggerDefID(SNInt x, int y, WEInt z, TriggerDefID *outID) const;
+	bool tryGetLockDefID(SNInt x, int y, WEInt z, LockDefID *outID) const;
+	bool tryGetBuildingNameID(SNInt x, int y, WEInt z, BuildingNameID *outID) const;
+	bool tryGetDoorDefID(SNInt x, int y, WEInt z, DoorDefID *outID) const;
+	bool tryGetChasmDefID(SNInt x, int y, WEInt z, ChasmDefID *outID) const;
 
-	int getChasmCount() const;
-	const ChasmDefinition &getChasm(ChasmID id) const;
-	bool tryGetChasmID(SNInt x, int y, WEInt z, ChasmID *outID) const;
+	int getTransitionDefCount() const;
+	int getTriggerDefCount() const;
+	int getLockDefCount() const;
+	int getBuildingNameDefCount() const;
+	int getDoorDefCount() const;
+	int getChasmDefCount() const;
+
+	const TransitionDefinition &getTransitionDef(TransitionDefID id) const;
+	const TriggerDefinition &getTriggerDef(TriggerDefID id) const;
+	const LockDefinition &getLockDef(LockDefID id) const;
+	const std::string &getBuildingName(BuildingNameID id) const;
+	const DoorDefinition &getDoorDef(DoorDefID id) const;
+	const ChasmDefinition &getChasmDef(ChasmDefID id) const;
 
 	// Sets the voxel at the given coordinate.
 	void setVoxelMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
@@ -180,20 +188,20 @@ public:
 	void addVoxelInst(VoxelInstance &&voxelInst);
 
 	// Adds a chunk decorator definition to the chunk and returns its newly assigned ID.
-	TransitionID addTransition(TransitionDefinition &&transition);
-	TriggerID addTrigger(TriggerDefinition &&trigger);
-	LockID addLock(LockDefinition &&lock);
+	TransitionDefID addTransition(TransitionDefinition &&transition);
+	TriggerDefID addTrigger(TriggerDefinition &&trigger);
+	LockDefID addLock(LockDefinition &&lock);
 	BuildingNameID addBuildingName(std::string &&buildingName);
-	DoorID addDoorDef(DoorDefinition &&door);
-	ChasmID addChasmDef(ChasmDefinition &&chasm);
+	DoorDefID addDoorDef(DoorDefinition &&door);
+	ChasmDefID addChasmDef(ChasmDefinition &&chasm);
 
 	// Adds a mapping of the chunk decorator definition ID to the given voxel.
-	void addTransitionPosition(TransitionID id, const VoxelInt3 &voxel);
-	void addTriggerPosition(TriggerID id, const VoxelInt3 &voxel);
-	void addLockPosition(LockID id, const VoxelInt3 &voxel);
+	void addTransitionPosition(TransitionDefID id, const VoxelInt3 &voxel);
+	void addTriggerPosition(TriggerDefID id, const VoxelInt3 &voxel);
+	void addLockPosition(LockDefID id, const VoxelInt3 &voxel);
 	void addBuildingNamePosition(BuildingNameID id, const VoxelInt3 &voxel);
-	void addDoorPosition(DoorID id, const VoxelInt3 &voxel);
-	void addChasmPosition(ChasmID id, const VoxelInt3 &voxel);
+	void addDoorPosition(DoorDefID id, const VoxelInt3 &voxel);
+	void addChasmPosition(ChasmDefID id, const VoxelInt3 &voxel);
 
 	// Removes a certain type of voxel instance from the given voxel (if any). This might be useful when
 	// updating a chunk edge due to adjacent chunks changing.
