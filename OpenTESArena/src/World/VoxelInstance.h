@@ -11,7 +11,7 @@ enum class VoxelFacing3D;
 class VoxelInstance
 {
 public:
-	enum class Type { Chasm, OpenDoor, Fading, Trigger };
+	enum class Type { Chasm, Fading, Trigger };
 
 	// @todo: break VoxelInstance into more pieces because each type is very different from each other system-wise.
 	// Chunk should have chasmInsts, openDoorInsts, fadingInsts, etc..
@@ -37,25 +37,6 @@ public:
 		bool faceIsVisible(VoxelFacing3D facing) const;
 		bool faceIsVisible(VoxelFacing2D facing) const;
 		int getFaceCount() const;
-	};
-
-	class DoorState
-	{
-	public:
-		enum class StateType { Closed, Opening, Open, Closing };
-	private:
-		double speed;
-		double percentOpen;
-		StateType stateType;
-	public:
-		void init(double speed, double percentOpen, StateType stateType);
-
-		double getSpeed() const;
-		double getPercentOpen() const;
-		StateType getStateType() const;
-
-		void setStateType(StateType stateType);
-		void update(double dt);
 	};
 
 	class FadeState
@@ -91,7 +72,6 @@ private:
 	union
 	{
 		ChasmState chasm;
-		DoorState door;
 		FadeState fade;
 		TriggerState trigger;
 	};
@@ -102,12 +82,6 @@ public:
 
 	static VoxelInstance makeChasm(SNInt x, int y, WEInt z, bool north, bool east,
 		bool south, bool west);
-
-	static VoxelInstance makeDoor(SNInt x, int y, WEInt z, double speed, double percentOpen,
-		DoorState::StateType stateType);
-	
-	// Default to opening (so it isn't cleared on the first frame).
-	static VoxelInstance makeDoor(SNInt x, int y, WEInt z, double speed);
 
 	static VoxelInstance makeFading(SNInt x, int y, WEInt z, double speed, double percentFaded);
 
@@ -122,8 +96,6 @@ public:
 	Type getType() const;
 	ChasmState &getChasmState();
 	const ChasmState &getChasmState() const;
-	DoorState &getDoorState();
-	const DoorState &getDoorState() const;
 	FadeState &getFadeState();
 	const FadeState &getFadeState() const;
 	TriggerState &getTriggerState();

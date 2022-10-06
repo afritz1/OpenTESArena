@@ -12,6 +12,7 @@
 #include "ChasmDefinition.h"
 #include "ChunkUtils.h"
 #include "Coord.h"
+#include "DoorAnimationInstance.h"
 #include "DoorDefinition.h"
 #include "LockDefinition.h"
 #include "TransitionDefinition.h"
@@ -58,6 +59,7 @@ private:
 
 	// Instance data for voxels that are uniquely different in some way.
 	std::vector<VoxelInstance> voxelInsts;
+	std::vector<DoorAnimationInstance> doorAnimInsts;
 
 	// Decorators.
 	std::vector<TransitionDefinition> transitionDefs;
@@ -95,11 +97,6 @@ private:
 	// Sets this voxel dirty for geometry updating, etc. if not already.
 	// @todo: should this take flags instead?
 	void setVoxelDirty(SNInt x, int y, WEInt z);
-
-	// Runs any voxel instance behavior based on its current state that cannot be done by the voxel
-	// instance itself.
-	void handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord,
-		double ceilingScale, AudioManager &audioManager);
 
 	// Runs any voxel instance shutdown behavior required by the given voxel instance type.
 	void handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScale, AudioManager &audioManager);
@@ -148,6 +145,10 @@ public:
 	VoxelInstance &getVoxelInst(int index);
 	const VoxelInstance &getVoxelInst(int index) const;
 
+	int getDoorAnimInstCount() const;
+	const DoorAnimationInstance &getDoorAnimInst(int index) const;
+	bool tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
+
 	// Convenience functions for attempting to get a voxel instance at the given voxel.
 	std::optional<int> tryGetVoxelInstIndex(const VoxelInt3 &voxel, VoxelInstance::Type type) const;
 	VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type);
@@ -184,8 +185,8 @@ public:
 	VoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&voxelTextureDef);
 	VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef);
 
-	// Adds a voxel instance to the chunk.
 	void addVoxelInst(VoxelInstance &&voxelInst);
+	void addDoorAnimInst(DoorAnimationInstance &&doorAnimInst);
 
 	// Adds a chunk decorator definition to the chunk and returns its newly assigned ID.
 	TransitionDefID addTransition(TransitionDefinition &&transition);

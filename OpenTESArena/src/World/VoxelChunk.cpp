@@ -77,22 +77,22 @@ int VoxelChunk::getVoxelTraitsDefCount() const
 	return static_cast<int>(this->voxelTraitsDefs.size());
 }
 
-const VoxelMeshDefinition &VoxelChunk::getVoxelMeshDef(int index) const
+const VoxelMeshDefinition &VoxelChunk::getVoxelMeshDef(VoxelMeshDefID id) const
 {
-	DebugAssertIndex(this->voxelMeshDefs, index);
-	return this->voxelMeshDefs[index];
+	DebugAssertIndex(this->voxelMeshDefs, id);
+	return this->voxelMeshDefs[id];
 }
 
-const VoxelTextureDefinition &VoxelChunk::getVoxelTextureDef(int index) const
+const VoxelTextureDefinition &VoxelChunk::getVoxelTextureDef(VoxelTextureDefID id) const
 {
-	DebugAssertIndex(this->voxelTextureDefs, index);
-	return this->voxelTextureDefs[index];
+	DebugAssertIndex(this->voxelTextureDefs, id);
+	return this->voxelTextureDefs[id];
 }
 
-const VoxelTraitsDefinition &VoxelChunk::getVoxelTraitsDef(int index) const
+const VoxelTraitsDefinition &VoxelChunk::getVoxelTraitsDef(VoxelTraitsDefID id) const
 {
-	DebugAssertIndex(this->voxelTraitsDefs, index);
-	return this->voxelTraitsDefs[index];
+	DebugAssertIndex(this->voxelTraitsDefs, id);
+	return this->voxelTraitsDefs[id];
 }
 
 int VoxelChunk::getDirtyVoxelCount() const
@@ -121,6 +121,36 @@ const VoxelInstance &VoxelChunk::getVoxelInst(int index) const
 {
 	DebugAssertIndex(this->voxelInsts, index);
 	return this->voxelInsts[index];
+}
+
+int VoxelChunk::getDoorAnimInstCount() const
+{
+	return static_cast<int>(this->doorAnimInsts.size());
+}
+
+const DoorAnimationInstance &VoxelChunk::getDoorAnimInst(int index) const
+{
+	DebugAssertIndex(this->doorAnimInsts, index);
+	return this->doorAnimInsts[index];
+}
+
+bool VoxelChunk::tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
+{
+	const auto iter = std::find_if(this->doorAnimInsts.begin(), this->doorAnimInsts.end(),
+		[x, y, z](const DoorAnimationInstance &animInst)
+	{
+		return (animInst.x == x) && (animInst.y == y) && (animInst.z == z);
+	});
+
+	if (iter != this->doorAnimInsts.end())
+	{
+		*outIndex = static_cast<int>(std::distance(this->doorAnimInsts.begin(), iter));
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 std::optional<int> VoxelChunk::tryGetVoxelInstIndex(const VoxelInt3 &voxel, VoxelInstance::Type type) const
@@ -403,6 +433,11 @@ void VoxelChunk::addVoxelInst(VoxelInstance &&voxelInst)
 	this->voxelInsts.emplace_back(std::move(voxelInst));
 }
 
+void VoxelChunk::addDoorAnimInst(DoorAnimationInstance &&doorAnimInst)
+{
+	this->doorAnimInsts.emplace_back(std::move(doorAnimInst));
+}
+
 VoxelChunk::TransitionDefID VoxelChunk::addTransition(TransitionDefinition &&transition)
 {
 	const TransitionDefID id = static_cast<int>(this->transitionDefs.size());
@@ -506,6 +541,7 @@ void VoxelChunk::clear()
 	this->dirtyVoxels.clear();
 	this->dirtyVoxelPositions.clear();
 	this->voxelInsts.clear();
+	this->doorAnimInsts.clear();
 	this->transitionDefs.clear();
 	this->triggerDefs.clear();
 	this->lockDefs.clear();
@@ -527,69 +563,11 @@ void VoxelChunk::clearDirtyVoxels()
 	this->dirtyVoxelPositions.clear();
 }
 
-void VoxelChunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord,
-	double ceilingScale, AudioManager &audioManager)
-{
-	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
-	{
-		VoxelInstance::DoorState &doorState = voxelInst.getDoorState();
-		if (doorState.getStateType() != VoxelInstance::DoorState::StateType::Closing)
-		{
-			// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
-			// the voxel if it is defined for the door.
-			const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
-			const CoordDouble3 voxelCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
-			const VoxelDouble3 diff = playerCoord - voxelCoord;
-
-			constexpr double closeDistSqr = ArenaLevelUtils::DOOR_CLOSE_DISTANCE * ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
-			const double distSqr = diff.lengthSquared();
-
-			if (distSqr >= closeDistSqr)
-			{
-				doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
-
-				// Play closing sound if it is defined for the door.
-				VoxelChunk::DoorDefID doorDefID;
-				if (!this->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
-				{
-					DebugCrash("Expected door def ID to exist.");
-				}
-				
-				const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
-				const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
-				if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosing)
-				{
-					const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(voxelCoord);
-					audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
-				}
-			}
-		}
-	}
-}
-
 void VoxelChunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScale, AudioManager &audioManager)
 {
 	const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
 
-	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
-	{
-		// Play closed sound if it is defined for the door.
-		VoxelChunk::DoorDefID doorDefID;
-		if (!this->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
-		{
-			DebugCrash("Expected door def ID to exist.");
-		}
-
-		const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
-		const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
-		if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosed)
-		{
-			const CoordDouble3 soundCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
-			const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
-			audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
-		}
-	}
-	else if (voxelInst.getType() == VoxelInstance::Type::Fading)
+	if (voxelInst.getType() == VoxelInstance::Type::Fading)
 	{
 		// Convert the faded voxel to air or a chasm depending on the Y coordinate.
 		if (voxel.y == 0)
@@ -757,6 +735,70 @@ void VoxelChunk::handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vect
 
 void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
 {
+	// Update doors.
+	for (int i = static_cast<int>(this->doorAnimInsts.size()) - 1; i >= 0; i--)
+	{
+		DoorAnimationInstance &animInst = this->doorAnimInsts[i];
+		animInst.update(dt);
+
+		const VoxelInt3 voxel(animInst.x, animInst.y, animInst.z);
+		if (animInst.stateType != DoorAnimationInstance::StateType::Closed)
+		{
+			if (animInst.stateType != DoorAnimationInstance::StateType::Closing)
+			{
+				// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
+				// the voxel if it is defined for the door.
+				const CoordDouble3 voxelCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+				const VoxelDouble3 diff = playerCoord - voxelCoord;
+
+				constexpr double closeDistSqr = ArenaLevelUtils::DOOR_CLOSE_DISTANCE * ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
+				const double distSqr = diff.lengthSquared();
+
+				if (distSqr >= closeDistSqr)
+				{
+					animInst.setStateType(DoorAnimationInstance::StateType::Closing);
+
+					// Play closing sound if it is defined for the door.
+					VoxelChunk::DoorDefID doorDefID;
+					if (!this->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+					{
+						DebugCrash("Expected door def ID to exist.");
+					}
+
+					const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
+					const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
+					if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosing)
+					{
+						const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(voxelCoord);
+						audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
+					}
+				}
+			}
+		}
+		else
+		{
+			// Play closed sound if it is defined for the door.
+			VoxelChunk::DoorDefID doorDefID;
+			if (!this->tryGetDoorDefID(animInst.x, animInst.y, animInst.z, &doorDefID))
+			{
+				DebugCrash("Expected door def ID to exist.");
+			}
+
+			const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
+			const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
+			if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosed)
+			{
+				const CoordDouble3 soundCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+				const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
+				audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
+			}
+
+			this->doorAnimInsts.erase(this->doorAnimInsts.begin() + i);
+		}
+
+		this->setVoxelDirty(animInst.x, animInst.y, animInst.z);
+	}
+
 	// Need to track voxel instances that finished fading because certain ones are converted to
 	// context-sensitive voxels on completion.
 	std::vector<VoxelInstance*> voxelInstsToPostFinish;
@@ -767,13 +809,8 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 		VoxelInstance &voxelInst = this->voxelInsts[i];
 		voxelInst.update(dt);
 
-		// See if the voxel instance is in a state that needs more behavior to be run, or if it can be
-		// removed because it no longer has interesting state.
-		if (voxelInst.hasRelevantState())
-		{
-			this->handleVoxelInstState(voxelInst, playerCoord, ceilingScale, audioManager);
-		}
-		else
+		// See if the voxel instance can be removed because it no longer has interesting state.
+		if (!voxelInst.hasRelevantState())
 		{
 			// Do the voxel instance's "on destroy" action, if any.
 			this->handleVoxelInstFinished(voxelInst, ceilingScale, audioManager);

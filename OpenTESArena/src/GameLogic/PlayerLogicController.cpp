@@ -626,15 +626,14 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 					else if (voxelType == ArenaTypes::VoxelType::Door)
 					{
 						// If the door is closed, then open it.
-						const VoxelInstance *existingOpenDoorInst = chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
-						const bool isClosed = existingOpenDoorInst == nullptr;
-
+						int doorAnimInstIndex;
+						const bool isClosed = !chunkPtr->tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
 						if (isClosed)
 						{
 							// Add the door to the open doors list.
-							VoxelInstance newOpenDoorInst = VoxelInstance::makeDoor(
-								voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-							chunkPtr->addVoxelInst(std::move(newOpenDoorInst));
+							DoorAnimationInstance newDoorAnimInst;
+							newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
+							chunkPtr->addDoorAnimInst(std::move(newDoorAnimInst));
 
 							// Get the door's opening sound and play it at the center of the voxel.
 							VoxelChunk::DoorDefID doorDefID;

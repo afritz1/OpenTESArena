@@ -308,9 +308,15 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 			{
 				if (voxelType == ArenaTypes::VoxelType::Door)
 				{
-					const VoxelInstance *doorInst = chunk->tryGetVoxelInst(coord.voxel, VoxelInstance::Type::OpenDoor);
-					const bool isClosed = doorInst == nullptr;
-					return !isClosed;
+					const VoxelInt3 &voxel = coord.voxel;
+					int doorAnimInstIndex;
+					if (!chunk->tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex))
+					{
+						return false;
+					}
+
+					const DoorAnimationInstance &doorAnimInst = chunk->getDoorAnimInst(doorAnimInstIndex);
+					return doorAnimInst.stateType != DoorAnimationInstance::StateType::Closed;
 				}
 				else
 				{

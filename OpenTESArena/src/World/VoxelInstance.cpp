@@ -62,75 +62,6 @@ int VoxelInstance::ChasmState::getFaceCount() const
 		(this->south ? 1 : 0) + (this->west ? 1 : 0);
 }
 
-void VoxelInstance::DoorState::init(double speed, double percentOpen, StateType stateType)
-{
-	if (stateType == StateType::Closed)
-	{
-		DebugAssert(percentOpen == 0.0);
-	}
-	else if (stateType == StateType::Open)
-	{
-		DebugAssert(percentOpen == 1.0);
-	}
-
-	this->speed = speed;
-	this->percentOpen = percentOpen;
-	this->stateType = stateType;
-}
-
-double VoxelInstance::DoorState::getSpeed() const
-{
-	return this->speed;
-}
-
-double VoxelInstance::DoorState::getPercentOpen() const
-{
-	return this->percentOpen;
-}
-
-VoxelInstance::DoorState::StateType VoxelInstance::DoorState::getStateType() const
-{
-	return this->stateType;
-}
-
-void VoxelInstance::DoorState::setStateType(StateType stateType)
-{
-	this->stateType = stateType;
-
-	if (stateType == StateType::Closed)
-	{
-		this->percentOpen = 0.0;
-	}
-	else if (stateType == StateType::Open)
-	{
-		this->percentOpen = 1.0;
-	}
-}
-
-void VoxelInstance::DoorState::update(double dt)
-{
-	const double delta = this->speed * dt;
-
-	if (this->stateType == StateType::Opening)
-	{
-		this->percentOpen = std::clamp(this->percentOpen + delta, this->percentOpen, 1.0);
-
-		if (this->percentOpen == 1.0)
-		{
-			this->stateType = StateType::Open;
-		}
-	}
-	else if (this->stateType == StateType::Closing)
-	{
-		this->percentOpen = std::clamp(this->percentOpen - delta, 0.0, this->percentOpen);
-
-		if (this->percentOpen == 0.0)
-		{
-			this->stateType = StateType::Closed;
-		}
-	}
-}
-
 void VoxelInstance::FadeState::init(double speed, double percentFaded)
 {
 	this->speed = speed;
@@ -199,22 +130,6 @@ VoxelInstance VoxelInstance::makeChasm(SNInt x, int y, WEInt z, bool north, bool
 	return voxelInst;
 }
 
-VoxelInstance VoxelInstance::makeDoor(SNInt x, int y, WEInt z, double speed, double percentOpen,
-	DoorState::StateType stateType)
-{
-	VoxelInstance voxelInst;
-	voxelInst.init(x, y, z, Type::OpenDoor);
-	voxelInst.door.init(speed, percentOpen, stateType);
-	return voxelInst;
-}
-
-VoxelInstance VoxelInstance::makeDoor(SNInt x, int y, WEInt z, double speed)
-{
-	constexpr double percentOpen = 0.0;
-	constexpr DoorState::StateType stateType = DoorState::StateType::Opening;
-	return VoxelInstance::makeDoor(x, y, z, speed, percentOpen, stateType);
-}
-
 VoxelInstance VoxelInstance::makeFading(SNInt x, int y, WEInt z, double speed, double percentFaded)
 {
 	VoxelInstance voxelInst;
@@ -269,18 +184,6 @@ const VoxelInstance::ChasmState &VoxelInstance::getChasmState() const
 	return this->chasm;
 }
 
-VoxelInstance::DoorState &VoxelInstance::getDoorState()
-{
-	DebugAssert(this->type == Type::OpenDoor);
-	return this->door;
-}
-
-const VoxelInstance::DoorState &VoxelInstance::getDoorState() const
-{
-	DebugAssert(this->type == Type::OpenDoor);
-	return this->door;
-}
-
 VoxelInstance::FadeState &VoxelInstance::getFadeState()
 {
 	DebugAssert(this->type == Type::Fading);
@@ -312,11 +215,6 @@ bool VoxelInstance::hasRelevantState() const
 		const VoxelInstance::ChasmState &chasmState = this->chasm;
 		return chasmState.getNorth() || chasmState.getSouth() || chasmState.getEast() || chasmState.getWest();
 	}
-	else if (this->type == Type::OpenDoor)
-	{
-		const VoxelInstance::DoorState &doorState = this->door;
-		return doorState.getStateType() != VoxelInstance::DoorState::StateType::Closed;
-	}
 	else if (this->type == Type::Fading)
 	{
 		const VoxelInstance::FadeState &fadeState = this->fade;
@@ -335,11 +233,7 @@ bool VoxelInstance::hasRelevantState() const
 
 void VoxelInstance::update(double dt)
 {
-	if (this->type == Type::OpenDoor)
-	{
-		this->door.update(dt);
-	}
-	else if (this->type == Type::Fading)
+	if (this->type == Type::Fading)
 	{
 		this->fade.update(dt);
 	}

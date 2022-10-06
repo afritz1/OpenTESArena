@@ -110,19 +110,16 @@ void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *out
 	*outEnd = *outStart + (diff * Constants::JustBelowOne);
 }
 
-double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const VoxelChunk &chunk)
+double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const VoxelChunk &chunk) // @todo: this should take Y too
 {
-	const VoxelInt3 voxel(voxelX, 1, voxelZ);
-	const VoxelInstance *voxelInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
-	if (voxelInst != nullptr)
-	{
-		const VoxelInstance::DoorState &doorState = voxelInst->getDoorState();
-		return doorState.getPercentOpen();
-	}
-	else
+	int doorAnimInstIndex;
+	if (!chunk.tryGetDoorAnimInstIndex(voxelX, 1, voxelZ, &doorAnimInstIndex))
 	{
 		return 0.0;
 	}
+
+	const DoorAnimationInstance &doorAnimInst = chunk.getDoorAnimInst(doorAnimInstIndex);
+	return doorAnimInst.percentOpen;
 }
 
 double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const VoxelChunk &chunk)
