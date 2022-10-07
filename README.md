@@ -34,7 +34,7 @@ Controls:
 
 Inspired by [OpenXcom](https://openxcom.org/) and [OpenMW](https://openmw.org/en/), this started out as a simplistic ray tracing tech demo in early 2016, and is now steadily inching closer to something akin to the original game. I am using a clean-room approach for understanding Arena's algorithms and data structures, the details of which can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). It is a behavioral approximation project, not about matching machine instructions, and quality-of-life changes are made where they make sense.
 
-There are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is a standalone engine and does not contain content.
+There are two versions of Arena (both available for free): the floppy disk version and the CD one. The player must acquire their own copy of Arena because OpenTESArena is a standalone engine and does not contain content.
 
 Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
@@ -43,36 +43,40 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist w
 If you would like music played in-game, see **Music setup** below after installing. The engine uses `ArenaPath` and `MidiConfig` from the options file to find where the game files and MIDI config are.
 
 ### Windows
-1. Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
-1. Get the Arena data files from one of:
-   1. [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website (floppy disk version)
-   1. Bethesda Launcher: `C:/Program Files (x86)/Bethesda.net Launcher/Games/The Elder Scrolls Arena` (floppy disk version)
-   1. [GOG](https://www.gog.com/wishlist/games/the_elder_scrolls_arena) (CD version)
-1. Extract Arena106Setup.zip and run Arena106.exe.
-1. Pick a destination folder to install into. This can be anywhere on your hard drive or in the OpenTESArena `data` folder.
+#### Get the data files for *The Elder Scrolls: Arena*
+Download the full game from one of:
+- [Bethesda website](https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) (floppy disk version)
+  1. Extract `Arena106Setup.zip` and run `Arena106.exe`.
+  1. Pick a destination folder to install anywhere on your hard drive. You can copy installed files to the OpenTESArena `data` folder later.
+- [Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/) (CD version)
+- [GOG](https://www.gog.com/game/the_elder_scrolls_arena) (CD version)
+
+#### Install OpenTESArena
+1. Download the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
+1. Extract the `.zip`.
 1. Open `options-default.txt` in the `options` folder and change `ArenaPath` to where you put the `ARENA`/`ARENACD` folder.
-1. Run OpenTESArena.exe.
+1. Run `OpenTESArena.exe`.
 
 If you see an error about missing MSVCP141.dll or similar, download and run the [Visual C++ Redistributable Installer](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for Windows:
-- 64-bit (recommended): vc_redist.x64.exe
-- 32-bit: vc_redist.x86.exe
+- 64-bit (recommended): `vc_redist.x64.exe`
+- 32-bit: `vc_redist.x86.exe`
 
-If you see a warning about `alcOpenDevice()` failing, or there is no sound, download the [OpenAL 1.1 Windows Installer](https://www.openal.org/downloads/) and run oalinst.exe.
+If you see a warning about `alcOpenDevice()` failing, or there is no sound, download the [OpenAL 1.1 Windows Installer](https://www.openal.org/downloads/) and run `oalinst.exe`.
 
 ### macOS
 #### Get the data files for *The Elder Scrolls: Arena*
-1. [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
-1. Unzip `Arena106Setup.zip`
+1. Download the full game from [Bethesda website](https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip).
+1. Extract `Arena106Setup.zip`.
 1. `Arena106.exe` is a self-extracting RAR file. Use a tool such as [The Unarchiver](https://theunarchiver.com) to extract it into a folder of data files.
 
 #### Install OpenTESArena
 1. Download the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
-1. Open the `.dmg` and copy OpenTESArena to the `Applications` folder or another location
-1. Right-click on the app and choose "Show Package Contents"
-1. Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier
-1. Return to the `Applications` folder or wherever you have the app installed and open OpenTESArena. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
-   1. Right-click on the app and choose "Open"
-   1. In the warning that appears saying that it is from an unidentified developer, choose "Open"
+1. Open the `.dmg` and copy OpenTESArena to the `Applications` folder or another location.
+1. Right-click on the app and choose "Show Package Contents".
+1. Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier.
+1. Return to the `Applications` folder or wherever you have the app installed and open `OpenTESArena`. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
+   1. Right-click on the app and choose "Open".
+   1. In the warning that appears saying that it is from an unidentified developer, choose "Open".
    1. The app will start. In the future, you can just double-click on the app without having to go through these steps.
 
 ### Linux (Debian/Ubuntu)
@@ -98,7 +102,7 @@ cd ..
 ### Music setup
 Arena uses MIDI files for music, so the user must have MIDI sound patches in order to have music play in-game.
 
-The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into the OpenTESArena `data` folder.
+The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted `eawpats` folder into the OpenTESArena `data` folder.
 
 If you would like to use a different sound patches library like OPL3, edit `MidiConfig` in the options file to point to the MIDI `.cfg` file for that library.
 
