@@ -128,7 +128,7 @@ int VoxelChunk::getDoorAnimInstCount() const
 	return static_cast<int>(this->doorAnimInsts.size());
 }
 
-const DoorAnimationInstance &VoxelChunk::getDoorAnimInst(int index) const
+const VoxelDoorAnimationInstance &VoxelChunk::getDoorAnimInst(int index) const
 {
 	DebugAssertIndex(this->doorAnimInsts, index);
 	return this->doorAnimInsts[index];
@@ -137,7 +137,7 @@ const DoorAnimationInstance &VoxelChunk::getDoorAnimInst(int index) const
 bool VoxelChunk::tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
 {
 	const auto iter = std::find_if(this->doorAnimInsts.begin(), this->doorAnimInsts.end(),
-		[x, y, z](const DoorAnimationInstance &animInst)
+		[x, y, z](const VoxelDoorAnimationInstance &animInst)
 	{
 		return (animInst.x == x) && (animInst.y == y) && (animInst.z == z);
 	});
@@ -463,7 +463,7 @@ void VoxelChunk::addVoxelInst(VoxelInstance &&voxelInst)
 	this->voxelInsts.emplace_back(std::move(voxelInst));
 }
 
-void VoxelChunk::addDoorAnimInst(DoorAnimationInstance &&animInst)
+void VoxelChunk::addDoorAnimInst(VoxelDoorAnimationInstance &&animInst)
 {
 	this->doorAnimInsts.emplace_back(std::move(animInst));
 }
@@ -604,13 +604,13 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 	// Update doors.
 	for (int i = static_cast<int>(this->doorAnimInsts.size()) - 1; i >= 0; i--)
 	{
-		DoorAnimationInstance &animInst = this->doorAnimInsts[i];
+		VoxelDoorAnimationInstance &animInst = this->doorAnimInsts[i];
 		animInst.update(dt);
 
 		const VoxelInt3 voxel(animInst.x, animInst.y, animInst.z);
-		if (animInst.stateType != DoorAnimationInstance::StateType::Closed)
+		if (animInst.stateType != VoxelDoorAnimationInstance::StateType::Closed)
 		{
-			if (animInst.stateType != DoorAnimationInstance::StateType::Closing)
+			if (animInst.stateType != VoxelDoorAnimationInstance::StateType::Closing)
 			{
 				// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
 				// the voxel if it is defined for the door.
@@ -622,7 +622,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 
 				if (distSqr >= closeDistSqr)
 				{
-					animInst.setStateType(DoorAnimationInstance::StateType::Closing);
+					animInst.setStateType(VoxelDoorAnimationInstance::StateType::Closing);
 
 					// Play closing sound if it is defined for the door.
 					VoxelChunk::DoorDefID doorDefID;

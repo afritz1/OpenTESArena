@@ -118,8 +118,8 @@ double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Voxel
 		return 0.0;
 	}
 
-	const DoorAnimationInstance &doorAnimInst = chunk.getDoorAnimInst(doorAnimInstIndex);
-	return doorAnimInst.percentOpen;
+	const VoxelDoorAnimationInstance &animInst = chunk.getDoorAnimInst(doorAnimInstIndex);
+	return animInst.percentOpen;
 }
 
 double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const VoxelChunk &chunk)

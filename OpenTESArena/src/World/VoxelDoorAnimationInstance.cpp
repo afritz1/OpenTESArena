@@ -1,10 +1,10 @@
 #include <algorithm>
 
-#include "DoorAnimationInstance.h"
+#include "VoxelDoorAnimationInstance.h"
 
 #include "components/debug/Debug.h"
 
-DoorAnimationInstance::DoorAnimationInstance()
+VoxelDoorAnimationInstance::VoxelDoorAnimationInstance()
 {
 	this->x = 0;
 	this->y = 0;
@@ -14,7 +14,7 @@ DoorAnimationInstance::DoorAnimationInstance()
 	this->stateType = StateType::Closed;
 }
 
-void DoorAnimationInstance::init(SNInt x, int y, WEInt z, double speed, double percentOpen, StateType stateType)
+void VoxelDoorAnimationInstance::init(SNInt x, int y, WEInt z, double speed, double percentOpen, StateType stateType)
 {
 	if (stateType == StateType::Closed)
 	{
@@ -33,12 +33,12 @@ void DoorAnimationInstance::init(SNInt x, int y, WEInt z, double speed, double p
 	this->stateType = stateType;
 }
 
-void DoorAnimationInstance::initOpening(SNInt x, int y, WEInt z, double speed)
+void VoxelDoorAnimationInstance::initOpening(SNInt x, int y, WEInt z, double speed)
 {
 	this->init(x, y, z, speed, 0.0, StateType::Opening);
 }
 
-void DoorAnimationInstance::setStateType(StateType stateType)
+void VoxelDoorAnimationInstance::setStateType(StateType stateType)
 {
 	this->stateType = stateType;
 
@@ -52,7 +52,7 @@ void DoorAnimationInstance::setStateType(StateType stateType)
 	}
 }
 
-void DoorAnimationInstance::update(double dt)
+void VoxelDoorAnimationInstance::update(double dt)
 {
 	const double delta = this->speed * dt;
 

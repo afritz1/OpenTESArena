@@ -12,11 +12,11 @@
 #include "ChasmDefinition.h"
 #include "ChunkUtils.h"
 #include "Coord.h"
-#include "DoorAnimationInstance.h"
 #include "DoorDefinition.h"
 #include "LockDefinition.h"
 #include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
+#include "VoxelDoorAnimationInstance.h"
 #include "VoxelFadeAnimationInstance.h"
 #include "VoxelInstance.h"
 #include "VoxelMeshDefinition.h"
@@ -60,7 +60,7 @@ private:
 
 	// Instance data for voxels that are uniquely different in some way.
 	std::vector<VoxelInstance> voxelInsts;
-	std::vector<DoorAnimationInstance> doorAnimInsts;
+	std::vector<VoxelDoorAnimationInstance> doorAnimInsts;
 	std::vector<VoxelFadeAnimationInstance> fadeAnimInsts;
 
 	// Decorators.
@@ -140,7 +140,7 @@ public:
 	const VoxelInstance &getVoxelInst(int index) const;
 
 	int getDoorAnimInstCount() const;
-	const DoorAnimationInstance &getDoorAnimInst(int index) const;
+	const VoxelDoorAnimationInstance &getDoorAnimInst(int index) const;
 	bool tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
 	int getFadeAnimInstCount() const;
@@ -184,7 +184,7 @@ public:
 	VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef);
 
 	void addVoxelInst(VoxelInstance &&voxelInst);
-	void addDoorAnimInst(DoorAnimationInstance &&animInst);
+	void addDoorAnimInst(VoxelDoorAnimationInstance &&animInst);
 	void addFadeAnimInst(VoxelFadeAnimationInstance &&animInst);
 
 	// Adds a chunk decorator definition to the chunk and returns its newly assigned ID.

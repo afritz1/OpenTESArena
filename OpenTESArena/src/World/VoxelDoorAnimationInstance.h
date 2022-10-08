@@ -1,9 +1,9 @@
-#ifndef DOOR_ANIMATION_INSTANCE_H
-#define DOOR_ANIMATION_INSTANCE_H
+#ifndef VOXEL_DOOR_ANIMATION_INSTANCE_H
+#define VOXEL_DOOR_ANIMATION_INSTANCE_H
 
 #include "Coord.h"
 
-struct DoorAnimationInstance
+struct VoxelDoorAnimationInstance
 {
 	enum class StateType
 	{
@@ -20,7 +20,7 @@ struct DoorAnimationInstance
 	double percentOpen;
 	StateType stateType;
 
-	DoorAnimationInstance();
+	VoxelDoorAnimationInstance();
 
 	void init(SNInt x, int y, WEInt z, double speed, double percentOpen, StateType stateType);
 

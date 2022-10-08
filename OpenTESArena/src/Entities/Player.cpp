@@ -315,8 +315,8 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 						return false;
 					}
 
-					const DoorAnimationInstance &doorAnimInst = chunk->getDoorAnimInst(doorAnimInstIndex);
-					return doorAnimInst.stateType != DoorAnimationInstance::StateType::Closed;
+					const VoxelDoorAnimationInstance &doorAnimInst = chunk->getDoorAnimInst(doorAnimInstIndex);
+					return doorAnimInst.stateType != VoxelDoorAnimationInstance::StateType::Closed;
 				}
 				else
 				{

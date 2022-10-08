@@ -630,7 +630,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 						if (isClosed)
 						{
 							// Add the door to the open doors list.
-							DoorAnimationInstance newDoorAnimInst;
+							VoxelDoorAnimationInstance newDoorAnimInst;
 							newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
 							chunkPtr->addDoorAnimInst(std::move(newDoorAnimInst));
 
