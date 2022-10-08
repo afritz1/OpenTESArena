@@ -276,11 +276,11 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 			{
 				if (!transitionDefID.has_value())
 				{
-					transitionDefID = chunk.addTransition(TransitionDefinition(transitionDef));
+					transitionDefID = chunk.addTransitionDef(TransitionDefinition(transitionDef));
 				}
 
 				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addTransitionPosition(*transitionDefID, voxel);
+				chunk.addTransitionDefPosition(*transitionDefID, voxel);
 			}
 		}
 	}
@@ -298,11 +298,11 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 			{
 				if (!triggerDefID.has_value())
 				{
-					triggerDefID = chunk.addTrigger(VoxelTriggerDefinition(triggerDef));
+					triggerDefID = chunk.addTriggerDef(VoxelTriggerDefinition(triggerDef));
 				}
 
 				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addTriggerPosition(*triggerDefID, voxel);
+				chunk.addTriggerDefPosition(*triggerDefID, voxel);
 			}
 		}
 	}
@@ -320,11 +320,11 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 			{
 				if (!lockDefID.has_value())
 				{
-					lockDefID = chunk.addLock(LockDefinition(lockDef));
+					lockDefID = chunk.addLockDef(LockDefinition(lockDef));
 				}
 
 				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addLockPosition(*lockDefID, voxel);
+				chunk.addLockDefPosition(*lockDefID, voxel);
 			}
 		}
 	}
@@ -369,7 +369,7 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 				}
 
 				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addDoorPosition(*doorDefID, voxel);
+				chunk.addDoorDefPosition(*doorDefID, voxel);
 			}
 		}
 	}
@@ -391,7 +391,7 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 				}
 
 				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addChasmPosition(*chasmDefID, voxel);
+				chunk.addChasmDefPosition(*chasmDefID, voxel);
 			}
 		}
 	}

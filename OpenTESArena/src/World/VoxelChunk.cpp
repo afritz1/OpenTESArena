@@ -508,21 +508,21 @@ void VoxelChunk::addTriggerInst(VoxelTriggerInstance &&inst)
 	this->triggerInsts.emplace_back(std::move(inst));
 }
 
-VoxelChunk::TransitionDefID VoxelChunk::addTransition(TransitionDefinition &&transition)
+VoxelChunk::TransitionDefID VoxelChunk::addTransitionDef(TransitionDefinition &&transition)
 {
 	const TransitionDefID id = static_cast<int>(this->transitionDefs.size());
 	this->transitionDefs.emplace_back(std::move(transition));
 	return id;
 }
 
-VoxelChunk::TriggerDefID VoxelChunk::addTrigger(VoxelTriggerDefinition &&trigger)
+VoxelChunk::TriggerDefID VoxelChunk::addTriggerDef(VoxelTriggerDefinition &&trigger)
 {
 	const TriggerDefID id = static_cast<int>(this->triggerDefs.size());
 	this->triggerDefs.emplace_back(std::move(trigger));
 	return id;
 }
 
-VoxelChunk::LockDefID VoxelChunk::addLock(LockDefinition &&lock)
+VoxelChunk::LockDefID VoxelChunk::addLockDef(LockDefinition &&lock)
 {
 	const LockDefID id = static_cast<int>(this->lockDefs.size());
 	this->lockDefs.emplace_back(std::move(lock));
@@ -550,19 +550,19 @@ VoxelChunk::ChasmDefID VoxelChunk::addChasmDef(ChasmDefinition &&chasm)
 	return id;
 }
 
-void VoxelChunk::addTransitionPosition(VoxelChunk::TransitionDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addTransitionDefPosition(VoxelChunk::TransitionDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->transitionDefIndices.find(voxel) == this->transitionDefIndices.end());
 	this->transitionDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addTriggerPosition(VoxelChunk::TriggerDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addTriggerDefPosition(VoxelChunk::TriggerDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->triggerDefIndices.find(voxel) == this->triggerDefIndices.end());
 	this->triggerDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addLockPosition(VoxelChunk::LockDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addLockDefPosition(VoxelChunk::LockDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->lockDefIndices.find(voxel) == this->lockDefIndices.end());
 	this->lockDefIndices.emplace(voxel, id);
@@ -574,13 +574,13 @@ void VoxelChunk::addBuildingNamePosition(VoxelChunk::BuildingNameID id, const Vo
 	this->buildingNameIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addDoorPosition(DoorDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addDoorDefPosition(DoorDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->doorDefIndices.find(voxel) == this->doorDefIndices.end());
 	this->doorDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addChasmPosition(ChasmDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addChasmDefPosition(ChasmDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->chasmDefIndices.find(voxel) == this->chasmDefIndices.end());
 	this->chasmDefIndices.emplace(voxel, id);

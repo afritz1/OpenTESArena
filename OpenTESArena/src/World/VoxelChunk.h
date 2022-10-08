@@ -195,20 +195,20 @@ public:
 	void addTriggerInst(VoxelTriggerInstance &&inst);
 
 	// Adds a chunk decorator definition to the chunk and returns its newly assigned ID.
-	TransitionDefID addTransition(TransitionDefinition &&transition);
-	TriggerDefID addTrigger(VoxelTriggerDefinition &&trigger);
-	LockDefID addLock(LockDefinition &&lock);
+	TransitionDefID addTransitionDef(TransitionDefinition &&transition);
+	TriggerDefID addTriggerDef(VoxelTriggerDefinition &&trigger);
+	LockDefID addLockDef(LockDefinition &&lock);
 	BuildingNameID addBuildingName(std::string &&buildingName);
 	DoorDefID addDoorDef(DoorDefinition &&door);
 	ChasmDefID addChasmDef(ChasmDefinition &&chasm);
 
 	// Adds a mapping of the chunk decorator definition ID to the given voxel.
-	void addTransitionPosition(TransitionDefID id, const VoxelInt3 &voxel);
-	void addTriggerPosition(TriggerDefID id, const VoxelInt3 &voxel);
-	void addLockPosition(LockDefID id, const VoxelInt3 &voxel);
+	void addTransitionDefPosition(TransitionDefID id, const VoxelInt3 &voxel);
+	void addTriggerDefPosition(TriggerDefID id, const VoxelInt3 &voxel);
+	void addLockDefPosition(LockDefID id, const VoxelInt3 &voxel);
 	void addBuildingNamePosition(BuildingNameID id, const VoxelInt3 &voxel);
-	void addDoorPosition(DoorDefID id, const VoxelInt3 &voxel);
-	void addChasmPosition(ChasmDefID id, const VoxelInt3 &voxel);
+	void addDoorDefPosition(DoorDefID id, const VoxelInt3 &voxel);
+	void addChasmDefPosition(ChasmDefID id, const VoxelInt3 &voxel);
 
 	// Removes a certain type of voxel instance from the given voxel (if any). This might be useful when
 	// updating a chunk edge due to adjacent chunks changing.
