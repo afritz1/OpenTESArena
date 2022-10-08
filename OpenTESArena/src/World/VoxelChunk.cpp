@@ -746,6 +746,8 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				this->setVoxelTextureDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_VOXEL_TEXTURE_DEF_ID);
 				this->setVoxelTraitsDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID);
 			}
+
+			this->fadeAnimInsts.erase(this->fadeAnimInsts.begin() + i);
 		}
 
 		this->setVoxelDirty(voxel.x, voxel.y, voxel.z);
