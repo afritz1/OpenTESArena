@@ -62,36 +62,6 @@ int VoxelInstance::ChasmState::getFaceCount() const
 		(this->south ? 1 : 0) + (this->west ? 1 : 0);
 }
 
-void VoxelInstance::FadeState::init(double speed, double percentFaded)
-{
-	this->speed = speed;
-	this->percentFaded = percentFaded;
-}
-
-double VoxelInstance::FadeState::getSpeed() const
-{
-	return this->speed;
-}
-
-double VoxelInstance::FadeState::getPercentFaded() const
-{
-	return this->percentFaded;
-}
-
-bool VoxelInstance::FadeState::isDoneFading() const
-{
-	return this->percentFaded == 1.0;
-}
-
-void VoxelInstance::FadeState::update(double dt)
-{
-	if (!this->isDoneFading())
-	{
-		const double delta = this->speed * dt;
-		this->percentFaded = std::clamp(this->percentFaded + delta, this->percentFaded, 1.0);
-	}
-}
-
 void VoxelInstance::TriggerState::init(bool triggered)
 {
 	this->triggered = triggered;
@@ -128,20 +98,6 @@ VoxelInstance VoxelInstance::makeChasm(SNInt x, int y, WEInt z, bool north, bool
 	voxelInst.init(x, y, z, Type::Chasm);
 	voxelInst.chasm.init(north, east, south, west);
 	return voxelInst;
-}
-
-VoxelInstance VoxelInstance::makeFading(SNInt x, int y, WEInt z, double speed, double percentFaded)
-{
-	VoxelInstance voxelInst;
-	voxelInst.init(x, y, z, Type::Fading);
-	voxelInst.fade.init(speed, percentFaded);
-	return voxelInst;
-}
-
-VoxelInstance VoxelInstance::makeFading(SNInt x, int y, WEInt z, double speed)
-{
-	constexpr double percentFaded = 0.0;
-	return VoxelInstance::makeFading(x, y, z, speed, percentFaded);
 }
 
 VoxelInstance VoxelInstance::makeTrigger(SNInt x, int y, WEInt z, bool triggered)
@@ -184,18 +140,6 @@ const VoxelInstance::ChasmState &VoxelInstance::getChasmState() const
 	return this->chasm;
 }
 
-VoxelInstance::FadeState &VoxelInstance::getFadeState()
-{
-	DebugAssert(this->type == Type::Fading);
-	return this->fade;
-}
-
-const VoxelInstance::FadeState &VoxelInstance::getFadeState() const
-{
-	DebugAssert(this->type == Type::Fading);
-	return this->fade;
-}
-
 VoxelInstance::TriggerState &VoxelInstance::getTriggerState()
 {
 	DebugAssert(this->type == Type::Trigger);
@@ -215,11 +159,6 @@ bool VoxelInstance::hasRelevantState() const
 		const VoxelInstance::ChasmState &chasmState = this->chasm;
 		return chasmState.getNorth() || chasmState.getSouth() || chasmState.getEast() || chasmState.getWest();
 	}
-	else if (this->type == Type::Fading)
-	{
-		const VoxelInstance::FadeState &fadeState = this->fade;
-		return !fadeState.isDoneFading();
-	}
 	else if (this->type == Type::Trigger)
 	{
 		const VoxelInstance::TriggerState &triggerState = this->trigger;
@@ -228,13 +167,5 @@ bool VoxelInstance::hasRelevantState() const
 	else
 	{
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
-	}
-}
-
-void VoxelInstance::update(double dt)
-{
-	if (this->type == Type::Fading)
-	{
-		this->fade.update(dt);
 	}
 }

@@ -613,13 +613,12 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 						else
 						{
 							// @temp: add to fading voxels if it doesn't already exist.
-							const VoxelInstance *existingFadingVoxelInst = chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::Fading);
-							const bool isFading = existingFadingVoxelInst != nullptr;
-							if (!isFading)
+							int fadeAnimInstIndex;
+							if (!chunkPtr->tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
 							{
-								VoxelInstance newFadingVoxelInst = VoxelInstance::makeFading(
-									voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-								chunkPtr->addVoxelInst(std::move(newFadingVoxelInst));
+								VoxelFadeAnimationInstance fadeAnimInst;
+								fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
+								chunkPtr->addFadeAnimInst(std::move(fadeAnimInst));
 							}
 						}
 					}

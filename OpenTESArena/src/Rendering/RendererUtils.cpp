@@ -124,17 +124,14 @@ double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Voxel
 
 double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const VoxelChunk &chunk)
 {
-	const VoxelInt3 voxel(voxelX, voxelY, voxelZ);
-	const VoxelInstance *voxelInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::Fading);
-	if (voxelInst != nullptr)
-	{
-		const VoxelInstance::FadeState &fadeState = voxelInst->getFadeState();
-		return std::clamp(1.0 - fadeState.getPercentFaded(), 0.0, 1.0);
-	}
-	else
+	int fadeAnimInstIndex;
+	if (!chunk.tryGetFadeAnimInstIndex(voxelX, voxelY, voxelZ, &fadeAnimInstIndex))
 	{
 		return 1.0;
 	}
+
+	const VoxelFadeAnimationInstance &animInst = chunk.getFadeAnimInst(fadeAnimInstIndex);
+	return std::clamp(1.0 - animInst.percentFaded, 0.0, 1.0);
 }
 
 double RendererUtils::getYShear(Radians angleRadians, double zoom)

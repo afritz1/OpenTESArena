@@ -17,6 +17,7 @@
 #include "LockDefinition.h"
 #include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
+#include "VoxelFadeAnimationInstance.h"
 #include "VoxelInstance.h"
 #include "VoxelMeshDefinition.h"
 #include "VoxelTextureDefinition.h"
@@ -60,6 +61,7 @@ private:
 	// Instance data for voxels that are uniquely different in some way.
 	std::vector<VoxelInstance> voxelInsts;
 	std::vector<DoorAnimationInstance> doorAnimInsts;
+	std::vector<VoxelFadeAnimationInstance> fadeAnimInsts;
 
 	// Decorators.
 	std::vector<TransitionDefinition> transitionDefs;
@@ -97,14 +99,6 @@ private:
 	// Sets this voxel dirty for geometry updating, etc. if not already.
 	// @todo: should this take flags instead?
 	void setVoxelDirty(SNInt x, int y, WEInt z);
-
-	// Runs any voxel instance shutdown behavior required by the given voxel instance type.
-	void handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScale, AudioManager &audioManager);
-
-	// Runs any context-sensitive voxel instance shutdown behavior based on its current state that cannot
-	// be done by the voxel instance itself. This is needed because of chasms that rely on adjacent voxels
-	// for which chasm faces they have.
-	void handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<int> &voxelInstIndicesToDestroy);
 public:
 	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
 	static constexpr WEInt DEPTH = WIDTH;
@@ -149,6 +143,10 @@ public:
 	const DoorAnimationInstance &getDoorAnimInst(int index) const;
 	bool tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
+	int getFadeAnimInstCount() const;
+	const VoxelFadeAnimationInstance &getFadeAnimInst(int index) const;
+	bool tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
+
 	// Convenience functions for attempting to get a voxel instance at the given voxel.
 	std::optional<int> tryGetVoxelInstIndex(const VoxelInt3 &voxel, VoxelInstance::Type type) const;
 	VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type);
@@ -186,7 +184,8 @@ public:
 	VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef);
 
 	void addVoxelInst(VoxelInstance &&voxelInst);
-	void addDoorAnimInst(DoorAnimationInstance &&doorAnimInst);
+	void addDoorAnimInst(DoorAnimationInstance &&animInst);
+	void addFadeAnimInst(VoxelFadeAnimationInstance &&animInst);
 
 	// Adds a chunk decorator definition to the chunk and returns its newly assigned ID.
 	TransitionDefID addTransition(TransitionDefinition &&transition);
