@@ -183,6 +183,36 @@ bool VoxelChunk::tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex)
 	}
 }
 
+int VoxelChunk::getTriggerCount() const
+{
+	return static_cast<int>(this->triggerInsts.size());
+}
+
+const VoxelTriggerInstance &VoxelChunk::getTriggerInst(int index) const
+{
+	DebugAssertIndex(this->triggerInsts, index);
+	return this->triggerInsts[index];
+}
+
+bool VoxelChunk::tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
+{
+	const auto iter = std::find_if(this->triggerInsts.begin(), this->triggerInsts.end(),
+		[x, y, z](const VoxelTriggerInstance &inst)
+	{
+		return (inst.x == x) && (inst.y == y) && (inst.z == z);
+	});
+
+	if (iter != this->triggerInsts.end())
+	{
+		*outIndex = static_cast<int>(std::distance(this->triggerInsts.begin(), iter));
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 std::optional<int> VoxelChunk::tryGetVoxelInstIndex(const VoxelInt3 &voxel, VoxelInstance::Type type) const
 {
 	for (int i = 0; i < static_cast<int>(this->voxelInsts.size()); i++)
@@ -473,6 +503,11 @@ void VoxelChunk::addFadeAnimInst(VoxelFadeAnimationInstance &&animInst)
 	this->fadeAnimInsts.emplace_back(std::move(animInst));
 }
 
+void VoxelChunk::addTriggerInst(VoxelTriggerInstance &&inst)
+{
+	this->triggerInsts.emplace_back(std::move(inst));
+}
+
 VoxelChunk::TransitionDefID VoxelChunk::addTransition(TransitionDefinition &&transition)
 {
 	const TransitionDefID id = static_cast<int>(this->transitionDefs.size());
@@ -578,6 +613,7 @@ void VoxelChunk::clear()
 	this->voxelInsts.clear();
 	this->doorAnimInsts.clear();
 	this->fadeAnimInsts.clear();
+	this->triggerInsts.clear();
 	this->transitionDefs.clear();
 	this->triggerDefs.clear();
 	this->lockDefs.clear();

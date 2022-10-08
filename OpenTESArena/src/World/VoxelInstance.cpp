@@ -62,16 +62,6 @@ int VoxelInstance::ChasmState::getFaceCount() const
 		(this->south ? 1 : 0) + (this->west ? 1 : 0);
 }
 
-void VoxelInstance::TriggerState::init(bool triggered)
-{
-	this->triggered = triggered;
-}
-
-bool VoxelInstance::TriggerState::isTriggered() const
-{
-	return this->triggered;
-}
-
 VoxelInstance::VoxelInstance()
 {
 	this->x = 0;
@@ -97,14 +87,6 @@ VoxelInstance VoxelInstance::makeChasm(SNInt x, int y, WEInt z, bool north, bool
 	VoxelInstance voxelInst;
 	voxelInst.init(x, y, z, Type::Chasm);
 	voxelInst.chasm.init(north, east, south, west);
-	return voxelInst;
-}
-
-VoxelInstance VoxelInstance::makeTrigger(SNInt x, int y, WEInt z, bool triggered)
-{
-	VoxelInstance voxelInst;
-	voxelInst.init(x, y, z, Type::Trigger);
-	voxelInst.trigger.init(triggered);
 	return voxelInst;
 }
 
@@ -140,29 +122,12 @@ const VoxelInstance::ChasmState &VoxelInstance::getChasmState() const
 	return this->chasm;
 }
 
-VoxelInstance::TriggerState &VoxelInstance::getTriggerState()
-{
-	DebugAssert(this->type == Type::Trigger);
-	return this->trigger;
-}
-
-const VoxelInstance::TriggerState &VoxelInstance::getTriggerState() const
-{
-	DebugAssert(this->type == Type::Trigger);
-	return this->trigger;
-}
-
 bool VoxelInstance::hasRelevantState() const
 {
 	if (this->type == Type::Chasm)
 	{
 		const VoxelInstance::ChasmState &chasmState = this->chasm;
 		return chasmState.getNorth() || chasmState.getSouth() || chasmState.getEast() || chasmState.getWest();
-	}
-	else if (this->type == Type::Trigger)
-	{
-		const VoxelInstance::TriggerState &triggerState = this->trigger;
-		return triggerState.isTriggered();
 	}
 	else
 	{

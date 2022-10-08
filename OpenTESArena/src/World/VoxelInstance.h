@@ -11,7 +11,7 @@ enum class VoxelFacing3D;
 class VoxelInstance
 {
 public:
-	enum class Type { Chasm, Trigger };
+	enum class Type { Chasm };
 
 	// @todo: break VoxelInstance into more pieces because each type is very different from each other system-wise.
 	// Chunk should have chasmInsts, openDoorInsts, fadingInsts, etc..
@@ -38,16 +38,6 @@ public:
 		bool faceIsVisible(VoxelFacing2D facing) const;
 		int getFaceCount() const;
 	};
-
-	class TriggerState
-	{
-	private:
-		bool triggered;
-	public:
-		void init(bool triggered);
-
-		bool isTriggered() const;
-	};
 private:
 	SNInt x;
 	int y;
@@ -57,7 +47,6 @@ private:
 	union
 	{
 		ChasmState chasm;
-		TriggerState trigger;
 	};
 
 	void init(SNInt x, int y, WEInt z, Type type);
@@ -67,16 +56,12 @@ public:
 	static VoxelInstance makeChasm(SNInt x, int y, WEInt z, bool north, bool east,
 		bool south, bool west);
 
-	static VoxelInstance makeTrigger(SNInt x, int y, WEInt z, bool triggered);
-
 	SNInt getX() const;
 	int getY() const;
 	WEInt getZ() const;
 	Type getType() const;
 	ChasmState &getChasmState();
 	const ChasmState &getChasmState() const;
-	TriggerState &getTriggerState();
-	const TriggerState &getTriggerState() const;
 
 	// Returns whether the voxel instance is worth keeping alive because it has unique data active.
 	bool hasRelevantState() const;

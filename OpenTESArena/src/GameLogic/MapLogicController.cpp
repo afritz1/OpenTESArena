@@ -92,9 +92,10 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	{
 		const TriggerDefinition::TextDef &textDef = triggerDef.getTextDef();
 		const VoxelInt3 &voxel = coord.voxel;
-		const VoxelInstance *triggerInst = chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::Trigger);
-		const bool hasBeenDisplayed = (triggerInst != nullptr) && triggerInst->getTriggerState().isTriggered();
-		const bool canDisplay = !textDef.isDisplayedOnce() || !hasBeenDisplayed;
+
+		int triggerInstIndex;
+		const bool hasBeenTriggered = chunkPtr->tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
+		const bool canDisplay = !textDef.isDisplayedOnce() || !hasBeenTriggered;
 
 		if (canDisplay)
 		{
@@ -104,13 +105,12 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 			triggerTextBox.setText(text);
 			gameState.setTriggerTextDuration(text);
 
-			// Set the text trigger as activated (regardless of whether or not it's single-shot, just
-			// for consistency).
-			if (triggerInst == nullptr)
+			// Set the text trigger as activated regardless of whether it's single-shot, just for consistency.
+			if (!hasBeenTriggered)
 			{
-				constexpr bool triggered = true;
-				VoxelInstance newTriggerInst = VoxelInstance::makeTrigger(voxel.x, voxel.y, voxel.z, triggered);
-				chunkPtr->addVoxelInst(std::move(newTriggerInst));
+				VoxelTriggerInstance newTriggerInst;
+				newTriggerInst.init(voxel.x, voxel.y, voxel.z);
+				chunkPtr->addTriggerInst(std::move(newTriggerInst));
 			}
 		}
 	}

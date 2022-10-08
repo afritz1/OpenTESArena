@@ -22,6 +22,7 @@
 #include "VoxelMeshDefinition.h"
 #include "VoxelTextureDefinition.h"
 #include "VoxelTraitsDefinition.h"
+#include "VoxelTriggerInstance.h"
 #include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
 
@@ -62,6 +63,7 @@ private:
 	std::vector<VoxelInstance> voxelInsts;
 	std::vector<VoxelDoorAnimationInstance> doorAnimInsts;
 	std::vector<VoxelFadeAnimationInstance> fadeAnimInsts;
+	std::vector<VoxelTriggerInstance> triggerInsts;
 
 	// Decorators.
 	std::vector<TransitionDefinition> transitionDefs;
@@ -147,6 +149,10 @@ public:
 	const VoxelFadeAnimationInstance &getFadeAnimInst(int index) const;
 	bool tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
+	int getTriggerCount() const;
+	const VoxelTriggerInstance &getTriggerInst(int index) const;
+	bool tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
+
 	// Convenience functions for attempting to get a voxel instance at the given voxel.
 	std::optional<int> tryGetVoxelInstIndex(const VoxelInt3 &voxel, VoxelInstance::Type type) const;
 	VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type);
@@ -186,6 +192,7 @@ public:
 	void addVoxelInst(VoxelInstance &&voxelInst);
 	void addDoorAnimInst(VoxelDoorAnimationInstance &&animInst);
 	void addFadeAnimInst(VoxelFadeAnimationInstance &&animInst);
+	void addTriggerInst(VoxelTriggerInstance &&inst);
 
 	// Adds a chunk decorator definition to the chunk and returns its newly assigned ID.
 	TransitionDefID addTransition(TransitionDefinition &&transition);
