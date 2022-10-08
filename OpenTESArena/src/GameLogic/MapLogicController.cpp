@@ -77,10 +77,10 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 		return;
 	}
 
-	const TriggerDefinition &triggerDef = chunkPtr->getTriggerDef(triggerDefID);
+	const VoxelTriggerDefinition &triggerDef = chunkPtr->getTriggerDef(triggerDefID);
 	if (triggerDef.hasSoundDef())
 	{
-		const TriggerDefinition::SoundDef &soundDef = triggerDef.getSoundDef();
+		const VoxelTriggerDefinition::SoundDef &soundDef = triggerDef.getSoundDef();
 		const std::string &soundFilename = soundDef.getFilename();
 
 		// Play the sound.
@@ -90,7 +90,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 
 	if (triggerDef.hasTextDef())
 	{
-		const TriggerDefinition::TextDef &textDef = triggerDef.getTextDef();
+		const VoxelTriggerDefinition::TextDef &textDef = triggerDef.getTextDef();
 		const VoxelInt3 &voxel = coord.voxel;
 
 		int triggerInstIndex;

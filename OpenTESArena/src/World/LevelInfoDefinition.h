@@ -11,10 +11,10 @@
 #include "LockDefinition.h"
 #include "MapGeneration.h"
 #include "TransitionDefinition.h"
-#include "TriggerDefinition.h"
 #include "VoxelMeshDefinition.h"
 #include "VoxelTextureDefinition.h"
 #include "VoxelTraitsDefinition.h"
+#include "VoxelTriggerDefinition.h"
 #include "VoxelUtils.h"
 #include "../Entities/EntityDefinition.h"
 
@@ -32,7 +32,7 @@ private:
 	std::vector<VoxelTraitsDefinition> voxelTraitsDefs;
 	std::vector<EntityDefinition> entityDefs;
 	std::vector<LockDefinition> lockDefs;
-	std::vector<TriggerDefinition> triggerDefs;
+	std::vector<VoxelTriggerDefinition> triggerDefs;
 	std::vector<TransitionDefinition> transitionDefs;
 	std::vector<std::string> buildingNames;
 	std::unordered_map<LevelDefinition::BuildingNameID, std::string> buildingNameOverrides;
@@ -63,7 +63,7 @@ public:
 	const VoxelTraitsDefinition &getVoxelTraitsDef(LevelDefinition::VoxelTraitsDefID id) const;
 	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
 	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
-	const TriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
+	const VoxelTriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
 	const TransitionDefinition &getTransitionDef(LevelDefinition::TransitionDefID id) const;
 	const std::string &getBuildingName(LevelDefinition::BuildingNameID id) const;
 	const DoorDefinition &getDoorDef(LevelDefinition::DoorDefID id) const;
@@ -75,7 +75,7 @@ public:
 	LevelDefinition::VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&def);
 	LevelDefinition::EntityDefID addEntityDef(EntityDefinition &&def);
 	LevelDefinition::LockDefID addLockDef(LockDefinition &&def);
-	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);
+	LevelDefinition::TriggerDefID addTriggerDef(VoxelTriggerDefinition &&def);
 	LevelDefinition::TransitionDefID addTransitionDef(TransitionDefinition &&def);
 	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
 	LevelDefinition::DoorDefID addDoorDef(DoorDefinition &&def);

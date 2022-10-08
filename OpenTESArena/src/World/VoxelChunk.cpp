@@ -372,7 +372,7 @@ const TransitionDefinition &VoxelChunk::getTransitionDef(TransitionDefID id) con
 	return this->transitionDefs[id];
 }
 
-const TriggerDefinition &VoxelChunk::getTriggerDef(TriggerDefID id) const
+const VoxelTriggerDefinition &VoxelChunk::getTriggerDef(TriggerDefID id) const
 {
 	DebugAssertIndex(this->triggerDefs, id);
 	return this->triggerDefs[id];
@@ -515,7 +515,7 @@ VoxelChunk::TransitionDefID VoxelChunk::addTransition(TransitionDefinition &&tra
 	return id;
 }
 
-VoxelChunk::TriggerDefID VoxelChunk::addTrigger(TriggerDefinition &&trigger)
+VoxelChunk::TriggerDefID VoxelChunk::addTrigger(VoxelTriggerDefinition &&trigger)
 {
 	const TriggerDefID id = static_cast<int>(this->triggerDefs.size());
 	this->triggerDefs.emplace_back(std::move(trigger));

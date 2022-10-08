@@ -97,7 +97,7 @@ const LockDefinition &LevelInfoDefinition::getLockDef(LevelDefinition::LockDefID
 	return this->lockDefs[id];
 }
 
-const TriggerDefinition &LevelInfoDefinition::getTriggerDef(LevelDefinition::TriggerDefID id) const
+const VoxelTriggerDefinition &LevelInfoDefinition::getTriggerDef(LevelDefinition::TriggerDefID id) const
 {
 	DebugAssertIndex(this->triggerDefs, id);
 	return this->triggerDefs[id];
@@ -175,7 +175,7 @@ LevelDefinition::LockDefID LevelInfoDefinition::addLockDef(LockDefinition &&def)
 	return id;
 }
 
-LevelDefinition::TriggerDefID LevelInfoDefinition::addTriggerDef(TriggerDefinition &&def)
+LevelDefinition::TriggerDefID LevelInfoDefinition::addTriggerDef(VoxelTriggerDefinition &&def)
 {
 	const LevelDefinition::TriggerDefID id = static_cast<LevelDefinition::TriggerDefID>(this->triggerDefs.size());
 	this->triggerDefs.emplace_back(std::move(def));

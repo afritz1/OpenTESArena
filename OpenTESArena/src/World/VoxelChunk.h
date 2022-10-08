@@ -15,13 +15,13 @@
 #include "DoorDefinition.h"
 #include "LockDefinition.h"
 #include "TransitionDefinition.h"
-#include "TriggerDefinition.h"
 #include "VoxelDoorAnimationInstance.h"
 #include "VoxelFadeAnimationInstance.h"
 #include "VoxelInstance.h"
 #include "VoxelMeshDefinition.h"
 #include "VoxelTextureDefinition.h"
 #include "VoxelTraitsDefinition.h"
+#include "VoxelTriggerDefinition.h"
 #include "VoxelTriggerInstance.h"
 #include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
@@ -67,7 +67,7 @@ private:
 
 	// Decorators.
 	std::vector<TransitionDefinition> transitionDefs;
-	std::vector<TriggerDefinition> triggerDefs;
+	std::vector<VoxelTriggerDefinition> triggerDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<std::string> buildingNames;
 	std::vector<DoorDefinition> doorDefs;
@@ -173,7 +173,7 @@ public:
 	int getChasmDefCount() const;
 
 	const TransitionDefinition &getTransitionDef(TransitionDefID id) const;
-	const TriggerDefinition &getTriggerDef(TriggerDefID id) const;
+	const VoxelTriggerDefinition &getTriggerDef(TriggerDefID id) const;
 	const LockDefinition &getLockDef(LockDefID id) const;
 	const std::string &getBuildingName(BuildingNameID id) const;
 	const DoorDefinition &getDoorDef(DoorDefID id) const;
@@ -196,7 +196,7 @@ public:
 
 	// Adds a chunk decorator definition to the chunk and returns its newly assigned ID.
 	TransitionDefID addTransition(TransitionDefinition &&transition);
-	TriggerDefID addTrigger(TriggerDefinition &&trigger);
+	TriggerDefID addTrigger(VoxelTriggerDefinition &&trigger);
 	LockDefID addLock(LockDefinition &&lock);
 	BuildingNameID addBuildingName(std::string &&buildingName);
 	DoorDefID addDoorDef(DoorDefinition &&door);

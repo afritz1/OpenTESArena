@@ -1,5 +1,5 @@
-#ifndef TRIGGER_DEFINITION_H
-#define TRIGGER_DEFINITION_H
+#ifndef VOXEL_TRIGGER_DEFINITION_H
+#define VOXEL_TRIGGER_DEFINITION_H
 
 #include <string>
 
@@ -7,7 +7,7 @@
 
 // Can have a sound and/or text definition.
 
-class TriggerDefinition
+class VoxelTriggerDefinition
 {
 public:
 	class SoundDef
@@ -38,7 +38,7 @@ private:
 	int y;
 	WEInt z;
 public:
-	TriggerDefinition();
+	VoxelTriggerDefinition();
 
 	void init(SNInt x, int y, WEInt z);
 

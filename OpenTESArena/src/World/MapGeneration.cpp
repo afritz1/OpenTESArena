@@ -15,8 +15,8 @@
 #include "MapGeneration.h"
 #include "MapType.h"
 #include "TransitionDefinition.h"
-#include "TriggerDefinition.h"
 #include "VoxelFacing2D.h"
+#include "VoxelTriggerDefinition.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -815,13 +815,13 @@ namespace MapGeneration
 		return LockDefinition::makeLeveledLock(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
 	}
 
-	TriggerDefinition makeTriggerDefFromArenaTrigger(const ArenaTypes::MIFTrigger &trigger,
+	VoxelTriggerDefinition makeTriggerDefFromArenaTrigger(const ArenaTypes::MIFTrigger &trigger,
 		const INFFile &inf)
 	{
 		const OriginalInt2 triggerPos(trigger.x, trigger.y);
 		const LevelInt2 newTriggerPos = VoxelUtils::originalVoxelToNewVoxel(triggerPos);
 
-		TriggerDefinition triggerDef;
+		VoxelTriggerDefinition triggerDef;
 		triggerDef.init(newTriggerPos.x, 1, newTriggerPos.y);
 
 		// There can be a text trigger and sound trigger in the same voxel.
@@ -1528,7 +1528,7 @@ namespace MapGeneration
 				MapGeneration::makeTriggerDefFromArenaTrigger(trigger, inf));
 			triggerMappings->emplace_back(std::make_pair(trigger, triggerDefID));
 
-			const TriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
+			const VoxelTriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
 			const SNInt x = triggerDef.getX();
 			const int y = triggerDef.getY();
 			const WEInt z = triggerDef.getZ();

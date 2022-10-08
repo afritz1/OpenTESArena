@@ -289,7 +289,7 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 	for (int i = 0; i < levelDefinition.getTriggerPlacementDefCount(); i++)
 	{
 		const LevelDefinition::TriggerPlacementDef &placementDef = levelDefinition.getTriggerPlacementDef(i);
-		const TriggerDefinition &triggerDef = levelInfoDefinition.getTriggerDef(placementDef.id);
+		const VoxelTriggerDefinition &triggerDef = levelInfoDefinition.getTriggerDef(placementDef.id);
 		
 		std::optional<VoxelChunk::TriggerDefID> triggerDefID;
 		for (const LevelInt3 &position : placementDef.positions)
@@ -298,7 +298,7 @@ void ChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinit
 			{
 				if (!triggerDefID.has_value())
 				{
-					triggerDefID = chunk.addTrigger(TriggerDefinition(triggerDef));
+					triggerDefID = chunk.addTrigger(VoxelTriggerDefinition(triggerDef));
 				}
 
 				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
