@@ -402,7 +402,7 @@ std::optional<int> SceneGraph::tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) 
 	return std::nullopt;
 }
 
-BufferView<const RenderDrawCall> SceneGraph::getDrawCalls() const
+BufferView<const RenderDrawCall> SceneGraph::getVoxelDrawCalls() const
 {
 	return BufferView<const RenderDrawCall>(this->drawCallsCache.data(), static_cast<int>(this->drawCallsCache.size()));
 }
@@ -423,8 +423,8 @@ void SceneGraph::loadVoxelTextures(const VoxelChunk &chunk, TextureManager &text
 	}
 }
 
-void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, const RenderCamera &camera,
-	double ceilingScale, bool nightLightsAreActive, RendererSystem3D &renderer)
+void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale,
+	RendererSystem3D &rendererSystem)
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
 
@@ -441,18 +441,18 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 			constexpr int attributesPerVertex = MeshUtils::ATTRIBUTES_PER_VERTEX;
 
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
-			if (!renderer.tryCreateVertexBuffer(vertexCount, componentsPerVertex, &graphVoxelDef.vertexBufferID))
+			if (!rendererSystem.tryCreateVertexBuffer(vertexCount, componentsPerVertex, &graphVoxelDef.vertexBufferID))
 			{
 				DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
 				continue;
 			}
 
-			if (!renderer.tryCreateAttributeBuffer(vertexCount, attributesPerVertex, &graphVoxelDef.attributeBufferID))
+			if (!rendererSystem.tryCreateAttributeBuffer(vertexCount, attributesPerVertex, &graphVoxelDef.attributeBufferID))
 			{
 				DebugLogError("Couldn't create attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
-				graphVoxelDef.freeBuffers(renderer);
+				graphVoxelDef.freeBuffers(rendererSystem);
 				continue;
 			}
 
@@ -463,9 +463,9 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 			voxelMeshDef.writeRendererIndexBuffers(meshInitCache.opaqueIndices0View, meshInitCache.opaqueIndices1View,
 				meshInitCache.opaqueIndices2View, meshInitCache.alphaTestedIndices0View);
 
-			renderer.populateVertexBuffer(graphVoxelDef.vertexBufferID,
+			rendererSystem.populateVertexBuffer(graphVoxelDef.vertexBufferID,
 				BufferView<const double>(meshInitCache.vertices.data(), vertexCount * MeshUtils::COMPONENTS_PER_VERTEX));
-			renderer.populateAttributeBuffer(graphVoxelDef.attributeBufferID,
+			rendererSystem.populateAttributeBuffer(graphVoxelDef.attributeBufferID,
 				BufferView<const double>(meshInitCache.attributes.data(), vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX));
 
 			const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
@@ -473,18 +473,18 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 			{
 				const int opaqueIndexCount = static_cast<int>(voxelMeshDef.getOpaqueIndicesList(bufferIndex).size());
 				IndexBufferID &opaqueIndexBufferID = graphVoxelDef.opaqueIndexBufferIDs[bufferIndex];
-				if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
+				if (!rendererSystem.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 				{
 					DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
-					graphVoxelDef.freeBuffers(renderer);
+					graphVoxelDef.freeBuffers(rendererSystem);
 					continue;
 				}
 
 				graphVoxelDef.opaqueIndexBufferIdCount++;
 
 				const auto &indices = *meshInitCache.opaqueIndicesPtrs[bufferIndex];
-				renderer.populateIndexBuffer(opaqueIndexBufferID,
+				rendererSystem.populateIndexBuffer(opaqueIndexBufferID,
 					BufferView<const int32_t>(indices.data(), opaqueIndexCount));
 			}
 
@@ -492,15 +492,15 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 			if (hasAlphaTestedIndexBuffer)
 			{
 				const int alphaTestedIndexCount = static_cast<int>(voxelMeshDef.alphaTestedIndices.size());
-				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &graphVoxelDef.alphaTestedIndexBufferID))
+				if (!rendererSystem.tryCreateIndexBuffer(alphaTestedIndexCount, &graphVoxelDef.alphaTestedIndexBufferID))
 				{
 					DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
-					graphVoxelDef.freeBuffers(renderer);
+					graphVoxelDef.freeBuffers(rendererSystem);
 					continue;
 				}
 
-				renderer.populateIndexBuffer(graphVoxelDef.alphaTestedIndexBufferID,
+				rendererSystem.populateIndexBuffer(graphVoxelDef.alphaTestedIndexBufferID,
 					BufferView<const int32_t>(meshInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
 			}
 		}
@@ -513,9 +513,7 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale,
 	double chasmAnimPercent)
 {
-	const ChunkInt2 &chunkPos = chunk.getPosition();
-
-	auto addDrawCall = [this, ceilingScale](SceneGraphChunk &graphChunk, SNInt x, int y, WEInt z,
+	auto addDrawCall = [ceilingScale](SceneGraphChunk &graphChunk, SNInt x, int y, WEInt z,
 		VertexBufferID vertexBufferID, AttributeBufferID attributeBufferID, IndexBufferID indexBufferID,
 		ObjectTextureID textureID, PixelShaderType pixelShaderType, bool allowsBackFaces)
 	{
@@ -535,12 +533,14 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 		graphChunk.voxelDrawCalls.emplace_back(std::move(drawCall));
 	};
 
+	const ChunkInt2 &chunkPos = graphChunk.position;
+
 	// Generate draw calls for each non-air voxel.
-	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
+	for (WEInt z = 0; z < graphChunk.voxels.getDepth(); z++)
 	{
-		for (int y = 0; y < chunk.getHeight(); y++)
+		for (int y = 0; y < graphChunk.voxels.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
+			for (SNInt x = 0; x < graphChunk.voxels.getWidth(); x++)
 			{
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
 				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
@@ -558,8 +558,10 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 				const SceneGraphVoxelID graphVoxelID = defIter->second;
 				graphChunk.voxels.set(x, y, z, graphVoxelID);
 
+				const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
+
 				// Convert voxel XYZ to world space.
-				const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunk.getPosition(), VoxelInt2(x, z));
+				const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
 				const int worldY = y;
 
 				const bool allowsBackFaces = voxelMeshDef.allowsBackFaces;
@@ -568,7 +570,6 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 				VoxelChunk::ChasmDefID chasmDefID;
 				const bool usesVoxelTextures = !chunk.tryGetChasmDefID(x, y, z, &chasmDefID);
 
-				const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
 				for (int bufferIndex = 0; bufferIndex < graphVoxelDef.opaqueIndexBufferIdCount; bufferIndex++)
 				{
 					ObjectTextureID textureID = -1;
@@ -648,46 +649,35 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 	}
 }
 
-void SceneGraph::loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
-	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight, double daytimePercent,
-	double latitude, const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager,
-	Renderer &renderer, RendererSystem3D &renderer3D)
+void SceneGraph::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager,
+	Renderer &renderer, RendererSystem3D &rendererSystem)
 {
-	DebugAssert(this->graphChunks.empty());
+	SceneGraphChunk graphChunk;
+	graphChunk.init(chunk.getPosition(), chunk.getHeight());
 
-	const double ceilingScale = levelInst.getCeilingScale();
-	const ChunkManager &chunkManager = levelInst.getChunkManager();
-	for (int i = 0; i < chunkManager.getChunkCount(); i++)
+	this->loadVoxelTextures(chunk, textureManager, renderer);
+	this->loadVoxelMeshBuffers(graphChunk, chunk, ceilingScale, rendererSystem);
+
+	this->graphChunks.emplace_back(std::move(graphChunk));
+}
+
+void SceneGraph::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem)
+{
+	const auto iter = std::find_if(this->graphChunks.begin(), this->graphChunks.end(),
+		[&chunkPos](const SceneGraphChunk &graphChunk)
 	{
-		const VoxelChunk &chunk = chunkManager.getChunk(i);
-		
-		SceneGraphChunk graphChunk;
-		graphChunk.init(chunk.getPosition(), chunk.getHeight());
+		return graphChunk.position == chunkPos;
+	});
 
-		this->loadVoxelTextures(chunk, textureManager, renderer);
-		this->loadVoxelMeshBuffers(graphChunk, chunk, camera, ceilingScale, nightLightsAreActive, renderer3D);
-		this->loadVoxelDrawCalls(graphChunk, chunk, ceilingScale, chasmAnimPercent);
-		//this->loadEntities(levelInst, camera, entityDefLibrary, nightLightsAreActive, playerHasLight, renderer3D);
-
-		this->graphChunks.emplace_back(std::move(graphChunk));
-	}
-
-	//this->loadSky(skyInst, daytimePercent, latitude, renderer3D);
-	//this->loadWeather(skyInst, daytimePercent, renderer3D);
-
-	// Gather draw calls from each chunk.
-	// @todo: do this in update() so it can operate on dirty stuff from chunk manager/entity manager/etc.
-	this->drawCallsCache.clear();
-	for (size_t i = 0; i < this->graphChunks.size(); i++)
+	if (iter != this->graphChunks.end())
 	{
-		const SceneGraphChunk &graphChunk = this->graphChunks[i];
-		this->drawCallsCache.insert(this->drawCallsCache.end(), graphChunk.voxelDrawCalls.begin(), graphChunk.voxelDrawCalls.end());
+		SceneGraphChunk &graphChunk = *iter;
+		graphChunk.freeBuffers(rendererSystem);
+		this->graphChunks.erase(iter);
 	}
 }
 
-void SceneGraph::unloadScene(RendererSystem3D &renderer)
+void SceneGraph::unloadScene(RendererSystem3D &rendererSystem)
 {
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
@@ -697,9 +687,31 @@ void SceneGraph::unloadScene(RendererSystem3D &renderer)
 	// Free vertex/attribute/index buffer IDs from renderer.
 	for (SceneGraphChunk &chunk : this->graphChunks)
 	{
-		chunk.freeBuffers(renderer);
+		chunk.freeBuffers(rendererSystem);
 	}
 
 	this->graphChunks.clear();
 	this->drawCallsCache.clear();
+}
+
+void SceneGraph::rebuildVoxelDrawCalls(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent)
+{
+	this->drawCallsCache.clear();
+
+	// Regenerate draw calls for each chunk.
+	for (size_t i = 0; i < this->graphChunks.size(); i++)
+	{
+		SceneGraphChunk &graphChunk = this->graphChunks[i];
+		graphChunk.voxelDrawCalls.clear();
+
+		const std::optional<int> chunkIndex = chunkManager.tryGetChunkIndex(graphChunk.position);
+		if (!chunkIndex.has_value())
+		{
+			DebugCrash("Expected chunk (" + graphChunk.position.toString() + ") to exist for draw call building.");
+		}
+
+		const VoxelChunk &chunk = chunkManager.getChunk(*chunkIndex);
+		this->loadVoxelDrawCalls(graphChunk, chunk, ceilingScale, chasmAnimPercent);
+		this->drawCallsCache.insert(this->drawCallsCache.end(), graphChunk.voxelDrawCalls.begin(), graphChunk.voxelDrawCalls.end());
+	}
 }

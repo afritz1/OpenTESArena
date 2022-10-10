@@ -833,30 +833,23 @@ void Renderer::freeUiTexture(UiTextureID id)
 	this->renderer2D->freeUiTexture(id);
 }
 
-void Renderer::loadScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double daytimePercent, double latitude,
-	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
+void Renderer::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager)
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.loadScene(levelInst, skyInst, activeLevelIndex, mapDefinition, citizenGenInfo, camera,
-		chasmAnimPercent, nightLightsAreActive, playerHasLight, daytimePercent, latitude, entityDefLibrary,
-		textureManager, *this, *this->renderer3D);
+	this->sceneGraph.loadVoxelChunk(chunk, ceilingScale, textureManager, *this, *this->renderer3D);
 }
 
-/*void Renderer::updateScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double daytimePercent, double latitude,
-	double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
+void Renderer::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem)
 {
 	DebugAssert(this->renderer3D != nullptr);
-	const double ceilingScale = levelInst.getCeilingScale();
-	this->sceneGraph.updateScene(levelInst, skyInst, activeLevelIndex, mapDefinition, citizenGenInfo, camera,
-		ceilingScale, chasmAnimPercent, nightLightsAreActive, playerHasLight, daytimePercent, latitude,
-		entityDefLibrary, textureManager, *this->renderer3D);
-}*/
+	this->sceneGraph.unloadVoxelChunk(chunkPos, rendererSystem);
+}
+
+void Renderer::rebuildVoxelDrawCalls(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent)
+{
+	DebugAssert(this->renderer3D != nullptr);
+	this->sceneGraph.rebuildVoxelDrawCalls(chunkManager, ceilingScale, chasmAnimPercent);
+}
 
 void Renderer::unloadScene()
 {
@@ -959,7 +952,7 @@ void Renderer::submitFrame(const RenderCamera &camera, double ambientPercent, Ob
 		reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
 	DebugAssertMsg(status == 0, "Couldn't lock game world texture for scene rendering (" + std::string(SDL_GetError()) + ").");
 
-	const BufferView<const RenderDrawCall> drawCalls = this->sceneGraph.getDrawCalls();
+	const BufferView<const RenderDrawCall> drawCalls = this->sceneGraph.getVoxelDrawCalls();
 
 	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();

@@ -106,26 +106,29 @@ private:
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const;
 
 	void loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer);
-	void loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, const RenderCamera &camera,
-		double ceilingScale, bool nightLightsAreActive, RendererSystem3D &renderer);
-	void loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale,
-		double chasmAnimPercent);
+	void loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale, RendererSystem3D &rendererSystem);
+	void loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale, double chasmAnimPercent);
 public:
-	// Gets the list of draw calls for visible geometry this frame.
-	BufferView<const RenderDrawCall> getDrawCalls() const;
+	// Gets the list of draw calls for visible voxel geometry this frame.
+	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
 
-	// Loads all the rendering resources of the given scene into the scene graph.
+	// Loads all the resources required by the given voxel chunk and adds it to the draw list.
 	// @todo: eventually I think a better way would be to simply treat scene graph chunks like allocated textures;
 	// via function calls and operations on a returned handle/ID.
-	void loadScene(const LevelInstance &levelInst, const SkyInstance &skyInst,
-		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const RenderCamera &camera,
-		double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-		double daytimePercent, double latitude, const EntityDefinitionLibrary &entityDefLibrary,
-		TextureManager &textureManager, Renderer &renderer, RendererSystem3D &renderer3D);
+	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer,
+		RendererSystem3D &rendererSystem);
+	// @todo: loadEntityChunk(), probably needs citizenGenInfo, nightLightsAreActive, playerHasLight, daytimePercent, entityDefLibrary
+	// @todo: loadSky()
+	// @todo: loadWeather()
+
+	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
 
 	// Clears all rendering resources from the scene graph (voxels, entities, sky, weather).
-	void unloadScene(RendererSystem3D &renderer);
+	void unloadScene(RendererSystem3D &rendererSystem);
+
+	// Call once per frame after all voxel chunk changes have been applied to the scene graph.
+	// @todo: maybe this could be called per chunk too
+	void rebuildVoxelDrawCalls(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent);
 };
 
 #endif

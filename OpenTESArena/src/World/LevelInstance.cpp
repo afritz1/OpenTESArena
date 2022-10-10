@@ -123,10 +123,6 @@ double LevelInstance::getCeilingScale() const
 	return this->ceilingScale;
 }
 
-// @temp for renderer.loadScene(); remove once we know where to properly use loadScene() and with what parameters.
-#include "../Rendering/RenderCamera.h"
-#include "../World/SkyInstance.h"
-#include "../Entities/EntityDefinitionLibrary.h"
 bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
@@ -138,9 +134,14 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 
 	renderer.unloadScene();
 
-	DebugLogWarning("renderer.loadScene() is taking temp arguments.");
-	renderer.loadScene(RenderCamera(), *this, SkyInstance(), 0, mapDefinition, citizenGenInfo,
-		0.0, 0.0, 0.0, false, true, EntityDefinitionLibrary(), textureManager);
+	for (int i = 0; i < this->chunkManager.getChunkCount(); i++)
+	{
+		const VoxelChunk &chunk = this->chunkManager.getChunk(i);
+		renderer.loadVoxelChunk(chunk, this->ceilingScale, textureManager);
+	}
+
+	constexpr double chasmAnimPercent = 0.0;
+	renderer.rebuildVoxelDrawCalls(this->chunkManager, this->ceilingScale, chasmAnimPercent);
 
 	if (!TryPopulatePaletteTexture(this->paletteTextureRef, textureManager, renderer))
 	{
@@ -168,6 +169,8 @@ void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoor
 	this->chunkManager.update(dt, centerChunk, playerCoord, activeLevelIndex, mapDefinition, entityGenInfo,
 		citizenGenInfo, this->ceilingScale, chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager,
 		audioManager, this->entityManager);
+
+	// @todo: renderer.rebuildVoxelDrawCalls()?
 
 	this->entityManager.tick(game, dt);
 }

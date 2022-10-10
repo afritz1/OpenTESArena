@@ -219,19 +219,10 @@ public:
 	void freeObjectTexture(ObjectTextureID id);
 	void freeUiTexture(UiTextureID id);
 
-	// Loads rendering resources for the given scene.
-	void loadScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
-		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		double daytimePercent, double latitude, double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
-
-	// @todo: get loadScene()/unloadScene() working well before adding functionality for dirty voxels, etc.
-	/*void updateScene(const RenderCamera &camera, const LevelInstance &levelInst, const SkyInstance &skyInst,
-		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double daytimePercent, double latitude,
-		double chasmAnimPercent, bool nightLightsAreActive, bool playerHasLight,
-		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);*/
+	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager);
+	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
+	// @todo: handle dirty voxels and updating voxel chunk
+	void rebuildVoxelDrawCalls(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent);
 	
 	// Unloads all world geometry from the scene graph, used on scene changes.
 	void unloadScene();
