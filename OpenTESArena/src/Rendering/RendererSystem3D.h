@@ -5,7 +5,6 @@
 
 #include "RenderGeometryUtils.h"
 #include "RenderTextureUtils.h"
-#include "RenderTriangle.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
 #include "../Media/Palette.h"

@@ -7,7 +7,6 @@
 #include "../RenderCamera.h"
 #include "../Renderer.h"
 #include "../RendererSystem3D.h"
-#include "../RenderTriangle.h"
 #include "../../Assets/MIFUtils.h"
 #include "../../Entities/EntityManager.h"
 #include "../../Entities/EntityVisibilityState.h"

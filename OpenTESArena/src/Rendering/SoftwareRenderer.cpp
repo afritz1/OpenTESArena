@@ -41,11 +41,36 @@ namespace swCamera
 // Internal geometry types/functions.
 namespace swGeometry
 {
+	Double3 MakeTriangleNormal(const Double3 &v0v1, const Double3 &v2v0)
+	{
+		return v2v0.cross(v0v1).normalized();
+	}
+
 	struct TriangleClipResult
 	{
-		int triangleCount = 0;
-		RenderTriangle triangles[2];
+		static constexpr int MAX_RESULTS = 2;
 
+		int triangleCount = 0;
+		Double3 v0s[MAX_RESULTS], v1s[MAX_RESULTS], v2s[MAX_RESULTS];
+		Double3 v0v1s[MAX_RESULTS], v1v2s[MAX_RESULTS], v2v0s[MAX_RESULTS];
+		Double3 normals[MAX_RESULTS];
+		Double2 uv0s[MAX_RESULTS], uv1s[MAX_RESULTS], uv2s[MAX_RESULTS];
+	private:
+		void populateIndex(int index, const Double3 &v0, const Double3 &v1, const Double3 &v2,
+			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
+		{
+			this->v0s[index] = v0;
+			this->v1s[index] = v1;
+			this->v2s[index] = v2;
+			this->v0v1s[index] = v1 - v0;
+			this->v1v2s[index] = v2 - v1;
+			this->v2v0s[index] = v0 - v2;
+			this->normals[index] = MakeTriangleNormal(this->v0v1s[index], this->v2v0s[index]);
+			this->uv0s[index] = uv0;
+			this->uv1s[index] = uv1;
+			this->uv2s[index] = uv2;
+		}
+	public:
 		static TriangleClipResult zero()
 		{
 			TriangleClipResult result;
@@ -53,33 +78,55 @@ namespace swGeometry
 			return result;
 		}
 
-		static TriangleClipResult one(const RenderTriangle &triangle)
+		static TriangleClipResult one(const Double3 &v0, const Double3 &v1, const Double3 &v2,
+			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
 		{
 			TriangleClipResult result;
 			result.triangleCount = 1;
-			result.triangles[0] = triangle;
+			result.populateIndex(0, v0, v1, v2, uv0, uv1, uv2);
 			return result;
 		}
 
-		static TriangleClipResult two(const RenderTriangle &triangleA, const RenderTriangle &triangleB)
+		static TriangleClipResult two(const Double3 &v0A, const Double3 &v1A, const Double3 &v2A,
+			const Double2 &uv0A, const Double2 &uv1A, const Double2 &uv2A,
+			const Double3 &v0B, const Double3 &v1B, const Double3 &v2B,
+			const Double2 &uv0B, const Double2 &uv1B, const Double2 &uv2B)
 		{
 			TriangleClipResult result;
 			result.triangleCount = 2;
-			result.triangles[0] = triangleA;
-			result.triangles[1] = triangleB;
+			result.populateIndex(0, v0A, v1A, v2A, uv0A, uv1A, uv2A);
+			result.populateIndex(1, v0B, v1B, v2B, uv0B, uv1B, uv2B);
 			return result;
 		}
 	};
 
-	TriangleClipResult ClipTriangle(const RenderTriangle &triangle, const Double3 &eye, const Double3 &planePoint, const Double3 &planeNormal)
+	struct TriangleDrawListIndices
+	{
+		int startIndex;
+		int count;
+
+		TriangleDrawListIndices(int startIndex, int count)
+		{
+			this->startIndex = startIndex;
+			this->count = count;
+		}
+	};
+
+	TriangleClipResult ClipTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2,
+		const Double2 &uv0, const Double2 &uv1, const Double2 &uv2, const Double3 &eye,
+		const Double3 &planePoint, const Double3 &planeNormal)
 	{
 		std::array<const Double3*, 3> insidePoints, outsidePoints;
 		std::array<const Double2*, 3> insideUVs, outsideUVs;
 		int insidePointCount = 0;
 		int outsidePointCount = 0;
 
-		const std::array<const Double3*, 3> vertexPtrs = { &triangle.v0, &triangle.v1, &triangle.v2 };
-		const std::array<const Double2*, 3> uvPtrs = { &triangle.uv0, &triangle.uv1, &triangle.uv2 };
+		const std::array<const Double3*, 3> vertexPtrs = { &v0, &v1, &v2 };
+		const std::array<const Double2*, 3> uvPtrs = { &uv0, &uv1, &uv2 };
+
+		const Double3 v0v1 = v1 - v0;
+		const Double3 v2v0 = v0 - v2;
+		const Double3 normal = MakeTriangleNormal(v0v1, v2v0);
 
 		// Determine which vertices are in the positive half-space of the clipping plane.
 		for (int i = 0; i < static_cast<int>(vertexPtrs.size()); i++)
@@ -112,17 +159,13 @@ namespace swGeometry
 		else if (isCompletelyInside)
 		{
 			// Reverse vertex order if back-facing.
-			if ((eye - triangle.v0).dot(triangle.normal) >= Constants::Epsilon)
+			if ((eye - v0).dot(normal) >= Constants::Epsilon)
 			{
-				return TriangleClipResult::one(triangle);
+				return TriangleClipResult::one(v0, v1, v2, uv0, uv1, uv2);
 			}
 			else
 			{
-				RenderTriangle newTriangle;
-				newTriangle.init(triangle.v0, triangle.v2, triangle.v1, triangle.uv0, triangle.uv2,
-					triangle.uv1, triangle.textureID, triangle.param0);
-
-				return TriangleClipResult::one(newTriangle);
+				return TriangleClipResult::one(v0, v2, v1, uv0, uv2, uv1);
 			}
 		}
 		else if (becomesSmallerTriangle)
@@ -151,19 +194,14 @@ namespace swGeometry
 
 			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
 			const Double3 unormal = (insidePoint - newInsidePoint2).cross(newInsidePoint1 - insidePoint);
-			RenderTriangle newTriangle;
 			if ((eye - insidePoint).dot(unormal) >= Constants::Epsilon)
 			{
-				newTriangle.init(insidePoint, newInsidePoint1, newInsidePoint2, insideUV, newInsideUV0,
-					newInsideUV1, triangle.textureID, triangle.param0);
+				return TriangleClipResult::one(insidePoint, newInsidePoint1, newInsidePoint2, insideUV, newInsideUV0, newInsideUV1);
 			}
 			else
 			{
-				newTriangle.init(newInsidePoint2, newInsidePoint1, insidePoint, newInsideUV1, newInsideUV0,
-					insideUV, triangle.textureID, triangle.param0);
+				return TriangleClipResult::one(newInsidePoint2, newInsidePoint1, insidePoint, newInsideUV1, newInsideUV0, insideUV);
 			}
-
-			return TriangleClipResult::one(newTriangle);
 		}
 		else if (becomesQuad)
 		{
@@ -181,7 +219,7 @@ namespace swGeometry
 
 			const double t0 = (outsidePoint0 - newTriangle0V0).length();
 
-			// @todo: replace ray-plane intersection with one that get T value internally
+			// @todo: replace ray-plane intersection with one that gets T value internally
 			Double3 newTriangle0V2;
 			MathUtils::rayPlaneIntersection(newTriangle0V0, (outsidePoint0 - newTriangle0V0).normalized(),
 				planePoint, planeNormal, &newTriangle0V2);
@@ -195,7 +233,7 @@ namespace swGeometry
 
 			const double t1 = (outsidePoint0 - newTriangle1V0).length();
 
-			// @todo: replace ray-plane intersection with one that get T value internally
+			// @todo: replace ray-plane intersection with one that gets T value internally
 			Double3 newTriangle1V2;
 			MathUtils::rayPlaneIntersection(newTriangle1V0, (outsidePoint0 - newTriangle1V0).normalized(),
 				planePoint, planeNormal, &newTriangle1V2);
@@ -204,32 +242,35 @@ namespace swGeometry
 
 			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
 			const Double3 unormal0 = (newTriangle0V0 - newTriangle0V2).cross(newTriangle0V1 - newTriangle0V0);
-			RenderTriangle newTriangle0;
-			if ((eye - newTriangle0V0).dot(unormal0) >= Constants::Epsilon)
-			{
-				newTriangle0.init(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0UV0, newTriangle0UV1,
-					newTriangle0UV2, triangle.textureID, triangle.param0);
-			}
-			else
-			{
-				newTriangle0.init(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0UV2, newTriangle0UV1,
-					newTriangle0UV0, triangle.textureID, triangle.param0);
-			}
-
 			const Double3 unormal1 = (newTriangle1V0 - newTriangle1V2).cross(newTriangle1V1 - newTriangle1V0);
-			RenderTriangle newTriangle1;
-			if ((eye - newTriangle1V0).dot(unormal1) >= Constants::Epsilon)
+			const bool keepOrientation0 = (eye - newTriangle0V0).dot(unormal0) >= Constants::Epsilon;
+			const bool keepOrientation1 = (eye - newTriangle1V0).dot(unormal1) >= Constants::Epsilon;
+			if (keepOrientation0)
 			{
-				newTriangle1.init(newTriangle1V0, newTriangle1V1, newTriangle1V2, newTriangle1UV0, newTriangle1UV1,
-					newTriangle1UV2, triangle.textureID, triangle.param0);
+				if (keepOrientation1)
+				{
+					return TriangleClipResult::two(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0UV0, newTriangle0UV1,
+						newTriangle0UV2, newTriangle1V0, newTriangle1V1, newTriangle1V2, newTriangle1UV0, newTriangle1UV1, newTriangle1UV2);
+				}
+				else
+				{
+					return TriangleClipResult::two(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0UV0, newTriangle0UV1,
+						newTriangle0UV2, newTriangle1V2, newTriangle1V1, newTriangle1V0, newTriangle1UV2, newTriangle1UV1, newTriangle1UV0);
+				}
 			}
 			else
 			{
-				newTriangle1.init(newTriangle1V2, newTriangle1V1, newTriangle1V0, newTriangle1UV2, newTriangle1UV1,
-					newTriangle1UV0, triangle.textureID, triangle.param0);
+				if (keepOrientation1)
+				{
+					return TriangleClipResult::two(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0UV2, newTriangle0UV1,
+						newTriangle0UV0, newTriangle1V0, newTriangle1V1, newTriangle1V2, newTriangle1UV0, newTriangle1UV1, newTriangle1UV2);
+				}
+				else
+				{
+					return TriangleClipResult::two(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0UV2, newTriangle0UV1,
+						newTriangle0UV0, newTriangle1V2, newTriangle1V1, newTriangle1V0, newTriangle1UV2, newTriangle1UV1, newTriangle1UV0);
+				}
 			}
-
-			return TriangleClipResult::two(newTriangle0, newTriangle1);
 		}
 		else
 		{
@@ -240,7 +281,12 @@ namespace swGeometry
 
 	// Caches for visible triangle processing/clipping.
 	// @optimization: make N of these caches to allow for multi-threaded clipping
-	std::vector<RenderTriangle> g_visibleTriangles, g_visibleClipList;
+	std::vector<Double3> g_visibleTriangleV0s, g_visibleTriangleV1s, g_visibleTriangleV2s;
+	std::vector<Double2> g_visibleTriangleUV0s, g_visibleTriangleUV1s, g_visibleTriangleUV2s;
+	std::vector<ObjectTextureID> g_visibleTriangleTextureIDs;
+	std::vector<Double3> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
+	std::vector<Double2> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
+	std::vector<ObjectTextureID> g_visibleClipListTextureIDs;
 	int g_visibleTriangleCount = 0; // Note this includes new triangles from clipping.
 	int g_totalTriangleCount = 0;
 
@@ -249,12 +295,24 @@ namespace swGeometry
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
-	BufferView<const RenderTriangle> ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
+	swGeometry::TriangleDrawListIndices ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
 		const SoftwareRenderer::AttributeBuffer &attributeBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
 		ObjectTextureID textureID, const Double3 &worldOffset, bool allowBackFaces, const RenderCamera &camera)
 	{
-		std::vector<RenderTriangle> &outVisibleTriangles = g_visibleTriangles;
-		std::vector<RenderTriangle> &outClipList = g_visibleClipList;
+		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
+		std::vector<Double3> &outVisibleTriangleV1s = g_visibleTriangleV1s;
+		std::vector<Double3> &outVisibleTriangleV2s = g_visibleTriangleV2s;
+		std::vector<Double2> &outVisibleTriangleUV0s = g_visibleTriangleUV0s;
+		std::vector<Double2> &outVisibleTriangleUV1s = g_visibleTriangleUV1s;
+		std::vector<Double2> &outVisibleTriangleUV2s = g_visibleTriangleUV2s;
+		std::vector<ObjectTextureID> &outVisibleTriangleTextureIDs = g_visibleTriangleTextureIDs;
+		std::vector<Double3> &outClipListV0s = g_visibleClipListV0s;
+		std::vector<Double3> &outClipListV1s = g_visibleClipListV1s;
+		std::vector<Double3> &outClipListV2s = g_visibleClipListV2s;
+		std::vector<Double2> &outClipListUV0s = g_visibleClipListUV0s;
+		std::vector<Double2> &outClipListUV1s = g_visibleClipListUV1s;
+		std::vector<Double2> &outClipListUV2s = g_visibleClipListUV2s;
+		std::vector<ObjectTextureID> &outClipListTextureIDs = g_visibleClipListTextureIDs;
 		int *outVisibleTriangleCount = &g_visibleTriangleCount;
 		int *outTotalTriangleCount = &g_totalTriangleCount;
 
@@ -295,7 +353,13 @@ namespace swGeometry
 			}
 		};
 
-		outVisibleTriangles.clear();
+		outVisibleTriangleV0s.clear();
+		outVisibleTriangleV1s.clear();
+		outVisibleTriangleV2s.clear();
+		outVisibleTriangleUV0s.clear();
+		outVisibleTriangleUV1s.clear();
+		outVisibleTriangleUV2s.clear();
+		outVisibleTriangleTextureIDs.clear();
 
 		const double *verticesPtr = vertexBuffer.vertices.get();
 		const double *attributesPtr = attributeBuffer.attributes.get();
@@ -330,14 +394,13 @@ namespace swGeometry
 				*(attributesPtr + (index2 * 2)),
 				*(attributesPtr + (index2 * 2) + 1));
 
-			// @todo: don't construct the RenderTriangle, just use the vertices/etc. directly throughout
-			// - also compute the normal in advance and pass with the UVs like [uv0.x, uv0.y, norm.x, norm.y, norm.z, uv1.x, ...]
-			RenderTriangle triangle;
-			triangle.init(v0, v1, v2, uv0, uv1, uv2, textureID, 0.0); // @todo: remove ObjectTextureID and param0, put in draw call instead
+			const Double3 v0v1 = v1 - v0;
+			const Double3 v2v0 = v0 - v2;
+			const Double3 normal = MakeTriangleNormal(v0v1, v2v0);
 
 			// Discard back-facing and almost-back-facing.
 			const Double3 v0ToEye = eye - v0;
-			const double visibilityDot = v0ToEye.dot(triangle.normal);
+			const double visibilityDot = v0ToEye.dot(normal);
 			if (!allowBackFaces)
 			{
 				if (visibilityDot < Constants::Epsilon)
@@ -353,30 +416,70 @@ namespace swGeometry
 				}
 			}
 
-			outClipList.clear();
-			outClipList.emplace_back(triangle);
+			outClipListV0s.clear();
+			outClipListV1s.clear();
+			outClipListV2s.clear();
+			outClipListUV0s.clear();
+			outClipListUV1s.clear();
+			outClipListUV2s.clear();
+			outClipListTextureIDs.clear();
+
+			outClipListV0s.emplace_back(v0);
+			outClipListV1s.emplace_back(v1);
+			outClipListV2s.emplace_back(v2);
+			outClipListUV0s.emplace_back(uv0);
+			outClipListUV1s.emplace_back(uv1);
+			outClipListUV2s.emplace_back(uv2);
+			outClipListTextureIDs.emplace_back(textureID);
+
 			for (const ClippingPlane &plane : clippingPlanes)
 			{
-				for (int j = static_cast<int>(outClipList.size()); j > 0; j--)
+				for (int j = static_cast<int>(outClipListV0s.size()); j > 0; j--)
 				{
-					const RenderTriangle &clipListTriangle = outClipList.front();
-					const TriangleClipResult clipResult = ClipTriangle(clipListTriangle, eye, plane.point, plane.normal);
+					const Double3 &clipListV0 = outClipListV0s.front();
+					const Double3 &clipListV1 = outClipListV1s.front();
+					const Double3 &clipListV2 = outClipListV2s.front();
+					const Double2 &clipListUV0 = outClipListUV0s.front();
+					const Double2 &clipListUV1 = outClipListUV1s.front();
+					const Double2 &clipListUV2 = outClipListUV2s.front();
+					const ObjectTextureID clipListTextureID = outClipListTextureIDs.front();
+
+					const TriangleClipResult clipResult = ClipTriangle(clipListV0, clipListV1, clipListV2,
+						clipListUV0, clipListUV1, clipListUV2, eye, plane.point, plane.normal);
 					for (int k = 0; k < clipResult.triangleCount; k++)
 					{
-						outClipList.emplace_back(clipResult.triangles[k]);
+						outClipListV0s.emplace_back(clipResult.v0s[k]);
+						outClipListV1s.emplace_back(clipResult.v1s[k]);
+						outClipListV2s.emplace_back(clipResult.v2s[k]);
+						outClipListUV0s.emplace_back(clipResult.uv0s[k]);
+						outClipListUV1s.emplace_back(clipResult.uv1s[k]);
+						outClipListUV2s.emplace_back(clipResult.uv2s[k]);
+						outClipListTextureIDs.emplace_back(textureID);
 					}
 
-					outClipList.erase(outClipList.begin());
+					outClipListV0s.erase(outClipListV0s.begin());
+					outClipListV1s.erase(outClipListV1s.begin());
+					outClipListV2s.erase(outClipListV2s.begin());
+					outClipListUV0s.erase(outClipListUV0s.begin());
+					outClipListUV1s.erase(outClipListUV1s.begin());
+					outClipListUV2s.erase(outClipListUV2s.begin());
+					outClipListTextureIDs.erase(outClipListTextureIDs.begin());
 				}
 			}
 
-			outVisibleTriangles.insert(outVisibleTriangles.end(), outClipList.begin(), outClipList.end());
+			outVisibleTriangleV0s.insert(outVisibleTriangleV0s.end(), outClipListV0s.begin(), outClipListV0s.end());
+			outVisibleTriangleV1s.insert(outVisibleTriangleV1s.end(), outClipListV1s.begin(), outClipListV1s.end());
+			outVisibleTriangleV2s.insert(outVisibleTriangleV2s.end(), outClipListV2s.begin(), outClipListV2s.end());
+			outVisibleTriangleUV0s.insert(outVisibleTriangleUV0s.end(), outClipListUV0s.begin(), outClipListUV0s.end());
+			outVisibleTriangleUV1s.insert(outVisibleTriangleUV1s.end(), outClipListUV1s.begin(), outClipListUV1s.end());
+			outVisibleTriangleUV2s.insert(outVisibleTriangleUV2s.end(), outClipListUV2s.begin(), outClipListUV2s.end());
+			outVisibleTriangleTextureIDs.insert(outVisibleTriangleTextureIDs.end(), outClipListTextureIDs.begin(), outClipListTextureIDs.end());
 		}
 
-		const int visibleTriangleCount = static_cast<int>(outVisibleTriangles.size());
+		const int visibleTriangleCount = static_cast<int>(outVisibleTriangleV0s.size());
 		*outVisibleTriangleCount += visibleTriangleCount;
 		*outTotalTriangleCount += triangleCount;
-		return BufferView<const RenderTriangle>(outVisibleTriangles.data(), visibleTriangleCount);
+		return swGeometry::TriangleDrawListIndices(0, visibleTriangleCount); // All visible triangles.
 	}
 }
 
@@ -423,16 +526,28 @@ namespace swRender
 		depthBuffer.fill(std::numeric_limits<double>::infinity());
 	}
 
-	void ClearGeometryCache()
+	void ClearTriangleDrawList()
 	{
-		swGeometry::g_visibleTriangles.clear();
-		swGeometry::g_visibleClipList.clear();
+		swGeometry::g_visibleTriangleV0s.clear();
+		swGeometry::g_visibleTriangleV1s.clear();
+		swGeometry::g_visibleTriangleV2s.clear();
+		swGeometry::g_visibleTriangleUV0s.clear();
+		swGeometry::g_visibleTriangleUV1s.clear();
+		swGeometry::g_visibleTriangleUV2s.clear();
+		swGeometry::g_visibleTriangleTextureIDs.clear();
+		swGeometry::g_visibleClipListV0s.clear();
+		swGeometry::g_visibleClipListV1s.clear();
+		swGeometry::g_visibleClipListV2s.clear();
+		swGeometry::g_visibleClipListUV0s.clear();
+		swGeometry::g_visibleClipListUV1s.clear();
+		swGeometry::g_visibleClipListUV2s.clear();
+		swGeometry::g_visibleClipListTextureIDs.clear();
 		swGeometry::g_visibleTriangleCount = 0;
 		swGeometry::g_totalTriangleCount = 0;
 	}
 
 	// The provided triangles are assumed to be back-face culled and clipped.
-	void RasterizeTriangles(const BufferView<const RenderTriangle> &triangles, bool debug_alphaTest, // @temp
+	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, bool debug_alphaTest, // @temp
 		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
 		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera,
 		BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
@@ -460,13 +575,13 @@ namespace swRender
 		uint32_t *colorBufferPtr = colorBuffer.get();
 		double *depthBufferPtr = depthBuffer.get();
 
-		const int triangleCount = triangles.getCount();
+		const int triangleCount = drawListIndices.count;
 		for (int i = 0; i < triangleCount; i++)
 		{
-			const RenderTriangle &triangle = triangles.get(i);
-			const Double3 &v0 = triangle.v0;
-			const Double3 &v1 = triangle.v1;
-			const Double3 &v2 = triangle.v2;
+			const int index = drawListIndices.startIndex + i;
+			const Double3 &v0 = swGeometry::g_visibleTriangleV0s[index];
+			const Double3 &v1 = swGeometry::g_visibleTriangleV1s[index];
+			const Double3 &v2 = swGeometry::g_visibleTriangleV2s[index];
 			const Double4 view0 = RendererUtils::worldSpaceToCameraSpace(Double4(v0, 1.0), viewMatrix);
 			const Double4 view1 = RendererUtils::worldSpaceToCameraSpace(Double4(v1, 1.0), viewMatrix);
 			const Double4 view2 = RendererUtils::worldSpaceToCameraSpace(Double4(v2, 1.0), viewMatrix);
@@ -506,16 +621,17 @@ namespace swRender
 			const double z1Recip = 1.0 / z1;
 			const double z2Recip = 1.0 / z2;
 
-			const Double2 &uv0 = triangle.uv0;
-			const Double2 &uv1 = triangle.uv1;
-			const Double2 &uv2 = triangle.uv2;
+			const Double2 &uv0 = swGeometry::g_visibleTriangleUV0s[index];
+			const Double2 &uv1 = swGeometry::g_visibleTriangleUV1s[index];
+			const Double2 &uv2 = swGeometry::g_visibleTriangleUV2s[index];
 			const Double2 uv0Perspective = uv0 * z0Recip;
 			const Double2 uv1Perspective = uv1 * z1Recip;
 			const Double2 uv2Perspective = uv2 * z2Recip;
 
 			// @todo: add support for multiple ObjectTextureIDs - they'll come from the draw call this time, not an object material.
-			const bool isMultiTextured = false;// material.id1 >= 0;
-			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(triangle.textureID);
+			const bool isMultiTextured = false;
+			const ObjectTextureID textureID = swGeometry::g_visibleTriangleTextureIDs[index];
+			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID);
 			const SoftwareRenderer::ObjectTexture &texture1 = texture0;// isMultiTextured ? textures.get(material.id1) : texture0;
 			
 			const int texture0Width = texture0.texels.getWidth();
@@ -526,7 +642,7 @@ namespace swRender
 			const int texture1Height = texture1.texels.getHeight();
 			const uint8_t *texture1Texels = texture1.texels.get();
 
-			const double fadePercent = triangle.param0;
+			const double fadePercent = 0.0; // @todo
 			const bool isFading = fadePercent > 0.0;
 
 			for (int y = yStart; y < yEnd; y++)
@@ -989,7 +1105,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 
 	const uint32_t clearColor = Color::Black.toARGB();
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
-	swRender::ClearGeometryCache();
+	swRender::ClearTriangleDrawList();
 
 	for (int i = 0; i < drawCalls.getCount(); i++)
 	{
@@ -1000,11 +1116,11 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const ObjectTextureID textureID = drawCall.textureIDs[0].value(); // @todo: do better error handling
 		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
 		const bool allowBackFaces = drawCall.allowBackFaces;
-		const BufferView<const RenderTriangle> clippedTriangles = swGeometry::ProcessTrianglesForRasterization(
+		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(
 			vertexBuffer, attributeBuffer, indexBuffer, textureID, worldSpaceOffset, allowBackFaces, camera);
 
 		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
-		swRender::RasterizeTriangles(clippedTriangles, isAlphaTested, this->objectTextures, paletteTexture,
+		swRender::RasterizeTriangles(drawListIndices, isAlphaTested, this->objectTextures, paletteTexture,
 			lightTableTexture, camera, colorBufferView, depthBufferView);
 	}
 }

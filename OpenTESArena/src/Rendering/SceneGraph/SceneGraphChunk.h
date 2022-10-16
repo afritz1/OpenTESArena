@@ -5,7 +5,6 @@
 
 #include "../RenderDrawCall.h"
 #include "../RenderGeometryUtils.h"
-#include "../RenderTriangle.h"
 #include "../../World/VoxelChunk.h"
 #include "../../World/VoxelUtils.h"
 
