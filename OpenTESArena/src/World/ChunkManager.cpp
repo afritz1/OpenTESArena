@@ -761,8 +761,8 @@ void ChunkManager::updateChunkPerimeter(VoxelChunk &chunk)
 		};
 		
 		constexpr VoxelInstance::Type voxelInstType = VoxelInstance::Type::Chasm;
-		VoxelInstance *chasmInst = chunk.tryGetVoxelInst(voxel, voxelInstType);
-		if (chasmInst != nullptr)
+		int chasmInstIndex;
+		if (chunk.tryGetVoxelInstIndex(voxel.x, voxel.y, voxel.z, voxelInstType, &chasmInstIndex))
 		{
 			// The voxel instance already exists. See if it should be updated or removed.
 			bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
@@ -771,7 +771,8 @@ void ChunkManager::updateChunkPerimeter(VoxelChunk &chunk)
 			if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 			{
 				// The voxel instance is still needed. Update its chasm walls.
-				VoxelInstance::ChasmState &chasmState = chasmInst->getChasmState();
+				VoxelInstance &chasmInst = chunk.getVoxelInst(chasmInstIndex);
+				VoxelInstance::ChasmState &chasmState = chasmInst.getChasmState();
 				chasmState.init(hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
 			}
 			else
