@@ -427,31 +427,31 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
 
-	// Add scene graph voxel definitions and create mappings to them.
+	// Add scene graph voxel mesh instances and create mappings to them.
 	for (int meshDefIndex = 0; meshDefIndex < chunk.getVoxelMeshDefCount(); meshDefIndex++)
 	{
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = static_cast<VoxelChunk::VoxelMeshDefID>(meshDefIndex);
 		const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
 
-		SceneGraphVoxelDefinition graphVoxelDef;
+		SceneGraphVoxelMeshInstance voxelMeshInst;
 		if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
 		{
 			constexpr int componentsPerVertex = MeshUtils::COMPONENTS_PER_VERTEX;
 			constexpr int attributesPerVertex = MeshUtils::ATTRIBUTES_PER_VERTEX;
 
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
-			if (!rendererSystem.tryCreateVertexBuffer(vertexCount, componentsPerVertex, &graphVoxelDef.vertexBufferID))
+			if (!rendererSystem.tryCreateVertexBuffer(vertexCount, componentsPerVertex, &voxelMeshInst.vertexBufferID))
 			{
 				DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
 				continue;
 			}
 
-			if (!rendererSystem.tryCreateAttributeBuffer(vertexCount, attributesPerVertex, &graphVoxelDef.attributeBufferID))
+			if (!rendererSystem.tryCreateAttributeBuffer(vertexCount, attributesPerVertex, &voxelMeshInst.attributeBufferID))
 			{
 				DebugLogError("Couldn't create attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
-				graphVoxelDef.freeBuffers(rendererSystem);
+				voxelMeshInst.freeBuffers(rendererSystem);
 				continue;
 			}
 
@@ -462,25 +462,25 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 			voxelMeshDef.writeRendererIndexBuffers(meshInitCache.opaqueIndices0View, meshInitCache.opaqueIndices1View,
 				meshInitCache.opaqueIndices2View, meshInitCache.alphaTestedIndices0View);
 
-			rendererSystem.populateVertexBuffer(graphVoxelDef.vertexBufferID,
+			rendererSystem.populateVertexBuffer(voxelMeshInst.vertexBufferID,
 				BufferView<const double>(meshInitCache.vertices.data(), vertexCount * MeshUtils::COMPONENTS_PER_VERTEX));
-			rendererSystem.populateAttributeBuffer(graphVoxelDef.attributeBufferID,
+			rendererSystem.populateAttributeBuffer(voxelMeshInst.attributeBufferID,
 				BufferView<const double>(meshInitCache.attributes.data(), vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX));
 
 			const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
 			for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
 			{
 				const int opaqueIndexCount = static_cast<int>(voxelMeshDef.getOpaqueIndicesList(bufferIndex).size());
-				IndexBufferID &opaqueIndexBufferID = graphVoxelDef.opaqueIndexBufferIDs[bufferIndex];
+				IndexBufferID &opaqueIndexBufferID = voxelMeshInst.opaqueIndexBufferIDs[bufferIndex];
 				if (!rendererSystem.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 				{
 					DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
-					graphVoxelDef.freeBuffers(rendererSystem);
+					voxelMeshInst.freeBuffers(rendererSystem);
 					continue;
 				}
 
-				graphVoxelDef.opaqueIndexBufferIdCount++;
+				voxelMeshInst.opaqueIndexBufferIdCount++;
 
 				const auto &indices = *meshInitCache.opaqueIndicesPtrs[bufferIndex];
 				rendererSystem.populateIndexBuffer(opaqueIndexBufferID,
@@ -491,21 +491,21 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 			if (hasAlphaTestedIndexBuffer)
 			{
 				const int alphaTestedIndexCount = static_cast<int>(voxelMeshDef.alphaTestedIndices.size());
-				if (!rendererSystem.tryCreateIndexBuffer(alphaTestedIndexCount, &graphVoxelDef.alphaTestedIndexBufferID))
+				if (!rendererSystem.tryCreateIndexBuffer(alphaTestedIndexCount, &voxelMeshInst.alphaTestedIndexBufferID))
 				{
 					DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
-					graphVoxelDef.freeBuffers(rendererSystem);
+					voxelMeshInst.freeBuffers(rendererSystem);
 					continue;
 				}
 
-				rendererSystem.populateIndexBuffer(graphVoxelDef.alphaTestedIndexBufferID,
+				rendererSystem.populateIndexBuffer(voxelMeshInst.alphaTestedIndexBufferID,
 					BufferView<const int32_t>(meshInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
 			}
 		}
 
-		const SceneGraphVoxelID graphVoxelID = graphChunk.addVoxelDef(std::move(graphVoxelDef));
-		graphChunk.voxelDefMappings.emplace(voxelMeshDefID, graphVoxelID);
+		const SceneGraphVoxelMeshInstanceID meshInstID = graphChunk.addMeshInstance(std::move(voxelMeshInst));
+		graphChunk.meshInstMappings.emplace(voxelMeshDefID, meshInstID);
 	}
 }
 
@@ -535,11 +535,11 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 	const ChunkInt2 &chunkPos = graphChunk.position;
 
 	// Generate draw calls for each non-air voxel.
-	for (WEInt z = 0; z < graphChunk.voxels.getDepth(); z++)
+	for (WEInt z = 0; z < graphChunk.meshInstIDs.getDepth(); z++)
 	{
-		for (int y = 0; y < graphChunk.voxels.getHeight(); y++)
+		for (int y = 0; y < graphChunk.meshInstIDs.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < graphChunk.voxels.getWidth(); x++)
+			for (SNInt x = 0; x < graphChunk.meshInstIDs.getWidth(); x++)
 			{
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
 				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
@@ -552,12 +552,12 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 					continue;
 				}
 
-				const auto defIter = graphChunk.voxelDefMappings.find(voxelMeshDefID);
-				DebugAssert(defIter != graphChunk.voxelDefMappings.end());
-				const SceneGraphVoxelID graphVoxelID = defIter->second;
-				graphChunk.voxels.set(x, y, z, graphVoxelID);
+				const auto defIter = graphChunk.meshInstMappings.find(voxelMeshDefID);
+				DebugAssert(defIter != graphChunk.meshInstMappings.end());
+				const SceneGraphVoxelMeshInstanceID meshInstID = defIter->second;
+				graphChunk.meshInstIDs.set(x, y, z, meshInstID);
 
-				const SceneGraphVoxelDefinition &graphVoxelDef = graphChunk.voxelDefs[graphVoxelID];
+				const SceneGraphVoxelMeshInstance &meshInst = graphChunk.meshInsts[meshInstID];
 
 				// Convert voxel XYZ to world space.
 				const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
@@ -569,7 +569,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 				VoxelChunk::ChasmDefID chasmDefID;
 				const bool usesVoxelTextures = !chunk.tryGetChasmDefID(x, y, z, &chasmDefID);
 
-				for (int bufferIndex = 0; bufferIndex < graphVoxelDef.opaqueIndexBufferIdCount; bufferIndex++)
+				for (int bufferIndex = 0; bufferIndex < meshInst.opaqueIndexBufferIdCount; bufferIndex++)
 				{
 					ObjectTextureID textureID = -1;
 
@@ -601,13 +601,12 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 						continue;
 					}
 
-					const IndexBufferID opaqueIndexBufferID = graphVoxelDef.opaqueIndexBufferIDs[bufferIndex];
-					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID,
-						graphVoxelDef.attributeBufferID, opaqueIndexBufferID, textureID, PixelShaderType::Opaque,
-						allowsBackFaces);
+					const IndexBufferID opaqueIndexBufferID = meshInst.opaqueIndexBufferIDs[bufferIndex];
+					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.attributeBufferID,
+						opaqueIndexBufferID, textureID, PixelShaderType::Opaque, allowsBackFaces);
 				}
 
-				if (graphVoxelDef.alphaTestedIndexBufferID >= 0)
+				if (meshInst.alphaTestedIndexBufferID >= 0)
 				{
 					ObjectTextureID textureID = -1;
 
@@ -639,9 +638,8 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 						continue;
 					}
 
-					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, graphVoxelDef.vertexBufferID,
-						graphVoxelDef.attributeBufferID, graphVoxelDef.alphaTestedIndexBufferID, textureID,
-						PixelShaderType::AlphaTested, allowsBackFaces);
+					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.attributeBufferID,
+						meshInst.alphaTestedIndexBufferID, textureID, PixelShaderType::AlphaTested, allowsBackFaces);
 				}
 			}
 		}

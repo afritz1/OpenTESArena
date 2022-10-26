@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 
+#include "SceneGraphMesh.h"
 #include "../RenderDrawCall.h"
 #include "../RenderGeometryUtils.h"
 #include "../../World/VoxelChunk.h"
@@ -14,30 +15,13 @@
 class EntityManager;
 class RendererSystem3D;
 
-struct SceneGraphVoxelDefinition // @todo: either rename this to "geometry/mesh definition" or add texture IDs to it
-{
-	static constexpr int MAX_TEXTURES = 3; // Based on VoxelDefinition subtypes (wall and raised).
-
-	VertexBufferID vertexBufferID;
-	AttributeBufferID attributeBufferID;
-	IndexBufferID opaqueIndexBufferIDs[MAX_TEXTURES];
-	int opaqueIndexBufferIdCount;
-	IndexBufferID alphaTestedIndexBufferID;
-	
-	// @todo: index buffers for voxel instances (i.e. chasm walls) will likely be separately stored in the scene graph like a default + override
-
-	SceneGraphVoxelDefinition();
-
-	void freeBuffers(RendererSystem3D &renderer3D);
-};
-
-using SceneGraphVoxelID = int;
+using SceneGraphVoxelMeshInstanceID = int;
 
 struct SceneGraphChunk
 {
-	std::vector<SceneGraphVoxelDefinition> voxelDefs;
-	std::unordered_map<VoxelChunk::VoxelMeshDefID, SceneGraphVoxelID> voxelDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
-	Buffer3D<SceneGraphVoxelID> voxels; // Points into voxel defs.
+	std::vector<SceneGraphVoxelMeshInstance> meshInsts;
+	std::unordered_map<VoxelChunk::VoxelMeshDefID, SceneGraphVoxelMeshInstanceID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
+	Buffer3D<SceneGraphVoxelMeshInstanceID> meshInstIDs; // Points into mesh instances.
 	std::vector<RenderDrawCall> voxelDrawCalls;
 	ChunkInt2 position;
 
@@ -49,7 +33,7 @@ struct SceneGraphChunk
 
 	void init(const ChunkInt2 &position, int height);
 	void update(EntityManager &entityManager);
-	SceneGraphVoxelID addVoxelDef(SceneGraphVoxelDefinition &&voxelDef);
+	SceneGraphVoxelMeshInstanceID addMeshInstance(SceneGraphVoxelMeshInstance &&meshInst);
 	void freeBuffers(RendererSystem3D &renderer);
 };
 
