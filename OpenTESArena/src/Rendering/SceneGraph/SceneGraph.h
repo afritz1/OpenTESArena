@@ -117,18 +117,22 @@ public:
 	// via function calls and operations on a returned handle/ID.
 	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer,
 		RendererSystem3D &rendererSystem);
+	
+	// Call once per frame per chunk after all voxel chunk changes have been applied to the scene graph.
+	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
+	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent);
+
+	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
+
 	// @todo: loadEntityChunk(), probably needs citizenGenInfo, nightLightsAreActive, playerHasLight, daytimePercent, entityDefLibrary
 	// @todo: loadSky()
 	// @todo: loadWeather()
 
-	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
+	// Collects all stored voxel draw calls from active chunks and puts them into a list for the renderer.
+	void rebuildVoxelDrawCallsList();
 
 	// Clears all rendering resources from the scene graph (voxels, entities, sky, weather).
 	void unloadScene(RendererSystem3D &rendererSystem);
-
-	// Call once per frame after all voxel chunk changes have been applied to the scene graph.
-	// @todo: maybe this could be called per chunk too
-	void rebuildVoxelDrawCalls(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent);
 };
 
 #endif

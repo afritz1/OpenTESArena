@@ -839,16 +839,22 @@ void Renderer::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, Text
 	this->sceneGraph.loadVoxelChunk(chunk, ceilingScale, textureManager, *this, *this->renderer3D);
 }
 
+void Renderer::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent)
+{
+	DebugAssert(this->renderer3D != nullptr);
+	this->sceneGraph.rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent);
+}
+
 void Renderer::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem)
 {
 	DebugAssert(this->renderer3D != nullptr);
 	this->sceneGraph.unloadVoxelChunk(chunkPos, rendererSystem);
 }
 
-void Renderer::rebuildVoxelDrawCalls(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent)
+void Renderer::rebuildVoxelDrawCallsList()
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.rebuildVoxelDrawCalls(chunkManager, ceilingScale, chasmAnimPercent);
+	this->sceneGraph.rebuildVoxelDrawCallsList();
 }
 
 void Renderer::unloadScene()

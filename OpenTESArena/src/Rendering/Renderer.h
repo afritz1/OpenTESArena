@@ -220,9 +220,10 @@ public:
 	void freeUiTexture(UiTextureID id);
 
 	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager);
-	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
 	// @todo: handle dirty voxels and updating voxel chunk
-	void rebuildVoxelDrawCalls(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent);
+	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent);
+	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
+	void rebuildVoxelDrawCallsList();
 	
 	// Unloads all world geometry from the scene graph, used on scene changes.
 	void unloadScene();

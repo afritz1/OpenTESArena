@@ -658,6 +658,22 @@ void SceneGraph::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, Te
 	this->graphChunks.emplace_back(std::move(graphChunk));
 }
 
+void SceneGraph::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent)
+{
+	const ChunkInt2 chunkPos = voxelChunk.getPosition();
+	const std::optional<int> graphChunkIndex = this->tryGetGraphChunkIndex(chunkPos);
+	if (!graphChunkIndex.has_value())
+	{
+		DebugLogError("No scene graph chunk available at (" + chunkPos.toString() + ").");
+		return;
+	}
+
+	SceneGraphChunk &graphChunk = this->graphChunks[*graphChunkIndex];
+	graphChunk.voxelDrawCalls.clear();
+
+	this->loadVoxelDrawCalls(graphChunk, voxelChunk, ceilingScale, chasmAnimPercent);
+}
+
 void SceneGraph::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem)
 {
 	const auto iter = std::find_if(this->graphChunks.begin(), this->graphChunks.end(),
@@ -671,6 +687,19 @@ void SceneGraph::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &r
 		SceneGraphChunk &graphChunk = *iter;
 		graphChunk.freeBuffers(rendererSystem);
 		this->graphChunks.erase(iter);
+	}
+}
+
+void SceneGraph::rebuildVoxelDrawCallsList()
+{
+	this->drawCallsCache.clear();
+
+	// @todo: eventually this should sort by distance from a CoordDouble2
+	for (size_t i = 0; i < this->graphChunks.size(); i++)
+	{
+		const SceneGraphChunk &graphChunk = this->graphChunks[i];
+		const auto &srcDrawCalls = graphChunk.voxelDrawCalls;
+		this->drawCallsCache.insert(this->drawCallsCache.end(), srcDrawCalls.begin(), srcDrawCalls.end());
 	}
 }
 
@@ -689,26 +718,4 @@ void SceneGraph::unloadScene(RendererSystem3D &rendererSystem)
 
 	this->graphChunks.clear();
 	this->drawCallsCache.clear();
-}
-
-void SceneGraph::rebuildVoxelDrawCalls(const ChunkManager &chunkManager, double ceilingScale, double chasmAnimPercent)
-{
-	this->drawCallsCache.clear();
-
-	// Regenerate draw calls for each chunk.
-	for (size_t i = 0; i < this->graphChunks.size(); i++)
-	{
-		SceneGraphChunk &graphChunk = this->graphChunks[i];
-		graphChunk.voxelDrawCalls.clear();
-
-		const std::optional<int> chunkIndex = chunkManager.tryGetChunkIndex(graphChunk.position);
-		if (!chunkIndex.has_value())
-		{
-			DebugCrash("Expected chunk (" + graphChunk.position.toString() + ") to exist for draw call building.");
-		}
-
-		const VoxelChunk &chunk = chunkManager.getChunk(*chunkIndex);
-		this->loadVoxelDrawCalls(graphChunk, chunk, ceilingScale, chasmAnimPercent);
-		this->drawCallsCache.insert(this->drawCallsCache.end(), graphChunk.voxelDrawCalls.begin(), graphChunk.voxelDrawCalls.end());
-	}
 }

@@ -136,12 +136,14 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 
 	for (int i = 0; i < this->chunkManager.getChunkCount(); i++)
 	{
-		const VoxelChunk &chunk = this->chunkManager.getChunk(i);
-		renderer.loadVoxelChunk(chunk, this->ceilingScale, textureManager);
+		const VoxelChunk &voxelChunk = this->chunkManager.getChunk(i);
+		renderer.loadVoxelChunk(voxelChunk, this->ceilingScale, textureManager);
+
+		constexpr double chasmAnimPercent = 0.0;
+		renderer.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent);
 	}
 
-	constexpr double chasmAnimPercent = 0.0;
-	renderer.rebuildVoxelDrawCalls(this->chunkManager, this->ceilingScale, chasmAnimPercent);
+	renderer.rebuildVoxelDrawCallsList();
 
 	if (!TryPopulatePaletteTexture(this->paletteTextureRef, textureManager, renderer))
 	{
