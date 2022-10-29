@@ -649,8 +649,9 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 void SceneGraph::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager,
 	Renderer &renderer, RendererSystem3D &rendererSystem)
 {
+	const ChunkInt2 &chunkPos = chunk.getPosition();
 	SceneGraphChunk graphChunk;
-	graphChunk.init(chunk.getPosition(), chunk.getHeight());
+	graphChunk.init(chunkPos, chunk.getHeight());
 
 	this->loadVoxelTextures(chunk, textureManager, renderer);
 	this->loadVoxelMeshBuffers(graphChunk, chunk, ceilingScale, rendererSystem);

@@ -222,7 +222,7 @@ public:
 	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager);
 	// @todo: handle dirty voxels and updating voxel chunk
 	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent);
-	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
+	void unloadVoxelChunk(const ChunkInt2 &chunkPos);
 	void rebuildVoxelDrawCallsList();
 	
 	// Unloads all world geometry from the scene graph, used on scene changes.

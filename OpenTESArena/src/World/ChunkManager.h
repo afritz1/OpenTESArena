@@ -34,6 +34,7 @@ private:
 
 	std::vector<VoxelChunkPtr> chunkPool;
 	std::vector<VoxelChunkPtr> activeChunks;
+	std::vector<ChunkInt2> newChunkPositions, freedChunkPositions; // Spawned and freed chunks this frame.
 	ChunkInt2 centerChunkPos;
 
 	template <typename VoxelIdType>
@@ -110,6 +111,11 @@ public:
 	// Convenience functions for attempting to obtain a chunk from the given chunk coordinate.
 	VoxelChunk *tryGetChunk(const ChunkInt2 &position);
 	const VoxelChunk *tryGetChunk(const ChunkInt2 &position) const;
+
+	int getNewChunkPositionCount() const;
+	int getFreedChunkPositionCount() const;
+	const ChunkInt2 &getNewChunkPosition(int index) const;
+	const ChunkInt2 &getFreedChunkPosition(int index) const;
 
 	// Index of the chunk all other active chunks surround.
 	int getCenterChunkIndex() const;

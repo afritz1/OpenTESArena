@@ -845,10 +845,10 @@ void Renderer::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double c
 	this->sceneGraph.rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent);
 }
 
-void Renderer::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem)
+void Renderer::unloadVoxelChunk(const ChunkInt2 &chunkPos)
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.unloadVoxelChunk(chunkPos, rendererSystem);
+	this->sceneGraph.unloadVoxelChunk(chunkPos, *this->renderer3D);
 }
 
 void Renderer::rebuildVoxelDrawCallsList()

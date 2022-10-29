@@ -89,6 +89,28 @@ const VoxelChunk *ChunkManager::tryGetChunk(const ChunkInt2 &position) const
 	return chunkIndex.has_value() ? &this->getChunk(*chunkIndex) : nullptr;
 }
 
+int ChunkManager::getNewChunkPositionCount() const
+{
+	return static_cast<int>(this->newChunkPositions.size());
+}
+
+int ChunkManager::getFreedChunkPositionCount() const
+{
+	return static_cast<int>(this->freedChunkPositions.size());
+}
+
+const ChunkInt2 &ChunkManager::getNewChunkPosition(int index) const
+{
+	DebugAssertIndex(this->newChunkPositions, index);
+	return this->newChunkPositions[index];
+}
+
+const ChunkInt2 &ChunkManager::getFreedChunkPosition(int index) const
+{
+	DebugAssertIndex(this->freedChunkPositions, index);
+	return this->freedChunkPositions[index];
+}
+
 int ChunkManager::getCenterChunkIndex() const
 {
 	const std::optional<int> index = this->tryGetChunkIndex(this->centerChunkPos);
@@ -848,6 +870,8 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const Coor
 
 			// Notify entity manager that the chunk is being recycled.
 			entityManager.removeChunk(chunkPos);
+
+			this->freedChunkPositions.emplace_back(chunkPos);
 		}
 	}
 
@@ -866,6 +890,8 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const Coor
 				const int spawnIndex = this->spawnChunk();
 				this->populateChunk(spawnIndex, curChunkPos, activeLevelIndex, mapDefinition, entityGenInfo,
 					citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
+
+				this->newChunkPositions.emplace_back(curChunkPos);
 			}
 		}
 	}
@@ -900,4 +926,7 @@ void ChunkManager::cleanUp()
 		VoxelChunk &chunk = this->getChunk(i);
 		chunk.clearDirtyVoxels();
 	}
+
+	this->newChunkPositions.clear();
+	this->freedChunkPositions.clear();
 }

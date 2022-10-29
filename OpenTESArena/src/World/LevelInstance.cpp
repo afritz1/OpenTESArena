@@ -8,6 +8,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Entities/CitizenUtils.h"
+#include "../Game/Game.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
@@ -172,7 +173,34 @@ void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoor
 		citizenGenInfo, this->ceilingScale, chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager,
 		audioManager, this->entityManager);
 
-	// @todo: renderer.rebuildVoxelDrawCalls()?
+	// @todo: eventually bring all entity manager add/remove chunk behavior from ChunkManager::update() to these two loops
+
+	Renderer &renderer = game.getRenderer();
+	const int freedChunkCount = this->chunkManager.getFreedChunkPositionCount();
+	const int newChunkCount = this->chunkManager.getNewChunkPositionCount();
+	for (int i = 0; i < freedChunkCount; i++)
+	{
+		const ChunkInt2 &chunkPos = this->chunkManager.getFreedChunkPosition(i);
+		renderer.unloadVoxelChunk(chunkPos);
+	}
+
+	for (int i = 0; i < newChunkCount; i++)
+	{
+		const ChunkInt2 &chunkPos = this->chunkManager.getNewChunkPosition(i);
+		VoxelChunk *voxelChunkPtr = this->chunkManager.tryGetChunk(chunkPos);
+		DebugAssert(voxelChunkPtr != nullptr);
+
+		renderer.loadVoxelChunk(*voxelChunkPtr, this->ceilingScale, textureManager);
+
+		const GameState &gameState = game.getGameState();
+		const double chasmAnimPercent = gameState.getChasmAnimPercent();
+		renderer.rebuildVoxelChunkDrawCalls(*voxelChunkPtr, this->ceilingScale, chasmAnimPercent); // @todo: maybe also do this every frame but only for voxels with animating textures, via a flag?
+	}
+
+	if ((freedChunkCount > 0) || (newChunkCount > 0))
+	{
+		renderer.rebuildVoxelDrawCallsList();
+	}
 
 	this->entityManager.tick(game, dt);
 }
