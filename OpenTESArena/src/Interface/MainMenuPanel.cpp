@@ -233,6 +233,8 @@ bool MainMenuPanel::init()
 		return false;
 	}
 
+	renderer.unloadScene(); // In case we are returning from a game session.
+
 	return true;
 }
 
