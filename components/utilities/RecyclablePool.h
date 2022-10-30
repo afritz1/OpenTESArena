@@ -2,8 +2,8 @@
 #define RECYCLABLE_POOL_H
 
 #include <algorithm>
-#include <deque>
 #include <type_traits>
+#include <unordered_set>
 #include <vector>
 
 #include "../debug/Debug.h"
@@ -21,12 +21,12 @@ private:
 	static_assert(std::is_integral_v<IdT>);
 	
 	std::vector<ElementT> elements;
-	std::deque<IdT> freedIDs;
+	std::unordered_set<IdT> freedIDs;
 	IdT nextID;
 
 	bool isFreedID(IdT id) const
 	{
-		return std::find(this->freedIDs.begin(), this->freedIDs.end(), id) != this->freedIDs.end();
+		return this->freedIDs.find(id) != this->freedIDs.end();
 	}
 
 	bool isValidID(IdT id) const
@@ -67,8 +67,8 @@ public:
 	{
 		if (!this->freedIDs.empty())
 		{
-			*outID = this->freedIDs.front();
-			this->freedIDs.pop_front();
+			*outID = *this->freedIDs.begin();
+			this->freedIDs.erase(this->freedIDs.begin());
 		}
 		else
 		{
@@ -87,7 +87,7 @@ public:
 			DebugCrash("Invalid ID to free: \"" + std::to_string(id) + "\"");
 		}
 
-		this->freedIDs.emplace_back(id);
+		this->freedIDs.emplace(id);
 		
 		DebugAssertIndex(this->elements, id);
 		this->elements[id] = ElementT();
