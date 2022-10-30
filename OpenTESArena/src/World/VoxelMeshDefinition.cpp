@@ -16,6 +16,7 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 	this->alphaTestedIndicesListCount = 0;
 	this->allowsBackFaces = false;
 	this->enablesNeighborGeometry = false;
+	this->isContextSensitive = false;
 }
 
 void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, const ArenaMeshUtils::InitCache &meshInitCache)
@@ -26,6 +27,7 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, const Are
 	this->alphaTestedIndicesListCount = ArenaMeshUtils::GetAlphaTestedIndexBufferCount(voxelType);
 	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
 	this->enablesNeighborGeometry = ArenaMeshUtils::EnablesNeighborVoxelGeometry(voxelType);
+	this->isContextSensitive = ArenaMeshUtils::HasContextSensitiveGeometry(voxelType);
 
 	if (voxelType != ArenaTypes::VoxelType::None)
 	{

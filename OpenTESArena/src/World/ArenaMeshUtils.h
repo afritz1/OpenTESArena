@@ -299,6 +299,27 @@ namespace ArenaMeshUtils
 		}
 	}
 
+	constexpr bool HasContextSensitiveGeometry(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Raised:
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Edge:
+		case ArenaTypes::VoxelType::Door:
+			return false;
+		case ArenaTypes::VoxelType::Chasm:
+			return true;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
 	// Mesh writing functions. All of these are in unscaled model space.
 	void WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes);
 	void WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices,

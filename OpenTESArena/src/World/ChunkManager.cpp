@@ -483,9 +483,9 @@ void ChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 		{
 			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
 			{
-				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(x, y, z);
-				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
-				if (voxelTraitsDef.type != ArenaTypes::VoxelType::Chasm)
+				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
+				const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
+				if (!voxelMeshDef.isContextSensitive)
 				{
 					continue;
 				}
@@ -504,7 +504,7 @@ void ChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 				this->getAdjacentVoxelMeshDefIDs(coord, &northChunkIndex, &eastChunkIndex, &southChunkIndex, &westChunkIndex,
 					&northVoxelMeshDefID, &eastVoxelMeshDefID, &southVoxelMeshDefID, &westVoxelMeshDefID);
 
-				auto isFaceActive = [this](const std::optional<int> &chunkIndex, VoxelChunk::VoxelMeshDefID voxelMeshDefID)
+				auto isFaceActive = [this](const std::optional<int> &chunkIndex, VoxelChunk::VoxelMeshDefID meshDefID)
 				{
 					if (!chunkIndex.has_value())
 					{
@@ -512,8 +512,8 @@ void ChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 					}
 
 					const VoxelChunk &voxelChunk = this->getChunk(*chunkIndex);
-					const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getVoxelMeshDef(voxelMeshDefID);
-					return voxelMeshDef.enablesNeighborGeometry;
+					const VoxelMeshDefinition &meshDef = voxelChunk.getVoxelMeshDef(meshDefID);
+					return meshDef.enablesNeighborGeometry;
 				};
 
 				bool hasNorthFace = isFaceActive(northChunkIndex, northVoxelMeshDefID);
