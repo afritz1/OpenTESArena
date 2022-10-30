@@ -81,8 +81,9 @@ private:
 	void populateWildChunkBuildingNames(VoxelChunk &chunk, const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo,
 		const LevelInfoDefinition &levelInfoDefinition);
 
-	// Adds any voxel instances to a chunk that should exist at level generation time. Mostly intended for chasms.
-	void populateChunkVoxelInsts(VoxelChunk &chunk);
+	// Adds chasm instances to the chunk that should exist at level generation time. Chasms are context-sensitive
+	// to adjacent voxels so this function also operates based on adjacent chunks (if any).
+	void populateChunkChasmInsts(VoxelChunk &chunk);
 
 	// Adds entities from the level to the chunk.
 	void populateChunkEntities(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
@@ -99,9 +100,8 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, EntityManager &entityManager);
 
-	// Updates context-sensitive voxels (such as chasms) on a chunk's perimeter that may be affected by
-	// adjacent chunks.
-	void updateChunkPerimeter(VoxelChunk &chunk);
+	// Updates chasms (context-sensitive voxels) on a chunk's perimeter that may be affected by adjacent chunks.
+	void updateChunkPerimeterChasmInsts(VoxelChunk &chunk);
 public:
 	int getChunkCount() const;
 	VoxelChunk &getChunk(int index);
