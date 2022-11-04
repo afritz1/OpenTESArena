@@ -1,12 +1,14 @@
 #include "ArenaMeshUtils.h"
 #include "VoxelFacing2D.h"
+#include "../Math/Constants.h"
 
-void ArenaMeshUtils::WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes)
+void ArenaMeshUtils::WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
+	BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Wall);
 
 	// One quad per face (results in duplication; necessary for correct texture mapping).
-	constexpr std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> vertices =
+	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices =
 	{
 		// X=0
 		0.0, 1.0, 0.0,
@@ -40,7 +42,41 @@ void ArenaMeshUtils::WriteWallMeshGeometryBuffers(BufferView<double> outVertices
 		1.0, 1.0, 1.0
 	};
 
-	constexpr std::array<double, vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes =
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals =
+	{
+		// X=0
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		// X=1
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		// Y=0
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		// Y=1
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		// Z=0
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		// Z=1
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0
+	};
+
+	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
 		// X=0
 		0.0, 0.0,
@@ -75,7 +111,8 @@ void ArenaMeshUtils::WriteWallMeshGeometryBuffers(BufferView<double> outVertices
 	};
 
 	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSideIndices,
@@ -120,11 +157,12 @@ void ArenaMeshUtils::WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSide
 	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.get());
 }
 
-void ArenaMeshUtils::WriteFloorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes)
+void ArenaMeshUtils::WriteFloorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
+	BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Floor);
 
-	constexpr std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> vertices =
+	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices =
 	{
 		// Y=1
 		0.0, 1.0, 1.0,
@@ -133,7 +171,16 @@ void ArenaMeshUtils::WriteFloorMeshGeometryBuffers(BufferView<double> outVertice
 		0.0, 1.0, 0.0
 	};
 
-	constexpr std::array<double, vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes =
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals =
+	{
+		// Y=1
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0
+	};
+
+	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
 		// Y=1
 		0.0, 1.0,
@@ -143,7 +190,8 @@ void ArenaMeshUtils::WriteFloorMeshGeometryBuffers(BufferView<double> outVertice
 	};
 
 	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
@@ -162,11 +210,12 @@ void ArenaMeshUtils::WriteFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueInd
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 }
 
-void ArenaMeshUtils::WriteCeilingMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes)
+void ArenaMeshUtils::WriteCeilingMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
+	BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Ceiling);
 
-	constexpr std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> vertices =
+	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices =
 	{
 		// Y=0
 		0.0, 0.0, 0.0,
@@ -175,7 +224,16 @@ void ArenaMeshUtils::WriteCeilingMeshGeometryBuffers(BufferView<double> outVerti
 		0.0, 0.0, 1.0,
 	};
 
-	constexpr std::array<double, vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes =
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals =
+	{
+		// Y=0
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0
+	};
+
+	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
 		// Y=0
 		0.0, 0.0,
@@ -185,7 +243,8 @@ void ArenaMeshUtils::WriteCeilingMeshGeometryBuffers(BufferView<double> outVerti
 	};
 
 	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteCeilingMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
@@ -205,14 +264,14 @@ void ArenaMeshUtils::WriteCeilingMeshIndexBuffers(BufferView<int32_t> outOpaqueI
 }
 
 void ArenaMeshUtils::WriteRaisedMeshGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
-	BufferView<double> outVertices, BufferView<double> outAttributes)
+	BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Raised);
 	const double yBottom = yOffset;
-	const double yTop = (yOffset + ySize);
+	const double yTop = yOffset + ySize;
 
 	// One quad per face (results in duplication; necessary for correct texture mapping).
-	const std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> vertices =
+	const std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices =
 	{
 		// X=0
 		0.0, yTop, 0.0,
@@ -246,7 +305,41 @@ void ArenaMeshUtils::WriteRaisedMeshGeometryBuffers(double yOffset, double ySize
 		1.0, yTop, 1.0
 	};
 
-	const std::array<double, vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes =
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals =
+	{
+		// X=0
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		// X=1
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		// Y=0
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		// Y=1
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		// Z=0
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		// Z=1
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0
+	};
+
+	const std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
 		// X=0
 		0.0, vTop,
@@ -281,7 +374,8 @@ void ArenaMeshUtils::WriteRaisedMeshGeometryBuffers(double yOffset, double ySize
 	};
 
 	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
@@ -327,11 +421,11 @@ void ArenaMeshUtils::WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTes
 }
 
 void ArenaMeshUtils::WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<double> outVertices,
-	BufferView<double> outAttributes)
+	BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Diagonal);
 
-	constexpr std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> type1Vertices =
+	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> type1Vertices =
 	{
 		0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0,
@@ -339,17 +433,32 @@ void ArenaMeshUtils::WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<dou
 		1.0, 1.0, 1.0,
 	};
 
-	constexpr std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> type2Vertices =
+	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> type2Vertices =
 	{
 		1.0, 1.0, 0.0,
 		1.0, 0.0, 0.0,
 		0.0, 0.0, 1.0,
 		0.0, 1.0, 1.0,
 	};
+	
+	constexpr double halfSqrt2 = Constants::HalfSqrt2;
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> type1Normals =
+	{
+		-halfSqrt2, 0.0, halfSqrt2,
+		-halfSqrt2, 0.0, halfSqrt2,
+		-halfSqrt2, 0.0, halfSqrt2,
+		-halfSqrt2, 0.0, halfSqrt2
+	};
 
-	const std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> &vertices = type1 ? type1Vertices : type2Vertices;
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> type2Normals =
+	{
+		halfSqrt2, 0.0, halfSqrt2,
+		halfSqrt2, 0.0, halfSqrt2,
+		halfSqrt2, 0.0, halfSqrt2,
+		halfSqrt2, 0.0, halfSqrt2
+	};
 
-	constexpr std::array<double, vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes =
+	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
 		0.0, 0.0,
 		0.0, 1.0,
@@ -357,8 +466,12 @@ void ArenaMeshUtils::WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<dou
 		1.0, 0.0
 	};
 
+	const auto &vertices = type1 ? type1Vertices : type2Vertices;
+	const auto &normals = type1 ? type1Normals : type2Normals;
+
 	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteDiagonalMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
@@ -377,12 +490,12 @@ void ArenaMeshUtils::WriteDiagonalMeshIndexBuffers(BufferView<int32_t> outOpaque
 }
 
 void ArenaMeshUtils::WriteTransparentWallMeshGeometryBuffers(BufferView<double> outVertices,
-	BufferView<double> outAttributes)
+	BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::TransparentWall);
 
 	// One quad per face (results in duplication; necessary for correct texture mapping).
-	constexpr std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> vertices =
+	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices =
 	{
 		// X=0
 		0.0, 1.0, 0.0,
@@ -406,7 +519,31 @@ void ArenaMeshUtils::WriteTransparentWallMeshGeometryBuffers(BufferView<double> 
 		1.0, 1.0, 1.0
 	};
 
-	constexpr std::array<double, vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes =
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals =
+	{
+		// X=0
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		// X=1
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		// Z=0
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		// Z=1
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0
+	};
+
+	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
 		// X=0
 		0.0, 0.0,
@@ -431,7 +568,8 @@ void ArenaMeshUtils::WriteTransparentWallMeshGeometryBuffers(BufferView<double> 
 	};
 
 	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteTransparentWallMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
@@ -460,16 +598,16 @@ void ArenaMeshUtils::WriteTransparentWallMeshIndexBuffers(BufferView<int32_t> ou
 }
 
 void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
-	BufferView<double> outVertices, BufferView<double> outAttributes)
+	BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Edge);
 	const double yBottom = yOffset;
 	const double yTop = yOffset + 1.0;
 
-	constexpr int componentCount = vertexCount * MeshUtils::COMPONENTS_PER_VERTEX;
+	constexpr int positionComponentCount = vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 
 	// @todo: might want to bias these towards the center of the voxel to avoid z-fighting.
-	const std::array<double, componentCount> nearXVertices =
+	const std::array<double, positionComponentCount> nearXVertices =
 	{
 		// X=0
 		0.0, yTop, 0.0,
@@ -478,7 +616,7 @@ void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double y
 		0.0, yTop, 1.0
 	};
 
-	const std::array<double, componentCount> farXVertices =
+	const std::array<double, positionComponentCount> farXVertices =
 	{
 		// X=1
 		1.0, yTop, 1.0,
@@ -487,7 +625,7 @@ void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double y
 		1.0, yTop, 0.0
 	};
 
-	const std::array<double, componentCount> nearZVertices =
+	const std::array<double, positionComponentCount> nearZVertices =
 	{
 		// Z=0
 		1.0, yTop, 0.0,
@@ -496,7 +634,7 @@ void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double y
 		0.0, yTop, 0.0
 	};
 
-	const std::array<double, componentCount> farZVertices =
+	const std::array<double, positionComponentCount> farZVertices =
 	{
 		// Z=1
 		0.0, yTop, 1.0,
@@ -505,27 +643,69 @@ void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double y
 		1.0, yTop, 1.0
 	};
 
-	const std::array<double, componentCount> *vertices = nullptr;
+	constexpr int normalComponentCount = vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+	constexpr std::array<double, normalComponentCount> nearXNormals =
+	{
+		// X=0
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0
+	};
+
+	constexpr std::array<double, normalComponentCount> farXNormals =
+	{
+		// X=1
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0
+	};
+
+	constexpr std::array<double, normalComponentCount> nearZNormals =
+	{
+		// Z=0
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0
+	};
+
+	constexpr std::array<double, normalComponentCount> farZNormals =
+	{
+		// Z=1
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0
+	};
+
+	const std::array<double, positionComponentCount> *vertices = nullptr;
+	const std::array<double, normalComponentCount> *normals = nullptr;
 	switch (facing)
 	{
 	case VoxelFacing2D::PositiveX:
 		vertices = &farXVertices;
+		normals = &farXNormals;
 		break;
 	case VoxelFacing2D::NegativeX:
 		vertices = &nearXVertices;
+		normals = &nearXNormals;
 		break;
 	case VoxelFacing2D::PositiveZ:
 		vertices = &farZVertices;
+		normals = &farZNormals;
 		break;
 	case VoxelFacing2D::NegativeZ:
 		vertices = &nearZVertices;
+		normals = &nearZNormals;
 		break;
 	default:
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
 	}
 
-	constexpr int attributeCount = vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX;
-	constexpr std::array<double, attributeCount> unflippedAttributes =
+	constexpr int texCoordCount = vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX;
+	constexpr std::array<double, texCoordCount> unflippedTexCoords =
 	{
 		0.0, 0.0,
 		0.0, 1.0,
@@ -533,7 +713,7 @@ void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double y
 		1.0, 0.0
 	};
 
-	constexpr std::array<double, attributeCount> flippedAttributes =
+	constexpr std::array<double, texCoordCount> flippedTexCoords =
 	{
 		1.0, 0.0,
 		1.0, 1.0,
@@ -541,10 +721,11 @@ void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double y
 		0.0, 0.0
 	};
 
-	const std::array<double, attributeCount> &attributes = flipped ? flippedAttributes : unflippedAttributes;
+	const std::array<double, texCoordCount> &texCoords = flipped ? flippedTexCoords : unflippedTexCoords;
 
 	std::copy(vertices->begin(), vertices->end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals->begin(), normals->end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteEdgeMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
@@ -563,13 +744,13 @@ void ArenaMeshUtils::WriteEdgeMeshIndexBuffers(BufferView<int32_t> outAlphaTeste
 }
 
 void ArenaMeshUtils::WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmType,
-	BufferView<double> outVertices, BufferView<double> outAttributes)
+	BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Chasm);
 	const double yBottom = 0.0;
 	const double yTop = 1.0;
 
-	const std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> vertices =
+	const std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices =
 	{
 		// Y=0 (guaranteed to exist)
 		0.0, yBottom, 1.0,
@@ -599,7 +780,37 @@ void ArenaMeshUtils::WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmTy
 		0.0, yTop, 1.0
 	};
 
-	constexpr std::array<double, vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes =
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals =
+	{
+		// Y=0 (guaranteed to exist)
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+
+		// X=0
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		// X=1
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		// Z=0
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		// Z=1
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0
+	};
+
+	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
 		// Y=0 (guaranteed to exist)
 		0.0, 0.0,
@@ -630,7 +841,8 @@ void ArenaMeshUtils::WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmTy
 	};
 
 	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteChasmMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices,
@@ -668,14 +880,15 @@ void ArenaMeshUtils::WriteChasmMeshIndexBuffers(BufferView<int32_t> outOpaqueInd
 	//std::copy(alphaTestedIndices.begin(), alphaTestedIndices.end(), outAlphaTestedIndices.get()); // @todo: figure out override index buffer support (allocate all combinations ahead of time, use bitwise lookup to get the right index buffer ID?).
 }
 
-void ArenaMeshUtils::WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes)
+void ArenaMeshUtils::WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
+	BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Door);
 
 	// @todo: does this need to care about the door type or can we do all that in the vertex shader?
 
 	// One quad per face (results in duplication; necessary for correct texture mapping).
-	constexpr std::array<double, vertexCount * MeshUtils::COMPONENTS_PER_VERTEX> vertices =
+	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices =
 	{
 		// X=0
 		0.0, 1.0, 0.0,
@@ -699,7 +912,31 @@ void ArenaMeshUtils::WriteDoorMeshGeometryBuffers(BufferView<double> outVertices
 		1.0, 1.0, 1.0
 	};
 
-	constexpr std::array<double, vertexCount * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes =
+	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals =
+	{
+		// X=0
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		// X=1
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		// Z=0
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		// Z=1
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0
+	};
+
+	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
 		// X=0
 		0.0, 0.0,
@@ -724,7 +961,8 @@ void ArenaMeshUtils::WriteDoorMeshGeometryBuffers(BufferView<double> outVertices
 	};
 
 	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(attributes.begin(), attributes.end(), outAttributes.get());
+	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
 void ArenaMeshUtils::WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)

@@ -11,6 +11,8 @@ namespace Constants
 	constexpr double DegToRad = Pi / 180.0;
 	constexpr double RadToDeg = 180.0 / Pi;
 	constexpr double JustBelowOne = 1.0 - Epsilon;
+	constexpr double Sqrt2 = 1.414213562373095;
+	constexpr double HalfSqrt2 = Sqrt2 / 2.0;
 }
 
 #endif

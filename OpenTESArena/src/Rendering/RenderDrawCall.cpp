@@ -3,7 +3,8 @@
 RenderDrawCall::RenderDrawCall()
 {
 	this->vertexBufferID = -1;
-	this->attributeBufferID = -1;
+	this->normalBufferID = -1;
+	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
@@ -13,7 +14,8 @@ RenderDrawCall::RenderDrawCall()
 void RenderDrawCall::clear()
 {
 	this->vertexBufferID = -1;
-	this->attributeBufferID = -1;
+	this->normalBufferID = -1;
+	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
 	for (std::optional<ObjectTextureID> &textureID : this->textureIDs)
 	{

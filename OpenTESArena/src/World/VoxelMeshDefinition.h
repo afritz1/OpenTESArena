@@ -14,7 +14,8 @@
 struct VoxelMeshDefinition
 {
 	std::vector<double> rendererVertices;
-	std::vector<double> rendererAttributes;
+	std::vector<double> rendererNormals;
+	std::vector<double> rendererTexCoords;
 	std::vector<int32_t> opaqueIndices0, opaqueIndices1, opaqueIndices2, alphaTestedIndices;
 	int uniqueVertexCount; // Ideal number of vertices to represent the mesh.
 	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
@@ -31,7 +32,8 @@ struct VoxelMeshDefinition
 	std::vector<int32_t> &getOpaqueIndicesList(int index);
 	const std::vector<int32_t> &getOpaqueIndicesList(int index) const;
 
-	void writeRendererGeometryBuffers(double ceilingScale, BufferView<double> outVertices, BufferView<double> outAttributes) const;
+	void writeRendererGeometryBuffers(double ceilingScale, BufferView<double> outVertices, BufferView<double> outNormals,
+		BufferView<double> outTexCoords) const;
 	void writeRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices0, BufferView<int32_t> outOpaqueIndices1,
 		BufferView<int32_t> outOpaqueIndices2, BufferView<int32_t> outAlphaTestedIndices) const;
 };

@@ -31,13 +31,17 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, const Are
 
 	if (voxelType != ArenaTypes::VoxelType::None)
 	{
-		const int rendererVertexComponentCount = ArenaMeshUtils::GetRendererVertexComponentCount(voxelType);
-		this->rendererVertices.resize(rendererVertexComponentCount);
-		std::copy(meshInitCache.vertices.begin(), meshInitCache.vertices.begin() + rendererVertexComponentCount, this->rendererVertices.data());
+		const int rendererVertexPositionComponentCount = ArenaMeshUtils::GetRendererVertexPositionComponentCount(voxelType);
+		this->rendererVertices.resize(rendererVertexPositionComponentCount);
+		std::copy(meshInitCache.vertices.begin(), meshInitCache.vertices.begin() + rendererVertexPositionComponentCount, this->rendererVertices.data());
 
-		const int rendererVertexAttributeCount = ArenaMeshUtils::GetRendererVertexAttributeCount(voxelType);
-		this->rendererAttributes.resize(rendererVertexAttributeCount);
-		std::copy(meshInitCache.attributes.begin(), meshInitCache.attributes.begin() + rendererVertexAttributeCount, this->rendererAttributes.data());
+		const int rendererVertexNormalComponentCount = ArenaMeshUtils::GetRendererVertexNormalComponentCount(voxelType);
+		this->rendererNormals.resize(rendererVertexNormalComponentCount);
+		std::copy(meshInitCache.normals.begin(), meshInitCache.normals.begin() + rendererVertexNormalComponentCount, this->rendererNormals.data());
+
+		const int rendererVertexTexCoordCount = ArenaMeshUtils::GetRendererVertexTexCoordCount(voxelType);
+		this->rendererTexCoords.resize(rendererVertexTexCoordCount);
+		std::copy(meshInitCache.texCoords.begin(), meshInitCache.texCoords.begin() + rendererVertexTexCoordCount, this->rendererTexCoords.data());
 		
 		for (int i = 0; i < this->opaqueIndicesListCount; i++)
 		{
@@ -78,15 +82,18 @@ const std::vector<int32_t> &VoxelMeshDefinition::getOpaqueIndicesList(int index)
 }
 
 void VoxelMeshDefinition::writeRendererGeometryBuffers(double ceilingScale, BufferView<double> outVertices,
-	BufferView<double> outAttributes) const
+	BufferView<double> outNormals, BufferView<double> outTexCoords) const
 {
-	static_assert(MeshUtils::COMPONENTS_PER_VERTEX == 3);
+	static_assert(MeshUtils::POSITION_COMPONENTS_PER_VERTEX == 3);
+	static_assert(MeshUtils::NORMAL_COMPONENTS_PER_VERTEX == 3);
+	static_assert(MeshUtils::TEX_COORDS_PER_VERTEX == 2);
 	DebugAssert(outVertices.getCount() >= this->rendererVertices.size());
-	DebugAssert(outAttributes.getCount() >= this->rendererAttributes.size());
+	DebugAssert(outNormals.getCount() >= this->rendererNormals.size());
+	DebugAssert(outTexCoords.getCount() >= this->rendererTexCoords.size());
 
 	for (int i = 0; i < this->rendererVertexCount; i++)
 	{
-		const int index = i * MeshUtils::COMPONENTS_PER_VERTEX;
+		const int index = i * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 		const double srcX = this->rendererVertices[index];
 		const double srcY = this->rendererVertices[index + 1];
 		const double srcZ = this->rendererVertices[index + 2];
@@ -98,7 +105,8 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(double ceilingScale, Buff
 		outVertices.set(index + 2, dstZ);
 	}
 
-	std::copy(this->rendererAttributes.begin(), this->rendererAttributes.end(), outAttributes.get());
+	std::copy(this->rendererNormals.begin(), this->rendererNormals.end(), outNormals.get());
+	std::copy(this->rendererTexCoords.begin(), this->rendererTexCoords.end(), outTexCoords.get());
 }
 
 void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices0,

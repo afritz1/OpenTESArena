@@ -20,19 +20,21 @@ namespace ArenaMeshUtils
 
 	struct InitCache
 	{
-		std::array<double, MAX_VERTICES * MeshUtils::COMPONENTS_PER_VERTEX> vertices;
-		std::array<double, MAX_VERTICES * MeshUtils::ATTRIBUTES_PER_VERTEX> attributes;
+		std::array<double, MAX_VERTICES * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices;
+		std::array<double, MAX_VERTICES * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals;
+		std::array<double, MAX_VERTICES * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords;
 		std::array<int32_t, MAX_INDICES> opaqueIndices0, opaqueIndices1, opaqueIndices2;
 		std::array<int32_t, MAX_INDICES> alphaTestedIndices0;
 		std::array<const decltype(opaqueIndices0)*, 3> opaqueIndicesPtrs;
 
-		BufferView<double> verticesView, attributesView;
+		BufferView<double> verticesView, normalsView, texCoordsView;
 		BufferView<int32_t> opaqueIndices0View, opaqueIndices1View, opaqueIndices2View, alphaTestedIndices0View;
 
 		InitCache()
 		{
 			this->vertices.fill(0.0);
-			this->attributes.fill(0.0);
+			this->normals.fill(0.0);
+			this->texCoords.fill(0.0);
 			this->opaqueIndices0.fill(-1);
 			this->opaqueIndices1.fill(-1);
 			this->opaqueIndices2.fill(-1);
@@ -40,7 +42,8 @@ namespace ArenaMeshUtils
 			this->opaqueIndicesPtrs = { &this->opaqueIndices0, &this->opaqueIndices1, &this->opaqueIndices2 };
 
 			this->verticesView = BufferView<double>(this->vertices.data(), static_cast<int>(this->vertices.size()));
-			this->attributesView = BufferView<double>(this->attributes.data(), static_cast<int>(this->attributes.size()));
+			this->normalsView = BufferView<double>(this->normals.data(), static_cast<int>(this->normals.size()));
+			this->texCoordsView = BufferView<double>(this->texCoords.data(), static_cast<int>(this->texCoords.size()));
 			this->opaqueIndices0View = BufferView<int32_t>(this->opaqueIndices0.data(), static_cast<int>(this->opaqueIndices0.size()));
 			this->opaqueIndices1View = BufferView<int32_t>(this->opaqueIndices1.data(), static_cast<int>(this->opaqueIndices1.size()));
 			this->opaqueIndices2View = BufferView<int32_t>(this->opaqueIndices2.data(), static_cast<int>(this->opaqueIndices2.size()));
@@ -96,14 +99,19 @@ namespace ArenaMeshUtils
 		}
 	}
 
-	constexpr int GetRendererVertexComponentCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetRendererVertexPositionComponentCount(ArenaTypes::VoxelType voxelType)
 	{
-		return GetRendererVertexCount(voxelType) * MeshUtils::COMPONENTS_PER_VERTEX;
+		return GetRendererVertexCount(voxelType) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	}
 
-	constexpr int GetRendererVertexAttributeCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetRendererVertexNormalComponentCount(ArenaTypes::VoxelType voxelType)
 	{
-		return GetRendererVertexCount(voxelType) * MeshUtils::ATTRIBUTES_PER_VERTEX;
+		return GetRendererVertexCount(voxelType) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+	}
+
+	constexpr int GetRendererVertexTexCoordCount(ArenaTypes::VoxelType voxelType)
+	{
+		return GetRendererVertexCount(voxelType) * MeshUtils::TEX_COORDS_PER_VERTEX;
 	}
 
 	constexpr int GetOpaqueIndexBufferCount(ArenaTypes::VoxelType voxelType)
@@ -321,28 +329,28 @@ namespace ArenaMeshUtils
 	}
 
 	// Mesh writing functions. All of these are in unscaled model space.
-	void WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes);
+	void WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices,
 		BufferView<int32_t> outOpaqueTopIndices);
-	void WriteFloorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes);
+	void WriteFloorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteCeilingMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes);
+	void WriteCeilingMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteCeilingMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
 	void WriteRaisedMeshGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
-		BufferView<double> outVertices, BufferView<double> outAttributes);
+		BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
 		BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
-	void WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outAttributes);
+	void WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteDiagonalMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteTransparentWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes);
+	void WriteTransparentWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteTransparentWallMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
 	void WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outVertices,
-		BufferView<double> outAttributes);
+		BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteEdgeMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
 	void WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices,
-		BufferView<double> outAttributes);
+		BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteChasmMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices);
-	void WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outAttributes);
+	void WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
 }
 

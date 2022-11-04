@@ -13,7 +13,7 @@ struct RenderDrawCall
 	static constexpr int MAX_TEXTURE_COUNT = 2; // For multi-texturing.
 
 	VertexBufferID vertexBufferID;
-	AttributeBufferID attributeBufferID;
+	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
 	std::optional<ObjectTextureID> textureIDs[MAX_TEXTURE_COUNT];
 	VertexShaderType vertexShaderType;

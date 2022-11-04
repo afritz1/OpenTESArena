@@ -1111,13 +1111,14 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
-		const AttributeBuffer &attributeBuffer = this->attributeBuffers.get(drawCall.attributeBufferID);
+		//const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
+		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
 		const ObjectTextureID textureID = drawCall.textureIDs[0].value(); // @todo: do better error handling
 		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
 		const bool allowBackFaces = drawCall.allowBackFaces;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(
-			vertexBuffer, attributeBuffer, indexBuffer, textureID, worldSpaceOffset, allowBackFaces, camera);
+			vertexBuffer, texCoordBuffer, indexBuffer, textureID, worldSpaceOffset, allowBackFaces, camera);
 
 		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
 		swRender::RasterizeTriangles(drawListIndices, isAlphaTested, this->objectTextures, paletteTexture,

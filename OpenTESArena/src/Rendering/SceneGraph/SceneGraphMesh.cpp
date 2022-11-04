@@ -6,7 +6,8 @@
 SceneGraphVoxelMeshInstance::SceneGraphVoxelMeshInstance()
 {
 	this->vertexBufferID = -1;
-	this->attributeBufferID = -1;
+	this->normalBufferID = -1;
+	this->texCoordBufferID = -1;
 	std::fill(std::begin(this->opaqueIndexBufferIDs), std::end(this->opaqueIndexBufferIDs), -1);
 	this->opaqueIndexBufferIdCount = 0;
 	this->alphaTestedIndexBufferID = -1;
@@ -20,10 +21,16 @@ void SceneGraphVoxelMeshInstance::freeBuffers(RendererSystem3D &renderer3D)
 		this->vertexBufferID = -1;
 	}
 
-	if (this->attributeBufferID >= 0)
+	if (this->normalBufferID >= 0)
 	{
-		renderer3D.freeAttributeBuffer(this->attributeBufferID);
-		this->attributeBufferID = -1;
+		renderer3D.freeAttributeBuffer(this->normalBufferID);
+		this->normalBufferID = -1;
+	}
+
+	if (this->texCoordBufferID >= 0)
+	{
+		renderer3D.freeAttributeBuffer(this->texCoordBufferID);
+		this->texCoordBufferID = -1;
 	}
 
 	if (this->opaqueIndexBufferIdCount > 0)

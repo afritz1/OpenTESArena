@@ -10,7 +10,7 @@ struct SceneGraphVoxelMeshInstance
 	static constexpr int MAX_TEXTURES = 3; // Based on VoxelDefinition subtypes (wall and raised).
 
 	VertexBufferID vertexBufferID;
-	AttributeBufferID attributeBufferID;
+	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID opaqueIndexBufferIDs[MAX_TEXTURES];
 	int opaqueIndexBufferIdCount;
 	IndexBufferID alphaTestedIndexBufferID;
