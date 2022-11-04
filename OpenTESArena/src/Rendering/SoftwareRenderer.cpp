@@ -41,11 +41,6 @@ namespace swCamera
 // Internal geometry types/functions.
 namespace swGeometry
 {
-	Double3 MakeTriangleNormal(const Double3 &v0v1, const Double3 &v2v0)
-	{
-		return v2v0.cross(v0v1).normalized();
-	}
-
 	struct TriangleClipResult
 	{
 		static constexpr int MAX_RESULTS = 2;
@@ -53,10 +48,11 @@ namespace swGeometry
 		int triangleCount = 0;
 		Double3 v0s[MAX_RESULTS], v1s[MAX_RESULTS], v2s[MAX_RESULTS];
 		Double3 v0v1s[MAX_RESULTS], v1v2s[MAX_RESULTS], v2v0s[MAX_RESULTS];
-		Double3 normals[MAX_RESULTS];
+		Double3 normal0s[MAX_RESULTS], normal1s[MAX_RESULTS], normal2s[MAX_RESULTS];
 		Double2 uv0s[MAX_RESULTS], uv1s[MAX_RESULTS], uv2s[MAX_RESULTS];
 	private:
 		void populateIndex(int index, const Double3 &v0, const Double3 &v1, const Double3 &v2,
+			const Double3 &normal0, const Double3 &normal1, const Double3 &normal2,
 			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
 		{
 			this->v0s[index] = v0;
@@ -65,7 +61,9 @@ namespace swGeometry
 			this->v0v1s[index] = v1 - v0;
 			this->v1v2s[index] = v2 - v1;
 			this->v2v0s[index] = v0 - v2;
-			this->normals[index] = MakeTriangleNormal(this->v0v1s[index], this->v2v0s[index]);
+			this->normal0s[index] = normal0;
+			this->normal1s[index] = normal1;
+			this->normal2s[index] = normal2;
 			this->uv0s[index] = uv0;
 			this->uv1s[index] = uv1;
 			this->uv2s[index] = uv2;
@@ -79,23 +77,26 @@ namespace swGeometry
 		}
 
 		static TriangleClipResult one(const Double3 &v0, const Double3 &v1, const Double3 &v2,
+			const Double3 &normal0, const Double3 &normal1, const Double3 &normal2,
 			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
 		{
 			TriangleClipResult result;
 			result.triangleCount = 1;
-			result.populateIndex(0, v0, v1, v2, uv0, uv1, uv2);
+			result.populateIndex(0, v0, v1, v2, normal0, normal1, normal2, uv0, uv1, uv2);
 			return result;
 		}
 
 		static TriangleClipResult two(const Double3 &v0A, const Double3 &v1A, const Double3 &v2A,
+			const Double3 &normal0A, const Double3 &normal1A, const Double3 &normal2A,
 			const Double2 &uv0A, const Double2 &uv1A, const Double2 &uv2A,
 			const Double3 &v0B, const Double3 &v1B, const Double3 &v2B,
+			const Double3 &normal0B, const Double3 &normal1B, const Double3 &normal2B,
 			const Double2 &uv0B, const Double2 &uv1B, const Double2 &uv2B)
 		{
 			TriangleClipResult result;
 			result.triangleCount = 2;
-			result.populateIndex(0, v0A, v1A, v2A, uv0A, uv1A, uv2A);
-			result.populateIndex(1, v0B, v1B, v2B, uv0B, uv1B, uv2B);
+			result.populateIndex(0, v0A, v1A, v2A, normal0A, normal1A, normal2A, uv0A, uv1A, uv2A);
+			result.populateIndex(1, v0B, v1B, v2B, normal0B, normal1B, normal2B, uv0B, uv1B, uv2B);
 			return result;
 		}
 	};
@@ -113,35 +114,37 @@ namespace swGeometry
 	};
 
 	TriangleClipResult ClipTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2,
+		const Double3 &normal0, const Double3 &normal1, const Double3 &normal2,
 		const Double2 &uv0, const Double2 &uv1, const Double2 &uv2, const Double3 &eye,
 		const Double3 &planePoint, const Double3 &planeNormal)
 	{
 		std::array<const Double3*, 3> insidePoints, outsidePoints;
+		std::array<const Double3*, 3> insideNormals, outsideNormals;
 		std::array<const Double2*, 3> insideUVs, outsideUVs;
 		int insidePointCount = 0;
 		int outsidePointCount = 0;
 
 		const std::array<const Double3*, 3> vertexPtrs = { &v0, &v1, &v2 };
+		const std::array<const Double3*, 3> normalPtrs = { &normal0, &normal1, &normal2 };
 		const std::array<const Double2*, 3> uvPtrs = { &uv0, &uv1, &uv2 };
-
-		const Double3 v0v1 = v1 - v0;
-		const Double3 v2v0 = v0 - v2;
-		const Double3 normal = MakeTriangleNormal(v0v1, v2v0);
 
 		// Determine which vertices are in the positive half-space of the clipping plane.
 		for (int i = 0; i < static_cast<int>(vertexPtrs.size()); i++)
 		{
 			const Double3 *vertexPtr = vertexPtrs[i];
+			const Double3 *normalPtr = normalPtrs[i];
 			const double dist = MathUtils::distanceToPlane(*vertexPtr, planePoint, planeNormal);
 			if (dist >= 0.0)
 			{
 				insidePoints[insidePointCount] = vertexPtr;
+				insideNormals[insidePointCount] = normalPtr;
 				insideUVs[insidePointCount] = uvPtrs[i];
 				insidePointCount++;
 			}
 			else
 			{
 				outsidePoints[outsidePointCount] = vertexPtr;
+				outsideNormals[outsidePointCount] = normalPtr;
 				outsideUVs[outsidePointCount] = uvPtrs[i];
 				outsidePointCount++;
 			}
@@ -159,18 +162,19 @@ namespace swGeometry
 		else if (isCompletelyInside)
 		{
 			// Reverse vertex order if back-facing.
-			if ((eye - v0).dot(normal) >= Constants::Epsilon)
+			if ((eye - v0).dot(normal0) >= Constants::Epsilon)
 			{
-				return TriangleClipResult::one(v0, v1, v2, uv0, uv1, uv2);
+				return TriangleClipResult::one(v0, v1, v2, normal0, normal1, normal2, uv0, uv1, uv2);
 			}
 			else
 			{
-				return TriangleClipResult::one(v0, v2, v1, uv0, uv2, uv1);
+				return TriangleClipResult::one(v0, v2, v1, normal0, normal2, normal1, uv0, uv2, uv1);
 			}
 		}
 		else if (becomesSmallerTriangle)
 		{
 			const Double3 &insidePoint = *insidePoints[0];
+			const Double3 &insideNormal = *insideNormals[0];
 			const Double2 &insideUV = *insideUVs[0];
 			const Double3 &outsidePoint0 = *outsidePoints[0];
 			const Double3 &outsidePoint1 = *outsidePoints[1];
@@ -187,6 +191,11 @@ namespace swGeometry
 			const double newT0 = (newInsidePoint1 - insidePoint).length();
 			const double newT1 = (newInsidePoint2 - insidePoint).length();
 
+			const Double3 outsideNormal0 = *outsideNormals[0];
+			const Double3 outsideNormal1 = *outsideNormals[1];
+			const Double3 newInsideNormal0 = insideNormal.lerp(outsideNormal0, newT0 / t0);
+			const Double3 newInsideNormal1 = insideNormal.lerp(outsideNormal1, newT1 / t1);
+
 			const Double2 outsideUV0 = *outsideUVs[0];
 			const Double2 outsideUV1 = *outsideUVs[1];
 			const Double2 newInsideUV0 = insideUV.lerp(outsideUV0, newT0 / t0);
@@ -196,11 +205,13 @@ namespace swGeometry
 			const Double3 unormal = (insidePoint - newInsidePoint2).cross(newInsidePoint1 - insidePoint);
 			if ((eye - insidePoint).dot(unormal) >= Constants::Epsilon)
 			{
-				return TriangleClipResult::one(insidePoint, newInsidePoint1, newInsidePoint2, insideUV, newInsideUV0, newInsideUV1);
+				return TriangleClipResult::one(insidePoint, newInsidePoint1, newInsidePoint2, insideNormal,
+					newInsideNormal0, newInsideNormal1, insideUV, newInsideUV0, newInsideUV1);
 			}
 			else
 			{
-				return TriangleClipResult::one(newInsidePoint2, newInsidePoint1, insidePoint, newInsideUV1, newInsideUV0, insideUV);
+				return TriangleClipResult::one(newInsidePoint2, newInsidePoint1, insidePoint, newInsideNormal1,
+					newInsideNormal0, insideNormal, newInsideUV1, newInsideUV0, insideUV);
 			}
 		}
 		else if (becomesQuad)
@@ -208,12 +219,17 @@ namespace swGeometry
 			const Double3 &insidePoint0 = *insidePoints[0];
 			const Double3 &insidePoint1 = *insidePoints[1];
 			const Double3 &outsidePoint0 = *outsidePoints[0];
+			const Double3 &insideNormal0 = *insideNormals[0];
+			const Double3 &insideNormal1 = *insideNormals[1];
+			const Double3 &outsideNormal0 = *outsideNormals[0];
 			const Double2 &insideUV0 = *insideUVs[0];
 			const Double2 &insideUV1 = *insideUVs[1];
 			const Double2 &outsideUV0 = *outsideUVs[0];
 
 			const Double3 &newTriangle0V0 = insidePoint0;
 			const Double3 &newTriangle0V1 = insidePoint1;
+			const Double3 &newTriangle0Normal0 = insideNormal0;
+			const Double3 &newTriangle0Normal1 = insideNormal1;
 			const Double2 &newTriangle0UV0 = insideUV0;
 			const Double2 &newTriangle0UV1 = insideUV1;
 
@@ -224,10 +240,13 @@ namespace swGeometry
 			MathUtils::rayPlaneIntersection(newTriangle0V0, (outsidePoint0 - newTriangle0V0).normalized(),
 				planePoint, planeNormal, &newTriangle0V2);
 			const double newTriangle0T = (newTriangle0V2 - newTriangle0V0).length();
+			const Double3 newTriangle0Normal2 = newTriangle0Normal0.lerp(outsideNormal0, newTriangle0T / t0);
 			const Double2 newTriangle0UV2 = newTriangle0UV0.lerp(outsideUV0, newTriangle0T / t0);
 
 			const Double3 &newTriangle1V0 = insidePoint1;
 			const Double3 &newTriangle1V1 = newTriangle0V2;
+			const Double3 &newTriangle1Normal0 = insideNormal1;
+			const Double3 &newTriangle1Normal1 = newTriangle0Normal2;
 			const Double2 &newTriangle1UV0 = insideUV1;
 			const Double2 &newTriangle1UV1 = newTriangle0UV2;
 
@@ -238,6 +257,7 @@ namespace swGeometry
 			MathUtils::rayPlaneIntersection(newTriangle1V0, (outsidePoint0 - newTriangle1V0).normalized(),
 				planePoint, planeNormal, &newTriangle1V2);
 			const double newTriangle1T = (newTriangle1V2 - newTriangle1V0).length();
+			const Double3 newTriangle1Normal2 = newTriangle1Normal0.lerp(outsideNormal0, newTriangle1T / t1);
 			const Double2 newTriangle1UV2 = newTriangle1UV0.lerp(outsideUV0, newTriangle1T / t1);
 
 			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
@@ -249,26 +269,30 @@ namespace swGeometry
 			{
 				if (keepOrientation1)
 				{
-					return TriangleClipResult::two(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0UV0, newTriangle0UV1,
-						newTriangle0UV2, newTriangle1V0, newTriangle1V1, newTriangle1V2, newTriangle1UV0, newTriangle1UV1, newTriangle1UV2);
+					return TriangleClipResult::two(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0Normal0, newTriangle0Normal1,
+						newTriangle0Normal2, newTriangle0UV0, newTriangle0UV1, newTriangle0UV2, newTriangle1V0, newTriangle1V1, newTriangle1V2,
+						newTriangle1Normal0, newTriangle1Normal1, newTriangle1Normal2, newTriangle1UV0, newTriangle1UV1, newTriangle1UV2);
 				}
 				else
 				{
-					return TriangleClipResult::two(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0UV0, newTriangle0UV1,
-						newTriangle0UV2, newTriangle1V2, newTriangle1V1, newTriangle1V0, newTriangle1UV2, newTriangle1UV1, newTriangle1UV0);
+					return TriangleClipResult::two(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0Normal0, newTriangle0Normal1,
+						newTriangle0Normal2, newTriangle0UV0, newTriangle0UV1, newTriangle0UV2, newTriangle1V2, newTriangle1V1, newTriangle1V0,
+						newTriangle1Normal2, newTriangle1Normal1, newTriangle1Normal0, newTriangle1UV2, newTriangle1UV1, newTriangle1UV0);
 				}
 			}
 			else
 			{
 				if (keepOrientation1)
 				{
-					return TriangleClipResult::two(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0UV2, newTriangle0UV1,
-						newTriangle0UV0, newTriangle1V0, newTriangle1V1, newTriangle1V2, newTriangle1UV0, newTriangle1UV1, newTriangle1UV2);
+					return TriangleClipResult::two(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0Normal2, newTriangle0Normal1,
+						newTriangle0Normal0, newTriangle0UV2, newTriangle0UV1, newTriangle0UV0, newTriangle1V0, newTriangle1V1, newTriangle1V2,
+						newTriangle1Normal0, newTriangle1Normal1, newTriangle0Normal2, newTriangle1UV0, newTriangle1UV1, newTriangle1UV2);
 				}
 				else
 				{
-					return TriangleClipResult::two(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0UV2, newTriangle0UV1,
-						newTriangle0UV0, newTriangle1V2, newTriangle1V1, newTriangle1V0, newTriangle1UV2, newTriangle1UV1, newTriangle1UV0);
+					return TriangleClipResult::two(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0Normal2, newTriangle0Normal1,
+						newTriangle0Normal0, newTriangle0UV2, newTriangle0UV1, newTriangle0UV0, newTriangle1V2, newTriangle1V1, newTriangle1V0,
+						newTriangle1Normal2, newTriangle1Normal1, newTriangle1Normal0, newTriangle1UV2, newTriangle1UV1, newTriangle1UV0);
 				}
 			}
 		}
@@ -282,9 +306,11 @@ namespace swGeometry
 	// Caches for visible triangle processing/clipping.
 	// @optimization: make N of these caches to allow for multi-threaded clipping
 	std::vector<Double3> g_visibleTriangleV0s, g_visibleTriangleV1s, g_visibleTriangleV2s;
+	std::vector<Double3> g_visibleTriangleNormal0s, g_visibleTriangleNormal1s, g_visibleTriangleNormal2s;
 	std::vector<Double2> g_visibleTriangleUV0s, g_visibleTriangleUV1s, g_visibleTriangleUV2s;
 	std::vector<ObjectTextureID> g_visibleTriangleTextureIDs;
 	std::vector<Double3> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
+	std::vector<Double3> g_visibleClipListNormal0s, g_visibleClipListNormal1s, g_visibleClipListNormal2s;
 	std::vector<Double2> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
 	std::vector<ObjectTextureID> g_visibleClipListTextureIDs;
 	int g_visibleTriangleCount = 0; // Note this includes new triangles from clipping.
@@ -296,12 +322,16 @@ namespace swGeometry
 	// 2) Frustum culling
 	// 3) Clipping
 	swGeometry::TriangleDrawListIndices ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
-		const SoftwareRenderer::AttributeBuffer &attributeBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
-		ObjectTextureID textureID, const Double3 &worldOffset, bool allowBackFaces, const RenderCamera &camera)
+		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
+		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID, const Double3 &worldOffset,
+		bool allowBackFaces, const RenderCamera &camera)
 	{
 		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
 		std::vector<Double3> &outVisibleTriangleV1s = g_visibleTriangleV1s;
 		std::vector<Double3> &outVisibleTriangleV2s = g_visibleTriangleV2s;
+		std::vector<Double3> &outVisibleTriangleNormal0s = g_visibleTriangleNormal0s;
+		std::vector<Double3> &outVisibleTriangleNormal1s = g_visibleTriangleNormal1s;
+		std::vector<Double3> &outVisibleTriangleNormal2s = g_visibleTriangleNormal2s;
 		std::vector<Double2> &outVisibleTriangleUV0s = g_visibleTriangleUV0s;
 		std::vector<Double2> &outVisibleTriangleUV1s = g_visibleTriangleUV1s;
 		std::vector<Double2> &outVisibleTriangleUV2s = g_visibleTriangleUV2s;
@@ -309,6 +339,9 @@ namespace swGeometry
 		std::vector<Double3> &outClipListV0s = g_visibleClipListV0s;
 		std::vector<Double3> &outClipListV1s = g_visibleClipListV1s;
 		std::vector<Double3> &outClipListV2s = g_visibleClipListV2s;
+		std::vector<Double3> &outClipListNormal0s = g_visibleClipListNormal0s;
+		std::vector<Double3> &outClipListNormal1s = g_visibleClipListNormal1s;
+		std::vector<Double3> &outClipListNormal2s = g_visibleClipListNormal2s;
 		std::vector<Double2> &outClipListUV0s = g_visibleClipListUV0s;
 		std::vector<Double2> &outClipListUV1s = g_visibleClipListUV1s;
 		std::vector<Double2> &outClipListUV2s = g_visibleClipListUV2s;
@@ -356,13 +389,17 @@ namespace swGeometry
 		outVisibleTriangleV0s.clear();
 		outVisibleTriangleV1s.clear();
 		outVisibleTriangleV2s.clear();
+		outVisibleTriangleNormal0s.clear();
+		outVisibleTriangleNormal1s.clear();
+		outVisibleTriangleNormal2s.clear();
 		outVisibleTriangleUV0s.clear();
 		outVisibleTriangleUV1s.clear();
 		outVisibleTriangleUV2s.clear();
 		outVisibleTriangleTextureIDs.clear();
 
 		const double *verticesPtr = vertexBuffer.vertices.get();
-		const double *attributesPtr = attributeBuffer.attributes.get();
+		const double *normalsPtr = normalBuffer.attributes.get();
+		const double *texCoordsPtr = texCoordBuffer.attributes.get();
 		const int32_t *indicesPtr = indexBuffer.indices.get();
 		const int triangleCount = indexBuffer.indices.getCount() / 3;
 		for (int i = 0; i < triangleCount; i++)
@@ -384,23 +421,31 @@ namespace swGeometry
 				*(verticesPtr + (index2 * 3)) + worldOffset.x,
 				*(verticesPtr + (index2 * 3) + 1) + worldOffset.y,
 				*(verticesPtr + (index2 * 3) + 2) + worldOffset.z);
+			const Double3 normal0(
+				*(normalsPtr + (index0 * 3)),
+				*(normalsPtr + (index0 * 3) + 1),
+				*(normalsPtr + (index0 * 3) + 2));
+			const Double3 normal1(
+				*(normalsPtr + (index1 * 3)),
+				*(normalsPtr + (index1 * 3) + 1),
+				*(normalsPtr + (index1 * 3) + 2));
+			const Double3 normal2(
+				*(normalsPtr + (index2 * 3)),
+				*(normalsPtr + (index2 * 3) + 1),
+				*(normalsPtr + (index2 * 3) + 2));
 			const Double2 uv0(
-				*(attributesPtr + (index0 * 2)),
-				*(attributesPtr + (index0 * 2) + 1));
+				*(texCoordsPtr + (index0 * 2)),
+				*(texCoordsPtr + (index0 * 2) + 1));
 			const Double2 uv1(
-				*(attributesPtr + (index1 * 2)),
-				*(attributesPtr + (index1 * 2) + 1));
+				*(texCoordsPtr + (index1 * 2)),
+				*(texCoordsPtr + (index1 * 2) + 1));
 			const Double2 uv2(
-				*(attributesPtr + (index2 * 2)),
-				*(attributesPtr + (index2 * 2) + 1));
-
-			const Double3 v0v1 = v1 - v0;
-			const Double3 v2v0 = v0 - v2;
-			const Double3 normal = MakeTriangleNormal(v0v1, v2v0);
+				*(texCoordsPtr + (index2 * 2)),
+				*(texCoordsPtr + (index2 * 2) + 1));
 
 			// Discard back-facing and almost-back-facing.
 			const Double3 v0ToEye = eye - v0;
-			const double visibilityDot = v0ToEye.dot(normal);
+			const double visibilityDot = v0ToEye.dot(normal0);
 			if (!allowBackFaces)
 			{
 				if (visibilityDot < Constants::Epsilon)
@@ -419,6 +464,9 @@ namespace swGeometry
 			outClipListV0s.clear();
 			outClipListV1s.clear();
 			outClipListV2s.clear();
+			outClipListNormal0s.clear();
+			outClipListNormal1s.clear();
+			outClipListNormal2s.clear();
 			outClipListUV0s.clear();
 			outClipListUV1s.clear();
 			outClipListUV2s.clear();
@@ -427,6 +475,9 @@ namespace swGeometry
 			outClipListV0s.emplace_back(v0);
 			outClipListV1s.emplace_back(v1);
 			outClipListV2s.emplace_back(v2);
+			outClipListNormal0s.emplace_back(normal0);
+			outClipListNormal1s.emplace_back(normal1);
+			outClipListNormal2s.emplace_back(normal2);
 			outClipListUV0s.emplace_back(uv0);
 			outClipListUV1s.emplace_back(uv1);
 			outClipListUV2s.emplace_back(uv2);
@@ -439,18 +490,25 @@ namespace swGeometry
 					const Double3 &clipListV0 = outClipListV0s.front();
 					const Double3 &clipListV1 = outClipListV1s.front();
 					const Double3 &clipListV2 = outClipListV2s.front();
+					const Double3 &clipListNormal0 = outClipListNormal0s.front();
+					const Double3 &clipListNormal1 = outClipListNormal1s.front();
+					const Double3 &clipListNormal2 = outClipListNormal2s.front();
 					const Double2 &clipListUV0 = outClipListUV0s.front();
 					const Double2 &clipListUV1 = outClipListUV1s.front();
 					const Double2 &clipListUV2 = outClipListUV2s.front();
 					const ObjectTextureID clipListTextureID = outClipListTextureIDs.front();
 
 					const TriangleClipResult clipResult = ClipTriangle(clipListV0, clipListV1, clipListV2,
-						clipListUV0, clipListUV1, clipListUV2, eye, plane.point, plane.normal);
+						clipListNormal0, clipListNormal1, clipListNormal2, clipListUV0, clipListUV1, clipListUV2,
+						eye, plane.point, plane.normal);
 					for (int k = 0; k < clipResult.triangleCount; k++)
 					{
 						outClipListV0s.emplace_back(clipResult.v0s[k]);
 						outClipListV1s.emplace_back(clipResult.v1s[k]);
 						outClipListV2s.emplace_back(clipResult.v2s[k]);
+						outClipListNormal0s.emplace_back(clipResult.normal0s[k]);
+						outClipListNormal1s.emplace_back(clipResult.normal1s[k]);
+						outClipListNormal2s.emplace_back(clipResult.normal2s[k]);
 						outClipListUV0s.emplace_back(clipResult.uv0s[k]);
 						outClipListUV1s.emplace_back(clipResult.uv1s[k]);
 						outClipListUV2s.emplace_back(clipResult.uv2s[k]);
@@ -460,6 +518,9 @@ namespace swGeometry
 					outClipListV0s.erase(outClipListV0s.begin());
 					outClipListV1s.erase(outClipListV1s.begin());
 					outClipListV2s.erase(outClipListV2s.begin());
+					outClipListNormal0s.erase(outClipListNormal0s.begin());
+					outClipListNormal1s.erase(outClipListNormal1s.begin());
+					outClipListNormal2s.erase(outClipListNormal2s.begin());
 					outClipListUV0s.erase(outClipListUV0s.begin());
 					outClipListUV1s.erase(outClipListUV1s.begin());
 					outClipListUV2s.erase(outClipListUV2s.begin());
@@ -470,6 +531,9 @@ namespace swGeometry
 			outVisibleTriangleV0s.insert(outVisibleTriangleV0s.end(), outClipListV0s.begin(), outClipListV0s.end());
 			outVisibleTriangleV1s.insert(outVisibleTriangleV1s.end(), outClipListV1s.begin(), outClipListV1s.end());
 			outVisibleTriangleV2s.insert(outVisibleTriangleV2s.end(), outClipListV2s.begin(), outClipListV2s.end());
+			outVisibleTriangleNormal0s.insert(outVisibleTriangleNormal0s.end(), outClipListNormal0s.begin(), outClipListNormal0s.end());
+			outVisibleTriangleNormal1s.insert(outVisibleTriangleNormal1s.end(), outClipListNormal1s.begin(), outClipListNormal1s.end());
+			outVisibleTriangleNormal2s.insert(outVisibleTriangleNormal2s.end(), outClipListNormal2s.begin(), outClipListNormal2s.end());
 			outVisibleTriangleUV0s.insert(outVisibleTriangleUV0s.end(), outClipListUV0s.begin(), outClipListUV0s.end());
 			outVisibleTriangleUV1s.insert(outVisibleTriangleUV1s.end(), outClipListUV1s.begin(), outClipListUV1s.end());
 			outVisibleTriangleUV2s.insert(outVisibleTriangleUV2s.end(), outClipListUV2s.begin(), outClipListUV2s.end());
@@ -1111,14 +1175,14 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
-		//const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
+		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
 		const ObjectTextureID textureID = drawCall.textureIDs[0].value(); // @todo: do better error handling
 		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
 		const bool allowBackFaces = drawCall.allowBackFaces;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(
-			vertexBuffer, texCoordBuffer, indexBuffer, textureID, worldSpaceOffset, allowBackFaces, camera);
+			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID, worldSpaceOffset, allowBackFaces, camera);
 
 		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
 		swRender::RasterizeTriangles(drawListIndices, isAlphaTested, this->objectTextures, paletteTexture,
