@@ -351,18 +351,6 @@ namespace swGeometry
 
 		const Double3 eye = swCamera::GetCameraEye(camera);
 
-		// Frustum directions pointing away from the camera eye.
-		const Double3 leftFrustumDir = (camera.forwardScaled - camera.rightScaled).normalized();
-		const Double3 rightFrustumDir = (camera.forwardScaled + camera.rightScaled).normalized();
-		const Double3 bottomFrustumDir = (camera.forwardScaled - camera.up).normalized();
-		const Double3 topFrustumDir = (camera.forwardScaled + camera.up).normalized();
-
-		// Frustum plane normals pointing towards the inside of the frustum volume.
-		const Double3 leftFrustumNormal = leftFrustumDir.cross(camera.up).normalized();
-		const Double3 rightFrustumNormal = camera.up.cross(rightFrustumDir).normalized();
-		const Double3 bottomFrustumNormal = camera.right.cross(bottomFrustumDir).normalized();
-		const Double3 topFrustumNormal = topFrustumDir.cross(camera.right).normalized();
-
 		struct ClippingPlane
 		{
 			Double3 point;
@@ -376,13 +364,13 @@ namespace swGeometry
 				// Near plane (far plane is not necessary due to how chunks are managed - it only matters if a view distance slider exists)
 				{ eye + (camera.forward * swConstants::NEAR_PLANE), camera.forward },
 				// Left
-				{ eye, leftFrustumNormal },
+				{ eye, camera.leftFrustumNormal },
 				// Right
-				{ eye, rightFrustumNormal },
+				{ eye, camera.rightFrustumNormal },
 				// Bottom
-				{ eye, bottomFrustumNormal },
+				{ eye, camera.bottomFrustumNormal },
 				// Top
-				{ eye, topFrustumNormal }
+				{ eye, camera.topFrustumNormal }
 			}
 		};
 

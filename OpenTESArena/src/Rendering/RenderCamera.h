@@ -14,6 +14,13 @@ struct RenderCamera
 	Double3 forward, right, up;
 	Double3 forwardScaled; // Scaled by zoom.
 	Double3 rightScaled; // Scaled by aspect ratio.
+
+	// Frustum directions pointing away from the camera eye.
+	Double3 leftFrustumDir, rightFrustumDir, bottomFrustumDir, topFrustumDir;
+
+	// Frustum plane normals pointing towards the inside of the frustum volume.
+	Double3 leftFrustumNormal, rightFrustumNormal, bottomFrustumNormal, topFrustumNormal;
+
 	Degrees fovX, fovY;
 	double zoom; // Function of vertical FOV (90 degrees = 1 zoom).
 	double aspectRatio;
