@@ -340,7 +340,7 @@ void SceneGraph::init(RendererSystem3D &rendererSystem)
 {
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
-	ArenaMeshUtils::WriteChasmWallMeshIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
+	ArenaMeshUtils::WriteChasmWallIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
 	constexpr int indicesPerFace = static_cast<int>(northIndices.size());
 
 	this->chasmWallIndexBufferIDs.fill(-1);

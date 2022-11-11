@@ -2,7 +2,7 @@
 #include "VoxelFacing2D.h"
 #include "../Math/Constants.h"
 
-void ArenaMeshUtils::WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
+void ArenaMeshUtils::WriteWallGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Wall);
@@ -115,7 +115,7 @@ void ArenaMeshUtils::WriteWallMeshGeometryBuffers(BufferView<double> outVertices
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSideIndices,
+void ArenaMeshUtils::WriteWallIndexBuffers(BufferView<int32_t> outOpaqueSideIndices,
 	BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Wall;
@@ -157,7 +157,7 @@ void ArenaMeshUtils::WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSide
 	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.get());
 }
 
-void ArenaMeshUtils::WriteFloorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
+void ArenaMeshUtils::WriteFloorGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Floor);
@@ -194,7 +194,7 @@ void ArenaMeshUtils::WriteFloorMeshGeometryBuffers(BufferView<double> outVertice
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
+void ArenaMeshUtils::WriteFloorIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Floor;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
@@ -210,7 +210,7 @@ void ArenaMeshUtils::WriteFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueInd
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 }
 
-void ArenaMeshUtils::WriteCeilingMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
+void ArenaMeshUtils::WriteCeilingGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Ceiling);
@@ -247,7 +247,7 @@ void ArenaMeshUtils::WriteCeilingMeshGeometryBuffers(BufferView<double> outVerti
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteCeilingMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
+void ArenaMeshUtils::WriteCeilingIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Ceiling;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
@@ -263,7 +263,7 @@ void ArenaMeshUtils::WriteCeilingMeshIndexBuffers(BufferView<int32_t> outOpaqueI
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 }
 
-void ArenaMeshUtils::WriteRaisedMeshGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
+void ArenaMeshUtils::WriteRaisedGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
 	BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Raised);
@@ -378,7 +378,7 @@ void ArenaMeshUtils::WriteRaisedMeshGeometryBuffers(double yOffset, double ySize
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
+void ArenaMeshUtils::WriteRaisedIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
 	BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Raised;
@@ -420,7 +420,7 @@ void ArenaMeshUtils::WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTes
 	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.get());
 }
 
-void ArenaMeshUtils::WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<double> outVertices,
+void ArenaMeshUtils::WriteDiagonalGeometryBuffers(bool type1, BufferView<double> outVertices,
 	BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Diagonal);
@@ -474,7 +474,7 @@ void ArenaMeshUtils::WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<dou
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteDiagonalMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
+void ArenaMeshUtils::WriteDiagonalIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Diagonal;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
@@ -489,7 +489,7 @@ void ArenaMeshUtils::WriteDiagonalMeshIndexBuffers(BufferView<int32_t> outOpaque
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
 }
 
-void ArenaMeshUtils::WriteTransparentWallMeshGeometryBuffers(BufferView<double> outVertices,
+void ArenaMeshUtils::WriteTransparentWallGeometryBuffers(BufferView<double> outVertices,
 	BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::TransparentWall);
@@ -572,7 +572,7 @@ void ArenaMeshUtils::WriteTransparentWallMeshGeometryBuffers(BufferView<double> 
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteTransparentWallMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
+void ArenaMeshUtils::WriteTransparentWallIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::TransparentWall;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 0);
@@ -597,7 +597,7 @@ void ArenaMeshUtils::WriteTransparentWallMeshIndexBuffers(BufferView<int32_t> ou
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 }
 
-void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
+void ArenaMeshUtils::WriteEdgeGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
 	BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Edge);
@@ -728,7 +728,7 @@ void ArenaMeshUtils::WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double y
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteEdgeMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
+void ArenaMeshUtils::WriteEdgeIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Edge;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 0);
@@ -743,7 +743,7 @@ void ArenaMeshUtils::WriteEdgeMeshIndexBuffers(BufferView<int32_t> outAlphaTeste
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 }
 
-void ArenaMeshUtils::WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmType,
+void ArenaMeshUtils::WriteChasmGeometryBuffers(ArenaTypes::ChasmType chasmType,
 	BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Chasm);
@@ -845,7 +845,7 @@ void ArenaMeshUtils::WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmTy
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteChasmFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
+void ArenaMeshUtils::WriteChasmFloorIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Chasm;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
@@ -861,7 +861,7 @@ void ArenaMeshUtils::WriteChasmFloorMeshIndexBuffers(BufferView<int32_t> outOpaq
 	std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.get());
 }
 
-void ArenaMeshUtils::WriteChasmWallMeshIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
+void ArenaMeshUtils::WriteChasmWallIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
 	ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices)
 {
 	if (outNorthIndices != nullptr) // X=0
@@ -905,7 +905,7 @@ void ArenaMeshUtils::WriteChasmWallMeshIndexBuffers(ChasmWallIndexBuffer *outNor
 	}
 }
 
-void ArenaMeshUtils::WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
+void ArenaMeshUtils::WriteDoorGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Door);
@@ -990,7 +990,7 @@ void ArenaMeshUtils::WriteDoorMeshGeometryBuffers(BufferView<double> outVertices
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
+void ArenaMeshUtils::WriteDoorIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Door;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 0);

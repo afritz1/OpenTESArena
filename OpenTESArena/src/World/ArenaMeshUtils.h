@@ -332,25 +332,25 @@ namespace ArenaMeshUtils
 	}
 
 	// Mesh writing functions. All of these are in unscaled model space.
-	void WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
-	void WriteFloorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteCeilingMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteCeilingMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteRaisedMeshGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
-	void WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteDiagonalMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteTransparentWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteTransparentWallMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteEdgeMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteChasmFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
-	void WriteChasmWallMeshIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices, ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
-	void WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void WriteWallGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteWallIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+	void WriteFloorGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteFloorIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void WriteCeilingGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteCeilingIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void WriteRaisedGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteRaisedIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+	void WriteDiagonalGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteDiagonalIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void WriteTransparentWallGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteTransparentWallIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void WriteEdgeGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteEdgeIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void WriteChasmGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteChasmFloorIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
+	void WriteChasmWallIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices, ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
+	void WriteDoorGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteDoorIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
 }
 
 #endif
