@@ -77,6 +77,9 @@ public:
 private:
 	// Chunks with data for geometry storage, visibility calculation, etc..
 	std::vector<SceneGraphChunk> graphChunks;
+	
+	// Chasm wall support - one index buffer for each face combination.
+	std::array<IndexBufferID, 16> chasmWallIndexBufferIDs;
 
 	std::vector<LoadedVoxelTexture> voxelTextures;
 	std::vector<LoadedChasmFloorTextureList> chasmFloorTextureLists;
@@ -101,6 +104,8 @@ private:
 
 	std::optional<int> tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) const;
 
+	IndexBufferID getChasmWallIndexBufferID(bool north, bool east, bool south, bool west) const;
+
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const;
@@ -109,6 +114,9 @@ private:
 	void loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale, RendererSystem3D &rendererSystem);
 	void loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale, double chasmAnimPercent);
 public:
+	void init(RendererSystem3D &rendererSystem);
+	void shutdown(RendererSystem3D &rendererSystem);
+
 	// Gets the list of draw calls for visible voxel geometry this frame.
 	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
 

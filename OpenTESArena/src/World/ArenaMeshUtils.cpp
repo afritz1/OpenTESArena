@@ -989,3 +989,47 @@ void ArenaMeshUtils::WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTeste
 
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
 }
+
+void ArenaMeshUtils::GetChasmWallIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
+	ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices)
+{
+	if (outNorthIndices != nullptr) // X=0
+	{
+		(*outNorthIndices)[0] = 4;
+		(*outNorthIndices)[1] = 5;
+		(*outNorthIndices)[2] = 6;
+		(*outNorthIndices)[3] = 6;
+		(*outNorthIndices)[4] = 7;
+		(*outNorthIndices)[5] = 4;
+	}
+
+	if (outEastIndices != nullptr) // Z=0
+	{
+		(*outEastIndices)[0] = 12;
+		(*outEastIndices)[1] = 13;
+		(*outEastIndices)[2] = 14;
+		(*outEastIndices)[3] = 14;
+		(*outEastIndices)[4] = 15;
+		(*outEastIndices)[5] = 12;
+	}
+
+	if (outSouthIndices != nullptr) // X=1
+	{
+		(*outSouthIndices)[0] = 8;
+		(*outSouthIndices)[1] = 9;
+		(*outSouthIndices)[2] = 10;
+		(*outSouthIndices)[3] = 10;
+		(*outSouthIndices)[4] = 11;
+		(*outSouthIndices)[5] = 8;
+	}
+
+	if (outWestIndices != nullptr) // Z=1
+	{
+		(*outWestIndices)[0] = 16;
+		(*outWestIndices)[1] = 17;
+		(*outWestIndices)[2] = 18;
+		(*outWestIndices)[3] = 18;
+		(*outWestIndices)[4] = 19;
+		(*outWestIndices)[5] = 16;
+	}
+}

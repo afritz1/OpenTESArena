@@ -352,6 +352,11 @@ namespace ArenaMeshUtils
 	void WriteChasmMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices);
 	void WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+
+	using ChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
+
+	void GetChasmWallIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
+		ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
 }
 
 #endif

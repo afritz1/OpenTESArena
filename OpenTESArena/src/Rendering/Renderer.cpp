@@ -143,6 +143,7 @@ Renderer::~Renderer()
 	
 	if (this->renderer3D)
 	{
+		this->sceneGraph.shutdown(*this->renderer3D);
 		this->renderer3D->shutdown();
 	}
 
@@ -638,6 +639,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	RenderInitSettings initSettings;
 	initSettings.init(renderWidth, renderHeight, renderThreadsMode);
 	this->renderer3D->init(initSettings);
+	this->sceneGraph.init(*this->renderer3D);
 
 	return true;
 }

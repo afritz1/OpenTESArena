@@ -336,6 +336,75 @@ void SceneGraph::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, VoxelChu
 	this->chasmWallIndex = chasmWallIndex;
 }
 
+void SceneGraph::init(RendererSystem3D &rendererSystem)
+{
+	// Populate chasm wall index buffers.
+	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
+	ArenaMeshUtils::GetChasmWallIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
+	constexpr int indicesPerFace = static_cast<int>(northIndices.size());
+
+	this->chasmWallIndexBufferIDs.fill(-1);
+
+	for (int i = 0; i < static_cast<int>(this->chasmWallIndexBufferIDs.size()); i++)
+	{
+		const bool hasNorth = (i & 0x1) != 0;
+		const bool hasEast = (i & 0x2) != 0;
+		const bool hasSouth = (i & 0x4) != 0;
+		const bool hasWest = (i & 0x8) != 0;
+
+		auto countFace = [](bool face)
+		{
+			return face ? 1 : 0;
+		};
+
+		const int faceCount = countFace(hasNorth) + countFace(hasEast) + countFace(hasSouth) + countFace(hasWest);
+		if (faceCount == 0)
+		{
+			continue;
+		}
+
+		const int indexCount = faceCount * indicesPerFace;
+
+		IndexBufferID &indexBufferID = this->chasmWallIndexBufferIDs[i];
+		if (!rendererSystem.tryCreateIndexBuffer(indexCount, &indexBufferID))
+		{
+			DebugLogError("Couldn't create chasm wall index buffer (" + std::to_string(i) + ").");
+			continue;
+		}
+
+		std::array<int32_t, indicesPerFace * 4> totalIndicesBuffer;
+		int writingIndex = 0;
+		auto tryWriteIndices = [indicesPerFace, &totalIndicesBuffer, &writingIndex](bool hasFace,
+			const ArenaMeshUtils::ChasmWallIndexBuffer &faceIndices)
+		{
+			if (hasFace)
+			{
+				std::copy(faceIndices.begin(), faceIndices.end(), totalIndicesBuffer.begin() + writingIndex);
+				writingIndex += indicesPerFace;
+			}
+		};
+
+		tryWriteIndices(hasNorth, northIndices);
+		tryWriteIndices(hasEast, eastIndices);
+		tryWriteIndices(hasSouth, southIndices);
+		tryWriteIndices(hasWest, westIndices);
+
+		rendererSystem.populateIndexBuffer(indexBufferID, BufferView<const int32_t>(totalIndicesBuffer.data(), writingIndex));
+	}
+}
+
+void SceneGraph::shutdown(RendererSystem3D &rendererSystem)
+{
+	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
+	{
+		if (indexBufferID >= 0)
+		{
+			rendererSystem.freeIndexBuffer(indexBufferID);
+			indexBufferID = -1;
+		}
+	}
+}
+
 ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAsset &textureAsset) const
 {
 	const auto iter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
@@ -399,6 +468,13 @@ std::optional<int> SceneGraph::tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) 
 	}
 
 	return std::nullopt;
+}
+
+IndexBufferID SceneGraph::getChasmWallIndexBufferID(bool north, bool east, bool south, bool west) const
+{
+	const int index = (north ? 0x1 : 0) | (east ? 0x2 : 0) | (south ? 0x4 : 0) | (west ? 0x8 : 0);
+	DebugAssertIndex(this->chasmWallIndexBufferIDs, index);
+	return this->chasmWallIndexBufferIDs[index];
 }
 
 BufferView<const RenderDrawCall> SceneGraph::getVoxelDrawCalls() const
