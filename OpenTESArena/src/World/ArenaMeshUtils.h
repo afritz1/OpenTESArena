@@ -2,6 +2,7 @@
 #define ARENA_MESH_UTILS_H
 
 #include <array>
+#include <cstdint>
 
 #include "MeshUtils.h"
 #include "../Assets/ArenaTypes.h"
@@ -17,6 +18,8 @@ namespace ArenaMeshUtils
 {
 	static constexpr int MAX_VERTICES = 24;
 	static constexpr int MAX_INDICES = 36;
+
+	using ChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
 
 	struct InitCache
 	{
@@ -330,33 +333,24 @@ namespace ArenaMeshUtils
 
 	// Mesh writing functions. All of these are in unscaled model space.
 	void WriteWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices,
-		BufferView<int32_t> outOpaqueTopIndices);
+	void WriteWallMeshIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
 	void WriteFloorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
 	void WriteCeilingMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteCeilingMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteRaisedMeshGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
-		BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
-		BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+	void WriteRaisedMeshGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteRaisedMeshIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
 	void WriteDiagonalMeshGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteDiagonalMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices);
 	void WriteTransparentWallMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteTransparentWallMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outVertices,
-		BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteEdgeMeshGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteEdgeMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices,
-		BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteChasmMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices, BufferView<int32_t> outAlphaTestedIndices);
+	void WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteChasmFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
+	void WriteChasmWallMeshIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices, ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
 	void WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-
-	using ChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
-
-	void GetChasmWallIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
-		ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
 }
 
 #endif

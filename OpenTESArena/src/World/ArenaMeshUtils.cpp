@@ -845,12 +845,11 @@ void ArenaMeshUtils::WriteChasmMeshGeometryBuffers(ArenaTypes::ChasmType chasmTy
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
 }
 
-void ArenaMeshUtils::WriteChasmMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices,
-	BufferView<int32_t> outAlphaTestedIndices)
+void ArenaMeshUtils::WriteChasmFloorMeshIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Chasm;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
-	static_assert(GetAlphaTestedIndexBufferCount(voxelType) == 0); // @temp
+	static_assert(GetAlphaTestedIndexBufferCount(voxelType) == 0);
 
 	constexpr std::array<int32_t, GetOpaqueIndexCount(voxelType, 0)> opaqueIndices =
 	{
@@ -859,25 +858,51 @@ void ArenaMeshUtils::WriteChasmMeshIndexBuffers(BufferView<int32_t> outOpaqueInd
 		2, 3, 0
 	};
 
-	// @temp: not writing chasm walls until later
-	/*constexpr std::array<int32_t, GetAlphaTestedIndexCount(ArenaTypes::VoxelType::Chasm)> alphaTestedIndices =
-	{
-		// X=0
-		4, 5, 6,
-		6, 7, 4,
-		// X=1
-		8, 9, 10,
-		10, 11, 8,
-		// Z=0
-		12, 13, 14,
-		14, 15, 12,
-		// Z=1
-		16, 17, 18,
-		18, 19, 16
-	};*/
-
 	std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.get());
-	//std::copy(alphaTestedIndices.begin(), alphaTestedIndices.end(), outAlphaTestedIndices.get()); // @todo: figure out override index buffer support (allocate all combinations ahead of time, use bitwise lookup to get the right index buffer ID?).
+}
+
+void ArenaMeshUtils::WriteChasmWallMeshIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
+	ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices)
+{
+	if (outNorthIndices != nullptr) // X=0
+	{
+		(*outNorthIndices)[0] = 4;
+		(*outNorthIndices)[1] = 5;
+		(*outNorthIndices)[2] = 6;
+		(*outNorthIndices)[3] = 6;
+		(*outNorthIndices)[4] = 7;
+		(*outNorthIndices)[5] = 4;
+	}
+
+	if (outEastIndices != nullptr) // Z=0
+	{
+		(*outEastIndices)[0] = 12;
+		(*outEastIndices)[1] = 13;
+		(*outEastIndices)[2] = 14;
+		(*outEastIndices)[3] = 14;
+		(*outEastIndices)[4] = 15;
+		(*outEastIndices)[5] = 12;
+	}
+
+	if (outSouthIndices != nullptr) // X=1
+	{
+		(*outSouthIndices)[0] = 8;
+		(*outSouthIndices)[1] = 9;
+		(*outSouthIndices)[2] = 10;
+		(*outSouthIndices)[3] = 10;
+		(*outSouthIndices)[4] = 11;
+		(*outSouthIndices)[5] = 8;
+	}
+
+	if (outWestIndices != nullptr) // Z=1
+	{
+		(*outWestIndices)[0] = 16;
+		(*outWestIndices)[1] = 17;
+		(*outWestIndices)[2] = 18;
+		(*outWestIndices)[3] = 18;
+		(*outWestIndices)[4] = 19;
+		(*outWestIndices)[5] = 16;
+	}
 }
 
 void ArenaMeshUtils::WriteDoorMeshGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
@@ -988,48 +1013,4 @@ void ArenaMeshUtils::WriteDoorMeshIndexBuffers(BufferView<int32_t> outAlphaTeste
 	};
 
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
-}
-
-void ArenaMeshUtils::GetChasmWallIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
-	ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices)
-{
-	if (outNorthIndices != nullptr) // X=0
-	{
-		(*outNorthIndices)[0] = 4;
-		(*outNorthIndices)[1] = 5;
-		(*outNorthIndices)[2] = 6;
-		(*outNorthIndices)[3] = 6;
-		(*outNorthIndices)[4] = 7;
-		(*outNorthIndices)[5] = 4;
-	}
-
-	if (outEastIndices != nullptr) // Z=0
-	{
-		(*outEastIndices)[0] = 12;
-		(*outEastIndices)[1] = 13;
-		(*outEastIndices)[2] = 14;
-		(*outEastIndices)[3] = 14;
-		(*outEastIndices)[4] = 15;
-		(*outEastIndices)[5] = 12;
-	}
-
-	if (outSouthIndices != nullptr) // X=1
-	{
-		(*outSouthIndices)[0] = 8;
-		(*outSouthIndices)[1] = 9;
-		(*outSouthIndices)[2] = 10;
-		(*outSouthIndices)[3] = 10;
-		(*outSouthIndices)[4] = 11;
-		(*outSouthIndices)[5] = 8;
-	}
-
-	if (outWestIndices != nullptr) // Z=1
-	{
-		(*outWestIndices)[0] = 16;
-		(*outWestIndices)[1] = 17;
-		(*outWestIndices)[2] = 18;
-		(*outWestIndices)[3] = 18;
-		(*outWestIndices)[4] = 19;
-		(*outWestIndices)[5] = 16;
-	}
 }

@@ -371,7 +371,7 @@ namespace MapGeneration
 			}
 
 			ArenaMeshUtils::WriteChasmMeshGeometryBuffers(*outChasmType, outMeshInitCache->verticesView, outMeshInitCache->normalsView, outMeshInitCache->texCoordsView);
-			ArenaMeshUtils::WriteChasmMeshIndexBuffers(outMeshInitCache->opaqueIndices0View, outMeshInitCache->alphaTestedIndices0View);
+			ArenaMeshUtils::WriteChasmFloorMeshIndexBuffers(outMeshInitCache->opaqueIndices0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(chasmID);
 			*outTextureAsset = TextureAsset(
