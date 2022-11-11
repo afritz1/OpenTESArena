@@ -9,6 +9,7 @@ void SceneGraphChunk::init(const ChunkInt2 &position, int height)
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
 	this->meshInstIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
+	this->chasmWallIndexBufferIDs.clear();
 	this->voxelDrawCalls.clear();
 	this->position = position;
 

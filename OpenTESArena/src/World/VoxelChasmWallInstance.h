@@ -1,16 +1,16 @@
-#ifndef VOXEL_CHASM_INSTANCE_H
-#define VOXEL_CHASM_INSTANCE_H
+#ifndef VOXEL_CHASM_WALL_INSTANCE_H
+#define VOXEL_CHASM_WALL_INSTANCE_H
 
 #include "Coord.h"
 
-struct VoxelChasmInstance
+struct VoxelChasmWallInstance
 {
 	SNInt x;
 	int y;
 	WEInt z;
 	bool north, east, south, west; // Visible faces.
 
-	VoxelChasmInstance();
+	VoxelChasmWallInstance();
 
 	void init(SNInt x, int y, WEInt z, bool north, bool east, bool south, bool west);
 

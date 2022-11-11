@@ -491,9 +491,9 @@ void ChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 				}
 
 				int chasmInstIndex;
-				if (chunk.tryGetChasmInstIndex(x, y, z, &chasmInstIndex))
+				if (chunk.tryGetChasmWallInstIndex(x, y, z, &chasmInstIndex))
 				{
-					DebugLogError("Expected no existing chasm instance at (" + std::to_string(x) + ", " +
+					DebugLogError("Expected no existing chasm wall instance at (" + std::to_string(x) + ", " +
 						std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + chunkPos.toString() + ").");
 					continue;
 				}
@@ -523,9 +523,9 @@ void ChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 
 				if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 				{
-					VoxelChasmInstance chasmInst;
-					chasmInst.init(x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-					chunk.addChasmInst(std::move(chasmInst));
+					VoxelChasmWallInstance chasmWallInst;
+					chasmWallInst.init(x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+					chunk.addChasmWallInst(std::move(chasmWallInst));
 				}
 			}
 		}
@@ -804,25 +804,25 @@ void ChunkManager::updateChunkPerimeterChasmInsts(VoxelChunk &chunk)
 		};
 		
 		int chasmInstIndex;
-		if (chunk.tryGetChasmInstIndex(voxel.x, voxel.y, voxel.z, &chasmInstIndex))
+		if (chunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmInstIndex))
 		{
-			// The chasm instance already exists. See if it should be updated or removed.
+			// The chasm wall instance already exists. See if it should be updated or removed.
 			bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
 			getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
 
 			if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 			{
 				// The instance is still needed. Update its chasm walls.
-				VoxelChasmInstance &chasmInst = chunk.getChasmInst(chasmInstIndex);
-				chasmInst.north = hasNorthFace;
-				chasmInst.east = hasEastFace;
-				chasmInst.south = hasSouthFace;
-				chasmInst.west = hasWestFace;
+				VoxelChasmWallInstance &chasmWallInst = chunk.getChasmWallInst(chasmInstIndex);
+				chasmWallInst.north = hasNorthFace;
+				chasmWallInst.east = hasEastFace;
+				chasmWallInst.south = hasSouthFace;
+				chasmWallInst.west = hasWestFace;
 			}
 			else
 			{
-				// The chasm instance no longer has any interesting data.
-				chunk.removeChasmInst(voxel);
+				// The chasm wall instance no longer has any interesting data.
+				chunk.removeChasmWallInst(voxel);
 			}
 		}
 		else
@@ -837,9 +837,9 @@ void ChunkManager::updateChunkPerimeterChasmInsts(VoxelChunk &chunk)
 
 				if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 				{
-					VoxelChasmInstance chasmInst;
-					chasmInst.init(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-					chunk.addChasmInst(std::move(chasmInst));
+					VoxelChasmWallInstance chasmWallInst;
+					chasmWallInst.init(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+					chunk.addChasmWallInst(std::move(chasmWallInst));
 				}
 			}
 		}

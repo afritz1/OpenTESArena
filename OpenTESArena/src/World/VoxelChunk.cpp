@@ -366,9 +366,9 @@ bool VoxelChunk::tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex)
 	}
 }
 
-int VoxelChunk::getChasmInstCount() const
+int VoxelChunk::getChasmWallInstCount() const
 {
-	return static_cast<int>(this->chasmInsts.size());
+	return static_cast<int>(this->chasmWallInsts.size());
 }
 
 int VoxelChunk::getTriggerInstCount() const
@@ -376,29 +376,29 @@ int VoxelChunk::getTriggerInstCount() const
 	return static_cast<int>(this->triggerInsts.size());
 }
 
-VoxelChasmInstance &VoxelChunk::getChasmInst(int index)
+VoxelChasmWallInstance &VoxelChunk::getChasmWallInst(int index)
 {
-	DebugAssertIndex(this->chasmInsts, index);
-	return this->chasmInsts[index];
+	DebugAssertIndex(this->chasmWallInsts, index);
+	return this->chasmWallInsts[index];
 }
 
-const VoxelChasmInstance &VoxelChunk::getChasmInst(int index) const
+const VoxelChasmWallInstance &VoxelChunk::getChasmWallInst(int index) const
 {
-	DebugAssertIndex(this->chasmInsts, index);
-	return this->chasmInsts[index];
+	DebugAssertIndex(this->chasmWallInsts, index);
+	return this->chasmWallInsts[index];
 }
 
-bool VoxelChunk::tryGetChasmInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
+bool VoxelChunk::tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
 {
-	const auto iter = std::find_if(this->chasmInsts.begin(), this->chasmInsts.end(),
-		[x, y, z](const VoxelChasmInstance &inst)
+	const auto iter = std::find_if(this->chasmWallInsts.begin(), this->chasmWallInsts.end(),
+		[x, y, z](const VoxelChasmWallInstance &inst)
 	{
 		return (inst.x == x) && (inst.y == y) && (inst.z == z);
 	});
 
-	if (iter != this->chasmInsts.end())
+	if (iter != this->chasmWallInsts.end())
 	{
-		*outIndex = static_cast<int>(std::distance(this->chasmInsts.begin(), iter));
+		*outIndex = static_cast<int>(std::distance(this->chasmWallInsts.begin(), iter));
 		return true;
 	}
 	else
@@ -559,9 +559,9 @@ void VoxelChunk::addFadeAnimInst(VoxelFadeAnimationInstance &&animInst)
 	this->fadeAnimInsts.emplace_back(std::move(animInst));
 }
 
-void VoxelChunk::addChasmInst(VoxelChasmInstance &&inst)
+void VoxelChunk::addChasmWallInst(VoxelChasmWallInstance &&inst)
 {
-	this->chasmInsts.emplace_back(std::move(inst));
+	this->chasmWallInsts.emplace_back(std::move(inst));
 }
 
 void VoxelChunk::addTriggerInst(VoxelTriggerInstance &&inst)
@@ -569,14 +569,14 @@ void VoxelChunk::addTriggerInst(VoxelTriggerInstance &&inst)
 	this->triggerInsts.emplace_back(std::move(inst));
 }
 
-void VoxelChunk::removeChasmInst(const VoxelInt3 &voxel)
+void VoxelChunk::removeChasmWallInst(const VoxelInt3 &voxel)
 {
-	for (int i = 0; i < static_cast<int>(this->chasmInsts.size()); i++)
+	for (int i = 0; i < static_cast<int>(this->chasmWallInsts.size()); i++)
 	{
-		const VoxelChasmInstance &chasmInst = this->chasmInsts[i];
-		if ((chasmInst.x == voxel.x) && (chasmInst.y == voxel.y) && (chasmInst.z == voxel.z))
+		const VoxelChasmWallInstance &chasmWallInst = this->chasmWallInsts[i];
+		if ((chasmWallInst.x == voxel.x) && (chasmWallInst.y == voxel.y) && (chasmWallInst.z == voxel.z))
 		{
-			this->chasmInsts.erase(this->chasmInsts.begin() + i);
+			this->chasmWallInsts.erase(this->chasmWallInsts.begin() + i);
 			break;
 		}
 	}
@@ -616,7 +616,7 @@ void VoxelChunk::clear()
 	this->chasmDefIndices.clear();
 	this->doorAnimInsts.clear();
 	this->fadeAnimInsts.clear();
-	this->chasmInsts.clear();
+	this->chasmWallInsts.clear();
 	this->triggerInsts.clear();
 }
 

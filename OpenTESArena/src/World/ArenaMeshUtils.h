@@ -23,6 +23,7 @@ namespace ArenaMeshUtils
 	static constexpr int CHASM_WALL_EAST = 0x2;
 	static constexpr int CHASM_WALL_SOUTH = 0x4;
 	static constexpr int CHASM_WALL_WEST = 0x8;
+	static constexpr int CHASM_WALL_COMBINATION_COUNT = CHASM_WALL_NORTH | CHASM_WALL_EAST | CHASM_WALL_SOUTH | CHASM_WALL_WEST;
 
 	using ChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
 

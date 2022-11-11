@@ -586,6 +586,35 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 	}
 }
 
+void SceneGraph::loadVoxelChasmWalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk)
+{
+	DebugAssert(graphChunk.chasmWallIndexBufferIDs.empty());
+
+	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
+	{
+		for (int y = 0; y < chunk.getHeight(); y++)
+		{
+			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
+			{
+				int chasmWallInstIndex;
+				if (!chunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
+				{
+					continue;
+				}
+
+				const VoxelChasmWallInstance &chasmWallInst = chunk.getChasmWallInst(chasmWallInstIndex);
+				DebugAssert(chasmWallInst.getFaceCount() > 0);
+
+				const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
+					chasmWallInst.north, chasmWallInst.east, chasmWallInst.south, chasmWallInst.west);
+				const IndexBufferID indexBufferID = this->chasmWallIndexBufferIDs[chasmWallIndexBufferIndex];
+
+				graphChunk.chasmWallIndexBufferIDs.emplace(VoxelInt3(x, y, z), indexBufferID);
+			}
+		}
+	}
+}
+
 void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale,
 	double chasmAnimPercent)
 {
@@ -619,6 +648,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 		{
 			for (SNInt x = 0; x < graphChunk.meshInstIDs.getWidth(); x++)
 			{
+				const VoxelInt3 voxel(x, y, z);
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
 				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
 				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(x, y, z);
@@ -708,7 +738,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 					}
 					else
 					{
-						textureID = this->getChasmWallTextureID(chunkPos, chasmDefID);
+						textureID = this->getChasmWallTextureID(chunkPos, chasmDefID); // @todo: don't think chasm support is needed here for alpha-tested
 					}
 
 					if (textureID < 0)
@@ -718,6 +748,16 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 
 					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
 						meshInst.texCoordBufferID, meshInst.alphaTestedIndexBufferID, textureID, PixelShaderType::AlphaTested,
+						allowsBackFaces);
+				}
+
+				const auto chasmWallIter = graphChunk.chasmWallIndexBufferIDs.find(voxel);
+				if (chasmWallIter != graphChunk.chasmWallIndexBufferIDs.end())
+				{
+					const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
+					ObjectTextureID textureID = this->getChasmWallTextureID(chunkPos, chasmDefID);
+					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
+						meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID, PixelShaderType::Opaque,
 						allowsBackFaces);
 				}
 			}
@@ -734,6 +774,7 @@ void SceneGraph::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, Te
 
 	this->loadVoxelTextures(chunk, textureManager, renderer);
 	this->loadVoxelMeshBuffers(graphChunk, chunk, ceilingScale, rendererSystem);
+	this->loadVoxelChasmWalls(graphChunk, chunk);
 
 	this->graphChunks.emplace_back(std::move(graphChunk));
 }
