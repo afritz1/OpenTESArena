@@ -78,8 +78,8 @@ private:
 	// Chunks with data for geometry storage, visibility calculation, etc..
 	std::vector<SceneGraphChunk> graphChunks;
 	
-	// Chasm wall support - one index buffer for each face combination.
-	std::array<IndexBufferID, 16> chasmWallIndexBufferIDs;
+	// Chasm wall support - one index buffer for each face combination. Four bits: 0x0-0xF.
+	std::array<IndexBufferID, 15> chasmWallIndexBufferIDs;
 
 	std::vector<LoadedVoxelTexture> voxelTextures;
 	std::vector<LoadedChasmFloorTextureList> chasmFloorTextureLists;
@@ -103,8 +103,6 @@ private:
 	std::vector<RenderDrawCall> drawCallsCache;
 
 	std::optional<int> tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) const;
-
-	IndexBufferID getChasmWallIndexBufferID(bool north, bool east, bool south, bool west) const;
 
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;

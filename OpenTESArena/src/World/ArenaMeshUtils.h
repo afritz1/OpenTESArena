@@ -19,6 +19,11 @@ namespace ArenaMeshUtils
 	static constexpr int MAX_VERTICES = 24;
 	static constexpr int MAX_INDICES = 36;
 
+	static constexpr int CHASM_WALL_NORTH = 0x1;
+	static constexpr int CHASM_WALL_EAST = 0x2;
+	static constexpr int CHASM_WALL_SOUTH = 0x4;
+	static constexpr int CHASM_WALL_WEST = 0x8;
+
 	using ChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
 
 	struct InitCache
@@ -266,6 +271,12 @@ namespace ArenaMeshUtils
 		}
 
 		return triangleCount * MeshUtils::INDICES_PER_TRIANGLE;
+	}
+
+	constexpr int GetChasmWallIndex(bool north, bool east, bool south, bool west)
+	{
+		const int index = (north ? CHASM_WALL_NORTH : 0) | (east ? CHASM_WALL_EAST : 0) | (south ? CHASM_WALL_SOUTH : 0) | (west ? CHASM_WALL_WEST : 0);
+		return index;
 	}
 
 	constexpr bool AllowsBackFacingGeometry(ArenaTypes::VoxelType voxelType)

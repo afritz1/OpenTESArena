@@ -347,10 +347,11 @@ void SceneGraph::init(RendererSystem3D &rendererSystem)
 
 	for (int i = 0; i < static_cast<int>(this->chasmWallIndexBufferIDs.size()); i++)
 	{
-		const bool hasNorth = (i & 0x1) != 0;
-		const bool hasEast = (i & 0x2) != 0;
-		const bool hasSouth = (i & 0x4) != 0;
-		const bool hasWest = (i & 0x8) != 0;
+		const int baseIndex = i + 1;
+		const bool hasNorth = (baseIndex & ArenaMeshUtils::CHASM_WALL_NORTH) != 0;
+		const bool hasEast = (baseIndex & ArenaMeshUtils::CHASM_WALL_EAST) != 0;
+		const bool hasSouth = (baseIndex & ArenaMeshUtils::CHASM_WALL_SOUTH) != 0;
+		const bool hasWest = (baseIndex & ArenaMeshUtils::CHASM_WALL_WEST) != 0;
 
 		auto countFace = [](bool face)
 		{
@@ -364,11 +365,10 @@ void SceneGraph::init(RendererSystem3D &rendererSystem)
 		}
 
 		const int indexCount = faceCount * indicesPerFace;
-
 		IndexBufferID &indexBufferID = this->chasmWallIndexBufferIDs[i];
 		if (!rendererSystem.tryCreateIndexBuffer(indexCount, &indexBufferID))
 		{
-			DebugLogError("Couldn't create chasm wall index buffer (" + std::to_string(i) + ").");
+			DebugLogError("Couldn't create chasm wall index buffer " + std::to_string(i) + ".");
 			continue;
 		}
 
@@ -397,11 +397,8 @@ void SceneGraph::shutdown(RendererSystem3D &rendererSystem)
 {
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
 	{
-		if (indexBufferID >= 0)
-		{
-			rendererSystem.freeIndexBuffer(indexBufferID);
-			indexBufferID = -1;
-		}
+		rendererSystem.freeIndexBuffer(indexBufferID);
+		indexBufferID = -1;
 	}
 }
 
@@ -468,13 +465,6 @@ std::optional<int> SceneGraph::tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) 
 	}
 
 	return std::nullopt;
-}
-
-IndexBufferID SceneGraph::getChasmWallIndexBufferID(bool north, bool east, bool south, bool west) const
-{
-	const int index = (north ? 0x1 : 0) | (east ? 0x2 : 0) | (south ? 0x4 : 0) | (west ? 0x8 : 0);
-	DebugAssertIndex(this->chasmWallIndexBufferIDs, index);
-	return this->chasmWallIndexBufferIDs[index];
 }
 
 BufferView<const RenderDrawCall> SceneGraph::getVoxelDrawCalls() const
