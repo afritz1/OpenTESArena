@@ -277,7 +277,7 @@ namespace ArenaMeshUtils
 	constexpr int GetChasmWallIndex(bool north, bool east, bool south, bool west)
 	{
 		const int index = (north ? CHASM_WALL_NORTH : 0) | (east ? CHASM_WALL_EAST : 0) | (south ? CHASM_WALL_SOUTH : 0) | (west ? CHASM_WALL_WEST : 0);
-		return index;
+		return index - 1;
 	}
 
 	constexpr bool AllowsBackFacingGeometry(ArenaTypes::VoxelType voxelType)
