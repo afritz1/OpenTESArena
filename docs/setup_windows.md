@@ -22,7 +22,7 @@ The easiest way to build the dependencies is with [vcpkg](https://github.com/Mic
 
 3. Install the dependencies:
   ```PowerShell
-  vcpkg install sdl2 openal-soft wildmidi --triplet x64-windows
+  .\vcpkg install sdl2 openal-soft wildmidi --triplet x64-windows
   ```
 
 ## Building
