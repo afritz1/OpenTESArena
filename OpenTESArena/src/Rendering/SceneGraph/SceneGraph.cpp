@@ -620,14 +620,16 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 {
 	auto addDrawCall = [ceilingScale](SceneGraphChunk &graphChunk, SNInt x, int y, WEInt z,
 		VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
-		IndexBufferID indexBufferID, ObjectTextureID textureID, PixelShaderType pixelShaderType, bool allowsBackFaces)
+		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
+		PixelShaderType pixelShaderType, bool allowsBackFaces)
 	{
 		RenderDrawCall drawCall;
 		drawCall.vertexBufferID = vertexBufferID;
 		drawCall.normalBufferID = normalBufferID;
 		drawCall.texCoordBufferID = texCoordBufferID;
 		drawCall.indexBufferID = indexBufferID;
-		drawCall.textureIDs[0] = textureID; // @todo: add another parameter for multi-texturing for chasm walls
+		drawCall.textureIDs[0] = textureID0;
+		drawCall.textureIDs[1] = textureID1.has_value() ? *textureID1 : -1;
 		drawCall.vertexShaderType = VertexShaderType::Default;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.worldSpaceOffset = Double3(
@@ -711,7 +713,8 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 
 					const IndexBufferID opaqueIndexBufferID = meshInst.opaqueIndexBufferIDs[bufferIndex];
 					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-						meshInst.texCoordBufferID, opaqueIndexBufferID, textureID, PixelShaderType::Opaque, allowsBackFaces);
+						meshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, PixelShaderType::Opaque,
+						allowsBackFaces);
 				}
 
 				if (meshInst.alphaTestedIndexBufferID >= 0)
@@ -747,8 +750,8 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 					}
 
 					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-						meshInst.texCoordBufferID, meshInst.alphaTestedIndexBufferID, textureID, PixelShaderType::AlphaTested,
-						allowsBackFaces);
+						meshInst.texCoordBufferID, meshInst.alphaTestedIndexBufferID, textureID, std::nullopt,
+						PixelShaderType::AlphaTested, allowsBackFaces);
 				}
 
 				const auto chasmWallIter = graphChunk.chasmWallIndexBufferIDs.find(voxel);
@@ -756,12 +759,12 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 				{
 					const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
 					
-					// @todo: need to give two textures since chasm walls are multi-textured
+					// Need to give two textures since chasm walls are multi-textured.
 					ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
-					//ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
+					ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
 					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-						meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, PixelShaderType::Opaque,
+						meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1, PixelShaderType::Opaque,
 						allowsBackFaces);
 				}
 			}
