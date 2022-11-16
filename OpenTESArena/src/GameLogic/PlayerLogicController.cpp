@@ -250,6 +250,8 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 			// Only attempt to accelerate if a direction was chosen.
 			if (accelDirection.lengthSquared() > 0.0)
 			{
+				player.setFrictionToDynamic();
+
 				// Use a normalized direction.
 				accelDirection = accelDirection.normalized();
 
@@ -273,6 +275,8 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		}
 		else if ((forward || backward || ((left || right) && lCtrl) || space) && isOnGround)
 		{
+			player.setFrictionToDynamic();
+
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
 
@@ -317,7 +321,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		}
 		else if (isOnGround)
 		{
-			player.setVelocityToZero();
+			player.setFrictionToStatic();
 		}
 	}
 	else
@@ -344,6 +348,8 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 
 		if ((forward || backward || left || right || space) && isOnGround)
 		{
+			player.setFrictionToDynamic();
+
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
 
@@ -388,7 +394,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		}
 		else if (isOnGround)
 		{
-			player.setVelocityToZero();
+			player.setFrictionToStatic();
 		}
 	}
 }
