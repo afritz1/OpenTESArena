@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <map>
 
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
@@ -9,6 +10,8 @@
 #include "ChooseAttributesPanel.h"
 #include "CommonUiView.h"
 #include "TextSubPanel.h"
+#include "../Entities/PrimaryAttribute.h"
+#include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
@@ -55,76 +58,23 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 
-	const std::string playerStrengthText = CharacterCreationUiModel::getPlayerStrengthText(game);
-	const TextBox::InitInfo playerStrengthTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerStrengthTextBoxInitInfo(playerStrengthText, fontLibrary);
-	if (!this->strengthTextBox.init(playerStrengthTextBoxInitInfo, playerStrengthText, renderer))
+	const std::vector<PrimaryAttribute> playerAttributes = CharacterCreationUiModel::getPlayerAttributes(game);
+	const std::map<PrimaryAttributeName, TextBox::InitInfo>
+		playerAttributesTextBoxInitInfoMap = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
+			playerAttributes, fontLibrary);
+	for (const PrimaryAttribute attribute : playerAttributes)
 	{
-		DebugLogError("Couldn't init player strength text box.");
-		return false;
-	}
-
-	const std::string playerIntelligenceText = CharacterCreationUiModel::getPlayerIntelligenceText(game);
-	const TextBox::InitInfo playerIntelligenceTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerIntelligenceTextBoxInitInfo(playerIntelligenceText, fontLibrary);
-	if (!this->intelligenceTextBox.init(playerIntelligenceTextBoxInitInfo, playerIntelligenceText, renderer))
-	{
-		DebugLogError("Couldn't init player intelligence text box.");
-		return false;
-	}
-
-	const std::string playerWillpowerText = CharacterCreationUiModel::getPlayerWillpowerText(game);
-	const TextBox::InitInfo playerWillpowerTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerWillpowerTextBoxInitInfo(playerWillpowerText, fontLibrary);
-	if (!this->willpowerTextBox.init(playerWillpowerTextBoxInitInfo, playerWillpowerText, renderer))
-	{
-		DebugLogError("Couldn't init player willpower text box.");
-		return false;
-	}
-
-	const std::string playerAgilityText = CharacterCreationUiModel::getPlayerAgilityText(game);
-	const TextBox::InitInfo playerAgilityTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerAgilityTextBoxInitInfo(playerAgilityText, fontLibrary);
-	if (!this->agilityTextBox.init(playerAgilityTextBoxInitInfo, playerAgilityText, renderer))
-	{
-		DebugLogError("Couldn't init player agility text box.");
-		return false;
-	}
-
-	const std::string playerSpeedText = CharacterCreationUiModel::getPlayerSpeedText(game);
-	const TextBox::InitInfo playerSpeedTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerSpeedTextBoxInitInfo(playerSpeedText, fontLibrary);
-	if (!this->speedTextBox.init(playerSpeedTextBoxInitInfo, playerSpeedText, renderer))
-	{
-		DebugLogError("Couldn't init player speed text box.");
-		return false;
-	}
-
-	const std::string playerEnduranceText = CharacterCreationUiModel::getPlayerEnduranceText(game);
-	const TextBox::InitInfo playerEnduranceTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerEnduranceTextBoxInitInfo(playerEnduranceText, fontLibrary);
-	if (!this->enduranceTextBox.init(playerEnduranceTextBoxInitInfo, playerEnduranceText, renderer))
-	{
-		DebugLogError("Couldn't init player endurance text box.");
-		return false;
-	}
-
-	const std::string playerPersonalityText = CharacterCreationUiModel::getPlayerPersonalityText(game);
-	const TextBox::InitInfo playerPersonalityTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerPersonalityTextBoxInitInfo(playerPersonalityText, fontLibrary);
-	if (!this->personalityTextBox.init(playerPersonalityTextBoxInitInfo, playerPersonalityText, renderer))
-	{
-		DebugLogError("Couldn't init player personality text box.");
-		return false;
-	}
-
-	const std::string playerLuckText = CharacterCreationUiModel::getPlayerLuckText(game);
-	const TextBox::InitInfo playerLuckTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerLuckTextBoxInitInfo(playerLuckText, fontLibrary);
-	if (!this->luckTextBox.init(playerLuckTextBoxInitInfo, playerLuckText, renderer))
-	{
-		DebugLogError("Couldn't init player luck text box.");
-		return false;
+		const int attributeValue = attribute.get();
+		const std::string attributeValueText = std::to_string(attributeValue);
+		const PrimaryAttributeName attributeName = attribute.getAttributeName();
+		const TextBox::InitInfo attributeTextBoxInitInfo = playerAttributesTextBoxInitInfoMap.at(attributeName);
+		this->attributeTextBoxes.insert({ attributeName, TextBox() });
+		if (!this->attributeTextBoxes.at(attributeName).init(attributeTextBoxInitInfo, attributeValueText, renderer))
+		{
+			const std::string attributeNameText = attribute.toString();
+			DebugLogError("Couldn't init player " + attributeNameText + " text box.");
+			return false;
+		}
 	}
 
 	this->doneButton = Button<Game&, bool*>(
@@ -260,269 +210,42 @@ bool ChooseAttributesPanel::init()
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	UiDrawCall::TextureFunc strengthTextureFunc = [this, &game]()
+	for (const PrimaryAttributeName attributeName : PRIMARY_ATTRIBUTE_NAMES)
 	{
-		auto& charCreationState = game.getCharacterCreationState();
-		const int strength = charCreationState.getStrength();
-		const std::string strengthText = std::to_string(strength);
-		this->strengthTextBox.setText(strengthText);
-		return this->strengthTextBox.getTextureID();
-	};
+		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeName]()
+		{
+			auto &charCreationState = game.getCharacterCreationState();
+			const PrimaryAttributeSet attributes = charCreationState.getAttributes();
+			const int attributeValue = attributes.getValue(attributeName);
+			const std::string attributeValueText = std::to_string(attributeValue);
+			this->attributeTextBoxes.at(attributeName).setText(attributeValueText);
+			return this->attributeTextBoxes.at(attributeName).getTextureID();
+		};
 
-	UiDrawCall::PositionFunc strengthPositionFunc = [this]()
-	{
-		const Rect& strengthTextBoxRect = this->strengthTextBox.getRect();
-		return strengthTextBoxRect.getTopLeft();
-	};
+		UiDrawCall::PositionFunc attributePositionFunc = [this, attributeName]()
+		{
+			const Rect &attributeTextBoxRect = this->attributeTextBoxes.at(attributeName).getRect();
+			return attributeTextBoxRect.getTopLeft();
+		};
 
-	UiDrawCall::SizeFunc strengthSizeFunc = [this]()
-	{
-		const Rect& strengthTextBoxRect = this->strengthTextBox.getRect();
-		return Int2(strengthTextBoxRect.getWidth(), strengthTextBoxRect.getHeight());
-	};
+		UiDrawCall::SizeFunc attributeSizeFunc = [this, attributeName]()
+		{
+			const Rect &attributeTextBoxRect = this->attributeTextBoxes.at(attributeName).getRect();
+			return Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight());
+		};
 
-	UiDrawCall::PivotFunc strengthPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
+		UiDrawCall::PivotFunc attributePivotFunc = []()
+		{
+			return PivotType::TopLeft;
+		};
 
-	this->addDrawCall(
-		strengthTextureFunc,
-		strengthPositionFunc,
-		strengthSizeFunc,
-		strengthPivotFunc,
-		UiDrawCall::defaultActiveFunc);
-	
-	UiDrawCall::TextureFunc intelligenceTextureFunc = [this, &game]()
-	{
-		auto& charCreationState = game.getCharacterCreationState();
-		const int intelligence = charCreationState.getIntelligence();
-		const std::string intelligenceText = std::to_string(intelligence);
-		this->intelligenceTextBox.setText(intelligenceText);
-		return this->intelligenceTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc intelligencePositionFunc = [this]()
-	{
-		const Rect& intelligenceTextBoxRect = this->intelligenceTextBox.getRect();
-		return intelligenceTextBoxRect.getTopLeft();
-	};
-
-	UiDrawCall::SizeFunc intelligenceSizeFunc = [this]()
-	{
-		const Rect& intelligenceTextBoxRect = this->intelligenceTextBox.getRect();
-		return Int2(intelligenceTextBoxRect.getWidth(), intelligenceTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc intelligencePivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
-
-	this->addDrawCall(
-		intelligenceTextureFunc,
-		intelligencePositionFunc,
-		intelligenceSizeFunc,
-		intelligencePivotFunc,
-		UiDrawCall::defaultActiveFunc);
-
-	UiDrawCall::TextureFunc willpowerTextureFunc = [this, &game]()
-	{
-		auto& charCreationState = game.getCharacterCreationState();
-		const int willpower = charCreationState.getWillpower();
-		const std::string willpowerText = std::to_string(willpower);
-		this->willpowerTextBox.setText(willpowerText);
-		return this->willpowerTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc willpowerPositionFunc = [this]()
-	{
-		const Rect& willpowerTextBoxRect = this->willpowerTextBox.getRect();
-		return willpowerTextBoxRect.getTopLeft();
-	};
-
-	UiDrawCall::SizeFunc willpowerSizeFunc = [this]()
-	{
-		const Rect& willpowerTextBoxRect = this->willpowerTextBox.getRect();
-		return Int2(willpowerTextBoxRect.getWidth(), willpowerTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc willpowerPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
-
-	this->addDrawCall(
-		willpowerTextureFunc,
-		willpowerPositionFunc,
-		willpowerSizeFunc,
-		willpowerPivotFunc,
-		UiDrawCall::defaultActiveFunc);
-
-	UiDrawCall::TextureFunc agilityTextureFunc = [this, &game]()
-	{
-		auto& charCreationState = game.getCharacterCreationState();
-		const int agility = charCreationState.getAgility();
-		const std::string agilityText = std::to_string(agility);
-		this->agilityTextBox.setText(agilityText);
-		return this->agilityTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc agilityPositionFunc = [this]()
-	{
-		const Rect& agilityTextBoxRect = this->agilityTextBox.getRect();
-		return agilityTextBoxRect.getTopLeft();
-	};
-
-	UiDrawCall::SizeFunc agilitySizeFunc = [this]()
-	{
-		const Rect& agilityTextBoxRect = this->agilityTextBox.getRect();
-		return Int2(agilityTextBoxRect.getWidth(), agilityTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc agilityPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
-
-	this->addDrawCall(
-		agilityTextureFunc,
-		agilityPositionFunc,
-		agilitySizeFunc,
-		agilityPivotFunc,
-		UiDrawCall::defaultActiveFunc);
-
-	UiDrawCall::TextureFunc speedTextureFunc = [this, &game]()
-	{
-		auto& charCreationState = game.getCharacterCreationState();
-		const int speed = charCreationState.getSpeed();
-		const std::string speedText = std::to_string(speed);
-		this->speedTextBox.setText(speedText);
-		return this->speedTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc speedPositionFunc = [this]()
-	{
-		const Rect& speedTextBoxRect = this->speedTextBox.getRect();
-		return speedTextBoxRect.getTopLeft();
-	};
-
-	UiDrawCall::SizeFunc speedSizeFunc = [this]()
-	{
-		const Rect& speedTextBoxRect = this->speedTextBox.getRect();
-		return Int2(speedTextBoxRect.getWidth(), speedTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc speedPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
-
-	this->addDrawCall(
-		speedTextureFunc,
-		speedPositionFunc,
-		speedSizeFunc,
-		speedPivotFunc,
-		UiDrawCall::defaultActiveFunc);
-
-	UiDrawCall::TextureFunc enduranceTextureFunc = [this, &game]()
-	{
-		auto& charCreationState = game.getCharacterCreationState();
-		const int endurance = charCreationState.getEndurance();
-		const std::string enduranceText = std::to_string(endurance);
-		this->enduranceTextBox.setText(enduranceText);
-		return this->enduranceTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc endurancePositionFunc = [this]()
-	{
-		const Rect& enduranceTextBoxRect = this->enduranceTextBox.getRect();
-		return enduranceTextBoxRect.getTopLeft();
-	};
-
-	UiDrawCall::SizeFunc enduranceSizeFunc = [this]()
-	{
-		const Rect& enduranceTextBoxRect = this->enduranceTextBox.getRect();
-		return Int2(enduranceTextBoxRect.getWidth(), enduranceTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc endurancePivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
-
-	this->addDrawCall(
-		enduranceTextureFunc,
-		endurancePositionFunc,
-		enduranceSizeFunc,
-		endurancePivotFunc,
-		UiDrawCall::defaultActiveFunc);
-
-	UiDrawCall::TextureFunc personalityTextureFunc = [this, &game]()
-	{
-		auto& charCreationState = game.getCharacterCreationState();
-		const int personality = charCreationState.getPersonality();
-		const std::string personalityText = std::to_string(personality);
-		this->personalityTextBox.setText(personalityText);
-		return this->personalityTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc personalityPositionFunc = [this]()
-	{
-		const Rect& personalityTextBoxRect = this->personalityTextBox.getRect();
-		return personalityTextBoxRect.getTopLeft();
-	};
-
-	UiDrawCall::SizeFunc personalitySizeFunc = [this]()
-	{
-		const Rect& personalityTextBoxRect = this->personalityTextBox.getRect();
-		return Int2(personalityTextBoxRect.getWidth(), personalityTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc personalityPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
-
-	this->addDrawCall(
-		personalityTextureFunc,
-		personalityPositionFunc,
-		personalitySizeFunc,
-		personalityPivotFunc,
-		UiDrawCall::defaultActiveFunc);
-
-	UiDrawCall::TextureFunc luckTextureFunc = [this, &game]()
-	{
-		auto& charCreationState = game.getCharacterCreationState();
-		const int luck = charCreationState.getLuck();
-		const std::string luckText = std::to_string(luck);
-		this->luckTextBox.setText(luckText);
-		return this->luckTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc luckPositionFunc = [this]()
-	{
-		const Rect& luckTextBoxRect = this->luckTextBox.getRect();
-		return luckTextBoxRect.getTopLeft();
-	};
-
-	UiDrawCall::SizeFunc luckSizeFunc = [this]()
-	{
-		const Rect& luckTextBoxRect = this->luckTextBox.getRect();
-		return Int2(luckTextBoxRect.getWidth(), luckTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc luckPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
-
-	this->addDrawCall(
-		luckTextureFunc,
-		luckPositionFunc,
-		luckSizeFunc,
-		luckPivotFunc,
-		UiDrawCall::defaultActiveFunc);
+		this->addDrawCall(
+			attributeTextureFunc,
+			attributePositionFunc,
+			attributeSizeFunc,
+			attributePivotFunc,
+			UiDrawCall::defaultActiveFunc);
+	}
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

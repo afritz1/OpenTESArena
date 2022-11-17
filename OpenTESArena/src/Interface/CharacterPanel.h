@@ -1,6 +1,8 @@
 #ifndef CHARACTER_PANEL_H
 #define CHARACTER_PANEL_H
 
+#include <vector>
+
 #include "Panel.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
@@ -15,9 +17,8 @@ class TextBox;
 class CharacterPanel : public Panel
 {
 private:
-	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox,
-		playerStrengthTextBox, playerIntelligenceTextBox, playerWillpowerTextBox, playerAgilityTextBox,
-		playerSpeedTextBox, playerEnduranceTextBox, playerPersonalityTextBox, playerLuckTextBox;
+	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox;
+	std::vector<TextBox> playerAttributeTextBoxes;
 	Button<Game&> doneButton, nextPageButton;
 	ScopedUiTextureRef bodyTextureRef, headTextureRef, shirtTextureRef, pantsTextureRef,
 		statsBgTextureRef, nextPageTextureRef, cursorTextureRef;

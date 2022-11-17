@@ -1,9 +1,12 @@
+#include <map>
 #include <optional>
 
 #include "CharacterSheetUiView.h"
 #include "CommonUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Entities/PrimaryAttribute.h"
+#include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
 
@@ -46,108 +49,28 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std:
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerStrengthTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
+std::map<PrimaryAttributeName, TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
+	const std::vector<PrimaryAttribute> attributes, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
-		text,
-		CharacterSheetUiView::PlayerStrengthTextBoxX,
-		CharacterSheetUiView::PlayerStrengthTextBoxY,
-		CharacterSheetUiView::PlayerStrengthTextBoxFontName,
-		CharacterSheetUiView::PlayerStrengthTextBoxColor,
-		CharacterSheetUiView::PlayerStrengthTextBoxAlignment,
-		fontLibrary);
-}
+	std::map<PrimaryAttributeName, TextBox::InitInfo> textBoxInitInfoMap;
+	
+	for (int i = 0; i < attributes.size(); i++)
+	{
+		const PrimaryAttribute attribute = attributes[i];
+		const PrimaryAttributeName attributeName = attribute.getAttributeName();
+		const int attributeValue = attribute.get();
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerIntelligenceTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithXY(
-		text,
-		CharacterSheetUiView::PlayerIntelligenceTextBoxX,
-		CharacterSheetUiView::PlayerIntelligenceTextBoxY,
-		CharacterSheetUiView::PlayerIntelligenceTextBoxFontName,
-		CharacterSheetUiView::PlayerIntelligenceTextBoxColor,
-		CharacterSheetUiView::PlayerIntelligenceTextBoxAlignment,
-		fontLibrary);
-}
+		textBoxInitInfoMap.insert({ attributeName, TextBox::InitInfo::makeWithXY(
+			std::to_string(attributeValue),
+			CharacterSheetUiView::PlayerAttributeTextBoxX,
+			CharacterSheetUiView::PlayerAttributeTextBoxesY + i * CharacterSheetUiView::PlayerAttributeTextBoxHeight,
+			CharacterSheetUiView::PlayerAttributeTextBoxFontName,
+			CharacterSheetUiView::PlayerAttributeTextBoxColor,
+			CharacterSheetUiView::PlayerAttributeTextBoxAlignment,
+			fontLibrary) });
+	}
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerWillpowerTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithXY(
-		text,
-		CharacterSheetUiView::PlayerWillpowerTextBoxX,
-		CharacterSheetUiView::PlayerWillpowerTextBoxY,
-		CharacterSheetUiView::PlayerWillpowerTextBoxFontName,
-		CharacterSheetUiView::PlayerWillpowerTextBoxColor,
-		CharacterSheetUiView::PlayerWillpowerTextBoxAlignment,
-		fontLibrary);
-}
-
-TextBox::InitInfo CharacterSheetUiView::getPlayerAgilityTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithXY(
-		text,
-		CharacterSheetUiView::PlayerAgilityTextBoxX,
-		CharacterSheetUiView::PlayerAgilityTextBoxY,
-		CharacterSheetUiView::PlayerAgilityTextBoxFontName,
-		CharacterSheetUiView::PlayerAgilityTextBoxColor,
-		CharacterSheetUiView::PlayerAgilityTextBoxAlignment,
-		fontLibrary);
-}
-
-TextBox::InitInfo CharacterSheetUiView::getPlayerSpeedTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithXY(
-		text,
-		CharacterSheetUiView::PlayerSpeedTextBoxX,
-		CharacterSheetUiView::PlayerSpeedTextBoxY,
-		CharacterSheetUiView::PlayerSpeedTextBoxFontName,
-		CharacterSheetUiView::PlayerSpeedTextBoxColor,
-		CharacterSheetUiView::PlayerSpeedTextBoxAlignment,
-		fontLibrary);
-}
-
-TextBox::InitInfo CharacterSheetUiView::getPlayerEnduranceTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithXY(
-		text,
-		CharacterSheetUiView::PlayerEnduranceTextBoxX,
-		CharacterSheetUiView::PlayerEnduranceTextBoxY,
-		CharacterSheetUiView::PlayerEnduranceTextBoxFontName,
-		CharacterSheetUiView::PlayerEnduranceTextBoxColor,
-		CharacterSheetUiView::PlayerEnduranceTextBoxAlignment,
-		fontLibrary);
-}
-
-TextBox::InitInfo CharacterSheetUiView::getPlayerPersonalityTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithXY(
-		text,
-		CharacterSheetUiView::PlayerPersonalityTextBoxX,
-		CharacterSheetUiView::PlayerPersonalityTextBoxY,
-		CharacterSheetUiView::PlayerPersonalityTextBoxFontName,
-		CharacterSheetUiView::PlayerPersonalityTextBoxColor,
-		CharacterSheetUiView::PlayerPersonalityTextBoxAlignment,
-		fontLibrary);
-}
-
-TextBox::InitInfo CharacterSheetUiView::getPlayerLuckTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithXY(
-		text,
-		CharacterSheetUiView::PlayerLuckTextBoxX,
-		CharacterSheetUiView::PlayerLuckTextBoxY,
-		CharacterSheetUiView::PlayerLuckTextBoxFontName,
-		CharacterSheetUiView::PlayerLuckTextBoxColor,
-		CharacterSheetUiView::PlayerLuckTextBoxAlignment,
-		fontLibrary);
+	return textBoxInitInfoMap;
 }
 
 Int2 CharacterSheetUiView::getBodyOffset(Game &game)

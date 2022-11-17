@@ -198,6 +198,7 @@ void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setRaceIndex(raceID);
+	charCreationState.rollAttributes(game.getRandom());
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
@@ -514,22 +515,14 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 				const int charClassDefID = charCreationState.getClassDefID();
 				const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
-				const int strength = charCreationState.getStrength();
-				const int intelligence = charCreationState.getIntelligence();
-				const int willpower = charCreationState.getWillpower();
-				const int agility = charCreationState.getAgility();
-				const int speed = charCreationState.getSpeed();
-				const int endurance = charCreationState.getEndurance();
-				const int personality = charCreationState.getPersonality();
-				const int luck = charCreationState.getLuck();
+				const PrimaryAttributeSet attributes = charCreationState.getAttributes();
 
 				const int portraitIndex = charCreationState.getPortraitIndex();
 
 				const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
 				const int weaponID = charClassDef.getAllowedWeapon(game.getRandom().next(allowedWeaponCount));
 
-				return Player(std::string(name), male, raceIndex, charClassDefID,
-					strength, intelligence, willpower, agility, speed, endurance, personality, luck,
+				return Player(std::string(name), male, raceIndex, charClassDefID, attributes,
 					portraitIndex, dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 			}();
 
@@ -681,7 +674,7 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
 {
 	auto& charCreationState = game.getCharacterCreationState();
-	charCreationState.setPrimaryAttributes();
+	charCreationState.rollAttributes(game.getRandom());
 	
 	game.popSubPanel();
 }

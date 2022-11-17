@@ -2,7 +2,10 @@
 #define CHARACTER_CREATION_STATE_H
 
 #include <array>
+#include <optional>
 #include <string_view>
+
+#include "../Entities/PrimaryAttributeSet.h"
 #include "../Math/Random.h"
 
 class CharacterCreationState
@@ -17,31 +20,14 @@ private:
 	int raceIndex;
 	int portraitIndex;
 	bool male;
-	int strength;
-	int intelligence;
-	int willpower;
-	int agility;
-	int speed;
-	int endurance;
-	int personality;
-	int luck;
-	Random random; // Convenience random for ease of use.
-
-	int rollPrimaryAttribute(int base);
+	std::optional<PrimaryAttributeSet> attributes; // Optional so it can start empty.
 public:
 	CharacterCreationState();
 
 	const std::string_view getName() const;
 	int getClassDefID() const;
 	int getRaceIndex() const;
-	int getStrength() const;
-	int getIntelligence() const;
-	int getWillpower() const;
-	int getAgility() const;
-	int getSpeed() const;
-	int getEndurance() const;
-	int getPersonality() const;
-	int getLuck() const;
+	const PrimaryAttributeSet getAttributes() const;
 	int getPortraitIndex() const;
 	bool isMale() const;
 
@@ -50,7 +36,7 @@ public:
 	void setRaceIndex(int index);
 	void setPortraitIndex(int index);
 	void setGender(bool male);
-	void setPrimaryAttributes();
+	void rollAttributes(Random &random);
 
 	void clear();
 };

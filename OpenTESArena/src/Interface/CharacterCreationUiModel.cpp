@@ -1,6 +1,7 @@
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
 #include "../Items/ArmorMaterial.h"
 #include "../Items/ArmorMaterialType.h"
@@ -37,60 +38,11 @@ std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
 	return charClassDef.getName();
 }
 
-std::string CharacterCreationUiModel::getPlayerStrengthText(Game &game)
+std::vector<PrimaryAttribute> CharacterCreationUiModel::getPlayerAttributes(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int strength = charCreationState.getStrength();
-	return std::to_string(strength);
-}
-
-std::string CharacterCreationUiModel::getPlayerIntelligenceText(Game &game)
-{
-	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int intelligence = charCreationState.getIntelligence();
-	return std::to_string(intelligence);
-}
-
-std::string CharacterCreationUiModel::getPlayerWillpowerText(Game &game)
-{
-	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int willpower = charCreationState.getWillpower();
-	return std::to_string(willpower);
-}
-
-std::string CharacterCreationUiModel::getPlayerAgilityText(Game &game)
-{
-	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int agility = charCreationState.getAgility();
-	return std::to_string(agility);
-}
-
-std::string CharacterCreationUiModel::getPlayerSpeedText(Game &game)
-{
-	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int speed = charCreationState.getSpeed();
-	return std::to_string(speed);
-}
-
-std::string CharacterCreationUiModel::getPlayerEnduranceText(Game &game)
-{
-	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int endurance = charCreationState.getEndurance();
-	return std::to_string(endurance);
-}
-
-std::string CharacterCreationUiModel::getPlayerPersonalityText(Game &game)
-{
-	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int personality = charCreationState.getPersonality();
-	return std::to_string(personality);
-}
-
-std::string CharacterCreationUiModel::getPlayerLuckText(Game &game)
-{
-	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int luck = charCreationState.getLuck();
-	return std::to_string(luck);
+	const PrimaryAttributeSet attributeSet = charCreationState.getAttributes();
+	return attributeSet.getAll();
 }
 
 std::string ChooseClassCreationUiModel::getTitleText(Game &game)

@@ -24,30 +24,14 @@ Player::Player(const std::string& displayName, bool male, int raceID, int charCl
 	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData),
-	strength(PrimaryAttributeName::Strength, raceID, male, random),
-	intelligence(PrimaryAttributeName::Intelligence, raceID, male, random),
-	willpower(PrimaryAttributeName::Willpower, raceID, male, random),
-	agility(PrimaryAttributeName::Agility, raceID, male, random),
-	speed(PrimaryAttributeName::Speed, raceID, male, random),
-	endurance(PrimaryAttributeName::Endurance, raceID, male, random),
-	personality(PrimaryAttributeName::Personality, raceID, male, random),
-	luck(PrimaryAttributeName::Luck, raceID, male, random) { }
+	attributes(raceID, male, random) { }
 
-Player::Player(const std::string& displayName, bool male, int raceID, int charClassDefID,
-	int strength, int intelligence, int willpower, int agility, int speed, int endurance, int personality, int luck,
+Player::Player(const std::string& displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet attributes,
 	int portraitID, const CoordDouble3& position, const Double3& direction, const Double3& velocity,
 	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData& exeData)
-	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID),
+	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID), attributes(attributes),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
-	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData),
-	strength(PrimaryAttributeName::Strength, strength),
-	intelligence(PrimaryAttributeName::Intelligence, intelligence),
-	willpower(PrimaryAttributeName::Willpower, willpower),
-	agility(PrimaryAttributeName::Agility , agility),
-	speed(PrimaryAttributeName::Speed, speed),
-	endurance(PrimaryAttributeName::Endurance, endurance),
-	personality(PrimaryAttributeName::Personality, personality),
-	luck(PrimaryAttributeName::Luck, luck) { }
+	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
 
 const CoordDouble3 &Player::getPosition() const
 {
@@ -85,44 +69,9 @@ int Player::getCharacterClassDefID() const
 	return this->charClassDefID;
 }
 
-PrimaryAttribute Player::getStrength() const
+PrimaryAttributeSet Player::getAttributes() const
 {
-	return this->strength;
-}
-
-PrimaryAttribute Player::getIntelligence() const
-{
-	return this->intelligence;
-}
-
-PrimaryAttribute Player::getWillpower() const
-{
-	return this->willpower;
-}
-
-PrimaryAttribute Player::getAgility() const
-{
-	return this->agility;
-}
-
-PrimaryAttribute Player::getSpeed() const
-{
-	return this->speed;
-}
-
-PrimaryAttribute Player::getEndurance() const
-{
-	return this->endurance;
-}
-
-PrimaryAttribute Player::getPersonality() const
-{
-	return this->personality;
-}
-
-PrimaryAttribute Player::getLuck() const
-{
-	return this->luck;
+	return this->attributes;
 }
 
 Player Player::makeRandom(const CharacterClassLibrary &charClassLibrary,
