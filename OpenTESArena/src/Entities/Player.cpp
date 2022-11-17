@@ -26,7 +26,8 @@ namespace // @todo: could be in a PlayerUtils instead
 	constexpr double GRAVITY = 9.81;
 
 	// Friction for slowing the player down on ground.
-	constexpr double FRICTION = 4.0;
+	constexpr double FRICTION_DYNAMIC = 4.0;
+	constexpr double FRICTION_STATIC = 16.0;
 }
 
 Player::Player()
@@ -38,6 +39,7 @@ Player::Player()
 	this->camera.init(CoordDouble3(), -Double3::UnitX); // To avoid audio listener normalization issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
 	this->maxRunSpeed = 0.0;
+	this->friction = 0.0;
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID,
@@ -53,6 +55,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->maxRunSpeed = maxRunSpeed;
+	this->friction = FRICTION_STATIC;
 	this->weaponAnimation.init(weaponID, exeData);
 }
 
@@ -373,6 +376,16 @@ void Player::setVelocityToZero()
 	this->velocity = Double3::Zero;
 }
 
+void Player::setFrictionToDynamic()
+{
+	this->friction = FRICTION_DYNAMIC;
+}
+
+void Player::setFrictionToStatic()
+{
+	this->friction = FRICTION_STATIC;
+}
+
 void Player::setDirectionToHorizon()
 {
 	const CoordDouble3 &coord = this->getPosition();
@@ -464,7 +477,7 @@ void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, dou
 		// Slow down the player's horizontal velocity with some friction.
 		Double2 velocityXZ(this->velocity.x, this->velocity.z);
 		Double2 frictionDirection = Double2(-velocityXZ.x, -velocityXZ.y).normalized();
-		double frictionMagnitude = velocityXZ.length() * FRICTION;
+		double frictionMagnitude = velocityXZ.length() * this->friction;
 
 		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
 		{

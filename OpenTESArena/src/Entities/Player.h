@@ -25,6 +25,7 @@ private:
 	Camera3D camera;
 	VoxelDouble3 velocity;
 	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
+	double friction;
 	WeaponAnimation weaponAnimation;
 	// Other stats...
 
@@ -94,6 +95,12 @@ public:
 
 	// Sets velocity vector to zero. Intended for stopping the player after level transitions.
 	void setVelocityToZero();
+
+	// Sets friction low to speed up walking.
+	void setFrictionToDynamic();
+
+	// Sets friction high to slow down faster.
+	void setFrictionToStatic();
 
 	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
 	void setDirectionToHorizon();
