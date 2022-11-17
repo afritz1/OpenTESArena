@@ -24,7 +24,9 @@ private:
 	static constexpr double GRAVITY = 9.81;
 
 	// Friction for slowing the player down on ground.
-	static constexpr double FRICTION = 4.0;
+	static constexpr double FRICTION_DYNAMIC = 4.0;
+	static constexpr double FRICTION_STATIC = 16.0;
+	double friction = FRICTION_STATIC;
 
 	std::string displayName;
 	bool male;
@@ -102,6 +104,12 @@ public:
 
 	// Sets velocity vector to zero. Intended for stopping the player after level transitions.
 	void setVelocityToZero();
+
+	// Sets friction low to speed up walking.
+	void setFrictionToDynamic();
+
+	// Sets friction high to slow down faster.
+	void setFrictionToStatic();
 
 	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
 	void setDirectionToHorizon();

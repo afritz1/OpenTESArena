@@ -156,6 +156,9 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
 
+	auto& player = game.getGameState().getPlayer();
+	const bool isOnGround = player.onGround(levelInst);
+
 	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
@@ -181,8 +184,6 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = game.getGameState().getPlayer();
-
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
 		const Double2 groundDirection = player.getGroundDirection();
@@ -191,7 +192,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		const Double3 &rightDirection = player.getRight();
 
 		// Mouse movement takes priority over key movement.
-		if (leftClick && player.onGround(levelInst))
+		if (leftClick && isOnGround)
 		{
 			const Int2 mousePosition = inputManager.getMousePosition();
 			const int mouseX = mousePosition.x;
@@ -249,6 +250,8 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 			// Only attempt to accelerate if a direction was chosen.
 			if (accelDirection.lengthSquared() > 0.0)
 			{
+				player.setFrictionToDynamic();
+
 				// Use a normalized direction.
 				accelDirection = accelDirection.normalized();
 
@@ -270,8 +273,10 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 				}
 			}
 		}
-		else if ((forward || backward || ((left || right) && lCtrl) || space) && player.onGround(levelInst))
+		else if ((forward || backward || ((left || right) && lCtrl) || space) && isOnGround)
 		{
+			player.setFrictionToDynamic();
+
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
 
@@ -314,6 +319,10 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
 			}
 		}
+		else if (isOnGround)
+		{
+			player.setFrictionToStatic();
+		}
 	}
 	else
 	{
@@ -337,8 +346,10 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 			groundDirection.y).normalized();
 		const Double3 &rightDirection = player.getRight();
 
-		if ((forward || backward || left || right || space) && player.onGround(levelInst))
+		if ((forward || backward || left || right || space) && isOnGround)
 		{
+			player.setFrictionToDynamic();
+
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
 
@@ -380,6 +391,10 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 			{
 				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
 			}
+		}
+		else if (isOnGround)
+		{
+			player.setFrictionToStatic();
 		}
 	}
 }

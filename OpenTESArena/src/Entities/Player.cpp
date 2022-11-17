@@ -323,6 +323,16 @@ void Player::setVelocityToZero()
 	this->velocity = Double3::Zero;
 }
 
+void Player::setFrictionToDynamic()
+{
+	this->friction = FRICTION_DYNAMIC;
+}
+
+void Player::setFrictionToStatic()
+{
+	this->friction = FRICTION_STATIC;
+}
+
 void Player::setDirectionToHorizon()
 {
 	const CoordDouble3 &coord = this->getPosition();
@@ -414,7 +424,7 @@ void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, dou
 		// Slow down the player's horizontal velocity with some friction.
 		Double2 velocityXZ(this->velocity.x, this->velocity.z);
 		Double2 frictionDirection = Double2(-velocityXZ.x, -velocityXZ.y).normalized();
-		double frictionMagnitude = velocityXZ.length() * Player::FRICTION;
+		double frictionMagnitude = velocityXZ.length() * this->friction;
 
 		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
 		{
