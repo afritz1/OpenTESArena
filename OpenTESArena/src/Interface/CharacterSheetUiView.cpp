@@ -46,6 +46,110 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std:
 		fontLibrary);
 }
 
+TextBox::InitInfo CharacterSheetUiView::getPlayerStrengthTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerStrengthTextBoxX,
+		CharacterSheetUiView::PlayerStrengthTextBoxY,
+		CharacterSheetUiView::PlayerStrengthTextBoxFontName,
+		CharacterSheetUiView::PlayerStrengthTextBoxColor,
+		CharacterSheetUiView::PlayerStrengthTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerIntelligenceTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerIntelligenceTextBoxX,
+		CharacterSheetUiView::PlayerIntelligenceTextBoxY,
+		CharacterSheetUiView::PlayerIntelligenceTextBoxFontName,
+		CharacterSheetUiView::PlayerIntelligenceTextBoxColor,
+		CharacterSheetUiView::PlayerIntelligenceTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerWillpowerTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerWillpowerTextBoxX,
+		CharacterSheetUiView::PlayerWillpowerTextBoxY,
+		CharacterSheetUiView::PlayerWillpowerTextBoxFontName,
+		CharacterSheetUiView::PlayerWillpowerTextBoxColor,
+		CharacterSheetUiView::PlayerWillpowerTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerAgilityTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerAgilityTextBoxX,
+		CharacterSheetUiView::PlayerAgilityTextBoxY,
+		CharacterSheetUiView::PlayerAgilityTextBoxFontName,
+		CharacterSheetUiView::PlayerAgilityTextBoxColor,
+		CharacterSheetUiView::PlayerAgilityTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerSpeedTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerSpeedTextBoxX,
+		CharacterSheetUiView::PlayerSpeedTextBoxY,
+		CharacterSheetUiView::PlayerSpeedTextBoxFontName,
+		CharacterSheetUiView::PlayerSpeedTextBoxColor,
+		CharacterSheetUiView::PlayerSpeedTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerEnduranceTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerEnduranceTextBoxX,
+		CharacterSheetUiView::PlayerEnduranceTextBoxY,
+		CharacterSheetUiView::PlayerEnduranceTextBoxFontName,
+		CharacterSheetUiView::PlayerEnduranceTextBoxColor,
+		CharacterSheetUiView::PlayerEnduranceTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerPersonalityTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerPersonalityTextBoxX,
+		CharacterSheetUiView::PlayerPersonalityTextBoxY,
+		CharacterSheetUiView::PlayerPersonalityTextBoxFontName,
+		CharacterSheetUiView::PlayerPersonalityTextBoxColor,
+		CharacterSheetUiView::PlayerPersonalityTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerLuckTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerLuckTextBoxX,
+		CharacterSheetUiView::PlayerLuckTextBoxY,
+		CharacterSheetUiView::PlayerLuckTextBoxFontName,
+		CharacterSheetUiView::PlayerLuckTextBoxColor,
+		CharacterSheetUiView::PlayerLuckTextBoxAlignment,
+		fontLibrary);
+}
+
 Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 {
 	const TextureAssetReference textureAssetRef = CharacterSheetUiView::getBodyTextureAssetRef(game);

@@ -514,13 +514,23 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 				const int charClassDefID = charCreationState.getClassDefID();
 				const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
+				const int strength = charCreationState.getStrength();
+				const int intelligence = charCreationState.getIntelligence();
+				const int willpower = charCreationState.getWillpower();
+				const int agility = charCreationState.getAgility();
+				const int speed = charCreationState.getSpeed();
+				const int endurance = charCreationState.getEndurance();
+				const int personality = charCreationState.getPersonality();
+				const int luck = charCreationState.getLuck();
+
 				const int portraitIndex = charCreationState.getPortraitIndex();
 
 				const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
 				const int weaponID = charClassDef.getAllowedWeapon(game.getRandom().next(allowedWeaponCount));
 
-				return Player(std::string(name), male, raceIndex, charClassDefID, portraitIndex, dummyPosition,
-					direction, velocity, Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
+				return Player(std::string(name), male, raceIndex, charClassDefID,
+					strength, intelligence, willpower, agility, speed, endurance, personality, luck,
+					portraitIndex, dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 			}();
 
 			return std::make_unique<GameState>(std::move(player), binaryAssetLibrary);
@@ -670,7 +680,9 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 
 void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
 {
-	// @todo: reroll attributes.
+	auto& charCreationState = game.getCharacterCreationState();
+	charCreationState.setPrimaryAttributes();
+	
 	game.popSubPanel();
 }
 

@@ -54,6 +54,78 @@ bool CharacterPanel::init()
 		return false;
 	}
 
+	const std::string playerStrengthText = CharacterSheetUiModel::getPlayerStrengthText(game);
+	const TextBox::InitInfo playerStrengthTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerStrengthTextBoxInitInfo(playerStrengthText, fontLibrary);
+	if (!this->playerStrengthTextBox.init(playerStrengthTextBoxInitInfo, playerStrengthText, renderer))
+	{
+		DebugLogError("Couldn't init player strength text box.");
+		return false;
+	}
+
+	const std::string playerIntelligenceText = CharacterSheetUiModel::getPlayerIntelligenceText(game);
+	const TextBox::InitInfo playerIntelligenceTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerIntelligenceTextBoxInitInfo(playerIntelligenceText, fontLibrary);
+	if (!this->playerIntelligenceTextBox.init(playerIntelligenceTextBoxInitInfo, playerIntelligenceText, renderer))
+	{
+		DebugLogError("Couldn't init player intelligence text box.");
+		return false;
+	}
+
+	const std::string playerWillpowerText = CharacterSheetUiModel::getPlayerWillpowerText(game);
+	const TextBox::InitInfo playerWillpowerTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerWillpowerTextBoxInitInfo(playerWillpowerText, fontLibrary);
+	if (!this->playerWillpowerTextBox.init(playerWillpowerTextBoxInitInfo, playerWillpowerText, renderer))
+	{
+		DebugLogError("Couldn't init player willpower text box.");
+		return false;
+	}
+
+	const std::string playerAgilityText = CharacterSheetUiModel::getPlayerAgilityText(game);
+	const TextBox::InitInfo playerAgilityTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerAgilityTextBoxInitInfo(playerAgilityText, fontLibrary);
+	if (!this->playerAgilityTextBox.init(playerAgilityTextBoxInitInfo, playerAgilityText, renderer))
+	{
+		DebugLogError("Couldn't init player agility text box.");
+		return false;
+	}
+
+	const std::string playerSpeedText = CharacterSheetUiModel::getPlayerSpeedText(game);
+	const TextBox::InitInfo playerSpeedTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerSpeedTextBoxInitInfo(playerSpeedText, fontLibrary);
+	if (!this->playerSpeedTextBox.init(playerSpeedTextBoxInitInfo, playerSpeedText, renderer))
+	{
+		DebugLogError("Couldn't init player speed text box.");
+		return false;
+	}
+
+	const std::string playerEnduranceText = CharacterSheetUiModel::getPlayerEnduranceText(game);
+	const TextBox::InitInfo playerEnduranceTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerEnduranceTextBoxInitInfo(playerEnduranceText, fontLibrary);
+	if (!this->playerEnduranceTextBox.init(playerEnduranceTextBoxInitInfo, playerEnduranceText, renderer))
+	{
+		DebugLogError("Couldn't init player endurance text box.");
+		return false;
+	}
+
+	const std::string playerPersonalityText = CharacterSheetUiModel::getPlayerPersonalityText(game);
+	const TextBox::InitInfo playerPersonalityTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerPersonalityTextBoxInitInfo(playerPersonalityText, fontLibrary);
+	if (!this->playerPersonalityTextBox.init(playerPersonalityTextBoxInitInfo, playerPersonalityText, renderer))
+	{
+		DebugLogError("Couldn't init player personality text box.");
+		return false;
+	}
+
+	const std::string playerLuckText = CharacterSheetUiModel::getPlayerLuckText(game);
+	const TextBox::InitInfo playerLuckTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerLuckTextBoxInitInfo(playerLuckText, fontLibrary);
+	if (!this->playerLuckTextBox.init(playerLuckTextBoxInitInfo, playerLuckText, renderer))
+	{
+		DebugLogError("Couldn't init player luck text box.");
+		return false;
+	}
+
 	this->doneButton = Button<Game&>(
 		CharacterSheetUiView::DoneButtonCenterPoint,
 		CharacterSheetUiView::DoneButtonWidth,
@@ -144,11 +216,67 @@ bool CharacterPanel::init()
 		Int2(playerRaceTextBoxRect.getWidth(), playerRaceTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const Rect &playerClassTextBoxRect = this->playerClassTextBox.getRect();
+	const Rect& playerClassTextBoxRect = this->playerClassTextBox.getRect();
 	this->addDrawCall(
 		this->playerClassTextBox.getTextureID(),
 		playerClassTextBoxRect.getTopLeft(),
 		Int2(playerClassTextBoxRect.getWidth(), playerClassTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect& playerStrengthTextBoxRect = this->playerStrengthTextBox.getRect();
+	this->addDrawCall(
+		this->playerStrengthTextBox.getTextureID(),
+		playerStrengthTextBoxRect.getTopLeft(),
+		Int2(playerStrengthTextBoxRect.getWidth(), playerStrengthTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect& playerIntelligenceTextBoxRect = this->playerIntelligenceTextBox.getRect();
+	this->addDrawCall(
+		this->playerIntelligenceTextBox.getTextureID(),
+		playerIntelligenceTextBoxRect.getTopLeft(),
+		Int2(playerIntelligenceTextBoxRect.getWidth(), playerIntelligenceTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect& playerWillpowerTextBoxRect = this->playerWillpowerTextBox.getRect();
+	this->addDrawCall(
+		this->playerWillpowerTextBox.getTextureID(),
+		playerWillpowerTextBoxRect.getTopLeft(),
+		Int2(playerWillpowerTextBoxRect.getWidth(), playerWillpowerTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect& playerAgilityTextBoxRect = this->playerAgilityTextBox.getRect();
+	this->addDrawCall(
+		this->playerAgilityTextBox.getTextureID(),
+		playerAgilityTextBoxRect.getTopLeft(),
+		Int2(playerAgilityTextBoxRect.getWidth(), playerAgilityTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect& playerSpeedTextBoxRect = this->playerSpeedTextBox.getRect();
+	this->addDrawCall(
+		this->playerSpeedTextBox.getTextureID(),
+		playerSpeedTextBoxRect.getTopLeft(),
+		Int2(playerSpeedTextBoxRect.getWidth(), playerSpeedTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect& playerEnduranceTextBoxRect = this->playerEnduranceTextBox.getRect();
+	this->addDrawCall(
+		this->playerEnduranceTextBox.getTextureID(),
+		playerEnduranceTextBoxRect.getTopLeft(),
+		Int2(playerEnduranceTextBoxRect.getWidth(), playerEnduranceTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect& playerPersonalityTextBoxRect = this->playerPersonalityTextBox.getRect();
+	this->addDrawCall(
+		this->playerPersonalityTextBox.getTextureID(),
+		playerPersonalityTextBoxRect.getTopLeft(),
+		Int2(playerPersonalityTextBoxRect.getWidth(), playerPersonalityTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect& playerLuckTextBoxRect = this->playerLuckTextBox.getRect();
+	this->addDrawCall(
+		this->playerLuckTextBox.getTextureID(),
+		playerLuckTextBoxRect.getTopLeft(),
+		Int2(playerLuckTextBoxRect.getWidth(), playerLuckTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

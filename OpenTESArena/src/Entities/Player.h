@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "Camera3D.h"
+#include "PrimaryAttribute.h"
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
 #include "../World/Coord.h"
@@ -35,6 +36,14 @@ private:
 	VoxelDouble3 velocity;
 	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
 	WeaponAnimation weaponAnimation;
+	PrimaryAttribute strength;
+	PrimaryAttribute intelligence;
+	PrimaryAttribute willpower;
+	PrimaryAttribute agility;
+	PrimaryAttribute speed;
+	PrimaryAttribute endurance;
+	PrimaryAttribute personality;
+	PrimaryAttribute luck;
 	// Other stats...
 
 	// Gets the Y position of the player's feet.
@@ -47,6 +56,10 @@ private:
 	void updatePhysics(const LevelInstance &activeLevel, bool collision, double dt);
 public:
 	Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
+		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random);
+	Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
+		int strength, int intelligence, int willpower, int agility, int speed, int endurance, int personality, int luck,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);
 
@@ -64,6 +77,14 @@ public:
 	bool isMale() const;
 	int getRaceID() const;
 	int getCharacterClassDefID() const;
+	PrimaryAttribute getStrength() const;
+	PrimaryAttribute getIntelligence() const;
+	PrimaryAttribute getWillpower() const;
+	PrimaryAttribute getAgility() const;
+	PrimaryAttribute getSpeed() const;
+	PrimaryAttribute getEndurance() const;
+	PrimaryAttribute getPersonality() const;
+	PrimaryAttribute getLuck() const;
 
 	// Generates a random player for testing.
 	static Player makeRandom(const CharacterClassLibrary &charClassLibrary,

@@ -34,9 +34,65 @@ namespace CharacterSheetUiView
 	const Color PlayerClassTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerClassTextBoxAlignment = TextAlignment::TopLeft;
 
+	constexpr int PlayerStrengthTextBoxX = 26;
+	constexpr int PlayerStrengthTextBoxY = 52;
+	const std::string PlayerStrengthTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerStrengthTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerStrengthTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerIntelligenceTextBoxX = 26;
+	constexpr int PlayerIntelligenceTextBoxY = 60;
+	const std::string PlayerIntelligenceTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerIntelligenceTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerIntelligenceTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerWillpowerTextBoxX = 26;
+	constexpr int PlayerWillpowerTextBoxY = 68;
+	const std::string PlayerWillpowerTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerWillpowerTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerWillpowerTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerAgilityTextBoxX = 26;
+	constexpr int PlayerAgilityTextBoxY = 76;
+	const std::string PlayerAgilityTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerAgilityTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerAgilityTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerSpeedTextBoxX = 26;
+	constexpr int PlayerSpeedTextBoxY = 84;
+	const std::string PlayerSpeedTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerSpeedTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerSpeedTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerEnduranceTextBoxX = 26;
+	constexpr int PlayerEnduranceTextBoxY = 92;
+	const std::string PlayerEnduranceTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerEnduranceTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerEnduranceTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerPersonalityTextBoxX = 26;
+	constexpr int PlayerPersonalityTextBoxY = 100;
+	const std::string PlayerPersonalityTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerPersonalityTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerPersonalityTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerLuckTextBoxX = 26;
+	constexpr int PlayerLuckTextBoxY = 108;
+	const std::string PlayerLuckTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerLuckTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerLuckTextBoxAlignment = TextAlignment::TopLeft;
+
 	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerStrengthTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerIntelligenceTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerWillpowerTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerAgilityTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerSpeedTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerEnduranceTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerPersonalityTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerLuckTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

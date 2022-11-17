@@ -21,7 +21,9 @@ class Renderer;
 class ChooseAttributesPanel : public Panel
 {
 private:
-	TextBox nameTextBox, raceTextBox, classTextBox;
+	TextBox nameTextBox, raceTextBox, classTextBox,
+		strengthTextBox, intelligenceTextBox, willpowerTextBox, agilityTextBox,
+		speedTextBox, enduranceTextBox, personalityTextBox, luckTextBox;
 	Button<Game&, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;

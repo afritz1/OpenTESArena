@@ -15,7 +15,9 @@ class TextBox;
 class CharacterPanel : public Panel
 {
 private:
-	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox;
+	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox,
+		playerStrengthTextBox, playerIntelligenceTextBox, playerWillpowerTextBox, playerAgilityTextBox,
+		playerSpeedTextBox, playerEnduranceTextBox, playerPersonalityTextBox, playerLuckTextBox;
 	Button<Game&> doneButton, nextPageButton;
 	ScopedUiTextureRef bodyTextureRef, headTextureRef, shirtTextureRef, pantsTextureRef,
 		statsBgTextureRef, nextPageTextureRef, cursorTextureRef;

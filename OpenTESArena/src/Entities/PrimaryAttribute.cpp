@@ -3,6 +3,7 @@
 #include "AttributeModifierName.h"
 #include "PrimaryAttribute.h"
 #include "PrimaryAttributeName.h"
+#include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 
@@ -41,6 +42,110 @@ PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int baseV
 
 	this->attributeName = attributeName;
 	this->baseValue = baseValue;
+}
+
+PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int raceID, bool male, Random &random)
+{
+	DebugAssert(raceID >= 0);
+	DebugAssert(raceID <= 7);
+
+	this->attributeName = attributeName;
+
+	// Lower limit (non-inclusive) of base attribute value, set by race and gender below.
+	// 20-sided-die roll will be added.
+	int baseValueBase;
+
+	// Source: https://en.uesp.net/wiki/Arena:Character_Creation#Character_Stats
+	if (raceID == 0) // Breton
+	{
+		if (attributeName == PrimaryAttributeName::Strength) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Intelligence) baseValueBase = 50;
+		else if (attributeName == PrimaryAttributeName::Willpower) baseValueBase = 50;
+		else if (attributeName == PrimaryAttributeName::Agility) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Speed) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Endurance) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Personality) baseValueBase = 40;
+		else baseValueBase = 40;
+	}
+	else if (raceID == 1) // Redguard
+	{
+		if (attributeName == PrimaryAttributeName::Strength) baseValueBase = male ? 40 : 30;
+		else if (attributeName == PrimaryAttributeName::Intelligence) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Willpower) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Agility) baseValueBase = male ? 40 : 50;
+		else if (attributeName == PrimaryAttributeName::Speed) baseValueBase = 50;
+		else if (attributeName == PrimaryAttributeName::Endurance) baseValueBase = 50;
+		else if (attributeName == PrimaryAttributeName::Personality) baseValueBase = 40;
+		else baseValueBase = 40;
+	}
+	else if (raceID == 2) // Nord
+	{
+		if (attributeName == PrimaryAttributeName::Strength) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Intelligence) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Willpower) baseValueBase = male ? 30 : 40;
+		else if (attributeName == PrimaryAttributeName::Agility) baseValueBase = male ? 30 : 40;
+		else if (attributeName == PrimaryAttributeName::Speed) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Endurance) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Personality) baseValueBase = 40;
+		else baseValueBase = male ? 40 : 50;
+	}
+	else if (raceID == 3) // Dark Elf
+	{
+		if (attributeName == PrimaryAttributeName::Strength) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Intelligence) baseValueBase = 50;
+		else if (attributeName == PrimaryAttributeName::Willpower) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Agility) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Speed) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Endurance) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Personality) baseValueBase = 40;
+		else baseValueBase = 40;
+	}
+	else if (raceID == 4) // High Elf
+	{
+		if (attributeName == PrimaryAttributeName::Strength) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Intelligence) baseValueBase = 50;
+		else if (attributeName == PrimaryAttributeName::Willpower) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Agility) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Speed) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Endurance) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Personality) baseValueBase = male ? 40 : 50;
+		else baseValueBase = 40;
+	}
+	else if (raceID == 5) // Wood Elf
+	{
+		if (attributeName == PrimaryAttributeName::Strength) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Intelligence) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Willpower) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Agility) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Speed) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Endurance) baseValueBase = male ? 30 : 40;
+		else if (attributeName == PrimaryAttributeName::Personality) baseValueBase = 40;
+		else baseValueBase = male ? 30 : 40;
+	}
+	else if (raceID == 6) // Khajiit
+	{
+		if (attributeName == PrimaryAttributeName::Strength) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Intelligence) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Willpower) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Agility) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Speed) baseValueBase = male ? 40 : 50;
+		else if (attributeName == PrimaryAttributeName::Endurance) baseValueBase = 30;
+		else if (attributeName == PrimaryAttributeName::Personality) baseValueBase = 40;
+		else baseValueBase = 50;
+	}
+	else // Argonian
+	{
+		if (attributeName == PrimaryAttributeName::Strength) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Intelligence) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Willpower) baseValueBase = 40;
+		else if (attributeName == PrimaryAttributeName::Agility) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Speed) baseValueBase = male ? 50 : 40;
+		else if (attributeName == PrimaryAttributeName::Endurance) baseValueBase = male ? 30 : 40;
+		else if (attributeName == PrimaryAttributeName::Personality) baseValueBase = 40;
+		else baseValueBase = male ? 30 : 40;
+	}
+
+	this->baseValue = baseValueBase + random.next(20) + 1;
 }
 
 int PrimaryAttribute::get() const
