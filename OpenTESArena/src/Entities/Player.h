@@ -48,9 +48,12 @@ private:
 	// Updates the player's position and velocity based on interactions with the world.
 	void updatePhysics(const LevelInstance &activeLevel, bool collision, double dt);
 public:
+	// Make player with rolled attributes based on race & gender.
 	Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random);
+
+	// Make player with given attributes.
 	Player(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet attributes,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);

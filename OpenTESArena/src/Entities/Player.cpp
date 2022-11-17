@@ -24,7 +24,10 @@ Player::Player(const std::string &displayName, bool male, int raceID, int charCl
 	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData),
-	attributes(raceID, male, random) { }
+	attributes(raceID, male, random)
+{
+	// @todo: increase attributes after initial roll, like a player would.
+}
 
 Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet attributes,
 	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
