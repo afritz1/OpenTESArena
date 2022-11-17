@@ -36,6 +36,7 @@ struct ChasmDefinition
 	
 	bool allowsSwimming;
 	bool isDamaging;
+	TextureAsset wallTextureAsset;
 
 	AnimationType animType; // Determines solid color/animated access.
 	SolidColor solidColor;
@@ -44,7 +45,7 @@ struct ChasmDefinition
 	ChasmDefinition();
 	ChasmDefinition(const ChasmDefinition &other);
 
-	void initClassic(ArenaTypes::ChasmType chasmType, TextureManager &textureManager);
+	void initClassic(ArenaTypes::ChasmType chasmType, const TextureAsset &wallTextureAsset, TextureManager &textureManager);
 };
 
 #endif

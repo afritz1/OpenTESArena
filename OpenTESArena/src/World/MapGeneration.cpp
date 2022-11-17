@@ -1225,8 +1225,11 @@ namespace MapGeneration
 					}
 					else
 					{
+						const VoxelTextureDefinition &voxelTextureDef = outLevelInfoDef->getVoxelTextureDef(voxelTextureDefID);
+						const TextureAsset &chasmWallTextureAsset = voxelTextureDef.getTextureAsset(0);
+
 						ChasmDefinition chasmDef;
-						chasmDef.initClassic(chasm.type, textureManager);
+						chasmDef.initClassic(chasm.type, chasmWallTextureAsset, textureManager);
 
 						chasmDefID = outLevelInfoDef->addChasmDef(std::move(chasmDef));
 						chasmCache->emplace(florVoxel, chasmDefID);

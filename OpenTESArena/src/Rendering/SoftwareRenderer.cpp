@@ -1167,6 +1167,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
 		const ObjectTextureID textureID = drawCall.textureIDs[0].value(); // @todo: do better error handling
+		// @todo: second texture ID if it exists
 		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
 		const bool allowBackFaces = drawCall.allowBackFaces;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(

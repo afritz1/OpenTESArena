@@ -30,6 +30,7 @@ ChasmDefinition::ChasmDefinition(const ChasmDefinition &other)
 {
 	this->allowsSwimming = other.allowsSwimming;
 	this->isDamaging = other.isDamaging;
+	this->wallTextureAsset = other.wallTextureAsset;
 	this->animType = other.animType;
 
 	if (this->animType == AnimationType::SolidColor)
@@ -49,10 +50,12 @@ ChasmDefinition::ChasmDefinition(const ChasmDefinition &other)
 	}
 }
 
-void ChasmDefinition::initClassic(ArenaTypes::ChasmType chasmType, TextureManager &textureManager)
+void ChasmDefinition::initClassic(ArenaTypes::ChasmType chasmType, const TextureAsset &wallTextureAsset,
+	TextureManager &textureManager)
 {
 	this->allowsSwimming = ArenaChasmUtils::allowsSwimming(chasmType);
 	this->isDamaging = ArenaChasmUtils::isDamaging(chasmType);
+	this->wallTextureAsset = wallTextureAsset;
 
 	if (chasmType == ArenaTypes::ChasmType::Dry)
 	{

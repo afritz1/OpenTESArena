@@ -64,14 +64,12 @@ public:
 		int getTextureIndex(double chasmAnimPercent) const;
 	};
 
-	using LoadedChasmWallTexture = LoadedVoxelTexture;
-
 	struct LoadedChasmTextureKey
 	{
 		ChunkInt2 chunkPos;
 		VoxelChunk::ChasmDefID chasmDefID;
 		int chasmFloorListIndex;
-		int chasmWallIndex;
+		int chasmWallIndex; // Points into voxel textures.
 
 		void init(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 	};
@@ -82,9 +80,8 @@ private:
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
 
-	std::vector<LoadedVoxelTexture> voxelTextures;
+	std::vector<LoadedVoxelTexture> voxelTextures; // Includes chasm walls.
 	std::vector<LoadedChasmFloorTextureList> chasmFloorTextureLists;
-	std::vector<LoadedChasmWallTexture> chasmWallTextures;
 	std::vector<LoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
 
 	// @todo: entity rendering resources
