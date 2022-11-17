@@ -23,16 +23,16 @@ std::string CharacterSheetUiModel::getPlayerRaceName(Game &game)
 	return singularRaceNames[raceNameIndex];
 }
 
-std::string CharacterSheetUiModel::getPlayerClassName(Game& game)
+std::string CharacterSheetUiModel::getPlayerClassName(Game &game)
 {
 	const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
 	const Player &player = game.getGameState().getPlayer();
 	const int defID = player.getCharacterClassDefID();
-	const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(defID);
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
 	return charClassDef.getName();
 }
 
-std::vector<PrimaryAttribute> CharacterSheetUiModel::getPlayerAttributes(Game& game)
+std::vector<PrimaryAttribute> CharacterSheetUiModel::getPlayerAttributes(Game &game)
 {
 	const Player& player = game.getGameState().getPlayer();
 	return player.getAttributes().getAll();

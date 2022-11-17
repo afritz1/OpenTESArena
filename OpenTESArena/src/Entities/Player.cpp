@@ -18,17 +18,17 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-Player::Player(const std::string& displayName, bool male, int raceID, int charClassDefID,
-	int portraitID, const CoordDouble3& position, const Double3& direction, const Double3& velocity,
-	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData& exeData, Random& random)
+Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
+	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random)
 	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData),
 	attributes(raceID, male, random) { }
 
-Player::Player(const std::string& displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet attributes,
-	int portraitID, const CoordDouble3& position, const Double3& direction, const Double3& velocity,
-	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData& exeData)
+Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet attributes,
+	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData)
 	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID), attributes(attributes),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
