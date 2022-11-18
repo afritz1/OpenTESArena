@@ -308,11 +308,11 @@ namespace swGeometry
 	std::vector<Double3> g_visibleTriangleV0s, g_visibleTriangleV1s, g_visibleTriangleV2s;
 	std::vector<Double3> g_visibleTriangleNormal0s, g_visibleTriangleNormal1s, g_visibleTriangleNormal2s;
 	std::vector<Double2> g_visibleTriangleUV0s, g_visibleTriangleUV1s, g_visibleTriangleUV2s;
-	std::vector<ObjectTextureID> g_visibleTriangleTextureIDs;
+	std::vector<ObjectTextureID> g_visibleTriangleTextureID0s, g_visibleTriangleTextureID1s;
 	std::vector<Double3> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
 	std::vector<Double3> g_visibleClipListNormal0s, g_visibleClipListNormal1s, g_visibleClipListNormal2s;
 	std::vector<Double2> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
-	std::vector<ObjectTextureID> g_visibleClipListTextureIDs;
+	std::vector<ObjectTextureID> g_visibleClipListTextureID0s, g_visibleClipListTextureID1s;
 	int g_visibleTriangleCount = 0; // Note this includes new triangles from clipping.
 	int g_totalTriangleCount = 0;
 
@@ -323,8 +323,8 @@ namespace swGeometry
 	// 3) Clipping
 	swGeometry::TriangleDrawListIndices ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
 		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
-		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID, const Double3 &worldOffset,
-		bool allowBackFaces, const RenderCamera &camera)
+		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
+		const Double3 &worldOffset, bool allowBackFaces, const RenderCamera &camera)
 	{
 		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
 		std::vector<Double3> &outVisibleTriangleV1s = g_visibleTriangleV1s;
@@ -335,7 +335,8 @@ namespace swGeometry
 		std::vector<Double2> &outVisibleTriangleUV0s = g_visibleTriangleUV0s;
 		std::vector<Double2> &outVisibleTriangleUV1s = g_visibleTriangleUV1s;
 		std::vector<Double2> &outVisibleTriangleUV2s = g_visibleTriangleUV2s;
-		std::vector<ObjectTextureID> &outVisibleTriangleTextureIDs = g_visibleTriangleTextureIDs;
+		std::vector<ObjectTextureID> &outVisibleTriangleTextureID0s = g_visibleTriangleTextureID0s;
+		std::vector<ObjectTextureID> &outVisibleTriangleTextureID1s = g_visibleTriangleTextureID1s;
 		std::vector<Double3> &outClipListV0s = g_visibleClipListV0s;
 		std::vector<Double3> &outClipListV1s = g_visibleClipListV1s;
 		std::vector<Double3> &outClipListV2s = g_visibleClipListV2s;
@@ -345,7 +346,8 @@ namespace swGeometry
 		std::vector<Double2> &outClipListUV0s = g_visibleClipListUV0s;
 		std::vector<Double2> &outClipListUV1s = g_visibleClipListUV1s;
 		std::vector<Double2> &outClipListUV2s = g_visibleClipListUV2s;
-		std::vector<ObjectTextureID> &outClipListTextureIDs = g_visibleClipListTextureIDs;
+		std::vector<ObjectTextureID> &outClipListTextureID0s = g_visibleClipListTextureID0s;
+		std::vector<ObjectTextureID> &outClipListTextureID1s = g_visibleClipListTextureID1s;
 		int *outVisibleTriangleCount = &g_visibleTriangleCount;
 		int *outTotalTriangleCount = &g_totalTriangleCount;
 
@@ -383,7 +385,8 @@ namespace swGeometry
 		outVisibleTriangleUV0s.clear();
 		outVisibleTriangleUV1s.clear();
 		outVisibleTriangleUV2s.clear();
-		outVisibleTriangleTextureIDs.clear();
+		outVisibleTriangleTextureID0s.clear();
+		outVisibleTriangleTextureID1s.clear();
 
 		const double *verticesPtr = vertexBuffer.vertices.get();
 		const double *normalsPtr = normalBuffer.attributes.get();
@@ -458,7 +461,8 @@ namespace swGeometry
 			outClipListUV0s.clear();
 			outClipListUV1s.clear();
 			outClipListUV2s.clear();
-			outClipListTextureIDs.clear();
+			outClipListTextureID0s.clear();
+			outClipListTextureID1s.clear();
 
 			outClipListV0s.emplace_back(v0);
 			outClipListV1s.emplace_back(v1);
@@ -469,7 +473,8 @@ namespace swGeometry
 			outClipListUV0s.emplace_back(uv0);
 			outClipListUV1s.emplace_back(uv1);
 			outClipListUV2s.emplace_back(uv2);
-			outClipListTextureIDs.emplace_back(textureID);
+			outClipListTextureID0s.emplace_back(textureID0);
+			outClipListTextureID1s.emplace_back(textureID1);
 
 			for (const ClippingPlane &plane : clippingPlanes)
 			{
@@ -484,7 +489,8 @@ namespace swGeometry
 					const Double2 &clipListUV0 = outClipListUV0s.front();
 					const Double2 &clipListUV1 = outClipListUV1s.front();
 					const Double2 &clipListUV2 = outClipListUV2s.front();
-					const ObjectTextureID clipListTextureID = outClipListTextureIDs.front();
+					const ObjectTextureID clipListTextureID0 = outClipListTextureID0s.front();
+					const ObjectTextureID clipListTextureID1 = outClipListTextureID1s.front();
 
 					const TriangleClipResult clipResult = ClipTriangle(clipListV0, clipListV1, clipListV2,
 						clipListNormal0, clipListNormal1, clipListNormal2, clipListUV0, clipListUV1, clipListUV2,
@@ -500,7 +506,8 @@ namespace swGeometry
 						outClipListUV0s.emplace_back(clipResult.uv0s[k]);
 						outClipListUV1s.emplace_back(clipResult.uv1s[k]);
 						outClipListUV2s.emplace_back(clipResult.uv2s[k]);
-						outClipListTextureIDs.emplace_back(textureID);
+						outClipListTextureID0s.emplace_back(textureID0);
+						outClipListTextureID1s.emplace_back(textureID1);
 					}
 
 					outClipListV0s.erase(outClipListV0s.begin());
@@ -512,7 +519,8 @@ namespace swGeometry
 					outClipListUV0s.erase(outClipListUV0s.begin());
 					outClipListUV1s.erase(outClipListUV1s.begin());
 					outClipListUV2s.erase(outClipListUV2s.begin());
-					outClipListTextureIDs.erase(outClipListTextureIDs.begin());
+					outClipListTextureID0s.erase(outClipListTextureID0s.begin());
+					outClipListTextureID1s.erase(outClipListTextureID1s.begin());
 				}
 			}
 
@@ -525,7 +533,8 @@ namespace swGeometry
 			outVisibleTriangleUV0s.insert(outVisibleTriangleUV0s.end(), outClipListUV0s.begin(), outClipListUV0s.end());
 			outVisibleTriangleUV1s.insert(outVisibleTriangleUV1s.end(), outClipListUV1s.begin(), outClipListUV1s.end());
 			outVisibleTriangleUV2s.insert(outVisibleTriangleUV2s.end(), outClipListUV2s.begin(), outClipListUV2s.end());
-			outVisibleTriangleTextureIDs.insert(outVisibleTriangleTextureIDs.end(), outClipListTextureIDs.begin(), outClipListTextureIDs.end());
+			outVisibleTriangleTextureID0s.insert(outVisibleTriangleTextureID0s.end(), outClipListTextureID0s.begin(), outClipListTextureID0s.end());
+			outVisibleTriangleTextureID1s.insert(outVisibleTriangleTextureID1s.end(), outClipListTextureID1s.begin(), outClipListTextureID1s.end());
 		}
 
 		const int visibleTriangleCount = static_cast<int>(outVisibleTriangleV0s.size());
@@ -586,14 +595,16 @@ namespace swRender
 		swGeometry::g_visibleTriangleUV0s.clear();
 		swGeometry::g_visibleTriangleUV1s.clear();
 		swGeometry::g_visibleTriangleUV2s.clear();
-		swGeometry::g_visibleTriangleTextureIDs.clear();
+		swGeometry::g_visibleTriangleTextureID0s.clear();
+		swGeometry::g_visibleTriangleTextureID1s.clear();
 		swGeometry::g_visibleClipListV0s.clear();
 		swGeometry::g_visibleClipListV1s.clear();
 		swGeometry::g_visibleClipListV2s.clear();
 		swGeometry::g_visibleClipListUV0s.clear();
 		swGeometry::g_visibleClipListUV1s.clear();
 		swGeometry::g_visibleClipListUV2s.clear();
-		swGeometry::g_visibleClipListTextureIDs.clear();
+		swGeometry::g_visibleClipListTextureID0s.clear();
+		swGeometry::g_visibleClipListTextureID1s.clear();
 		swGeometry::g_visibleTriangleCount = 0;
 		swGeometry::g_totalTriangleCount = 0;
 	}
@@ -680,11 +691,11 @@ namespace swRender
 			const Double2 uv1Perspective = uv1 * z1Recip;
 			const Double2 uv2Perspective = uv2 * z2Recip;
 
-			// @todo: add support for multiple ObjectTextureIDs - they'll come from the draw call this time, not an object material.
-			const bool isMultiTextured = false;
-			const ObjectTextureID textureID = swGeometry::g_visibleTriangleTextureIDs[index];
-			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID);
-			const SoftwareRenderer::ObjectTexture &texture1 = texture0;// isMultiTextured ? textures.get(material.id1) : texture0;
+			const ObjectTextureID textureID0 = swGeometry::g_visibleTriangleTextureID0s[index];
+			const ObjectTextureID textureID1 = swGeometry::g_visibleTriangleTextureID1s[index];			
+			const bool isMultiTextured = textureID1 >= 0;
+			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID0);
+			const SoftwareRenderer::ObjectTexture &texture1 = isMultiTextured ? textures.get(textureID1) : texture0;
 			
 			const int texture0Width = texture0.texels.getWidth();
 			const int texture0Height = texture0.texels.getHeight();
@@ -1166,12 +1177,13 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
-		const ObjectTextureID textureID = drawCall.textureIDs[0].value(); // @todo: do better error handling
-		// @todo: second texture ID if it exists
+		const ObjectTextureID textureID0 = drawCall.textureIDs[0].has_value() ? *drawCall.textureIDs[0] : -1;
+		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
 		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
 		const bool allowBackFaces = drawCall.allowBackFaces;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(
-			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID, worldSpaceOffset, allowBackFaces, camera);
+			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, worldSpaceOffset,
+			allowBackFaces, camera);
 
 		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
 		swRender::RasterizeTriangles(drawListIndices, isAlphaTested, this->objectTextures, paletteTexture,
