@@ -9,7 +9,8 @@ enum class VertexShaderType
 enum class PixelShaderType
 {
 	Opaque,
-	AlphaTested
+	AlphaTested,
+	OpaqueWithAlphaTestLayer
 };
 
 #endif

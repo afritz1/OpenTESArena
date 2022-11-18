@@ -772,8 +772,8 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 					ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
 					addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-						meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1, PixelShaderType::Opaque,
-						allowsBackFaces);
+						meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
+						PixelShaderType::OpaqueWithAlphaTestLayer, allowsBackFaces);
 				}
 			}
 		}

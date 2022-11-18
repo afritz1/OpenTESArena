@@ -610,7 +610,7 @@ namespace swRender
 	}
 
 	// The provided triangles are assumed to be back-face culled and clipped.
-	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, bool debug_alphaTest, // @temp
+	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, PixelShaderType pixelShaderType,
 		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
 		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera,
 		BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
@@ -692,8 +692,8 @@ namespace swRender
 			const Double2 uv2Perspective = uv2 * z2Recip;
 
 			const ObjectTextureID textureID0 = swGeometry::g_visibleTriangleTextureID0s[index];
-			const ObjectTextureID textureID1 = swGeometry::g_visibleTriangleTextureID1s[index];			
-			const bool isMultiTextured = textureID1 >= 0;
+			const ObjectTextureID textureID1 = swGeometry::g_visibleTriangleTextureID1s[index];
+			const bool isMultiTextured = pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer;
 			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID0);
 			const SoftwareRenderer::ObjectTexture &texture1 = isMultiTextured ? textures.get(textureID1) : texture0;
 			
@@ -776,7 +776,7 @@ namespace swRender
 								texel = texture0Texels[texelIndex];
 							}
 							
-							if (debug_alphaTest)
+							if (pixelShaderType == PixelShaderType::AlphaTested)
 							{
 								const bool isTransparent = texel == 0;
 								if (isTransparent)
@@ -1185,8 +1185,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, worldSpaceOffset,
 			allowBackFaces, camera);
 
-		const bool isAlphaTested = drawCall.pixelShaderType == PixelShaderType::AlphaTested;
-		swRender::RasterizeTriangles(drawListIndices, isAlphaTested, this->objectTextures, paletteTexture,
+		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
+		swRender::RasterizeTriangles(drawListIndices, pixelShaderType, this->objectTextures, paletteTexture,
 			lightTableTexture, camera, colorBufferView, depthBufferView);
 	}
 }
