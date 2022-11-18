@@ -54,7 +54,7 @@ public:
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random);
 
 	// Make player with given attributes.
-	Player(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet attributes,
+	Player(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);
 
@@ -72,7 +72,7 @@ public:
 	bool isMale() const;
 	int getRaceID() const;
 	int getCharacterClassDefID() const;
-	PrimaryAttributeSet getAttributes() const;
+	const PrimaryAttributeSet &getAttributes() const;
 
 	// Generates a random player for testing.
 	static Player makeRandom(const CharacterClassLibrary &charClassLibrary,

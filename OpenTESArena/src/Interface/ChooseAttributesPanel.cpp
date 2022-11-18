@@ -215,7 +215,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeName]()
 		{
 			auto &charCreationState = game.getCharacterCreationState();
-			const PrimaryAttributeSet attributes = charCreationState.getAttributes();
+			const PrimaryAttributeSet &attributes = charCreationState.getAttributes();
 			const int attributeValue = attributes.getValue(attributeName);
 			const std::string attributeValueText = std::to_string(attributeValue);
 			this->attributeTextBoxes.at(attributeName).setText(attributeValueText);

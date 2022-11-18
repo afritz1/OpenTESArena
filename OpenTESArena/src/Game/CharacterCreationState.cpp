@@ -2,6 +2,8 @@
 
 #include "CharacterCreationState.h"
 
+#include "components/debug/Debug.h"
+
 CharacterCreationState::CharacterCreationState()
 {
 	this->clear();
@@ -22,10 +24,10 @@ int CharacterCreationState::getRaceIndex() const
 	return this->raceIndex;
 }
 
-const PrimaryAttributeSet CharacterCreationState::getAttributes() const
+const PrimaryAttributeSet &CharacterCreationState::getAttributes() const
 {
-	// Get optional (possibly uninitialized) value. Throws error if not set yet.
-	return this->attributes.value();
+	DebugAssert(this->attributes.has_value());
+	return *this->attributes;
 }
 
 int CharacterCreationState::getPortraitIndex() const
@@ -75,4 +77,5 @@ void CharacterCreationState::clear()
 	this->raceIndex = CharacterCreationState::NO_INDEX;
 	this->portraitIndex = CharacterCreationState::NO_INDEX;
 	this->male = false;
+	this->attributes = std::nullopt;
 }

@@ -27,7 +27,7 @@ public:
 	const std::string_view getName() const;
 	int getClassDefID() const;
 	int getRaceIndex() const;
-	const PrimaryAttributeSet getAttributes() const;
+	const PrimaryAttributeSet &getAttributes() const;
 	int getPortraitIndex() const;
 	bool isMale() const;
 

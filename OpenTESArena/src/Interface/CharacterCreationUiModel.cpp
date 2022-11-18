@@ -41,7 +41,7 @@ std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
 std::vector<PrimaryAttribute> CharacterCreationUiModel::getPlayerAttributes(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const PrimaryAttributeSet attributeSet = charCreationState.getAttributes();
+	const PrimaryAttributeSet &attributeSet = charCreationState.getAttributes();
 	return attributeSet.getAll();
 }
 
