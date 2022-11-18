@@ -50,24 +50,26 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std:
 }
 
 std::map<PrimaryAttributeName, TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
-	const std::vector<PrimaryAttribute> attributes, const FontLibrary &fontLibrary)
+	const std::vector<PrimaryAttribute> &attributes, const FontLibrary &fontLibrary)
 {
 	std::map<PrimaryAttributeName, TextBox::InitInfo> textBoxInitInfoMap;
 	
-	for (int i = 0; i < attributes.size(); i++)
+	for (int i = 0; i < static_cast<int>(attributes.size()); i++)
 	{
-		const PrimaryAttribute attribute = attributes[i];
+		const PrimaryAttribute &attribute = attributes[i];
 		const PrimaryAttributeName attributeName = attribute.getAttributeName();
 		const int attributeValue = attribute.get();
-
-		textBoxInitInfoMap.insert({ attributeName, TextBox::InitInfo::makeWithXY(
-			std::to_string(attributeValue),
+		const std::string attributeValueStr = std::to_string(attributeValue);
+		TextBox::InitInfo initInfo = TextBox::InitInfo::makeWithXY(
+			attributeValueStr,
 			CharacterSheetUiView::PlayerAttributeTextBoxX,
 			CharacterSheetUiView::PlayerAttributeTextBoxesY + i * CharacterSheetUiView::PlayerAttributeTextBoxHeight,
 			CharacterSheetUiView::PlayerAttributeTextBoxFontName,
 			CharacterSheetUiView::PlayerAttributeTextBoxColor,
 			CharacterSheetUiView::PlayerAttributeTextBoxAlignment,
-			fontLibrary) });
+			fontLibrary);
+
+		textBoxInitInfoMap.emplace(attributeName, std::move(initInfo));
 	}
 
 	return textBoxInitInfoMap;
