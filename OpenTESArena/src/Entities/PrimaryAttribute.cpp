@@ -86,7 +86,7 @@ int PrimaryAttribute::getModifier() const
 
 std::string PrimaryAttribute::toString() const
 {
-	auto displayName = PrimaryAttributeDisplayNames.at(this->getAttributeName());
+	std::string displayName = PrimaryAttributeDisplayNames.at(this->getAttributeName());
 	return displayName;
 }
 

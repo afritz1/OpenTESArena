@@ -60,16 +60,15 @@ bool CharacterPanel::init()
 	}
 
 	const std::vector<PrimaryAttribute> playerAttributes = CharacterSheetUiModel::getPlayerAttributes(game);
-	const std::map<PrimaryAttributeName, TextBox::InitInfo>
-		playerAttributesTextBoxInitInfoMap = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
-			playerAttributes, fontLibrary);
-	for (const PrimaryAttribute attribute : playerAttributes)
+	const std::map<PrimaryAttributeName, TextBox::InitInfo> playerAttributesTextBoxInitInfoMap =
+		CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(playerAttributes, fontLibrary);
+	for (const PrimaryAttribute &attribute : playerAttributes)
 	{
 		const int attributeValue = attribute.get();
 		const std::string attributeValueText = std::to_string(attributeValue);
 		const PrimaryAttributeName attributeName = attribute.getAttributeName();
 		const TextBox::InitInfo attributeTextBoxInitInfo = playerAttributesTextBoxInitInfoMap.at(attributeName);
-		this->playerAttributeTextBoxes.push_back(TextBox());
+		this->playerAttributeTextBoxes.emplace_back(TextBox());
 		if (!this->playerAttributeTextBoxes.back().init(attributeTextBoxInitInfo, attributeValueText, renderer))
 		{
 			const std::string attributeNameText = attribute.toString();
