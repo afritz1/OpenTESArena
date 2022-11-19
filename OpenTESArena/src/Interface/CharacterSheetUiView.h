@@ -1,7 +1,11 @@
 #ifndef CHARACTER_SHEET_UI_VIEW_H
 #define CHARACTER_SHEET_UI_VIEW_H
 
+#include <map>
+
 #include "../Assets/TextureAsset.h"
+#include "../Entities/PrimaryAttribute.h"
+#include "../Entities/PrimaryAttributeName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -34,9 +38,18 @@ namespace CharacterSheetUiView
 	const Color PlayerClassTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerClassTextBoxAlignment = TextAlignment::TopLeft;
 
+	constexpr int PlayerAttributeTextBoxX = 26;
+	constexpr int PlayerAttributeTextBoxesY = 52;
+	constexpr int PlayerAttributeTextBoxHeight = 8;
+	const std::string PlayerAttributeTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerAttributeTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerAttributeTextBoxAlignment = TextAlignment::TopLeft;
+
 	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	std::map<PrimaryAttributeName, TextBox::InitInfo> getPlayerAttributeTextBoxInitInfoMap(
+		const std::vector<PrimaryAttribute> &attributes, const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

@@ -2,6 +2,8 @@
 
 #include "CharacterCreationState.h"
 
+#include "components/debug/Debug.h"
+
 CharacterCreationState::CharacterCreationState()
 {
 	this->clear();
@@ -20,6 +22,12 @@ int CharacterCreationState::getClassDefID() const
 int CharacterCreationState::getRaceIndex() const
 {
 	return this->raceIndex;
+}
+
+const PrimaryAttributeSet &CharacterCreationState::getAttributes() const
+{
+	DebugAssert(this->attributes.has_value());
+	return *this->attributes;
 }
 
 int CharacterCreationState::getPortraitIndex() const
@@ -47,6 +55,11 @@ void CharacterCreationState::setRaceIndex(int index)
 	this->raceIndex = index;
 }
 
+void CharacterCreationState::rollAttributes(Random &random)
+{
+	this->attributes = PrimaryAttributeSet(this->raceIndex, this->male, random);
+}
+
 void CharacterCreationState::setPortraitIndex(int index)
 {
 	this->portraitIndex = index;
@@ -64,4 +77,5 @@ void CharacterCreationState::clear()
 	this->raceIndex = CharacterCreationState::NO_INDEX;
 	this->portraitIndex = CharacterCreationState::NO_INDEX;
 	this->male = false;
+	this->attributes = std::nullopt;
 }

@@ -1,6 +1,7 @@
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
 #include "../Items/ArmorMaterial.h"
 #include "../Items/ArmorMaterialType.h"
@@ -35,6 +36,13 @@ std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
 	const int defID = charCreationState.getClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
 	return charClassDef.getName();
+}
+
+std::vector<PrimaryAttribute> CharacterCreationUiModel::getPlayerAttributes(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	const PrimaryAttributeSet &attributeSet = charCreationState.getAttributes();
+	return attributeSet.getAll();
 }
 
 std::string ChooseClassCreationUiModel::getTitleText(Game &game)

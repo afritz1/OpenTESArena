@@ -3,6 +3,7 @@
 #include "AttributeModifierName.h"
 #include "PrimaryAttribute.h"
 #include "PrimaryAttributeName.h"
+#include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 
@@ -43,6 +44,17 @@ PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int baseV
 	this->baseValue = baseValue;
 }
 
+PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int raceID, bool male, Random &random)
+{
+	DebugAssert(raceID >= 0);
+	DebugAssert(raceID <= 7);
+
+	this->attributeName = attributeName;
+
+	// @todo: read from ExeData::entities::raceAttributes
+	this->baseValue = 0;
+}
+
 int PrimaryAttribute::get() const
 {
 	DebugAssert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
@@ -74,7 +86,7 @@ int PrimaryAttribute::getModifier() const
 
 std::string PrimaryAttribute::toString() const
 {
-	auto displayName = PrimaryAttributeDisplayNames.at(this->getAttributeName());
+	std::string displayName = PrimaryAttributeDisplayNames.at(this->getAttributeName());
 	return displayName;
 }
 

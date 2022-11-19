@@ -1,3 +1,6 @@
+#include <map>
+#include <vector>
+
 #include "SDL.h"
 
 #include "CharacterPanel.h"
@@ -5,6 +8,8 @@
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "CommonUiView.h"
+#include "../Entities/PrimaryAttribute.h"
+#include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
@@ -52,6 +57,24 @@ bool CharacterPanel::init()
 	{
 		DebugLogError("Couldn't init player class text box.");
 		return false;
+	}
+
+	const std::vector<PrimaryAttribute> playerAttributes = CharacterSheetUiModel::getPlayerAttributes(game);
+	const std::map<PrimaryAttributeName, TextBox::InitInfo> playerAttributesTextBoxInitInfoMap =
+		CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(playerAttributes, fontLibrary);
+	for (const PrimaryAttribute &attribute : playerAttributes)
+	{
+		const int attributeValue = attribute.get();
+		const std::string attributeValueText = std::to_string(attributeValue);
+		const PrimaryAttributeName attributeName = attribute.getAttributeName();
+		const TextBox::InitInfo attributeTextBoxInitInfo = playerAttributesTextBoxInitInfoMap.at(attributeName);
+		this->playerAttributeTextBoxes.emplace_back(TextBox());
+		if (!this->playerAttributeTextBoxes.back().init(attributeTextBoxInitInfo, attributeValueText, renderer))
+		{
+			const std::string attributeNameText = attribute.toString();
+			DebugLogError("Couldn't init player " + attributeNameText + " text box.");
+			return false;
+		}
 	}
 
 	this->doneButton = Button<Game&>(
@@ -150,6 +173,16 @@ bool CharacterPanel::init()
 		playerClassTextBoxRect.getTopLeft(),
 		Int2(playerClassTextBoxRect.getWidth(), playerClassTextBoxRect.getHeight()),
 		PivotType::TopLeft);
+
+	for (int i = 0; i < this->playerAttributeTextBoxes.size(); i++)
+	{
+		const Rect &playerAttributeTextBoxRect = this->playerAttributeTextBoxes[i].getRect();
+		this->addDrawCall(
+			this->playerAttributeTextBoxes[i].getTextureID(),
+			playerAttributeTextBoxRect.getTopLeft(),
+			Int2(playerAttributeTextBoxRect.getWidth(), playerAttributeTextBoxRect.getHeight()),
+			PivotType::TopLeft);
+	}
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

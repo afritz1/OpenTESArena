@@ -14,4 +14,16 @@ enum class PrimaryAttributeName
 	Luck
 };
 
+// An array for iterating over primary attribute names.
+static const PrimaryAttributeName PRIMARY_ATTRIBUTE_NAMES[] = {
+	PrimaryAttributeName::Strength,
+	PrimaryAttributeName::Intelligence,
+	PrimaryAttributeName::Willpower,
+	PrimaryAttributeName::Agility,
+	PrimaryAttributeName::Speed,
+	PrimaryAttributeName::Endurance,
+	PrimaryAttributeName::Personality,
+	PrimaryAttributeName::Luck,
+};
+
 #endif

@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "Camera3D.h"
+#include "PrimaryAttributeSet.h"
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
 #include "../World/Coord.h"
@@ -27,6 +28,7 @@ private:
 	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
 	double friction;
 	WeaponAnimation weaponAnimation;
+	PrimaryAttributeSet attributes;
 	// Other stats...
 
 	// Gets the Y position of the player's feet.
@@ -40,7 +42,13 @@ private:
 public:
 	Player();
 
+	// Make player with rolled attributes based on race & gender.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
+		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random);
+
+	// Make player with given attributes.
+	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);
 
@@ -61,6 +69,7 @@ public:
 	bool isMale() const;
 	int getRaceID() const;
 	int getCharacterClassDefID() const;
+	const PrimaryAttributeSet &getAttributes() const;
 
 	// Gets the direction the player is facing.
 	const Double3 &getDirection() const;

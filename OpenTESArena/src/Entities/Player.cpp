@@ -6,6 +6,7 @@
 #include "CharacterClassLibrary.h"
 #include "EntityType.h"
 #include "Player.h"
+#include "PrimaryAttributeName.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
@@ -42,9 +43,9 @@ Player::Player()
 	this->friction = 0.0;
 }
 
-void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID,
-	const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-	double maxRunSpeed, int weaponID, const ExeData &exeData)
+void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
+	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random)
 {
 	this->displayName = displayName;
 	this->male = male;
@@ -57,6 +58,25 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->maxRunSpeed = maxRunSpeed;
 	this->friction = FRICTION_STATIC;
 	this->weaponAnimation.init(weaponID, exeData);
+	this->attributes.init(raceID, male, random);
+}
+
+void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
+	PrimaryAttributeSet &&attributes, int portraitID, const CoordDouble3 &position, const Double3 &direction,
+	const Double3 &velocity, double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData)
+{
+	this->displayName = displayName;
+	this->male = male;
+	this->raceID = raceID;
+	this->charClassDefID = charClassDefID;
+	this->portraitID = portraitID;
+	this->camera.init(position, direction);
+	this->velocity = velocity;
+	this->maxWalkSpeed = maxWalkSpeed;
+	this->maxRunSpeed = maxRunSpeed;
+	this->friction = FRICTION_STATIC;
+	this->weaponAnimation.init(weaponID, exeData);
+	this->attributes = std::move(attributes);
 }
 
 void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, Random &random)
@@ -93,6 +113,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	}();
 
 	this->weaponAnimation.init(weaponID, exeData);
+	this->attributes.init(this->raceID, this->male, random);
 }
 
 const CoordDouble3 &Player::getPosition() const
@@ -129,6 +150,11 @@ int Player::getRaceID() const
 int Player::getCharacterClassDefID() const
 {
 	return this->charClassDefID;
+}
+
+const PrimaryAttributeSet &Player::getAttributes() const
+{
+	return this->attributes;
 }
 
 const Double3 &Player::getDirection() const
