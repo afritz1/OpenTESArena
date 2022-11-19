@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "../Entities/PrimaryAttribute.h"
 #include "../Math/Vector2.h"
 #include "../UI/TextRenderUtils.h"
 
@@ -16,6 +17,7 @@ namespace CharacterCreationUiModel
 	std::string getPlayerName(Game &game);
 	std::string getPlayerRaceName(Game &game);
 	std::string getPlayerClassName(Game &game);
+	std::vector<PrimaryAttribute> getPlayerAttributes(Game &game);
 }
 
 namespace ChooseClassCreationUiModel

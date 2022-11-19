@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <map>
 
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
@@ -9,6 +10,8 @@
 #include "ChooseAttributesPanel.h"
 #include "CommonUiView.h"
 #include "TextSubPanel.h"
+#include "../Entities/PrimaryAttribute.h"
+#include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
@@ -53,6 +56,25 @@ bool ChooseAttributesPanel::init()
 	{
 		DebugLogError("Couldn't init player class text box.");
 		return false;
+	}
+
+	const std::vector<PrimaryAttribute> playerAttributes = CharacterCreationUiModel::getPlayerAttributes(game);
+	const std::map<PrimaryAttributeName, TextBox::InitInfo>
+		playerAttributesTextBoxInitInfoMap = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
+			playerAttributes, fontLibrary);
+	for (const PrimaryAttribute attribute : playerAttributes)
+	{
+		const int attributeValue = attribute.get();
+		const std::string attributeValueText = std::to_string(attributeValue);
+		const PrimaryAttributeName attributeName = attribute.getAttributeName();
+		const TextBox::InitInfo attributeTextBoxInitInfo = playerAttributesTextBoxInitInfoMap.at(attributeName);
+		this->attributeTextBoxes.insert({ attributeName, TextBox() });
+		if (!this->attributeTextBoxes.at(attributeName).init(attributeTextBoxInitInfo, attributeValueText, renderer))
+		{
+			const std::string attributeNameText = attribute.toString();
+			DebugLogError("Couldn't init player " + attributeNameText + " text box.");
+			return false;
+		}
 	}
 
 	this->doneButton = Button<Game&, bool*>(
@@ -187,6 +209,43 @@ bool ChooseAttributesPanel::init()
 		classTextBoxRect.getTopLeft(),
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
+
+	for (const PrimaryAttributeName attributeName : PRIMARY_ATTRIBUTE_NAMES)
+	{
+		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeName]()
+		{
+			auto &charCreationState = game.getCharacterCreationState();
+			const PrimaryAttributeSet &attributes = charCreationState.getAttributes();
+			const int attributeValue = attributes.getValue(attributeName);
+			const std::string attributeValueText = std::to_string(attributeValue);
+			this->attributeTextBoxes.at(attributeName).setText(attributeValueText);
+			return this->attributeTextBoxes.at(attributeName).getTextureID();
+		};
+
+		UiDrawCall::PositionFunc attributePositionFunc = [this, attributeName]()
+		{
+			const Rect &attributeTextBoxRect = this->attributeTextBoxes.at(attributeName).getRect();
+			return attributeTextBoxRect.getTopLeft();
+		};
+
+		UiDrawCall::SizeFunc attributeSizeFunc = [this, attributeName]()
+		{
+			const Rect &attributeTextBoxRect = this->attributeTextBoxes.at(attributeName).getRect();
+			return Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight());
+		};
+
+		UiDrawCall::PivotFunc attributePivotFunc = []()
+		{
+			return PivotType::TopLeft;
+		};
+
+		this->addDrawCall(
+			attributeTextureFunc,
+			attributePositionFunc,
+			attributeSizeFunc,
+			attributePivotFunc,
+			UiDrawCall::defaultActiveFunc);
+	}
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

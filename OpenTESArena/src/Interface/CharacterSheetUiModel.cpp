@@ -1,4 +1,7 @@
+#include <vector>
+
 #include "CharacterSheetUiModel.h"
+#include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
 
 #include "components/debug/Debug.h"
@@ -27,4 +30,10 @@ std::string CharacterSheetUiModel::getPlayerClassName(Game &game)
 	const int defID = player.getCharacterClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
 	return charClassDef.getName();
+}
+
+std::vector<PrimaryAttribute> CharacterSheetUiModel::getPlayerAttributes(Game &game)
+{
+	const Player& player = game.getGameState().getPlayer();
+	return player.getAttributes().getAll();
 }

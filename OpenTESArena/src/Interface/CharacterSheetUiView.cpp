@@ -1,9 +1,12 @@
+#include <map>
 #include <optional>
 
 #include "CharacterSheetUiView.h"
 #include "CommonUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Entities/PrimaryAttribute.h"
+#include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
 
@@ -44,6 +47,32 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std:
 		CharacterSheetUiView::PlayerClassTextBoxColor,
 		CharacterSheetUiView::PlayerClassTextBoxAlignment,
 		fontLibrary);
+}
+
+std::map<PrimaryAttributeName, TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
+	const std::vector<PrimaryAttribute> &attributes, const FontLibrary &fontLibrary)
+{
+	std::map<PrimaryAttributeName, TextBox::InitInfo> textBoxInitInfoMap;
+	
+	for (int i = 0; i < static_cast<int>(attributes.size()); i++)
+	{
+		const PrimaryAttribute &attribute = attributes[i];
+		const PrimaryAttributeName attributeName = attribute.getAttributeName();
+		const int attributeValue = attribute.get();
+		const std::string attributeValueStr = std::to_string(attributeValue);
+		TextBox::InitInfo initInfo = TextBox::InitInfo::makeWithXY(
+			attributeValueStr,
+			CharacterSheetUiView::PlayerAttributeTextBoxX,
+			CharacterSheetUiView::PlayerAttributeTextBoxesY + i * CharacterSheetUiView::PlayerAttributeTextBoxHeight,
+			CharacterSheetUiView::PlayerAttributeTextBoxFontName,
+			CharacterSheetUiView::PlayerAttributeTextBoxColor,
+			CharacterSheetUiView::PlayerAttributeTextBoxAlignment,
+			fontLibrary);
+
+		textBoxInitInfoMap.emplace(attributeName, std::move(initInfo));
+	}
+
+	return textBoxInitInfoMap;
 }
 
 Int2 CharacterSheetUiView::getBodyOffset(Game &game)

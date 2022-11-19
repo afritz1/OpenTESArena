@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "../Math/Random.h"
+
 // The AttributeModifier class is just for the modifier display names. The modifier 
 // value can be obtained in this class. AttributeModifiers are in PDF page 22 of the
 // manual.
@@ -23,6 +25,7 @@ private:
 	int baseValue; // Based on allocated points.
 public:
 	PrimaryAttribute(PrimaryAttributeName attributeName, int baseValue);
+	PrimaryAttribute(PrimaryAttributeName attributeName, int raceID, bool male, Random &random); // Rolls new value based on race & gender.
 
 	int get() const;
 	PrimaryAttributeName getAttributeName() const;

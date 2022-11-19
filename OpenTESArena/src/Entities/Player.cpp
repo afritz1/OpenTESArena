@@ -6,6 +6,7 @@
 #include "CharacterClassLibrary.h"
 #include "EntityType.h"
 #include "Player.h"
+#include "PrimaryAttributeName.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
@@ -19,8 +20,19 @@
 
 Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
 	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
-	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData)
+	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random)
 	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID),
+	portraitID(portraitID), camera(position, direction), velocity(velocity),
+	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData),
+	attributes(raceID, male, random)
+{
+	// @todo: increase attributes after initial roll, like a player would.
+}
+
+Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
+	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData)
+	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID), attributes(std::move(attributes)),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
 
@@ -60,6 +72,11 @@ int Player::getCharacterClassDefID() const
 	return this->charClassDefID;
 }
 
+const PrimaryAttributeSet &Player::getAttributes() const
+{
+	return this->attributes;
+}
+
 Player Player::makeRandom(const CharacterClassLibrary &charClassLibrary,
 	const ExeData &exeData, Random &random)
 {
@@ -88,7 +105,7 @@ Player Player::makeRandom(const CharacterClassLibrary &charClassLibrary,
 	}();
 
 	return Player(name, isMale, raceID, charClassDefID, portraitID, position, direction, velocity,
-		Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
+		Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData, random);
 }
 
 const Double3 &Player::getDirection() const
