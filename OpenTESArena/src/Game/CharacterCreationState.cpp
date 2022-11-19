@@ -26,8 +26,7 @@ int CharacterCreationState::getRaceIndex() const
 
 const PrimaryAttributeSet &CharacterCreationState::getAttributes() const
 {
-	DebugAssert(this->attributes.has_value());
-	return *this->attributes;
+	return this->attributes;
 }
 
 int CharacterCreationState::getPortraitIndex() const
@@ -57,7 +56,7 @@ void CharacterCreationState::setRaceIndex(int index)
 
 void CharacterCreationState::rollAttributes(Random &random)
 {
-	this->attributes = PrimaryAttributeSet(this->raceIndex, this->male, random);
+	this->attributes.init(this->raceIndex, this->male, random);
 }
 
 void CharacterCreationState::setPortraitIndex(int index)
@@ -77,5 +76,5 @@ void CharacterCreationState::clear()
 	this->raceIndex = CharacterCreationState::NO_INDEX;
 	this->portraitIndex = CharacterCreationState::NO_INDEX;
 	this->male = false;
-	this->attributes = std::nullopt;
+	this->attributes.clear();
 }
