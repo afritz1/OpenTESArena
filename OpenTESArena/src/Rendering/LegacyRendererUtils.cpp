@@ -2,6 +2,7 @@
 
 #include "LegacyRendererUtils.h"
 #include "RendererUtils.h"
+#include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 
 #include "components/debug/Debug.h"
