@@ -969,7 +969,7 @@ void SoftwareRenderer::shutdown()
 
 bool SoftwareRenderer::isInited() const
 {
-	return this->depthBuffer.isValid();
+	return true;
 }
 
 void SoftwareRenderer::resize(int width, int height)

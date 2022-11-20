@@ -403,11 +403,22 @@ void SceneGraph::init(RendererSystem3D &rendererSystem)
 
 void SceneGraph::shutdown(RendererSystem3D &rendererSystem)
 {
+	for (SceneGraphChunk &graphChunk : this->graphChunks)
+	{
+		graphChunk.freeBuffers(rendererSystem);
+	}
+
+	this->graphChunks.clear();
+
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
 	{
 		rendererSystem.freeIndexBuffer(indexBufferID);
 		indexBufferID = -1;
 	}
+
+	this->voxelTextures.clear();
+	this->chasmFloorTextureLists.clear();
+	this->chasmTextureKeys.clear();
 }
 
 ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAsset &textureAsset) const
