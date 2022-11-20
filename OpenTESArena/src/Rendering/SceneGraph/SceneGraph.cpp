@@ -785,23 +785,26 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 					}
 				}
 
-				const auto chasmWallIter = graphChunk.chasmWallIndexBufferIDs.find(voxel);
-				if (chasmWallIter != graphChunk.chasmWallIndexBufferIDs.end())
+				if (!usesVoxelTextures)
 				{
-					DebugAssert(voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm);
-					const bool isAnimating = voxelTraitsDef.chasm.type != ArenaTypes::ChasmType::Dry;
-
-					if ((!isAnimating && updateStatics) || (isAnimating && updateAnimating))
+					const auto chasmWallIter = graphChunk.chasmWallIndexBufferIDs.find(voxel);
+					if (chasmWallIter != graphChunk.chasmWallIndexBufferIDs.end())
 					{
-						const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
+						DebugAssert(voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm);
+						const bool isAnimating = voxelTraitsDef.chasm.type != ArenaTypes::ChasmType::Dry;
 
-						// Need to give two textures since chasm walls are multi-textured.
-						ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
-						ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
+						if ((!isAnimating && updateStatics) || (isAnimating && updateAnimating))
+						{
+							const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
 
-						addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-							meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1, TextureSamplingType::ScreenSpaceRepeatY,
-							PixelShaderType::OpaqueWithAlphaTestLayer, allowsBackFaces, isAnimating);
+							// Need to give two textures since chasm walls are multi-textured.
+							ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
+							ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
+
+							addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
+								meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1, TextureSamplingType::ScreenSpaceRepeatY,
+								PixelShaderType::OpaqueWithAlphaTestLayer, allowsBackFaces, isAnimating);
+						}
 					}
 				}
 			}
