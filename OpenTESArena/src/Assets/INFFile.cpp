@@ -960,7 +960,7 @@ bool INFFile::init(const char *filename)
 	if (!this->wetChasmIndex.has_value())
 	{
 		// Some interiors appear to use the second texture of *BOXCAP 6 as a fallback.
-		const std::optional<int> &fallbackIndex = this->boxCaps[6];
+		const std::optional<int> &fallbackIndex = this->getBoxCap(6);
 		if (fallbackIndex.has_value())
 		{
 			this->wetChasmIndex = *fallbackIndex + 1;
