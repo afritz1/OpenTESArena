@@ -29,9 +29,10 @@ public:
 	{
 		int width, height;
 		int threadCount;
+		int drawCallCount;
 		int potentiallyVisTriangleCount, visTriangleCount, visLightCount;
 
-		ProfilerData(int width, int height, int threadCount, int potentiallyVisTriangleCount,
+		ProfilerData(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
 			int visTriangleCount, int visLightCount);
 	};
 

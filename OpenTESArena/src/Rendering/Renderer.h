@@ -63,6 +63,7 @@ public:
 		int width, height;
 
 		int threadCount;
+		int drawCallCount;
 
 		// Visible triangles and lights.
 		int potentiallyVisTriangleCount, visTriangleCount, visLightCount;
@@ -71,7 +72,7 @@ public:
 
 		ProfilerData();
 
-		void init(int width, int height, int threadCount, int potentiallyVisTriangleCount,
+		void init(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
 			int visTriangleCount, int visLightCount, double frameTime);
 	};
 

@@ -99,18 +99,20 @@ Renderer::ProfilerData::ProfilerData()
 	this->width = -1;
 	this->height = -1;
 	this->threadCount = -1;
+	this->drawCallCount = -1;
 	this->potentiallyVisTriangleCount = -1;
 	this->visTriangleCount = -1;
 	this->visLightCount = -1;
 	this->frameTime = 0.0;
 }
 
-void Renderer::ProfilerData::init(int width, int height, int threadCount, int potentiallyVisTriangleCount,
+void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
 	int visTriangleCount, int visLightCount, double frameTime)
 {
 	this->width = width;
 	this->height = height;
 	this->threadCount = threadCount;
+	this->drawCallCount = drawCallCount;
 	this->potentiallyVisTriangleCount = potentiallyVisTriangleCount;
 	this->visTriangleCount = visTriangleCount;
 	this->visLightCount = visLightCount;
@@ -972,8 +974,8 @@ void Renderer::submitFrame(const RenderCamera &camera, double ambientPercent, Ob
 	// Update profiler stats.
 	const RendererSystem3D::ProfilerData swProfilerData = this->renderer3D->getProfilerData();
 	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
-		swProfilerData.potentiallyVisTriangleCount, swProfilerData.visTriangleCount, swProfilerData.visLightCount,
-		frameTime);
+		swProfilerData.drawCallCount, swProfilerData.potentiallyVisTriangleCount, swProfilerData.visTriangleCount,
+		swProfilerData.visLightCount, frameTime);
 
 	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
 	SDL_UnlockTexture(this->gameWorldTexture.get());

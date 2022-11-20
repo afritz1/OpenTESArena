@@ -315,6 +315,7 @@ namespace swGeometry
 	std::vector<ObjectTextureID> g_visibleClipListTextureID0s, g_visibleClipListTextureID1s;
 	int g_visibleTriangleCount = 0; // Note this includes new triangles from clipping.
 	int g_totalTriangleCount = 0;
+	int g_totalDrawCallCount = 0;
 
 	// Processes the given world space triangles in the following ways, and returns a view to a geometry cache
 	// that is invalidated the next time this function is called.
@@ -1230,11 +1231,13 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	const int renderHeight = this->depthBuffer.getHeight();
 
 	const int threadCount = 1;
+	const int drawCallCount = swGeometry::g_totalDrawCallCount;
 	const int potentiallyVisTriangleCount = swGeometry::g_totalTriangleCount;
 	const int visTriangleCount = swGeometry::g_visibleTriangleCount;
 	const int visLightCount = 0;
 
-	return ProfilerData(renderWidth, renderHeight, threadCount, potentiallyVisTriangleCount, visTriangleCount, visLightCount);
+	return ProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, potentiallyVisTriangleCount,
+		visTriangleCount, visLightCount);
 }
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,
@@ -1255,7 +1258,10 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 	swRender::ClearTriangleDrawList();
 
-	for (int i = 0; i < drawCalls.getCount(); i++)
+	const int drawCallCount = drawCalls.getCount();
+	swGeometry::g_totalDrawCallCount = drawCallCount;
+
+	for (int i = 0; i < drawCallCount; i++)
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
