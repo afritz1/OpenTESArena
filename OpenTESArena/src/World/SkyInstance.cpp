@@ -125,6 +125,82 @@ SkyInstance::SkyInstance()
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
 	int currentDay, TextureManager &textureManager, Renderer &renderer)
 {
+	auto loadGeneralSkyObjectTexture = [this, &textureManager, &renderer](const TextureAsset &textureAsset)
+	{
+		const auto loadedIter = std::find_if(this->loadedSkyObjectTextures.begin(), this->loadedSkyObjectTextures.end(),
+			[&textureAsset](const LoadedSkyObjectTextureEntry &loadedEntry)
+		{
+			return loadedEntry.textureAsset == textureAsset;
+		});
+
+		if (loadedIter != this->loadedSkyObjectTextures.end())
+		{
+			return;
+		}
+
+		const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogWarning("Couldn't load sky object texture \"" + textureAsset.filename + "\".");
+			return;
+		}
+
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+		ObjectTextureID objectTextureID;
+		if (!renderer.tryCreateObjectTexture(textureBuilder, &objectTextureID))
+		{
+			DebugLogWarning("Couldn't create sky object texture \"" + textureAsset.filename + "\".");
+			return;
+		}
+
+		ScopedObjectTextureRef objectTextureRef(objectTextureID, renderer);
+		LoadedSkyObjectTextureEntry newEntry;
+		newEntry.init(textureAsset, std::move(objectTextureRef));
+		this->loadedSkyObjectTextures.emplace_back(std::move(newEntry));
+	};
+
+	auto loadSmallStarTexture = [this, &textureManager, &renderer](uint8_t paletteIndex)
+	{
+		const auto loadedIter = std::find_if(this->loadedSmallStarTextures.begin(), this->loadedSmallStarTextures.end(),
+			[paletteIndex](const LoadedSmallStarTextureEntry &loadedEntry)
+		{
+			return loadedEntry.paletteIndex == paletteIndex;
+		});
+
+		if (loadedIter != this->loadedSmallStarTextures.end())
+		{
+			return;
+		}
+
+		constexpr int textureWidth = 1;
+		constexpr int textureHeight = textureWidth;
+
+		ObjectTextureID objectTextureID;
+		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, false, &objectTextureID))
+		{
+			DebugLogWarning("Couldn't create small star texture.");
+			return;
+		}
+
+		LockedTexture lockedSmallStarTexture = renderer.lockObjectTexture(objectTextureID);
+		if (!lockedSmallStarTexture.isValid())
+		{
+			DebugLogWarning("Couldn't lock small star texture for writing.");
+			renderer.freeObjectTexture(objectTextureID);
+			return;
+		}
+
+		DebugAssert(!lockedSmallStarTexture.isTrueColor);
+		uint8_t *lockedSmallStarTexels = static_cast<uint8_t*>(lockedSmallStarTexture.texels);
+		*lockedSmallStarTexels = paletteIndex;
+		renderer.unlockObjectTexture(objectTextureID);
+
+		ScopedObjectTextureRef objectTextureRef(objectTextureID, renderer);
+		LoadedSmallStarTextureEntry newEntry;
+		newEntry.init(paletteIndex, std::move(objectTextureRef));
+		this->loadedSmallStarTextures.emplace_back(std::move(newEntry));
+	};
+
 	auto addGeneralObjectInst = [this, &textureManager, &renderer](const Double3 &baseDirection,
 		const TextureAsset &textureAsset, bool emissive)
 	{
@@ -134,39 +210,15 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			return entry.textureAsset == textureAsset;
 		});
 
-		ObjectTextureID objectTextureID;
-		int textureWidth, textureHeight;
 		if (cacheIter == this->loadedSkyObjectTextures.end())
 		{
-			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-			if (!textureBuilderID.has_value())
-			{
-				DebugLogWarning("Couldn't load sky object texture \"" + textureAsset.filename + "\".");
-				return;
-			}
-
-			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-			if (!renderer.tryCreateObjectTexture(textureBuilder, &objectTextureID))
-			{
-				DebugLogWarning("Couldn't create sky object texture \"" + textureAsset.filename + "\".");
-				return;
-			}
-
-			textureWidth = textureBuilder.getWidth();
-			textureHeight = textureBuilder.getHeight();
-
-			ScopedObjectTextureRef skyObjectTextureRef(objectTextureID, renderer);
-			LoadedSkyObjectTextureEntry newEntry;
-			newEntry.init(textureAsset, std::move(skyObjectTextureRef));
-			this->loadedSkyObjectTextures.emplace_back(std::move(newEntry));
+			DebugCrash("Expected sky object texture \"" + textureAsset.filename + "\" to be loaded.");
 		}
-		else
-		{
-			const ScopedObjectTextureRef &objectTextureRef = cacheIter->objectTextureRef;
-			objectTextureID = objectTextureRef.get();
-			textureWidth = objectTextureRef.getWidth();
-			textureHeight = objectTextureRef.getHeight();
-		}
+		
+		const ScopedObjectTextureRef &objectTextureRef = cacheIter->objectTextureRef;
+		const ObjectTextureID objectTextureID = objectTextureRef.get();
+		const int textureWidth = objectTextureRef.getWidth();
+		const int textureHeight = objectTextureRef.getHeight();
 
 		double width, height;
 		SkyUtils::getSkyObjectDimensions(textureWidth, textureHeight, &width, &height);
@@ -184,40 +236,15 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			return entry.paletteIndex == paletteIndex;
 		});
 
-		constexpr int textureWidth = 1;
-		constexpr int textureHeight = textureWidth;
-
-		ObjectTextureID objectTextureID;
 		if (cacheIter == this->loadedSmallStarTextures.end())
 		{
-			if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, false, &objectTextureID))
-			{
-				DebugLogWarning("Couldn't create small star texture.");
-				return;
-			}
-
-			LockedTexture lockedSmallStarTexture = renderer.lockObjectTexture(objectTextureID);
-			if (!lockedSmallStarTexture.isValid())
-			{
-				DebugLogWarning("Couldn't lock small star texture for writing.");
-				renderer.freeObjectTexture(objectTextureID);
-				return;
-			}
-
-			DebugAssert(!lockedSmallStarTexture.isTrueColor);
-			uint8_t *lockedSmallStarTexels = static_cast<uint8_t*>(lockedSmallStarTexture.texels);
-			*lockedSmallStarTexels = paletteIndex;
-			renderer.unlockObjectTexture(objectTextureID);
-
-			ScopedObjectTextureRef smallStarTextureRef(objectTextureID, renderer);
-			LoadedSmallStarTextureEntry newEntry;
-			newEntry.init(paletteIndex, std::move(smallStarTextureRef));
-			this->loadedSmallStarTextures.emplace_back(std::move(newEntry));
+			DebugCrash("Expected small star texture with color \"" + std::to_string(paletteIndex) + "\" to be loaded.");
 		}
-		else
-		{
-			objectTextureID = cacheIter->objectTextureRef.get();
-		}
+
+		const ScopedObjectTextureRef &objectTextureRef = cacheIter->objectTextureRef;
+		const ObjectTextureID objectTextureID = objectTextureRef.get();
+		const int textureWidth = objectTextureRef.getWidth();
+		const int textureHeight = objectTextureRef.getHeight();
 
 		double width, height;
 		SkyUtils::getSkyObjectDimensions(textureWidth, textureHeight, &width, &height);
@@ -258,16 +285,21 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::LandDefID defID = placementDef.id;
 		const SkyLandDefinition &skyLandDef = skyInfoDefinition.getLand(defID);
 
-		DebugAssert(skyLandDef.getTextureCount() > 0);
-		const TextureAsset &textureAsset = skyLandDef.getTextureAsset(0);
+		// Load all textures for this land (mostly meant for volcanoes).
+		for (int textureAssetIndex = 0; textureAssetIndex < skyLandDef.getTextureCount(); textureAssetIndex++)
+		{
+			const TextureAsset &textureAsset = skyLandDef.getTextureAsset(textureAssetIndex);
+			loadGeneralSkyObjectTexture(textureAsset);
+		}
 
+		const TextureAsset &firstTextureAsset = skyLandDef.getTextureAsset(0);
 		for (const Radians position : placementDef.positions)
 		{
 			// Convert radians to direction.
 			const Radians angleY = 0.0;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(position, angleY);
 			const bool emissive = skyLandDef.getShadingType() == SkyLandDefinition::ShadingType::Bright;
-			addGeneralObjectInst(direction, textureAsset, emissive);
+			addGeneralObjectInst(direction, firstTextureAsset, emissive);
 
 			// Only land objects support animations (for now).
 			if (skyLandDef.hasAnimation())
@@ -301,6 +333,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::AirDefID defID = placementDef.id;
 		const SkyAirDefinition &skyAirDef = skyInfoDefinition.getAir(defID);
 		const TextureAsset &textureAsset = skyAirDef.getTextureAsset();
+		loadGeneralSkyObjectTexture(textureAsset);
 
 		for (const std::pair<Radians, Radians> &position : placementDef.positions)
 		{
@@ -332,6 +365,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		// Get the image from the current day.
 		DebugAssert(skyMoonDef.getTextureCount() > 0);
 		const TextureAsset &textureAsset = skyMoonDef.getTextureAsset(currentDay);
+		loadGeneralSkyObjectTexture(textureAsset);
 
 		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
 		{
@@ -362,6 +396,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::SunDefID defID = placementDef.id;
 		const SkySunDefinition &skySunDef = skyInfoDefinition.getSun(defID);
 		const TextureAsset &textureAsset = skySunDef.getTextureAsset();
+		loadGeneralSkyObjectTexture(textureAsset);
 
 		for (const double position : placementDef.positions)
 		{
@@ -396,6 +431,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Small stars are 1x1 pixels.
 			const SkyStarDefinition::SmallStar &smallStar = skyStarDef.getSmallStar();
 			const uint8_t paletteIndex = smallStar.paletteIndex;
+			loadSmallStarTexture(paletteIndex);
 
 			for (const Double3 &position : placementDef.positions)
 			{
@@ -407,6 +443,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		{
 			const SkyStarDefinition::LargeStar &largeStar = skyStarDef.getLargeStar();
 			const TextureAsset &textureAsset = largeStar.textureAsset;
+			loadGeneralSkyObjectTexture(textureAsset);
 
 			for (const Double3 &position : placementDef.positions)
 			{
@@ -435,9 +472,15 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		for (int i = 0; i < lightningBoltDefCount; i++)
 		{
 			const SkyLightningDefinition &skyLightningDef = skyInfoDefinition.getLightning(i);
-			DebugAssert(skyLightningDef.getTextureCount() > 0);
-			const TextureAsset &firstTextureAsset = skyLightningDef.getTextureAsset(0);
 
+			// Load all textures for this lightning bolt.
+			for (int textureAssetIndex = 0; textureAssetIndex < skyLightningDef.getTextureCount(); textureAssetIndex++)
+			{
+				const TextureAsset &textureAsset = skyLightningDef.getTextureAsset(textureAssetIndex);
+				loadGeneralSkyObjectTexture(textureAsset);
+			}
+
+			const TextureAsset &firstTextureAsset = skyLightningDef.getTextureAsset(0);
 			addGeneralObjectInst(Double3::Zero, firstTextureAsset, true);
 			
 			Buffer<TextureAsset> textureAssets(skyLightningDef.getTextureCount());
