@@ -1,6 +1,8 @@
 #ifndef RENDER_TEXTURE_UTILS_H
 #define RENDER_TEXTURE_UTILS_H
 
+#include <cstdint>
+
 // Common texture handles allocated by a renderer for a user when they want a new texture in the
 // internal renderer format.
 
