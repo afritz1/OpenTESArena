@@ -956,6 +956,21 @@ bool INFFile::init(const char *filename)
 	// and has the possibility of an off-by-one error with its *TEXT saving.
 	flushAllStates();
 
+	// Handle missing *WETCHASM (important for deleting floor voxels).
+	if (!this->wetChasmIndex.has_value())
+	{
+		// Some interiors appear to use the second texture of *BOXCAP 6 as a fallback.
+		const std::optional<int> &fallbackIndex = this->boxCaps[6];
+		if (fallbackIndex.has_value())
+		{
+			this->wetChasmIndex = *fallbackIndex + 1;
+		}
+		else
+		{
+			DebugLogWarning("Couldn't find *WETCHASM fallback for \"" + std::string(filename) + "\".");
+		}
+	}
+
 	return true;
 }
 
