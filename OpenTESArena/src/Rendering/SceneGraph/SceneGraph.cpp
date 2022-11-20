@@ -630,7 +630,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 	auto addDrawCall = [ceilingScale](SceneGraphChunk &graphChunk, SNInt x, int y, WEInt z,
 		VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-		PixelShaderType pixelShaderType, bool allowsBackFaces, bool isAnimating)
+		TextureSamplingType textureSamplingType, PixelShaderType pixelShaderType, bool allowsBackFaces, bool isAnimating)
 	{
 		RenderDrawCall drawCall;
 		drawCall.vertexBufferID = vertexBufferID;
@@ -639,6 +639,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 		drawCall.indexBufferID = indexBufferID;
 		drawCall.textureIDs[0] = textureID0;
 		drawCall.textureIDs[1] = textureID1;
+		drawCall.textureSamplingType = textureSamplingType;
 		drawCall.vertexShaderType = VertexShaderType::Default;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.worldSpaceOffset = Double3(
@@ -731,9 +732,10 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 						}
 
 						const IndexBufferID opaqueIndexBufferID = meshInst.opaqueIndexBufferIDs[bufferIndex];
+						const TextureSamplingType textureSamplingType = usesVoxelTextures ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
 						addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-							meshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, PixelShaderType::Opaque,
-							allowsBackFaces, isAnimating);
+							meshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, textureSamplingType,
+							PixelShaderType::Opaque, allowsBackFaces, isAnimating);
 					}
 				}
 
@@ -768,7 +770,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 						const bool isAnimating = false;
 						addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
 							meshInst.texCoordBufferID, meshInst.alphaTestedIndexBufferID, textureID, std::nullopt,
-							PixelShaderType::AlphaTested, allowsBackFaces, isAnimating);
+							TextureSamplingType::Default, PixelShaderType::AlphaTested, allowsBackFaces, isAnimating);
 					}
 				}
 
@@ -787,7 +789,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 						ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
 						addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-							meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
+							meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1, TextureSamplingType::ScreenSpaceRepeatY,
 							PixelShaderType::OpaqueWithAlphaTestLayer, allowsBackFaces, isAnimating);
 					}
 				}

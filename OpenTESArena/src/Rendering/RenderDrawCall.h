@@ -16,6 +16,7 @@ struct RenderDrawCall
 	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
 	std::optional<ObjectTextureID> textureIDs[MAX_TEXTURE_COUNT];
+	TextureSamplingType textureSamplingType;
 	VertexShaderType vertexShaderType;
 	PixelShaderType pixelShaderType;
 	Double3 worldSpaceOffset;

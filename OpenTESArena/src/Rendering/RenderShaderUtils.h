@@ -13,4 +13,10 @@ enum class PixelShaderType
 	OpaqueWithAlphaTestLayer
 };
 
+enum class TextureSamplingType
+{
+	Default,
+	ScreenSpaceRepeatY // Chasms.
+};
+
 #endif
