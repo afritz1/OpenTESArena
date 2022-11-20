@@ -62,7 +62,7 @@ VerticalSensitivity=5.0
 
 # The camera pitch limit determines in degrees how high or low the camera
 # can look relative to the horizon in modern mode. Must be less than 90.
-CameraPitchLimit=30.0
+CameraPitchLimit=85.0
 
 # Filters clicks on entities to only opaque parts of the entity's texture
 # if enabled. Otherwise, clicks register anywhere in the entity's shape.
