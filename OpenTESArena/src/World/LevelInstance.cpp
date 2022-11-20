@@ -135,17 +135,6 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 
 	renderer.unloadScene();
 
-	for (int i = 0; i < this->chunkManager.getChunkCount(); i++)
-	{
-		const VoxelChunk &voxelChunk = this->chunkManager.getChunk(i);
-		renderer.loadVoxelChunk(voxelChunk, this->ceilingScale, textureManager);
-
-		constexpr double chasmAnimPercent = 0.0;
-		renderer.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent);
-	}
-
-	renderer.rebuildVoxelDrawCallsList();
-
 	if (!TryPopulatePaletteTexture(this->paletteTextureRef, textureManager, renderer))
 	{
 		DebugLogError("Couldn't load palette texture.");
@@ -184,6 +173,8 @@ void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoor
 		renderer.unloadVoxelChunk(chunkPos);
 	}
 
+	const GameState &gameState = game.getGameState();
+	const double chasmAnimPercent = gameState.getChasmAnimPercent();
 	for (int i = 0; i < newChunkCount; i++)
 	{
 		const ChunkInt2 &chunkPos = this->chunkManager.getNewChunkPosition(i);
@@ -191,13 +182,18 @@ void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoor
 		DebugAssert(voxelChunkPtr != nullptr);
 
 		renderer.loadVoxelChunk(*voxelChunkPtr, this->ceilingScale, textureManager);
-
-		const GameState &gameState = game.getGameState();
-		const double chasmAnimPercent = gameState.getChasmAnimPercent();
-		renderer.rebuildVoxelChunkDrawCalls(*voxelChunkPtr, this->ceilingScale, chasmAnimPercent); // @todo: maybe also do this every frame but only for voxels with animating textures, via a flag?
+		renderer.rebuildVoxelChunkDrawCalls(*voxelChunkPtr, this->ceilingScale, chasmAnimPercent, true, false);
 	}
 
-	if ((freedChunkCount > 0) || (newChunkCount > 0))
+	const int totalChunkCount = this->chunkManager.getChunkCount();
+	for (int i = 0; i < totalChunkCount; i++)
+	{
+		const VoxelChunk &voxelChunk = this->chunkManager.getChunk(i);
+		renderer.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, false, true);
+	}
+
+	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient
+	//if ((freedChunkCount > 0) || (newChunkCount > 0))
 	{
 		renderer.rebuildVoxelDrawCallsList();
 	}

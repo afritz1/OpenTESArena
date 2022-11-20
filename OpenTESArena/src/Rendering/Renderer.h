@@ -221,7 +221,7 @@ public:
 
 	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager);
 	// @todo: handle dirty voxels and updating voxel chunk
-	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent);
+	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 	void unloadVoxelChunk(const ChunkInt2 &chunkPos);
 	void rebuildVoxelDrawCallsList();
 	

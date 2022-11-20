@@ -109,7 +109,8 @@ private:
 	void loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer);
 	void loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale, RendererSystem3D &rendererSystem);
 	void loadVoxelChasmWalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk);
-	void loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale, double chasmAnimPercent);
+	void loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale,
+		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 public:
 	void init(RendererSystem3D &rendererSystem);
 	void shutdown(RendererSystem3D &rendererSystem);
@@ -125,7 +126,8 @@ public:
 	
 	// Call once per frame per chunk after all voxel chunk changes have been applied to the scene graph.
 	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
-	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent);
+	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent,
+		bool updateStatics, bool updateAnimating);
 
 	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
 

@@ -841,10 +841,11 @@ void Renderer::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, Text
 	this->sceneGraph.loadVoxelChunk(chunk, ceilingScale, textureManager, *this, *this->renderer3D);
 }
 
-void Renderer::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent)
+void Renderer::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale,
+	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent);
+	this->sceneGraph.rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
 }
 
 void Renderer::unloadVoxelChunk(const ChunkInt2 &chunkPos)

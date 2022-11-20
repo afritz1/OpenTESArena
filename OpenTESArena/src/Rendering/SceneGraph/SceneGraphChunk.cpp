@@ -10,16 +10,16 @@ void SceneGraphChunk::init(const ChunkInt2 &position, int height)
 	this->meshInstMappings.clear();
 	this->meshInstIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->chasmWallIndexBufferIDs.clear();
-	this->voxelDrawCalls.clear();
+	this->staticDrawCalls.clear();
+	this->animatingDrawCalls.clear();
 	this->position = position;
 
 	// Add empty mesh instance for air.
 	this->addMeshInstance(SceneGraphVoxelMeshInstance());
 }
 
-void SceneGraphChunk::update(EntityManager &entityManager)
+void SceneGraphChunk::update()
 {
-	// @todo: refresh bounding box for the whole chunk; needs to iterate all entities in the EntityManager's chunk every frame.
 	DebugNotImplemented();
 }
 
