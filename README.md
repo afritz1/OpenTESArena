@@ -114,6 +114,11 @@ If you would like to use a different sound patches library like OPL3, edit `Midi
 - [SDL 2.0.9](https://www.libsdl.org/download-2.0.php)
 - [WildMIDI 0.4.4](https://github.com/Mindwerks/wildmidi/releases) (optional; required for music)
 
+Unix terminal commands on a fresh machine:
+```bash
+sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libwildmidi-dev
+```
+
 ### Building the executable
 - Navigate to the root of the repository
 - Use CMake to generate your project file (Visual Studio .sln, Unix Makefile, etc.). In a Unix terminal, the commands might look like:
