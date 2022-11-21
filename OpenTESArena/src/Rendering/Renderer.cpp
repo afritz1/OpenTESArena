@@ -285,7 +285,7 @@ double Renderer::getDpiScale() const
 	}
 	else
 	{
-		DebugLogWarning("Couldn't get DPI of display \"" + std::to_string(displayIndex) + "\".");
+		DebugLogWarning("Couldn't get DPI of display \"" + std::to_string(displayIndex) + "\" (" + std::string(SDL_GetError()) + ").");
 		return 1.0;
 	}
 }
@@ -361,7 +361,7 @@ Surface Renderer::getScreenshot() const
 
 	if (status != 0)
 	{
-		DebugCrash("Couldn't take screenshot, " + std::string(SDL_GetError()));
+		DebugCrash("Couldn't take screenshot (" + std::string(SDL_GetError()) + ").");
 	}
 
 	return screenshot;
@@ -514,7 +514,7 @@ Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
 	SDL_Texture *tex = SDL_CreateTexture(this->renderer, format, access, w, h);
 	if (tex == nullptr)
 	{
-		DebugLogError("Could not create SDL_Texture.");
+		DebugLogError("Couldn't create SDL_Texture (" + std::string(SDL_GetError()) + ").");
 	}
 
 	Texture texture;
@@ -553,7 +553,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	if (this->window == nullptr)
 	{
 		DebugLogError("Couldn't create SDL_Window (dimensions: " + std::to_string(width) + "x" + std::to_string(height) +
-			", window mode: " + std::to_string(static_cast<int>(windowMode)) + ").");
+			", window mode: " + std::to_string(static_cast<int>(windowMode)) + ", " + std::string(SDL_GetError()) + ").");
 		return false;
 	}
 
@@ -561,7 +561,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	this->renderer = Renderer::createRenderer(this->window);
 	if (this->renderer == nullptr)
 	{
-		DebugLogError("Couldn't create SDL_Renderer.");
+		DebugLogError("Couldn't create SDL_Renderer (" + std::string(SDL_GetError()) + ").");
 		return false;
 	}
 
@@ -593,7 +593,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
 	if (this->nativeTexture.get() == nullptr)
 	{
-		DebugLogError("Couldn't create SDL_Texture frame buffer (error: " + std::string(SDL_GetError()) + ").");
+		DebugLogError("Couldn't create SDL_Texture frame buffer (" + std::string(SDL_GetError()) + ").");
 		return false;
 	}
 
@@ -606,8 +606,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		}
 		else
 		{
-			DebugLogError("Unrecognized 2D renderer system type \"" +
-				std::to_string(static_cast<int>(systemType2D)) + "\".");
+			DebugLogError("Unrecognized 2D renderer system type \"" + std::to_string(static_cast<int>(systemType2D)) + "\".");
 			return nullptr;
 		}
 	}();
@@ -626,8 +625,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		}
 		else
 		{
-			DebugLogError("Unrecognized 3D renderer system type \"" +
-				std::to_string(static_cast<int>(systemType3D)) + "\".");
+			DebugLogError("Unrecognized 3D renderer system type \"" + std::to_string(static_cast<int>(systemType3D)) + "\".");
 			return nullptr;
 		}
 	}();
@@ -662,10 +660,8 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	SDL_RenderSetLogicalSize(this->renderer, width, height);
 
 	// Reinitialize native frame buffer.
-	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_TARGET, width, height);
-	DebugAssertMsg(this->nativeTexture.get() != nullptr,
-		"Couldn't recreate native frame buffer (" + std::string(SDL_GetError()) + ").");
+	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, width, height);
+	DebugAssertMsg(this->nativeTexture.get() != nullptr, "Couldn't recreate native frame buffer (" + std::string(SDL_GetError()) + ").");
 
 	this->fullGameWindow = fullGameWindow;
 
@@ -677,10 +673,8 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
 
 		// Reinitialize the game world frame buffer.
-		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
-			SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-		DebugAssertMsg(this->gameWorldTexture.get() != nullptr,
-			"Couldn't recreate game world texture (" + std::string(SDL_GetError()) + ").");
+		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
+		DebugAssertMsg(this->gameWorldTexture.get() != nullptr, "Couldn't recreate game world texture (" + std::string(SDL_GetError()) + ").");
 
 		this->renderer3D->resize(renderWidth, renderHeight);
 	}
