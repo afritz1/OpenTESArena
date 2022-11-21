@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cmath>
 #include <string>
+#include <iostream>
 
 #include "SDL.h"
 
@@ -159,7 +160,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	SDL_Renderer *rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_ACCELERATED);
 	if (rendererContext == nullptr)
 	{
-		DebugLogError("Couldn't create SDL_Renderer with driver \"" + std::to_string(bestDriver) + "\".");
+		DebugLogError("Couldn't create SDL_Renderer with driver \"" + std::to_string(bestDriver) + "\" (error: " + std::string(SDL_GetError()) + ").");
 		return nullptr;
 	}
 
@@ -188,20 +189,20 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	// (such as with Linux), so we retry with software.
 	if (nativeSurface == nullptr)
 	{
-		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
+		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback (error: " + std::string(SDL_GetError()) + ").");
 		SDL_DestroyRenderer(rendererContext);
 
 		rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
 		if (rendererContext == nullptr)
 		{
-			DebugLogError("Couldn't create software fallback SDL_Renderer.");
+			DebugLogError("Couldn't create software fallback SDL_Renderer (error: " + std::string(SDL_GetError()) + ").");
 			return nullptr;
 		}
 
 		nativeSurface = SDL_GetWindowSurface(window);
 		if (nativeSurface == nullptr)
 		{
-			DebugLogError("Couldn't get software fallback SDL_Window surface.");
+			DebugLogError("Couldn't get software fallback SDL_Window surface (error: " + std::string(SDL_GetError()) + ").");
 			return nullptr;
 		}
 	}
@@ -545,7 +546,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	if (this->window == nullptr)
 	{
 		DebugLogError("Couldn't create SDL_Window (dimensions: " + std::to_string(width) + "x" + std::to_string(height) +
-			", window mode: " + std::to_string(static_cast<int>(windowMode)) + ").");
+			", window mode: " + std::to_string(static_cast<int>(windowMode)) + ", error: " + std::string(SDL_GetError()) + ").");
 		return false;
 	}
 
@@ -553,7 +554,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	this->renderer = Renderer::createRenderer(this->window);
 	if (this->renderer == nullptr)
 	{
-		DebugLogError("Couldn't create SDL_Renderer.");
+		DebugLogError("Couldn't create SDL_Renderer (error: " + std::string(SDL_GetError()) + ").");
 		return false;
 	}
 
@@ -599,7 +600,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		else
 		{
 			DebugLogError("Unrecognized 2D renderer system type \"" +
-				std::to_string(static_cast<int>(systemType2D)) + "\".");
+				std::to_string(static_cast<int>(systemType2D)) + "\" (error: " + std::string(SDL_GetError()) + ").");
 			return nullptr;
 		}
 	}();
