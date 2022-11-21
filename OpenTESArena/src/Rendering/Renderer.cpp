@@ -165,14 +165,14 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	SDL_Renderer *rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_ACCELERATED);
 	if (rendererContext == nullptr)
 	{
-		DebugLogError("Couldn't create SDL_Renderer with driver \"" + std::to_string(bestDriver) + "\".");
+		DebugLogError("Couldn't create SDL_Renderer with driver \"" + std::to_string(bestDriver) + "\" (" + std::string(SDL_GetError()) + ").");
 		return nullptr;
 	}
 
 	SDL_RendererInfo rendererInfo;
 	if (SDL_GetRendererInfo(rendererContext, &rendererInfo) < 0)
 	{
-		DebugLogError("Couldn't get SDL_RendererInfo (error: " + std::string(SDL_GetError()) + ").");
+		DebugLogError("Couldn't get SDL_RendererInfo (" + std::string(SDL_GetError()) + ").");
 		return nullptr;
 	}
 
@@ -183,37 +183,42 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	const SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
 	{
-		DebugLogWarning("Couldn't set SDL rendering interpolation hint.");
+		DebugLogWarning("Couldn't set SDL rendering interpolation hint (" + std::string(SDL_GetError()) + ").");
 	}
 
-	// Set the size of the render texture to be the size of the whole screen
-	// (it automatically scales otherwise).
-	const SDL_Surface *nativeSurface = SDL_GetWindowSurface(window);
-
-	// If this fails, we might not support hardware accelerated renderers for some reason
-	// (such as with Linux), so we retry with software.
-	if (nativeSurface == nullptr)
+	int windowWidth, windowHeight;
+	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+	
+	auto isValidWindowSize = [](int width, int height)
 	{
-		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
+		return (width > 0) && (height > 0);
+	};
+
+	// Set the size of the render texture to be the size of the whole screen (it automatically scales otherwise).
+	// If this fails, the OS might not support hardware accelerated renderers for some reason (such as with Linux),
+	// so retry with software.
+	if (!isValidWindowSize(windowWidth, windowHeight))
+	{
+		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback (" + std::string(SDL_GetError()) + ").");
 		SDL_DestroyRenderer(rendererContext);
 
 		rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
 		if (rendererContext == nullptr)
 		{
-			DebugLogError("Couldn't create software fallback SDL_Renderer.");
+			DebugLogError("Couldn't create software fallback SDL_Renderer (" + std::string(SDL_GetError()) + ").");
 			return nullptr;
 		}
 
-		nativeSurface = SDL_GetWindowSurface(window);
-		if (nativeSurface == nullptr)
+		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+		if (!isValidWindowSize(windowWidth, windowHeight))
 		{
-			DebugLogError("Couldn't get software fallback SDL_Window surface.");
+			DebugLogError("Couldn't get software fallback SDL_Window dimensions (" + std::string(SDL_GetError()) + ").");
 			return nullptr;
 		}
 	}
 
 	// Set the device-independent resolution for rendering (i.e., the "behind-the-scenes" resolution).
-	SDL_RenderSetLogicalSize(rendererContext, nativeSurface->w, nativeSurface->h);
+	SDL_RenderSetLogicalSize(rendererContext, windowWidth, windowHeight);
 
 	return rendererContext;
 }
@@ -252,8 +257,9 @@ double Renderer::getLetterboxAspect() const
 
 Int2 Renderer::getWindowDimensions() const
 {
-	const SDL_Surface *nativeSurface = SDL_GetWindowSurface(this->window);
-	return Int2(nativeSurface->w, nativeSurface->h);
+	int windowWidth, windowHeight;
+	SDL_GetWindowSize(this->window, &windowWidth, &windowHeight);
+	return Int2(windowWidth, windowHeight);
 }
 
 double Renderer::getWindowAspect() const
