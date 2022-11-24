@@ -33,6 +33,10 @@ CursorScale=5.0
 # similar to Daggerfall's.
 ModernInterface=false
 
+# Adjusts the view projection vertically by 20% to match the 16:10 -> 4:3
+# scaling of the original game.
+TallPixelCorrection=true
+
 # The render threads mode determines how many CPU threads are used for
 # rendering. The actual number of threads depends on your CPU.
 # 0: very low, 1: low, 2: medium, 3: high, 4: very high, 5: max

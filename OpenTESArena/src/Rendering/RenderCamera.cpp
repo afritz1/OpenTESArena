@@ -1,7 +1,7 @@
 #include "RenderCamera.h"
 
 void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction, Degrees fovX,
-	Degrees fovY, double aspectRatio)
+	Degrees fovY, double aspectRatio, double tallPixelRatio)
 {
 	this->chunk = chunk;
 	this->point = point;
@@ -15,11 +15,14 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->rightScaled = this->right * this->aspectRatio;
 
 	this->up = this->right.cross(this->forward).normalized();
+	this->tallPixelRatio = tallPixelRatio;
+	this->upScaled = this->up * this->tallPixelRatio;
 
+	const Double3 upScaledRecip = this->up * (1.0 / this->tallPixelRatio);
 	this->leftFrustumDir = (this->forwardScaled - this->rightScaled).normalized();
 	this->rightFrustumDir = (this->forwardScaled + this->rightScaled).normalized();
-	this->bottomFrustumDir = (this->forwardScaled - this->up).normalized();
-	this->topFrustumDir = (this->forwardScaled + this->up).normalized();
+	this->bottomFrustumDir = (this->forwardScaled - upScaledRecip).normalized();
+	this->topFrustumDir = (this->forwardScaled + upScaledRecip).normalized();
 
 	this->leftFrustumNormal = this->leftFrustumDir.cross(this->up).normalized();
 	this->rightFrustumNormal = this->up.cross(this->rightFrustumDir).normalized();

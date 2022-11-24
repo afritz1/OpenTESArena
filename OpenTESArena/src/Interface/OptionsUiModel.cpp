@@ -349,6 +349,20 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeModernInterfaceO
 	});
 }
 
+std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeTallPixelCorrectionOption(Game &game)
+{
+	const auto &options = game.getOptions();
+	return std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::TALL_PIXEL_CORRECTION_NAME,
+		"Adjusts the view projection to match the scaling of the original\ngame on a 4:3 monitor.",
+		options.getGraphics_TallPixelCorrection(),
+		[&game](bool value)
+	{
+		auto &options = game.getOptions();
+		options.setGraphics_TallPixelCorrection(value);
+	});
+}
+
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsModeOption(Game &game)
 {
 	const auto &options = game.getOptions();
@@ -379,6 +393,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 	group.emplace_back(OptionsUiModel::makeLetterboxModeOption(game));
 	group.emplace_back(OptionsUiModel::makeCursorScaleOption(game));
 	group.emplace_back(OptionsUiModel::makeModernInterfaceOption(game));
+	group.emplace_back(OptionsUiModel::makeTallPixelCorrectionOption(game));
 	group.emplace_back(OptionsUiModel::makeRenderThreadsModeOption(game));
 	return group;
 }

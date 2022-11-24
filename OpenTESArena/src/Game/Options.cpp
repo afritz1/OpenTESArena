@@ -27,6 +27,7 @@ namespace
 		{ "LetterboxMode", OptionType::Int },
 		{ "CursorScale", OptionType::Double },
 		{ "ModernInterface", OptionType::Bool },
+		{ "TallPixelCorrection", OptionType::Bool },
 		{ "RenderThreadsMode", OptionType::Int }
 	};
 

@@ -14,6 +14,7 @@ struct RenderCamera
 	Double3 forward, right, up;
 	Double3 forwardScaled; // Scaled by zoom.
 	Double3 rightScaled; // Scaled by aspect ratio.
+	Double3 upScaled; // Scaled by tall pixel ratio.
 
 	// Frustum directions pointing away from the camera eye.
 	Double3 leftFrustumDir, rightFrustumDir, bottomFrustumDir, topFrustumDir;
@@ -24,9 +25,10 @@ struct RenderCamera
 	Degrees fovX, fovY;
 	double zoom; // Function of vertical FOV (90 degrees = 1 zoom).
 	double aspectRatio;
+	double tallPixelRatio;
 
 	void init(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction, Degrees fovX,
-		Degrees fovY, double aspectRatio);
+		Degrees fovY, double aspectRatio, double tallPixelRatio);
 };
 
 #endif

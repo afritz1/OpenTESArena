@@ -760,7 +760,7 @@ namespace swRender
 
 		const Double3 eye = swCamera::GetCameraEye(camera);
 		const Double2 eye2D(eye.x, eye.z); // For 2D lighting.
-		const Matrix4d viewMatrix = Matrix4d::view(eye, camera.forward, camera.right, camera.up);
+		const Matrix4d viewMatrix = Matrix4d::view(eye, camera.forward, camera.right, camera.upScaled); // Adjust for tall pixels.
 		const Matrix4d perspectiveMatrix = Matrix4d::perspective(camera.fovY, camera.aspectRatio,
 			swConstants::NEAR_PLANE, swConstants::FAR_PLANE);
 

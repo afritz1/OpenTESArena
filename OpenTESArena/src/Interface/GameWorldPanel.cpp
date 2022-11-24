@@ -824,9 +824,10 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const auto &options = game.getOptions();
 	const Degrees fovY = options.getGraphics_VerticalFOV();
 	const Degrees fovX = MathUtils::verticalFovToHorizontalFov(fovY, viewAspectRatio);
+	const double tallPixelRatio = options.getGraphics_TallPixelCorrection() ? ArenaRenderUtils::TALL_PIXEL_RATIO : 1.0;
 
 	RenderCamera renderCamera;
-	renderCamera.init(playerPos.chunk, playerPos.point, playerDir, fovX, fovY, viewAspectRatio);
+	renderCamera.init(playerPos.chunk, playerPos.point, playerDir, fovX, fovY, viewAspectRatio, tallPixelRatio);
 
 	// @todo: shore up loadScene() and that overall design before attempting to change dirty voxels and entities between frames.
 	/*renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
