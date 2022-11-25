@@ -120,18 +120,17 @@ public:
 	// Index of the chunk all other active chunks surround.
 	int getCenterChunkIndex() const;
 
-	// Updates the chunk manager with the given chunk as the current center of the game world. This invalidates
-	// all active chunk references and they must be looked up again. The 'updateChunkStates' parameter tells
-	// whether to update the real-time state of chunks; this should be false during the frame of a level's
-	// initialization, and true for all other cases (otherwise the world would be one update step ahead of the
-	// player, which isn't a big deal but is poor design).
-	void update(double dt, const ChunkInt2 &centerChunkPos, const CoordDouble3 &playerCoord,
-		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const EntityGeneration::EntityGenInfo &entityGenInfo,
+	// Refreshes the internally-managed lists of new/old chunk positions with the given chunk as the current center
+	// of the game world.
+	void calculateActiveChunks(const ChunkInt2 &centerChunkPos, int chunkDistance);
+
+	void updateVoxels(double dt, const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex,
+		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
 		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,
 		EntityManager &entityManager);
+	void updateEntities(EntityManager &entityManager);
 
 	// Run at the end of a frame to reset certain frame data like dirty voxels.
 	void cleanUp();

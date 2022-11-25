@@ -870,33 +870,20 @@ void ChunkManager::updateChunkPerimeterChasmInsts(VoxelChunk &chunk)
 	}
 }
 
-void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const CoordDouble3 &playerCoord,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const EntityGeneration::EntityGenInfo &entityGenInfo,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
-	int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,
-	EntityManager &entityManager)
+void ChunkManager::calculateActiveChunks(const ChunkInt2 &centerChunkPos, int chunkDistance)
 {
 	this->centerChunkPos = centerChunkPos;
 
-	// Free any out-of-range chunks.
 	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
 	{
 		const VoxelChunkPtr &chunkPtr = this->activeChunks[i];
 		const ChunkInt2 chunkPos = chunkPtr->getPosition();
 		if (!ChunkUtils::isWithinActiveRange(centerChunkPos, chunkPos, chunkDistance))
 		{
-			this->recycleChunk(i);
-
-			// Notify entity manager that the chunk is being recycled.
-			entityManager.removeChunk(chunkPos);
-
 			this->freedChunkPositions.emplace_back(chunkPos);
 		}
 	}
 
-	// Add new chunks until the area around the center chunk is filled.
 	ChunkInt2 minChunkPos, maxChunkPos;
 	ChunkUtils::getSurroundingChunks(centerChunkPos, chunkDistance, &minChunkPos, &maxChunkPos);
 
@@ -908,13 +895,32 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const Coor
 			const std::optional<int> index = this->tryGetChunkIndex(curChunkPos);
 			if (!index.has_value())
 			{
-				const int spawnIndex = this->spawnChunk();
-				this->populateChunk(spawnIndex, curChunkPos, activeLevelIndex, mapDefinition, entityGenInfo,
-					citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
-
 				this->newChunkPositions.emplace_back(curChunkPos);
 			}
 		}
+	}
+}
+
+void ChunkManager::updateVoxels(double dt, const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex,
+	const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
+	int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, AudioManager &audioManager, EntityManager &entityManager)
+{
+	for (size_t i = 0; i < this->freedChunkPositions.size(); i++)
+	{
+		const ChunkInt2 &chunkPos = this->freedChunkPositions[i];
+		const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
+		DebugAssert(chunkIndex.has_value());
+		this->recycleChunk(*chunkIndex);
+	}
+
+	for (size_t i = 0; i < this->newChunkPositions.size(); i++)
+	{
+		const ChunkInt2 &chunkPos = this->newChunkPositions[i];
+		const int spawnIndex = this->spawnChunk();
+		this->populateChunk(spawnIndex, chunkPos, activeLevelIndex, mapDefinition, entityGenInfo,
+			citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
@@ -938,6 +944,19 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunkPos, const Coor
 		VoxelChunkPtr &chunkPtr = this->activeChunks[i];
 		this->updateChunkPerimeterChasmInsts(*chunkPtr);
 	}
+}
+
+void ChunkManager::updateEntities(EntityManager &entityManager)
+{
+	for (size_t i = 0; i < this->freedChunkPositions.size(); i++)
+	{
+		const ChunkInt2 &chunkPos = this->freedChunkPositions[i];
+		entityManager.removeChunk(chunkPos);
+	}
+
+	// @todo: move entity-related code out of updateVoxels() for dealing with new chunks
+	// - that will also fix the "entity chunk already exists" errors since populateChunk()
+	//   is running before entityManager.removeChunk()
 }
 
 void ChunkManager::cleanUp()

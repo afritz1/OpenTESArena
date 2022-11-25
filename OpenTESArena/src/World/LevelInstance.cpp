@@ -157,10 +157,12 @@ void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoor
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, AudioManager &audioManager)
 {
-	const ChunkInt2 &centerChunk = playerCoord.chunk;
-	this->chunkManager.update(dt, centerChunk, playerCoord, activeLevelIndex, mapDefinition, entityGenInfo,
-		citizenGenInfo, this->ceilingScale, chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager,
-		audioManager, this->entityManager);
+	const ChunkInt2 &centerChunkPos = playerCoord.chunk;
+	this->chunkManager.calculateActiveChunks(centerChunkPos, chunkDistance);
+	this->chunkManager.updateVoxels(dt, playerCoord, activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo,
+		this->ceilingScale, chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager, audioManager,
+		this->entityManager);
+	this->chunkManager.updateEntities(this->entityManager);
 
 	// @todo: eventually bring all entity manager add/remove chunk behavior from ChunkManager::update() to these two loops
 
