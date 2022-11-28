@@ -13,8 +13,8 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Audio/MusicUtils.h"
 #include "../Game/Game.h"
+#include "../Sky/SkyUtils.h"
 #include "../World/MapType.h"
-#include "../World/SkyUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 void MainMenuUiController::onLoadGameButtonSelected(Game &game)

@@ -5,8 +5,8 @@
 #include <optional>
 #include <string>
 
-#include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Voxels/VoxelUtils.h"
 
 class ArenaRandom;
 

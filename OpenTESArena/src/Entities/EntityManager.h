@@ -13,7 +13,7 @@
 #include "EntityUtils.h"
 #include "StaticEntity.h"
 #include "../Math/Vector3.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer2D.h"
 

@@ -1,7 +1,7 @@
 #ifndef CHUNK_UTILS_H
 #define CHUNK_UTILS_H
 
-#include "VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 namespace ChunkUtils
 {

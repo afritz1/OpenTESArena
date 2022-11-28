@@ -1,8 +1,8 @@
 #include "AutomapUiModel.h"
 #include "AutomapUiView.h"
+#include "../Voxels/VoxelUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/ChunkUtils.h"
-#include "../World/VoxelUtils.h"
 
 Double2 AutomapUiModel::makeAutomapOffset(const VoxelInt2 &playerVoxel)
 {

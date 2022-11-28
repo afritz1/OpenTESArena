@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <vector>
 
-#include "VoxelUtils.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer3D.h"
 

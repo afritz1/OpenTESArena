@@ -5,7 +5,6 @@
 #include <type_traits>
 
 #include "ArenaSkyUtils.h"
-#include "ArenaWeatherUtils.h"
 #include "SkyDefinition.h"
 #include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
@@ -19,6 +18,7 @@
 #include "../Math/Vector4.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
+#include "../Weather/ArenaWeatherUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"

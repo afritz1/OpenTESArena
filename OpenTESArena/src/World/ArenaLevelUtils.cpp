@@ -1,11 +1,11 @@
 #include <algorithm>
 
 #include "ArenaLevelUtils.h"
-#include "ArenaVoxelUtils.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
+#include "../Voxels/ArenaVoxelUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"

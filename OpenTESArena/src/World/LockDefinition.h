@@ -1,7 +1,7 @@
 #ifndef LOCK_DEFINITION_H
 #define LOCK_DEFINITION_H
 
-#include "VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 // Supports both locks that can be picked, and locks that require a key.
 

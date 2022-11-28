@@ -1,10 +1,8 @@
 #include <algorithm>
 
-#include "ArenaWeatherUtils.h"
 #include "LevelInstance.h"
 #include "MapDefinition.h"
 #include "MapType.h"
-#include "WeatherDefinition.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Entities/CitizenUtils.h"
@@ -13,6 +11,8 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Weather/ArenaWeatherUtils.h"
+#include "../Weather/WeatherDefinition.h"
 
 #include "components/debug/Debug.h"
 

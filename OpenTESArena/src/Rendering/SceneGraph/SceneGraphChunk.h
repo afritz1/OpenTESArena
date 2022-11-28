@@ -6,8 +6,8 @@
 #include "SceneGraphMesh.h"
 #include "../RenderDrawCall.h"
 #include "../RenderGeometryUtils.h"
-#include "../../World/VoxelChunk.h"
-#include "../../World/VoxelUtils.h"
+#include "../../Voxels/VoxelChunk.h"
+#include "../../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer3D.h"

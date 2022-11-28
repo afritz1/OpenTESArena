@@ -10,11 +10,7 @@
 #include <vector>
 
 #include "ChasmDefinition.h"
-#include "ChunkUtils.h"
-#include "Coord.h"
 #include "DoorDefinition.h"
-#include "LockDefinition.h"
-#include "TransitionDefinition.h"
 #include "VoxelChasmWallInstance.h"
 #include "VoxelDoorAnimationInstance.h"
 #include "VoxelFadeAnimationInstance.h"
@@ -25,6 +21,10 @@
 #include "VoxelTriggerInstance.h"
 #include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
+#include "../World/ChunkUtils.h"
+#include "../World/Coord.h"
+#include "../World/LockDefinition.h"
+#include "../World/TransitionDefinition.h"
 
 #include "components/utilities/Buffer3D.h"
 

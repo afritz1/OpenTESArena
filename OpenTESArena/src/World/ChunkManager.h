@@ -6,10 +6,10 @@
 #include <vector>
 
 #include "ChunkUtils.h"
-#include "VoxelChunk.h"
-#include "VoxelUtils.h"
 #include "../Entities/CitizenUtils.h"
 #include "../Entities/EntityGeneration.h"
+#include "../Voxels/VoxelChunk.h"
+#include "../Voxels/VoxelUtils.h"
 
 // Handles lifetimes of chunks. Does not store any entities. When freeing a chunk, it needs to tell
 // the entity manager so the entities in it are handled correctly (marked for deletion one way or

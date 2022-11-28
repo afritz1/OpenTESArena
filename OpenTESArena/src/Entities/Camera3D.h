@@ -4,7 +4,7 @@
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 // A camera for the player. Make sure not to look directly up or down, as
 // that breaks the vector cross product used for determining the camera's axes.

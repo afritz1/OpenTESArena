@@ -4,7 +4,7 @@
 #include <vector> // @todo: Buffer<T> would be better although there were annoyances with the deleted copy constructor
 
 #include "../Assets/ArenaTypes.h"
-#include "ArenaMeshUtils.h"
+#include "../World/ArenaMeshUtils.h"
 
 #include "components/utilities/BufferView.h"
 

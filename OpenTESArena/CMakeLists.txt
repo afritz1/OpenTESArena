@@ -66,6 +66,10 @@ FILE(GLOB TES_RENDERING_SCENE_GRAPH
     ${SRC_ROOT}/src/Rendering/SceneGraph/*.h* 
     ${SRC_ROOT}/src/Rendering/SceneGraph/*.c*)
 
+FILE(GLOB TES_SKY
+    ${SRC_ROOT}/src/Sky/*.h* 
+    ${SRC_ROOT}/src/Sky/*.c*)
+
 FILE(GLOB TES_UI
     ${SRC_ROOT}/src/UI/*.h* 
     ${SRC_ROOT}/src/UI/*.c*)
@@ -73,6 +77,14 @@ FILE(GLOB TES_UI
 FILE(GLOB TES_UTILITIES
     ${SRC_ROOT}/src/Utilities/*.h* 
     ${SRC_ROOT}/src/Utilities/*.c*)
+
+FILE(GLOB TES_VOXELS
+    ${SRC_ROOT}/src/Voxels/*.h* 
+    ${SRC_ROOT}/src/Voxels/*.c*)
+
+FILE(GLOB TES_WEATHER
+    ${SRC_ROOT}/src/Weather/*.h* 
+    ${SRC_ROOT}/src/Weather/*.c*)
 
 FILE(GLOB TES_WORLD
     ${SRC_ROOT}/src/World/*.h* 
@@ -97,8 +109,11 @@ SET(TES_SOURCES
     ${TES_MEDIA}
     ${TES_RENDERING}
     ${TES_RENDERING_SCENE_GRAPH}
+    ${TES_SKY}
     ${TES_UI}
     ${TES_UTILITIES}
+    ${TES_VOXELS}
+    ${TES_WEATHER}
     ${TES_WORLD}
     ${TES_WORLD_MAP}
     ${TES_MAIN})

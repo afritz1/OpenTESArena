@@ -6,7 +6,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Math/Random.h"
 #include "../Math/RandomUtils.h"
-#include "../World/WeatherDefinition.h"
+#include "../Weather/WeatherDefinition.h"
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/debug/Debug.h"

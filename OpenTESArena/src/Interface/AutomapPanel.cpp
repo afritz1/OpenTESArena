@@ -27,9 +27,9 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
+#include "../Voxels/VoxelFacing2D.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/MapType.h"
-#include "../World/VoxelFacing2D.h"
 
 #include "components/debug/Debug.h"
 

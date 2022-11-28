@@ -3,7 +3,7 @@
 
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 // Common render camera usable by all renderers.
 

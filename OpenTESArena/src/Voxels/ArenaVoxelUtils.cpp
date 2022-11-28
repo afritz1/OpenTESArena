@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "ArenaVoxelUtils.h"
-#include "MapType.h"
+#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

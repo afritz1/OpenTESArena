@@ -3,9 +3,9 @@
 
 #include <optional>
 
-#include "Coord.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
+#include "../World/Coord.h"
 
 enum class VoxelFacing2D;
 enum class VoxelFacing3D;

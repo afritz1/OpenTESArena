@@ -2,8 +2,8 @@
 #define MAP_INSTANCE_H
 
 #include "LevelInstance.h"
-#include "SkyInstance.h"
 #include "../Entities/EntityGeneration.h"
+#include "../Sky/SkyInstance.h"
 
 #include "components/utilities/Buffer.h"
 

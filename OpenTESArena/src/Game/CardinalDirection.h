@@ -4,7 +4,7 @@
 #include <string>
 
 #include "../Math/Vector2.h"
-#include "../World/VoxelUtils.h"
+#include "../World/Coord.h"
 
 // North, northeast, southwest, etc..
 

@@ -5,18 +5,18 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ChasmDefinition.h"
-#include "DoorDefinition.h"
 #include "LevelDefinition.h"
 #include "LockDefinition.h"
 #include "MapGeneration.h"
 #include "TransitionDefinition.h"
-#include "VoxelMeshDefinition.h"
-#include "VoxelTextureDefinition.h"
-#include "VoxelTraitsDefinition.h"
-#include "VoxelTriggerDefinition.h"
-#include "VoxelUtils.h"
 #include "../Entities/EntityDefinition.h"
+#include "../Voxels/ChasmDefinition.h"
+#include "../Voxels/DoorDefinition.h"
+#include "../Voxels/VoxelMeshDefinition.h"
+#include "../Voxels/VoxelTextureDefinition.h"
+#include "../Voxels/VoxelTraitsDefinition.h"
+#include "../Voxels/VoxelTriggerDefinition.h"
+#include "../Voxels/VoxelUtils.h"
 
 // Modern replacement for .INF files; defines the actual voxels, entities, etc. pointed to by a
 // level definition. This is intended to separate the level's IDs from what they're pointing to

@@ -7,7 +7,7 @@
 
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Bytes.h"
 

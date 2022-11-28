@@ -4,9 +4,9 @@
 #include <cstdint>
 
 #include "ArenaLevelUtils.h"
-#include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
+#include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/utilities/Buffer2D.h"

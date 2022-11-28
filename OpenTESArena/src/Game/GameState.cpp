@@ -23,10 +23,10 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
-#include "../World/ArenaVoxelUtils.h"
-#include "../World/ArenaWeatherUtils.h"
+#include "../Voxels/ArenaVoxelUtils.h"
+#include "../Weather/ArenaWeatherUtils.h"
+#include "../Weather/WeatherUtils.h"
 #include "../World/MapType.h"
-#include "../World/WeatherUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 #include "../WorldMap/LocationInstance.h"
 

@@ -1,7 +1,7 @@
 #ifndef VOXEL_CHASM_WALL_INSTANCE_H
 #define VOXEL_CHASM_WALL_INSTANCE_H
 
-#include "Coord.h"
+#include "../World/Coord.h"
 
 struct VoxelChasmWallInstance
 {

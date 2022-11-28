@@ -4,10 +4,10 @@
 #include "../Entities/EntityType.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
+#include "../Sky/SkyUtils.h"
 #include "../UI/TextBox.h"
+#include "../Voxels/VoxelFacing3D.h"
 #include "../World/MapType.h"
-#include "../World/SkyUtils.h"
-#include "../World/VoxelFacing3D.h"
 
 void MapLogicController::handleNightLightChange(Game &game, bool active)
 {

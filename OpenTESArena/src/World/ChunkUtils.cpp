@@ -2,7 +2,7 @@
 #include <cmath>
 
 #include "ChunkUtils.h"
-#include "VoxelChunk.h"
+#include "../Voxels/VoxelChunk.h"
 
 #include "components/debug/Debug.h"
 

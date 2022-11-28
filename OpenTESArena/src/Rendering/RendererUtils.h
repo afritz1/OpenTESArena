@@ -11,7 +11,7 @@
 #include "../Math/Vector3.h"
 #include "../Media/Color.h"
 #include "../Media/Palette.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/BufferView.h"
 

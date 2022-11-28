@@ -1,14 +1,14 @@
 #include <algorithm>
 
 #include "ArenaCityUtils.h"
-#include "ArenaVoxelUtils.h"
-#include "ArenaWeatherUtils.h"
 #include "ArenaWildUtils.h"
 #include "MapType.h"
-#include "WeatherDefinition.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
+#include "../Voxels/ArenaVoxelUtils.h"
+#include "../Weather/ArenaWeatherUtils.h"
+#include "../Weather/WeatherDefinition.h"
 
 #include "components/debug/Debug.h"
 

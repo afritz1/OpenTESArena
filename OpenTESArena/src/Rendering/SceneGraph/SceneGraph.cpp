@@ -13,12 +13,12 @@
 #include "../../Math/Constants.h"
 #include "../../Math/Matrix4.h"
 #include "../../Media/TextureManager.h"
+#include "../../Voxels/VoxelFacing2D.h"
 #include "../../World/ArenaMeshUtils.h"
 #include "../../World/ChunkManager.h"
 #include "../../World/LevelInstance.h"
 #include "../../World/MapDefinition.h"
 #include "../../World/MapType.h"
-#include "../../World/VoxelFacing2D.h"
 
 #include "components/debug/Debug.h"
 

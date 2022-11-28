@@ -1,7 +1,7 @@
 #ifndef VOXEL_TRIGGER_INSTANCE_H
 #define VOXEL_TRIGGER_INSTANCE_H
 
-#include "Coord.h"
+#include "../World/Coord.h"
 
 // Simply a record that a trigger occurred at a voxel coordinate. Intended for one-shot text triggers.
 

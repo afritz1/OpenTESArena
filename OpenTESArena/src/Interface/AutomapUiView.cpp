@@ -7,14 +7,14 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
+#include "../Voxels/VoxelChunk.h"
+#include "../Voxels/VoxelFacing2D.h"
+#include "../Voxels/VoxelTraitsDefinition.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MapType.h"
 #include "../World/TransitionDefinition.h"
 #include "../World/TransitionType.h"
-#include "../World/VoxelChunk.h"
-#include "../World/VoxelFacing2D.h"
-#include "../World/VoxelTraitsDefinition.h"
 
 #include "components/debug/Debug.h"
 

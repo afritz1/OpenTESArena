@@ -6,8 +6,8 @@
 #include "../Game/CardinalDirection.h"
 #include "../Math/Constants.h"
 #include "../Utilities/Platform.h"
-#include "../World/VoxelChunk.h"
-#include "../World/WeatherInstance.h"
+#include "../Voxels/VoxelChunk.h"
+#include "../Weather/WeatherInstance.h"
 
 #include "components/debug/Debug.h"
 

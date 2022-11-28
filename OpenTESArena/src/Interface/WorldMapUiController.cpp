@@ -5,8 +5,8 @@
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "../Game/Game.h"
-#include "../World/ArenaWeatherUtils.h"
-#include "../World/SkyUtils.h"
+#include "../Sky/SkyUtils.h"
+#include "../Weather/ArenaWeatherUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 void WorldMapUiController::onBackToGameButtonSelected(Game &game)

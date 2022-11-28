@@ -1,6 +1,6 @@
 #include "ArenaMeshUtils.h"
-#include "VoxelFacing2D.h"
 #include "../Math/Constants.h"
+#include "../Voxels/VoxelFacing2D.h"
 
 void ArenaMeshUtils::WriteWallGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)

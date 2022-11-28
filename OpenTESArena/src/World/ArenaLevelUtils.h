@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/utilities/BufferView2D.h"

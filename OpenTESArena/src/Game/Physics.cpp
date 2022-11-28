@@ -10,10 +10,10 @@
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
-#include "../World/ArenaVoxelUtils.h"
+#include "../Voxels/ArenaVoxelUtils.h"
+#include "../Voxels/VoxelFacing3D.h"
 #include "../World/ChunkUtils.h"
 #include "../World/LevelInstance.h"
-#include "../World/VoxelFacing3D.h"
 
 #include "components/debug/Debug.h"
 

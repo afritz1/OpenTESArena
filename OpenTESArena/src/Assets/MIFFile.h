@@ -8,7 +8,7 @@
 
 #include "ArenaTypes.h"
 #include "../Math/Vector2.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView.h"

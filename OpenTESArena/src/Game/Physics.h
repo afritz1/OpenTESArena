@@ -10,7 +10,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Rendering/Renderer.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 // Namespace for physics-related calculations like ray casting.
 

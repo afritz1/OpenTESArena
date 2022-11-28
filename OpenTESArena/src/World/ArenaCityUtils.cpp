@@ -2,14 +2,14 @@
 #include <cstdio>
 
 #include "ArenaCityUtils.h"
-#include "ArenaVoxelUtils.h"
-#include "ArenaWeatherUtils.h"
 #include "MapType.h"
-#include "WeatherDefinition.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Math/Random.h"
+#include "../Voxels/ArenaVoxelUtils.h"
+#include "../Weather/ArenaWeatherUtils.h"
+#include "../Weather/WeatherDefinition.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 #include "../WorldMap/ProvinceDefinition.h"
 

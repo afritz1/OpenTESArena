@@ -1,9 +1,8 @@
 #include <array>
 
-#include "ArenaMeshUtils.h"
-#include "MeshUtils.h"
 #include "VoxelMeshDefinition.h"
 #include "VoxelFacing2D.h"
+#include "../World/MeshUtils.h"
 
 #include "components/debug/Debug.h"
 

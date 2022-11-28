@@ -9,7 +9,7 @@
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../UI/TextBox.h"
-#include "../World/ArenaVoxelUtils.h"
+#include "../Voxels/ArenaVoxelUtils.h"
 
 #include "components/utilities/String.h"
 

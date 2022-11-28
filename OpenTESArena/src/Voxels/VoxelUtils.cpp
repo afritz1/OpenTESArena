@@ -1,9 +1,9 @@
 #include <cmath>
 
-#include "ChunkUtils.h"
 #include "VoxelFacing2D.h"
 #include "VoxelFacing3D.h"
 #include "VoxelUtils.h"
+#include "../World/ChunkUtils.h"
 
 #include "components/debug/Debug.h"
 

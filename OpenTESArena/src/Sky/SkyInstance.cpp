@@ -1,8 +1,6 @@
 #include <cmath>
 
 #include "ArenaSkyUtils.h"
-#include "MapDefinition.h"
-#include "MapType.h"
 #include "SkyAirDefinition.h"
 #include "SkyDefinition.h"
 #include "SkyInfoDefinition.h"
@@ -12,12 +10,14 @@
 #include "SkyStarDefinition.h"
 #include "SkySunDefinition.h"
 #include "SkyUtils.h"
-#include "WeatherInstance.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Weather/WeatherInstance.h"
+#include "../World/MapDefinition.h"
+#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 

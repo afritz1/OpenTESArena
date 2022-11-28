@@ -4,7 +4,7 @@
 #include "EntityAnimationInstance.h"
 #include "EntityUtils.h"
 #include "../Math/Vector2.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 // Entities are any objects in the world that aren't part of the voxel grid. Every entity
 // has a world position and a unique referencing ID.

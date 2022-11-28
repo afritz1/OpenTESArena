@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "ArenaTypes.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView2D.h"

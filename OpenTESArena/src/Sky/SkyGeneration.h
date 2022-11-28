@@ -3,8 +3,8 @@
 
 #include <cstdint>
 
-#include "WeatherDefinition.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Weather/WeatherDefinition.h"
 
 #include "components/utilities/Buffer.h"
 

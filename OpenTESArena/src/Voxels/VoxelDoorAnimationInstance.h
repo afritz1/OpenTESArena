@@ -1,7 +1,7 @@
 #ifndef VOXEL_DOOR_ANIMATION_INSTANCE_H
 #define VOXEL_DOOR_ANIMATION_INSTANCE_H
 
-#include "Coord.h"
+#include "../World/Coord.h"
 
 struct VoxelDoorAnimationInstance
 {

@@ -16,10 +16,10 @@
 #include "../Interface/ProvinceMapUiModel.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
+#include "../Weather/WeatherDefinition.h"
+#include "../Weather/WeatherInstance.h"
 #include "../World/MapDefinition.h"
 #include "../World/MapInstance.h"
-#include "../World/WeatherDefinition.h"
-#include "../World/WeatherInstance.h"
 #include "../WorldMap/WorldMapInstance.h"
 
 // Intended to be a container for the player and world data that is currently active 

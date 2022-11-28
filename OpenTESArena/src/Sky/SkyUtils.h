@@ -1,8 +1,8 @@
 #ifndef SKY_UTILS_H
 #define SKY_UTILS_H
 
-#include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 namespace SkyUtils
 {

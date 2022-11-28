@@ -7,13 +7,13 @@
 #include <string_view>
 
 #include "ArenaWildUtils.h"
-#include "DoorDefinition.h"
 #include "LevelDefinition.h"
 #include "TransitionType.h"
-#include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Voxels/DoorDefinition.h"
+#include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/utilities/Buffer.h"

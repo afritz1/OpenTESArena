@@ -12,7 +12,7 @@
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../World/VoxelChunk.h"
+#include "../Voxels/VoxelChunk.h"
 
 #include "components/utilities/Buffer.h"
 
