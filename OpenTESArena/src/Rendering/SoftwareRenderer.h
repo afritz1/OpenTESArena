@@ -12,7 +12,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
-#include "../Media/Palette.h"
+#include "../Utilities/Palette.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"

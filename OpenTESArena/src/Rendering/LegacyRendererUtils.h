@@ -7,7 +7,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
-#include "../Media/Palette.h"
+#include "../Utilities/Palette.h"
 
 // Temp namespace for storing old code from the 2.5D ray caster, etc., to be deleted once no longer needed.
 

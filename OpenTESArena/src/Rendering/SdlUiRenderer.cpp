@@ -6,10 +6,10 @@
 
 #include "ArenaRenderUtils.h"
 #include "SdlUiRenderer.h"
+#include "../Assets/TextureBuilder.h"
+#include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
 #include "../Math/Rect.h"
-#include "../Media/TextureBuilder.h"
-#include "../Media/TextureManager.h"
 #include "../UI/RenderSpace.h"
 
 #include "components/debug/Debug.h"

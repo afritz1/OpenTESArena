@@ -9,8 +9,8 @@
 #include "TextRenderUtils.h"
 #include "Texture.h"
 #include "../Math/Rect.h"
-#include "../Media/Color.h"
 #include "../Rendering/RenderTextureUtils.h"
+#include "../Utilities/Color.h"
 
 class FontLibrary;
 class Renderer;

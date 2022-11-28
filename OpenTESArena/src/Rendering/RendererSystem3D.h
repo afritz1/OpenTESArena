@@ -7,7 +7,7 @@
 #include "RenderTextureUtils.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
-#include "../Media/Palette.h"
+#include "../Utilities/Palette.h"
 
 #include "components/utilities/BufferView.h"
 

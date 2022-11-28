@@ -5,9 +5,9 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureAsset.h"
+#include "../Assets/TextureFileMetadata.h"
+#include "../Assets/TextureManager.h"
 #include "../Math/Random.h"
-#include "../Media/TextureFileMetadata.h"
-#include "../Media/TextureManager.h"
 
 #include "components/dos/DOSUtils.h"
 

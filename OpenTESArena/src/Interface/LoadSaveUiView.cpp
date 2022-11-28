@@ -1,7 +1,7 @@
 #include "LoadSaveUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
 Color LoadSaveUiView::getEntryTextColor()

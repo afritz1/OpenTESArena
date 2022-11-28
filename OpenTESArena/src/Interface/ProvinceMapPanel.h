@@ -5,10 +5,10 @@
 
 #include "Panel.h"
 #include "../Math/Vector2.h"
-#include "../Media/Palette.h"
 #include "../UI/AnimationState.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Palette.h"
 
 class LocationDefinition;
 class ProvinceDefinition;

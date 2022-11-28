@@ -5,9 +5,9 @@
 #include <optional>
 
 #include "RenderTextureUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../Math/Vector2.h"
-#include "../Media/Palette.h"
-#include "../Media/TextureUtils.h"
+#include "../Utilities/Palette.h"
 
 #include "components/utilities/BufferView2D.h"
 

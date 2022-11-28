@@ -3,12 +3,12 @@
 
 #include <string>
 
-#include "../Media/Color.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 class FontLibrary;
 class Renderer;

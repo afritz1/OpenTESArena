@@ -7,7 +7,7 @@
 
 #include "Panel.h"
 #include "TextCinematicUiModel.h"
-#include "../Media/TextureManager.h"
+#include "../Assets/TextureManager.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 

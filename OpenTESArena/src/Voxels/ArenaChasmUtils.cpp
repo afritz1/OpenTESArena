@@ -1,5 +1,5 @@
 #include "ArenaChasmUtils.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/debug/Debug.h"

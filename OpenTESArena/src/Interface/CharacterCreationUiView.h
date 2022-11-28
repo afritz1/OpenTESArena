@@ -2,15 +2,15 @@
 #define CHARACTER_CREATION_UI_VIEW_H
 
 #include "../Assets/TextureAsset.h"
+#include "../Assets/TextureUtils.h"
 #include "../Interface/MessageBoxSubPanel.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 #include "components/utilities/Buffer.h"
 

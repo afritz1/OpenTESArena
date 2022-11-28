@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "../Math/MathUtils.h"
-#include "../Media/Color.h"
+#include "../Utilities/Color.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"

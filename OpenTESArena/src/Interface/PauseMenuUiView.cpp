@@ -2,7 +2,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/TextureAsset.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/Surface.h"
 

@@ -3,7 +3,7 @@
 
 #include "TextCinematicUiModel.h"
 #include "../Game/Game.h"
-#include "../Media/TextCinematicDefinition.h"
+#include "../Interface/TextCinematicDefinition.h"
 
 #include "components/dos/DOSUtils.h"
 #include "components/utilities/String.h"

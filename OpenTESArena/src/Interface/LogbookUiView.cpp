@@ -1,6 +1,6 @@
 #include "LogbookUiView.h"
 #include "../Assets/ArenaTextureName.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 
 TextBox::InitInfo LogbookUiView::getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
 {

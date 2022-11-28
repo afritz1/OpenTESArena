@@ -1,7 +1,7 @@
 #ifndef CURSOR_DATA_H
 #define CURSOR_DATA_H
 
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 
 enum class CursorAlignment;
 

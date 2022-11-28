@@ -4,17 +4,17 @@
 #include <map>
 
 #include "../Assets/TextureAsset.h"
+#include "../Assets/TextureUtils.h"
 #include "../Entities/PrimaryAttribute.h"
 #include "../Entities/PrimaryAttributeName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 class Game;
 

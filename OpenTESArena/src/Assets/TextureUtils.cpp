@@ -2,8 +2,8 @@
 
 #include "TextureUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/TextureManager.h"
 #include "../Math/Rect.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/FontLibrary.h"

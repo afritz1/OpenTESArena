@@ -5,8 +5,8 @@
 #include <optional>
 #include <vector>
 
+#include "../Assets/TextureUtils.h"
 #include "../Math/Vector3.h"
-#include "../Media/TextureUtils.h"
 
 // Contains distant sky object instances and their state.
 

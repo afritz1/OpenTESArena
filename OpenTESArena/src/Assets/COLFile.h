@@ -1,7 +1,7 @@
 #ifndef COL_FILE_H
 #define COL_FILE_H
 
-#include "../Media/Palette.h"
+#include "../Utilities/Palette.h"
 
 // A COL file (assuming it means "color" file) has the colors for a palette.
 

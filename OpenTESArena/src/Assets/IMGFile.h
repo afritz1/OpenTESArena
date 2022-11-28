@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "../Media/Palette.h"
+#include "../Utilities/Palette.h"
 
 #include "components/utilities/Buffer2D.h"
 

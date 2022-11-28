@@ -2,11 +2,11 @@
 #include <optional>
 
 #include "ArenaRenderUtils.h"
+#include "../Assets/TextureBuilder.h"
+#include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Math/Vector4.h"
-#include "../Media/TextureBuilder.h"
-#include "../Media/TextureManager.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"

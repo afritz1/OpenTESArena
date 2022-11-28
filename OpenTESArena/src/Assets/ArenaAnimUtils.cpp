@@ -5,11 +5,11 @@
 #include "ArenaTypes.h"
 #include "BinaryAssetLibrary.h"
 #include "MIFUtils.h"
+#include "../Assets/TextureManager.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityType.h"
 #include "../Items/ArmorMaterialType.h"
-#include "../Media/TextureManager.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"

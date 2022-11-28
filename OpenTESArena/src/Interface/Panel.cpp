@@ -11,7 +11,6 @@
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
@@ -19,6 +18,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 #include "components/vfs/manager.hpp"
 

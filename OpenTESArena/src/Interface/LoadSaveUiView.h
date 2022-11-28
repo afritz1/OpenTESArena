@@ -3,10 +3,10 @@
 
 #include "../Assets/TextureAsset.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
+#include "../Utilities/Color.h"
 
 class Renderer;
 class TextureManager;

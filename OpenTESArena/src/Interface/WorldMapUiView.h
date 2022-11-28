@@ -4,12 +4,12 @@
 #include <string>
 
 #include "../Assets/TextureAsset.h"
+#include "../Assets/TextureUtils.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
+#include "../Utilities/Color.h"
 
 class Game;
 

@@ -11,7 +11,7 @@
 #include "ArenaTypes.h"
 #include "INFFile.h"
 #include "../Entities/EntityAnimationDefinition.h"
-#include "../Media/Palette.h"
+#include "../Utilities/Palette.h"
 
 class ArenaRandom;
 class BinaryAssetLibrary;

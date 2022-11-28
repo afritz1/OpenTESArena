@@ -4,7 +4,7 @@
 #include "EntityAnimationInstance.h"
 #include "EntityUtils.h"
 #include "../Assets/ArenaTypes.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../World/Coord.h"
 
 class BinaryAssetLibrary;

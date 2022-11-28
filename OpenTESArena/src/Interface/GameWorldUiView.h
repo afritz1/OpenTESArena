@@ -4,16 +4,16 @@
 #include <array>
 
 #include "GameWorldUiModel.h"
+#include "../Assets/TextureUtils.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 class FontLibrary;
 class Game;

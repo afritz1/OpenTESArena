@@ -8,7 +8,7 @@
 #include "SDL.h"
 
 #include "Panel.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 

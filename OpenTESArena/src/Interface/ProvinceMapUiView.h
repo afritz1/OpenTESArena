@@ -3,15 +3,15 @@
 
 #include <cstdint>
 
+#include "../Assets/TextureUtils.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 class BinaryAssetLibrary;
 class Game;

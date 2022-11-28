@@ -2,7 +2,7 @@
 #define SKY_LAND_DEFINITION_H
 
 #include "../Assets/TextureAsset.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 
 #include "components/utilities/Buffer.h"
 

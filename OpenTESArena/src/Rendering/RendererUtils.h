@@ -9,8 +9,8 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector3.h"
-#include "../Media/Color.h"
-#include "../Media/Palette.h"
+#include "../Utilities/Color.h"
+#include "../Utilities/Palette.h"
 #include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/BufferView.h"

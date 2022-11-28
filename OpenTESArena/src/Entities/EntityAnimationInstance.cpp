@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include "EntityAnimationInstance.h"
-#include "../Media/TextureManager.h"
+#include "../Assets/TextureManager.h"
 
 #include "components/debug/Debug.h"
 

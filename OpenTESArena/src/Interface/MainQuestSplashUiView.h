@@ -1,10 +1,10 @@
 #ifndef MAIN_QUEST_SPLASH_UI_VIEW_H
 #define MAIN_QUEST_SPLASH_UI_VIEW_H
 
-#include "../Media/Color.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 class Game;
 

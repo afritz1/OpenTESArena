@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "Palette.h"
 #include "../Rendering/RenderTextureUtils.h"
+#include "../Utilities/Palette.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"

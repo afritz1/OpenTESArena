@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "Color.h"
+#include "../Utilities/Color.h"
 
 // Intended for text cinematics with speech.
 
