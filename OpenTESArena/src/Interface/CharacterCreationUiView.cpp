@@ -4,9 +4,9 @@
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "CharacterSheetUiView.h"
+#include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
-#include "../Media/PortraitFile.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
@@ -694,7 +694,7 @@ Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 	const int raceID = charCreationState.getRaceIndex();
 
 	constexpr bool trimmed = false;
-	const std::string &headsFilename = PortraitFile::getHeads(isMale, raceID, trimmed);
+	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
 
 	auto &textureManager = game.getTextureManager();
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(headsFilename.c_str());
@@ -718,14 +718,14 @@ Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.canCastMagic();
 
-	return PortraitFile::getShirtOffset(isMale, isMagic);
+	return ArenaPortraitUtils::getShirtOffset(isMale, isMagic);
 }
 
 Int2 ChooseAttributesUiView::getPantsOffset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const bool isMale = charCreationState.isMale();
-	return PortraitFile::getPantsOffset(isMale);
+	return ArenaPortraitUtils::getPantsOffset(isMale);
 }
 
 TextureAsset ChooseAttributesUiView::getBodyTextureAsset(Game &game)
@@ -734,7 +734,7 @@ TextureAsset ChooseAttributesUiView::getBodyTextureAsset(Game &game)
 	const bool isMale = charCreationState.isMale();
 	const int raceID = charCreationState.getRaceIndex();
 
-	std::string bodyFilename = PortraitFile::getBody(isMale, raceID);
+	std::string bodyFilename = ArenaPortraitUtils::getBody(isMale, raceID);
 	return TextureAsset(std::move(bodyFilename));
 }
 
@@ -745,7 +745,7 @@ Buffer<TextureAsset> ChooseAttributesUiView::getHeadTextureAssets(Game &game)
 	const int raceID = charCreationState.getRaceIndex();
 
 	constexpr bool trimmed = false;
-	std::string headsFilename = PortraitFile::getHeads(isMale, raceID, trimmed);
+	std::string headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
 
 	auto &textureManager = game.getTextureManager();
 	return TextureUtils::makeTextureAssets(headsFilename, textureManager);
@@ -761,7 +761,7 @@ TextureAsset ChooseAttributesUiView::getShirtTextureAsset(Game &game)
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.canCastMagic();
 
-	std::string shirtFilename = PortraitFile::getShirt(isMale, isMagic);
+	std::string shirtFilename = ArenaPortraitUtils::getShirt(isMale, isMagic);
 	return TextureAsset(std::move(shirtFilename));
 }
 
@@ -770,7 +770,7 @@ TextureAsset ChooseAttributesUiView::getPantsTextureAsset(Game &game)
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const bool isMale = charCreationState.isMale();
 
-	std::string pantsFilename = PortraitFile::getPants(isMale);
+	std::string pantsFilename = ArenaPortraitUtils::getPants(isMale);
 	return TextureAsset(std::move(pantsFilename));
 }
 

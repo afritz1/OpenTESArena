@@ -1,30 +1,26 @@
 #include <array>
 #include <cstdio>
 
-#include "PortraitFile.h"
+#include "ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 
 #include "components/dos/DOSUtils.h"
 
-std::string PortraitFile::getHeads(bool male, int raceID, bool trimmed)
+std::string ArenaPortraitUtils::getHeads(bool male, int raceID, bool trimmed)
 {
 	DOSUtils::FilenameBuffer filename;
-	std::snprintf(filename.data(), filename.size(), "FACES%s%d%d.CIF",
-		male ? "" : "F", trimmed ? 0 : 1, raceID);
-
+	std::snprintf(filename.data(), filename.size(), "FACES%s%d%d.CIF", male ? "" : "F", trimmed ? 0 : 1, raceID);
 	return std::string(filename.data());
 }
 
-std::string PortraitFile::getBody(bool male, int raceID)
+std::string ArenaPortraitUtils::getBody(bool male, int raceID)
 {
 	DOSUtils::FilenameBuffer filename;
-	std::snprintf(filename.data(), filename.size(), "%s0%d.IMG",
-		male ? "CHARBK" : "CHRBKF", raceID);
-
+	std::snprintf(filename.data(), filename.size(), "%s0%d.IMG", male ? "CHARBK" : "CHRBKF", raceID);
 	return std::string(filename.data());
 }
 
-const std::string &PortraitFile::getShirt(bool male, bool magic)
+const std::string &ArenaPortraitUtils::getShirt(bool male, bool magic)
 {
 	if (male)
 	{
@@ -36,17 +32,17 @@ const std::string &PortraitFile::getShirt(bool male, bool magic)
 	}
 }
 
-const std::string &PortraitFile::getPants(bool male)
+const std::string &ArenaPortraitUtils::getPants(bool male)
 {
 	return male ? ArenaTextureName::MalePants : ArenaTextureName::FemalePants;
 }
 
-const std::string &PortraitFile::getEquipment(bool male)
+const std::string &ArenaPortraitUtils::getEquipment(bool male)
 {
 	return male ? ArenaTextureName::MaleEquipment : ArenaTextureName::FemaleEquipment;
 }
 
-Int2 PortraitFile::getShirtOffset(bool male, bool magic)
+Int2 ArenaPortraitUtils::getShirtOffset(bool male, bool magic)
 {
 	if (male)
 	{
@@ -58,7 +54,7 @@ Int2 PortraitFile::getShirtOffset(bool male, bool magic)
 	}
 }
 
-Int2 PortraitFile::getPantsOffset(bool male)
+Int2 ArenaPortraitUtils::getPantsOffset(bool male)
 {
 	return male ? Int2(229, 82) : Int2(212, 74);
 }

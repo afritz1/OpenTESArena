@@ -4,10 +4,10 @@
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
-#include "../Media/PortraitFile.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/Surface.h"
 
@@ -336,7 +336,7 @@ TextureAsset GameWorldUiView::getStatusGradientTextureAsset(StatusGradientType g
 
 TextureAsset GameWorldUiView::getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID)
 {
-	const std::string &headsFilename = PortraitFile::getHeads(isMale, raceID, true);
+	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, true);
 	return TextureAsset(std::string(headsFilename), portraitID);
 }
 

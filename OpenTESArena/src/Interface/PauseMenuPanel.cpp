@@ -8,7 +8,6 @@
 #include "PauseMenuUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../Media/PortraitFile.h"
 #include "../UI/CursorData.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"

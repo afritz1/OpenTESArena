@@ -1,13 +1,13 @@
-#ifndef PORTRAIT_FILE_H
-#define PORTRAIT_FILE_H
+#ifndef ARENA_PORTRAIT_UTILS_H
+#define ARENA_PORTRAIT_UTILS_H
 
 #include <string>
 
 #include "../Math/Vector2.h"
 
-// This namespace gets the filenames for images relevant to character portraits.
+// Gets the filenames for images relevant to character portraits.
 
-namespace PortraitFile
+namespace ArenaPortraitUtils
 {
 	// Gets the heads filename for a given gender, race, and whether the heads
 	// are for the character sheet (not trimmed) or the game interface (trimmed).
