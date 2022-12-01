@@ -604,7 +604,7 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 	// way because the sky is not added to and removed from like entities are. The sky is baked once per level
 	// and that's it.
 	
-	// @todo: tell SceneGraph to clear its sky geometry
+	// @todo: tell RenderChunkManager to clear its sky geometry
 	//DebugNotImplementedMsg("trySetActive");
 	//renderer.clearSky();
 
@@ -657,7 +657,7 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 	// Set sky objects in the renderer.
 	// @todo: I think we're going to be leaking/making duplicates of textures for every new sky instance we create
 	// unless the sky instances get deleted automatically when MapInstance goes out of scope. Need to investigate.
-	//renderer.setSky(*this, palette, textureManager); // @todo: this should set all the distant sky intermediate values in SceneGraph I think.
+	//renderer.setSky(*this, palette, textureManager); // @todo: this should set all the distant sky intermediate values in the render chunk manager equivalent for the sky I think.
 
 	return true;
 }

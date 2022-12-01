@@ -2,23 +2,23 @@
 #include <numeric>
 #include <optional>
 
-#include "SceneGraph.h"
-#include "../ArenaRenderUtils.h"
-#include "../RenderCamera.h"
-#include "../Renderer.h"
-#include "../RendererSystem3D.h"
-#include "../../Assets/MIFUtils.h"
-#include "../../Assets/TextureManager.h"
-#include "../../Entities/EntityManager.h"
-#include "../../Entities/EntityVisibilityState.h"
-#include "../../Math/Constants.h"
-#include "../../Math/Matrix4.h"
-#include "../../Voxels/VoxelFacing2D.h"
-#include "../../World/ArenaMeshUtils.h"
-#include "../../World/ChunkManager.h"
-#include "../../World/LevelInstance.h"
-#include "../../World/MapDefinition.h"
-#include "../../World/MapType.h"
+#include "RenderChunkManager.h"
+#include "ArenaRenderUtils.h"
+#include "RenderCamera.h"
+#include "Renderer.h"
+#include "RendererSystem3D.h"
+#include "../Assets/MIFUtils.h"
+#include "../Assets/TextureManager.h"
+#include "../Entities/EntityManager.h"
+#include "../Entities/EntityVisibilityState.h"
+#include "../Math/Constants.h"
+#include "../Math/Matrix4.h"
+#include "../Voxels/VoxelFacing2D.h"
+#include "../World/ArenaMeshUtils.h"
+#include "../World/ChunkManager.h"
+#include "../World/LevelInstance.h"
+#include "../World/MapDefinition.h"
+#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 
@@ -87,14 +87,14 @@ namespace sgTexture
 	}
 
 	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
-	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef, std::vector<SceneGraph::LoadedVoxelTexture> &voxelTextures,
-		TextureManager &textureManager, Renderer &renderer)
+	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef,
+		std::vector<RenderChunkManager::LoadedVoxelTexture> &voxelTextures, TextureManager &textureManager, Renderer &renderer)
 	{
 		for (int i = 0; i < voxelTextureDef.textureCount; i++)
 		{
 			const TextureAsset &textureAsset = voxelTextureDef.getTextureAsset(i);
 			const auto cacheIter = std::find_if(voxelTextures.begin(), voxelTextures.end(),
-				[&textureAsset](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+				[&textureAsset](const RenderChunkManager::LoadedVoxelTexture &loadedTexture)
 			{
 				return loadedTexture.textureAsset == textureAsset;
 			});
@@ -117,14 +117,14 @@ namespace sgTexture
 				}
 
 				ScopedObjectTextureRef voxelTextureRef(voxelTextureID, renderer);
-				SceneGraph::LoadedVoxelTexture newTexture;
+				RenderChunkManager::LoadedVoxelTexture newTexture;
 				newTexture.init(textureAsset, std::move(voxelTextureRef));
 				voxelTextures.emplace_back(std::move(newTexture));
 			}
 		}
 	}
 
-	bool LoadedChasmFloorComparer(const SceneGraph::LoadedChasmFloorTextureList &textureList, const ChasmDefinition &chasmDef)
+	bool LoadedChasmFloorComparer(const RenderChunkManager::LoadedChasmFloorTextureList &textureList, const ChasmDefinition &chasmDef)
 	{
 		if (textureList.animType != chasmDef.animType)
 		{
@@ -162,9 +162,9 @@ namespace sgTexture
 	}
 
 	void LoadChasmDefTextures(VoxelChunk::ChasmDefID chasmDefID, const VoxelChunk &chunk,
-		const std::vector<SceneGraph::LoadedVoxelTexture> &voxelTextures,
-		std::vector<SceneGraph::LoadedChasmFloorTextureList> &chasmFloorTextureLists,
-		std::vector<SceneGraph::LoadedChasmTextureKey> &chasmTextureKeys,
+		const std::vector<RenderChunkManager::LoadedVoxelTexture> &voxelTextures,
+		std::vector<RenderChunkManager::LoadedChasmFloorTextureList> &chasmFloorTextureLists,
+		std::vector<RenderChunkManager::LoadedChasmTextureKey> &chasmTextureKeys,
 		TextureManager &textureManager, Renderer &renderer)
 	{
 		const ChunkInt2 chunkPos = chunk.getPosition();
@@ -172,7 +172,7 @@ namespace sgTexture
 
 		// Check if this chasm already has a mapping (i.e. have we seen this chunk before?).
 		const auto keyIter = std::find_if(chasmTextureKeys.begin(), chasmTextureKeys.end(),
-			[chasmDefID, &chunkPos](const SceneGraph::LoadedChasmTextureKey &loadedKey)
+			[chasmDefID, &chunkPos](const RenderChunkManager::LoadedChasmTextureKey &loadedKey)
 		{
 			return (loadedKey.chasmDefID == chasmDefID) && (loadedKey.chunkPos == chunkPos);
 		});
@@ -184,7 +184,7 @@ namespace sgTexture
 
 		// Check if any loaded chasm floors reference the same asset(s).
 		const auto chasmFloorIter = std::find_if(chasmFloorTextureLists.begin(), chasmFloorTextureLists.end(),
-			[&chasmDef](const SceneGraph::LoadedChasmFloorTextureList &textureList)
+			[&chasmDef](const RenderChunkManager::LoadedChasmFloorTextureList &textureList)
 		{
 			return LoadedChasmFloorComparer(textureList, chasmDef);
 		});
@@ -197,7 +197,7 @@ namespace sgTexture
 		else
 		{
 			// Load the required textures and add a key for them.
-			SceneGraph::LoadedChasmFloorTextureList newTextureList;
+			RenderChunkManager::LoadedChasmFloorTextureList newTextureList;
 			if (chasmDef.animType == ChasmDefinition::AnimationType::SolidColor)
 			{
 				// Dry chasms are a single color, no texture asset.
@@ -269,7 +269,7 @@ namespace sgTexture
 		// The chasm wall (if any) should already be loaded as a voxel texture during map gen.
 		// @todo: support chasm walls adding to the voxel textures list (i.e. for destroyed voxels; the list would have to be non-const)
 		const auto chasmWallIter = std::find_if(voxelTextures.begin(), voxelTextures.end(),
-			[&chasmDef](const SceneGraph::LoadedVoxelTexture &voxelTexture)
+			[&chasmDef](const RenderChunkManager::LoadedVoxelTexture &voxelTexture)
 		{
 			return voxelTexture.textureAsset == chasmDef.wallTextureAsset;
 		});
@@ -280,26 +280,26 @@ namespace sgTexture
 		DebugAssert(chasmFloorListIndex >= 0);
 		DebugAssert(chasmWallIndex >= 0);
 
-		SceneGraph::LoadedChasmTextureKey key;
+		RenderChunkManager::LoadedChasmTextureKey key;
 		key.init(chunkPos, chasmDefID, chasmFloorListIndex, chasmWallIndex);
 		chasmTextureKeys.emplace_back(std::move(key));
 	}
 }
 
-void SceneGraph::LoadedVoxelTexture::init(const TextureAsset &textureAsset,
+void RenderChunkManager::LoadedVoxelTexture::init(const TextureAsset &textureAsset,
 	ScopedObjectTextureRef &&objectTextureRef)
 {
 	this->textureAsset = textureAsset;
 	this->objectTextureRef = std::move(objectTextureRef);
 }
 
-SceneGraph::LoadedChasmFloorTextureList::LoadedChasmFloorTextureList()
+RenderChunkManager::LoadedChasmFloorTextureList::LoadedChasmFloorTextureList()
 {
 	this->animType = static_cast<ChasmDefinition::AnimationType>(-1);
 	this->paletteIndex = 0;
 }
 
-void SceneGraph::LoadedChasmFloorTextureList::initColor(uint8_t paletteIndex,
+void RenderChunkManager::LoadedChasmFloorTextureList::initColor(uint8_t paletteIndex,
 	ScopedObjectTextureRef &&objectTextureRef)
 {
 	this->animType = ChasmDefinition::AnimationType::SolidColor;
@@ -307,7 +307,7 @@ void SceneGraph::LoadedChasmFloorTextureList::initColor(uint8_t paletteIndex,
 	this->objectTextureRefs.emplace_back(std::move(objectTextureRef));
 }
 
-void SceneGraph::LoadedChasmFloorTextureList::initTextured(std::vector<TextureAsset> &&textureAssets,
+void RenderChunkManager::LoadedChasmFloorTextureList::initTextured(std::vector<TextureAsset> &&textureAssets,
 	std::vector<ScopedObjectTextureRef> &&objectTextureRefs)
 {
 	this->animType = ChasmDefinition::AnimationType::Animated;
@@ -315,7 +315,7 @@ void SceneGraph::LoadedChasmFloorTextureList::initTextured(std::vector<TextureAs
 	this->objectTextureRefs = std::move(objectTextureRefs);
 }
 
-int SceneGraph::LoadedChasmFloorTextureList::getTextureIndex(double chasmAnimPercent) const
+int RenderChunkManager::LoadedChasmFloorTextureList::getTextureIndex(double chasmAnimPercent) const
 {
 	const int textureCount = static_cast<int>(this->objectTextureRefs.size());
 	DebugAssert(textureCount >= 1);
@@ -335,7 +335,7 @@ int SceneGraph::LoadedChasmFloorTextureList::getTextureIndex(double chasmAnimPer
 	}
 }
 
-void SceneGraph::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID,
+void RenderChunkManager::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID,
 	int chasmFloorListIndex, int chasmWallIndex)
 {
 	this->chunkPos = chunkPos;
@@ -344,7 +344,7 @@ void SceneGraph::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, VoxelChu
 	this->chasmWallIndex = chasmWallIndex;
 }
 
-void SceneGraph::init(RendererSystem3D &rendererSystem)
+void RenderChunkManager::init(RendererSystem3D &rendererSystem)
 {
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
@@ -401,14 +401,14 @@ void SceneGraph::init(RendererSystem3D &rendererSystem)
 	}
 }
 
-void SceneGraph::shutdown(RendererSystem3D &rendererSystem)
+void RenderChunkManager::shutdown(RendererSystem3D &rendererSystem)
 {
-	for (SceneGraphChunk &graphChunk : this->graphChunks)
+	for (RenderChunk &renderChunk : this->renderChunks)
 	{
-		graphChunk.freeBuffers(rendererSystem);
+		renderChunk.freeBuffers(rendererSystem);
 	}
 
-	this->graphChunks.clear();
+	this->renderChunks.clear();
 
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
 	{
@@ -421,7 +421,7 @@ void SceneGraph::shutdown(RendererSystem3D &rendererSystem)
 	this->chasmTextureKeys.clear();
 }
 
-ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAsset &textureAsset) const
+ObjectTextureID RenderChunkManager::getVoxelTextureID(const TextureAsset &textureAsset) const
 {
 	const auto iter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
 		[&textureAsset](const LoadedVoxelTexture &loadedTexture)
@@ -434,7 +434,7 @@ ObjectTextureID SceneGraph::getVoxelTextureID(const TextureAsset &textureAsset) 
 	return objectTextureRef.get();
 }
 
-ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID,
+ObjectTextureID RenderChunkManager::getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID,
 	double chasmAnimPercent) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
@@ -456,7 +456,7 @@ ObjectTextureID SceneGraph::getChasmFloorTextureID(const ChunkInt2 &chunkPos, Vo
 	return objectTextureRef.get();
 }
 
-ObjectTextureID SceneGraph::getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const
+ObjectTextureID RenderChunkManager::getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
 		[&chunkPos, chasmDefID](const LoadedChasmTextureKey &key)
@@ -473,12 +473,12 @@ ObjectTextureID SceneGraph::getChasmWallTextureID(const ChunkInt2 &chunkPos, Vox
 	return objectTextureRef.get();
 }
 
-std::optional<int> SceneGraph::tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) const
+std::optional<int> RenderChunkManager::tryGetRenderChunkIndex(const ChunkInt2 &chunkPos) const
 {
-	for (int i = 0; i < static_cast<int>(this->graphChunks.size()); i++)
+	for (int i = 0; i < static_cast<int>(this->renderChunks.size()); i++)
 	{
-		const SceneGraphChunk &graphChunk = this->graphChunks[i];
-		if (graphChunk.position == chunkPos)
+		const RenderChunk &renderChunk = this->renderChunks[i];
+		if (renderChunk.position == chunkPos)
 		{
 			return i;
 		}
@@ -487,12 +487,12 @@ std::optional<int> SceneGraph::tryGetGraphChunkIndex(const ChunkInt2 &chunkPos) 
 	return std::nullopt;
 }
 
-BufferView<const RenderDrawCall> SceneGraph::getVoxelDrawCalls() const
+BufferView<const RenderDrawCall> RenderChunkManager::getVoxelDrawCalls() const
 {
 	return BufferView<const RenderDrawCall>(this->drawCallsCache.data(), static_cast<int>(this->drawCallsCache.size()));
 }
 
-void SceneGraph::loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer)
+void RenderChunkManager::loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer)
 {
 	for (int i = 0; i < chunk.getVoxelTextureDefCount(); i++)
 	{
@@ -508,18 +508,18 @@ void SceneGraph::loadVoxelTextures(const VoxelChunk &chunk, TextureManager &text
 	}
 }
 
-void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale,
+void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
 	RendererSystem3D &rendererSystem)
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
 
-	// Add scene graph voxel mesh instances and create mappings to them.
+	// Add render chunk voxel mesh instances and create mappings to them.
 	for (int meshDefIndex = 0; meshDefIndex < chunk.getVoxelMeshDefCount(); meshDefIndex++)
 	{
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = static_cast<VoxelChunk::VoxelMeshDefID>(meshDefIndex);
 		const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
 
-		SceneGraphVoxelMeshInstance voxelMeshInst;
+		RenderChunkVoxelMeshInstance voxelMeshInst;
 		if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
 		{
 			constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -601,14 +601,14 @@ void SceneGraph::loadVoxelMeshBuffers(SceneGraphChunk &graphChunk, const VoxelCh
 			}
 		}
 
-		const SceneGraphVoxelMeshInstanceID meshInstID = graphChunk.addMeshInstance(std::move(voxelMeshInst));
-		graphChunk.meshInstMappings.emplace(voxelMeshDefID, meshInstID);
+		const RenderChunkVoxelMeshInstanceID meshInstID = renderChunk.addMeshInstance(std::move(voxelMeshInst));
+		renderChunk.meshInstMappings.emplace(voxelMeshDefID, meshInstID);
 	}
 }
 
-void SceneGraph::loadVoxelChasmWalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk)
+void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &chunk)
 {
-	DebugAssert(graphChunk.chasmWallIndexBufferIDs.empty());
+	DebugAssert(renderChunk.chasmWallIndexBufferIDs.empty());
 
 	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
 	{
@@ -629,19 +629,19 @@ void SceneGraph::loadVoxelChasmWalls(SceneGraphChunk &graphChunk, const VoxelChu
 					chasmWallInst.north, chasmWallInst.east, chasmWallInst.south, chasmWallInst.west);
 				const IndexBufferID indexBufferID = this->chasmWallIndexBufferIDs[chasmWallIndexBufferIndex];
 
-				graphChunk.chasmWallIndexBufferIDs.emplace(VoxelInt3(x, y, z), indexBufferID);
+				renderChunk.chasmWallIndexBufferIDs.emplace(VoxelInt3(x, y, z), indexBufferID);
 			}
 		}
 	}
 }
 
-void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChunk &chunk, double ceilingScale,
+void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
 	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
-	auto addDrawCall = [ceilingScale](SceneGraphChunk &graphChunk, SNInt x, int y, WEInt z,
-		VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
-		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-		TextureSamplingType textureSamplingType, PixelShaderType pixelShaderType, bool allowsBackFaces, bool isAnimating)
+	auto addDrawCall = [&renderChunk, ceilingScale](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID,
+		AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
+		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType,
+		PixelShaderType pixelShaderType, bool allowsBackFaces, bool isAnimating)
 	{
 		RenderDrawCall drawCall;
 		drawCall.vertexBufferID = vertexBufferID;
@@ -661,22 +661,22 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 
 		if (!isAnimating)
 		{
-			graphChunk.staticDrawCalls.emplace_back(std::move(drawCall));
+			renderChunk.staticDrawCalls.emplace_back(std::move(drawCall));
 		}
 		else
 		{
-			graphChunk.animatingDrawCalls.emplace_back(std::move(drawCall));
+			renderChunk.animatingDrawCalls.emplace_back(std::move(drawCall));
 		}
 	};
 
-	const ChunkInt2 &chunkPos = graphChunk.position;
+	const ChunkInt2 &chunkPos = renderChunk.position;
 
 	// Generate draw calls for each non-air voxel.
-	for (WEInt z = 0; z < graphChunk.meshInstIDs.getDepth(); z++)
+	for (WEInt z = 0; z < renderChunk.meshInstIDs.getDepth(); z++)
 	{
-		for (int y = 0; y < graphChunk.meshInstIDs.getHeight(); y++)
+		for (int y = 0; y < renderChunk.meshInstIDs.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < graphChunk.meshInstIDs.getWidth(); x++)
+			for (SNInt x = 0; x < renderChunk.meshInstIDs.getWidth(); x++)
 			{
 				const VoxelInt3 voxel(x, y, z);
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
@@ -690,12 +690,12 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 					continue;
 				}
 
-				const auto defIter = graphChunk.meshInstMappings.find(voxelMeshDefID);
-				DebugAssert(defIter != graphChunk.meshInstMappings.end());
-				const SceneGraphVoxelMeshInstanceID meshInstID = defIter->second;
-				graphChunk.meshInstIDs.set(x, y, z, meshInstID);
+				const auto defIter = renderChunk.meshInstMappings.find(voxelMeshDefID);
+				DebugAssert(defIter != renderChunk.meshInstMappings.end());
+				const RenderChunkVoxelMeshInstanceID meshInstID = defIter->second;
+				renderChunk.meshInstIDs.set(x, y, z, meshInstID);
 
-				const SceneGraphVoxelMeshInstance &meshInst = graphChunk.meshInsts[meshInstID];
+				const RenderChunkVoxelMeshInstance &meshInst = renderChunk.meshInsts[meshInstID];
 
 				// Convert voxel XYZ to world space.
 				const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
@@ -718,7 +718,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 						{
 							const int textureAssetIndex = sgTexture::GetVoxelOpaqueTextureAssetIndex(voxelType, bufferIndex);
 							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
-								[&voxelTextureDef, textureAssetIndex](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+								[&voxelTextureDef, textureAssetIndex](const RenderChunkManager::LoadedVoxelTexture &loadedTexture)
 							{
 								return loadedTexture.textureAsset == voxelTextureDef.getTextureAsset(textureAssetIndex);
 							});
@@ -744,7 +744,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 
 						const IndexBufferID opaqueIndexBufferID = meshInst.opaqueIndexBufferIDs[bufferIndex];
 						const TextureSamplingType textureSamplingType = usesVoxelTextures ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
-						addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
+						addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
 							meshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, textureSamplingType,
 							PixelShaderType::Opaque, allowsBackFaces, isAnimating);
 					}
@@ -759,7 +759,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 
 						const int textureAssetIndex = sgTexture::GetVoxelAlphaTestedTextureAssetIndex(voxelType);
 						const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
-							[&voxelTextureDef, textureAssetIndex](const SceneGraph::LoadedVoxelTexture &loadedTexture)
+							[&voxelTextureDef, textureAssetIndex](const RenderChunkManager::LoadedVoxelTexture &loadedTexture)
 						{
 							return loadedTexture.textureAsset == voxelTextureDef.getTextureAsset(textureAssetIndex);
 						});
@@ -779,7 +779,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 						}
 
 						const bool isAnimating = false;
-						addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
+						addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
 							meshInst.texCoordBufferID, meshInst.alphaTestedIndexBufferID, textureID, std::nullopt,
 							TextureSamplingType::Default, PixelShaderType::AlphaTested, allowsBackFaces, isAnimating);
 					}
@@ -787,8 +787,8 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 
 				if (!usesVoxelTextures)
 				{
-					const auto chasmWallIter = graphChunk.chasmWallIndexBufferIDs.find(voxel);
-					if (chasmWallIter != graphChunk.chasmWallIndexBufferIDs.end())
+					const auto chasmWallIter = renderChunk.chasmWallIndexBufferIDs.find(voxel);
+					if (chasmWallIter != renderChunk.chasmWallIndexBufferIDs.end())
 					{
 						DebugAssert(voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm);
 						const bool isAnimating = voxelTraitsDef.chasm.type != ArenaTypes::ChasmType::Dry;
@@ -801,7 +801,7 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 							ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
 							ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
-							addDrawCall(graphChunk, worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
+							addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
 								meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1, TextureSamplingType::ScreenSpaceRepeatY,
 								PixelShaderType::OpaqueWithAlphaTestLayer, allowsBackFaces, isAnimating);
 						}
@@ -812,88 +812,88 @@ void SceneGraph::loadVoxelDrawCalls(SceneGraphChunk &graphChunk, const VoxelChun
 	}
 }
 
-void SceneGraph::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager,
+void RenderChunkManager::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager,
 	Renderer &renderer, RendererSystem3D &rendererSystem)
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
-	SceneGraphChunk graphChunk;
-	graphChunk.init(chunkPos, chunk.getHeight());
+	RenderChunk renderChunk;
+	renderChunk.init(chunkPos, chunk.getHeight());
 
 	this->loadVoxelTextures(chunk, textureManager, renderer);
-	this->loadVoxelMeshBuffers(graphChunk, chunk, ceilingScale, rendererSystem);
-	this->loadVoxelChasmWalls(graphChunk, chunk);
+	this->loadVoxelMeshBuffers(renderChunk, chunk, ceilingScale, rendererSystem);
+	this->loadVoxelChasmWalls(renderChunk, chunk);
 
-	this->graphChunks.emplace_back(std::move(graphChunk));
+	this->renderChunks.emplace_back(std::move(renderChunk));
 }
 
-void SceneGraph::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale,
+void RenderChunkManager::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale,
 	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
 	const ChunkInt2 chunkPos = voxelChunk.getPosition();
-	const std::optional<int> graphChunkIndex = this->tryGetGraphChunkIndex(chunkPos);
-	if (!graphChunkIndex.has_value())
+	const std::optional<int> renderChunkIndex = this->tryGetRenderChunkIndex(chunkPos);
+	if (!renderChunkIndex.has_value())
 	{
-		DebugLogError("No scene graph chunk available at (" + chunkPos.toString() + ").");
+		DebugLogError("No render chunk available at (" + chunkPos.toString() + ").");
 		return;
 	}
 
-	SceneGraphChunk &graphChunk = this->graphChunks[*graphChunkIndex];
+	RenderChunk &renderChunk = this->renderChunks[*renderChunkIndex];
 	if (updateStatics)
 	{
-		graphChunk.staticDrawCalls.clear();
+		renderChunk.staticDrawCalls.clear();
 	}
 
 	if (updateAnimating)
 	{
-		graphChunk.animatingDrawCalls.clear();
+		renderChunk.animatingDrawCalls.clear();
 	}
 
-	this->loadVoxelDrawCalls(graphChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
+	this->loadVoxelDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
 }
 
-void SceneGraph::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem)
+void RenderChunkManager::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem)
 {
-	const auto iter = std::find_if(this->graphChunks.begin(), this->graphChunks.end(),
-		[&chunkPos](const SceneGraphChunk &graphChunk)
+	const auto iter = std::find_if(this->renderChunks.begin(), this->renderChunks.end(),
+		[&chunkPos](const RenderChunk &renderChunk)
 	{
-		return graphChunk.position == chunkPos;
+		return renderChunk.position == chunkPos;
 	});
 
-	if (iter != this->graphChunks.end())
+	if (iter != this->renderChunks.end())
 	{
-		SceneGraphChunk &graphChunk = *iter;
-		graphChunk.freeBuffers(rendererSystem);
-		this->graphChunks.erase(iter);
+		RenderChunk &renderChunk = *iter;
+		renderChunk.freeBuffers(rendererSystem);
+		this->renderChunks.erase(iter);
 	}
 }
 
-void SceneGraph::rebuildVoxelDrawCallsList()
+void RenderChunkManager::rebuildVoxelDrawCallsList()
 {
 	this->drawCallsCache.clear();
 
 	// @todo: eventually this should sort by distance from a CoordDouble2
-	for (size_t i = 0; i < this->graphChunks.size(); i++)
+	for (size_t i = 0; i < this->renderChunks.size(); i++)
 	{
-		const SceneGraphChunk &graphChunk = this->graphChunks[i];
-		const std::vector<RenderDrawCall> &staticDrawCalls = graphChunk.staticDrawCalls;
-		const std::vector<RenderDrawCall> &animatingDrawCalls = graphChunk.animatingDrawCalls;
+		const RenderChunk &renderChunk = this->renderChunks[i];
+		const std::vector<RenderDrawCall> &staticDrawCalls = renderChunk.staticDrawCalls;
+		const std::vector<RenderDrawCall> &animatingDrawCalls = renderChunk.animatingDrawCalls;
 		this->drawCallsCache.insert(this->drawCallsCache.end(), staticDrawCalls.begin(), staticDrawCalls.end());
 		this->drawCallsCache.insert(this->drawCallsCache.end(), animatingDrawCalls.begin(), animatingDrawCalls.end());
 	}
 }
 
-void SceneGraph::unloadScene(RendererSystem3D &rendererSystem)
+void RenderChunkManager::unloadScene(RendererSystem3D &rendererSystem)
 {
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
 
 	// Free vertex/attribute/index buffer IDs from renderer.
-	for (SceneGraphChunk &chunk : this->graphChunks)
+	for (RenderChunk &renderChunk : this->renderChunks)
 	{
-		chunk.freeBuffers(rendererSystem);
+		renderChunk.freeBuffers(rendererSystem);
 	}
 
-	this->graphChunks.clear();
+	this->renderChunks.clear();
 	this->drawCallsCache.clear();
 }

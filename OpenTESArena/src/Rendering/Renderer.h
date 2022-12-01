@@ -7,10 +7,10 @@
 #include <optional>
 #include <vector>
 
+#include "RenderChunkManager.h"
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
-#include "SceneGraph/SceneGraph.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/TextureUtils.h"
 #include "../Entities/EntityManager.h"
@@ -83,7 +83,7 @@ private:
 
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	SceneGraph sceneGraph;
+	RenderChunkManager renderChunkManager;
 	std::vector<DisplayMode> displayModes;	
 	SDL_Window *window;
 	SDL_Renderer *renderer;
@@ -226,7 +226,7 @@ public:
 	void unloadVoxelChunk(const ChunkInt2 &chunkPos);
 	void rebuildVoxelDrawCallsList();
 	
-	// Unloads all world geometry from the scene graph, used on scene changes.
+	// Unloads all world geometry from the render chunk manager, used on scene changes.
 	void unloadScene();
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.

@@ -58,10 +58,6 @@ FILE(GLOB TES_RENDERING
     ${SRC_ROOT}/src/Rendering/*.h* 
     ${SRC_ROOT}/src/Rendering/*.c*)
 
-FILE(GLOB TES_RENDERING_SCENE_GRAPH
-    ${SRC_ROOT}/src/Rendering/SceneGraph/*.h* 
-    ${SRC_ROOT}/src/Rendering/SceneGraph/*.c*)
-
 FILE(GLOB TES_SKY
     ${SRC_ROOT}/src/Sky/*.h* 
     ${SRC_ROOT}/src/Sky/*.c*)
@@ -103,7 +99,6 @@ SET(TES_SOURCES
     ${TES_ITEMS}
     ${TES_MATH}
     ${TES_RENDERING}
-    ${TES_RENDERING_SCENE_GRAPH}
     ${TES_SKY}
     ${TES_UI}
     ${TES_UTILITIES}

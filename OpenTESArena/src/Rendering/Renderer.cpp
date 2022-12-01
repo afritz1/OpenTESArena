@@ -145,7 +145,7 @@ Renderer::~Renderer()
 	
 	if (this->renderer3D)
 	{
-		this->sceneGraph.shutdown(*this->renderer3D);
+		this->renderChunkManager.shutdown(*this->renderer3D);
 		this->renderer3D->shutdown();
 	}
 
@@ -645,7 +645,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	RenderInitSettings initSettings;
 	initSettings.init(renderWidth, renderHeight, renderThreadsMode);
 	this->renderer3D->init(initSettings);
-	this->sceneGraph.init(*this->renderer3D);
+	this->renderChunkManager.init(*this->renderer3D);
 
 	return true;
 }
@@ -840,32 +840,32 @@ void Renderer::freeUiTexture(UiTextureID id)
 void Renderer::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager)
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.loadVoxelChunk(chunk, ceilingScale, textureManager, *this, *this->renderer3D);
+	this->renderChunkManager.loadVoxelChunk(chunk, ceilingScale, textureManager, *this, *this->renderer3D);
 }
 
 void Renderer::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale,
 	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
+	this->renderChunkManager.rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
 }
 
 void Renderer::unloadVoxelChunk(const ChunkInt2 &chunkPos)
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.unloadVoxelChunk(chunkPos, *this->renderer3D);
+	this->renderChunkManager.unloadVoxelChunk(chunkPos, *this->renderer3D);
 }
 
 void Renderer::rebuildVoxelDrawCallsList()
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.rebuildVoxelDrawCallsList();
+	this->renderChunkManager.rebuildVoxelDrawCallsList();
 }
 
 void Renderer::unloadScene()
 {
 	DebugAssert(this->renderer3D != nullptr);
-	this->sceneGraph.unloadScene(*this->renderer3D);
+	this->renderChunkManager.unloadScene(*this->renderer3D);
 }
 
 void Renderer::clear(const Color &color)
@@ -963,7 +963,7 @@ void Renderer::submitFrame(const RenderCamera &camera, double ambientPercent, Ob
 		reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
 	DebugAssertMsg(status == 0, "Couldn't lock game world texture for scene rendering (" + std::string(SDL_GetError()) + ").");
 
-	const BufferView<const RenderDrawCall> drawCalls = this->sceneGraph.getVoxelDrawCalls();
+	const BufferView<const RenderDrawCall> drawCalls = this->renderChunkManager.getVoxelDrawCalls();
 
 	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();

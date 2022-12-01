@@ -1,9 +1,9 @@
 #include <algorithm>
 
-#include "SceneGraphMesh.h"
-#include "../RendererSystem3D.h"
+#include "RenderChunkMesh.h"
+#include "RendererSystem3D.h"
 
-SceneGraphVoxelMeshInstance::SceneGraphVoxelMeshInstance()
+RenderChunkVoxelMeshInstance::RenderChunkVoxelMeshInstance()
 {
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
@@ -13,7 +13,7 @@ SceneGraphVoxelMeshInstance::SceneGraphVoxelMeshInstance()
 	this->alphaTestedIndexBufferID = -1;
 }
 
-void SceneGraphVoxelMeshInstance::freeBuffers(RendererSystem3D &renderer3D)
+void RenderChunkVoxelMeshInstance::freeBuffers(RendererSystem3D &renderer3D)
 {
 	if (this->vertexBufferID >= 0)
 	{

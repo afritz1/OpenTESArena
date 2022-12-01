@@ -1,11 +1,11 @@
-#ifndef SCENE_GRAPH_MESH_H
-#define SCENE_GRAPH_MESH_H
+#ifndef RENDER_CHUNK_MESH_H
+#define RENDER_CHUNK_MESH_H
 
-#include "../RenderGeometryUtils.h"
+#include "RenderGeometryUtils.h"
 
 class RendererSystem3D;
 
-struct SceneGraphVoxelMeshInstance
+struct RenderChunkVoxelMeshInstance
 {
 	static constexpr int MAX_TEXTURES = 3; // Based on VoxelDefinition subtypes (wall and raised).
 
@@ -15,7 +15,7 @@ struct SceneGraphVoxelMeshInstance
 	int opaqueIndexBufferIdCount;
 	IndexBufferID alphaTestedIndexBufferID;
 
-	SceneGraphVoxelMeshInstance();
+	RenderChunkVoxelMeshInstance();
 
 	void freeBuffers(RendererSystem3D &renderer3D);
 };
