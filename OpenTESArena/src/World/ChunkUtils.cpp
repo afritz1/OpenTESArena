@@ -12,6 +12,19 @@ int ChunkUtils::getNextHigherChunkMultiple(int coord)
 	return (remainder == 0) ? coord : (coord + ChunkUtils::CHUNK_DIM - remainder);
 }
 
+int ChunkUtils::getChunkCountPerSide(int chunkDistance)
+{
+	DebugAssert(chunkDistance > 0);
+	const int count = 1 + (chunkDistance * 2);
+	return count;
+}
+
+int ChunkUtils::getChunkCount(int chunkDistance)
+{
+	const int chunksPerSide = ChunkUtils::getChunkCountPerSide(chunkDistance);
+	return chunksPerSide * chunksPerSide;
+}
+
 void ChunkUtils::getChunkCounts(SNInt gridWidth, WEInt gridDepth, SNInt *outChunkCountX,
 	WEInt *outChunkCountZ)
 {
@@ -24,13 +37,10 @@ void ChunkUtils::getChunkCounts(SNInt gridWidth, WEInt gridDepth, SNInt *outChun
 	*outChunkCountZ = chunksForDimension(gridDepth);
 }
 
-void ChunkUtils::getPotentiallyVisibleChunkCounts(int chunkDistance, SNInt *outChunkCountX,
-	WEInt *outChunkCountZ)
+void ChunkUtils::getPotentiallyVisibleChunkCounts(int chunkDistance, SNInt *outChunkCountX, WEInt *outChunkCountZ)
 {
-	DebugAssert(chunkDistance >= 1);
-	const int count = 1 + (chunkDistance * 2);
-	*outChunkCountX = count;
-	*outChunkCountZ = count;
+	*outChunkCountX = ChunkUtils::getChunkCountPerSide(chunkDistance);
+	*outChunkCountZ = *outChunkCountX;
 }
 
 void ChunkUtils::getSurroundingChunks(const ChunkInt2 &chunk, int chunkDistance,

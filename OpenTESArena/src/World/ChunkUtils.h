@@ -14,6 +14,12 @@ namespace ChunkUtils
 	// I.e., given 23, returns 64.
 	int getNextHigherChunkMultiple(int coord);
 
+	// Gets the side length (in chunks) of the active chunks for the given chunk distance.
+	int getChunkCountPerSide(int chunkDistance);
+
+	// Gets the number of chunks needed for the given chunk distance.
+	int getChunkCount(int chunkDistance);
+
 	// Gets the number of chunks in each dimension required to fit the given area that's in
 	// new voxel grid space.
 	void getChunkCounts(SNInt gridWidth, WEInt gridDepth, SNInt *outChunkCountX, WEInt *outChunkCountZ);
