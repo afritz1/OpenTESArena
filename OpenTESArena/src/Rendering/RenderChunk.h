@@ -13,7 +13,7 @@
 #include "components/utilities/Buffer3D.h"
 
 class EntityManager;
-class RendererSystem3D;
+class Renderer;
 
 using RenderChunkVoxelMeshInstanceID = int;
 
@@ -36,7 +36,7 @@ struct RenderChunk
 	void init(const ChunkInt2 &position, int height);
 	void update();
 	RenderChunkVoxelMeshInstanceID addMeshInstance(RenderChunkVoxelMeshInstance &&meshInst);
-	void freeBuffers(RendererSystem3D &renderer);
+	void freeBuffers(Renderer &renderer);
 };
 
 #endif

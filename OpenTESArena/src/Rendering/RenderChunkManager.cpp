@@ -344,7 +344,7 @@ void RenderChunkManager::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, 
 	this->chasmWallIndex = chasmWallIndex;
 }
 
-void RenderChunkManager::init(RendererSystem3D &rendererSystem)
+void RenderChunkManager::init(Renderer &renderer)
 {
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
@@ -374,7 +374,7 @@ void RenderChunkManager::init(RendererSystem3D &rendererSystem)
 
 		const int indexCount = faceCount * indicesPerFace;
 		IndexBufferID &indexBufferID = this->chasmWallIndexBufferIDs[i];
-		if (!rendererSystem.tryCreateIndexBuffer(indexCount, &indexBufferID))
+		if (!renderer.tryCreateIndexBuffer(indexCount, &indexBufferID))
 		{
 			DebugLogError("Couldn't create chasm wall index buffer " + std::to_string(i) + ".");
 			continue;
@@ -397,22 +397,22 @@ void RenderChunkManager::init(RendererSystem3D &rendererSystem)
 		tryWriteIndices(hasSouth, southIndices);
 		tryWriteIndices(hasWest, westIndices);
 
-		rendererSystem.populateIndexBuffer(indexBufferID, BufferView<const int32_t>(totalIndicesBuffer.data(), writingIndex));
+		renderer.populateIndexBuffer(indexBufferID, BufferView<const int32_t>(totalIndicesBuffer.data(), writingIndex));
 	}
 }
 
-void RenderChunkManager::shutdown(RendererSystem3D &rendererSystem)
+void RenderChunkManager::shutdown(Renderer &renderer)
 {
 	for (RenderChunk &renderChunk : this->renderChunks)
 	{
-		renderChunk.freeBuffers(rendererSystem);
+		renderChunk.freeBuffers(renderer);
 	}
 
 	this->renderChunks.clear();
 
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
 	{
-		rendererSystem.freeIndexBuffer(indexBufferID);
+		renderer.freeIndexBuffer(indexBufferID);
 		indexBufferID = -1;
 	}
 
@@ -508,8 +508,7 @@ void RenderChunkManager::loadVoxelTextures(const VoxelChunk &chunk, TextureManag
 	}
 }
 
-void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
-	RendererSystem3D &rendererSystem)
+void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale, Renderer &renderer)
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
 
@@ -527,26 +526,26 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
-			if (!rendererSystem.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &voxelMeshInst.vertexBufferID))
+			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &voxelMeshInst.vertexBufferID))
 			{
 				DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
 				continue;
 			}
 
-			if (!rendererSystem.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &voxelMeshInst.normalBufferID))
+			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &voxelMeshInst.normalBufferID))
 			{
 				DebugLogError("Couldn't create normal attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
-				voxelMeshInst.freeBuffers(rendererSystem);
+				voxelMeshInst.freeBuffers(renderer);
 				continue;
 			}
 
-			if (!rendererSystem.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &voxelMeshInst.texCoordBufferID))
+			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &voxelMeshInst.texCoordBufferID))
 			{
 				DebugLogError("Couldn't create tex coord attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
-				voxelMeshInst.freeBuffers(rendererSystem);
+				voxelMeshInst.freeBuffers(renderer);
 				continue;
 			}
 
@@ -557,11 +556,11 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			voxelMeshDef.writeRendererIndexBuffers(meshInitCache.opaqueIndices0View, meshInitCache.opaqueIndices1View,
 				meshInitCache.opaqueIndices2View, meshInitCache.alphaTestedIndices0View);
 
-			rendererSystem.populateVertexBuffer(voxelMeshInst.vertexBufferID,
+			renderer.populateVertexBuffer(voxelMeshInst.vertexBufferID,
 				BufferView<const double>(meshInitCache.vertices.data(), vertexCount * positionComponentsPerVertex));
-			rendererSystem.populateAttributeBuffer(voxelMeshInst.normalBufferID,
+			renderer.populateAttributeBuffer(voxelMeshInst.normalBufferID,
 				BufferView<const double>(meshInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
-			rendererSystem.populateAttributeBuffer(voxelMeshInst.texCoordBufferID,
+			renderer.populateAttributeBuffer(voxelMeshInst.texCoordBufferID,
 				BufferView<const double>(meshInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
 
 			const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
@@ -569,18 +568,18 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			{
 				const int opaqueIndexCount = static_cast<int>(voxelMeshDef.getOpaqueIndicesList(bufferIndex).size());
 				IndexBufferID &opaqueIndexBufferID = voxelMeshInst.opaqueIndexBufferIDs[bufferIndex];
-				if (!rendererSystem.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
+				if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 				{
 					DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
-					voxelMeshInst.freeBuffers(rendererSystem);
+					voxelMeshInst.freeBuffers(renderer);
 					continue;
 				}
 
 				voxelMeshInst.opaqueIndexBufferIdCount++;
 
 				const auto &indices = *meshInitCache.opaqueIndicesPtrs[bufferIndex];
-				rendererSystem.populateIndexBuffer(opaqueIndexBufferID,
+				renderer.populateIndexBuffer(opaqueIndexBufferID,
 					BufferView<const int32_t>(indices.data(), opaqueIndexCount));
 			}
 
@@ -588,15 +587,15 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			if (hasAlphaTestedIndexBuffer)
 			{
 				const int alphaTestedIndexCount = static_cast<int>(voxelMeshDef.alphaTestedIndices.size());
-				if (!rendererSystem.tryCreateIndexBuffer(alphaTestedIndexCount, &voxelMeshInst.alphaTestedIndexBufferID))
+				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &voxelMeshInst.alphaTestedIndexBufferID))
 				{
 					DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
-					voxelMeshInst.freeBuffers(rendererSystem);
+					voxelMeshInst.freeBuffers(renderer);
 					continue;
 				}
 
-				rendererSystem.populateIndexBuffer(voxelMeshInst.alphaTestedIndexBufferID,
+				renderer.populateIndexBuffer(voxelMeshInst.alphaTestedIndexBufferID,
 					BufferView<const int32_t>(meshInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
 			}
 		}
@@ -812,15 +811,14 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 	}
 }
 
-void RenderChunkManager::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager,
-	Renderer &renderer, RendererSystem3D &rendererSystem)
+void RenderChunkManager::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
 	RenderChunk renderChunk;
 	renderChunk.init(chunkPos, chunk.getHeight());
 
 	this->loadVoxelTextures(chunk, textureManager, renderer);
-	this->loadVoxelMeshBuffers(renderChunk, chunk, ceilingScale, rendererSystem);
+	this->loadVoxelMeshBuffers(renderChunk, chunk, ceilingScale, renderer);
 	this->loadVoxelChasmWalls(renderChunk, chunk);
 
 	this->renderChunks.emplace_back(std::move(renderChunk));
@@ -851,7 +849,7 @@ void RenderChunkManager::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk
 	this->loadVoxelDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
 }
 
-void RenderChunkManager::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem)
+void RenderChunkManager::unloadVoxelChunk(const ChunkInt2 &chunkPos, Renderer &renderer)
 {
 	const auto iter = std::find_if(this->renderChunks.begin(), this->renderChunks.end(),
 		[&chunkPos](const RenderChunk &renderChunk)
@@ -862,7 +860,7 @@ void RenderChunkManager::unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSys
 	if (iter != this->renderChunks.end())
 	{
 		RenderChunk &renderChunk = *iter;
-		renderChunk.freeBuffers(rendererSystem);
+		renderChunk.freeBuffers(renderer);
 		this->renderChunks.erase(iter);
 	}
 }
@@ -882,7 +880,7 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 	}
 }
 
-void RenderChunkManager::unloadScene(RendererSystem3D &rendererSystem)
+void RenderChunkManager::unloadScene(Renderer &renderer)
 {
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
@@ -891,7 +889,7 @@ void RenderChunkManager::unloadScene(RendererSystem3D &rendererSystem)
 	// Free vertex/attribute/index buffer IDs from renderer.
 	for (RenderChunk &renderChunk : this->renderChunks)
 	{
-		renderChunk.freeBuffers(rendererSystem);
+		renderChunk.freeBuffers(renderer);
 	}
 
 	this->renderChunks.clear();

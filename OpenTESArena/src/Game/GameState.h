@@ -139,7 +139,7 @@ private:
 		Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+		RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// Attempts to set the sky active in the systems (i.e. renderer) that need its data. This must
 	// be run after trySetLevelActive() (not sure that's a good idea though).
@@ -149,7 +149,7 @@ private:
 	// Attempts to apply the map transition state saved from the previous frame to the current game state.
 	bool tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+		RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	void clearMaps();
 public:
@@ -201,7 +201,8 @@ public:
 
 	// Pops the top-most map from the stack and sets the next map active if there is one available.
 	bool tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
+		const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager,
+		TextureManager &textureManager, Renderer &renderer);
 
 	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
 	bool hasActiveMapInst() const; // @todo: don't rely on this forever - we want the engine to always have chunks active (even if empty) at some point.

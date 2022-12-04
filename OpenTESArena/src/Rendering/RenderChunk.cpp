@@ -30,7 +30,7 @@ RenderChunkVoxelMeshInstanceID RenderChunk::addMeshInstance(RenderChunkVoxelMesh
 	return id;
 }
 
-void RenderChunk::freeBuffers(RendererSystem3D &renderer)
+void RenderChunk::freeBuffers(Renderer &renderer)
 {
 	for (RenderChunkVoxelMeshInstance &meshInst : this->meshInsts)
 	{

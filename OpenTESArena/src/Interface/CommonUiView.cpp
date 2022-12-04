@@ -1,6 +1,7 @@
 #include "CommonUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/TextureAsset.h"
 #include "../Assets/TextureManager.h"
 #include "../Rendering/Renderer.h"
 

@@ -594,7 +594,8 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 }
 
 bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
+	const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	if (this->maps.size() == 0)
 	{
@@ -655,7 +656,7 @@ bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityD
 
 	// Set level active in the renderer.
 	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, player, std::move(activeWeatherDef),
-		startCoord, citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
+		startCoord, citizenGenInfo, entityDefLibrary, binaryAssetLibrary, renderChunkManager, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for previously active level.");
 		return false;
@@ -969,7 +970,7 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+	RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	const VoxelDouble2 startVoxelReal = VoxelUtils::getVoxelCenter(startCoord.voxel);
 	const CoordDouble3 playerPos(
@@ -991,8 +992,7 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	const MapDefinition &mapDefinition = this->maps.top().definition;
 
 	// @todo: need to combine setting level and sky active into a renderer.loadScene() call I think.
-	if (!levelInst.trySetActive(this->weatherDef, this->nightLightsAreActive(), activeLevelIndex,
-		mapDefinition, citizenGenInfo, textureManager, renderer))
+	if (!levelInst.trySetActive(renderChunkManager, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer.");
 		return false;
@@ -1018,7 +1018,7 @@ bool GameState::trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &
 
 bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+	RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	MapState &nextMapState = transitionState.mapState;
 	WeatherDefinition nextWeatherDef = nextMapState.weatherDef;
@@ -1045,7 +1045,7 @@ bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState, Play
 
 	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, player, std::move(nextWeatherDef),
 		transitionState.startCoord, transitionState.citizenGenInfo, entityDefLibrary, binaryAssetLibrary,
-		textureManager, renderer))
+		renderChunkManager, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set new level active.");
 		return false;
@@ -1117,7 +1117,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 	if (this->nextMap != nullptr)
 	{
 		if (!this->tryApplyMapTransition(std::move(*this->nextMap), player, game.getEntityDefinitionLibrary(),
-			game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
+			game.getBinaryAssetLibrary(), game.getRenderChunkManager(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugLogError("Couldn't apply map transition.");
 		}

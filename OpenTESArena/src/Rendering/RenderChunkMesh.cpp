@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include "RenderChunkMesh.h"
-#include "RendererSystem3D.h"
+#include "Renderer.h"
 
 RenderChunkVoxelMeshInstance::RenderChunkVoxelMeshInstance()
 {
@@ -13,23 +13,23 @@ RenderChunkVoxelMeshInstance::RenderChunkVoxelMeshInstance()
 	this->alphaTestedIndexBufferID = -1;
 }
 
-void RenderChunkVoxelMeshInstance::freeBuffers(RendererSystem3D &renderer3D)
+void RenderChunkVoxelMeshInstance::freeBuffers(Renderer &renderer)
 {
 	if (this->vertexBufferID >= 0)
 	{
-		renderer3D.freeVertexBuffer(this->vertexBufferID);
+		renderer.freeVertexBuffer(this->vertexBufferID);
 		this->vertexBufferID = -1;
 	}
 
 	if (this->normalBufferID >= 0)
 	{
-		renderer3D.freeAttributeBuffer(this->normalBufferID);
+		renderer.freeAttributeBuffer(this->normalBufferID);
 		this->normalBufferID = -1;
 	}
 
 	if (this->texCoordBufferID >= 0)
 	{
-		renderer3D.freeAttributeBuffer(this->texCoordBufferID);
+		renderer.freeAttributeBuffer(this->texCoordBufferID);
 		this->texCoordBufferID = -1;
 	}
 
@@ -37,7 +37,7 @@ void RenderChunkVoxelMeshInstance::freeBuffers(RendererSystem3D &renderer3D)
 	{
 		for (int i = 0; i < this->opaqueIndexBufferIdCount; i++)
 		{
-			renderer3D.freeIndexBuffer(this->opaqueIndexBufferIDs[i]);
+			renderer.freeIndexBuffer(this->opaqueIndexBufferIDs[i]);
 		}
 
 		std::fill(std::begin(this->opaqueIndexBufferIDs), std::end(this->opaqueIndexBufferIDs), -1);
@@ -46,7 +46,7 @@ void RenderChunkVoxelMeshInstance::freeBuffers(RendererSystem3D &renderer3D)
 
 	if (this->alphaTestedIndexBufferID >= 0)
 	{
-		renderer3D.freeIndexBuffer(this->alphaTestedIndexBufferID);
+		renderer.freeIndexBuffer(this->alphaTestedIndexBufferID);
 		this->alphaTestedIndexBufferID = -1;
 	}
 }

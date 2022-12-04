@@ -7,7 +7,6 @@
 
 #include "RenderChunk.h"
 #include "RenderDrawCall.h"
-#include "../Entities/CitizenUtils.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
@@ -24,12 +23,9 @@
 // - avoid requiring a screen clear
 
 class ChunkManager;
-class EntityDefinitionLibrary;
-class EntityManager;
 class LevelInstance;
 class MapDefinition;
 class Renderer;
-class SkyInstance;
 class TextureManager;
 
 struct RenderCamera;
@@ -107,13 +103,13 @@ private:
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const;
 
 	void loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer);
-	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale, RendererSystem3D &rendererSystem);
+	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale, Renderer &renderer);
 	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &chunk);
 	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 public:
-	void init(RendererSystem3D &rendererSystem);
-	void shutdown(RendererSystem3D &rendererSystem);
+	void init(Renderer &renderer);
+	void shutdown(Renderer &renderer);
 
 	// Gets the list of draw calls for visible voxel geometry this frame.
 	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
@@ -121,15 +117,14 @@ public:
 	// Loads all the resources required by the given voxel chunk and adds it to the draw list.
 	// @todo: eventually I think a better way would be to simply treat render chunks like allocated textures;
 	// via function calls and operations on a returned handle/ID.
-	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer,
-		RendererSystem3D &rendererSystem);
+	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer);
 	
 	// Call once per frame per chunk after all voxel chunk changes have been applied to this manager.
 	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
 	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent,
 		bool updateStatics, bool updateAnimating);
 
-	void unloadVoxelChunk(const ChunkInt2 &chunkPos, RendererSystem3D &rendererSystem);
+	void unloadVoxelChunk(const ChunkInt2 &chunkPos, Renderer &renderer);
 
 	// @todo: loadEntityChunk(), probably needs citizenGenInfo, nightLightsAreActive, playerHasLight, daytimePercent, entityDefLibrary
 	// @todo: loadSky()
@@ -139,7 +134,7 @@ public:
 	void rebuildVoxelDrawCallsList();
 
 	// Clears all rendering resources (voxels, entities, sky, weather).
-	void unloadScene(RendererSystem3D &rendererSystem);
+	void unloadScene(Renderer &renderer);
 };
 
 #endif

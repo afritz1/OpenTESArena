@@ -233,7 +233,8 @@ bool MainMenuPanel::init()
 		return false;
 	}
 
-	renderer.unloadScene(); // In case we are returning from a game session.
+	RenderChunkManager &renderChunkManager = game.getRenderChunkManager();
+	renderChunkManager.unloadScene(renderer); // In case we are returning from a game session.
 
 	return true;
 }

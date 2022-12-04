@@ -21,6 +21,7 @@
 #include "../Input/InputManager.h"
 #include "../Interface/CinematicLibrary.h"
 #include "../Interface/Panel.h"
+#include "../Rendering/RenderChunkManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/TextBox.h"
@@ -88,6 +89,7 @@ private:
 	GameState gameState;
 	Player player;
 	ChunkManager chunkManager;
+	RenderChunkManager renderChunkManager;
 
 	// Engine variables for what kinds of simulation should be attempted each frame.
 	bool shouldSimulateScene;
@@ -156,6 +158,8 @@ public:
 	Player &getPlayer();
 
 	const ChunkManager &getChunkManager() const;
+
+	RenderChunkManager &getRenderChunkManager();
 
 	// Whether the game loop should animate voxels, entities, and sky that can change over time.
 	// Used when determining if the player is actively in the game world or in menus. This does 

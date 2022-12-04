@@ -94,6 +94,8 @@ Game::~Game()
 	{
 		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
+
+	this->renderChunkManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -151,6 +153,7 @@ bool Game::init()
 		return false;
 	}
 
+	this->renderChunkManager.init(this->renderer);
 	this->inputManager.init();
 
 	// Add application-level input event handlers.
@@ -316,6 +319,11 @@ Player &Game::getPlayer()
 const ChunkManager &Game::getChunkManager() const
 {
 	return this->chunkManager;
+}
+
+RenderChunkManager &Game::getRenderChunkManager()
+{
+	return this->renderChunkManager;
 }
 
 bool Game::isSimulatingScene() const

@@ -7,29 +7,18 @@
 #include <optional>
 #include <vector>
 
-#include "RenderChunkManager.h"
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
-#include "../Assets/ArenaTypes.h"
 #include "../Assets/TextureUtils.h"
-#include "../Entities/EntityManager.h"
-#include "../Math/Vector2.h"
-#include "../Math/Vector3.h"
 #include "../UI/Texture.h"
 
 // Container for 2D and 3D rendering operations.
 
-class Camera3D;
 class Color;
-class EntityAnimationDefinition;
-class EntityAnimationInstance;
-class EntityDefinitionLibrary;
-class EntityManager;
 class Rect;
 class Surface;
 class TextureManager;
-class WeatherInstance;
 
 enum class CursorAlignment;
 
@@ -83,7 +72,6 @@ private:
 
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	RenderChunkManager renderChunkManager;
 	std::vector<DisplayMode> displayModes;	
 	SDL_Window *window;
 	SDL_Renderer *renderer;
@@ -143,10 +131,10 @@ public:
 	// 'pixelPerfect' determines whether the entity's texture is involved in the calculation.
 	// Returns whether the entity was able to be tested and was hit by the ray. This is a renderer
 	// function because the exact method of testing may depend on the 3D representation of the entity.
-	bool getEntityRayIntersection(const EntityVisibilityState3D &visState, const EntityDefinition &entityDef,
+	/*bool getEntityRayIntersection(const EntityVisibilityState3D &visState, const EntityDefinition &entityDef,
 		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp,
 		double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
-		bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const;
+		bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const;*/
 
 	// Converts a [0, 1] screen point to a ray through the world. The exact direction is
 	// dependent on renderer details.
@@ -198,6 +186,17 @@ public:
 	// Sets which mode to use for software render threads (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);
 
+	// Geometry management functions.
+	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID);
+	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID);
+	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID);
+	void populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices);
+	void populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes);
+	void populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices);
+	void freeVertexBuffer(VertexBufferID id);
+	void freeAttributeBuffer(AttributeBufferID id);
+	void freeIndexBuffer(IndexBufferID id);
+
 	// Texture handle allocation functions.
 	bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID);
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID);
@@ -220,15 +219,6 @@ public:
 	void freeObjectTexture(ObjectTextureID id);
 	void freeUiTexture(UiTextureID id);
 
-	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager);
-	// @todo: handle dirty voxels and updating voxel chunk
-	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating);
-	void unloadVoxelChunk(const ChunkInt2 &chunkPos);
-	void rebuildVoxelDrawCallsList();
-	
-	// Unloads all world geometry from the render chunk manager, used on scene changes.
-	void unloadScene();
-
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);
 	void clear();
@@ -245,9 +235,9 @@ public:
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	void submitFrame(const RenderCamera &camera, double ambientPercent, ObjectTextureID paletteTextureID,
-		ObjectTextureID lightTableTextureID, ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID,
-		int renderThreadsMode);
+	void submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &voxelDrawCalls,
+		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

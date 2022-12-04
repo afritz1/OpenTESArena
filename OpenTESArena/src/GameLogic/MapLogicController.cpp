@@ -126,6 +126,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	const CoordInt3 hitCoord(hit.getCoord().chunk, voxelHit.voxel);
 
 	auto &gameState = game.getGameState();
+	auto &renderChunkManager = game.getRenderChunkManager();
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
@@ -152,7 +153,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 		// Leave the interior and go to the saved exterior.
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 		if (!gameState.tryPopMap(game.getPlayer(), game.getEntityDefinitionLibrary(),
-			game.getBinaryAssetLibrary(), textureManager, renderer))
+			game.getBinaryAssetLibrary(), renderChunkManager, textureManager, renderer))
 		{
 			DebugCrash("Couldn't leave interior.");
 		}
@@ -578,10 +579,10 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 
 			// @todo: should this be called differently so it doesn't badly influence data for the rest of
 			// this frame? Level changing should be done earlier I think.
+			auto &renderChunkManager = game.getRenderChunkManager();
 			auto &textureManager = game.getTextureManager();
 			auto &renderer = game.getRenderer();
-			if (!newActiveLevel.trySetActive(weatherDef, gameState.nightLightsAreActive(), levelIndex,
-				interiorMapDef, citizenGenInfo, textureManager, renderer))
+			if (!newActiveLevel.trySetActive(renderChunkManager, textureManager, renderer))
 			{
 				DebugCrash("Couldn't set new level active in renderer.");
 			}
@@ -614,7 +615,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
 			newActiveLevel.update(dummyDeltaTime, activeChunkPositions, newChunkPositions, freedChunkPositions,
 				player.getPosition(), levelIndex, interiorMapDef, chunkDistance, gameState.getChasmAnimPercent(),
-				game.getTextureManager(), game.getAudioManager(), game.getRenderer());
+				renderChunkManager, textureManager, game.getAudioManager(), renderer);
 		};
 
 		// Lambda for opening the world map when the player enters a transition voxel

@@ -124,16 +124,13 @@ double LevelInstance::getCeilingScale() const
 	return this->ceilingScale;
 }
 
-bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	TextureManager &textureManager, Renderer &renderer)
+bool LevelInstance::trySetActive(RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear stored object texture refs, freeing them from the renderer.
 	this->paletteTextureRef.destroy();
 	this->lightTableTextureRef.destroy();
 
-	renderer.unloadScene();
+	renderChunkManager.unloadScene(renderer);
 
 	if (!TryPopulatePaletteTexture(this->paletteTextureRef, textureManager, renderer))
 	{
@@ -153,8 +150,8 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 	const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	int chunkDistance, double chasmAnimPercent, TextureManager &textureManager, AudioManager &audioManager,
-	Renderer &renderer)
+	int chunkDistance, double chasmAnimPercent, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
+	AudioManager &audioManager, Renderer &renderer)
 {
 	const ChunkInt2 &centerChunkPos = playerCoord.chunk;
 	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
@@ -163,28 +160,28 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 	for (int i = 0; i < freedChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
-		renderer.unloadVoxelChunk(chunkPos);
+		renderChunkManager.unloadVoxelChunk(chunkPos, renderer);
 	}
 
 	for (int i = 0; i < newChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		VoxelChunk &voxelChunk = this->voxelChunkManager.getChunkAtPosition(chunkPos);
-		renderer.loadVoxelChunk(voxelChunk, this->ceilingScale, textureManager);
-		renderer.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, true, false);
+		renderChunkManager.loadVoxelChunk(voxelChunk, this->ceilingScale, textureManager, renderer);
+		renderChunkManager.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, true, false);
 	}
 
 	for (int i = 0; i < activeChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
 		const VoxelChunk &voxelChunk = this->voxelChunkManager.getChunkAtPosition(chunkPos);
-		renderer.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, false, true);
+		renderChunkManager.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, false, true);
 	}
 
 	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient
 	//if ((freedChunkCount > 0) || (newChunkCount > 0))
 	{
-		renderer.rebuildVoxelDrawCallsList();
+		renderChunkManager.rebuildVoxelDrawCallsList();
 	}
 
 	//this->entityManager.tick(game, dt); // @todo: simulate entities after voxel chunks are working well

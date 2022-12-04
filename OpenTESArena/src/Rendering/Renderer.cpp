@@ -13,8 +13,6 @@
 #include "SdlUiRenderer.h"
 #include "SoftwareRenderer.h"
 #include "../Assets/TextureManager.h"
-#include "../Entities/EntityAnimationInstance.h"
-#include "../Entities/EntityVisibilityState.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Rect.h"
@@ -23,7 +21,6 @@
 #include "../UI/Surface.h"
 #include "../Utilities/Color.h"
 #include "../Utilities/Platform.h"
-#include "../World/LevelInstance.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -145,7 +142,6 @@ Renderer::~Renderer()
 	
 	if (this->renderer3D)
 	{
-		this->renderChunkManager.shutdown(*this->renderer3D);
 		this->renderer3D->shutdown();
 	}
 
@@ -372,7 +368,7 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
+/*bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
 	const EntityDefinition &entityDef, const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight,
 	const VoxelDouble3 &entityUp, double entityWidth, double entityHeight, const CoordDouble3 &rayPoint,
 	const VoxelDouble3 &rayDirection, bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const
@@ -409,17 +405,17 @@ bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
 		// @todo: get the entity anim inst's texture ID instead of asset ref. Can probably remove 'palette' too.
 		DebugLogError("Not implemented: getEntityRayIntersection");
 		return false;
-		/*const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAsset, flipped, reflective, pixelPerfect, palette, &isSelected);
+		const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAsset, flipped, reflective, pixelPerfect, palette, &isSelected);
 
 		*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
-		return withinEntity && isSelected;*/
+		return withinEntity && isSelected;
 	}
 	else
 	{
 		// Did not intersect the entity's plane.
 		return false;
 	}
-}
+}*/
 
 Double3 Renderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
 	double fovY, double aspect) const
@@ -645,7 +641,6 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	RenderInitSettings initSettings;
 	initSettings.init(renderWidth, renderHeight, renderThreadsMode);
 	this->renderer3D->init(initSettings);
-	this->renderChunkManager.init(*this->renderer3D);
 
 	return true;
 }
@@ -761,6 +756,60 @@ void Renderer::setRenderThreadsMode(int mode)
 	//this->renderer3D->setRenderThreadsMode(mode); // @todo: figure out if this should be in RenderFrameSettings and obtained via Options
 }
 
+bool Renderer::tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateVertexBuffer(vertexCount, componentsPerVertex, outID);
+}
+
+bool Renderer::tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateAttributeBuffer(vertexCount, componentsPerVertex, outID);
+}
+
+bool Renderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateIndexBuffer(indexCount, outID);
+}
+
+void Renderer::populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->populateVertexBuffer(id, vertices);
+}
+
+void Renderer::populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->populateAttributeBuffer(id, attributes);
+}
+
+void Renderer::populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->populateIndexBuffer(id, indices);
+}
+
+void Renderer::freeVertexBuffer(VertexBufferID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->freeVertexBuffer(id);
+}
+
+void Renderer::freeAttributeBuffer(AttributeBufferID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->freeAttributeBuffer(id);
+}
+
+void Renderer::freeIndexBuffer(IndexBufferID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->freeIndexBuffer(id);
+}
+
 bool Renderer::tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID)
 {
 	DebugAssert(this->renderer3D->isInited());
@@ -796,6 +845,7 @@ bool Renderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID p
 
 std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
 {
+	DebugAssert(this->renderer3D->isInited());
 	return this->renderer3D->tryGetObjectTextureDims(id);
 }
 
@@ -835,37 +885,6 @@ void Renderer::freeObjectTexture(ObjectTextureID id)
 void Renderer::freeUiTexture(UiTextureID id)
 {
 	this->renderer2D->freeUiTexture(id);
-}
-
-void Renderer::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager)
-{
-	DebugAssert(this->renderer3D != nullptr);
-	this->renderChunkManager.loadVoxelChunk(chunk, ceilingScale, textureManager, *this, *this->renderer3D);
-}
-
-void Renderer::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale,
-	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
-{
-	DebugAssert(this->renderer3D != nullptr);
-	this->renderChunkManager.rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
-}
-
-void Renderer::unloadVoxelChunk(const ChunkInt2 &chunkPos)
-{
-	DebugAssert(this->renderer3D != nullptr);
-	this->renderChunkManager.unloadVoxelChunk(chunkPos, *this->renderer3D);
-}
-
-void Renderer::rebuildVoxelDrawCallsList()
-{
-	DebugAssert(this->renderer3D != nullptr);
-	this->renderChunkManager.rebuildVoxelDrawCallsList();
-}
-
-void Renderer::unloadScene()
-{
-	DebugAssert(this->renderer3D != nullptr);
-	this->renderChunkManager.unloadScene(*this->renderer3D);
 }
 
 void Renderer::clear(const Color &color)
@@ -945,9 +964,9 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
-void Renderer::submitFrame(const RenderCamera &camera, double ambientPercent, ObjectTextureID paletteTextureID,
-	ObjectTextureID lightTableTextureID, ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID,
-	int renderThreadsMode)
+void Renderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &voxelDrawCalls,
+	double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+	ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode)
 {
 	DebugAssert(this->renderer3D->isInited());
 
@@ -963,11 +982,9 @@ void Renderer::submitFrame(const RenderCamera &camera, double ambientPercent, Ob
 		reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
 	DebugAssertMsg(status == 0, "Couldn't lock game world texture for scene rendering (" + std::string(SDL_GetError()) + ").");
 
-	const BufferView<const RenderDrawCall> drawCalls = this->renderChunkManager.getVoxelDrawCalls();
-
 	// Render the game world (no UI).
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(camera, drawCalls, renderFrameSettings, outputBuffer);
+	this->renderer3D->submitFrame(camera, voxelDrawCalls, renderFrameSettings, outputBuffer);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 

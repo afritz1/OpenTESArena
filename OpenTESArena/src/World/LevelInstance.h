@@ -19,6 +19,7 @@
 class AudioManager;
 class EntityDefinitionLibrary;
 class MapDefinition;
+class RenderChunkManager;
 class Renderer;
 class WeatherDefinition;
 
@@ -52,16 +53,13 @@ public:
 	ObjectTextureID getLightTableTextureID() const;
 	double getCeilingScale() const;
 
-	bool trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
-		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		TextureManager &textureManager, Renderer &renderer);
+	bool trySetActive(RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 		const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		int chunkDistance, double chasmAnimPercent, TextureManager &textureManager, AudioManager &audioManager,
-		Renderer &renderer);
+		int chunkDistance, double chasmAnimPercent, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
+		AudioManager &audioManager, Renderer &renderer);
 
 	void cleanUp();
 };

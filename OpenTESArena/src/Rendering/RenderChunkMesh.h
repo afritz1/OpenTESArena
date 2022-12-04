@@ -3,7 +3,7 @@
 
 #include "RenderGeometryUtils.h"
 
-class RendererSystem3D;
+class Renderer;
 
 struct RenderChunkVoxelMeshInstance
 {
@@ -17,7 +17,7 @@ struct RenderChunkVoxelMeshInstance
 
 	RenderChunkVoxelMeshInstance();
 
-	void freeBuffers(RendererSystem3D &renderer3D);
+	void freeBuffers(Renderer &renderer);
 };
 
 #endif

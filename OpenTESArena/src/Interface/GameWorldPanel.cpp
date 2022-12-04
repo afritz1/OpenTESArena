@@ -808,6 +808,9 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
+	const RenderChunkManager &renderChunkManager = game.getRenderChunkManager();
+	const BufferView<const RenderDrawCall> voxelDrawCalls = renderChunkManager.getVoxelDrawCalls();
+
 	const double ambientPercent = gameState.getAmbientPercent();
 	const double latitude = [&gameState]()
 	{
@@ -840,12 +843,11 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const ObjectTextureID skyColorsTextureID = activeSkyInst.getSkyColorsTextureID();
 	const ObjectTextureID thunderstormColorsTextureID = -1;
 
-	renderer.submitFrame(renderCamera, ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
-		thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
+	renderer.submitFrame(renderCamera, voxelDrawCalls, ambientPercent, paletteTextureID, lightTableTextureID,
+		skyColorsTextureID, thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
 
 	return true;
 }
-
 
 TextBox &GameWorldPanel::getTriggerTextBox()
 {

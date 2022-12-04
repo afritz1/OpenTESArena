@@ -2,6 +2,7 @@
 
 #include "TextureUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/TextureAsset.h"
 #include "../Assets/TextureManager.h"
 #include "../Math/Rect.h"
 #include "../Rendering/Renderer.h"
