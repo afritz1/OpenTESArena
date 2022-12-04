@@ -470,25 +470,29 @@ namespace swGeometry
 			outClipListTextureID0s.emplace_back(textureID0);
 			outClipListTextureID1s.emplace_back(textureID1);
 
+			int clipListFrontIndex = 0; // Alternative to erasing front element for performance.
+
 			for (const ClippingPlane &plane : clippingPlanes)
 			{
-				for (int j = static_cast<int>(outClipListV0s.size()); j > 0; j--)
+				const int trianglesToClipCount = static_cast<int>(outClipListV0s.size()) - clipListFrontIndex;
+				for (int j = trianglesToClipCount; j > 0; j--)
 				{
-					const Double3 &clipListV0 = outClipListV0s.front();
-					const Double3 &clipListV1 = outClipListV1s.front();
-					const Double3 &clipListV2 = outClipListV2s.front();
-					const Double3 &clipListNormal0 = outClipListNormal0s.front();
-					const Double3 &clipListNormal1 = outClipListNormal1s.front();
-					const Double3 &clipListNormal2 = outClipListNormal2s.front();
-					const Double2 &clipListUV0 = outClipListUV0s.front();
-					const Double2 &clipListUV1 = outClipListUV1s.front();
-					const Double2 &clipListUV2 = outClipListUV2s.front();
-					const ObjectTextureID clipListTextureID0 = outClipListTextureID0s.front();
-					const ObjectTextureID clipListTextureID1 = outClipListTextureID1s.front();
+					const Double3 &clipListV0 = outClipListV0s[clipListFrontIndex];
+					const Double3 &clipListV1 = outClipListV1s[clipListFrontIndex];
+					const Double3 &clipListV2 = outClipListV2s[clipListFrontIndex];
+					const Double3 &clipListNormal0 = outClipListNormal0s[clipListFrontIndex];
+					const Double3 &clipListNormal1 = outClipListNormal1s[clipListFrontIndex];
+					const Double3 &clipListNormal2 = outClipListNormal2s[clipListFrontIndex];
+					const Double2 &clipListUV0 = outClipListUV0s[clipListFrontIndex];
+					const Double2 &clipListUV1 = outClipListUV1s[clipListFrontIndex];
+					const Double2 &clipListUV2 = outClipListUV2s[clipListFrontIndex];
+					const ObjectTextureID clipListTextureID0 = outClipListTextureID0s[clipListFrontIndex];
+					const ObjectTextureID clipListTextureID1 = outClipListTextureID1s[clipListFrontIndex];
 
 					const TriangleClipResult clipResult = ClipTriangle(clipListV0, clipListV1, clipListV2,
 						clipListNormal0, clipListNormal1, clipListNormal2, clipListUV0, clipListUV1, clipListUV2,
 						eye, plane.point, plane.normal);
+
 					for (int k = 0; k < clipResult.triangleCount; k++)
 					{
 						outClipListV0s.emplace_back(clipResult.v0s[k]);
@@ -504,31 +508,22 @@ namespace swGeometry
 						outClipListTextureID1s.emplace_back(textureID1);
 					}
 
-					outClipListV0s.erase(outClipListV0s.begin());
-					outClipListV1s.erase(outClipListV1s.begin());
-					outClipListV2s.erase(outClipListV2s.begin());
-					outClipListNormal0s.erase(outClipListNormal0s.begin());
-					outClipListNormal1s.erase(outClipListNormal1s.begin());
-					outClipListNormal2s.erase(outClipListNormal2s.begin());
-					outClipListUV0s.erase(outClipListUV0s.begin());
-					outClipListUV1s.erase(outClipListUV1s.begin());
-					outClipListUV2s.erase(outClipListUV2s.begin());
-					outClipListTextureID0s.erase(outClipListTextureID0s.begin());
-					outClipListTextureID1s.erase(outClipListTextureID1s.begin());
+					clipListFrontIndex++;
 				}
 			}
 
-			outVisibleTriangleV0s.insert(outVisibleTriangleV0s.end(), outClipListV0s.begin(), outClipListV0s.end());
-			outVisibleTriangleV1s.insert(outVisibleTriangleV1s.end(), outClipListV1s.begin(), outClipListV1s.end());
-			outVisibleTriangleV2s.insert(outVisibleTriangleV2s.end(), outClipListV2s.begin(), outClipListV2s.end());
-			outVisibleTriangleNormal0s.insert(outVisibleTriangleNormal0s.end(), outClipListNormal0s.begin(), outClipListNormal0s.end());
-			outVisibleTriangleNormal1s.insert(outVisibleTriangleNormal1s.end(), outClipListNormal1s.begin(), outClipListNormal1s.end());
-			outVisibleTriangleNormal2s.insert(outVisibleTriangleNormal2s.end(), outClipListNormal2s.begin(), outClipListNormal2s.end());
-			outVisibleTriangleUV0s.insert(outVisibleTriangleUV0s.end(), outClipListUV0s.begin(), outClipListUV0s.end());
-			outVisibleTriangleUV1s.insert(outVisibleTriangleUV1s.end(), outClipListUV1s.begin(), outClipListUV1s.end());
-			outVisibleTriangleUV2s.insert(outVisibleTriangleUV2s.end(), outClipListUV2s.begin(), outClipListUV2s.end());
-			outVisibleTriangleTextureID0s.insert(outVisibleTriangleTextureID0s.end(), outClipListTextureID0s.begin(), outClipListTextureID0s.end());
-			outVisibleTriangleTextureID1s.insert(outVisibleTriangleTextureID1s.end(), outClipListTextureID1s.begin(), outClipListTextureID1s.end());
+			// @todo: replace with resize() and std::copy()?
+			outVisibleTriangleV0s.insert(outVisibleTriangleV0s.end(), outClipListV0s.begin() + clipListFrontIndex, outClipListV0s.end());
+			outVisibleTriangleV1s.insert(outVisibleTriangleV1s.end(), outClipListV1s.begin() + clipListFrontIndex, outClipListV1s.end());
+			outVisibleTriangleV2s.insert(outVisibleTriangleV2s.end(), outClipListV2s.begin() + clipListFrontIndex, outClipListV2s.end());
+			outVisibleTriangleNormal0s.insert(outVisibleTriangleNormal0s.end(), outClipListNormal0s.begin() + clipListFrontIndex, outClipListNormal0s.end());
+			outVisibleTriangleNormal1s.insert(outVisibleTriangleNormal1s.end(), outClipListNormal1s.begin() + clipListFrontIndex, outClipListNormal1s.end());
+			outVisibleTriangleNormal2s.insert(outVisibleTriangleNormal2s.end(), outClipListNormal2s.begin() + clipListFrontIndex, outClipListNormal2s.end());
+			outVisibleTriangleUV0s.insert(outVisibleTriangleUV0s.end(), outClipListUV0s.begin() + clipListFrontIndex, outClipListUV0s.end());
+			outVisibleTriangleUV1s.insert(outVisibleTriangleUV1s.end(), outClipListUV1s.begin() + clipListFrontIndex, outClipListUV1s.end());
+			outVisibleTriangleUV2s.insert(outVisibleTriangleUV2s.end(), outClipListUV2s.begin() + clipListFrontIndex, outClipListUV2s.end());
+			outVisibleTriangleTextureID0s.insert(outVisibleTriangleTextureID0s.end(), outClipListTextureID0s.begin() + clipListFrontIndex, outClipListTextureID0s.end());
+			outVisibleTriangleTextureID1s.insert(outVisibleTriangleTextureID1s.end(), outClipListTextureID1s.begin() + clipListFrontIndex, outClipListTextureID1s.end());
 		}
 
 		const int visibleTriangleCount = static_cast<int>(outVisibleTriangleV0s.size());
