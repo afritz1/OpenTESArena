@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <deque>
 #include <limits>
 
@@ -512,18 +513,37 @@ namespace swGeometry
 				}
 			}
 
-			// @todo: replace with resize() and std::copy()?
-			outVisibleTriangleV0s.insert(outVisibleTriangleV0s.end(), outClipListV0s.begin() + clipListFrontIndex, outClipListV0s.end());
-			outVisibleTriangleV1s.insert(outVisibleTriangleV1s.end(), outClipListV1s.begin() + clipListFrontIndex, outClipListV1s.end());
-			outVisibleTriangleV2s.insert(outVisibleTriangleV2s.end(), outClipListV2s.begin() + clipListFrontIndex, outClipListV2s.end());
-			outVisibleTriangleNormal0s.insert(outVisibleTriangleNormal0s.end(), outClipListNormal0s.begin() + clipListFrontIndex, outClipListNormal0s.end());
-			outVisibleTriangleNormal1s.insert(outVisibleTriangleNormal1s.end(), outClipListNormal1s.begin() + clipListFrontIndex, outClipListNormal1s.end());
-			outVisibleTriangleNormal2s.insert(outVisibleTriangleNormal2s.end(), outClipListNormal2s.begin() + clipListFrontIndex, outClipListNormal2s.end());
-			outVisibleTriangleUV0s.insert(outVisibleTriangleUV0s.end(), outClipListUV0s.begin() + clipListFrontIndex, outClipListUV0s.end());
-			outVisibleTriangleUV1s.insert(outVisibleTriangleUV1s.end(), outClipListUV1s.begin() + clipListFrontIndex, outClipListUV1s.end());
-			outVisibleTriangleUV2s.insert(outVisibleTriangleUV2s.end(), outClipListUV2s.begin() + clipListFrontIndex, outClipListUV2s.end());
-			outVisibleTriangleTextureID0s.insert(outVisibleTriangleTextureID0s.end(), outClipListTextureID0s.begin() + clipListFrontIndex, outClipListTextureID0s.end());
-			outVisibleTriangleTextureID1s.insert(outVisibleTriangleTextureID1s.end(), outClipListTextureID1s.begin() + clipListFrontIndex, outClipListTextureID1s.end());
+			// Append newly clipped triangles to visible triangles (faster than vector::insert or std::copy in debug build).
+			const size_t oldVisibleTrianglesCount = outVisibleTriangleV0s.size();
+			const size_t newlyClippedTrianglesCount = std::distance(outClipListV0s.begin() + clipListFrontIndex, outClipListV0s.end());
+			const size_t totalTrianglesCount = oldVisibleTrianglesCount + newlyClippedTrianglesCount;
+
+			if (totalTrianglesCount > oldVisibleTrianglesCount)
+			{
+				outVisibleTriangleV0s.resize(totalTrianglesCount);
+				outVisibleTriangleV1s.resize(totalTrianglesCount);
+				outVisibleTriangleV2s.resize(totalTrianglesCount);
+				outVisibleTriangleNormal0s.resize(totalTrianglesCount);
+				outVisibleTriangleNormal1s.resize(totalTrianglesCount);
+				outVisibleTriangleNormal2s.resize(totalTrianglesCount);
+				outVisibleTriangleUV0s.resize(totalTrianglesCount);
+				outVisibleTriangleUV1s.resize(totalTrianglesCount);
+				outVisibleTriangleUV2s.resize(totalTrianglesCount);
+				outVisibleTriangleTextureID0s.resize(totalTrianglesCount);
+				outVisibleTriangleTextureID1s.resize(totalTrianglesCount);
+
+				std::memcpy(&outVisibleTriangleV0s[oldVisibleTrianglesCount], &outClipListV0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV0s[0]));
+				std::memcpy(&outVisibleTriangleV1s[oldVisibleTrianglesCount], &outClipListV1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV1s[0]));
+				std::memcpy(&outVisibleTriangleV2s[oldVisibleTrianglesCount], &outClipListV2s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV2s[0]));
+				std::memcpy(&outVisibleTriangleNormal0s[oldVisibleTrianglesCount], &outClipListNormal0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListNormal0s[0]));
+				std::memcpy(&outVisibleTriangleNormal1s[oldVisibleTrianglesCount], &outClipListNormal1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListNormal1s[0]));
+				std::memcpy(&outVisibleTriangleNormal2s[oldVisibleTrianglesCount], &outClipListNormal2s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListNormal2s[0]));
+				std::memcpy(&outVisibleTriangleUV0s[oldVisibleTrianglesCount], &outClipListUV0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV0s[0]));
+				std::memcpy(&outVisibleTriangleUV1s[oldVisibleTrianglesCount], &outClipListUV1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV1s[0]));
+				std::memcpy(&outVisibleTriangleUV2s[oldVisibleTrianglesCount], &outClipListUV2s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV2s[0]));
+				std::memcpy(&outVisibleTriangleTextureID0s[oldVisibleTrianglesCount], &outClipListTextureID0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListTextureID0s[0]));
+				std::memcpy(&outVisibleTriangleTextureID1s[oldVisibleTrianglesCount], &outClipListTextureID1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListTextureID1s[0]));
+			}
 		}
 
 		const int visibleTriangleCount = static_cast<int>(outVisibleTriangleV0s.size());
