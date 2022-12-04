@@ -20,6 +20,9 @@ class WeatherInstance;
 
 namespace RendererUtils
 {
+	constexpr double NEAR_PLANE = 0.001;
+	constexpr double FAR_PLANE = 1000.0;
+
 	// Vertices used with fog geometry in screen-space around the player.
 	constexpr int FOG_GEOMETRY_VERTEX_COUNT = 8;
 	constexpr int FOG_GEOMETRY_INDEX_COUNT = 16;

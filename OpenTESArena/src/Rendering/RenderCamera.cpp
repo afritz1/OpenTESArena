@@ -1,4 +1,5 @@
 #include "RenderCamera.h"
+#include "RendererUtils.h"
 
 void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction, Degrees fovX,
 	Degrees fovY, double aspectRatio, double tallPixelRatio)
@@ -15,10 +16,12 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->rightScaled = this->right * this->aspectRatio;
 
 	this->up = this->right.cross(this->forward).normalized();
-	this->tallPixelRatio = tallPixelRatio;
-	this->upScaled = this->up * this->tallPixelRatio;
+	this->upScaled = this->up * tallPixelRatio;
 
-	const Double3 upScaledRecip = this->up * (1.0 / this->tallPixelRatio);
+	this->viewMatrix = Matrix4d::view(point, this->forward, this->right, this->upScaled); // Adjust for tall pixels.
+	this->perspectiveMatrix = Matrix4d::perspective(fovY, aspectRatio, RendererUtils::NEAR_PLANE, RendererUtils::FAR_PLANE);
+
+	const Double3 upScaledRecip = this->up * (1.0 / tallPixelRatio);
 	this->leftFrustumDir = (this->forwardScaled - this->rightScaled).normalized();
 	this->rightFrustumDir = (this->forwardScaled + this->rightScaled).normalized();
 	this->bottomFrustumDir = (this->forwardScaled - upScaledRecip).normalized();

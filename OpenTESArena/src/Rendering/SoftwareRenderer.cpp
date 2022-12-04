@@ -23,8 +23,6 @@
 
 namespace swConstants
 {
-	constexpr double NEAR_PLANE = 0.001;
-	constexpr double FAR_PLANE = 1000.0;
 	constexpr double PLAYER_LIGHT_DISTANCE = 3.0;
 }
 
@@ -365,7 +363,7 @@ namespace swGeometry
 		{
 			{
 				// Near plane (far plane is not necessary due to how chunks are managed - it only matters if a view distance slider exists)
-				{ eye + (camera.forward * swConstants::NEAR_PLANE), camera.forward },
+				{ eye + (camera.forward * RendererUtils::NEAR_PLANE), camera.forward },
 				// Left
 				{ eye, camera.leftFrustumNormal },
 				// Right
@@ -760,9 +758,8 @@ namespace swRender
 
 		const Double3 eye = swCamera::GetCameraEye(camera);
 		const Double2 eye2D(eye.x, eye.z); // For 2D lighting.
-		const Matrix4d viewMatrix = Matrix4d::view(eye, camera.forward, camera.right, camera.upScaled); // Adjust for tall pixels.
-		const Matrix4d perspectiveMatrix = Matrix4d::perspective(camera.fovY, camera.aspectRatio,
-			swConstants::NEAR_PLANE, swConstants::FAR_PLANE);
+		const Matrix4d &viewMatrix = camera.viewMatrix;
+		const Matrix4d &perspectiveMatrix = camera.perspectiveMatrix;
 
 		constexpr double yShear = 0.0;
 
