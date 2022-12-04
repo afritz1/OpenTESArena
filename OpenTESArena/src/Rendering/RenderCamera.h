@@ -7,11 +7,11 @@
 #include "../Voxels/VoxelUtils.h"
 
 // Common render camera usable by all renderers.
-
 struct RenderCamera
 {
 	ChunkInt2 chunk;
-	Double3 point; // 3D position relative to chunk origin.
+	Double3 chunkPoint; // 3D position relative to chunk origin.
+	Double3 worldPoint; // 3D position relative to world origin.
 	Double3 forward, right, up;
 	Double3 forwardScaled; // Scaled by zoom.
 	Double3 rightScaled; // Scaled by aspect ratio.

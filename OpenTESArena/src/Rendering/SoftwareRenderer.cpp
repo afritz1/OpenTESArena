@@ -26,16 +26,6 @@ namespace swConstants
 	constexpr double PLAYER_LIGHT_DISTANCE = 3.0;
 }
 
-namespace swCamera
-{
-	Double3 GetCameraEye(const RenderCamera &camera)
-	{
-		// @todo: eventually I think the chunk should be zeroed out and everything should always treat
-		// the player's chunk as the origin chunk.
-		return VoxelUtils::chunkPointToNewPoint(camera.chunk, camera.point);
-	}
-}
-
 // Internal geometry types/functions.
 namespace swGeometry
 {
@@ -48,21 +38,21 @@ namespace swGeometry
 	using ClippingPlanes = std::array<ClippingPlane, 5>;
 
 	// Plane point and normal pairs in world space.
-	ClippingPlanes MakeClippingPlanes(const RenderCamera &camera, const Double3 &eye)
+	ClippingPlanes MakeClippingPlanes(const RenderCamera &camera)
 	{
 		const ClippingPlanes planes =
 		{
 			{
 				// Near plane (far plane is not necessary due to how chunks are managed - it only matters if a view distance slider exists)
-				{ eye + (camera.forward * RendererUtils::NEAR_PLANE), camera.forward },
+				{ camera.worldPoint + (camera.forward * RendererUtils::NEAR_PLANE), camera.forward },
 				// Left
-				{ eye, camera.leftFrustumNormal },
+				{ camera.worldPoint, camera.leftFrustumNormal },
 				// Right
-				{ eye, camera.rightFrustumNormal },
+				{ camera.worldPoint, camera.rightFrustumNormal },
 				// Bottom
-				{ eye, camera.bottomFrustumNormal },
+				{ camera.worldPoint, camera.bottomFrustumNormal },
 				// Top
-				{ eye, camera.topFrustumNormal }
+				{ camera.worldPoint, camera.topFrustumNormal }
 			}
 		};
 
@@ -754,14 +744,14 @@ namespace swRender
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType,
 		PixelShaderType pixelShaderType, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const RenderCamera &camera, const Double3 &eye, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
+		const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
 	{
 		const int frameBufferWidth = colorBuffer.getWidth();
 		const int frameBufferHeight = colorBuffer.getHeight();
 		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 
-		const Double2 eye2D(eye.x, eye.z); // For 2D lighting.
+		const Double2 eye2D(camera.worldPoint.x, camera.worldPoint.z); // For 2D lighting.
 		const Matrix4d &viewMatrix = camera.viewMatrix;
 		const Matrix4d &perspectiveMatrix = camera.perspectiveMatrix;
 
@@ -1259,8 +1249,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 	swRender::ClearTriangleDrawList();
 
-	const Double3 eye = swCamera::GetCameraEye(camera);
-	const swGeometry::ClippingPlanes clippingPlanes = swGeometry::MakeClippingPlanes(camera, eye);
+	const swGeometry::ClippingPlanes clippingPlanes = swGeometry::MakeClippingPlanes(camera);
 
 	const int drawCallCount = drawCalls.getCount();
 	swGeometry::g_totalDrawCallCount = drawCallCount;
@@ -1278,12 +1267,12 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const bool allowBackFaces = drawCall.allowBackFaces;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(
 			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, worldSpaceOffset,
-			allowBackFaces, eye, clippingPlanes);
+			allowBackFaces, camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType = drawCall.textureSamplingType;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
 		swRender::RasterizeTriangles(drawListIndices, textureSamplingType, pixelShaderType, this->objectTextures,
-			paletteTexture, lightTableTexture, camera, eye, colorBufferView, depthBufferView);
+			paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
 	}
 }
 

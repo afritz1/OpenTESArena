@@ -5,7 +5,11 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	Degrees fovY, double aspectRatio, double tallPixelRatio)
 {
 	this->chunk = chunk;
-	this->point = point;
+	this->chunkPoint = point;
+
+	// @todo: eventually I think the chunk should be zeroed out and everything should always treat
+	// the player's chunk as the origin chunk.
+	this->worldPoint = VoxelUtils::chunkPointToNewPoint(chunk, point);
 
 	this->forward = direction.normalized();
 	this->zoom = MathUtils::verticalFovToZoom(fovY);
@@ -18,7 +22,7 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->up = this->right.cross(this->forward).normalized();
 	this->upScaled = this->up * tallPixelRatio;
 
-	this->viewMatrix = Matrix4d::view(point, this->forward, this->right, this->upScaled); // Adjust for tall pixels.
+	this->viewMatrix = Matrix4d::view(this->worldPoint, this->forward, this->right, this->upScaled); // Adjust for tall pixels.
 	this->perspectiveMatrix = Matrix4d::perspective(fovY, aspectRatio, RendererUtils::NEAR_PLANE, RendererUtils::FAR_PLANE);
 
 	const Double3 upScaledRecip = this->up * (1.0 / tallPixelRatio);
