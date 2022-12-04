@@ -39,6 +39,36 @@ namespace swCamera
 // Internal geometry types/functions.
 namespace swGeometry
 {
+	struct ClippingPlane
+	{
+		Double3 point;
+		Double3 normal;
+	};
+
+	using ClippingPlanes = std::array<ClippingPlane, 5>;
+
+	// Plane point and normal pairs in world space.
+	ClippingPlanes MakeClippingPlanes(const RenderCamera &camera, const Double3 &eye)
+	{
+		const ClippingPlanes planes =
+		{
+			{
+				// Near plane (far plane is not necessary due to how chunks are managed - it only matters if a view distance slider exists)
+				{ eye + (camera.forward * RendererUtils::NEAR_PLANE), camera.forward },
+				// Left
+				{ eye, camera.leftFrustumNormal },
+				// Right
+				{ eye, camera.rightFrustumNormal },
+				// Bottom
+				{ eye, camera.bottomFrustumNormal },
+				// Top
+				{ eye, camera.topFrustumNormal }
+			}
+		};
+
+		return planes;
+	}
+
 	struct TriangleClipResult
 	{
 		static constexpr int MAX_RESULTS = 2;
@@ -323,7 +353,7 @@ namespace swGeometry
 	swGeometry::TriangleDrawListIndices ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
 		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
 		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
-		const Double3 &worldOffset, bool allowBackFaces, const RenderCamera &camera)
+		const Double3 &worldOffset, bool allowBackFaces, const Double3 &eye, const ClippingPlanes &clippingPlanes)
 	{
 		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
 		std::vector<Double3> &outVisibleTriangleV1s = g_visibleTriangleV1s;
@@ -349,31 +379,6 @@ namespace swGeometry
 		std::vector<ObjectTextureID> &outClipListTextureID1s = g_visibleClipListTextureID1s;
 		int *outVisibleTriangleCount = &g_visibleTriangleCount;
 		int *outTotalTriangleCount = &g_totalTriangleCount;
-
-		const Double3 eye = swCamera::GetCameraEye(camera);
-
-		struct ClippingPlane
-		{
-			Double3 point;
-			Double3 normal;
-		};
-
-		// Plane point and normal pairs in world space.
-		const std::array<ClippingPlane, 5> clippingPlanes =
-		{
-			{
-				// Near plane (far plane is not necessary due to how chunks are managed - it only matters if a view distance slider exists)
-				{ eye + (camera.forward * RendererUtils::NEAR_PLANE), camera.forward },
-				// Left
-				{ eye, camera.leftFrustumNormal },
-				// Right
-				{ eye, camera.rightFrustumNormal },
-				// Bottom
-				{ eye, camera.bottomFrustumNormal },
-				// Top
-				{ eye, camera.topFrustumNormal }
-			}
-		};
 
 		outVisibleTriangleV0s.clear();
 		outVisibleTriangleV1s.clear();
@@ -749,14 +754,13 @@ namespace swRender
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType,
 		PixelShaderType pixelShaderType, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
+		const RenderCamera &camera, const Double3 &eye, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
 	{
 		const int frameBufferWidth = colorBuffer.getWidth();
 		const int frameBufferHeight = colorBuffer.getHeight();
 		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 
-		const Double3 eye = swCamera::GetCameraEye(camera);
 		const Double2 eye2D(eye.x, eye.z); // For 2D lighting.
 		const Matrix4d &viewMatrix = camera.viewMatrix;
 		const Matrix4d &perspectiveMatrix = camera.perspectiveMatrix;
@@ -1255,6 +1259,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
 	swRender::ClearTriangleDrawList();
 
+	const Double3 eye = swCamera::GetCameraEye(camera);
+	const swGeometry::ClippingPlanes clippingPlanes = swGeometry::MakeClippingPlanes(camera, eye);
+
 	const int drawCallCount = drawCalls.getCount();
 	swGeometry::g_totalDrawCallCount = drawCallCount;
 
@@ -1271,12 +1278,12 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const bool allowBackFaces = drawCall.allowBackFaces;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(
 			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, worldSpaceOffset,
-			allowBackFaces, camera);
+			allowBackFaces, eye, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType = drawCall.textureSamplingType;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
 		swRender::RasterizeTriangles(drawListIndices, textureSamplingType, pixelShaderType, this->objectTextures,
-			paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
+			paletteTexture, lightTableTexture, camera, eye, colorBufferView, depthBufferView);
 	}
 }
 
