@@ -544,7 +544,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
-	ChunkManager &chunkManager = levelInst.getChunkManager();
+	VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
 	const EntityManager &entityManager = levelInst.getEntityManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
@@ -578,14 +578,12 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	{
 		if (hit.getType() == Physics::Hit::Type::Voxel)
 		{
-			const ChunkInt2 chunk = hit.getCoord().chunk;
-			VoxelChunk *chunkPtr = chunkManager.tryGetChunk(chunk);
-			DebugAssert(chunkPtr != nullptr);
-
+			const ChunkInt2 chunkPos = hit.getCoord().chunk;
+			VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunkPtr->getVoxelTraitsDef(voxelTraitsDefID);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
 			const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
 			// Primary interaction handles selection in the game world. Secondary interaction handles
@@ -615,9 +613,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							if (isWall || isEdge)
 							{
 								VoxelChunk::TransitionDefID transitionDefID;
-								if (chunkPtr->tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
+								if (chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 								{
-									const TransitionDefinition &transitionDef = chunkPtr->getTransitionDef(transitionDefID);
+									const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
 									if (transitionDef.getType() != TransitionType::LevelChange)
 									{
 										MapLogicController::handleMapTransition(game, hit, transitionDef);
@@ -629,11 +627,11 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 						{
 							// @temp: add to fading voxels if it doesn't already exist.
 							int fadeAnimInstIndex;
-							if (!chunkPtr->tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
+							if (!chunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
 							{
 								VoxelFadeAnimationInstance fadeAnimInst;
 								fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-								chunkPtr->addFadeAnimInst(std::move(fadeAnimInst));
+								chunk.addFadeAnimInst(std::move(fadeAnimInst));
 							}
 						}
 					}
@@ -641,28 +639,28 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 					{
 						// If the door is closed, then open it.
 						int doorAnimInstIndex;
-						const bool isClosed = !chunkPtr->tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
+						const bool isClosed = !chunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
 						if (isClosed)
 						{
 							// Add the door to the open doors list.
 							VoxelDoorAnimationInstance newDoorAnimInst;
 							newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-							chunkPtr->addDoorAnimInst(std::move(newDoorAnimInst));
+							chunk.addDoorAnimInst(std::move(newDoorAnimInst));
 
 							// Get the door's opening sound and play it at the center of the voxel.
 							VoxelChunk::DoorDefID doorDefID;
-							if (!chunkPtr->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+							if (!chunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
 							{
 								DebugCrash("Expected door def ID to exist.");
 							}
 
-							const DoorDefinition &doorDef = chunkPtr->getDoorDef(doorDefID);
+							const DoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
 							const DoorDefinition::OpenSoundDef &openSoundDef = doorDef.getOpenSound();
 
 							auto &audioManager = game.getAudioManager();
 							const std::string &soundFilename = openSoundDef.soundFilename;
 
-							const CoordDouble3 soundCoord(chunkPtr->getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+							const CoordDouble3 soundCoord(chunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 							const NewDouble3 soundPosition = VoxelUtils::coordToNewPoint(soundCoord);
 							audioManager.playSound(soundFilename, soundPosition);
 						}
@@ -675,9 +673,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				if (voxelType == ArenaTypes::VoxelType::Wall)
 				{
 					VoxelChunk::BuildingNameID buildingNameID;
-					if (chunkPtr->tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
+					if (chunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
 					{
-						const std::string &buildingName = chunkPtr->getBuildingName(buildingNameID);
+						const std::string &buildingName = chunk.getBuildingName(buildingNameID);
 						actionTextBox.setText(buildingName);
 
 						auto &gameState = game.getGameState();

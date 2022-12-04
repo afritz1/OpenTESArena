@@ -66,18 +66,17 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	GameState &gameState = game.getGameState();
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
-	ChunkManager &chunkManager = levelInst.getChunkManager();
-	VoxelChunk *chunkPtr = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(chunkPtr != nullptr);
+	VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
+	VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(coord.chunk);
 
 	const VoxelInt3 &voxel = coord.voxel;
 	VoxelChunk::TriggerDefID triggerDefID;
-	if (!chunkPtr->tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
+	if (!chunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
 	{
 		return;
 	}
 
-	const VoxelTriggerDefinition &triggerDef = chunkPtr->getTriggerDef(triggerDefID);
+	const VoxelTriggerDefinition &triggerDef = chunk.getTriggerDef(triggerDefID);
 	if (triggerDef.hasSoundDef())
 	{
 		const VoxelTriggerDefinition::SoundDef &soundDef = triggerDef.getSoundDef();
@@ -94,7 +93,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 		const VoxelInt3 &voxel = coord.voxel;
 
 		int triggerInstIndex;
-		const bool hasBeenTriggered = chunkPtr->tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
+		const bool hasBeenTriggered = chunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
 		const bool canDisplay = !textDef.isDisplayedOnce() || !hasBeenTriggered;
 
 		if (canDisplay)
@@ -110,7 +109,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 			{
 				VoxelTriggerInstance newTriggerInst;
 				newTriggerInst.init(voxel.x, voxel.y, voxel.z);
-				chunkPtr->addTriggerInst(std::move(newTriggerInst));
+				chunk.addTriggerInst(std::move(newTriggerInst));
 			}
 		}
 	}
@@ -480,22 +479,21 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 
 	MapInstance &interiorMapInst = gameState.getActiveMapInst();
 	const LevelInstance &level = interiorMapInst.getActiveLevel();
-	const ChunkManager &chunkManager = level.getChunkManager();
-	const VoxelChunk *chunkPtr = chunkManager.tryGetChunk(transitionCoord.chunk);
-	DebugAssert(chunkPtr != nullptr);
+	const VoxelChunkManager &voxelChunkManager = level.getVoxelChunkManager();
+	const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(transitionCoord.chunk);
 
 	const VoxelInt3 &transitionVoxel = transitionCoord.voxel;
-	if (!chunkPtr->isValidVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z))
+	if (!chunk.isValidVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z))
 	{
 		// Not in the chunk.
 		return;
 	}
 
 	// Get the voxel definition associated with the voxel.
-	const VoxelTraitsDefinition &voxelTraitsDef = [chunkPtr, &transitionVoxel]()
+	const VoxelTraitsDefinition &voxelTraitsDef = [&chunk, &transitionVoxel]()
 	{
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
-		return chunkPtr->getVoxelTraitsDef(voxelTraitsDefID);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
+		return chunk.getVoxelTraitsDef(voxelTraitsDefID);
 	}();
 
 	// If the associated voxel data is a wall, then it might be a transition voxel.
@@ -503,12 +501,12 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	{
 		const VoxelInt3 &voxel = transitionCoord.voxel;
 		VoxelChunk::TransitionDefID transitionDefID;
-		if (!chunkPtr->tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
+		if (!chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 		{
 			return;
 		}
 
-		const TransitionDefinition &transitionDef = chunkPtr->getTransitionDef(transitionDefID);
+		const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
 
 		// The direction from a level up/down voxel to where the player should end up after
 		// going through. In other words, it points to the destination voxel adjacent to the
@@ -609,10 +607,14 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			// Tick the level's chunk manager once during initialization so the renderer is passed valid
 			// chunks this frame.
 			constexpr double dummyDeltaTime = 0.0;
+			const ChunkManager &chunkManager = game.getChunkManager();
+			const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+			const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+			const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 			const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
-			newActiveLevel.update(dummyDeltaTime, game, player.getPosition(), levelIndex, interiorMapDef,
-				entityGenInfo, citizenGenInfo, chunkDistance, game.getEntityDefinitionLibrary(),
-				game.getBinaryAssetLibrary(), game.getTextureManager(), game.getAudioManager());
+			newActiveLevel.update(dummyDeltaTime, activeChunkPositions, newChunkPositions, freedChunkPositions,
+				player.getPosition(), levelIndex, interiorMapDef, chunkDistance, gameState.getChasmAnimPercent(),
+				game.getTextureManager(), game.getAudioManager(), game.getRenderer());
 		};
 
 		// Lambda for opening the world map when the player enters a transition voxel

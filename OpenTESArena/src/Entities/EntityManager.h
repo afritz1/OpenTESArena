@@ -17,9 +17,9 @@
 
 #include "components/utilities/Buffer2D.h"
 
-class ChunkManager;
 class EntityDefinitionLibrary;
 class Game;
+class VoxelChunkManager;
 
 struct EntityVisibilityState2D;
 struct EntityVisibilityState3D;
@@ -175,11 +175,10 @@ public:
 
 	// Gets the entity visibility data necessary for rendering and ray cast selection.
 	void getEntityVisibilityState2D(const Entity &entity, const CoordDouble2 &eye2D,
-		const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-		EntityVisibilityState2D &outVisState) const;
+		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const;
 	void getEntityVisibilityState3D(const Entity &entity, const CoordDouble2 &eye2D,
-		double ceilingScale, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-		EntityVisibilityState3D &outVisState) const;
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState3D &outVisState) const;
 
 	// Convenience function for getting the active keyframe from an entity, given some
 	// visibility data.

@@ -44,7 +44,7 @@ AutomapPanel::~AutomapPanel()
 }
 
 bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
-	const ChunkManager &chunkManager, const std::string &locationName)
+	const VoxelChunkManager &voxelChunkManager, const std::string &locationName)
 {
 	auto &game = this->getGame();
 	
@@ -84,7 +84,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
 	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
 	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(
-		game.getGameState(), playerCoordXZ, playerDirection, chunkManager, renderer);
+		game.getGameState(), playerCoordXZ, playerDirection, voxelChunkManager, renderer);
 	this->mapTextureRef.init(mapTextureID, renderer);
 
 	auto &textureManager = game.getTextureManager();

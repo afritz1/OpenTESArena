@@ -19,8 +19,8 @@
 // - Int2 getChunkPixelPosition(??Int chunkX, ??Int chunkY); // position on-screen in original render coords
 // - just get the surrounding 3x3 chunks. Does it really matter that it's 2x2 like the original game?
 
-class ChunkManager;
 class Renderer;
+class VoxelChunkManager;
 
 class AutomapPanel : public Panel
 {
@@ -36,7 +36,7 @@ public:
 	~AutomapPanel() override;
 
 	bool init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
-		const ChunkManager &chunkManager, const std::string &locationName);
+		const VoxelChunkManager &voxelChunkManager, const std::string &locationName);
 };
 
 #endif

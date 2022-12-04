@@ -192,7 +192,7 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 
 		const auto &player = game.getPlayer();
 		game.setPanel<AutomapPanel>(player.getPosition(), player.getGroundDirection(),
-			levelInst.getChunkManager(), automapLocationName);
+			levelInst.getVoxelChunkManager(), automapLocationName);
 	}
 	else
 	{

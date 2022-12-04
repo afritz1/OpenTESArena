@@ -5,11 +5,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ChunkManager.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Entities/CitizenUtils.h"
 #include "../Entities/EntityGeneration.h"
 #include "../Entities/EntityManager.h"
+#include "../Voxels/VoxelChunkManager.h"
+
+#include "components/utilities/BufferView.h"
 
 // Instance of a level with voxels and entities. Its data is in a baked, context-sensitive format
 // and depends on one or more level definitions for its population.
@@ -30,7 +32,7 @@ private:
 	// - we make the assumption that "a level has voxel and entity textures" but that is decoupled from actual voxel and entity instances.
 	// - feels like all voxel/entity/sky/particle object texture loading should be on demand...? Might simplify enemy spawning code.
 
-	ChunkManager chunkManager;
+	VoxelChunkManager voxelChunkManager;
 	EntityManager entityManager;
 
 	// Texture handles for the active game world palette and light table.
@@ -42,8 +44,8 @@ public:
 
 	void init(double ceilingScale);
 
-	ChunkManager &getChunkManager();
-	const ChunkManager &getChunkManager() const;
+	VoxelChunkManager &getVoxelChunkManager();
+	const VoxelChunkManager &getVoxelChunkManager() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
 	ObjectTextureID getPaletteTextureID() const;
@@ -55,11 +57,11 @@ public:
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		TextureManager &textureManager, Renderer &renderer);
 
-	void update(double dt, Game &game, const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, AudioManager &audioManager);
+	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
+		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+		const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		int chunkDistance, double chasmAnimPercent, TextureManager &textureManager, AudioManager &audioManager,
+		Renderer &renderer);
 
 	void cleanUp();
 };

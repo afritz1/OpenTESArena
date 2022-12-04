@@ -89,14 +89,14 @@ void LevelInstance::init(double ceilingScale)
 	this->ceilingScale = ceilingScale;
 }
 
-ChunkManager &LevelInstance::getChunkManager()
+VoxelChunkManager &LevelInstance::getVoxelChunkManager()
 {
-	return this->chunkManager;
+	return this->voxelChunkManager;
 }
 
-const ChunkManager &LevelInstance::getChunkManager() const
+const VoxelChunkManager &LevelInstance::getVoxelChunkManager() const
 {
-	return this->chunkManager;
+	return this->voxelChunkManager;
 }
 
 EntityManager &LevelInstance::getEntityManager()
@@ -150,47 +150,34 @@ bool LevelInstance::trySetActive(const WeatherDefinition &weatherDef, bool night
 	return true;
 }
 
-void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const EntityGeneration::EntityGenInfo &entityGenInfo,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, AudioManager &audioManager)
+void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
+	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+	const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	int chunkDistance, double chasmAnimPercent, TextureManager &textureManager, AudioManager &audioManager,
+	Renderer &renderer)
 {
 	const ChunkInt2 &centerChunkPos = playerCoord.chunk;
-	this->chunkManager.calculateActiveChunks(centerChunkPos, chunkDistance);
-	this->chunkManager.updateVoxels(dt, playerCoord, activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo,
-		this->ceilingScale, chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager, audioManager,
-		this->entityManager);
-	this->chunkManager.updateEntities(this->entityManager);
+	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
+		mapDefinition, this->ceilingScale, audioManager);
 
-	// @todo: eventually bring all entity manager add/remove chunk behavior from ChunkManager::update() to these two loops
-
-	Renderer &renderer = game.getRenderer();
-	const int freedChunkCount = this->chunkManager.getFreedChunkPositionCount();
-	const int newChunkCount = this->chunkManager.getNewChunkPositionCount();
-	for (int i = 0; i < freedChunkCount; i++)
+	for (int i = 0; i < freedChunkPositions.getCount(); i++)
 	{
-		const ChunkInt2 &chunkPos = this->chunkManager.getFreedChunkPosition(i);
+		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
 		renderer.unloadVoxelChunk(chunkPos);
 	}
 
-	const GameState &gameState = game.getGameState();
-	const double chasmAnimPercent = gameState.getChasmAnimPercent();
-	for (int i = 0; i < newChunkCount; i++)
+	for (int i = 0; i < newChunkPositions.getCount(); i++)
 	{
-		const ChunkInt2 &chunkPos = this->chunkManager.getNewChunkPosition(i);
-		VoxelChunk *voxelChunkPtr = this->chunkManager.tryGetChunk(chunkPos);
-		DebugAssert(voxelChunkPtr != nullptr);
-
-		renderer.loadVoxelChunk(*voxelChunkPtr, this->ceilingScale, textureManager);
-		renderer.rebuildVoxelChunkDrawCalls(*voxelChunkPtr, this->ceilingScale, chasmAnimPercent, true, false);
+		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
+		VoxelChunk &voxelChunk = this->voxelChunkManager.getChunkAtPosition(chunkPos);
+		renderer.loadVoxelChunk(voxelChunk, this->ceilingScale, textureManager);
+		renderer.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, true, false);
 	}
 
-	const int totalChunkCount = this->chunkManager.getChunkCount();
-	for (int i = 0; i < totalChunkCount; i++)
+	for (int i = 0; i < activeChunkPositions.getCount(); i++)
 	{
-		const VoxelChunk &voxelChunk = this->chunkManager.getChunk(i);
+		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
+		const VoxelChunk &voxelChunk = this->voxelChunkManager.getChunkAtPosition(chunkPos);
 		renderer.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, false, true);
 	}
 
@@ -200,10 +187,10 @@ void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoor
 		renderer.rebuildVoxelDrawCallsList();
 	}
 
-	this->entityManager.tick(game, dt);
+	//this->entityManager.tick(game, dt); // @todo: simulate entities after voxel chunks are working well
 }
 
 void LevelInstance::cleanUp()
 {
-	this->chunkManager.cleanUp();
+	this->voxelChunkManager.cleanUp();
 }

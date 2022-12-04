@@ -90,7 +90,7 @@ namespace Physics
 	// Builds a set of voxels for a chunk that are at least partially touched by entities. A point of reference
 	// is needed for evaluating entity animations. Ignores entities behind the camera.
 	Physics::ChunkEntityMap makeChunkEntityMap(const ChunkInt2 &chunk, const CoordDouble3 &viewCoord,
-		double ceilingScale, const ChunkManager &chunkManager, const EntityManager &entityManager,
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityManager &entityManager,
 		const EntityDefinitionLibrary &entityDefLibrary)
 	{
 		// Include entities within one chunk of the center chunk to get entities that are partially touching
@@ -151,7 +151,7 @@ namespace Physics
 
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
 			EntityVisibilityState3D visState;
-			entityManager.getEntityVisibilityState3D(entity, viewCoordXZ, ceilingScale, chunkManager,
+			entityManager.getEntityVisibilityState3D(entity, viewCoordXZ, ceilingScale, voxelChunkManager,
 				entityDefLibrary, visState);
 
 			// Get the entity's view-independent bounding box to help determine which voxels they are in.
@@ -196,7 +196,7 @@ namespace Physics
 
 	// The given chunk coordinate is known to be loaded.
 	const ChunkEntityMap &getOrAddChunkEntityMap(const ChunkInt2 &chunk, const CoordDouble3 &viewCoord,
-		double ceilingScale, const ChunkManager &chunkManager, const EntityManager &entityManager,
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityManager &entityManager,
 		const EntityDefinitionLibrary &entityDefLibrary, std::vector<ChunkEntityMap> &chunkEntityMaps)
 	{
 		for (const ChunkEntityMap &map : chunkEntityMaps)
@@ -207,7 +207,7 @@ namespace Physics
 			}
 		}
 
-		ChunkEntityMap newMap = Physics::makeChunkEntityMap(chunk, viewCoord, ceilingScale, chunkManager,
+		ChunkEntityMap newMap = Physics::makeChunkEntityMap(chunk, viewCoord, ceilingScale, voxelChunkManager,
 			entityManager, entityDefLibrary);
 		chunkEntityMaps.emplace_back(std::move(newMap));
 		return chunkEntityMaps.back();
@@ -219,8 +219,8 @@ namespace Physics
 		VoxelFacing3D farFacing, const VoxelDouble3 &farPoint, double ceilingScale, const LevelInstance &levelInst,
 		Physics::Hit &hit)
 	{
-		const ChunkManager &chunkManager = levelInst.getChunkManager();
-		const VoxelChunk *chunk = chunkManager.tryGetChunk(rayCoord.chunk);
+		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
+		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
 		if (chunk == nullptr)
 		{
 			// Nothing to intersect with.
@@ -612,8 +612,8 @@ namespace Physics
 		VoxelFacing3D nearFacing, const CoordDouble3 &nearCoord, const CoordDouble3 &farCoord,
 		double ceilingScale, const LevelInstance &levelInst, Physics::Hit &hit)
 	{
-		const ChunkManager &chunkManager = levelInst.getChunkManager();
-		const VoxelChunk *chunk = chunkManager.tryGetChunk(voxelCoord.chunk);
+		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
+		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(voxelCoord.chunk);
 		if (chunk == nullptr)
 		{
 			// Nothing to intersect with.
@@ -1066,7 +1066,7 @@ namespace Physics
 		bool includeEntities, const Palette &palette, const EntityDefinitionLibrary &entityDefLibrary,
 		const Renderer &renderer, std::vector<ChunkEntityMap> &chunkEntityMaps, Physics::Hit &hit)
 	{
-		const ChunkManager &chunkManager = levelInst.getChunkManager();
+		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
 		const EntityManager &entityManager = levelInst.getEntityManager();
 
 		// Each flat shares the same axes. Their forward direction always faces opposite to the camera direction.
@@ -1146,7 +1146,7 @@ namespace Physics
 
 		// Check whether the initial voxel is in a loaded chunk.
 		ChunkInt2 currentChunk = rayCoord.chunk;
-		const VoxelChunk *currentChunkPtr = chunkManager.tryGetChunk(currentChunk);
+		const VoxelChunk *currentChunkPtr = voxelChunkManager.tryGetChunkAtPosition(currentChunk);
 
 		// The initial DDA step is a special case, so it's brought outside the DDA loop. This complicates things
 		// a little bit, but it's important enough that it should be kept.
@@ -1181,7 +1181,7 @@ namespace Physics
 			{
 				// Test the initial voxel's entities for ray intersections.
 				const ChunkEntityMap &chunkEntityMap = Physics::getOrAddChunkEntityMap(currentChunk, rayCoord,
-					ceilingScale, chunkManager, entityManager, entityDefLibrary, chunkEntityMaps);
+					ceilingScale, voxelChunkManager, entityManager, entityDefLibrary, chunkEntityMaps);
 				success |= Physics::testEntitiesInVoxel(rayCoord, rayDirection, flatForward, flatRight, flatUp,
 					rayVoxel, chunkEntityMap, pixelPerfect, palette, entityManager, entityDefLibrary, renderer, hit);
 			}
@@ -1214,7 +1214,7 @@ namespace Physics
 		constexpr WEDouble halfOneMinusStepZReal = static_cast<WEDouble>((1 - stepZ) / 2);
 
 		// Lambda for stepping to the next voxel in the grid and updating various values.
-		auto doDDAStep = [&rayCoord, &rayDirection, &chunkManager, &deltaDist, stepX, stepY, stepZ, initialDeltaDistX,
+		auto doDDAStep = [&rayCoord, &rayDirection, &voxelChunkManager, &deltaDist, stepX, stepY, stepZ, initialDeltaDistX,
 			initialDeltaDistY, initialDeltaDistZ, &visibleWallFacings, &rayDistance, &facing, &currentChunk,
 			&currentChunkPtr, &currentVoxel, &deltaDistSumX, &deltaDistSumY, &deltaDistSumZ, &canDoYStep,
 			halfOneMinusStepXReal, halfOneMinusStepYReal, halfOneMinusStepZReal]()
@@ -1288,7 +1288,7 @@ namespace Physics
 
 			if (currentChunk != oldChunk)
 			{
-				currentChunkPtr = chunkManager.tryGetChunk(currentChunk);
+				currentChunkPtr = voxelChunkManager.tryGetChunkAtPosition(currentChunk);
 			}
 		};
 
@@ -1323,7 +1323,7 @@ namespace Physics
 			{
 				// Test the current voxel's entities for ray intersections.
 				const ChunkEntityMap &chunkEntityMap = Physics::getOrAddChunkEntityMap(savedVoxelCoord.chunk, rayCoord,
-					ceilingScale, chunkManager, entityManager, entityDefLibrary, chunkEntityMaps);
+					ceilingScale, voxelChunkManager, entityManager, entityDefLibrary, chunkEntityMaps);
 				success |= Physics::testEntitiesInVoxel(rayCoord, rayDirection, flatForward, flatRight, flatUp,
 					savedVoxelCoord.voxel, chunkEntityMap, pixelPerfect, palette, entityManager, entityDefLibrary,
 					renderer, hit);

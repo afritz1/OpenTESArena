@@ -313,6 +313,11 @@ Player &Game::getPlayer()
 	return this->player;
 }
 
+const ChunkManager &Game::getChunkManager() const
+{
+	return this->chunkManager;
+}
+
 bool Game::isSimulatingScene() const
 {
 	return this->shouldSimulateScene;
@@ -770,11 +775,16 @@ void Game::loop()
 
 			if (this->isSimulatingScene())
 			{
+				// Recalculate the active chunks.
+				const CoordDouble3 playerCoord = this->player.getPosition();
+				const int chunkDistance = this->options.getMisc_ChunkDistance();
+				this->chunkManager.update(playerCoord.chunk, chunkDistance);
+
 				// Tick game world state (voxels, entities, daytime clock, etc.).
 				this->gameState.tick(timeScaledDt, *this);
 
 				// Update audio listener and check for finished sounds.
-				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(this->player.getPosition());
+				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(playerCoord);
 				const NewDouble3 &direction = this->player.getDirection();
 				const AudioManager::ListenerData listenerData(absolutePosition, direction);
 				this->audioManager.update(dt, &listenerData);
@@ -786,6 +796,8 @@ void Game::loop()
 		}
 
 		// Late tick.
+		// @todo: this should probably be "handle scene change" instead, since user input, ticking the active panel,
+		// and simulating the game state all have the potential to start a scene change.
 		try
 		{
 			// Handle an edge case with the game loop during map transitions, etc.. This can happen due to the
@@ -874,6 +886,8 @@ void Game::loop()
 				MapInstance &mapInst = this->gameState.getActiveMapInst();
 				mapInst.cleanUp();
 			}
+
+			this->chunkManager.cleanUp();
 		}
 		catch (const std::exception &e)
 		{

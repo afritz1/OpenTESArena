@@ -523,7 +523,6 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const auto &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const ChunkManager &chunkManager = levelInst.getChunkManager();
 	const EntityManager &entityManager = levelInst.getEntityManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
@@ -602,7 +601,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const auto &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const ChunkManager &chunkManager = levelInst.getChunkManager();
+	const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
 	const EntityManager &entityManager = levelInst.getEntityManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
@@ -629,14 +628,13 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		{
 		case Physics::Hit::Type::Voxel:
 		{
-			const ChunkInt2 chunk = hit.getCoord().chunk;
-			const VoxelChunk *chunkPtr = chunkManager.tryGetChunk(chunk);
-			DebugAssert(chunkPtr != nullptr);
+			const ChunkInt2 chunkPos = hit.getCoord().chunk;
+			const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunkPtr->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunkPtr->getVoxelTraitsDef(voxelTraitsDefID);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
 
 			text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelTraitsDef.type)) +
 				' ' + std::to_string(hit.getT());

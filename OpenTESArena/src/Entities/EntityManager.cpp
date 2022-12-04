@@ -719,8 +719,7 @@ EntityDefID EntityManager::addEntityDef(EntityDefinition &&def,
 }
 
 void EntityManager::getEntityVisibilityState2D(const Entity &entity, const CoordDouble2 &eye2D,
-	const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-	EntityVisibilityState2D &outVisState) const
+	const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const
 {
 	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID(), entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
@@ -798,24 +797,24 @@ void EntityManager::getEntityVisibilityState2D(const Entity &entity, const Coord
 }
 
 void EntityManager::getEntityVisibilityState3D(const Entity &entity, const CoordDouble2 &eye2D,
-	double ceilingScale, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 	EntityVisibilityState3D &outVisState) const
 {
 	// Use the results from the 2D calculation.
 	EntityVisibilityState2D visState2D;
-	this->getEntityVisibilityState2D(entity, eye2D, chunkManager, entityDefLibrary, visState2D);
+	this->getEntityVisibilityState2D(entity, eye2D, entityDefLibrary, visState2D);
 
 	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID(), entityDefLibrary);
 	const int baseYOffset = EntityUtils::getYOffset(entityDef);
 	const double flatYOffset = static_cast<double>(-baseYOffset) / MIFUtils::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
-	const double raisedPlatformYOffset = [ceilingScale, &chunkManager, &visState2D]()
+	const double raisedPlatformYOffset = [ceilingScale, &voxelChunkManager, &visState2D]()
 	{
 		const CoordInt2 entityVoxelCoord(
 			visState2D.flatPosition.chunk,
 			VoxelUtils::pointToVoxel(visState2D.flatPosition.point));
-		const VoxelChunk *chunk = chunkManager.tryGetChunk(entityVoxelCoord.chunk);
+		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(entityVoxelCoord.chunk);
 		if (chunk == nullptr)
 		{
 			// Not sure this is ever reachable, but handle just in case.

@@ -258,11 +258,11 @@ void Player::lookAt(const CoordDouble3 &point)
 
 void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 {
-	const ChunkManager &chunkManager = activeLevel.getChunkManager();
+	const VoxelChunkManager &voxelChunkManager = activeLevel.getVoxelChunkManager();
 
-	auto tryGetVoxelTraitsDef = [&activeLevel, &chunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
+	auto tryGetVoxelTraitsDef = [&activeLevel, &voxelChunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
 	{
-		const VoxelChunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
 		if (chunk != nullptr)
 		{
 			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
@@ -310,7 +310,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 	// -- Temp hack until Y collision detection is implemented --
 	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [&chunkManager](const CoordInt3 &coord, const VoxelTraitsDefinition &voxelTraitsDef)
+	auto wouldCollideWithVoxel = [&voxelChunkManager](const CoordInt3 &coord, const VoxelTraitsDefinition &voxelTraitsDef)
 	{
 		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
@@ -328,23 +328,22 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 		}
 		else
 		{
-			const VoxelChunk *chunk = chunkManager.tryGetChunk(coord.chunk);
-			DebugAssert(chunk != nullptr);
+			const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(coord.chunk);
 
 			// General voxel collision.
 			const bool isEmpty = voxelType == ArenaTypes::VoxelType::None;
-			const bool isOpenDoor = [&coord, voxelType, chunk]()
+			const bool isOpenDoor = [&coord, voxelType, &chunk]()
 			{
 				if (voxelType == ArenaTypes::VoxelType::Door)
 				{
 					const VoxelInt3 &voxel = coord.voxel;
 					int doorAnimInstIndex;
-					if (!chunk->tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex))
+					if (!chunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex))
 					{
 						return false;
 					}
 
-					const VoxelDoorAnimationInstance &doorAnimInst = chunk->getDoorAnimInst(doorAnimInstIndex);
+					const VoxelDoorAnimationInstance &doorAnimInst = chunk.getDoorAnimInst(doorAnimInstIndex);
 					return doorAnimInst.stateType != VoxelDoorAnimationInstance::StateType::Closed;
 				}
 				else
@@ -355,7 +354,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - @todo: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelTransition = [&coord, voxelType, chunk]()
+			const bool isLevelTransition = [&coord, voxelType, &chunk]()
 			{
 				if (voxelType == ArenaTypes::VoxelType::Wall)
 				{
@@ -363,12 +362,12 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 
 					// Check if there is a level change transition definition for this voxel.
 					VoxelChunk::TransitionDefID transitionDefID;
-					if (!chunk->tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
+					if (!chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 					{
 						return false;
 					}
 
-					const TransitionDefinition &transitionDef = chunk->getTransitionDef(transitionDefID);
+					const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
 					return transitionDef.getType() == TransitionType::LevelChange;
 				}
 				else

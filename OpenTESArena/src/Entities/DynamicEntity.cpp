@@ -318,7 +318,7 @@ void DynamicEntity::updateProjectileState(Game &game, double dt)
 void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 	const EntityDefinitionLibrary &entityDefLibrary, Random &random, double dt)
 {
-	const ChunkManager &chunkManager = activeLevel.getChunkManager();
+	const VoxelChunkManager &voxelChunkManager = activeLevel.getVoxelChunkManager();
 	const EntityManager &entityManager = activeLevel.getEntityManager();
 	const DynamicEntityType dynamicEntityType = this->getDerivedType();
 
@@ -358,9 +358,9 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 
 			if (nextVoxel != curVoxel)
 			{
-				auto isSuitableVoxel = [&chunkManager](const CoordInt2 &coord)
+				auto isSuitableVoxel = [&voxelChunkManager](const CoordInt2 &coord)
 				{
-					const VoxelChunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+					const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
 
 					auto isValidVoxel = [chunk]()
 					{
