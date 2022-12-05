@@ -328,7 +328,7 @@ namespace swGeometry
 	std::vector<Double3> g_visibleTriangleNormal0s, g_visibleTriangleNormal1s, g_visibleTriangleNormal2s;
 	std::vector<Double2> g_visibleTriangleUV0s, g_visibleTriangleUV1s, g_visibleTriangleUV2s;
 	std::vector<ObjectTextureID> g_visibleTriangleTextureID0s, g_visibleTriangleTextureID1s;	
-	constexpr int MAX_CLIP_LIST_SIZE = 24; // Arbitrary worst case for processing one triangle. Increase this if clipping breaks.
+	constexpr int MAX_CLIP_LIST_SIZE = 64; // Arbitrary worst case for processing one triangle. Increase this if clipping breaks (32 wasn't enough).
 	std::array<Double3, MAX_CLIP_LIST_SIZE> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
 	std::array<Double3, MAX_CLIP_LIST_SIZE> g_visibleClipListNormal0s, g_visibleClipListNormal1s, g_visibleClipListNormal2s;
 	std::array<Double2, MAX_CLIP_LIST_SIZE> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
@@ -490,6 +490,8 @@ namespace swGeometry
 					{
 						const int oldClipListSize = clipListSize;
 						const int newClipListSize = oldClipListSize + clipResult.triangleCount;
+						DebugAssert(newClipListSize < swGeometry::MAX_CLIP_LIST_SIZE);
+
 						const int dstIndex = newClipListSize - clipResult.triangleCount;
 						std::memcpy(&outClipListV0s[dstIndex], clipResult.v0s, clipResult.triangleCount * sizeof(clipResult.v0s[0]));
 						std::memcpy(&outClipListV1s[dstIndex], clipResult.v1s, clipResult.triangleCount * sizeof(clipResult.v1s[0]));
