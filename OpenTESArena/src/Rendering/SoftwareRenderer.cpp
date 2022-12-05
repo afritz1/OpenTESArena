@@ -327,11 +327,12 @@ namespace swGeometry
 	std::vector<Double3> g_visibleTriangleV0s, g_visibleTriangleV1s, g_visibleTriangleV2s;
 	std::vector<Double3> g_visibleTriangleNormal0s, g_visibleTriangleNormal1s, g_visibleTriangleNormal2s;
 	std::vector<Double2> g_visibleTriangleUV0s, g_visibleTriangleUV1s, g_visibleTriangleUV2s;
-	std::vector<ObjectTextureID> g_visibleTriangleTextureID0s, g_visibleTriangleTextureID1s;
-	std::vector<Double3> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
-	std::vector<Double3> g_visibleClipListNormal0s, g_visibleClipListNormal1s, g_visibleClipListNormal2s;
-	std::vector<Double2> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
-	std::vector<ObjectTextureID> g_visibleClipListTextureID0s, g_visibleClipListTextureID1s;
+	std::vector<ObjectTextureID> g_visibleTriangleTextureID0s, g_visibleTriangleTextureID1s;	
+	constexpr int MAX_CLIP_LIST_SIZE = 24; // Arbitrary worst case for processing one triangle. Increase this if clipping breaks.
+	std::array<Double3, MAX_CLIP_LIST_SIZE> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
+	std::array<Double3, MAX_CLIP_LIST_SIZE> g_visibleClipListNormal0s, g_visibleClipListNormal1s, g_visibleClipListNormal2s;
+	std::array<Double2, MAX_CLIP_LIST_SIZE> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
+	std::array<ObjectTextureID, MAX_CLIP_LIST_SIZE> g_visibleClipListTextureID0s, g_visibleClipListTextureID1s;
 	int g_visibleTriangleCount = 0; // Note this includes new triangles from clipping.
 	int g_totalTriangleCount = 0;
 	int g_totalDrawCallCount = 0;
@@ -357,17 +358,17 @@ namespace swGeometry
 		std::vector<Double2> &outVisibleTriangleUV2s = g_visibleTriangleUV2s;
 		std::vector<ObjectTextureID> &outVisibleTriangleTextureID0s = g_visibleTriangleTextureID0s;
 		std::vector<ObjectTextureID> &outVisibleTriangleTextureID1s = g_visibleTriangleTextureID1s;
-		std::vector<Double3> &outClipListV0s = g_visibleClipListV0s;
-		std::vector<Double3> &outClipListV1s = g_visibleClipListV1s;
-		std::vector<Double3> &outClipListV2s = g_visibleClipListV2s;
-		std::vector<Double3> &outClipListNormal0s = g_visibleClipListNormal0s;
-		std::vector<Double3> &outClipListNormal1s = g_visibleClipListNormal1s;
-		std::vector<Double3> &outClipListNormal2s = g_visibleClipListNormal2s;
-		std::vector<Double2> &outClipListUV0s = g_visibleClipListUV0s;
-		std::vector<Double2> &outClipListUV1s = g_visibleClipListUV1s;
-		std::vector<Double2> &outClipListUV2s = g_visibleClipListUV2s;
-		std::vector<ObjectTextureID> &outClipListTextureID0s = g_visibleClipListTextureID0s;
-		std::vector<ObjectTextureID> &outClipListTextureID1s = g_visibleClipListTextureID1s;
+		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListV0s = g_visibleClipListV0s;
+		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListV1s = g_visibleClipListV1s;
+		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListV2s = g_visibleClipListV2s;
+		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal0s = g_visibleClipListNormal0s;
+		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal1s = g_visibleClipListNormal1s;
+		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal2s = g_visibleClipListNormal2s;
+		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV0s = g_visibleClipListUV0s;
+		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV1s = g_visibleClipListUV1s;
+		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV2s = g_visibleClipListUV2s;
+		std::array<ObjectTextureID, MAX_CLIP_LIST_SIZE> &outClipListTextureID0s = g_visibleClipListTextureID0s;
+		std::array<ObjectTextureID, MAX_CLIP_LIST_SIZE> &outClipListTextureID1s = g_visibleClipListTextureID1s;
 		int *outVisibleTriangleCount = &g_visibleTriangleCount;
 		int *outTotalTriangleCount = &g_totalTriangleCount;
 
@@ -447,35 +448,26 @@ namespace swGeometry
 				}
 			}
 
-			outClipListV0s.clear();
-			outClipListV1s.clear();
-			outClipListV2s.clear();
-			outClipListNormal0s.clear();
-			outClipListNormal1s.clear();
-			outClipListNormal2s.clear();
-			outClipListUV0s.clear();
-			outClipListUV1s.clear();
-			outClipListUV2s.clear();
-			outClipListTextureID0s.clear();
-			outClipListTextureID1s.clear();
+			// Manually update clip list size and index 0 instead of doing costly vector resizing.
+			int clipListSize = 1;
+			int clipListFrontIndex = 0;
 
-			outClipListV0s.emplace_back(v0);
-			outClipListV1s.emplace_back(v1);
-			outClipListV2s.emplace_back(v2);
-			outClipListNormal0s.emplace_back(normal0);
-			outClipListNormal1s.emplace_back(normal1);
-			outClipListNormal2s.emplace_back(normal2);
-			outClipListUV0s.emplace_back(uv0);
-			outClipListUV1s.emplace_back(uv1);
-			outClipListUV2s.emplace_back(uv2);
-			outClipListTextureID0s.emplace_back(textureID0);
-			outClipListTextureID1s.emplace_back(textureID1);
-
-			int clipListFrontIndex = 0; // Alternative to erasing front element for performance.
+			// Add the first triangle to clip.
+			outClipListV0s[clipListFrontIndex] = v0;
+			outClipListV1s[clipListFrontIndex] = v1;
+			outClipListV2s[clipListFrontIndex] = v2;
+			outClipListNormal0s[clipListFrontIndex] = normal0;
+			outClipListNormal1s[clipListFrontIndex] = normal1;
+			outClipListNormal2s[clipListFrontIndex] = normal2;
+			outClipListUV0s[clipListFrontIndex] = uv0;
+			outClipListUV1s[clipListFrontIndex] = uv1;
+			outClipListUV2s[clipListFrontIndex] = uv2;
+			outClipListTextureID0s[clipListFrontIndex] = textureID0;
+			outClipListTextureID1s[clipListFrontIndex] = textureID1;
 
 			for (const ClippingPlane &plane : clippingPlanes)
 			{
-				const int trianglesToClipCount = static_cast<int>(outClipListV0s.size()) - clipListFrontIndex;
+				const int trianglesToClipCount = clipListSize - clipListFrontIndex;
 				for (int j = trianglesToClipCount; j > 0; j--)
 				{
 					const Double3 &clipListV0 = outClipListV0s[clipListFrontIndex];
@@ -494,19 +486,29 @@ namespace swGeometry
 						clipListNormal0, clipListNormal1, clipListNormal2, clipListUV0, clipListUV1, clipListUV2,
 						eye, plane.point, plane.normal);
 
-					for (int k = 0; k < clipResult.triangleCount; k++)
+					if (clipResult.triangleCount > 0)
 					{
-						outClipListV0s.emplace_back(clipResult.v0s[k]);
-						outClipListV1s.emplace_back(clipResult.v1s[k]);
-						outClipListV2s.emplace_back(clipResult.v2s[k]);
-						outClipListNormal0s.emplace_back(clipResult.normal0s[k]);
-						outClipListNormal1s.emplace_back(clipResult.normal1s[k]);
-						outClipListNormal2s.emplace_back(clipResult.normal2s[k]);
-						outClipListUV0s.emplace_back(clipResult.uv0s[k]);
-						outClipListUV1s.emplace_back(clipResult.uv1s[k]);
-						outClipListUV2s.emplace_back(clipResult.uv2s[k]);
-						outClipListTextureID0s.emplace_back(textureID0);
-						outClipListTextureID1s.emplace_back(textureID1);
+						const int oldClipListSize = clipListSize;
+						const int newClipListSize = oldClipListSize + clipResult.triangleCount;
+						const int dstIndex = newClipListSize - clipResult.triangleCount;
+						std::memcpy(&outClipListV0s[dstIndex], clipResult.v0s, clipResult.triangleCount * sizeof(clipResult.v0s[0]));
+						std::memcpy(&outClipListV1s[dstIndex], clipResult.v1s, clipResult.triangleCount * sizeof(clipResult.v1s[0]));
+						std::memcpy(&outClipListV2s[dstIndex], clipResult.v2s, clipResult.triangleCount * sizeof(clipResult.v2s[0]));
+						std::memcpy(&outClipListNormal0s[dstIndex], clipResult.normal0s, clipResult.triangleCount * sizeof(clipResult.normal0s[0]));
+						std::memcpy(&outClipListNormal1s[dstIndex], clipResult.normal1s, clipResult.triangleCount * sizeof(clipResult.normal1s[0]));
+						std::memcpy(&outClipListNormal2s[dstIndex], clipResult.normal2s, clipResult.triangleCount * sizeof(clipResult.normal2s[0]));
+						std::memcpy(&outClipListUV0s[dstIndex], clipResult.uv0s, clipResult.triangleCount * sizeof(clipResult.uv0s[0]));
+						std::memcpy(&outClipListUV1s[dstIndex], clipResult.uv1s, clipResult.triangleCount * sizeof(clipResult.uv1s[0]));
+						std::memcpy(&outClipListUV2s[dstIndex], clipResult.uv2s, clipResult.triangleCount * sizeof(clipResult.uv2s[0]));
+						
+						for (int clipResultIndex = 0; clipResultIndex < clipResult.triangleCount; clipResultIndex++)
+						{
+							const int writeIndex = dstIndex + clipResultIndex;
+							outClipListTextureID0s[writeIndex] = textureID0;
+							outClipListTextureID1s[writeIndex] = textureID1;
+						}
+
+						clipListSize = newClipListSize;
 					}
 
 					clipListFrontIndex++;
@@ -514,9 +516,9 @@ namespace swGeometry
 			}
 
 			// Append newly clipped triangles to visible triangles (faster than vector::insert or std::copy in debug build).
-			const size_t oldVisibleTrianglesCount = outVisibleTriangleV0s.size();
-			const size_t newlyClippedTrianglesCount = std::distance(outClipListV0s.begin() + clipListFrontIndex, outClipListV0s.end());
-			const size_t totalTrianglesCount = oldVisibleTrianglesCount + newlyClippedTrianglesCount;
+			const int oldVisibleTrianglesCount = static_cast<int>(outVisibleTriangleV0s.size());
+			const int newlyClippedTrianglesCount = static_cast<int>(std::distance(outClipListV0s.begin() + clipListFrontIndex, outClipListV0s.begin() + clipListSize));
+			const int totalTrianglesCount = oldVisibleTrianglesCount + newlyClippedTrianglesCount;
 
 			if (totalTrianglesCount > oldVisibleTrianglesCount)
 			{
@@ -601,19 +603,25 @@ namespace swRender
 		swGeometry::g_visibleTriangleV0s.clear();
 		swGeometry::g_visibleTriangleV1s.clear();
 		swGeometry::g_visibleTriangleV2s.clear();
+		swGeometry::g_visibleTriangleNormal0s.clear();
+		swGeometry::g_visibleTriangleNormal1s.clear();
+		swGeometry::g_visibleTriangleNormal2s.clear();
 		swGeometry::g_visibleTriangleUV0s.clear();
 		swGeometry::g_visibleTriangleUV1s.clear();
 		swGeometry::g_visibleTriangleUV2s.clear();
 		swGeometry::g_visibleTriangleTextureID0s.clear();
 		swGeometry::g_visibleTriangleTextureID1s.clear();
-		swGeometry::g_visibleClipListV0s.clear();
-		swGeometry::g_visibleClipListV1s.clear();
-		swGeometry::g_visibleClipListV2s.clear();
-		swGeometry::g_visibleClipListUV0s.clear();
-		swGeometry::g_visibleClipListUV1s.clear();
-		swGeometry::g_visibleClipListUV2s.clear();
-		swGeometry::g_visibleClipListTextureID0s.clear();
-		swGeometry::g_visibleClipListTextureID1s.clear();
+		swGeometry::g_visibleClipListV0s.fill(Double3::Zero);
+		swGeometry::g_visibleClipListV1s.fill(Double3::Zero);
+		swGeometry::g_visibleClipListV2s.fill(Double3::Zero);
+		swGeometry::g_visibleClipListNormal0s.fill(Double3::Zero);
+		swGeometry::g_visibleClipListNormal1s.fill(Double3::Zero);
+		swGeometry::g_visibleClipListNormal2s.fill(Double3::Zero);
+		swGeometry::g_visibleClipListUV0s.fill(Double2::Zero);
+		swGeometry::g_visibleClipListUV1s.fill(Double2::Zero);
+		swGeometry::g_visibleClipListUV2s.fill(Double2::Zero);
+		swGeometry::g_visibleClipListTextureID0s.fill(-1);
+		swGeometry::g_visibleClipListTextureID1s.fill(-1);
 		swGeometry::g_visibleTriangleCount = 0;
 		swGeometry::g_totalTriangleCount = 0;
 	}
