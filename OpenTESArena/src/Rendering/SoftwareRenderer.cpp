@@ -22,11 +22,6 @@
 
 #include "components/debug/Debug.h"
 
-namespace swConstants
-{
-	constexpr double PLAYER_LIGHT_DISTANCE = 3.0;
-}
-
 // Internal geometry types/functions.
 namespace swGeometry
 {
