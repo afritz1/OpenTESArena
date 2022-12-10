@@ -641,70 +641,74 @@ void ArenaMeshUtils::WriteEdgeGeometryBuffers(VoxelFacing2D facing, double yOffs
 	BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr int vertexCount = GetRendererVertexCount(ArenaTypes::VoxelType::Edge);
+
+	// Bias the geometry towards the center of the voxel to avoid Z-fighting.
+	constexpr double xMin = Constants::Epsilon;
+	constexpr double xMax = 1.0 - Constants::Epsilon;
 	const double yBottom = yOffset;
 	const double yTop = yOffset + 1.0;
+	constexpr double zMin = xMin;
+	constexpr double zMax = xMax;
 
 	constexpr int positionComponentCount = vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-
-	// @todo: might want to bias these towards the center of the voxel to avoid z-fighting.
 	const std::array<double, positionComponentCount> nearXVertices =
 	{
 		// X=0 Front
-		0.0, yTop, 0.0,
-		0.0, yBottom, 0.0,
-		0.0, yBottom, 1.0,
-		0.0, yTop, 1.0,
+		xMin, yTop, zMin,
+		xMin, yBottom, zMin,
+		xMin, yBottom, zMax,
+		xMin, yTop, zMax,
 
 		// X=0 Back
-		0.0, yTop, 1.0,
-		0.0, yBottom, 1.0,
-		0.0, yBottom, 0.0,
-		0.0, yTop, 0.0
+		xMin, yTop, zMax,
+		xMin, yBottom, zMax,
+		xMin, yBottom, zMin,
+		xMin, yTop, zMin
 	};
 
 	const std::array<double, positionComponentCount> farXVertices =
 	{
 		// X=1 Front
-		1.0, yTop, 1.0,
-		1.0, yBottom, 1.0,
-		1.0, yBottom, 0.0,
-		1.0, yTop, 0.0,
+		xMax, yTop, zMax,
+		xMax, yBottom, zMax,
+		xMax, yBottom, zMin,
+		xMax, yTop, zMin,
 
 		// X=1 Back
-		1.0, yTop, 0.0,
-		1.0, yBottom, 0.0,
-		1.0, yBottom, 1.0,
-		1.0, yTop, 1.0
+		xMax, yTop, zMin,
+		xMax, yBottom, zMin,
+		xMax, yBottom, zMax,
+		xMax, yTop, zMax
 	};
 
 	const std::array<double, positionComponentCount> nearZVertices =
 	{
 		// Z=0 Front
-		1.0, yTop, 0.0,
-		1.0, yBottom, 0.0,
-		0.0, yBottom, 0.0,
-		0.0, yTop, 0.0,
+		xMax, yTop, zMin,
+		xMax, yBottom, zMin,
+		xMin, yBottom, zMin,
+		xMin, yTop, zMin,
 
 		// Z=0 Back
-		0.0, yTop, 0.0,
-		0.0, yBottom, 0.0,
-		1.0, yBottom, 0.0,
-		1.0, yTop, 0.0
+		xMin, yTop, zMin,
+		xMin, yBottom, zMin,
+		xMax, yBottom, zMin,
+		xMax, yTop, zMin
 	};
 
 	const std::array<double, positionComponentCount> farZVertices =
 	{
 		// Z=1 Front
-		0.0, yTop, 1.0,
-		0.0, yBottom, 1.0,
-		1.0, yBottom, 1.0,
-		1.0, yTop, 1.0,
+		xMin, yTop, zMax,
+		xMin, yBottom, zMax,
+		xMax, yBottom, zMax,
+		xMax, yTop, zMax,
 
 		// Z=1 Back
-		1.0, yTop, 1.0,
-		1.0, yBottom, 1.0,
-		0.0, yBottom, 1.0,
-		0.0, yTop, 1.0
+		xMax, yTop, zMax,
+		xMax, yBottom, zMax,
+		xMin, yBottom, zMax,
+		xMin, yTop, zMax
 	};
 
 	constexpr int normalComponentCount = vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
