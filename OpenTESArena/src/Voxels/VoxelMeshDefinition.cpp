@@ -1,5 +1,6 @@
 #include <array>
 
+#include "ArenaChasmUtils.h"
 #include "VoxelMeshDefinition.h"
 #include "VoxelFacing2D.h"
 #include "../World/MeshUtils.h"
@@ -13,17 +14,20 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 	this->rendererVertexCount = 0;
 	this->opaqueIndicesListCount = 0;
 	this->alphaTestedIndicesListCount = 0;
+	this->scaleType = VoxelMeshScaleType::ScaledFromMin;
 	this->allowsBackFaces = false;
 	this->enablesNeighborGeometry = false;
 	this->isContextSensitive = false;
 }
 
-void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, const ArenaMeshUtils::InitCache &meshInitCache)
+void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMeshScaleType scaleType,
+	const ArenaMeshUtils::InitCache &meshInitCache)
 {
 	this->uniqueVertexCount = ArenaMeshUtils::GetUniqueVertexCount(voxelType);
 	this->rendererVertexCount = ArenaMeshUtils::GetRendererVertexCount(voxelType);
 	this->opaqueIndicesListCount = ArenaMeshUtils::GetOpaqueIndexBufferCount(voxelType);
 	this->alphaTestedIndicesListCount = ArenaMeshUtils::GetAlphaTestedIndexBufferCount(voxelType);
+	this->scaleType = scaleType;
 	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
 	this->enablesNeighborGeometry = ArenaMeshUtils::EnablesNeighborVoxelGeometry(voxelType);
 	this->isContextSensitive = ArenaMeshUtils::HasContextSensitiveGeometry(voxelType);
@@ -97,7 +101,26 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(double ceilingScale, Buff
 		const double srcY = this->rendererVertices[index + 1];
 		const double srcZ = this->rendererVertices[index + 2];
 		const double dstX = srcX;
-		const double dstY = srcY * ceilingScale;
+		
+		double dstY;
+		switch (this->scaleType)
+		{
+		case VoxelMeshScaleType::ScaledFromMin:
+			dstY = srcY * ceilingScale;
+			break;
+		case VoxelMeshScaleType::UnscaledFromMin:
+			dstY = srcY;
+			break;
+		case VoxelMeshScaleType::UnscaledFromMax:
+		{
+			constexpr double chasmHeight = ArenaChasmUtils::HEIGHT;
+			dstY = (srcY * chasmHeight) + (ceilingScale - chasmHeight);
+			break;
+		}
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(this->scaleType)));
+		}
+
 		const double dstZ = srcZ;
 		outVertices.set(index, dstX);
 		outVertices.set(index + 1, dstY);

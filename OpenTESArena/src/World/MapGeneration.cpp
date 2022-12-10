@@ -393,7 +393,13 @@ namespace MapGeneration
 		MapGeneration::writeVoxelInfoForFLOR(florVoxel, mapType, inf, &voxelType, &meshInitCache, &textureAsset,
 			&isChasm, &isWildWallColored, &chasmType);
 
-		outMeshDef->initClassic(voxelType, meshInitCache);
+		VoxelMeshScaleType scaleType = VoxelMeshScaleType::ScaledFromMin;
+		if (isChasm && (chasmType != ArenaTypes::ChasmType::Dry))
+		{
+			scaleType = VoxelMeshScaleType::UnscaledFromMax;
+		}
+
+		outMeshDef->initClassic(voxelType, scaleType, meshInitCache);
 		outTextureDef->addTextureAsset(std::move(textureAsset));
 
 		switch (voxelType)
@@ -717,7 +723,13 @@ namespace MapGeneration
 		MapGeneration::writeVoxelInfoForMAP1(map1Voxel, mostSigNibble, mapType, inf, exeData, &voxelType,
 			&meshInitCache, &textureAsset0, &textureAsset1, &textureAsset2, &yOffset, &ySize, &isCollider, &facing);
 
-		outMeshDef->initClassic(voxelType, meshInitCache);
+		VoxelMeshScaleType scaleType = VoxelMeshScaleType::ScaledFromMin;
+		if (voxelType == ArenaTypes::VoxelType::Raised)
+		{
+			scaleType = VoxelMeshScaleType::UnscaledFromMin;
+		}
+
+		outMeshDef->initClassic(voxelType, scaleType, meshInitCache);
 
 		const std::array<const TextureAsset*, 3> textureAssetPtrs = { &textureAsset0, &textureAsset1, &textureAsset2 };
 		for (const TextureAsset *textureAsset : textureAssetPtrs)
@@ -771,7 +783,8 @@ namespace MapGeneration
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
 		MapGeneration::writeVoxelInfoForMAP2(map2Voxel, inf, &voxelType, &meshInitCache, &textureAsset0, &textureAsset1, &textureAsset2);
 
-		outMeshDef->initClassic(voxelType, meshInitCache);
+		constexpr VoxelMeshScaleType scaleType = VoxelMeshScaleType::ScaledFromMin;
+		outMeshDef->initClassic(voxelType, scaleType, meshInitCache);
 		outTextureDef->addTextureAsset(std::move(textureAsset0));
 		outTextureDef->addTextureAsset(std::move(textureAsset1));
 		outTextureDef->addTextureAsset(std::move(textureAsset2));
@@ -803,7 +816,8 @@ namespace MapGeneration
 		TextureAsset textureAsset;
 		MapGeneration::writeVoxelInfoForCeiling(inf, &voxelType, &meshInitCache, &textureAsset);
 
-		outMeshDef->initClassic(voxelType, meshInitCache);
+		constexpr VoxelMeshScaleType scaleType = VoxelMeshScaleType::ScaledFromMin;
+		outMeshDef->initClassic(voxelType, scaleType, meshInitCache);
 		outTextureDef->addTextureAsset(std::move(textureAsset));
 		outTraitsDef->initGeneral(voxelType);
 	}
