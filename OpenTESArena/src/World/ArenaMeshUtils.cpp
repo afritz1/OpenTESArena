@@ -452,10 +452,10 @@ void ArenaMeshUtils::WriteDiagonalGeometryBuffers(bool type1, BufferView<double>
 
 	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> type2Normals =
 	{
-		halfSqrt2, 0.0, halfSqrt2,
-		halfSqrt2, 0.0, halfSqrt2,
-		halfSqrt2, 0.0, halfSqrt2,
-		halfSqrt2, 0.0, halfSqrt2
+		-halfSqrt2, 0.0, -halfSqrt2,
+		-halfSqrt2, 0.0, -halfSqrt2,
+		-halfSqrt2, 0.0, -halfSqrt2,
+		-halfSqrt2, 0.0, -halfSqrt2
 	};
 
 	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
