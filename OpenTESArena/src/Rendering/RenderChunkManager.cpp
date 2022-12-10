@@ -640,7 +640,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 	auto addDrawCall = [&renderChunk, ceilingScale](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID,
 		AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
 		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType,
-		PixelShaderType pixelShaderType, bool allowsBackFaces, bool isAnimating)
+		PixelShaderType pixelShaderType, bool isAnimating)
 	{
 		RenderDrawCall drawCall;
 		drawCall.vertexBufferID = vertexBufferID;
@@ -656,7 +656,6 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 			static_cast<SNDouble>(x),
 			static_cast<double>(y) * ceilingScale,
 			static_cast<WEDouble>(z));
-		drawCall.allowBackFaces = allowsBackFaces;
 
 		if (!isAnimating)
 		{
@@ -700,7 +699,6 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 				const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
 				const int worldY = y;
 
-				const bool allowsBackFaces = voxelMeshDef.allowsBackFaces;
 				const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
 				VoxelChunk::ChasmDefID chasmDefID;
@@ -745,7 +743,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const TextureSamplingType textureSamplingType = usesVoxelTextures ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
 						addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
 							meshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, textureSamplingType,
-							PixelShaderType::Opaque, allowsBackFaces, isAnimating);
+							PixelShaderType::Opaque, isAnimating);
 					}
 				}
 
@@ -780,7 +778,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const bool isAnimating = false;
 						addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
 							meshInst.texCoordBufferID, meshInst.alphaTestedIndexBufferID, textureID, std::nullopt,
-							TextureSamplingType::Default, PixelShaderType::AlphaTested, allowsBackFaces, isAnimating);
+							TextureSamplingType::Default, PixelShaderType::AlphaTested, isAnimating);
 					}
 				}
 
@@ -802,7 +800,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 							addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
 								meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1, TextureSamplingType::ScreenSpaceRepeatY,
-								PixelShaderType::OpaqueWithAlphaTestLayer, allowsBackFaces, isAnimating);
+								PixelShaderType::OpaqueWithAlphaTestLayer, isAnimating);
 						}
 					}
 				}

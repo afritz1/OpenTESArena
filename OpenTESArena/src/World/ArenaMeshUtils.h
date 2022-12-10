@@ -100,9 +100,10 @@ namespace ArenaMeshUtils
 			return 20;
 		case ArenaTypes::VoxelType::Floor:
 		case ArenaTypes::VoxelType::Ceiling:
+			return 4;
 		case ArenaTypes::VoxelType::Diagonal:
 		case ArenaTypes::VoxelType::Edge:
-			return 4;
+			return 8;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
 		}
@@ -185,10 +186,19 @@ namespace ArenaMeshUtils
 		case ArenaTypes::VoxelType::Chasm:
 		case ArenaTypes::VoxelType::Floor:
 		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 2;
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
+			}
+			break;
+		case ArenaTypes::VoxelType::Diagonal:
+			if (bufferIndex == 0)
+			{
+				triangleCount = 4;
 			}
 			else
 			{
@@ -260,7 +270,7 @@ namespace ArenaMeshUtils
 		case ArenaTypes::VoxelType::Edge:
 			if (bufferIndex == 0)
 			{
-				triangleCount = 2;
+				triangleCount = 4;
 			}
 			else
 			{

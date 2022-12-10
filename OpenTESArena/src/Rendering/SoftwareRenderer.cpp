@@ -340,7 +340,7 @@ namespace swGeometry
 	swGeometry::TriangleDrawListIndices ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
 		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
 		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
-		const Double3 &worldOffset, bool allowBackFaces, const Double3 &eye, const ClippingPlanes &clippingPlanes)
+		const Double3 &worldOffset, const Double3 &eye, const ClippingPlanes &clippingPlanes)
 	{
 		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
 		std::vector<Double3> &outVisibleTriangleV1s = g_visibleTriangleV1s;
@@ -425,22 +425,11 @@ namespace swGeometry
 				*(texCoordsPtr + (index2 * 2)),
 				*(texCoordsPtr + (index2 * 2) + 1));
 
-			// Discard back-facing and almost-back-facing.
+			// Discard back-facing.
 			const Double3 v0ToEye = eye - v0;
-			const double visibilityDot = v0ToEye.dot(normal0);
-			if (!allowBackFaces)
+			if (v0ToEye.dot(normal0) < Constants::Epsilon)
 			{
-				if (visibilityDot < Constants::Epsilon)
-				{
-					continue;
-				}
-			}
-			else
-			{
-				if (std::abs(visibilityDot) < Constants::Epsilon)
-				{
-					continue;
-				}
+				continue;
 			}
 
 			// Manually update clip list size and index 0 instead of doing costly vector resizing.
@@ -1284,10 +1273,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const ObjectTextureID textureID0 = drawCall.textureIDs[0].has_value() ? *drawCall.textureIDs[0] : -1;
 		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
 		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
-		const bool allowBackFaces = drawCall.allowBackFaces;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(
 			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, worldSpaceOffset,
-			allowBackFaces, camera.worldPoint, clippingPlanes);
+			camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType = drawCall.textureSamplingType;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;

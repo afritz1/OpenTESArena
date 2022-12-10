@@ -427,43 +427,78 @@ void ArenaMeshUtils::WriteDiagonalGeometryBuffers(bool type1, BufferView<double>
 
 	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> type1Vertices =
 	{
+		// Front
 		0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0,
 		1.0, 0.0, 1.0,
 		1.0, 1.0, 1.0,
+
+		// Back
+		1.0, 1.0, 1.0,
+		1.0, 0.0, 1.0,
+		0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0
 	};
 
 	constexpr std::array<double, vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> type2Vertices =
 	{
+		// Front
 		1.0, 1.0, 0.0,
 		1.0, 0.0, 0.0,
 		0.0, 0.0, 1.0,
 		0.0, 1.0, 1.0,
+
+		// Back
+		0.0, 1.0, 1.0,
+		0.0, 0.0, 1.0,
+		1.0, 0.0, 0.0,
+		1.0, 1.0, 0.0
 	};
 	
 	constexpr double halfSqrt2 = Constants::HalfSqrt2;
 	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> type1Normals =
 	{
+		// Front
 		-halfSqrt2, 0.0, halfSqrt2,
 		-halfSqrt2, 0.0, halfSqrt2,
 		-halfSqrt2, 0.0, halfSqrt2,
-		-halfSqrt2, 0.0, halfSqrt2
+		-halfSqrt2, 0.0, halfSqrt2,
+
+		// Back
+		halfSqrt2, 0.0, -halfSqrt2,
+		halfSqrt2, 0.0, -halfSqrt2,
+		halfSqrt2, 0.0, -halfSqrt2,
+		halfSqrt2, 0.0, -halfSqrt2
 	};
 
 	constexpr std::array<double, vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> type2Normals =
 	{
+		// Front
 		-halfSqrt2, 0.0, -halfSqrt2,
 		-halfSqrt2, 0.0, -halfSqrt2,
 		-halfSqrt2, 0.0, -halfSqrt2,
-		-halfSqrt2, 0.0, -halfSqrt2
+		-halfSqrt2, 0.0, -halfSqrt2,
+
+		// Back
+		halfSqrt2, 0.0, halfSqrt2,
+		halfSqrt2, 0.0, halfSqrt2,
+		halfSqrt2, 0.0, halfSqrt2,
+		halfSqrt2, 0.0, halfSqrt2
 	};
 
 	constexpr std::array<double, vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords =
 	{
+		// Front
 		0.0, 0.0,
 		0.0, 1.0,
 		1.0, 1.0,
-		1.0, 0.0
+		1.0, 0.0,
+
+		// Back
+		1.0, 0.0,
+		1.0, 1.0,
+		0.0, 1.0,
+		0.0, 0.0
 	};
 
 	const auto &vertices = type1 ? type1Vertices : type2Vertices;
@@ -482,8 +517,13 @@ void ArenaMeshUtils::WriteDiagonalIndexBuffers(BufferView<int32_t> outOpaqueIndi
 
 	constexpr std::array<int32_t, GetOpaqueIndexCount(voxelType, 0)> indices =
 	{
+		// Front
 		0, 1, 2,
-		2, 3, 0
+		2, 3, 0,
+
+		// Back
+		4, 5, 6,
+		6, 7, 4
 	};
 
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
@@ -609,75 +649,123 @@ void ArenaMeshUtils::WriteEdgeGeometryBuffers(VoxelFacing2D facing, double yOffs
 	// @todo: might want to bias these towards the center of the voxel to avoid z-fighting.
 	const std::array<double, positionComponentCount> nearXVertices =
 	{
-		// X=0
+		// X=0 Front
 		0.0, yTop, 0.0,
 		0.0, yBottom, 0.0,
 		0.0, yBottom, 1.0,
-		0.0, yTop, 1.0
-	};
+		0.0, yTop, 1.0,
 
-	const std::array<double, positionComponentCount> farXVertices =
-	{
-		// X=1
-		1.0, yTop, 1.0,
-		1.0, yBottom, 1.0,
-		1.0, yBottom, 0.0,
-		1.0, yTop, 0.0
-	};
-
-	const std::array<double, positionComponentCount> nearZVertices =
-	{
-		// Z=0
-		1.0, yTop, 0.0,
-		1.0, yBottom, 0.0,
+		// X=0 Back
+		0.0, yTop, 1.0,
+		0.0, yBottom, 1.0,
 		0.0, yBottom, 0.0,
 		0.0, yTop, 0.0
 	};
 
+	const std::array<double, positionComponentCount> farXVertices =
+	{
+		// X=1 Front
+		1.0, yTop, 1.0,
+		1.0, yBottom, 1.0,
+		1.0, yBottom, 0.0,
+		1.0, yTop, 0.0,
+
+		// X=1 Back
+		1.0, yTop, 0.0,
+		1.0, yBottom, 0.0,
+		1.0, yBottom, 1.0,
+		1.0, yTop, 1.0
+	};
+
+	const std::array<double, positionComponentCount> nearZVertices =
+	{
+		// Z=0 Front
+		1.0, yTop, 0.0,
+		1.0, yBottom, 0.0,
+		0.0, yBottom, 0.0,
+		0.0, yTop, 0.0,
+
+		// Z=0 Back
+		0.0, yTop, 0.0,
+		0.0, yBottom, 0.0,
+		1.0, yBottom, 0.0,
+		1.0, yTop, 0.0
+	};
+
 	const std::array<double, positionComponentCount> farZVertices =
 	{
-		// Z=1
+		// Z=1 Front
 		0.0, yTop, 1.0,
 		0.0, yBottom, 1.0,
 		1.0, yBottom, 1.0,
-		1.0, yTop, 1.0
+		1.0, yTop, 1.0,
+
+		// Z=1 Back
+		1.0, yTop, 1.0,
+		1.0, yBottom, 1.0,
+		0.0, yBottom, 1.0,
+		0.0, yTop, 1.0
 	};
 
 	constexpr int normalComponentCount = vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	constexpr std::array<double, normalComponentCount> nearXNormals =
 	{
-		// X=0
+		// X=0 Front
 		-1.0, 0.0, 0.0,
 		-1.0, 0.0, 0.0,
 		-1.0, 0.0, 0.0,
-		-1.0, 0.0, 0.0
-	};
+		-1.0, 0.0, 0.0,
 
-	constexpr std::array<double, normalComponentCount> farXNormals =
-	{
-		// X=1
+		// X=0 Back
 		1.0, 0.0, 0.0,
 		1.0, 0.0, 0.0,
 		1.0, 0.0, 0.0,
 		1.0, 0.0, 0.0
 	};
 
-	constexpr std::array<double, normalComponentCount> nearZNormals =
+	constexpr std::array<double, normalComponentCount> farXNormals =
 	{
-		// Z=0
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0
+		// X=1 Front
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+
+		// X=1 Back
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0
 	};
 
-	constexpr std::array<double, normalComponentCount> farZNormals =
+	constexpr std::array<double, normalComponentCount> nearZNormals =
 	{
-		// Z=1
+		// Z=0 Front
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+
+		// Z=0 Back
 		0.0, 0.0, 1.0,
 		0.0, 0.0, 1.0,
 		0.0, 0.0, 1.0,
 		0.0, 0.0, 1.0
+	};
+
+	constexpr std::array<double, normalComponentCount> farZNormals =
+	{
+		// Z=1 Front
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+
+		// Z=1 Back
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0
 	};
 
 	const std::array<double, positionComponentCount> *vertices = nullptr;
@@ -707,18 +795,32 @@ void ArenaMeshUtils::WriteEdgeGeometryBuffers(VoxelFacing2D facing, double yOffs
 	constexpr int texCoordCount = vertexCount * MeshUtils::TEX_COORDS_PER_VERTEX;
 	constexpr std::array<double, texCoordCount> unflippedTexCoords =
 	{
+		// Front
 		0.0, 0.0,
 		0.0, 1.0,
 		1.0, 1.0,
-		1.0, 0.0
-	};
+		1.0, 0.0,
 
-	constexpr std::array<double, texCoordCount> flippedTexCoords =
-	{
+		// Back
 		1.0, 0.0,
 		1.0, 1.0,
 		0.0, 1.0,
 		0.0, 0.0
+	};
+
+	constexpr std::array<double, texCoordCount> flippedTexCoords =
+	{
+		// Front
+		1.0, 0.0,
+		1.0, 1.0,
+		0.0, 1.0,
+		0.0, 0.0,
+
+		// Back
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0
 	};
 
 	const std::array<double, texCoordCount> &texCoords = flipped ? flippedTexCoords : unflippedTexCoords;
@@ -736,8 +838,13 @@ void ArenaMeshUtils::WriteEdgeIndexBuffers(BufferView<int32_t> outAlphaTestedInd
 
 	constexpr std::array<int32_t, GetAlphaTestedIndexCount(voxelType, 0)> indices =
 	{
+		// Front
 		0, 1, 2,
-		2, 3, 0
+		2, 3, 0,
+
+		// Back
+		4, 5, 6,
+		6, 7, 4
 	};
 
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());

@@ -9,7 +9,6 @@ RenderDrawCall::RenderDrawCall()
 	this->textureSamplingType = static_cast<TextureSamplingType>(-1);
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
-	this->allowBackFaces = false;
 }
 
 void RenderDrawCall::clear()
@@ -27,5 +26,4 @@ void RenderDrawCall::clear()
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
 	this->worldSpaceOffset = Double3::Zero;
-	this->allowBackFaces = false;
 }
