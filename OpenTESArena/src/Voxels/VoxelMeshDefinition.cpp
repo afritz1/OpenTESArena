@@ -113,7 +113,7 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(double ceilingScale, Buff
 			break;
 		case VoxelMeshScaleType::UnscaledFromMax:
 		{
-			constexpr double chasmHeight = ArenaChasmUtils::HEIGHT;
+			constexpr double chasmHeight = ArenaChasmUtils::DEFAULT_HEIGHT;
 			dstY = (srcY * chasmHeight) + (ceilingScale - chasmHeight);
 			break;
 		}

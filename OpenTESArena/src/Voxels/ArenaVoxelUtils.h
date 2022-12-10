@@ -5,7 +5,6 @@
 
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
-#include "../Assets/MIFUtils.h"
 
 enum class MapType;
 
@@ -13,10 +12,6 @@ namespace ArenaVoxelUtils
 {
 	// Original game ID values.
 	static constexpr int TOTAL_VOXEL_IDS = 64;
-
-	// The size of wet chasms and lava chasms, unaffected by ceiling height.
-	constexpr double WET_CHASM_DEPTH = static_cast<double>(
-		INFFile::CeilingData::DEFAULT_HEIGHT) / MIFUtils::ARENA_UNITS;
 
 	// Seconds per chasm animation loop.
 	constexpr double CHASM_ANIM_SECONDS = 1.0 / 2.0; // @todo: arbitrary, get original game value.
