@@ -86,7 +86,7 @@ bool VOCFile::init(const char *filename)
 		// Regarding this #define: the repeating drums are working just fine now, but they
 		// can get a little annoying after a while, so only define this name when repeating
 		// drums are desired (like in later builds, so we don't get sick of it now).
-//#define DRUMS_REPEAT
+#define DRUMS_REPEAT
 
 		// Decide how to use the data block.
 		if (blockType == BlockType::SoundData)
