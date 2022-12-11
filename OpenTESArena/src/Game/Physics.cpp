@@ -213,6 +213,48 @@ namespace Physics
 		return chunkEntityMaps.back();
 	}
 
+	bool getEntityRayIntersection(const EntityVisibilityState3D &visState, const EntityDefinition &entityDef,
+		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp,
+		double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
+		CoordDouble3 *outHitPoint)
+	{
+		const Entity &entity = *visState.entity;
+
+		// Do a ray test to see if the ray intersects.
+		const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayPoint);
+		const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(visState.flatPosition);
+		NewDouble3 absoluteHitPoint;
+		if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition,
+			entityForward, &absoluteHitPoint))
+		{
+			const NewDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
+
+			// Get the texture coordinates. It's okay if they are outside the entity.
+			const Double2 uv(
+				0.5 - (diff.dot(entityRight) / entityWidth),
+				1.0 - (diff.dot(entityUp) / entityHeight));
+
+			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+			const EntityAnimationDefinition::State &animState = animDef.getState(visState.stateIndex);
+			const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visState.angleIndex);
+			const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visState.keyframeIndex);
+			const TextureAsset &textureAsset = animKeyframe.getTextureAsset();
+			const bool flipped = animKeyframeList.isFlipped();
+			const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
+
+			// The entity's projected rectangle is hit if the texture coordinates are valid.
+			const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
+
+			*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
+			return withinEntity;
+		}
+		else
+		{
+			// Did not intersect the entity's plane.
+			return false;
+		}
+	}
+
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelInt3 &voxel,
@@ -1008,9 +1050,8 @@ namespace Physics
 	// Helper function for testing which entities in a voxel are intersected by a ray.
 	bool testEntitiesInVoxel(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection,
 		const VoxelDouble3 &flatForward, const VoxelDouble3 &flatRight, const VoxelDouble3 &flatUp,
-		const VoxelInt3 &voxel, const ChunkEntityMap &chunkEntityMap, bool pixelPerfect, const Palette &palette,
-		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
-		const Renderer &renderer, Physics::Hit &hit)
+		const VoxelInt3 &voxel, const ChunkEntityMap &chunkEntityMap, const EntityManager &entityManager,
+		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 	{
 		// Use a separate hit variable so we can determine whether an entity was closer.
 		Physics::Hit entityHit;
@@ -1034,16 +1075,15 @@ namespace Physics
 				const double flatHeight = animKeyframe.getHeight();
 
 				CoordDouble3 hitCoord;
-				DebugLogError("Not implemented: renderer.getEntityRayIntersection()");
-				/*if (renderer.getEntityRayIntersection(visState, entityDef, flatForward, flatRight, flatUp,
-					flatWidth, flatHeight, rayCoord, rayDirection, pixelPerfect, palette, &hitCoord))
+				if (Physics::getEntityRayIntersection(visState, entityDef, flatForward, flatRight, flatUp,
+					flatWidth, flatHeight, rayCoord, rayDirection, &hitCoord))
 				{
 					const double distance = (hitCoord - rayCoord).length();
 					if (distance < entityHit.getT())
 					{
 						entityHit.initEntity(distance, hitCoord, entity.getID(), entity.getEntityType());
 					}
-				}*/
+				}
 			}
 		}
 
@@ -1062,9 +1102,8 @@ namespace Physics
 	// Internal ray casting loop for stepping through individual voxels and checking ray intersections
 	// against voxels and entities.
 	template <bool NonNegativeDirX, bool NonNegativeDirY, bool NonNegativeDirZ>
-	void rayCastInternal(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection,
-		const VoxelDouble3 &cameraForward, double ceilingScale, const LevelInstance &levelInst, bool pixelPerfect,
-		bool includeEntities, const Palette &palette, const EntityDefinitionLibrary &entityDefLibrary,
+	void rayCastInternal(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelDouble3 &cameraForward,
+		double ceilingScale, const LevelInstance &levelInst, bool includeEntities, const EntityDefinitionLibrary &entityDefLibrary,
 		const Renderer &renderer, std::vector<ChunkEntityMap> &chunkEntityMaps, Physics::Hit &hit)
 	{
 		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
@@ -1184,7 +1223,7 @@ namespace Physics
 				const ChunkEntityMap &chunkEntityMap = Physics::getOrAddChunkEntityMap(currentChunk, rayCoord,
 					ceilingScale, voxelChunkManager, entityManager, entityDefLibrary, chunkEntityMaps);
 				success |= Physics::testEntitiesInVoxel(rayCoord, rayDirection, flatForward, flatRight, flatUp,
-					rayVoxel, chunkEntityMap, pixelPerfect, palette, entityManager, entityDefLibrary, renderer, hit);
+					rayVoxel, chunkEntityMap, entityManager, entityDefLibrary, renderer, hit);
 			}
 
 			if (success)
@@ -1326,8 +1365,7 @@ namespace Physics
 				const ChunkEntityMap &chunkEntityMap = Physics::getOrAddChunkEntityMap(savedVoxelCoord.chunk, rayCoord,
 					ceilingScale, voxelChunkManager, entityManager, entityDefLibrary, chunkEntityMaps);
 				success |= Physics::testEntitiesInVoxel(rayCoord, rayDirection, flatForward, flatRight, flatUp,
-					savedVoxelCoord.voxel, chunkEntityMap, pixelPerfect, palette, entityManager, entityDefLibrary,
-					renderer, hit);
+					savedVoxelCoord.voxel, chunkEntityMap, entityManager, entityDefLibrary, renderer, hit);
 			}
 
 			if (success)
@@ -1405,9 +1443,8 @@ void Physics::Hit::setT(double t)
 }
 
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, double ceilingScale,
-	const VoxelDouble3 &cameraForward, bool pixelPerfect, const Palette &palette, bool includeEntities,
-	const LevelInstance &levelInst, const EntityDefinitionLibrary &entityDefLibrary,
-	const Renderer &renderer, Physics::Hit &hit)
+	const VoxelDouble3 &cameraForward, bool includeEntities, const LevelInstance &levelInst,
+	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
 	// entity, the distance can still be used.
@@ -1429,14 +1466,12 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<true, true, true>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, pixelPerfect, includeEntities, palette, entityDefLibrary, renderer, chunkEntityMaps,
-					hit);
+					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, true, false>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, pixelPerfect, includeEntities, palette, entityDefLibrary, renderer, chunkEntityMaps,
-					hit);
+					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
 			}
 		}
 		else
@@ -1444,14 +1479,12 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<true, false, true>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, pixelPerfect, includeEntities, palette, entityDefLibrary, renderer, chunkEntityMaps,
-					hit);
+					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, false, false>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, pixelPerfect, includeEntities, palette, entityDefLibrary, renderer, chunkEntityMaps,
-					hit);
+					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
 			}
 		}
 	}
@@ -1462,14 +1495,12 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<false, true, true>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, pixelPerfect, includeEntities, palette, entityDefLibrary, renderer, chunkEntityMaps,
-					hit);
+					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, true, false>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, pixelPerfect, includeEntities, palette, entityDefLibrary, renderer, chunkEntityMaps,
-					hit);
+					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
 			}
 		}
 		else
@@ -1477,14 +1508,12 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<false, false, true>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, pixelPerfect, includeEntities, palette, entityDefLibrary, renderer, chunkEntityMaps,
-					hit);
+					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, false, false>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, pixelPerfect, includeEntities, palette, entityDefLibrary, renderer, chunkEntityMaps,
-					hit);
+					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
 			}
 		}
 	}
@@ -1494,11 +1523,10 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 }
 
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection,
-	const VoxelDouble3 &cameraForward, bool pixelPerfect, const Palette &palette, bool includeEntities,
-	const LevelInstance &levelInst, const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer,
-	Physics::Hit &hit)
+	const VoxelDouble3 &cameraForward, bool includeEntities, const LevelInstance &levelInst,
+	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 {
 	constexpr double ceilingScale = 1.0;
-	return Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraForward, pixelPerfect, palette,
-		includeEntities, levelInst, entityDefLibrary, renderer, hit);
+	return Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraForward, includeEntities, levelInst,
+		entityDefLibrary, renderer, hit);
 }

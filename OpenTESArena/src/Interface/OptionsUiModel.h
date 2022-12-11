@@ -45,7 +45,6 @@ namespace OptionsUiModel
 	const std::string HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
 	const std::string VERTICAL_SENSITIVITY_NAME = "Vertical Sensitivity";
 	const std::string CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
-	const std::string PIXEL_PERFECT_SELECTION_NAME = "Pixel-Perfect Selection";
 
 	// Misc.
 	const std::string SHOW_COMPASS_NAME = "Show Compass";
@@ -201,7 +200,6 @@ namespace OptionsUiModel
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeHorizontalSensitivityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeVerticalSensitivityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeCameraPitchLimitOption(Game &game);
-	std::unique_ptr<OptionsUiModel::BoolOption> makePixelPerfectSelectionOption(Game &game);
 	OptionGroup makeInputOptionGroup(Game &game);
 
 	// Miscellaneous options.

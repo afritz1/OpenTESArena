@@ -1186,39 +1186,6 @@ std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id
 	return Int2(texture.texels.getWidth(), texture.texels.getHeight());
 }
 
-bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect, bool *outIsSelected) const
-{
-	if (pixelPerfect)
-	{
-		// Get the texture list from the texture group at the given animation state and angle.
-		const ObjectTexture &texture = this->objectTextures.get(textureID);
-		const int textureWidth = texture.texels.getWidth();
-		const int textureHeight = texture.texels.getHeight();
-
-		const int textureX = static_cast<int>(uv.x * static_cast<double>(textureWidth));
-		const int textureY = static_cast<int>(uv.y * static_cast<double>(textureHeight));
-
-		if ((textureX < 0) || (textureX >= textureWidth) ||
-			(textureY < 0) || (textureY >= textureHeight))
-		{
-			// Outside the texture; out of bounds.
-			return false;
-		}
-
-		// Check if the texel is non-transparent.
-		const uint8_t texel = texture.texels.get(textureX, textureY);
-		*outIsSelected = texel != 0;
-		return true;
-	}
-	else
-	{
-		// The entity's projected rectangle is hit if the texture coordinates are valid.
-		const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
-		*outIsSelected = withinEntity;
-		return true;
-	}
-}
-
 Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
 	Degrees fovY, double aspect) const
 {

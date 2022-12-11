@@ -66,11 +66,6 @@ public:
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
 
-	// Tries to write out selection data for the given entity. Returns whether selection data was
-	// successfully written.
-	virtual bool tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect,
-		bool *outIsSelected) const = 0;
-
 	// Converts a screen point into a ray in the game world.
 	virtual Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
 		Degrees fovY, double aspect) const = 0;

@@ -512,7 +512,6 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 
 	const auto &options = game.getOptions();
 	const double verticalFOV = options.getGraphics_VerticalFOV();
-	const bool pixelPerfect = options.getInput_PixelPerfectSelection();
 
 	const auto &player = game.getPlayer();
 	const CoordDouble3 &rayStart = player.getPosition();
@@ -526,16 +525,6 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const EntityManager &entityManager = levelInst.getEntityManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	auto &textureManager = game.getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-
 	for (int y = 0; y < windowDims.y; y += yOffset)
 	{
 		for (int x = 0; x < windowDims.x; x += xOffset)
@@ -547,8 +536,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 			constexpr bool includeEntities = false;
 			Physics::Hit hit;
 			const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-				pixelPerfect, palette, includeEntities, levelInst, game.getEntityDefinitionLibrary(),
-				renderer, hit);
+				includeEntities, levelInst, game.getEntityDefinitionLibrary(), renderer, hit);
 
 			if (success)
 			{
@@ -605,21 +593,10 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const EntityManager &entityManager = levelInst.getEntityManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	auto &textureManager = game.getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-
 	constexpr bool includeEntities = true;
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-		options.getInput_PixelPerfectSelection(), palette, includeEntities, levelInst,
-		game.getEntityDefinitionLibrary(), renderer, hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection, includeEntities,
+		levelInst, game.getEntityDefinitionLibrary(), renderer, hit);
 
 	std::string text;
 	if (success)

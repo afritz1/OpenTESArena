@@ -68,10 +68,6 @@ VerticalSensitivity=5.0
 # can look relative to the horizon in modern mode. Must be less than 90.
 CameraPitchLimit=85.0
 
-# Filters clicks on entities to only opaque parts of the entity's texture
-# if enabled. Otherwise, clicks register anywhere in the entity's shape.
-PixelPerfectSelection=false
-
 [Misc]
 # Change "ArenaPath" to your desired path. In the future, this should be
 # set by a wizard instead.

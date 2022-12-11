@@ -95,9 +95,6 @@ public:
 	void freeObjectTexture(ObjectTextureID id) override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
 
-	bool tryGetEntitySelectionData(const Double2 &uv, ObjectTextureID textureID, bool pixelPerfect,
-		bool *outIsSelected) const override;
-
 	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
 		Degrees fovY, double aspect) const override;
 

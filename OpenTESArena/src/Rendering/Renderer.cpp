@@ -368,55 +368,6 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-/*bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
-	const EntityDefinition &entityDef, const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight,
-	const VoxelDouble3 &entityUp, double entityWidth, double entityHeight, const CoordDouble3 &rayPoint,
-	const VoxelDouble3 &rayDirection, bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const
-{
-	DebugAssert(this->renderer3D->isInited());
-	const Entity &entity = *visState.entity;
-
-	// Do a ray test to see if the ray intersects.
-	const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayPoint);
-	const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(visState.flatPosition);
-	NewDouble3 absoluteHitPoint;
-	if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition,
-		entityForward, &absoluteHitPoint))
-	{
-		const NewDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
-
-		// Get the texture coordinates. It's okay if they are outside the entity.
-		const Double2 uv(
-			0.5 - (diff.dot(entityRight) / entityWidth),
-			1.0 - (diff.dot(entityUp) / entityHeight));
-
-		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-		const EntityAnimationDefinition::State &animState = animDef.getState(visState.stateIndex);
-		const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visState.angleIndex);
-		const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visState.keyframeIndex);
-		const TextureAsset &textureAsset = animKeyframe.getTextureAsset();
-		const bool flipped = animKeyframeList.isFlipped();
-		const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
-
-		// See if the ray successfully hit a point on the entity, and that point is considered
-		// selectable (i.e. it's not transparent).
-		//bool isSelected;
-
-		// @todo: get the entity anim inst's texture ID instead of asset ref. Can probably remove 'palette' too.
-		DebugLogError("Not implemented: getEntityRayIntersection");
-		return false;
-		const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAsset, flipped, reflective, pixelPerfect, palette, &isSelected);
-
-		*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
-		return withinEntity && isSelected;
-	}
-	else
-	{
-		// Did not intersect the entity's plane.
-		return false;
-	}
-}*/
-
 Double3 Renderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
 	double fovY, double aspect) const
 {

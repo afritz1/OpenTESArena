@@ -552,26 +552,11 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	const Double3 &cameraDirection = player.getDirection();
 	const CoordDouble3 rayStart = player.getPosition();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
-
-	// Pixel-perfect selection determines whether an entity's texture is used in the
-	// selection calculation.
-	const bool pixelPerfectSelection = options.getInput_PixelPerfectSelection();
-
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	auto &textureManager = game.getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	constexpr bool includeEntities = true;
 
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-		pixelPerfectSelection, palette, includeEntities, levelInst, game.getEntityDefinitionLibrary(),
-		game.getRenderer(), hit);
+		includeEntities, levelInst, game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)

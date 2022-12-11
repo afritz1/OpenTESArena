@@ -523,27 +523,12 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCameraPitchLim
 	});
 }
 
-std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makePixelPerfectSelectionOption(Game &game)
-{
-	const auto &options = game.getOptions();
-	return std::make_unique<OptionsUiModel::BoolOption>(
-		OptionsUiModel::PIXEL_PERFECT_SELECTION_NAME,
-		"Changes entity selection so only clicks on opaque places are\nregistered, if enabled.",
-		options.getInput_PixelPerfectSelection(),
-		[&game](bool value)
-	{
-		auto &options = game.getOptions();
-		options.setInput_PixelPerfectSelection(value);
-	});
-}
-
 OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 {
 	OptionGroup group;
 	group.emplace_back(OptionsUiModel::makeHorizontalSensitivityOption(game));
 	group.emplace_back(OptionsUiModel::makeVerticalSensitivityOption(game));
 	group.emplace_back(OptionsUiModel::makeCameraPitchLimitOption(game));
-	group.emplace_back(OptionsUiModel::makePixelPerfectSelectionOption(game));
 	return group;
 }
 
