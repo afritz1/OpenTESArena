@@ -352,14 +352,14 @@ void ArenaMeshUtils::WriteRaisedGeometryBuffers(double yOffset, double ySize, do
 		1.0, vBottom,
 		1.0, vTop,
 		// Y=0
-		0.0, 0.0,
-		0.0, 1.0,
 		1.0, 1.0,
+		0.0, 1.0,
+		0.0, 0.0,
 		1.0, 0.0,
 		// Y=1
-		0.0, 0.0,
-		0.0, 1.0,
 		1.0, 1.0,
+		0.0, 1.0,
+		0.0, 0.0,
 		1.0, 0.0,
 		// Z=0
 		0.0, vTop,
