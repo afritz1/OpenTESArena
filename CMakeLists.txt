@@ -21,13 +21,13 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 # Replace default configurations (Debug/Release/RelWithDebInfo/MinSizeRel) with custom ones.
 # - Debug: maximum debugging
-# - DebugFast: like Debug but for typical development
+# - ReleaseGenericNoLTO: Same as ReleaseGeneric but for faster dev iteration
 # - ReleaseGeneric: distributed at project releases, works with the most CPUs
 # - ReleaseNative: maximum performance for the computer it's compiled on
-set(CMAKE_CONFIGURATION_TYPES "Debug;DebugFast;ReleaseGeneric;ReleaseNative" CACHE STRING "" FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Debug;ReleaseGenericNoLTO;ReleaseGeneric;ReleaseNative" CACHE STRING "" FORCE)
 
 # CMake-required flags for new configurations.
-SET(CMAKE_EXE_LINKER_FLAGS_DEBUGFAST "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASEGENERICNOLTO "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 SET(CMAKE_EXE_LINKER_FLAGS_RELEASEGENERIC "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 SET(CMAKE_EXE_LINKER_FLAGS_RELEASENATIVE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 
@@ -36,12 +36,9 @@ IF (MSVC)
     # Multi-processor compilation.
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
-    # Add custom debug flags to DebugFast (/RTCs and /RTCu are not compatible with /Ox).
-    SET(CMAKE_CXX_FLAGS_DEBUGFAST "/DEBUG /Zi /MDd /Ox /Ob0")
-    SET(CMAKE_RC_FLAGS_DEBUGFAST "${CMAKE_RC_FLAGS_DEBUG}")
-
     # Add various optimizations to release builds.
-    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "/O2 /Ob2 /Oi /Ot /Oy /GL /fp:fast")
+    SET(CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO "/O2 /Ob2 /Oi /Ot /Oy /fp:fast")
+    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "${CMAKE_EXE_LINKER_FLAGS_RELEASEGENERICNOLTO} /GL")
     SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASEGENERIC}")
     #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} /arch:AVX2")
     SET(CMAKE_EXE_LINKER_FLAGS_RELEASEGENERIC "${CMAKE_EXE_LINKER_FLAGS_RELEASEGENERIC} /LTCG")
@@ -55,10 +52,10 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
 
     # Debug builds.
     SET(CMAKE_CXX_FLAGS_DEBUG "-g")
-    SET(CMAKE_CXX_FLAGS_DEBUGFAST "-g -Og")
 
     # Generic release build (works with a variety of CPUs).
-    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "-g -O3 -flto")
+    SET(CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO "-g -O3")
+    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "${CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO} -flto")
 
     # Native release build for the computer compiling it.
     SET(CMAKE_CXX_FLAGS_RELEASENATIVE "-g -Ofast -flto -march=native")
