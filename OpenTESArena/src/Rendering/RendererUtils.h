@@ -18,6 +18,8 @@
 class VoxelChunk;
 class WeatherInstance;
 
+struct RenderCamera;
+
 namespace RendererUtils
 {
 	constexpr double NEAR_PLANE = 0.001;
@@ -29,6 +31,9 @@ namespace RendererUtils
 	constexpr int FOG_GEOMETRY_INDICES_PER_QUAD = 4;
 	using FogVertexArray = std::array<Double3, FOG_GEOMETRY_VERTEX_COUNT>; // Corners of a cube.
 	using FogIndexArray = std::array<int, FOG_GEOMETRY_INDEX_COUNT>; // 4 faces.
+
+	RenderCamera makeCamera(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction,
+		Degrees fovY, double aspectRatio, bool tallPixelCorrection);
 
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);

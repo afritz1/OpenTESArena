@@ -18,6 +18,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Rendering/RenderCamera.h"
+#include "../Rendering/RendererUtils.h"
 #include "../UI/CursorData.h"
 #include "../World/MapType.h"
 
@@ -811,6 +812,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const RenderChunkManager &renderChunkManager = game.getRenderChunkManager();
 	const BufferView<const RenderDrawCall> voxelDrawCalls = renderChunkManager.getVoxelDrawCalls();
 
+	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
 	const double ambientPercent = gameState.getAmbientPercent();
 	const double latitude = [&gameState]()
 	{
@@ -821,16 +823,10 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
 
 	auto &renderer = game.getRenderer();
-	const Int2 viewDims = renderer.getViewDimensions();
-	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
-
 	const auto &options = game.getOptions();
 	const Degrees fovY = options.getGraphics_VerticalFOV();
-	const Degrees fovX = MathUtils::verticalFovToHorizontalFov(fovY, viewAspectRatio);
-	const double tallPixelRatio = options.getGraphics_TallPixelCorrection() ? ArenaRenderUtils::TALL_PIXEL_RATIO : 1.0;
-
-	RenderCamera renderCamera;
-	renderCamera.init(playerPos.chunk, playerPos.point, playerDir, fovX, fovY, viewAspectRatio, tallPixelRatio);
+	const double viewAspectRatio = renderer.getViewAspect();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
 
 	// @todo: shore up loadScene() and that overall design before attempting to change dirty voxels and entities between frames.
 	/*renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),

@@ -302,6 +302,12 @@ Int2 Renderer::getViewDimensions() const
 	return Int2(windowDims.x, viewHeight);
 }
 
+double Renderer::getViewAspect() const
+{
+	const Int2 viewDims = this->getViewDimensions();
+	return static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
+}
+
 SDL_Rect Renderer::getLetterboxDimensions() const
 {
 	const Int2 windowDims = this->getWindowDimensions();

@@ -2,6 +2,8 @@
 #include <cmath>
 #include <tuple>
 
+#include "ArenaRenderUtils.h"
+#include "RenderCamera.h"
 #include "RendererUtils.h"
 #include "../Game/CardinalDirection.h"
 #include "../Math/Constants.h"
@@ -10,6 +12,17 @@
 #include "../Weather/WeatherInstance.h"
 
 #include "components/debug/Debug.h"
+
+RenderCamera RendererUtils::makeCamera(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction,
+	Degrees fovY, double aspectRatio, bool tallPixelCorrection)
+{
+	const double tallPixelRatio = tallPixelCorrection ? ArenaRenderUtils::TALL_PIXEL_RATIO : 1.0;
+
+	RenderCamera camera;
+	camera.init(chunk, point, direction, fovY, aspectRatio, tallPixelRatio);
+
+	return camera;
+}
 
 int RendererUtils::getRenderThreadsFromMode(int mode)
 {

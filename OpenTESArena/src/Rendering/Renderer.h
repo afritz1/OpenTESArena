@@ -13,8 +13,6 @@
 #include "../Assets/TextureUtils.h"
 #include "../UI/Texture.h"
 
-// Container for 2D and 3D rendering operations.
-
 class Color;
 class Rect;
 class Surface;
@@ -28,6 +26,7 @@ struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 
+// Manages the active window and 2D and 3D rendering operations.
 class Renderer
 {
 public:
@@ -116,6 +115,7 @@ public:
 	// depends on whether the whole screen is rendered or just the portion above 
 	// the interface. The game interface is 53 pixels tall in 320x200.
 	Int2 getViewDimensions() const;
+	double getViewAspect() const;
 
 	// This is for the "letterbox" part of the screen, scaled to fit the window 
 	// using the given letterbox aspect.
