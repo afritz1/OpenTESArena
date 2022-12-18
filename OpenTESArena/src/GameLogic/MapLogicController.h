@@ -1,7 +1,7 @@
 #ifndef MAP_LOGIC_CONTROLLER_H
 #define MAP_LOGIC_CONTROLLER_H
 
-#include "../Game/Physics.h"
+#include "../Collision/Physics.h"
 #include "../World/Coord.h"
 
 class Game;

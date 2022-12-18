@@ -2,10 +2,12 @@
 #include "PlayerLogicController.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaSoundName.h"
+#include "../Collision/ArenaSelectionUtils.h"
+#include "../Collision/CollisionUtils.h"
+#include "../Collision/Physics.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
-#include "../Game/Physics.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../UI/TextBox.h"
@@ -577,16 +579,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			{
 				// Arbitrary max distance for selection.
 				// @todo: move to some ArenaPlayerUtils maybe
-				constexpr double maxSelectionDist = 1.75;
-
-				if (hit.getT() <= maxSelectionDist)
+				if (hit.getT() <= CollisionUtils::MAX_SELECTION_DISTANCE)
 				{
-					if (voxelType == ArenaTypes::VoxelType::Wall ||
-						voxelType == ArenaTypes::VoxelType::Floor ||
-						voxelType == ArenaTypes::VoxelType::Raised ||
-						voxelType == ArenaTypes::VoxelType::Diagonal ||
-						voxelType == ArenaTypes::VoxelType::TransparentWall ||
-						voxelType == ArenaTypes::VoxelType::Edge)
+					if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
 					{
 						if (!debugFadeVoxel)
 						{
@@ -654,8 +649,8 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			}
 			else
 			{
-				// Handle secondary click (i.e., right click).
-				if (voxelType == ArenaTypes::VoxelType::Wall)
+				// Handle secondary click (i.e. right click).
+				if (ArenaSelectionUtils::isVoxelSelectableAsSecondary(voxelType))
 				{
 					VoxelChunk::BuildingNameID buildingNameID;
 					if (chunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))

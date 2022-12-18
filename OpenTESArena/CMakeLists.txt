@@ -26,6 +26,10 @@ FILE(GLOB TES_AUDIO
     ${SRC_ROOT}/src/Audio/*.h* 
     ${SRC_ROOT}/src/Audio/*.c*)
 
+FILE(GLOB TES_COLLISION
+    ${SRC_ROOT}/src/Collision/*.h* 
+    ${SRC_ROOT}/src/Collision/*.c*)
+
 FILE(GLOB TES_ENTITIES
     ${SRC_ROOT}/src/Entities/*.h* 
     ${SRC_ROOT}/src/Entities/*.c*)
@@ -91,6 +95,7 @@ SET(TES_MAIN ${SRC_ROOT}/src/Main.cpp)
 SET(TES_SOURCES 
     ${TES_ASSETS}
     ${TES_AUDIO}
+    ${TES_COLLISION}
     ${TES_ENTITIES}
     ${TES_GAME}
     ${TES_GAME_LOGIC}
