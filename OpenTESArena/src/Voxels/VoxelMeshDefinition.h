@@ -20,12 +20,12 @@ enum class VoxelMeshScaleType
 // like raised voxels have unique offset and size requirements.
 struct VoxelMeshDefinition
 {
-	std::vector<double> rendererVertices;
-	std::vector<double> rendererNormals;
-	std::vector<double> rendererTexCoords;
+	std::vector<double> rendererVertices, rendererNormals, rendererTexCoords;
+	std::vector<double> collisionVertices, collisionNormals;
 	std::vector<int32_t> opaqueIndices0, opaqueIndices1, opaqueIndices2, alphaTestedIndices;
 	int uniqueVertexCount; // Ideal number of vertices to represent the mesh.
 	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
+	int collisionVertexCount;
 	int opaqueIndicesListCount, alphaTestedIndicesListCount;
 	VoxelMeshScaleType scaleType;
 	bool allowsBackFaces;
@@ -34,7 +34,9 @@ struct VoxelMeshDefinition
 
 	VoxelMeshDefinition();
 
-	void initClassic(ArenaTypes::VoxelType voxelType, VoxelMeshScaleType scaleType, const ArenaMeshUtils::InitCache &meshInitCache);
+	void initClassic(ArenaTypes::VoxelType voxelType, VoxelMeshScaleType scaleType,
+		const ArenaMeshUtils::RenderMeshInitCache &renderMeshInitCache,
+		const ArenaMeshUtils::CollisionMeshInitCache &collisionMeshInitCache);
 
 	bool isEmpty() const;
 	std::vector<int32_t> &getOpaqueIndicesList(int index);

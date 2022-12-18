@@ -348,7 +348,7 @@ void RenderChunkManager::init(Renderer &renderer)
 {
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
-	ArenaMeshUtils::WriteChasmWallIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
+	ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
 	constexpr int indicesPerFace = static_cast<int>(northIndices.size());
 
 	this->chasmWallIndexBufferIDs.fill(-1);
@@ -549,7 +549,7 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 				continue;
 			}
 
-			ArenaMeshUtils::InitCache meshInitCache;
+			ArenaMeshUtils::RenderMeshInitCache meshInitCache;
 
 			// Generate mesh geometry and indices for this voxel definition.
 			voxelMeshDef.writeRendererGeometryBuffers(ceilingScale, meshInitCache.verticesView, meshInitCache.normalsView, meshInitCache.texCoordsView);

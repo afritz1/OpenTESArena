@@ -16,8 +16,12 @@ enum class VoxelFacing2D;
 
 namespace ArenaMeshUtils
 {
-	static constexpr int MAX_VERTICES = 24;
-	static constexpr int MAX_INDICES = 36;
+	static constexpr int MAX_RENDERER_VERTICES = 24;
+	static constexpr int MAX_RENDERER_INDICES = 36;
+
+	static constexpr int MAX_COLLISION_VERTICES = 8;
+	static constexpr int MAX_COLLISION_FACES = 6;
+	static constexpr int MAX_COLLISION_INDICES = 72;
 
 	static constexpr int CHASM_WALL_NORTH = 0x1;
 	static constexpr int CHASM_WALL_EAST = 0x2;
@@ -27,19 +31,20 @@ namespace ArenaMeshUtils
 
 	using ChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
 
-	struct InitCache
+	struct RenderMeshInitCache
 	{
-		std::array<double, MAX_VERTICES * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices;
-		std::array<double, MAX_VERTICES * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals;
-		std::array<double, MAX_VERTICES * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords;
-		std::array<int32_t, MAX_INDICES> opaqueIndices0, opaqueIndices1, opaqueIndices2;
-		std::array<int32_t, MAX_INDICES> alphaTestedIndices0;
+		// Per-vertex data (duplicated to some extent, compared to the minimum-required).
+		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices;
+		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals;
+		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords;
+		std::array<int32_t, MAX_RENDERER_INDICES> opaqueIndices0, opaqueIndices1, opaqueIndices2;
+		std::array<int32_t, MAX_RENDERER_INDICES> alphaTestedIndices0;
 		std::array<const decltype(opaqueIndices0)*, 3> opaqueIndicesPtrs;
 
 		BufferView<double> verticesView, normalsView, texCoordsView;
 		BufferView<int32_t> opaqueIndices0View, opaqueIndices1View, opaqueIndices2View, alphaTestedIndices0View;
 
-		InitCache()
+		RenderMeshInitCache()
 		{
 			this->vertices.fill(0.0);
 			this->normals.fill(0.0);
@@ -57,6 +62,29 @@ namespace ArenaMeshUtils
 			this->opaqueIndices1View = BufferView<int32_t>(this->opaqueIndices1.data(), static_cast<int>(this->opaqueIndices1.size()));
 			this->opaqueIndices2View = BufferView<int32_t>(this->opaqueIndices2.data(), static_cast<int>(this->opaqueIndices2.size()));
 			this->alphaTestedIndices0View = BufferView<int32_t>(this->alphaTestedIndices0.data(), static_cast<int>(this->alphaTestedIndices0.size()));
+		}
+	};
+
+	struct CollisionMeshInitCache
+	{
+		// Minimum-required geometry (not per vertex, unlike renderer geometry) with indices in a tuple format
+		// (two indices per vertex: first index for vertex XYZ, second for normal XYZ).
+		std::array<double, MAX_COLLISION_VERTICES * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices;
+		std::array<double, MAX_COLLISION_FACES * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals;
+		std::array<int32_t, MAX_COLLISION_INDICES> indices;
+
+		BufferView<double> verticesView, normalsView;
+		BufferView<int32_t> indicesView;
+
+		CollisionMeshInitCache()
+		{
+			this->vertices.fill(0.0);
+			this->normals.fill(0.0);
+			this->indices.fill(-1);
+
+			this->verticesView = BufferView<double>(this->vertices.data(), static_cast<int>(this->vertices.size()));
+			this->normalsView = BufferView<double>(this->normals.data(), static_cast<int>(this->normals.size()));
+			this->indicesView = BufferView<int32_t>(this->indices.data(), static_cast<int>(this->indices.size()));
 		}
 	};
 
@@ -78,6 +106,31 @@ namespace ArenaMeshUtils
 		case ArenaTypes::VoxelType::Diagonal:
 		case ArenaTypes::VoxelType::Edge:
 			return 4;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	constexpr int GetUniqueFaceCount(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+			return 0;
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Raised:
+			return 6;
+		case ArenaTypes::VoxelType::Chasm:
+			return 5;
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Door:
+			return 4;
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+			return 1;
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::Edge:
+			return 2;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
 		}
@@ -109,6 +162,16 @@ namespace ArenaMeshUtils
 		}
 	}
 
+	constexpr int GetUniqueVertexPositionComponentCount(ArenaTypes::VoxelType voxelType)
+	{
+		return GetUniqueVertexCount(voxelType) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+	}
+
+	constexpr int GetUniqueFaceNormalComponentCount(ArenaTypes::VoxelType voxelType)
+	{
+		return GetUniqueFaceCount(voxelType) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+	}
+
 	constexpr int GetRendererVertexPositionComponentCount(ArenaTypes::VoxelType voxelType)
 	{
 		return GetRendererVertexCount(voxelType) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -119,9 +182,52 @@ namespace ArenaMeshUtils
 		return GetRendererVertexCount(voxelType) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	}
 
-	constexpr int GetRendererVertexTexCoordCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetRendererVertexTexCoordComponentCount(ArenaTypes::VoxelType voxelType)
 	{
 		return GetRendererVertexCount(voxelType) * MeshUtils::TEX_COORDS_PER_VERTEX;
+	}
+
+	constexpr int GetCollisionVertexPositionComponentCount(ArenaTypes::VoxelType voxelType)
+	{
+		return GetUniqueVertexPositionComponentCount(voxelType);
+	}
+
+	constexpr int GetCollisionFaceNormalComponentCount(ArenaTypes::VoxelType voxelType)
+	{
+		return GetUniqueFaceNormalComponentCount(voxelType);
+	}
+
+	constexpr int GetCollisionIndexCount(ArenaTypes::VoxelType voxelType)
+	{
+		int indexCount = -1;
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+			indexCount = 0;
+			break;
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Raised:
+			indexCount = 6 * MeshUtils::INDICES_PER_FACE;
+			break;
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Chasm:
+			indexCount = 1 * MeshUtils::INDICES_PER_FACE;
+			break;
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::Edge:
+			indexCount = 2 * MeshUtils::INDICES_PER_FACE;
+			break;
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Door:
+			indexCount = 4 * MeshUtils::INDICES_PER_FACE;
+			break;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		}
+
+		// This is doubled due to the index tuple design (first index: position, second index: normal).
+		return indexCount * 2;
 	}
 
 	constexpr int GetOpaqueIndexBufferCount(ArenaTypes::VoxelType voxelType)
@@ -354,25 +460,53 @@ namespace ArenaMeshUtils
 	}
 
 	// Mesh writing functions. All of these are in unscaled model space.
-	void WriteWallGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteWallIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
-	void WriteFloorGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteFloorIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteCeilingGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteCeilingIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteRaisedGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteRaisedIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
-	void WriteDiagonalGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteDiagonalIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteTransparentWallGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteTransparentWallIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteEdgeGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteEdgeIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteChasmGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteChasmFloorIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
-	void WriteChasmWallIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices, ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
-	void WriteDoorGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteDoorIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void WriteWallUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteWallRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+	void WriteWallCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteWallCollisionIndexBuffers(BufferView<int32_t> outIndices);
+	void WriteFloorUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteFloorRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void WriteFloorCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteFloorCollisionIndexBuffers(BufferView<int32_t> outIndices);
+	void WriteCeilingUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteCeilingRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void WriteCeilingCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteCeilingCollisionIndexBuffers(BufferView<int32_t> outIndices);
+	void WriteRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteRaisedRendererIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+	void WriteRaisedCollisionGeometryBuffers(double yOffset, double ySize, BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteRaisedCollisionIndexBuffers(BufferView<int32_t> outIndices);
+	void WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void WriteDiagonalCollisionGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteDiagonalCollisionIndexBuffers(BufferView<int32_t> outIndices);
+	void WriteTransparentWallUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteTransparentWallRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteTransparentWallRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void WriteTransparentWallCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteTransparentWallCollisionIndexBuffers(BufferView<int32_t> outIndices);
+	void WriteEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void WriteEdgeCollisionGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteEdgeCollisionIndexBuffers(BufferView<int32_t> outIndices);
+	void WriteChasmUniqueGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteChasmRendererGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
+	void WriteChasmWallRendererIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices, ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
+	void WriteChasmCollisionGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteChasmFloorCollisionIndexBuffers(BufferView<int32_t> outIndices); // Chasm walls are separate because they're conditionally enabled.
+	void WriteChasmWallCollisionIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices, ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
+	void WriteDoorUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteDoorRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void WriteDoorCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
+	void WriteDoorCollisionIndexBuffers(BufferView<int32_t> outIndices);
 }
 
 #endif

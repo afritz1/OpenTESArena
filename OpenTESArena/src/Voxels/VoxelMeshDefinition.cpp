@@ -12,6 +12,7 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 	// Default to air voxel.
 	this->uniqueVertexCount = 0;
 	this->rendererVertexCount = 0;
+	this->collisionVertexCount = 0;
 	this->opaqueIndicesListCount = 0;
 	this->alphaTestedIndicesListCount = 0;
 	this->scaleType = VoxelMeshScaleType::ScaledFromMin;
@@ -21,10 +22,12 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 }
 
 void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMeshScaleType scaleType,
-	const ArenaMeshUtils::InitCache &meshInitCache)
+	const ArenaMeshUtils::RenderMeshInitCache &renderMeshInitCache,
+	const ArenaMeshUtils::CollisionMeshInitCache &collisionMeshInitCache)
 {
 	this->uniqueVertexCount = ArenaMeshUtils::GetUniqueVertexCount(voxelType);
 	this->rendererVertexCount = ArenaMeshUtils::GetRendererVertexCount(voxelType);
+	this->collisionVertexCount = this->uniqueVertexCount;
 	this->opaqueIndicesListCount = ArenaMeshUtils::GetOpaqueIndexBufferCount(voxelType);
 	this->alphaTestedIndicesListCount = ArenaMeshUtils::GetAlphaTestedIndexBufferCount(voxelType);
 	this->scaleType = scaleType;
@@ -36,23 +39,31 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMesh
 	{
 		const int rendererVertexPositionComponentCount = ArenaMeshUtils::GetRendererVertexPositionComponentCount(voxelType);
 		this->rendererVertices.resize(rendererVertexPositionComponentCount);
-		std::copy(meshInitCache.vertices.begin(), meshInitCache.vertices.begin() + rendererVertexPositionComponentCount, this->rendererVertices.data());
+		std::copy(renderMeshInitCache.vertices.begin(), renderMeshInitCache.vertices.begin() + rendererVertexPositionComponentCount, this->rendererVertices.data());
 
 		const int rendererVertexNormalComponentCount = ArenaMeshUtils::GetRendererVertexNormalComponentCount(voxelType);
 		this->rendererNormals.resize(rendererVertexNormalComponentCount);
-		std::copy(meshInitCache.normals.begin(), meshInitCache.normals.begin() + rendererVertexNormalComponentCount, this->rendererNormals.data());
+		std::copy(renderMeshInitCache.normals.begin(), renderMeshInitCache.normals.begin() + rendererVertexNormalComponentCount, this->rendererNormals.data());
 
-		const int rendererVertexTexCoordCount = ArenaMeshUtils::GetRendererVertexTexCoordCount(voxelType);
-		this->rendererTexCoords.resize(rendererVertexTexCoordCount);
-		std::copy(meshInitCache.texCoords.begin(), meshInitCache.texCoords.begin() + rendererVertexTexCoordCount, this->rendererTexCoords.data());
+		const int rendererVertexTexCoordComponentCount = ArenaMeshUtils::GetRendererVertexTexCoordComponentCount(voxelType);
+		this->rendererTexCoords.resize(rendererVertexTexCoordComponentCount);
+		std::copy(renderMeshInitCache.texCoords.begin(), renderMeshInitCache.texCoords.begin() + rendererVertexTexCoordComponentCount, this->rendererTexCoords.data());
+
+		const int collisionVertexPositionComponentCount = ArenaMeshUtils::GetCollisionVertexPositionComponentCount(voxelType);
+		this->collisionVertices.resize(collisionVertexPositionComponentCount);
+		std::copy(collisionMeshInitCache.vertices.begin(), collisionMeshInitCache.vertices.begin() + collisionVertexPositionComponentCount, this->collisionVertices.data());
+
+		const int collisionFaceNormalComponentCount = ArenaMeshUtils::GetCollisionFaceNormalComponentCount(voxelType);
+		this->collisionNormals.resize(collisionFaceNormalComponentCount);
+		std::copy(collisionMeshInitCache.normals.begin(), collisionMeshInitCache.normals.begin() + collisionFaceNormalComponentCount, this->collisionNormals.data());
 		
 		for (int i = 0; i < this->opaqueIndicesListCount; i++)
 		{
 			std::vector<int32_t> &dstBuffer = this->getOpaqueIndicesList(i);
 			const int opaqueIndexCount = ArenaMeshUtils::GetOpaqueIndexCount(voxelType, i);
 			dstBuffer.resize(opaqueIndexCount);
-			const BufferView<int32_t> &srcBuffer = (i == 0) ? meshInitCache.opaqueIndices0View :
-				((i == 1) ? meshInitCache.opaqueIndices1View : meshInitCache.opaqueIndices2View);
+			const BufferView<int32_t> &srcBuffer = (i == 0) ? renderMeshInitCache.opaqueIndices0View :
+				((i == 1) ? renderMeshInitCache.opaqueIndices1View : renderMeshInitCache.opaqueIndices2View);
 			std::copy(srcBuffer.get(), srcBuffer.get() + opaqueIndexCount, dstBuffer.data());
 		}
 
@@ -60,7 +71,7 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMesh
 		{
 			const int alphaTestedIndexCount = ArenaMeshUtils::GetAlphaTestedIndexCount(voxelType, 0);
 			this->alphaTestedIndices.resize(alphaTestedIndexCount);
-			std::copy(meshInitCache.alphaTestedIndices0.begin(), meshInitCache.alphaTestedIndices0.begin() + alphaTestedIndexCount, this->alphaTestedIndices.data());
+			std::copy(renderMeshInitCache.alphaTestedIndices0.begin(), renderMeshInitCache.alphaTestedIndices0.begin() + alphaTestedIndexCount, this->alphaTestedIndices.data());
 		}
 	}
 }
