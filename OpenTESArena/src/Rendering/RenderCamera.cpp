@@ -38,3 +38,10 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->fovY = fovY;
 	this->fovX = MathUtils::verticalFovToHorizontalFov(fovY, aspectRatio);
 }
+
+Double3 RenderCamera::screenToWorld(double xPercent, double yPercent) const
+{
+	const Double3 baseDir = this->forwardScaled - this->rightScaled + this->upScaled;
+	const Double3 adjustedDir = baseDir + (this->rightScaled * (2.0 * xPercent)) - (this->upScaled * (2.0 * yPercent));
+	return adjustedDir.normalized();
+}

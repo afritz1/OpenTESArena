@@ -1186,12 +1186,6 @@ std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id
 	return Int2(texture.texels.getWidth(), texture.texels.getHeight());
 }
 
-Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
-	Degrees fovY, double aspect) const
-{
-	return LegacyRendererUtils::screenPointToRay(xPercent, yPercent, cameraDirection, fovY, aspect);
-}
-
 RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 {
 	const int renderWidth = this->depthBuffer.getWidth();

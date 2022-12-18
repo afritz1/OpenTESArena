@@ -900,28 +900,3 @@ uint8_t LegacyRendererUtils::sampleFogMatrixTexture(const ArenaRenderUtils::FogM
 	*g = texel.g;
 	*b = texel.b;
 }*/
-
-Double3 LegacyRendererUtils::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
-	Degrees fovY, double aspect)
-{
-	// The basic components are the forward, up, and right vectors.
-	const Double3 up = Double3::UnitY;
-	const Double3 right = cameraDirection.cross(up).normalized();
-	const Double3 forward = up.cross(right).normalized();
-
-	// Building blocks of the ray direction. Up is reversed because y=0 is at the top
-	// of the screen.
-	const double rightPercent = ((xPercent * 2.0) - 1.0) * aspect;
-
-	// Subtract y-shear from the Y percent because Y coordinates on-screen are reversed.
-	const Radians yAngleRadians = cameraDirection.getYAngleRadians();
-	const double zoom = MathUtils::verticalFovToZoom(fovY);
-	const double yShear = RendererUtils::getYShear(yAngleRadians, zoom);
-	const double upPercent = (((yPercent - yShear) * 2.0) - 1.0) / ArenaRenderUtils::TALL_PIXEL_RATIO;
-
-	// Combine the various components to get the final vector
-	const Double3 forwardComponent = forward * zoom;
-	const Double3 rightComponent = right * rightPercent;
-	const Double3 upComponent = up * upPercent;
-	return (forwardComponent + rightComponent - upComponent).normalized();
-}

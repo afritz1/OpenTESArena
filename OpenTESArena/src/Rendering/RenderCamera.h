@@ -32,6 +32,9 @@ struct RenderCamera
 
 	void init(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction, Degrees fovY,
 		double aspectRatio, double tallPixelRatio);
+
+	// Generates a 3D ray from an XY position on-screen.
+	Double3 screenToWorld(double xPercent, double yPercent) const;
 };
 
 #endif

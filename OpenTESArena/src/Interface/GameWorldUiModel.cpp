@@ -6,6 +6,8 @@
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
+#include "../Rendering/RenderCamera.h"
+#include "../Rendering/RendererUtils.h"
 #include "../World/MapType.h"
 
 #include "components/utilities/String.h"
@@ -250,19 +252,17 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 {
 	const auto &options = game.getOptions();
 	const auto &renderer = game.getRenderer();
-	const Int2 viewDims = renderer.getViewDimensions();
-	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
-
 	const Player &player = game.getPlayer();
-	const Double3 &cameraDirection = player.getDirection();
+	const CoordDouble3 &playerCoord = player.getPosition();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 
-	// Mouse position percents across the screen. Add 0.50 to sample at the center
-	// of the pixel.
-	const double mouseXPercent = (static_cast<double>(windowPoint.x) + 0.50) / static_cast<double>(viewDims.x);
-	const double mouseYPercent = (static_cast<double>(windowPoint.y) + 0.50) / static_cast<double>(viewDims.y);
+	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.
+	const Int2 viewDims = renderer.getViewDimensions();
+	const double screenXPercent = (static_cast<double>(windowPoint.x) + 0.50) / static_cast<double>(viewDims.x);
+	const double screenYPercent = (static_cast<double>(windowPoint.y) + 0.50) / static_cast<double>(viewDims.y);
 
-	return renderer.screenPointToRay(mouseXPercent, mouseYPercent, cameraDirection,
-		options.getGraphics_VerticalFOV(), viewAspectRatio);
+	return renderCamera.screenToWorld(screenXPercent, screenYPercent);
 }
 
 Radians GameWorldUiModel::getCompassAngle(const VoxelDouble2 &direction)

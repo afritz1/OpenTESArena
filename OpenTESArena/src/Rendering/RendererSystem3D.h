@@ -66,10 +66,6 @@ public:
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
 
-	// Converts a screen point into a ray in the game world.
-	virtual Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
-		Degrees fovY, double aspect) const = 0;
-
 	// Gets various profiler information about internal renderer state.
 	virtual ProfilerData getProfilerData() const = 0;
 	

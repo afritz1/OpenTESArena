@@ -374,12 +374,6 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-Double3 Renderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
-	double fovY, double aspect) const
-{
-	return this->renderer3D->screenPointToRay(xPercent, yPercent, cameraDirection, fovY, aspect);
-}
-
 Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
 {
 	// From native point to letterbox point.
