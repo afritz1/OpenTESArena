@@ -3,7 +3,7 @@
 
 #include "Panel.h"
 #include "../Assets/TextureUtils.h"
-#include "../Game/Physics.h"
+#include "../Collision/Physics.h"
 #include "../Math/Rect.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
