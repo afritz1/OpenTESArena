@@ -3,8 +3,8 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Collision/ArenaSelectionUtils.h"
-#include "../Collision/CollisionUtils.h"
 #include "../Collision/Physics.h"
+#include "../Collision/SelectionUtils.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
@@ -579,7 +579,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			{
 				// Arbitrary max distance for selection.
 				// @todo: move to some ArenaPlayerUtils maybe
-				if (hit.getT() <= CollisionUtils::MAX_SELECTION_DISTANCE)
+				if (hit.getT() <= SelectionUtils::MAX_DISTANCE)
 				{
 					if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
 					{
