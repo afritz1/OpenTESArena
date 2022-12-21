@@ -1,8 +1,8 @@
 #include <algorithm>
 
-#include "CollisionMeshInstance.h"
+#include "CollisionMeshDefinition.h"
 
-void CollisionMeshInstance::init(const BufferView<const double> &vertices, const BufferView<const double> &normals,
+void CollisionMeshDefinition::init(const BufferView<const double> &vertices, const BufferView<const double> &normals,
 	const BufferView<const int> &indices)
 {
 	this->vertices.init(vertices.getCount());
