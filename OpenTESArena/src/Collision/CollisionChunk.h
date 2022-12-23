@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "CollisionMeshInstance.h"
+#include "CollisionMeshDefinition.h"
 #include "../Math/MathUtils.h"
 #include "../World/ChunkUtils.h"
 
