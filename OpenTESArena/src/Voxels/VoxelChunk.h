@@ -85,10 +85,6 @@ private:
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	// This is slightly different than the chunk manager's version since it is chunk-independent (but as
 	// a result, voxels on a chunk edge must be updated by the chunk manager).
-	template <typename VoxelIdType>
-	void getAdjacentVoxelIDsInternal(const VoxelInt3 &voxel, const Buffer3D<VoxelIdType> &voxelIDs,
-		VoxelIdType defaultID, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
-		VoxelIdType *outWestID);
 	void getAdjacentVoxelMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID,
 		VoxelMeshDefID *outEastID, VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID);
 	void getAdjacentVoxelTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID,

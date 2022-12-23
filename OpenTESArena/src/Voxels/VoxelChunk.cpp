@@ -29,26 +29,6 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	this->dirtyVoxelPositions.reserve(VoxelChunk::WIDTH * height * VoxelChunk::DEPTH);
 }
 
-template <typename VoxelIdType>
-void VoxelChunk::getAdjacentVoxelIDsInternal(const VoxelInt3 &voxel, const Buffer3D<VoxelIdType> &voxelIDs,
-	VoxelIdType defaultID, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
-	VoxelIdType *outWestID)
-{
-	auto getIdOrDefault = [this, &voxelIDs, defaultID](const VoxelInt3 &voxel)
-	{
-		return this->isValidVoxel(voxel.x, voxel.y, voxel.z) ? voxelIDs.get(voxel.x, voxel.y, voxel.z) : defaultID;
-	};
-
-	const VoxelInt3 northVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::North);
-	const VoxelInt3 eastVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::East);
-	const VoxelInt3 southVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::South);
-	const VoxelInt3 westVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::West);
-	*outNorthID = getIdOrDefault(northVoxel);
-	*outEastID = getIdOrDefault(eastVoxel);
-	*outSouthID = getIdOrDefault(southVoxel);
-	*outWestID = getIdOrDefault(westVoxel);
-}
-
 void VoxelChunk::getAdjacentVoxelMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID, VoxelMeshDefID *outEastID,
 	VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID)
 {

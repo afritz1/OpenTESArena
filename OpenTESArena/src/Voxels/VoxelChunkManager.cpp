@@ -34,103 +34,6 @@ namespace
 	}
 }
 
-std::optional<int> VoxelChunkManager::tryGetChunkIndex(const ChunkInt2 &position) const
-{
-	const auto iter = std::find_if(this->activeChunks.begin(), this->activeChunks.end(),
-		[&position](const ChunkPtr &chunkPtr)
-	{
-		return chunkPtr->getPosition() == position;
-	});
-
-	if (iter != this->activeChunks.end())
-	{
-		return static_cast<int>(std::distance(this->activeChunks.begin(), iter));
-	}
-	else
-	{
-		return std::nullopt;
-	}
-}
-
-int VoxelChunkManager::getChunkIndex(const ChunkInt2 &position) const
-{
-	const std::optional<int> index = this->tryGetChunkIndex(position);
-
-	// If this fails, we didn't properly update from the base chunk manager.
-	DebugAssertMsg(index.has_value(), "Chunk (" + position.toString() + ") not found.");
-
-	return *index;
-}
-
-VoxelChunk &VoxelChunkManager::getChunkAtIndex(int index)
-{
-	DebugAssertIndex(this->activeChunks, index);
-	return *this->activeChunks[index];
-}
-
-const VoxelChunk &VoxelChunkManager::getChunkAtIndex(int index) const
-{
-	DebugAssertIndex(this->activeChunks, index);
-	return *this->activeChunks[index];
-}
-
-VoxelChunk *VoxelChunkManager::tryGetChunkAtPosition(const ChunkInt2 &position)
-{
-	const std::optional<int> index = this->tryGetChunkIndex(position);
-	return index.has_value() ? &this->getChunkAtIndex(*index) : nullptr;
-}
-
-const VoxelChunk *VoxelChunkManager::tryGetChunkAtPosition(const ChunkInt2 &position) const
-{
-	const std::optional<int> index = this->tryGetChunkIndex(position);
-	return index.has_value() ? &this->getChunkAtIndex(*index) : nullptr;
-}
-
-VoxelChunk &VoxelChunkManager::getChunkAtPosition(const ChunkInt2 &position)
-{
-	const int index = this->getChunkIndex(position);
-	return this->getChunkAtIndex(index);
-}
-
-const VoxelChunk &VoxelChunkManager::getChunkAtPosition(const ChunkInt2 &position) const
-{
-	const int index = this->getChunkIndex(position);
-	return this->getChunkAtIndex(index);
-}
-
-template <typename VoxelIdType>
-void VoxelChunkManager::getAdjacentVoxelIDsInternal(const CoordInt3 &coord, VoxelIdFunc<VoxelIdType> voxelIdFunc,
-	VoxelIdType defaultID, std::optional<int> *outNorthChunkIndex, std::optional<int> *outEastChunkIndex,
-	std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex, VoxelIdType *outNorthID,
-	VoxelIdType *outEastID, VoxelIdType *outSouthID, VoxelIdType *outWestID)
-{
-	auto getIdOrDefault = [this, &voxelIdFunc, defaultID](const std::optional<int> &chunkIndex, const VoxelInt3 &voxel)
-	{
-		if (chunkIndex.has_value())
-		{
-			const VoxelChunk &chunk = this->getChunkAtIndex(*chunkIndex);
-			return voxelIdFunc(chunk, voxel);
-		}
-		else
-		{
-			return defaultID;
-		}
-	};
-
-	const CoordInt3 northCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::North);
-	const CoordInt3 eastCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::East);
-	const CoordInt3 southCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::South);
-	const CoordInt3 westCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::West);
-	*outNorthChunkIndex = this->tryGetChunkIndex(northCoord.chunk);
-	*outEastChunkIndex = this->tryGetChunkIndex(eastCoord.chunk);
-	*outSouthChunkIndex = this->tryGetChunkIndex(southCoord.chunk);
-	*outWestChunkIndex = this->tryGetChunkIndex(westCoord.chunk);
-	*outNorthID = getIdOrDefault(*outNorthChunkIndex, northCoord.voxel);
-	*outEastID = getIdOrDefault(*outEastChunkIndex, eastCoord.voxel);
-	*outSouthID = getIdOrDefault(*outSouthChunkIndex, southCoord.voxel);
-	*outWestID = getIdOrDefault(*outWestChunkIndex, westCoord.voxel);
-}
-
 void VoxelChunkManager::getAdjacentVoxelMeshDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
 	VoxelChunk::VoxelMeshDefID *outNorthID, VoxelChunk::VoxelMeshDefID *outEastID, VoxelChunk::VoxelMeshDefID *outSouthID,
@@ -141,7 +44,7 @@ void VoxelChunkManager::getAdjacentVoxelMeshDefIDs(const CoordInt3 &coord, std::
 		return chunk.getVoxelMeshDefID(voxel.x, voxel.y, voxel.z);
 	};
 
-	VoxelChunkManager::getAdjacentVoxelIDsInternal<VoxelChunk::VoxelMeshDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_MESH_DEF_ID,
+	this->getAdjacentVoxelIDsInternal<VoxelChunk::VoxelMeshDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_MESH_DEF_ID,
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
@@ -155,7 +58,7 @@ void VoxelChunkManager::getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, st
 		return chunk.getVoxelTextureDefID(voxel.x, voxel.y, voxel.z);
 	};
 
-	VoxelChunkManager::getAdjacentVoxelIDsInternal<VoxelChunk::VoxelTextureDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_TEXTURE_DEF_ID,
+	this->getAdjacentVoxelIDsInternal<VoxelChunk::VoxelTextureDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_TEXTURE_DEF_ID,
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
@@ -169,39 +72,8 @@ void VoxelChunkManager::getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, std
 		return chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
 	};
 
-	VoxelChunkManager::getAdjacentVoxelIDsInternal<VoxelChunk::VoxelTraitsDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID,
+	this->getAdjacentVoxelIDsInternal<VoxelChunk::VoxelTraitsDefID>(coord, voxelIdFunc, VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID,
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
-}
-
-int VoxelChunkManager::spawnChunk()
-{
-	if (!this->chunkPool.empty())
-	{
-		this->activeChunks.emplace_back(std::move(this->chunkPool.back()));
-		this->chunkPool.pop_back();
-	}
-	else
-	{
-		// Always allow expanding in the event that chunk distance is increased.
-		this->activeChunks.emplace_back(std::make_unique<VoxelChunk>());
-	}
-
-	return static_cast<int>(this->activeChunks.size()) - 1;
-}
-
-void VoxelChunkManager::recycleChunk(int index)
-{
-	DebugAssertIndex(this->activeChunks, index);
-	ChunkPtr &chunkPtr = this->activeChunks[index];
-	const ChunkInt2 chunkPos = chunkPtr->getPosition();
-
-	// @todo: save chunk changes
-
-	// Move chunk to chunk pool. It's okay to shift chunk pointers around because this is during the 
-	// time when references get invalidated.
-	chunkPtr->clear();
-	this->chunkPool.emplace_back(std::move(chunkPtr));
-	this->activeChunks.erase(this->activeChunks.begin() + index);
 }
 
 void VoxelChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelInfoDefinition &levelInfoDefinition)
