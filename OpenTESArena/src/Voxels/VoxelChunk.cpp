@@ -15,18 +15,18 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	this->voxelTraitsDefs.emplace_back(VoxelTraitsDefinition());
 
 	// Set all voxels to air.
-	this->voxelMeshDefIDs.init(VoxelChunk::WIDTH, height, VoxelChunk::DEPTH);
+	this->voxelMeshDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->voxelMeshDefIDs.fill(VoxelChunk::AIR_VOXEL_MESH_DEF_ID);
 
-	this->voxelTextureDefIDs.init(VoxelChunk::WIDTH, height, VoxelChunk::DEPTH);
+	this->voxelTextureDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->voxelTextureDefIDs.fill(VoxelChunk::AIR_VOXEL_TEXTURE_DEF_ID);
 
-	this->voxelTraitsDefIDs.init(VoxelChunk::WIDTH, height, VoxelChunk::DEPTH);
+	this->voxelTraitsDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->voxelTraitsDefIDs.fill(VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID);
 
-	this->dirtyVoxels.init(VoxelChunk::WIDTH, height, VoxelChunk::DEPTH);
+	this->dirtyVoxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->dirtyVoxels.fill(false);
-	this->dirtyVoxelPositions.reserve(VoxelChunk::WIDTH * height * VoxelChunk::DEPTH);
+	this->dirtyVoxelPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
 }
 
 void VoxelChunk::getAdjacentVoxelMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID, VoxelMeshDefID *outEastID,

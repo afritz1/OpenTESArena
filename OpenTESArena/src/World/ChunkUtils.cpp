@@ -118,11 +118,11 @@ void ChunkUtils::GetWritingRanges(const LevelInt2 &levelOffset, SNInt levelWidth
 	SNInt *outStartX, int *outStartY, WEInt *outStartZ, SNInt *outEndX, int *outEndY, WEInt *outEndZ)
 {
 	*outStartX = levelOffset.x;
-	*outEndX = std::min(*outStartX + VoxelChunk::WIDTH, levelWidth);
+	*outEndX = std::min(*outStartX + Chunk::WIDTH, levelWidth);
 	*outStartY = 0;
 	*outEndY = levelHeight;
 	*outStartZ = levelOffset.y;
-	*outEndZ = std::min(*outStartZ + VoxelChunk::DEPTH, levelDepth);
+	*outEndZ = std::min(*outStartZ + Chunk::DEPTH, levelDepth);
 }
 
 bool ChunkUtils::IsInWritingRange(const LevelInt3 &position, SNInt startX, SNInt endX, int startY, int endY,

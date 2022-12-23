@@ -277,11 +277,11 @@ void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
 	// Cache of level building names that have been added to the chunk.
 	std::unordered_map<LevelDefinition::BuildingNameID, VoxelChunk::BuildingNameID> buildingNameIDs;
 
-	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				VoxelChunk::TransitionDefID transitionDefID;
 				if (!chunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
@@ -329,11 +329,11 @@ void VoxelChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 	// @todo: only iterate over chunk writing ranges
 
 	const ChunkInt2 &chunkPos = chunk.getPosition();
-	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
 				const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
@@ -425,9 +425,9 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		const VoxelChunk::VoxelTraitsDefID ceilingVoxelTraitsDefID = ceilingVoxelMeshDefID; // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
 
 		const int chunkHeight = chunk.getHeight();
-		for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
+		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
-			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				chunk.setVoxelMeshDefID(x, 0, z, floorVoxelMeshDefID);
 				chunk.setVoxelTextureDefID(x, 0, z, floorVoxelTextureDefID);
@@ -464,9 +464,9 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// Chunks outside the level are wrapped but only have floor voxels.		
-		for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
+		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
-			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				auto wrapLevelVoxel = [](int voxel, int levelDim)
 				{
@@ -527,8 +527,8 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// Copy level definition directly into chunk.
-		DebugAssert(levelDefinition.getWidth() == VoxelChunk::WIDTH);
-		DebugAssert(levelDefinition.getDepth() == VoxelChunk::DEPTH);
+		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
+		DebugAssert(levelDefinition.getDepth() == Chunk::DEPTH);
 		const LevelInt2 levelOffset = LevelInt2::Zero;
 		this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 		this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
@@ -628,24 +628,24 @@ void VoxelChunkManager::updateChunkPerimeterChasmInsts(VoxelChunk &chunk)
 	};
 
 	// North and south sides.
-	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
 			constexpr SNInt northX = 0;
-			constexpr SNInt southX = VoxelChunk::WIDTH - 1;
+			constexpr SNInt southX = Chunk::WIDTH - 1;
 			tryUpdateChasm(VoxelInt3(northX, y, z));
 			tryUpdateChasm(VoxelInt3(southX, y, z));
 		}
 	}
 
 	// East and west sides, minus the corners.
-	for (SNInt x = 1; x < (VoxelChunk::WIDTH - 1); x++)
+	for (SNInt x = 1; x < (Chunk::WIDTH - 1); x++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
 			constexpr WEInt eastZ = 0;
-			constexpr WEInt westZ = VoxelChunk::DEPTH - 1;
+			constexpr WEInt westZ = Chunk::DEPTH - 1;
 			tryUpdateChasm(VoxelInt3(x, y, eastZ));
 			tryUpdateChasm(VoxelInt3(x, y, westZ));
 		}

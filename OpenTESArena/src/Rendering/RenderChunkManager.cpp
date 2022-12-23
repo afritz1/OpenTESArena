@@ -609,11 +609,11 @@ void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const Vox
 {
 	DebugAssert(renderChunk.chasmWallIndexBufferIDs.empty());
 
-	for (WEInt z = 0; z < VoxelChunk::DEPTH; z++)
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < VoxelChunk::WIDTH; x++)
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				int chasmWallInstIndex;
 				if (!chunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))

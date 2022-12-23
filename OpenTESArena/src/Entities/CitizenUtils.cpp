@@ -177,7 +177,7 @@ bool CitizenUtils::trySpawnCitizenInChunk(const VoxelChunk &chunk, const Citizen
 		constexpr int spawnTriesCount = 20;
 		for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
 		{
-			const VoxelInt2 spawnVoxel(random.next(VoxelChunk::WIDTH), random.next(VoxelChunk::DEPTH));
+			const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
 			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
 			const VoxelChunk::VoxelTraitsDefID groundVoxelTraitsDefID = chunk.getVoxelTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
