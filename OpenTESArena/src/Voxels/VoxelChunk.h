@@ -21,6 +21,7 @@
 #include "VoxelTriggerInstance.h"
 #include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
+#include "../World/Chunk.h"
 #include "../World/ChunkUtils.h"
 #include "../World/Coord.h"
 #include "../World/LockDefinition.h"
@@ -32,7 +33,7 @@
 
 class AudioManager;
 
-class VoxelChunk
+class VoxelChunk final : public Chunk
 {
 public:
 	using VoxelMeshDefID = int;
@@ -45,8 +46,6 @@ public:
 	using DoorDefID = int;
 	using ChasmDefID = int;
 private:
-	ChunkInt2 position;
-
 	// Definitions pointed to by voxel IDs.
 	std::vector<VoxelMeshDefinition> voxelMeshDefs;
 	std::vector<VoxelTextureDefinition> voxelTextureDefs;
@@ -101,19 +100,11 @@ private:
 	// @todo: should this take flags instead?
 	void setVoxelDirty(SNInt x, int y, WEInt z);
 public:
-	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
-	static constexpr WEInt DEPTH = WIDTH;
-	static_assert(MathUtils::isPowerOf2(WIDTH));
-
 	static constexpr VoxelMeshDefID AIR_VOXEL_MESH_DEF_ID = 0;
 	static constexpr VoxelTextureDefID AIR_VOXEL_TEXTURE_DEF_ID = 0;
 	static constexpr VoxelTraitsDefID AIR_VOXEL_TRAITS_DEF_ID = 0;
 
 	void init(const ChunkInt2 &position, int height);
-
-	int getHeight() const;
-	bool isValidVoxel(SNInt x, int y, WEInt z) const;
-	const ChunkInt2 &getPosition() const;
 
 	int getVoxelMeshDefCount() const;
 	int getVoxelTextureDefCount() const;

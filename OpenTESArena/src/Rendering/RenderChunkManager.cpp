@@ -478,7 +478,7 @@ std::optional<int> RenderChunkManager::tryGetRenderChunkIndex(const ChunkInt2 &c
 	for (int i = 0; i < static_cast<int>(this->renderChunks.size()); i++)
 	{
 		const RenderChunk &renderChunk = this->renderChunks[i];
-		if (renderChunk.position == chunkPos)
+		if (renderChunk.getPosition() == chunkPos)
 		{
 			return i;
 		}
@@ -667,7 +667,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 		}
 	};
 
-	const ChunkInt2 &chunkPos = renderChunk.position;
+	const ChunkInt2 &chunkPos = renderChunk.getPosition();
 
 	// Generate draw calls for each non-air voxel.
 	for (WEInt z = 0; z < renderChunk.meshInstIDs.getDepth(); z++)
@@ -852,7 +852,7 @@ void RenderChunkManager::unloadVoxelChunk(const ChunkInt2 &chunkPos, Renderer &r
 	const auto iter = std::find_if(this->renderChunks.begin(), this->renderChunks.end(),
 		[&chunkPos](const RenderChunk &renderChunk)
 	{
-		return renderChunk.position == chunkPos;
+		return renderChunk.getPosition() == chunkPos;
 	});
 
 	if (iter != this->renderChunks.end())

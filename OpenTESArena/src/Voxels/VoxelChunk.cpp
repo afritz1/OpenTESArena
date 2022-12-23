@@ -7,7 +7,7 @@
 
 void VoxelChunk::init(const ChunkInt2 &position, int height)
 {
-	this->position = position;
+	Chunk::init(position, height);
 
 	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely point to it.
 	this->voxelMeshDefs.emplace_back(VoxelMeshDefinition());
@@ -65,24 +65,6 @@ void VoxelChunk::getAdjacentVoxelTraitsDefIDs(const VoxelInt3 &voxel, VoxelTrait
 	VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID)
 {
 	this->getAdjacentVoxelIDsInternal(voxel, this->voxelTraitsDefIDs, VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
-}
-
-int VoxelChunk::getHeight() const
-{
-	DebugAssert(this->voxelMeshDefIDs.getHeight() == this->voxelTextureDefIDs.getHeight());
-	DebugAssert(this->voxelMeshDefIDs.getHeight() == this->voxelTraitsDefIDs.getHeight());
-	DebugAssert(this->voxelMeshDefIDs.getHeight() == this->dirtyVoxels.getHeight());
-	return this->voxelMeshDefIDs.getHeight();
-}
-
-bool VoxelChunk::isValidVoxel(SNInt x, int y, WEInt z) const
-{
-	return (x >= 0) && (x < VoxelChunk::WIDTH) && (y >= 0) && (y < this->getHeight()) && (z >= 0) && (z < VoxelChunk::DEPTH);
-}
-
-const ChunkInt2 &VoxelChunk::getPosition() const
-{
-	return this->position;
 }
 
 int VoxelChunk::getVoxelMeshDefCount() const
@@ -593,7 +575,7 @@ void VoxelChunk::setVoxelDirty(SNInt x, int y, WEInt z)
 
 void VoxelChunk::clear()
 {
-	this->position = ChunkInt2();
+	Chunk::clear();
 	this->voxelMeshDefs.clear();
 	this->voxelTextureDefs.clear();
 	this->voxelTraitsDefs.clear();
@@ -628,6 +610,8 @@ void VoxelChunk::clearDirtyVoxels()
 
 void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
 {
+	const ChunkInt2 &chunkPos = this->getPosition();
+
 	// Update doors.
 	for (int i = static_cast<int>(this->doorAnimInsts.size()) - 1; i >= 0; i--)
 	{
@@ -641,7 +625,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 			{
 				// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
 				// the voxel if it is defined for the door.
-				const CoordDouble3 voxelCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+				const CoordDouble3 voxelCoord(chunkPos, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 				const VoxelDouble3 diff = playerCoord - voxelCoord;
 
 				constexpr double closeDistSqr = ArenaLevelUtils::DOOR_CLOSE_DISTANCE * ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
@@ -681,7 +665,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 			const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
 			if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosed)
 			{
-				const CoordDouble3 soundCoord(this->position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+				const CoordDouble3 soundCoord(chunkPos, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 				const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
 				audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
 			}

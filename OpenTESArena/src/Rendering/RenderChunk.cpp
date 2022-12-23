@@ -6,13 +6,13 @@
 
 void RenderChunk::init(const ChunkInt2 &position, int height)
 {
+	Chunk::init(position, height);
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
 	this->meshInstIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->chasmWallIndexBufferIDs.clear();
 	this->staticDrawCalls.clear();
 	this->animatingDrawCalls.clear();
-	this->position = position;
 
 	// Add empty mesh instance for air.
 	this->addMeshInstance(RenderChunkVoxelMeshInstance());

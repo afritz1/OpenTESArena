@@ -8,6 +8,7 @@
 #include "RenderGeometryUtils.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelUtils.h"
+#include "../World/Chunk.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer3D.h"
@@ -17,15 +18,15 @@ class Renderer;
 
 using RenderChunkVoxelMeshInstanceID = int;
 
-struct RenderChunk
+class RenderChunk final : public Chunk
 {
+public:
 	std::vector<RenderChunkVoxelMeshInstance> meshInsts;
 	std::unordered_map<VoxelChunk::VoxelMeshDefID, RenderChunkVoxelMeshInstanceID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
 	Buffer3D<RenderChunkVoxelMeshInstanceID> meshInstIDs; // Points into mesh instances.
 	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDs; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	std::vector<RenderDrawCall> staticDrawCalls; // Most voxel geometry.
 	std::vector<RenderDrawCall> animatingDrawCalls; // Chasm floors, chasm walls, doors, etc. so their textures can animate.
-	ChunkInt2 position;
 
 	// @todo: quadtree
 	// - thinking that each 'visible slice' of the tree could be a BufferView2D maybe, or a VoxelInt2 begin + end pattern
