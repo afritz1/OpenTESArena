@@ -1249,11 +1249,10 @@ void GameState::tick(double dt, Game &game)
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
 
-	auto &gameState = game.getGameState();
-	MapInstance &mapInst = gameState.getActiveMapInst();
-	const double latitude = [&gameState]()
+	MapInstance &mapInst = this->getActiveMapInst();
+	const double latitude = [this]()
 	{
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
+		const LocationDefinition &locationDef = this->getLocationDefinition();
 		return locationDef.getLatitude();
 	}();
 
@@ -1261,18 +1260,18 @@ void GameState::tick(double dt, Game &game)
 	TextureManager &textureManager = game.getTextureManager();
 
 	EntityGeneration::EntityGenInfo entityGenInfo;
-	entityGenInfo.init(gameState.nightLightsAreActive());
+	entityGenInfo.init(this->nightLightsAreActive());
 
 	// Tick active map (entities, animated distant land, etc.).
-	const MapDefinition &mapDef = gameState.getActiveMapDef();
+	const MapDefinition &mapDef = this->getActiveMapDef();
 	const MapType mapType = mapDef.getMapType();
-	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&game, &gameState, mapType,
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [this, &game, mapType,
 		&entityDefLibrary, &textureManager]() -> std::optional<CitizenUtils::CitizenGenInfo>
 	{
 		if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
 		{
-			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
-			const LocationDefinition &locationDef = gameState.getLocationDefinition();
+			const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+			const LocationDefinition &locationDef = this->getLocationDefinition();
 			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
 				entityDefLibrary, textureManager);
@@ -1283,7 +1282,7 @@ void GameState::tick(double dt, Game &game)
 		}
 	}();
 
-	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, gameState.getDaytimePercent(),
+	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, this->getDaytimePercent(),
 		game.getOptions().getMisc_ChunkDistance(), entityGenInfo, citizenGenInfo, entityDefLibrary,
 		game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
 
