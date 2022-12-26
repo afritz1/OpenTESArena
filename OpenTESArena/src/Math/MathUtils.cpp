@@ -270,6 +270,52 @@ bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &ray
 	return false;
 }
 
+bool MathUtils::rayTriangleIntersection(const Double3 &rayStart, const Double3 &rayDirection,
+	const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT)
+{
+	// Möller-Trumbore
+	const Double3 v0v1 = v1 - v0;
+	const Double3 v0v2 = v2 - v0;
+	const Double3 dirV0V2Cross = rayDirection.cross(v0v2);
+	const double v0v1CrossDot = v0v1.dot(dirV0V2Cross);
+	if (std::abs(v0v1CrossDot) < Constants::Epsilon)
+	{
+		// Ray is parallel to triangle.
+		return false;
+	}
+
+	const double invDot = 1.0 / v0v1CrossDot;
+	const Double3 startV0Diff = rayStart - v0;
+	
+	// First barycentric coordinate.
+	const double u = invDot * startV0Diff.dot(dirV0V2Cross);
+	if ((u < 0.0) || (u > 1.0))
+	{
+		// Outside the triangle.
+		return false;
+	}
+
+	const Double3 diffV0V1Cross = startV0Diff.cross(v0v1);
+	
+	// Second barycentric coordinate.
+	const double v = invDot * rayDirection.dot(diffV0V1Cross);
+	if ((v < 0.0) || ((u + v) > 1.0))
+	{
+		// Outside the triangle.
+		return false;
+	}
+
+	const double t = invDot * v0v2.dot(diffV0V1Cross);
+	if (t <= Constants::Epsilon)
+	{
+		// Too close or the ray starts past the triangle.
+		return false;
+	}
+
+	*outT = t;
+	return true;
+}
+
 bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 	const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint)
 {

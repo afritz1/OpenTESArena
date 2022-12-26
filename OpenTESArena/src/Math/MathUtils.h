@@ -75,6 +75,10 @@ namespace MathUtils
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint);
 
+	// Finds the intersection of a ray with the given triangle. Returns success.
+	bool rayTriangleIntersection(const Double3 &rayStart, const Double3 &rayDirection,
+		const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT);
+
 	// Finds the intersection of a ray and a quad defined by three vertices. The vertex order
 	// must go around the quad (i.e. v0 = top left, v1 = bottom left, v2 = bottom right).
 	bool rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
