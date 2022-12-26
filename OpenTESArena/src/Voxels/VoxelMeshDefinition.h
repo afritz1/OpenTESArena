@@ -23,6 +23,7 @@ struct VoxelMeshDefinition
 	std::vector<double> rendererVertices, rendererNormals, rendererTexCoords;
 	std::vector<double> collisionVertices, collisionNormals;
 	std::vector<int32_t> opaqueIndices0, opaqueIndices1, opaqueIndices2, alphaTestedIndices;
+	std::vector<int32_t> collisionIndices;
 	int uniqueVertexCount; // Ideal number of vertices to represent the mesh.
 	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
 	int collisionVertexCount;

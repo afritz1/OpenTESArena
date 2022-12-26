@@ -16,6 +16,14 @@ void CollisionChunk::init(const ChunkInt2 &position, int height)
 	this->enabledColliders.fill(false);
 }
 
+void CollisionChunk::clear()
+{
+	Chunk::clear();
+	this->meshDefs.clear();
+	this->meshDefIDs.clear();
+	this->enabledColliders.clear();
+}
+
 int CollisionChunk::getCollisionMeshDefCount() const
 {
 	return static_cast<int>(this->meshDefs.size());

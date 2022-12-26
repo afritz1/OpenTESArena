@@ -73,6 +73,9 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMesh
 			this->alphaTestedIndices.resize(alphaTestedIndexCount);
 			std::copy(renderMeshInitCache.alphaTestedIndices0.begin(), renderMeshInitCache.alphaTestedIndices0.begin() + alphaTestedIndexCount, this->alphaTestedIndices.data());
 		}
+
+		this->collisionIndices.resize(collisionMeshInitCache.indices.size());
+		std::copy(collisionMeshInitCache.indicesView.get(), collisionMeshInitCache.indicesView.end(), this->collisionIndices.data());
 	}
 }
 

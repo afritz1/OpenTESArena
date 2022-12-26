@@ -20,6 +20,7 @@ public:
 	static constexpr CollisionMeshDefID AIR_COLLISION_MESH_DEF_ID = 0;
 
 	void init(const ChunkInt2 &position, int height);
+	void clear();
 
 	int getCollisionMeshDefCount() const;
 	const CollisionMeshDefinition &getCollisionMeshDef(CollisionMeshDefID id) const;
