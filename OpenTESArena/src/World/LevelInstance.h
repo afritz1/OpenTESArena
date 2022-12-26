@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../Assets/ArenaTypes.h"
+#include "../Collision/CollisionChunkManager.h"
 #include "../Entities/CitizenUtils.h"
 #include "../Entities/EntityGeneration.h"
 #include "../Entities/EntityManager.h"
@@ -34,6 +35,7 @@ private:
 	// - feels like all voxel/entity/sky/particle object texture loading should be on demand...? Might simplify enemy spawning code.
 
 	VoxelChunkManager voxelChunkManager;
+	CollisionChunkManager collisionChunkManager;
 	EntityManager entityManager;
 
 	// Texture handles for the active game world palette and light table.
@@ -47,6 +49,8 @@ public:
 
 	VoxelChunkManager &getVoxelChunkManager();
 	const VoxelChunkManager &getVoxelChunkManager() const;
+	CollisionChunkManager &getCollisionChunkManager();
+	const CollisionChunkManager &getCollisionChunkManager() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
 	ObjectTextureID getPaletteTextureID() const;

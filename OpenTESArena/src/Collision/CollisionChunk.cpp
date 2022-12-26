@@ -27,6 +27,13 @@ const CollisionMeshDefinition &CollisionChunk::getCollisionMeshDef(CollisionMesh
 	return this->meshDefs[id];
 }
 
+CollisionChunk::CollisionMeshDefID CollisionChunk::addCollisionMeshDef(CollisionMeshDefinition &&meshDef)
+{
+	const CollisionMeshDefID id = static_cast<CollisionMeshDefID>(this->meshDefs.size());
+	this->meshDefs.emplace_back(std::move(meshDef));
+	return id;
+}
+
 CollisionChunk::CollisionMeshDefID CollisionChunk::getCollisionMeshDefID(SNInt x, int y, WEInt z) const
 {
 	return this->meshDefIDs.get(x, y, z);
@@ -45,11 +52,4 @@ bool CollisionChunk::isColliderEnabled(SNInt x, int y, WEInt z) const
 void CollisionChunk::setColliderEnabled(SNInt x, int y, WEInt z, bool enabled)
 {
 	this->enabledColliders.set(x, y, z, enabled);
-}
-
-CollisionChunk::CollisionMeshDefID CollisionChunk::addCollisionMeshDef(CollisionMeshDefinition &&meshDef)
-{
-	const CollisionMeshDefID id = static_cast<CollisionMeshDefID>(this->meshDefs.size());
-	this->meshDefs.emplace_back(std::move(meshDef));
-	return id;
 }

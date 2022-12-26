@@ -99,6 +99,16 @@ const VoxelChunkManager &LevelInstance::getVoxelChunkManager() const
 	return this->voxelChunkManager;
 }
 
+CollisionChunkManager &LevelInstance::getCollisionChunkManager()
+{
+	return this->collisionChunkManager;
+}
+
+const CollisionChunkManager &LevelInstance::getCollisionChunkManager() const
+{
+	return this->collisionChunkManager;
+}
+
 EntityManager &LevelInstance::getEntityManager()
 {
 	return this->entityManager;
@@ -156,6 +166,7 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 	const ChunkInt2 &centerChunkPos = playerCoord.chunk;
 	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
 		mapDefinition, this->ceilingScale, audioManager);
+	this->collisionChunkManager.update(dt, newChunkPositions, freedChunkPositions);
 
 	for (int i = 0; i < freedChunkPositions.getCount(); i++)
 	{

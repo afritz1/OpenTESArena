@@ -23,14 +23,13 @@ public:
 
 	int getCollisionMeshDefCount() const;
 	const CollisionMeshDefinition &getCollisionMeshDef(CollisionMeshDefID id) const;
+	CollisionMeshDefID addCollisionMeshDef(CollisionMeshDefinition &&meshDef);
 
 	CollisionMeshDefID getCollisionMeshDefID(SNInt x, int y, WEInt z) const;
 	void setCollisionMeshDefID(SNInt x, int y, WEInt z, CollisionMeshDefID id);
 
 	bool isColliderEnabled(SNInt x, int y, WEInt z) const;
 	void setColliderEnabled(SNInt x, int y, WEInt z, bool enabled);
-
-	CollisionMeshDefID addCollisionMeshDef(CollisionMeshDefinition &&meshDef);
 };
 
 #endif

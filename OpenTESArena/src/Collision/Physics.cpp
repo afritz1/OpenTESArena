@@ -258,793 +258,174 @@ namespace Physics
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelInt3 &voxel,
-		VoxelFacing3D farFacing, const VoxelDouble3 &farPoint, double ceilingScale, const LevelInstance &levelInst,
-		Physics::Hit &hit)
+		VoxelFacing3D farFacing, const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
 	{
-		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
-		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
-		if (chunk == nullptr)
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		if (collisionChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
 
-		if (!chunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
+		if (!collisionChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
 		{
 			// Not in the chunk.
 			return false;
 		}
 
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
-		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
-
-		// @todo
-		DebugLogError("Not implemented: Physics::testInitialVoxelRay()");
-
-		return false;
-
-		// Determine which type the voxel data is and run the associated calculation.
-		/*if (voxelType == ArenaTypes::VoxelType::None)
+		if (!collisionChunk->isColliderEnabled(voxel.x, voxel.y, voxel.z))
 		{
-			// Do nothing.
+			// Collider is not turned on.
 			return false;
 		}
-		else if (voxelType == ArenaTypes::VoxelType::Wall)
+
+		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->getCollisionMeshDefID(voxel.x, voxel.y, voxel.z);
+		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
+		const BufferView<const double> verticesView(collisionMeshDef.vertices.get(), collisionMeshDef.vertices.getCount());
+		const BufferView<const double> normalsView(collisionMeshDef.normals.get(), collisionMeshDef.normals.getCount());
+		const BufferView<const int> indicesView(collisionMeshDef.indices.get(), collisionMeshDef.indices.getCount());
+
+		// Each collision triangle is formed by 6 indices.
+		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
+
+		const VoxelDouble3 voxelReal(
+			static_cast<SNDouble>(voxel.x),
+			static_cast<double>(voxel.y),
+			static_cast<WEDouble>(voxel.z));
+		bool success = false;
+		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
 		{
-			// Opaque walls are always hit.
-			const double t = (farPoint - rayCoord.point).length();
-			const CoordDouble3 hitCoord(rayCoord.chunk, farPoint);
-			hit.initVoxel(t, hitCoord, voxelID, voxel, &farFacing);
-			return true;
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Floor)
-		{
-			// Check if the ray hits the top of the voxel.
-			if (farFacing == VoxelFacing3D::PositiveY)
-			{
-				const double t = (farPoint - rayCoord.point).length();
-				const CoordDouble3 hitCoord(rayCoord.chunk, farPoint);
-				hit.initVoxel(t, hitCoord, voxelID, voxel, &farFacing);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Ceiling)
-		{
-			// Check if the ray hits the bottom of the voxel.
-			if (farFacing == VoxelFacing3D::NegativeY)
-			{
-				const double t = (farPoint - rayCoord.point).length();
-				const CoordDouble3 hitCoord(rayCoord.chunk, farPoint);
-				hit.initVoxel(t, hitCoord, voxelID, voxel, &farFacing);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Raised)
-		{
-			const VoxelDefinition::RaisedData &raised = voxelDef.raised;
-			const double raisedYBottom = (static_cast<double>(voxel.y) + raised.yOffset) * ceilingScale;
-			const double raisedYTop = raisedYBottom + (raised.ySize * ceilingScale);
+			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
+			const int vertexIndex0 = indicesView.get(indicesIndex);
+			const int vertexIndex1 = indicesView.get(indicesIndex + 2);
+			const int vertexIndex2 = indicesView.get(indicesIndex + 4);
+			const int normalIndex0 = indicesView.get(indicesIndex + 1);
+			//const int normalIndex1 = indicesView.get(indicesIndex + 3);
+			//const int normalIndex2 = indicesView.get(indicesIndex + 5);
 
-			if ((rayCoord.point.y > raisedYBottom) && (rayCoord.point.y < raisedYTop))
-			{
-				// Inside the raised platform. See where the far point is.
-				if (farPoint.y < raisedYBottom)
-				{
-					// Hits the inside floor of the raised platform.
-					const VoxelDouble3 planeOrigin(
-						static_cast<SNDouble>(voxel.x) + 0.50,
-						raisedYBottom,
-						static_cast<WEDouble>(voxel.z) + 0.50);
-					const VoxelDouble3 planeNormal = Double3::UnitY;
+			const double vertex0X = verticesView.get(vertexIndex0);
+			const double vertex0Y = verticesView.get(vertexIndex0 + 1);
+			const double vertex0Z = verticesView.get(vertexIndex0 + 2);
+			const double vertex1X = verticesView.get(vertexIndex1);
+			const double vertex1Y = verticesView.get(vertexIndex1 + 1);
+			const double vertex1Z = verticesView.get(vertexIndex1 + 2);
+			const double vertex2X = verticesView.get(vertexIndex2);
+			const double vertex2Y = verticesView.get(vertexIndex2 + 1);
+			const double vertex2Z = verticesView.get(vertexIndex2 + 2);
 
-					// Ray-plane intersection (guaranteed to hit a valid spot).
-					VoxelDouble3 hitPoint;
-					const bool success = MathUtils::rayPlaneIntersection(
-						rayCoord.point, rayDirection, planeOrigin, planeNormal, &hitPoint);
-					DebugAssert(success);
-					CoordDouble3 hitCoord(rayCoord.chunk, hitPoint);
+			// Normals are the same per face.
+			const double normal0X = normalsView.get(normalIndex0);
+			const double normal0Y = normalsView.get(normalIndex0 + 1);
+			const double normal0Z = normalsView.get(normalIndex0 + 2);
 
-					const double t = (hitPoint - rayCoord.point).length();
-					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
-					return true;
-				}
-				else if (farPoint.y > raisedYTop)
-				{
-					// Hits the inside ceiling of the raised platform.
-					const VoxelDouble3 planeOrigin(
-						static_cast<SNDouble>(voxel.x) + 0.50,
-						raisedYTop,
-						static_cast<WEDouble>(voxel.z) + 0.50);
-					const VoxelDouble3 planeNormal = -Double3::UnitY;
+			const Double3 v0(vertex0X, vertex0Y, vertex0Z);
+			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
+			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
 
-					// Ray-plane intersection (guaranteed to hit a valid spot).
-					VoxelDouble3 hitPoint;
-					const bool success = MathUtils::rayPlaneIntersection(
-						rayCoord.point, rayDirection, planeOrigin, planeNormal, &hitPoint);
-					DebugAssert(success);
-					CoordDouble3 hitCoord(rayCoord.chunk, hitPoint);
+			const Double3 v0Actual = v0 + voxelReal;
+			const Double3 v1Actual = v1 + voxelReal;
+			const Double3 v2Actual = v2 + voxelReal;
 
-					const double t = (hitPoint - rayCoord.point).length();
-					const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
-					return true;
-				}
-				else
-				{
-					// Hits the inside wall of the raised platform.
-					const double t = (farPoint - rayCoord.point).length();
-					const CoordDouble3 hitCoord(rayCoord.chunk, farPoint);
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &farFacing);
-					return true;
-				}
-			}
-			else if (rayCoord.point.y > raisedYTop)
-			{
-				// Above the raised platform. See if the ray hits the top.
-				if (farPoint.y <= raisedYTop)
-				{
-					// Hits the top somewhere.
-					const VoxelDouble3 planeOrigin(
-						static_cast<SNDouble>(voxel.x) + 0.50,
-						raisedYTop,
-						static_cast<WEDouble>(voxel.z) + 0.50);
-					const VoxelDouble3 planeNormal = Double3::UnitY;
-
-					// Ray-plane intersection (guaranteed to hit a valid spot).
-					VoxelDouble3 hitPoint;
-					const bool success = MathUtils::rayPlaneIntersection(
-						rayCoord.point, rayDirection, planeOrigin, planeNormal, &hitPoint);
-					DebugAssert(success);
-					CoordDouble3 hitCoord(rayCoord.chunk, hitPoint);
-
-					const double t = (hitPoint - rayCoord.point).length();
-					const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else if (rayCoord.point.y < raisedYBottom)
-			{
-				// Below the raised platform. See if the ray hits the bottom.
-				if (farPoint.y >= raisedYBottom)
-				{
-					// Hits the bottom somewhere.
-					const VoxelDouble3 planeOrigin(
-						static_cast<SNDouble>(voxel.x) + 0.50,
-						raisedYBottom,
-						static_cast<WEDouble>(voxel.z) + 0.50);
-					const VoxelDouble3 planeNormal = -Double3::UnitY;
-
-					// Ray-plane intersection (guaranteed to hit a valid spot).
-					VoxelDouble3 hitPoint;
-					const bool success = MathUtils::rayPlaneIntersection(
-						rayCoord.point, rayDirection, planeOrigin, planeNormal, &hitPoint);
-					DebugAssert(success);
-					CoordDouble3 hitCoord(rayCoord.chunk, hitPoint);
-
-					const double t = (hitPoint - rayCoord.point).length();
-					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Diagonal)
-		{
-			const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
-			const bool isRightDiag = diagonal.type1;
-
-			// Generate points for the diagonal's quad.
-			VoxelDouble3 bottomLeftPoint, bottomRightPoint, topRightPoint;
-			if (isRightDiag)
-			{
-				bottomLeftPoint = VoxelDouble3(
-					static_cast<SNDouble>(voxel.x),
-					static_cast<double>(voxel.y) * ceilingScale,
-					static_cast<WEDouble>(voxel.z));
-				bottomRightPoint = VoxelDouble3(
-					bottomLeftPoint.x + 1.0,
-					bottomLeftPoint.y,
-					bottomLeftPoint.z + 1.0);
-				topRightPoint = VoxelDouble3(
-					bottomRightPoint.x,
-					bottomRightPoint.y + ceilingScale,
-					bottomRightPoint.z);
-			}
-			else
-			{
-				bottomLeftPoint = VoxelDouble3(
-					static_cast<SNDouble>(voxel.x + 1),
-					static_cast<double>(voxel.y) * ceilingScale,
-					static_cast<WEDouble>(voxel.z));
-				bottomRightPoint = VoxelDouble3(
-					bottomLeftPoint.x - 1.0,
-					bottomLeftPoint.y,
-					bottomLeftPoint.z + 1.0);
-				topRightPoint = VoxelDouble3(
-					bottomRightPoint.x,
-					bottomRightPoint.y + ceilingScale,
-					bottomRightPoint.z);
-			}
-
-			VoxelDouble3 hitPoint;
-			const bool success = MathUtils::rayQuadIntersection(
-				rayCoord.point, rayDirection, bottomLeftPoint, bottomRightPoint, topRightPoint, &hitPoint);
-			CoordDouble3 hitCoord(rayCoord.chunk, hitPoint);
-
+			double t;
+			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
 			if (success)
 			{
-				const double t = (hitPoint - rayCoord.point).length();
-				hit.initVoxel(t, hitCoord, voxelID, voxel, nullptr);
-				return true;
-			}
-			else
-			{
-				return false;
+				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
+				const uint16_t voxelID = -1; // @todo
+				hit.initVoxel(t, hitCoord, voxelID, voxel, &farFacing);
+				break;
 			}
 		}
-		else if (voxelType == ArenaTypes::VoxelType::TransparentWall)
-		{
-			// Back faces of transparent walls are invisible.
-			return false;
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Edge)
-		{
-			// See if the intersected facing and the edge's facing are the same, and only
-			// consider edges with collision.
-			const VoxelDefinition::EdgeData &edge = voxelDef.edge;
-			const VoxelFacing2D edgeFacing = edge.facing;
-			const VoxelFacing3D edgeFacing3D = VoxelUtils::convertFaceTo3D(edgeFacing);
 
-			if ((edgeFacing3D == farFacing) && edge.collider)
-			{
-				// See if the ray hits within the edge with its Y offset.
-				const double edgeYBottom = (static_cast<double>(voxel.y) + edge.yOffset) * ceilingScale;
-				const double edgeYTop = edgeYBottom + ceilingScale;
-
-				if ((farPoint.y >= edgeYBottom) && (farPoint.y <= edgeYTop))
-				{
-					const double t = (farPoint - rayCoord.point).length();
-					const CoordDouble3 hitCoord(rayCoord.chunk, farPoint);
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &farFacing);
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Chasm)
-		{
-			// The chasm type determines the depth relative to the top of the voxel.
-			const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
-			const bool isDryChasm = chasm.type == ArenaTypes::ChasmType::Dry;
-			const double voxelHeight = isDryChasm ? ceilingScale : ArenaVoxelUtils::WET_CHASM_DEPTH;
-
-			const double chasmYTop = static_cast<double>(voxel.y + 1) * ceilingScale;
-			const double chasmYBottom = chasmYTop - voxelHeight;
-
-			// See if the ray starts above or below the chasm floor.
-			if (rayCoord.point.y >= chasmYBottom)
-			{
-				// Get any non-default state for this chasm voxel.
-				const VoxelInstance::ChasmState *chasmState = [&voxel, &chunk]() -> const VoxelInstance::ChasmState*
-				{
-					const VoxelInstance *voxelInst = chunk->tryGetVoxelInst(voxel, VoxelInstance::Type::Chasm);
-					if (voxelInst != nullptr)
-					{
-						return &voxelInst->getChasmState();
-					}
-					else
-					{
-						return nullptr;
-					}
-				}();
-
-				// Above the floor. See which face the ray hits.
-				if ((farFacing == VoxelFacing3D::NegativeY) || (farPoint.y < chasmYBottom))
-				{
-					// Hits the floor somewhere.
-					const VoxelDouble3 planeOrigin(
-						static_cast<SNDouble>(voxel.x) + 0.50,
-						chasmYBottom,
-						static_cast<WEDouble>(voxel.z) + 0.50);
-					const VoxelDouble3 planeNormal = Double3::UnitY;
-
-					// Ray-plane intersection (guaranteed to hit a valid spot).
-					VoxelDouble3 hitPoint;
-					const bool success = MathUtils::rayPlaneIntersection(
-						rayCoord.point, rayDirection, planeOrigin, planeNormal, &hitPoint);
-					DebugAssert(success);
-					CoordDouble3 hitCoord(rayCoord.chunk, hitPoint);
-
-					const double t = (hitPoint - rayCoord.point).length();
-					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
-					return true;
-				}
-				else if ((farFacing != VoxelFacing3D::PositiveY) &&
-					((chasmState != nullptr) && chasmState->faceIsVisible(farFacing)))
-				{
-					// Hits a side wall.
-					const double t = (farPoint - rayCoord.point).length();
-					const CoordDouble3 hitCoord(rayCoord.chunk, farPoint);
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &farFacing);
-					return true;
-				}
-				else
-				{
-					// Goes up outside the chasm, or goes through an invisible chasm side wall.
-					return false;
-				}
-			}
-			else
-			{
-				// Below the floor. See if the ray hits the bottom face.
-				if (farPoint.y >= chasmYBottom)
-				{
-					// Hits the bottom face somewhere.
-					const VoxelDouble3 planeOrigin(
-						static_cast<SNDouble>(voxel.x) + 0.50,
-						chasmYBottom,
-						static_cast<WEDouble>(voxel.z) + 0.50);
-					const VoxelDouble3 planeNormal = -Double3::UnitY;
-
-					// Ray-plane intersection (guaranteed to hit a valid spot).
-					VoxelDouble3 hitPoint;
-					const bool success = MathUtils::rayPlaneIntersection(
-						rayCoord.point, rayDirection, planeOrigin, planeNormal, &hitPoint);
-					DebugAssert(success);
-					CoordDouble3 hitCoord(rayCoord.chunk, hitPoint);
-
-					const double t = (hitPoint - rayCoord.point).length();
-					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Door)
-		{
-			// Doors are not clickable when in the same voxel (besides, it would be complicated
-			// due to various oddities: some doors have back faces, swinging doors have corner
-			// preferences, etc.).
-			return false;
-		}
-		else
-		{
-			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
-		}*/
+		return success;
 	}
 
 	// Checks a voxel for ray hits and writes them into the output parameter. The near point and far point
 	// are in the voxel coord's chunk, not necessarily the ray's. Returns true if the ray hit something.
 	bool testVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const CoordInt3 &voxelCoord,
 		VoxelFacing3D nearFacing, const CoordDouble3 &nearCoord, const CoordDouble3 &farCoord,
-		double ceilingScale, const LevelInstance &levelInst, Physics::Hit &hit)
+		const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
 	{
-		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
-		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(voxelCoord.chunk);
-		if (chunk == nullptr)
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		if (collisionChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
 
 		const VoxelInt3 &voxel = voxelCoord.voxel;
-		if (!chunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
+		if (!collisionChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
 		{
 			// Not in the chunk.
 			return false;
 		}
 
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
-		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
-
-		// Use absolute voxel when generating quads for ray intersection.
-		const NewInt3 absoluteVoxel = VoxelUtils::coordToNewVoxel(voxelCoord);
-
-		// @todo: decide later if all voxel types can just use one VoxelGeometry block of code
-		// instead of branching on type here.
-
-		// @todo
-		DebugLogError("Not implemented: Physics::testVoxelRay()");
-
-		return false;
-
-		/*// Determine which type the voxel data is and run the associated calculation.
-		if (voxelType == ArenaTypes::VoxelType::None)
+		if (!collisionChunk->isColliderEnabled(voxel.x, voxel.y, voxel.z))
 		{
-			// Do nothing.
+			// Collider is not turned on.
 			return false;
 		}
-		else if (voxelType == ArenaTypes::VoxelType::Wall)
-		{
-			// Opaque walls are always hit.
-			const double t = (nearCoord - rayCoord).length();
-			hit.initVoxel(t, nearCoord, voxelID, voxel, &nearFacing);
-			return true;
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Floor)
-		{
-			// Intersect the floor as a quad.
-			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale, nullptr, &quad, 1);
-			DebugAssert(quadsWritten == 1);
 
-			const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
-			NewDouble3 absoluteHitPoint;
-			const bool success = MathUtils::rayQuadIntersection(
-				absoluteRayPoint, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &absoluteHitPoint);
-			const CoordDouble3 hitCoord = VoxelUtils::newPointToCoord(absoluteHitPoint);
+		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->getCollisionMeshDefID(voxel.x, voxel.y, voxel.z);
+		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
+		const BufferView<const double> verticesView(collisionMeshDef.vertices.get(), collisionMeshDef.vertices.getCount());
+		const BufferView<const double> normalsView(collisionMeshDef.normals.get(), collisionMeshDef.normals.getCount());
+		const BufferView<const int> indicesView(collisionMeshDef.indices.get(), collisionMeshDef.indices.getCount());
 
+		// Each collision triangle is formed by 6 indices.
+		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
+
+		const VoxelDouble3 voxelReal(
+			static_cast<SNDouble>(voxel.x),
+			static_cast<double>(voxel.y),
+			static_cast<WEDouble>(voxel.z));
+		bool success = false;
+		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
+		{
+			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
+			const int vertexIndex0 = indicesView.get(indicesIndex);
+			const int vertexIndex1 = indicesView.get(indicesIndex + 2);
+			const int vertexIndex2 = indicesView.get(indicesIndex + 4);
+			const int normalIndex0 = indicesView.get(indicesIndex + 1);
+			//const int normalIndex1 = indicesView.get(indicesIndex + 3);
+			//const int normalIndex2 = indicesView.get(indicesIndex + 5);
+
+			const double vertex0X = verticesView.get(vertexIndex0);
+			const double vertex0Y = verticesView.get(vertexIndex0 + 1);
+			const double vertex0Z = verticesView.get(vertexIndex0 + 2);
+			const double vertex1X = verticesView.get(vertexIndex1);
+			const double vertex1Y = verticesView.get(vertexIndex1 + 1);
+			const double vertex1Z = verticesView.get(vertexIndex1 + 2);
+			const double vertex2X = verticesView.get(vertexIndex2);
+			const double vertex2Y = verticesView.get(vertexIndex2 + 1);
+			const double vertex2Z = verticesView.get(vertexIndex2 + 2);
+
+			// Normals are the same per face.
+			const double normal0X = normalsView.get(normalIndex0);
+			const double normal0Y = normalsView.get(normalIndex0 + 1);
+			const double normal0Z = normalsView.get(normalIndex0 + 2);
+
+			const Double3 v0(vertex0X, vertex0Y, vertex0Z);
+			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
+			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
+
+			const Double3 v0Actual = v0 + voxelReal;
+			const Double3 v1Actual = v1 + voxelReal;
+			const Double3 v2Actual = v2 + voxelReal;
+
+			double t;
+			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
 			if (success)
 			{
-				const double t = (hitCoord - rayCoord).length();
-				const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
+				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
+				const uint16_t voxelID = -1; // @todo
+				const VoxelFacing3D facing = nearFacing; // @todo: probably needs to take hit normal into account
 				hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
-				return true;
-			}
-			else
-			{
-				return false;
+				break;
 			}
 		}
-		else if (voxelType == ArenaTypes::VoxelType::Ceiling)
-		{
-			// Intersect the ceiling as a quad.
-			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale, nullptr, &quad, 1);
-			DebugAssert(quadsWritten == 1);
 
-			const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
-			NewDouble3 absoluteHitPoint;
-			const bool success = MathUtils::rayQuadIntersection(
-				absoluteRayPoint, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &absoluteHitPoint);
-
-			if (success)
-			{
-				const CoordDouble3 hitCoord = VoxelUtils::newPointToCoord(absoluteHitPoint);
-				const double t = (hitCoord - rayCoord).length();
-				const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
-				hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Raised)
-		{
-			// Intersect each face of the platform and find the closest one (if any).
-			int quadCount;
-			VoxelGeometry::getInfo(voxelDef, nullptr, &quadCount);
-
-			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale,
-				nullptr, quads.data(), static_cast<int>(quads.size()));
-			DebugAssert(quadsWritten == quadCount);
-
-			double closestT = Hit::MAX_T;
-			CoordDouble3 closestHitCoord;
-			int closestIndex;
-
-			for (int i = 0; i < quadsWritten; i++)
-			{
-				const Quad &quad = quads[i];
-
-				const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
-				NewDouble3 absoluteHitPoint;
-				const bool success = MathUtils::rayQuadIntersection(
-					absoluteRayPoint, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &absoluteHitPoint);
-
-				if (success)
-				{
-					const double t = (absoluteHitPoint - absoluteRayPoint).length();
-					if (t < closestT)
-					{
-						closestT = t;
-						closestHitCoord = VoxelUtils::newPointToCoord(absoluteHitPoint);
-						closestIndex = i;
-					}
-				}
-			}
-
-			if (closestT < Hit::MAX_T)
-			{
-				const Quad &closestQuad = quads[closestIndex];
-				const VoxelDouble3 normal = closestQuad.getNormal();
-				VoxelFacing3D facing;
-				if (Physics::tryGetFacingFromNormal(normal, &facing))
-				{
-					hit.initVoxel(closestT, closestHitCoord, voxelID, voxel, &facing);
-				}
-				else
-				{
-					hit.initVoxel(closestT, closestHitCoord, voxelID, voxel, nullptr);
-				}
-
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Diagonal)
-		{
-			// Intersect the diagonal as a quad.
-			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale, nullptr, &quad, 1);
-			DebugAssert(quadsWritten == 1);
-
-			const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
-			NewDouble3 absoluteHitPoint;
-			const bool success = MathUtils::rayQuadIntersection(
-				absoluteRayPoint, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &absoluteHitPoint);
-
-			if (success)
-			{
-				const CoordDouble3 hitCoord = VoxelUtils::newPointToCoord(absoluteHitPoint);
-				const double t = (hitCoord - rayCoord).length();
-				hit.initVoxel(t, hitCoord, voxelID, voxel, nullptr);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::TransparentWall)
-		{
-			// Intersect each face and find the closest one (if any).
-			int quadCount;
-			VoxelGeometry::getInfo(voxelDef, nullptr, &quadCount);
-
-			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale,
-				nullptr, quads.data(), static_cast<int>(quads.size()));
-			DebugAssert(quadsWritten == quadCount);
-
-			double closestT = Hit::MAX_T;
-			CoordDouble3 closestHitCoord;
-			int closestIndex;
-
-			for (int i = 0; i < quadsWritten; i++)
-			{
-				const Quad &quad = quads[i];
-
-				const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
-				NewDouble3 absoluteHitPoint;
-				const bool success = MathUtils::rayQuadIntersection(
-					absoluteRayPoint, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &absoluteHitPoint);
-
-				if (success)
-				{
-					const double t = (absoluteHitPoint - absoluteRayPoint).length();
-					if (t < closestT)
-					{
-						closestT = t;
-						closestHitCoord = VoxelUtils::newPointToCoord(absoluteHitPoint);
-						closestIndex = i;
-					}
-				}
-			}
-
-			if (closestT < Hit::MAX_T)
-			{
-				const Quad &closestQuad = quads[closestIndex];
-				const VoxelDouble3 normal = closestQuad.getNormal();
-				VoxelFacing3D facing;
-				if (Physics::tryGetFacingFromNormal(normal, &facing))
-				{
-					hit.initVoxel(closestT, closestHitCoord, voxelID, voxel, &facing);
-				}
-				else
-				{
-					hit.initVoxel(closestT, closestHitCoord, voxelID, voxel, nullptr);
-				}
-
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Edge)
-		{
-			const VoxelDefinition::EdgeData &edge = voxelDef.edge;
-
-			if (edge.collider)
-			{
-				// Intersect the edge as a quad.
-				Quad quad;
-				const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale, nullptr, &quad, 1);
-				DebugAssert(quadsWritten == 1);
-
-				const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
-				NewDouble3 absoluteHitPoint;
-				const bool success = MathUtils::rayQuadIntersection(
-					absoluteRayPoint, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &absoluteHitPoint);
-
-				if (success)
-				{
-					const CoordDouble3 hitCoord = VoxelUtils::newPointToCoord(absoluteHitPoint);
-					const double t = (hitCoord - rayCoord).length();
-					const VoxelFacing3D edgeFacing3D = VoxelUtils::convertFaceTo3D(edge.facing);
-					hit.initVoxel(t, hitCoord, voxelID, voxel, &edgeFacing3D);
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Chasm)
-		{
-			const VoxelInstance *voxelInst = chunk->tryGetVoxelInst(voxel, VoxelInstance::Type::Chasm);
-
-			// Intersect each face and find the closest one (if any).
-			int quadCount;
-			VoxelGeometry::getInfo(voxelDef, voxelInst, &quadCount);
-
-			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale,
-				voxelInst, quads.data(), static_cast<int>(quads.size()));
-			DebugAssert(quadsWritten == quadCount);
-
-			double closestT = Hit::MAX_T;
-			CoordDouble3 closestHitCoord;
-			int closestIndex;
-
-			for (int i = 0; i < quadsWritten; i++)
-			{
-				const Quad &quad = quads[i];
-
-				const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
-				NewDouble3 absoluteHitPoint;
-				const bool success = MathUtils::rayQuadIntersection(
-					absoluteRayPoint, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &absoluteHitPoint);
-
-				if (success)
-				{
-					const double t = (absoluteHitPoint - absoluteRayPoint).length();
-					if (t < closestT)
-					{
-						closestT = t;
-						closestHitCoord = VoxelUtils::newPointToCoord(absoluteHitPoint);
-						closestIndex = i;
-					}
-				}
-			}
-
-			if (closestT < Hit::MAX_T)
-			{
-				const Quad &closestQuad = quads[closestIndex];
-				const VoxelDouble3 normal = closestQuad.getNormal();
-				VoxelFacing3D facing;
-				if (Physics::tryGetFacingFromNormal(normal, &facing))
-				{
-					hit.initVoxel(closestT, closestHitCoord, voxelID, voxel, &facing);
-				}
-				else
-				{
-					hit.initVoxel(closestT, closestHitCoord, voxelID, voxel, nullptr);
-				}
-
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Door)
-		{
-			// @todo: ideally this method would take any hit on a door into consideration, since
-			// it's the calling code's responsibility to decide what to do based on the door's open
-			// state, but for now it will assume closed doors only, for simplicity.
-
-			const VoxelInstance *voxelInst = chunk->tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
-
-			// Intersect each face and find the closest one (if any).
-			int quadCount;
-			VoxelGeometry::getInfo(voxelDef, voxelInst, &quadCount);
-
-			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale,
-				voxelInst, quads.data(), static_cast<int>(quads.size()));
-			DebugAssert(quadsWritten == quadCount);
-
-			double closestT = Hit::MAX_T;
-			CoordDouble3 closestHitCoord;
-			int closestIndex;
-
-			for (int i = 0; i < quadsWritten; i++)
-			{
-				const Quad &quad = quads[i];
-
-				const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
-				NewDouble3 absoluteHitPoint;
-				const bool success = MathUtils::rayQuadIntersection(
-					absoluteRayPoint, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &absoluteHitPoint);
-
-				if (success)
-				{
-					const double t = (absoluteHitPoint - absoluteRayPoint).length();
-					if (t < closestT)
-					{
-						closestT = t;
-						closestHitCoord = VoxelUtils::newPointToCoord(absoluteHitPoint);
-						closestIndex = i;
-					}
-				}
-			}
-
-			if (closestT < Hit::MAX_T)
-			{
-				const Quad &closestQuad = quads[closestIndex];
-				const VoxelDouble3 normal = closestQuad.getNormal();
-				VoxelFacing3D facing;
-				if (Physics::tryGetFacingFromNormal(normal, &facing))
-				{
-					hit.initVoxel(closestT, closestHitCoord, voxelID, voxel, &facing);
-				}
-				else
-				{
-					hit.initVoxel(closestT, closestHitCoord, voxelID, voxel, nullptr);
-				}
-
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		else
-		{
-			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
-		}*/
+		return success;
 	}
 
 	// Helper function for testing which entities in a voxel are intersected by a ray.
@@ -1107,6 +488,7 @@ namespace Physics
 		const Renderer &renderer, std::vector<ChunkEntityMap> &chunkEntityMaps, Physics::Hit &hit)
 	{
 		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
+		const CollisionChunkManager &collisionChunkManager = levelInst.getCollisionChunkManager();
 		const EntityManager &entityManager = levelInst.getEntityManager();
 
 		// Each flat shares the same axes. Their forward direction always faces opposite to the camera direction.
@@ -1215,7 +597,7 @@ namespace Physics
 
 			// Test the initial voxel's geometry for ray intersections.
 			bool success = Physics::testInitialVoxelRay(rayCoord, rayDirection, rayVoxel, facing,
-				initialFarPoint, ceilingScale, levelInst, hit);
+				collisionChunkManager, hit);
 
 			if (includeEntities)
 			{
@@ -1357,7 +739,7 @@ namespace Physics
 
 			// Test the current voxel's geometry for ray intersections.
 			bool success = Physics::testVoxelRay(rayCoord, rayDirection, savedVoxelCoord, savedFacing,
-				nearCoord, farCoord, ceilingScale, levelInst, hit);
+				nearCoord, farCoord, collisionChunkManager, hit);
 
 			if (includeEntities)
 			{

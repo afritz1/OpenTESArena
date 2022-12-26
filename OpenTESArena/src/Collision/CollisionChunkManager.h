@@ -10,7 +10,7 @@
 #include "../World/SpecializedChunkManager.h"
 
 // Handles the lifetimes of collision chunks.
-class CollisionChunkManager final : SpecializedChunkManager<CollisionChunk>
+class CollisionChunkManager final : public SpecializedChunkManager<CollisionChunk>
 {
 private:
 	// @todo: dynamic collision meshes for entities (stored globally here, not per-chunk)
