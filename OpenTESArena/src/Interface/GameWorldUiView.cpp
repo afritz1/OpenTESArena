@@ -516,8 +516,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const auto &player = game.getPlayer();
 	const CoordDouble3 &rayStart = player.getPosition();
 	const VoxelDouble3 &cameraDirection = player.getDirection();
-	const Int2 viewDims = renderer.getViewDimensions();
-	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
+	const double viewAspectRatio = renderer.getViewAspect();
 
 	const auto &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();

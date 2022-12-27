@@ -1852,18 +1852,18 @@ void ArenaMeshUtils::WriteDoorCollisionIndexBuffers(BufferView<int32_t> outIndic
 		7, 1,
 		// Z=0
 		3, 2,
-		7, 2,
-		6, 2,
-		6, 2,
+		1, 2,
+		0, 2,
+		0, 2,
 		2, 2,
 		3, 2,
 		// Z=1
+		6, 3,
 		4, 3,
-		0, 3,
-		1, 3,
-		1, 3,
 		5, 3,
-		4, 3
+		5, 3,
+		7, 3,
+		6, 3
 	};
 
 	std::copy(indices.begin(), indices.end(), outIndices.get());

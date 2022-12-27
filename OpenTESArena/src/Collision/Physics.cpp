@@ -258,7 +258,8 @@ namespace Physics
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelInt3 &voxel,
-		VoxelFacing3D farFacing, const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
+		VoxelFacing3D farFacing, double ceilingScale, const CollisionChunkManager &collisionChunkManager,
+		Physics::Hit &hit)
 	{
 		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
 		if (collisionChunk == nullptr)
@@ -296,12 +297,12 @@ namespace Physics
 		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
 		{
 			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
-			const int vertexIndex0 = indicesView.get(indicesIndex);
-			const int vertexIndex1 = indicesView.get(indicesIndex + 2);
-			const int vertexIndex2 = indicesView.get(indicesIndex + 4);
-			const int normalIndex0 = indicesView.get(indicesIndex + 1);
-			//const int normalIndex1 = indicesView.get(indicesIndex + 3);
-			//const int normalIndex2 = indicesView.get(indicesIndex + 5);
+			const int vertexIndex0 = indicesView.get(indicesIndex) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			const int vertexIndex1 = indicesView.get(indicesIndex + 2) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			const int vertexIndex2 = indicesView.get(indicesIndex + 4) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			//const int normalIndex0 = indicesView.get(indicesIndex + 1) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+			//const int normalIndex1 = indicesView.get(indicesIndex + 3) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+			//const int normalIndex2 = indicesView.get(indicesIndex + 5) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 
 			const double vertex0X = verticesView.get(vertexIndex0);
 			const double vertex0Y = verticesView.get(vertexIndex0 + 1);
@@ -314,17 +315,19 @@ namespace Physics
 			const double vertex2Z = verticesView.get(vertexIndex2 + 2);
 
 			// Normals are the same per face.
-			const double normal0X = normalsView.get(normalIndex0);
-			const double normal0Y = normalsView.get(normalIndex0 + 1);
-			const double normal0Z = normalsView.get(normalIndex0 + 2);
+			//const double normal0X = normalsView.get(normalIndex0);
+			//const double normal0Y = normalsView.get(normalIndex0 + 1);
+			//const double normal0Z = normalsView.get(normalIndex0 + 2);
 
 			const Double3 v0(vertex0X, vertex0Y, vertex0Z);
 			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
 			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
 
-			const Double3 v0Actual = v0 + voxelReal;
-			const Double3 v1Actual = v1 + voxelReal;
-			const Double3 v2Actual = v2 + voxelReal;
+			// @todo: don't scale for raised platforms, etc. (check the voxel mesh scale type)
+			const Double3 yScale(1.0, ceilingScale, 1.0);
+			const Double3 v0Actual = (v0 + voxelReal) * yScale;
+			const Double3 v1Actual = (v1 + voxelReal) * yScale;
+			const Double3 v2Actual = (v2 + voxelReal) * yScale;
 
 			double t;
 			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
@@ -344,7 +347,7 @@ namespace Physics
 	// are in the voxel coord's chunk, not necessarily the ray's. Returns true if the ray hit something.
 	bool testVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const CoordInt3 &voxelCoord,
 		VoxelFacing3D nearFacing, const CoordDouble3 &nearCoord, const CoordDouble3 &farCoord,
-		const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
+		double ceilingScale, const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
 	{
 		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
 		if (collisionChunk == nullptr)
@@ -383,12 +386,12 @@ namespace Physics
 		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
 		{
 			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
-			const int vertexIndex0 = indicesView.get(indicesIndex);
-			const int vertexIndex1 = indicesView.get(indicesIndex + 2);
-			const int vertexIndex2 = indicesView.get(indicesIndex + 4);
-			const int normalIndex0 = indicesView.get(indicesIndex + 1);
-			//const int normalIndex1 = indicesView.get(indicesIndex + 3);
-			//const int normalIndex2 = indicesView.get(indicesIndex + 5);
+			const int vertexIndex0 = indicesView.get(indicesIndex) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			const int vertexIndex1 = indicesView.get(indicesIndex + 2) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			const int vertexIndex2 = indicesView.get(indicesIndex + 4) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			//const int normalIndex0 = indicesView.get(indicesIndex + 1) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+			//const int normalIndex1 = indicesView.get(indicesIndex + 3) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+			//const int normalIndex2 = indicesView.get(indicesIndex + 5) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 
 			const double vertex0X = verticesView.get(vertexIndex0);
 			const double vertex0Y = verticesView.get(vertexIndex0 + 1);
@@ -401,17 +404,19 @@ namespace Physics
 			const double vertex2Z = verticesView.get(vertexIndex2 + 2);
 
 			// Normals are the same per face.
-			const double normal0X = normalsView.get(normalIndex0);
-			const double normal0Y = normalsView.get(normalIndex0 + 1);
-			const double normal0Z = normalsView.get(normalIndex0 + 2);
+			//const double normal0X = normalsView.get(normalIndex0);
+			//const double normal0Y = normalsView.get(normalIndex0 + 1);
+			//const double normal0Z = normalsView.get(normalIndex0 + 2);
 
 			const Double3 v0(vertex0X, vertex0Y, vertex0Z);
 			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
 			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
 
-			const Double3 v0Actual = v0 + voxelReal;
-			const Double3 v1Actual = v1 + voxelReal;
-			const Double3 v2Actual = v2 + voxelReal;
+			// @todo: don't scale for raised platforms, etc. (check the voxel mesh scale type)
+			const Double3 yScale(1.0, ceilingScale, 1.0);
+			const Double3 v0Actual = (v0 + voxelReal) * yScale;
+			const Double3 v1Actual = (v1 + voxelReal) * yScale;
+			const Double3 v2Actual = (v2 + voxelReal) * yScale;
 
 			double t;
 			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
@@ -597,7 +602,7 @@ namespace Physics
 
 			// Test the initial voxel's geometry for ray intersections.
 			bool success = Physics::testInitialVoxelRay(rayCoord, rayDirection, rayVoxel, facing,
-				collisionChunkManager, hit);
+				ceilingScale, collisionChunkManager, hit);
 
 			if (includeEntities)
 			{
@@ -739,7 +744,7 @@ namespace Physics
 
 			// Test the current voxel's geometry for ray intersections.
 			bool success = Physics::testVoxelRay(rayCoord, rayDirection, savedVoxelCoord, savedFacing,
-				nearCoord, farCoord, collisionChunkManager, hit);
+				nearCoord, farCoord, ceilingScale, collisionChunkManager, hit);
 
 			if (includeEntities)
 			{
