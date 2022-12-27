@@ -875,9 +875,9 @@ void ArenaMeshUtils::WriteDiagonalCollisionIndexBuffers(BufferView<int32_t> outI
 		0, 1, 2,
 		2, 3, 0,
 
-		// Back
-		4, 5, 6,
-		6, 7, 4
+		// Back (same as front due to there only being four vertices per diagonal variant)
+		0, 1, 2,
+		2, 3, 0
 	};
 
 	std::copy(indices.begin(), indices.end(), outIndices.get());
