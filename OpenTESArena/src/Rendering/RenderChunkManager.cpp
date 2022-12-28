@@ -518,7 +518,7 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = static_cast<VoxelChunk::VoxelMeshDefID>(meshDefIndex);
 		const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
 
-		RenderChunkVoxelMeshInstance voxelMeshInst;
+		RenderVoxelMeshDefinition renderVoxelMeshDef;
 		if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
 		{
 			constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -526,26 +526,26 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
-			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &voxelMeshInst.vertexBufferID))
+			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshDef.vertexBufferID))
 			{
 				DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
 				continue;
 			}
 
-			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &voxelMeshInst.normalBufferID))
+			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &renderVoxelMeshDef.normalBufferID))
 			{
 				DebugLogError("Couldn't create normal attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
-				voxelMeshInst.freeBuffers(renderer);
+				renderVoxelMeshDef.freeBuffers(renderer);
 				continue;
 			}
 
-			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &voxelMeshInst.texCoordBufferID))
+			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &renderVoxelMeshDef.texCoordBufferID))
 			{
 				DebugLogError("Couldn't create tex coord attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + chunk.getPosition().toString() + ").");
-				voxelMeshInst.freeBuffers(renderer);
+				renderVoxelMeshDef.freeBuffers(renderer);
 				continue;
 			}
 
@@ -556,27 +556,27 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			voxelMeshDef.writeRendererIndexBuffers(meshInitCache.opaqueIndices0View, meshInitCache.opaqueIndices1View,
 				meshInitCache.opaqueIndices2View, meshInitCache.alphaTestedIndices0View);
 
-			renderer.populateVertexBuffer(voxelMeshInst.vertexBufferID,
+			renderer.populateVertexBuffer(renderVoxelMeshDef.vertexBufferID,
 				BufferView<const double>(meshInitCache.vertices.data(), vertexCount * positionComponentsPerVertex));
-			renderer.populateAttributeBuffer(voxelMeshInst.normalBufferID,
+			renderer.populateAttributeBuffer(renderVoxelMeshDef.normalBufferID,
 				BufferView<const double>(meshInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
-			renderer.populateAttributeBuffer(voxelMeshInst.texCoordBufferID,
+			renderer.populateAttributeBuffer(renderVoxelMeshDef.texCoordBufferID,
 				BufferView<const double>(meshInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
 
 			const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
 			for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
 			{
 				const int opaqueIndexCount = static_cast<int>(voxelMeshDef.getOpaqueIndicesList(bufferIndex).size());
-				IndexBufferID &opaqueIndexBufferID = voxelMeshInst.opaqueIndexBufferIDs[bufferIndex];
+				IndexBufferID &opaqueIndexBufferID = renderVoxelMeshDef.opaqueIndexBufferIDs[bufferIndex];
 				if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 				{
 					DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
-					voxelMeshInst.freeBuffers(renderer);
+					renderVoxelMeshDef.freeBuffers(renderer);
 					continue;
 				}
 
-				voxelMeshInst.opaqueIndexBufferIdCount++;
+				renderVoxelMeshDef.opaqueIndexBufferIdCount++;
 
 				const auto &indices = *meshInitCache.opaqueIndicesPtrs[bufferIndex];
 				renderer.populateIndexBuffer(opaqueIndexBufferID,
@@ -587,21 +587,21 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			if (hasAlphaTestedIndexBuffer)
 			{
 				const int alphaTestedIndexCount = static_cast<int>(voxelMeshDef.alphaTestedIndices.size());
-				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &voxelMeshInst.alphaTestedIndexBufferID))
+				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &renderVoxelMeshDef.alphaTestedIndexBufferID))
 				{
 					DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
-					voxelMeshInst.freeBuffers(renderer);
+					renderVoxelMeshDef.freeBuffers(renderer);
 					continue;
 				}
 
-				renderer.populateIndexBuffer(voxelMeshInst.alphaTestedIndexBufferID,
+				renderer.populateIndexBuffer(renderVoxelMeshDef.alphaTestedIndexBufferID,
 					BufferView<const int32_t>(meshInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
 			}
 		}
 
-		const RenderChunkVoxelMeshInstanceID meshInstID = renderChunk.addMeshInstance(std::move(voxelMeshInst));
-		renderChunk.meshInstMappings.emplace(voxelMeshDefID, meshInstID);
+		const RenderVoxelMeshDefID renderMeshDefID = renderChunk.addMeshDefinition(std::move(renderVoxelMeshDef));
+		renderChunk.meshDefMappings.emplace(voxelMeshDefID, renderMeshDefID);
 	}
 }
 
@@ -670,11 +670,11 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 	const ChunkInt2 &chunkPos = renderChunk.getPosition();
 
 	// Generate draw calls for each non-air voxel.
-	for (WEInt z = 0; z < renderChunk.meshInstIDs.getDepth(); z++)
+	for (WEInt z = 0; z < renderChunk.meshDefIDs.getDepth(); z++)
 	{
-		for (int y = 0; y < renderChunk.meshInstIDs.getHeight(); y++)
+		for (int y = 0; y < renderChunk.meshDefIDs.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < renderChunk.meshInstIDs.getWidth(); x++)
+			for (SNInt x = 0; x < renderChunk.meshDefIDs.getWidth(); x++)
 			{
 				const VoxelInt3 voxel(x, y, z);
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
@@ -688,12 +688,12 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 					continue;
 				}
 
-				const auto defIter = renderChunk.meshInstMappings.find(voxelMeshDefID);
-				DebugAssert(defIter != renderChunk.meshInstMappings.end());
-				const RenderChunkVoxelMeshInstanceID meshInstID = defIter->second;
-				renderChunk.meshInstIDs.set(x, y, z, meshInstID);
+				const auto defIter = renderChunk.meshDefMappings.find(voxelMeshDefID);
+				DebugAssert(defIter != renderChunk.meshDefMappings.end());
+				const RenderVoxelMeshDefID renderMeshDefID = defIter->second;
+				renderChunk.meshDefIDs.set(x, y, z, renderMeshDefID);
 
-				const RenderChunkVoxelMeshInstance &meshInst = renderChunk.meshInsts[meshInstID];
+				const RenderVoxelMeshDefinition &renderMeshDef = renderChunk.meshDefs[renderMeshDefID];
 
 				// Convert voxel XYZ to world space.
 				const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
@@ -707,7 +707,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 				const bool isAnimating = !usesVoxelTextures;
 				if ((!isAnimating && updateStatics) || (isAnimating && updateAnimating))
 				{
-					for (int bufferIndex = 0; bufferIndex < meshInst.opaqueIndexBufferIdCount; bufferIndex++)
+					for (int bufferIndex = 0; bufferIndex < renderMeshDef.opaqueIndexBufferIdCount; bufferIndex++)
 					{
 						ObjectTextureID textureID = -1;
 
@@ -739,15 +739,15 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							continue;
 						}
 
-						const IndexBufferID opaqueIndexBufferID = meshInst.opaqueIndexBufferIDs[bufferIndex];
+						const IndexBufferID opaqueIndexBufferID = renderMeshDef.opaqueIndexBufferIDs[bufferIndex];
 						const TextureSamplingType textureSamplingType = usesVoxelTextures ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
-						addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-							meshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, textureSamplingType,
+						addDrawCall(worldXZ.x, worldY, worldXZ.y, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+							renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, textureSamplingType,
 							PixelShaderType::Opaque, isAnimating);
 					}
 				}
 
-				if (meshInst.alphaTestedIndexBufferID >= 0)
+				if (renderMeshDef.alphaTestedIndexBufferID >= 0)
 				{
 					if (updateStatics)
 					{
@@ -776,8 +776,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						}
 
 						const bool isAnimating = false;
-						addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-							meshInst.texCoordBufferID, meshInst.alphaTestedIndexBufferID, textureID, std::nullopt,
+						addDrawCall(worldXZ.x, worldY, worldXZ.y, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+							renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt,
 							TextureSamplingType::Default, PixelShaderType::AlphaTested, isAnimating);
 					}
 				}
@@ -798,9 +798,9 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
 							ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
-							addDrawCall(worldXZ.x, worldY, worldXZ.y, meshInst.vertexBufferID, meshInst.normalBufferID,
-								meshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1, TextureSamplingType::ScreenSpaceRepeatY,
-								PixelShaderType::OpaqueWithAlphaTestLayer, isAnimating);
+							addDrawCall(worldXZ.x, worldY, worldXZ.y, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+								renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
+								TextureSamplingType::ScreenSpaceRepeatY, PixelShaderType::OpaqueWithAlphaTestLayer, isAnimating);
 						}
 					}
 				}

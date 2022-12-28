@@ -1,11 +1,11 @@
-#ifndef RENDER_CHUNK_MESH_H
-#define RENDER_CHUNK_MESH_H
+#ifndef RENDER_VOXEL_MESH_DEFINITION_H
+#define RENDER_VOXEL_MESH_DEFINITION_H
 
 #include "RenderGeometryUtils.h"
 
 class Renderer;
 
-struct RenderChunkVoxelMeshInstance
+struct RenderVoxelMeshDefinition
 {
 	static constexpr int MAX_TEXTURES = 3; // Based on VoxelDefinition subtypes (wall and raised).
 
@@ -15,7 +15,7 @@ struct RenderChunkVoxelMeshInstance
 	int opaqueIndexBufferIdCount;
 	IndexBufferID alphaTestedIndexBufferID;
 
-	RenderChunkVoxelMeshInstance();
+	RenderVoxelMeshDefinition();
 
 	void freeBuffers(Renderer &renderer);
 };

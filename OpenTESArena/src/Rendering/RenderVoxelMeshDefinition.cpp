@@ -1,9 +1,9 @@
 #include <algorithm>
 
-#include "RenderChunkMesh.h"
+#include "RenderVoxelMeshDefinition.h"
 #include "Renderer.h"
 
-RenderChunkVoxelMeshInstance::RenderChunkVoxelMeshInstance()
+RenderVoxelMeshDefinition::RenderVoxelMeshDefinition()
 {
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
@@ -13,7 +13,7 @@ RenderChunkVoxelMeshInstance::RenderChunkVoxelMeshInstance()
 	this->alphaTestedIndexBufferID = -1;
 }
 
-void RenderChunkVoxelMeshInstance::freeBuffers(Renderer &renderer)
+void RenderVoxelMeshDefinition::freeBuffers(Renderer &renderer)
 {
 	if (this->vertexBufferID >= 0)
 	{

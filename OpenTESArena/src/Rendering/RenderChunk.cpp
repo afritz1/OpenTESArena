@@ -7,15 +7,15 @@
 void RenderChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
-	this->meshInsts.clear();
-	this->meshInstMappings.clear();
-	this->meshInstIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
+	this->meshDefs.clear();
+	this->meshDefMappings.clear();
+	this->meshDefIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->chasmWallIndexBufferIDs.clear();
 	this->staticDrawCalls.clear();
 	this->animatingDrawCalls.clear();
 
 	// Add empty mesh instance for air.
-	this->addMeshInstance(RenderChunkVoxelMeshInstance());
+	this->addMeshDefinition(RenderVoxelMeshDefinition());
 }
 
 void RenderChunk::update()
@@ -23,17 +23,17 @@ void RenderChunk::update()
 	DebugNotImplemented();
 }
 
-RenderChunkVoxelMeshInstanceID RenderChunk::addMeshInstance(RenderChunkVoxelMeshInstance &&meshInst)
+RenderVoxelMeshDefID RenderChunk::addMeshDefinition(RenderVoxelMeshDefinition &&meshDef)
 {
-	const RenderChunkVoxelMeshInstanceID id = static_cast<RenderChunkVoxelMeshInstanceID>(this->meshInsts.size());
-	this->meshInsts.emplace_back(std::move(meshInst));
+	const RenderVoxelMeshDefID id = static_cast<RenderVoxelMeshDefID>(this->meshDefs.size());
+	this->meshDefs.emplace_back(std::move(meshDef));
 	return id;
 }
 
 void RenderChunk::freeBuffers(Renderer &renderer)
 {
-	for (RenderChunkVoxelMeshInstance &meshInst : this->meshInsts)
+	for (RenderVoxelMeshDefinition &meshDef : this->meshDefs)
 	{
-		meshInst.freeBuffers(renderer);
+		meshDef.freeBuffers(renderer);
 	}
 }
