@@ -18,8 +18,6 @@
 
 #include "components/debug/Debug.h"
 
-// @todo: allow hits on the insides of voxels until the renderer uses back-face culling (if ever).
-
 namespace Physics
 {
 	// Container of the voxels each entity is touching per chunk. Each chunk needs to look at adjacent chunk
@@ -46,47 +44,6 @@ namespace Physics
 			visStateList.emplace_back(visState);
 		}
 	};
-
-	// Converts the normal to the associated voxel facing on success. Not all conversions
-	// exist, for example, diagonals have normals but do not have a voxel facing.
-	bool tryGetFacingFromNormal(const NewDouble3 &normal, VoxelFacing3D *outFacing)
-	{
-		DebugAssert(outFacing != nullptr);
-
-		constexpr double oneMinusEpsilon = 1.0 - Constants::Epsilon;
-
-		bool success = true;
-		if (normal.dot(NewDouble3::UnitX) > oneMinusEpsilon)
-		{
-			*outFacing = VoxelFacing3D::PositiveX;
-		}
-		else if (normal.dot(-NewDouble3::UnitX) > oneMinusEpsilon)
-		{
-			*outFacing = VoxelFacing3D::NegativeX;
-		}
-		else if (normal.dot(NewDouble3::UnitY) > oneMinusEpsilon)
-		{
-			*outFacing = VoxelFacing3D::PositiveY;
-		}
-		else if (normal.dot(-NewDouble3::UnitY) > oneMinusEpsilon)
-		{
-			*outFacing = VoxelFacing3D::NegativeY;
-		}
-		else if (normal.dot(NewDouble3::UnitZ) > oneMinusEpsilon)
-		{
-			*outFacing = VoxelFacing3D::PositiveZ;
-		}
-		else if (normal.dot(-NewDouble3::UnitZ) > oneMinusEpsilon)
-		{
-			*outFacing = VoxelFacing3D::NegativeZ;
-		}
-		else
-		{
-			success = false;
-		}
-
-		return success;
-	}
 
 	// Builds a set of voxels for a chunk that are at least partially touched by entities. A point of reference
 	// is needed for evaluating entity animations. Ignores entities behind the camera.
@@ -349,8 +306,7 @@ namespace Physics
 			if (success)
 			{
 				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
-				const uint16_t voxelID = -1; // @todo
-				hit.initVoxel(t, hitCoord, voxelID, voxel, &farFacing);
+				hit.initVoxel(t, hitCoord, voxel, &farFacing);
 				break;
 			}
 		}
@@ -453,9 +409,8 @@ namespace Physics
 			if (success)
 			{
 				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
-				const uint16_t voxelID = -1; // @todo
 				const VoxelFacing3D facing = nearFacing; // @todo: probably needs to take hit normal into account
-				hit.initVoxel(t, hitCoord, voxelID, voxel, &facing);
+				hit.initVoxel(t, hitCoord, voxel, &facing);
 				break;
 			}
 		}
@@ -794,13 +749,11 @@ namespace Physics
 	}
 }
 
-void Physics::Hit::initVoxel(double t, const CoordDouble3 &coord, uint16_t id, const VoxelInt3 &voxel,
-	const VoxelFacing3D *facing)
+void Physics::Hit::initVoxel(double t, const CoordDouble3 &coord, const VoxelInt3 &voxel, const VoxelFacing3D *facing)
 {
 	this->t = t;
 	this->coord = coord;
 	this->type = Hit::Type::Voxel;
-	this->voxelHit.id = id;
 	this->voxelHit.voxel = voxel;
 
 	if (facing != nullptr)
