@@ -872,12 +872,20 @@ void ArenaMeshUtils::WriteDiagonalCollisionIndexBuffers(BufferView<int32_t> outI
 	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
 	{
 		// Front
-		0, 1, 2,
-		2, 3, 0,
+		0, 0,
+		1, 0,
+		2, 0,
+		2, 0,
+		3, 0,
+		0, 0,
 
 		// Back (same as front due to there only being four vertices per diagonal variant)
-		0, 1, 2,
-		2, 3, 0
+		0, 1,
+		1, 1,
+		2, 1,
+		2, 1,
+		3, 1,
+		0, 1
 	};
 
 	std::copy(indices.begin(), indices.end(), outIndices.get());
@@ -1407,12 +1415,20 @@ void ArenaMeshUtils::WriteEdgeCollisionIndexBuffers(BufferView<int32_t> outIndic
 	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
 	{
 		// Front
-		0, 1, 2,
-		2, 3, 0,
+		0, 0,
+		1, 0,
+		2, 0,
+		2, 0,
+		3, 0,
+		0, 0,
 
 		// Back
-		4, 5, 6,
-		6, 7, 4
+		4, 1,
+		5, 1,
+		6, 1,
+		6, 1,
+		7, 1,
+		4, 1
 	};
 
 	std::copy(indices.begin(), indices.end(), outIndices.get());
