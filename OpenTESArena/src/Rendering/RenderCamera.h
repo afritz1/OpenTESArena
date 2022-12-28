@@ -16,6 +16,7 @@ struct RenderCamera
 	Double3 forwardScaled; // Scaled by zoom.
 	Double3 rightScaled; // Scaled by aspect ratio.
 	Double3 upScaled; // Scaled by tall pixel ratio.
+	Double3 upScaledRecip; // Scaled by 1.0 / tall pixel ratio.
 
 	Matrix4d viewMatrix;
 	Matrix4d perspectiveMatrix;

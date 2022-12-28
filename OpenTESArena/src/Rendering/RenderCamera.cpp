@@ -20,15 +20,15 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 
 	this->up = this->right.cross(this->forward).normalized();
 	this->upScaled = this->up * tallPixelRatio;
+	this->upScaledRecip = this->up / tallPixelRatio;
 
 	this->viewMatrix = Matrix4d::view(this->worldPoint, this->forward, this->right, this->upScaled); // Adjust for tall pixels.
 	this->perspectiveMatrix = Matrix4d::perspective(fovY, aspectRatio, RendererUtils::NEAR_PLANE, RendererUtils::FAR_PLANE);
 
-	const Double3 upScaledRecip = this->up * (1.0 / tallPixelRatio);
 	this->leftFrustumDir = (this->forwardScaled - this->rightScaled).normalized();
 	this->rightFrustumDir = (this->forwardScaled + this->rightScaled).normalized();
-	this->bottomFrustumDir = (this->forwardScaled - upScaledRecip).normalized();
-	this->topFrustumDir = (this->forwardScaled + upScaledRecip).normalized();
+	this->bottomFrustumDir = (this->forwardScaled - this->upScaledRecip).normalized();
+	this->topFrustumDir = (this->forwardScaled + this->upScaledRecip).normalized();
 
 	this->leftFrustumNormal = this->leftFrustumDir.cross(this->up).normalized();
 	this->rightFrustumNormal = this->up.cross(this->rightFrustumDir).normalized();
@@ -41,7 +41,7 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 
 Double3 RenderCamera::screenToWorld(double xPercent, double yPercent) const
 {
-	const Double3 baseDir = this->forwardScaled - this->rightScaled + this->upScaled;
-	const Double3 adjustedDir = baseDir + (this->rightScaled * (2.0 * xPercent)) - (this->upScaled * (2.0 * yPercent));
+	const Double3 baseDir = this->forwardScaled - this->rightScaled + this->upScaledRecip;
+	const Double3 adjustedDir = baseDir + (this->rightScaled * (2.0 * xPercent)) - (this->upScaledRecip * (2.0 * yPercent));
 	return adjustedDir.normalized();
 }

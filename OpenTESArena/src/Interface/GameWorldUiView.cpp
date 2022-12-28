@@ -510,9 +510,6 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	constexpr int xOffset = 16;
 	constexpr int yOffset = 16;
 
-	const auto &options = game.getOptions();
-	const double verticalFOV = options.getGraphics_VerticalFOV();
-
 	const auto &player = game.getPlayer();
 	const CoordDouble3 &rayStart = player.getPosition();
 	const VoxelDouble3 &cameraDirection = player.getDirection();
