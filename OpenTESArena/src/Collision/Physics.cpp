@@ -14,6 +14,7 @@
 #include "../Voxels/VoxelFacing3D.h"
 #include "../World/ChunkUtils.h"
 #include "../World/LevelInstance.h"
+#include "../World/MeshUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -258,17 +259,20 @@ namespace Physics
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelInt3 &voxel,
-		VoxelFacing3D farFacing, double ceilingScale, const CollisionChunkManager &collisionChunkManager,
-		Physics::Hit &hit)
+		VoxelFacing3D farFacing, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
 	{
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
-		if (collisionChunk == nullptr)
+		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
 
-		if (!collisionChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		DebugAssert(collisionChunk != nullptr);
+
+		if (!voxelChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
 		{
 			// Not in the chunk.
 			return false;
@@ -279,6 +283,10 @@ namespace Physics
 			// Collider is not turned on.
 			return false;
 		}
+
+		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getVoxelMeshDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getVoxelMeshDef(voxelMeshDefID);
+		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
 
 		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->getCollisionMeshDefID(voxel.x, voxel.y, voxel.z);
 		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
@@ -291,7 +299,7 @@ namespace Physics
 
 		const VoxelDouble3 voxelReal(
 			static_cast<SNDouble>(voxel.x),
-			static_cast<double>(voxel.y),
+			static_cast<double>(voxel.y) * ceilingScale,
 			static_cast<WEDouble>(voxel.z));
 		bool success = false;
 		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
@@ -323,11 +331,18 @@ namespace Physics
 			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
 			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
 
-			// @todo: don't scale for raised platforms, etc. (check the voxel mesh scale type)
-			const Double3 yScale(1.0, ceilingScale, 1.0);
-			const Double3 v0Actual = (v0 + voxelReal) * yScale;
-			const Double3 v1Actual = (v1 + voxelReal) * yScale;
-			const Double3 v2Actual = (v2 + voxelReal) * yScale;
+			const Double3 v0Actual(
+				v0.x + voxelReal.x,
+				MeshUtils::getScaledVertexY(v0.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				v0.z + voxelReal.z);
+			const Double3 v1Actual(
+				v1.x + voxelReal.x,
+				MeshUtils::getScaledVertexY(v1.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				v1.z + voxelReal.z);
+			const Double3 v2Actual(
+				v2.x + voxelReal.x,
+				MeshUtils::getScaledVertexY(v2.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				v2.z + voxelReal.z);
 
 			double t;
 			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
@@ -347,14 +362,18 @@ namespace Physics
 	// are in the voxel coord's chunk, not necessarily the ray's. Returns true if the ray hit something.
 	bool testVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const CoordInt3 &voxelCoord,
 		VoxelFacing3D nearFacing, const CoordDouble3 &nearCoord, const CoordDouble3 &farCoord,
-		double ceilingScale, const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager,
+		Physics::Hit &hit)
 	{
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
-		if (collisionChunk == nullptr)
+		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
+
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		DebugAssert(collisionChunk != nullptr);
 
 		const VoxelInt3 &voxel = voxelCoord.voxel;
 		if (!collisionChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
@@ -369,6 +388,10 @@ namespace Physics
 			return false;
 		}
 
+		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getVoxelMeshDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getVoxelMeshDef(voxelMeshDefID);
+		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
+
 		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->getCollisionMeshDefID(voxel.x, voxel.y, voxel.z);
 		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
 		const BufferView<const double> verticesView(collisionMeshDef.vertices.get(), collisionMeshDef.vertices.getCount());
@@ -380,7 +403,7 @@ namespace Physics
 
 		const VoxelDouble3 voxelReal(
 			static_cast<SNDouble>(voxel.x),
-			static_cast<double>(voxel.y),
+			static_cast<double>(voxel.y) * ceilingScale,
 			static_cast<WEDouble>(voxel.z));
 		bool success = false;
 		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
@@ -412,11 +435,18 @@ namespace Physics
 			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
 			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
 
-			// @todo: don't scale for raised platforms, etc. (check the voxel mesh scale type)
-			const Double3 yScale(1.0, ceilingScale, 1.0);
-			const Double3 v0Actual = (v0 + voxelReal) * yScale;
-			const Double3 v1Actual = (v1 + voxelReal) * yScale;
-			const Double3 v2Actual = (v2 + voxelReal) * yScale;
+			const Double3 v0Actual(
+				v0.x + voxelReal.x,
+				MeshUtils::getScaledVertexY(v0.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				v0.z + voxelReal.z);
+			const Double3 v1Actual(
+				v1.x + voxelReal.x,
+				MeshUtils::getScaledVertexY(v1.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				v1.z + voxelReal.z);
+			const Double3 v2Actual(
+				v2.x + voxelReal.x,
+				MeshUtils::getScaledVertexY(v2.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				v2.z + voxelReal.z);
 
 			double t;
 			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
@@ -602,7 +632,7 @@ namespace Physics
 
 			// Test the initial voxel's geometry for ray intersections.
 			bool success = Physics::testInitialVoxelRay(rayCoord, rayDirection, rayVoxel, facing,
-				ceilingScale, collisionChunkManager, hit);
+				ceilingScale, voxelChunkManager, collisionChunkManager, hit);
 
 			if (includeEntities)
 			{
@@ -744,7 +774,7 @@ namespace Physics
 
 			// Test the current voxel's geometry for ray intersections.
 			bool success = Physics::testVoxelRay(rayCoord, rayDirection, savedVoxelCoord, savedFacing,
-				nearCoord, farCoord, ceilingScale, collisionChunkManager, hit);
+				nearCoord, farCoord, ceilingScale, voxelChunkManager, collisionChunkManager, hit);
 
 			if (includeEntities)
 			{

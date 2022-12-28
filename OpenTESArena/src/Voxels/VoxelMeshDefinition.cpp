@@ -116,26 +116,7 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(double ceilingScale, Buff
 		const double srcY = this->rendererVertices[index + 1];
 		const double srcZ = this->rendererVertices[index + 2];
 		const double dstX = srcX;
-		
-		double dstY;
-		switch (this->scaleType)
-		{
-		case VoxelMeshScaleType::ScaledFromMin:
-			dstY = srcY * ceilingScale;
-			break;
-		case VoxelMeshScaleType::UnscaledFromMin:
-			dstY = srcY;
-			break;
-		case VoxelMeshScaleType::UnscaledFromMax:
-		{
-			constexpr double chasmHeight = ArenaChasmUtils::DEFAULT_HEIGHT;
-			dstY = (srcY * chasmHeight) + (ceilingScale - chasmHeight);
-			break;
-		}
-		default:
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(this->scaleType)));
-		}
-
+		const double dstY = MeshUtils::getScaledVertexY(srcY, this->scaleType, ceilingScale);
 		const double dstZ = srcZ;
 		outVertices.set(index, dstX);
 		outVertices.set(index + 1, dstY);
