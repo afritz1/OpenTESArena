@@ -337,10 +337,11 @@ namespace swGeometry
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
-	swGeometry::TriangleDrawListIndices ProcessTrianglesForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
+	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
 		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
 		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
-		const Double3 &worldOffset, const Double3 &eye, const ClippingPlanes &clippingPlanes)
+		const Double3 &worldOffset, const Matrix4d &rotation, VertexShaderType vertexShaderType, const Double3 &eye,
+		const ClippingPlanes &clippingPlanes)
 	{
 		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
 		std::vector<Double3> &outVisibleTriangleV1s = g_visibleTriangleV1s;
@@ -390,31 +391,70 @@ namespace swGeometry
 			const int32_t index0 = indicesPtr[indexBufferBase];
 			const int32_t index1 = indicesPtr[indexBufferBase + 1];
 			const int32_t index2 = indicesPtr[indexBufferBase + 2];
+			const int32_t v0Index = index0 * 3;
+			const int32_t v1Index = index1 * 3;
+			const int32_t v2Index = index2 * 3;
+			const int32_t normal0Index = v0Index;
+			const int32_t normal1Index = v1Index;
+			const int32_t normal2Index = v2Index;
 
-			const Double3 v0(
-				*(verticesPtr + (index0 * 3)) + worldOffset.x,
-				*(verticesPtr + (index0 * 3) + 1) + worldOffset.y,
-				*(verticesPtr + (index0 * 3) + 2) + worldOffset.z);
-			const Double3 v1(
-				*(verticesPtr + (index1 * 3)) + worldOffset.x,
-				*(verticesPtr + (index1 * 3) + 1) + worldOffset.y,
-				*(verticesPtr + (index1 * 3) + 2) + worldOffset.z);
-			const Double3 v2(
-				*(verticesPtr + (index2 * 3)) + worldOffset.x,
-				*(verticesPtr + (index2 * 3) + 1) + worldOffset.y,
-				*(verticesPtr + (index2 * 3) + 2) + worldOffset.z);
-			const Double3 normal0(
-				*(normalsPtr + (index0 * 3)),
-				*(normalsPtr + (index0 * 3) + 1),
-				*(normalsPtr + (index0 * 3) + 2));
-			const Double3 normal1(
-				*(normalsPtr + (index1 * 3)),
-				*(normalsPtr + (index1 * 3) + 1),
-				*(normalsPtr + (index1 * 3) + 2));
-			const Double3 normal2(
-				*(normalsPtr + (index2 * 3)),
-				*(normalsPtr + (index2 * 3) + 1),
-				*(normalsPtr + (index2 * 3) + 2));
+			const Double3 unshadedV0(
+				*(verticesPtr + v0Index),
+				*(verticesPtr + v0Index + 1),
+				*(verticesPtr + v0Index + 2));
+			const Double3 unshadedV1(
+				*(verticesPtr + v1Index),
+				*(verticesPtr + v1Index + 1),
+				*(verticesPtr + v1Index + 2));
+			const Double3 unshadedV2(
+				*(verticesPtr + v2Index),
+				*(verticesPtr + v2Index + 1),
+				*(verticesPtr + v2Index + 2));
+			const Double3 unshadedNormal0(
+				*(normalsPtr + normal0Index),
+				*(normalsPtr + normal0Index + 1),
+				*(normalsPtr + normal0Index + 2));
+			const Double3 unshadedNormal1(
+				*(normalsPtr + normal1Index),
+				*(normalsPtr + normal1Index + 1),
+				*(normalsPtr + normal1Index + 2));
+			const Double3 unshadedNormal2(
+				*(normalsPtr + normal2Index),
+				*(normalsPtr + normal2Index + 1),
+				*(normalsPtr + normal2Index + 2));
+
+			Double3 shadedV0, shadedV1, shadedV2;
+			Double3 shadedNormal0, shadedNormal1, shadedNormal2;
+			switch (vertexShaderType)
+			{
+			case VertexShaderType::Voxel:
+				// Simple translation to the correct position; no rotation.
+				shadedV0 = unshadedV0 + worldOffset;
+				shadedV1 = unshadedV1 + worldOffset;
+				shadedV2 = unshadedV2 + worldOffset;
+				shadedNormal0 = unshadedNormal0;
+				shadedNormal1 = unshadedNormal1;
+				shadedNormal2 = unshadedNormal2;
+				break;
+			case VertexShaderType::SwingingDoor:
+			case VertexShaderType::SlidingDoor:
+			case VertexShaderType::RaisingDoor:
+			case VertexShaderType::SplittingDoor:
+			{
+				shadedV0 = unshadedV0 + worldOffset;
+				shadedV1 = unshadedV1 + worldOffset;
+				shadedV2 = unshadedV2 + worldOffset;
+				shadedNormal0 = unshadedNormal0;
+				shadedNormal1 = unshadedNormal1;
+				shadedNormal2 = unshadedNormal2;
+				// @todo: rotate then offset. Need anim percent somehow (either baked into the rotation or separate)
+				break;
+			}
+			default:
+				DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
+				break;
+			}
+
 			const Double2 uv0(
 				*(texCoordsPtr + (index0 * 2)),
 				*(texCoordsPtr + (index0 * 2) + 1));
@@ -426,8 +466,8 @@ namespace swGeometry
 				*(texCoordsPtr + (index2 * 2) + 1));
 
 			// Discard back-facing.
-			const Double3 v0ToEye = eye - v0;
-			if (v0ToEye.dot(normal0) < Constants::Epsilon)
+			const Double3 v0ToEye = eye - shadedV0;
+			if (v0ToEye.dot(shadedNormal0) < Constants::Epsilon)
 			{
 				continue;
 			}
@@ -437,12 +477,12 @@ namespace swGeometry
 			int clipListFrontIndex = 0;
 
 			// Add the first triangle to clip.
-			outClipListV0s[clipListFrontIndex] = v0;
-			outClipListV1s[clipListFrontIndex] = v1;
-			outClipListV2s[clipListFrontIndex] = v2;
-			outClipListNormal0s[clipListFrontIndex] = normal0;
-			outClipListNormal1s[clipListFrontIndex] = normal1;
-			outClipListNormal2s[clipListFrontIndex] = normal2;
+			outClipListV0s[clipListFrontIndex] = shadedV0;
+			outClipListV1s[clipListFrontIndex] = shadedV1;
+			outClipListV2s[clipListFrontIndex] = shadedV2;
+			outClipListNormal0s[clipListFrontIndex] = shadedNormal0;
+			outClipListNormal1s[clipListFrontIndex] = shadedNormal1;
+			outClipListNormal2s[clipListFrontIndex] = shadedNormal2;
 			outClipListUV0s[clipListFrontIndex] = uv0;
 			outClipListUV1s[clipListFrontIndex] = uv1;
 			outClipListUV2s[clipListFrontIndex] = uv2;
@@ -533,7 +573,7 @@ namespace swGeometry
 				std::memcpy(&outVisibleTriangleTextureID1s[oldVisibleTrianglesCount], &outClipListTextureID1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListTextureID1s[0]));
 			}
 		}
-
+		
 		const int visibleTriangleCount = static_cast<int>(outVisibleTriangleV0s.size());
 		*outVisibleTriangleCount += visibleTriangleCount;
 		*outTotalTriangleCount += triangleCount;
@@ -1233,10 +1273,12 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
 		const ObjectTextureID textureID0 = drawCall.textureIDs[0].has_value() ? *drawCall.textureIDs[0] : -1;
 		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
+		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
-		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessTrianglesForRasterization(
+		const Matrix4d rotationMatrix = Matrix4d::identity(); // @todo: support swinging doors
+		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
 			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, worldSpaceOffset,
-			camera.worldPoint, clippingPlanes);
+			rotationMatrix, vertexShaderType, camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType = drawCall.textureSamplingType;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;

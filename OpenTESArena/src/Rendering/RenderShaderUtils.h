@@ -3,7 +3,11 @@
 
 enum class VertexShaderType
 {
-	Default
+	Voxel,
+	SwingingDoor,
+	SlidingDoor,
+	RaisingDoor,
+	SplittingDoor
 };
 
 enum class PixelShaderType
