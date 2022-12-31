@@ -147,12 +147,12 @@ namespace ArenaMeshUtils
 		case ArenaTypes::VoxelType::Raised:
 			return 24;
 		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
 			return 16;
 		case ArenaTypes::VoxelType::Chasm:
 			return 20;
 		case ArenaTypes::VoxelType::Floor:
 		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Door:
 			return 4;
 		case ArenaTypes::VoxelType::Diagonal:
 		case ArenaTypes::VoxelType::Edge:
@@ -363,7 +363,6 @@ namespace ArenaMeshUtils
 			}
 			break;
 		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 8;
@@ -377,6 +376,16 @@ namespace ArenaMeshUtils
 			if (bufferIndex == 0)
 			{
 				triangleCount = 4;
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
+			}
+			break;
+		case ArenaTypes::VoxelType::Door:
+			if (bufferIndex == 0)
+			{
+				triangleCount = 2;
 			}
 			else
 			{

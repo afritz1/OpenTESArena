@@ -13,7 +13,8 @@ RenderDrawCall::RenderDrawCall()
 
 void RenderDrawCall::clear()
 {
-	this->transform = Matrix4d();
+	this->position = Double3::Zero;
+	this->rotation = Matrix4d();
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;

@@ -637,13 +637,15 @@ void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const Vox
 void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
 	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
-	auto addDrawCall = [&renderChunk, ceilingScale](const Matrix4d &transform, VertexBufferID vertexBufferID,
-		AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
-		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType,
-		VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, bool isAnimating)
+	auto addDrawCall = [&renderChunk, ceilingScale](const Double3 &position, const Matrix4d &rotation,
+		VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
+		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
+		TextureSamplingType textureSamplingType, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
+		bool isAnimating)
 	{
 		RenderDrawCall drawCall;
-		drawCall.transform = transform;
+		drawCall.position = position;
+		drawCall.rotation = rotation;
 		drawCall.vertexBufferID = vertexBufferID;
 		drawCall.normalBufferID = normalBufferID;
 		drawCall.texCoordBufferID = texCoordBufferID;
@@ -696,7 +698,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 				// Convert voxel XYZ to world space.
 				const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
 				const int worldY = y;
-				const Matrix4d worldTransform = Matrix4d::translation(
+				const Double3 worldPos(
 					static_cast<SNDouble>(worldXZ.x),
 					static_cast<double>(worldY) * ceilingScale,
 					static_cast<WEDouble>(worldXZ.y));
@@ -746,9 +748,9 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 						const IndexBufferID opaqueIndexBufferID = renderMeshDef.opaqueIndexBufferIDs[bufferIndex];
 						const TextureSamplingType textureSamplingType = usesVoxelTextures ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
-						addDrawCall(worldTransform, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
-							renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, textureSamplingType,
-							VertexShaderType::Voxel, PixelShaderType::Opaque, isAnimating);
+						addDrawCall(worldPos, Matrix4d::identity(), renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+							renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
+							textureSamplingType, VertexShaderType::Voxel, PixelShaderType::Opaque, isAnimating);
 					}
 				}
 
@@ -780,35 +782,92 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							continue;
 						}
 
-						VertexShaderType vertexShaderType = VertexShaderType::Voxel;
 						if (isDoor)
 						{
+							double doorAnimPercent = 0.0;
+							int doorAnimInstIndex;
+							if (chunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
+							{
+								const VoxelDoorAnimationInstance &doorAnimInst = chunk.getDoorAnimInst(doorAnimInstIndex);
+								doorAnimPercent = doorAnimInst.percentOpen;
+							}
+
 							const DoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
 							const ArenaTypes::DoorType doorType = doorDef.getType();
 							switch (doorType)
 							{
 							case ArenaTypes::DoorType::Swinging:
-								vertexShaderType = VertexShaderType::SwingingDoor;
+							{
+								// One draw call for each door face since they have independent transforms.
+								// @todo: skip adding draw call if the "exterior face" of the voxel is facing away from the camera; i.e. if the face's normal is < 0 with the diff with the camera position.
+								constexpr int doorCount = ArenaMeshUtils::GetUniqueFaceCount(ArenaTypes::VoxelType::Door);
+
+								const std::array<Double3, doorCount> doorHingeOffsets =
+								{
+									// X=0
+									Double3::Zero,
+									// X=1
+									Double3::UnitX + Double3::UnitZ,
+									// Z=0
+									Double3::UnitX,
+									// Z=1
+									Double3::UnitZ
+								};
+
+								constexpr std::array<Radians, doorCount> doorBaseAngles =
+								{
+									// X=0
+									0.0,
+									// X=1
+									Constants::Pi,
+									// Z=0
+									Constants::HalfPi,
+									// Z=1
+									Constants::HalfPi * 3.0
+								};
+
+								// @todo: repeat this hinge position array for the 'alternate' view when camera is west/south of door
+								// @todo: if camera voxel X or Z is west or south of the door, swap the starting corner and reverse the anim direction?
+
+								const Radians rotationAmount = -(Constants::HalfPi - Constants::Epsilon) * doorAnimPercent;
+
+								for (int i = 0; i < doorCount; i++)
+								{
+									const Double3 &doorHingeOffset = doorHingeOffsets[i];
+									const Double3 doorHingePosition = worldPos + doorHingeOffset;
+									const Radians doorBaseAngle = doorBaseAngles[i];
+									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle + rotationAmount);
+									constexpr bool isAnimating = true;
+									addDrawCall(doorHingePosition, doorRotationMatrix, renderMeshDef.vertexBufferID,
+										renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID,
+										textureID, std::nullopt, TextureSamplingType::Default, VertexShaderType::SwingingDoor,
+										PixelShaderType::AlphaTested, isAnimating);
+								}
+
 								break;
+							}
 							case ArenaTypes::DoorType::Sliding:
-								vertexShaderType = VertexShaderType::SlidingDoor;
+								//vertexShaderType = VertexShaderType::SlidingDoor;
 								break;
 							case ArenaTypes::DoorType::Raising:
-								vertexShaderType = VertexShaderType::RaisingDoor;
+								//vertexShaderType = VertexShaderType::RaisingDoor;
 								break;
 							case ArenaTypes::DoorType::Splitting:
-								vertexShaderType = VertexShaderType::SplittingDoor;
+								//vertexShaderType = VertexShaderType::SplittingDoor;
 								break;
 							default:
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(doorType)));
 								break;
 							}
 						}
-
-						const bool isAnimating = isDoor;
-						addDrawCall(worldTransform, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
-							renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt,
-							TextureSamplingType::Default, vertexShaderType, PixelShaderType::AlphaTested, isAnimating);
+						else
+						{
+							constexpr VertexShaderType vertexShaderType = VertexShaderType::Voxel;
+							constexpr bool isAnimating = false;
+							addDrawCall(worldPos, Matrix4d::identity(), renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+								renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt,
+								TextureSamplingType::Default, vertexShaderType, PixelShaderType::AlphaTested, isAnimating);
+						}
 					}
 				}
 
@@ -828,10 +887,10 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
 							ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
-							addDrawCall(worldTransform, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+							addDrawCall(worldPos, Matrix4d::identity(), renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
 								renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
-								TextureSamplingType::ScreenSpaceRepeatY, VertexShaderType::Voxel,
-								PixelShaderType::OpaqueWithAlphaTestLayer, isAnimating);
+								TextureSamplingType::ScreenSpaceRepeatY, VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
+								isAnimating);
 						}
 					}
 				}

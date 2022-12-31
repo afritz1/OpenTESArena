@@ -337,7 +337,7 @@ namespace swGeometry
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
-	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Matrix4d &transform,
+	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &modelPosition, const Matrix4d &rotation,
 		const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &normalBuffer,
 		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
 		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType, const Double3 &eye,
@@ -429,18 +429,27 @@ namespace swGeometry
 				*(normalsPtr + normal2Index + 2),
 				0.0);
 
+			const Double4 modelPositionXYZW(modelPosition, 0.0);
+
 			Double4 shadedV0, shadedV1, shadedV2;
 			Double4 shadedNormal0, shadedNormal1, shadedNormal2;
 			switch (vertexShaderType)
 			{
 			case VertexShaderType::Voxel:
+				shadedV0 = unshadedV0 + modelPositionXYZW;
+				shadedV1 = unshadedV1 + modelPositionXYZW;
+				shadedV2 = unshadedV2 + modelPositionXYZW;
+				shadedNormal0 = unshadedNormal0;
+				shadedNormal1 = unshadedNormal1;
+				shadedNormal2 = unshadedNormal2;
+				break;
 			case VertexShaderType::SwingingDoor:
-				shadedV0 = transform * unshadedV0;
-				shadedV1 = transform * unshadedV1;
-				shadedV2 = transform * unshadedV2;
-				shadedNormal0 = transform * unshadedNormal0;
-				shadedNormal1 = transform * unshadedNormal1;
-				shadedNormal2 = transform * unshadedNormal2;
+				shadedV0 = (rotation * unshadedV0) + modelPositionXYZW;
+				shadedV1 = (rotation * unshadedV1) + modelPositionXYZW;
+				shadedV2 = (rotation * unshadedV2) + modelPositionXYZW;
+				shadedNormal0 = rotation * unshadedNormal0;
+				shadedNormal1 = rotation * unshadedNormal1;
+				shadedNormal2 = rotation * unshadedNormal2;
 				break;
 			case VertexShaderType::SlidingDoor:
 			case VertexShaderType::RaisingDoor:
@@ -448,12 +457,12 @@ namespace swGeometry
 			{
 				// @todo: eventually for sliding and raising doors, we're going to scale each face down and translate the tex coords with the animation
 				// - splitting doors will be double the draw calls most likely; two rects per face, each scaled by themselves
-				shadedV0 = transform * unshadedV0;
-				shadedV1 = transform * unshadedV1;
-				shadedV2 = transform * unshadedV2;
-				shadedNormal0 = transform * unshadedNormal0;
-				shadedNormal1 = transform * unshadedNormal1;
-				shadedNormal2 = transform * unshadedNormal2;
+				shadedV0 = unshadedV0 + modelPositionXYZW;
+				shadedV1 = unshadedV1 + modelPositionXYZW;
+				shadedV2 = unshadedV2 + modelPositionXYZW;
+				shadedNormal0 = unshadedNormal0;
+				shadedNormal1 = unshadedNormal1;
+				shadedNormal2 = unshadedNormal2;
 				break;
 			}
 			default:
@@ -1279,7 +1288,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	for (int i = 0; i < drawCallCount; i++)
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
-		const Matrix4d &transform = drawCall.transform;
+		const Double3 &meshPosition = drawCall.position;
+		const Matrix4d &rotation = drawCall.rotation;
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
 		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
@@ -1288,8 +1298,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			transform, vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, 
-			vertexShaderType, camera.worldPoint, clippingPlanes);
+			meshPosition, rotation, vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0,
+			textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType = drawCall.textureSamplingType;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;

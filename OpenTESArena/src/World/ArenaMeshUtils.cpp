@@ -1735,31 +1735,16 @@ void ArenaMeshUtils::WriteDoorRendererGeometryBuffers(BufferView<double> outVert
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Door;
 
-	// @todo: does this need to care about the door type or can we do all that in the vertex shader?
+	// @todo: this will probably have double the vertices for splitting doors.
 
-	// One quad per face (results in duplication; necessary for correct texture mapping).
+	// One quad that gets translated/rotated per face.
 	constexpr std::array<double, GetRendererVertexPositionComponentCount(voxelType)> vertices =
 	{
 		// X=0
 		0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0,
 		0.0, 0.0, 1.0,
-		0.0, 1.0, 1.0,
-		// X=1
-		1.0, 1.0, 1.0,
-		1.0, 0.0, 1.0,
-		1.0, 0.0, 0.0,
-		1.0, 1.0, 0.0,
-		// Z=0
-		1.0, 1.0, 0.0,
-		1.0, 0.0, 0.0,
-		0.0, 0.0, 0.0,
-		0.0, 1.0, 0.0,
-		// Z=1
-		0.0, 1.0, 1.0,
-		0.0, 0.0, 1.0,
-		1.0, 0.0, 1.0,
-		1.0, 1.0, 1.0
+		0.0, 1.0, 1.0
 	};
 
 	constexpr std::array<double, GetRendererVertexNormalComponentCount(voxelType)> normals =
@@ -1768,42 +1753,12 @@ void ArenaMeshUtils::WriteDoorRendererGeometryBuffers(BufferView<double> outVert
 		-1.0, 0.0, 0.0,
 		-1.0, 0.0, 0.0,
 		-1.0, 0.0, 0.0,
-		-1.0, 0.0, 0.0,
-		// X=1
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		// Z=0
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0,
-		// Z=1
-		0.0, 0.0, 1.0,
-		0.0, 0.0, 1.0,
-		0.0, 0.0, 1.0,
-		0.0, 0.0, 1.0
+		-1.0, 0.0, 0.0
 	};
 
 	constexpr std::array<double, GetRendererVertexTexCoordComponentCount(voxelType)> texCoords =
 	{
 		// X=0
-		0.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-		1.0, 0.0,
-		// X=1
-		0.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-		1.0, 0.0,
-		// Z=0
-		0.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-		1.0, 0.0,
-		// Z=1
 		0.0, 0.0,
 		0.0, 1.0,
 		1.0, 1.0,
@@ -1825,16 +1780,7 @@ void ArenaMeshUtils::WriteDoorRendererIndexBuffers(BufferView<int32_t> outAlphaT
 	{
 		// X=0
 		0, 1, 2,
-		2, 3, 0,
-		// X=1
-		4, 5, 6,
-		6, 7, 4,
-		// Z=0
-		8, 9, 10,
-		10, 11, 8,
-		// Z=1
-		12, 13, 14,
-		14, 15, 12
+		2, 3, 0
 	};
 
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
