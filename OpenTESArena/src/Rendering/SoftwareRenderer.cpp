@@ -337,10 +337,10 @@ namespace swGeometry
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
-	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const SoftwareRenderer::VertexBuffer &vertexBuffer,
-		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
-		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
-		const Double3 &worldOffset, const Matrix4d &rotation, VertexShaderType vertexShaderType, const Double3 &eye,
+	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Matrix4d &transform,
+		const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &normalBuffer,
+		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
+		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType, const Double3 &eye,
 		const ClippingPlanes &clippingPlanes)
 	{
 		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
@@ -398,56 +398,62 @@ namespace swGeometry
 			const int32_t normal1Index = v1Index;
 			const int32_t normal2Index = v2Index;
 
-			const Double3 unshadedV0(
+			const Double4 unshadedV0(
 				*(verticesPtr + v0Index),
 				*(verticesPtr + v0Index + 1),
-				*(verticesPtr + v0Index + 2));
-			const Double3 unshadedV1(
+				*(verticesPtr + v0Index + 2),
+				1.0);
+			const Double4 unshadedV1(
 				*(verticesPtr + v1Index),
 				*(verticesPtr + v1Index + 1),
-				*(verticesPtr + v1Index + 2));
-			const Double3 unshadedV2(
+				*(verticesPtr + v1Index + 2),
+				1.0);
+			const Double4 unshadedV2(
 				*(verticesPtr + v2Index),
 				*(verticesPtr + v2Index + 1),
-				*(verticesPtr + v2Index + 2));
-			const Double3 unshadedNormal0(
+				*(verticesPtr + v2Index + 2),
+				1.0);
+			const Double4 unshadedNormal0(
 				*(normalsPtr + normal0Index),
 				*(normalsPtr + normal0Index + 1),
-				*(normalsPtr + normal0Index + 2));
-			const Double3 unshadedNormal1(
+				*(normalsPtr + normal0Index + 2),
+				0.0);
+			const Double4 unshadedNormal1(
 				*(normalsPtr + normal1Index),
 				*(normalsPtr + normal1Index + 1),
-				*(normalsPtr + normal1Index + 2));
-			const Double3 unshadedNormal2(
+				*(normalsPtr + normal1Index + 2),
+				0.0);
+			const Double4 unshadedNormal2(
 				*(normalsPtr + normal2Index),
 				*(normalsPtr + normal2Index + 1),
-				*(normalsPtr + normal2Index + 2));
+				*(normalsPtr + normal2Index + 2),
+				0.0);
 
-			Double3 shadedV0, shadedV1, shadedV2;
-			Double3 shadedNormal0, shadedNormal1, shadedNormal2;
+			Double4 shadedV0, shadedV1, shadedV2;
+			Double4 shadedNormal0, shadedNormal1, shadedNormal2;
 			switch (vertexShaderType)
 			{
 			case VertexShaderType::Voxel:
-				// Simple translation to the correct position; no rotation.
-				shadedV0 = unshadedV0 + worldOffset;
-				shadedV1 = unshadedV1 + worldOffset;
-				shadedV2 = unshadedV2 + worldOffset;
-				shadedNormal0 = unshadedNormal0;
-				shadedNormal1 = unshadedNormal1;
-				shadedNormal2 = unshadedNormal2;
-				break;
 			case VertexShaderType::SwingingDoor:
+				shadedV0 = transform * unshadedV0;
+				shadedV1 = transform * unshadedV1;
+				shadedV2 = transform * unshadedV2;
+				shadedNormal0 = transform * unshadedNormal0;
+				shadedNormal1 = transform * unshadedNormal1;
+				shadedNormal2 = transform * unshadedNormal2;
+				break;
 			case VertexShaderType::SlidingDoor:
 			case VertexShaderType::RaisingDoor:
 			case VertexShaderType::SplittingDoor:
 			{
-				shadedV0 = unshadedV0 + worldOffset;
-				shadedV1 = unshadedV1 + worldOffset;
-				shadedV2 = unshadedV2 + worldOffset;
-				shadedNormal0 = unshadedNormal0;
-				shadedNormal1 = unshadedNormal1;
-				shadedNormal2 = unshadedNormal2;
-				// @todo: rotate then offset. Need anim percent somehow (either baked into the rotation or separate)
+				// @todo: eventually for sliding and raising doors, we're going to scale each face down and translate the tex coords with the animation
+				// - splitting doors will be double the draw calls most likely; two rects per face, each scaled by themselves
+				shadedV0 = transform * unshadedV0;
+				shadedV1 = transform * unshadedV1;
+				shadedV2 = transform * unshadedV2;
+				shadedNormal0 = transform * unshadedNormal0;
+				shadedNormal1 = transform * unshadedNormal1;
+				shadedNormal2 = transform * unshadedNormal2;
 				break;
 			}
 			default:
@@ -455,6 +461,12 @@ namespace swGeometry
 				break;
 			}
 
+			const Double3 shadedV0XYZ(shadedV0.x, shadedV0.y, shadedV0.z);
+			const Double3 shadedV1XYZ(shadedV1.x, shadedV1.y, shadedV1.z);
+			const Double3 shadedV2XYZ(shadedV2.x, shadedV2.y, shadedV2.z);
+			const Double3 shadedNormal0XYZ(shadedNormal0.x, shadedNormal0.y, shadedNormal0.z);
+			const Double3 shadedNormal1XYZ(shadedNormal1.x, shadedNormal1.y, shadedNormal1.z);
+			const Double3 shadedNormal2XYZ(shadedNormal2.x, shadedNormal2.y, shadedNormal2.z);
 			const Double2 uv0(
 				*(texCoordsPtr + (index0 * 2)),
 				*(texCoordsPtr + (index0 * 2) + 1));
@@ -466,8 +478,8 @@ namespace swGeometry
 				*(texCoordsPtr + (index2 * 2) + 1));
 
 			// Discard back-facing.
-			const Double3 v0ToEye = eye - shadedV0;
-			if (v0ToEye.dot(shadedNormal0) < Constants::Epsilon)
+			const Double3 v0ToEye = eye - shadedV0XYZ;
+			if (v0ToEye.dot(shadedNormal0XYZ) < Constants::Epsilon)
 			{
 				continue;
 			}
@@ -477,12 +489,12 @@ namespace swGeometry
 			int clipListFrontIndex = 0;
 
 			// Add the first triangle to clip.
-			outClipListV0s[clipListFrontIndex] = shadedV0;
-			outClipListV1s[clipListFrontIndex] = shadedV1;
-			outClipListV2s[clipListFrontIndex] = shadedV2;
-			outClipListNormal0s[clipListFrontIndex] = shadedNormal0;
-			outClipListNormal1s[clipListFrontIndex] = shadedNormal1;
-			outClipListNormal2s[clipListFrontIndex] = shadedNormal2;
+			outClipListV0s[clipListFrontIndex] = shadedV0XYZ;
+			outClipListV1s[clipListFrontIndex] = shadedV1XYZ;
+			outClipListV2s[clipListFrontIndex] = shadedV2XYZ;
+			outClipListNormal0s[clipListFrontIndex] = shadedNormal0XYZ;
+			outClipListNormal1s[clipListFrontIndex] = shadedNormal1XYZ;
+			outClipListNormal2s[clipListFrontIndex] = shadedNormal2XYZ;
 			outClipListUV0s[clipListFrontIndex] = uv0;
 			outClipListUV1s[clipListFrontIndex] = uv1;
 			outClipListUV2s[clipListFrontIndex] = uv2;
@@ -1267,6 +1279,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	for (int i = 0; i < drawCallCount; i++)
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
+		const Matrix4d &transform = drawCall.transform;
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
 		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
@@ -1274,11 +1287,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const ObjectTextureID textureID0 = drawCall.textureIDs[0].has_value() ? *drawCall.textureIDs[0] : -1;
 		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
-		const Double3 &worldSpaceOffset = drawCall.worldSpaceOffset;
-		const Matrix4d rotationMatrix = Matrix4d::identity(); // @todo: support swinging doors
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, worldSpaceOffset,
-			rotationMatrix, vertexShaderType, camera.worldPoint, clippingPlanes);
+			transform, vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, 
+			vertexShaderType, camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType = drawCall.textureSamplingType;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;

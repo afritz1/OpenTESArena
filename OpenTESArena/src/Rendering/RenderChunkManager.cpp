@@ -637,12 +637,13 @@ void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const Vox
 void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
 	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
-	auto addDrawCall = [&renderChunk, ceilingScale](SNInt x, int y, WEInt z, VertexBufferID vertexBufferID,
+	auto addDrawCall = [&renderChunk, ceilingScale](const Matrix4d &transform, VertexBufferID vertexBufferID,
 		AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
 		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType,
 		VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, bool isAnimating)
 	{
 		RenderDrawCall drawCall;
+		drawCall.transform = transform;
 		drawCall.vertexBufferID = vertexBufferID;
 		drawCall.normalBufferID = normalBufferID;
 		drawCall.texCoordBufferID = texCoordBufferID;
@@ -652,10 +653,6 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 		drawCall.textureSamplingType = textureSamplingType;
 		drawCall.vertexShaderType = vertexShaderType;
 		drawCall.pixelShaderType = pixelShaderType;
-		drawCall.worldSpaceOffset = Double3(
-			static_cast<SNDouble>(x),
-			static_cast<double>(y) * ceilingScale,
-			static_cast<WEDouble>(z));
 
 		if (!isAnimating)
 		{
@@ -678,15 +675,16 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 			{
 				const VoxelInt3 voxel(x, y, z);
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
-				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
-				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(x, y, z);
 				const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
-				const VoxelTextureDefinition &voxelTextureDef = chunk.getVoxelTextureDef(voxelTextureDefID);
-				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
 				if (voxelMeshDef.isEmpty())
 				{
 					continue;
 				}
+
+				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
+				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(x, y, z);
+				const VoxelTextureDefinition &voxelTextureDef = chunk.getVoxelTextureDef(voxelTextureDefID);
+				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
 
 				const auto defIter = renderChunk.meshDefMappings.find(voxelMeshDefID);
 				DebugAssert(defIter != renderChunk.meshDefMappings.end());
@@ -698,6 +696,10 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 				// Convert voxel XYZ to world space.
 				const NewInt2 worldXZ = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
 				const int worldY = y;
+				const Matrix4d worldTransform = Matrix4d::translation(
+					static_cast<SNDouble>(worldXZ.x),
+					static_cast<double>(worldY) * ceilingScale,
+					static_cast<WEDouble>(worldXZ.y));
 
 				const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
@@ -744,7 +746,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 						const IndexBufferID opaqueIndexBufferID = renderMeshDef.opaqueIndexBufferIDs[bufferIndex];
 						const TextureSamplingType textureSamplingType = usesVoxelTextures ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
-						addDrawCall(worldXZ.x, worldY, worldXZ.y, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+						addDrawCall(worldTransform, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
 							renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, textureSamplingType,
 							VertexShaderType::Voxel, PixelShaderType::Opaque, isAnimating);
 					}
@@ -804,7 +806,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						}
 
 						const bool isAnimating = isDoor;
-						addDrawCall(worldXZ.x, worldY, worldXZ.y, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+						addDrawCall(worldTransform, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
 							renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt,
 							TextureSamplingType::Default, vertexShaderType, PixelShaderType::AlphaTested, isAnimating);
 					}
@@ -826,7 +828,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
 							ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
-							addDrawCall(worldXZ.x, worldY, worldXZ.y, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
+							addDrawCall(worldTransform, renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID,
 								renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
 								TextureSamplingType::ScreenSpaceRepeatY, VertexShaderType::Voxel,
 								PixelShaderType::OpaqueWithAlphaTestLayer, isAnimating);

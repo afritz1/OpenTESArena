@@ -6,12 +6,14 @@
 #include "RenderGeometryUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
+#include "../Math/Matrix4.h"
 #include "../Math/Vector3.h"
 
 struct RenderDrawCall
 {
 	static constexpr int MAX_TEXTURE_COUNT = 2; // For multi-texturing.
 
+	Matrix4d transform;
 	VertexBufferID vertexBufferID;
 	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
@@ -19,7 +21,6 @@ struct RenderDrawCall
 	TextureSamplingType textureSamplingType;
 	VertexShaderType vertexShaderType;
 	PixelShaderType pixelShaderType;
-	Double3 worldSpaceOffset;
 
 	RenderDrawCall();
 

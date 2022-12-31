@@ -13,6 +13,7 @@ RenderDrawCall::RenderDrawCall()
 
 void RenderDrawCall::clear()
 {
+	this->transform = Matrix4d();
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
@@ -25,5 +26,4 @@ void RenderDrawCall::clear()
 	this->textureSamplingType = static_cast<TextureSamplingType>(-1);
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
-	this->worldSpaceOffset = Double3::Zero;
 }
