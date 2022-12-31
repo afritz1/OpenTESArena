@@ -333,6 +333,11 @@ int VoxelChunk::getChasmWallInstCount() const
 	return static_cast<int>(this->chasmWallInsts.size());
 }
 
+int VoxelChunk::getDoorVisibilityInstCount() const
+{
+	return static_cast<int>(this->doorVisInsts.size());
+}
+
 int VoxelChunk::getTriggerInstCount() const
 {
 	return static_cast<int>(this->triggerInsts.size());
@@ -361,6 +366,37 @@ bool VoxelChunk::tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex
 	if (iter != this->chasmWallInsts.end())
 	{
 		*outIndex = static_cast<int>(std::distance(this->chasmWallInsts.begin(), iter));
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+VoxelDoorVisibilityInstance &VoxelChunk::getDoorVisibilityInst(int index)
+{
+	DebugAssertIndex(this->doorVisInsts, index);
+	return this->doorVisInsts[index];
+}
+
+const VoxelDoorVisibilityInstance &VoxelChunk::getDoorVisibilityInst(int index) const
+{
+	DebugAssertIndex(this->doorVisInsts, index);
+	return this->doorVisInsts[index];
+}
+
+bool VoxelChunk::tryGetDoorVisibilityInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
+{
+	const auto iter = std::find_if(this->doorVisInsts.begin(), this->doorVisInsts.end(),
+		[x, y, z](const VoxelDoorVisibilityInstance &inst)
+	{
+		return (inst.x == x) && (inst.y == y) && (inst.z == z);
+	});
+
+	if (iter != this->doorVisInsts.end())
+	{
+		*outIndex = static_cast<int>(std::distance(this->doorVisInsts.begin(), iter));
 		return true;
 	}
 	else
@@ -526,6 +562,11 @@ void VoxelChunk::addChasmWallInst(VoxelChasmWallInstance &&inst)
 	this->chasmWallInsts.emplace_back(std::move(inst));
 }
 
+void VoxelChunk::addDoorVisibilityInst(VoxelDoorVisibilityInstance &&inst)
+{
+	this->doorVisInsts.emplace_back(std::move(inst));
+}
+
 void VoxelChunk::addTriggerInst(VoxelTriggerInstance &&inst)
 {
 	this->triggerInsts.emplace_back(std::move(inst));
@@ -579,6 +620,7 @@ void VoxelChunk::clear()
 	this->doorAnimInsts.clear();
 	this->fadeAnimInsts.clear();
 	this->chasmWallInsts.clear();
+	this->doorVisInsts.clear();
 	this->triggerInsts.clear();
 }
 

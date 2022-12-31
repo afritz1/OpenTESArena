@@ -792,6 +792,15 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 								doorAnimPercent = doorAnimInst.percentOpen;
 							}
 
+							int doorVisInstIndex;
+							if (!chunk.tryGetDoorVisibilityInstIndex(x, y, z, &doorVisInstIndex))
+							{
+								DebugLogError("Expected door visibility instance at (" + std::to_string(x) + ", " +
+									std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + chunkPos.toString() + ").");
+								continue;
+							}
+							
+							const VoxelDoorVisibilityInstance &doorVisInst = chunk.getDoorVisibilityInst(doorVisInstIndex);
 							const DoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
 							const ArenaTypes::DoorType doorType = doorDef.getType();
 							switch (doorType)
@@ -801,6 +810,18 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 								// One draw call for each door face since they have independent transforms.
 								// @todo: skip adding draw call if the "exterior face" of the voxel is facing away from the camera; i.e. if the face's normal is < 0 with the diff with the camera position.
 								constexpr int doorCount = ArenaMeshUtils::GetUniqueFaceCount(ArenaTypes::VoxelType::Door);
+
+								const std::array<VoxelFacing2D, doorCount> doorFacings =
+								{
+									// X=0
+									VoxelFacing2D::NegativeX,
+									// X=1
+									VoxelFacing2D::PositiveX,
+									// Z=0
+									VoxelFacing2D::NegativeZ,
+									// Z=1
+									VoxelFacing2D::PositiveZ
+								};
 
 								const std::array<Double3, doorCount> doorHingeOffsets =
 								{
@@ -826,13 +847,26 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									Constants::HalfPi * 3.0
 								};
 
-								// @todo: repeat this hinge position array for the 'alternate' view when camera is west/south of door
-								// @todo: if camera voxel X or Z is west or south of the door, swap the starting corner and reverse the anim direction?
-
 								const Radians rotationAmount = -(Constants::HalfPi - Constants::Epsilon) * doorAnimPercent;
 
 								for (int i = 0; i < doorCount; i++)
 								{
+									const VoxelFacing2D doorFacing = doorFacings[i];
+									bool canRenderFace = false;
+									for (int j = 0; j < doorVisInst.visibleFaceCount; j++)
+									{
+										if (doorVisInst.visibleFaces[j] == doorFacing)
+										{
+											canRenderFace = true;
+											break;
+										}
+									}
+
+									if (!canRenderFace)
+									{
+										continue;
+									}
+
 									const Double3 &doorHingeOffset = doorHingeOffsets[i];
 									const Double3 doorHingePosition = worldPos + doorHingeOffset;
 									const Radians doorBaseAngle = doorBaseAngles[i];

@@ -50,12 +50,18 @@ private:
 	// to adjacent voxels so this function also operates based on adjacent chunks (if any).
 	void populateChunkChasmInsts(VoxelChunk &chunk);
 
+	// Adds door visibility instances to the chunk for determining which faces to render.
+	void populateChunkDoorVisibilityInsts(VoxelChunk &chunk);
+
 	// Fills the chunk with the data required based on its position and the world type.
 	void populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition);
 
 	// Updates chasms (context-sensitive voxels) on a chunk's perimeter that may be affected by adjacent chunks.
 	void updateChunkPerimeterChasmInsts(VoxelChunk &chunk);
+
+	// Updates door visibilities for a chunk; some of which might be on the chunk's perimeter that are affected by adjacent chunks.
+	void updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const CoordDouble3 &playerCoord);
 public:
 	void update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
 		const BufferView<const ChunkInt2> &freedChunkPositions, const CoordDouble3 &playerCoord,

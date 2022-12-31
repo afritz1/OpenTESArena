@@ -13,6 +13,7 @@
 #include "DoorDefinition.h"
 #include "VoxelChasmWallInstance.h"
 #include "VoxelDoorAnimationInstance.h"
+#include "VoxelDoorVisibilityInstance.h"
 #include "VoxelFadeAnimationInstance.h"
 #include "VoxelMeshDefinition.h"
 #include "VoxelTextureDefinition.h"
@@ -80,6 +81,7 @@ private:
 
 	// Unique voxel states.
 	std::vector<VoxelChasmWallInstance> chasmWallInsts;
+	std::vector<VoxelDoorVisibilityInstance> doorVisInsts;
 	std::vector<VoxelTriggerInstance> triggerInsts;
 
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
@@ -145,10 +147,14 @@ public:
 	bool tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
 	int getChasmWallInstCount() const;
+	int getDoorVisibilityInstCount() const;
 	int getTriggerInstCount() const;
 	VoxelChasmWallInstance &getChasmWallInst(int index);
 	const VoxelChasmWallInstance &getChasmWallInst(int index) const;
 	bool tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
+	VoxelDoorVisibilityInstance &getDoorVisibilityInst(int index);
+	const VoxelDoorVisibilityInstance &getDoorVisibilityInst(int index) const;
+	bool tryGetDoorVisibilityInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 	const VoxelTriggerInstance &getTriggerInst(int index) const;
 	bool tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
@@ -177,6 +183,7 @@ public:
 	void addFadeAnimInst(VoxelFadeAnimationInstance &&animInst);
 
 	void addChasmWallInst(VoxelChasmWallInstance &&inst);
+	void addDoorVisibilityInst(VoxelDoorVisibilityInstance &&inst);
 	void addTriggerInst(VoxelTriggerInstance &&inst);
 	void removeChasmWallInst(const VoxelInt3 &voxel);
 

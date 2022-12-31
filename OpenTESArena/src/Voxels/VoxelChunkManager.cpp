@@ -384,6 +384,29 @@ void VoxelChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 	}
 }
 
+void VoxelChunkManager::populateChunkDoorVisibilityInsts(VoxelChunk &chunk)
+{
+	DebugAssert(chunk.getDoorVisibilityInstCount() == 0);
+
+	const ChunkInt2 &chunkPos = chunk.getPosition();
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	{
+		for (int y = 0; y < chunk.getHeight(); y++)
+		{
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			{
+				VoxelChunk::DoorDefID doorDefID;
+				if (chunk.tryGetDoorDefID(x, y, z, &doorDefID))
+				{
+					VoxelDoorVisibilityInstance doorVisInst;
+					doorVisInst.init(x, y, z);
+					chunk.addDoorVisibilityInst(std::move(doorVisInst));
+				}
+			}
+		}
+	}
+}
+
 void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
 	const MapDefinition &mapDefinition)
 {
@@ -449,7 +472,8 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkChasmInsts(chunk);
-			
+			this->populateChunkDoorVisibilityInsts(chunk);
+
 			/*DebugAssert(!citizenGenInfo.has_value());
 			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
 				citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);*/
@@ -508,6 +532,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkChasmInsts(chunk);
+			this->populateChunkDoorVisibilityInsts(chunk);
 
 			/*DebugAssert(citizenGenInfo.has_value());
 			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
@@ -542,6 +567,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		}
 
 		this->populateChunkChasmInsts(chunk);
+		this->populateChunkDoorVisibilityInsts(chunk);
 
 		/*DebugAssert(citizenGenInfo.has_value());
 		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
@@ -652,6 +678,46 @@ void VoxelChunkManager::updateChunkPerimeterChasmInsts(VoxelChunk &chunk)
 	}
 }
 
+void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const CoordDouble3 &playerCoord)
+{
+	const ChunkInt2 &chunkPos = chunk.getPosition();
+	const CoordInt3 playerCoordInt(playerCoord.chunk, VoxelUtils::pointToVoxel(playerCoord.point));
+
+	for (int i = 0; i < chunk.getDoorVisibilityInstCount(); i++)
+	{
+		VoxelDoorVisibilityInstance &visInst = chunk.getDoorVisibilityInst(i);
+		const CoordInt3 doorCoord(chunkPos, VoxelInt3(visInst.x, visInst.y, visInst.z));
+
+		const bool isCameraNorthInclusive = (playerCoordInt.chunk.x < doorCoord.chunk.x) ||
+			((playerCoordInt.chunk.x == doorCoord.chunk.x) && (playerCoordInt.voxel.x <= doorCoord.voxel.x));
+		const bool isCameraEastInclusive = (playerCoordInt.chunk.y < doorCoord.chunk.y) ||
+			((playerCoordInt.chunk.y == doorCoord.chunk.y) && (playerCoordInt.voxel.z <= doorCoord.voxel.z));
+
+		std::optional<int> northChunkIndex, eastChunkIndex, southChunkIndex, westChunkIndex;
+		VoxelChunk::VoxelMeshDefID northVoxelMeshDefID, eastVoxelMeshDefID, southVoxelMeshDefID, westVoxelMeshDefID;
+		this->getAdjacentVoxelMeshDefIDs(doorCoord, &northChunkIndex, &eastChunkIndex, &southChunkIndex, &westChunkIndex,
+			&northVoxelMeshDefID, &eastVoxelMeshDefID, &southVoxelMeshDefID, &westVoxelMeshDefID);
+
+		auto isVoxelAir = [this](const std::optional<int> &chunkIndex, VoxelChunk::VoxelMeshDefID meshDefID)
+		{
+			if (!chunkIndex.has_value())
+			{
+				return true;
+			}
+
+			const VoxelChunk &voxelChunk = this->getChunkAtIndex(*chunkIndex);
+			const VoxelMeshDefinition &meshDef = voxelChunk.getVoxelMeshDef(meshDefID);
+			return meshDef.isEmpty();
+		};
+
+		const bool isNorthAir = isVoxelAir(northChunkIndex, northVoxelMeshDefID);
+		const bool isEastAir = isVoxelAir(eastChunkIndex, eastVoxelMeshDefID);
+		const bool isSouthAir = isVoxelAir(southChunkIndex, southVoxelMeshDefID);
+		const bool isWestAir = isVoxelAir(westChunkIndex, westVoxelMeshDefID);
+		visInst.update(isCameraNorthInclusive, isCameraEastInclusive, isNorthAir, isEastAir, isSouthAir, isWestAir);
+	}
+}
+
 void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
 	const BufferView<const ChunkInt2> &freedChunkPositions, const CoordDouble3 &playerCoord,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, double ceilingScale,
@@ -691,6 +757,13 @@ void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &new
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		this->updateChunkPerimeterChasmInsts(*chunkPtr);
+	}
+
+	// Update which door faces are able to be rendered.
+	for (int i = 0; i < activeChunkCount; i++)
+	{
+		ChunkPtr &chunkPtr = this->activeChunks[i];
+		this->updateChunkDoorVisibilityInsts(*chunkPtr, playerCoord);
 	}
 }
 
