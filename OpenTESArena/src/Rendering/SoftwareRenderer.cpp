@@ -338,7 +338,7 @@ namespace swGeometry
 	// 2) Frustum culling
 	// 3) Clipping
 	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &modelPosition, const Matrix4d &rotation,
-		const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &normalBuffer,
+		const Matrix4d &scale, const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &normalBuffer,
 		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
 		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType, const Double3 &eye,
 		const ClippingPlanes &clippingPlanes)
@@ -452,6 +452,13 @@ namespace swGeometry
 				shadedNormal2 = rotation * unshadedNormal2;
 				break;
 			case VertexShaderType::SlidingDoor:
+				shadedV0 = (rotation * (scale * unshadedV0)) + modelPositionXYZW;
+				shadedV1 = (rotation * (scale * unshadedV1)) + modelPositionXYZW;
+				shadedV2 = (rotation * (scale * unshadedV2)) + modelPositionXYZW;
+				shadedNormal0 = rotation * unshadedNormal0;
+				shadedNormal1 = rotation * unshadedNormal1;
+				shadedNormal2 = rotation * unshadedNormal2;
+				break;
 			case VertexShaderType::RaisingDoor:
 			case VertexShaderType::SplittingDoor:
 			{
@@ -766,6 +773,32 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
+	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
+		const PixelShaderTexture &alphaTestTexture, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercent.x * alphaTestTexture.width), 0, alphaTestTexture.width - 1);
+		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercent.y * alphaTestTexture.height), 0, alphaTestTexture.height - 1);
+		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
+		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
+
+		const bool isTransparent = texel == 0;
+		if (isTransparent)
+		{
+			const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * opaqueTexture.width), 0, opaqueTexture.width - 1);
+
+			const double v = frameBuffer.yPercent * 2.0;
+			const double actualV = v >= 1.0 ? (v - 1.0) : v;
+			const int texelY = std::clamp(static_cast<int>(actualV * opaqueTexture.height), 0, opaqueTexture.height - 1);
+
+			const int texelIndex = texelX + (texelY * opaqueTexture.width);
+			texel = opaqueTexture.texels[texelIndex];
+		}
+
+		const uint32_t color = frameBuffer.palette.colors[texel];
+		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+	}
+
 	void PixelShader_AlphaTest(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
@@ -784,25 +817,19 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
-	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
-		const PixelShaderTexture &alphaTestTexture, PixelShaderFrameBuffer &frameBuffer)
+	void PixelShader_AlphaTestedWithVariableTexCoordUMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		double uMin, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercent.x * alphaTestTexture.width), 0, alphaTestTexture.width - 1);
-		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercent.y * alphaTestTexture.height), 0, alphaTestTexture.height - 1);
-		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
-		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
+		const double u = std::clamp(uMin + ((1.0 - uMin) * perspective.texelPercent.x), uMin, 1.0);
+		const int texelX = std::clamp(static_cast<int>(u * texture.width), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+		const int texelIndex = texelX + (texelY * texture.width);
+		const uint8_t texel = texture.texels[texelIndex];
 
 		const bool isTransparent = texel == 0;
 		if (isTransparent)
 		{
-			const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * opaqueTexture.width), 0, opaqueTexture.width - 1);
-			
-			const double v = frameBuffer.yPercent * 2.0;
-			const double actualV = v >= 1.0 ? (v - 1.0) : v;
-			const int texelY = std::clamp(static_cast<int>(actualV * opaqueTexture.height), 0, opaqueTexture.height - 1);
-
-			const int texelIndex = texelX + (texelY * opaqueTexture.width);
-			texel = opaqueTexture.texels[texelIndex];
+			return;
 		}
 
 		const uint32_t color = frameBuffer.palette.colors[texel];
@@ -812,7 +839,7 @@ namespace swRender
 
 	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType,
-		PixelShaderType pixelShaderType, const SoftwareRenderer::ObjectTexturePool &textures,
+		PixelShaderType pixelShaderType, double pixelShaderParam0, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
 		const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
 	{
@@ -953,11 +980,14 @@ namespace swRender
 							case PixelShaderType::Opaque:
 								PixelShader_Opaque(shaderPerspective, shaderTexture0, shaderFrameBuffer);
 								break;
+							case PixelShaderType::OpaqueWithAlphaTestLayer:
+								PixelShader_OpaqueWithAlphaTestLayer(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
+								break;
 							case PixelShaderType::AlphaTested:
 								PixelShader_AlphaTest(shaderPerspective, shaderTexture0, shaderFrameBuffer);
 								break;
-							case PixelShaderType::OpaqueWithAlphaTestLayer:
-								PixelShader_OpaqueWithAlphaTestLayer(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
+							case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
+								PixelShader_AlphaTestedWithVariableTexCoordUMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderFrameBuffer);
 								break;
 							default:
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(pixelShaderType)));
@@ -1289,7 +1319,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
 		const Double3 &meshPosition = drawCall.position;
-		const Matrix4d &rotation = drawCall.rotation;
+		const Matrix4d &rotationMatrix = drawCall.rotation;
+		const Matrix4d &scaleMatrix = drawCall.scale;
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
 		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
@@ -1298,13 +1329,14 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			meshPosition, rotation, vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0,
-			textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
+			meshPosition, rotationMatrix, scaleMatrix, vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer,
+			textureID0, textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType = drawCall.textureSamplingType;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
-		swRender::RasterizeTriangles(drawListIndices, textureSamplingType, pixelShaderType, this->objectTextures,
-			paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
+		const double pixelShaderParam0 = drawCall.pixelShaderParam0;
+		swRender::RasterizeTriangles(drawListIndices, textureSamplingType, pixelShaderType, pixelShaderParam0, 
+			this->objectTextures, paletteTexture, lightTableTexture, camera, colorBufferView, depthBufferView);
 	}
 }
 

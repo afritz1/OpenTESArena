@@ -13,8 +13,9 @@ enum class VertexShaderType
 enum class PixelShaderType
 {
 	Opaque,
+	OpaqueWithAlphaTestLayer,
 	AlphaTested,
-	OpaqueWithAlphaTestLayer
+	AlphaTestedWithVariableTexCoordUMin // Sliding doors.
 };
 
 enum class TextureSamplingType

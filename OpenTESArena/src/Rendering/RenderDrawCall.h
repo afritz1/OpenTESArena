@@ -14,7 +14,7 @@ struct RenderDrawCall
 	static constexpr int MAX_TEXTURE_COUNT = 2; // For multi-texturing.
 
 	Double3 position;
-	Matrix4d rotation;
+	Matrix4d rotation, scale;
 	VertexBufferID vertexBufferID;
 	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
@@ -22,6 +22,7 @@ struct RenderDrawCall
 	TextureSamplingType textureSamplingType;
 	VertexShaderType vertexShaderType;
 	PixelShaderType pixelShaderType;
+	double pixelShaderParam0;
 
 	RenderDrawCall();
 
