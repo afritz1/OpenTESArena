@@ -337,11 +337,11 @@ namespace swGeometry
 	// 1) Back-face culling
 	// 2) Frustum culling
 	// 3) Clipping
-	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &modelPosition, const Matrix4d &rotation,
-		const Matrix4d &scale, const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &normalBuffer,
-		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
-		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType, const Double3 &eye,
-		const ClippingPlanes &clippingPlanes)
+	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &modelPosition, const Double3 &preScaleTranslation,
+		const Matrix4d &rotation, const Matrix4d &scale, const SoftwareRenderer::VertexBuffer &vertexBuffer,
+		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
+		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
+		VertexShaderType vertexShaderType, const Double3 &eye, const ClippingPlanes &clippingPlanes)
 	{
 		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
 		std::vector<Double3> &outVisibleTriangleV1s = g_visibleTriangleV1s;
@@ -379,6 +379,9 @@ namespace swGeometry
 		outVisibleTriangleUV2s.clear();
 		outVisibleTriangleTextureID0s.clear();
 		outVisibleTriangleTextureID1s.clear();
+
+		const Double4 modelPositionXYZW(modelPosition, 0.0);
+		const Double4 preScaleTranslationXYZW(preScaleTranslation, 1.0);
 
 		const double *verticesPtr = vertexBuffer.vertices.get();
 		const double *normalsPtr = normalBuffer.attributes.get();
@@ -429,8 +432,6 @@ namespace swGeometry
 				*(normalsPtr + normal2Index + 2),
 				0.0);
 
-			const Double4 modelPositionXYZW(modelPosition, 0.0);
-
 			Double4 shadedV0, shadedV1, shadedV2;
 			Double4 shadedNormal0, shadedNormal1, shadedNormal2;
 			switch (vertexShaderType)
@@ -460,16 +461,27 @@ namespace swGeometry
 				shadedNormal2 = rotation * unshadedNormal2;
 				break;
 			case VertexShaderType::RaisingDoor:
+				// Need to push + pop a translation so it scales towards the ceiling.
+				shadedV0 = unshadedV0 + preScaleTranslationXYZW;
+				shadedV1 = unshadedV1 + preScaleTranslationXYZW;
+				shadedV2 = unshadedV2 + preScaleTranslationXYZW;
+				shadedV0 = scale * shadedV0;
+				shadedV1 = scale * shadedV1;
+				shadedV2 = scale * shadedV2;
+				shadedV0 = shadedV0 - preScaleTranslationXYZW;
+				shadedV1 = shadedV1 - preScaleTranslationXYZW;
+				shadedV2 = shadedV2 - preScaleTranslationXYZW;
+
+				shadedV0 = (rotation * shadedV0) + modelPositionXYZW;
+				shadedV1 = (rotation * shadedV1) + modelPositionXYZW;
+				shadedV2 = (rotation * shadedV2) + modelPositionXYZW;
+				shadedNormal0 = rotation * unshadedNormal0;
+				shadedNormal1 = rotation * unshadedNormal1;
+				shadedNormal2 = rotation * unshadedNormal2;
+				break;
 			case VertexShaderType::SplittingDoor:
 			{
-				// @todo: eventually for sliding and raising doors, we're going to scale each face down and translate the tex coords with the animation
-				// - splitting doors will be double the draw calls most likely; two rects per face, each scaled by themselves
-				shadedV0 = unshadedV0 + modelPositionXYZW;
-				shadedV1 = unshadedV1 + modelPositionXYZW;
-				shadedV2 = unshadedV2 + modelPositionXYZW;
-				shadedNormal0 = unshadedNormal0;
-				shadedNormal1 = unshadedNormal1;
-				shadedNormal2 = unshadedNormal2;
+				DebugNotImplemented();
 				break;
 			}
 			default:
@@ -837,6 +849,27 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
+	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		double vMin, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
+		const double v = std::clamp(vMin + ((1.0 - vMin) * perspective.texelPercent.y), vMin, 1.0);
+		const int texelY = std::clamp(static_cast<int>(v * texture.height), 0, texture.height - 1);
+
+		const int texelIndex = texelX + (texelY * texture.width);
+		const uint8_t texel = texture.texels[texelIndex];
+
+		const bool isTransparent = texel == 0;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		const uint32_t color = frameBuffer.palette.colors[texel];
+		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+	}
+
 	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType,
 		PixelShaderType pixelShaderType, double pixelShaderParam0, const SoftwareRenderer::ObjectTexturePool &textures,
@@ -988,6 +1021,9 @@ namespace swRender
 								break;
 							case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
 								PixelShader_AlphaTestedWithVariableTexCoordUMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderFrameBuffer);
+								break;
+							case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
+								PixelShader_AlphaTestedWithVariableTexCoordVMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderFrameBuffer);
 								break;
 							default:
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(pixelShaderType)));
@@ -1319,6 +1355,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
 		const Double3 &meshPosition = drawCall.position;
+		const Double3 &preScaleTranslation = drawCall.preScaleTranslation;
 		const Matrix4d &rotationMatrix = drawCall.rotation;
 		const Matrix4d &scaleMatrix = drawCall.scale;
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
@@ -1329,8 +1366,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			meshPosition, rotationMatrix, scaleMatrix, vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer,
-			textureID0, textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
+			meshPosition, preScaleTranslation, rotationMatrix, scaleMatrix, vertexBuffer, normalBuffer, texCoordBuffer,
+			indexBuffer, textureID0, textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType = drawCall.textureSamplingType;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;

@@ -15,6 +15,7 @@ RenderDrawCall::RenderDrawCall()
 void RenderDrawCall::clear()
 {
 	this->position = Double3::Zero;
+	this->preScaleTranslation = Double3::Zero;
 	this->rotation = Matrix4d();
 	this->scale = Matrix4d();
 	this->vertexBufferID = -1;

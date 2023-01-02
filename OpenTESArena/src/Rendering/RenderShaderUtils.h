@@ -15,7 +15,8 @@ enum class PixelShaderType
 	Opaque,
 	OpaqueWithAlphaTestLayer,
 	AlphaTested,
-	AlphaTestedWithVariableTexCoordUMin // Sliding doors.
+	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
+	AlphaTestedWithVariableTexCoordVMin // Raising doors.
 };
 
 enum class TextureSamplingType
