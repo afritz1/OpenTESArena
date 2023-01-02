@@ -811,6 +811,28 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
+	void PixelShader_OpaqueWithFade(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderTexture &lightTableTexture, double fadePercent, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+		const int texelIndex = texelX + (texelY * texture.width);
+		const uint8_t texel = texture.texels[texelIndex];
+
+		const int lightLevelTexelCount = lightTableTexture.width;
+		const int lightLevelCount = lightTableTexture.height;
+		const double lightLevelCountReal = static_cast<double>(lightLevelCount);
+		const uint8_t *lightLevelTexels = lightTableTexture.texels;
+		const double lightLevelValue = fadePercent * lightLevelCountReal;
+		const int lightLevelIndex = std::clamp(static_cast<int>(lightLevelValue), 0, lightLevelCount - 1);
+		const double lightLevelPercent = std::clamp(lightLevelValue - std::floor(lightLevelValue), 0.0, Constants::JustBelowOne);
+		const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
+		const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
+		const uint32_t color = frameBuffer.palette.colors[shadedTexel];
+		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+	}
+
 	void PixelShader_AlphaTest(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
@@ -887,6 +909,12 @@ namespace swRender
 
 		constexpr double yShear = 0.0;
 
+		PixelShaderTexture lightTableShaderTexture;
+		lightTableShaderTexture.texels = lightTableTexture.texels.get();
+		lightTableShaderTexture.width = lightTableTexture.texels.getWidth();
+		lightTableShaderTexture.height = lightTableTexture.texels.getHeight();
+		lightTableShaderTexture.samplingType = TextureSamplingType::Default;
+
 		const int triangleCount = drawListIndices.count;
 		for (int i = 0; i < triangleCount; i++)
 		{
@@ -958,9 +986,6 @@ namespace swRender
 			shaderTexture1.height = texture1.texels.getHeight();
 			shaderTexture1.samplingType = TextureSamplingType::ScreenSpaceRepeatY; // @todo: change to variable once other shaders need this
 
-			const double fadePercent = 0.0; // @todo
-			const bool isFading = fadePercent > 0.0;
-
 			PixelShaderFrameBuffer shaderFrameBuffer;
 			shaderFrameBuffer.colors = colorBuffer.get();
 			shaderFrameBuffer.depth = depthBuffer.get();
@@ -1015,6 +1040,9 @@ namespace swRender
 								break;
 							case PixelShaderType::OpaqueWithAlphaTestLayer:
 								PixelShader_OpaqueWithAlphaTestLayer(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
+								break;
+							case PixelShaderType::OpaqueWithFade:
+								PixelShader_OpaqueWithFade(shaderPerspective, shaderTexture0, lightTableShaderTexture, pixelShaderParam0, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTested:
 								PixelShader_AlphaTest(shaderPerspective, shaderTexture0, shaderFrameBuffer);

@@ -186,7 +186,8 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 	{
 		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
 		const VoxelChunk &voxelChunk = this->voxelChunkManager.getChunkAtPosition(chunkPos);
-		renderChunkManager.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, false, true);
+		const bool updateStatics = voxelChunk.getDirtyVoxelCount() > 0; // @temp fix for fading voxels being covered by their non-fading draw call
+		renderChunkManager.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 
 	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient

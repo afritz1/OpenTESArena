@@ -717,7 +717,15 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 				VoxelChunk::DoorDefID doorDefID;
 				const bool isDoor = chunk.tryGetDoorDefID(x, y, z, &doorDefID);
 
-				const bool canAnimate = !usesVoxelTextures || isDoor;
+				int fadeAnimInstIndex;
+				const VoxelFadeAnimationInstance *fadeAnimInst = nullptr;
+				const bool isFading = chunk.tryGetFadeAnimInstIndex(x, y, z, &fadeAnimInstIndex);
+				if (isFading)
+				{
+					fadeAnimInst = &chunk.getFadeAnimInst(fadeAnimInstIndex);
+				}
+
+				const bool canAnimate = !usesVoxelTextures || isDoor || isFading;
 				if ((!canAnimate && updateStatics) || (canAnimate && updateAnimating))
 				{
 					for (int bufferIndex = 0; bufferIndex < renderMeshDef.opaqueIndexBufferIdCount; bufferIndex++)
@@ -757,10 +765,18 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const Matrix4d rotationMatrix = Matrix4d::identity();
 						const Matrix4d scaleMatrix = Matrix4d::identity();
 						const TextureSamplingType textureSamplingType = usesVoxelTextures ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
-						constexpr double pixelShaderParam0 = 0.0;
+						
+						PixelShaderType pixelShaderType = PixelShaderType::Opaque;
+						double pixelShaderParam0 = 0.0;
+						if (isFading)
+						{
+							pixelShaderType = PixelShaderType::OpaqueWithFade;
+							pixelShaderParam0 = fadeAnimInst->percentFaded;
+						}
+
 						addDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
-							textureSamplingType, VertexShaderType::Voxel, PixelShaderType::Opaque, pixelShaderParam0, canAnimate);
+							textureSamplingType, VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, canAnimate);
 					}
 				}
 
