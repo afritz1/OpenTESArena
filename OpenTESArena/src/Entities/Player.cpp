@@ -265,8 +265,8 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
 		if (chunk != nullptr)
 		{
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
 			return &voxelTraitsDef;
 		}
 		else

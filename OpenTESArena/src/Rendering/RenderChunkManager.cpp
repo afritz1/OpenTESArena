@@ -496,9 +496,9 @@ BufferView<const RenderDrawCall> RenderChunkManager::getVoxelDrawCalls() const
 
 void RenderChunkManager::loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer)
 {
-	for (int i = 0; i < chunk.getVoxelTextureDefCount(); i++)
+	for (int i = 0; i < chunk.getTextureDefCount(); i++)
 	{
-		const VoxelTextureDefinition &voxelTextureDef = chunk.getVoxelTextureDef(i);
+		const VoxelTextureDefinition &voxelTextureDef = chunk.getTextureDef(i);
 		sgTexture::LoadVoxelDefTextures(voxelTextureDef, this->voxelTextures, textureManager, renderer);
 	}
 
@@ -515,10 +515,10 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 	const ChunkInt2 &chunkPos = chunk.getPosition();
 
 	// Add render chunk voxel mesh instances and create mappings to them.
-	for (int meshDefIndex = 0; meshDefIndex < chunk.getVoxelMeshDefCount(); meshDefIndex++)
+	for (int meshDefIndex = 0; meshDefIndex < chunk.getMeshDefCount(); meshDefIndex++)
 	{
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = static_cast<VoxelChunk::VoxelMeshDefID>(meshDefIndex);
-		const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
+		const VoxelMeshDefinition &voxelMeshDef = chunk.getMeshDef(voxelMeshDefID);
 
 		RenderVoxelMeshDefinition renderVoxelMeshDef;
 		if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
@@ -682,17 +682,17 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 			for (SNInt x = 0; x < renderChunk.meshDefIDs.getWidth(); x++)
 			{
 				const VoxelInt3 voxel(x, y, z);
-				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getVoxelMeshDefID(x, y, z);
-				const VoxelMeshDefinition &voxelMeshDef = chunk.getVoxelMeshDef(voxelMeshDefID);
+				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getMeshDefID(x, y, z);
+				const VoxelMeshDefinition &voxelMeshDef = chunk.getMeshDef(voxelMeshDefID);
 				if (voxelMeshDef.isEmpty())
 				{
 					continue;
 				}
 
-				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getVoxelTextureDefID(x, y, z);
-				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(x, y, z);
-				const VoxelTextureDefinition &voxelTextureDef = chunk.getVoxelTextureDef(voxelTextureDefID);
-				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
+				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getTextureDefID(x, y, z);
+				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(x, y, z);
+				const VoxelTextureDefinition &voxelTextureDef = chunk.getTextureDef(voxelTextureDefID);
+				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
 
 				const auto defIter = renderChunk.meshDefMappings.find(voxelMeshDefID);
 				DebugAssert(defIter != renderChunk.meshDefMappings.end());

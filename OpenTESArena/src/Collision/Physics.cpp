@@ -241,8 +241,8 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getVoxelMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getVoxelMeshDef(voxelMeshDefID);
+		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getMeshDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
 		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
 
 		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->getCollisionMeshDefID(voxel.x, voxel.y, voxel.z);
@@ -344,8 +344,8 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getVoxelMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getVoxelMeshDef(voxelMeshDefID);
+		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getMeshDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
 		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
 
 		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->getCollisionMeshDefID(voxel.x, voxel.y, voxel.z);

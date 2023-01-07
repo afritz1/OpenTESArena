@@ -493,8 +493,8 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	// Get the voxel definition associated with the voxel.
 	const VoxelTraitsDefinition &voxelTraitsDef = [&chunk, &transitionVoxel]()
 	{
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
-		return chunk.getVoxelTraitsDef(voxelTraitsDefID);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
+		return chunk.getTraitsDef(voxelTraitsDefID);
 	}();
 
 	// If the associated voxel data is a wall, then it might be a transition voxel.

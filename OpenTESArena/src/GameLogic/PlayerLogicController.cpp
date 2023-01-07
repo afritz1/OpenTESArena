@@ -569,8 +569,8 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getVoxelTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getVoxelTraitsDef(voxelTraitsDefID);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
 			const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
 			// Primary interaction handles selection in the game world. Secondary interaction handles

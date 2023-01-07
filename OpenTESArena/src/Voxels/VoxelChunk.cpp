@@ -10,56 +10,56 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	Chunk::init(position, height);
 
 	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely point to it.
-	this->voxelMeshDefs.emplace_back(VoxelMeshDefinition());
-	this->voxelTextureDefs.emplace_back(VoxelTextureDefinition());
-	this->voxelTraitsDefs.emplace_back(VoxelTraitsDefinition());
+	this->meshDefs.emplace_back(VoxelMeshDefinition());
+	this->textureDefs.emplace_back(VoxelTextureDefinition());
+	this->traitsDefs.emplace_back(VoxelTraitsDefinition());
 
 	// Set all voxels to air.
-	this->voxelMeshDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->voxelMeshDefIDs.fill(VoxelChunk::AIR_VOXEL_MESH_DEF_ID);
+	this->meshDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->meshDefIDs.fill(VoxelChunk::AIR_MESH_DEF_ID);
 
-	this->voxelTextureDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->voxelTextureDefIDs.fill(VoxelChunk::AIR_VOXEL_TEXTURE_DEF_ID);
+	this->textureDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->textureDefIDs.fill(VoxelChunk::AIR_TEXTURE_DEF_ID);
 
-	this->voxelTraitsDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->voxelTraitsDefIDs.fill(VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID);
+	this->traitsDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->traitsDefIDs.fill(VoxelChunk::AIR_TRAITS_DEF_ID);
 
 	this->dirtyVoxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->dirtyVoxels.fill(false);
 	this->dirtyVoxelPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
 }
 
-void VoxelChunk::getAdjacentVoxelMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID, VoxelMeshDefID *outEastID,
+void VoxelChunk::getAdjacentMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID, VoxelMeshDefID *outEastID,
 	VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID)
 {
-	this->getAdjacentVoxelIDsInternal(voxel, this->voxelMeshDefIDs, VoxelChunk::AIR_VOXEL_MESH_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal(voxel, this->meshDefIDs, VoxelChunk::AIR_MESH_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-void VoxelChunk::getAdjacentVoxelTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID,
+void VoxelChunk::getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID,
 	VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID)
 {
-	this->getAdjacentVoxelIDsInternal(voxel, this->voxelTextureDefIDs, VoxelChunk::AIR_VOXEL_TEXTURE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal(voxel, this->textureDefIDs, VoxelChunk::AIR_TEXTURE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-void VoxelChunk::getAdjacentVoxelTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID,
+void VoxelChunk::getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID,
 	VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID)
 {
-	this->getAdjacentVoxelIDsInternal(voxel, this->voxelTraitsDefIDs, VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal(voxel, this->traitsDefIDs, VoxelChunk::AIR_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-int VoxelChunk::getVoxelMeshDefCount() const
+int VoxelChunk::getMeshDefCount() const
 {
-	return static_cast<int>(this->voxelMeshDefs.size());
+	return static_cast<int>(this->meshDefs.size());
 }
 
-int VoxelChunk::getVoxelTextureDefCount() const
+int VoxelChunk::getTextureDefCount() const
 {
-	return static_cast<int>(this->voxelTextureDefs.size());
+	return static_cast<int>(this->textureDefs.size());
 }
 
-int VoxelChunk::getVoxelTraitsDefCount() const
+int VoxelChunk::getTraitsDefCount() const
 {
-	return static_cast<int>(this->voxelTraitsDefs.size());
+	return static_cast<int>(this->traitsDefs.size());
 }
 
 int VoxelChunk::getTransitionDefCount() const
@@ -92,22 +92,22 @@ int VoxelChunk::getChasmDefCount() const
 	return static_cast<int>(this->chasmDefs.size());
 }
 
-const VoxelMeshDefinition &VoxelChunk::getVoxelMeshDef(VoxelMeshDefID id) const
+const VoxelMeshDefinition &VoxelChunk::getMeshDef(VoxelMeshDefID id) const
 {
-	DebugAssertIndex(this->voxelMeshDefs, id);
-	return this->voxelMeshDefs[id];
+	DebugAssertIndex(this->meshDefs, id);
+	return this->meshDefs[id];
 }
 
-const VoxelTextureDefinition &VoxelChunk::getVoxelTextureDef(VoxelTextureDefID id) const
+const VoxelTextureDefinition &VoxelChunk::getTextureDef(VoxelTextureDefID id) const
 {
-	DebugAssertIndex(this->voxelTextureDefs, id);
-	return this->voxelTextureDefs[id];
+	DebugAssertIndex(this->textureDefs, id);
+	return this->textureDefs[id];
 }
 
-const VoxelTraitsDefinition &VoxelChunk::getVoxelTraitsDef(VoxelTraitsDefID id) const
+const VoxelTraitsDefinition &VoxelChunk::getTraitsDef(VoxelTraitsDefID id) const
 {
-	DebugAssertIndex(this->voxelTraitsDefs, id);
-	return this->voxelTraitsDefs[id];
+	DebugAssertIndex(this->traitsDefs, id);
+	return this->traitsDefs[id];
 }
 
 const TransitionDefinition &VoxelChunk::getTransitionDef(TransitionDefID id) const
@@ -146,19 +146,19 @@ const ChasmDefinition &VoxelChunk::getChasmDef(ChasmDefID id) const
 	return this->chasmDefs[id];
 }
 
-VoxelChunk::VoxelMeshDefID VoxelChunk::getVoxelMeshDefID(SNInt x, int y, WEInt z) const
+VoxelChunk::VoxelMeshDefID VoxelChunk::getMeshDefID(SNInt x, int y, WEInt z) const
 {
-	return this->voxelMeshDefIDs.get(x, y, z);
+	return this->meshDefIDs.get(x, y, z);
 }
 
-VoxelChunk::VoxelTextureDefID VoxelChunk::getVoxelTextureDefID(SNInt x, int y, WEInt z) const
+VoxelChunk::VoxelTextureDefID VoxelChunk::getTextureDefID(SNInt x, int y, WEInt z) const
 {
-	return this->voxelTextureDefIDs.get(x, y, z);
+	return this->textureDefIDs.get(x, y, z);
 }
 
-VoxelChunk::VoxelTraitsDefID VoxelChunk::getVoxelTraitsDefID(SNInt x, int y, WEInt z) const
+VoxelChunk::VoxelTraitsDefID VoxelChunk::getTraitsDefID(SNInt x, int y, WEInt z) const
 {
-	return this->voxelTraitsDefIDs.get(x, y, z);
+	return this->traitsDefIDs.get(x, y, z);
 }
 
 int VoxelChunk::getDirtyVoxelCount() const
@@ -430,42 +430,42 @@ bool VoxelChunk::tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) 
 	}
 }
 
-void VoxelChunk::setVoxelMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
+void VoxelChunk::setMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
 {
-	this->voxelMeshDefIDs.set(x, y, z, id);
+	this->meshDefIDs.set(x, y, z, id);
 	this->setVoxelDirty(x, y, z);
 }
 
-void VoxelChunk::setVoxelTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
+void VoxelChunk::setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
 {
-	this->voxelTextureDefIDs.set(x, y, z, id);
+	this->textureDefIDs.set(x, y, z, id);
 	this->setVoxelDirty(x, y, z);
 }
 
-void VoxelChunk::setVoxelTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
+void VoxelChunk::setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 {
-	this->voxelTraitsDefIDs.set(x, y, z, id);
+	this->traitsDefIDs.set(x, y, z, id);
 	this->setVoxelDirty(x, y, z);
 }
 
-VoxelChunk::VoxelMeshDefID VoxelChunk::addVoxelMeshDef(VoxelMeshDefinition &&voxelMeshDef)
+VoxelChunk::VoxelMeshDefID VoxelChunk::addMeshDef(VoxelMeshDefinition &&voxelMeshDef)
 {
-	const VoxelMeshDefID id = static_cast<VoxelMeshDefID>(this->voxelMeshDefs.size());
-	this->voxelMeshDefs.emplace_back(std::move(voxelMeshDef));
+	const VoxelMeshDefID id = static_cast<VoxelMeshDefID>(this->meshDefs.size());
+	this->meshDefs.emplace_back(std::move(voxelMeshDef));
 	return id;
 }
 
-VoxelChunk::VoxelTextureDefID VoxelChunk::addVoxelTextureDef(VoxelTextureDefinition &&voxelTextureDef)
+VoxelChunk::VoxelTextureDefID VoxelChunk::addTextureDef(VoxelTextureDefinition &&voxelTextureDef)
 {
-	const VoxelTextureDefID id = static_cast<VoxelTextureDefID>(this->voxelTextureDefs.size());
-	this->voxelTextureDefs.emplace_back(std::move(voxelTextureDef));
+	const VoxelTextureDefID id = static_cast<VoxelTextureDefID>(this->textureDefs.size());
+	this->textureDefs.emplace_back(std::move(voxelTextureDef));
 	return id;
 }
 
-VoxelChunk::VoxelTraitsDefID VoxelChunk::addVoxelTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef)
+VoxelChunk::VoxelTraitsDefID VoxelChunk::addTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef)
 {
-	const VoxelTraitsDefID id = static_cast<VoxelTraitsDefID>(this->voxelTraitsDefs.size());
-	this->voxelTraitsDefs.emplace_back(std::move(voxelTraitsDef));
+	const VoxelTraitsDefID id = static_cast<VoxelTraitsDefID>(this->traitsDefs.size());
+	this->traitsDefs.emplace_back(std::move(voxelTraitsDef));
 	return id;
 }
 
@@ -597,18 +597,18 @@ void VoxelChunk::setVoxelDirty(SNInt x, int y, WEInt z)
 void VoxelChunk::clear()
 {
 	Chunk::clear();
-	this->voxelMeshDefs.clear();
-	this->voxelTextureDefs.clear();
-	this->voxelTraitsDefs.clear();
+	this->meshDefs.clear();
+	this->textureDefs.clear();
+	this->traitsDefs.clear();
 	this->transitionDefs.clear();
 	this->triggerDefs.clear();
 	this->lockDefs.clear();
 	this->buildingNames.clear();
 	this->doorDefs.clear();
 	this->chasmDefs.clear();
-	this->voxelMeshDefIDs.clear();
-	this->voxelTextureDefIDs.clear();
-	this->voxelTraitsDefIDs.clear();
+	this->meshDefIDs.clear();
+	this->textureDefIDs.clear();
+	this->traitsDefIDs.clear();
 	this->dirtyVoxels.clear();
 	this->dirtyVoxelPositions.clear();
 	this->transitionDefIndices.clear();
@@ -775,9 +775,9 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 			else
 			{
 				// Air voxel.
-				this->setVoxelMeshDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_VOXEL_MESH_DEF_ID);
-				this->setVoxelTextureDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_VOXEL_TEXTURE_DEF_ID);
-				this->setVoxelTraitsDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_VOXEL_TRAITS_DEF_ID);
+				this->setMeshDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_MESH_DEF_ID);
+				this->setTextureDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TEXTURE_DEF_ID);
+				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TRAITS_DEF_ID);
 			}
 
 			this->fadeAnimInsts.erase(this->fadeAnimInsts.begin() + i);

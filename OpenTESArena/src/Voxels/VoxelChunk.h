@@ -48,9 +48,9 @@ public:
 	using ChasmDefID = int;
 private:
 	// Definitions pointed to by voxel IDs.
-	std::vector<VoxelMeshDefinition> voxelMeshDefs;
-	std::vector<VoxelTextureDefinition> voxelTextureDefs;
-	std::vector<VoxelTraitsDefinition> voxelTraitsDefs;
+	std::vector<VoxelMeshDefinition> meshDefs;
+	std::vector<VoxelTextureDefinition> textureDefs;
+	std::vector<VoxelTraitsDefinition> traitsDefs;
 	std::vector<TransitionDefinition> transitionDefs;
 	std::vector<VoxelTriggerDefinition> triggerDefs;
 	std::vector<LockDefinition> lockDefs;
@@ -59,9 +59,9 @@ private:
 	std::vector<ChasmDefinition> chasmDefs;
 
 	// Indices into definitions for actual voxels in-game.
-	Buffer3D<VoxelMeshDefID> voxelMeshDefIDs;
-	Buffer3D<VoxelTextureDefID> voxelTextureDefIDs;
-	Buffer3D<VoxelTraitsDefID> voxelTraitsDefIDs;
+	Buffer3D<VoxelMeshDefID> meshDefIDs;
+	Buffer3D<VoxelTextureDefID> textureDefIDs;
+	Buffer3D<VoxelTraitsDefID> traitsDefIDs;
 
 	// Voxels that changed this frame. Reset at end-of-frame.
 	Buffer3D<bool> dirtyVoxels;
@@ -87,26 +87,26 @@ private:
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	// This is slightly different than the chunk manager's version since it is chunk-independent (but as
 	// a result, voxels on a chunk edge must be updated by the chunk manager).
-	void getAdjacentVoxelMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID,
+	void getAdjacentMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID,
 		VoxelMeshDefID *outEastID, VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID);
-	void getAdjacentVoxelTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID,
+	void getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID,
 		VoxelTextureDefID *outEastID, VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID);
-	void getAdjacentVoxelTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID,
+	void getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID,
 		VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID);
 
 	// Sets this voxel dirty for geometry updating, etc. if not already.
 	// @todo: should this take flags instead?
 	void setVoxelDirty(SNInt x, int y, WEInt z);
 public:
-	static constexpr VoxelMeshDefID AIR_VOXEL_MESH_DEF_ID = 0;
-	static constexpr VoxelTextureDefID AIR_VOXEL_TEXTURE_DEF_ID = 0;
-	static constexpr VoxelTraitsDefID AIR_VOXEL_TRAITS_DEF_ID = 0;
+	static constexpr VoxelMeshDefID AIR_MESH_DEF_ID = 0;
+	static constexpr VoxelTextureDefID AIR_TEXTURE_DEF_ID = 0;
+	static constexpr VoxelTraitsDefID AIR_TRAITS_DEF_ID = 0;
 
 	void init(const ChunkInt2 &position, int height);
 
-	int getVoxelMeshDefCount() const;
-	int getVoxelTextureDefCount() const;
-	int getVoxelTraitsDefCount() const;
+	int getMeshDefCount() const;
+	int getTextureDefCount() const;
+	int getTraitsDefCount() const;
 	int getTransitionDefCount() const;
 	int getTriggerDefCount() const;
 	int getLockDefCount() const;
@@ -115,9 +115,9 @@ public:
 	int getChasmDefCount() const;
 
 	// Gets the definition associated with a voxel def ID (can iterate with an index too).
-	const VoxelMeshDefinition &getVoxelMeshDef(VoxelMeshDefID id) const;
-	const VoxelTextureDefinition &getVoxelTextureDef(VoxelTextureDefID id) const;
-	const VoxelTraitsDefinition &getVoxelTraitsDef(VoxelTraitsDefID id) const;
+	const VoxelMeshDefinition &getMeshDef(VoxelMeshDefID id) const;
+	const VoxelTextureDefinition &getTextureDef(VoxelTextureDefID id) const;
+	const VoxelTraitsDefinition &getTraitsDef(VoxelTraitsDefID id) const;
 	const TransitionDefinition &getTransitionDef(TransitionDefID id) const;
 	const VoxelTriggerDefinition &getTriggerDef(TriggerDefID id) const;
 	const LockDefinition &getLockDef(LockDefID id) const;
@@ -125,9 +125,9 @@ public:
 	const DoorDefinition &getDoorDef(DoorDefID id) const;
 	const ChasmDefinition &getChasmDef(ChasmDefID id) const;
 
-	VoxelMeshDefID getVoxelMeshDefID(SNInt x, int y, WEInt z) const;
-	VoxelTextureDefID getVoxelTextureDefID(SNInt x, int y, WEInt z) const;
-	VoxelTraitsDefID getVoxelTraitsDefID(SNInt x, int y, WEInt z) const;
+	VoxelMeshDefID getMeshDefID(SNInt x, int y, WEInt z) const;
+	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
+	VoxelTraitsDefID getTraitsDefID(SNInt x, int y, WEInt z) const;
 
 	int getDirtyVoxelCount() const;
 	const VoxelInt3 &getDirtyVoxel(int index) const;
@@ -158,13 +158,13 @@ public:
 	const VoxelTriggerInstance &getTriggerInst(int index) const;
 	bool tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
-	void setVoxelMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
-	void setVoxelTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
-	void setVoxelTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
+	void setMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
+	void setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
+	void setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
 
-	VoxelMeshDefID addVoxelMeshDef(VoxelMeshDefinition &&voxelMeshDef);
-	VoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&voxelTextureDef);
-	VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef);
+	VoxelMeshDefID addMeshDef(VoxelMeshDefinition &&meshDef);
+	VoxelTextureDefID addTextureDef(VoxelTextureDefinition &&textureDef);
+	VoxelTraitsDefID addTraitsDef(VoxelTraitsDefinition &&traitsDef);
 	TransitionDefID addTransitionDef(TransitionDefinition &&transition);
 	TriggerDefID addTriggerDef(VoxelTriggerDefinition &&trigger);
 	LockDefID addLockDef(LockDefinition &&lock);

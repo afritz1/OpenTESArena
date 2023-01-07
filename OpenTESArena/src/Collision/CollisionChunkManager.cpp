@@ -17,7 +17,7 @@ void CollisionChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos,
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				// Colliders are dependent on the voxel mesh definition.
-				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getVoxelMeshDefID(x, y, z);
+				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(x, y, z);
 				const auto iter = meshMappings.find(voxelMeshDefID);
 
 				CollisionChunk::CollisionMeshDefID collisionMeshDefID = -1;
@@ -27,7 +27,7 @@ void CollisionChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos,
 				}
 				else
 				{
-					const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getVoxelMeshDef(voxelMeshDefID);
+					const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
 					const BufferView<const double> verticesView(voxelMeshDef.collisionVertices.data(), static_cast<int>(voxelMeshDef.collisionVertices.size()));
 					const BufferView<const double> normalsView(voxelMeshDef.collisionNormals.data(), static_cast<int>(voxelMeshDef.collisionNormals.size()));
 					const BufferView<const int> indicesView(voxelMeshDef.collisionIndices.data(), static_cast<int>(voxelMeshDef.collisionIndices.size()));

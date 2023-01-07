@@ -18,7 +18,7 @@ protected:
 	void clear();
 
 	template<typename VoxelIdType>
-	void getAdjacentVoxelIDsInternal(const VoxelInt3 &voxel, const Buffer3D<VoxelIdType> &voxelIDs,
+	void getAdjacentIDsInternal(const VoxelInt3 &voxel, const Buffer3D<VoxelIdType> &voxelIDs,
 		VoxelIdType defaultID, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
 		VoxelIdType *outWestID)
 	{

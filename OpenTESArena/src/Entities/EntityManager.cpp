@@ -821,8 +821,8 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 			return 0.0;
 		}
 
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getVoxelTraitsDefID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
-		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getVoxelTraitsDef(voxelTraitsDefID);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
+		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
 
 		if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
 		{
