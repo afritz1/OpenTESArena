@@ -1423,12 +1423,12 @@ void ArenaMeshUtils::WriteEdgeCollisionIndexBuffers(BufferView<int32_t> outIndic
 		0, 0,
 
 		// Back
-		4, 1,
-		5, 1,
-		6, 1,
-		6, 1,
-		7, 1,
-		4, 1
+		3, 1,
+		2, 1,
+		1, 1,
+		1, 1,
+		0, 1,
+		3, 1
 	};
 
 	std::copy(indices.begin(), indices.end(), outIndices.get());
