@@ -64,8 +64,11 @@ private:
 	Buffer3D<VoxelTraitsDefID> traitsDefIDs;
 
 	// Voxels that changed this frame. Reset at end-of-frame.
-	Buffer3D<bool> dirtyVoxels;
-	std::vector<VoxelInt3> dirtyVoxelPositions;
+	std::vector<VoxelInt3> dirtyMeshDefPositions;
+	std::vector<VoxelInt3> dirtyDoorAnimInstPositions;
+	std::vector<VoxelInt3> dirtyDoorVisInstPositions;
+	std::vector<VoxelInt3> dirtyFadeAnimInstPositions;
+	std::vector<VoxelInt3> dirtyChasmWallInstPositions;
 
 	// Indices into decorators (generally sparse in comparison to voxels themselves).
 	std::unordered_map<VoxelInt3, TransitionDefID> transitionDefIndices;
@@ -95,8 +98,12 @@ private:
 		VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID);
 
 	// Sets this voxel dirty for geometry updating, etc. if not already.
-	// @todo: should this take flags instead?
-	void setVoxelDirty(SNInt x, int y, WEInt z);
+	void trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<VoxelInt3> &dirtyPositions);
+	void setMeshDefDirty(SNInt x, int y, WEInt z);
+	void setDoorAnimInstDirty(SNInt x, int y, WEInt z);
+	void setDoorVisInstDirty(SNInt x, int y, WEInt z);
+	void setFadeAnimInstDirty(SNInt x, int y, WEInt z);
+	void setChasmWallInstDirty(SNInt x, int y, WEInt z);
 public:
 	static constexpr VoxelMeshDefID AIR_MESH_DEF_ID = 0;
 	static constexpr VoxelTextureDefID AIR_TEXTURE_DEF_ID = 0;
@@ -129,8 +136,17 @@ public:
 	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
 	VoxelTraitsDefID getTraitsDefID(SNInt x, int y, WEInt z) const;
 
-	int getDirtyVoxelCount() const;
-	const VoxelInt3 &getDirtyVoxel(int index) const;
+	int getDirtyMeshDefPositionCount() const;
+	int getDirtyDoorAnimInstPositionCount() const;
+	int getDirtyDoorVisInstPositionCount() const;
+	int getDirtyFadeAnimInstPositionCount() const;
+	int getDirtyChasmWallInstPositionCount() const;
+
+	const VoxelInt3 &getDirtyMeshDefPosition(int index) const;
+	const VoxelInt3 &getDirtyDoorAnimInstPosition(int index) const;
+	const VoxelInt3 &getDirtyDoorVisInstPosition(int index) const;
+	const VoxelInt3 &getDirtyFadeAnimInstPosition(int index) const;
+	const VoxelInt3 &getDirtyChasmWallInstPosition(int index) const;
 
 	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID *outID) const;
 	bool tryGetTriggerDefID(SNInt x, int y, WEInt z, TriggerDefID *outID) const;

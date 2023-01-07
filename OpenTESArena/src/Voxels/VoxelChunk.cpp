@@ -24,9 +24,7 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	this->traitsDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->traitsDefIDs.fill(VoxelChunk::AIR_TRAITS_DEF_ID);
 
-	this->dirtyVoxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->dirtyVoxels.fill(false);
-	this->dirtyVoxelPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
+	this->dirtyMeshDefPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
 }
 
 void VoxelChunk::getAdjacentMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID, VoxelMeshDefID *outEastID,
@@ -161,15 +159,59 @@ VoxelChunk::VoxelTraitsDefID VoxelChunk::getTraitsDefID(SNInt x, int y, WEInt z)
 	return this->traitsDefIDs.get(x, y, z);
 }
 
-int VoxelChunk::getDirtyVoxelCount() const
+int VoxelChunk::getDirtyMeshDefPositionCount() const
 {
-	return static_cast<int>(this->dirtyVoxelPositions.size());
+	return static_cast<int>(this->dirtyMeshDefPositions.size());
 }
 
-const VoxelInt3 &VoxelChunk::getDirtyVoxel(int index) const
+int VoxelChunk::getDirtyDoorAnimInstPositionCount() const
 {
-	DebugAssertIndex(this->dirtyVoxelPositions, index);
-	return this->dirtyVoxelPositions[index];
+	return static_cast<int>(this->dirtyDoorAnimInstPositions.size());
+}
+
+int VoxelChunk::getDirtyDoorVisInstPositionCount() const
+{
+	return static_cast<int>(this->dirtyDoorVisInstPositions.size());
+}
+
+int VoxelChunk::getDirtyFadeAnimInstPositionCount() const
+{
+	return static_cast<int>(this->dirtyFadeAnimInstPositions.size());
+}
+
+int VoxelChunk::getDirtyChasmWallInstPositionCount() const
+{
+	return static_cast<int>(this->dirtyChasmWallInstPositions.size());
+}
+
+const VoxelInt3 &VoxelChunk::getDirtyMeshDefPosition(int index) const
+{
+	DebugAssertIndex(this->dirtyMeshDefPositions, index);
+	return this->dirtyMeshDefPositions[index];
+}
+
+const VoxelInt3 &VoxelChunk::getDirtyDoorAnimInstPosition(int index) const
+{
+	DebugAssertIndex(this->dirtyDoorAnimInstPositions, index);
+	return this->dirtyDoorAnimInstPositions[index];
+}
+
+const VoxelInt3 &VoxelChunk::getDirtyDoorVisInstPosition(int index) const
+{
+	DebugAssertIndex(this->dirtyDoorVisInstPositions, index);
+	return this->dirtyDoorVisInstPositions[index];
+}
+
+const VoxelInt3 &VoxelChunk::getDirtyFadeAnimInstPosition(int index) const
+{
+	DebugAssertIndex(this->dirtyFadeAnimInstPositions, index);
+	return this->dirtyFadeAnimInstPositions[index];
+}
+
+const VoxelInt3 &VoxelChunk::getDirtyChasmWallInstPosition(int index) const
+{
+	DebugAssertIndex(this->dirtyChasmWallInstPositions, index);
+	return this->dirtyChasmWallInstPositions[index];
 }
 
 bool VoxelChunk::tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID *outID) const
@@ -433,19 +475,17 @@ bool VoxelChunk::tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) 
 void VoxelChunk::setMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
 {
 	this->meshDefIDs.set(x, y, z, id);
-	this->setVoxelDirty(x, y, z);
+	this->setMeshDefDirty(x, y, z);
 }
 
 void VoxelChunk::setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
 {
 	this->textureDefIDs.set(x, y, z, id);
-	this->setVoxelDirty(x, y, z);
 }
 
 void VoxelChunk::setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 {
 	this->traitsDefIDs.set(x, y, z, id);
-	this->setVoxelDirty(x, y, z);
 }
 
 VoxelChunk::VoxelMeshDefID VoxelChunk::addMeshDef(VoxelMeshDefinition &&voxelMeshDef)
@@ -585,13 +625,43 @@ void VoxelChunk::removeChasmWallInst(const VoxelInt3 &voxel)
 	}
 }
 
-void VoxelChunk::setVoxelDirty(SNInt x, int y, WEInt z)
+void VoxelChunk::trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<VoxelInt3> &dirtyPositions)
 {
-	if (!this->dirtyVoxels.get(x, y, z))
+	const auto iter = std::find_if(dirtyPositions.begin(), dirtyPositions.end(),
+		[x, y, z](const VoxelInt3 &position)
 	{
-		this->dirtyVoxels.set(x, y, z, true);
-		this->dirtyVoxelPositions.emplace_back(VoxelInt3(x, y, z));
+		return (position.x == x) && (position.y == y) && (position.z == z);
+	});
+
+	if (iter == dirtyPositions.end())
+	{
+		dirtyPositions.emplace_back(VoxelInt3(x, y, z));
 	}
+}
+
+void VoxelChunk::setMeshDefDirty(SNInt x, int y, WEInt z)
+{
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyMeshDefPositions);
+}
+
+void VoxelChunk::setDoorAnimInstDirty(SNInt x, int y, WEInt z)
+{
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyDoorAnimInstPositions);
+}
+
+void VoxelChunk::setDoorVisInstDirty(SNInt x, int y, WEInt z)
+{
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyDoorVisInstPositions);
+}
+
+void VoxelChunk::setFadeAnimInstDirty(SNInt x, int y, WEInt z)
+{
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyFadeAnimInstPositions);
+}
+
+void VoxelChunk::setChasmWallInstDirty(SNInt x, int y, WEInt z)
+{
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyChasmWallInstPositions);
 }
 
 void VoxelChunk::clear()
@@ -609,8 +679,11 @@ void VoxelChunk::clear()
 	this->meshDefIDs.clear();
 	this->textureDefIDs.clear();
 	this->traitsDefIDs.clear();
-	this->dirtyVoxels.clear();
-	this->dirtyVoxelPositions.clear();
+	this->dirtyMeshDefPositions.clear();
+	this->dirtyDoorAnimInstPositions.clear();
+	this->dirtyDoorVisInstPositions.clear();
+	this->dirtyFadeAnimInstPositions.clear();
+	this->dirtyChasmWallInstPositions.clear();
 	this->transitionDefIndices.clear();
 	this->triggerDefIndices.clear();
 	this->lockDefIndices.clear();
@@ -626,8 +699,11 @@ void VoxelChunk::clear()
 
 void VoxelChunk::clearDirtyVoxels()
 {
-	this->dirtyVoxels.fill(false);
-	this->dirtyVoxelPositions.clear();
+	this->dirtyMeshDefPositions.clear();
+	this->dirtyDoorAnimInstPositions.clear();
+	this->dirtyDoorVisInstPositions.clear();
+	this->dirtyFadeAnimInstPositions.clear();
+	this->dirtyChasmWallInstPositions.clear();
 }
 
 void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
@@ -673,6 +749,8 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 					}
 				}
 			}
+
+			this->setDoorAnimInstDirty(voxel.x, voxel.y, voxel.z);
 		}
 		else
 		{
@@ -694,8 +772,6 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 
 			this->doorAnimInsts.erase(this->doorAnimInsts.begin() + i);
 		}
-
-		this->setVoxelDirty(voxel.x, voxel.y, voxel.z);
 	}
 
 	// Update fading voxels.
@@ -782,7 +858,9 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 
 			this->fadeAnimInsts.erase(this->fadeAnimInsts.begin() + i);
 		}
-
-		this->setVoxelDirty(voxel.x, voxel.y, voxel.z);
+		else
+		{
+			this->setFadeAnimInstDirty(voxel.x, voxel.y, voxel.z);
+		}
 	}
 }
