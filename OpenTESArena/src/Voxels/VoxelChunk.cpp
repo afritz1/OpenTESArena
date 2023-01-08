@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <type_traits>
 
 #include "VoxelChunk.h"
 #include "../Audio/AudioManager.h"
@@ -24,6 +25,8 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	this->traitsDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->traitsDefIDs.fill(VoxelChunk::AIR_TRAITS_DEF_ID);
 
+	this->dirtyVoxelTypes.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
 	this->dirtyMeshDefPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
 }
 
@@ -625,43 +628,46 @@ void VoxelChunk::removeChasmWallInst(const VoxelInt3 &voxel)
 	}
 }
 
-void VoxelChunk::trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<VoxelInt3> &dirtyPositions)
+void VoxelChunk::trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<VoxelInt3> &dirtyPositions, VoxelDirtyType dirtyType)
 {
-	const auto iter = std::find_if(dirtyPositions.begin(), dirtyPositions.end(),
-		[x, y, z](const VoxelInt3 &position)
-	{
-		return (position.x == x) && (position.y == y) && (position.z == z);
-	});
+	static_assert(std::is_same_v<std::underlying_type_t<VoxelDirtyType>, uint8_t>);
 
-	if (iter == dirtyPositions.end())
+	const VoxelDirtyType prevDirtyType = this->dirtyVoxelTypes.get(x, y, z);
+	const uint8_t prevFlags = static_cast<uint8_t>(prevDirtyType);
+	const uint8_t flags = static_cast<uint8_t>(dirtyType);
+
+	if ((prevFlags & flags) == 0)
 	{
 		dirtyPositions.emplace_back(VoxelInt3(x, y, z));
+
+		const VoxelDirtyType sumDirtyType = static_cast<VoxelDirtyType>(prevFlags | flags);
+		this->dirtyVoxelTypes.set(x, y, z, sumDirtyType);
 	}
 }
 
 void VoxelChunk::setMeshDefDirty(SNInt x, int y, WEInt z)
 {
-	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyMeshDefPositions);
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyMeshDefPositions, VoxelDirtyType::MeshDefinition);
 }
 
 void VoxelChunk::setDoorAnimInstDirty(SNInt x, int y, WEInt z)
 {
-	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyDoorAnimInstPositions);
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyDoorAnimInstPositions, VoxelDirtyType::DoorAnimation);
 }
 
 void VoxelChunk::setDoorVisInstDirty(SNInt x, int y, WEInt z)
 {
-	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyDoorVisInstPositions);
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyDoorVisInstPositions, VoxelDirtyType::DoorVisibility);
 }
 
 void VoxelChunk::setFadeAnimInstDirty(SNInt x, int y, WEInt z)
 {
-	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyFadeAnimInstPositions);
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyFadeAnimInstPositions, VoxelDirtyType::FadeAnimation);
 }
 
 void VoxelChunk::setChasmWallInstDirty(SNInt x, int y, WEInt z)
 {
-	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyChasmWallInstPositions);
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyChasmWallInstPositions, VoxelDirtyType::ChasmWall);
 }
 
 void VoxelChunk::clear()
@@ -679,6 +685,7 @@ void VoxelChunk::clear()
 	this->meshDefIDs.clear();
 	this->textureDefIDs.clear();
 	this->traitsDefIDs.clear();
+	this->dirtyVoxelTypes.clear();
 	this->dirtyMeshDefPositions.clear();
 	this->dirtyDoorAnimInstPositions.clear();
 	this->dirtyDoorVisInstPositions.clear();
@@ -699,6 +706,7 @@ void VoxelChunk::clear()
 
 void VoxelChunk::clearDirtyVoxels()
 {
+	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
 	this->dirtyMeshDefPositions.clear();
 	this->dirtyDoorAnimInstPositions.clear();
 	this->dirtyDoorVisInstPositions.clear();

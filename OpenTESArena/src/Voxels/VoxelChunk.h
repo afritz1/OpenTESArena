@@ -12,6 +12,7 @@
 #include "ChasmDefinition.h"
 #include "DoorDefinition.h"
 #include "VoxelChasmWallInstance.h"
+#include "VoxelDirtyType.h"
 #include "VoxelDoorAnimationInstance.h"
 #include "VoxelDoorVisibilityInstance.h"
 #include "VoxelFadeAnimationInstance.h"
@@ -64,6 +65,7 @@ private:
 	Buffer3D<VoxelTraitsDefID> traitsDefIDs;
 
 	// Voxels that changed this frame. Reset at end-of-frame.
+	Buffer3D<VoxelDirtyType> dirtyVoxelTypes;
 	std::vector<VoxelInt3> dirtyMeshDefPositions;
 	std::vector<VoxelInt3> dirtyDoorAnimInstPositions;
 	std::vector<VoxelInt3> dirtyDoorVisInstPositions;
@@ -98,7 +100,7 @@ private:
 		VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID);
 
 	// Sets this voxel dirty for geometry updating, etc. if not already.
-	void trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<VoxelInt3> &dirtyPositions);
+	void trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<VoxelInt3> &dirtyPositions, VoxelDirtyType dirtyType);
 	void setMeshDefDirty(SNInt x, int y, WEInt z);
 	void setDoorAnimInstDirty(SNInt x, int y, WEInt z);
 	void setDoorVisInstDirty(SNInt x, int y, WEInt z);
