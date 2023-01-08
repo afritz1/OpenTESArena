@@ -753,8 +753,6 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 					}
 				}
 			}
-
-			this->setDoorAnimInstDirty(voxel.x, voxel.y, voxel.z);
 		}
 		else
 		{
@@ -776,6 +774,8 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 
 			this->doorAnimInsts.erase(this->doorAnimInsts.begin() + i);
 		}
+
+		this->setDoorAnimInstDirty(voxel.x, voxel.y, voxel.z);
 	}
 
 	// Update fading voxels.

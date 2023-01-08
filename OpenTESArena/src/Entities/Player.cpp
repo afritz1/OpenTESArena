@@ -7,6 +7,7 @@
 #include "EntityType.h"
 #include "Player.h"
 #include "PrimaryAttributeName.h"
+#include "../Collision/CollisionChunk.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
@@ -259,6 +260,7 @@ void Player::lookAt(const CoordDouble3 &point)
 void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 {
 	const VoxelChunkManager &voxelChunkManager = activeLevel.getVoxelChunkManager();
+	const CollisionChunkManager &collisionChunkManager = activeLevel.getCollisionChunkManager();
 
 	auto tryGetVoxelTraitsDef = [&activeLevel, &voxelChunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
 	{
@@ -310,7 +312,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 	// -- Temp hack until Y collision detection is implemented --
 	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [&voxelChunkManager](const CoordInt3 &coord, const VoxelTraitsDefinition &voxelTraitsDef)
+	auto wouldCollideWithVoxel = [&voxelChunkManager, &collisionChunkManager](const CoordInt3 &coord, const VoxelTraitsDefinition &voxelTraitsDef)
 	{
 		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
@@ -328,23 +330,22 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 		}
 		else
 		{
-			const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(coord.chunk);
+			const ChunkInt2 &chunkPos = coord.chunk;
+			const VoxelInt3 &voxelPos = coord.voxel;
+			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+			const CollisionChunk &collisionChunk = collisionChunkManager.getChunkAtPosition(chunkPos);
 
 			// General voxel collision.
-			const bool isEmpty = voxelType == ArenaTypes::VoxelType::None;
-			const bool isOpenDoor = [&coord, voxelType, &chunk]()
+			const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.meshDefIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
+			const CollisionMeshDefinition &collisionMeshDef = collisionChunk.getCollisionMeshDef(collisionMeshDefID);
+			const bool isEmpty = collisionMeshDef.vertices.getCount() == 0;
+
+			// @todo: don't check that it's a door, just check the collision chunk directly for everything (it should be data-driven, not type-driven).
+			const bool isOpenDoor = [voxelType, &voxelPos, &collisionChunk]()
 			{
 				if (voxelType == ArenaTypes::VoxelType::Door)
 				{
-					const VoxelInt3 &voxel = coord.voxel;
-					int doorAnimInstIndex;
-					if (!chunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex))
-					{
-						return false;
-					}
-
-					const VoxelDoorAnimationInstance &doorAnimInst = chunk.getDoorAnimInst(doorAnimInstIndex);
-					return doorAnimInst.stateType != VoxelDoorAnimationInstance::StateType::Closed;
+					return !collisionChunk.enabledColliders.get(voxelPos.x, voxelPos.y, voxelPos.z);
 				}
 				else
 				{
@@ -354,7 +355,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - @todo: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelTransition = [&coord, voxelType, &chunk]()
+			const bool isLevelTransition = [&coord, voxelType, &voxelChunk]()
 			{
 				if (voxelType == ArenaTypes::VoxelType::Wall)
 				{
@@ -362,12 +363,12 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 
 					// Check if there is a level change transition definition for this voxel.
 					VoxelChunk::TransitionDefID transitionDefID;
-					if (!chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
+					if (!voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 					{
 						return false;
 					}
 
-					const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
+					const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
 					return transitionDef.getType() == TransitionType::LevelChange;
 				}
 				else

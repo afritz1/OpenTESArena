@@ -8,6 +8,7 @@ void CollisionChunk::init(const ChunkInt2 &position, int height)
 
 	// Let the first definition (air) be usable immediately. All default IDs can safely point to it.
 	this->meshDefs.emplace_back(CollisionMeshDefinition());
+	this->meshMappings.emplace(VoxelChunk::AIR_MESH_DEF_ID, CollisionChunk::AIR_COLLISION_MESH_DEF_ID);
 
 	this->meshDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->meshDefIDs.fill(CollisionChunk::AIR_COLLISION_MESH_DEF_ID);
