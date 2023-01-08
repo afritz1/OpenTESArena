@@ -356,21 +356,17 @@ const VoxelFadeAnimationInstance &VoxelChunk::getFadeAnimInst(int index) const
 
 bool VoxelChunk::tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
 {
-	const auto iter = std::find_if(this->fadeAnimInsts.begin(), this->fadeAnimInsts.end(),
-		[x, y, z](const VoxelFadeAnimationInstance &animInst)
+	for (int i = 0; i < static_cast<int>(this->fadeAnimInsts.size()); i++)
 	{
-		return (animInst.x == x) && (animInst.y == y) && (animInst.z == z);
-	});
+		const VoxelFadeAnimationInstance &inst = this->fadeAnimInsts[i];
+		if ((inst.x == x) && (inst.y == y) && (inst.z == z))
+		{
+			*outIndex = i;
+			return true;
+		}
+	}
 
-	if (iter != this->fadeAnimInsts.end())
-	{
-		*outIndex = static_cast<int>(std::distance(this->fadeAnimInsts.begin(), iter));
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
 int VoxelChunk::getChasmWallInstCount() const
