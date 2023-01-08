@@ -970,24 +970,21 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 					{
 						DebugAssert(voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm);
 						const bool isAnimatingChasm = voxelTraitsDef.chasm.type != ArenaTypes::ChasmType::Dry;
+						const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
 
-						if ((!isAnimatingChasm && updateStatics) || (isAnimatingChasm && updateAnimating))
-						{
-							const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
+						// Need to give two textures since chasm walls are multi-textured.
+						ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
+						ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
-							// Need to give two textures since chasm walls are multi-textured.
-							ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
-							ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
-
-							const Double3 preScaleTranslation = Double3::Zero;
-							const Matrix4d rotationMatrix = Matrix4d::identity();
-							const Matrix4d scaleMatrix = Matrix4d::identity();
-							constexpr double pixelShaderParam0 = 0.0;
-							this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
-								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
-								TextureSamplingType::ScreenSpaceRepeatY, VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
-								pixelShaderParam0, renderChunk.chasmDrawCalls);
-						}
+						const Double3 preScaleTranslation = Double3::Zero;
+						const Matrix4d rotationMatrix = Matrix4d::identity();
+						const Matrix4d scaleMatrix = Matrix4d::identity();
+						const TextureSamplingType textureSamplingType = isAnimatingChasm ? TextureSamplingType::ScreenSpaceRepeatY : TextureSamplingType::Default;
+						constexpr double pixelShaderParam0 = 0.0;
+						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
+							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
+							textureSamplingType, VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
+							pixelShaderParam0, renderChunk.chasmDrawCalls);
 					}
 				}
 			}
