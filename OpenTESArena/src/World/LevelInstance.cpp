@@ -166,7 +166,7 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 	const ChunkInt2 &centerChunkPos = playerCoord.chunk;
 	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
 		mapDefinition, this->ceilingScale, audioManager);
-	this->collisionChunkManager.update(dt, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
+	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
 
 	for (int i = 0; i < freedChunkPositions.getCount(); i++)
 	{

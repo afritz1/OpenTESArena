@@ -15,8 +15,9 @@ private:
 	// @todo: dynamic collision meshes for entities (stored globally here, not per-chunk)
 
 	void populateChunk(int index, const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk);
+	void updateDirtyVoxels(const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk);
 public:
-	void update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
+	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
 		const BufferView<const ChunkInt2> &freedChunkPositions, const VoxelChunkManager &voxelChunkManager);
 };
 

@@ -235,7 +235,7 @@ namespace Physics
 			return false;
 		}
 
-		if (!collisionChunk->isColliderEnabled(voxel.x, voxel.y, voxel.z))
+		if (!collisionChunk->enabledColliders.get(voxel.x, voxel.y, voxel.z))
 		{
 			// Collider is not turned on.
 			return false;
@@ -245,7 +245,7 @@ namespace Physics
 		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
 		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
 
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->getCollisionMeshDefID(voxel.x, voxel.y, voxel.z);
+		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
 		const BufferView<const double> verticesView(collisionMeshDef.vertices.get(), collisionMeshDef.vertices.getCount());
 		const BufferView<const double> normalsView(collisionMeshDef.normals.get(), collisionMeshDef.normals.getCount());
@@ -338,7 +338,7 @@ namespace Physics
 			return false;
 		}
 
-		if (!collisionChunk->isColliderEnabled(voxel.x, voxel.y, voxel.z))
+		if (!collisionChunk->enabledColliders.get(voxel.x, voxel.y, voxel.z))
 		{
 			// Collider is not turned on.
 			return false;
@@ -348,7 +348,7 @@ namespace Physics
 		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
 		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
 
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->getCollisionMeshDefID(voxel.x, voxel.y, voxel.z);
+		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
 		const BufferView<const double> verticesView(collisionMeshDef.vertices.get(), collisionMeshDef.vertices.getCount());
 		const BufferView<const double> normalsView(collisionMeshDef.normals.get(), collisionMeshDef.normals.getCount());

@@ -20,6 +20,7 @@ void CollisionChunk::clear()
 {
 	Chunk::clear();
 	this->meshDefs.clear();
+	this->meshMappings.clear();
 	this->meshDefIDs.clear();
 	this->enabledColliders.clear();
 }
@@ -42,22 +43,28 @@ CollisionChunk::CollisionMeshDefID CollisionChunk::addCollisionMeshDef(Collision
 	return id;
 }
 
-CollisionChunk::CollisionMeshDefID CollisionChunk::getCollisionMeshDefID(SNInt x, int y, WEInt z) const
+CollisionChunk::CollisionMeshDefID CollisionChunk::getOrAddMeshDefIdMapping(const VoxelChunk &voxelChunk,
+	VoxelChunk::VoxelMeshDefID voxelMeshDefID)
 {
-	return this->meshDefIDs.get(x, y, z);
-}
+	CollisionChunk::CollisionMeshDefID collisionMeshDefID = -1;
 
-void CollisionChunk::setCollisionMeshDefID(SNInt x, int y, WEInt z, CollisionMeshDefID id)
-{
-	this->meshDefIDs.set(x, y, z, id);
-}
+	const auto iter = this->meshMappings.find(voxelMeshDefID);
+	if (iter != this->meshMappings.end())
+	{
+		collisionMeshDefID = iter->second;
+	}
+	else
+	{
+		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
+		const BufferView<const double> verticesView(voxelMeshDef.collisionVertices.data(), static_cast<int>(voxelMeshDef.collisionVertices.size()));
+		const BufferView<const double> normalsView(voxelMeshDef.collisionNormals.data(), static_cast<int>(voxelMeshDef.collisionNormals.size()));
+		const BufferView<const int> indicesView(voxelMeshDef.collisionIndices.data(), static_cast<int>(voxelMeshDef.collisionIndices.size()));
 
-bool CollisionChunk::isColliderEnabled(SNInt x, int y, WEInt z) const
-{
-	return this->enabledColliders.get(x, y, z);
-}
+		CollisionMeshDefinition collisionMeshDef;
+		collisionMeshDef.init(verticesView, normalsView, indicesView);
+		collisionMeshDefID = this->addCollisionMeshDef(std::move(collisionMeshDef));
+		this->meshMappings.emplace(voxelMeshDefID, collisionMeshDefID);
+	}
 
-void CollisionChunk::setColliderEnabled(SNInt x, int y, WEInt z, bool enabled)
-{
-	this->enabledColliders.set(x, y, z, enabled);
+	return collisionMeshDefID;
 }
