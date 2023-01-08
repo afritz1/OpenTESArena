@@ -105,6 +105,12 @@ private:
 	void loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer);
 	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale, Renderer &renderer);
 	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &chunk);
+
+	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
+		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
+		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
+		TextureSamplingType textureSamplingType, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
+		double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
 	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 public:
