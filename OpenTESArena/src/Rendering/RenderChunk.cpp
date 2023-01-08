@@ -12,15 +12,12 @@ void RenderChunk::init(const ChunkInt2 &position, int height)
 	this->meshDefIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->chasmWallIndexBufferIDs.clear();
 	this->staticDrawCalls.clear();
-	this->animatingDrawCalls.clear();
+	this->doorDrawCalls.clear();
+	this->chasmDrawCalls.clear();
+	this->fadingDrawCalls.clear();
 
 	// Add empty mesh instance for air.
 	this->addMeshDefinition(RenderVoxelMeshDefinition());
-}
-
-void RenderChunk::update()
-{
-	DebugNotImplemented();
 }
 
 RenderVoxelMeshDefID RenderChunk::addMeshDefinition(RenderVoxelMeshDefinition &&meshDef)

@@ -644,7 +644,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 		AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
 		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
 		TextureSamplingType textureSamplingType, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
-		double pixelShaderParam0, bool canAnimate)
+		double pixelShaderParam0, bool isDoor, bool isChasm, bool isFading)
 	{
 		RenderDrawCall drawCall;
 		drawCall.position = position;
@@ -662,14 +662,25 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = pixelShaderParam0;
 
-		if (!canAnimate)
+		std::vector<RenderDrawCall> *drawCalls = nullptr;
+		if (isDoor)
 		{
-			renderChunk.staticDrawCalls.emplace_back(std::move(drawCall));
+			drawCalls = &renderChunk.doorDrawCalls;
+		}
+		else if (isChasm)
+		{
+			drawCalls = &renderChunk.chasmDrawCalls;
+		}
+		else if (isFading)
+		{
+			drawCalls = &renderChunk.fadingDrawCalls;
 		}
 		else
 		{
-			renderChunk.animatingDrawCalls.emplace_back(std::move(drawCall));
+			drawCalls = &renderChunk.staticDrawCalls;
 		}
+
+		drawCalls->emplace_back(std::move(drawCall));
 	};
 
 	const ChunkInt2 &chunkPos = renderChunk.getPosition();
@@ -711,11 +722,11 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 				const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
-				VoxelChunk::ChasmDefID chasmDefID;
-				const bool usesVoxelTextures = !chunk.tryGetChasmDefID(x, y, z, &chasmDefID);
-
 				VoxelChunk::DoorDefID doorDefID;
 				const bool isDoor = chunk.tryGetDoorDefID(x, y, z, &doorDefID);
+
+				VoxelChunk::ChasmDefID chasmDefID;
+				const bool isChasm = chunk.tryGetChasmDefID(x, y, z, &chasmDefID);
 
 				int fadeAnimInstIndex;
 				const VoxelFadeAnimationInstance *fadeAnimInst = nullptr;
@@ -725,14 +736,14 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 					fadeAnimInst = &chunk.getFadeAnimInst(fadeAnimInstIndex);
 				}
 
-				const bool canAnimate = !usesVoxelTextures || isDoor || isFading;
+				const bool canAnimate = isDoor || isChasm || isFading;
 				if ((!canAnimate && updateStatics) || (canAnimate && updateAnimating))
 				{
 					for (int bufferIndex = 0; bufferIndex < renderMeshDef.opaqueIndexBufferIdCount; bufferIndex++)
 					{
 						ObjectTextureID textureID = -1;
 
-						if (usesVoxelTextures)
+						if (!isChasm)
 						{
 							const int textureAssetIndex = sgTexture::GetVoxelOpaqueTextureAssetIndex(voxelType, bufferIndex);
 							const auto voxelTextureIter = std::find_if(this->voxelTextures.begin(), this->voxelTextures.end(),
@@ -764,7 +775,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const Double3 preScaleTranslation = Double3::Zero;
 						const Matrix4d rotationMatrix = Matrix4d::identity();
 						const Matrix4d scaleMatrix = Matrix4d::identity();
-						const TextureSamplingType textureSamplingType = usesVoxelTextures ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
+						const TextureSamplingType textureSamplingType = !isChasm ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
 						
 						PixelShaderType pixelShaderType = PixelShaderType::Opaque;
 						double pixelShaderParam0 = 0.0;
@@ -776,7 +787,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 						addDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
-							textureSamplingType, VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, canAnimate);
+							textureSamplingType, VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, isDoor, isChasm, isFading);
 					}
 				}
 
@@ -784,7 +795,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 				{
 					if (updateStatics || (updateAnimating && isDoor))
 					{
-						DebugAssert(usesVoxelTextures);
+						DebugAssert(!isChasm);
 						ObjectTextureID textureID = -1;
 
 						const int textureAssetIndex = sgTexture::GetVoxelAlphaTestedTextureAssetIndex(voxelType);
@@ -873,7 +884,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									addDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, TextureSamplingType::Default,
-										VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested, pixelShaderParam0, canAnimate);
+										VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested, pixelShaderParam0, isDoor, isChasm, isFading);
 								}
 
 								break;
@@ -901,7 +912,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, TextureSamplingType::Default,
 										VertexShaderType::SlidingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, pixelShaderParam0,
-										canAnimate);
+										isDoor, isChasm, isFading);
 								}
 
 								break;
@@ -930,7 +941,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, TextureSamplingType::Default,
 										VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, pixelShaderParam0,
-										canAnimate);
+										isDoor, isChasm, isFading);
 								}
 
 								break;
@@ -953,12 +964,12 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							addDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID,
 								textureID, std::nullopt, TextureSamplingType::Default, VertexShaderType::Voxel, PixelShaderType::AlphaTested,
-								pixelShaderParam0, canAnimate);
+								pixelShaderParam0, isDoor, isChasm, isFading);
 						}
 					}
 				}
 
-				if (!usesVoxelTextures)
+				if (isChasm)
 				{
 					const auto chasmWallIter = renderChunk.chasmWallIndexBufferIDs.find(voxel);
 					if (chasmWallIter != renderChunk.chasmWallIndexBufferIDs.end())
@@ -981,7 +992,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							addDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
 								TextureSamplingType::ScreenSpaceRepeatY, VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
-								pixelShaderParam0, isAnimatingChasm);
+								pixelShaderParam0, isDoor, isChasm, isFading);
 						}
 					}
 				}
@@ -1022,7 +1033,9 @@ void RenderChunkManager::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk
 
 	if (updateAnimating)
 	{
-		renderChunk.animatingDrawCalls.clear();
+		renderChunk.doorDrawCalls.clear();
+		renderChunk.chasmDrawCalls.clear();
+		renderChunk.fadingDrawCalls.clear();
 	}
 
 	this->loadVoxelDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
@@ -1053,9 +1066,13 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 	{
 		const RenderChunk &renderChunk = this->renderChunks[i];
 		const std::vector<RenderDrawCall> &staticDrawCalls = renderChunk.staticDrawCalls;
-		const std::vector<RenderDrawCall> &animatingDrawCalls = renderChunk.animatingDrawCalls;
+		const std::vector<RenderDrawCall> &doorDrawCalls = renderChunk.doorDrawCalls;
+		const std::vector<RenderDrawCall> &chasmDrawCalls = renderChunk.chasmDrawCalls;
+		const std::vector<RenderDrawCall> &fadingDrawCalls = renderChunk.fadingDrawCalls;
 		this->drawCallsCache.insert(this->drawCallsCache.end(), staticDrawCalls.begin(), staticDrawCalls.end());
-		this->drawCallsCache.insert(this->drawCallsCache.end(), animatingDrawCalls.begin(), animatingDrawCalls.end());
+		this->drawCallsCache.insert(this->drawCallsCache.end(), doorDrawCalls.begin(), doorDrawCalls.end());
+		this->drawCallsCache.insert(this->drawCallsCache.end(), chasmDrawCalls.begin(), chasmDrawCalls.end());
+		this->drawCallsCache.insert(this->drawCallsCache.end(), fadingDrawCalls.begin(), fadingDrawCalls.end());
 	}
 }
 
