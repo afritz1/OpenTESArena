@@ -45,9 +45,9 @@ namespace CitizenUtils
 	};
 
 	// Helper functions for determining a citizen's walking direction.
-	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, NewDouble2 *outDirection);
+	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection);
 	CardinalDirectionName getCitizenDirectionNameByIndex(int index);
-	NewDouble2 getCitizenDirectionByIndex(int index);
+	WorldDouble2 getCitizenDirectionByIndex(int index);
 	int getRandomCitizenDirectionIndex(Random &random);
 
 	// Gets the number of citizens active in the world.

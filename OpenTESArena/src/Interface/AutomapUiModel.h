@@ -10,7 +10,7 @@ namespace AutomapUiModel
 	Double2 makeAutomapOffset(const VoxelInt2 &playerVoxel);
 
 	// Helper function for obtaining relative wild origin in new coordinate system.
-	NewInt2 makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
+	WorldInt2 makeRelativeWildOrigin(const WorldInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
 }
 
 #endif

@@ -91,32 +91,32 @@ bool RendererUtils::isChasmEmissive(ArenaTypes::ChasmType chasmType)
 	}
 }
 
-void RendererUtils::getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outTopLeftCorner,
-	NewDouble2 *outTopRightCorner, NewDouble2 *outBottomLeftCorner, NewDouble2 *outBottomRightCorner)
+void RendererUtils::getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outTopLeftCorner,
+	WorldDouble2 *outTopRightCorner, WorldDouble2 *outBottomLeftCorner, WorldDouble2 *outBottomRightCorner)
 {
 	// In the +X south/+Z west coordinate system, the top right of a voxel is its origin.
-	*outTopRightCorner = NewDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
+	*outTopRightCorner = WorldDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
 	*outTopLeftCorner = *outTopRightCorner + CardinalDirection::West;
 	*outBottomRightCorner = *outTopRightCorner + CardinalDirection::South;
 	*outBottomLeftCorner = *outTopRightCorner + CardinalDirection::West + CardinalDirection::South;
 }
 
-void RendererUtils::getDiag1Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outStart,
-	NewDouble2 *outMiddle, NewDouble2 *outEnd)
+void RendererUtils::getDiag1Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
+	WorldDouble2 *outMiddle, WorldDouble2 *outEnd)
 {
 	// Top right to bottom left.
-	const NewDouble2 diff = CardinalDirection::South + CardinalDirection::West;
-	*outStart = NewDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
+	const WorldDouble2 diff = CardinalDirection::South + CardinalDirection::West;
+	*outStart = WorldDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
 	*outMiddle = *outStart + (diff * 0.50);
 	*outEnd = *outStart + (diff * Constants::JustBelowOne);
 }
 
-void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outStart,
-	NewDouble2 *outMiddle, NewDouble2 *outEnd)
+void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
+	WorldDouble2 *outMiddle, WorldDouble2 *outEnd)
 {
 	// Bottom right to top left.
-	const NewDouble2 diff = CardinalDirection::North + CardinalDirection::West;
-	*outStart = NewDouble2(
+	const WorldDouble2 diff = CardinalDirection::North + CardinalDirection::West;
+	*outStart = WorldDouble2(
 		static_cast<SNDouble>(voxelX) + Constants::JustBelowOne,
 		static_cast<WEDouble>(voxelZ));
 	*outMiddle = *outStart + (diff * 0.50);

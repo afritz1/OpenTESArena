@@ -213,7 +213,7 @@ bool Player::onGround(const LevelInstance &activeLevel) const
 	/*const double feetY = this->getFeetY();
 	const double feetVoxelYPos = std::floor(feetY);
 	const bool closeEnoughToLowerVoxel = std::abs(feetY - feetVoxelYPos) < EPSILON;
-	const NewInt3 feetVoxel(
+	const WorldInt3 feetVoxel(
 		static_cast<int>(std::floor(this->camera.position.x)),
 		static_cast<int>(feetVoxelYPos) - (closeEnoughToLowerVoxel ? 1 : 0),
 		static_cast<int>(std::floor(this->camera.position.z)));
@@ -415,7 +415,7 @@ void Player::setFrictionToStatic()
 void Player::setDirectionToHorizon()
 {
 	const CoordDouble3 &coord = this->getPosition();
-	const NewDouble2 groundDirection = this->getGroundDirection();
+	const WorldDouble2 groundDirection = this->getGroundDirection();
 	const VoxelDouble3 lookAtPoint = coord.point + VoxelDouble3(groundDirection.x, 0.0, groundDirection.y);
 	const CoordDouble3 lookAtCoord(coord.chunk, lookAtPoint);
 	this->lookAt(lookAtCoord);

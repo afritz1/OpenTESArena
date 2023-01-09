@@ -179,13 +179,13 @@ namespace Physics
 		const Entity &entity = *visState.entity;
 
 		// Do a ray test to see if the ray intersects.
-		const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayPoint);
-		const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(visState.flatPosition);
-		NewDouble3 absoluteHitPoint;
+		const WorldDouble3 absoluteRayPoint = VoxelUtils::coordToWorldPoint(rayPoint);
+		const WorldDouble3 absoluteFlatPosition = VoxelUtils::coordToWorldPoint(visState.flatPosition);
+		WorldDouble3 absoluteHitPoint;
 		if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition,
 			entityForward, &absoluteHitPoint))
 		{
-			const NewDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
+			const WorldDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
 
 			// Get the texture coordinates. It's okay if they are outside the entity.
 			const Double2 uv(
@@ -203,7 +203,7 @@ namespace Physics
 			// The entity's projected rectangle is hit if the texture coordinates are valid.
 			const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
 
-			*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
+			*outHitPoint = VoxelUtils::worldPointToCoord(absoluteHitPoint);
 			return withinEntity;
 		}
 		else

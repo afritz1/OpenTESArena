@@ -23,9 +23,9 @@ enum class CardinalDirectionName;
 class DynamicEntity final : public Entity
 {
 private:
-	NewDouble2 direction;
-	NewDouble2 velocity;
-	std::optional<NewDouble2> destination;
+	WorldDouble2 direction;
+	WorldDouble2 velocity;
+	std::optional<WorldDouble2> destination;
 	double secondsTillCreatureSound;
 	DynamicEntityType derivedType;
 
@@ -61,17 +61,17 @@ public:
 	void initCitizen(EntityDefID defID, const EntityAnimationInstance &animInst,
 		CardinalDirectionName direction);
 	void initCreature(EntityDefID defID, const EntityAnimationInstance &animInst,
-		const NewDouble2 &direction, Random &random);
+		const WorldDouble2 &direction, Random &random);
 	void initProjectile(EntityDefID defID, const EntityAnimationInstance &animInst,
-		const NewDouble2 &direction);
+		const WorldDouble2 &direction);
 
 	EntityType getEntityType() const override;
 	DynamicEntityType getDerivedType() const;
-	const NewDouble2 &getDirection() const;
-	const NewDouble2 &getVelocity() const;
-	const NewDouble2 *getDestination() const;
+	const WorldDouble2 &getDirection() const;
+	const WorldDouble2 &getVelocity() const;
+	const WorldDouble2 *getDestination() const;
 
-	void setDirection(const NewDouble2 &direction);
+	void setDirection(const WorldDouble2 &direction);
 
 	// Turns the camera around the global up vector by the given degrees.
 	void rotate(double degrees);
@@ -82,8 +82,8 @@ public:
 	// Sets the entity's pathfinding destination and they will attempt to move towards
 	// it each frame depending on their AI. If the given point is null, their destination
 	// is reset.
-	void setDestination(const NewDouble2 *point, double minDistance);
-	void setDestination(const NewDouble2 *point);
+	void setDestination(const WorldDouble2 *point, double minDistance);
+	void setDestination(const WorldDouble2 *point);
 
 	void reset() override;
 	void tick(Game &game, double dt) override;

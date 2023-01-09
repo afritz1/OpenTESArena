@@ -743,7 +743,7 @@ void EntityManager::getEntityVisibilityState2D(const Entity &entity, const Coord
 		{
 			// Dynamic entities are angle-dependent.
 			const DynamicEntity &dynamicEntity = static_cast<const DynamicEntity&>(entity);
-			const NewDouble2 &entityDir = dynamicEntity.getDirection();
+			const WorldDouble2 &entityDir = dynamicEntity.getDirection();
 			const VoxelDouble2 diffDir = (eye2D - dynamicEntity.getPosition()).normalized();
 
 			const Radians entityAngle = MathUtils::fullAtan2(entityDir);

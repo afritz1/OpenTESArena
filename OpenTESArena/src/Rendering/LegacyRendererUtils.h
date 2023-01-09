@@ -34,50 +34,50 @@ namespace LegacyRendererUtils
 	/*// Gathers potential intersection data from a voxel containing a "diagonal 1" ID; the 
 	// diagonal starting at (nearX, nearZ) and ending at (farX, farZ). Returns whether an 
 	// intersection occurred within the voxel.
-	bool findDiag1Intersection(const CoordInt2 &coord, const NewDouble2 &nearPoint,
-		const NewDouble2 &farPoint, RayHit &hit);
+	bool findDiag1Intersection(const CoordInt2 &coord, const WorldDouble2 &nearPoint,
+		const WorldDouble2 &farPoint, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a "diagonal 2" ID; the
 	// diagonal starting at (farX, nearZ) and ending at (nearX, farZ). Returns whether an
 	// intersection occurred within the voxel.
-	bool findDiag2Intersection(const CoordInt2 &coord, const NewDouble2 &nearPoint,
-		const NewDouble2 &farPoint, RayHit &hit);
+	bool findDiag2Intersection(const CoordInt2 &coord, const WorldDouble2 &nearPoint,
+		const WorldDouble2 &farPoint, RayHit &hit);
 
 	// Gathers potential intersection data from an initial voxel containing an edge ID. The
 	// facing determines which edge of the voxel an intersection can occur on.
 	bool findInitialEdgeIntersection(const CoordInt2 &coord, VoxelFacing2D edgeFacing,
-		bool flipped, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, const Camera &camera,
+		bool flipped, const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint, const Camera &camera,
 		const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing an edge ID. The facing
 	// determines which edge of the voxel an intersection can occur on. This function is separate
 	// from the initial case since it's a trivial solution when the edge and near facings match.
 	bool findEdgeIntersection(const CoordInt2 &coord, VoxelFacing2D edgeFacing,
-		bool flipped, VoxelFacing2D nearFacing, const NewDouble2 &nearPoint,
-		const NewDouble2 &farPoint, double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
+		bool flipped, VoxelFacing2D nearFacing, const WorldDouble2 &nearPoint,
+		const WorldDouble2 &farPoint, double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
 
 	// Helper method for findInitialDoorIntersection() for swinging doors.
 	bool findInitialSwingingDoorIntersection(const CoordInt2 &coord, double percentOpen,
-		const NewDouble2 &nearPoint, const NewDouble2 &farPoint, bool xAxis, const Camera &camera,
+		const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint, bool xAxis, const Camera &camera,
 		const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection.
 	bool findInitialDoorIntersection(const CoordInt2 &coord, ArenaTypes::DoorType doorType,
-		double percentOpen, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, const Camera &camera,
+		double percentOpen, const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint, const Camera &camera,
 		const Ray &ray, const ChunkManager &chunkManager, RayHit &hit);
 
 	// Helper method for findDoorIntersection() for swinging doors.
 	bool findSwingingDoorIntersection(const CoordInt2 &coord, double percentOpen,
-		VoxelFacing2D nearFacing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+		VoxelFacing2D nearFacing, const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint,
 		double nearU, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection. Raising doors
 	// are always hit, so they do not need a specialized method.
 	bool findDoorIntersection(const CoordInt2 &coord, ArenaTypes::DoorType doorType,
-		double percentOpen, VoxelFacing2D nearFacing, const NewDouble2 &nearPoint,
-		const NewDouble2 &farPoint, double nearU, RayHit &hit);*/
+		double percentOpen, VoxelFacing2D nearFacing, const WorldDouble2 &nearPoint,
+		const WorldDouble2 &farPoint, double nearU, RayHit &hit);*/
 
 	// Low-level fog matrix sampling function.
 	template <int TextureWidth, int TextureHeight>

@@ -152,7 +152,7 @@ namespace MapGeneration
 		const LevelInt3 &position, int menuID, uint32_t rulerSeed, const std::optional<bool> &rulerIsMale,
 		bool palaceIsMainQuestDungeon, ArenaTypes::CityType cityType, MapType mapType, const ExeData &exeData)
 	{
-		const OriginalInt2 originalPos = VoxelUtils::newVoxelToOriginalVoxel(NewInt2(position.x, position.z));
+		const OriginalInt2 originalPos = VoxelUtils::worldVoxelToOriginalVoxel(WorldInt2(position.x, position.z));
 		std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(originalPos.x, originalPos.y, menuID,
 			rulerSeed, palaceIsMainQuestDungeon, cityType, mapType, exeData);
 
@@ -850,7 +850,7 @@ namespace MapGeneration
 	LockDefinition makeLockDefFromArenaLock(const ArenaTypes::MIFLock &lock)
 	{
 		const OriginalInt2 lockPos(lock.x, lock.y);
-		const LevelInt2 newLockPos = VoxelUtils::originalVoxelToNewVoxel(lockPos);
+		const LevelInt2 newLockPos = VoxelUtils::originalVoxelToWorldVoxel(lockPos);
 		return LockDefinition::makeLeveledLock(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
 	}
 
@@ -858,7 +858,7 @@ namespace MapGeneration
 		const INFFile &inf)
 	{
 		const OriginalInt2 triggerPos(trigger.x, trigger.y);
-		const LevelInt2 newTriggerPos = VoxelUtils::originalVoxelToNewVoxel(triggerPos);
+		const LevelInt2 newTriggerPos = VoxelUtils::originalVoxelToWorldVoxel(triggerPos);
 
 		VoxelTriggerDefinition triggerDef;
 		triggerDef.init(newTriggerPos.x, 1, newTriggerPos.y);
@@ -2463,7 +2463,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	const OriginalInt2 startPoint(
 		ArenaInteriorUtils::offsetLevelChangeVoxel(firstTransitionChunkX),
 		ArenaInteriorUtils::offsetLevelChangeVoxel(firstTransitionChunkZ));
-	*outStartPoint = VoxelUtils::originalVoxelToNewVoxel(startPoint);
+	*outStartPoint = VoxelUtils::originalVoxelToWorldVoxel(startPoint);
 }
 
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,

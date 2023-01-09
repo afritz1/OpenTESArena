@@ -508,7 +508,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 				const WEInt levelDepth = levelDefinition.getDepth();
 
 				// Convert chunk voxel to level voxel, then wrap that between 0 and level width/depth.
-				const LevelInt2 levelVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunkPos, VoxelInt2(x, z));
+				const LevelInt2 levelVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt2(x, z));
 				const LevelInt2 wrappedLevelVoxel(
 					wrapLevelVoxel(levelVoxel.x, levelWidth),
 					wrapLevelVoxel(levelVoxel.y, levelDepth));

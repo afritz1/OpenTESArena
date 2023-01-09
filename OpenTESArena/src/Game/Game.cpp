@@ -792,8 +792,8 @@ void Game::loop()
 				this->gameState.tick(timeScaledDt, *this);
 
 				// Update audio listener and check for finished sounds.
-				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(playerCoord);
-				const NewDouble3 &direction = this->player.getDirection();
+				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
+				const WorldDouble3 &direction = this->player.getDirection();
 				const AudioManager::ListenerData listenerData(absolutePosition, direction);
 				this->audioManager.update(dt, &listenerData);
 			}

@@ -295,12 +295,12 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 	if (result.side != SearchResult::Side::None)
 	{
 		// The direction to step from a palace voxel to the other palace voxel.
-		const NewInt2 northSouthPalaceStep = VoxelUtils::West;
-		const NewInt2 eastWestPalaceStep = VoxelUtils::South;
+		const WorldInt2 northSouthPalaceStep = VoxelUtils::West;
+		const WorldInt2 eastWestPalaceStep = VoxelUtils::South;
 
 		// Gets the distance in voxels from a palace voxel to its gate, or -1 if no gate exists.
 		constexpr int NO_GATE = -1;
-		auto getGateDistance = [&getMap1Voxel, NO_GATE](const NewInt2 &palaceVoxel, const NewInt2 &dir)
+		auto getGateDistance = [&getMap1Voxel, NO_GATE](const WorldInt2 &palaceVoxel, const WorldInt2 &dir)
 		{
 			auto isGateBlock = [&getMap1Voxel](SNInt x, WEInt z)
 			{
@@ -314,7 +314,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 			constexpr int MAX_GATE_DIST = 8;
 
 			int i = 0;
-			NewInt2 position = palaceVoxel;
+			WorldInt2 position = palaceVoxel;
 			while ((i < MAX_GATE_DIST) && !isGateBlock(position.x, position.y))
 			{
 				position = position + dir;
@@ -325,14 +325,14 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 		};
 
 		// Set the positions of the two palace voxels and the two gate voxels.
-		NewInt2 firstPalaceVoxel, secondPalaceVoxel, firstGateVoxel, secondGateVoxel;
+		WorldInt2 firstPalaceVoxel, secondPalaceVoxel, firstGateVoxel, secondGateVoxel;
 		ArenaTypes::VoxelID firstPalaceVoxelID, secondPalaceVoxelID, gateVoxelID;
 		int gateDist;
 		if (result.side == SearchResult::Side::North)
 		{
-			firstPalaceVoxel = NewInt2(0, result.offset);
+			firstPalaceVoxel = WorldInt2(0, result.offset);
 			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
-			const NewInt2 gateDir = VoxelUtils::South;
+			const WorldInt2 gateDir = VoxelUtils::South;
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
@@ -342,9 +342,9 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 		}
 		else if (result.side == SearchResult::Side::South)
 		{
-			firstPalaceVoxel = NewInt2(gridWidth - 1, result.offset);
+			firstPalaceVoxel = WorldInt2(gridWidth - 1, result.offset);
 			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
-			const NewInt2 gateDir = VoxelUtils::North;
+			const WorldInt2 gateDir = VoxelUtils::North;
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
@@ -354,9 +354,9 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 		}
 		else if (result.side == SearchResult::Side::East)
 		{
-			firstPalaceVoxel = NewInt2(result.offset, 0);
+			firstPalaceVoxel = WorldInt2(result.offset, 0);
 			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
-			const NewInt2 gateDir = VoxelUtils::West;
+			const WorldInt2 gateDir = VoxelUtils::West;
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;
@@ -366,9 +366,9 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 		}
 		else if (result.side == SearchResult::Side::West)
 		{
-			firstPalaceVoxel = NewInt2(result.offset, gridDepth - 1);
+			firstPalaceVoxel = WorldInt2(result.offset, gridDepth - 1);
 			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
-			const NewInt2 gateDir = VoxelUtils::East;
+			const WorldInt2 gateDir = VoxelUtils::East;
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;

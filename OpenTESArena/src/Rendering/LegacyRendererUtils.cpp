@@ -34,12 +34,12 @@ Double3 LegacyRendererUtils::getThunderstormFlashColor(double flashPercent, cons
 	return color.lerp(nextColor, percent);
 }
 
-/*bool LegacyRendererUtils::findDiag1Intersection(const CoordInt2 &coord, const NewDouble2 &nearPoint,
-	const NewDouble2 &farPoint, RayHit &hit)
+/*bool LegacyRendererUtils::findDiag1Intersection(const CoordInt2 &coord, const WorldDouble2 &nearPoint,
+	const WorldDouble2 &farPoint, RayHit &hit)
 {
 	// Start, middle, and end points of the diagonal line segment relative to the grid.
-	const NewInt2 absoluteVoxel = VoxelUtils::coordToNewVoxel(coord);
-	NewDouble2 diagStart, diagMiddle, diagEnd;
+	const WorldInt2 absoluteVoxel = VoxelUtils::coordToWorldVoxel(coord);
+	WorldDouble2 diagStart, diagMiddle, diagEnd;
 	RendererUtils::getDiag1Points2D(absoluteVoxel.x, absoluteVoxel.y, &diagStart, &diagMiddle, &diagEnd);
 
 	// Normals for the left and right faces of the wall, facing down-right and up-left
@@ -51,7 +51,7 @@ Double3 LegacyRendererUtils::getThunderstormFlashColor(double flashPercent, cons
 	// of the diagonal line, or if the near point lies on the diagonal line. No need
 	// to normalize the (localPoint - diagMiddle) vector because it's just checking
 	// if it's greater than zero.
-	const NewDouble2 leftNormal2D(leftNormal.x, leftNormal.z);
+	const WorldDouble2 leftNormal2D(leftNormal.x, leftNormal.z);
 	const bool nearOnLeft = leftNormal2D.dot(nearPoint - diagMiddle) >= 0.0;
 	const bool farOnLeft = leftNormal2D.dot(farPoint - diagMiddle) >= 0.0;
 	const bool intersectionOccurred = (nearOnLeft && !farOnLeft) || (!nearOnLeft && farOnLeft);
@@ -115,15 +115,15 @@ Double3 LegacyRendererUtils::getThunderstormFlashColor(double flashPercent, cons
 	}
 }
 
-bool LegacyRendererUtils::findDiag2Intersection(const CoordInt2 &coord, const NewDouble2 &nearPoint,
-	const NewDouble2 &farPoint, RayHit &hit)
+bool LegacyRendererUtils::findDiag2Intersection(const CoordInt2 &coord, const WorldDouble2 &nearPoint,
+	const WorldDouble2 &farPoint, RayHit &hit)
 {
 	// Mostly a copy of findDiag1Intersection(), though with a couple different values
 	// for the diagonal (end points, slope, etc.).
 
 	// Start, middle, and end points of the diagonal line segment relative to the grid.
-	const NewInt2 absoluteVoxel = VoxelUtils::coordToNewVoxel(coord);
-	NewDouble2 diagStart, diagMiddle, diagEnd;
+	const WorldInt2 absoluteVoxel = VoxelUtils::coordToWorldVoxel(coord);
+	WorldDouble2 diagStart, diagMiddle, diagEnd;
 	RendererUtils::getDiag2Points2D(absoluteVoxel.x, absoluteVoxel.y, &diagStart, &diagMiddle, &diagEnd);
 
 	// Normals for the left and right faces of the wall, facing down-left and up-right
@@ -200,12 +200,12 @@ bool LegacyRendererUtils::findDiag2Intersection(const CoordInt2 &coord, const Ne
 }
 
 bool LegacyRendererUtils::findInitialEdgeIntersection(const CoordInt2 &coord, VoxelFacing2D edgeFacing,
-	bool flipped, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, const Camera &camera,
+	bool flipped, const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint, const Camera &camera,
 	const Ray &ray, RayHit &hit)
 {
 	// Reuse the chasm facing code to find which face is intersected.
-	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewDouble2 absoluteEye2D(absoluteEye.x, absoluteEye.z);
+	const WorldDouble3 absoluteEye = VoxelUtils::coordToWorldPoint(camera.eye);
+	const WorldDouble2 absoluteEye2D(absoluteEye.x, absoluteEye.z);
 	const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(coord, absoluteEye2D, ray);
 
 	// If the edge facing and far facing match, there's an intersection.
@@ -251,7 +251,7 @@ bool LegacyRendererUtils::findInitialEdgeIntersection(const CoordInt2 &coord, Vo
 }
 
 bool LegacyRendererUtils::findEdgeIntersection(const CoordInt2 &coord, VoxelFacing2D edgeFacing,
-	bool flipped, VoxelFacing2D nearFacing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+	bool flipped, VoxelFacing2D nearFacing, const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint,
 	double nearU, const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// If the edge facing and near facing match, the intersection is trivial.
@@ -314,17 +314,17 @@ bool LegacyRendererUtils::findEdgeIntersection(const CoordInt2 &coord, VoxelFaci
 }
 
 bool LegacyRendererUtils::findInitialSwingingDoorIntersection(const CoordInt2 &coord, double percentOpen,
-	const NewDouble2 &nearPoint, const NewDouble2 &farPoint, bool xAxis, const Camera &camera,
+	const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint, bool xAxis, const Camera &camera,
 	const Ray &ray, RayHit &hit)
 {
-	const NewInt2 absoluteVoxel = VoxelUtils::coordToNewVoxel(coord);
+	const WorldInt2 absoluteVoxel = VoxelUtils::coordToWorldVoxel(coord);
 
 	// Decide which corner the door's hinge will be in, and create the line segment
 	// that will be rotated based on percent open.
-	NewDouble2 interpStart;
-	const NewDouble2 pivot = [&absoluteVoxel, xAxis, &interpStart]()
+	WorldDouble2 interpStart;
+	const WorldDouble2 pivot = [&absoluteVoxel, xAxis, &interpStart]()
 	{
-		const NewInt2 corner = [&absoluteVoxel, xAxis, &interpStart]()
+		const WorldInt2 corner = [&absoluteVoxel, xAxis, &interpStart]()
 		{
 			if (xAxis)
 			{
@@ -334,46 +334,46 @@ bool LegacyRendererUtils::findInitialSwingingDoorIntersection(const CoordInt2 &c
 			else
 			{
 				interpStart = CardinalDirection::West;
-				return NewInt2(absoluteVoxel.x + 1, absoluteVoxel.y);
+				return WorldInt2(absoluteVoxel.x + 1, absoluteVoxel.y);
 			}
 		}();
 
-		const NewDouble2 cornerReal(
+		const WorldDouble2 cornerReal(
 			static_cast<SNDouble>(corner.x),
 			static_cast<WEDouble>(corner.y));
 
 		// Bias the pivot towards the voxel center slightly to avoid Z-fighting with adjacent walls.
-		const NewDouble2 voxelCenter = VoxelUtils::getVoxelCenter(absoluteVoxel);
-		const NewDouble2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
+		const WorldDouble2 voxelCenter = VoxelUtils::getVoxelCenter(absoluteVoxel);
+		const WorldDouble2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
 		return cornerReal + bias;
 	}();
 
 	// Use the left perpendicular vector of the door's closed position as the 
 	// fully open position.
-	const NewDouble2 interpEnd = interpStart.leftPerp();
+	const WorldDouble2 interpEnd = interpStart.leftPerp();
 
 	// Actual position of the door in its rotation, represented as a vector.
-	const NewDouble2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
+	const WorldDouble2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
 
 	// Use back-face culling with swinging doors so it's not obstructing the player's
 	// view as much when it's opening.
-	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewDouble2 eye2D(absoluteEye.x, absoluteEye.z);
+	const WorldDouble3 absoluteEye = VoxelUtils::coordToWorldPoint(camera.eye);
+	const WorldDouble2 eye2D(absoluteEye.x, absoluteEye.z);
 	const bool isFrontFace = (eye2D - pivot).normalized().dot(doorVec.leftPerp()) > 0.0;
 
 	if (isFrontFace)
 	{
 		// Vector cross product in 2D, returns a scalar.
-		auto cross = [](const NewDouble2 &a, const NewDouble2 &b)
+		auto cross = [](const WorldDouble2 &a, const WorldDouble2 &b)
 		{
 			return (a.x * b.y) - (b.x * a.y);
 		};
 
 		// Solve line segment intersection between the incoming ray and the door.
-		const NewDouble2 p1 = pivot;
-		const NewDouble2 v1 = doorVec;
-		const NewDouble2 p2 = nearPoint;
-		const NewDouble2 v2 = farPoint - nearPoint;
+		const WorldDouble2 p1 = pivot;
+		const WorldDouble2 v1 = doorVec;
+		const WorldDouble2 p2 = nearPoint;
+		const WorldDouble2 v2 = farPoint - nearPoint;
 
 		// Percent from p1 to (p1 + v1).
 		const double t = cross(p2 - p1, v2) / cross(v1, v2);
@@ -387,7 +387,7 @@ bool LegacyRendererUtils::findInitialSwingingDoorIntersection(const CoordInt2 &c
 			hit.u = t;
 			hit.normal = [&v1]()
 			{
-				const NewDouble2 norm2D = v1.rightPerp();
+				const WorldDouble2 norm2D = v1.rightPerp();
 				return Double3(norm2D.x, 0.0, norm2D.y);
 			}();
 
@@ -407,7 +407,7 @@ bool LegacyRendererUtils::findInitialSwingingDoorIntersection(const CoordInt2 &c
 }
 
 bool LegacyRendererUtils::findInitialDoorIntersection(const CoordInt2 &coord, ArenaTypes::DoorType doorType,
-	double percentOpen, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, const Camera &camera,
+	double percentOpen, const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint, const Camera &camera,
 	const Ray &ray, const ChunkManager &chunkManager, RayHit &hit)
 {
 	// Determine which axis the door should open/close for (either X or Z).
@@ -453,8 +453,8 @@ bool LegacyRendererUtils::findInitialDoorIntersection(const CoordInt2 &coord, Ar
 	if (useFarFacing)
 	{
 		// Treat the door like a wall. Reuse the chasm facing code to find which face is intersected.
-		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-		const NewDouble2 absoluteEye2D(absoluteEye.x, absoluteEye.z);
+		const WorldDouble3 absoluteEye = VoxelUtils::coordToWorldPoint(camera.eye);
+		const WorldDouble2 absoluteEye2D(absoluteEye.x, absoluteEye.z);
 		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(coord, absoluteEye2D, ray);
 		const VoxelFacing2D doorFacing = xAxis ? VoxelFacing2D::PositiveX : VoxelFacing2D::PositiveZ;
 
@@ -609,22 +609,22 @@ bool LegacyRendererUtils::findInitialDoorIntersection(const CoordInt2 &coord, Ar
 }
 
 bool LegacyRendererUtils::findSwingingDoorIntersection(const CoordInt2 &coord, double percentOpen,
-	VoxelFacing2D nearFacing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+	VoxelFacing2D nearFacing, const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint,
 	double nearU, RayHit &hit)
 {
-	const NewInt2 absoluteVoxel = VoxelUtils::coordToNewVoxel(coord);
+	const WorldInt2 absoluteVoxel = VoxelUtils::coordToWorldVoxel(coord);
 
 	// Decide which corner the door's hinge will be in, and create the line segment
 	// that will be rotated based on percent open.
-	NewDouble2 interpStart;
-	const NewDouble2 pivot = [&absoluteVoxel, nearFacing, &interpStart]()
+	WorldDouble2 interpStart;
+	const WorldDouble2 pivot = [&absoluteVoxel, nearFacing, &interpStart]()
 	{
-		const NewInt2 corner = [&absoluteVoxel, nearFacing, &interpStart]()
+		const WorldInt2 corner = [&absoluteVoxel, nearFacing, &interpStart]()
 		{
 			if (nearFacing == VoxelFacing2D::PositiveX)
 			{
 				interpStart = CardinalDirection::North;
-				return NewInt2(absoluteVoxel.x + 1, absoluteVoxel.y + 1);
+				return WorldInt2(absoluteVoxel.x + 1, absoluteVoxel.y + 1);
 			}
 			else if (nearFacing == VoxelFacing2D::NegativeX)
 			{
@@ -634,47 +634,47 @@ bool LegacyRendererUtils::findSwingingDoorIntersection(const CoordInt2 &coord, d
 			else if (nearFacing == VoxelFacing2D::PositiveZ)
 			{
 				interpStart = CardinalDirection::East;
-				return NewInt2(absoluteVoxel.x, absoluteVoxel.y + 1);
+				return WorldInt2(absoluteVoxel.x, absoluteVoxel.y + 1);
 			}
 			else if (nearFacing == VoxelFacing2D::NegativeZ)
 			{
 				interpStart = CardinalDirection::West;
-				return NewInt2(absoluteVoxel.x + 1, absoluteVoxel.y);
+				return WorldInt2(absoluteVoxel.x + 1, absoluteVoxel.y);
 			}
 			else
 			{
-				DebugUnhandledReturnMsg(NewInt2, std::to_string(static_cast<int>(nearFacing)));
+				DebugUnhandledReturnMsg(WorldInt2, std::to_string(static_cast<int>(nearFacing)));
 			}
 		}();
 
-		const NewDouble2 cornerReal(
+		const WorldDouble2 cornerReal(
 			static_cast<SNDouble>(corner.x),
 			static_cast<WEDouble>(corner.y));
 
 		// Bias the pivot towards the voxel center slightly to avoid Z-fighting with adjacent walls.
-		const NewDouble2 voxelCenter = VoxelUtils::getVoxelCenter(absoluteVoxel);
-		const NewDouble2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
+		const WorldDouble2 voxelCenter = VoxelUtils::getVoxelCenter(absoluteVoxel);
+		const WorldDouble2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
 		return cornerReal + bias;
 	}();
 
 	// Use the left perpendicular vector of the door's closed position as the 
 	// fully open position.
-	const NewDouble2 interpEnd = interpStart.leftPerp();
+	const WorldDouble2 interpEnd = interpStart.leftPerp();
 
 	// Actual position of the door in its rotation, represented as a vector.
-	const NewDouble2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
+	const WorldDouble2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
 
 	// Vector cross product in 2D, returns a scalar.
-	auto cross = [](const NewDouble2 &a, const NewDouble2 &b)
+	auto cross = [](const WorldDouble2 &a, const WorldDouble2 &b)
 	{
 		return (a.x * b.y) - (b.x * a.y);
 	};
 
 	// Solve line segment intersection between the incoming ray and the door.
-	const NewDouble2 p1 = pivot;
-	const NewDouble2 v1 = doorVec;
-	const NewDouble2 p2 = nearPoint;
-	const NewDouble2 v2 = farPoint - nearPoint;
+	const WorldDouble2 p1 = pivot;
+	const WorldDouble2 v1 = doorVec;
+	const WorldDouble2 p2 = nearPoint;
+	const WorldDouble2 v2 = farPoint - nearPoint;
 
 	// Percent from p1 to (p1 + v1).
 	const double t = cross(p2 - p1, v2) / cross(v1, v2);
@@ -688,7 +688,7 @@ bool LegacyRendererUtils::findSwingingDoorIntersection(const CoordInt2 &coord, d
 		hit.u = t;
 		hit.normal = [&v1]()
 		{
-			const NewDouble2 norm2D = v1.rightPerp();
+			const WorldDouble2 norm2D = v1.rightPerp();
 			return Double3(norm2D.x, 0.0, norm2D.y);
 		}();
 
@@ -702,7 +702,7 @@ bool LegacyRendererUtils::findSwingingDoorIntersection(const CoordInt2 &coord, d
 }
 
 bool LegacyRendererUtils::findDoorIntersection(const CoordInt2 &coord, ArenaTypes::DoorType doorType,
-	double percentOpen, VoxelFacing2D nearFacing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+	double percentOpen, VoxelFacing2D nearFacing, const WorldDouble2 &nearPoint, const WorldDouble2 &farPoint,
 	double nearU, RayHit &hit)
 {
 	// Check trivial case first: whether the door is closed.

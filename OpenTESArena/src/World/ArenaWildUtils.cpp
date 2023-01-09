@@ -280,9 +280,9 @@ OriginalInt2 ArenaWildUtils::getRelativeWildOrigin(const Int2 &voxel)
 		voxel.y - (voxel.y % (RMDFile::DEPTH * 2)));
 }
 
-NewInt2 ArenaWildUtils::getCenteredWildOrigin(const NewInt2 &voxel)
+WorldInt2 ArenaWildUtils::getCenteredWildOrigin(const WorldInt2 &voxel)
 {
-	return NewInt2(
+	return WorldInt2(
 		(std::max(voxel.x - 32, 0) / RMDFile::WIDTH) * RMDFile::WIDTH,
 		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
 }

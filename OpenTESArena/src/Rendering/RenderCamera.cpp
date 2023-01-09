@@ -8,7 +8,7 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 
 	// @todo: eventually I think the chunk should be zeroed out and everything should always treat
 	// the player's chunk as the origin chunk.
-	this->worldPoint = VoxelUtils::chunkPointToNewPoint(chunk, point);
+	this->worldPoint = VoxelUtils::chunkPointToWorldPoint(chunk, point);
 
 	this->forward = direction.normalized();
 	this->zoom = MathUtils::verticalFovToZoom(fovY);

@@ -14,12 +14,12 @@ namespace CardinalDirection
 {
 	// Cardinal directions in the XZ plane (bird's eye view).
 	// CANNOT INITIALIZE FROM VOXELUTILS due to global initialization order uncertainty.
-	const NewDouble2 North(-1.0, 0.0);
-	const NewDouble2 South(1.0, 0.0);
-	const NewDouble2 East(0.0, -1.0);
-	const NewDouble2 West(0.0, 1.0);
+	const WorldDouble2 North(-1.0, 0.0);
+	const WorldDouble2 South(1.0, 0.0);
+	const WorldDouble2 East(0.0, -1.0);
+	const WorldDouble2 West(0.0, 1.0);
 
-	CardinalDirectionName getDirectionName(const NewDouble2 &direction);
+	CardinalDirectionName getDirectionName(const WorldDouble2 &direction);
 	const std::string &toString(CardinalDirectionName directionName);
 }
 

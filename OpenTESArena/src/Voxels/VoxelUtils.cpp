@@ -7,14 +7,14 @@
 
 #include "components/debug/Debug.h"
 
-NewInt2 VoxelUtils::originalVoxelToNewVoxel(const OriginalInt2 &voxel)
+WorldInt2 VoxelUtils::originalVoxelToWorldVoxel(const OriginalInt2 &voxel)
 {
-	return NewInt2(voxel.y, voxel.x);
+	return WorldInt2(voxel.y, voxel.x);
 }
 
-OriginalInt2 VoxelUtils::newVoxelToOriginalVoxel(const NewInt2 &voxel)
+OriginalInt2 VoxelUtils::worldVoxelToOriginalVoxel(const WorldInt2 &voxel)
 {
-	return VoxelUtils::originalVoxelToNewVoxel(voxel);
+	return VoxelUtils::originalVoxelToWorldVoxel(voxel);
 }
 
 Double2 VoxelUtils::getTransformedVoxel(const Double2 &voxel)
@@ -43,56 +43,56 @@ VoxelInt2 VoxelUtils::pointToVoxel(const VoxelDouble2 &point)
 		static_cast<WEInt>(std::floor(point.y)));
 }
 
-NewDouble3 VoxelUtils::chunkPointToNewPoint(const ChunkInt2 &chunk, const VoxelDouble3 &point)
+WorldDouble3 VoxelUtils::chunkPointToWorldPoint(const ChunkInt2 &chunk, const VoxelDouble3 &point)
 {
-	const NewDouble3 basePoint(
+	const WorldDouble3 basePoint(
 		static_cast<SNDouble>(chunk.x) * ChunkUtils::CHUNK_DIM,
 		0.0,
 		static_cast<WEDouble>(chunk.y) * ChunkUtils::CHUNK_DIM);
 	return basePoint + point;
 }
 
-NewDouble2 VoxelUtils::chunkPointToNewPoint(const ChunkInt2 &chunk, const VoxelDouble2 &point)
+WorldDouble2 VoxelUtils::chunkPointToWorldPoint(const ChunkInt2 &chunk, const VoxelDouble2 &point)
 {
-	const NewDouble2 basePoint(
+	const WorldDouble2 basePoint(
 		static_cast<SNDouble>(chunk.x) * ChunkUtils::CHUNK_DIM,
 		static_cast<WEDouble>(chunk.y) * ChunkUtils::CHUNK_DIM);
 	return basePoint + point;
 }
 
-NewInt3 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
+WorldInt3 VoxelUtils::chunkVoxelToWorldVoxel(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
 {
-	const NewInt3 baseVoxel(chunk.x * ChunkUtils::CHUNK_DIM, 0, chunk.y * ChunkUtils::CHUNK_DIM);
+	const WorldInt3 baseVoxel(chunk.x * ChunkUtils::CHUNK_DIM, 0, chunk.y * ChunkUtils::CHUNK_DIM);
 	return baseVoxel + voxel;
 }
 
-NewDouble3 VoxelUtils::coordToNewPoint(const CoordDouble3 &coord)
+WorldDouble3 VoxelUtils::coordToWorldPoint(const CoordDouble3 &coord)
 {
-	return VoxelUtils::chunkPointToNewPoint(coord.chunk, coord.point);
+	return VoxelUtils::chunkPointToWorldPoint(coord.chunk, coord.point);
 }
 
-NewDouble2 VoxelUtils::coordToNewPoint(const CoordDouble2 &coord)
+WorldDouble2 VoxelUtils::coordToWorldPoint(const CoordDouble2 &coord)
 {
-	return VoxelUtils::chunkPointToNewPoint(coord.chunk, coord.point);
+	return VoxelUtils::chunkPointToWorldPoint(coord.chunk, coord.point);
 }
 
-NewInt3 VoxelUtils::coordToNewVoxel(const CoordInt3 &coord)
+WorldInt3 VoxelUtils::coordToWorldVoxel(const CoordInt3 &coord)
 {
-	return VoxelUtils::chunkVoxelToNewVoxel(coord.chunk, coord.voxel);
+	return VoxelUtils::chunkVoxelToWorldVoxel(coord.chunk, coord.voxel);
 }
 
-NewInt2 VoxelUtils::coordToNewVoxel(const CoordInt2 &coord)
+WorldInt2 VoxelUtils::coordToWorldVoxel(const CoordInt2 &coord)
 {
-	const NewInt3 voxel3D = VoxelUtils::chunkVoxelToNewVoxel(coord.chunk, VoxelInt3(coord.voxel.x, 0, coord.voxel.y));
-	return NewInt2(voxel3D.x, voxel3D.z);
+	const WorldInt3 voxel3D = VoxelUtils::chunkVoxelToWorldVoxel(coord.chunk, VoxelInt3(coord.voxel.x, 0, coord.voxel.y));
+	return WorldInt2(voxel3D.x, voxel3D.z);
 }
 
-NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
+WorldInt2 VoxelUtils::chunkVoxelToWorldVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
 {
 	return (chunk * ChunkUtils::CHUNK_DIM) + voxel;
 }
 
-CoordDouble3 VoxelUtils::newPointToCoord(const NewDouble3 &point)
+CoordDouble3 VoxelUtils::worldPointToCoord(const WorldDouble3 &point)
 {
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
 	constexpr double chunkDimReal = static_cast<double>(chunkDim);
@@ -106,7 +106,7 @@ CoordDouble3 VoxelUtils::newPointToCoord(const NewDouble3 &point)
 	return CoordDouble3(chunk, newPoint);
 }
 
-CoordDouble2 VoxelUtils::newPointToCoord(const NewDouble2 &point)
+CoordDouble2 VoxelUtils::worldPointToCoord(const WorldDouble2 &point)
 {
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
 	constexpr double chunkDimReal = static_cast<double>(chunkDim);
@@ -119,7 +119,7 @@ CoordDouble2 VoxelUtils::newPointToCoord(const NewDouble2 &point)
 	return CoordDouble2(chunk, newPoint);
 }
 
-CoordInt3 VoxelUtils::newVoxelToCoord(const NewInt3 &voxel)
+CoordInt3 VoxelUtils::worldVoxelToCoord(const WorldInt3 &voxel)
 {
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
 	const ChunkInt2 chunk(
@@ -132,7 +132,7 @@ CoordInt3 VoxelUtils::newVoxelToCoord(const NewInt3 &voxel)
 	return CoordInt3(chunk, newVoxel);
 }
 
-CoordInt2 VoxelUtils::newVoxelToCoord(const NewInt2 &voxel)
+CoordInt2 VoxelUtils::worldVoxelToCoord(const WorldInt2 &voxel)
 {
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
 	const ChunkInt2 chunk(
@@ -147,12 +147,12 @@ CoordInt2 VoxelUtils::newVoxelToCoord(const NewInt2 &voxel)
 CoordInt2 VoxelUtils::levelVoxelToCoord(const LevelInt2 &voxel)
 {
 	// @todo: make sure it handles negative coordinates.
-	return VoxelUtils::newVoxelToCoord(voxel);
+	return VoxelUtils::worldVoxelToCoord(voxel);
 }
 
-ChunkInt2 VoxelUtils::newVoxelToChunk(const NewInt2 &voxel)
+ChunkInt2 VoxelUtils::worldVoxelToChunk(const WorldInt2 &voxel)
 {
-	const CoordInt2 chunkCoord = VoxelUtils::newVoxelToCoord(voxel);
+	const CoordInt2 chunkCoord = VoxelUtils::worldVoxelToCoord(voxel);
 	return chunkCoord.chunk;
 }
 

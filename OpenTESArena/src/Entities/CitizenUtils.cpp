@@ -19,7 +19,7 @@
 namespace
 {
 	// Allowed directions for citizens to walk.
-	const std::array<std::pair<CardinalDirectionName, NewDouble2>, 4> CitizenDirections =
+	const std::array<std::pair<CardinalDirectionName, WorldDouble2>, 4> CitizenDirections =
 	{
 		{
 			{ CardinalDirectionName::North, CardinalDirection::North },
@@ -44,7 +44,7 @@ void CitizenUtils::CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID
 	this->raceID = raceID;
 }
 
-bool CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, NewDouble2 *outDirection)
+bool CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection)
 {
 	const auto iter = std::find_if(CitizenDirections.begin(), CitizenDirections.end(),
 		[directionName](const auto &pair)
@@ -69,7 +69,7 @@ CardinalDirectionName CitizenUtils::getCitizenDirectionNameByIndex(int index)
 	return CitizenDirections[index].first;
 }
 
-NewDouble2 CitizenUtils::getCitizenDirectionByIndex(int index)
+WorldDouble2 CitizenUtils::getCitizenDirectionByIndex(int index)
 {
 	DebugAssertIndex(CitizenDirections, index);
 	return CitizenDirections[index].second;

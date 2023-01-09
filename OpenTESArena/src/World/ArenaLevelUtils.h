@@ -32,7 +32,7 @@ namespace ArenaLevelUtils
 	constexpr WEInt RANDOM_DUNGEON_PLAYER_START_OFFSET_Z = 0;
 
 	// Display names for *MENU transition voxels in cities and the wilderness.
-	using MenuNamesList = std::vector<std::pair<NewInt2, std::string>>;
+	using MenuNamesList = std::vector<std::pair<WorldInt2, std::string>>;
 
 	// Gets the most and least significant bytes from the voxel ID to determine the voxel type/texture/etc..
 	uint8_t getVoxelMostSigByte(ArenaTypes::VoxelID voxelID);

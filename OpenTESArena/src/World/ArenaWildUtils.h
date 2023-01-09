@@ -63,7 +63,7 @@ namespace ArenaWildUtils
 	// A variation on getRelativeWildOrigin() -- determine which one is actually what we want for
 	// all cases, because getRelativeWildOrigin() apparently doesn't make the automap centered.
 	// Given coordinates are expected to be in original coordinate system.
-	NewInt2 getCenteredWildOrigin(const NewInt2 &voxel);
+	WorldInt2 getCenteredWildOrigin(const WorldInt2 &voxel);
 
 	// Whether a *MENU voxel appears in the wilderness automap.
 	bool menuIsDisplayedInWildAutomap(int menuIndex);

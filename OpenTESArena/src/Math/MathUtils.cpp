@@ -49,7 +49,7 @@ Radians MathUtils::fullAtan2(double y, double x)
 	return (angle >= 0.0) ? angle : (Constants::TwoPi + angle);
 }
 
-Radians MathUtils::fullAtan2(const NewDouble2 &v)
+Radians MathUtils::fullAtan2(const WorldDouble2 &v)
 {
 	// Flip +X south/+Y west to +X east/+Y north.
 	return MathUtils::fullAtan2(-v.x, -v.y);

@@ -512,7 +512,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		// The direction from a level up/down voxel to where the player should end up after
 		// going through. In other words, it points to the destination voxel adjacent to the
 		// level up/down voxel.
-		const VoxelDouble3 dirToNewVoxel = [&playerCoord, &transitionCoord]()
+		const VoxelDouble3 dirToWorldVoxel = [&playerCoord, &transitionCoord]()
 		{
 			const VoxelInt3 diff = transitionCoord - playerCoord;
 
@@ -552,11 +552,11 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		auto &player = game.getPlayer();
 		const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
 		const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(
-			transitionCoord.chunk, transitionVoxelCenter + dirToNewVoxel);
+			transitionCoord.chunk, transitionVoxelCenter + dirToWorldVoxel);
 
 		// Lambda for transitioning the player to the given level.
 		auto switchToLevel = [&game, &gameState, &interiorMapDef, &interiorMapInst, &player, &destinationCoord,
-			&dirToNewVoxel](int levelIndex)
+			&dirToWorldVoxel](int levelIndex)
 		{
 			// Clear all open doors and fading voxels in the level the player is switching away from.
 			// @todo: why wouldn't it just clear them when it gets switched to in setActive()?
@@ -599,7 +599,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 				destinationCoord.point.z);
 			const CoordDouble3 playerDestinationCoord(destinationCoord.chunk, playerDestinationPoint);
 			player.teleport(playerDestinationCoord);
-			player.lookAt(player.getPosition() + dirToNewVoxel);
+			player.lookAt(player.getPosition() + dirToWorldVoxel);
 			player.setVelocityToZero();
 
 			EntityGeneration::EntityGenInfo entityGenInfo;

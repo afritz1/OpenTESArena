@@ -45,16 +45,16 @@ namespace RendererUtils
 	bool isChasmEmissive(ArenaTypes::ChasmType chasmType);
 
 	// Gets the world space coordinates of the given voxel's four corners from a top-down perspective.
-	void getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outTopLeftCorner,
-		NewDouble2 *outTopRightCorner, NewDouble2 *outBottomLeftCorner, NewDouble2 *outBottomRightCorner);
+	void getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outTopLeftCorner,
+		WorldDouble2 *outTopRightCorner, WorldDouble2 *outBottomLeftCorner, WorldDouble2 *outBottomRightCorner);
 
 	// Gets the world space coordinates of the given diagonal voxel's three points (beginning, middle,
 	// and end point). Diag1 includes the top right and bottom left corners, diag2 includes the top left
 	// and bottom right corners.
-	void getDiag1Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outStart,
-		NewDouble2 *outMiddle, NewDouble2 *outEnd);
-	void getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outStart,
-		NewDouble2 *outMiddle, NewDouble2 *outEnd);
+	void getDiag1Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
+		WorldDouble2 *outMiddle, WorldDouble2 *outEnd);
+	void getDiag2Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
+		WorldDouble2 *outMiddle, WorldDouble2 *outEnd);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
 	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const VoxelChunk &chunk);

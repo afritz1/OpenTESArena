@@ -42,7 +42,7 @@ void DynamicEntity::initCitizen(EntityDefID defID, const EntityAnimationInstance
 }
 
 void DynamicEntity::initCreature(EntityDefID defID, const EntityAnimationInstance &animInst,
-	const NewDouble2 &direction, Random &random)
+	const WorldDouble2 &direction, Random &random)
 {
 	this->init(defID, animInst);
 	this->derivedType = DynamicEntityType::Creature;
@@ -51,7 +51,7 @@ void DynamicEntity::initCreature(EntityDefID defID, const EntityAnimationInstanc
 }
 
 void DynamicEntity::initProjectile(EntityDefID defID, const EntityAnimationInstance &animInst,
-	const NewDouble2 &direction)
+	const WorldDouble2 &direction)
 {
 	this->init(defID, animInst);
 	this->derivedType = DynamicEntityType::Projectile;
@@ -68,22 +68,22 @@ DynamicEntityType DynamicEntity::getDerivedType() const
 	return this->derivedType;
 }
 
-const NewDouble2 &DynamicEntity::getDirection() const
+const WorldDouble2 &DynamicEntity::getDirection() const
 {
 	return this->direction;
 }
 
-const NewDouble2 &DynamicEntity::getVelocity() const
+const WorldDouble2 &DynamicEntity::getVelocity() const
 {
 	return this->velocity;
 }
 
-const NewDouble2 *DynamicEntity::getDestination() const
+const WorldDouble2 *DynamicEntity::getDestination() const
 {
 	return this->destination.has_value() ? &this->destination.value() : nullptr;
 }
 
-void DynamicEntity::setDirection(const NewDouble2 &direction)
+void DynamicEntity::setDirection(const WorldDouble2 &direction)
 {
 	DebugAssert(std::isfinite(direction.lengthSquared()));
 	this->direction = direction;
@@ -139,7 +139,7 @@ void DynamicEntity::playCreatureSound(const std::string &soundFilename, double c
 	const CoordDouble3 soundCoord(
 		this->position.chunk,
 		VoxelDouble3(this->position.point.x, ceilingScale * 1.50, this->position.point.y));
-	const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
+	const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
 	audioManager.playSound(soundFilename, absoluteSoundPosition);
 }
 
@@ -154,7 +154,7 @@ void DynamicEntity::yaw(double radians)
 		Quaternion(forward, 0.0);
 
 	// Convert back to 2D.
-	this->direction = NewDouble2(q.x, q.z).normalized();
+	this->direction = WorldDouble2(q.x, q.z).normalized();
 }
 
 void DynamicEntity::rotate(double degrees)
@@ -171,7 +171,7 @@ void DynamicEntity::rotate(double degrees)
 
 void DynamicEntity::lookAt(const CoordDouble2 &point)
 {
-	const NewDouble2 newDirection = (point - this->position).normalized();
+	const WorldDouble2 newDirection = (point - this->position).normalized();
 
 	// Only accept the change if it's valid.
 	if (std::isfinite(newDirection.lengthSquared()))
@@ -180,7 +180,7 @@ void DynamicEntity::lookAt(const CoordDouble2 &point)
 	}
 }
 
-void DynamicEntity::setDestination(const NewDouble2 *point, double minDistance)
+void DynamicEntity::setDestination(const WorldDouble2 *point, double minDistance)
 {
 	if (point != nullptr)
 	{
@@ -192,7 +192,7 @@ void DynamicEntity::setDestination(const NewDouble2 *point, double minDistance)
 	}
 }
 
-void DynamicEntity::setDestination(const NewDouble2 *point)
+void DynamicEntity::setDestination(const WorldDouble2 *point)
 {
 	constexpr double minDistance = Constants::Epsilon;
 	this->setDestination(point, minDistance);
@@ -270,7 +270,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 		if (shouldChangeToIdle)
 		{
 			animInst.setStateIndex(*idleStateIndex);
-			this->velocity = NewDouble2::Zero;
+			this->velocity = WorldDouble2::Zero;
 		}
 	}
 }
@@ -407,7 +407,7 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 							CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
 						if (cardinalDirectionName != curDirectionName)
 						{
-							const NewDouble2 &direction = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
+							const WorldDouble2 &direction = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
 							const CoordInt2 voxel = getVoxelAtDistance(direction * 0.50);
 							if (isSuitableVoxel(voxel))
 							{
@@ -420,14 +420,14 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 
 					if (iter != randomDirectionIndices.end())
 					{
-						const NewDouble2 &newDirection = CitizenUtils::getCitizenDirectionByIndex(*iter);
+						const WorldDouble2 &newDirection = CitizenUtils::getCitizenDirectionByIndex(*iter);
 						this->setDirection(newDirection);
 						this->velocity = newDirection * CitizenUtils::SPEED;
 					}
 					else
 					{
 						// Couldn't find any valid direction.
-						this->velocity = NewDouble2::Zero;
+						this->velocity = WorldDouble2::Zero;
 					}
 				}
 			}

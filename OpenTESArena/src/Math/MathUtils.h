@@ -47,7 +47,7 @@ namespace MathUtils
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	Radians fullAtan2(double y, double x);
-	Radians fullAtan2(const NewDouble2 &v);
+	Radians fullAtan2(const WorldDouble2 &v);
 
 	// Converts vertical field of view to camera zoom (where 90 degrees = 1.0 zoom).
 	double verticalFovToZoom(Degrees fovY);
