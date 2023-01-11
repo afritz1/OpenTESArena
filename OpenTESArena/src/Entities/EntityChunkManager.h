@@ -1,7 +1,11 @@
 #ifndef ENTITY_CHUNK_MANAGER_H
 #define ENTITY_CHUNK_MANAGER_H
 
-class EntityChunkManager
+#include "EntityChunk.h"
+#include "EntityInstance.h"
+#include "../World/SpecializedChunkManager.h"
+
+class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 private:
 	// @todo: entity instance data for all entities
