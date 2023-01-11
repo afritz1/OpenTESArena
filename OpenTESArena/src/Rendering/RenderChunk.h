@@ -21,6 +21,8 @@ using RenderVoxelMeshDefID = int;
 class RenderChunk final : public Chunk
 {
 public:
+	static constexpr RenderVoxelMeshDefID AIR_MESH_DEF_ID = 0;
+
 	std::vector<RenderVoxelMeshDefinition> meshDefs;
 	std::unordered_map<VoxelChunk::VoxelMeshDefID, RenderVoxelMeshDefID> meshDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
 	Buffer3D<RenderVoxelMeshDefID> meshDefIDs; // Points into mesh instances.
@@ -39,6 +41,7 @@ public:
 	void init(const ChunkInt2 &position, int height);
 	RenderVoxelMeshDefID addMeshDefinition(RenderVoxelMeshDefinition &&meshDef);
 	void freeBuffers(Renderer &renderer);
+	void clear();
 };
 
 #endif
