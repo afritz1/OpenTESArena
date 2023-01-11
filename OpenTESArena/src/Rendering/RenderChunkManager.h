@@ -96,29 +96,28 @@ private:
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const;
 
-	void loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer);
-	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale, Renderer &renderer);
-	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &chunk);
+	void loadVoxelTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer);
+	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
+	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk);
 
 	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
 		TextureSamplingType textureSamplingType, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
 		double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
-	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
+	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 
 	// Loads all the resources required by the given voxel chunk and adds it to the draw list.
 	// @todo: eventually I think a better way would be to simply treat render chunks like allocated textures;
 	// via function calls and operations on a returned handle/ID.
-	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer);
+	void populateChunk(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Call once per frame per chunk after all voxel chunk changes have been applied to this manager.
 	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
-	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent,
-		bool updateStatics, bool updateAnimating);
-
-	void unloadVoxelChunk(const ChunkInt2 &chunkPos, Renderer &renderer);
+	void rebuildVoxelChunkDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
+		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 
 	// @todo: loadEntityChunk(), probably needs citizenGenInfo, nightLightsAreActive, playerHasLight, daytimePercent, entityDefLibrary
 	// @todo: loadSky()

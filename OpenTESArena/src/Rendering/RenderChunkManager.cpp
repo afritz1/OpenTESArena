@@ -163,14 +163,14 @@ namespace sgTexture
 		}
 	}
 
-	void LoadChasmDefTextures(VoxelChunk::ChasmDefID chasmDefID, const VoxelChunk &chunk,
+	void LoadChasmDefTextures(VoxelChunk::ChasmDefID chasmDefID, const VoxelChunk &voxelChunk,
 		const std::vector<RenderChunkManager::LoadedVoxelTexture> &voxelTextures,
 		std::vector<RenderChunkManager::LoadedChasmFloorTextureList> &chasmFloorTextureLists,
 		std::vector<RenderChunkManager::LoadedChasmTextureKey> &chasmTextureKeys,
 		TextureManager &textureManager, Renderer &renderer)
 	{
-		const ChunkInt2 chunkPos = chunk.getPosition();
-		const ChasmDefinition &chasmDef = chunk.getChasmDef(chasmDefID);
+		const ChunkInt2 chunkPos = voxelChunk.getPosition();
+		const ChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
 
 		// Check if this chasm already has a mapping (i.e. have we seen this chunk before?).
 		const auto keyIter = std::find_if(chasmTextureKeys.begin(), chasmTextureKeys.end(),
@@ -480,31 +480,31 @@ BufferView<const RenderDrawCall> RenderChunkManager::getVoxelDrawCalls() const
 	return BufferView<const RenderDrawCall>(this->drawCallsCache.data(), static_cast<int>(this->drawCallsCache.size()));
 }
 
-void RenderChunkManager::loadVoxelTextures(const VoxelChunk &chunk, TextureManager &textureManager, Renderer &renderer)
+void RenderChunkManager::loadVoxelTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer)
 {
-	for (int i = 0; i < chunk.getTextureDefCount(); i++)
+	for (int i = 0; i < voxelChunk.getTextureDefCount(); i++)
 	{
-		const VoxelTextureDefinition &voxelTextureDef = chunk.getTextureDef(i);
+		const VoxelTextureDefinition &voxelTextureDef = voxelChunk.getTextureDef(i);
 		sgTexture::LoadVoxelDefTextures(voxelTextureDef, this->voxelTextures, textureManager, renderer);
 	}
 
-	for (int i = 0; i < chunk.getChasmDefCount(); i++)
+	for (int i = 0; i < voxelChunk.getChasmDefCount(); i++)
 	{
 		const VoxelChunk::ChasmDefID chasmDefID = static_cast<VoxelChunk::ChasmDefID>(i);
-		sgTexture::LoadChasmDefTextures(chasmDefID, chunk, this->voxelTextures, this->chasmFloorTextureLists,
+		sgTexture::LoadChasmDefTextures(chasmDefID, voxelChunk, this->voxelTextures, this->chasmFloorTextureLists,
 			this->chasmTextureKeys, textureManager, renderer);
 	}
 }
 
-void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale, Renderer &renderer)
+void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
 {
-	const ChunkInt2 &chunkPos = chunk.getPosition();
+	const ChunkInt2 &chunkPos = voxelChunk.getPosition();
 
 	// Add render chunk voxel mesh instances and create mappings to them.
-	for (int meshDefIndex = 0; meshDefIndex < chunk.getMeshDefCount(); meshDefIndex++)
+	for (int meshDefIndex = 0; meshDefIndex < voxelChunk.getMeshDefCount(); meshDefIndex++)
 	{
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = static_cast<VoxelChunk::VoxelMeshDefID>(meshDefIndex);
-		const VoxelMeshDefinition &voxelMeshDef = chunk.getMeshDef(voxelMeshDefID);
+		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
 
 		RenderVoxelMeshDefinition renderVoxelMeshDef;
 		if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
@@ -517,14 +517,14 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshDef.vertexBufferID))
 			{
 				DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
-					" in chunk (" + chunk.getPosition().toString() + ").");
+					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				continue;
 			}
 
 			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &renderVoxelMeshDef.normalBufferID))
 			{
 				DebugLogError("Couldn't create normal attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
-					" in chunk (" + chunk.getPosition().toString() + ").");
+					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				renderVoxelMeshDef.freeBuffers(renderer);
 				continue;
 			}
@@ -532,7 +532,7 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &renderVoxelMeshDef.texCoordBufferID))
 			{
 				DebugLogError("Couldn't create tex coord attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
-					" in chunk (" + chunk.getPosition().toString() + ").");
+					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				renderVoxelMeshDef.freeBuffers(renderer);
 				continue;
 			}
@@ -559,7 +559,7 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 				if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 				{
 					DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
-						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
+						std::to_string(voxelMeshDefID) + " in chunk (" + voxelChunk.getPosition().toString() + ").");
 					renderVoxelMeshDef.freeBuffers(renderer);
 					continue;
 				}
@@ -578,7 +578,7 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &renderVoxelMeshDef.alphaTestedIndexBufferID))
 				{
 					DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
-						std::to_string(voxelMeshDefID) + " in chunk (" + chunk.getPosition().toString() + ").");
+						std::to_string(voxelMeshDefID) + " in chunk (" + voxelChunk.getPosition().toString() + ").");
 					renderVoxelMeshDef.freeBuffers(renderer);
 					continue;
 				}
@@ -593,23 +593,23 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 	}
 }
 
-void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &chunk)
+void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk)
 {
 	DebugAssert(renderChunk.chasmWallIndexBufferIDs.empty());
 
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
-		for (int y = 0; y < chunk.getHeight(); y++)
+		for (int y = 0; y < voxelChunk.getHeight(); y++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				int chasmWallInstIndex;
-				if (!chunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
+				if (!voxelChunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
 				{
 					continue;
 				}
 
-				const VoxelChasmWallInstance &chasmWallInst = chunk.getChasmWallInst(chasmWallInstIndex);
+				const VoxelChasmWallInstance &chasmWallInst = voxelChunk.getChasmWallInst(chasmWallInstIndex);
 				DebugAssert(chasmWallInst.getFaceCount() > 0);
 
 				const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
@@ -647,7 +647,7 @@ void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3
 	drawCalls.emplace_back(std::move(drawCall));
 }
 
-void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
+void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
 	const ChunkInt2 &chunkPos = renderChunk.getPosition();
@@ -660,17 +660,17 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 			for (SNInt x = 0; x < renderChunk.meshDefIDs.getWidth(); x++)
 			{
 				const VoxelInt3 voxel(x, y, z);
-				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk.getMeshDefID(x, y, z);
-				const VoxelMeshDefinition &voxelMeshDef = chunk.getMeshDef(voxelMeshDefID);
+				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(x, y, z);
+				const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
 				if (voxelMeshDef.isEmpty())
 				{
 					continue;
 				}
 
-				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = chunk.getTextureDefID(x, y, z);
-				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(x, y, z);
-				const VoxelTextureDefinition &voxelTextureDef = chunk.getTextureDef(voxelTextureDefID);
-				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = voxelChunk.getTextureDefID(x, y, z);
+				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
+				const VoxelTextureDefinition &voxelTextureDef = voxelChunk.getTextureDef(voxelTextureDefID);
+				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 
 				const auto defIter = renderChunk.meshDefMappings.find(voxelMeshDefID);
 				DebugAssert(defIter != renderChunk.meshDefMappings.end());
@@ -690,17 +690,17 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 				const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
 				VoxelChunk::DoorDefID doorDefID;
-				const bool isDoor = chunk.tryGetDoorDefID(x, y, z, &doorDefID);
+				const bool isDoor = voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID);
 
 				VoxelChunk::ChasmDefID chasmDefID;
-				const bool isChasm = chunk.tryGetChasmDefID(x, y, z, &chasmDefID);
+				const bool isChasm = voxelChunk.tryGetChasmDefID(x, y, z, &chasmDefID);
 
 				int fadeAnimInstIndex;
 				const VoxelFadeAnimationInstance *fadeAnimInst = nullptr;
-				const bool isFading = chunk.tryGetFadeAnimInstIndex(x, y, z, &fadeAnimInstIndex);
+				const bool isFading = voxelChunk.tryGetFadeAnimInstIndex(x, y, z, &fadeAnimInstIndex);
 				if (isFading)
 				{
-					fadeAnimInst = &chunk.getFadeAnimInst(fadeAnimInstIndex);
+					fadeAnimInst = &voxelChunk.getFadeAnimInst(fadeAnimInstIndex);
 				}
 
 				const bool canAnimate = isDoor || isChasm || isFading;
@@ -804,21 +804,21 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						{
 							double doorAnimPercent = 0.0;
 							int doorAnimInstIndex;
-							if (chunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
+							if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
 							{
-								const VoxelDoorAnimationInstance &doorAnimInst = chunk.getDoorAnimInst(doorAnimInstIndex);
+								const VoxelDoorAnimationInstance &doorAnimInst = voxelChunk.getDoorAnimInst(doorAnimInstIndex);
 								doorAnimPercent = doorAnimInst.percentOpen;
 							}
 
 							int doorVisInstIndex;
-							if (!chunk.tryGetDoorVisibilityInstIndex(x, y, z, &doorVisInstIndex))
+							if (!voxelChunk.tryGetDoorVisibilityInstIndex(x, y, z, &doorVisInstIndex))
 							{
 								DebugLogError("Expected door visibility instance at (" + std::to_string(x) + ", " +
 									std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + chunkPos.toString() + ").");
 								continue;
 							}
 
-							const VoxelDoorVisibilityInstance &doorVisInst = chunk.getDoorVisibilityInst(doorVisInstIndex);
+							const VoxelDoorVisibilityInstance &doorVisInst = voxelChunk.getDoorVisibilityInst(doorVisInstIndex);
 							bool visibleDoorFaces[DoorUtils::FACE_COUNT];
 							std::fill(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), false);
 
@@ -840,7 +840,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 							// Get the door type and generate draw calls. One draw call for each door face since
 							// they have independent transforms.
-							const DoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
+							const DoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 							const ArenaTypes::DoorType doorType = doorDef.getType();
 							switch (doorType)
 							{
@@ -978,31 +978,17 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 	}
 }
 
-void RenderChunkManager::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer)
+void RenderChunkManager::populateChunk(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
+	TextureManager &textureManager, Renderer &renderer)
 {
-	const ChunkInt2 &chunkPos = chunk.getPosition();
-	
-	const int spawnIndex = this->spawnChunk();
-	RenderChunk &renderChunk = this->getChunkAtIndex(spawnIndex);
-	renderChunk.init(chunkPos, chunk.getHeight());
-
-	this->loadVoxelTextures(chunk, textureManager, renderer);
-	this->loadVoxelMeshBuffers(renderChunk, chunk, ceilingScale, renderer);
-	this->loadVoxelChasmWalls(renderChunk, chunk);
+	this->loadVoxelTextures(voxelChunk, textureManager, renderer);
+	this->loadVoxelMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
+	this->loadVoxelChasmWalls(renderChunk, voxelChunk);
 }
 
-void RenderChunkManager::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale,
-	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
+void RenderChunkManager::rebuildVoxelChunkDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk,
+	double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
-	const ChunkInt2 chunkPos = voxelChunk.getPosition();
-	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
-	if (!chunkIndex.has_value())
-	{
-		DebugLogError("No render chunk available at (" + chunkPos.toString() + ").");
-		return;
-	}
-
-	RenderChunk &renderChunk = this->getChunkAtIndex(*chunkIndex);
 	if (updateStatics)
 	{
 		renderChunk.staticDrawCalls.clear();
@@ -1016,19 +1002,6 @@ void RenderChunkManager::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk
 	}
 
 	this->loadVoxelDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
-}
-
-void RenderChunkManager::unloadVoxelChunk(const ChunkInt2 &chunkPos, Renderer &renderer)
-{
-	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
-	if (!chunkIndex.has_value())
-	{
-		return;
-	}
-
-	RenderChunk &renderChunk = this->getChunkAtIndex(*chunkIndex);
-	renderChunk.freeBuffers(renderer);
-	this->recycleChunk(*chunkIndex);
 }
 
 void RenderChunkManager::rebuildVoxelDrawCallsList()
@@ -1058,23 +1031,37 @@ void RenderChunkManager::update(const BufferView<const ChunkInt2> &activeChunkPo
 	for (int i = 0; i < freedChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
-		this->unloadVoxelChunk(chunkPos, renderer);
+		const int chunkIndex = this->getChunkIndex(chunkPos);
+		RenderChunk &renderChunk = this->getChunkAtIndex(chunkIndex);
+		renderChunk.freeBuffers(renderer);
+		this->recycleChunk(chunkIndex);
 	}
 
 	for (int i = 0; i < newChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		this->loadVoxelChunk(voxelChunk, ceilingScale, textureManager, renderer);
-		this->rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent, true, false);
+
+		const int spawnIndex = this->spawnChunk();
+		RenderChunk &renderChunk = this->getChunkAtIndex(spawnIndex);
+		renderChunk.init(chunkPos, voxelChunk.getHeight());
+
+		this->populateChunk(renderChunk, voxelChunk, ceilingScale, textureManager, renderer);
+		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, true, false);
 	}
+
+	// Free any unneeded chunks for memory savings in case the chunk distance was once large
+	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
+	this->chunkPool.clear();
 
 	for (int i = 0; i < activeChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
+		const int chunkIndex = this->getChunkIndex(chunkPos);
+		RenderChunk &renderChunk = this->getChunkAtIndex(chunkIndex);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const bool updateStatics = (voxelChunk.getDirtyMeshDefPositionCount() > 0) || (voxelChunk.getDirtyFadeAnimInstPositionCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
-		this->rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
+		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 
 	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient
