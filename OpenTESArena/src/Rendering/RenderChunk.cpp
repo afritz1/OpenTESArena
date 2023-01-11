@@ -8,7 +8,7 @@ void RenderChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
 	this->meshDefIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
-	this->meshDefIDs.fill(0);
+	this->meshDefIDs.fill(RenderChunk::AIR_MESH_DEF_ID);
 	this->meshDefMappings.emplace(VoxelChunk::AIR_MESH_DEF_ID, RenderChunk::AIR_MESH_DEF_ID);
 
 	// Add empty mesh instance for air.
