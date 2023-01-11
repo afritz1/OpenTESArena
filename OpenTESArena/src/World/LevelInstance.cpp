@@ -163,40 +163,12 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 	int chunkDistance, double chasmAnimPercent, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
 	AudioManager &audioManager, Renderer &renderer)
 {
-	const ChunkInt2 &centerChunkPos = playerCoord.chunk;
 	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
 		mapDefinition, this->ceilingScale, audioManager);
-	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
-
-	for (int i = 0; i < freedChunkPositions.getCount(); i++)
-	{
-		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
-		renderChunkManager.unloadVoxelChunk(chunkPos, renderer);
-	}
-
-	for (int i = 0; i < newChunkPositions.getCount(); i++)
-	{
-		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
-		VoxelChunk &voxelChunk = this->voxelChunkManager.getChunkAtPosition(chunkPos);
-		renderChunkManager.loadVoxelChunk(voxelChunk, this->ceilingScale, textureManager, renderer);
-		renderChunkManager.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, true, false);
-	}
-
-	for (int i = 0; i < activeChunkPositions.getCount(); i++)
-	{
-		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
-		const VoxelChunk &voxelChunk = this->voxelChunkManager.getChunkAtPosition(chunkPos);
-		const bool updateStatics = (voxelChunk.getDirtyMeshDefPositionCount() > 0) || (voxelChunk.getDirtyFadeAnimInstPositionCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
-		renderChunkManager.rebuildVoxelChunkDrawCalls(voxelChunk, this->ceilingScale, chasmAnimPercent, updateStatics, true);
-	}
-
-	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient
-	//if ((freedChunkCount > 0) || (newChunkCount > 0))
-	{
-		renderChunkManager.rebuildVoxelDrawCallsList();
-	}
-
 	//this->entityManager.tick(game, dt); // @todo: simulate entities after voxel chunks are working well
+	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
+	renderChunkManager.update(activeChunkPositions, newChunkPositions, freedChunkPositions, this->ceilingScale,
+		chasmAnimPercent, this->voxelChunkManager, textureManager, renderer);
 }
 
 void LevelInstance::cleanUp()

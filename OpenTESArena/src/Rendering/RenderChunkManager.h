@@ -7,6 +7,7 @@
 
 #include "RenderChunk.h"
 #include "RenderDrawCall.h"
+#include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
@@ -22,15 +23,13 @@
 // - occlusion culling system or hierarchical Z buffer to reduce/eliminate overdraw
 // - avoid requiring a screen clear
 
-class ChunkManager;
-class LevelInstance;
-class MapDefinition;
 class Renderer;
 class TextureManager;
+class VoxelChunkManager;
 
 struct RenderCamera;
 
-class RenderChunkManager
+class RenderChunkManager final : public SpecializedChunkManager<RenderChunk>
 {
 public:
 	struct LoadedVoxelTexture
@@ -70,9 +69,6 @@ public:
 		void init(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 	};
 private:
-	// Chunks with data for geometry storage, visibility calculation, etc..
-	std::vector<RenderChunk> renderChunks;
-	
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
 
@@ -113,18 +109,12 @@ private:
 		double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
 	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &chunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
-public:
-	void init(Renderer &renderer);
-	void shutdown(Renderer &renderer);
-
-	// Gets the list of draw calls for visible voxel geometry this frame.
-	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
 
 	// Loads all the resources required by the given voxel chunk and adds it to the draw list.
 	// @todo: eventually I think a better way would be to simply treat render chunks like allocated textures;
 	// via function calls and operations on a returned handle/ID.
 	void loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer);
-	
+
 	// Call once per frame per chunk after all voxel chunk changes have been applied to this manager.
 	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
 	void rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent,
@@ -138,6 +128,16 @@ public:
 
 	// Collects all stored voxel draw calls from active chunks and puts them into a list for the renderer.
 	void rebuildVoxelDrawCallsList();
+public:
+	void init(Renderer &renderer);
+	void shutdown(Renderer &renderer);
+
+	// Gets the list of draw calls for visible voxel geometry this frame.
+	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
+
+	void update(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
+		const BufferView<const ChunkInt2> &freedChunkPositions, double ceilingScale, double chasmAnimPercent,
+		const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all rendering resources (voxels, entities, sky, weather).
 	void unloadScene(Renderer &renderer);

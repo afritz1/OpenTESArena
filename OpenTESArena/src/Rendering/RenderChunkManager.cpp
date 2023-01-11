@@ -405,12 +405,12 @@ void RenderChunkManager::init(Renderer &renderer)
 
 void RenderChunkManager::shutdown(Renderer &renderer)
 {
-	for (RenderChunk &renderChunk : this->renderChunks)
+	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
-		renderChunk.freeBuffers(renderer);
+		chunkPtr->freeBuffers(renderer);
 	}
 
-	this->renderChunks.clear();
+	this->activeChunks.clear();
 
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
 	{
@@ -477,10 +477,10 @@ ObjectTextureID RenderChunkManager::getChasmWallTextureID(const ChunkInt2 &chunk
 
 std::optional<int> RenderChunkManager::tryGetRenderChunkIndex(const ChunkInt2 &chunkPos) const
 {
-	for (int i = 0; i < static_cast<int>(this->renderChunks.size()); i++)
+	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
 	{
-		const RenderChunk &renderChunk = this->renderChunks[i];
-		if (renderChunk.getPosition() == chunkPos)
+		const ChunkPtr &chunkPtr = this->activeChunks[i];
+		if (chunkPtr->getPosition() == chunkPos)
 		{
 			return i;
 		}
@@ -995,14 +995,14 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 void RenderChunkManager::loadVoxelChunk(const VoxelChunk &chunk, double ceilingScale, TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 &chunkPos = chunk.getPosition();
-	RenderChunk renderChunk;
+	
+	const int spawnIndex = this->spawnChunk();
+	RenderChunk &renderChunk = this->getChunkAtIndex(spawnIndex);
 	renderChunk.init(chunkPos, chunk.getHeight());
 
 	this->loadVoxelTextures(chunk, textureManager, renderer);
 	this->loadVoxelMeshBuffers(renderChunk, chunk, ceilingScale, renderer);
 	this->loadVoxelChasmWalls(renderChunk, chunk);
-
-	this->renderChunks.emplace_back(std::move(renderChunk));
 }
 
 void RenderChunkManager::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk, double ceilingScale,
@@ -1016,35 +1016,38 @@ void RenderChunkManager::rebuildVoxelChunkDrawCalls(const VoxelChunk &voxelChunk
 		return;
 	}
 
-	RenderChunk &renderChunk = this->renderChunks[*renderChunkIndex];
+	ChunkPtr &chunkPtr = this->activeChunks[*renderChunkIndex];
 	if (updateStatics)
 	{
-		renderChunk.staticDrawCalls.clear();
+		chunkPtr->staticDrawCalls.clear();
 	}
 
 	if (updateAnimating)
 	{
-		renderChunk.doorDrawCalls.clear();
-		renderChunk.chasmDrawCalls.clear();
-		renderChunk.fadingDrawCalls.clear();
+		chunkPtr->doorDrawCalls.clear();
+		chunkPtr->chasmDrawCalls.clear();
+		chunkPtr->fadingDrawCalls.clear();
 	}
 
-	this->loadVoxelDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
+	this->loadVoxelDrawCalls(*chunkPtr, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
 }
 
 void RenderChunkManager::unloadVoxelChunk(const ChunkInt2 &chunkPos, Renderer &renderer)
 {
-	const auto iter = std::find_if(this->renderChunks.begin(), this->renderChunks.end(),
-		[&chunkPos](const RenderChunk &renderChunk)
+	// @todo: use recycleChunk() instead
+	DebugNotImplemented();
+
+	const auto iter = std::find_if(this->activeChunks.begin(), this->activeChunks.end(),
+		[&chunkPos](const ChunkPtr &chunkPtr)
 	{
-		return renderChunk.getPosition() == chunkPos;
+		return chunkPtr->getPosition() == chunkPos;
 	});
 
-	if (iter != this->renderChunks.end())
+	if (iter != this->activeChunks.end())
 	{
-		RenderChunk &renderChunk = *iter;
-		renderChunk.freeBuffers(renderer);
-		this->renderChunks.erase(iter);
+		ChunkPtr &chunkPtr = *iter;
+		chunkPtr->freeBuffers(renderer);
+		this->activeChunks.erase(iter);
 	}
 }
 
@@ -1053,17 +1056,51 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 	this->drawCallsCache.clear();
 
 	// @todo: eventually this should sort by distance from a CoordDouble2
-	for (size_t i = 0; i < this->renderChunks.size(); i++)
+	for (size_t i = 0; i < this->activeChunks.size(); i++)
 	{
-		const RenderChunk &renderChunk = this->renderChunks[i];
-		const std::vector<RenderDrawCall> &staticDrawCalls = renderChunk.staticDrawCalls;
-		const std::vector<RenderDrawCall> &doorDrawCalls = renderChunk.doorDrawCalls;
-		const std::vector<RenderDrawCall> &chasmDrawCalls = renderChunk.chasmDrawCalls;
-		const std::vector<RenderDrawCall> &fadingDrawCalls = renderChunk.fadingDrawCalls;
+		const ChunkPtr &chunkPtr = this->activeChunks[i];
+		const std::vector<RenderDrawCall> &staticDrawCalls = chunkPtr->staticDrawCalls;
+		const std::vector<RenderDrawCall> &doorDrawCalls = chunkPtr->doorDrawCalls;
+		const std::vector<RenderDrawCall> &chasmDrawCalls = chunkPtr->chasmDrawCalls;
+		const std::vector<RenderDrawCall> &fadingDrawCalls = chunkPtr->fadingDrawCalls;
 		this->drawCallsCache.insert(this->drawCallsCache.end(), staticDrawCalls.begin(), staticDrawCalls.end());
 		this->drawCallsCache.insert(this->drawCallsCache.end(), doorDrawCalls.begin(), doorDrawCalls.end());
 		this->drawCallsCache.insert(this->drawCallsCache.end(), chasmDrawCalls.begin(), chasmDrawCalls.end());
 		this->drawCallsCache.insert(this->drawCallsCache.end(), fadingDrawCalls.begin(), fadingDrawCalls.end());
+	}
+}
+
+void RenderChunkManager::update(const BufferView<const ChunkInt2> &activeChunkPositions,
+	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+	double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
+	Renderer &renderer)
+{
+	for (int i = 0; i < freedChunkPositions.getCount(); i++)
+	{
+		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
+		this->unloadVoxelChunk(chunkPos, renderer);
+	}
+
+	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	{
+		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
+		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		this->loadVoxelChunk(voxelChunk, ceilingScale, textureManager, renderer);
+		this->rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent, true, false);
+	}
+
+	for (int i = 0; i < activeChunkPositions.getCount(); i++)
+	{
+		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
+		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		const bool updateStatics = (voxelChunk.getDirtyMeshDefPositionCount() > 0) || (voxelChunk.getDirtyFadeAnimInstPositionCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
+		this->rebuildVoxelChunkDrawCalls(voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
+	}
+
+	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient
+	//if ((freedChunkCount > 0) || (newChunkCount > 0))
+	{
+		this->rebuildVoxelDrawCallsList();
 	}
 }
 
@@ -1074,11 +1111,11 @@ void RenderChunkManager::unloadScene(Renderer &renderer)
 	this->chasmTextureKeys.clear();
 
 	// Free vertex/attribute/index buffer IDs from renderer.
-	for (RenderChunk &renderChunk : this->renderChunks)
+	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
-		renderChunk.freeBuffers(renderer);
+		chunkPtr->freeBuffers(renderer);
 	}
 
-	this->renderChunks.clear();
+	this->activeChunks.clear();
 	this->drawCallsCache.clear();
 }
