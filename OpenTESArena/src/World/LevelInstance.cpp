@@ -165,7 +165,8 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 {
 	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
 		mapDefinition, this->ceilingScale, audioManager);
-	//this->entityManager.tick(game, dt); // @todo: simulate entities after voxel chunks are working well
+	this->entityChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, playerCoord,
+		this->ceilingScale, this->voxelChunkManager, textureManager, renderer);
 	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
 	renderChunkManager.update(activeChunkPositions, newChunkPositions, freedChunkPositions, this->ceilingScale,
 		chasmAnimPercent, this->voxelChunkManager, textureManager, renderer);

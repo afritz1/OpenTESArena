@@ -8,6 +8,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/CitizenUtils.h"
+#include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityGeneration.h"
 #include "../Entities/EntityManager.h"
 #include "../Voxels/VoxelChunkManager.h"
@@ -35,8 +36,9 @@ private:
 	// - feels like all voxel/entity/sky/particle object texture loading should be on demand...? Might simplify enemy spawning code.
 
 	VoxelChunkManager voxelChunkManager;
+	EntityChunkManager entityChunkManager;
+	EntityManager entityManager; // @todo: deprecate and remove this
 	CollisionChunkManager collisionChunkManager;
-	EntityManager entityManager;
 
 	// Texture handles for the active game world palette and light table.
 	ScopedObjectTextureRef paletteTextureRef, lightTableTextureRef;
