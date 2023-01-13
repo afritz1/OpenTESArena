@@ -8,4 +8,5 @@ void EntityChunk::init(const ChunkInt2 &position, int height)
 void EntityChunk::clear()
 {
 	Chunk::clear();
+	this->entityIDs.clear();
 }

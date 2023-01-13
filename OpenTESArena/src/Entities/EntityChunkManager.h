@@ -1,11 +1,14 @@
 #ifndef ENTITY_CHUNK_MANAGER_H
 #define ENTITY_CHUNK_MANAGER_H
 
-#include "components/utilities/BufferView.h"
-
+#include "EntityAnimationDefinition.h"
+#include "EntityAnimationInstance.h"
 #include "EntityChunk.h"
 #include "EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"
+
+#include "components/utilities/BufferView.h"
+#include "components/utilities/RecyclablePool.h"
 
 class Renderer;
 class TextureManager;
@@ -15,8 +18,18 @@ class VoxelChunkManager;
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 private:
-	// @todo: entity instance data for all entities
-	// @todo: chunks that reference those entities
+	using EntityPool = RecyclablePool<EntityInstance, EntityInstanceID>;
+	using EntityPositionPool = RecyclablePool<CoordDouble3, EntityPositionID>;
+	using EntityDirectionPool = RecyclablePool<VoxelDouble3, EntityDirectionID>;
+	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
+
+	EntityPool entities;
+	EntityPositionPool positions;
+	EntityDirectionPool directions;
+	EntityAnimationInstancePool animInsts;
+	
+	std::vector<EntityAnimationDefinition> animDefs; // Not a pool since defs can be shared by several entities.
+	// @todo: entity anim defs, maybe a mapping of some kind, i.e. X -> anim def so they can be reused
 
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, TextureManager &textureManager,
 		Renderer &renderer);

@@ -1,15 +1,21 @@
 #ifndef ENTITY_CHUNK_H
 #define ENTITY_CHUNK_H
 
+#include <vector>
+
+#include "EntityInstance.h"
 #include "../World/Chunk.h"
 
 class EntityChunk final : public Chunk
 {
 public:
-	// @todo: decide what should go in here.
-	// - EntityChunk should not own the entity, only a reference of some kind (maybe a hash set of entity IDs for quick "is this entity touching this chunk?").
+	// Entities physically present in this chunk, based on their center position. Owned by EntityChunkManager.
+	std::vector<EntityInstanceID> entityIDs;
 
-	// @todo: bounding box
+	// @todo: it's important for this to store references to entities so that when this chunk is freed, all those entities can
+	// be iterated for removal in EntityChunkManager.
+
+	// @todo: bounding box (CoordDouble3 x 2) based on view-independent bounding box sum of all entities present
 
 	void init(const ChunkInt2 &position, int height);
 	void clear();

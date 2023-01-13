@@ -11,13 +11,13 @@
 // Contiguous pool that allows elements to be freed and their position reused by future elements
 // without affecting other elements.
 
-template <typename ElementT, typename IdT>
+template<typename ElementT, typename IdT>
 class RecyclablePool
 {
 private:
 	static_assert(std::is_default_constructible_v<ElementT>);
 	static_assert(std::is_move_assignable_v<ElementT>);
-	static_assert(std::is_standard_layout_v<ElementT>);
+	static_assert(!std::is_polymorphic_v<ElementT>);
 	static_assert(std::is_integral_v<IdT>);
 	
 	std::vector<ElementT> elements;
