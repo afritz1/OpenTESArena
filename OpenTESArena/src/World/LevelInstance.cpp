@@ -163,13 +163,18 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 	int chunkDistance, double chasmAnimPercent, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
 	AudioManager &audioManager, Renderer &renderer)
 {
+	// Simulate game world.
 	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
 		mapDefinition, this->ceilingScale, audioManager);
 	this->entityChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, playerCoord,
 		this->ceilingScale, this->voxelChunkManager, textureManager, renderer);
 	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
-	renderChunkManager.update(activeChunkPositions, newChunkPositions, freedChunkPositions, this->ceilingScale,
-		chasmAnimPercent, this->voxelChunkManager, textureManager, renderer);
+	
+	// Update rendering.
+	renderChunkManager.updateActiveChunks(activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager, renderer);
+	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, this->ceilingScale, chasmAnimPercent,
+		this->voxelChunkManager, textureManager, renderer);
+	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, this->entityChunkManager, textureManager, renderer);
 }
 
 void LevelInstance::cleanUp()

@@ -23,6 +23,7 @@
 // - occlusion culling system or hierarchical Z buffer to reduce/eliminate overdraw
 // - avoid requiring a screen clear
 
+class EntityChunkManager;
 class Renderer;
 class TextureManager;
 class VoxelChunkManager;
@@ -111,7 +112,7 @@ private:
 	// Loads all the resources required by the given voxel chunk and adds it to the draw list.
 	// @todo: eventually I think a better way would be to simply treat render chunks like allocated textures;
 	// via function calls and operations on a returned handle/ID.
-	void populateChunk(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
+	void populateVoxelChunk(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Call once per frame per chunk after all voxel chunk changes have been applied to this manager.
@@ -119,7 +120,6 @@ private:
 	void rebuildVoxelChunkDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 
-	// @todo: loadEntityChunk(), probably needs citizenGenInfo, nightLightsAreActive, playerHasLight, daytimePercent, entityDefLibrary
 	// @todo: loadSky()
 	// @todo: loadWeather()
 
@@ -132,9 +132,16 @@ public:
 	// Gets the list of draw calls for visible voxel geometry this frame.
 	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
 
-	void update(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
-		const BufferView<const ChunkInt2> &freedChunkPositions, double ceilingScale, double chasmAnimPercent,
-		const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer);
+	// Chunk allocating/freeing update function, called before voxel or entity resources are updated.
+	void updateActiveChunks(const BufferView<const ChunkInt2> &activeChunkPositions,
+		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
+
+	void updateVoxels(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
+		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
+		Renderer &renderer);
+	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
+		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all rendering resources (voxels, entities, sky, weather).
 	void unloadScene(Renderer &renderer);

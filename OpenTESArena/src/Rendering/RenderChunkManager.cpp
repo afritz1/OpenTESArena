@@ -978,7 +978,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 	}
 }
 
-void RenderChunkManager::populateChunk(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
+void RenderChunkManager::populateVoxelChunk(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	this->loadVoxelTextures(voxelChunk, textureManager, renderer);
@@ -1023,10 +1023,9 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 	}
 }
 
-void RenderChunkManager::update(const BufferView<const ChunkInt2> &activeChunkPositions,
+void RenderChunkManager::updateActiveChunks(const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
-	double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
-	Renderer &renderer)
+	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	for (int i = 0; i < freedChunkPositions.getCount(); i++)
 	{
@@ -1045,20 +1044,30 @@ void RenderChunkManager::update(const BufferView<const ChunkInt2> &activeChunkPo
 		const int spawnIndex = this->spawnChunk();
 		RenderChunk &renderChunk = this->getChunkAtIndex(spawnIndex);
 		renderChunk.init(chunkPos, voxelChunk.getHeight());
-
-		this->populateChunk(renderChunk, voxelChunk, ceilingScale, textureManager, renderer);
-		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, true, false);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
+}
+
+void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeChunkPositions,
+	const BufferView<const ChunkInt2> &newChunkPositions, double ceilingScale, double chasmAnimPercent,
+	const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer)
+{
+	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	{
+		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
+		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
+		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		this->populateVoxelChunk(renderChunk, voxelChunk, ceilingScale, textureManager, renderer);
+		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, true, false);
+	}
 
 	for (int i = 0; i < activeChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
-		const int chunkIndex = this->getChunkIndex(chunkPos);
-		RenderChunk &renderChunk = this->getChunkAtIndex(chunkIndex);
+		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const bool updateStatics = (voxelChunk.getDirtyMeshDefPositionCount() > 0) || (voxelChunk.getDirtyFadeAnimInstPositionCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
 		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
@@ -1069,6 +1078,13 @@ void RenderChunkManager::update(const BufferView<const ChunkInt2> &activeChunkPo
 	{
 		this->rebuildVoxelDrawCallsList();
 	}
+}
+
+void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions,
+	const BufferView<const ChunkInt2> &newChunkPositions, const EntityChunkManager &entityChunkManager,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	// @todo
 }
 
 void RenderChunkManager::unloadScene(Renderer &renderer)
