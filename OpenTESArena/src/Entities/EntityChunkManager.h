@@ -28,8 +28,10 @@ private:
 	EntityDirectionPool directions;
 	EntityAnimationInstancePool animInsts;
 	
-	std::vector<EntityAnimationDefinition> animDefs; // Not a pool since defs can be shared by several entities.
-	// @todo: entity anim defs, maybe a mapping of some kind, i.e. X -> anim def so they can be reused
+	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
+	// to be zero-based because these are in addition to ones in the entity definition library.
+	// @todo: separate EntityAnimationDefinition from EntityDefinition?
+	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, TextureManager &textureManager,
 		Renderer &renderer);
@@ -46,6 +48,8 @@ public:
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 		const CoordDouble3 &playerCoord, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		TextureManager &textureManager, Renderer &renderer);
+
+	// @todo: support spawning an entity not from the level def
 
 	/*void update(double dt, const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,

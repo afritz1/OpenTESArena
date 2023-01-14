@@ -1,24 +1,26 @@
 #ifndef ENTITY_INSTANCE_H
 #define ENTITY_INSTANCE_H
 
+#include "EntityUtils.h"
+
 using EntityInstanceID = int;
 using EntityPositionID = int;
 using EntityDirectionID = int;
-using EntityAnimationDefinitionID = int;
 using EntityAnimationInstanceID = int;
+using EntityPaletteInstanceID = int;
 
 struct EntityInstance
 {
 	EntityInstanceID instanceID;
+	EntityDefID defID;
 	EntityPositionID positionID;
 	EntityDirectionID directionID;
-	EntityAnimationDefinitionID animDefID;
 	EntityAnimationInstanceID animInstID;
 
 	EntityInstance();
 
-	// All entities at least have an instance ID and position.
-	void init(EntityInstanceID instanceID, EntityPositionID positionID);
+	// All entities at least have an instance ID, definition, and position.
+	void init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID);
 
 	void clear();
 };
