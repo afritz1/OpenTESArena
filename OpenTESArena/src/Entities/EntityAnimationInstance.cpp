@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 
 #include "EntityAnimationInstance.h"
@@ -164,5 +165,85 @@ void EntityAnimationInstance::tick(double dt, double totalSeconds, bool looping)
 	if (looping && (this->currentSeconds >= totalSeconds))
 	{
 		this->currentSeconds = std::fmod(this->currentSeconds, totalSeconds);
+	}
+}
+
+EntityAnimationInstanceKeyframeList::EntityAnimationInstanceKeyframeList()
+{
+	this->textureIdsIndex = -1;
+	this->textureIdCount = 0;
+}
+
+EntityAnimationInstanceState::EntityAnimationInstanceState()
+{
+	this->keyframeListsIndex = -1;
+	this->keyframeListCount = 0;
+	this->seconds = 0.0;
+	this->looping = false;
+}
+
+EntityAnimationInstanceA::EntityAnimationInstanceA()
+{
+	this->clear();
+}
+
+void EntityAnimationInstanceA::setStateIndex(int index)
+{
+	DebugAssert(this->stateCount > 0);
+	DebugAssert(index >= 0);
+	DebugAssert(index < this->stateCount);
+	const EntityAnimationInstanceState &currentState = this->states[index];
+
+	// Start at the beginning of this state.
+	this->currentStateIndex = index;
+	this->currentSeconds = 0.0;
+	this->targetSeconds = currentState.seconds;
+	this->looping = currentState.looping;
+
+	const int currentKeyframeListsIndex = currentState.keyframeListsIndex;
+	DebugAssert(currentState.keyframeListCount > 0);
+	DebugAssert(currentKeyframeListsIndex >= 0);
+	DebugAssert(currentKeyframeListsIndex < this->keyframeListCount);
+	const EntityAnimationInstanceKeyframeList &currentKeyframeList = this->keyframeLists[currentKeyframeListsIndex];
+	
+	const int currentTextureIdIndex = currentKeyframeList.textureIdsIndex;
+	DebugAssert(currentKeyframeList.textureIdCount > 0);
+	DebugAssert(currentTextureIdIndex >= 0);
+	DebugAssert(currentTextureIdIndex < this->textureIdCount);
+	this->currentTextureID = this->textureIDs[currentTextureIdIndex];
+}
+
+void EntityAnimationInstanceA::resetTime()
+{
+	this->currentSeconds = 0.0;
+}
+
+void EntityAnimationInstanceA::clear()
+{
+	std::fill(std::begin(this->states), std::end(this->states), EntityAnimationInstanceState());
+	this->stateCount = 0;
+
+	std::fill(std::begin(this->keyframeLists), std::end(this->keyframeLists), EntityAnimationInstanceKeyframeList());
+	this->keyframeListCount = 0;
+
+	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
+	this->textureIdCount = 0;
+
+	this->currentSeconds = 0.0;
+	this->targetSeconds = 0.0;
+	this->currentStateIndex = -1;
+	this->currentTextureID = -1;
+	this->looping = false;
+}
+
+void EntityAnimationInstanceA::update(double dt)
+{
+	if (this->looping)
+	{
+		this->currentSeconds = std::fmod(this->currentSeconds + dt, this->targetSeconds);
+	}
+	else
+	{
+		this->currentSeconds = std::min(this->currentSeconds + dt, this->targetSeconds);
 	}
 }

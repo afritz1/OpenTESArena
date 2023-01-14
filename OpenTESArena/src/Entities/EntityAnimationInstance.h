@@ -99,4 +99,51 @@ public:
 	void tick(double dt, double totalSeconds, bool looping);
 };
 
+struct EntityAnimationInstanceKeyframeList
+{
+	int textureIdsIndex;
+	int textureIdCount;
+
+	EntityAnimationInstanceKeyframeList();
+};
+
+struct EntityAnimationInstanceState
+{
+	int keyframeListsIndex;
+	int keyframeListCount;
+	double seconds;
+	bool looping;
+
+	EntityAnimationInstanceState();
+};
+
+struct EntityAnimationInstanceA
+{
+	static constexpr int MAX_STATES = 8;
+	static constexpr int MAX_KEYFRAME_LISTS = 64;
+	static constexpr int MAX_TEXTURE_IDS = 128;
+
+	EntityAnimationInstanceState states[MAX_STATES];
+	int stateCount;
+
+	EntityAnimationInstanceKeyframeList keyframeLists[MAX_KEYFRAME_LISTS];
+	int keyframeListCount;
+
+	ObjectTextureID textureIDs[MAX_TEXTURE_IDS]; // Non-owning texture IDs for 3D rendering.
+	int textureIdCount;
+
+	double currentSeconds; // Updated every frame.
+	double targetSeconds; // Updated when changing states.
+	int currentStateIndex;
+	ObjectTextureID currentTextureID;
+	bool looping; // Updated when changing states.
+
+	EntityAnimationInstanceA();
+
+	void setStateIndex(int index);
+	void resetTime();
+	void clear();
+	void update(double dt);
+};
+
 #endif

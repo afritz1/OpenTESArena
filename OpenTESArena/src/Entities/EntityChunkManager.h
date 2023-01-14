@@ -21,17 +21,26 @@ private:
 	using EntityPool = RecyclablePool<EntityInstance, EntityInstanceID>;
 	using EntityPositionPool = RecyclablePool<CoordDouble3, EntityPositionID>;
 	using EntityDirectionPool = RecyclablePool<VoxelDouble3, EntityDirectionID>;
-	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
+	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstanceA, EntityAnimationInstanceID>;
+	using EntityPaletteInstancePool = RecyclablePool<Palette, EntityPaletteInstanceID>;
 
 	EntityPool entities;
 	EntityPositionPool positions;
 	EntityDirectionPool directions;
 	EntityAnimationInstancePool animInsts;
-	
+
+	// Each citizen has a unique palette in place of unique textures for memory savings. It was found
+	// that hardly any citizen instances share textures due to variations in their random palette. As
+	// a result, citizen textures will need to be 8-bit.
+	EntityPaletteInstancePool palettes;
+
 	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
 	// @todo: separate EntityAnimationDefinition from EntityDefinition?
 	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
+
+	// Allocated textures for each entity definition's animations.
+	std::unordered_map<EntityDefID, std::vector<ScopedObjectTextureRef>> animTextureRefs;
 
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, TextureManager &textureManager,
 		Renderer &renderer);
