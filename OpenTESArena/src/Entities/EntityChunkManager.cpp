@@ -254,7 +254,12 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 				const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
 				if (EntityUtils::withinHearingDistance(playerCoord, entityCoord, ceilingScale))
 				{
+					// @todo: store some kind of sound def ID w/ the secondsTillCreatureSound instead of generating the sound filename here.
 					const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID, entityDefLibrary);
+					if (creatureSoundFilename.empty())
+					{
+						continue;
+					}
 
 					// Center the sound inside the creature.
 					const CoordDouble3 soundCoord(
