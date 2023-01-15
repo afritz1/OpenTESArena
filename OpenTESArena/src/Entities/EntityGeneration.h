@@ -24,6 +24,8 @@ namespace EntityGeneration
 		void init(bool nightLightsAreActive);
 	};
 
+	const std::string &getDefaultAnimationStateName(const EntityDefinition &entityDef, const EntityGenInfo &genInfo);
+
 	Entity *makeEntity(EntityType entityType, EntityDefinition::Type entityDefType, EntityDefID entityDefID,
 		const EntityDefinition &entityDef, const EntityAnimationDefinition &animDef,
 		const EntityGenInfo &entityGenInfo, Random &random, EntityManager &entityManager);

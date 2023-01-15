@@ -1,15 +1,22 @@
 #ifndef ENTITY_CHUNK_MANAGER_H
 #define ENTITY_CHUNK_MANAGER_H
 
+#include "CitizenUtils.h"
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationInstance.h"
 #include "EntityChunk.h"
+#include "EntityGeneration.h"
 #include "EntityInstance.h"
+#include "EntityUtils.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/BufferView.h"
 #include "components/utilities/RecyclablePool.h"
 
+class BinaryAssetLibrary;
+class EntityDefinitionLibrary;
+class LevelInfoDefinition;
+class MapDefinition;
 class Renderer;
 class TextureManager;
 class VoxelChunk;
@@ -19,8 +26,8 @@ class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 private:
 	using EntityPool = RecyclablePool<EntityInstance, EntityInstanceID>;
-	using EntityPositionPool = RecyclablePool<CoordDouble3, EntityPositionID>;
-	using EntityDirectionPool = RecyclablePool<VoxelDouble3, EntityDirectionID>;
+	using EntityPositionPool = RecyclablePool<CoordDouble2, EntityPositionID>;
+	using EntityDirectionPool = RecyclablePool<VoxelDouble2, EntityDirectionID>;
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstanceA, EntityAnimationInstanceID>;
 	using EntityPaletteInstancePool = RecyclablePool<Palette, EntityPaletteInstanceID>;
 
@@ -42,8 +49,20 @@ private:
 	// Allocated textures for each entity definition's animations.
 	std::unordered_map<EntityDefID, std::vector<ScopedObjectTextureRef>> animTextureRefs;
 
-	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, TextureManager &textureManager,
-		Renderer &renderer);
+	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
+
+	EntityInstanceID spawnEntity();
+
+	void populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &chunk, const LevelDefinition &levelDefinition,
+		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
+		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
+	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const std::optional<int> &activeLevelIndex,
+		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Adds entities from the level to the chunk.
 	/*void populateChunkEntities(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
@@ -55,8 +74,10 @@ private:
 public:
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
-		const CoordDouble3 &playerCoord, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		TextureManager &textureManager, Renderer &renderer);
+		const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// @todo: support spawning an entity not from the level def
 

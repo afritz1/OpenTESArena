@@ -8,6 +8,18 @@ void EntityGeneration::EntityGenInfo::init(bool nightLightsAreActive)
 	this->nightLightsAreActive = nightLightsAreActive;
 }
 
+const std::string &EntityGeneration::getDefaultAnimationStateName(const EntityDefinition &entityDef, const EntityGenInfo &genInfo)
+{
+	if (!EntityUtils::isStreetlight(entityDef))
+	{
+		return EntityAnimationUtils::STATE_IDLE;
+	}
+	else
+	{
+		return genInfo.nightLightsAreActive ? EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
+	}
+}
+
 Entity *EntityGeneration::makeEntity(EntityType entityType, EntityDefinition::Type entityDefType,
 	EntityDefID entityDefID, const EntityDefinition &entityDef, const EntityAnimationDefinition &animDef,
 	const EntityGenInfo &entityGenInfo, Random &random, EntityManager &entityManager)
@@ -18,19 +30,7 @@ Entity *EntityGeneration::makeEntity(EntityType entityType, EntityDefinition::Ty
 	EntityAnimationInstance animInst;
 	animInst.init(animDef);
 
-	const std::string &defaultStateName = [&entityDef, &entityGenInfo]() -> const std::string&
-	{
-		if (!EntityUtils::isStreetlight(entityDef))
-		{
-			return EntityAnimationUtils::STATE_IDLE;
-		}
-		else
-		{
-			return entityGenInfo.nightLightsAreActive ?
-				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
-		}
-	}();
-
+	const std::string &defaultStateName = EntityGeneration::getDefaultAnimationStateName(entityDef, entityGenInfo);
 	const std::optional<int> defaultStateIndex = animDef.tryGetStateIndex(defaultStateName.c_str());
 	if (!defaultStateIndex.has_value())
 	{
@@ -76,8 +76,7 @@ Entity *EntityGeneration::makeEntity(EntityType entityType, EntityDefinition::Ty
 	else if (entityType == EntityType::Dynamic)
 	{
 		DynamicEntity *dynamicEntity = dynamic_cast<DynamicEntity*>(entityPtr);
-		const VoxelDouble2 direction = CardinalDirection::North;
-		const CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(direction);
+		const VoxelDouble2 &direction = CardinalDirection::North;
 
 		if (entityDefType == EntityDefinition::Type::Enemy)
 		{

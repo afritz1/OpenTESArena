@@ -1162,9 +1162,8 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 			}
 		}();
 
-		mapInst.update(dt, game, newPlayerCoord, activeMapDef, latitude, this->getDaytimePercent(),
-			game.getOptions().getMisc_ChunkDistance(), entityGenInfo, citizenGenInfo, entityDefLibrary,
-			game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
+		mapInst.update(dt, game, newPlayerCoord, activeMapDef, latitude, this->getDaytimePercent(), entityGenInfo,
+			citizenGenInfo, entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
 	}
 }
 
@@ -1282,9 +1281,8 @@ void GameState::tick(double dt, Game &game)
 		}
 	}();
 
-	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, this->getDaytimePercent(),
-		game.getOptions().getMisc_ChunkDistance(), entityGenInfo, citizenGenInfo, entityDefLibrary,
-		game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
+	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
+		entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.
