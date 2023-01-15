@@ -171,3 +171,13 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
 
 	return true;
 }
+
+bool EntityUtils::withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale)
+{
+	const CoordDouble3 soundCoord3D(
+		soundCoord.chunk,
+		VoxelDouble3(soundCoord.point.x, ceilingScale * 1.50, soundCoord.point.y));
+	const VoxelDouble3 diff = soundCoord3D - listenerCoord;
+	constexpr double hearingDistanceSqr = EntityUtils::HearingDistance * EntityUtils::HearingDistance;
+	return diff.lengthSquared() < hearingDistanceSqr;
+}

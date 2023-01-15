@@ -29,9 +29,6 @@ private:
 	double secondsTillCreatureSound;
 	DynamicEntityType derivedType;
 
-	// @todo: this should probably be a property of the listener, not this entity.
-	bool withinHearingDistance(const CoordDouble3 &point, double ceilingScale);
-
 	// Attempts to get the entity's creature sound filename (if any). Returns success.
 	bool tryGetCreatureSoundFilename(const EntityManager &entityManager,
 		const EntityDefinitionLibrary &entityDefLibrary, std::string *outFilename) const;

@@ -186,8 +186,8 @@ void MapInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord,
 	const GameState &gameState = game.getGameState();
 	const double chasmAnimPercent = gameState.getChasmAnimPercent();
 	levelInst.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, playerCoord, this->activeLevelIndex,
-		mapDefinition, entityGenInfo, citizenGenInfo, chasmAnimPercent, entityDefLibrary, binaryAssetLibrary, renderChunkManager,
-		textureManager, audioManager, game.getRenderer());
+		mapDefinition, entityGenInfo, citizenGenInfo, chasmAnimPercent, game.getRandom(), entityDefLibrary, binaryAssetLibrary,
+		renderChunkManager, textureManager, audioManager, game.getRenderer());
 
 	SkyInstance &skyInst = this->getActiveSky();
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();

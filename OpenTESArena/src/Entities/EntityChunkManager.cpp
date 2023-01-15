@@ -2,6 +2,7 @@
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityType.h"
+#include "../Audio/AudioManager.h"
 #include "../Game/CardinalDirection.h"
 #include "../Math/Random.h"
 #include "../Voxels/VoxelChunk.h"
@@ -11,72 +12,20 @@
 #include "../World/MapDefinition.h"
 #include "../World/MapType.h"
 
-/*void VoxelChunkManager::populateChunkEntities(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
-	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
-	const EntityGeneration::EntityGenInfo &entityGenInfo,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, EntityManager &entityManager)
+#include "components/utilities/String.h"
+
+const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const
 {
-	SNInt startX, endX;
-	int startY, endY;
-	WEInt startZ, endZ;
-	ChunkUtils::GetWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
-		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
-
-	// Cosmetic random (initial creature sound timing, etc.).
-	Random random;
-
-	for (int i = 0; i < levelDefinition.getEntityPlacementDefCount(); i++)
+	const auto iter = this->entityDefs.find(defID);
+	if (iter != this->entityDefs.end())
 	{
-		const LevelDefinition::EntityPlacementDef &placementDef = levelDefinition.getEntityPlacementDef(i);
-		const LevelDefinition::EntityDefID levelEntityDefID = placementDef.id;
-		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
-		const EntityDefinition::Type entityDefType = entityDef.getType();
-		const EntityType entityType = EntityUtils::getEntityTypeFromDefType(entityDefType);
-		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-
-		std::optional<EntityDefID> entityDefID;
-		for (const LevelDouble3 &position : placementDef.positions)
-		{
-			const double ceilingScale = levelInfoDefinition.getCeilingScale();
-			const LevelInt3 voxelPosition = VoxelUtils::pointToVoxel(position, ceilingScale);
-			if (ChunkUtils::IsInWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
-			{
-				if (!entityDefID.has_value())
-				{
-					entityDefID = entityManager.addEntityDef(EntityDefinition(entityDef), entityDefLibrary);
-				}
-
-				const VoxelDouble3 point = ChunkUtils::MakeChunkPointFromLevel(position, startX, startY, startZ);
-				Entity *entity = EntityGeneration::makeEntity(entityType, entityDefType, *entityDefID,
-					entityDef, animDef, entityGenInfo, random, entityManager);
-
-				// Set entity position in chunk last. This has the potential to change the entity's chunk
-				// and invalidate the local entity pointer.
-				const CoordDouble2 coord(chunk.getPosition(), VoxelDouble2(point.x, point.z));
-				entity->setPosition(coord, entityManager);
-			}
-		}
+		return iter->second;
 	}
-
-	if (citizenGenInfo.has_value())
+	else
 	{
-		// Spawn citizens if the total active limit has not been reached.
-		const int currentCitizenCount = CitizenUtils::getCitizenCount(entityManager);
-		const int remainingCitizensToSpawn = std::min(
-			CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
-
-		for (int i = 0; i < remainingCitizensToSpawn; i++)
-		{
-			if (!CitizenUtils::trySpawnCitizenInChunk(chunk, *citizenGenInfo, random, binaryAssetLibrary,
-				textureManager, entityManager))
-			{
-				DebugLogWarning("Couldn't spawn citizen in chunk \"" + chunk.getPosition().toString() + "\".");
-			}
-		}
+		return defLibrary.getDefinition(defID);
 	}
-}*/
+}
 
 EntityDefID EntityChunkManager::addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary)
 {
@@ -183,6 +132,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 						secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
 					}
 				}
+
+				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
 		}
 	}
@@ -267,12 +218,64 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	}
 }
 
+std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID, const EntityDefinitionLibrary &entityDefLibrary) const
+{
+	const EntityDefinition &entityDef = this->getEntityDef(defID, entityDefLibrary);
+	if (entityDef.getType() != EntityDefinition::Type::Enemy)
+	{
+		return std::string();
+	}
+
+	const auto &enemyDef = entityDef.getEnemy();
+	if (enemyDef.getType() != EntityDefinition::EnemyDefinition::Type::Creature)
+	{
+		return std::string();
+	}
+
+	const auto &creatureDef = enemyDef.getCreature();
+	const std::string_view creatureSoundName = creatureDef.soundName;
+	return String::toUppercase(std::string(creatureSoundName));
+}
+
+void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,
+	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, AudioManager &audioManager)
+{
+	const int entityCount = static_cast<int>(entityChunk.entityIDs.size());
+	for (int i = 0; i < entityCount; i++)
+	{
+		const EntityInstanceID instID = entityChunk.entityIDs[i];
+		EntityInstance &entityInst = this->entities.get(instID);
+		if (entityInst.creatureSoundInstID >= 0)
+		{
+			double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
+			secondsTillCreatureSound -= dt;
+			if (secondsTillCreatureSound <= 0.0)
+			{
+				const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
+				if (EntityUtils::withinHearingDistance(playerCoord, entityCoord, ceilingScale))
+				{
+					const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID, entityDefLibrary);
+
+					// Center the sound inside the creature.
+					const CoordDouble3 soundCoord(
+						entityCoord.chunk,
+						VoxelDouble3(entityCoord.point.x, ceilingScale * 1.50, entityCoord.point.y));
+					const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
+					audioManager.playSound(creatureSoundFilename, absoluteSoundPosition);
+
+					secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
+				}
+			}
+		}
+	}
+}
+
 void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 	const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer)
 {
 	for (int i = 0; i < freedChunkPositions.getCount(); i++)
 	{
@@ -306,6 +309,8 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 		// @todo: simulate/animate AI
+
+		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, entityDefLibrary, audioManager);
 
 		// @todo: citizen spawning and management by player distance
 

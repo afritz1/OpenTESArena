@@ -614,8 +614,8 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 			newActiveLevel.update(dummyDeltaTime, activeChunkPositions, newChunkPositions, freedChunkPositions,
 				player.getPosition(), levelIndex, interiorMapDef, entityGenInfo, citizenGenInfo, gameState.getChasmAnimPercent(),
-				game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), renderChunkManager, textureManager,
-				game.getAudioManager(), renderer);
+				game.getRandom(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), renderChunkManager,
+				textureManager, game.getAudioManager(), renderer);
 		};
 
 		// Lambda for opening the world map when the player enters a transition voxel

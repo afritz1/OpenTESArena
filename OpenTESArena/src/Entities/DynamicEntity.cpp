@@ -15,13 +15,6 @@
 
 #include "components/utilities/String.h"
 
-namespace
-{
-	// Arbitrary value for how far away a creature can be heard from.
-	// @todo: make this be part of the player, not creatures.
-	constexpr double HearingDistance = 6.0;
-}
-
 DynamicEntity::DynamicEntity()
 	: direction(Double2::Zero), velocity(Double2::Zero)
 {
@@ -93,16 +86,6 @@ double DynamicEntity::nextCreatureSoundWaitTime(Random &random)
 {
 	// Arbitrary amount of time.
 	return 2.75 + (random.nextReal() * 4.50);
-}
-
-bool DynamicEntity::withinHearingDistance(const CoordDouble3 &point, double ceilingScale)
-{
-	const CoordDouble3 position3D(
-		this->position.chunk,
-		VoxelDouble3(this->position.point.x, ceilingScale * 1.50, this->position.point.y));
-	const VoxelDouble3 diff = point - position3D;
-	constexpr double hearingDistanceSqr = HearingDistance * HearingDistance;
-	return diff.lengthSquared() < hearingDistanceSqr;
 }
 
 bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManager,
@@ -293,7 +276,7 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 	{
 		// See if the NPC is withing hearing distance of the player.
 		const CoordDouble3 &playerPosition = game.getPlayer().getPosition();
-		if (this->withinHearingDistance(playerPosition, ceilingScale))
+		if (EntityUtils::withinHearingDistance(playerPosition, this->position, ceilingScale))
 		{
 			// See if the NPC has a creature sound.
 			std::string creatureSoundFilename;
