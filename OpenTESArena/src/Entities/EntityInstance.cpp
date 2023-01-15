@@ -24,4 +24,5 @@ void EntityInstance::clear()
 	this->positionID = -1;
 	this->directionID = -1;
 	this->animInstID = -1;
+	this->creatureSoundInstID = -1;
 }

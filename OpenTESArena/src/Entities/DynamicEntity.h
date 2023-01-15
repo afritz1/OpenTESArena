@@ -29,9 +29,6 @@ private:
 	double secondsTillCreatureSound;
 	DynamicEntityType derivedType;
 
-	// Gets the next creature sound wait time (in seconds) from the given RNG.
-	static double nextCreatureSoundWaitTime(Random &random);
-
 	// @todo: this should probably be a property of the listener, not this entity.
 	bool withinHearingDistance(const CoordDouble3 &point, double ceilingScale);
 
@@ -57,6 +54,9 @@ private:
 public:
 	DynamicEntity();
 	~DynamicEntity() override = default;
+
+	// Gets the next creature sound wait time (in seconds) from the given RNG.
+	static double nextCreatureSoundWaitTime(Random &random);
 
 	void initCitizen(EntityDefID defID, const EntityAnimationInstance &animInst,
 		CardinalDirectionName direction);

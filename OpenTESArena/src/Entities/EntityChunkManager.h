@@ -29,12 +29,14 @@ private:
 	using EntityPositionPool = RecyclablePool<CoordDouble2, EntityPositionID>;
 	using EntityDirectionPool = RecyclablePool<VoxelDouble2, EntityDirectionID>;
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstanceA, EntityAnimationInstanceID>;
+	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
 	using EntityPaletteInstancePool = RecyclablePool<Palette, EntityPaletteInstanceID>;
 
 	EntityPool entities;
 	EntityPositionPool positions;
 	EntityDirectionPool directions;
 	EntityAnimationInstancePool animInsts;
+	EntityCreatureSoundPool creatureSoundInsts;
 
 	// Each citizen has a unique palette in place of unique textures for memory savings. It was found
 	// that hardly any citizen instances share textures due to variations in their random palette. As
@@ -63,14 +65,6 @@ private:
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
-
-	// Adds entities from the level to the chunk.
-	/*void populateChunkEntities(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
-		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
-		const EntityGeneration::EntityGenInfo &entityGenInfo,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, EntityManager &entityManager);*/
 public:
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
@@ -80,13 +74,6 @@ public:
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// @todo: support spawning an entity not from the level def
-
-	/*void update(double dt, const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
-		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,
-		EntityManager &entityManager);*/
 };
 
 #endif

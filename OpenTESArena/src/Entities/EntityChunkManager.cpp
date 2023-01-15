@@ -1,3 +1,4 @@
+#include "DynamicEntity.h"
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityType.h"
@@ -173,7 +174,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 					if (entityDefType == EntityDefinition::Type::Enemy)
 					{
-						// @todo: init creature sound seconds w/ Random (need another pool for creature sound seconds probably)
+						if (!this->creatureSoundInsts.tryAlloc(&entityInst.creatureSoundInstID))
+						{
+							DebugCrash("Couldn't allocate EntityCreatureSoundInstanceID.");
+						}
+
+						double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
+						secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
 					}
 				}
 			}
