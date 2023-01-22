@@ -14,9 +14,9 @@ class Renderer;
 struct LockedTexture
 {
 	void *texels;
-	bool isTrueColor;
+	int bytesPerTexel;
 
-	LockedTexture(void *texels, bool isTrueColor);
+	LockedTexture(void *texels, int bytesPerTexel);
 
 	bool isValid();
 };

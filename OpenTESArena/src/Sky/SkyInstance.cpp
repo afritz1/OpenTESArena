@@ -176,7 +176,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		constexpr int textureHeight = textureWidth;
 
 		ObjectTextureID objectTextureID;
-		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, false, &objectTextureID))
+		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, 1, &objectTextureID))
 		{
 			DebugLogWarning("Couldn't create small star texture.");
 			return;
@@ -190,7 +190,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			return;
 		}
 
-		DebugAssert(!lockedSmallStarTexture.isTrueColor);
+		DebugAssert(lockedSmallStarTexture.bytesPerTexel == 1);
 		uint8_t *lockedSmallStarTexels = static_cast<uint8_t*>(lockedSmallStarTexture.texels);
 		*lockedSmallStarTexels = paletteIndex;
 		renderer.unlockObjectTexture(objectTextureID);
@@ -640,7 +640,7 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 	}
 
 	ObjectTextureID skyColorsTextureID;
-	if (!renderer.tryCreateObjectTexture(skyColors.getCount(), 1, false, &skyColorsTextureID))
+	if (!renderer.tryCreateObjectTexture(skyColors.getCount(), 1, 1, &skyColorsTextureID))
 	{
 		DebugLogError("Couldn't create sky colors texture.");
 		return false;
@@ -648,7 +648,7 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 
 	this->skyColorsTextureRef = ScopedObjectTextureRef(skyColorsTextureID, renderer);
 	LockedTexture lockedSkyColorsTexture = renderer.lockObjectTexture(this->skyColorsTextureRef.get());
-	DebugAssert(!lockedSkyColorsTexture.isTrueColor);
+	DebugAssert(lockedSkyColorsTexture.bytesPerTexel == 1);
 	uint8_t *lockedSkyColorsTexels = static_cast<uint8_t*>(lockedSkyColorsTexture.texels);
 	// @todo: change SkyDefinition sky colors to be 8-bit, or a TextureBuilder maybe in case of modding
 	std::fill(lockedSkyColorsTexels, lockedSkyColorsTexels + skyColors.getCount(), 0);

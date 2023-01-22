@@ -57,7 +57,7 @@ public:
 	virtual void freeIndexBuffer(IndexBufferID id) = 0;
 
 	// Texture management functions.
-	virtual bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID) = 0;
+	virtual bool tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID) = 0;
 	virtual bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) = 0;
 	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
 	virtual void unlockObjectTexture(ObjectTextureID id) = 0;

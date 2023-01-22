@@ -204,7 +204,7 @@ namespace sgTexture
 			{
 				// Dry chasms are a single color, no texture asset.
 				ObjectTextureID dryChasmTextureID;
-				if (!renderer.tryCreateObjectTexture(1, 1, false, &dryChasmTextureID))
+				if (!renderer.tryCreateObjectTexture(1, 1, 1, &dryChasmTextureID))
 				{
 					DebugLogWarning("Couldn't create dry chasm texture.");
 					return;
@@ -220,7 +220,7 @@ namespace sgTexture
 
 				const uint8_t paletteIndex = chasmDef.solidColor.paletteIndex;
 
-				DebugAssert(!lockedTexture.isTrueColor);
+				DebugAssert(lockedTexture.bytesPerTexel == 1);
 				uint8_t *texels = static_cast<uint8_t*>(lockedTexture.texels);
 				*texels = paletteIndex;
 				renderer.unlockObjectTexture(dryChasmTextureID);

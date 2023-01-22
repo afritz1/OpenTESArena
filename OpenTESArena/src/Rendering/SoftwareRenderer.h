@@ -2,6 +2,7 @@
 #define SOFTWARE_RENDERER_H
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
@@ -27,13 +28,15 @@ class SoftwareRenderer : public RendererSystem3D
 public:
 	struct ObjectTexture
 	{
-		Buffer2D<uint8_t> texels;
-		Buffer<uint32_t> paletteTexels;
+		Buffer<std::byte> texels;
+		int width, height, texelCount;
+		int bytesPerTexel;
 
-		void init8Bit(int width, int height);
-		void initPalette(int count);
-
+		void init(int width, int height, int bytesPerTexel);
 		void clear();
+
+		const uint8_t *get8Bit() const;
+		const uint32_t *get32Bit() const;
 	};
 
 	using ObjectTexturePool = RecyclablePool<ObjectTexture, ObjectTextureID>;
@@ -88,7 +91,7 @@ public:
 	void freeAttributeBuffer(AttributeBufferID id) override;
 	void freeIndexBuffer(IndexBufferID id) override;
 
-	bool tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID) override;
+	bool tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID) override;
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) override;
 	LockedTexture lockObjectTexture(ObjectTextureID id) override;
 	void unlockObjectTexture(ObjectTextureID id) override;

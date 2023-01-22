@@ -3,10 +3,10 @@
 
 #include "components/debug/Debug.h"
 
-LockedTexture::LockedTexture(void *texels, bool isTrueColor)
+LockedTexture::LockedTexture(void *texels, int bytesPerTexel)
 {
 	this->texels = texels;
-	this->isTrueColor = isTrueColor;
+	this->bytesPerTexel = bytesPerTexel;
 }
 
 bool LockedTexture::isValid()

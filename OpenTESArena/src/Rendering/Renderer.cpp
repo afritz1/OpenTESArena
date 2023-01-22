@@ -761,10 +761,10 @@ void Renderer::freeIndexBuffer(IndexBufferID id)
 	this->renderer3D->freeIndexBuffer(id);
 }
 
-bool Renderer::tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID)
+bool Renderer::tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateObjectTexture(width, height, isPalette, outID);
+	return this->renderer3D->tryCreateObjectTexture(width, height, bytesPerTexel, outID);
 }
 
 bool Renderer::tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID)

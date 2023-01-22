@@ -910,9 +910,9 @@ namespace swRender
 		constexpr double yShear = 0.0;
 
 		PixelShaderTexture lightTableShaderTexture;
-		lightTableShaderTexture.texels = lightTableTexture.texels.get();
-		lightTableShaderTexture.width = lightTableTexture.texels.getWidth();
-		lightTableShaderTexture.height = lightTableTexture.texels.getHeight();
+		lightTableShaderTexture.texels = lightTableTexture.get8Bit();
+		lightTableShaderTexture.width = lightTableTexture.width;
+		lightTableShaderTexture.height = lightTableTexture.height;
 		lightTableShaderTexture.samplingType = TextureSamplingType::Default;
 
 		const int triangleCount = drawListIndices.count;
@@ -975,22 +975,22 @@ namespace swRender
 			const SoftwareRenderer::ObjectTexture &texture1 = isMultiTextured ? textures.get(textureID1) : texture0;
 
 			PixelShaderTexture shaderTexture0;
-			shaderTexture0.texels = texture0.texels.get();
-			shaderTexture0.width = texture0.texels.getWidth();
-			shaderTexture0.height = texture0.texels.getHeight();
+			shaderTexture0.texels = texture0.get8Bit();
+			shaderTexture0.width = texture0.width;
+			shaderTexture0.height = texture0.height;
 			shaderTexture0.samplingType = textureSamplingType;
 
 			PixelShaderTexture shaderTexture1;
-			shaderTexture1.texels = texture1.texels.get();
-			shaderTexture1.width = texture1.texels.getWidth();
-			shaderTexture1.height = texture1.texels.getHeight();
+			shaderTexture1.texels = texture1.get8Bit();
+			shaderTexture1.width = texture1.width;
+			shaderTexture1.height = texture1.height;
 			shaderTexture1.samplingType = TextureSamplingType::ScreenSpaceRepeatY; // @todo: change to variable once other shaders need this
 
 			PixelShaderFrameBuffer shaderFrameBuffer;
 			shaderFrameBuffer.colors = colorBuffer.get();
 			shaderFrameBuffer.depth = depthBuffer.get();
-			shaderFrameBuffer.palette.colors = paletteTexture.paletteTexels.get();
-			shaderFrameBuffer.palette.count = paletteTexture.paletteTexels.getCount();
+			shaderFrameBuffer.palette.colors = paletteTexture.get32Bit();
+			shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 
 			for (int y = yStart; y < yEnd; y++)
 			{
@@ -1065,20 +1065,38 @@ namespace swRender
 	}
 }
 
-void SoftwareRenderer::ObjectTexture::init8Bit(int width, int height)
+void SoftwareRenderer::ObjectTexture::init(int width, int height, int bytesPerTexel)
 {
-	this->texels.init(width, height);
-}
+	DebugAssert(width > 0);
+	DebugAssert(height > 0);
+	DebugAssert(bytesPerTexel > 0);
 
-void SoftwareRenderer::ObjectTexture::initPalette(int count)
-{
-	this->paletteTexels.init(count);
+	this->texelCount = width * height;
+	this->texels.init(this->texelCount * bytesPerTexel);
+	this->texels.fill(static_cast<std::byte>(0));
+
+	this->width = width;
+	this->height = height;
+	this->bytesPerTexel = bytesPerTexel;
 }
 
 void SoftwareRenderer::ObjectTexture::clear()
 {
 	this->texels.clear();
-	this->paletteTexels.clear();
+}
+
+const uint8_t *SoftwareRenderer::ObjectTexture::get8Bit() const
+{
+	DebugAssertMsg(this->bytesPerTexel == 1, "Expected object texture (" + std::to_string(this->width) + "x" +
+		std::to_string(this->height) + " to be 1 byte per texel (was " + std::to_string(this->bytesPerTexel) + ").");
+	return reinterpret_cast<const uint8_t*>(this->texels.get());
+}
+
+const uint32_t *SoftwareRenderer::ObjectTexture::get32Bit() const
+{
+	DebugAssertMsg(this->bytesPerTexel == 4, "Expected object texture (" + std::to_string(this->width) + "x" +
+		std::to_string(this->height) + " to be 4 bytes per texel (was " + std::to_string(this->bytesPerTexel) + ").");
+	return reinterpret_cast<const uint32_t*>(this->texels.get());
 }
 
 void SoftwareRenderer::VertexBuffer::init(int vertexCount, int componentsPerVertex)
@@ -1247,7 +1265,7 @@ void SoftwareRenderer::freeIndexBuffer(IndexBufferID id)
 	this->indexBuffers.free(id);
 }
 
-bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, bool isPalette, ObjectTextureID *outID)
+bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID)
 {
 	if (!this->objectTextures.tryAlloc(outID))
 	{
@@ -1256,17 +1274,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, bool isPale
 	}
 
 	ObjectTexture &texture = this->objectTextures.get(*outID);
-	if (!isPalette)
-	{
-		texture.init8Bit(width, height);
-		texture.texels.fill(0);
-	}
-	else
-	{
-		texture.initPalette(width * height);
-		texture.paletteTexels.fill(0);
-	}
-
+	texture.init(width, height, bytesPerTexel);
 	return true;
 }
 
@@ -1274,29 +1282,30 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 {
 	const int width = textureBuilder.getWidth();
 	const int height = textureBuilder.getHeight();
-	if (!this->tryCreateObjectTexture(width, height, false, outID))
+	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
+	const int bytesPerTexel = (textureBuilderType == TextureBuilder::Type::Paletted) ? 1 :
+		((textureBuilderType == TextureBuilder::Type::TrueColor) ? 4 : -1);
+
+	if (!this->tryCreateObjectTexture(width, height, bytesPerTexel, outID))
 	{
 		DebugLogWarning("Couldn't create " + std::to_string(width) + "x" + std::to_string(height) + " object texture.");
 		return false;
 	}
 
 	ObjectTexture &texture = this->objectTextures.get(*outID);
-	uint8_t *dstTexels = texture.texels.get();
-
-	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
 		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
 		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
+		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.get());
 		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
 	{
-		DebugLogWarning("True color texture (dimensions " + std::to_string(width) + "x" + std::to_string(height) + ") not supported.");
-		texture.texels.fill(0);
 		const TextureBuilder::TrueColorTexture &trueColorTexture = textureBuilder.getTrueColor();
 		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
-		//std::transform(srcTexels.get(), srcTexels.end(), dstTexels, ...)
+		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.get());
+		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
 	}
 	else
 	{
@@ -1309,19 +1318,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
 {
 	ObjectTexture &texture = this->objectTextures.get(id);
-	if (texture.texels.isValid())
-	{
-		return LockedTexture(texture.texels.get(), false);
-	}
-	else if (texture.paletteTexels.isValid())
-	{
-		return LockedTexture(texture.paletteTexels.get(), true);
-	}
-	else
-	{
-		DebugNotImplemented();
-		return LockedTexture(nullptr, false);
-	}
+	return LockedTexture(texture.texels.get(), texture.bytesPerTexel);
 }
 
 void SoftwareRenderer::unlockObjectTexture(ObjectTextureID id)
@@ -1338,7 +1335,7 @@ void SoftwareRenderer::freeObjectTexture(ObjectTextureID id)
 std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
 {
 	const ObjectTexture &texture = this->objectTextures.get(id);
-	return Int2(texture.texels.getWidth(), texture.texels.getHeight());
+	return Int2(texture.width, texture.height);
 }
 
 RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const

@@ -30,7 +30,7 @@ namespace
 
 		const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
 		ObjectTextureID paletteTextureID;
-		if (!renderer.tryCreateObjectTexture(static_cast<int>(defaultPalette.size()), 1, true, &paletteTextureID))
+		if (!renderer.tryCreateObjectTexture(static_cast<int>(defaultPalette.size()), 1, 4, &paletteTextureID))
 		{
 			DebugLogError("Couldn't create default palette texture \"" + defaultPaletteFilename + "\".");
 			return false;
@@ -44,7 +44,7 @@ namespace
 			return false;
 		}
 
-		DebugAssert(lockedPaletteTexture.isTrueColor);
+		DebugAssert(lockedPaletteTexture.bytesPerTexel == 4);
 		uint32_t *paletteTexels = static_cast<uint32_t*>(lockedPaletteTexture.texels);
 		std::transform(defaultPalette.begin(), defaultPalette.end(), paletteTexels,
 			[](const Color &paletteColor)
