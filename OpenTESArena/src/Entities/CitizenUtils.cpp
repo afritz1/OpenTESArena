@@ -13,6 +13,8 @@
 #include "../Math/Random.h"
 #include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
+#include "../World/MapType.h"
+#include "../WorldMap/ProvinceDefinition.h"
 
 #include "components/utilities/Buffer.h"
 
@@ -42,6 +44,67 @@ void CitizenUtils::CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID
 	this->femaleAnimInst = std::move(femaleAnimInst);
 	this->paletteID = paletteID;
 	this->raceID = raceID;
+}
+
+bool CitizenUtils::canMapTypeSpawnCitizens(MapType mapType)
+{
+	return (mapType == MapType::City) || (mapType == MapType::Wilderness);
+}
+
+CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
+	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
+{
+	// Citizen entity definitions are level-independent and stored in a library beforehand.
+	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinition::Type::Citizen));
+	EntityDefinitionLibrary::Key maleEntityDefKey, femaleEntityDefKey;
+	maleEntityDefKey.initCitizen(true, climateType);
+	femaleEntityDefKey.initCitizen(false, climateType);
+
+	EntityDefID maleEntityDefID, femaleEntityDefID;
+	if (!entityDefLibrary.tryGetDefinitionID(maleEntityDefKey, &maleEntityDefID) ||
+		!entityDefLibrary.tryGetDefinitionID(femaleEntityDefKey, &femaleEntityDefID))
+	{
+		DebugCrash("Couldn't get citizen entity def ID from library.");
+	}
+
+	// Only two citizen entity definitions for a given climate, based on the gender.
+	const EntityDefinition &maleEntityDef = entityDefLibrary.getDefinition(maleEntityDefID);
+	const EntityDefinition &femaleEntityDef = entityDefLibrary.getDefinition(femaleEntityDefID);
+	EntityAnimationInstance maleAnimInst, femaleAnimInst;
+	maleAnimInst.init(maleEntityDef.getAnimDef());
+	femaleAnimInst.init(femaleEntityDef.getAnimDef());
+
+	// Base palette for citizens to generate from.
+	const std::string &paletteName = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get default palette \"" + paletteName + "\".");
+	}
+
+	CitizenGenInfo citizenGenInfo;
+	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef,
+		std::move(maleAnimInst), std::move(femaleAnimInst), *paletteID, raceID);
+	return citizenGenInfo;
+}
+
+std::optional<CitizenUtils::CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapType, int raceID,
+	const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
+{
+	if (!CitizenUtils::canMapTypeSpawnCitizens(mapType))
+	{
+		return std::nullopt;
+	}
+
+	const LocationDefinition::Type locationDefType = locationDef.getType();
+	if (locationDefType != LocationDefinition::Type::City)
+	{
+		return std::nullopt;
+	}
+	
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const ArenaTypes::ClimateType climateType = cityDef.climateType;
+	return CitizenUtils::makeCitizenGenInfo(raceID, climateType, entityDefLibrary, textureManager);
 }
 
 bool CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection)
@@ -121,43 +184,6 @@ int CitizenUtils::getCitizenCountInChunk(const ChunkInt2 &chunk, const EntityMan
 	}
 
 	return count;
-}
-
-CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
-	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
-{
-	// Citizen entity definitions are level-independent and stored in a library beforehand.
-	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinition::Type::Citizen));
-	EntityDefinitionLibrary::Key maleEntityDefKey, femaleEntityDefKey;
-	maleEntityDefKey.initCitizen(true, climateType);
-	femaleEntityDefKey.initCitizen(false, climateType);
-
-	EntityDefID maleEntityDefID, femaleEntityDefID;
-	if (!entityDefLibrary.tryGetDefinitionID(maleEntityDefKey, &maleEntityDefID) ||
-		!entityDefLibrary.tryGetDefinitionID(femaleEntityDefKey, &femaleEntityDefID))
-	{
-		DebugCrash("Couldn't get citizen entity def ID from library.");
-	}
-
-	// Only two citizen entity definitions for a given climate, based on the gender.
-	const EntityDefinition &maleEntityDef = entityDefLibrary.getDefinition(maleEntityDefID);
-	const EntityDefinition &femaleEntityDef = entityDefLibrary.getDefinition(femaleEntityDefID);
-	EntityAnimationInstance maleAnimInst, femaleAnimInst;
-	maleAnimInst.init(maleEntityDef.getAnimDef());
-	femaleAnimInst.init(femaleEntityDef.getAnimDef());
-
-	// Base palette for citizens to generate from.
-	const std::string &paletteName = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get default palette \"" + paletteName + "\".");
-	}
-
-	CitizenGenInfo citizenGenInfo;
-	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef,
-		std::move(maleAnimInst), std::move(femaleAnimInst), *paletteID, raceID);
-	return citizenGenInfo;
 }
 
 bool CitizenUtils::trySpawnCitizenInChunk(const VoxelChunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,

@@ -1145,22 +1145,10 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 		// Tick active map (entities, animated distant land, etc.).
 		const MapDefinition &activeMapDef = this->getActiveMapDef();
 		const MapType mapType = activeMapDef.getMapType();
-		const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [this, &game, &entityDefLibrary,
-			&textureManager, mapType]() -> std::optional<CitizenUtils::CitizenGenInfo>
-		{
-			if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
-			{
-				const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-				const LocationDefinition &locationDef = this->getLocationDefinition();
-				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-				return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
-					entityDefLibrary, textureManager);
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}();
+		const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+		const LocationDefinition &locationDef = this->getLocationDefinition();
+		const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
+			mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
 
 		mapInst.update(dt, game, newPlayerCoord, activeMapDef, latitude, this->getDaytimePercent(), entityGenInfo,
 			citizenGenInfo, entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
@@ -1264,22 +1252,10 @@ void GameState::tick(double dt, Game &game)
 	// Tick active map (entities, animated distant land, etc.).
 	const MapDefinition &mapDef = this->getActiveMapDef();
 	const MapType mapType = mapDef.getMapType();
-	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [this, &game, mapType,
-		&entityDefLibrary, &textureManager]() -> std::optional<CitizenUtils::CitizenGenInfo>
-	{
-		if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
-		{
-			const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-			const LocationDefinition &locationDef = this->getLocationDefinition();
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
-				entityDefLibrary, textureManager);
-		}
-		else
-		{
-			return std::nullopt;
-		}
-	}();
+	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
+		mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
 
 	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
 		entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());

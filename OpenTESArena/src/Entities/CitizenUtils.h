@@ -1,6 +1,8 @@
 #ifndef CITIZEN_UTILS_H
 #define CITIZEN_UTILS_H
 
+#include <optional>
+
 #include "EntityAnimationInstance.h"
 #include "EntityUtils.h"
 #include "../Assets/ArenaTypes.h"
@@ -11,10 +13,12 @@ class BinaryAssetLibrary;
 class EntityDefinition;
 class EntityDefinitionLibrary;
 class EntityManager;
+class LocationDefinition;
 class Random;
 class VoxelChunk;
 
 enum class CardinalDirectionName;
+enum class MapType;
 
 namespace CitizenUtils
 {
@@ -44,6 +48,12 @@ namespace CitizenUtils
 			EntityAnimationInstance &&femaleAnimInst, PaletteID paletteID, int raceID);
 	};
 
+	bool canMapTypeSpawnCitizens(MapType mapType);
+	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
+		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
+	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef,
+		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
+
 	// Helper functions for determining a citizen's walking direction.
 	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection);
 	CardinalDirectionName getCitizenDirectionNameByIndex(int index);
@@ -53,9 +63,6 @@ namespace CitizenUtils
 	// Gets the number of citizens active in the world.
 	int getCitizenCount(const EntityManager &entityManager);
 	int getCitizenCountInChunk(const ChunkInt2 &chunk, const EntityManager &entityManager);
-
-	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
-		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
 
 	bool trySpawnCitizenInChunk(const VoxelChunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityManager &entityManager);
