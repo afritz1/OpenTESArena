@@ -82,35 +82,6 @@ void WeatherDefinition::initSnow(bool overcast, bool heavyFog)
 	this->snow.init(overcast, heavyFog);
 }
 
-void WeatherDefinition::initFromClassic(ArenaTypes::WeatherType weatherType, int currentDay, Random &random)
-{
-	if (ArenaWeatherUtils::isClear(weatherType))
-	{
-		this->initClear();
-	}
-	else if (ArenaWeatherUtils::isOvercast(weatherType))
-	{
-		const bool heavyFog = ArenaWeatherUtils::fogIsHeavy(currentDay);
-		this->initOvercast(heavyFog);
-	}
-	else if (ArenaWeatherUtils::isRain(weatherType))
-	{
-		const bool thunderstorm = ArenaWeatherUtils::rainIsThunderstorm(random);
-		this->initRain(thunderstorm);
-	}
-	else if (ArenaWeatherUtils::isSnow(weatherType))
-	{
-		const bool overcast = (weatherType == ArenaTypes::WeatherType::SnowOvercast) ||
-			(weatherType == ArenaTypes::WeatherType::SnowOvercast2);
-		const bool heavyFog = ArenaWeatherUtils::fogIsHeavy(currentDay);
-		this->initSnow(overcast, heavyFog);
-	}
-	else
-	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(weatherType)));
-	}
-}
-
 WeatherDefinition::Type WeatherDefinition::getType() const
 {
 	return this->type;

@@ -351,21 +351,14 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
-			const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
-			{
-				WeatherDefinition weatherDef;
-				weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
-				return weatherDef;
-			}();
-
 			SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-			skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+			skyGenInfo.init(cityDef.climateType, currentDay, starCount, cityDef.citySeed, cityDef.skySeed,
+				provinceDef.hasAnimatedDistantLand(), game.getRandom());
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-				game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-				game.getTextAssetLibrary(), game.getTextureManager(), renderer))
+			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
+				game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(),
+				game.getTextureManager(), renderer))
 			{
 				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 			}
@@ -431,23 +424,16 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
-			const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
-			{
-				WeatherDefinition weatherDef;
-				weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
-				return weatherDef;
-			}();
-
 			SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-			skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+			skyGenInfo.init(cityDef.climateType, currentDay, starCount, cityDef.citySeed, cityDef.skySeed,
+				provinceDef.hasAnimatedDistantLand(), game.getRandom());
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
 			// Load city into game state.
-			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-				game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-				game.getTextAssetLibrary(), game.getTextureManager(), renderer))
+			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
+				game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(),
+				game.getTextureManager(), renderer))
 			{
 				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 			}
@@ -471,26 +457,18 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		MapGeneration::WildGenInfo wildGenInfo;
 		wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
-		// Use current weather.
-		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
-		{
-			WeatherDefinition weatherDef;
-			weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
-			return weatherDef;
-		}();
-
 		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+		skyGenInfo.init(cityDef.climateType, currentDay, starCount, cityDef.citySeed, cityDef.skySeed,
+			provinceDef.hasAnimatedDistantLand(), game.getRandom());
 
 		// No previous start coordinate available. Let the loader decide.
 		const std::optional<CoordInt3> startCoord;
 
 		// Load wilderness into game state.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-		if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-			worldMapLocationIDs, game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
-			binaryAssetLibrary, game.getTextureManager(), renderer))
+		if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, startCoord, worldMapLocationIDs,
+			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+			game.getTextureManager(), renderer))
 		{
 			DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 		}

@@ -1,6 +1,8 @@
 #include <algorithm>
 
 #include "SkyDefinition.h"
+#include "../Weather/ArenaWeatherUtils.h"
+#include "../Weather/WeatherUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -45,9 +47,76 @@ SkyDefinition::MoonPlacementDef::MoonPlacementDef(MoonDefID id,
 	this->id = id;
 }
 
-void SkyDefinition::init(Buffer<Color> &&skyColors)
+void SkyDefinition::initInterior(Buffer<Color> &&skyColors)
 {
+	this->allowedWeatherDefs = WeatherUtils::makeInteriorDefs();
 	this->skyColors = std::move(skyColors);
+}
+
+void SkyDefinition::initExterior(Buffer<WeatherDefinition> &&allowedWeatherDefs)
+{
+	this->allowedWeatherDefs = std::move(allowedWeatherDefs);
+	// Sky colors here are empty; the overrides are determined when an active weather is selected.
+}
+
+int SkyDefinition::getAllowedWeatherCount() const
+{
+	return this->allowedWeatherDefs.getCount();
+}
+
+const WeatherDefinition &SkyDefinition::getAllowedWeather(int index) const
+{
+	return this->allowedWeatherDefs.get(index);
+}
+
+int SkyDefinition::getAllowedWeatherIndex(ArenaTypes::WeatherType weatherType) const
+{
+	DebugAssert(this->allowedWeatherDefs.getCount() > 0);
+
+	auto tryGetBestIndex = [this](WeatherDefinition::Type desiredType, bool (*func)(const WeatherDefinition &weatherDef))
+	{
+		for (int i = 0; i < this->allowedWeatherDefs.getCount(); i++)
+		{
+			const WeatherDefinition &weatherDef = this->allowedWeatherDefs.get(i);
+			const WeatherDefinition::Type weatherDefType = weatherDef.getType();
+			if ((weatherDefType == desiredType) && func(weatherDef))
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	};
+
+	DebugNotImplementedMsg("getAllowedWeatherIndex()");
+
+	// Look up the best available match for the given weather.
+	if (ArenaWeatherUtils::isSnow(weatherType))
+	{
+		const int bestSnowOvercastIndex = tryGetBestIndex(WeatherDefinition::Type::Snow, [](const WeatherDefinition &weatherDef)
+		{
+			const WeatherDefinition::SnowDefinition &snowDef = weatherDef.getSnow();
+			return snowDef.overcast;
+		});
+
+		const int bestSnowIndex = tryGetBestIndex(WeatherDefinition::Type::Snow, [](const WeatherDefinition &weatherDef)
+		{
+			const WeatherDefinition::SnowDefinition &snowDef = weatherDef.getSnow();
+			return snowDef.overcast;
+		});
+	}
+
+	if (ArenaWeatherUtils::isRain(weatherType))
+	{
+
+	}
+
+	if (ArenaWeatherUtils::isOvercast(weatherType))
+	{
+
+	}
+
+	return 0;
 }
 
 int SkyDefinition::getSkyColorCount() const

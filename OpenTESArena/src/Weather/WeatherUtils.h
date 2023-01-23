@@ -3,12 +3,19 @@
 
 #include "../Assets/ArenaTypes.h"
 
+#include "components/utilities/Buffer.h"
+
+class Random;
 class WeatherDefinition;
+
+enum class MapType;
 
 namespace WeatherUtils
 {
-	// Filters the weather for a location (i.e. if it's attempting to have snow in a desert).
-	WeatherDefinition getFilteredWeather(const WeatherDefinition &weatherDef, ArenaTypes::ClimateType climateType);
+	Buffer<WeatherDefinition> makeInteriorDefs();
+
+	// Generates a set of allowed weathers. The given RNG is cosmetic for determining if e.g. there should be a thunderstorm.
+	Buffer<WeatherDefinition> makeExteriorDefs(ArenaTypes::ClimateType climateType, int currentDay, Random &random);
 }
 
 #endif

@@ -64,14 +64,6 @@ bool ArenaWeatherUtils::shouldSnowflakeChangeDirection(Random &random)
 	return random.next(0x10000) < 15000;
 }
 
-ArenaTypes::WeatherType ArenaWeatherUtils::getFilteredWeatherType(ArenaTypes::WeatherType weatherType,
-	ArenaTypes::ClimateType climateType)
-{
-	// Snow in deserts is replaced by rain.
-	const bool isSnow = ArenaWeatherUtils::isSnow(weatherType);
-	return ((climateType == ArenaTypes::ClimateType::Desert) && isSnow) ? ArenaTypes::WeatherType::Rain : weatherType;
-}
-
 double ArenaWeatherUtils::getFogDistanceFromWeather(ArenaTypes::WeatherType weatherType)
 {
 	return WeatherFogDistances.at(weatherType);

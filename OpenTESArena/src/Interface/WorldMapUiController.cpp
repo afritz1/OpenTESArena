@@ -59,23 +59,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	// Decide how to load the location.
 	if (travelLocationDef.getType() == LocationDefinition::Type::City)
 	{
-		// Get weather type from game state.
 		const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
-		const ArenaTypes::WeatherType weatherType = [&game, &gameState, &binaryAssetLibrary,
-			&travelProvinceDef, &travelLocationDef, &cityDef]()
-		{
-			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
-			const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, travelProvinceDef.getGlobalRect());
-
-			const auto &cityData = binaryAssetLibrary.getCityDataFile();
-			const int globalQuarter = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityData);
-
-			const auto &weathersArray = gameState.getWeathersArray();
-			DebugAssertIndex(weathersArray, globalQuarter);
-			return ArenaWeatherUtils::getFilteredWeatherType(weathersArray[globalQuarter], cityDef.climateType);
-		}();
-
-		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 
 		// Get city generation values.
 		Buffer<uint8_t> reservedBlocks = [&cityDef]()
@@ -107,38 +91,34 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 		const int currentDay = gameState.getDate().getDay();
-		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
-		{
-			WeatherDefinition weatherDef;
-			weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
-			return weatherDef;
-		}();
+		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 
 		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
+		skyGenInfo.init(cityDef.climateType, currentDay, starCount, cityDef.citySeed, cityDef.skySeed,
+			travelProvinceDef.hasAnimatedDistantLand(), game.getRandom());
 
 		// Load the destination city.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
-		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
-			game.getTextAssetLibrary(), game.getTextureManager(), game.getRenderer()))
+		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
+			game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(),
+			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
 		}
 
 		// Choose time-based music and enter the game world.
 		const MusicLibrary &musicLibrary = game.getMusicLibrary();
-		const MusicDefinition *musicDef = [&game, &gameState, &overrideWeather, &musicLibrary]()
+		const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
 		{
+			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 			if (!gameState.nightMusicIsActive())
 			{
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-					game.getRandom(), [&overrideWeather](const MusicDefinition &def)
+					game.getRandom(), [&weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-					return weatherMusicDef.weatherDef == overrideWeather;
+					return weatherMusicDef.weatherDef == weatherDef;
 				});
 			}
 			else

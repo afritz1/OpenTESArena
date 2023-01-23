@@ -66,11 +66,9 @@ private:
 	{
 		MapDefinition definition;
 		MapInstance instance;
-		WeatherDefinition weatherDef; // Only ignored if a significant amount of time has passed upon returning to an exterior.
 		std::optional<CoordInt3> returnCoord; // Available when returning from inside an interior.
 		
-		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, WeatherDefinition &&weatherDef,
-			const std::optional<CoordInt3> &returnCoord);
+		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, const std::optional<CoordInt3> &returnCoord);
 	};
 
 	struct MapTransitionState
@@ -136,15 +134,13 @@ private:
 
 	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
 	bool trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-		Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		Player &player, const CoordInt2 &startCoord, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// Attempts to set the sky active in the systems (i.e. renderer) that need its data. This must
 	// be run after trySetLevelActive() (not sure that's a good idea though).
-	bool trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &activeLevelIndex,
-		TextureManager &textureManager, Renderer &renderer);
+	bool trySetSkyActive(SkyInstance &skyInst, TextureManager &textureManager, Renderer &renderer);
 
 	// Attempts to apply the map transition state saved from the previous frame to the current game state.
 	bool tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
@@ -186,15 +182,13 @@ public:
 
 	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
 	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
-		const std::optional<WeatherDefinition> &overrideWeather,
 		const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all maps and attempts to generate a wilderness and set it active based on the given generation info.
-	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
+	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, 
 		const std::optional<CoordInt3> &startCoord, const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
@@ -227,6 +221,9 @@ public:
 
 	// Gets a percentage representing the current progress through the looping chasm animation.
 	double getChasmAnimPercent() const;
+
+	// Gets the currently active weather type at the given world map location.
+	ArenaTypes::WeatherType getWeatherType(int provinceID, int locationID, const BinaryAssetLibrary &binaryAssetLibrary) const;
 
 	// Gets the currently selected weather and associated state.
 	const WeatherDefinition &getWeatherDefinition() const;
