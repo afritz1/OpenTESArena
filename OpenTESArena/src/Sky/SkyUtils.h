@@ -2,13 +2,7 @@
 #define SKY_UTILS_H
 
 #include "../Math/MathUtils.h"
-#include "../Utilities/Color.h"
 #include "../Voxels/VoxelUtils.h"
-
-#include "components/utilities/Buffer.h"
-
-class TextureManager;
-class WeatherDefinition;
 
 namespace SkyUtils
 {
@@ -23,11 +17,6 @@ namespace SkyUtils
 
 	// Gets the number of stars to generate based on the given star density (new to this engine).
 	int getStarCountFromDensity(int starDensity);
-
-	Buffer<Color> makeInteriorSkyColors(bool isOutdoorDungeon, TextureManager &textureManager);
-
-	// These colors cannot be known ahead of time in the sky definition because they rely on the active weather, unlike interior colors.
-	Buffer<Color> makeExteriorSkyColors(const WeatherDefinition &weatherDef, TextureManager &textureManager);
 }
 
 #endif

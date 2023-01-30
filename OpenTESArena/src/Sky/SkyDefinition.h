@@ -5,7 +5,6 @@
 
 #include "../Math/MathUtils.h"
 #include "../Utilities/Color.h"
-#include "../Weather/WeatherDefinition.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
@@ -87,15 +86,9 @@ private:
 	std::vector<StarPlacementDef> starPlacementDefs;
 	std::vector<SunPlacementDef> sunPlacementDefs;
 	std::vector<MoonPlacementDef> moonPlacementDefs;
-	Buffer<WeatherDefinition> allowedWeatherDefs;
-	Buffer<Color> skyColors; // Colors for an entire day. Only known ahead of time for interiors. Exteriors are driven by current weather.
+	Buffer<Color> skyColors; // Colors for an entire day.
 public:
-	void initInterior(Buffer<Color> &&skyColors);
-	void initExterior(Buffer<WeatherDefinition> &&allowedWeatherDefs);
-
-	int getAllowedWeatherCount() const;
-	const WeatherDefinition &getAllowedWeather(int index) const;
-	int getAllowedWeatherIndex(ArenaTypes::WeatherType weatherType) const;
+	void init(Buffer<Color> &&skyColors);
 
 	int getSkyColorCount() const;
 	const Color &getSkyColor(int index) const;
@@ -115,7 +108,8 @@ public:
 	void addAir(AirDefID id, Radians angleX, Radians angleY);
 	void addStar(StarDefID id, const Double3 &direction);
 	void addSun(SunDefID id, double bonusLatitude);
-	void addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent, double bonusLatitude, int imageIndex);
+	void addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent, double bonusLatitude,
+		int imageIndex);
 };
 
 #endif

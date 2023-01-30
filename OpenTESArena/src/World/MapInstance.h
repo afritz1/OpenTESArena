@@ -21,14 +21,14 @@ private:
 	Buffer<SkyInstance> skies;
 	int activeLevelIndex;
 	int activeSkyIndex;
+
+	void initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager, Renderer &renderer);
+	void initCity(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
+	void initWild(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
 public:
 	MapInstance();
 
-	void initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager, Renderer &renderer);
-	void initCity(const MapDefinition &mapDefinition, ArenaTypes::WeatherType weatherType, int currentDay,
-		TextureManager &textureManager, Renderer &renderer);
-	void initWild(const MapDefinition &mapDefinition, ArenaTypes::WeatherType weatherType, int currentDay,
-		TextureManager &textureManager, Renderer &renderer);
+	void init(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
 
 	int getLevelCount() const;
 	LevelInstance &getLevel(int index);

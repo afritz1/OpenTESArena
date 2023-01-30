@@ -14,6 +14,7 @@
 // and 4) shading type. Maybe also rendering order. It has the option of doing visibility culling
 // as well.
 
+class MapDefinition;
 class Random;
 class Renderer;
 class SkyDefinition;
@@ -92,14 +93,11 @@ private:
 		lightningStart, lightningEnd;
 	Buffer<int> lightningAnimIndices; // Non-empty during thunderstorm so animations can be updated.
 	std::optional<int> currentLightningBoltObjectIndex; // Updated by WeatherInstance.
-
-	int weatherDefIndex;
-	Buffer<Color> skyColors; // Populated by the sky definition's colors if they exist (for interiors); otherwise dependent on the current weather.
 public:
 	SkyInstance();
 
 	void init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
-		int weatherDefIndex, int currentDay, TextureManager &textureManager, Renderer &renderer);
+		int currentDay, TextureManager &textureManager, Renderer &renderer);
 
 	// Start (inclusive) and end (exclusive) indices of each sky object type.
 	int getLandStartIndex() const;
@@ -123,14 +121,13 @@ public:
 
 	std::optional<double> tryGetObjectAnimPercent(int index) const;
 
-	int getWeatherDefIndex() const;
-
 	ObjectTextureID getSkyColorsTextureID() const;
 
 	// Attempts to set this sky active in the renderer.
 	// @todo: maybe this and LevelInstance::trySetActive() should be replaced by some MapInstance::trySetLevelActive(int)
 	// that does the work for both the level and the sky.
-	bool trySetActive(TextureManager &textureManager, Renderer &renderer);
+	bool trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		TextureManager &textureManager, Renderer &renderer);
 
 	void update(double dt, double latitude, double daytimePercent, const WeatherInstance &weatherInst,
 		Random &random, const TextureManager &textureManager);

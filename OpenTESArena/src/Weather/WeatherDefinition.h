@@ -58,6 +58,7 @@ public:
 	void initOvercast(bool heavyFog);
 	void initRain(bool thunderstorm);
 	void initSnow(bool overcast, bool heavyFog);
+	void initFromClassic(ArenaTypes::WeatherType weatherType, int currentDay, Random &random);
 
 	Type getType() const;
 	double getFogDistance() const;

@@ -750,7 +750,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		}();
 
 		const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+			[&cityDef]() ->std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
 		{
 			if (cityDef.hasMainQuestTempleOverride)
 			{
@@ -769,15 +769,22 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 		const int currentDay = gameState.getDate().getDay();
+		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+		{
+			WeatherDefinition weatherDef;
+			weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+			return weatherDef;
+		}();
 
 		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-		skyGenInfo.init(cityDef.climateType, currentDay, starCount, cityDef.citySeed, cityDef.skySeed,
-			provinceDef.hasAnimatedDistantLand(), game.getRandom());
+		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
+			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
-		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
-			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextAssetLibrary(),
-			game.getTextureManager(), renderer))
+		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
+			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+			game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getTextureManager(),
+			renderer))
 		{
 			DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 		}
@@ -799,7 +806,8 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+				return musicLibrary.getRandomMusicDefinition(
+					MusicDefinition::Type::Night, game.getRandom());
 			}
 		}();
 

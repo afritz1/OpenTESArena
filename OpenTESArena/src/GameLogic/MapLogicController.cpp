@@ -283,6 +283,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
 			const LocationDefinition &locationDef = gameState.getLocationDefinition();
+			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 			const int currentDay = gameState.getDate().getDay();
 			const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 
@@ -327,8 +328,11 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, currentDay, starCount, cityDef.citySeed, cityDef.skySeed,
-					provinceDef.hasAnimatedDistantLand(), game.getRandom());
+				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
+					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+
+				// Use current weather.
+				const WeatherDefinition &overrideWeather = weatherDef;
 
 				// Calculate wilderness position based on the gate's voxel in the city.
 				const CoordInt3 startCoord = [&hitCoord, &transitionDir]()
@@ -345,8 +349,9 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
 
-				if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, startCoord, worldMapLocationIDs,game.getCharacterClassLibrary(),
-					game.getEntityDefinitionLibrary(), binaryAssetLibrary, textureManager, renderer))
+				if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
+					worldMapLocationIDs, game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+					binaryAssetLibrary, textureManager, renderer))
 				{
 					DebugLogError("Couldn't switch from city to wilderness for \"" + locationDef.getName() + "\".");
 					return;
@@ -384,14 +389,18 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 					cityDef.cityBlocksPerSide);
 
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, currentDay, starCount, cityDef.citySeed, cityDef.skySeed,
-					provinceDef.hasAnimatedDistantLand(), game.getRandom());
+				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
+					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+
+				// Use current weather.
+				const WeatherDefinition &overrideWeather = weatherDef;
 
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
 
-				if (!gameState.trySetCity(cityGenInfo, skyGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
-					game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(), textureManager, renderer))
+				if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
+					game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+					game.getTextAssetLibrary(), textureManager, renderer))
 				{
 					DebugLogError("Couldn't switch from wilderness to city for \"" + locationDef.getName() + "\".");
 					return;
@@ -563,6 +572,9 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			auto &newActiveLevel = interiorMapInst.getActiveLevel();
 			auto &newActiveSky = interiorMapInst.getActiveSky();
 
+			WeatherDefinition weatherDef;
+			weatherDef.initClear();
+
 			const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
 
 			// @todo: should this be called differently so it doesn't badly influence data for the rest of
@@ -575,7 +587,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 				DebugCrash("Couldn't set new level active in renderer.");
 			}
 
-			if (!newActiveSky.trySetActive(textureManager, renderer))
+			if (!newActiveSky.trySetActive(levelIndex, interiorMapDef, textureManager, renderer))
 			{
 				DebugCrash("Couldn't set new sky active in renderer.");
 			}

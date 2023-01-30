@@ -8,7 +8,6 @@
 #include "SkyDefinition.h"
 #include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
-#include "SkyUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
@@ -20,8 +19,6 @@
 #include "../Math/Vector4.h"
 #include "../Utilities/Color.h"
 #include "../Weather/ArenaWeatherUtils.h"
-#include "../Weather/WeatherUtils.h"
-#include "../World/MapType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
@@ -35,6 +32,72 @@ namespace SkyGeneration
 	using ArenaAirMappingCache = std::unordered_map<std::string, SkyDefinition::AirDefID>;
 	using ArenaSmallStarMappingCache = std::unordered_map<uint8_t, SkyDefinition::StarDefID>;
 	using ArenaLargeStarMappingCache = std::unordered_map<std::string, SkyDefinition::StarDefID>;
+
+	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon, TextureManager &textureManager)
+	{
+		// Interior sky color comes from the darkest row of an .LGT light palette.
+		const char *lightPaletteName = outdoorDungeon ? "FOG.LGT" : "NORMAL.LGT";
+
+		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+			textureManager.tryGetTextureBuilderIDs(lightPaletteName);
+		if (!textureBuilderIDs.has_value())
+		{
+			DebugLogWarning("Couldn't get texture builder IDs for \"" + std::string(lightPaletteName) + "\".");
+			return Buffer<Color>();
+		}
+
+		// Get darkest light palette and a suitable color for 'dark'.
+		const TextureBuilderID darkestTextureBuilderID = textureBuilderIDs->getID(textureBuilderIDs->getCount() - 1);
+		const TextureBuilder &lightPaletteTextureBuilder = textureManager.getTextureBuilderHandle(darkestTextureBuilderID);
+		DebugAssert(lightPaletteTextureBuilder.getType() == TextureBuilder::Type::Paletted);
+		const TextureBuilder::PalettedTexture &lightPaletteTexture = lightPaletteTextureBuilder.getPaletted();
+		const Buffer2D<uint8_t> &lightPaletteTexels = lightPaletteTexture.texels;
+		const uint8_t lightColor = lightPaletteTexels.get(16, 0);
+
+		const std::string &paletteName = ArenaPaletteName::Default;
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+		if (!paletteID.has_value())
+		{
+			DebugLogWarning("Couldn't get palette ID for \"" + paletteName + "\".");
+			return Buffer<Color>();
+		}
+
+		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+		DebugAssertIndex(palette, lightColor);
+		const Color &paletteColor = palette[lightColor];
+
+		Buffer<Color> skyColors(1);
+		skyColors.set(0, paletteColor);
+		return skyColors;
+	}
+
+	Buffer<Color> makeExteriorSkyColors(const WeatherDefinition &weatherDef, TextureManager &textureManager)
+	{
+		// Get the palette name for the given weather.
+		const std::string &paletteName = (weatherDef.getType() == WeatherDefinition::Type::Clear) ?
+			ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
+
+		// The palettes in the data files only cover half of the day, so some added darkness is
+		// needed for the other half.
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+		if (!paletteID.has_value())
+		{
+			DebugLogWarning("Couldn't get palette ID for \"" + paletteName + "\".");
+			return Buffer<Color>();
+		}
+
+		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+
+		// Fill sky palette with darkness. The first color in the palette is the closest to night.
+		const Color &darkness = palette[0];
+		Buffer<Color> fullPalette(static_cast<int>(palette.size()) * 2);
+		fullPalette.fill(darkness);
+
+		// Copy the sky palette over the center of the full palette.
+		std::copy(palette.begin(), palette.end(), fullPalette.get() + (fullPalette.getCount() / 4));
+
+		return fullPalette;
+	}
 
 	// Used with mountains and clouds.
 	bool tryGenerateArenaStaticObject(const std::string &baseFilename, int position, int variation,
@@ -127,8 +190,9 @@ namespace SkyGeneration
 	}
 
 	// Includes distant mountains and clouds.
-	void generateArenaStatics(ArenaTypes::ClimateType climateType, int currentDay, uint32_t skySeed, const ExeData &exeData,
-		TextureManager &textureManager, SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+	void generateArenaStatics(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef, int currentDay,
+		uint32_t skySeed, const ExeData &exeData, TextureManager &textureManager, SkyDefinition *outSkyDef,
+		SkyInfoDefinition *outSkyInfoDef)
 	{
 		ArenaRandom random(skySeed);
 
@@ -154,27 +218,30 @@ namespace SkyGeneration
 			}
 		}
 
-		// Cloud generation (note these are only displayed if the active weather is clear).
-		const uint32_t cloudSeed = random.getSeed() + (currentDay % 32);
-		random.srand(cloudSeed);
-
-		constexpr int cloudCount = 7;
-		const std::string &cloudFilename = exeData.locations.cloudFilename;
-
-		ArenaAirMappingCache airCache;
-		for (int i = 0; i < cloudCount; i++)
+		// Cloud generation, only if the sky is clear.
+		if (weatherDef.getType() == WeatherDefinition::Type::Clear)
 		{
-			constexpr int cloudPosition = 5;
-			constexpr int cloudVariation = 17;
-			constexpr int cloudMaxDigits = 2;
-			constexpr bool randomHeight = true;
-			if (!SkyGeneration::tryGenerateArenaStaticObject(cloudFilename, cloudPosition, cloudVariation,
-				cloudMaxDigits, random, textureManager, outSkyDef, outSkyInfoDef, nullptr, &airCache))
+			const uint32_t cloudSeed = random.getSeed() + (currentDay % 32);
+			random.srand(cloudSeed);
+
+			constexpr int cloudCount = 7;
+			const std::string &cloudFilename = exeData.locations.cloudFilename;
+
+			ArenaAirMappingCache airCache;
+			for (int i = 0; i < cloudCount; i++)
 			{
-				DebugLogWarning("Couldn't generate sky static air \"" + cloudFilename + "\" (position: " +
-					std::to_string(cloudPosition) + ", variation: " +
-					std::to_string(cloudVariation) + ", max digits: " +
-					std::to_string(cloudMaxDigits) + ").");
+				constexpr int cloudPosition = 5;
+				constexpr int cloudVariation = 17;
+				constexpr int cloudMaxDigits = 2;
+				constexpr bool randomHeight = true;
+				if (!SkyGeneration::tryGenerateArenaStaticObject(cloudFilename, cloudPosition, cloudVariation,
+					cloudMaxDigits, random, textureManager, outSkyDef, outSkyInfoDef, nullptr, &airCache))
+				{
+					DebugLogWarning("Couldn't generate sky static air \"" + cloudFilename + "\" (position: " +
+						std::to_string(cloudPosition) + ", variation: " +
+						std::to_string(cloudVariation) + ", max digits: " +
+						std::to_string(cloudMaxDigits) + ").");
+				}
 			}
 		}
 	}
@@ -475,49 +542,64 @@ void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
 	this->outdoorDungeon = outdoorDungeon;
 }
 
-void SkyGeneration::ExteriorSkyGenInfo::init(ArenaTypes::ClimateType climateType, int currentDay, int starCount,
-	uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand, Random &random)
+void SkyGeneration::ExteriorSkyGenInfo::init(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef,
+	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
 {
 	this->climateType = climateType;
+	this->weatherDef = weatherDef;
 	this->currentDay = currentDay;
 	this->starCount = starCount;
 	this->citySeed = citySeed;
 	this->skySeed = skySeed;
 	this->provinceHasAnimatedLand = provinceHasAnimatedLand;
-	this->randomPtr = &random;
 }
 
 void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
 	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 {
-	Buffer<Color> skyColors = SkyUtils::makeInteriorSkyColors(skyGenInfo.outdoorDungeon, textureManager);
-	outSkyDef->initInterior(std::move(skyColors));
+	// Only worry about sky color for interior skies.
+	Buffer<Color> skyColors = SkyGeneration::makeInteriorSkyColors(skyGenInfo.outdoorDungeon, textureManager);
+	outSkyDef->init(std::move(skyColors));
 }
 
-void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 {
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
-	// Generate allowed weathers. Sky colors are determined later once an active weather is selected.
-	Buffer<WeatherDefinition> weatherDefs = WeatherUtils::makeExteriorDefs(skyGenInfo.climateType, skyGenInfo.currentDay, *skyGenInfo.randomPtr);
-	outSkyDef->initExterior(std::move(weatherDefs));
+	// Generate sky colors.
+	Buffer<Color> skyColors = SkyGeneration::makeExteriorSkyColors(skyGenInfo.weatherDef, textureManager);
+	outSkyDef->init(std::move(skyColors));
 
 	// Generate static land and air objects.
-	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.currentDay, skyGenInfo.skySeed, exeData,
-		textureManager, outSkyDef, outSkyInfoDef);
+	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherDef,
+		skyGenInfo.currentDay, skyGenInfo.skySeed, exeData, textureManager, outSkyDef, outSkyInfoDef);
 
 	// Generate animated land if the province has it.
 	if (skyGenInfo.provinceHasAnimatedLand)
 	{
-		SkyGeneration::generateArenaAnimatedLand(skyGenInfo.citySeed, exeData, textureManager, outSkyDef, outSkyInfoDef);
+		SkyGeneration::generateArenaAnimatedLand(skyGenInfo.citySeed, exeData, textureManager,
+			outSkyDef, outSkyInfoDef);
 	}
 
-	// Add sky objects. Note that the active weather might prevent these from appearing, but that's fine.
-	// We don't want to give the weather ahead of time since that was impacting putting allowed weathers
-	// in the sky definition.
-	SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager, outSkyDef, outSkyInfoDef);
-	SkyGeneration::generateArenaStars(skyGenInfo.starCount, exeData, textureManager, outSkyDef, outSkyInfoDef);
-	SkyGeneration::generateArenaSun(exeData, textureManager, outSkyDef, outSkyInfoDef);
-	SkyGeneration::generateArenaLightning(textureManager, outSkyInfoDef);
+	const WeatherDefinition::Type weatherDefType = skyGenInfo.weatherDef.getType();
+	if (weatherDefType == WeatherDefinition::Type::Clear)
+	{
+		// Add space objects.
+		SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager,
+			outSkyDef, outSkyInfoDef);
+		SkyGeneration::generateArenaStars(skyGenInfo.starCount, exeData, textureManager,
+			outSkyDef, outSkyInfoDef);
+		SkyGeneration::generateArenaSun(exeData, textureManager, outSkyDef, outSkyInfoDef);
+	}
+	else if (weatherDefType == WeatherDefinition::Type::Rain)
+	{
+		const WeatherDefinition::RainDefinition &rainDef = skyGenInfo.weatherDef.getRain();
+		if (rainDef.thunderstorm)
+		{
+			// Add lightning bolt assets, to be spawned randomly during a thunderstorm.
+			SkyGeneration::generateArenaLightning(textureManager, outSkyInfoDef);
+		}
+	}
 }

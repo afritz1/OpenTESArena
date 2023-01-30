@@ -3,7 +3,6 @@
 #include "ArenaSkyUtils.h"
 #include "SkyAirDefinition.h"
 #include "SkyDefinition.h"
-#include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
 #include "SkyInstance.h"
 #include "SkyLandDefinition.h"
@@ -124,7 +123,7 @@ SkyInstance::SkyInstance()
 }
 
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
-	int weatherDefIndex, int currentDay, TextureManager &textureManager, Renderer &renderer)
+	int currentDay, TextureManager &textureManager, Renderer &renderer)
 {
 	auto loadGeneralSkyObjectTexture = [this, &textureManager, &renderer](const TextureAsset &textureAsset)
 	{
@@ -498,25 +497,6 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		this->lightningStart = this->starEnd;
 		this->lightningEnd = this->lightningStart + lightningBoltDefCount;
 	}
-
-	this->weatherDefIndex = weatherDefIndex;
-
-	// Use the sky definition's sky colors if it defined any. Otherwise, generate new colors based on the weather
-	// (i.e. for exteriors).
-	const int defaultSkyColorCount = skyDefinition.getSkyColorCount();
-	if (defaultSkyColorCount > 0)
-	{
-		this->skyColors.init(defaultSkyColorCount);
-		for (int i = 0; i < defaultSkyColorCount; i++)
-		{
-			this->skyColors.set(i, skyDefinition.getSkyColor(i));
-		}
-	}
-	else
-	{
-		const WeatherDefinition &weatherDef = skyDefinition.getAllowedWeather(this->weatherDefIndex);
-		this->skyColors = SkyUtils::makeExteriorSkyColors(weatherDef, textureManager);
-	}
 }
 
 int SkyInstance::getLandStartIndex() const
@@ -612,17 +592,13 @@ std::optional<double> SkyInstance::tryGetObjectAnimPercent(int index) const
 	return std::nullopt;
 }
 
-int SkyInstance::getWeatherDefIndex() const
-{
-	return this->weatherDefIndex;
-}
-
 ObjectTextureID SkyInstance::getSkyColorsTextureID() const
 {
 	return this->skyColorsTextureRef.get();
 }
 
-bool SkyInstance::trySetActive(TextureManager &textureManager, Renderer &renderer)
+bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Although the sky could be treated the same way as visible entities (regenerated every frame), keep it this
 	// way because the sky is not added to and removed from like entities are. The sky is baked once per level
@@ -632,16 +608,39 @@ bool SkyInstance::trySetActive(TextureManager &textureManager, Renderer &rendere
 	//DebugNotImplementedMsg("trySetActive");
 	//renderer.clearSky();
 
-	// Set sky gradient colors in renderer.
-	Buffer<uint32_t> skyColorsARGB(this->skyColors.getCount());
-	for (int i = 0; i < skyColorsARGB.getCount(); i++)
+	const MapType mapType = mapDefinition.getMapType();
+	const SkyDefinition &skyDefinition = [&activeLevelIndex, &mapDefinition, mapType]() -> const SkyDefinition&
 	{
-		const Color &color = this->skyColors.get(i);
-		skyColorsARGB.set(i, color.toARGB());
+		const int skyIndex = [&activeLevelIndex, &mapDefinition, mapType]()
+		{
+			if ((mapType == MapType::Interior) || (mapType == MapType::City))
+			{
+				DebugAssert(activeLevelIndex.has_value());
+				return mapDefinition.getSkyIndexForLevel(*activeLevelIndex);
+			}
+			else if (mapType == MapType::Wilderness)
+			{
+				return mapDefinition.getSkyIndexForLevel(0);
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(mapType)));
+			}
+		}();
+
+		return mapDefinition.getSky(skyIndex);
+	}();
+
+	// Set sky gradient colors.
+	Buffer<uint32_t> skyColors(skyDefinition.getSkyColorCount());
+	for (int i = 0; i < skyColors.getCount(); i++)
+	{
+		const Color &color = skyDefinition.getSkyColor(i);
+		skyColors.set(i, color.toARGB());
 	}
 
 	ObjectTextureID skyColorsTextureID;
-	if (!renderer.tryCreateObjectTexture(skyColorsARGB.getCount(), 1, 1, &skyColorsTextureID))
+	if (!renderer.tryCreateObjectTexture(skyColors.getCount(), 1, 1, &skyColorsTextureID))
 	{
 		DebugLogError("Couldn't create sky colors texture.");
 		return false;

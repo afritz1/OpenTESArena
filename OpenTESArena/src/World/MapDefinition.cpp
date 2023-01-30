@@ -286,7 +286,8 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 
 	SkyDefinition &skyDef = this->skies.get(0);
 	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
-	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, textureManager, &skyDef, &skyInfoDef);
+	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, textureManager,
+		&skyDef, &skyInfoDef);
 
 	// Only one level info and sky to use.
 	this->levelInfoMappings.set(0, 0);
@@ -467,8 +468,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	DebugNotImplementedMsg("Need to decouple MapDefinition from weather");
-	const std::string infName = std::string();// ArenaCityUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
+	const std::string infName = ArenaCityUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
 	INFFile inf;
 	if (!inf.init(infName.c_str()))
 	{
@@ -500,8 +500,7 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 {
 	this->init(MapType::Wilderness);
 
-	DebugNotImplementedMsg("Need to decouple MapDefinition from weather");
-	const std::string infName = std::string();// ArenaWildUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
+	const std::string infName = ArenaWildUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
 	INFFile inf;
 	if (!inf.init(infName.c_str()))
 	{
