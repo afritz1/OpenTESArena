@@ -17,7 +17,6 @@ class BinaryAssetLibrary;
 class LocationDefinition;
 class ProvinceDefinition;
 class TextAssetLibrary;
-class WeatherDefinition;
 
 // @todo: these should probably all be BufferView2D instead of Buffer2D
 
@@ -27,7 +26,7 @@ namespace ArenaCityUtils
 	constexpr int LEVEL_HEIGHT = 6;
 
 	// Generates the .INF name for a city given a climate and current weather.
-	std::string generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef);
+	std::string generateInfName(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType);
 
 	// Writes the barebones city layout (just ground and walls).
 	void writeSkeleton(const MIFFile::Level &level, BufferView2D<ArenaTypes::VoxelID> &dstFlor,

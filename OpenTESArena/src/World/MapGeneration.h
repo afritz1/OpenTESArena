@@ -178,6 +178,16 @@ namespace MapGeneration
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
 
+	void generateMifInterior(const BufferView<const MIFFile::Level> &levels, MapType mapType,
+		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
+		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
+		const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
+		const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
+	void generateMifInteriorInfo(const INFFile &inf, LevelInfoDefinition *outLevelInfoDef);
+
 	// Generates levels from the random chunk .MIF file and converts them to the modern format.
 	// Also writes out the player start voxel.
 	void generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
@@ -187,6 +197,8 @@ namespace MapGeneration
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
 		LevelInfoDefinition *outLevelInfoDef, LevelInt2 *outStartPoint);
+
+	void generateMifDungeonInfo(const INFFile &inf, LevelInfoDefinition *outLevelInfoDef);
 
 	// Generates a level from the city .MIF file, optionally generating random city blocks if it
 	// is not a premade city, and converts the level to the modern format.
@@ -200,6 +212,8 @@ namespace MapGeneration
 		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
 		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef);
 
+	void generateMifCityInfo(const INFFile &inf, LevelInfoDefinition *outLevelInfoDef);
+
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
 	void generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
@@ -209,6 +223,8 @@ namespace MapGeneration
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
 		LevelInfoDefinition *outLevelInfoDef,
 		std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos);
+
+	void generateRmdWildernessInfo(const INFFile &inf, LevelInfoDefinition *outLevelInfoDef);
 
 	void readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);

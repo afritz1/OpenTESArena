@@ -10,6 +10,7 @@
 #include "../World/LevelDefinition.h"
 #include "../World/LevelInfoDefinition.h"
 #include "../World/MapDefinition.h"
+#include "../World/MapInstance.h"
 #include "../World/MapType.h"
 
 #include "components/utilities/String.h"
@@ -155,7 +156,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 }
 
 void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, const MapInstance &mapInstance,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
@@ -168,7 +169,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	{
 		DebugAssert(activeLevelIndex.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(*activeLevelIndex);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(*activeLevelIndex);
+		const LevelInfoDefinition &levelInfoDefinition = mapInstance.getLevelInfoForLevel(*activeLevelIndex);
 
 		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
@@ -183,7 +184,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	{
 		DebugAssert(activeLevelIndex.has_value() && (*activeLevelIndex == 0));
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
+		const LevelInfoDefinition &levelInfoDefinition = mapInstance.getLevelInfoForLevel(0);
 
 		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
@@ -202,7 +203,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
 		const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkPos);
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(levelDefIndex);
+		const LevelInfoDefinition &levelInfoDefinition = mapInstance.getLevelInfoForLevel(levelDefIndex);
 
 		// Copy level definition directly into chunk.
 		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
@@ -275,8 +276,9 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 	const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+	const MapInstance &mapInstance, const EntityGeneration::EntityGenInfo &entityGenInfo,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random,
+	const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer)
 {
 	for (int i = 0; i < freedChunkPositions.getCount(); i++)
@@ -295,7 +297,7 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		EntityChunk &entityChunk = this->getChunkAtIndex(spawnIndex);
 		entityChunk.init(chunkPos, voxelChunk.getHeight());
 
-		this->populateChunk(entityChunk, voxelChunk, activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo,
+		this->populateChunk(entityChunk, voxelChunk, activeLevelIndex, mapDefinition, mapInstance, entityGenInfo, citizenGenInfo,
 			ceilingScale, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
 	}
 

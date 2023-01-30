@@ -7,12 +7,10 @@
 #include <vector>
 
 #include "LevelDefinition.h"
-#include "LevelInfoDefinition.h"
 #include "MapGeneration.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Sky/SkyDefinition.h"
 #include "../Sky/SkyGeneration.h"
-#include "../Sky/SkyInfoDefinition.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 
@@ -35,16 +33,20 @@ enum class MapType;
 class MapDefinition
 {
 public:
-	class Interior
+	struct Interior
 	{
-	private:
 		ArenaTypes::InteriorType interiorType;
+		std::vector<std::string> infNames;
+		std::vector<double> ceilingScales;
+		std::vector<bool> isOutdoorDungeons;
+		bool isProcedural; // False if made from a prefab .MIF, true if a generated dungeon.
+
 		// - InteriorDefinition?
 		// - probably store the music filename here, or make it retrievable by the interior type
-	public:
-		void init(ArenaTypes::InteriorType interiorType);
 
-		ArenaTypes::InteriorType getInteriorType() const;
+		Interior();
+
+		void init(ArenaTypes::InteriorType interiorType, bool isProcedural);
 	};
 
 	class Wild
@@ -65,12 +67,8 @@ public:
 	};
 private:
 	Buffer<LevelDefinition> levels;
-	Buffer<LevelInfoDefinition> levelInfos; // Each can be used by one or more levels.
 	Buffer<SkyDefinition> skies;
-	Buffer<SkyInfoDefinition> skyInfos; // Each can be used by one or more skies.
-	Buffer<int> levelInfoMappings; // Level info pointed to by each level.
 	Buffer<int> skyMappings; // Sky definition pointed to by each level.
-	Buffer<int> skyInfoMappings; // Sky info pointed to by each sky.
 	Buffer<LevelDouble2> startPoints;
 	std::optional<int> startLevelIndex;
 
@@ -93,13 +91,13 @@ private:
 		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
 		bool palaceIsMainQuestDungeon, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
-		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
+		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, 
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
 	bool initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
 		uint32_t fallbackSeed, const LocationDefinition::CityDefinition &cityDef,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
+		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, 
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
@@ -132,11 +130,8 @@ public:
 	// coordinate.
 	const LevelDefinition &getLevel(int index) const;
 
-	const LevelInfoDefinition &getLevelInfoForLevel(int levelIndex) const;	
-
 	int getSkyIndexForLevel(int levelIndex) const;
 	const SkyDefinition &getSky(int index) const;
-	const SkyInfoDefinition &getSkyInfoForSky(int skyIndex) const;
 
 	MapType getMapType() const;
 	const Interior &getInterior() const;

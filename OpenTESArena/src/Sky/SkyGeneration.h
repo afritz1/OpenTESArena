@@ -37,10 +37,12 @@ namespace SkyGeneration
 			uint32_t skySeed, bool provinceHasAnimatedLand, Random &random);
 	};
 
-	void generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
-		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef);
+	void generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager, SkyDefinition *outSkyDef);
+	void generateInteriorSkyInfo(SkyInfoDefinition *outSkyInfoDef);
+
 	void generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef);
+	void generateExteriorSkyInfo(SkyInfoDefinition *outSkyInfoDef);
 }
 
 #endif

@@ -507,6 +507,11 @@ namespace swGeometry
 
 			// Discard back-facing.
 			const Double3 v0ToEye = eye - shadedV0XYZ;
+			if (v0ToEye.length() > 3.0)
+			{
+				continue;
+			}
+
 			if (v0ToEye.dot(shadedNormal0XYZ) < Constants::Epsilon)
 			{
 				continue;

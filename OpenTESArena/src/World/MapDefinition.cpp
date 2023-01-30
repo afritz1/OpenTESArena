@@ -21,14 +21,16 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 
-void MapDefinition::Interior::init(ArenaTypes::InteriorType interiorType)
+MapDefinition::Interior::Interior()
 {
-	this->interiorType = interiorType;
+	this->interiorType = static_cast<ArenaTypes::InteriorType>(-1);
+	this->isProcedural = false;
 }
 
-ArenaTypes::InteriorType MapDefinition::Interior::getInteriorType() const
+void MapDefinition::Interior::init(ArenaTypes::InteriorType interiorType, bool isProcedural)
 {
-	return this->interiorType;
+	this->interiorType = interiorType;
+	this->isProcedural = isProcedural;
 }
 
 void MapDefinition::Wild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
@@ -78,36 +80,35 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
-	// N level + level info pairs.
 	const int levelCount = mif.getLevelCount();
 	this->levels.init(levelCount);
-	this->levelInfos.init(levelCount);
-	this->levelInfoMappings.init(levelCount);
 	this->skies.init(levelCount);
 	this->skyMappings.init(levelCount);
-	this->skyInfos.init(levelCount);
-	this->skyInfoMappings.init(levelCount);
 
-	auto initLevelAndInfo = [this, &mif, interiorType, &rulerSeed, &rulerIsMale, &charClassLibrary,
-		&entityDefLibrary, &binaryAssetLibrary, &textureManager](int levelIndex,
-			const MIFFile::Level &mifLevel, const INFFile &inf)
+	this->interior.init(interiorType, false);
+
+	for (int i = 0; i < levelCount; i++)
 	{
-		LevelDefinition &levelDef = this->levels.get(levelIndex);
-		LevelInfoDefinition &levelInfoDef = this->levelInfos.get(levelIndex);
-
-		const INFFile::CeilingData &ceiling = inf.getCeiling();
+		const MIFFile::Level &mifLevel = mif.getLevel(i);
 		const WEInt levelWidth = mif.getWidth();
-		const int levelHeight = ArenaLevelUtils::getMifLevelHeight(mifLevel, &ceiling);
+		const int levelHeight = ArenaLevelUtils::getMifLevelHeight(mifLevel);
 		const SNInt levelDepth = mif.getDepth();
+
+		// In general the .INF file should stay decoupled from the level def, but for interiors it makes
+		// sense to keep them together since interiors don't depend on climate/weather.
+		std::string infName = String::toUppercase(mifLevel.getInfo());
+		INFFile inf;
+		if (!inf.init(infName.c_str()))
+		{
+			DebugLogError("Couldn't init interior .INF file \"" + infName + "\".");
+			return false;
+		}
+
+		LevelDefinition &levelDef = this->levels.get(i);
 
 		// Transpose .MIF dimensions to new dimensions.
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 
-		const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
-		levelInfoDef.init(ceilingScale);
-
-		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
-		// (due to ceiling, etc.).
 		const BufferView<const MIFFile::Level> mifLevelView(&mifLevel, 1);
 		constexpr MapType mapType = MapType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
@@ -115,52 +116,27 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for non-dungeons.
 		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for non-dungeons.
 		BufferView<LevelDefinition> levelDefView(&levelDef, 1);
-		MapGeneration::readMifVoxels(mifLevelView, mapType, interiorType, rulerSeed, rulerIsMale,
-			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
-			entityDefLibrary, binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef);
-		MapGeneration::readMifLocks(mifLevelView, inf, levelDefView, &levelInfoDef);
-		MapGeneration::readMifTriggers(mifLevelView, inf, levelDefView, &levelInfoDef);
+		
+
+		const INFFile::CeilingData &ceiling = inf.getCeiling();
+		const bool isOutdoorDungeon = ceiling.outdoorDungeon; DebugNotImplemented(); // @todo: readMifVoxels() probably needs this value
+		const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 
 		// Generate interior sky.
 		SkyGeneration::InteriorSkyGenInfo interiorSkyGenInfo;
-		interiorSkyGenInfo.init(ceiling.outdoorDungeon);
+		interiorSkyGenInfo.init(isOutdoorDungeon);
 
-		SkyDefinition &skyDef = this->skies.get(levelIndex);
-		SkyInfoDefinition &skyInfoDef = this->skyInfos.get(levelIndex);
-		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, textureManager, &skyDef, &skyInfoDef);
-	};
+		SkyDefinition &skyDef = this->skies.get(i);
+		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, textureManager, &skyDef);
 
-	for (int i = 0; i < mif.getLevelCount(); i++)
-	{
-		const MIFFile::Level &level = mif.getLevel(i);
-		const std::string infName = String::toUppercase(level.getInfo());
-		INFFile inf;
-		if (!inf.init(infName.c_str()))
-		{
-			DebugLogError("Couldn't init .INF file \"" + infName + "\".");
-			return false;
-		}
-
-		initLevelAndInfo(i, level, inf);
-	}
-
-	// Each interior level info maps to its parallel level.
-	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
-	{
-		this->levelInfoMappings.set(i, i);
+		this->interior.infNames.emplace_back(std::move(infName));
+		this->interior.ceilingScales.emplace_back(ceilingScale);
 	}
 
 	for (int i = 0; i < this->skyMappings.getCount(); i++)
 	{
 		this->skyMappings.set(i, i);
 	}
-
-	for (int i = 0; i < this->skyInfoMappings.getCount(); i++)
-	{
-		this->skyInfoMappings.set(i, i);
-	}
-
-	this->interior.init(interiorType);
 
 	return true;
 }
@@ -174,46 +150,44 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 
 	// N LevelDefinitions all pointing to one LevelInfoDefinition.
 	this->levels.init(levelCount);
-	this->levelInfos.init(1);
-	this->levelInfoMappings.init(levelCount);
 	this->skies.init(levelCount);
 	this->skyMappings.init(levelCount);
-	this->skyInfos.init(levelCount);
-	this->skyInfoMappings.init(levelCount);
 
-	// Use the .INF filename of the first level.
+	constexpr ArenaTypes::InteriorType interiorType = ArenaTypes::InteriorType::Dungeon;
+	this->interior.init(interiorType, true);
+
+	// Use the first level as the source of .INF data.
 	const MIFFile::Level &level = mif.getLevel(0);
+	const WEInt levelWidth = mif.getWidth() * widthChunks;
+	const int levelHeight = ArenaLevelUtils::getMifLevelHeight(level);
+	const SNInt levelDepth = mif.getDepth() * depthChunks;
+
 	const std::string infName = String::toUppercase(level.getInfo());
 	INFFile inf;
 	if (!inf.init(infName.c_str()))
 	{
-		DebugLogError("Couldn't init .INF file \"" + infName + "\".");
+		DebugLogError("Couldn't init dungeon .INF file \"" + infName + "\".");
 		return false;
 	}
 
 	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const WEInt levelWidth = mif.getWidth() * widthChunks;
-	const int levelHeight = ceiling.outdoorDungeon ? 2 : 3;
-	const SNInt levelDepth = mif.getDepth() * depthChunks;
+	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 
-	for (int i = 0; i < this->levels.getCount(); i++)
+	for (int i = 0; i < levelCount; i++)
 	{
 		// Transpose .MIF dimensions to new dimensions.
 		LevelDefinition &levelDef = this->levels.get(i);
 		levelDef.init(levelDepth, levelHeight, levelWidth);
+
+		this->interior.infNames.emplace_back(infName);
+		this->interior.ceilingScales.emplace_back(ceilingScale);
 	}
 
 	BufferView<LevelDefinition> levelDefView(this->levels.get(), this->levels.getCount());
-	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
-
-	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
-	levelInfoDef.init(ceilingScale);
-
-	constexpr ArenaTypes::InteriorType interiorType = ArenaTypes::InteriorType::Dungeon;
 	constexpr std::optional<bool> rulerIsMale;
-	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, inf, random,
-		mapType, interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef, outStartPoint);
+	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, random, mapType,
+		interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary, entityDefLibrary,
+		binaryAssetLibrary, textureManager, levelDefView, outStartPoint);
 
 	// Generate sky for each dungeon level.
 	for (int i = 0; i < levelCount; i++)
@@ -222,27 +196,13 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 		interiorSkyGenInfo.init(ceiling.outdoorDungeon);
 
 		SkyDefinition &skyDef = this->skies.get(i);
-		SkyInfoDefinition &skyInfoDef = this->skyInfos.get(i);
-		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, textureManager, &skyDef, &skyInfoDef);
-	}
-
-	// Each dungeon level uses the same level info definition.
-	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
-	{
-		this->levelInfoMappings.set(i, 0);
+		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, textureManager, &skyDef);
 	}
 
 	for (int i = 0; i < this->skyMappings.getCount(); i++)
 	{
 		this->skyMappings.set(i, i);
 	}
-
-	for (int i = 0; i < this->skyInfoMappings.getCount(); i++)
-	{
-		this->skyInfoMappings.set(i, i);
-	}
-
-	this->interior.init(interiorType);
 
 	return true;
 }
@@ -252,55 +212,40 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
-	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
-	TextureManager &textureManager)
+	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager)
 {
-	// 1 LevelDefinition and 1 LevelInfoDefinition.
 	this->levels.init(1);
-	this->levelInfos.init(1);
-	this->levelInfoMappings.init(1);
 	this->skies.init(1);
 	this->skyMappings.init(1);
-	this->skyInfos.init(1);
-	this->skyInfoMappings.init(1);
 
 	const WEInt levelWidth = mif.getWidth();
-	const int levelHeight =  6;
+	const int levelHeight = 6;
 	const SNInt levelDepth = mif.getDepth();
 
 	// Transpose .MIF dimensions to new dimensions.
 	LevelDefinition &levelDef = this->levels.get(0);
 	levelDef.init(levelDepth, levelHeight, levelWidth);
 
-	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
-	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
-	levelInfoDef.init(ceilingScale);
-
 	MapGeneration::generateMifCity(mif, citySeed, rulerSeed, raceID, isPremade, rulerIsMale, palaceIsMainQuestDungeon,
 		reservedBlocks, blockStartPosX, blockStartPosY, cityBlocksPerSide, coastal, cityTypeName, cityType,
-		mainQuestTempleOverride, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textAssetLibrary,
-		textureManager, &levelDef, &levelInfoDef);
+		mainQuestTempleOverride, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textAssetLibrary,
+		textureManager, &levelDef);
 
 	SkyDefinition &skyDef = this->skies.get(0);
-	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
-	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, textureManager, &skyDef, &skyInfoDef);
+	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, textureManager, &skyDef);
 
-	// Only one level info and sky to use.
-	this->levelInfoMappings.set(0, 0);
 	this->skyMappings.set(0, 0);
-	this->skyInfoMappings.set(0, 0);
 	
 	return true;
 }
 
 bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
 	uint32_t fallbackSeed, const LocationDefinition::CityDefinition &cityDef,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
 {
 	// Create a list of unique block IDs and a 2D table of level definition index mappings. The index
 	// of a wild block ID is its level definition index.
@@ -329,14 +274,10 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 		}
 	}
 
-	// N LevelDefinitions (for chunks) and 1 LevelInfoDefinition.
+	// N LevelDefinitions (for chunks) which will all point at one LevelInfoDefinition.
 	this->levels.init(static_cast<int>(uniqueWildBlockIDs.size()));
-	this->levelInfos.init(1);
-	this->levelInfoMappings.init(this->levels.getCount());
 	this->skies.init(1);
 	this->skyMappings.init(this->levels.getCount()); // Unnecessary but convenient for API.
-	this->skyInfos.init(1);
-	this->skyInfoMappings.init(1);
 
 	for (int i = 0; i < this->levels.getCount(); i++)
 	{
@@ -346,37 +287,22 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 		levelDef.init(chunkDim, 6, chunkDim);
 	}
 
-	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
-	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
-	levelInfoDef.init(ceilingScale);
-
 	const BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(
 		uniqueWildBlockIDs.data(), static_cast<int>(uniqueWildBlockIDs.size()));
 	const BufferView2D<const int> levelDefIndicesConstView(levelDefIndices.get(),
 		levelDefIndices.getWidth(), levelDefIndices.getHeight());
 	BufferView<LevelDefinition> levelDefsView(this->levels.get(), this->levels.getCount());
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
-	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView, cityDef, inf,
-		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef,
-		&buildingNameInfos);
+	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView, cityDef, 
+		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &buildingNameInfos);
 
 	SkyDefinition &skyDef = this->skies.get(0);
-	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
-	SkyGeneration::generateExteriorSky(skyGenInfo, binaryAssetLibrary, textureManager, &skyDef, &skyInfoDef);
-
-	// Every wild chunk level definition uses the same level info definition.
-	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
-	{
-		this->levelInfoMappings.set(i, 0);
-	}
+	SkyGeneration::generateExteriorSky(skyGenInfo, binaryAssetLibrary, textureManager, &skyDef);
 
 	for (int i = 0; i < this->skyMappings.getCount(); i++)
 	{
 		this->skyMappings.set(i, 0);
 	}
-
-	this->skyInfoMappings.set(0, 0);
 
 	// Populate wild chunk look-up values.
 	this->wild.init(std::move(levelDefIndices), fallbackSeed, std::move(buildingNameInfos));
@@ -467,15 +393,6 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	DebugNotImplementedMsg("Need to decouple MapDefinition from weather");
-	const std::string infName = std::string();// ArenaCityUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
-	INFFile inf;
-	if (!inf.init(infName.c_str()))
-	{
-		DebugLogError("Couldn't init .INF file \"" + infName + "\".");
-		return false;
-	}
-
 	const BufferView<const uint8_t> reservedBlocks(generationInfo.reservedBlocks.get(),
 		generationInfo.reservedBlocks.getCount());
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride =
@@ -486,7 +403,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		generationInfo.isPremade, reservedBlocks, generationInfo.blockStartPosX, generationInfo.blockStartPosY,
 		generationInfo.cityBlocksPerSide, generationInfo.coastal, generationInfo.rulerIsMale,
 		generationInfo.palaceIsMainQuestDungeon, generationInfo.cityTypeName, generationInfo.cityType,
-		mainQuestTempleOverride, skyGenInfo, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+		mainQuestTempleOverride, skyGenInfo, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
 		textAssetLibrary, textureManager);
 	this->initStartPoints(mif);
 	this->startLevelIndex = 0;
@@ -499,21 +416,12 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 	TextureManager &textureManager)
 {
 	this->init(MapType::Wilderness);
-
-	DebugNotImplementedMsg("Need to decouple MapDefinition from weather");
-	const std::string infName = std::string();// ArenaWildUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
-	INFFile inf;
-	if (!inf.init(infName.c_str()))
-	{
-		DebugLogError("Couldn't init .INF file \"" + infName + "\".");
-		return false;
-	}
 	
 	const BufferView2D<const ArenaWildUtils::WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs.get(),
 		generationInfo.wildBlockIDs.getWidth(), generationInfo.wildBlockIDs.getHeight());
 	const LocationDefinition::CityDefinition &cityDef = *generationInfo.cityDef;
 
-	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, cityDef, skyGenInfo, inf,
+	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, cityDef, skyGenInfo,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 
 	// No start level index and no start points in the wilderness due to the nature of chunks.
@@ -546,12 +454,6 @@ const LevelDefinition &MapDefinition::getLevel(int index) const
 	return this->levels.get(index);
 }
 
-const LevelInfoDefinition &MapDefinition::getLevelInfoForLevel(int levelIndex) const
-{
-	const int levelInfoIndex = this->levelInfoMappings.get(levelIndex);
-	return this->levelInfos.get(levelInfoIndex);
-}
-
 int MapDefinition::getSkyIndexForLevel(int levelIndex) const
 {
 	return this->skyMappings.get(levelIndex);
@@ -560,12 +462,6 @@ int MapDefinition::getSkyIndexForLevel(int levelIndex) const
 const SkyDefinition &MapDefinition::getSky(int index) const
 {
 	return this->skies.get(index);
-}
-
-const SkyInfoDefinition &MapDefinition::getSkyInfoForSky(int skyIndex) const
-{
-	const int skyInfoIndex = this->skyInfoMappings.get(skyIndex);
-	return this->skyInfos.get(skyInfoIndex);
 }
 
 MapType MapDefinition::getMapType() const

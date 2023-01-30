@@ -12,7 +12,7 @@
 
 #include "components/debug/Debug.h"
 
-std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef)
+std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
@@ -37,18 +37,17 @@ std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType,
 	// Wilderness is "W".
 	constexpr char locationLetter = 'W';
 
-	const char weatherLetter = [climateType, &weatherDef]()
+	const char weatherLetter = [climateType, weatherType]()
 	{
-		const WeatherDefinition::Type weatherDefType = weatherDef.getType();
-		if ((weatherDefType == WeatherDefinition::Type::Clear) || (weatherDefType == WeatherDefinition::Type::Overcast))
+		if (ArenaWeatherUtils::isClear(weatherType) || ArenaWeatherUtils::isOvercast(weatherType))
 		{
 			return 'N';
 		}
-		else if (weatherDefType == WeatherDefinition::Type::Rain)
+		else if (ArenaWeatherUtils::isRain(weatherType))
 		{
 			return 'R';
 		}
-		else if (weatherDefType == WeatherDefinition::Type::Snow)
+		else if (ArenaWeatherUtils::isSnow(weatherType))
 		{
 			// Deserts can't have snow.
 			if (climateType != ArenaTypes::ClimateType::Desert)

@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Voxels/VoxelUtils.h"
 

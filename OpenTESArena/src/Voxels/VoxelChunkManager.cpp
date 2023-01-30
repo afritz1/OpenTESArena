@@ -8,6 +8,7 @@
 #include "../Game/Game.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MapDefinition.h"
+#include "../World/MapInstance.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -408,7 +409,7 @@ void VoxelChunkManager::populateChunkDoorVisibilityInsts(VoxelChunk &chunk)
 }
 
 void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition)
+	const MapDefinition &mapDefinition, const MapInstance &mapInstance)
 {
 	VoxelChunk &chunk = this->getChunkAtIndex(index);
 
@@ -418,7 +419,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 	{
 		DebugAssert(activeLevelIndex.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(*activeLevelIndex);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(*activeLevelIndex);
+		const LevelInfoDefinition &levelInfoDefinition = mapInstance.getLevelInfoForLevel(*activeLevelIndex);
 		chunk.init(chunkPos, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
@@ -483,7 +484,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 	{
 		DebugAssert(activeLevelIndex.has_value() && (*activeLevelIndex == 0));
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
+		const LevelInfoDefinition &levelInfoDefinition = mapInstance.getLevelInfoForLevel(0);
 		chunk.init(chunkPos, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
@@ -547,7 +548,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
 		const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkPos);
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(levelDefIndex);
+		const LevelInfoDefinition &levelInfoDefinition = mapInstance.getLevelInfoForLevel(levelDefIndex);
 		chunk.init(chunkPos, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
@@ -720,8 +721,8 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 
 void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
 	const BufferView<const ChunkInt2> &freedChunkPositions, const CoordDouble3 &playerCoord,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, double ceilingScale,
-	AudioManager &audioManager)
+	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, const MapInstance &mapInstance,
+	double ceilingScale, AudioManager &audioManager)
 {
 	for (int i = 0; i < freedChunkPositions.getCount(); i++)
 	{
@@ -734,7 +735,7 @@ void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &new
 	{
 		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		const int spawnIndex = this->spawnChunk();
-		this->populateChunk(spawnIndex, chunkPos, activeLevelIndex, mapDefinition);
+		this->populateChunk(spawnIndex, chunkPos, activeLevelIndex, mapDefinition, mapInstance);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large

@@ -487,11 +487,15 @@ void SkyGeneration::ExteriorSkyGenInfo::init(ArenaTypes::ClimateType climateType
 	this->randomPtr = &random;
 }
 
-void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
-	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager, SkyDefinition *outSkyDef)
 {
 	Buffer<Color> skyColors = SkyUtils::makeInteriorSkyColors(skyGenInfo.outdoorDungeon, textureManager);
 	outSkyDef->initInterior(std::move(skyColors));
+}
+
+void SkyGeneration::generateInteriorSkyInfo(SkyInfoDefinition *outSkyInfoDef)
+{
+	DebugNotImplementedMsg("generateInteriorSkyInfo");
 }
 
 void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -520,4 +524,9 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo, co
 	SkyGeneration::generateArenaStars(skyGenInfo.starCount, exeData, textureManager, outSkyDef, outSkyInfoDef);
 	SkyGeneration::generateArenaSun(exeData, textureManager, outSkyDef, outSkyInfoDef);
 	SkyGeneration::generateArenaLightning(textureManager, outSkyInfoDef);
+}
+
+void SkyGeneration::generateExteriorSkyInfo(SkyInfoDefinition *outSkyInfoDef)
+{
+	DebugNotImplementedMsg("generateExteriorSkyInfo");
 }
