@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../Assets/ArenaTypes.h"
+#include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
@@ -46,8 +47,8 @@ namespace ArenaLevelUtils
 	// Gets the max height from a set of MAP2 voxels.
 	int getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2);
 
-	// Gets the voxel height of a .MIF level.
-	int getMifLevelHeight(const MIFFile::Level &level);
+	// Gets the voxel height of a .MIF level with optional ceiling data.
+	int getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling);
 
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).

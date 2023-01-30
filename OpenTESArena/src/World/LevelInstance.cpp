@@ -160,17 +160,16 @@ bool LevelInstance::trySetActive(RenderChunkManager &renderChunkManager, Texture
 void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 	const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const MapInstance &mapInstance, const EntityGeneration::EntityGenInfo &entityGenInfo,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double chasmAnimPercent, Random &random,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	double chasmAnimPercent, Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	RenderChunkManager &renderChunkManager, TextureManager &textureManager, AudioManager &audioManager, Renderer &renderer)
 {
 	// Simulate game world.
 	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
-		mapDefinition, mapInstance, this->ceilingScale, audioManager);
+		mapDefinition, this->ceilingScale, audioManager);
 	this->entityChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, playerCoord,
-		activeLevelIndex, mapDefinition, mapInstance, entityGenInfo, citizenGenInfo, this->ceilingScale, random,
-		this->voxelChunkManager, entityDefLibrary, binaryAssetLibrary, audioManager, textureManager, renderer);
+		activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo, this->ceilingScale, random, this->voxelChunkManager,
+		entityDefLibrary, binaryAssetLibrary, audioManager, textureManager, renderer);
 	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
 	
 	// Update rendering.

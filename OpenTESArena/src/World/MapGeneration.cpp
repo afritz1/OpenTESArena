@@ -2375,27 +2375,6 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 	}
 }
 
-void MapGeneration::generateMifInterior(const BufferView<const MIFFile::Level> &levels, MapType mapType,
-	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
-	const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-	const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
-	const std::optional<bool> &isArtifactDungeon, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
-{
-	MapGeneration::readMifVoxels(levels, mapType, interiorType, rulerSeed, rulerIsMale,
-		palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
-		entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDefs);
-	MapGeneration::readMifLocks(levels, inf, outLevelDefs);
-	MapGeneration::readMifTriggers(levels, inf, outLevelDefs);
-}
-
-void MapGeneration::generateMifInteriorInfo(const INFFile &inf, LevelInfoDefinition *outLevelInfoDef)
-{
-	// @todo
-	DebugNotImplementedMsg("generateMifInteriorInfo");
-}
-
 void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
 	SNInt depthChunks, const INFFile &inf, ArenaRandom &random, MapType mapType,
 	ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale,
@@ -2487,11 +2466,6 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	*outStartPoint = VoxelUtils::originalVoxelToWorldVoxel(startPoint);
 }
 
-void MapGeneration::generateMifDungeonInfo(const INFFile &inf, LevelInfoDefinition *outLevelInfoDef)
-{
-	DebugNotImplementedMsg("generateMifDungeonInfo");
-}
-
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
@@ -2558,11 +2532,6 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	MapGeneration::generateArenaCityBuildingNames(citySeed, raceID, coastal, cityTypeName,
 		mainQuestTempleOverride, random, binaryAssetLibrary, textAssetLibrary, outLevelDef,
 		outLevelInfoDef);
-}
-
-void MapGeneration::generateMifCityInfo(const INFFile &inf, LevelInfoDefinition *outLevelInfoDef)
-{
-	DebugNotImplementedMsg("generateMifCityInfo");
 }
 
 void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
@@ -2676,11 +2645,6 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 			}
 		}
 	}
-}
-
-void MapGeneration::generateRmdWildernessInfo(const INFFile &inf, LevelInfoDefinition *outLevelInfoDef)
-{
-	DebugNotImplementedMsg("generateRmdWildernessInfo");
 }
 
 void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,

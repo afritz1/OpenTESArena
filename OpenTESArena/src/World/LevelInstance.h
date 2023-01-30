@@ -21,7 +21,6 @@
 class AudioManager;
 class EntityDefinitionLibrary;
 class MapDefinition;
-class MapInstance;
 class RenderChunkManager;
 class Renderer;
 class WeatherDefinition;
@@ -65,10 +64,10 @@ public:
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 		const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const MapInstance &mapInstance, const EntityGeneration::EntityGenInfo &entityGenInfo,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double chasmAnimPercent, Random &random,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		RenderChunkManager &renderChunkManager, TextureManager &textureManager, AudioManager &audioManager, Renderer &renderer);
+		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		double chasmAnimPercent, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
+		AudioManager &audioManager, Renderer &renderer);
 
 	void cleanUp();
 };

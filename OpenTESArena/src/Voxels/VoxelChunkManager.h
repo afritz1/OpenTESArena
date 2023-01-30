@@ -12,7 +12,6 @@
 #include "components/utilities/BufferView.h"
 
 class MapDefinition;
-class MapInstance;
 
 // Handles the lifetimes of voxel chunks. Relies on the base chunk manager for the active chunk coordinates.
 class VoxelChunkManager final : public SpecializedChunkManager<VoxelChunk>
@@ -56,7 +55,7 @@ private:
 
 	// Fills the chunk with the data required based on its position and the world type.
 	void populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, const MapInstance &mapInstance);
+		const MapDefinition &mapDefinition);
 
 	// Updates chasms (context-sensitive voxels) on a chunk's perimeter that may be affected by adjacent chunks.
 	void updateChunkPerimeterChasmInsts(VoxelChunk &chunk);
@@ -66,8 +65,8 @@ private:
 public:
 	void update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
 		const BufferView<const ChunkInt2> &freedChunkPositions, const CoordDouble3 &playerCoord,
-		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, const MapInstance &mapInstance,
-		double ceilingScale, AudioManager &audioManager);
+		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, double ceilingScale,
+		AudioManager &audioManager);
 
 	// Run at the end of a frame to reset certain frame data like dirty voxels.
 	void cleanUp();

@@ -251,22 +251,22 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo, const 
 		locationID = this->locationIndex;
 	}
 
-	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
-	const ArenaTypes::ClimateType climateType = cityDef.climateType;
 	const ArenaTypes::WeatherType curWeatherType = this->getWeatherType(provinceID, locationID, binaryAssetLibrary);
 
 	MapInstance mapInstance;
-	mapInstance.initCity(mapDefinition, climateType, curWeatherType, skyGenInfo.currentDay, textureManager, renderer);
+	mapInstance.initCity(mapDefinition, curWeatherType, skyGenInfo.currentDay, textureManager, renderer);
 
 	DebugAssert(mapDefinition.getStartPointCount() > 0);
 	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
+	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+
 	MapState mapState;
 	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
 	
 	CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
-		provinceDefPtr->getRaceID(), climateType, entityDefLibrary, textureManager);
+		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
 
 	constexpr std::optional<bool> enteringInteriorFromExterior; // Unused for exteriors.
 
@@ -331,18 +331,17 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo, 
 		locationID = this->locationIndex;
 	}
 
-	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
-	const ArenaTypes::ClimateType climateType = cityDef.climateType;
 	const ArenaTypes::WeatherType curWeatherType = this->getWeatherType(provinceID, locationID, binaryAssetLibrary);
 
 	MapInstance mapInstance;
-	mapInstance.initWild(mapDefinition, climateType, curWeatherType, skyGenInfo.currentDay, textureManager, renderer);
+	mapInstance.initWild(mapDefinition, curWeatherType, skyGenInfo.currentDay, textureManager, renderer);
 
 	MapState mapState;
 	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
 
+	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
 	CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
-		provinceDefPtr->getRaceID(), climateType, entityDefLibrary, textureManager);
+		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
 
 	constexpr std::optional<bool> enteringInteriorFromExterior; // Unused for exteriors.
 

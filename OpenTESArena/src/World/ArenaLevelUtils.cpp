@@ -64,7 +64,7 @@ int ArenaLevelUtils::getMap2Height(const BufferView2D<const ArenaTypes::VoxelID>
 	return currentMap2Height;
 }
 
-int ArenaLevelUtils::getMifLevelHeight(const MIFFile::Level &level)
+int ArenaLevelUtils::getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling)
 {
 	const BufferView2D<const ArenaTypes::VoxelID> map2 = level.getMAP2();
 
@@ -74,7 +74,8 @@ int ArenaLevelUtils::getMifLevelHeight(const MIFFile::Level &level)
 	}
 	else
 	{
-		return 3;
+		const bool hasCeiling = (ceiling != nullptr) && !ceiling->outdoorDungeon;
+		return hasCeiling ? 3 : 2;
 	}
 }
 

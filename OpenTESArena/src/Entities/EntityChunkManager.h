@@ -18,7 +18,6 @@ class BinaryAssetLibrary;
 class EntityDefinitionLibrary;
 class LevelInfoDefinition;
 class MapDefinition;
-class MapInstance;
 class Renderer;
 class TextureManager;
 class VoxelChunk;
@@ -64,7 +63,7 @@ private:
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager);
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, const MapInstance &mapInstance, const EntityGeneration::EntityGenInfo &entityGenInfo,
+		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
@@ -76,9 +75,8 @@ public:
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 		const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const MapInstance &mapInstance, const EntityGeneration::EntityGenInfo &entityGenInfo,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random,
-		const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer);
 
 	// @todo: support spawning an entity not from the level def
