@@ -91,6 +91,7 @@ public:
 	int getStateCount() const;
 	const State &getState(int index) const;
 	std::optional<int> tryGetStateIndex(const char *name) const;
+	int getLinearizedKeyframeIndex(int stateIndex, int keyframeListIndex, int keyframeIndex) const;
 
 	void addState(State &&state);
 	void removeState(const char *name);

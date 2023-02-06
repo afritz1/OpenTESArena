@@ -288,6 +288,50 @@ std::optional<int> EntityAnimationDefinition::tryGetStateIndex(const char *name)
 	return std::nullopt;
 }
 
+int EntityAnimationDefinition::getLinearizedKeyframeIndex(int stateIndex, int keyframeListIndex, int keyframeIndex) const
+{
+	DebugAssert(stateIndex >= 0);
+	DebugAssert(keyframeListIndex >= 0);
+	DebugAssert(keyframeIndex >= 0);
+
+	int index = 0;
+	for (int i = 0; i < this->getStateCount(); i++)
+	{
+		const State &state = this->states[i];
+		if (i < stateIndex)
+		{
+			for (int j = 0; j < state.getKeyframeListCount(); j++)
+			{
+				const KeyframeList &keyframeList = state.getKeyframeList(j);
+				index += keyframeList.getKeyframeCount();
+			}
+		}
+		else if (i == stateIndex)
+		{
+			for (int j = 0; j < state.getKeyframeListCount(); j++)
+			{
+				const KeyframeList &keyframeList = state.getKeyframeList(j);
+				if (j < keyframeListIndex)
+				{
+					index += keyframeList.getKeyframeCount();
+				}
+				else if (j == keyframeListIndex)
+				{
+					for (int k = 0; i < keyframeList.getKeyframeCount(); k++)
+					{
+						if (k <= keyframeIndex)
+						{
+							index++;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return index;
+}
+
 void EntityAnimationDefinition::addState(State &&state)
 {
 	this->states.push_back(std::move(state));
