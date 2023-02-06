@@ -27,6 +27,9 @@ public:
 	public:
 		Keyframe(TextureAsset &&textureAsset, double width, double height);
 
+		bool operator==(const Keyframe &other) const;
+		bool operator!=(const Keyframe &other) const;
+
 		const TextureAsset &getTextureAsset() const;
 		double getWidth() const;
 		double getHeight() const;
@@ -41,6 +44,9 @@ public:
 		KeyframeList();
 
 		void init(bool flipped);
+
+		bool operator==(const KeyframeList &other) const;
+		bool operator!=(const KeyframeList &other) const;
 
 		int getKeyframeCount() const;
 		const Keyframe &getKeyframe(int index) const;
@@ -64,6 +70,9 @@ public:
 
 		void init(const char *name, double totalSeconds, bool loop);
 
+		bool operator==(const State &other) const;
+		bool operator!=(const State &other) const;
+
 		const char *getName() const;
 		int getKeyframeListCount() const;
 		const KeyframeList &getKeyframeList(int index) const;
@@ -76,6 +85,9 @@ public:
 private:
 	std::vector<State> states; // Idle, Attack, etc..
 public:
+	bool operator==(const EntityAnimationDefinition &other) const;
+	bool operator!=(const EntityAnimationDefinition &other) const;
+
 	int getStateCount() const;
 	const State &getState(int index) const;
 	std::optional<int> tryGetStateIndex(const char *name) const;

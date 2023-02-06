@@ -35,6 +35,7 @@ public:
 		};
 
 		// @todo: move this into a creature library so it can just be an ID instead.
+		// @todo: also it is basically an ArenaCreatureDefinition since it copy-pastes so much from ExeData.
 		struct CreatureDefinition
 		{
 			char name[64];
@@ -56,6 +57,8 @@ public:
 			int attributes[8];
 
 			void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
+
+			bool operator==(const CreatureDefinition &other) const;
 		};
 
 		struct HumanDefinition
@@ -64,6 +67,8 @@ public:
 			int charClassID;
 
 			void init(bool male, int charClassID);
+
+			bool operator==(const HumanDefinition &other) const;
 		};
 	private:
 		EnemyDefinition::Type type;
@@ -76,12 +81,14 @@ public:
 	public:
 		EnemyDefinition();
 
+		void initCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
+		void initHuman(bool male, int charClassID);
+
+		bool operator==(const EnemyDefinition &other) const;
+
 		EnemyDefinition::Type getType() const;
 		const CreatureDefinition &getCreature() const;
 		const HumanDefinition &getHuman() const;
-
-		void initCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
-		void initHuman(bool male, int charClassID);
 	};
 
 	struct CitizenDefinition
@@ -92,6 +99,8 @@ public:
 		CitizenDefinition();
 
 		void init(bool male, ArenaTypes::ClimateType climateType);
+
+		bool operator==(const CitizenDefinition &other) const;
 	};
 
 	class StaticNpcDefinition
@@ -116,12 +125,16 @@ public:
 			ShopkeeperDefinition::Type type;
 
 			void init(ShopkeeperDefinition::Type type);
+
+			bool operator==(const ShopkeeperDefinition &other) const;
 		};
 
 		struct PersonDefinition
 		{
 			// Personality, isRuler, etc..
 			// @todo: probably want like a personality ID into personality library.
+
+			bool operator==(const PersonDefinition &other) const;
 		};
 	private:
 		StaticNpcDefinition::Type type;
@@ -134,12 +147,14 @@ public:
 	public:
 		StaticNpcDefinition();
 
+		void initShopkeeper(ShopkeeperDefinition::Type type);
+		void initPerson();
+
+		bool operator==(const StaticNpcDefinition &other) const;
+
 		StaticNpcDefinition::Type getType() const;
 		const ShopkeeperDefinition &getShopkeeper() const;
 		const PersonDefinition &getPerson() const;
-
-		void initShopkeeper(ShopkeeperDefinition::Type type);
-		void initPerson();
 	};
 
 	class ItemDefinition
@@ -170,12 +185,14 @@ public:
 	public:
 		ItemDefinition();
 
+		void initKey();
+		void initQuestItem();
+
+		bool operator==(const ItemDefinition &other) const;
+
 		ItemDefinition::Type getType() const;
 		const KeyDefinition &getKey() const;
 		const QuestItemDefinition &getQuestItem() const;
-
-		void initKey();
-		void initQuestItem();
 	};
 
 	class ContainerDefinition
@@ -195,11 +212,15 @@ public:
 			HolderDefinition();
 
 			void init(bool locked);
+
+			bool operator==(const HolderDefinition &other) const;
 		};
 
 		struct PileDefinition
 		{
 			// @todo: loot table ID?
+
+			bool operator==(const PileDefinition &other) const;
 		};
 	private:
 		ContainerDefinition::Type type;
@@ -212,12 +233,14 @@ public:
 	public:
 		ContainerDefinition();
 
+		void initHolder(bool locked);
+		void initPile();
+
+		bool operator==(const ContainerDefinition &other) const;
+
 		ContainerDefinition::Type getType() const;
 		const HolderDefinition &getHolder() const;
 		const PileDefinition &getPile() const;
-
-		void initHolder(bool locked);
-		void initPile();
 	};
 
 	struct ProjectileDefinition
@@ -229,6 +252,8 @@ public:
 		ProjectileDefinition();
 
 		void init(bool hasGravity);
+
+		bool operator==(const ProjectileDefinition &other) const;
 	};
 
 	struct TransitionDefinition
@@ -241,6 +266,8 @@ public:
 		TransitionDefinition();
 
 		void init(LevelDefinition::TransitionDefID transitionDefID);
+
+		bool operator==(const TransitionDefinition &other) const;
 	};
 
 	struct DoodadDefinition
@@ -259,6 +286,8 @@ public:
 
 		void init(int yOffset, double scale, bool collider, bool transparent, bool ceiling,
 			bool streetlight, bool puddle, int lightIntensity);
+
+		bool operator==(const DoodadDefinition &other) const;
 	};
 private:
 	Type type;
@@ -279,6 +308,8 @@ private:
 	void init(Type type, EntityAnimationDefinition &&animDef);
 public:
 	EntityDefinition();
+
+	bool operator==(const EntityDefinition &other) const;
 
 	Type getType() const;
 	const EntityAnimationDefinition &getAnimDef() const;

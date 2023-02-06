@@ -14,6 +14,36 @@ EntityAnimationDefinition::Keyframe::Keyframe(TextureAsset &&textureAsset, doubl
 	this->height = height;
 }
 
+bool EntityAnimationDefinition::Keyframe::operator==(const Keyframe &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->textureAsset != other.textureAsset)
+	{
+		return false;
+	}
+
+	if (this->width != other.width)
+	{
+		return false;
+	}
+
+	if (this->height != other.height)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool EntityAnimationDefinition::Keyframe::operator!=(const Keyframe &other) const
+{
+	return !(*this == other);
+}
+
 const TextureAsset &EntityAnimationDefinition::Keyframe::getTextureAsset() const
 {
 	return this->textureAsset;
@@ -37,6 +67,41 @@ EntityAnimationDefinition::KeyframeList::KeyframeList()
 void EntityAnimationDefinition::KeyframeList::init(bool flipped)
 {
 	this->flipped = flipped;
+}
+
+bool EntityAnimationDefinition::KeyframeList::operator==(const KeyframeList &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->keyframes.size() != other.keyframes.size())
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < this->keyframes.size(); i++)
+	{
+		const EntityAnimationDefinition::Keyframe &keyframe = this->keyframes[i];
+		const EntityAnimationDefinition::Keyframe &otherKeyframe = other.keyframes[i];
+		if (keyframe != otherKeyframe)
+		{
+			return false;
+		}
+	}
+
+	if (this->flipped != other.flipped)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool EntityAnimationDefinition::KeyframeList::operator!=(const KeyframeList &other) const
+{
+	return !(*this == other);
 }
 
 int EntityAnimationDefinition::KeyframeList::getKeyframeCount() const
@@ -81,6 +146,51 @@ void EntityAnimationDefinition::State::init(const char *name, double totalSecond
 	this->loop = loop;
 }
 
+bool EntityAnimationDefinition::State::operator==(const State &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (std::strncmp(this->name.data(), other.name.data(), this->name.size()) != 0)
+	{
+		return false;
+	}
+
+	if (this->keyframeLists.size() != other.keyframeLists.size())
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < this->keyframeLists.size(); i++)
+	{
+		const EntityAnimationDefinition::KeyframeList &keyframeList = this->keyframeLists[i];
+		const EntityAnimationDefinition::KeyframeList &otherKeyframeList = other.keyframeLists[i];
+		if (keyframeList != otherKeyframeList)
+		{
+			return false;
+		}
+	}
+
+	if (this->totalSeconds != other.totalSeconds)
+	{
+		return false;
+	}
+
+	if (this->loop != other.loop)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool EntityAnimationDefinition::State::operator!=(const State &other) const
+{
+	return !(*this == other);
+}
+
 const char *EntityAnimationDefinition::State::getName() const
 {
 	return this->name.data();
@@ -115,6 +225,36 @@ void EntityAnimationDefinition::State::addKeyframeList(KeyframeList &&keyframeLi
 void EntityAnimationDefinition::State::clearKeyframeLists()
 {
 	this->keyframeLists.clear();
+}
+
+bool EntityAnimationDefinition::operator==(const EntityAnimationDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->states.size() != other.states.size())
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < this->states.size(); i++)
+	{
+		const EntityAnimationDefinition::State &state = this->states[i];
+		const EntityAnimationDefinition::State &otherState = other.states[i];
+		if (state != otherState)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool EntityAnimationDefinition::operator!=(const EntityAnimationDefinition &other) const
+{
+	return !(*this == other);
 }
 
 int EntityAnimationDefinition::getStateCount() const

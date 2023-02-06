@@ -9,8 +9,7 @@ void EntityDefinition::EnemyDefinition::CreatureDefinition::init(int creatureInd
 {
 	const auto &entities = exeData.entities;
 
-	const std::string &nameStr = isFinalBoss ? entities.finalBossName :
-		entities.creatureNames[creatureIndex];
+	const std::string &nameStr = isFinalBoss ? entities.finalBossName : entities.creatureNames[creatureIndex];
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", nameStr.c_str());
 
 	this->level = entities.creatureLevels[creatureIndex];
@@ -20,8 +19,7 @@ void EntityDefinition::EnemyDefinition::CreatureDefinition::init(int creatureInd
 	this->expMultiplier = entities.creatureExpMultipliers[creatureIndex];
 	this->soundIndex = entities.creatureSounds[creatureIndex];
 
-	std::snprintf(std::begin(this->soundName), std::size(this->soundName),
-		"%s", entities.creatureSoundNames[this->soundIndex].c_str());
+	std::snprintf(std::begin(this->soundName), std::size(this->soundName), "%s", entities.creatureSoundNames[this->soundIndex].c_str());
 
 	this->minDamage = entities.creatureDamages[creatureIndex].first;
 	this->maxDamage = entities.creatureDamages[creatureIndex].second;
@@ -36,15 +34,168 @@ void EntityDefinition::EnemyDefinition::CreatureDefinition::init(int creatureInd
 	std::copy(srcAttributes.begin(), srcAttributes.end(), std::begin(this->attributes));
 }
 
+bool EntityDefinition::EnemyDefinition::CreatureDefinition::operator==(const CreatureDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (std::strncmp(std::begin(this->name), std::begin(other.name), std::size(this->name)) != 0)
+	{
+		return false;
+	}
+
+	if (this->level != other.level)
+	{
+		return false;
+	}
+
+	if (this->minHP != other.minHP)
+	{
+		return false;
+	}
+
+	if (this->maxHP != other.maxHP)
+	{
+		return false;
+	}
+
+	if (this->baseExp != other.baseExp)
+	{
+		return false;
+	}
+
+	if (this->expMultiplier != other.expMultiplier)
+	{
+		return false;
+	}
+
+	if (this->soundIndex != other.soundIndex)
+	{
+		return false;
+	}
+
+	if (std::strncmp(std::begin(this->soundName), std::begin(other.soundName), std::size(this->soundName)) != 0)
+	{
+		return false;
+	}
+
+	if (this->minDamage != other.minDamage)
+	{
+		return false;
+	}
+
+	if (this->maxDamage != other.maxDamage)
+	{
+		return false;
+	}
+
+	if (this->magicEffects != other.magicEffects)
+	{
+		return false;
+	}
+
+	if (this->scale != other.scale)
+	{
+		return false;
+	}
+
+	if (this->yOffset != other.yOffset)
+	{
+		return false;
+	}
+
+	if (this->hasNoCorpse != other.hasNoCorpse)
+	{
+		return false;
+	}
+
+	if (this->bloodIndex != other.bloodIndex)
+	{
+		return false;
+	}
+
+	if (this->diseaseChances != other.diseaseChances)
+	{
+		return false;
+	}
+
+	if (std::memcmp(std::begin(this->attributes), std::begin(other.attributes), std::size(this->attributes) * sizeof(this->attributes[0])) != 0)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 void EntityDefinition::EnemyDefinition::HumanDefinition::init(bool male, int charClassID)
 {
 	this->male = male;
 	this->charClassID = charClassID;
 }
 
+bool EntityDefinition::EnemyDefinition::HumanDefinition::operator==(const HumanDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->male != other.male)
+	{
+		return false;
+	}
+
+	if (this->charClassID != other.charClassID)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 EntityDefinition::EnemyDefinition::EnemyDefinition()
 {
 	this->type = static_cast<EnemyDefinition::Type>(-1);
+}
+
+void EntityDefinition::EnemyDefinition::initCreature(int creatureIndex, bool isFinalBoss,
+	const ExeData &exeData)
+{
+	this->type = EnemyDefinition::Type::Creature;
+	this->creature.init(creatureIndex, isFinalBoss, exeData);
+}
+
+void EntityDefinition::EnemyDefinition::initHuman(bool male, int charClassID)
+{
+	this->type = EnemyDefinition::Type::Human;
+	this->human.init(male, charClassID);
+}
+
+bool EntityDefinition::EnemyDefinition::operator==(const EnemyDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->type != other.type)
+	{
+		return false;
+	}
+
+	switch (this->type)
+	{
+	case EnemyDefinition::Type::Creature:
+		return this->creature == other.creature;
+	case EnemyDefinition::Type::Human:
+		return this->human == other.human;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
+	}
+
+	return true;
 }
 
 EntityDefinition::EnemyDefinition::Type EntityDefinition::EnemyDefinition::getType() const
@@ -64,19 +215,6 @@ const EntityDefinition::EnemyDefinition::HumanDefinition &EntityDefinition::Enem
 	return this->human;
 }
 
-void EntityDefinition::EnemyDefinition::initCreature(int creatureIndex, bool isFinalBoss,
-	const ExeData &exeData)
-{
-	this->type = EnemyDefinition::Type::Creature;
-	this->creature.init(creatureIndex, isFinalBoss, exeData);
-}
-
-void EntityDefinition::EnemyDefinition::initHuman(bool male, int charClassID)
-{
-	this->type = EnemyDefinition::Type::Human;
-	this->human.init(male, charClassID);
-}
-
 EntityDefinition::CitizenDefinition::CitizenDefinition()
 {
 	this->male = false;
@@ -89,14 +227,88 @@ void EntityDefinition::CitizenDefinition::init(bool male, ArenaTypes::ClimateTyp
 	this->climateType = climateType;
 }
 
+bool EntityDefinition::CitizenDefinition::operator==(const CitizenDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->male != other.male)
+	{
+		return false;
+	}
+
+	if (this->climateType != other.climateType)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 void EntityDefinition::StaticNpcDefinition::ShopkeeperDefinition::init(ShopkeeperDefinition::Type type)
 {
 	this->type = type;
 }
 
+bool EntityDefinition::StaticNpcDefinition::ShopkeeperDefinition::operator==(const ShopkeeperDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return this->type == other.type;
+}
+
+bool EntityDefinition::StaticNpcDefinition::PersonDefinition::operator==(const PersonDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return true;
+}
+
 EntityDefinition::StaticNpcDefinition::StaticNpcDefinition()
 {
 	this->type = static_cast<StaticNpcDefinition::Type>(-1);
+}
+
+void EntityDefinition::StaticNpcDefinition::initShopkeeper(ShopkeeperDefinition::Type type)
+{
+	this->type = StaticNpcDefinition::Type::Shopkeeper;
+	this->shopkeeper.init(type);
+}
+
+void EntityDefinition::StaticNpcDefinition::initPerson()
+{
+	this->type = StaticNpcDefinition::Type::Person;
+}
+
+bool EntityDefinition::StaticNpcDefinition::operator==(const StaticNpcDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->type != other.type)
+	{
+		return false;
+	}
+
+	switch (this->type)
+	{
+	case StaticNpcDefinition::Type::Shopkeeper:
+		return this->shopkeeper == other.shopkeeper;
+	case StaticNpcDefinition::Type::Person:
+		return this->person == other.person;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
+	}
 }
 
 EntityDefinition::StaticNpcDefinition::StaticNpcDefinition::Type EntityDefinition::StaticNpcDefinition::getType() const
@@ -116,20 +328,29 @@ const EntityDefinition::StaticNpcDefinition::PersonDefinition &EntityDefinition:
 	return this->person;
 }
 
-void EntityDefinition::StaticNpcDefinition::initShopkeeper(ShopkeeperDefinition::Type type)
-{
-	this->type = StaticNpcDefinition::Type::Shopkeeper;
-	this->shopkeeper.init(type);
-}
-
-void EntityDefinition::StaticNpcDefinition::initPerson()
-{
-	this->type = StaticNpcDefinition::Type::Person;
-}
-
 EntityDefinition::ItemDefinition::ItemDefinition()
 {
 	this->type = static_cast<ItemDefinition::Type>(-1);
+}
+
+void EntityDefinition::ItemDefinition::initKey()
+{
+	this->type = ItemDefinition::Type::Key;
+}
+
+void EntityDefinition::ItemDefinition::initQuestItem()
+{
+	this->type = ItemDefinition::Type::QuestItem;
+}
+
+bool EntityDefinition::ItemDefinition::operator==(const ItemDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return this->type == other.type;
 }
 
 EntityDefinition::ItemDefinition::ItemDefinition::Type EntityDefinition::ItemDefinition::getType() const
@@ -149,16 +370,6 @@ const EntityDefinition::ItemDefinition::QuestItemDefinition &EntityDefinition::I
 	return this->questItem;
 }
 
-void EntityDefinition::ItemDefinition::initKey()
-{
-	this->type = ItemDefinition::Type::Key;
-}
-
-void EntityDefinition::ItemDefinition::initQuestItem()
-{
-	this->type = ItemDefinition::Type::QuestItem;
-}
-
 EntityDefinition::ContainerDefinition::HolderDefinition::HolderDefinition()
 {
 	this->locked = false;
@@ -169,9 +380,63 @@ void EntityDefinition::ContainerDefinition::HolderDefinition::init(bool locked)
 	this->locked = locked;
 }
 
+bool EntityDefinition::ContainerDefinition::HolderDefinition::operator==(const HolderDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return this->locked == other.locked;
+}
+
+bool EntityDefinition::ContainerDefinition::PileDefinition::operator==(const PileDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return true;
+}
+
 EntityDefinition::ContainerDefinition::ContainerDefinition()
 {
 	this->type = static_cast<ContainerDefinition::Type>(-1);
+}
+
+void EntityDefinition::ContainerDefinition::initHolder(bool locked)
+{
+	this->type = ContainerDefinition::Type::Holder;
+	this->holder.init(locked);
+}
+
+void EntityDefinition::ContainerDefinition::initPile()
+{
+	this->type = ContainerDefinition::Type::Pile;
+}
+
+bool EntityDefinition::ContainerDefinition::operator==(const ContainerDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->type != other.type)
+	{
+		return false;
+	}
+
+	switch (this->type)
+	{
+	case ContainerDefinition::Type::Holder:
+		return this->holder == other.holder;
+	case ContainerDefinition::Type::Pile:
+		return this->pile == other.pile;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
+	}
 }
 
 EntityDefinition::ContainerDefinition::ContainerDefinition::Type EntityDefinition::ContainerDefinition::getType() const
@@ -191,17 +456,6 @@ const EntityDefinition::ContainerDefinition::PileDefinition &EntityDefinition::C
 	return this->pile;
 }
 
-void EntityDefinition::ContainerDefinition::initHolder(bool locked)
-{
-	this->type = ContainerDefinition::Type::Holder;
-	this->holder.init(locked);
-}
-
-void EntityDefinition::ContainerDefinition::initPile()
-{
-	this->type = ContainerDefinition::Type::Pile;
-}
-
 EntityDefinition::ProjectileDefinition::ProjectileDefinition()
 {
 	this->hasGravity = false;
@@ -212,6 +466,16 @@ void EntityDefinition::ProjectileDefinition::init(bool hasGravity)
 	this->hasGravity = hasGravity;
 }
 
+bool EntityDefinition::ProjectileDefinition::operator==(const ProjectileDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return this->hasGravity == other.hasGravity;
+}
+
 EntityDefinition::TransitionDefinition::TransitionDefinition()
 {
 	this->transitionDefID = -1;
@@ -220,6 +484,16 @@ EntityDefinition::TransitionDefinition::TransitionDefinition()
 void EntityDefinition::TransitionDefinition::init(LevelDefinition::TransitionDefID transitionDefID)
 {
 	this->transitionDefID = transitionDefID;
+}
+
+bool EntityDefinition::TransitionDefinition::operator==(const TransitionDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return this->transitionDefID == other.transitionDefID;
 }
 
 EntityDefinition::DoodadDefinition::DoodadDefinition()
@@ -247,6 +521,56 @@ void EntityDefinition::DoodadDefinition::init(int yOffset, double scale, bool co
 	this->lightIntensity = lightIntensity;
 }
 
+bool EntityDefinition::DoodadDefinition::operator==(const DoodadDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->yOffset != other.yOffset)
+	{
+		return false;
+	}
+
+	if (this->scale != other.scale)
+	{
+		return false;
+	}
+	
+	if (this->collider != other.collider)
+	{
+		return false;
+	}
+
+	if (this->transparent != other.transparent)
+	{
+		return false;
+	}
+
+	if (this->ceiling != other.ceiling)
+	{
+		return false;
+	}
+
+	if (this->streetlight != other.streetlight)
+	{
+		return false;
+	}
+	
+	if (this->puddle != other.puddle)
+	{
+		return false;
+	}
+
+	if (this->lightIntensity != other.lightIntensity)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 void EntityDefinition::init(Type type, EntityAnimationDefinition &&animDef)
 {
 	this->type = type;
@@ -256,6 +580,46 @@ void EntityDefinition::init(Type type, EntityAnimationDefinition &&animDef)
 EntityDefinition::EntityDefinition()
 {
 	this->type = static_cast<Type>(-1);
+}
+
+bool EntityDefinition::operator==(const EntityDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->type != other.type)
+	{
+		return false;
+	}
+
+	if (this->animDef != other.animDef)
+	{
+		return false;
+	}
+
+	switch (this->type)
+	{
+	case EntityDefinition::Type::Enemy:
+		return this->enemy == other.enemy;
+	case EntityDefinition::Type::Citizen:
+		return this->citizen == other.citizen;
+	case EntityDefinition::Type::StaticNPC:
+		return this->staticNpc == other.staticNpc;
+	case EntityDefinition::Type::Item:
+		return this->item == other.item;
+	case EntityDefinition::Type::Container:
+		return this->container == other.container;
+	case EntityDefinition::Type::Projectile:
+		return this->projectile == other.projectile;
+	case EntityDefinition::Type::Transition:
+		return this->transition == other.transition;
+	case EntityDefinition::Type::Doodad:
+		return this->doodad == other.doodad;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
+	}
 }
 
 EntityDefinition::Type EntityDefinition::getType() const
