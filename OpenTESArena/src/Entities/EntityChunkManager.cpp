@@ -35,6 +35,21 @@ EntityDefID EntityChunkManager::addEntityDef(EntityDefinition &&def, const Entit
 	return defID;
 }
 
+EntityDefID EntityChunkManager::getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary)
+{
+	for (const auto &pair : this->entityDefs)
+	{
+		const EntityDefID currentDefID = pair.first;
+		const EntityDefinition &currentDef = pair.second;
+		if (currentDef == def) // There doesn't seem to be a better way than value comparisons.
+		{
+			return currentDefID;
+		}
+	}
+
+	return this->addEntityDef(EntityDefinition(def), defLibrary);
+}
+
 EntityInstanceID EntityChunkManager::spawnEntity()
 {
 	EntityInstanceID instID;
@@ -58,6 +73,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 	ChunkUtils::GetWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
 		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
 
+	const double ceilingScale = levelInfoDefinition.getCeilingScale();
+
 	for (int i = 0; i < levelDefinition.getEntityPlacementDefCount(); i++)
 	{
 		const LevelDefinition::EntityPlacementDef &placementDef = levelDefinition.getEntityPlacementDef(i);
@@ -67,16 +84,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const EntityType entityType = EntityUtils::getEntityTypeFromDefType(entityDefType);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
-		std::optional<EntityDefID> entityDefID;
+		std::optional<EntityDefID> entityDefID; // Global entity def ID (shared across all active chunks).
 		for (const LevelDouble3 &position : placementDef.positions)
 		{
-			const double ceilingScale = levelInfoDefinition.getCeilingScale();
 			const LevelInt3 voxelPosition = VoxelUtils::pointToVoxel(position, ceilingScale);
 			if (ChunkUtils::IsInWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!entityDefID.has_value())
 				{
-					entityDefID = this->addEntityDef(EntityDefinition(entityDef), entityDefLibrary);
+					entityDefID = this->getOrAddEntityDefID(entityDef, entityDefLibrary);
 				}
 
 				const VoxelDouble3 point = ChunkUtils::MakeChunkPointFromLevel(position, startX, startY, startZ);
@@ -162,7 +178,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 {
 	const ChunkInt2 &chunkPos = entityChunk.getPosition();
 
-	// Populate all or part of the chunk from a level definition depending on the world type.
+	// Populate all or part of the chunk from a level definition depending on the map type.
 	const MapType mapType = mapDefinition.getMapType();
 	if (mapType == MapType::Interior)
 	{

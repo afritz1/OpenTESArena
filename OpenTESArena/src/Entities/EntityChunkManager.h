@@ -54,6 +54,7 @@ private:
 
 	const EntityDefinition &getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const;
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
+	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);
 
 	EntityInstanceID spawnEntity();
 
