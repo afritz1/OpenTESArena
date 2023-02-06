@@ -10,6 +10,7 @@
 #include "EntityUtils.h"
 #include "../World/SpecializedChunkManager.h"
 
+#include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
 #include "components/utilities/RecyclablePool.h"
 
@@ -50,7 +51,7 @@ private:
 	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
 	// Allocated textures for each entity definition's animations.
-	std::unordered_map<EntityDefID, std::vector<ScopedObjectTextureRef>> animTextureRefs;
+	std::unordered_map<EntityDefID, Buffer<ScopedObjectTextureRef>> animTextureRefs;
 
 	const EntityDefinition &getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const;
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
@@ -62,7 +63,7 @@ private:
 		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager);
+		TextureManager &textureManager, Renderer &renderer);
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,

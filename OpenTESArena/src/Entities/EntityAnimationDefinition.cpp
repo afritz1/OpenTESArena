@@ -288,6 +288,22 @@ std::optional<int> EntityAnimationDefinition::tryGetStateIndex(const char *name)
 	return std::nullopt;
 }
 
+int EntityAnimationDefinition::getTotalKeyframeCount() const
+{
+	int count = 0;
+	for (int i = 0; i < this->getStateCount(); i++)
+	{
+		const State &state = this->states[i];
+		for (int j = 0; j < state.getKeyframeListCount(); j++)
+		{
+			const KeyframeList &keyframeList = state.getKeyframeList(j);
+			count += keyframeList.getKeyframeCount();
+		}
+	}
+
+	return count;
+}
+
 int EntityAnimationDefinition::getLinearizedKeyframeIndex(int stateIndex, int keyframeListIndex, int keyframeIndex) const
 {
 	DebugAssert(stateIndex >= 0);

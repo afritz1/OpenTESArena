@@ -2,9 +2,11 @@
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityType.h"
+#include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Game/CardinalDirection.h"
 #include "../Math/Random.h"
+#include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/LevelDefinition.h"
@@ -13,6 +15,49 @@
 #include "../World/MapType.h"
 
 #include "components/utilities/String.h"
+
+namespace
+{
+	Buffer<ScopedObjectTextureRef> MakeAnimTextureRefs(const EntityAnimationDefinition &animDef, TextureManager &textureManager, Renderer &renderer)
+	{
+		Buffer<ScopedObjectTextureRef> animTextureRefs(animDef.getTotalKeyframeCount());
+
+		int writeIndex = 0;
+		for (int i = 0; i < animDef.getStateCount(); i++)
+		{
+			const EntityAnimationDefinition::State &state = animDef.getState(i);
+			for (int j = 0; j < state.getKeyframeListCount(); j++)
+			{
+				const EntityAnimationDefinition::KeyframeList &keyframeList = state.getKeyframeList(j);
+				for (int k = 0; k < keyframeList.getKeyframeCount(); k++)
+				{
+					const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
+					const TextureAsset &textureAsset = keyframe.getTextureAsset();
+					const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
+					if (!textureBuilderID.has_value())
+					{
+						DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
+						continue;
+					}
+
+					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+					ObjectTextureID textureID;
+					if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
+					{
+						DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
+						continue;
+					}
+
+					ScopedObjectTextureRef textureRef(textureID, renderer);
+					animTextureRefs.set(writeIndex, std::move(textureRef));
+					writeIndex++;
+				}
+			}
+		}
+
+		return animTextureRefs;
+	}
+}
 
 const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const
 {
@@ -65,7 +110,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 	const LevelDefinition &levelDefinition, const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager)
+	TextureManager &textureManager, Renderer &renderer)
 {
 	SNInt startX, endX;
 	int startY, endY;
@@ -93,6 +138,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				if (!entityDefID.has_value())
 				{
 					entityDefID = this->getOrAddEntityDefID(entityDef, entityDefLibrary);
+
+					if (this->animTextureRefs.find(*entityDefID) == this->animTextureRefs.end())
+					{
+						// Allocate renderer textures for the animation.
+						Buffer<ScopedObjectTextureRef> animTextureRefs = MakeAnimTextureRefs(animDef, textureManager, renderer);
+						this->animTextureRefs.emplace(*entityDefID, std::move(animTextureRefs));
+					}
 				}
 
 				const VoxelDouble3 point = ChunkUtils::MakeChunkPointFromLevel(position, startX, startY, startZ);
@@ -192,7 +244,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 			const LevelInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			DebugAssert(!citizenGenInfo.has_value());
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
-				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager);
+				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -207,7 +259,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 			const LevelInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			DebugAssert(citizenGenInfo.has_value());
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
-				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager);
+				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -227,7 +279,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 
 		DebugAssert(citizenGenInfo.has_value());
 		this->populateChunkEntities(entityChunk, voxelChunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
-			citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager);
+			citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
 	}
 }
 
