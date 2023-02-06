@@ -140,6 +140,8 @@ struct EntityAnimationInstanceA
 
 	EntityAnimationInstanceA();
 
+	void init(const EntityAnimationDefinition &def, const BufferView<const ScopedObjectTextureRef> &textureRefs);
+
 	void setStateIndex(int index);
 	void resetTime();
 	void clear();

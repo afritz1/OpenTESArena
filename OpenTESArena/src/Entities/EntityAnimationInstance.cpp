@@ -187,6 +187,60 @@ EntityAnimationInstanceA::EntityAnimationInstanceA()
 	this->clear();
 }
 
+void EntityAnimationInstanceA::init(const EntityAnimationDefinition &def, const BufferView<const ScopedObjectTextureRef> &textureRefs)
+{
+	this->currentSeconds = 0.0;
+
+	const int defStateCount = def.getStateCount();
+	this->stateCount = defStateCount;
+	this->keyframeListCount = 0;
+	this->textureIdCount = 0;
+
+	int textureWriteIndex = 0;
+	for (int i = 0; i < defStateCount; i++)
+	{
+		const EntityAnimationDefinition::State &defState = def.getState(i);
+		const int defKeyframeListCount = defState.getKeyframeListCount();
+
+		DebugAssertIndex(this->states, i);
+		EntityAnimationInstanceState &instState = this->states[i];
+		instState.keyframeListsIndex = this->keyframeListCount;
+		instState.keyframeListCount = defKeyframeListCount;
+		instState.seconds = defState.getTotalSeconds();
+		instState.looping = defState.isLooping();
+
+		for (int j = 0; j < defKeyframeListCount; j++)
+		{
+			const EntityAnimationDefinition::KeyframeList &defKeyframeList = defState.getKeyframeList(j);
+			const int defKeyframeCount = defKeyframeList.getKeyframeCount();
+
+			const int instKeyframeListIndex = this->keyframeListCount + j;
+			DebugAssertIndex(this->keyframeLists, instKeyframeListIndex);
+			EntityAnimationInstanceKeyframeList &instKeyframeList = this->keyframeLists[instKeyframeListIndex];
+			instKeyframeList.textureIdsIndex = this->textureIdCount;
+			instKeyframeList.textureIdCount = defKeyframeCount;
+
+			for (int k = 0; k < defKeyframeCount; k++)
+			{
+				const int textureIdIndex = this->textureIdCount + k;
+				const ScopedObjectTextureRef &textureRef = textureRefs.get(textureWriteIndex);
+
+				DebugAssertIndex(this->textureIDs, textureIdIndex);
+				ObjectTextureID &textureID = this->textureIDs[textureIdIndex];
+				textureID = textureRef.get();
+				textureWriteIndex++;
+			}
+
+			this->textureIdCount += defKeyframeCount;
+		}
+
+		this->keyframeListCount += defKeyframeListCount;
+	}
+
+	// This function doesn't set the initial state index; the caller is expected to.
+	DebugAssert(this->currentStateIndex == -1);
+}
+
 void EntityAnimationInstanceA::setStateIndex(int index)
 {
 	DebugAssert(this->stateCount > 0);

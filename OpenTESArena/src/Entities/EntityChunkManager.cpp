@@ -129,6 +129,14 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const EntityType entityType = EntityUtils::getEntityTypeFromDefType(entityDefType);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
+		const std::string &defaultAnimStateName = EntityGeneration::getDefaultAnimationStateName(entityDef, entityGenInfo);
+		const std::optional<int> defaultAnimStateIndex = animDef.tryGetStateIndex(defaultAnimStateName.c_str());
+		if (!defaultAnimStateIndex.has_value())
+		{
+			DebugLogWarning("Couldn't get default anim state index for entity.");
+			continue;
+		}
+
 		std::optional<EntityDefID> entityDefID; // Global entity def ID (shared across all active chunks).
 		for (const LevelDouble3 &position : placementDef.positions)
 		{
@@ -142,10 +150,11 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					if (this->animTextureRefs.find(*entityDefID) == this->animTextureRefs.end())
 					{
 						// Allocate renderer textures for the animation.
-						Buffer<ScopedObjectTextureRef> animTextureRefs = MakeAnimTextureRefs(animDef, textureManager, renderer);
-						this->animTextureRefs.emplace(*entityDefID, std::move(animTextureRefs));
+						this->animTextureRefs.emplace(*entityDefID, MakeAnimTextureRefs(animDef, textureManager, renderer));
 					}
 				}
+
+				const Buffer<ScopedObjectTextureRef> &animTextureRefs = this->animTextureRefs.find(*entityDefID)->second;
 
 				const VoxelDouble3 point = ChunkUtils::MakeChunkPointFromLevel(position, startX, startY, startZ);
 				EntityInstanceID entityInstID = this->spawnEntity();
@@ -158,19 +167,6 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				}
 
 				entityInst.init(entityInstID, *entityDefID, positionID);
-
-				EntityAnimationInstance animInst;
-				animInst.init(animDef);
-
-				const std::string &defaultStateName = EntityGeneration::getDefaultAnimationStateName(entityDef, entityGenInfo);
-				const std::optional<int> defaultStateIndex = animDef.tryGetStateIndex(defaultStateName.c_str());
-				if (!defaultStateIndex.has_value())
-				{
-					DebugLogWarning("Couldn't get default state index for entity.");
-					continue;
-				}
-
-				animInst.setStateIndex(*defaultStateIndex);
 
 				CoordDouble2 &entityCoord = this->positions.get(positionID);
 				entityCoord.chunk = chunk.getPosition();
@@ -197,6 +193,16 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 						secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
 					}
 				}
+
+				if (!this->animInsts.tryAlloc(&entityInst.animInstID))
+				{
+					DebugCrash("Couldn't allocate EntityAnimationInstanceID.");
+				}
+
+				const BufferView<const ScopedObjectTextureRef> animTextureRefsView(animTextureRefs.get(), animTextureRefs.getCount());
+				EntityAnimationInstanceA &animInst = this->animInsts.get(entityInst.animInstID);
+				animInst.init(animDef, animTextureRefsView);
+				animInst.setStateIndex(*defaultAnimStateIndex);
 
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
