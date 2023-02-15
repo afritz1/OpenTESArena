@@ -50,9 +50,6 @@ private:
 	// @todo: separate EntityAnimationDefinition from EntityDefinition?
 	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
-	// Allocated textures for each entity definition's animations.
-	std::unordered_map<EntityDefID, Buffer<ScopedObjectTextureRef>> animTextureRefs;
-
 	const EntityDefinition &getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const;
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
 	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);

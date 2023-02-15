@@ -168,103 +168,18 @@ void EntityAnimationInstance::tick(double dt, double totalSeconds, bool looping)
 	}
 }
 
-EntityAnimationInstanceKeyframeList::EntityAnimationInstanceKeyframeList()
-{
-	this->textureIdsIndex = -1;
-	this->textureIdCount = 0;
-}
-
-EntityAnimationInstanceState::EntityAnimationInstanceState()
-{
-	this->keyframeListsIndex = -1;
-	this->keyframeListCount = 0;
-	this->seconds = 0.0;
-	this->looping = false;
-}
-
 EntityAnimationInstanceA::EntityAnimationInstanceA()
 {
 	this->clear();
 }
 
-void EntityAnimationInstanceA::init(const EntityAnimationDefinition &def, const BufferView<const ScopedObjectTextureRef> &textureRefs)
+void EntityAnimationInstanceA::setStateIndex(int index, const EntityAnimationDefinitionState &defState)
 {
-	this->currentSeconds = 0.0;
-
-	const int defStateCount = def.getStateCount();
-	this->stateCount = defStateCount;
-	this->keyframeListCount = 0;
-	this->textureIdCount = 0;
-
-	int textureWriteIndex = 0;
-	for (int i = 0; i < defStateCount; i++)
-	{
-		const EntityAnimationDefinition::State &defState = def.getState(i);
-		const int defKeyframeListCount = defState.getKeyframeListCount();
-
-		DebugAssertIndex(this->states, i);
-		EntityAnimationInstanceState &instState = this->states[i];
-		instState.keyframeListsIndex = this->keyframeListCount;
-		instState.keyframeListCount = defKeyframeListCount;
-		instState.seconds = defState.getTotalSeconds();
-		instState.looping = defState.isLooping();
-
-		for (int j = 0; j < defKeyframeListCount; j++)
-		{
-			const EntityAnimationDefinition::KeyframeList &defKeyframeList = defState.getKeyframeList(j);
-			const int defKeyframeCount = defKeyframeList.getKeyframeCount();
-
-			const int instKeyframeListIndex = this->keyframeListCount + j;
-			DebugAssertIndex(this->keyframeLists, instKeyframeListIndex);
-			EntityAnimationInstanceKeyframeList &instKeyframeList = this->keyframeLists[instKeyframeListIndex];
-			instKeyframeList.textureIdsIndex = this->textureIdCount;
-			instKeyframeList.textureIdCount = defKeyframeCount;
-
-			for (int k = 0; k < defKeyframeCount; k++)
-			{
-				const int textureIdIndex = this->textureIdCount + k;
-				const ScopedObjectTextureRef &textureRef = textureRefs.get(textureWriteIndex);
-
-				DebugAssertIndex(this->textureIDs, textureIdIndex);
-				ObjectTextureID &textureID = this->textureIDs[textureIdIndex];
-				textureID = textureRef.get();
-				textureWriteIndex++;
-			}
-
-			this->textureIdCount += defKeyframeCount;
-		}
-
-		this->keyframeListCount += defKeyframeListCount;
-	}
-
-	// This function doesn't set the initial state index; the caller is expected to.
-	DebugAssert(this->currentStateIndex == -1);
-}
-
-void EntityAnimationInstanceA::setStateIndex(int index)
-{
-	DebugAssert(this->stateCount > 0);
 	DebugAssert(index >= 0);
-	DebugAssert(index < this->stateCount);
-	const EntityAnimationInstanceState &currentState = this->states[index];
-
-	// Start at the beginning of this state.
-	this->currentStateIndex = index;
 	this->currentSeconds = 0.0;
-	this->targetSeconds = currentState.seconds;
-	this->looping = currentState.looping;
-
-	const int currentKeyframeListsIndex = currentState.keyframeListsIndex;
-	DebugAssert(currentState.keyframeListCount > 0);
-	DebugAssert(currentKeyframeListsIndex >= 0);
-	DebugAssert(currentKeyframeListsIndex < this->keyframeListCount);
-	const EntityAnimationInstanceKeyframeList &currentKeyframeList = this->keyframeLists[currentKeyframeListsIndex];
-	
-	const int currentTextureIdIndex = currentKeyframeList.textureIdsIndex;
-	DebugAssert(currentKeyframeList.textureIdCount > 0);
-	DebugAssert(currentTextureIdIndex >= 0);
-	DebugAssert(currentTextureIdIndex < this->textureIdCount);
-	this->currentTextureID = this->textureIDs[currentTextureIdIndex];
+	this->targetSeconds = defState.seconds;
+	this->currentStateIndex = index;
+	this->isLooping = defState.isLooping;
 }
 
 void EntityAnimationInstanceA::resetTime()
@@ -274,25 +189,15 @@ void EntityAnimationInstanceA::resetTime()
 
 void EntityAnimationInstanceA::clear()
 {
-	std::fill(std::begin(this->states), std::end(this->states), EntityAnimationInstanceState());
-	this->stateCount = 0;
-
-	std::fill(std::begin(this->keyframeLists), std::end(this->keyframeLists), EntityAnimationInstanceKeyframeList());
-	this->keyframeListCount = 0;
-
-	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
-	this->textureIdCount = 0;
-
 	this->currentSeconds = 0.0;
 	this->targetSeconds = 0.0;
 	this->currentStateIndex = -1;
-	this->currentTextureID = -1;
-	this->looping = false;
+	this->isLooping = false;
 }
 
 void EntityAnimationInstanceA::update(double dt)
 {
-	if (this->looping)
+	if (this->isLooping)
 	{
 		this->currentSeconds = std::fmod(this->currentSeconds + dt, this->targetSeconds);
 	}

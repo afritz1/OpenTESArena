@@ -146,15 +146,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				if (!entityDefID.has_value())
 				{
 					entityDefID = this->getOrAddEntityDefID(entityDef, entityDefLibrary);
-
-					if (this->animTextureRefs.find(*entityDefID) == this->animTextureRefs.end())
-					{
-						// Allocate renderer textures for the animation.
-						this->animTextureRefs.emplace(*entityDefID, MakeAnimTextureRefs(animDef, textureManager, renderer));
-					}
 				}
-
-				const Buffer<ScopedObjectTextureRef> &animTextureRefs = this->animTextureRefs.find(*entityDefID)->second;
 
 				const VoxelDouble3 point = ChunkUtils::MakeChunkPointFromLevel(position, startX, startY, startZ);
 				EntityInstanceID entityInstID = this->spawnEntity();
@@ -199,10 +191,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					DebugCrash("Couldn't allocate EntityAnimationInstanceID.");
 				}
 
-				const BufferView<const ScopedObjectTextureRef> animTextureRefsView(animTextureRefs.get(), animTextureRefs.getCount());
 				EntityAnimationInstanceA &animInst = this->animInsts.get(entityInst.animInstID);
-				animInst.init(animDef, animTextureRefsView);
-				animInst.setStateIndex(*defaultAnimStateIndex);
+				animInst.setStateIndex(*defaultAnimStateIndex, animDef.getState(*defaultAnimStateIndex));
 
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
@@ -385,6 +375,13 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 		// @todo: simulate/animate AI
+
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+		{
+			const EntityInstance &entityInst = this->entities.get(entityInstID);
+			EntityAnimationInstanceA &animInst = this->animInsts.get(entityInst.animInstID);
+			animInst.update(dt);
+		}
 
 		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, entityDefLibrary, audioManager);
 
