@@ -408,9 +408,9 @@ int EntityAnimationDefinitionA::getLinearizedKeyframeIndex(int stateIndex, int k
 		{
 			for (int j = 0; j < state.keyframeListCount; j++)
 			{
-				const int keyframeListIndex = state.keyframeListsIndex + j;
-				DebugAssert(keyframeListIndex < this->keyframeListCount);
-				const EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[keyframeListIndex];
+				const int curKeyframeListIndex = state.keyframeListsIndex + j;
+				DebugAssert(curKeyframeListIndex < this->keyframeListCount);
+				const EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[curKeyframeListIndex];
 				index += keyframeList.keyframeCount;
 			}
 		}
@@ -418,9 +418,9 @@ int EntityAnimationDefinitionA::getLinearizedKeyframeIndex(int stateIndex, int k
 		{
 			for (int j = 0; j < state.keyframeListCount; j++)
 			{
-				const int keyframeListIndex = state.keyframeListsIndex + j;
-				DebugAssert(keyframeListIndex < this->keyframeListCount);
-				const EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[keyframeListIndex];
+				const int curKeyframeListIndex = state.keyframeListsIndex + j;
+				DebugAssert(curKeyframeListIndex < this->keyframeListCount);
+				const EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[curKeyframeListIndex];
 				if (j < keyframeListIndex)
 				{
 					index += keyframeList.keyframeCount;
