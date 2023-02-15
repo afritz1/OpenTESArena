@@ -100,4 +100,51 @@ public:
 	void clear();
 };
 
+struct EntityAnimationDefinitionState
+{
+	char name[EntityAnimationUtils::NAME_LENGTH];
+	double seconds;
+	int keyframeListsIndex;
+	int keyframeListCount;
+	bool isLooping;
+};
+
+struct EntityAnimationDefinitionKeyframeList
+{
+	int keyframesIndex;
+	int keyframeCount;
+	bool flipped;
+};
+
+struct EntityAnimationDefinitionKeyframe
+{
+	TextureAsset textureAsset;
+	double width, height;
+};
+
+struct EntityAnimationDefinitionA
+{
+	static constexpr int MAX_STATES = 8;
+	static constexpr int MAX_KEYFRAME_LISTS = 64;
+	static constexpr int MAX_KEYFRAMES = 128;
+
+	EntityAnimationDefinitionState states[MAX_STATES];
+	int stateCount;
+
+	EntityAnimationDefinitionKeyframeList keyframeLists[MAX_KEYFRAME_LISTS];
+	int keyframeListCount;
+
+	EntityAnimationDefinitionKeyframe keyframes[MAX_KEYFRAMES];
+	int keyframeCount;
+
+	EntityAnimationDefinitionA();
+
+	std::optional<int> tryGetStateIndex(const char *name) const;
+	int getLinearizedKeyframeIndex(int stateIndex, int keyframeListIndex, int keyframeIndex) const;
+
+	int addState(const char *name, double seconds, bool isLooping);
+	int addKeyframeList(int stateIndex, bool flipped);
+	int addKeyframe(int keyframeListIndex, TextureAsset &&textureAsset, double width, double height);
+};
+
 #endif
