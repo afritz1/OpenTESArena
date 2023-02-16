@@ -64,3 +64,4 @@ cmake_install.cmake
 
 # VS Code Workspace Settings folder
 .vscode/
+/cmake-build-*/
