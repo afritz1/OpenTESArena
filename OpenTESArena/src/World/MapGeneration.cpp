@@ -245,13 +245,11 @@ namespace MapGeneration
 		}
 
 		// @todo: replace isCreature/etc. with some flatIndex -> EntityDefinition::Type function.
-		// - Most likely also need location type, etc. because flatIndex is level-dependent.
+		// - Most likely also need location/interior type, etc. because flatIndex is level-dependent.
 		if (isCreature)
 		{
 			const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
-			const int creatureID = isFinalBoss ?
-				ArenaAnimUtils::getFinalBossCreatureID() :
-				ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
+			const int creatureID = isFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = creatureID - 1;
 
 			// @todo: read from EntityDefinitionLibrary instead, and don't make anim def above.

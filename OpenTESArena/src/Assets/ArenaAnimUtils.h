@@ -91,14 +91,14 @@ namespace ArenaAnimUtils
 	// Returns whether the given flat index is for a static or dynamic entity.
 	EntityType getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
 
-	// Gets the first creature's *ITEM index (rat).
-	ArenaTypes::ItemIndex getFirstCreatureItemIndex();
+	// The first creature's *ITEM index (rat).
+	constexpr ArenaTypes::ItemIndex FirstCreatureItemIndex = 32;
+
+	// The final boss is a special case, essentially hardcoded at the end of the creatures.
+	constexpr int FinalBossCreatureID = 24;
 
 	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
 	int getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex);
-
-	// The final boss is a special case, essentially hardcoded at the end of the creatures.
-	int getFinalBossCreatureID();
 
 	// Converts the 1-based creature ID to an index usable with .exe data arrays.
 	int getCreatureIndexFromID(int creatureID);

@@ -670,20 +670,9 @@ EntityType ArenaAnimUtils::getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex
 	}
 }
 
-ArenaTypes::ItemIndex ArenaAnimUtils::getFirstCreatureItemIndex()
-{
-	return 32;
-}
-
 int ArenaAnimUtils::getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex)
 {
-	return ArenaAnimUtils::isFinalBossIndex(itemIndex) ?
-		ArenaAnimUtils::getFinalBossCreatureID() : (itemIndex - 31);
-}
-
-int ArenaAnimUtils::getFinalBossCreatureID()
-{
-	return 24;
+	return ArenaAnimUtils::isFinalBossIndex(itemIndex) ? ArenaAnimUtils::FinalBossCreatureID : (itemIndex - 31);
 }
 
 int ArenaAnimUtils::getCreatureIndexFromID(int creatureID)
