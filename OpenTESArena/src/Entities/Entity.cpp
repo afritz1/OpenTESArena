@@ -145,11 +145,11 @@ void Entity::tick(Game &game, double dt)
 
 	// Get current animation keyframe from instance, so we know which anim def state to get.
 	const int stateIndex = this->animInst.getStateIndex();
-	const EntityAnimationDefinition::State &animDefState = animDef.getState(stateIndex);
+	const EntityAnimationDefinitionState &animDefState = animDef.states[stateIndex];
 
 	// Animate.
 	// @todo: maybe want to add an 'isRandom' bool to EntityAnimationDefinition::State so
 	// it can more closely match citizens' animations from the original game. Either that
 	// or have a separate tickRandom() method so it's more optimizable.
-	this->animInst.tick(dt, animDefState.getTotalSeconds(), animDefState.isLooping());
+	this->animInst.tick(dt, animDefState.seconds, animDefState.isLooping);
 }

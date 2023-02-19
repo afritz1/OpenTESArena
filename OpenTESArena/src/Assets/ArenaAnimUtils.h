@@ -108,13 +108,13 @@ namespace ArenaAnimUtils
 
 	// Streetlights are hardcoded in the original game to flat index 29. This lets the
 	// game give them a light source and toggle them between on and off states.
-	ArenaTypes::FlatIndex getStreetLightActiveIndex();
-	ArenaTypes::FlatIndex getStreetLightInactiveIndex();
+	constexpr ArenaTypes::FlatIndex StreetLightActiveIndex = 29;
+	constexpr ArenaTypes::FlatIndex StreetLightInactiveIndex = 30;
 	bool isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, MapType mapType);
 
 	// Ruler flats are either a king or queen.
-	ArenaTypes::FlatIndex getRulerKingIndex();
-	ArenaTypes::FlatIndex getRulerQueenIndex();
+	constexpr ArenaTypes::FlatIndex RulerKingIndex = 0;
+	constexpr ArenaTypes::FlatIndex RulerQueenIndex = 1;
 	bool isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, ArenaTypes::InteriorType interiorType);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling

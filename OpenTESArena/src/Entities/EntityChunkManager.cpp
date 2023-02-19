@@ -20,39 +20,30 @@ namespace
 {
 	Buffer<ScopedObjectTextureRef> MakeAnimTextureRefs(const EntityAnimationDefinition &animDef, TextureManager &textureManager, Renderer &renderer)
 	{
-		Buffer<ScopedObjectTextureRef> animTextureRefs(animDef.getTotalKeyframeCount());
-
-		int writeIndex = 0;
-		for (int i = 0; i < animDef.getStateCount(); i++)
+		const int keyframeCount = animDef.keyframeCount;
+		Buffer<ScopedObjectTextureRef> animTextureRefs(keyframeCount);
+		
+		for (int i = 0; i < keyframeCount; i++)
 		{
-			const EntityAnimationDefinition::State &state = animDef.getState(i);
-			for (int j = 0; j < state.getKeyframeListCount(); j++)
+			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[i];
+			const TextureAsset &textureAsset = keyframe.textureAsset;
+			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
+			if (!textureBuilderID.has_value())
 			{
-				const EntityAnimationDefinition::KeyframeList &keyframeList = state.getKeyframeList(j);
-				for (int k = 0; k < keyframeList.getKeyframeCount(); k++)
-				{
-					const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
-					const TextureAsset &textureAsset = keyframe.getTextureAsset();
-					const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-					if (!textureBuilderID.has_value())
-					{
-						DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
-						continue;
-					}
-
-					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-					ObjectTextureID textureID;
-					if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
-					{
-						DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
-						continue;
-					}
-
-					ScopedObjectTextureRef textureRef(textureID, renderer);
-					animTextureRefs.set(writeIndex, std::move(textureRef));
-					writeIndex++;
-				}
+				DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
+				continue;
 			}
+
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+			ObjectTextureID textureID;
+			if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
+			{
+				DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
+				continue;
+			}
+
+			ScopedObjectTextureRef textureRef(textureID, renderer);
+			animTextureRefs.set(i, std::move(textureRef));
 		}
 
 		return animTextureRefs;
@@ -192,7 +183,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				}
 
 				EntityAnimationInstanceA &animInst = this->animInsts.get(entityInst.animInstID);
-				animInst.setStateIndex(*defaultAnimStateIndex, animDef.getState(*defaultAnimStateIndex));
+				const EntityAnimationDefinitionState &animDefState = animDef.states[*defaultAnimStateIndex];
+				animInst.setStateIndex(*defaultAnimStateIndex, animDefState);
 
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}

@@ -84,17 +84,18 @@ EntityAnimationInstance &EntityAnimationInstance::operator=(const EntityAnimatio
 
 void EntityAnimationInstance::init(const EntityAnimationDefinition &animDef)
 {
-	for (int i = 0; i < animDef.getStateCount(); i++)
+	for (int i = 0; i < animDef.stateCount; i++)
 	{
-		const EntityAnimationDefinition::State &defState = animDef.getState(i);
+		const EntityAnimationDefinitionState &defState = animDef.states[i];
 		EntityAnimationInstance::State instState;
 
-		for (int j = 0; j < defState.getKeyframeListCount(); j++)
+		for (int j = 0; j < defState.keyframeListCount; j++)
 		{
-			const EntityAnimationDefinition::KeyframeList &defKeyframeList = defState.getKeyframeList(j);
+			const int keyframeListsIndex = defState.keyframeListsIndex + j;
+			const EntityAnimationDefinitionKeyframeList &defKeyframeList = animDef.keyframeLists[keyframeListsIndex];
 			EntityAnimationInstance::KeyframeList instKeyframeList;
 
-			for (int k = 0; k < defKeyframeList.getKeyframeCount(); k++)
+			for (int k = 0; k < defKeyframeList.keyframeCount; k++)
 			{
 				EntityAnimationInstance::Keyframe instKeyframe;
 				// @todo: this will eventually get renderer entity texture handles, likely from looking up in a hash table

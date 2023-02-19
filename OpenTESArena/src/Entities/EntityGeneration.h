@@ -5,9 +5,10 @@
 #include "EntityUtils.h"
 
 class Entity;
-class EntityAnimationDefinition;
 class EntityManager;
 class Random;
+
+struct EntityAnimationDefinition;
 
 enum class EntityType;
 

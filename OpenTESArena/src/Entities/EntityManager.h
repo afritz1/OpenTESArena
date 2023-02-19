@@ -180,9 +180,8 @@ public:
 		double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState3D &outVisState) const;
 
-	// Convenience function for getting the active keyframe from an entity, given some
-	// visibility data.
-	const EntityAnimationDefinition::Keyframe &getEntityAnimKeyframe(const Entity &entity,
+	// Convenience function for getting the active keyframe from an entity, given some visibility data.
+	const EntityAnimationDefinitionKeyframe &getEntityAnimKeyframe(const Entity &entity,
 		const EntityVisibilityState3D &visState, const EntityDefinitionLibrary &entityDefLibrary) const;
 
 	// Puts the entity into the chunk representative of their 3D position.

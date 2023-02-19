@@ -727,7 +727,9 @@ void EntityManager::getEntityVisibilityState2D(const Entity &entity, const Coord
 
 	// Get active animation state.
 	const int stateIndex = animInst.getStateIndex();
-	const EntityAnimationDefinition::State &animDefState = animDef.getState(stateIndex);
+	DebugAssert(stateIndex >= 0);
+	DebugAssert(stateIndex < animDef.stateCount);
+	const EntityAnimationDefinitionState &animDefState = animDef.states[stateIndex];
 	const EntityAnimationInstance::State &animInstState = animInst.getState(stateIndex);
 
 	// Get animation angle based on entity direction relative to some camera/eye.
@@ -774,15 +776,18 @@ void EntityManager::getEntityVisibilityState2D(const Entity &entity, const Coord
 	}();
 
 	// Keyframe list for the current state and angle.
-	const EntityAnimationDefinition::KeyframeList &animDefKeyframeList = animDefState.getKeyframeList(angleIndex);
+	const int animDefKeyframeListIndex = animDefState.keyframeListsIndex + angleIndex;
+	DebugAssert(animDefKeyframeListIndex >= 0);
+	DebugAssert(animDefKeyframeListIndex < animDef.keyframeListCount);
+	const EntityAnimationDefinitionKeyframeList &animDefKeyframeList = animDef.keyframeLists[animDefKeyframeListIndex];
 
 	// Progress through current animation.
 	const int keyframeIndex = [&animInst, &animDefState, &animDefKeyframeList]()
 	{
-		const int keyframeCount = animDefKeyframeList.getKeyframeCount();
+		const int keyframeCount = animDefKeyframeList.keyframeCount;
 		const double keyframeCountReal = static_cast<double>(keyframeCount);
 		const double animCurSeconds = animInst.getCurrentSeconds();
-		const double animTotalSeconds = animDefState.getTotalSeconds();
+		const double animTotalSeconds = animDefState.seconds;
 		const double animPercent = animCurSeconds / animTotalSeconds;
 		const int keyframeIndex = static_cast<int>(keyframeCountReal * animPercent);
 		return std::clamp(keyframeIndex, 0, keyframeCount - 1);
@@ -846,15 +851,17 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 	outVisState.init(&entity, flatPosition, visState2D.stateIndex, visState2D.angleIndex, visState2D.keyframeIndex);
 }
 
-const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
+const EntityAnimationDefinitionKeyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
 	const EntityVisibilityState3D &visState, const EntityDefinitionLibrary &entityDefLibrary) const
 {
 	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID(), entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-	const EntityAnimationDefinition::State &animState = animDef.getState(visState.stateIndex);
-	const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visState.angleIndex);
-	const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visState.keyframeIndex);
-	return animKeyframe;
+	
+	const int keyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
+	DebugAssert(keyframeIndex >= 0);
+	DebugAssert(keyframeIndex < animDef.keyframeCount);
+	const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[keyframeIndex];
+	return keyframe;
 }
 
 void EntityManager::updateEntityChunk(Entity *entity)

@@ -193,11 +193,19 @@ namespace Physics
 				1.0 - (diff.dot(entityUp) / entityHeight));
 
 			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-			const EntityAnimationDefinition::State &animState = animDef.getState(visState.stateIndex);
-			const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visState.angleIndex);
-			const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visState.keyframeIndex);
-			const TextureAsset &textureAsset = animKeyframe.getTextureAsset();
-			const bool flipped = animKeyframeList.isFlipped();
+			const EntityAnimationDefinitionState &animState = animDef.states[visState.stateIndex];
+
+			const int keyframeListIndex = animState.keyframeListsIndex + visState.angleIndex;
+			DebugAssert(keyframeListIndex >= 0);
+			DebugAssert(keyframeListIndex < animDef.keyframeListCount);
+			const EntityAnimationDefinitionKeyframeList &animKeyframeList = animDef.keyframeLists[keyframeListIndex];
+
+			const int keyframeIndex = animKeyframeList.keyframesIndex + visState.keyframeIndex;
+			DebugAssert(keyframeIndex >= 0);
+			DebugAssert(keyframeIndex < animDef.keyframeCount);
+			const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[keyframeIndex];
+			const TextureAsset &textureAsset = animKeyframe.textureAsset;
+
 			const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
 
 			// The entity's projected rectangle is hit if the texture coordinates are valid.
@@ -437,13 +445,11 @@ namespace Physics
 			for (const EntityVisibilityState3D &visState : entityVisStateList)
 			{
 				const Entity &entity = *visState.entity;
-				const EntityDefinition &entityDef = entityManager.getEntityDef(
-					entity.getDefinitionID(), entityDefLibrary);
-				const EntityAnimationDefinition::Keyframe &animKeyframe =
-					entityManager.getEntityAnimKeyframe(entity, visState, entityDefLibrary);
+				const EntityDefinition &entityDef = entityManager.getEntityDef(entity.getDefinitionID(), entityDefLibrary);
+				const EntityAnimationDefinitionKeyframe &animKeyframe = entityManager.getEntityAnimKeyframe(entity, visState, entityDefLibrary);
 
-				const double flatWidth = animKeyframe.getWidth();
-				const double flatHeight = animKeyframe.getHeight();
+				const double flatWidth = animKeyframe.width;
+				const double flatHeight = animKeyframe.height;
 
 				CoordDouble3 hitCoord;
 				if (Physics::getEntityRayIntersection(visState, entityDef, flatForward, flatRight, flatUp,
