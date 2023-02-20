@@ -1999,15 +1999,14 @@ namespace MapGeneration
 	// Using a separate building name info struct because the same level definition might be
 	// used in multiple places in the wild, so it can't store the building name IDs.
 	void generateArenaWildChunkBuildingNames(uint32_t wildChunkSeed, const LevelDefinition &levelDef,
-		const BinaryAssetLibrary &binaryAssetLibrary,
-		MapGeneration::WildChunkBuildingNameInfo *outBuildingNameInfo,
+		const BinaryAssetLibrary &binaryAssetLibrary, MapGeneration::WildChunkBuildingNameInfo *outBuildingNameInfo,
 		LevelInfoDefinition *outLevelInfoDef, ArenaBuildingNameMappingCache *buildingNameMappings)
 	{
 		const auto &exeData = binaryAssetLibrary.getExeData();
 
 		// Lambda for searching for an interior entrance voxel of the given type in the chunk
 		// and generating a name for it if found.
-		auto tryGenerateChunkBuildingName = [wildChunkSeed, &levelDef, outBuildingNameInfo,
+		auto tryGenerateBuildingNameForChunk = [wildChunkSeed, &levelDef, outBuildingNameInfo,
 			outLevelInfoDef, buildingNameMappings, &exeData](ArenaTypes::InteriorType interiorType)
 		{
 			auto createTavernName = [&exeData](int prefixIndex, int suffixIndex)
@@ -2050,119 +2049,72 @@ namespace MapGeneration
 				return templePrefixes[model] + templeSuffix;
 			};
 
-			// The lambda called for each main-floor voxel in the chunk.
-			auto tryGenerateBlockName = [wildChunkSeed, &levelDef, outBuildingNameInfo,
-				outLevelInfoDef, buildingNameMappings, interiorType, &createTavernName,
-				&createTempleName](SNInt x, WEInt z) -> bool
+			// Iterate transition voxels in the chunk and stop once a relevant voxel for generating
+			// the name has been found.
+			for (int i = 0; i < levelDef.getTransitionPlacementDefCount(); i++)
 			{
+				const LevelDefinition::TransitionPlacementDef &placementDef = levelDef.getTransitionPlacementDef(i);
+				const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(placementDef.id);
+				const TransitionType transitionType = transitionDef.getType();
+				if (transitionType != TransitionType::EnterInterior)
+				{
+					// Not a transition to an interior.
+					continue;
+				}
+
+				const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
+				const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+				if (interiorGenInfo.getInteriorType() != interiorType)
+				{
+					// Not the interior we're generating a name for.
+					continue;
+				}
+
 				ArenaRandom random(wildChunkSeed);
 
-				// See if the current voxel is an interior transition block and matches the target type.
-				const bool matchesTargetType = [&levelDef, outLevelInfoDef, interiorType, x, z]()
+				// Get the *MENU block's display name.
+				std::string buildingName = [interiorType, &random, &createTavernName, &createTempleName]()
 				{
-					// Find the associated transition for this voxel (if any).
-					const std::optional<LevelDefinition::TransitionDefID> transitionDefID =
-						[&levelDef, x, z]() -> std::optional<LevelDefinition::TransitionDefID>
+					if (interiorType == ArenaTypes::InteriorType::Tavern)
 					{
-						const LevelInt3 voxel(x, 1, z);
-						for (int i = 0; i < levelDef.getTransitionPlacementDefCount(); i++)
-						{
-							const auto &placementDef = levelDef.getTransitionPlacementDef(i);
-							for (const LevelInt3 &position : placementDef.positions)
-							{
-								if (position == voxel)
-								{
-									return placementDef.id;
-								}
-							}
-						}
-
-						return std::nullopt;
-					}();
-
-					if (!transitionDefID.has_value())
-					{
-						// No transition at this voxel.
-						return false;
+						const int prefixIndex = random.next() % 23;
+						const int suffixIndex = random.next() % 23;
+						return createTavernName(prefixIndex, suffixIndex);
 					}
-
-					const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(*transitionDefID);
-					const TransitionType transitionType = transitionDef.getType();
-					if (transitionType != TransitionType::EnterInterior)
+					else if (interiorType == ArenaTypes::InteriorType::Temple)
 					{
-						// Not a transition to an interior.
-						return false;
-					}
-
-					const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
-					const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-					return interiorGenInfo.getInteriorType() == interiorType;
-				}();
-
-				if (matchesTargetType)
-				{
-					// Get the *MENU block's display name.
-					std::string name = [interiorType, &random, &createTavernName, &createTempleName]()
-					{
-						if (interiorType == ArenaTypes::InteriorType::Tavern)
-						{
-							const int prefixIndex = random.next() % 23;
-							const int suffixIndex = random.next() % 23;
-							return createTavernName(prefixIndex, suffixIndex);
-						}
-						else if (interiorType == ArenaTypes::InteriorType::Temple)
-						{
-							const int model = random.next() % 3;
-							constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
-							DebugAssertIndex(ModelVars, model);
-							const int vars = ModelVars[model];
-							const int suffixIndex = random.next() % vars;
-							return createTempleName(model, suffixIndex);
-						}
-						else
-						{
-							DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(interiorType)));
-						}
-					}();
-
-					// Set building name info for the given menu type.
-					const auto iter = buildingNameMappings->find(name);
-					if (iter != buildingNameMappings->end())
-					{
-						outBuildingNameInfo->setBuildingNameID(interiorType, iter->second);
+						const int model = random.next() % 3;
+						constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
+						DebugAssertIndex(ModelVars, model);
+						const int vars = ModelVars[model];
+						const int suffixIndex = random.next() % vars;
+						return createTempleName(model, suffixIndex);
 					}
 					else
 					{
-						const LevelDefinition::BuildingNameID buildingNameID =
-							outLevelInfoDef->addBuildingName(std::string(name));
-						outBuildingNameInfo->setBuildingNameID(interiorType, buildingNameID);
-						buildingNameMappings->emplace(std::move(name), buildingNameID);
+						DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(interiorType)));
 					}
+				}();
 
-					return true;
+				// Set building name info for the given menu type.
+				const auto iter = buildingNameMappings->find(buildingName);
+				if (iter != buildingNameMappings->end())
+				{
+					outBuildingNameInfo->setBuildingNameID(interiorType, iter->second);
 				}
 				else
 				{
-					return false;
+					const LevelDefinition::BuildingNameID buildingNameID = outLevelInfoDef->addBuildingName(std::string(buildingName));
+					outBuildingNameInfo->setBuildingNameID(interiorType, buildingNameID);
+					buildingNameMappings->emplace(std::move(buildingName), buildingNameID);
 				}
-			};
 
-			// Iterate blocks in the chunk in any order and stop once a relevant voxel for
-			// generating the name has been found.
-			for (SNInt x = 0; x < RMDFile::DEPTH; x++)
-			{
-				for (WEInt z = 0; z < RMDFile::WIDTH; z++)
-				{
-					if (tryGenerateBlockName(x, z))
-					{
-						return;
-					}
-				}
+				break;
 			}
 		};
 
-		tryGenerateChunkBuildingName(ArenaTypes::InteriorType::Tavern);
-		tryGenerateChunkBuildingName(ArenaTypes::InteriorType::Temple);
+		tryGenerateBuildingNameForChunk(ArenaTypes::InteriorType::Tavern);
+		tryGenerateBuildingNameForChunk(ArenaTypes::InteriorType::Temple);
 	}
 }
 
