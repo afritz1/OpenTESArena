@@ -103,12 +103,13 @@ struct EntityAnimationInstanceA
 {
 	double currentSeconds; // Updated every frame.
 	double targetSeconds; // Updated when changing states.
-	int currentStateIndex;
+	double progressPercent; // Updated on animation tick.
+	int currentStateIndex; // Points into this entity's animation def.
 	bool isLooping; // Updated when changing states.
 
 	EntityAnimationInstanceA();
 
-	void setStateIndex(int index, const EntityAnimationDefinitionState &defState);
+	void setStateIndex(int index, double targetSeconds, bool isLooping);
 	void resetTime();
 	void clear();
 	void update(double dt);

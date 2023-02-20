@@ -174,24 +174,27 @@ EntityAnimationInstanceA::EntityAnimationInstanceA()
 	this->clear();
 }
 
-void EntityAnimationInstanceA::setStateIndex(int index, const EntityAnimationDefinitionState &defState)
+void EntityAnimationInstanceA::setStateIndex(int index, double targetSeconds, bool isLooping)
 {
 	DebugAssert(index >= 0);
 	this->currentSeconds = 0.0;
-	this->targetSeconds = defState.seconds;
+	this->targetSeconds = targetSeconds;
+	this->progressPercent = 0.0;
 	this->currentStateIndex = index;
-	this->isLooping = defState.isLooping;
+	this->isLooping = isLooping;
 }
 
 void EntityAnimationInstanceA::resetTime()
 {
 	this->currentSeconds = 0.0;
+	this->progressPercent = 0.0;
 }
 
 void EntityAnimationInstanceA::clear()
 {
 	this->currentSeconds = 0.0;
 	this->targetSeconds = 0.0;
+	this->progressPercent = 0.0;
 	this->currentStateIndex = -1;
 	this->isLooping = false;
 }
@@ -206,4 +209,6 @@ void EntityAnimationInstanceA::update(double dt)
 	{
 		this->currentSeconds = std::min(this->currentSeconds + dt, this->targetSeconds);
 	}
+
+	this->progressPercent = std::clamp(this->currentSeconds / this->targetSeconds, 0.0, 1.0);
 }

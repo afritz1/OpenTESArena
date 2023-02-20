@@ -184,7 +184,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 				EntityAnimationInstanceA &animInst = this->animInsts.get(entityInst.animInstID);
 				const EntityAnimationDefinitionState &animDefState = animDef.states[*defaultAnimStateIndex];
-				animInst.setStateIndex(*defaultAnimStateIndex, animDefState);
+				animInst.setStateIndex(*defaultAnimStateIndex, animDefState.seconds, animDefState.isLooping);
 
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
