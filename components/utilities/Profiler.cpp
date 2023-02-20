@@ -1,67 +1,127 @@
-#include <algorithm>
+#include <cstring>
 
 #include "Profiler.h"
 #include "../debug/Debug.h"
 
-double Profiler::Sampler::getSeconds() const
+void ProfilerSampler::init(std::string &&name)
 {
-	return static_cast<double>((this->endTime - this->startTime).count()) /
-		static_cast<double>(std::nano::den);
-}
-
-double Profiler::Sampler::getMilliseconds() const
-{
-	return this->getSeconds() * 1000.0;
-}
-
-void Profiler::Sampler::setStart()
-{
+	this->name = std::move(name);
 	this->startTime = std::chrono::high_resolution_clock::now();
+	this->endTime = this->startTime;
 }
 
-void Profiler::Sampler::setStop()
+Profiler::Profiler()
 {
-	this->endTime = std::chrono::high_resolution_clock::now();
+	this->samplerCount = 0;
 }
 
-Profiler::Sampler *Profiler::findSampler(const std::string &name)
+std::optional<int> Profiler::tryGetSamplerIndex(const std::string &name) const
 {
-	const auto iter = std::find_if(this->samplers.begin(), this->samplers.end(),
-		[&name](const auto &pair)
+	for (int i = 0; i < this->samplerCount; i++)
 	{
-		return pair.first == name;
-	});
-
-	return (iter != this->samplers.end()) ? iter->second.get() : nullptr;
-}
-
-Profiler::Sampler *Profiler::addSampler(const std::string &name)
-{
-	DebugAssertMsg(this->findSampler(name) == nullptr, "Sampler \"" + name + "\" already exists.");
-	this->samplers.push_back(std::make_pair(name, std::make_unique<Sampler>()));
-	return this->samplers.back().second.get();
-}
-
-Profiler::Sampler *Profiler::getSampler(const std::string &name)
-{
-	return this->findSampler(name);
-}
-
-void Profiler::removeSampler(const std::string &name)
-{
-	const auto iter = std::find_if(this->samplers.begin(), this->samplers.end(),
-		[&name](const auto &pair)
-	{
-		return pair.first == name;
-	});
-
-	if (iter != this->samplers.end())
-	{
-		this->samplers.erase(iter);
+		if (this->samplers[i].name == name)
+		{
+			return i;
+		}
 	}
+
+	return std::nullopt;
+}
+
+std::string Profiler::durationToString(double time) const
+{
+	char buffer[32];
+	std::snprintf(buffer, std::size(buffer), "%.2f", time);
+	return std::string(buffer);
+}
+
+int Profiler::getSamplerCount() const
+{
+	return this->samplerCount;
+}
+
+const std::string &Profiler::getSamplerName(int index) const
+{
+	DebugAssert(index >= 0);
+	DebugAssert(index < this->samplerCount);
+	return this->samplers[index].name;
+}
+
+double Profiler::getSeconds(const std::string &name) const
+{
+	const std::optional<int> index = this->tryGetSamplerIndex(name);
+	if (!index.has_value())
+	{
+		return 0.0;
+	}
+
+	const ProfilerSampler &sampler = this->samplers[*index];
+	DebugAssert(sampler.endTime >= sampler.startTime);
+	const std::chrono::nanoseconds diff = sampler.endTime - sampler.startTime;
+	return static_cast<double>(diff.count()) / static_cast<double>(std::nano::den);
+}
+
+std::string Profiler::getSecondsString(const std::string &name) const
+{
+	const double seconds = this->getSeconds(name);
+	return this->durationToString(seconds);
+}
+
+double Profiler::getMilliseconds(const std::string &name) const
+{
+	return this->getSeconds(name) * 1000.0;
+}
+
+std::string Profiler::getMillisecondsString(const std::string &name) const
+{
+	const double milliseconds = this->getMilliseconds(name);
+	return this->durationToString(milliseconds);
+}
+
+void Profiler::setStart(const std::string &name)
+{
+	ProfilerSampler *sampler = nullptr;
+	std::optional<int> index = this->tryGetSamplerIndex(name);
+	if (index.has_value())
+	{
+		sampler = &this->samplers[*index];
+	}
+	else
+	{
+		if (this->samplerCount == MAX_SAMPLERS)
+		{
+			DebugLogError("Too many samplers, can't add \"" + name + "\".");
+			return;
+		}
+
+		index = this->samplerCount;
+		sampler = &this->samplers[*index];
+		sampler->init(std::string(name));
+
+		this->samplerCount++;
+	}
+
+	sampler->startTime = std::chrono::high_resolution_clock::now();
+}
+
+void Profiler::setStop(const std::string &name)
+{
+	ProfilerSampler *sampler = nullptr;
+	std::optional<int> index = this->tryGetSamplerIndex(name);
+	if (index.has_value())
+	{
+		sampler = &this->samplers[*index];
+	}
+	else
+	{
+		DebugLogError("Couldn't find sampler for \"" + name + "\", need to start it first.");
+		return;
+	}
+
+	sampler->endTime = std::chrono::high_resolution_clock::now();
 }
 
 void Profiler::clear()
 {
-	this->samplers.clear();
+	this->samplerCount = 0;
 }
