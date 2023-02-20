@@ -86,15 +86,24 @@ public:
 
 struct EntityAnimationInstanceA
 {
+	static constexpr int MAX_STATES = EntityAnimationDefinition::MAX_STATES;
+
+	// Cached data for ease of state switching.
+	double targetSecondsList[MAX_STATES];
+	bool isLoopingList[MAX_STATES];
+
 	double currentSeconds; // Updated every frame.
 	double targetSeconds; // Updated when changing states.
-	double progressPercent; // Updated on animation tick.
+	double progressPercent; // Updated every frame.
 	int currentStateIndex; // Points into this entity's animation def.
+	int stateCount;
 	bool isLooping; // Updated when changing states.
 
 	EntityAnimationInstanceA();
 
-	void setStateIndex(int index, double targetSeconds, bool isLooping);
+	void addState(double targetSeconds, bool isLooping);
+
+	void setStateIndex(int index);
 	void resetTime();
 	void clear();
 	void update(double dt);

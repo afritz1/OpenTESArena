@@ -135,14 +135,28 @@ EntityAnimationInstanceA::EntityAnimationInstanceA()
 	this->clear();
 }
 
-void EntityAnimationInstanceA::setStateIndex(int index, double targetSeconds, bool isLooping)
+void EntityAnimationInstanceA::addState(double targetSeconds, bool isLooping)
+{
+	if (this->stateCount >= MAX_STATES)
+	{
+		DebugLogError("Can't add any more states.");
+		return;
+	}
+
+	this->targetSecondsList[this->stateCount] = targetSeconds;
+	this->isLoopingList[this->stateCount] = isLooping;
+	this->stateCount++;
+}
+
+void EntityAnimationInstanceA::setStateIndex(int index)
 {
 	DebugAssert(index >= 0);
+	DebugAssert(index < this->stateCount);
 	this->currentSeconds = 0.0;
-	this->targetSeconds = targetSeconds;
+	this->targetSeconds = this->targetSecondsList[index];
 	this->progressPercent = 0.0;
 	this->currentStateIndex = index;
-	this->isLooping = isLooping;
+	this->isLooping = this->isLoopingList[index];
 }
 
 void EntityAnimationInstanceA::resetTime()
@@ -157,6 +171,7 @@ void EntityAnimationInstanceA::clear()
 	this->targetSeconds = 0.0;
 	this->progressPercent = 0.0;
 	this->currentStateIndex = -1;
+	this->stateCount = 0;
 	this->isLooping = false;
 }
 

@@ -258,7 +258,7 @@ int EntityAnimationDefinition::addState(const char *name, double seconds, bool i
 
 	if (this->stateCount == MAX_STATES)
 	{
-		DebugLogError("Can't add anymore animation states.");
+		DebugLogError("Can't add any more animation states.");
 		return -1;
 	}
 
@@ -284,7 +284,7 @@ int EntityAnimationDefinition::addKeyframeList(int stateIndex, bool isFlipped)
 
 	if (this->keyframeListCount == MAX_KEYFRAME_LISTS)
 	{
-		DebugLogError("Can't add anymore animation keyframe lists.");
+		DebugLogError("Can't add any more animation keyframe lists.");
 		return -1;
 	}
 
@@ -311,7 +311,7 @@ int EntityAnimationDefinition::addKeyframe(int keyframeListIndex, TextureAsset &
 
 	if (this->keyframeCount == MAX_KEYFRAMES)
 	{
-		DebugLogError("Can't add anymore animation keyframes.");
+		DebugLogError("Can't add any more animation keyframes.");
 		return -1;
 	}
 
