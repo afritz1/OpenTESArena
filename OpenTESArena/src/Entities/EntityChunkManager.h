@@ -30,7 +30,7 @@ private:
 	using EntityPool = RecyclablePool<EntityInstance, EntityInstanceID>;
 	using EntityPositionPool = RecyclablePool<CoordDouble2, EntityPositionID>;
 	using EntityDirectionPool = RecyclablePool<VoxelDouble2, EntityDirectionID>;
-	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstanceA, EntityAnimationInstanceID>;
+	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
 	using EntityPaletteInstancePool = RecyclablePool<Palette, EntityPaletteInstanceID>;
 

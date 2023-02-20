@@ -28,7 +28,8 @@ Entity *EntityGeneration::makeEntity(EntityType entityType, EntityDefinition::Ty
 	Entity *entityPtr = entity.get();
 
 	EntityAnimationInstance animInst;
-	animInst.init(animDef);
+	DebugLogWarning("Not implemented: initing EntityAnimationInstance (the new one).");
+	//animInst.init(animDef);
 
 	const std::string &defaultStateName = EntityGeneration::getDefaultAnimationStateName(entityDef, entityGenInfo);
 	const std::optional<int> defaultStateIndex = animDef.tryGetStateIndex(defaultStateName.c_str());

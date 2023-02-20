@@ -11,7 +11,7 @@ Entity::Entity()
 {
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
-	this->animInst.reset();
+	this->animInst.clear();
 }
 
 void Entity::init(EntityDefID defID, const EntityAnimationInstance &animInst)
@@ -126,30 +126,10 @@ void Entity::reset()
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
 	this->position = CoordDouble2(ChunkInt2::Zero, VoxelDouble2::Zero);
-	this->animInst.reset();
+	this->animInst.clear();
 }
 
 void Entity::tick(Game &game, double dt)
 {
-	const EntityAnimationDefinition &animDef = [this, &game]() -> const EntityAnimationDefinition&
-	{
-		const GameState &gameState = game.getGameState();
-		const MapInstance &mapInst = gameState.getActiveMapInst();
-		const LevelInstance &levelInst = mapInst.getActiveLevel();
-		const EntityManager &entityManager = levelInst.getEntityManager();
-		const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
-		const EntityDefinition &entityDef = entityManager.getEntityDef(
-			this->getDefinitionID(), entityDefLibrary);
-		return entityDef.getAnimDef();
-	}();
-
-	// Get current animation keyframe from instance, so we know which anim def state to get.
-	const int stateIndex = this->animInst.getStateIndex();
-	const EntityAnimationDefinitionState &animDefState = animDef.states[stateIndex];
-
-	// Animate.
-	// @todo: maybe want to add an 'isRandom' bool to EntityAnimationDefinition::State so
-	// it can more closely match citizens' animations from the original game. Either that
-	// or have a separate tickRandom() method so it's more optimizable.
-	this->animInst.tick(dt, animDefState.seconds, animDefState.isLooping);
+	this->animInst.update(dt);
 }

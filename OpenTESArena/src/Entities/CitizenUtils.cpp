@@ -70,9 +70,19 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 	// Only two citizen entity definitions for a given climate, based on the gender.
 	const EntityDefinition &maleEntityDef = entityDefLibrary.getDefinition(maleEntityDefID);
 	const EntityDefinition &femaleEntityDef = entityDefLibrary.getDefinition(femaleEntityDefID);
+
+	auto initAnimInst = [](EntityAnimationInstance &animInst, const EntityAnimationDefinition &animDef)
+	{
+		for (int i = 0; i < animDef.stateCount; i++)
+		{
+			const EntityAnimationDefinitionState &animDefState = animDef.states[i];
+			animInst.addState(animDefState.seconds, animDefState.isLooping);
+		}
+	};
+
 	EntityAnimationInstance maleAnimInst, femaleAnimInst;
-	maleAnimInst.init(maleEntityDef.getAnimDef());
-	femaleAnimInst.init(femaleEntityDef.getAnimDef());
+	initAnimInst(maleAnimInst, maleEntityDef.getAnimDef());
+	initAnimInst(femaleAnimInst, femaleEntityDef.getAnimDef());	
 
 	// Base palette for citizens to generate from.
 	const std::string &paletteName = ArenaPaletteName::Default;

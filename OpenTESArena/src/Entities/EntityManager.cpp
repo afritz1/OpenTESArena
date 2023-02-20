@@ -726,14 +726,13 @@ void EntityManager::getEntityVisibilityState2D(const Entity &entity, const Coord
 	const EntityAnimationInstance &animInst = entity.getAnimInstance();
 
 	// Get active animation state.
-	const int stateIndex = animInst.getStateIndex();
+	const int stateIndex = animInst.currentStateIndex;
 	DebugAssert(stateIndex >= 0);
 	DebugAssert(stateIndex < animDef.stateCount);
 	const EntityAnimationDefinitionState &animDefState = animDef.states[stateIndex];
-	const EntityAnimationInstance::State &animInstState = animInst.getState(stateIndex);
 
 	// Get animation angle based on entity direction relative to some camera/eye.
-	const int angleCount = animInstState.getKeyframeListCount();
+	const int angleCount = animDefState.keyframeListCount;
 	const Radians animAngle = [&entity, &eye2D, angleCount]()
 	{
 		if (entity.getEntityType() == EntityType::Static)
@@ -761,8 +760,7 @@ void EntityManager::getEntityVisibilityState2D(const Entity &entity, const Coord
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(Radians,
-				std::to_string(static_cast<int>(entity.getEntityType())));
+			DebugUnhandledReturnMsg(Radians, std::to_string(static_cast<int>(entity.getEntityType())));
 		}
 	}();
 
@@ -786,7 +784,7 @@ void EntityManager::getEntityVisibilityState2D(const Entity &entity, const Coord
 	{
 		const int keyframeCount = animDefKeyframeList.keyframeCount;
 		const double keyframeCountReal = static_cast<double>(keyframeCount);
-		const double animCurSeconds = animInst.getCurrentSeconds();
+		const double animCurSeconds = animInst.currentSeconds;
 		const double animTotalSeconds = animDefState.seconds;
 		const double animPercent = animCurSeconds / animTotalSeconds;
 		const int keyframeIndex = static_cast<int>(keyframeCountReal * animPercent);

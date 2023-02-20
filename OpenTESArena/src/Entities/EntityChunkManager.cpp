@@ -182,7 +182,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					DebugCrash("Couldn't allocate EntityAnimationInstanceID.");
 				}
 
-				EntityAnimationInstanceA &animInst = this->animInsts.get(entityInst.animInstID);
+				EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 
 				// Populate anim inst states now so the def doesn't need to be provided later.
 				for (int animDefStateIndex = 0; animDefStateIndex < animDef.stateCount; animDefStateIndex++)
@@ -379,7 +379,7 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
 			const EntityInstance &entityInst = this->entities.get(entityInstID);
-			EntityAnimationInstanceA &animInst = this->animInsts.get(entityInst.animInstID);
+			EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 			animInst.update(dt);
 		}
 

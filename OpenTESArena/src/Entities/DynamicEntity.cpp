@@ -223,7 +223,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	constexpr double citizenIdleDistSqr = CitizenUtils::IDLE_DISTANCE * CitizenUtils::IDLE_DISTANCE;
 	const auto &playerWeaponAnim = player.getWeaponAnimation();
 	EntityAnimationInstance &animInst = this->getAnimInstance();
-	const int curAnimStateIndex = animInst.getStateIndex();
+	const int curAnimStateIndex = animInst.currentStateIndex;
 
 	if (curAnimStateIndex == idleStateIndex)
 	{
@@ -321,7 +321,7 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 		}
 
 		const EntityAnimationInstance &animInst = this->getAnimInstance();
-		const int curAnimStateIndex = animInst.getStateIndex();
+		const int curAnimStateIndex = animInst.currentStateIndex;
 		if (curAnimStateIndex == *walkStateIndex)
 		{
 			// Integrate by delta time.
