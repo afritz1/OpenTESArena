@@ -54,34 +54,6 @@ EntityAnimationInstance::EntityAnimationInstance()
 	this->currentSeconds = 0.0;
 }
 
-EntityAnimationInstance::EntityAnimationInstance(const EntityAnimationInstance &other)
-	: states(other.states)
-{
-	const std::unique_ptr<CitizenParams> &otherCitizenParams = other.citizenParams;
-	this->citizenParams = (otherCitizenParams != nullptr) ?
-		std::make_unique<CitizenParams>(*otherCitizenParams) : nullptr;
-
-	this->currentSeconds = other.currentSeconds;
-	this->stateIndex = other.stateIndex;
-}
-
-EntityAnimationInstance &EntityAnimationInstance::operator=(const EntityAnimationInstance &other)
-{
-	if (this != &other)
-	{
-		this->states = other.states;
-
-		const std::unique_ptr<CitizenParams> &otherCitizenParams = other.citizenParams;
-		this->citizenParams = (otherCitizenParams != nullptr) ?
-			std::make_unique<CitizenParams>(*otherCitizenParams) : nullptr;
-
-		this->currentSeconds = other.currentSeconds;
-		this->stateIndex = other.stateIndex;
-	}
-	
-	return *this;
-}
-
 void EntityAnimationInstance::init(const EntityAnimationDefinition &animDef)
 {
 	for (int i = 0; i < animDef.stateCount; i++)
@@ -121,11 +93,6 @@ const EntityAnimationInstance::State &EntityAnimationInstance::getState(int inde
 	return this->states[index];
 }
 
-const EntityAnimationInstance::CitizenParams *EntityAnimationInstance::getCitizenParams() const
-{
-	return this->citizenParams.get();
-}
-
 int EntityAnimationInstance::getStateIndex() const
 {
 	return this->stateIndex;
@@ -134,11 +101,6 @@ int EntityAnimationInstance::getStateIndex() const
 double EntityAnimationInstance::getCurrentSeconds() const
 {
 	return this->currentSeconds;
-}
-
-void EntityAnimationInstance::setCitizenParams(std::unique_ptr<CitizenParams> &&citizenParams)
-{
-	this->citizenParams = std::move(citizenParams);
 }
 
 void EntityAnimationInstance::setStateIndex(int index)
@@ -150,7 +112,6 @@ void EntityAnimationInstance::setStateIndex(int index)
 void EntityAnimationInstance::reset()
 {
 	this->states.clear();
-	this->citizenParams = nullptr;
 	this->resetTime();
 	this->stateIndex = -1;
 }

@@ -254,9 +254,10 @@ bool CitizenUtils::trySpawnCitizenInChunk(const VoxelChunk &chunk, const Citizen
 	EntityAnimationInstance &animInst = dynamicEntity->getAnimInstance();
 	animInst.setStateIndex(*stateIndex);
 
-	auto citizenParams = std::make_unique<EntityAnimationInstance::CitizenParams>();
+	DebugLogWarning("Not implemented: writing CitizenParams palette to EntityChunkManager palette pool (also it needs to be referenced in RenderChunkManager probably).");
+	/*auto citizenParams = std::make_unique<EntityAnimationInstance::CitizenParams>();
 	citizenParams->palette = generatedPalette;
-	animInst.setCitizenParams(std::move(citizenParams));
+	animInst.setCitizenParams(std::move(citizenParams));*/
 
 	// Note: since the entity pointer is being used directly, update the position last
 	// in scope to avoid a dangling pointer problem in case it changes chunks.

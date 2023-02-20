@@ -60,34 +60,19 @@ public:
 		void addKeyframeList(KeyframeList &&keyframeList);
 		void clearKeyframeLists();
 	};
-
-	struct CitizenParams
-	{
-		// Each citizen has a unique palette instead of unique textures for memory savings. It was found
-		// through testing that hardly any citizen instances share textures due to variations in their
-		// random palette. As a result, citizen textures will need to be 8-bit.
-		Palette palette;
-	};
 private:
 	std::vector<State> states;
-	std::unique_ptr<CitizenParams> citizenParams; // Extra data for citizens.
 	double currentSeconds; // Seconds through current state.
 	int stateIndex; // Active state, also usable with animation definition states.
 public:
 	EntityAnimationInstance();
-	EntityAnimationInstance(const EntityAnimationInstance &other);
-
-	EntityAnimationInstance &operator=(const EntityAnimationInstance &other);
 
 	void init(const EntityAnimationDefinition &animDef);
 
 	int getStateCount() const;
 	const State &getState(int index) const;
-	const CitizenParams *getCitizenParams() const;
 	double getCurrentSeconds() const;
 	int getStateIndex() const;
-
-	void setCitizenParams(std::unique_ptr<CitizenParams> &&citizenParams);
 
 	// Sets the active state index shared between this instance and its definition.
 	void setStateIndex(int index);
