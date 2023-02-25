@@ -7,6 +7,7 @@
 
 #include "RenderChunk.h"
 #include "RenderDrawCall.h"
+#include "../Entities/EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
@@ -23,11 +24,14 @@
 // - occlusion culling system or hierarchical Z buffer to reduce/eliminate overdraw
 // - avoid requiring a screen clear
 
+class EntityChunk;
 class EntityChunkManager;
+class EntityDefinitionLibrary;
 class Renderer;
 class TextureManager;
 class VoxelChunkManager;
 
+struct EntityAnimationInstance;
 struct RenderCamera;
 
 class RenderChunkManager final : public SpecializedChunkManager<RenderChunk>
@@ -69,6 +73,14 @@ public:
 
 		void init(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 	};
+
+	struct LoadedEntityAnimation
+	{
+		EntityDefID defID;
+		Buffer<ScopedObjectTextureRef> textureRefs; // Linearized based on the anim def's keyframes.
+
+		void init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs);
+	};
 private:
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
@@ -77,7 +89,7 @@ private:
 	std::vector<LoadedChasmFloorTextureList> chasmFloorTextureLists;
 	std::vector<LoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
 
-	// @todo: entity rendering resources
+	std::vector<LoadedEntityAnimation> entityAnims;
 
 	// @todo: sky rendering resources
 	// - hemisphere geometry w/ texture IDs and coordinates for colors (use some trig functions for vertex generation?)
@@ -96,10 +108,16 @@ private:
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const;
+	ObjectTextureID getEntityTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ,
+		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary) const;
 
 	void loadVoxelTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer);
 	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk);
+
+	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
+		const EntityDefinitionLibrary &entityDefinitionLibrary, TextureManager &textureManager, Renderer &renderer);
+	// @todo: loadEntityMeshBuffers()
 
 	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
@@ -141,7 +159,8 @@ public:
 		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
 		Renderer &renderer);
 	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
-		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
+		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefinitionLibrary,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all rendering resources (voxels, entities, sky, weather).
 	void unloadScene(Renderer &renderer);

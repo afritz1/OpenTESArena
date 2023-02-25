@@ -17,6 +17,11 @@ void EntityInstance::init(EntityInstanceID instanceID, EntityDefID defID, Entity
 	this->positionID = positionID;
 }
 
+bool EntityInstance::isDynamic() const
+{
+	return this->directionID >= 0;
+}
+
 void EntityInstance::clear()
 {
 	this->instanceID = -1;

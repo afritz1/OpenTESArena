@@ -24,6 +24,9 @@ struct EntityInstance
 	// All entities at least have an instance ID, definition, and position.
 	void init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID);
 
+	// Whether the entity is capable of moving + looking.
+	bool isDynamic() const;
+
 	void clear();
 };
 

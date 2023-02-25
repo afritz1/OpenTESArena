@@ -286,6 +286,39 @@ namespace sgTexture
 		key.init(chunkPos, chasmDefID, chasmFloorListIndex, chasmWallIndex);
 		chasmTextureKeys.emplace_back(std::move(key));
 	}
+
+	// Creates a buffer of texture refs, intended to be accessed with linearized keyframe indices.
+	Buffer<ScopedObjectTextureRef> MakeEntityAnimationTextures(const EntityAnimationDefinition &animDef,
+		TextureManager &textureManager, Renderer &renderer)
+	{
+		const int keyframeCount = animDef.keyframeCount;
+		Buffer<ScopedObjectTextureRef> textureRefs(keyframeCount);
+		for (int i = 0; i < keyframeCount; i++)
+		{
+			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[i];
+			const TextureAsset &textureAsset = keyframe.textureAsset;
+
+			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
+			if (!textureBuilderID.has_value())
+			{
+				DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
+				continue;
+			}
+
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+			ObjectTextureID textureID;
+			if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
+			{
+				DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
+				continue;
+			}
+
+			ScopedObjectTextureRef textureRef(textureID, renderer);
+			textureRefs.set(i, std::move(textureRef));
+		}
+
+		return textureRefs;
+	}
 }
 
 void RenderChunkManager::LoadedVoxelTexture::init(const TextureAsset &textureAsset,
@@ -344,6 +377,12 @@ void RenderChunkManager::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, 
 	this->chasmDefID = chasmDefID;
 	this->chasmFloorListIndex = chasmFloorListIndex;
 	this->chasmWallIndex = chasmWallIndex;
+}
+
+void RenderChunkManager::LoadedEntityAnimation::init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs)
+{
+	this->defID = defID;
+	this->textureRefs = std::move(textureRefs);
 }
 
 void RenderChunkManager::init(Renderer &renderer)
@@ -473,6 +512,29 @@ ObjectTextureID RenderChunkManager::getChasmWallTextureID(const ChunkInt2 &chunk
 	const LoadedVoxelTexture &voxelTexture = this->voxelTextures[wallIndex];
 	const ScopedObjectTextureRef &objectTextureRef = voxelTexture.objectTextureRef;
 	return objectTextureRef.get();
+}
+
+ObjectTextureID RenderChunkManager::getEntityTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ,
+	const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary) const
+{
+	const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+	const EntityDefID entityDefID = entityInst.defID;
+	const auto defIter = std::find_if(this->entityAnims.begin(), this->entityAnims.end(),
+		[entityDefID](const LoadedEntityAnimation &loadedAnim)
+	{
+		return loadedAnim.defID == entityDefID;
+	});
+
+	DebugAssertMsg(defIter != this->entityAnims.end(), "Expected loaded entity animation for def ID " + std::to_string(entityDefID) + ".");
+
+	EntityVisibilityState2D visState;
+	entityChunkManager.getEntityVisibilityState2D(entityInstID, cameraCoordXZ, entityDefLibrary, visState);
+
+	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID, entityDefLibrary);
+	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+	const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
+	const Buffer<ScopedObjectTextureRef> &textureRefs = defIter->textureRefs;
+	return textureRefs.get(linearizedKeyframeIndex).get();
 }
 
 BufferView<const RenderDrawCall> RenderChunkManager::getVoxelDrawCalls() const
@@ -619,6 +681,35 @@ void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const Vox
 				renderChunk.chasmWallIndexBufferIDs.emplace(VoxelInt3(x, y, z), indexBufferID);
 			}
 		}
+	}
+}
+
+void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
+	const EntityDefinitionLibrary &entityDefinitionLibrary, TextureManager &textureManager, Renderer &renderer)
+{
+	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	{
+		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+		const EntityDefID entityDefID = entityInst.defID;
+
+		const auto animIter = std::find_if(this->entityAnims.begin(), this->entityAnims.end(),
+			[entityDefID](const LoadedEntityAnimation &loadedAnim)
+		{
+			return loadedAnim.defID == entityDefID;
+		});
+
+		if (animIter != this->entityAnims.end())
+		{
+			continue;
+		}
+
+		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID, entityDefinitionLibrary);
+		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+		Buffer<ScopedObjectTextureRef> textureRefs = sgTexture::MakeEntityAnimationTextures(animDef, textureManager, renderer);
+		
+		LoadedEntityAnimation loadedEntityAnim;
+		loadedEntityAnim.init(entityDefID, std::move(textureRefs));
+		this->entityAnims.emplace_back(std::move(loadedEntityAnim));
 	}
 }
 
@@ -1082,9 +1173,29 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 
 void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const EntityChunkManager &entityChunkManager,
-	TextureManager &textureManager, Renderer &renderer)
+	const EntityDefinitionLibrary &entityDefinitionLibrary, TextureManager &textureManager, Renderer &renderer)
 {
-	// @todo
+	// @todo: pass player camera coord 2D as parameter ^?
+
+	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	{
+		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
+		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
+		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
+		this->loadEntityTextures(entityChunk, entityChunkManager, entityDefinitionLibrary, textureManager, renderer);
+		// @todo: can probably put that ^ in a populateEntityChunk() with loadEntityMeshBuffers() once they are written
+		//this->populateEntityChunk(renderChunk, entityChunk, textureManager, renderer);
+		//this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, true, false);
+	}
+	
+	for (int i = 0; i < activeChunkPositions.getCount(); i++)
+	{
+		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
+		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
+		// @todo
+	}
+
+	// @todo: rebuildEntityDrawCallsList()
 }
 
 void RenderChunkManager::unloadScene(Renderer &renderer)

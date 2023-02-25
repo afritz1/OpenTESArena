@@ -24,6 +24,9 @@ class TextureManager;
 class VoxelChunk;
 class VoxelChunkManager;
 
+struct EntityVisibilityState2D;
+struct EntityVisibilityState3D;
+
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 private:
@@ -50,7 +53,6 @@ private:
 	// @todo: separate EntityAnimationDefinition from EntityDefinition?
 	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
-	const EntityDefinition &getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const;
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
 	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);
 
@@ -71,6 +73,20 @@ private:
 	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,
 		double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, AudioManager &audioManager);
 public:
+	const EntityDefinition &getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const;
+	const EntityInstance &getEntity(EntityInstanceID id) const;
+	const CoordDouble2 &getEntityPosition(EntityPositionID id) const;
+	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
+	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
+	const Palette &getEntityPalette(EntityPaletteInstanceID id) const;
+
+	// Gets the entity visibility data necessary for rendering and ray cast selection.
+	void getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D,
+		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const;
+	void getEntityVisibilityState3D(EntityInstanceID id, const CoordDouble2 &eye2D,
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState3D &outVisState) const;
+
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 		const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
