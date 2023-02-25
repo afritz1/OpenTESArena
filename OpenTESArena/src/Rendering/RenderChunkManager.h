@@ -138,7 +138,8 @@ private:
 		double width, double height, PixelShaderType pixelShaderType, double pixelShaderParam0,
 		std::vector<RenderDrawCall> &drawCalls);
 	void rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk, const CoordDouble2 &cameraCoordXZ,
-		double ceilingScale, const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary);
+		const Matrix4d &rotationMatrix, double ceilingScale, const EntityChunkManager &entityChunkManager,
+		const EntityDefinitionLibrary &entityDefLibrary);
 	void rebuildEntityDrawCallsList();
 
 	// @todo: loadSky()

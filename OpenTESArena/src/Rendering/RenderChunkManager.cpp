@@ -1218,8 +1218,8 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 }
 
 void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk,
-	const CoordDouble2 &cameraCoordXZ, double ceilingScale, const EntityChunkManager &entityChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary)
+	const CoordDouble2 &cameraCoordXZ, const Matrix4d &rotationMatrix, double ceilingScale,
+	const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary)
 {
 	renderChunk.entityDrawCalls.clear();
 
@@ -1241,7 +1241,6 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 			static_cast<double>(worldY),
 			static_cast<WEDouble>(worldXZ.y));
 
-		const Matrix4d rotationMatrix = Matrix4d::yRotation(0.0);
 		const ObjectTextureID textureID = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager, entityDefLibrary);
 		const double width = 1.0; // @todo: get from entity def? EntityUtils?
 		const double height = 1.0;
@@ -1336,12 +1335,15 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 		this->loadEntityTextures(entityChunk, entityChunkManager, entityDefLibrary, textureManager, renderer);
 	}
 
+	const Radians rotationAngle = -MathUtils::fullAtan2(cameraDirXZ);
+	const Matrix4d rotationMatrix = Matrix4d::yRotation(rotationAngle - Constants::HalfPi);
 	for (int i = 0; i < activeChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, ceilingScale, entityChunkManager, entityDefLibrary);
+		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, rotationMatrix, ceilingScale,
+			entityChunkManager, entityDefLibrary);
 	}
 
 	this->rebuildEntityDrawCallsList();
