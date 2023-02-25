@@ -227,9 +227,9 @@ int EntityAnimationDefinition::getLinearizedKeyframeIndex(int stateIndex, int ke
 				}
 				else if (j == keyframeListIndex)
 				{
-					for (int k = 0; i < keyframeList.keyframeCount; k++)
+					for (int k = 0; k < keyframeList.keyframeCount; k++)
 					{
-						if (k <= keyframeIndex)
+						if (k < keyframeIndex)
 						{
 							index++;
 						}
