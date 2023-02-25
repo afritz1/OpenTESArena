@@ -7,6 +7,7 @@
 
 #include "RenderChunk.h"
 #include "RenderDrawCall.h"
+#include "RenderEntityMeshDefinition.h"
 #include "../Entities/EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"
 
@@ -90,6 +91,7 @@ private:
 	std::vector<LoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
 
 	std::vector<LoadedEntityAnimation> entityAnims;
+	RenderEntityMeshDefinition entityMeshDef; // Shared by all entities.
 
 	// @todo: sky rendering resources
 	// - hemisphere geometry w/ texture IDs and coordinates for colors (use some trig functions for vertex generation?)
@@ -117,7 +119,6 @@ private:
 
 	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
 		const EntityDefinitionLibrary &entityDefinitionLibrary, TextureManager &textureManager, Renderer &renderer);
-	// @todo: loadEntityMeshBuffers()
 
 	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
@@ -126,12 +127,6 @@ private:
 		double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
 	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
-
-	// Loads all the resources required by the given voxel chunk and adds it to the draw list.
-	// @todo: eventually I think a better way would be to simply treat render chunks like allocated textures;
-	// via function calls and operations on a returned handle/ID.
-	void populateVoxelChunk(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
-		TextureManager &textureManager, Renderer &renderer);
 
 	// Call once per frame per chunk after all voxel chunk changes have been applied to this manager.
 	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.

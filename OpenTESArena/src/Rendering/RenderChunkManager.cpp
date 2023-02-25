@@ -440,6 +440,79 @@ void RenderChunkManager::init(Renderer &renderer)
 
 		renderer.populateIndexBuffer(indexBufferID, BufferView<const int32_t>(totalIndicesBuffer.data(), writingIndex));
 	}
+
+	// Populate entity mesh buffers. All entities share the same buffers, and the normals buffer is updated every frame.
+	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+	constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
+	constexpr int entityMeshVertexCount = 4;
+	constexpr int entityMeshIndexCount = 6;
+
+	if (!renderer.tryCreateVertexBuffer(entityMeshVertexCount, positionComponentsPerVertex, &this->entityMeshDef.vertexBufferID))
+	{
+		DebugLogError("Couldn't create vertex buffer for entity mesh ID.");
+		return;
+	}
+
+	if (!renderer.tryCreateAttributeBuffer(entityMeshVertexCount, normalComponentsPerVertex, &this->entityMeshDef.normalBufferID))
+	{
+		DebugLogError("Couldn't create normal attribute buffer for entity mesh def.");
+		this->entityMeshDef.freeBuffers(renderer);
+		return;
+	}
+
+	if (!renderer.tryCreateAttributeBuffer(entityMeshVertexCount, texCoordComponentsPerVertex, &this->entityMeshDef.texCoordBufferID))
+	{
+		DebugLogError("Couldn't create tex coord attribute buffer for entity mesh def.");
+		this->entityMeshDef.freeBuffers(renderer);
+		return;
+	}
+
+	if (!renderer.tryCreateIndexBuffer(entityMeshIndexCount, &this->entityMeshDef.indexBufferID))
+	{
+		DebugLogError("Couldn't create index buffer for entity mesh def.");
+		this->entityMeshDef.freeBuffers(renderer);
+		return;
+	}
+
+	constexpr std::array<double, entityMeshVertexCount * positionComponentsPerVertex> entityVertices =
+	{
+		0.0, 1.0, -0.50,
+		0.0, 0.0, -0.50,
+		0.0, 0.0, 0.50,
+		0.0, 1.0, 0.50
+	};
+
+	constexpr std::array<double, entityMeshVertexCount * normalComponentsPerVertex> dummyEntityNormals =
+	{
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0
+	};
+
+	constexpr std::array<double, entityMeshVertexCount * texCoordComponentsPerVertex> entityTexCoords =
+	{
+		0.0, 1.0,
+		0.0, 0.0,
+		1.0, 0.0,
+		1.0, 1.0
+	};
+
+	constexpr std::array<int32_t, entityMeshIndexCount> entityIndices =
+	{
+		0, 1, 2,
+		2, 3, 4
+	};
+
+	const BufferView<const double> entityVerticesView(entityVertices.data(), static_cast<int>(entityVertices.size()));
+	const BufferView<const double> entityNormalsView(dummyEntityNormals.data(), static_cast<int>(dummyEntityNormals.size()));
+	const BufferView<const double> entityTexCoordsView(entityTexCoords.data(), static_cast<int>(entityTexCoords.size()));
+	const BufferView<const int32_t> entityIndicesView(entityIndices.data(), static_cast<int>(entityIndices.size()));
+	renderer.populateVertexBuffer(this->entityMeshDef.vertexBufferID, entityVerticesView);
+	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormalsView);
+	renderer.populateAttributeBuffer(this->entityMeshDef.texCoordBufferID, entityTexCoordsView);
+	renderer.populateIndexBuffer(this->entityMeshDef.indexBufferID, entityIndicesView);
 }
 
 void RenderChunkManager::shutdown(Renderer &renderer)
@@ -460,6 +533,9 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
+	this->entityAnims.clear();
+	this->entityMeshDef.freeBuffers(renderer);
+	this->drawCallsCache.clear();
 }
 
 ObjectTextureID RenderChunkManager::getVoxelTextureID(const TextureAsset &textureAsset) const
@@ -1069,14 +1145,6 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 	}
 }
 
-void RenderChunkManager::populateVoxelChunk(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	this->loadVoxelTextures(voxelChunk, textureManager, renderer);
-	this->loadVoxelMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
-	this->loadVoxelChasmWalls(renderChunk, voxelChunk);
-}
-
 void RenderChunkManager::rebuildVoxelChunkDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk,
 	double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
@@ -1151,7 +1219,9 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		this->populateVoxelChunk(renderChunk, voxelChunk, ceilingScale, textureManager, renderer);
+		this->loadVoxelTextures(voxelChunk, textureManager, renderer);
+		this->loadVoxelMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
+		this->loadVoxelChasmWalls(renderChunk, voxelChunk);
 		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, true, false);
 	}
 
@@ -1203,8 +1273,10 @@ void RenderChunkManager::unloadScene(Renderer &renderer)
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
+	this->entityAnims.clear();
+	this->entityMeshDef.freeBuffers(renderer);
 
-	// Free vertex/attribute/index buffer IDs from renderer.
+	// Free vertex/attribute/index buffer IDs.
 	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
