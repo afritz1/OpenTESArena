@@ -48,7 +48,7 @@ namespace Physics
 	// Builds a set of voxels for a chunk that are at least partially touched by entities. A point of reference
 	// is needed for evaluating entity animations. Ignores entities behind the camera.
 	Physics::ChunkEntityMap makeChunkEntityMap(const ChunkInt2 &chunk, const CoordDouble3 &viewCoord,
-		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityManager &entityManager,
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 		const EntityDefinitionLibrary &entityDefLibrary)
 	{
 		// Include entities within one chunk of the center chunk to get entities that are partially touching
@@ -58,31 +58,50 @@ namespace Physics
 		ChunkUtils::getSurroundingChunks(chunk, chunkDistance, &minChunk, &maxChunk);
 
 		// Gather up entities in nearby chunks.
-		const int totalNearbyEntities = [&entityManager, &minChunk, &maxChunk]()
+		const int totalNearbyEntities = [&entityChunkManager, &minChunk, &maxChunk]()
 		{
 			int count = 0;
 			for (WEInt z = minChunk.y; z <= maxChunk.y; z++)
 			{
 				for (SNInt x = minChunk.x; x <= maxChunk.x; x++)
 				{
-					count += entityManager.getCountInChunk(ChunkInt2(x, z));
+					const EntityChunk *entityChunkPtr = entityChunkManager.tryGetChunkAtPosition(ChunkInt2(x, z));
+					if (entityChunkPtr != nullptr)
+					{
+						count += static_cast<int>(entityChunkPtr->entityIDs.size());
+					}
 				}
 			}
 
 			return count;
 		}();
 
-		Buffer<const Entity*> entities(totalNearbyEntities);
-		entities.fill(nullptr);
+		Buffer<EntityInstanceID> entityInstIDs(totalNearbyEntities);
+		entityInstIDs.fill(-1);
 
 		int entityInsertIndex = 0;
-		auto addEntitiesFromChunk = [&entityManager, &entities, &entityInsertIndex](SNInt chunkX, WEInt chunkZ)
+		auto addEntitiesFromChunk = [&entityChunkManager, &entityInstIDs, &entityInsertIndex](SNInt chunkX, WEInt chunkZ)
 		{
-			const Entity **entitiesPtr = entities.get() + entityInsertIndex;
-			const int size = entities.getCount() - entityInsertIndex;
-			const int writtenCount = entityManager.getEntitiesInChunk(ChunkInt2(chunkX, chunkZ), entitiesPtr, size);
-			DebugAssert(writtenCount <= size);
-			entityInsertIndex += writtenCount;
+			EntityInstanceID *entityInstIDsPtr = entityInstIDs.get() + entityInsertIndex;
+			const int size = entityInstIDs.getCount() - entityInsertIndex;
+			const EntityChunk *entityChunkPtr = entityChunkManager.tryGetChunkAtPosition(ChunkInt2(chunkX, chunkZ));
+			if (entityChunkPtr != nullptr)
+			{
+				int writtenCount = 0;
+				for (size_t i = 0; i < entityChunkPtr->entityIDs.size(); i++)
+				{
+					if (writtenCount >= size)
+					{
+						break;
+					}
+
+					entityInstIDsPtr[i] = entityChunkPtr->entityIDs[i];
+					writtenCount++;
+				}
+
+				DebugAssert(writtenCount <= size);
+				entityInsertIndex += writtenCount;
+			}
 		};
 
 		for (WEInt z = minChunk.y; z <= maxChunk.y; z++)
@@ -97,25 +116,19 @@ namespace Physics
 		chunkEntityMap.init(chunk);
 
 		// Build mappings of voxels to entities.
-		for (int i = 0; i < entities.getCount(); i++)
+		for (int i = 0; i < entityInstIDs.getCount(); i++)
 		{
-			const Entity *entityPtr = entities.get(i);
-			if (entityPtr == nullptr)
-			{
-				continue;
-			}
-
-			const Entity &entity = *entityPtr;
-
+			const EntityInstanceID entityInstID = entityInstIDs.get(i);
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
 			EntityVisibilityState3D visState;
-			entityManager.getEntityVisibilityState3D(entity, viewCoordXZ, ceilingScale, voxelChunkManager,
+			entityChunkManager.getEntityVisibilityState3D(entityInstID, viewCoordXZ, ceilingScale, voxelChunkManager,
 				entityDefLibrary, visState);
 
 			// Get the entity's view-independent bounding box to help determine which voxels they are in.
 			CoordDouble3 minCoord, maxCoord;
-			entity.getViewIndependentBBox3D(visState.flatPosition.point.y, entityManager, entityDefLibrary,
-				&minCoord, &maxCoord);
+			//entity.getViewIndependentBBox3D(visState.flatPosition.point.y, entityChunkManager, entityDefLibrary, &minCoord, &maxCoord);
+			DebugLogWarning("Not implemented: EntityInstance view-independent bounding box 3D");
 
 			// Normalize Y values.
 			const VoxelDouble3 minPoint(minCoord.point.x, minCoord.point.y / ceilingScale, minCoord.point.z);
@@ -154,7 +167,7 @@ namespace Physics
 
 	// The given chunk coordinate is known to be loaded.
 	const ChunkEntityMap &getOrAddChunkEntityMap(const ChunkInt2 &chunk, const CoordDouble3 &viewCoord,
-		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityManager &entityManager,
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 		const EntityDefinitionLibrary &entityDefLibrary, std::vector<ChunkEntityMap> &chunkEntityMaps)
 	{
 		for (const ChunkEntityMap &map : chunkEntityMaps)
@@ -166,7 +179,7 @@ namespace Physics
 		}
 
 		ChunkEntityMap newMap = Physics::makeChunkEntityMap(chunk, viewCoord, ceilingScale, voxelChunkManager,
-			entityManager, entityDefLibrary);
+			entityChunkManager, entityDefLibrary);
 		chunkEntityMaps.emplace_back(std::move(newMap));
 		return chunkEntityMaps.back();
 	}
@@ -176,8 +189,6 @@ namespace Physics
 		double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
 		CoordDouble3 *outHitPoint)
 	{
-		const Entity &entity = *visState.entity;
-
 		// Do a ray test to see if the ray intersects.
 		const WorldDouble3 absoluteRayPoint = VoxelUtils::coordToWorldPoint(rayPoint);
 		const WorldDouble3 absoluteFlatPosition = VoxelUtils::coordToWorldPoint(visState.flatPosition);
@@ -429,7 +440,7 @@ namespace Physics
 	// Helper function for testing which entities in a voxel are intersected by a ray.
 	bool testEntitiesInVoxel(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection,
 		const VoxelDouble3 &flatForward, const VoxelDouble3 &flatRight, const VoxelDouble3 &flatUp,
-		const VoxelInt3 &voxel, const ChunkEntityMap &chunkEntityMap, const EntityManager &entityManager,
+		const VoxelInt3 &voxel, const ChunkEntityMap &chunkEntityMap, const EntityChunkManager &entityChunkManager,
 		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 	{
 		// Use a separate hit variable so we can determine whether an entity was closer.
@@ -444,10 +455,14 @@ namespace Physics
 			const std::vector<EntityVisibilityState3D> &entityVisStateList = iter->second;
 			for (const EntityVisibilityState3D &visState : entityVisStateList)
 			{
-				const Entity &entity = *visState.entity;
-				const EntityDefinition &entityDef = entityManager.getEntityDef(entity.getDefinitionID(), entityDefLibrary);
-				const EntityAnimationDefinitionKeyframe &animKeyframe = entityManager.getEntityAnimKeyframe(entity, visState, entityDefLibrary);
+				const EntityInstanceID entityInstID = visState.entityInstID;
+				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, entityDefLibrary);
+				const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+				const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
 
+				DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
+				const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
 				const double flatWidth = animKeyframe.width;
 				const double flatHeight = animKeyframe.height;
 
@@ -458,7 +473,8 @@ namespace Physics
 					const double distance = (hitCoord - rayCoord).length();
 					if (distance < entityHit.getT())
 					{
-						entityHit.initEntity(distance, hitCoord, entity.getID(), entity.getEntityType());
+						const EntityType entityType = entityInst.isDynamic() ? EntityType::Dynamic : EntityType::Static;
+						entityHit.initEntity(distance, hitCoord, entityInstID, entityType);
 					}
 				}
 			}
@@ -485,7 +501,7 @@ namespace Physics
 	{
 		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
 		const CollisionChunkManager &collisionChunkManager = levelInst.getCollisionChunkManager();
-		const EntityManager &entityManager = levelInst.getEntityManager();
+		const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
 
 		// Each flat shares the same axes. Their forward direction always faces opposite to the camera direction.
 		const VoxelDouble3 flatForward = VoxelDouble3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
@@ -599,9 +615,9 @@ namespace Physics
 			{
 				// Test the initial voxel's entities for ray intersections.
 				const ChunkEntityMap &chunkEntityMap = Physics::getOrAddChunkEntityMap(currentChunk, rayCoord,
-					ceilingScale, voxelChunkManager, entityManager, entityDefLibrary, chunkEntityMaps);
+					ceilingScale, voxelChunkManager, entityChunkManager, entityDefLibrary, chunkEntityMaps);
 				success |= Physics::testEntitiesInVoxel(rayCoord, rayDirection, flatForward, flatRight, flatUp,
-					rayVoxel, chunkEntityMap, entityManager, entityDefLibrary, renderer, hit);
+					rayVoxel, chunkEntityMap, entityChunkManager, entityDefLibrary, renderer, hit);
 			}
 
 			if (success)
@@ -741,9 +757,9 @@ namespace Physics
 			{
 				// Test the current voxel's entities for ray intersections.
 				const ChunkEntityMap &chunkEntityMap = Physics::getOrAddChunkEntityMap(savedVoxelCoord.chunk, rayCoord,
-					ceilingScale, voxelChunkManager, entityManager, entityDefLibrary, chunkEntityMaps);
+					ceilingScale, voxelChunkManager, entityChunkManager, entityDefLibrary, chunkEntityMaps);
 				success |= Physics::testEntitiesInVoxel(rayCoord, rayDirection, flatForward, flatRight, flatUp,
-					savedVoxelCoord.voxel, chunkEntityMap, entityManager, entityDefLibrary, renderer, hit);
+					savedVoxelCoord.voxel, chunkEntityMap, entityChunkManager, entityDefLibrary, renderer, hit);
 			}
 
 			if (success)

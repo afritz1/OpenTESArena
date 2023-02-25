@@ -105,7 +105,7 @@ private:
 	// - list of transforms for screen positions
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
-	std::vector<RenderDrawCall> drawCallsCache;
+	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache, totalDrawCallsCache;
 
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
@@ -118,7 +118,7 @@ private:
 	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk);
 
 	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
-		const EntityDefinitionLibrary &entityDefinitionLibrary, TextureManager &textureManager, Renderer &renderer);
+		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
@@ -132,18 +132,24 @@ private:
 	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
 	void rebuildVoxelChunkDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
+	void rebuildVoxelDrawCallsList();
+
+	void addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, ObjectTextureID textureID0,
+		double width, double height, PixelShaderType pixelShaderType, double pixelShaderParam0,
+		std::vector<RenderDrawCall> &drawCalls);
+	void rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk, const CoordDouble2 &cameraCoordXZ,
+		double ceilingScale, const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary);
+	void rebuildEntityDrawCallsList();
 
 	// @todo: loadSky()
 	// @todo: loadWeather()
-
-	// Collects all stored voxel draw calls from active chunks and puts them into a list for the renderer.
-	void rebuildVoxelDrawCallsList();
 public:
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	// Gets the list of draw calls for visible voxel geometry this frame.
 	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
+	BufferView<const RenderDrawCall> getEntityDrawCalls() const;
+	BufferView<const RenderDrawCall> getTotalDrawCalls() const;
 
 	// Chunk allocating/freeing update function, called before voxel or entity resources are updated.
 	void updateActiveChunks(const BufferView<const ChunkInt2> &activeChunkPositions,
@@ -154,8 +160,8 @@ public:
 		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
 		Renderer &renderer);
 	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
-		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefinitionLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const EntityChunkManager &entityChunkManager,
+		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all rendering resources (voxels, entities, sky, weather).
 	void unloadScene(Renderer &renderer);

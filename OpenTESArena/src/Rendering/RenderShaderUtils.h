@@ -7,7 +7,8 @@ enum class VertexShaderType
 	SwingingDoor,
 	SlidingDoor,
 	RaisingDoor,
-	SplittingDoor
+	SplittingDoor,
+	Entity
 };
 
 enum class PixelShaderType

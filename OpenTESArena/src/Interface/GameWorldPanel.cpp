@@ -810,7 +810,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
 	const RenderChunkManager &renderChunkManager = game.getRenderChunkManager();
-	const BufferView<const RenderDrawCall> voxelDrawCalls = renderChunkManager.getVoxelDrawCalls();
+	const BufferView<const RenderDrawCall> drawCalls = renderChunkManager.getTotalDrawCalls();
 
 	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
 	const double ambientPercent = gameState.getAmbientPercent();
@@ -839,7 +839,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const ObjectTextureID skyColorsTextureID = activeSkyInst.getSkyColorsTextureID();
 	const ObjectTextureID thunderstormColorsTextureID = -1;
 
-	renderer.submitFrame(renderCamera, voxelDrawCalls, ambientPercent, paletteTextureID, lightTableTextureID,
+	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID,
 		skyColorsTextureID, thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
 
 	return true;

@@ -41,4 +41,5 @@ void RenderChunk::clear()
 	this->doorDrawCalls.clear();
 	this->chasmDrawCalls.clear();
 	this->fadingDrawCalls.clear();
+	this->entityDrawCalls.clear();
 }

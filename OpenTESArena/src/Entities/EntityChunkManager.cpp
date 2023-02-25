@@ -335,7 +335,6 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 	const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 	
 	const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
-	const VoxelDouble2 &entityDir = this->getEntityDirection(entityInst.directionID);
 	const bool isDynamic = entityInst.isDynamic();
 
 	// Get active animation state.
@@ -346,7 +345,7 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 
 	// Get animation angle based on entity direction relative to some camera/eye.
 	const int angleCount = animDefState.keyframeListCount;
-	const Radians animAngle = [this, &eye2D, &entityCoord, &entityDir, isDynamic, angleCount]()
+	const Radians animAngle = [this, &eye2D, &entityInst, &entityCoord, isDynamic, angleCount]()
 	{
 		if (!isDynamic)
 		{
@@ -355,6 +354,8 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 		}
 		else
 		{
+			const VoxelDouble2 &entityDir = this->getEntityDirection(entityInst.directionID);
+
 			// Dynamic entities are angle-dependent.
 			const VoxelDouble2 diffDir = (eye2D - entityCoord).normalized();
 
@@ -400,8 +401,7 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 		entityCoord.chunk,
 		VoxelDouble2(entityCoord.point.x, entityCoord.point.y));
 
-	DebugNotImplementedMsg("Change EntityVisibilityState to use EntityInstanceID");
-	//outVisState.init(&entity, flatPosition, stateIndex, angleIndex, keyframeIndex);
+	outVisState.init(id, flatPosition, stateIndex, angleIndex, keyframeIndex);
 }
 
 void EntityChunkManager::getEntityVisibilityState3D(EntityInstanceID id, const CoordDouble2 &eye2D,
@@ -451,8 +451,7 @@ void EntityChunkManager::getEntityVisibilityState3D(EntityInstanceID id, const C
 		visState2D.flatPosition.point.y);
 	const CoordDouble3 flatPosition(visState2D.flatPosition.chunk, flatPoint);
 
-	DebugNotImplementedMsg("Change EntityVisibilityState to use EntityInstanceID");
-	//outVisState.init(&entity, flatPosition, visState2D.stateIndex, visState2D.angleIndex, visState2D.keyframeIndex);
+	outVisState.init(id, flatPosition, visState2D.stateIndex, visState2D.angleIndex, visState2D.keyframeIndex);
 }
 
 void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,

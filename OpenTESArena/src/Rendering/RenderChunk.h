@@ -31,6 +31,7 @@ public:
 	std::vector<RenderDrawCall> doorDrawCalls; // All doors, open or closed.
 	std::vector<RenderDrawCall> chasmDrawCalls; // Chasm walls and floors, separate from static draw calls so their textures can animate.
 	std::vector<RenderDrawCall> fadingDrawCalls; // Voxels with fade shader. Note that the static draw call in the same voxel needs to be deleted to avoid a conflict in the depth buffer.
+	std::vector<RenderDrawCall> entityDrawCalls;
 
 	// @todo: quadtree
 	// - thinking that each 'visible slice' of the tree could be a BufferView2D maybe, or a VoxelInt2 begin + end pattern

@@ -484,6 +484,14 @@ namespace swGeometry
 				DebugNotImplemented();
 				break;
 			}
+			case VertexShaderType::Entity:
+				shadedV0 = unshadedV0 + modelPositionXYZW;
+				shadedV1 = unshadedV1 + modelPositionXYZW;
+				shadedV2 = unshadedV2 + modelPositionXYZW;
+				shadedNormal0 = unshadedNormal0;
+				shadedNormal1 = unshadedNormal1;
+				shadedNormal2 = unshadedNormal2;
+				break;
 			default:
 				DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
 				break;

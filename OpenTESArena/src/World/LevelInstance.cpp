@@ -119,6 +119,16 @@ const EntityManager &LevelInstance::getEntityManager() const
 	return this->entityManager;
 }
 
+EntityChunkManager &LevelInstance::getEntityChunkManager()
+{
+	return this->entityChunkManager;
+}
+
+const EntityChunkManager &LevelInstance::getEntityChunkManager() const
+{
+	return this->entityChunkManager;
+}
+
 ObjectTextureID LevelInstance::getPaletteTextureID() const
 {
 	return this->paletteTextureRef.get();
@@ -159,9 +169,10 @@ bool LevelInstance::trySetActive(RenderChunkManager &renderChunkManager, Texture
 
 void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
-	const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	double chasmAnimPercent, Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirXZ, const std::optional<int> &activeLevelIndex,
+	const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double chasmAnimPercent, Random &random,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	RenderChunkManager &renderChunkManager, TextureManager &textureManager, AudioManager &audioManager, Renderer &renderer)
 {
 	// Simulate game world.
@@ -172,12 +183,14 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 		entityDefLibrary, binaryAssetLibrary, audioManager, textureManager, renderer);
 	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
 	
+	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
+
 	// Update rendering.
 	renderChunkManager.updateActiveChunks(activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager, renderer);
 	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, this->ceilingScale, chasmAnimPercent,
 		this->voxelChunkManager, textureManager, renderer);
-	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, this->entityChunkManager, entityDefLibrary,
-		textureManager, renderer);
+	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
+		this->entityChunkManager, entityDefLibrary, textureManager, renderer);
 }
 
 void LevelInstance::cleanUp()

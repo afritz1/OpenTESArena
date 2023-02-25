@@ -173,13 +173,6 @@ public:
 	// Adds an entity definition and returns its ID.
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &entityDefLibrary);
 
-	// Gets the entity visibility data necessary for rendering and ray cast selection.
-	void getEntityVisibilityState2D(const Entity &entity, const CoordDouble2 &eye2D,
-		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const;
-	void getEntityVisibilityState3D(const Entity &entity, const CoordDouble2 &eye2D,
-		double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState3D &outVisState) const;
-
 	// Convenience function for getting the active keyframe from an entity, given some visibility data.
 	const EntityAnimationDefinitionKeyframe &getEntityAnimKeyframe(const Entity &entity,
 		const EntityVisibilityState3D &visState, const EntityDefinitionLibrary &entityDefLibrary) const;

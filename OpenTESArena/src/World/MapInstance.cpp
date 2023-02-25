@@ -184,10 +184,11 @@ void MapInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord,
 	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 	RenderChunkManager &renderChunkManager = game.getRenderChunkManager();
 	const GameState &gameState = game.getGameState();
+	const VoxelDouble2 &playerDirXZ = game.getPlayer().getGroundDirection();
 	const double chasmAnimPercent = gameState.getChasmAnimPercent();
-	levelInst.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, playerCoord, this->activeLevelIndex,
-		mapDefinition, entityGenInfo, citizenGenInfo, chasmAnimPercent, game.getRandom(), entityDefLibrary, binaryAssetLibrary,
-		renderChunkManager, textureManager, audioManager, game.getRenderer());
+	levelInst.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, playerCoord, playerDirXZ,
+		this->activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo, chasmAnimPercent, game.getRandom(),
+		entityDefLibrary, binaryAssetLibrary, renderChunkManager, textureManager, audioManager, game.getRenderer());
 
 	SkyInstance &skyInst = this->getActiveSky();
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
