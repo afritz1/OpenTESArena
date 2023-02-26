@@ -154,11 +154,22 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					DebugCrash("Couldn't allocate EntityPositionID.");
 				}
 
-				entityInst.init(entityInstID, *entityDefID, positionID);
+				EntityBoundingBoxID bboxID;
+				if (!this->boundingBoxes.tryAlloc(&bboxID))
+				{
+					DebugCrash("Couldn't allocate EntityBoundingBoxID.");
+				}
+
+				entityInst.init(entityInstID, *entityDefID, positionID, bboxID);
 
 				CoordDouble2 &entityCoord = this->positions.get(positionID);
 				entityCoord.chunk = voxelChunk.getPosition();
 				entityCoord.point = VoxelDouble2(point.x, point.z);
+
+				double animMaxWidth, dummyAnimMaxHeight;
+				EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &dummyAnimMaxHeight);
+				double &entityBBoxExtent = this->boundingBoxes.get(bboxID);
+				entityBBoxExtent = animMaxWidth;
 
 				if (entityType == EntityType::Dynamic) // Dynamic entities have a direction.
 				{
@@ -262,10 +273,22 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				return false;
 			}
 
-			entityInst.init(entityInstID, entityDefID, positionID);
+			EntityBoundingBoxID bboxID;
+			if (!this->boundingBoxes.tryAlloc(&bboxID))
+			{
+				DebugLogError("Couldn't allocate citizen EntityBoundingBoxID.");
+				return false;
+			}
+
+			entityInst.init(entityInstID, entityDefID, positionID, bboxID);
 
 			CoordDouble2 &entityCoord = this->positions.get(positionID);
 			entityCoord = CoordDouble2(chunkPos, VoxelUtils::getVoxelCenter(*spawnVoxel));
+
+			double animMaxWidth, dummyAnimMaxHeight;
+			EntityUtils::getAnimationMaxDims(entityAnimDef, &animMaxWidth, &dummyAnimMaxHeight);
+			double &entityBBoxExtent = this->boundingBoxes.get(bboxID);
+			entityBBoxExtent = animMaxWidth;
 
 			if (!this->directions.tryAlloc(&entityInst.directionID))
 			{
@@ -400,6 +423,11 @@ const EntityInstance &EntityChunkManager::getEntity(EntityInstanceID id) const
 const CoordDouble2 &EntityChunkManager::getEntityPosition(EntityPositionID id) const
 {
 	return this->positions.get(id);
+}
+
+double EntityChunkManager::getEntityBoundingBox(EntityBoundingBoxID id) const
+{
+	return this->boundingBoxes.get(id);
 }
 
 const VoxelDouble2 &EntityChunkManager::getEntityDirection(EntityDirectionID id) const

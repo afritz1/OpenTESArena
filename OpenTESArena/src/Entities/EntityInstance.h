@@ -5,6 +5,7 @@
 
 using EntityInstanceID = int;
 using EntityPositionID = int;
+using EntityBoundingBoxID = int;
 using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
 using EntityCreatureSoundInstanceID = int;
@@ -15,6 +16,7 @@ struct EntityInstance
 	EntityInstanceID instanceID;
 	EntityDefID defID;
 	EntityPositionID positionID;
+	EntityBoundingBoxID bboxID;
 	EntityDirectionID directionID;
 	EntityAnimationInstanceID animInstID;
 	EntityCreatureSoundInstanceID creatureSoundInstID;
@@ -22,8 +24,8 @@ struct EntityInstance
 
 	EntityInstance();
 
-	// All entities at least have an instance ID, definition, and position.
-	void init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID);
+	// All entities at least have an instance ID, definition, position, and bounding box.
+	void init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID, EntityBoundingBoxID bboxID);
 
 	// Whether the entity is capable of moving + looking.
 	bool isDynamic() const;

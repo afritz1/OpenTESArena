@@ -46,15 +46,6 @@ const EntityAnimationInstance &Entity::getAnimInstance() const
 	return this->animInst;
 }
 
-void Entity::getViewDependentBBox2D(const CoordDouble2 &cameraCoord, CoordDouble2 *outMin, CoordDouble2 *outMax) const
-{
-	DebugAssert(this->defID != EntityManager::NO_DEF_ID);
-
-	// @todo: get the animation frame that would be shown to the camera.
-	// - get from EntityAnimationInstance
-	DebugNotImplemented();
-}
-
 void Entity::getViewIndependentBBox2D(const EntityManager &entityManager,
 	const EntityDefinitionLibrary &entityDefLibrary, CoordDouble2 *outMin, CoordDouble2 *outMax) const
 {
