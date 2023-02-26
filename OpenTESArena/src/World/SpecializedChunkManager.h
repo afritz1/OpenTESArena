@@ -53,18 +53,6 @@ protected:
 		return *index;
 	}
 
-	ChunkType &getChunkAtIndex(int index)
-	{
-		DebugAssertIndex(this->activeChunks, index);
-		return *this->activeChunks[index];
-	}
-
-	const ChunkType &getChunkAtIndex(int index) const
-	{
-		DebugAssertIndex(this->activeChunks, index);
-		return *this->activeChunks[index];
-	}
-
 	// Gets the def IDs adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	template<typename VoxelIdType>
 	void getAdjacentVoxelIDsInternal(const CoordInt3 &coord, VoxelIdFunc<VoxelIdType> voxelIdFunc, VoxelIdType defaultID,
@@ -132,6 +120,23 @@ protected:
 		this->activeChunks.erase(this->activeChunks.begin() + index);
 	}
 public:
+	int getChunkCount() const
+	{
+		return static_cast<int>(this->activeChunks.size());
+	}
+
+	ChunkType &getChunkAtIndex(int index)
+	{
+		DebugAssertIndex(this->activeChunks, index);
+		return *this->activeChunks[index];
+	}
+
+	const ChunkType &getChunkAtIndex(int index) const
+	{
+		DebugAssertIndex(this->activeChunks, index);
+		return *this->activeChunks[index];
+	}
+
 	ChunkType *tryGetChunkAtPosition(const ChunkInt2 &position)
 	{
 		const std::optional<int> index = this->tryGetChunkIndex(position);
