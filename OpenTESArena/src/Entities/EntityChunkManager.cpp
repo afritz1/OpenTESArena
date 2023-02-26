@@ -623,7 +623,12 @@ void EntityChunkManager::getEntityVisibilityState3D(EntityInstanceID id, const C
 		if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
 		{
 			const VoxelTraitsDefinition::Raised &raised = voxelTraitsDef.raised;
-			return (raised.yOffset + raised.ySize) * ceilingScale;
+			const double meshYPos = raised.yOffset + raised.ySize;
+
+			const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk->getMeshDefID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
+			const VoxelMeshDefinition &voxelMeshDef = chunk->getMeshDef(voxelMeshDefID);
+
+			return MeshUtils::getScaledVertexY(meshYPos, voxelMeshDef.scaleType, ceilingScale);
 		}
 		else
 		{
