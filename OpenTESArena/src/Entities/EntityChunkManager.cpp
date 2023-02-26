@@ -326,6 +326,75 @@ const Palette &EntityChunkManager::getEntityPalette(EntityPaletteInstanceID id) 
 	return this->palettes.get(id);
 }
 
+int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
+{
+	int count = 0;
+	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
+	if (!chunkIndex.has_value())
+	{
+		DebugLogWarning("Missing chunk (" + chunkPos.toString() + ") for counting entities with direction.");
+		return 0;
+	}
+
+	const EntityChunk &chunk = this->getChunkAtIndex(*chunkIndex);
+	for (const EntityInstanceID entityInstID : chunk.entityIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		if (entityInst.directionID >= 0)
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
+int EntityChunkManager::getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const
+{
+	int count = 0;
+	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
+	if (!chunkIndex.has_value())
+	{
+		DebugLogWarning("Missing chunk (" + chunkPos.toString() + ") for counting entities with creature sound.");
+		return 0;
+	}
+
+	const EntityChunk &chunk = this->getChunkAtIndex(*chunkIndex);
+	for (const EntityInstanceID entityInstID : chunk.entityIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		if (entityInst.creatureSoundInstID >= 0)
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
+int EntityChunkManager::getCountInChunkWithPalette(const ChunkInt2 &chunkPos) const
+{
+	int count = 0;
+	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
+	if (!chunkIndex.has_value())
+	{
+		DebugLogWarning("Missing chunk (" + chunkPos.toString() + ") for counting entities with palette.");
+		return 0;
+	}
+
+	const EntityChunk &chunk = this->getChunkAtIndex(*chunkIndex);
+	for (const EntityInstanceID entityInstID : chunk.entityIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		if (entityInst.paletteInstID >= 0)
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
 void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D,
 	const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const
 {

@@ -80,6 +80,11 @@ public:
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
 	const Palette &getEntityPalette(EntityPaletteInstanceID id) const;
 
+	// Count functions for specialized entities.
+	int getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const;
+	int getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const;
+	int getCountInChunkWithPalette(const ChunkInt2 &chunkPos) const;
+
 	// Gets the entity visibility data necessary for rendering and ray cast selection.
 	void getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D,
 		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const;
