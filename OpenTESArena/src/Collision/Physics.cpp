@@ -125,10 +125,12 @@ namespace Physics
 			entityChunkManager.getEntityVisibilityState3D(entityInstID, viewCoordXZ, ceilingScale, voxelChunkManager,
 				entityDefLibrary, visState);
 
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, entityDefLibrary);
+			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+
 			// Get the entity's view-independent bounding box to help determine which voxels they are in.
 			CoordDouble3 minCoord, maxCoord;
-			//entity.getViewIndependentBBox3D(visState.flatPosition.point.y, entityChunkManager, entityDefLibrary, &minCoord, &maxCoord);
-			DebugLogWarning("Not implemented: EntityInstance view-independent bounding box 3D");
+			EntityUtils::getViewIndependentBBox3D(visState.flatPosition, animDef, &minCoord, &maxCoord);
 
 			// Normalize Y values.
 			const VoxelDouble3 minPoint(minCoord.point.x, minCoord.point.y / ceilingScale, minCoord.point.z);

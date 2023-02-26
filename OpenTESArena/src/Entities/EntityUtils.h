@@ -5,6 +5,7 @@
 #include <string>
 
 #include "EntityDefinition.h"
+#include "../World/Coord.h"
 
 // Entity instance handle.
 using EntityID = int;
@@ -39,6 +40,9 @@ namespace EntityUtils
 
 	// Gets the max width and height from the entity animation's frames.
 	void getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight);
+
+	void getViewIndependentBBox2D(const CoordDouble2 &coord, double bboxExtent, CoordDouble2 *outMin, CoordDouble2 *outMax);
+	void getViewIndependentBBox3D(const CoordDouble3 &coord, const EntityAnimationDefinition &animDef, CoordDouble3 *outMin, CoordDouble3 *outMax);
 
 	// Returns whether the entity definition has a display name.
 	bool tryGetDisplayName(const EntityDefinition &entityDef,

@@ -46,59 +46,6 @@ const EntityAnimationInstance &Entity::getAnimInstance() const
 	return this->animInst;
 }
 
-void Entity::getViewIndependentBBox2D(const EntityManager &entityManager,
-	const EntityDefinitionLibrary &entityDefLibrary, CoordDouble2 *outMin, CoordDouble2 *outMax) const
-{
-	DebugAssert(this->defID != EntityManager::NO_DEF_ID);
-
-	const EntityDefinition &entityDef = entityManager.getEntityDef(this->defID, entityDefLibrary);
-	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-
-	// Get the largest width from the animation frames.
-	double maxAnimWidth, dummyMaxAnimHeight;
-	EntityUtils::getAnimationMaxDims(animDef, &maxAnimWidth, &dummyMaxAnimHeight);
-	static_cast<void>(dummyMaxAnimHeight);
-
-	const double halfMaxWidth = maxAnimWidth * 0.50;
-
-	// Orient the bounding box so it is largest with respect to the grid. Recalculate the coordinates in case
-	// the min and max are in different chunks.
-	*outMin = ChunkUtils::recalculateCoord(
-		this->position.chunk,
-		VoxelDouble2(this->position.point.x - halfMaxWidth, this->position.point.y - halfMaxWidth));
-	*outMax = ChunkUtils::recalculateCoord(
-		this->position.chunk,
-		VoxelDouble2(this->position.point.x + halfMaxWidth, this->position.point.y + halfMaxWidth));
-}
-
-void Entity::getViewIndependentBBox3D(double flatPosY, const EntityManager &entityManager,
-	const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const
-{
-	DebugAssert(this->defID != EntityManager::NO_DEF_ID);
-
-	const EntityDefinition &entityDef = entityManager.getEntityDef(this->defID, entityDefLibrary);
-	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-
-	// Get the largest width and height from the animation frames.
-	double maxAnimWidth, maxAnimHeight;
-	EntityUtils::getAnimationMaxDims(animDef, &maxAnimWidth, &maxAnimHeight);
-
-	const double halfMaxWidth = maxAnimWidth * 0.50;
-
-	// Orient the bounding box so it is largest with respect to the grid. Recalculate the coordinates in case
-	// the min and max are in different chunks.
-	const VoxelDouble3 minPoint(
-		this->position.point.x - halfMaxWidth,
-		flatPosY,
-		this->position.point.y - halfMaxWidth);
-	const VoxelDouble3 maxPoint(
-		this->position.point.x + halfMaxWidth,
-		flatPosY + maxAnimHeight,
-		this->position.point.y + halfMaxWidth);
-	*outMin = ChunkUtils::recalculateCoord(this->position.chunk, minPoint);
-	*outMax = ChunkUtils::recalculateCoord(this->position.chunk, maxPoint);
-}
-
 void Entity::setID(EntityID id)
 {
 	this->id = id;
