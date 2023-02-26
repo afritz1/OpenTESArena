@@ -10,9 +10,9 @@
 #include "../World/Coord.h"
 
 class BinaryAssetLibrary;
+class EntityChunkManager;
 class EntityDefinition;
 class EntityDefinitionLibrary;
-class EntityManager;
 class LocationDefinition;
 class Random;
 class VoxelChunk;
@@ -60,15 +60,9 @@ namespace CitizenUtils
 	WorldDouble2 getCitizenDirectionByIndex(int index);
 	int getRandomCitizenDirectionIndex(Random &random);
 
-	// Gets the number of citizens active in the world.
-	int getCitizenCount(const EntityManager &entityManager);
-	int getCitizenCountInChunk(const ChunkInt2 &chunk, const EntityManager &entityManager);
-
-	bool trySpawnCitizenInChunk(const VoxelChunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityManager &entityManager);
-
-	// Used when the player commits a crime and the guards are called.
-	void clearCitizens(EntityManager &entityManager);
+	// Gets the number of citizens active in the world or a chunk.
+	int getCitizenCountInChunk(const ChunkInt2 &chunkPos, const EntityChunkManager &entityChunkManager);
+	int getCitizenCount(const EntityChunkManager &entityChunkManager);
 }
 
 #endif

@@ -3,6 +3,8 @@
 #include "EntityDefinitionLibrary.h"
 #include "EntityType.h"
 #include "EntityVisibilityState.h"
+#include "../Assets/ArenaAnimUtils.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
@@ -100,7 +102,7 @@ EntityInstanceID EntityChunkManager::spawnEntity()
 	return instID;
 }
 
-void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &chunk,
+void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDefinition, const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -155,7 +157,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				entityInst.init(entityInstID, *entityDefID, positionID);
 
 				CoordDouble2 &entityCoord = this->positions.get(positionID);
-				entityCoord.chunk = chunk.getPosition();
+				entityCoord.chunk = voxelChunk.getPosition();
 				entityCoord.point = VoxelDouble2(point.x, point.z);
 
 				if (entityType == EntityType::Dynamic) // Dynamic entities have a direction.
@@ -204,20 +206,110 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 	if (citizenGenInfo.has_value())
 	{
-		DebugLogError("Not implemented: citizen spawning");
-
 		// Spawn citizens if the total active limit has not been reached.
-		/*const int currentCitizenCount = CitizenUtils::getCitizenCount(entityManager);
-		const int remainingCitizensToSpawn = std::min(
-			CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
+		const int currentCitizenCount = CitizenUtils::getCitizenCount(*this);
+		const int remainingCitizensToSpawn = std::min(CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
+
+		// @todo: spawn X male citizens then Y female citizens instead of randomly switching between defs/anim defs/etc.
+
+		const ChunkInt2 &chunkPos = voxelChunk.getPosition();
+		auto trySpawnCitizenInChunk = [this, &entityChunk, &voxelChunk, &entityGenInfo, &citizenGenInfo, &random,
+			&binaryAssetLibrary, &textureManager, &chunkPos]()
+		{
+			EntityChunk *entityChunkPtr = this->tryGetChunkAtPosition(chunkPos);
+			if (entityChunkPtr == nullptr)
+			{
+				DebugLogWarning("Can't spawn a citizen in untracked chunk \"" + chunkPos.toString() + "\".");
+				return false;
+			}
+
+			const std::optional<VoxelInt2> spawnVoxel = [&voxelChunk, &random]() -> std::optional<VoxelInt2>
+			{
+				DebugAssert(voxelChunk.getHeight() >= 2);
+
+				constexpr int spawnTriesCount = 20;
+				for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
+				{
+					const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
+					const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
+					const VoxelChunk::VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
+					const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+					const VoxelTraitsDefinition &groundVoxelTraitsDef = voxelChunk.getTraitsDef(groundVoxelTraitsDefID);
+
+					// @todo: this type check could ostensibly be replaced with some "allowsCitizenSpawn".
+					if ((voxelTraitsDef.type == ArenaTypes::VoxelType::None) &&
+						(groundVoxelTraitsDef.type == ArenaTypes::VoxelType::Floor))
+					{
+						return spawnVoxel;
+					}
+				}
+
+				// No spawn position found.
+				return std::nullopt;
+			}();
+
+			if (!spawnVoxel.has_value())
+			{
+				DebugLogWarning("Couldn't find spawn voxel for citizen.");
+				return false;
+			}
+
+			const bool isMale = random.next(2) == 0;
+			const EntityDefID entityDefID = isMale ? citizenGenInfo->maleEntityDefID : citizenGenInfo->femaleEntityDefID;
+			const EntityDefinition &entityDef = isMale ? *citizenGenInfo->maleEntityDef : *citizenGenInfo->femaleEntityDef;
+			const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
+
+			const Palette &palette = textureManager.getPaletteHandle(citizenGenInfo->paletteID);
+			const uint16_t colorSeed = static_cast<uint16_t>(random.next());
+			const Palette generatedPalette = ArenaAnimUtils::transformCitizenColors(citizenGenInfo->raceID, colorSeed, palette, binaryAssetLibrary.getExeData());
+
+			EntityInstanceID entityInstID = this->spawnEntity();
+			EntityInstance &entityInst = this->entities.get(entityInstID);
+
+			EntityPositionID positionID;
+			if (!this->positions.tryAlloc(&positionID))
+			{
+				DebugCrash("Couldn't allocate citizen EntityPositionID.");
+			}
+
+			entityInst.init(entityInstID, entityDefID, positionID);
+
+			CoordDouble2 &entityCoord = this->positions.get(positionID);
+			entityCoord = CoordDouble2(chunkPos, VoxelUtils::getVoxelCenter(*spawnVoxel));
+
+			if (!this->directions.tryAlloc(&entityInst.directionID))
+			{
+				DebugCrash("Couldn't allocate citizen EntityDirectionID.");
+			}
+
+			VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
+			entityDir = CardinalDirection::North;
+
+			if (!this->animInsts.tryAlloc(&entityInst.animInstID))
+			{
+				DebugCrash("Couldn't allocate EntityAnimationInstanceID.");
+			}
+
+			EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+			animInst = isMale ? citizenGenInfo->maleAnimInst : citizenGenInfo->femaleAnimInst;
+
+			entityChunk.entityIDs.emplace_back(entityInstID);
+
+			DebugLogWarning("Not implemented: writing CitizenParams palette to EntityChunkManager palette pool (also it needs to be allocated and referenced in RenderChunkManager as textureID1).");
+			/*auto citizenParams = std::make_unique<EntityAnimationInstance::CitizenParams>();
+			citizenParams->palette = generatedPalette;
+			animInst.setCitizenParams(std::move(citizenParams));*/
+
+			return true;
+		};
 
 		for (int i = 0; i < remainingCitizensToSpawn; i++)
 		{
-			if (!CitizenUtils::trySpawnCitizenInChunk(chunk, *citizenGenInfo, random, binaryAssetLibrary, textureManager, entityManager))
+			if (!trySpawnCitizenInChunk())
 			{
-				DebugLogWarning("Couldn't spawn citizen in chunk \"" + chunk.getPosition().toString() + "\".");
+				DebugLogWarning("Couldn't spawn citizen in chunk \"" + chunkPos.toString() + "\".");
 			}
-		}*/
+		}
 	}
 }
 
@@ -611,8 +703,5 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, entityDefLibrary, audioManager);
 
 		// @todo: citizen spawning and management by player distance
-
-		// @todo: rebuild entity chunk draw calls
-		//this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 }

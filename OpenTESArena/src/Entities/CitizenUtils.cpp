@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "CitizenUtils.h"
+#include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityManager.h"
 #include "EntityType.h"
@@ -78,6 +79,16 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 			const EntityAnimationDefinitionState &animDefState = animDef.states[i];
 			animInst.addState(animDefState.seconds, animDefState.isLooping);
 		}
+		
+		// Idle animation by default.
+		const std::optional<int> stateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+		if (!stateIndex.has_value())
+		{
+			DebugLogError("Couldn't get idle state index for citizen.");
+			return;
+		}
+
+		animInst.setStateIndex(*stateIndex);
 	};
 
 	EntityAnimationInstance maleAnimInst, femaleAnimInst;
@@ -153,143 +164,19 @@ int CitizenUtils::getRandomCitizenDirectionIndex(Random &random)
 	return random.next() % static_cast<int>(CitizenDirections.size());
 }
 
-int CitizenUtils::getCitizenCount(const EntityManager &entityManager)
+int CitizenUtils::getCitizenCountInChunk(const ChunkInt2 &chunkPos, const EntityChunkManager &entityChunkManager)
 {
-	constexpr EntityType entityType = EntityType::Dynamic;
-	Buffer<const Entity*> entities(entityManager.getCountOfType(entityType));
-	const int entityWriteCount = entityManager.getEntitiesOfType(entityType, entities.get(), entities.getCount());
+	return entityChunkManager.getCountInChunkWithPalette(chunkPos);
+}
 
+int CitizenUtils::getCitizenCount(const EntityChunkManager &entityChunkManager)
+{
 	int count = 0;
-	for (int i = 0; i < entityWriteCount; i++)
+	for (int i = 0; i < entityChunkManager.getChunkCount(); i++)
 	{
-		const Entity *entity = entities.get(i);
-		const DynamicEntity *dynamicEntity = dynamic_cast<const DynamicEntity*>(entity);
-		if (dynamicEntity->getDerivedType() == DynamicEntityType::Citizen)
-		{
-			count++;
-		}
+		const EntityChunk &chunk = entityChunkManager.getChunkAtIndex(i);
+		count += CitizenUtils::getCitizenCountInChunk(chunk.getPosition(), entityChunkManager);
 	}
 
 	return count;
-}
-
-int CitizenUtils::getCitizenCountInChunk(const ChunkInt2 &chunk, const EntityManager &entityManager)
-{
-	constexpr EntityType entityType = EntityType::Dynamic;
-	Buffer<const Entity*> entities(entityManager.getCountInChunk(chunk));
-	const int entityWriteCount = entityManager.getEntitiesInChunk(chunk, entities.get(), entities.getCount());
-
-	int count = 0;
-	for (int i = 0; i < entityWriteCount; i++)
-	{
-		const Entity *entity = entities.get(i);
-		if (entity->getEntityType() == entityType)
-		{
-			const DynamicEntity *dynamicEntity = dynamic_cast<const DynamicEntity*>(entity);
-			if (dynamicEntity->getDerivedType() == DynamicEntityType::Citizen)
-			{
-				count++;
-			}
-		}
-	}
-
-	return count;
-}
-
-bool CitizenUtils::trySpawnCitizenInChunk(const VoxelChunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityManager &entityManager)
-{
-	const ChunkInt2 &chunkPosition = chunk.getPosition();
-	if (!entityManager.hasChunk(chunkPosition))
-	{
-		DebugLogWarning("Can't spawn a citizen in untracked chunk \"" + chunkPosition.toString() + "\".");
-		return false;
-	}
-
-	const std::optional<VoxelInt2> spawnVoxel = [&chunk, &random]() -> std::optional<VoxelInt2>
-	{
-		DebugAssert(chunk.getHeight() >= 2);
-
-		constexpr int spawnTriesCount = 20;
-		for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
-		{
-			const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
-			const VoxelChunk::VoxelTraitsDefID groundVoxelTraitsDefID = chunk.getTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
-			const VoxelTraitsDefinition &groundVoxelTraitsDef = chunk.getTraitsDef(groundVoxelTraitsDefID);
-
-			// @todo: this type check could ostensibly be replaced with some "allowsCitizenSpawn".
-			if ((voxelTraitsDef.type == ArenaTypes::VoxelType::None) &&
-				(groundVoxelTraitsDef.type == ArenaTypes::VoxelType::Floor))
-			{
-				return spawnVoxel;
-			}
-		}
-
-		// No spawn position found.
-		return std::nullopt;
-	}();
-
-	if (!spawnVoxel.has_value())
-	{
-		DebugLogWarning("Couldn't find spawn voxel for citizen.");
-		return false;
-	}
-
-	const bool male = random.next(2) == 0;
-	const EntityDefID entityDefID = male ? citizenGenInfo.maleEntityDefID : citizenGenInfo.femaleEntityDefID;
-	const EntityDefinition &entityDef = male ? *citizenGenInfo.maleEntityDef : *citizenGenInfo.femaleEntityDef;
-	const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
-	const EntityAnimationInstance &entityAnimInst = male ? citizenGenInfo.maleAnimInst : citizenGenInfo.femaleAnimInst;
-
-	const Palette &palette = textureManager.getPaletteHandle(citizenGenInfo.paletteID);
-	const uint16_t colorSeed = static_cast<uint16_t>(random.next());
-	const Palette generatedPalette = ArenaAnimUtils::transformCitizenColors(
-		citizenGenInfo.raceID, colorSeed, palette, binaryAssetLibrary.getExeData());
-
-	EntityRef entityRef = entityManager.makeEntity(EntityType::Dynamic);
-	DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
-	constexpr CardinalDirectionName direction = CardinalDirectionName::North;
-	dynamicEntity->initCitizen(entityDefID, entityAnimInst, direction);
-
-	// Idle animation by default.
-	const std::optional<int> stateIndex = entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
-	if (!stateIndex.has_value())
-	{
-		DebugLogWarning("Couldn't get idle state index for citizen.");
-		return false;
-	}
-
-	EntityAnimationInstance &animInst = dynamicEntity->getAnimInstance();
-	animInst.setStateIndex(*stateIndex);
-
-	DebugLogWarning("Not implemented: writing CitizenParams palette to EntityChunkManager palette pool (also it needs to be referenced in RenderChunkManager probably).");
-	/*auto citizenParams = std::make_unique<EntityAnimationInstance::CitizenParams>();
-	citizenParams->palette = generatedPalette;
-	animInst.setCitizenParams(std::move(citizenParams));*/
-
-	// Note: since the entity pointer is being used directly, update the position last
-	// in scope to avoid a dangling pointer problem in case it changes chunks.
-	const CoordDouble2 spawnCoordReal(chunkPosition, VoxelUtils::getVoxelCenter(*spawnVoxel));
-	dynamicEntity->setPosition(spawnCoordReal, entityManager);
-
-	return true;
-}
-
-void CitizenUtils::clearCitizens(EntityManager &entityManager)
-{
-	constexpr EntityType entityType = EntityType::Dynamic;
-	Buffer<const Entity*> entities(entityManager.getCountOfType(entityType));
-	const int entityWriteCount = entityManager.getEntitiesOfType(entityType, entities.get(), entities.getCount());
-
-	for (int i = 0; i < entityWriteCount; i++)
-	{
-		const Entity *entity = entities.get(i);
-		const DynamicEntity *dynamicEntity = dynamic_cast<const DynamicEntity*>(entity);
-		if (dynamicEntity->getDerivedType() == DynamicEntityType::Citizen)
-		{
-			entityManager.remove(dynamicEntity->getID());
-		}
-	}
 }
