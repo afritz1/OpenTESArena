@@ -1194,14 +1194,15 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 	}
 }
 
-void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, ObjectTextureID textureID0,
-	double width, double height, PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
+void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
+	ObjectTextureID textureID0, double width, double height, PixelShaderType pixelShaderType, double pixelShaderParam0,
+	std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
 	drawCall.position = position;
 	drawCall.preScaleTranslation = Double3::Zero;
 	drawCall.rotation = rotationMatrix;
-	drawCall.scale = Matrix4d::identity();
+	drawCall.scale = scaleMatrix;
 	drawCall.vertexBufferID = this->entityMeshDef.vertexBufferID;
 	drawCall.normalBufferID = this->entityMeshDef.normalBufferID;
 	drawCall.texCoordBufferID = this->entityMeshDef.texCoordBufferID;
@@ -1210,7 +1211,6 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 	drawCall.textureIDs[1] = std::nullopt;
 	drawCall.textureSamplingType = TextureSamplingType::Default;
 	drawCall.vertexShaderType = VertexShaderType::Entity;
-	// @todo: vertex shader params
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = pixelShaderParam0;
 
@@ -1219,7 +1219,8 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 
 void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk,
 	const CoordDouble2 &cameraCoordXZ, const Matrix4d &rotationMatrix, double ceilingScale,
-	const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary)
+	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
+	const EntityDefinitionLibrary &entityDefLibrary)
 {
 	renderChunk.entityDrawCalls.clear();
 
@@ -1230,22 +1231,24 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		const EntityInstanceID entityInstID = entityIDs[i];
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
+		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, entityDefLibrary);
+		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
-		// @todo: get the correct anim frame, vis state 3D, call addEntityDrawCall(), etc. etc.
+		EntityVisibilityState3D visState;
+		entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, entityDefLibrary, visState);
+		const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
+		DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
+		const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
 
 		// Convert entity XYZ to world space.
-		const WorldDouble2 worldXZ = VoxelUtils::coordToWorldPoint(entityCoord);
-		const double worldY = ceilingScale;
-		const Double3 worldPos(
-			static_cast<SNDouble>(worldXZ.x),
-			static_cast<double>(worldY),
-			static_cast<WEDouble>(worldXZ.y));
+		const Double3 worldPos = VoxelUtils::coordToWorldPoint(visState.flatPosition);
 
+		const Matrix4d scaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
 		const ObjectTextureID textureID = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager, entityDefLibrary);
 		const double width = 1.0; // @todo: get from entity def? EntityUtils?
 		const double height = 1.0;
 		const double pixelShaderParam0 = 0.0;
-		this->addEntityDrawCall(worldPos, rotationMatrix, textureID, width, height, PixelShaderType::AlphaTested,
+		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID, width, height, PixelShaderType::AlphaTested,
 			pixelShaderParam0, renderChunk.entityDrawCalls);
 	}
 }
@@ -1324,8 +1327,8 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 
 void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ,
-	double ceilingScale, const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
+	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer)
 {
 	for (int i = 0; i < newChunkPositions.getCount(); i++)
 	{
@@ -1343,7 +1346,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, rotationMatrix, ceilingScale,
-			entityChunkManager, entityDefLibrary);
+			voxelChunkManager, entityChunkManager, entityDefLibrary);
 	}
 
 	this->rebuildEntityDrawCallsList();

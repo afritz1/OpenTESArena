@@ -134,12 +134,12 @@ private:
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 	void rebuildVoxelDrawCallsList();
 
-	void addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, ObjectTextureID textureID0,
-		double width, double height, PixelShaderType pixelShaderType, double pixelShaderParam0,
+	void addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
+		ObjectTextureID textureID0, double width, double height, PixelShaderType pixelShaderType, double pixelShaderParam0,
 		std::vector<RenderDrawCall> &drawCalls);
 	void rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk, const CoordDouble2 &cameraCoordXZ,
-		const Matrix4d &rotationMatrix, double ceilingScale, const EntityChunkManager &entityChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary);
+		const Matrix4d &rotationMatrix, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary);
 	void rebuildEntityDrawCallsList();
 
 	// @todo: loadSky()
@@ -161,8 +161,9 @@ public:
 		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
 		Renderer &renderer);
 	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
-		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const EntityChunkManager &entityChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer);
+		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Clears all rendering resources (voxels, entities, sky, weather).
 	void unloadScene(Renderer &renderer);

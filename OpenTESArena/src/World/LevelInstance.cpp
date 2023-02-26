@@ -190,7 +190,7 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, this->ceilingScale, chasmAnimPercent,
 		this->voxelChunkManager, textureManager, renderer);
 	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
-		this->entityChunkManager, entityDefLibrary, textureManager, renderer);
+		this->voxelChunkManager, this->entityChunkManager, entityDefLibrary, textureManager, renderer);
 }
 
 void LevelInstance::cleanUp()

@@ -485,9 +485,9 @@ namespace swGeometry
 				break;
 			}
 			case VertexShaderType::Entity:
-				shadedV0 = (rotation * unshadedV0) + modelPositionXYZW;
-				shadedV1 = (rotation * unshadedV1) + modelPositionXYZW;
-				shadedV2 = (rotation * unshadedV2) + modelPositionXYZW;
+				shadedV0 = (rotation * (scale * unshadedV0)) + modelPositionXYZW;
+				shadedV1 = (rotation * (scale * unshadedV1)) + modelPositionXYZW;
+				shadedV2 = (rotation * (scale * unshadedV2)) + modelPositionXYZW;
 				shadedNormal0 = unshadedNormal0;
 				shadedNormal1 = unshadedNormal1;
 				shadedNormal2 = unshadedNormal2;
