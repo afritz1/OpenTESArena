@@ -43,13 +43,6 @@ public:
 	EntityAnimationInstance &getAnimInstance();
 	const EntityAnimationInstance &getAnimInstance() const;
 
-	// Gets the entity's view-independent bounding boxes. The view-independent box will
-	// generally be larger because it takes all animation frames into consideration.
-	void getViewIndependentBBox2D(const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
-		CoordDouble2 *outMin, CoordDouble2 *outMax) const;
-	void getViewIndependentBBox3D(double flatPosY, const EntityManager &entityManager,
-		const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const;
-
 	// Gets the entity's derived type (NPC, doodad, etc.).
 	virtual EntityType getEntityType() const = 0;
 
