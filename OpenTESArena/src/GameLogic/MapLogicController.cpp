@@ -121,7 +121,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	const TransitionType transitionType = transitionDef.getType();
 	DebugAssert(transitionType != TransitionType::LevelChange);
 
-	DebugAssert(hit.getType() == Physics::Hit::Type::Voxel);
+	DebugAssert(hit.getType() == Physics::HitType::Voxel);
 	const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 	const CoordInt3 hitCoord(hit.getCoord().chunk, voxelHit.voxel);
 

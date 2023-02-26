@@ -475,8 +475,7 @@ namespace Physics
 					const double distance = (hitCoord - rayCoord).length();
 					if (distance < entityHit.getT())
 					{
-						const EntityType entityType = entityInst.isDynamic() ? EntityType::Dynamic : EntityType::Static;
-						entityHit.initEntity(distance, hitCoord, entityInstID, entityType);
+						entityHit.initEntity(distance, hitCoord, entityInstID);
 					}
 				}
 			}
@@ -777,7 +776,7 @@ void Physics::Hit::initVoxel(double t, const CoordDouble3 &coord, const VoxelInt
 {
 	this->t = t;
 	this->coord = coord;
-	this->type = Hit::Type::Voxel;
+	this->type = HitType::Voxel;
 	this->voxelHit.voxel = voxel;
 
 	if (facing != nullptr)
@@ -790,13 +789,12 @@ void Physics::Hit::initVoxel(double t, const CoordDouble3 &coord, const VoxelInt
 	}
 }
 
-void Physics::Hit::initEntity(double t, const CoordDouble3 &coord, EntityID id, EntityType type)
+void Physics::Hit::initEntity(double t, const CoordDouble3 &coord, EntityInstanceID id)
 {
 	this->t = t;
 	this->coord = coord;
-	this->type = Hit::Type::Entity;
+	this->type = HitType::Entity;
 	this->entityHit.id = id;
-	this->entityHit.type = type;
 }
 
 double Physics::Hit::getT() const
@@ -814,20 +812,20 @@ const CoordDouble3 &Physics::Hit::getCoord() const
 	return this->coord;
 }
 
-Physics::Hit::Type Physics::Hit::getType() const
+Physics::HitType Physics::Hit::getType() const
 {
 	return this->type;
 }
 
 const Physics::Hit::VoxelHit &Physics::Hit::getVoxelHit() const
 {
-	DebugAssert(this->getType() == Hit::Type::Voxel);
+	DebugAssert(this->getType() == HitType::Voxel);
 	return this->voxelHit;
 }
 
 const Physics::Hit::EntityHit &Physics::Hit::getEntityHit() const
 {
-	DebugAssert(this->getType() == Hit::Type::Entity);
+	DebugAssert(this->getType() == HitType::Entity);
 	return this->entityHit;
 }
 

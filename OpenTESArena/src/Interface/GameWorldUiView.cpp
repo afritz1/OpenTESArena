@@ -539,7 +539,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 				Color color;
 				switch (hit.getType())
 				{
-				case Physics::Hit::Type::Voxel:
+				case Physics::HitType::Voxel:
 				{
 					const std::array<Color, 5> colors =
 					{
@@ -551,7 +551,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 					color = colors[colorsIndex];
 					break;
 				}
-				case Physics::Hit::Type::Entity:
+				case Physics::HitType::Entity:
 				{
 					color = Color::Yellow;
 					break;
@@ -587,6 +587,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
 	const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
 	const EntityManager &entityManager = levelInst.getEntityManager();
+	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
 	constexpr bool includeEntities = true;
@@ -599,7 +600,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	{
 		switch (hit.getType())
 		{
-		case Physics::Hit::Type::Voxel:
+		case Physics::HitType::Voxel:
 		{
 			const ChunkInt2 chunkPos = hit.getCoord().chunk;
 			const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
@@ -613,18 +614,14 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 				' ' + std::to_string(hit.getT());
 			break;
 		}
-		case Physics::Hit::Type::Entity:
+		case Physics::HitType::Entity:
 		{
 			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
 			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 
-			// Try inspecting the entity (can be from any distance). If they have a display name,
-			// then show it.
-			ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
-			DebugAssert(entityRef.getID() != EntityManager::NO_ID);
-
-			const EntityDefinition &entityDef = entityManager.getEntityDef(
-				entityRef.get()->getDefinitionID(), game.getEntityDefinitionLibrary());
+			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
+			const EntityDefinition &entityDef = entityManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
 			const auto &charClassLibrary = game.getCharacterClassLibrary();
 
 			std::string entityName;

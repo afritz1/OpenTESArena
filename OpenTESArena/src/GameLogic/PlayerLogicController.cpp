@@ -548,6 +548,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	LevelInstance &levelInst = mapInst.getActiveLevel();
 	VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
 	const EntityManager &entityManager = levelInst.getEntityManager();
+	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
 	auto &player = game.getPlayer();
@@ -563,7 +564,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	// See if the ray hit anything.
 	if (success)
 	{
-		if (hit.getType() == Physics::Hit::Type::Voxel)
+		if (hit.getType() == Physics::HitType::Voxel)
 		{
 			const ChunkInt2 chunkPos = hit.getCoord().chunk;
 			VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
@@ -664,7 +665,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				}
 			}
 		}
-		else if (hit.getType() == Physics::Hit::Type::Entity)
+		else if (hit.getType() == Physics::HitType::Entity)
 		{
 			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
 			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
@@ -681,13 +682,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 				}*/
 
-				// Try inspecting the entity (can be from any distance). If they have a display name,
-				// then show it.
-				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
-				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
-
-				const EntityDefinition &entityDef = entityManager.getEntityDef(
-					entityRef.get()->getDefinitionID(), game.getEntityDefinitionLibrary());
+				// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
+				const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
+				const EntityDefinition &entityDef = entityManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
 				const auto &charClassLibrary = game.getCharacterClassLibrary();
 
 				std::string entityName;
