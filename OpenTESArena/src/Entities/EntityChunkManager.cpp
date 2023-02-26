@@ -216,13 +216,6 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		auto trySpawnCitizenInChunk = [this, &entityChunk, &voxelChunk, &entityGenInfo, &citizenGenInfo, &random,
 			&binaryAssetLibrary, &textureManager, &chunkPos]()
 		{
-			EntityChunk *entityChunkPtr = this->tryGetChunkAtPosition(chunkPos);
-			if (entityChunkPtr == nullptr)
-			{
-				DebugLogWarning("Can't spawn a citizen in untracked chunk \"" + chunkPos.toString() + "\".");
-				return false;
-			}
-
 			const std::optional<VoxelInt2> spawnVoxel = [&voxelChunk, &random]() -> std::optional<VoxelInt2>
 			{
 				DebugAssert(voxelChunk.getHeight() >= 2);
@@ -259,17 +252,14 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			const EntityDefinition &entityDef = isMale ? *citizenGenInfo->maleEntityDef : *citizenGenInfo->femaleEntityDef;
 			const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
 
-			const Palette &palette = textureManager.getPaletteHandle(citizenGenInfo->paletteID);
-			const uint16_t colorSeed = static_cast<uint16_t>(random.next());
-			const Palette generatedPalette = ArenaAnimUtils::transformCitizenColors(citizenGenInfo->raceID, colorSeed, palette, binaryAssetLibrary.getExeData());
-
 			EntityInstanceID entityInstID = this->spawnEntity();
 			EntityInstance &entityInst = this->entities.get(entityInstID);
 
 			EntityPositionID positionID;
 			if (!this->positions.tryAlloc(&positionID))
 			{
-				DebugCrash("Couldn't allocate citizen EntityPositionID.");
+				DebugLogError("Couldn't allocate citizen EntityPositionID.");
+				return false;
 			}
 
 			entityInst.init(entityInstID, entityDefID, positionID);
@@ -279,7 +269,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			if (!this->directions.tryAlloc(&entityInst.directionID))
 			{
-				DebugCrash("Couldn't allocate citizen EntityDirectionID.");
+				DebugLogError("Couldn't allocate citizen EntityDirectionID.");
+				return false;
 			}
 
 			VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
@@ -287,18 +278,26 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			if (!this->animInsts.tryAlloc(&entityInst.animInstID))
 			{
-				DebugCrash("Couldn't allocate EntityAnimationInstanceID.");
+				DebugLogError("Couldn't allocate citizen EntityAnimationInstanceID.");
+				return false;
 			}
 
 			EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 			animInst = isMale ? citizenGenInfo->maleAnimInst : citizenGenInfo->femaleAnimInst;
 
-			entityChunk.entityIDs.emplace_back(entityInstID);
+			if (!this->palettes.tryAlloc(&entityInst.paletteInstID))
+			{
+				DebugLogError("Couldn't allocate citizen EntityPaletteInstanceID.");
+				return false;
+			}
 
-			DebugLogWarning("Not implemented: writing CitizenParams palette to EntityChunkManager palette pool (also it needs to be allocated and referenced in RenderChunkManager as textureID1).");
-			/*auto citizenParams = std::make_unique<EntityAnimationInstance::CitizenParams>();
-			citizenParams->palette = generatedPalette;
-			animInst.setCitizenParams(std::move(citizenParams));*/
+			const Palette &srcPalette = textureManager.getPaletteHandle(citizenGenInfo->paletteID);
+			const uint16_t colorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
+
+			Palette &palette = this->palettes.get(entityInst.paletteInstID);
+			palette = ArenaAnimUtils::transformCitizenColors(citizenGenInfo->raceID, colorSeed, srcPalette, binaryAssetLibrary.getExeData());
+
+			entityChunk.entityIDs.emplace_back(entityInstID);
 
 			return true;
 		};
