@@ -18,6 +18,7 @@ struct EntityInstance
 	EntityDirectionID directionID;
 	EntityAnimationInstanceID animInstID;
 	EntityCreatureSoundInstanceID creatureSoundInstID;
+	EntityPaletteInstanceID paletteInstID;
 
 	EntityInstance();
 
@@ -26,6 +27,8 @@ struct EntityInstance
 
 	// Whether the entity is capable of moving + looking.
 	bool isDynamic() const;
+
+	bool isCitizen() const;
 
 	void clear();
 };

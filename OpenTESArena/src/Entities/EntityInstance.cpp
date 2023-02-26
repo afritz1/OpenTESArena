@@ -22,6 +22,11 @@ bool EntityInstance::isDynamic() const
 	return this->directionID >= 0;
 }
 
+bool EntityInstance::isCitizen() const
+{
+	return this->paletteInstID >= 0;
+}
+
 void EntityInstance::clear()
 {
 	this->instanceID = -1;
@@ -30,4 +35,5 @@ void EntityInstance::clear()
 	this->directionID = -1;
 	this->animInstID = -1;
 	this->creatureSoundInstID = -1;
+	this->paletteInstID = -1;
 }
