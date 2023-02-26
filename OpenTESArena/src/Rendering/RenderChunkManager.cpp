@@ -291,32 +291,74 @@ namespace sgTexture
 	Buffer<ScopedObjectTextureRef> MakeEntityAnimationTextures(const EntityAnimationDefinition &animDef,
 		TextureManager &textureManager, Renderer &renderer)
 	{
-		const int keyframeCount = animDef.keyframeCount;
-		Buffer<ScopedObjectTextureRef> textureRefs(keyframeCount);
-		for (int i = 0; i < keyframeCount; i++)
+		Buffer<ScopedObjectTextureRef> textureRefs(animDef.keyframeCount);
+
+		// Need to go by state + keyframe list because the keyframes don't know whether they're flipped.
+		int writeIndex = 0;
+		for (int i = 0; i < animDef.stateCount; i++)
 		{
-			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[i];
-			const TextureAsset &textureAsset = keyframe.textureAsset;
-
-			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-			if (!textureBuilderID.has_value())
+			const EntityAnimationDefinitionState &defState = animDef.states[i];
+			for (int j = 0; j < defState.keyframeListCount; j++)
 			{
-				DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
-				continue;
-			}
+				const int keyframeListIndex = defState.keyframeListsIndex + j;
+				DebugAssertIndex(animDef.keyframeLists, keyframeListIndex);
+				const EntityAnimationDefinitionKeyframeList &keyframeList = animDef.keyframeLists[keyframeListIndex];
+				for (int k = 0; k < keyframeList.keyframeCount; k++)
+				{
+					const int keyframeIndex = keyframeList.keyframesIndex + k;
+					DebugAssertIndex(animDef.keyframes, keyframeIndex);
+					const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[keyframeIndex];
+					const TextureAsset &textureAsset = keyframe.textureAsset;
 
-			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-			ObjectTextureID textureID;
-			if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
-			{
-				DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
-				continue;
-			}
+					const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
+					if (!textureBuilderID.has_value())
+					{
+						DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
+						continue;
+					}
 
-			ScopedObjectTextureRef textureRef(textureID, renderer);
-			textureRefs.set(i, std::move(textureRef));
+					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+					const int textureWidth = textureBuilder.getWidth();
+					const int textureHeight = textureBuilder.getHeight();
+					const int texelCount = textureWidth * textureHeight;
+					constexpr int bytesPerTexel = 1;
+					DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+
+					ObjectTextureID textureID;
+					if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
+					{
+						DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
+						continue;
+					}
+
+					ScopedObjectTextureRef textureRef(textureID, renderer);
+
+					const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+					const uint8_t *srcTexels = palettedTexture.texels.get();
+
+					LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
+					uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);
+
+					// Copy texels from source texture, mirroring if necessary.
+					for (int y = 0; y < textureHeight; y++)
+					{
+						for (int x = 0; x < textureWidth; x++)
+						{
+							const int srcX = !keyframeList.isFlipped ? x : (textureWidth - 1 - x);
+							const int srcIndex = srcX + (y * textureWidth);
+							const int dstIndex = x + (y * textureWidth);
+							dstTexels[dstIndex] = srcTexels[srcIndex];
+						}
+					}
+
+					renderer.unlockObjectTexture(textureID);
+					textureRefs.set(writeIndex, std::move(textureRef));
+					writeIndex++;
+				}
+			}
 		}
 
+		DebugAssert(writeIndex == textureRefs.getCount());
 		return textureRefs;
 	}
 }
