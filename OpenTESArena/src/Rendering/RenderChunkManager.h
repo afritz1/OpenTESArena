@@ -92,6 +92,7 @@ private:
 
 	std::vector<LoadedEntityAnimation> entityAnims;
 	RenderEntityMeshDefinition entityMeshDef; // Shared by all entities.
+	std::unordered_map<EntityPaletteInstanceID, ScopedObjectTextureRef> entityPaletteTextureRefs;
 
 	// @todo: sky rendering resources
 	// - hemisphere geometry w/ texture IDs and coordinates for colors (use some trig functions for vertex generation?)

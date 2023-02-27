@@ -361,6 +361,30 @@ namespace sgTexture
 		DebugAssert(writeIndex == textureRefs.getCount());
 		return textureRefs;
 	}
+
+	ScopedObjectTextureRef MakeEntityPaletteTextureRef(const Palette &palette, Renderer &renderer)
+	{
+		const int textureWidth = static_cast<int>(palette.size());
+		const int textureHeight = 1;
+		constexpr int bytesPerTexel = 4;
+
+		ObjectTextureID textureID;
+		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
+		{
+			DebugCrash("Couldn't create entity palette texture.");
+		}
+
+		LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
+		uint32_t *dstTexels = static_cast<uint32_t*>(lockedTexture.texels);
+		std::transform(palette.begin(), palette.end(), dstTexels,
+			[](const Color &color)
+		{
+			return color.toARGB();
+		});
+
+		renderer.unlockObjectTexture(textureID);
+		return ScopedObjectTextureRef(textureID, renderer);
+	}
 }
 
 void RenderChunkManager::LoadedVoxelTexture::init(const TextureAsset &textureAsset,
@@ -577,6 +601,7 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 	this->chasmTextureKeys.clear();
 	this->entityAnims.clear();
 	this->entityMeshDef.freeBuffers(renderer);
+	this->entityPaletteTextureRefs.clear();
 	this->voxelDrawCallsCache.clear();
 	this->entityDrawCallsCache.clear();
 	this->totalDrawCallsCache.clear();
@@ -828,18 +853,28 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 			return loadedAnim.defID == entityDefID;
 		});
 
-		if (animIter != this->entityAnims.end())
+		if (animIter == this->entityAnims.end())
 		{
-			continue;
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID, entityDefLibrary);
+			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+			Buffer<ScopedObjectTextureRef> textureRefs = sgTexture::MakeEntityAnimationTextures(animDef, textureManager, renderer);
+
+			LoadedEntityAnimation loadedEntityAnim;
+			loadedEntityAnim.init(entityDefID, std::move(textureRefs));
+			this->entityAnims.emplace_back(std::move(loadedEntityAnim));
 		}
 
-		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID, entityDefLibrary);
-		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-		Buffer<ScopedObjectTextureRef> textureRefs = sgTexture::MakeEntityAnimationTextures(animDef, textureManager, renderer);
-
-		LoadedEntityAnimation loadedEntityAnim;
-		loadedEntityAnim.init(entityDefID, std::move(textureRefs));
-		this->entityAnims.emplace_back(std::move(loadedEntityAnim));
+		if (entityInst.isCitizen())
+		{
+			const EntityPaletteInstanceID paletteInstID = entityInst.paletteInstID;
+			const auto paletteIter = this->entityPaletteTextureRefs.find(paletteInstID);
+			if (paletteIter == this->entityPaletteTextureRefs.end())
+			{
+				const Palette &palette = entityChunkManager.getEntityPalette(paletteInstID);
+				ScopedObjectTextureRef paletteTextureRef = sgTexture::MakeEntityPaletteTextureRef(palette, renderer);
+				this->entityPaletteTextureRefs.emplace(paletteInstID, std::move(paletteTextureRef));
+			}
+		}
 	}
 }
 
@@ -1419,6 +1454,7 @@ void RenderChunkManager::unloadScene(Renderer &renderer)
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
 	this->entityAnims.clear();
+	this->entityPaletteTextureRefs.clear();
 
 	// Free vertex/attribute/index buffer IDs.
 	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
