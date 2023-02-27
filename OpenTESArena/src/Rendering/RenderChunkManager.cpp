@@ -881,8 +881,8 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 	const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 	IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-	TextureSamplingType textureSamplingType, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
-	double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
+	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, VertexShaderType vertexShaderType,
+	PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
 	drawCall.position = position;
@@ -895,7 +895,8 @@ void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3
 	drawCall.indexBufferID = indexBufferID;
 	drawCall.textureIDs[0] = textureID0;
 	drawCall.textureIDs[1] = textureID1;
-	drawCall.textureSamplingType = textureSamplingType;
+	drawCall.textureSamplingType0 = textureSamplingType0;
+	drawCall.textureSamplingType1 = textureSamplingType1;
 	drawCall.vertexShaderType = vertexShaderType;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = pixelShaderParam0;
@@ -1024,7 +1025,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
-							textureSamplingType, VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);
+							textureSamplingType, textureSamplingType, VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);
 					}
 				}
 
@@ -1117,10 +1118,11 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Double3 doorPreScaleTranslation = Double3::Zero;
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle + rotationAmount);
 									const Matrix4d doorScaleMatrix = Matrix4d::identity();
+									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									constexpr double pixelShaderParam0 = 0.0;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
-										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, TextureSamplingType::Default,
+										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
 										VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
@@ -1144,10 +1146,11 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Double3 doorPreScaleTranslation = Double3::Zero;
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle);
 									const Matrix4d doorScaleMatrix = Matrix4d::scale(1.0, 1.0, scaleAmount);
+									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									const double pixelShaderParam0 = uMin;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
-										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, TextureSamplingType::Default,
+										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
 										VertexShaderType::SlidingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, pixelShaderParam0,
 										renderChunk.doorDrawCalls);
 								}
@@ -1173,10 +1176,11 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Double3 doorPreScaleTranslation = Double3(1.0, preScaleTranslationY, 1.0);
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle);
 									const Matrix4d doorScaleMatrix = Matrix4d::scale(1.0, scaleAmount, 1.0);
+									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									const double pixelShaderParam0 = vMin;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
-										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, TextureSamplingType::Default,
+										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
 										VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, pixelShaderParam0,
 										renderChunk.doorDrawCalls);
 								}
@@ -1196,11 +1200,12 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							const Double3 preScaleTranslation = Double3::Zero;
 							const Matrix4d rotationMatrix = Matrix4d::identity();
 							const Matrix4d scaleMatrix = Matrix4d::identity();
+							const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 							constexpr double pixelShaderParam0 = 0.0;
 							this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID,
-								textureID, std::nullopt, TextureSamplingType::Default, VertexShaderType::Voxel, PixelShaderType::AlphaTested,
-								pixelShaderParam0, renderChunk.staticDrawCalls);
+								textureID, std::nullopt, textureSamplingType, textureSamplingType, VertexShaderType::Voxel,
+								PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.staticDrawCalls);
 						}
 					}
 				}
@@ -1225,7 +1230,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						constexpr double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
-							textureSamplingType, VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
+							textureSamplingType, textureSamplingType, VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
 							pixelShaderParam0, renderChunk.chasmDrawCalls);
 					}
 				}
@@ -1272,7 +1277,7 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 }
 
 void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
-	ObjectTextureID textureID0, double width, double height, PixelShaderType pixelShaderType, double pixelShaderParam0,
+	ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, PixelShaderType pixelShaderType,
 	std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
@@ -1285,11 +1290,12 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 	drawCall.texCoordBufferID = this->entityMeshDef.texCoordBufferID;
 	drawCall.indexBufferID = this->entityMeshDef.indexBufferID;
 	drawCall.textureIDs[0] = textureID0;
-	drawCall.textureIDs[1] = std::nullopt;
-	drawCall.textureSamplingType = TextureSamplingType::Default;
+	drawCall.textureIDs[1] = textureID1;
+	drawCall.textureSamplingType0 = TextureSamplingType::Default;
+	drawCall.textureSamplingType1 = TextureSamplingType::Default;
 	drawCall.vertexShaderType = VertexShaderType::Entity;
 	drawCall.pixelShaderType = pixelShaderType;
-	drawCall.pixelShaderParam0 = pixelShaderParam0;
+	drawCall.pixelShaderParam0 = 0.0;
 
 	drawCalls.emplace_back(std::move(drawCall));
 }
@@ -1319,14 +1325,22 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 
 		// Convert entity XYZ to world space.
 		const Double3 worldPos = VoxelUtils::coordToWorldPoint(visState.flatPosition);
-
 		const Matrix4d scaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
-		const ObjectTextureID textureID = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager, entityDefLibrary);
-		const double width = 1.0; // @todo: get from entity def? EntityUtils?
-		const double height = 1.0;
-		const double pixelShaderParam0 = 0.0;
-		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID, width, height, PixelShaderType::AlphaTested,
-			pixelShaderParam0, renderChunk.entityDrawCalls);
+
+		const ObjectTextureID textureID0 = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager, entityDefLibrary);
+		std::optional<ObjectTextureID> textureID1 = std::nullopt;
+		PixelShaderType pixelShaderType = PixelShaderType::AlphaTested;
+
+		if (entityInst.isCitizen())
+		{
+			const EntityPaletteInstanceID paletteInstID = entityInst.paletteInstID;
+			const auto paletteIter = this->entityPaletteTextureRefs.find(paletteInstID);
+			DebugAssertMsg(paletteIter != this->entityPaletteTextureRefs.end(), "Expected entity palette texture for ID " + std::to_string(paletteInstID) + ".");
+			textureID1 = paletteIter->second.get();
+			pixelShaderType = PixelShaderType::AlphaTestedWithPalette;
+		}
+
+		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID0, textureID1, pixelShaderType, renderChunk.entityDrawCalls);
 	}
 }
 

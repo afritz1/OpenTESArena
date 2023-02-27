@@ -18,7 +18,8 @@ enum class PixelShaderType
 	OpaqueWithFade,
 	AlphaTested,
 	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
-	AlphaTestedWithVariableTexCoordVMin // Raising doors.
+	AlphaTestedWithVariableTexCoordVMin, // Raising doors.
+	AlphaTestedWithPalette // Citizens.
 };
 
 enum class TextureSamplingType

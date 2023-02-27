@@ -6,7 +6,8 @@ RenderDrawCall::RenderDrawCall()
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
-	this->textureSamplingType = static_cast<TextureSamplingType>(-1);
+	this->textureSamplingType0 = static_cast<TextureSamplingType>(-1);
+	this->textureSamplingType1 = static_cast<TextureSamplingType>(-1);
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
 	this->pixelShaderParam0 = 0.0;
@@ -27,7 +28,8 @@ void RenderDrawCall::clear()
 		textureID = std::nullopt;
 	}
 
-	this->textureSamplingType = static_cast<TextureSamplingType>(-1);
+	this->textureSamplingType0 = static_cast<TextureSamplingType>(-1);
+	this->textureSamplingType1 = static_cast<TextureSamplingType>(-1);
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
 	this->pixelShaderParam0 = 0.0;

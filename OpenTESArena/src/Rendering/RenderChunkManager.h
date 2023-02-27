@@ -124,8 +124,8 @@ private:
 	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-		TextureSamplingType textureSamplingType, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
-		double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
+		TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, VertexShaderType vertexShaderType,
+		PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
 	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 
@@ -136,7 +136,7 @@ private:
 	void rebuildVoxelDrawCallsList();
 
 	void addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
-		ObjectTextureID textureID0, double width, double height, PixelShaderType pixelShaderType, double pixelShaderParam0,
+		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, PixelShaderType pixelShaderType,
 		std::vector<RenderDrawCall> &drawCalls);
 	void rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk, const CoordDouble2 &cameraCoordXZ,
 		const Matrix4d &rotationMatrix, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
