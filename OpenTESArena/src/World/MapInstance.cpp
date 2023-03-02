@@ -172,10 +172,10 @@ void MapInstance::setActiveLevelIndex(int levelIndex, const MapDefinition &mapDe
 	this->activeSkyIndex = mapDefinition.getSkyIndexForLevel(levelIndex);
 }
 
-void MapInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord, const MapDefinition &mapDefinition,
-	double latitude, double daytimePercent, const EntityGeneration::EntityGenInfo &entityGenInfo,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager)
+void MapInstance::update(double dt, Game &game, const MapDefinition &mapDefinition, double latitude, double daytimePercent,
+	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, AudioManager &audioManager)
 {
 	LevelInstance &levelInst = this->getActiveLevel();
 	const ChunkManager &chunkManager = game.getChunkManager();
@@ -184,9 +184,8 @@ void MapInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord,
 	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 	RenderChunkManager &renderChunkManager = game.getRenderChunkManager();
 	const GameState &gameState = game.getGameState();
-	const VoxelDouble2 &playerDirXZ = game.getPlayer().getGroundDirection();
 	const double chasmAnimPercent = gameState.getChasmAnimPercent();
-	levelInst.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, playerCoord, playerDirXZ,
+	levelInst.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, game.getPlayer(),
 		this->activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo, chasmAnimPercent, game.getRandom(),
 		entityDefLibrary, binaryAssetLibrary, renderChunkManager, textureManager, audioManager, game.getRenderer());
 

@@ -19,6 +19,7 @@ class BinaryAssetLibrary;
 class EntityDefinitionLibrary;
 class LevelInfoDefinition;
 class MapDefinition;
+class Player;
 class Renderer;
 class TextureManager;
 class VoxelChunk;
@@ -71,6 +72,10 @@ private:
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
 
+	void updateCitizenStates(double dt, EntityChunk &entityChunk, const CoordDouble2 &playerCoordXZ, bool isPlayerMoving,
+		bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager,
+		const EntityDefinitionLibrary &entityDefLibrary);
+
 	std::string getCreatureSoundFilename(const EntityDefID defID, const EntityDefinitionLibrary &entityDefLibrary) const;
 	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,
 		double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, AudioManager &audioManager);
@@ -97,7 +102,7 @@ public:
 
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
-		const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const Player &player, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer);

@@ -45,10 +45,10 @@ public:
 
 	void setActiveLevelIndex(int levelIndex, const MapDefinition &mapDefinition);
 
-	void update(double dt, Game &game, const CoordDouble3 &playerCoord, const MapDefinition &mapDefinition,
-		double latitude, double daytimePercent, const EntityGeneration::EntityGenInfo &entityGenInfo,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager);
+	void update(double dt, Game &game, const MapDefinition &mapDefinition, double latitude, double daytimePercent,
+		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, AudioManager &audioManager);
 
 	void cleanUp();
 };

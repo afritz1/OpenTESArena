@@ -3,6 +3,7 @@
 #include "EntityDefinitionLibrary.h"
 #include "EntityType.h"
 #include "EntityVisibilityState.h"
+#include "Player.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
@@ -10,6 +11,7 @@
 #include "../Audio/AudioManager.h"
 #include "../Game/CardinalDirection.h"
 #include "../Math/Constants.h"
+#include "../Math/RandomUtils.h"
 #include "../Math/Random.h"
 #include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
@@ -27,7 +29,7 @@ namespace
 	{
 		const int keyframeCount = animDef.keyframeCount;
 		Buffer<ScopedObjectTextureRef> animTextureRefs(keyframeCount);
-		
+
 		for (int i = 0; i < keyframeCount; i++)
 		{
 			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[i];
@@ -396,6 +398,165 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	}
 }
 
+void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk, const CoordDouble2 &playerCoordXZ,
+	bool isPlayerMoving, bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager,
+	const EntityDefinitionLibrary &entityDefLibrary)
+{
+	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		if (!entityInst.isCitizen())
+		{
+			continue;
+		}
+
+		CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
+		const VoxelDouble2 dirToPlayer = playerCoordXZ - entityCoord;
+		const double distToPlayerSqr = dirToPlayer.lengthSquared();
+
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID, entityDefLibrary);
+		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+
+		const std::optional<int> idleStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+		if (!idleStateIndex.has_value())
+		{
+			DebugCrash("Couldn't get citizen idle state index.");
+		}
+
+		const std::optional<int> walkStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+		if (!walkStateIndex.has_value())
+		{
+			DebugCrash("Couldn't get citizen walk state index.");
+		}
+
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
+		VoxelDouble2 entityVelocity;
+		if (animInst.currentStateIndex == idleStateIndex)
+		{
+			entityVelocity = VoxelDouble2::Zero;
+			const bool shouldChangeToWalking = !isPlayerWeaponSheathed || (distToPlayerSqr > CitizenUtils::IDLE_DISTANCE_SQR) || isPlayerMoving;
+
+			// @todo: need to preserve their previous direction so they stay aligned with
+			// the center of the voxel. Basically need to store cardinal direction as internal state.
+			if (shouldChangeToWalking)
+			{
+				animInst.setStateIndex(*walkStateIndex);
+				const int citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
+
+				entityDir = CitizenUtils::getCitizenDirectionByIndex(citizenDirectionIndex);
+				entityVelocity = entityDir * CitizenUtils::SPEED;
+			}
+			else
+			{
+				// Face towards player.
+				// @todo: cache the previous entity dir here so it can be popped when we return to walking. Could maybe have an EntityCitizenDirectionPool that stores ints.
+				entityDir = dirToPlayer;
+			}
+		}
+		else if (animInst.currentStateIndex == walkStateIndex)
+		{
+			entityVelocity = entityDir * CitizenUtils::SPEED;
+
+			const bool shouldChangeToIdle = isPlayerWeaponSheathed && (distToPlayerSqr <= CitizenUtils::IDLE_DISTANCE_SQR) && !isPlayerMoving;
+			if (shouldChangeToIdle)
+			{
+				animInst.setStateIndex(*idleStateIndex);
+				entityVelocity = WorldDouble2::Zero;
+			}
+		}
+
+		// Update citizen position and change facing if about to hit something.
+		const int curAnimStateIndex = animInst.currentStateIndex;
+		if (curAnimStateIndex == *walkStateIndex)
+		{
+			// Integrate by delta time.
+			entityCoord = entityCoord + (entityVelocity * dt);
+
+			auto getVoxelAtDistance = [&entityCoord](const VoxelDouble2 &checkDist) -> CoordInt2
+			{
+				const CoordDouble2 pos = entityCoord + checkDist;
+				return CoordInt2(pos.chunk, VoxelUtils::pointToVoxel(pos.point));
+			};
+
+			const CoordInt2 curVoxel(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point));
+			const CoordInt2 nextVoxel = getVoxelAtDistance(entityDir * 0.50);
+
+			if (nextVoxel != curVoxel)
+			{
+				auto isSuitableVoxel = [&voxelChunkManager](const CoordInt2 &coord)
+				{
+					const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
+
+					auto isValidVoxel = [voxelChunk]()
+					{
+						return voxelChunk != nullptr;
+					};
+
+					auto isPassableVoxel = [&coord, voxelChunk]()
+					{
+						const VoxelInt3 voxel(coord.voxel.x, 1, coord.voxel.y);
+						const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
+						const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk->getTraitsDef(voxelTraitsDefID);
+						return voxelTraitsDef.type == ArenaTypes::VoxelType::None;
+					};
+
+					auto isWalkableVoxel = [&coord, voxelChunk]()
+					{
+						const VoxelInt3 voxel(coord.voxel.x, 0, coord.voxel.y);
+						const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
+						const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk->getTraitsDef(voxelTraitsDefID);
+						return voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
+					};
+
+					return isValidVoxel() && isPassableVoxel() && isWalkableVoxel();
+				};
+
+				if (!isSuitableVoxel(nextVoxel))
+				{
+					// Need to change walking direction. Determine another safe route, or if
+					// none exist, then stop walking.
+					const CardinalDirectionName curDirectionName = CardinalDirection::getDirectionName(entityDir);
+
+					// Shuffle citizen direction indices so they don't all switch to the same
+					// direction every time.
+					std::array<int, 4> randomDirectionIndices = { 0, 1, 2, 3 };
+					RandomUtils::shuffle(randomDirectionIndices.data(), static_cast<int>(randomDirectionIndices.size()), random);
+
+					const auto iter = std::find_if(randomDirectionIndices.begin(), randomDirectionIndices.end(),
+						[&getVoxelAtDistance, &isSuitableVoxel, curDirectionName](int dirIndex)
+					{
+						// See if this is a valid direction to go in.
+						const CardinalDirectionName cardinalDirectionName =
+						CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
+						if (cardinalDirectionName != curDirectionName)
+						{
+							const WorldDouble2 &direction = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
+							const CoordInt2 voxel = getVoxelAtDistance(direction * 0.50);
+							if (isSuitableVoxel(voxel))
+							{
+								return true;
+							}
+						}
+
+						return false;
+					});
+
+					if (iter != randomDirectionIndices.end())
+					{
+						const WorldDouble2 &newDirection = CitizenUtils::getCitizenDirectionByIndex(*iter);
+						entityDir = newDirection;
+					}
+					else
+					{
+						// Couldn't find any valid direction.
+					}
+				}
+			}
+		}
+	}
+}
+
 std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID, const EntityDefinitionLibrary &entityDefLibrary) const
 {
 	const EntityDefinition &entityDef = this->getEntityDef(defID, entityDefLibrary);
@@ -521,7 +682,7 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID, entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-	
+
 	const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
 	const bool isDynamic = entityInst.isDynamic();
 
@@ -687,7 +848,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 
 void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
-	const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	const Player &player, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer)
@@ -716,6 +877,11 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
 
+	const CoordDouble3 &playerCoord = player.getPosition();
+	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
+	const bool isPlayerMoving = player.getVelocity().lengthSquared() >= Constants::Epsilon;
+	const bool isPlayerWeaponSheathed = player.getWeaponAnimation().isSheathed();
+
 	for (int i = 0; i < activeChunkPositions.getCount(); i++)
 	{
 		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
@@ -724,6 +890,8 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 		// @todo: simulate/animate AI
+		this->updateCitizenStates(dt, entityChunk, playerCoordXZ, isPlayerMoving, isPlayerWeaponSheathed, random,
+			voxelChunkManager, entityDefLibrary);
 
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
@@ -733,7 +901,5 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		}
 
 		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, entityDefLibrary, audioManager);
-
-		// @todo: citizen spawning and management by player distance
 	}
 }

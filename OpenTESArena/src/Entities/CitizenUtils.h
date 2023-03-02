@@ -28,6 +28,7 @@ namespace CitizenUtils
 
 	// How far away a citizen will consider idling around the player.
 	constexpr double IDLE_DISTANCE = 1.25;
+	constexpr double IDLE_DISTANCE_SQR = IDLE_DISTANCE * IDLE_DISTANCE;
 
 	// Walking speed of citizens.
 	constexpr double SPEED = 2.25;

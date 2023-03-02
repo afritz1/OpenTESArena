@@ -169,21 +169,23 @@ bool LevelInstance::trySetActive(RenderChunkManager &renderChunkManager, Texture
 
 void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
-	const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirXZ, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double chasmAnimPercent, Random &random,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	RenderChunkManager &renderChunkManager, TextureManager &textureManager, AudioManager &audioManager, Renderer &renderer)
+	const Player &player, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	double chasmAnimPercent, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
+	AudioManager &audioManager, Renderer &renderer)
 {
+	const CoordDouble3 &playerCoord = player.getPosition();
+	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
+	const VoxelDouble2 playerDirXZ = player.getGroundDirection();
+
 	// Simulate game world.
 	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
 		mapDefinition, this->ceilingScale, audioManager);
-	this->entityChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, playerCoord,
+	this->entityChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, player,
 		activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo, this->ceilingScale, random, this->voxelChunkManager,
 		entityDefLibrary, binaryAssetLibrary, audioManager, textureManager, renderer);
 	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
-	
-	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 
 	// Update rendering.
 	renderChunkManager.updateActiveChunks(activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager, renderer);

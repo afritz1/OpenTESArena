@@ -1127,7 +1127,6 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 		// This mapInst.update() below is required in case we didn't do a GameWorldPanel::tick() this frame
 		// (i.e. if we did a fast travel tick onAnimationFinished() kind of thing instead).
 		// @todo: consider revising the Game loop more so this is handled more as a primary concern of the engine.
-		const CoordDouble3 newPlayerCoord = player.getPosition();
 
 		MapInstance &mapInst = this->getActiveMapInst();
 		const double latitude = [this]()
@@ -1150,8 +1149,8 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 		const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
 			mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
 
-		mapInst.update(dt, game, newPlayerCoord, activeMapDef, latitude, this->getDaytimePercent(), entityGenInfo,
-			citizenGenInfo, entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
+		mapInst.update(dt, game, activeMapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
+			entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
 	}
 }
 
@@ -1257,7 +1256,7 @@ void GameState::tick(double dt, Game &game)
 	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
 		mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
 
-	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
+	mapInst.update(dt, game, mapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
 		entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
