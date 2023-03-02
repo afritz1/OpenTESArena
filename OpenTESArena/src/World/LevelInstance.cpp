@@ -109,16 +109,6 @@ const CollisionChunkManager &LevelInstance::getCollisionChunkManager() const
 	return this->collisionChunkManager;
 }
 
-EntityManager &LevelInstance::getEntityManager()
-{
-	return this->entityManager;
-}
-
-const EntityManager &LevelInstance::getEntityManager() const
-{
-	return this->entityManager;
-}
-
 EntityChunkManager &LevelInstance::getEntityChunkManager()
 {
 	return this->entityChunkManager;

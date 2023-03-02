@@ -11,6 +11,7 @@
 // entities, and sky for every level instance in the map.
 
 class AudioManager;
+class Game;
 class MapDefinition;
 class TextureManager;
 

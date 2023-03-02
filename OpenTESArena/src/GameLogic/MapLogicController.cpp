@@ -1,7 +1,6 @@
 #include "MapLogicController.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Audio/MusicUtils.h"
-#include "../Entities/EntityType.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
 #include "../Sky/SkyUtils.h"
@@ -15,11 +14,12 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 	GameState &gameState = game.getGameState();
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
-	auto &entityManager = levelInst.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 
 	// Turn streetlights on or off.
-	Buffer<Entity*> entityBuffer(entityManager.getCountOfType(EntityType::Static));
+	// @todo
+	DebugLogError("Not implemented: turning streetlights on/off");
+	/*Buffer<Entity*> entityBuffer(entityManager.getCountOfType(EntityType::Static));
 	const int entityCount = entityManager.getEntitiesOfType(
 		EntityType::Static, entityBuffer.get(), entityBuffer.getCount());
 
@@ -45,7 +45,7 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 			EntityAnimationInstance &animInst = entity->getAnimInstance();
 			animInst.setStateIndex(*newStateIndex);
 		}
-	}
+	}*/
 
 	TextureManager &textureManager = game.getTextureManager();
 	const std::string paletteName = ArenaPaletteName::Default;

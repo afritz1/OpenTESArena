@@ -21,7 +21,6 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Entities/EntityDefinition.h"
 #include "../Entities/EntityDefinitionLibrary.h"
-#include "../Entities/EntityType.h"
 #include "../Math/Random.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Voxels/VoxelFacing2D.h"
@@ -183,7 +182,7 @@ namespace MapGeneration
 		TextureManager &textureManager, EntityDefinition *outDef)
 	{
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
-		const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, inf);
+		const bool isDynamicEntity = ArenaAnimUtils::isDynamicEntity(flatIndex, inf);
 		const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 
 		bool isFinalBoss;
@@ -195,7 +194,7 @@ namespace MapGeneration
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
 		EntityAnimationDefinition entityAnimDef;
-		if (entityType == EntityType::Static)
+		if (!isDynamicEntity)
 		{
 			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType,
 				rulerIsMale, inf, textureManager, &entityAnimDef))
@@ -215,7 +214,7 @@ namespace MapGeneration
 				return false;
 			}
 		}
-		else if (entityType == EntityType::Dynamic)
+		else
 		{
 			// Assume that human enemies in level data are male.
 			const std::optional<bool> isMale = true;
@@ -237,11 +236,6 @@ namespace MapGeneration
 					std::to_string(flatIndex) + "\".");
 				return false;
 			}
-		}
-		else
-		{
-			DebugCrash("Unrecognized entity type \"" +
-				std::to_string(static_cast<int>(entityType)) + "\".");
 		}
 
 		// @todo: replace isCreature/etc. with some flatIndex -> EntityDefinition::Type function.

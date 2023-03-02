@@ -20,7 +20,6 @@ class CharacterClassLibrary;
 class ExeData;
 class TextureManager;
 
-enum class EntityType;
 enum class MapType;
 
 // Helper values for working with the original animations. These may or may not be directly
@@ -89,7 +88,7 @@ namespace ArenaAnimUtils
 	bool isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex);
 
 	// Returns whether the given flat index is for a static or dynamic entity.
-	EntityType getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
+	bool isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
 
 	// The first creature's *ITEM index (rat).
 	constexpr ArenaTypes::ItemIndex FirstCreatureItemIndex = 32;

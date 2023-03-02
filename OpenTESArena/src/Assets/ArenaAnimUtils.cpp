@@ -8,7 +8,6 @@
 #include "../Assets/TextureManager.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
-#include "../Entities/EntityType.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../World/MapType.h"
 
@@ -651,23 +650,21 @@ bool ArenaAnimUtils::isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex)
 	return itemIndex >= 55 && itemIndex <= 72;
 }
 
-EntityType ArenaAnimUtils::getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex, const INFFile &inf)
+bool ArenaAnimUtils::isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFFile &inf)
 {
 	const auto &flatData = inf.getFlat(flatIndex);
-	if (flatData.itemIndex.has_value())
+	const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
+	if (!optItemIndex.has_value())
 	{
-		const ArenaTypes::ItemIndex itemIndex = flatData.itemIndex.value();
+		return false;
+	}
+	
+	const ArenaTypes::ItemIndex itemIndex = optItemIndex.value();
 
-		// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
-		// are higher.
-		bool dummy;
-		return (isCreatureIndex(itemIndex, &dummy) || isHumanEnemyIndex(itemIndex)) ?
-			EntityType::Dynamic : EntityType::Static;
-	}
-	else
-	{
-		return EntityType::Static;
-	}
+	// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
+	// are higher.
+	bool dummy;
+	return isCreatureIndex(itemIndex, &dummy) || isHumanEnemyIndex(itemIndex);
 }
 
 int ArenaAnimUtils::getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex)

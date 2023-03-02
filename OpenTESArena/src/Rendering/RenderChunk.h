@@ -13,7 +13,6 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer3D.h"
 
-class EntityManager;
 class Renderer;
 
 using RenderVoxelMeshDefID = int;

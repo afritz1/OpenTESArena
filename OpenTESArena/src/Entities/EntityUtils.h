@@ -15,12 +15,11 @@ using EntityDefID = int;
 
 class CharacterClassLibrary;
 class EntityDefinitionLibrary;
-
-enum class EntityType;
+class Random;
 
 namespace EntityUtils
 {
-	EntityType getEntityTypeFromDefType(EntityDefinition::Type defType);
+	bool isDynamicEntity(EntityDefinition::Type defType);
 
 	// Gets the display name of the entity definition type for debugging.
 	std::string defTypeToString(const EntityDefinition &entityDef);
@@ -53,6 +52,8 @@ namespace EntityUtils
 	constexpr double HearingDistance = 6.0;
 
 	bool withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale);
+
+	double nextCreatureSoundWaitTime(Random &random);
 }
 
 #endif

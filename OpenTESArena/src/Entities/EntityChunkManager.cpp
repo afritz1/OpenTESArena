@@ -1,7 +1,5 @@
-#include "DynamicEntity.h"
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
-#include "EntityType.h"
 #include "EntityVisibilityState.h"
 #include "Player.h"
 #include "../Assets/ArenaAnimUtils.h"
@@ -125,7 +123,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const LevelDefinition::EntityDefID levelEntityDefID = placementDef.id;
 		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
 		const EntityDefinition::Type entityDefType = entityDef.getType();
-		const EntityType entityType = EntityUtils::getEntityTypeFromDefType(entityDefType);
+		const bool isDynamicEntity = EntityUtils::isDynamicEntity(entityDefType);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 		const std::string &defaultAnimStateName = EntityGeneration::getDefaultAnimationStateName(entityDef, entityGenInfo);
@@ -174,7 +172,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				double &entityBBoxExtent = this->boundingBoxes.get(bboxID);
 				entityBBoxExtent = animMaxWidth;
 
-				if (entityType == EntityType::Dynamic) // Dynamic entities have a direction.
+				if (isDynamicEntity) // Dynamic entities have a direction.
 				{
 					if (!this->directions.tryAlloc(&entityInst.directionID))
 					{
@@ -192,7 +190,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 						}
 
 						double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
-						secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
+						secondsTillCreatureSound = EntityUtils::nextCreatureSoundWaitTime(random);
 					}
 				}
 
@@ -850,7 +848,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 					const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
 					audioManager.playSound(creatureSoundFilename, absoluteSoundPosition);
 
-					secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
+					secondsTillCreatureSound = EntityUtils::nextCreatureSoundWaitTime(random);
 				}
 			}
 		}

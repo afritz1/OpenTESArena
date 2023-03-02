@@ -4,8 +4,6 @@
 #include "Physics.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
-#include "../Entities/Entity.h"
-#include "../Entities/EntityType.h"
 #include "../Entities/EntityVisibilityState.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"

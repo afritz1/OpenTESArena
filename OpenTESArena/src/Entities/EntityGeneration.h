@@ -4,13 +4,9 @@
 #include "EntityDefinition.h"
 #include "EntityUtils.h"
 
-class Entity;
-class EntityManager;
 class Random;
 
 struct EntityAnimationDefinition;
-
-enum class EntityType;
 
 namespace EntityGeneration
 {
@@ -26,10 +22,6 @@ namespace EntityGeneration
 	};
 
 	const std::string &getDefaultAnimationStateName(const EntityDefinition &entityDef, const EntityGenInfo &genInfo);
-
-	Entity *makeEntity(EntityType entityType, EntityDefinition::Type entityDefType, EntityDefID entityDefID,
-		const EntityDefinition &entityDef, const EntityAnimationDefinition &animDef,
-		const EntityGenInfo &entityGenInfo, Random &random, EntityManager &entityManager);
 }
 
 #endif

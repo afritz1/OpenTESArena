@@ -11,7 +11,6 @@
 #include "Date.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
-#include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../Interface/ProvinceMapUiModel.h"
 #include "../Math/Random.h"

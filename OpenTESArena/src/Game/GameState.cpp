@@ -12,8 +12,6 @@
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Assets/TextureManager.h"
-#include "../Entities/Entity.h"
-#include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../GameLogic/MapLogicController.h"
 #include "../GameLogic/PlayerLogicController.h"

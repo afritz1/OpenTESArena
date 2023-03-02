@@ -4,7 +4,6 @@
 
 #include "CharacterClassDefinition.h"
 #include "CharacterClassLibrary.h"
-#include "EntityType.h"
 #include "Player.h"
 #include "PrimaryAttributeName.h"
 #include "../Collision/CollisionChunk.h"

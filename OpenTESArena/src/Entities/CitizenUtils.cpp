@@ -3,8 +3,6 @@
 #include "CitizenUtils.h"
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
-#include "EntityManager.h"
-#include "EntityType.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"

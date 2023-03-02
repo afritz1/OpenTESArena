@@ -518,7 +518,6 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const auto &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const EntityManager &entityManager = levelInst.getEntityManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
 	for (int y = 0; y < windowDims.y; y += yOffset)
@@ -586,7 +585,6 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
 	const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
-	const EntityManager &entityManager = levelInst.getEntityManager();
 	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
@@ -621,7 +619,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
-			const EntityDefinition &entityDef = entityManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
 			const auto &charClassLibrary = game.getCharacterClassLibrary();
 
 			std::string entityName;

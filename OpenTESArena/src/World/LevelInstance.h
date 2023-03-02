@@ -10,7 +10,6 @@
 #include "../Entities/CitizenUtils.h"
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityGeneration.h"
-#include "../Entities/EntityManager.h"
 #include "../Voxels/VoxelChunkManager.h"
 
 #include "components/utilities/BufferView.h"
@@ -37,7 +36,6 @@ private:
 
 	VoxelChunkManager voxelChunkManager;
 	EntityChunkManager entityChunkManager;
-	EntityManager entityManager; // @todo: deprecate and remove this
 	CollisionChunkManager collisionChunkManager;
 
 	// Texture handles for the active game world palette and light table.
@@ -53,8 +51,6 @@ public:
 	const VoxelChunkManager &getVoxelChunkManager() const;
 	CollisionChunkManager &getCollisionChunkManager();
 	const CollisionChunkManager &getCollisionChunkManager() const;
-	EntityManager &getEntityManager();
-	const EntityManager &getEntityManager() const;
 	EntityChunkManager &getEntityChunkManager();
 	const EntityChunkManager &getEntityChunkManager() const;
 	ObjectTextureID getPaletteTextureID() const;

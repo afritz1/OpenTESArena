@@ -10,7 +10,6 @@
 #include "RendererSystem3D.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
-#include "../Entities/EntityManager.h"
 #include "../Entities/EntityVisibilityState.h"
 #include "../Math/Constants.h"
 #include "../Math/Matrix4.h"

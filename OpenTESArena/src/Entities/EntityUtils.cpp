@@ -4,14 +4,14 @@
 #include "CharacterClassLibrary.h"
 #include "EntityDefinition.h"
 #include "EntityDefinitionLibrary.h"
-#include "EntityType.h"
 #include "EntityUtils.h"
+#include "../Math/Random.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../World/ChunkUtils.h"
 
 #include "components/debug/Debug.h"
 
-EntityType EntityUtils::getEntityTypeFromDefType(EntityDefinition::Type defType)
+bool EntityUtils::isDynamicEntity(EntityDefinition::Type defType)
 {
 	switch (defType)
 	{
@@ -20,13 +20,13 @@ EntityType EntityUtils::getEntityTypeFromDefType(EntityDefinition::Type defType)
 	case EntityDefinition::Type::Container:
 	case EntityDefinition::Type::Transition:
 	case EntityDefinition::Type::Doodad:
-		return EntityType::Static;
+		return false;
 	case EntityDefinition::Type::Enemy:
 	case EntityDefinition::Type::Citizen:
 	case EntityDefinition::Type::Projectile:
-		return EntityType::Dynamic;
+		return true;
 	default:
-		DebugUnhandledReturnMsg(EntityType, std::to_string(static_cast<int>(defType)));
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(defType)));
 	}
 }
 
@@ -213,4 +213,10 @@ bool EntityUtils::withinHearingDistance(const CoordDouble3 &listenerCoord, const
 	const VoxelDouble3 diff = soundCoord3D - listenerCoord;
 	constexpr double hearingDistanceSqr = EntityUtils::HearingDistance * EntityUtils::HearingDistance;
 	return diff.lengthSquared() < hearingDistanceSqr;
+}
+
+double EntityUtils::nextCreatureSoundWaitTime(Random &random)
+{
+	// Arbitrary amount of time.
+	return 2.75 + (random.nextReal() * 4.50);
 }

@@ -547,7 +547,6 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
 	VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
-	const EntityManager &entityManager = levelInst.getEntityManager();
 	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
@@ -684,7 +683,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 				// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 				const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
-				const EntityDefinition &entityDef = entityManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
+				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
 				const auto &charClassLibrary = game.getCharacterClassLibrary();
 
 				std::string entityName;
