@@ -16,6 +16,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelChunkManager.h"
+#include "../World/ChunkUtils.h"
 #include "../World/LevelDefinition.h"
 #include "../World/LevelInfoDefinition.h"
 #include "../World/MapDefinition.h"
@@ -402,8 +403,9 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 	bool isPlayerMoving, bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager,
 	const EntityDefinitionLibrary &entityDefLibrary)
 {
-	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
 	{
+		const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		if (!entityInst.isCitizen())
 		{
@@ -411,6 +413,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		}
 
 		CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
+		const ChunkInt2 prevEntityChunkPos = entityCoord.chunk;
 		const VoxelDouble2 dirToPlayer = playerCoordXZ - entityCoord;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
@@ -471,7 +474,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		if (curAnimStateIndex == *walkStateIndex)
 		{
 			// Integrate by delta time.
-			entityCoord = entityCoord + (entityVelocity * dt);
+			entityCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point + (entityVelocity * dt));
 
 			auto getVoxelAtDistance = [&entityCoord](const VoxelDouble2 &checkDist) -> CoordInt2
 			{
@@ -527,8 +530,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 						[&getVoxelAtDistance, &isSuitableVoxel, curDirectionName](int dirIndex)
 					{
 						// See if this is a valid direction to go in.
-						const CardinalDirectionName cardinalDirectionName =
-						CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
+						const CardinalDirectionName cardinalDirectionName = CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
 						if (cardinalDirectionName != curDirectionName)
 						{
 							const WorldDouble2 &direction = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
@@ -549,10 +551,19 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					}
 					else
 					{
-						// Couldn't find any valid direction.
+						// Couldn't find any valid direction. The citizen is probably stuck somewhere.
 					}
 				}
 			}
+		}
+
+		// Transfer ownership of the entity ID to a new chunk if needed.
+		const ChunkInt2 curEntityChunkPos = entityCoord.chunk;
+		if (curEntityChunkPos != prevEntityChunkPos)
+		{
+			EntityChunk &curEntityChunk = this->getChunkAtPosition(curEntityChunkPos);
+			entityChunk.entityIDs.erase(entityChunk.entityIDs.begin() + i);
+			curEntityChunk.entityIDs.emplace_back(entityInstID);
 		}
 	}
 }
