@@ -7,9 +7,6 @@
 #include "EntityDefinition.h"
 #include "../World/Coord.h"
 
-// Entity instance handle.
-using EntityID = int;
-
 // Entity definition handle.
 using EntityDefID = int;
 
