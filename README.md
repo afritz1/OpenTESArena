@@ -1,13 +1,14 @@
 # OpenTESArena
 
 [![GitHub release](https://img.shields.io/github/release/afritz1/OpenTESArena/all.svg)](https://github.com/afritz1/OpenTESArena/releases/latest)
+[![Build Status](https://github.com/afritz1/OpenTESArena/actions/workflows/cmake.yml/badge.svg?branch=main)](https://github.com/afritz1/OpenTESArena/actions)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt) 
 [![Discord](https://img.shields.io/discord/395739926831824908.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/DgHe2jG)
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCJpmkgtHRIxR7aOpi909GKw)](https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw)
 
 This open-source project aims to be a modern engine re-implementation for the 1994 video game [*The Elder Scrolls: Arena*](https://en.wikipedia.org/wiki/The_Elder_Scrolls:_Arena) by Bethesda Softworks. It is written in C++17 and uses SDL2, WildMIDI for music, and OpenAL Soft for sound and mixing. There is support for Windows, Linux, and macOS.
 
-## Current status [![Build Status](https://travis-ci.com/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.com/afritz1/OpenTESArena)
+## Current status
 
 No actual gameplay yet, but all locations and interiors can be accessed for testing. Citizens wander around cities and the wilderness but cannot be interacted with. Fast traveling works and you can go to any city or dungeon on the world map. Collision detection is barebones (just enough for playtesting) and needs work. Character creation works but character questions and player attributes are not implemented. Some of the in-game interface icons work; for example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
