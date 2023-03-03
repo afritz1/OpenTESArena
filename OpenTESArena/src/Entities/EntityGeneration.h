@@ -4,12 +4,9 @@
 #include "EntityDefinition.h"
 #include "EntityUtils.h"
 
-class Entity;
-class EntityAnimationDefinition;
-class EntityManager;
 class Random;
 
-enum class EntityType;
+struct EntityAnimationDefinition;
 
 namespace EntityGeneration
 {
@@ -24,9 +21,7 @@ namespace EntityGeneration
 		void init(bool nightLightsAreActive);
 	};
 
-	Entity *makeEntity(EntityType entityType, EntityDefinition::Type entityDefType, EntityDefID entityDefID,
-		const EntityDefinition &entityDef, const EntityAnimationDefinition &animDef,
-		const EntityGenInfo &entityGenInfo, Random &random, EntityManager &entityManager);
+	const std::string &getDefaultAnimationStateName(const EntityDefinition &entityDef, const EntityGenInfo &genInfo);
 }
 
 #endif

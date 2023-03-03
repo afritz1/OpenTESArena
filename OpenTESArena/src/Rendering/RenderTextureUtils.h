@@ -1,57 +1,57 @@
 #ifndef RENDER_TEXTURE_UTILS_H
 #define RENDER_TEXTURE_UTILS_H
 
-#include "../Math/Vector2.h"
+#include <cstdint>
 
 // Common texture handles allocated by a renderer for a user when they want a new texture in the
 // internal renderer format.
 
-using VoxelTextureID = int; // Only for voxels, must be power-of-2 for mipmaps.
-using EntityTextureID = int; // One per frame of entity animations, any dimensions.
-using SkyTextureID = int; // Similar to entity textures but for mountains/clouds/stars/etc.
-using UiTextureID = int; // Used with all UI textures.
+using ObjectTextureID = int; // For all scene geometry (voxels/entities/sky/particles).
+using UiTextureID = int; // For all UI textures.
 
 class Renderer;
 
-// Convenience classes for creating and automatically destroying a texture.
-// @temp: commented out until the renderers are working with texture builders and texture IDs instead of
-// TextureAssetReferences for texture handle creation/destruction.
-/*class ScopedVoxelTextureRef
+struct LockedTexture
 {
-private:
-	VoxelTextureID id;
-	RendererSystem3D *rendererSystem;
-public:
-	ScopedVoxelTextureRef(VoxelTextureID id, RendererSystem3D &rendererSystem);
-	~ScopedVoxelTextureRef();
+	void *texels;
+	int bytesPerTexel;
 
-	VoxelTextureID get() const;
+	LockedTexture(void *texels, int bytesPerTexel);
+
+	bool isValid();
 };
 
-class ScopedEntityTextureRef
+// Owning reference to an object texture ID.
+class ScopedObjectTextureRef
 {
 private:
-	EntityTextureID id;
-	RendererSystem3D *rendererSystem;
-public:
-	ScopedEntityTextureRef(EntityTextureID id, RendererSystem3D &rendererSystem);
-	~ScopedEntityTextureRef();
+	ObjectTextureID id;
+	Renderer *renderer;
+	int width, height;
 
-	EntityTextureID get() const;
+	void setDims();
+public:
+	ScopedObjectTextureRef(ObjectTextureID id, Renderer &renderer);
+	ScopedObjectTextureRef();
+	ScopedObjectTextureRef(ScopedObjectTextureRef &&other);
+	~ScopedObjectTextureRef();
+
+	ScopedObjectTextureRef &operator=(ScopedObjectTextureRef &&other);
+
+	void init(ObjectTextureID id, Renderer &renderer);
+
+	ObjectTextureID get() const;
+	int getWidth() const;
+	int getHeight() const;
+
+	// Texture updating functions.
+	LockedTexture lockTexels();
+	void unlockTexels();
+
+	void destroy();
 };
 
-class ScopedSkyTextureRef
-{
-private:
-	SkyTextureID id;
-	RendererSystem3D *rendererSystem;
-public:
-	ScopedSkyTextureRef(SkyTextureID id, RendererSystem3D &rendererSystem);
-	~ScopedSkyTextureRef();
-
-	SkyTextureID get() const;
-};*/
-
+// Owning reference to a UI texture ID.
 class ScopedUiTextureRef
 {
 private:

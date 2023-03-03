@@ -8,8 +8,8 @@
 
 #include "FontDefinition.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/Palette.h"
+#include "../Utilities/Color.h"
+#include "../Utilities/Palette.h"
 
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView.h"

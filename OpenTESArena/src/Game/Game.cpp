@@ -12,12 +12,15 @@
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/TextureManager.h"
+#include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CommonUiController.h"
 #include "../Interface/CommonUiView.h"
+#include "../Interface/GameWorldPanel.h"
+#include "../Interface/GameWorldUiModel.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorData.h"
 #include "../UI/GuiUtils.h"
@@ -32,46 +35,104 @@
 
 namespace
 {
-	// Size of scratch buffer in bytes, reset each frame.
-	constexpr int SCRATCH_BUFFER_SIZE = 65536;
+	bool TryMakeValidArenaExePath(const std::string &vfsFolderPath, std::string *outExePath, bool *outIsFloppyDiskVersion)
+	{
+		// Check for CD version first.
+		const std::string &cdExeName = ExeData::CD_VERSION_EXE_FILENAME;
+		std::string cdExePath = vfsFolderPath + cdExeName;
+		if (File::exists(cdExePath.c_str()))
+		{
+			DebugLog("CD executable \"" + cdExeName + "\" found in \"" + vfsFolderPath + "\".");
+			*outExePath = std::move(cdExePath);
+			*outIsFloppyDiskVersion = false;
+			return true;
+		}
+
+		const std::string &floppyDiskExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
+		std::string floppyDiskExePath = vfsFolderPath + floppyDiskExeName;
+		if (File::exists(floppyDiskExePath.c_str()))
+		{
+			DebugLog("Floppy disk executable \"" + floppyDiskExeName + "\" found in \"" + vfsFolderPath + "\".");
+			*outExePath = std::move(floppyDiskExePath);
+			*outIsFloppyDiskVersion = true;
+			return true;
+		}
+
+		// No valid Arena .exe found.
+		return false;
+	}
 }
 
 Game::Game()
 {
+	// Keeps us from deleting a sub-panel the same frame it's in use. The pop is delayed until the
+	// beginning of the next frame.
+	this->requestedSubPanelPop = false;
+
+	this->shouldSimulateScene = false;
+	this->running = true;
+}
+
+Game::~Game()
+{
+	if (this->applicationExitListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->applicationExitListenerID);
+	}
+
+	if (this->windowResizedListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->windowResizedListenerID);
+	}
+
+	if (this->takeScreenshotListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->takeScreenshotListenerID);
+	}
+
+	if (this->debugProfilerListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->debugProfilerListenerID);
+	}
+
+	this->renderChunkManager.shutdown(this->renderer);
+}
+
+bool Game::init()
+{
 	DebugLog("Initializing (Platform: " + Platform::getPlatform() + ").");
 
-	// Get the current working directory. This is most relevant for platforms
-	// like macOS, where the base path might be in the app's own "Resources" folder.
-	this->basePath = Platform::getBasePath();
+	// Current working directory (in most cases). This is most relevant for platforms like macOS, where
+	// the base path might be in the app's own "Resources" folder.
+	const std::string basePath = Platform::getBasePath();
+	const std::string dataFolderPath = basePath + "data/";
 
-	// Get the path to the options folder. This is platform-dependent and points inside 
-	// the "preferences directory" so it's always writable.
-	this->optionsPath = Platform::getOptionsPath();
-
-	// Parse options-default.txt and options-changes.txt (if it exists). Always prefer the
-	// default file before the "changes" file.
-	this->initOptions(this->basePath, this->optionsPath);
+	// Initialize options from default and changes files if present. The path is platform-dependent
+	// and points inside the "preferences directory" so it's always writable.
+	const std::string optionsPath = Platform::getOptionsPath();
+	this->initOptions(basePath, optionsPath);
 
 	// Initialize virtual file system using the Arena path in the options file.
 	const bool arenaPathIsRelative = File::pathIsRelative(this->options.getMisc_ArenaPath().c_str());
-	VFS::Manager::get().initialize(std::string(
-		(arenaPathIsRelative ? this->basePath : "") + this->options.getMisc_ArenaPath()));
+	const std::string vfsFolderPath = String::addTrailingSlashIfMissing(
+		(arenaPathIsRelative ? basePath : "") + this->options.getMisc_ArenaPath());
+	VFS::Manager::get().initialize(std::string(vfsFolderPath));
 
-	// Initialize the OpenAL Soft audio manager.
+	// Determine which game version the data path is pointing to.
+	std::string arenaExePath;
+	bool isFloppyDiskVersion;
+	if (!TryMakeValidArenaExePath(vfsFolderPath, &arenaExePath, &isFloppyDiskVersion))
+	{
+		DebugLogError("\"" + vfsFolderPath + "\" does not contain an Arena executable.");
+		return false;
+	}
+
+	// Initialize audio manager.
 	const bool midiPathIsRelative = File::pathIsRelative(this->options.getAudio_MidiConfig().c_str());
-	const std::string midiPath = (midiPathIsRelative ? this->basePath : "") +
-		this->options.getAudio_MidiConfig();
-
+	const std::string midiFilePath = (midiPathIsRelative ? basePath : "") + this->options.getAudio_MidiConfig();
 	this->audioManager.init(this->options.getAudio_MusicVolume(),
 		this->options.getAudio_SoundVolume(), this->options.getAudio_SoundChannels(),
-		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiPath);
-
-	// Initialize music library from file.
-	const std::string musicLibraryPath = this->basePath + "data/audio/MusicDefinitions.txt";
-	if (!this->musicLibrary.init(musicLibraryPath.c_str()))
-	{
-		DebugLogError("Couldn't init music library at \"" + musicLibraryPath + "\".");
-	}
+		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiFilePath);
 
 	// Initialize the renderer and window with the given settings.
 	auto resolutionScaleFunc = [this]()
@@ -84,11 +145,15 @@ Game::Game()
 	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
 	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
 		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()),
-		this->options.getGraphics_LetterboxMode(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D))
+		this->options.getGraphics_LetterboxMode(), this->options.getGraphics_ModernInterface(),
+		resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D, this->options.getGraphics_RenderThreadsMode()))
 	{
-		throw DebugException("Couldn't init renderer.");
+		DebugLogError("Couldn't init renderer (2D: " + std::to_string(static_cast<int>(rendererSystemType2D)) +
+			", 3D: " + std::to_string(static_cast<int>(rendererSystemType3D)) + ").");
+		return false;
 	}
 
+	this->renderChunkManager.init(this->renderer);
 	this->inputManager.init();
 
 	// Add application-level input event handlers.
@@ -119,81 +184,43 @@ Game::Game()
 	this->debugProfilerListenerID = this->inputManager.addInputActionListener(
 		InputActionName::DebugProfiler, CommonUiController::onDebugInputAction);
 
-	// Determine which version of the game the Arena path is pointing to.
-	const bool isFloppyVersion = [this, arenaPathIsRelative]()
-	{
-		// Path to the Arena folder.
-		const std::string fullArenaPath = [this, arenaPathIsRelative]()
-		{
-			// Include the base path if the ArenaPath is relative.
-			const std::string path = (arenaPathIsRelative ? this->basePath : "") +
-				this->options.getMisc_ArenaPath();
-			return String::addTrailingSlashIfMissing(path);
-		}();
-
-		// Check for the CD version first.
-		const std::string &acdExeName = ExeData::CD_VERSION_EXE_FILENAME;
-		const std::string acdExePath = fullArenaPath + acdExeName;
-		if (File::exists(acdExePath.c_str()))
-		{
-			DebugLog("CD version.");
-			return false;
-		}
-
-		// If that's not there, check for the floppy disk version.
-		const std::string &aExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
-		const std::string aExePath = fullArenaPath + aExeName;
-		if (File::exists(aExePath.c_str()))
-		{
-			DebugLog("Floppy disk version.");
-			return true;
-		}
-
-		// If neither exist, it's not a valid Arena directory.
-		throw DebugException("\"" + fullArenaPath + "\" does not have an Arena executable.");
-	}();
-
-	// Load fonts.
+	// Load various asset libraries.
 	if (!this->fontLibrary.init())
 	{
-		DebugCrash("Couldn't init font library.");
+		DebugLogError("Couldn't init font library.");
+		return false;
 	}
 
-	// Load various asset libraries.
-	if (!this->binaryAssetLibrary.init(isFloppyVersion))
+	if (!this->binaryAssetLibrary.init(isFloppyDiskVersion))
 	{
-		DebugCrash("Couldn't init binary asset library.");
+		DebugLogError("Couldn't init binary asset library.");
+		return false;
 	}
 
 	if (!this->textAssetLibrary.init())
 	{
-		DebugCrash("Couldn't init text asset library.");
+		DebugLogError("Couldn't init text asset library.");
+		return false;
 	}
 
-	// Load character classes (dependent on original game's data).
-	this->charClassLibrary.init(this->binaryAssetLibrary.getExeData());
+	const std::string audioFolderPath = dataFolderPath + "audio/";
+	const std::string musicLibraryPath = audioFolderPath + "MusicDefinitions.txt";
+	if (!this->musicLibrary.init(musicLibraryPath.c_str()))
+	{
+		DebugLogError("Couldn't init music library with path \"" + musicLibraryPath + "\".");
+		return false;
+	}
 
 	this->cinematicLibrary.init();
 
-	// Load entity definitions (dependent on original game's data).
-	this->entityDefLibrary.init(this->binaryAssetLibrary.getExeData(), this->textureManager);
+	const ExeData &exeData = this->binaryAssetLibrary.getExeData();
+	this->charClassLibrary.init(exeData);
+	this->entityDefLibrary.init(exeData, this->textureManager);
 
-	// Load and set window icon.
-	const Surface icon = [this]()
-	{
-		const std::string iconPath = this->basePath + "data/icon.bmp";
-		Surface surface = Surface::loadBMP(iconPath.c_str(), Renderer::DEFAULT_PIXELFORMAT);
-
-		// Treat black as transparent.
-		const uint32_t black = surface.mapRGBA(0, 0, 0, 255);
-		SDL_SetColorKey(surface.get(), SDL_TRUE, black);
-
-		return surface;
-	}();
-
-	// Load single-instance sounds file for the audio manager.
+	// Load single-instance sounds file for the audio manager (new feature with this engine since
+	// the one-sound-at-a-time limit no longer exists).
 	TextLinesFile singleInstanceSoundsFile;
-	const std::string singleInstanceSoundsPath = this->basePath + "data/audio/SingleInstanceSounds.txt";
+	const std::string singleInstanceSoundsPath = audioFolderPath + "SingleInstanceSounds.txt";
 	if (singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
 	{
 		for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
@@ -207,74 +234,41 @@ Game::Game()
 		DebugLogWarning("Missing single instance sounds file at \"" + singleInstanceSoundsPath + "\".");
 	}
 
-	this->renderer.setWindowIcon(icon);
+	// Initialize window icon.
+	const std::string windowIconPath = dataFolderPath + "icon.bmp";
+	const Surface windowIconSurface = Surface::loadBMP(windowIconPath.c_str(), Renderer::DEFAULT_PIXELFORMAT);
+	if (windowIconSurface.get() == nullptr)
+	{
+		DebugLogError("Couldn't load window icon with path \"" + windowIconPath + "\".");
+		return false;
+	}
 
+	const uint32_t windowIconColorKey = windowIconSurface.mapRGBA(0, 0, 0, 255);
+	SDL_SetColorKey(windowIconSurface.get(), SDL_TRUE, windowIconColorKey);
+	this->renderer.setWindowIcon(windowIconSurface);
+
+	// Initialize click regions for player movement in classic interface mode.
+	const Int2 windowDims = this->renderer.getWindowDimensions();
+	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
+
+	// Random seed.
 	this->random.init();
-	this->scratchAllocator.init(SCRATCH_BUFFER_SIZE);
 
-	// Initialize panel and music to default.
-	this->panel = IntroUiModel::makeStartupPanel(*this);
-	
-	const MusicDefinition *mainMenuMusicDef = this->musicLibrary.getRandomMusicDefinition(
-		MusicDefinition::Type::MainMenu, this->random);
-	if (mainMenuMusicDef == nullptr)
-	{
-		DebugLogWarning("Missing main menu music.");
-	}
-
-	this->audioManager.setMusic(mainMenuMusicDef);
-
-	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(this->fontLibrary);
-	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
-	{
-		DebugCrash("Couldn't init debug info text box.");
-	}
-
-	// Use a texture as the cursor instead.
+	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
 
-	// Leave some members null for now. The game state is initialized when the player 
-	// enters the game world, and the "next panel" is a temporary used by the game
+	// Leave some members null for now. The "next panel" is a temporary used by the game
 	// to avoid corruption between panel events which change the panel.
-	this->gameState = nullptr;
-	this->charCreationState = nullptr;
-	this->nextPanel = nullptr;
-	this->nextSubPanel = nullptr;
+	DebugAssert(this->charCreationState == nullptr);
+	DebugAssert(this->nextPanel == nullptr);
+	DebugAssert(this->nextSubPanel == nullptr);
 
-	// This keeps the programmer from deleting a sub-panel the same frame it's in use.
-	// The pop is delayed until the beginning of the next frame.
-	this->requestedSubPanelPop = false;
-
-	this->running = true;
-}
-
-Game::~Game()
-{
-	if (this->applicationExitListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->applicationExitListenerID);
-	}
-
-	if (this->windowResizedListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->windowResizedListenerID);
-	}
-
-	if (this->takeScreenshotListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->takeScreenshotListenerID);
-	}
-
-	if (this->debugProfilerListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->debugProfilerListenerID);
-	}
+	return true;
 }
 
 Panel *Game::getActivePanel() const
 {
-	return (this->subPanels.size() > 0) ?
-		this->subPanels.back().get() : this->panel.get();
+	return (this->subPanels.size() > 0) ? this->subPanels.back().get() : this->panel.get();
 }
 
 AudioManager &Game::getAudioManager()
@@ -312,15 +306,34 @@ const EntityDefinitionLibrary &Game::getEntityDefinitionLibrary() const
 	return this->entityDefLibrary;
 }
 
-bool Game::gameStateIsActive() const
+GameState &Game::getGameState()
 {
-	return this->gameState.get() != nullptr;
+	return this->gameState;
 }
 
-GameState &Game::getGameState() const
+Player &Game::getPlayer()
 {
-	DebugAssert(this->gameStateIsActive());
-	return *this->gameState.get();
+	return this->player;
+}
+
+const ChunkManager &Game::getChunkManager() const
+{
+	return this->chunkManager;
+}
+
+RenderChunkManager &Game::getRenderChunkManager()
+{
+	return this->renderChunkManager;
+}
+
+bool Game::isSimulatingScene() const
+{
+	return this->shouldSimulateScene;
+}
+
+void Game::setIsSimulatingScene(bool active)
+{
+	this->shouldSimulateScene = active;
 }
 
 bool Game::characterCreationIsActive() const
@@ -364,11 +377,6 @@ Random &Game::getRandom()
 	return this->random;
 }
 
-ScratchAllocator &Game::getScratchAllocator()
-{
-	return this->scratchAllocator;
-}
-
 Profiler &Game::getProfiler()
 {
 	return this->profiler;
@@ -377,6 +385,31 @@ Profiler &Game::getProfiler()
 const FPSCounter &Game::getFPSCounter() const
 {
 	return this->fpsCounter;
+}
+
+const Rect &Game::getNativeCursorRegion(int index) const
+{
+	DebugAssertIndex(this->nativeCursorRegions, index);
+	return this->nativeCursorRegions[index];
+}
+
+TextBox *Game::getTriggerTextBox()
+{
+	Panel *panel = this->getActivePanel();
+	if (panel == nullptr)
+	{
+		DebugLogError("No active panel for trigger text box getter.");
+		return nullptr;
+	}
+
+	GameWorldPanel *gameWorldPanel = dynamic_cast<GameWorldPanel*>(panel);
+	if (gameWorldPanel == nullptr)
+	{
+		DebugLogError("Active panel is not game world panel for trigger text box getter.");
+		return nullptr;
+	}
+
+	return &gameWorldPanel->getTriggerTextBox();
 }
 
 void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
@@ -395,11 +428,6 @@ void Game::popSubPanel()
 	DebugAssertMsg(this->subPanels.size() > 0, "No sub-panels to pop.");
 
 	this->requestedSubPanelPop = true;
-}
-
-void Game::setGameState(std::unique_ptr<GameState> gameState)
-{
-	this->gameState = std::move(gameState);
 }
 
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
@@ -434,12 +462,15 @@ void Game::initOptions(const std::string &basePath, const std::string &optionsPa
 	}
 }
 
-void Game::resizeWindow(int width, int height)
+void Game::resizeWindow(int windowWidth, int windowHeight)
 {
 	// Resize the window, and the 3D renderer if initialized.
 	const bool fullGameWindow = this->options.getGraphics_ModernInterface();
-	this->renderer.resize(width, height,
+	this->renderer.resize(windowWidth, windowHeight,
 		this->options.getGraphics_ResolutionScale(), fullGameWindow);
+
+	// Update where the mouse can click for player movement in the classic interface.
+	this->updateNativeCursorRegions(windowWidth, windowHeight);
 }
 
 void Game::saveScreenshot(const Surface &surface)
@@ -476,8 +507,7 @@ void Game::saveScreenshot(const Surface &surface)
 	}
 	else
 	{
-		DebugCrash("Failed to save screenshot to \"" + screenshotPath + "\": " +
-			std::string(SDL_GetError()));
+		DebugLogError("Failed to save screenshot to \"" + screenshotPath + "\": " + std::string(SDL_GetError()));
 	}
 }
 
@@ -509,19 +539,6 @@ void Game::handlePanelChanges()
 	}
 }
 
-void Game::handleInput(double dt)
-{
-	// Handle input listener callbacks and general input updating.
-	const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
-	auto onFinishedProcessingEventFunc = [this]()
-	{
-		// See if the event requested any changes in active panels.
-		this->handlePanelChanges();
-	};
-
-	this->inputManager.update(*this, dt, buttonProxies, onFinishedProcessingEventFunc);
-}
-
 void Game::handleApplicationExit()
 {
 	this->running = false;
@@ -541,29 +558,12 @@ void Game::handleWindowResized(int width, int height)
 	}
 }
 
-void Game::tick(double dt)
+void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
 {
-	// Tick the active panel.
-	this->getActivePanel()->tick(dt);
-
-	// See if the panel tick requested any changes in active panels.
-	this->handlePanelChanges();
-}
-
-void Game::updateAudio(double dt)
-{
-	if (this->gameStateIsActive())
-	{
-		const Player &player = this->getGameState().getPlayer();
-		const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
-		const NewDouble3 &direction = player.getDirection();
-		const AudioManager::ListenerData listenerData(absolutePosition, direction);
-		this->audioManager.update(dt, &listenerData);
-	}
-	else
-	{
-		this->audioManager.update(dt, nullptr);
-	}
+	// Update screen regions for classic interface player movement.
+	BufferView<Rect> nativeCursorRegionsView(
+		this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
+	GameWorldUiModel::updateNativeCursorRegions(nativeCursorRegionsView, windowWidth, windowHeight);
 }
 
 void Game::renderDebugInfo()
@@ -611,11 +611,12 @@ void Game::renderDebugInfo()
 			const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
 			const std::string renderThreadCount = std::to_string(profilerData.threadCount);
 			const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
+			const std::string renderDrawCallCount = std::to_string(profilerData.drawCallCount);
 			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
 				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
 				"3D render: " + renderTime + "ms" + "\n" +
-				"Vis flats: " + std::to_string(profilerData.visFlatCount) + " (" +
-				std::to_string(profilerData.potentiallyVisFlatCount) + ")" +
+				"Draw calls: " + renderDrawCallCount + "\n" +
+				"Vis triangles: " + std::to_string(profilerData.visTriangleCount) + " (" + std::to_string(profilerData.potentiallyVisTriangleCount) + ")" +
 				", lights: " + std::to_string(profilerData.visLightCount));
 		}
 		else
@@ -626,29 +627,21 @@ void Game::renderDebugInfo()
 
 	if (profilerLevel >= 3)
 	{
-		if (this->gameStateIsActive())
-		{
-			// Player position, direction, etc.
-			const auto &player = this->gameState->getPlayer();
-			const CoordDouble3 &playerPosition = player.getPosition();
-			const Double3 &direction = player.getDirection();
+		// Player position, direction, etc.
+		const CoordDouble3 &playerPosition = this->player.getPosition();
+		const Double3 &direction = this->player.getDirection();
 
-			const std::string chunkStr = playerPosition.chunk.toString();
-			const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
-			const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
-			const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
-			const std::string dirX = String::fixedPrecision(direction.x, 2);
-			const std::string dirY = String::fixedPrecision(direction.y, 2);
-			const std::string dirZ = String::fixedPrecision(direction.z, 2);
+		const std::string chunkStr = playerPosition.chunk.toString();
+		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
+		const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
+		const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
+		const std::string dirX = String::fixedPrecision(direction.x, 2);
+		const std::string dirY = String::fixedPrecision(direction.y, 2);
+		const std::string dirZ = String::fixedPrecision(direction.z, 2);
 
-			debugText.append("\nChunk: " + chunkStr + '\n' +
-				"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
-				"Dir: " + dirX + ", " + dirY + ", " + dirZ);
-		}
-		else
-		{
-			debugText.append("\nNo active game state.");
-		}
+		debugText.append("\nChunk: " + chunkStr + '\n' +
+			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
+			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
 	}
 
 	this->debugInfoTextBox.setText(debugText);
@@ -668,71 +661,26 @@ void Game::renderDebugInfo()
 	this->renderer.draw(&renderElement, 1, renderSpace);
 }
 
-void Game::render()
-{
-	// Get the draw calls from each UI panel/sub-panel and determine what to draw.
-	std::vector<Panel*> panelsToRender;
-	panelsToRender.emplace_back(this->panel.get());
-	for (auto &subPanel : this->subPanels)
-	{
-		panelsToRender.emplace_back(subPanel.get());
-	}
-
-	this->renderer.clear();
-
-	if (this->gameWorldRenderCallback)
-	{
-		if (!this->gameWorldRenderCallback(*this))
-		{
-			DebugLogError("Couldn't render game world.");
-		}
-	}
-
-	const Int2 windowDims = this->renderer.getWindowDimensions();
-
-	for (Panel *currentPanel : panelsToRender)
-	{
-		BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
-		for (int i = 0; i < drawCallsView.getCount(); i++)
-		{
-			const UiDrawCall &drawCall = drawCallsView.get(i);
-			if (!drawCall.isActive())
-			{
-				continue;
-			}
-
-			const std::optional<Rect> &clipRect = drawCall.getClipRect();
-			if (clipRect.has_value())
-			{
-				this->renderer.setClipRect(&clipRect->getRect());
-			}
-
-			const UiTextureID textureID = drawCall.getTextureID();
-			const Int2 position = drawCall.getPosition();
-			const Int2 size = drawCall.getSize();
-			const PivotType pivotType = drawCall.getPivotType();
-			const RenderSpace renderSpace = drawCall.getRenderSpace();
-
-			double xPercent, yPercent, wPercent, hPercent;
-			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-			const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
-			this->renderer.draw(&renderElement, 1, renderSpace);
-
-			if (clipRect.has_value())
-			{
-				this->renderer.setClipRect(nullptr);
-			}
-		}
-	}
-
-	this->renderDebugInfo();
-	this->renderer.present();
-}
-
 void Game::loop()
 {
+	// Initialize panel and music to default (bootstrapping the first game frame).
+	this->panel = IntroUiModel::makeStartupPanel(*this);
+
+	const MusicDefinition *mainMenuMusicDef = this->musicLibrary.getRandomMusicDefinition(
+		MusicDefinition::Type::MainMenu, this->random);
+	if (mainMenuMusicDef == nullptr)
+	{
+		DebugLogWarning("Missing main menu music.");
+	}
+
+	this->audioManager.setMusic(mainMenuMusicDef);
+
+	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(this->fontLibrary);
+	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
+	{
+		DebugCrash("Couldn't init debug info text box.");
+	}
+
 	// Nanoseconds per second. Only using this much precision because it's what
 	// high_resolution_clock gives back. Microseconds would be fine too.
 	constexpr int64_t timeUnits = 1000000000;
@@ -788,51 +736,173 @@ void Game::loop()
 		const double dt = static_cast<double>(frameTime.count()) / timeUnitsReal;
 		const double clampedDt = std::fmin(frameTime.count(), maxFrameTime.count()) / timeUnitsReal;
 
-		// Reset scratch allocator for use with this frame.
-		this->scratchAllocator.clear();
-
-		// Update the audio manager listener (if any) and check for finished sounds.
-		this->updateAudio(dt);
-
 		// Update FPS counter.
 		this->fpsCounter.updateFrameTime(dt);
+		
+		// Multiply delta time by the time scale. I settled on having the effects of this
+		// be application-wide rather than just in the game world since it's intended to
+		// simulate lower DOSBox cycles.
+		const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
 
-		// Listen for input events.
+		// User input.
 		try
 		{
-			this->handleInput(dt);
+			const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
+			auto onFinishedProcessingEventFunc = [this]()
+			{
+				// See if the event requested any changes in active panels.
+				this->handlePanelChanges();
+			};
+
+			this->inputManager.update(*this, dt, buttonProxies, onFinishedProcessingEventFunc);
+
+			if (this->isSimulatingScene())
+			{
+				// Handle input for player motion.
+				const BufferView<const Rect> nativeCursorRegionsView(
+					this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
+				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(
+					*this, timeScaledDt, nativeCursorRegionsView);
+				PlayerLogicController::turnPlayer(*this, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
+				PlayerLogicController::handlePlayerMovement(*this, timeScaledDt, nativeCursorRegionsView);
+			}
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("handleInput() exception: " + std::string(e.what()));
+			DebugCrash("User input exception: " + std::string(e.what()));
 		}
 
-		// Animate the current game state by delta time.
+		// Tick.
 		try
 		{
-			// Multiply delta time by the time scale. I settled on having the effects of this
-			// be application-wide rather than just in the game world since it's intended to
-			// simulate lower DOSBox cycles.
-			const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
-			this->tick(timeScaledDt);
+			// Animate the current UI panel by delta time.
+			this->getActivePanel()->tick(timeScaledDt);
+
+			// See if the panel tick requested any changes in active panels.
+			this->handlePanelChanges();
+
+			if (this->isSimulatingScene())
+			{
+				// Recalculate the active chunks.
+				const CoordDouble3 playerCoord = this->player.getPosition();
+				const int chunkDistance = this->options.getMisc_ChunkDistance();
+				this->chunkManager.update(playerCoord.chunk, chunkDistance);
+
+				// Tick game world state (voxels, entities, daytime clock, etc.).
+				this->gameState.tick(timeScaledDt, *this);
+
+				// Update audio listener and check for finished sounds.
+				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
+				const WorldDouble3 &direction = this->player.getDirection();
+				const AudioManager::ListenerData listenerData(absolutePosition, direction);
+				this->audioManager.update(dt, &listenerData);
+			}
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("tick() exception: " + std::string(e.what()));
+			DebugCrash("Tick exception: " + std::string(e.what()));
 		}
 
-		// Draw to the screen.
+		// Late tick.
+		// @todo: this should probably be "handle scene change" instead, since user input, ticking the active panel,
+		// and simulating the game state all have the potential to start a scene change.
 		try
 		{
-			this->render();
+			// Handle an edge case with the game loop during map transitions, etc.. This can happen due to the
+			// current tick() design where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this
+			// frame, causing us to miss updating the renderer.
+			this->gameState.tryUpdatePendingMapTransition(*this, timeScaledDt);
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("render() exception: " + std::string(e.what()));
+			DebugCrash("Late tick exception: " + std::string(e.what()));
+		}
+
+		// Render.
+		try
+		{
+			// Get the draw calls from each UI panel/sub-panel and determine what to draw.
+			std::vector<const Panel*> panelsToRender;
+			panelsToRender.emplace_back(this->panel.get());
+			for (const auto &subPanel : this->subPanels)
+			{
+				panelsToRender.emplace_back(subPanel.get());
+			}
+
+			this->renderer.clear();
+
+			if (this->gameWorldRenderCallback)
+			{
+				if (!this->gameWorldRenderCallback(*this))
+				{
+					DebugLogError("Couldn't render game world.");
+				}
+			}
+
+			const Int2 windowDims = this->renderer.getWindowDimensions();
+
+			for (const Panel *currentPanel : panelsToRender)
+			{
+				const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
+				for (int i = 0; i < drawCallsView.getCount(); i++)
+				{
+					const UiDrawCall &drawCall = drawCallsView.get(i);
+					if (!drawCall.isActive())
+					{
+						continue;
+					}
+
+					const std::optional<Rect> &clipRect = drawCall.getClipRect();
+					if (clipRect.has_value())
+					{
+						this->renderer.setClipRect(&clipRect->getRect());
+					}
+
+					const UiTextureID textureID = drawCall.getTextureID();
+					const Int2 position = drawCall.getPosition();
+					const Int2 size = drawCall.getSize();
+					const PivotType pivotType = drawCall.getPivotType();
+					const RenderSpace renderSpace = drawCall.getRenderSpace();
+
+					double xPercent, yPercent, wPercent, hPercent;
+					GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+						renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
+
+					const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+					this->renderer.draw(&renderElement, 1, renderSpace);
+
+					if (clipRect.has_value())
+					{
+						this->renderer.setClipRect(nullptr);
+					}
+				}
+			}
+
+			this->renderDebugInfo();
+			this->renderer.present();
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrash("Render exception: " + std::string(e.what()));
+		}
+
+		// End-of-frame clean up.
+		try
+		{
+			if (this->gameState.hasActiveMapInst())
+			{
+				MapInstance &mapInst = this->gameState.getActiveMapInst();
+				mapInst.cleanUp();
+			}
+
+			this->chunkManager.cleanUp();
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrash("Clean-up exception: " + std::string(e.what()));
 		}
 	}
 
-	// At this point, the program has received an exit signal, and is now 
-	// quitting peacefully.
+	// At this point, the engine has received an exit signal and is now quitting peacefully.
 	this->options.saveChanges();
 }

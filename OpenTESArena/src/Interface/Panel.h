@@ -6,10 +6,10 @@
 #include <string_view>
 #include <vector>
 
+#include "../Assets/TextureManager.h"
+#include "../Assets/TextureUtils.h"
 #include "../Input/InputManager.h"
 #include "../Math/Vector2.h"
-#include "../Media/TextureManager.h"
-#include "../Media/TextureUtils.h"
 #include "../UI/Button.h"
 #include "../UI/UiDrawCall.h"
 

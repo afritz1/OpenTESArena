@@ -1,8 +1,8 @@
 #include "CinematicPanel.h"
+#include "../Assets/TextureManager.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/Texture.h"
@@ -44,16 +44,16 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-	const TextureAssetReference paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
+	const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
 
 	auto &renderer = game.getRenderer();
 	this->textureRefs.init(textureFileMetadata.getTextureCount());
 	for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
 	{
-		const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(sequenceName), i);
+		const TextureAsset textureAsset = TextureAsset(std::string(sequenceName), i);
 
 		UiTextureID textureID;
-		if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+		if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 		{
 			DebugLogError("Couldn't create UI texture for sequence \"" + sequenceName + "\" frame " + std::to_string(i) + ".");
 			return false;

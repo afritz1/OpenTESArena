@@ -4,10 +4,10 @@
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
-#include "../Media/PortraitFile.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/Surface.h"
 
@@ -318,60 +318,60 @@ Int2 GameWorldUiView::getNativeWindowCenter(const Renderer &renderer)
 	return nativeCenter;
 }
 
-TextureAssetReference GameWorldUiView::getPaletteTextureAssetRef()
+TextureAsset GameWorldUiView::getPaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaPaletteName::Default));
+	return TextureAsset(std::string(ArenaPaletteName::Default));
 }
 
-TextureAssetReference GameWorldUiView::getGameWorldInterfaceTextureAssetRef()
+TextureAsset GameWorldUiView::getGameWorldInterfaceTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::GameWorldInterface));
+	return TextureAsset(std::string(ArenaTextureName::GameWorldInterface));
 }
 
-TextureAssetReference GameWorldUiView::getStatusGradientTextureAssetRef(StatusGradientType gradientType)
+TextureAsset GameWorldUiView::getStatusGradientTextureAsset(StatusGradientType gradientType)
 {
 	const int gradientID = static_cast<int>(gradientType);
-	return TextureAssetReference(std::string(ArenaTextureName::StatusGradients), gradientID);
+	return TextureAsset(std::string(ArenaTextureName::StatusGradients), gradientID);
 }
 
-TextureAssetReference GameWorldUiView::getPlayerPortraitTextureAssetRef(bool isMale, int raceID, int portraitID)
+TextureAsset GameWorldUiView::getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID)
 {
-	const std::string &headsFilename = PortraitFile::getHeads(isMale, raceID, true);
-	return TextureAssetReference(std::string(headsFilename), portraitID);
+	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, true);
+	return TextureAsset(std::string(headsFilename), portraitID);
 }
 
-TextureAssetReference GameWorldUiView::getNoMagicTextureAssetRef()
+TextureAsset GameWorldUiView::getNoMagicTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::NoSpell));
+	return TextureAsset(std::string(ArenaTextureName::NoSpell));
 }
 
-TextureAssetReference GameWorldUiView::getWeaponAnimTextureAssetRef(const std::string &weaponFilename, int index)
+TextureAsset GameWorldUiView::getWeaponAnimTextureAsset(const std::string &weaponFilename, int index)
 {
-	return TextureAssetReference(std::string(weaponFilename), index);
+	return TextureAsset(std::string(weaponFilename), index);
 }
 
-TextureAssetReference GameWorldUiView::getCompassFrameTextureAssetRef()
+TextureAsset GameWorldUiView::getCompassFrameTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::CompassFrame));
+	return TextureAsset(std::string(ArenaTextureName::CompassFrame));
 }
 
-TextureAssetReference GameWorldUiView::getCompassSliderTextureAssetRef()
+TextureAsset GameWorldUiView::getCompassSliderTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::CompassSlider));
+	return TextureAsset(std::string(ArenaTextureName::CompassSlider));
 }
 
-TextureAssetReference GameWorldUiView::getArrowCursorTextureAssetRef(int cursorIndex)
+TextureAsset GameWorldUiView::getArrowCursorTextureAsset(int cursorIndex)
 {
-	return TextureAssetReference(std::string(ArenaTextureName::ArrowCursors), cursorIndex);
+	return TextureAsset(std::string(ArenaTextureName::ArrowCursors), cursorIndex);
 }
 
 UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getGameWorldInterfaceTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for game world interface.");
 	}
@@ -382,11 +382,11 @@ UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &text
 UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradientType,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getStatusGradientTextureAssetRef(gradientType);
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getStatusGradientTextureAsset(gradientType);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for status gradient " + std::to_string(static_cast<int>(gradientType)) + ".");
 	}
@@ -397,11 +397,11 @@ UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradi
 UiTextureID GameWorldUiView::allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getPlayerPortraitTextureAssetRef(isMale, raceID, portraitID);
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(isMale, raceID, portraitID);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for player portrait (male: " + std::to_string(static_cast<int>(isMale)) +
 			", race: " + std::to_string(raceID) + ", portrait: " + std::to_string(portraitID) + ").");
@@ -412,11 +412,11 @@ UiTextureID GameWorldUiView::allocPlayerPortraitTexture(bool isMale, int raceID,
 
 UiTextureID GameWorldUiView::allocNoMagicTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getNoMagicTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getNoMagicTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for no magic icon.");
 	}
@@ -427,11 +427,11 @@ UiTextureID GameWorldUiView::allocNoMagicTexture(TextureManager &textureManager,
 UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFilename, int index,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getWeaponAnimTextureAssetRef(weaponFilename, index);
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getWeaponAnimTextureAsset(weaponFilename, index);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for weapon animation \"" + weaponFilename +
 			"\" index " + std::to_string(index) + ".");
@@ -442,11 +442,11 @@ UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFil
 
 UiTextureID GameWorldUiView::allocCompassFrameTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getCompassFrameTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getCompassFrameTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for compass frame.");
 	}
@@ -456,11 +456,11 @@ UiTextureID GameWorldUiView::allocCompassFrameTexture(TextureManager &textureMan
 
 UiTextureID GameWorldUiView::allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getCompassSliderTextureAssetRef();
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getCompassSliderTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for compass frame.");
 	}
@@ -487,11 +487,11 @@ UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType bu
 
 UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = GameWorldUiView::getArrowCursorTextureAssetRef(cursorIndex);
-	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getPaletteTextureAssetRef();
+	const TextureAsset textureAsset = GameWorldUiView::getArrowCursorTextureAsset(cursorIndex);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for arrow cursor " + std::to_string(cursorIndex) + ".");
 	}
@@ -510,33 +510,15 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	constexpr int xOffset = 16;
 	constexpr int yOffset = 16;
 
-	auto &gameState = game.getGameState();
-
-	const auto &options = game.getOptions();
-	const double verticalFOV = options.getGraphics_VerticalFOV();
-	const bool pixelPerfect = options.getInput_PixelPerfectSelection();
-
-	const auto &player = gameState.getPlayer();
+	const auto &player = game.getPlayer();
 	const CoordDouble3 &rayStart = player.getPosition();
 	const VoxelDouble3 &cameraDirection = player.getDirection();
-	const Int2 viewDims = renderer.getViewDimensions();
-	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
+	const double viewAspectRatio = renderer.getViewAspect();
 
+	const auto &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const ChunkManager &chunkManager = levelInst.getChunkManager();
-	const EntityManager &entityManager = levelInst.getEntityManager();
 	const double ceilingScale = levelInst.getCeilingScale();
-
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	auto &textureManager = game.getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 
 	for (int y = 0; y < windowDims.y; y += yOffset)
 	{
@@ -549,15 +531,14 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 			constexpr bool includeEntities = false;
 			Physics::Hit hit;
 			const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-				pixelPerfect, palette, includeEntities, levelInst, game.getEntityDefinitionLibrary(),
-				renderer, hit);
+				includeEntities, levelInst, game.getEntityDefinitionLibrary(), renderer, hit);
 
 			if (success)
 			{
 				Color color;
 				switch (hit.getType())
 				{
-				case Physics::Hit::Type::Voxel:
+				case Physics::HitType::Voxel:
 				{
 					const std::array<Color, 5> colors =
 					{
@@ -569,7 +550,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 					color = colors[colorsIndex];
 					break;
 				}
-				case Physics::Hit::Type::Entity:
+				case Physics::HitType::Entity:
 				{
 					color = Color::Yellow;
 					break;
@@ -589,9 +570,8 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	// ray cast out from center and display hit info (faster/better than console logging).
 	GameWorldUiView::DEBUG_ColorRaycastPixel(game);
 
-	auto &gameState = game.getGameState();
 	const auto &options = game.getOptions();
-	const auto &player = gameState.getPlayer();
+	const auto &player = game.getPlayer();
 	const Double3 &cameraDirection = player.getDirection();
 
 	auto &renderer = game.getRenderer();
@@ -601,60 +581,45 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const CoordDouble3 rayStart = player.getPosition();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, viewCenterPoint);
 
+	const auto &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const ChunkManager &chunkManager = levelInst.getChunkManager();
-	const EntityManager &entityManager = levelInst.getEntityManager();
+	const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
+	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
 	const double ceilingScale = levelInst.getCeilingScale();
-
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	auto &textureManager = game.getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 
 	constexpr bool includeEntities = true;
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-		options.getInput_PixelPerfectSelection(), palette, includeEntities, levelInst,
-		game.getEntityDefinitionLibrary(), renderer, hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection, includeEntities,
+		levelInst, game.getEntityDefinitionLibrary(), renderer, hit);
 
 	std::string text;
 	if (success)
 	{
 		switch (hit.getType())
 		{
-		case Physics::Hit::Type::Voxel:
+		case Physics::HitType::Voxel:
 		{
-			const ChunkInt2 chunk = hit.getCoord().chunk;
-			const Chunk *chunkPtr = chunkManager.tryGetChunk(chunk);
-			DebugAssert(chunkPtr != nullptr);
+			const ChunkInt2 chunkPos = hit.getCoord().chunk;
+			const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
-			const VoxelDefinition &voxelDef = chunkPtr->getVoxelDef(voxelID);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
 
-			text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelDef.type)) +
+			text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelTraitsDef.type)) +
 				' ' + std::to_string(hit.getT());
 			break;
 		}
-		case Physics::Hit::Type::Entity:
+		case Physics::HitType::Entity:
 		{
 			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
 			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 
-			// Try inspecting the entity (can be from any distance). If they have a display name,
-			// then show it.
-			ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
-			DebugAssert(entityRef.getID() != EntityManager::NO_ID);
-
-			const EntityDefinition &entityDef = entityManager.getEntityDef(
-				entityRef.get()->getDefinitionID(), game.getEntityDefinitionLibrary());
+			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
 			const auto &charClassLibrary = game.getCharacterClassLibrary();
 
 			std::string entityName;

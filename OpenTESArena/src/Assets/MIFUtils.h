@@ -5,7 +5,7 @@
 #include <string>
 
 #include "../Math/Vector2.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 // Various functions for working with .MIF files.
 

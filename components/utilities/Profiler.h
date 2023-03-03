@@ -2,42 +2,55 @@
 #define PROFILER_H
 
 #include <chrono>
-#include <memory>
+#include <optional>
 #include <string>
-#include <vector>
 
+namespace ProfilerUtils
+{
+	const std::string ASSETS = "Assets";
+	const std::string AUDIO = "Audio";
+	const std::string COLLISION = "Collision";
+	const std::string ENTITIES = "Entities";
+	const std::string INPUT = "Input";
+	const std::string RENDERING = "Rendering";
+	const std::string SKY = "Sky";
+	const std::string UI = "UI";
+	const std::string VOXELS = "Voxels";
+	const std::string WORLD = "World";
+}
+
+struct ProfilerSampler
+{
+	std::string name;
+	std::chrono::time_point<std::chrono::high_resolution_clock> startTime, endTime;
+
+	void init(std::string &&name);
+};
+
+// For conveniently timing chunks of code.
 class Profiler
 {
-public:
-	class Sampler
-	{
-	private:
-		std::chrono::time_point<std::chrono::high_resolution_clock> startTime, endTime;
-	public:
-		double getSeconds() const;
-		double getMilliseconds() const;
-
-		void setStart();
-		void setStop();
-	};
 private:
-	// Need to allocate sampler on the heap so returned pointers are not invalidated
-	// on vector resize.
-	std::vector<std::pair<std::string, std::unique_ptr<Sampler>>> samplers;
+	static constexpr int MAX_SAMPLERS = 16;
 
-	// Searches samplers for the one with the given name.
-	Sampler *findSampler(const std::string &name);
+	ProfilerSampler samplers[MAX_SAMPLERS];
+	int samplerCount;
+
+	std::optional<int> tryGetSamplerIndex(const std::string &name) const;
+	std::string durationToString(double time) const;
 public:
-	// Overwrites existing (if any).
-	Sampler *addSampler(const std::string &name);
+	Profiler();
 
-	// Gets sampler from the given name, or null if it doesn't exist.
-	Sampler *getSampler(const std::string &name);
+	int getSamplerCount() const;
+	const std::string &getSamplerName(int index) const;
 
-	// Removes sampler if it exists.
-	void removeSampler(const std::string &name);
+	double getSeconds(const std::string &name) const;
+	std::string getSecondsString(const std::string &name) const;
+	double getMilliseconds(const std::string &name) const;
+	std::string getMillisecondsString(const std::string &name) const;
 
-	// Clears all samplers from the profiler.
+	void setStart(const std::string &name);
+	void setStop(const std::string &name);
 	void clear();
 };
 

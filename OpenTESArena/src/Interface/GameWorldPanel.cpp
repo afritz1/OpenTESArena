@@ -9,6 +9,7 @@
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
@@ -16,7 +17,8 @@
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
-#include "../Media/PortraitFile.h"
+#include "../Rendering/RenderCamera.h"
+#include "../Rendering/RendererUtils.h"
 #include "../UI/CursorData.h"
 #include "../World/MapType.h"
 
@@ -40,13 +42,13 @@ GameWorldPanel::~GameWorldPanel()
 		GameWorldUiModel::setFreeLookActive(game, false);
 	}
 
+	game.setIsSimulatingScene(false);
 	game.setGameWorldRenderCallback([](Game&) { return true; });
 }
 
 bool GameWorldPanel::init()
 {
 	auto &game = this->getGame();
-	DebugAssert(game.gameStateIsActive());
 
 	auto &renderer = game.getRenderer();
 	const auto &fontLibrary = game.getFontLibrary();
@@ -98,7 +100,7 @@ bool GameWorldPanel::init()
 	this->mapButton = Button<Game&, bool>(
 		GameWorldUiView::getMapButtonRect(), GameWorldUiController::onMapButtonSelected);
 
-	auto &player = game.getGameState().getPlayer();
+	auto &player = game.getPlayer();
 	const auto &options = game.getOptions();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
@@ -247,24 +249,18 @@ bool GameWorldPanel::init()
 
 	this->addMouseButtonChangedListener([this](Game &game, MouseButtonType type, const Int2 &position, bool pressed)
 	{
-		const Rect &centerCursorRegion = this->nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
+		const Rect &centerCursorRegion = game.getNativeCursorRegion(GameWorldUiView::CursorMiddleIndex);
 		GameWorldUiController::onMouseButtonChanged(game, type, position, pressed, centerCursorRegion, this->actionText);
 	});
 
 	this->addMouseButtonHeldListener([this](Game &game, MouseButtonType type, const Int2 &position, double dt)
 	{
-		const Rect &centerCursorRegion = this->nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
+		const Rect &centerCursorRegion = game.getNativeCursorRegion(GameWorldUiView::CursorMiddleIndex);
 		GameWorldUiController::onMouseButtonHeld(game, type, position, dt, centerCursorRegion);
 	});
 
 	// Moved into a method for better organization due to extra complexity from classic/modern mode.
 	this->initUiDrawCalls();
-
-	// Set all of the cursor regions relative to the current window.
-	const Int2 screenDims = game.getRenderer().getWindowDimensions();
-	GameWorldUiModel::updateNativeCursorRegions(
-		BufferView<Rect>(this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size())),
-		screenDims.x, screenDims.y);
 
 	// If in modern mode, lock mouse to center of screen for free-look.
 	if (modernInterface)
@@ -273,6 +269,7 @@ bool GameWorldPanel::init()
 	}
 
 	game.setGameWorldRenderCallback(GameWorldPanel::gameWorldRenderCallback);
+	game.setIsSimulatingScene(true);
 
 	return true;
 }
@@ -295,7 +292,7 @@ void GameWorldPanel::initUiDrawCalls()
 		GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
 	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
 
-	const auto &player = game.getGameState().getPlayer();
+	const auto &player = game.getPlayer();
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
 		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
@@ -717,14 +714,15 @@ void GameWorldPanel::initUiDrawCalls()
 			return inputManager.getMousePosition();
 		};
 
-		auto getCursorRegionIndex = [this, cursorPositionFunc]() -> std::optional<int>
+		auto getCursorRegionIndex = [this, &game, cursorPositionFunc]() -> std::optional<int>
 		{
 			const Int2 cursorPosition = cursorPositionFunc();
 
 			// See which arrow cursor region the native mouse is in.
-			for (int i = 0; i < this->nativeCursorRegions.size(); i++)
+			for (int i = 0; i < GameWorldUiView::ArrowCursorRegionCount; i++)
 			{
-				if (this->nativeCursorRegions[i].contains(cursorPosition))
+				const Rect &nativeCursorRegion = game.getNativeCursorRegion(i);
+				if (nativeCursorRegion.contains(cursorPosition))
 				{
 					return i;
 				}
@@ -796,6 +794,62 @@ void GameWorldPanel::initUiDrawCalls()
 	}
 }
 
+bool GameWorldPanel::gameWorldRenderCallback(Game &game)
+{
+	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
+	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
+	const auto &player = game.getPlayer();
+	const CoordDouble3 &playerPos = player.getPosition();
+	const VoxelDouble3 &playerDir = player.getDirection();
+
+	auto &gameState = game.getGameState();
+	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
+	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
+
+	const RenderChunkManager &renderChunkManager = game.getRenderChunkManager();
+	const BufferView<const RenderDrawCall> drawCalls = renderChunkManager.getTotalDrawCalls();
+
+	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
+	const double ambientPercent = gameState.getAmbientPercent();
+	const double latitude = [&gameState]()
+	{
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
+		return locationDef.getLatitude();
+	}();
+
+	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
+
+	auto &renderer = game.getRenderer();
+	const auto &options = game.getOptions();
+	const Degrees fovY = options.getGraphics_VerticalFOV();
+	const double viewAspectRatio = renderer.getViewAspect();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
+
+	// @todo: shore up loadScene() and that overall design before attempting to change dirty voxels and entities between frames.
+	/*renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
+		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight(),
+		game.getEntityDefinitionLibrary());*/
+
+	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
+	const ObjectTextureID paletteTextureID = activeLevelInst.getPaletteTextureID();
+	const ObjectTextureID lightTableTextureID = activeLevelInst.getLightTableTextureID();
+	const ObjectTextureID skyColorsTextureID = activeSkyInst.getSkyColorsTextureID();
+	const ObjectTextureID thunderstormColorsTextureID = -1;
+
+	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID,
+		skyColorsTextureID, thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
+
+	return true;
+}
+
+TextBox &GameWorldPanel::getTriggerTextBox()
+{
+	return this->triggerText;
+}
+
 void GameWorldPanel::onPauseChanged(bool paused)
 {
 	Panel::onPauseChanged(paused);
@@ -810,207 +864,6 @@ void GameWorldPanel::onPauseChanged(bool paused)
 	{
 		GameWorldUiModel::setFreeLookActive(game, !paused);
 	}
-}
 
-void GameWorldPanel::resize(int windowWidth, int windowHeight)
-{
-	// Update the cursor's regions for camera motion.
-	GameWorldUiModel::updateNativeCursorRegions(
-		BufferView<Rect>(this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size())),
-		windowWidth, windowHeight);
-}
-
-bool GameWorldPanel::gameWorldRenderCallback(Game &game)
-{
-	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
-	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-	auto &gameState = game.getGameState();
-	auto &player = gameState.getPlayer();
-	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-	const MapInstance &activeMapInst = gameState.getActiveMapInst();
-	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
-	const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
-	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
-	const auto &options = game.getOptions();
-	const double ambientPercent = gameState.getAmbientPercent();
-
-	const double latitude = [&gameState]()
-	{
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		return locationDef.getLatitude();
-	}();
-
-	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
-
-	auto &textureManager = game.getTextureManager();
-	const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
-	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
-	if (!defaultPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteFilename + "\".");
-		return false;
-	}
-
-	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
-
-	auto &renderer = game.getRenderer();
-	renderer.renderWorld(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
-		ambientPercent, gameState.getDaytimePercent(), gameState.getChasmAnimPercent(), latitude,
-		gameState.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
-		options.getMisc_ChunkDistance(), activeLevelInst.getCeilingScale(), activeLevelInst, activeSkyInst,
-		activeWeatherInst, game.getRandom(), game.getEntityDefinitionLibrary(), defaultPalette);
-
-	return true;
-}
-
-void GameWorldPanel::tick(double dt)
-{
-	auto &game = this->getGame();
-	DebugAssert(game.gameStateIsActive());
-
-	// Handle input for player motion.
-	const BufferView<const Rect> nativeCursorRegionsView(
-		this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
-	const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(game, dt, nativeCursorRegionsView);
-	PlayerLogicController::turnPlayer(game, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
-	PlayerLogicController::handlePlayerMovement(game, dt, nativeCursorRegionsView);
-
-	// Tick the game world clock time.
-	auto &gameState = game.getGameState();
-	const Clock oldClock = gameState.getClock();
-	gameState.tick(dt, game);
-	const Clock newClock = gameState.getClock();
-
-	Renderer &renderer = game.getRenderer();
-
-	// See if the clock passed the boundary between night and day, and vice versa.
-	const double oldClockTime = oldClock.getPreciseTotalSeconds();
-	const double newClockTime = newClock.getPreciseTotalSeconds();
-	const double lamppostActivateTime = ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
-	const double lamppostDeactivateTime = ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool activateNightLights =
-		(oldClockTime < lamppostActivateTime) &&
-		(newClockTime >= lamppostActivateTime);
-	const bool deactivateNightLights =
-		(oldClockTime < lamppostDeactivateTime) &&
-		(newClockTime >= lamppostDeactivateTime);
-
-	if (activateNightLights)
-	{
-		MapLogicController::handleNightLightChange(game, true);
-	}
-	else if (deactivateNightLights)
-	{
-		MapLogicController::handleNightLightChange(game, false);
-	}
-
-	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const MapType mapType = mapDef.getMapType();
-
-	// Check for changes in exterior music depending on the time.
-	if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
-	{
-		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
-		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
-		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);
-		const bool changeToNightMusic = (oldClockTime < nightMusicStartTime) && (newClockTime >= nightMusicStartTime);
-
-		AudioManager &audioManager = game.getAudioManager();
-		const MusicLibrary &musicLibrary = game.getMusicLibrary();
-
-		if (changeToDayMusic)
-		{
-			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Weather, game.getRandom(), [&weatherDef](const MusicDefinition &def)
-			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-				return weatherMusicDef.weatherDef == weatherDef;
-			});
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing weather music.");
-			}
-
-			audioManager.setMusic(musicDef);
-		}
-		else if (changeToNightMusic)
-		{
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-				MusicDefinition::Type::Night, game.getRandom());
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing night music.");
-			}
-
-			audioManager.setMusic(musicDef);
-		}
-	}
-
-	// Tick the player.
-	auto &player = gameState.getPlayer();
-	const CoordDouble3 oldPlayerCoord = player.getPosition();
-	player.tick(game, dt);
-	const CoordDouble3 newPlayerCoord = player.getPosition();
-
-	// Handle input for the player's attack.
-	const auto &inputManager = game.getInputManager();
-	const Int2 mouseDelta = inputManager.getMouseDelta();
-	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
-
-	MapInstance &mapInst = gameState.getActiveMapInst();
-	const double latitude = [&gameState]()
-	{
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		return locationDef.getLatitude();
-	}();
-
-	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
-	TextureManager &textureManager = game.getTextureManager();
-
-	EntityGeneration::EntityGenInfo entityGenInfo;
-	entityGenInfo.init(gameState.nightLightsAreActive());
-
-	// Tick active map (entities, animated distant land, etc.).
-	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&game, &gameState, mapType,
-		&entityDefLibrary, &textureManager]() -> std::optional<CitizenUtils::CitizenGenInfo>
-	{
-		if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
-		{
-			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
-			const LocationDefinition &locationDef = gameState.getLocationDefinition();
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
-				entityDefLibrary, textureManager);
-		}
-		else
-		{
-			return std::nullopt;
-		}
-	}();
-
-	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, gameState.getDaytimePercent(),
-		game.getOptions().getMisc_ChunkDistance(), entityGenInfo, citizenGenInfo, entityDefLibrary,
-		game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
-
-	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
-	// and handle any level transition.
-	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const double ceilingScale = levelInst.getCeilingScale();
-	const CoordInt3 oldPlayerVoxelCoord(
-		oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
-	const CoordInt3 newPlayerVoxelCoord(
-		newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
-	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
-	{
-		MapLogicController::handleTriggers(game, newPlayerVoxelCoord, this->triggerText);
-
-		if (mapType == MapType::Interior)
-		{
-			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
-		}
-	}
+	game.setIsSimulatingScene(!paused);
 }

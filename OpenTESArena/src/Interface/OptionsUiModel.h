@@ -33,6 +33,7 @@ namespace OptionsUiModel
 	const std::string MODERN_INTERFACE_NAME = "Modern Interface";
 	const std::string RENDER_THREADS_MODE_NAME = "Render Threads Mode";
 	const std::string RESOLUTION_SCALE_NAME = "Resolution Scale";
+	const std::string TALL_PIXEL_CORRECTION_NAME = "Tall Pixel Correction";
 	const std::string VERTICAL_FOV_NAME = "Vertical FOV";
 
 	// Audio.
@@ -44,7 +45,6 @@ namespace OptionsUiModel
 	const std::string HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
 	const std::string VERTICAL_SENSITIVITY_NAME = "Vertical Sensitivity";
 	const std::string CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
-	const std::string PIXEL_PERFECT_SELECTION_NAME = "Pixel-Perfect Selection";
 
 	// Misc.
 	const std::string SHOW_COMPASS_NAME = "Show Compass";
@@ -186,6 +186,7 @@ namespace OptionsUiModel
 	std::unique_ptr<OptionsUiModel::IntOption> makeLetterboxModeOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeCursorScaleOption(Game &game);
 	std::unique_ptr<OptionsUiModel::BoolOption> makeModernInterfaceOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makeTallPixelCorrectionOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeRenderThreadsModeOption(Game &game);
 	OptionGroup makeGraphicsOptionGroup(Game &game);
 
@@ -199,7 +200,6 @@ namespace OptionsUiModel
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeHorizontalSensitivityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeVerticalSensitivityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeCameraPitchLimitOption(Game &game);
-	std::unique_ptr<OptionsUiModel::BoolOption> makePixelPerfectSelectionOption(Game &game);
 	OptionGroup makeInputOptionGroup(Game &game);
 
 	// Miscellaneous options.

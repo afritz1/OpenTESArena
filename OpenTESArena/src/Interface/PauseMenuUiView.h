@@ -1,14 +1,14 @@
 #ifndef PAUSE_MENU_UI_VIEW_H
 #define PAUSE_MENU_UI_VIEW_H
 
+#include "../Assets/TextureUtils.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
-struct TextureAssetReference;
+struct TextureAsset;
 
 namespace PauseMenuUiView
 {
@@ -44,8 +44,8 @@ namespace PauseMenuUiView
 	Rect getMusicUpButtonRect();
 	Rect getMusicDownButtonRect();
 
-	TextureAssetReference getBackgroundPaletteTextureAssetRef();
-	TextureAssetReference getBackgroundTextureAssetRef();
+	TextureAsset getBackgroundPaletteTextureAsset();
+	TextureAsset getBackgroundTextureAsset();
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocOptionsButtonTexture(TextureManager &textureManager, Renderer &renderer);

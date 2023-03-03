@@ -1,15 +1,21 @@
 #ifndef RENDER_FRAME_SETTINGS_H
 #define RENDER_FRAME_SETTINGS_H
 
-class RenderFrameSettings
+#include <cstdint>
+
+#include "RenderTextureUtils.h"
+
+// 3D renderer variables that can change each frame.
+
+struct RenderFrameSettings
 {
-private:
-	// @todo: shader variables for a given frame, time of day, delta time, etc.
-	// - things that don't fit into camera or bulk voxel/entity/sky-object data.
-	// - ceiling height
-	double resolutionScale;
-public:
-	void init();
+	double ambientPercent;
+	ObjectTextureID paletteTextureID, lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID;
+	int renderWidth, renderHeight, renderThreadsMode;
+
+	void init(double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderWidth, int renderHeight,
+		int renderThreadsMode);
 };
 
 #endif

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-struct TextureAssetReference;
+struct TextureAsset;
 
 namespace IntroUiView
 {
@@ -13,12 +13,12 @@ namespace IntroUiView
 	std::string getIntroBookPaletteFilename();
 
 	constexpr double IntroTitleSeconds = 5.0;
-	TextureAssetReference getIntroTitleTextureAssetReference();
-	TextureAssetReference getIntroTitlePaletteTextureAssetReference();
+	TextureAsset getIntroTitleTextureAsset();
+	TextureAsset getIntroTitlePaletteTextureAsset();
 
 	constexpr double IntroQuoteSeconds = 5.0;
-	TextureAssetReference getIntroQuoteTextureAssetReference();
-	TextureAssetReference getIntroQuotePaletteTextureAssetReference();
+	TextureAsset getIntroQuoteTextureAsset();
+	TextureAsset getIntroQuotePaletteTextureAsset();
 
 	constexpr double OpeningScrollFramesPerSecond = 24.0;
 	std::string getOpeningScrollSequenceFilename();

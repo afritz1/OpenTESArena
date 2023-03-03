@@ -19,14 +19,14 @@ Int2 WorldMapUiView::getProvinceNameOffset(int provinceID, TextureManager &textu
 	return textureFileMetadata.getOffset(provinceID);
 }
 
-TextureAssetReference WorldMapUiView::getTextureAssetReference()
+TextureAsset WorldMapUiView::getTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::WorldMap));
+	return TextureAsset(std::string(ArenaTextureName::WorldMap));
 }
 
-TextureAssetReference WorldMapUiView::getPaletteTextureAssetReference()
+TextureAsset WorldMapUiView::getPaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::WorldMap));
+	return TextureAsset(std::string(ArenaTextureName::WorldMap));
 }
 
 std::string WorldMapUiView::getProvinceNamesFilename()
@@ -36,11 +36,11 @@ std::string WorldMapUiView::getProvinceNamesFilename()
 
 UiTextureID WorldMapUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference textureAssetRef = WorldMapUiView::getTextureAssetReference();
-	const TextureAssetReference paletteTextureAssetRef = WorldMapUiView::getPaletteTextureAssetReference();
+	const TextureAsset textureAsset = WorldMapUiView::getTextureAsset();
+	const TextureAsset paletteTextureAsset = WorldMapUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for world map background.");
 	}
@@ -50,13 +50,13 @@ UiTextureID WorldMapUiView::allocBackgroundTexture(TextureManager &textureManage
 
 UiTextureID WorldMapUiView::allocHighlightedTextTexture(int provinceID, TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference paletteTextureAssetRef = WorldMapUiView::getPaletteTextureAssetReference();
+	const TextureAsset paletteTextureAsset = WorldMapUiView::getPaletteTextureAsset();
 
 	const std::string provinceNamesFilename = WorldMapUiView::getProvinceNamesFilename();
-	const TextureAssetReference textureAssetRef = TextureAssetReference(std::string(provinceNamesFilename), provinceID);
+	const TextureAsset textureAsset = TextureAsset(std::string(provinceNamesFilename), provinceID);
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for highlighted text for province " + std::to_string(provinceID) + ".");
 	}
@@ -74,9 +74,9 @@ std::string FastTravelUiView::getAnimationFilename()
 	return ArenaTextureName::FastTravel;
 }
 
-TextureAssetReference FastTravelUiView::getPaletteTextureAssetRef()
+TextureAsset FastTravelUiView::getPaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::WorldMap));
+	return TextureAsset(std::string(ArenaTextureName::WorldMap));
 }
 
 Int2 FastTravelUiView::getCityArrivalPopUpTextCenterPoint(Game &game)

@@ -1,17 +1,13 @@
 #ifndef GAME_WORLD_PANEL_H
 #define GAME_WORLD_PANEL_H
 
-#include <array>
-#include <vector>
-
 #include "Panel.h"
-#include "../Game/Physics.h"
+#include "../Assets/TextureUtils.h"
+#include "../Collision/Physics.h"
 #include "../Math/Rect.h"
-#include "../Media/TextureUtils.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../World/VoxelDefinition.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 // When the GameWorldPanel is active, the game world is ticking.
 
@@ -32,7 +28,6 @@ private:
 	Button<> stealButton, magicButton, useItemButton, campButton;
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
-	std::array<Rect, 9> nativeCursorRegions;
 	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, tooltipTextureRefs;
 	ScopedUiTextureRef gameWorldInterfaceTextureRef, statusGradientTextureRef, playerPortraitTextureRef,
 		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef;
@@ -47,9 +42,10 @@ public:
 
 	bool init();
 
+	// @temp workaround until there are listener callbacks or something for updating text boxes from game logic
+	TextBox &getTriggerTextBox();
+
 	virtual void onPauseChanged(bool paused) override;
-	virtual void resize(int windowWidth, int windowHeight) override;
-	virtual void tick(double dt) override;
 };
 
 #endif

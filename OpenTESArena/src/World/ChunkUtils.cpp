@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <cmath>
 
 #include "ChunkUtils.h"
+#include "../Voxels/VoxelChunk.h"
 
 #include "components/debug/Debug.h"
 
@@ -8,6 +10,19 @@ int ChunkUtils::getNextHigherChunkMultiple(int coord)
 {
 	const int remainder = coord % ChunkUtils::CHUNK_DIM;
 	return (remainder == 0) ? coord : (coord + ChunkUtils::CHUNK_DIM - remainder);
+}
+
+int ChunkUtils::getChunkCountPerSide(int chunkDistance)
+{
+	DebugAssert(chunkDistance > 0);
+	const int count = 1 + (chunkDistance * 2);
+	return count;
+}
+
+int ChunkUtils::getChunkCount(int chunkDistance)
+{
+	const int chunksPerSide = ChunkUtils::getChunkCountPerSide(chunkDistance);
+	return chunksPerSide * chunksPerSide;
 }
 
 void ChunkUtils::getChunkCounts(SNInt gridWidth, WEInt gridDepth, SNInt *outChunkCountX,
@@ -22,13 +37,10 @@ void ChunkUtils::getChunkCounts(SNInt gridWidth, WEInt gridDepth, SNInt *outChun
 	*outChunkCountZ = chunksForDimension(gridDepth);
 }
 
-void ChunkUtils::getPotentiallyVisibleChunkCounts(int chunkDistance, SNInt *outChunkCountX,
-	WEInt *outChunkCountZ)
+void ChunkUtils::getPotentiallyVisibleChunkCounts(int chunkDistance, SNInt *outChunkCountX, WEInt *outChunkCountZ)
 {
-	DebugAssert(chunkDistance >= 1);
-	const int count = 1 + (chunkDistance * 2);
-	*outChunkCountX = count;
-	*outChunkCountZ = count;
+	*outChunkCountX = ChunkUtils::getChunkCountPerSide(chunkDistance);
+	*outChunkCountZ = *outChunkCountX;
 }
 
 void ChunkUtils::getSurroundingChunks(const ChunkInt2 &chunk, int chunkDistance,
@@ -100,4 +112,38 @@ CoordInt3 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelInt3 &
 	const CoordInt2 coord = ChunkUtils::recalculateCoord(chunk, VoxelInt2(voxel.x, voxel.z));
 	const VoxelInt2 &newVoxel = coord.voxel;
 	return CoordInt3(coord.chunk, VoxelInt3(newVoxel.x, voxel.y, newVoxel.y));
+}
+
+void ChunkUtils::GetWritingRanges(const LevelInt2 &levelOffset, SNInt levelWidth, int levelHeight, WEInt levelDepth,
+	SNInt *outStartX, int *outStartY, WEInt *outStartZ, SNInt *outEndX, int *outEndY, WEInt *outEndZ)
+{
+	*outStartX = levelOffset.x;
+	*outEndX = std::min(*outStartX + Chunk::WIDTH, levelWidth);
+	*outStartY = 0;
+	*outEndY = levelHeight;
+	*outStartZ = levelOffset.y;
+	*outEndZ = std::min(*outStartZ + Chunk::DEPTH, levelDepth);
+}
+
+bool ChunkUtils::IsInWritingRange(const LevelInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
+	WEInt startZ, WEInt endZ)
+{
+	return (position.x >= startX) && (position.x < endX) && (position.y >= startY) && (position.y < endY) &&
+		(position.z >= startZ) && (position.z < endZ);
+}
+
+VoxelInt3 ChunkUtils::MakeChunkVoxelFromLevel(const LevelInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
+{
+	return VoxelInt3(
+		levelPosition.x - chunkStartX,
+		levelPosition.y - chunkStartY,
+		levelPosition.z - chunkStartZ);
+}
+
+VoxelDouble3 ChunkUtils::MakeChunkPointFromLevel(const LevelDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
+{
+	return VoxelDouble3(
+		levelPosition.x - static_cast<SNDouble>(chunkStartX),
+		levelPosition.y - static_cast<double>(chunkStartY),
+		levelPosition.z - static_cast<WEDouble>(chunkStartZ));
 }

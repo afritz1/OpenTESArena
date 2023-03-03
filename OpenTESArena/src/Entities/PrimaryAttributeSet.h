@@ -11,7 +11,9 @@ class PrimaryAttributeSet
 private:
 	std::unordered_map<PrimaryAttributeName, PrimaryAttribute> attributeMap;
 public:
-	PrimaryAttributeSet(int raceID, bool male, Random &random); // Rolls new values based on race & gender.
+	PrimaryAttributeSet();
+	
+	void init(int raceID, bool male, Random &random); // Rolls new values based on race & gender.
 
 	const PrimaryAttribute &get(PrimaryAttributeName name) const;
 	std::vector<PrimaryAttribute> getAll() const;
@@ -24,6 +26,8 @@ public:
 	const PrimaryAttribute &getEndurance() const;
 	const PrimaryAttribute &getPersonality() const;
 	const PrimaryAttribute &getLuck() const;
+
+	void clear();
 };
 
 #endif

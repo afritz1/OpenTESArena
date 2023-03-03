@@ -1,14 +1,14 @@
 #ifndef MAIN_QUEST_SPLASH_UI_VIEW_H
 #define MAIN_QUEST_SPLASH_UI_VIEW_H
 
-#include "../Media/Color.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 class Game;
 
-struct TextureAssetReference;
+struct TextureAsset;
 
 namespace MainQuestSplashUiView
 {
@@ -28,7 +28,7 @@ namespace MainQuestSplashUiView
 	constexpr int ExitButtonWidth = 43;
 	constexpr int ExitButtonHeight = 13;
 
-	TextureAssetReference getSplashTextureAssetRef(Game &game, int provinceID);
+	TextureAsset getSplashTextureAsset(Game &game, int provinceID);
 
 	UiTextureID allocSplashTextureID(Game &game, int provinceID);
 }

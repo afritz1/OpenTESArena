@@ -221,34 +221,34 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 
 	// Location icon textures.
-	const TextureAssetReference backgroundPaletteTextureAssetRef = ProvinceMapUiView::getBackgroundPaletteTextureAssetRef(provinceID, binaryAssetLibrary);
+	const TextureAsset backgroundPaletteTextureAsset = ProvinceMapUiView::getBackgroundPaletteTextureAsset(provinceID, binaryAssetLibrary);
 	this->cityStateTextureRefs.init(
-		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
-		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
-		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 		renderer);
 	this->townTextureRefs.init(
-		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
-		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
-		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 		renderer);
 	this->villageTextureRefs.init(
-		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
-		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
-		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 		renderer);
 	this->dungeonTextureRefs.init(
-		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
-		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
-		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 		renderer);
 
 	if (ProvinceMapUiView::provinceHasStaffDungeonIcon(provinceID))
 	{
 		this->staffDungeonTextureRefs.init(
-			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAssetRef, textureManager, renderer),
-			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAssetRef, textureManager, renderer),
-			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAssetRef, textureManager, renderer),
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 			renderer);
 	}
 

@@ -2,7 +2,9 @@
 #include "PrimaryAttributeName.h"
 #include "PrimaryAttributeSet.h"
 
-PrimaryAttributeSet::PrimaryAttributeSet(int raceID, bool male, Random &random)
+PrimaryAttributeSet::PrimaryAttributeSet() { }
+
+void PrimaryAttributeSet::init(int raceID, bool male, Random &random)
 {
 	for (const PrimaryAttributeName attributeName : PRIMARY_ATTRIBUTE_NAMES)
 	{
@@ -73,4 +75,9 @@ const PrimaryAttribute &PrimaryAttributeSet::getPersonality() const
 const PrimaryAttribute &PrimaryAttributeSet::getLuck() const
 {
 	return this->get(PrimaryAttributeName::Luck);
+}
+
+void PrimaryAttributeSet::clear()
+{
+	this->attributeMap.clear();
 }

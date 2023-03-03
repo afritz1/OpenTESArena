@@ -1,6 +1,4 @@
 #include "EntityGeneration.h"
-#include "EntityManager.h"
-#include "EntityType.h"
 #include "../Game/CardinalDirection.h"
 
 void EntityGeneration::EntityGenInfo::init(bool nightLightsAreActive)
@@ -8,90 +6,14 @@ void EntityGeneration::EntityGenInfo::init(bool nightLightsAreActive)
 	this->nightLightsAreActive = nightLightsAreActive;
 }
 
-Entity *EntityGeneration::makeEntity(EntityType entityType, EntityDefinition::Type entityDefType,
-	EntityDefID entityDefID, const EntityDefinition &entityDef, const EntityAnimationDefinition &animDef,
-	const EntityGenInfo &entityGenInfo, Random &random, EntityManager &entityManager)
+const std::string &EntityGeneration::getDefaultAnimationStateName(const EntityDefinition &entityDef, const EntityGenInfo &genInfo)
 {
-	EntityRef entity = entityManager.makeEntity(entityType); // @todo: decide if chunk should be an argument too
-	Entity *entityPtr = entity.get();
-
-	EntityAnimationInstance animInst;
-	animInst.init(animDef);
-
-	const std::string &defaultStateName = [&entityDef, &entityGenInfo]() -> const std::string&
+	if (!EntityUtils::isStreetlight(entityDef))
 	{
-		if (!EntityUtils::isStreetlight(entityDef))
-		{
-			return EntityAnimationUtils::STATE_IDLE;
-		}
-		else
-		{
-			return entityGenInfo.nightLightsAreActive ?
-				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
-		}
-	}();
-
-	const std::optional<int> defaultStateIndex = animDef.tryGetStateIndex(defaultStateName.c_str());
-	if (!defaultStateIndex.has_value())
-	{
-		DebugLogWarning("Couldn't get default state index for entity.");
-		return nullptr;
-	}
-
-	animInst.setStateIndex(*defaultStateIndex);
-	// @todo: set anim inst to the correct state for the entity
-	// @todo: let the entity acquire the anim inst instead of copying
-	// @todo: set streetlight anim state if night lights are active
-
-	if (entityType == EntityType::Static)
-	{
-		StaticEntity *staticEntity = dynamic_cast<StaticEntity*>(entityPtr);
-		if (entityDefType == EntityDefinition::Type::StaticNPC)
-		{
-			staticEntity->initNPC(entityDefID, animInst);
-		}
-		else if (entityDefType == EntityDefinition::Type::Item)
-		{
-			// @todo: initialize as an item
-			staticEntity->initDoodad(entityDefID, animInst);
-			DebugLogError("Item entity initialization not implemented.");
-		}
-		else if (entityDefType == EntityDefinition::Type::Container)
-		{
-			staticEntity->initContainer(entityDefID, animInst);
-		}
-		else if (entityDefType == EntityDefinition::Type::Transition)
-		{
-			staticEntity->initTransition(entityDefID, animInst);
-		}
-		else if (entityDefType == EntityDefinition::Type::Doodad)
-		{
-			staticEntity->initDoodad(entityDefID, animInst);
-		}
-		else
-		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
-		}
-	}
-	else if (entityType == EntityType::Dynamic)
-	{
-		DynamicEntity *dynamicEntity = dynamic_cast<DynamicEntity*>(entityPtr);
-		const VoxelDouble2 direction = CardinalDirection::North;
-		const CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(direction);
-
-		if (entityDefType == EntityDefinition::Type::Enemy)
-		{
-			dynamicEntity->initCreature(entityDefID, animInst, direction, random);
-		}
-		else
-		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
-		}
+		return EntityAnimationUtils::STATE_IDLE;
 	}
 	else
 	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(entityType)));
+		return genInfo.nightLightsAreActive ? EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
 	}
-
-	return entityPtr;
 }

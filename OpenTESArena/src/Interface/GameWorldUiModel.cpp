@@ -6,14 +6,15 @@
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
+#include "../Rendering/RenderCamera.h"
+#include "../Rendering/RendererUtils.h"
 #include "../World/MapType.h"
 
 #include "components/utilities/String.h"
 
 std::string GameWorldUiModel::getPlayerNameText(Game &game)
 {
-	auto &gameState = game.getGameState();
-	const auto &player = gameState.getPlayer();
+	const Player &player = game.getPlayer();
 	return player.getFirstName();
 }
 
@@ -128,15 +129,15 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	GameState &gameState = game.getGameState();
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const Player &player = gameState.getPlayer();
+	const Player &player = game.getPlayer();
 
 	const MapType mapType = mapDef.getMapType();
 	const OriginalInt2 displayedCoords = [&player, mapType]()
 	{
-		const NewDouble3 absolutePlayerPosition = VoxelUtils::coordToNewPoint(player.getPosition());
-		const NewInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
-		const NewInt2 playerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
-		const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(playerVoxelXZ);
+		const WorldDouble3 absolutePlayerPosition = VoxelUtils::coordToWorldPoint(player.getPosition());
+		const WorldInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
+		const WorldInt2 playerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
+		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(playerVoxelXZ);
 
 		// The displayed coordinates in the wilderness behave differently in the original
 		// game due to how the 128x128 grid shifts to keep the player roughly centered.
@@ -196,8 +197,7 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 {
 	if (buttonType == ButtonType::Magic)
 	{
-		auto &gameState = game.getGameState();
-		const Player &player = gameState.getPlayer();
+		const Player &player = game.getPlayer();
 		const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
 		const int charClassDefID = player.getCharacterClassDefID();
 		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
@@ -252,20 +252,17 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 {
 	const auto &options = game.getOptions();
 	const auto &renderer = game.getRenderer();
+	const Player &player = game.getPlayer();
+	const CoordDouble3 &playerCoord = player.getPosition();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+
+	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.
 	const Int2 viewDims = renderer.getViewDimensions();
-	const double viewAspectRatio = static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
+	const double screenXPercent = (static_cast<double>(windowPoint.x) + 0.50) / static_cast<double>(viewDims.x);
+	const double screenYPercent = (static_cast<double>(windowPoint.y) + 0.50) / static_cast<double>(viewDims.y);
 
-	auto &gameState = game.getGameState();
-	const auto &player = gameState.getPlayer();
-	const Double3 &cameraDirection = player.getDirection();
-
-	// Mouse position percents across the screen. Add 0.50 to sample at the center
-	// of the pixel.
-	const double mouseXPercent = (static_cast<double>(windowPoint.x) + 0.50) / static_cast<double>(viewDims.x);
-	const double mouseYPercent = (static_cast<double>(windowPoint.y) + 0.50) / static_cast<double>(viewDims.y);
-
-	return renderer.screenPointToRay(mouseXPercent, mouseYPercent, cameraDirection,
-		options.getGraphics_VerticalFOV(), viewAspectRatio);
+	return renderCamera.screenToWorld(screenXPercent, screenYPercent);
 }
 
 Radians GameWorldUiModel::getCompassAngle(const VoxelDouble2 &direction)

@@ -9,12 +9,11 @@
 #include "MainMenuPanel.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
+#include "../Assets/TextureManager.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Input/InputActionName.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
@@ -22,6 +21,7 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
+#include "../Utilities/Color.h"
 
 #include "components/utilities/String.h"
 

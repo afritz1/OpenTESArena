@@ -1,13 +1,12 @@
 #include "MapLogicController.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Audio/MusicUtils.h"
-#include "../Entities/EntityType.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
+#include "../Sky/SkyUtils.h"
 #include "../UI/TextBox.h"
+#include "../Voxels/VoxelFacing3D.h"
 #include "../World/MapType.h"
-#include "../World/SkyUtils.h"
-#include "../World/VoxelFacing3D.h"
 
 void MapLogicController::handleNightLightChange(Game &game, bool active)
 {
@@ -15,11 +14,12 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 	GameState &gameState = game.getGameState();
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
-	auto &entityManager = levelInst.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 
 	// Turn streetlights on or off.
-	Buffer<Entity*> entityBuffer(entityManager.getCountOfType(EntityType::Static));
+	// @todo
+	DebugLogError("Not implemented: turning streetlights on/off");
+	/*Buffer<Entity*> entityBuffer(entityManager.getCountOfType(EntityType::Static));
 	const int entityCount = entityManager.getEntitiesOfType(
 		EntityType::Static, entityBuffer.get(), entityBuffer.getCount());
 
@@ -45,7 +45,7 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 			EntityAnimationInstance &animInst = entity->getAnimInstance();
 			animInst.setStateIndex(*newStateIndex);
 		}
-	}
+	}*/
 
 	TextureManager &textureManager = game.getTextureManager();
 	const std::string paletteName = ArenaPaletteName::Default;
@@ -56,7 +56,9 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	renderer.setNightLightsActive(active, palette);
+	
+	DebugLogError("Not implemented: handleNightLightChange"); // @todo: make this night light value a bool in GameState or something so it can be given to RenderFrameSettings.
+	//renderer.setNightLightsActive(active, palette);
 }
 
 void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
@@ -64,47 +66,50 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	GameState &gameState = game.getGameState();
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
-	ChunkManager &chunkManager = levelInst.getChunkManager();
-	Chunk *chunkPtr = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(chunkPtr != nullptr);
+	VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
+	VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(coord.chunk);
 
-	const TriggerDefinition *triggerDef = chunkPtr->tryGetTrigger(coord.voxel);
-	if (triggerDef != nullptr)
+	const VoxelInt3 &voxel = coord.voxel;
+	VoxelChunk::TriggerDefID triggerDefID;
+	if (!chunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
 	{
-		if (triggerDef->hasSoundDef())
+		return;
+	}
+
+	const VoxelTriggerDefinition &triggerDef = chunk.getTriggerDef(triggerDefID);
+	if (triggerDef.hasSoundDef())
+	{
+		const VoxelTriggerDefinition::SoundDef &soundDef = triggerDef.getSoundDef();
+		const std::string &soundFilename = soundDef.getFilename();
+
+		// Play the sound.
+		auto &audioManager = game.getAudioManager();
+		audioManager.playSound(soundFilename);
+	}
+
+	if (triggerDef.hasTextDef())
+	{
+		const VoxelTriggerDefinition::TextDef &textDef = triggerDef.getTextDef();
+		const VoxelInt3 &voxel = coord.voxel;
+
+		int triggerInstIndex;
+		const bool hasBeenTriggered = chunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
+		const bool canDisplay = !textDef.isDisplayedOnce() || !hasBeenTriggered;
+
+		if (canDisplay)
 		{
-			const TriggerDefinition::SoundDef &soundDef = triggerDef->getSoundDef();
-			const std::string &soundFilename = soundDef.getFilename();
+			// Ignore the newline at the end.
+			const std::string &textDefText = textDef.getText();
+			const std::string text = textDefText.substr(0, textDefText.size() - 1);
+			triggerTextBox.setText(text);
+			gameState.setTriggerTextDuration(text);
 
-			// Play the sound.
-			auto &audioManager = game.getAudioManager();
-			audioManager.playSound(soundFilename);
-		}
-
-		if (triggerDef->hasTextDef())
-		{
-			const TriggerDefinition::TextDef &textDef = triggerDef->getTextDef();
-			const VoxelInt3 &voxel = coord.voxel;
-			const VoxelInstance *triggerInst = chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::Trigger);
-			const bool hasBeenDisplayed = (triggerInst != nullptr) && triggerInst->getTriggerState().isTriggered();
-			const bool canDisplay = !textDef.isDisplayedOnce() || !hasBeenDisplayed;
-
-			if (canDisplay)
+			// Set the text trigger as activated regardless of whether it's single-shot, just for consistency.
+			if (!hasBeenTriggered)
 			{
-				// Ignore the newline at the end.
-				const std::string &textDefText = textDef.getText();
-				const std::string text = textDefText.substr(0, textDefText.size() - 1);
-				triggerTextBox.setText(text);
-				gameState.setTriggerTextDuration(text);
-
-				// Set the text trigger as activated (regardless of whether or not it's single-shot, just
-				// for consistency).
-				if (triggerInst == nullptr)
-				{
-					constexpr bool triggered = true;
-					VoxelInstance newTriggerInst = VoxelInstance::makeTrigger(voxel.x, voxel.y, voxel.z, triggered);
-					chunkPtr->addVoxelInst(std::move(newTriggerInst));
-				}
+				VoxelTriggerInstance newTriggerInst;
+				newTriggerInst.init(voxel.x, voxel.y, voxel.z);
+				chunk.addTriggerInst(std::move(newTriggerInst));
 			}
 		}
 	}
@@ -116,11 +121,12 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	const TransitionType transitionType = transitionDef.getType();
 	DebugAssert(transitionType != TransitionType::LevelChange);
 
-	DebugAssert(hit.getType() == Physics::Hit::Type::Voxel);
+	DebugAssert(hit.getType() == Physics::HitType::Voxel);
 	const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 	const CoordInt3 hitCoord(hit.getCoord().chunk, voxelHit.voxel);
 
 	auto &gameState = game.getGameState();
+	auto &renderChunkManager = game.getRenderChunkManager();
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
@@ -146,8 +152,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 
 		// Leave the interior and go to the saved exterior.
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-		if (!gameState.tryPopMap(game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
-			textureManager, renderer))
+		if (!gameState.tryPopMap(game.getPlayer(), game.getEntityDefinitionLibrary(),
+			game.getBinaryAssetLibrary(), renderChunkManager, textureManager, renderer))
 		{
 			DebugCrash("Couldn't leave interior.");
 		}
@@ -474,191 +480,199 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 
 	MapInstance &interiorMapInst = gameState.getActiveMapInst();
 	const LevelInstance &level = interiorMapInst.getActiveLevel();
-	const ChunkManager &chunkManager = level.getChunkManager();
-	const Chunk *chunkPtr = chunkManager.tryGetChunk(transitionCoord.chunk);
-	DebugAssert(chunkPtr != nullptr);
+	const VoxelChunkManager &voxelChunkManager = level.getVoxelChunkManager();
+	const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(transitionCoord.chunk);
 
 	const VoxelInt3 &transitionVoxel = transitionCoord.voxel;
-	if (!chunkPtr->isValidVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z))
+	if (!chunk.isValidVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z))
 	{
 		// Not in the chunk.
 		return;
 	}
 
 	// Get the voxel definition associated with the voxel.
-	const VoxelDefinition &voxelDef = [chunkPtr, &transitionVoxel]()
+	const VoxelTraitsDefinition &voxelTraitsDef = [&chunk, &transitionVoxel]()
 	{
-		const Chunk::VoxelID voxelID = chunkPtr->getVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
-		return chunkPtr->getVoxelDef(voxelID);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
+		return chunk.getTraitsDef(voxelTraitsDefID);
 	}();
 
 	// If the associated voxel data is a wall, then it might be a transition voxel.
-	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
+	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Wall)
 	{
-		const TransitionDefinition *transitionDef = chunkPtr->tryGetTransition(transitionCoord.voxel);
-		if (transitionDef != nullptr)
+		const VoxelInt3 &voxel = transitionCoord.voxel;
+		VoxelChunk::TransitionDefID transitionDefID;
+		if (!chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 		{
-			// The direction from a level up/down voxel to where the player should end up after
-			// going through. In other words, it points to the destination voxel adjacent to the
-			// level up/down voxel.
-			const VoxelDouble3 dirToNewVoxel = [&playerCoord, &transitionCoord]()
+			return;
+		}
+
+		const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
+
+		// The direction from a level up/down voxel to where the player should end up after
+		// going through. In other words, it points to the destination voxel adjacent to the
+		// level up/down voxel.
+		const VoxelDouble3 dirToWorldVoxel = [&playerCoord, &transitionCoord]()
+		{
+			const VoxelInt3 diff = transitionCoord - playerCoord;
+
+			// @todo: this probably isn't robust enough. Maybe also check the player's angle
+			// of velocity with angles to the voxel's corners to get the "arrival vector"
+			// and thus the "near face" that is intersected, because this method doesn't
+			// handle the player coming in at a diagonal.
+
+			// Check which way the player is going and get the reverse of it.
+			if (diff.x > 0)
 			{
-				const VoxelInt3 diff = transitionCoord - playerCoord;
+				// From south to north.
+				return -Double3::UnitX;
+			}
+			else if (diff.x < 0)
+			{
+				// From north to south.
+				return Double3::UnitX;
+			}
+			else if (diff.z > 0)
+			{
+				// From west to east.
+				return -Double3::UnitZ;
+			}
+			else if (diff.z < 0)
+			{
+				// From east to west.
+				return Double3::UnitZ;
+			}
+			else
+			{
+				throw DebugException("Bad player transition voxel.");
+			}
+		}();
 
-				// @todo: this probably isn't robust enough. Maybe also check the player's angle
-				// of velocity with angles to the voxel's corners to get the "arrival vector"
-				// and thus the "near face" that is intersected, because this method doesn't
-				// handle the player coming in at a diagonal.
+		// Player destination after going through a level up/down voxel.
+		auto &player = game.getPlayer();
+		const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
+		const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(
+			transitionCoord.chunk, transitionVoxelCenter + dirToWorldVoxel);
 
-				// Check which way the player is going and get the reverse of it.
-				if (diff.x > 0)
+		// Lambda for transitioning the player to the given level.
+		auto switchToLevel = [&game, &gameState, &interiorMapDef, &interiorMapInst, &player, &destinationCoord,
+			&dirToWorldVoxel](int levelIndex)
+		{
+			// Clear all open doors and fading voxels in the level the player is switching away from.
+			// @todo: why wouldn't it just clear them when it gets switched to in setActive()?
+			auto &oldActiveLevel = interiorMapInst.getActiveLevel();
+
+			// @todo: find a modern equivalent for this w/ either the LevelInstance or ChunkManager.
+			//oldActiveLevel.clearTemporaryVoxelInstances();
+
+			// Select the new level.
+			interiorMapInst.setActiveLevelIndex(levelIndex, interiorMapDef);
+
+			// Set the new level active in the renderer.
+			auto &newActiveLevel = interiorMapInst.getActiveLevel();
+			auto &newActiveSky = interiorMapInst.getActiveSky();
+
+			WeatherDefinition weatherDef;
+			weatherDef.initClear();
+
+			const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
+
+			// @todo: should this be called differently so it doesn't badly influence data for the rest of
+			// this frame? Level changing should be done earlier I think.
+			auto &renderChunkManager = game.getRenderChunkManager();
+			auto &textureManager = game.getTextureManager();
+			auto &renderer = game.getRenderer();
+			if (!newActiveLevel.trySetActive(renderChunkManager, textureManager, renderer))
+			{
+				DebugCrash("Couldn't set new level active in renderer.");
+			}
+
+			if (!newActiveSky.trySetActive(levelIndex, interiorMapDef, textureManager, renderer))
+			{
+				DebugCrash("Couldn't set new sky active in renderer.");
+			}
+
+			// Move the player to where they should be in the new level.
+			const VoxelDouble3 playerDestinationPoint(
+				destinationCoord.point.x,
+				newActiveLevel.getCeilingScale() + Player::HEIGHT,
+				destinationCoord.point.z);
+			const CoordDouble3 playerDestinationCoord(destinationCoord.chunk, playerDestinationPoint);
+			player.teleport(playerDestinationCoord);
+			player.lookAt(player.getPosition() + dirToWorldVoxel);
+			player.setVelocityToZero();
+
+			EntityGeneration::EntityGenInfo entityGenInfo;
+			entityGenInfo.init(gameState.nightLightsAreActive());
+
+			// Tick the level's chunk manager once during initialization so the renderer is passed valid
+			// chunks this frame.
+			constexpr double dummyDeltaTime = 0.0;
+			const ChunkManager &chunkManager = game.getChunkManager();
+			const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+			const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+			const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
+			newActiveLevel.update(dummyDeltaTime, activeChunkPositions, newChunkPositions, freedChunkPositions,
+				player, levelIndex, interiorMapDef, entityGenInfo, citizenGenInfo, gameState.getChasmAnimPercent(),
+				game.getRandom(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), renderChunkManager,
+				textureManager, game.getAudioManager(), renderer);
+		};
+
+		// Lambda for opening the world map when the player enters a transition voxel
+		// that will "lead to the surface of the dungeon".
+		auto switchToWorldMap = [&playerCoord, &game, &player]()
+		{
+			// Move player to center of previous voxel in case they change their mind
+			// about fast traveling. Don't change their direction.
+			const VoxelInt2 playerVoxelXZ(playerCoord.voxel.x, playerCoord.voxel.z);
+			const VoxelDouble2 playerVoxelCenterXZ = VoxelUtils::getVoxelCenter(playerVoxelXZ);
+			const VoxelDouble3 playerDestinationPoint(
+				playerVoxelCenterXZ.x,
+				player.getPosition().point.y,
+				playerVoxelCenterXZ.y);
+			const CoordDouble3 playerDestinationCoord(playerCoord.chunk, playerDestinationPoint);
+			player.teleport(playerDestinationCoord);
+			player.setVelocityToZero();
+
+			game.setPanel<WorldMapPanel>();
+		};
+
+		// See if it's a level up or level down transition. Ignore other transition types.
+		if (transitionDef.getType() == TransitionType::LevelChange)
+		{
+			const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef.getLevelChange();
+			if (levelChangeDef.isLevelUp)
+			{
+				// Level up transition. If the custom function has a target, call it and reset it (necessary
+				// for main quest start dungeon).
+				auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
+
+				if (onLevelUpVoxelEnter)
 				{
-					// From south to north.
-					return -Double3::UnitX;
+					onLevelUpVoxelEnter(game);
+					onLevelUpVoxelEnter = std::function<void(Game&)>();
 				}
-				else if (diff.x < 0)
+				else if (interiorMapInst.getActiveLevelIndex() > 0)
 				{
-					// From north to south.
-					return Double3::UnitX;
-				}
-				else if (diff.z > 0)
-				{
-					// From west to east.
-					return -Double3::UnitZ;
-				}
-				else if (diff.z < 0)
-				{
-					// From east to west.
-					return Double3::UnitZ;
+					// Decrement the world's level index and activate the new level.
+					switchToLevel(interiorMapInst.getActiveLevelIndex() - 1);
 				}
 				else
 				{
-					throw DebugException("Bad player transition voxel.");
+					switchToWorldMap();
 				}
-			}();
-
-			// Player destination after going through a level up/down voxel.
-			auto &player = gameState.getPlayer();
-			const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
-			const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(
-				transitionCoord.chunk, transitionVoxelCenter + dirToNewVoxel);
-
-			// Lambda for transitioning the player to the given level.
-			auto switchToLevel = [&game, &gameState, &interiorMapDef, &interiorMapInst, &player, &destinationCoord,
-				&dirToNewVoxel](int levelIndex)
+			}
+			else
 			{
-				// Clear all open doors and fading voxels in the level the player is switching away from.
-				// @todo: why wouldn't it just clear them when it gets switched to in setActive()?
-				auto &oldActiveLevel = interiorMapInst.getActiveLevel();
-
-				// @todo: find a modern equivalent for this w/ either the LevelInstance or ChunkManager.
-				//oldActiveLevel.clearTemporaryVoxelInstances();
-
-				// Select the new level.
-				interiorMapInst.setActiveLevelIndex(levelIndex, interiorMapDef);
-
-				// Set the new level active in the renderer.
-				auto &newActiveLevel = interiorMapInst.getActiveLevel();
-				auto &newActiveSky = interiorMapInst.getActiveSky();
-
-				WeatherDefinition weatherDef;
-				weatherDef.initClear();
-
-				const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
-
-				// @todo: should this be called differently so it doesn't badly influence data for the rest of
-				// this frame? Level changing should be done earlier I think.
-				auto &textureManager = game.getTextureManager();
-				auto &renderer = game.getRenderer();
-				if (!newActiveLevel.trySetActive(weatherDef, gameState.nightLightsAreActive(), levelIndex,
-					interiorMapDef, citizenGenInfo, textureManager, renderer))
+				// Level down transition.
+				if (interiorMapInst.getActiveLevelIndex() < (interiorMapInst.getLevelCount() - 1))
 				{
-					DebugCrash("Couldn't set new level active in renderer.");
-				}
-
-				if (!newActiveSky.trySetActive(levelIndex, interiorMapDef, textureManager, renderer))
-				{
-					DebugCrash("Couldn't set new sky active in renderer.");
-				}
-
-				// Move the player to where they should be in the new level.
-				const VoxelDouble3 playerDestinationPoint(
-					destinationCoord.point.x,
-					newActiveLevel.getCeilingScale() + Player::HEIGHT,
-					destinationCoord.point.z);
-				const CoordDouble3 playerDestinationCoord(destinationCoord.chunk, playerDestinationPoint);
-				player.teleport(playerDestinationCoord);
-				player.lookAt(player.getPosition() + dirToNewVoxel);
-				player.setVelocityToZero();
-
-				EntityGeneration::EntityGenInfo entityGenInfo;
-				entityGenInfo.init(gameState.nightLightsAreActive());
-
-				// Tick the level's chunk manager once during initialization so the renderer is passed valid
-				// chunks this frame.
-				constexpr double dummyDeltaTime = 0.0;
-				const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
-				newActiveLevel.update(dummyDeltaTime, game, player.getPosition(), levelIndex, interiorMapDef,
-					entityGenInfo, citizenGenInfo, chunkDistance, game.getEntityDefinitionLibrary(),
-					game.getBinaryAssetLibrary(), game.getTextureManager(), game.getAudioManager());
-			};
-
-			// Lambda for opening the world map when the player enters a transition voxel
-			// that will "lead to the surface of the dungeon".
-			auto switchToWorldMap = [&playerCoord, &game, &player]()
-			{
-				// Move player to center of previous voxel in case they change their mind
-				// about fast traveling. Don't change their direction.
-				const VoxelInt2 playerVoxelXZ(playerCoord.voxel.x, playerCoord.voxel.z);
-				const VoxelDouble2 playerVoxelCenterXZ = VoxelUtils::getVoxelCenter(playerVoxelXZ);
-				const VoxelDouble3 playerDestinationPoint(
-					playerVoxelCenterXZ.x,
-					player.getPosition().point.y,
-					playerVoxelCenterXZ.y);
-				const CoordDouble3 playerDestinationCoord(playerCoord.chunk, playerDestinationPoint);
-				player.teleport(playerDestinationCoord);
-				player.setVelocityToZero();
-
-				game.setPanel<WorldMapPanel>();
-			};
-
-			// See if it's a level up or level down transition. Ignore other transition types.
-			if (transitionDef->getType() == TransitionType::LevelChange)
-			{
-				const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
-				if (levelChangeDef.isLevelUp)
-				{
-					// Level up transition. If the custom function has a target, call it and reset it (necessary
-					// for main quest start dungeon).
-					auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
-
-					if (onLevelUpVoxelEnter)
-					{
-						onLevelUpVoxelEnter(game);
-						onLevelUpVoxelEnter = std::function<void(Game&)>();
-					}
-					else if (interiorMapInst.getActiveLevelIndex() > 0)
-					{
-						// Decrement the world's level index and activate the new level.
-						switchToLevel(interiorMapInst.getActiveLevelIndex() - 1);
-					}
-					else
-					{
-						switchToWorldMap();
-					}
+					// Increment the world's level index and activate the new level.
+					switchToLevel(interiorMapInst.getActiveLevelIndex() + 1);
 				}
 				else
 				{
-					// Level down transition.
-					if (interiorMapInst.getActiveLevelIndex() < (interiorMapInst.getLevelCount() - 1))
-					{
-						// Increment the world's level index and activate the new level.
-						switchToLevel(interiorMapInst.getActiveLevelIndex() + 1);
-					}
-					else
-					{
-						switchToWorldMap();
-					}
+					switchToWorldMap();
 				}
 			}
 		}

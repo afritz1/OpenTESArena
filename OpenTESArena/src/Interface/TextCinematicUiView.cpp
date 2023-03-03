@@ -1,5 +1,5 @@
 #include "TextCinematicUiView.h"
-#include "../Media/TextureManager.h"
+#include "../Assets/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
 

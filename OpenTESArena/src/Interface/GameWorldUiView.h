@@ -4,16 +4,16 @@
 #include <array>
 
 #include "GameWorldUiModel.h"
+#include "../Assets/TextureUtils.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 class FontLibrary;
 class Game;
@@ -157,15 +157,15 @@ namespace GameWorldUiView
 	Int2 getNativeWindowCenter(const Renderer &renderer);
 
 	// Helper functions for various UI textures.
-	TextureAssetReference getPaletteTextureAssetRef();
-	TextureAssetReference getGameWorldInterfaceTextureAssetRef();
-	TextureAssetReference getStatusGradientTextureAssetRef(StatusGradientType gradientType);
-	TextureAssetReference getPlayerPortraitTextureAssetRef(bool isMale, int raceID, int portraitID);
-	TextureAssetReference getNoMagicTextureAssetRef();
-	TextureAssetReference getWeaponAnimTextureAssetRef(const std::string &weaponFilename, int index);
-	TextureAssetReference getCompassFrameTextureAssetRef();
-	TextureAssetReference getCompassSliderTextureAssetRef();
-	TextureAssetReference getArrowCursorTextureAssetRef(int cursorIndex);
+	TextureAsset getPaletteTextureAsset();
+	TextureAsset getGameWorldInterfaceTextureAsset();
+	TextureAsset getStatusGradientTextureAsset(StatusGradientType gradientType);
+	TextureAsset getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID);
+	TextureAsset getNoMagicTextureAsset();
+	TextureAsset getWeaponAnimTextureAsset(const std::string &weaponFilename, int index);
+	TextureAsset getCompassFrameTextureAsset();
+	TextureAsset getCompassSliderTextureAsset();
+	TextureAsset getArrowCursorTextureAsset(int cursorIndex);
 
 	UiTextureID allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocStatusGradientTexture(StatusGradientType gradientType, TextureManager &textureManager, Renderer &renderer);

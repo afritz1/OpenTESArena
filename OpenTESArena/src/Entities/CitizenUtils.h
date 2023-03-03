@@ -1,20 +1,24 @@
 #ifndef CITIZEN_UTILS_H
 #define CITIZEN_UTILS_H
 
+#include <optional>
+
 #include "EntityAnimationInstance.h"
 #include "EntityUtils.h"
 #include "../Assets/ArenaTypes.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../World/Coord.h"
 
 class BinaryAssetLibrary;
-class Chunk;
+class EntityChunkManager;
 class EntityDefinition;
 class EntityDefinitionLibrary;
-class EntityManager;
+class LocationDefinition;
 class Random;
+class VoxelChunk;
 
 enum class CardinalDirectionName;
+enum class MapType;
 
 namespace CitizenUtils
 {
@@ -24,6 +28,7 @@ namespace CitizenUtils
 
 	// How far away a citizen will consider idling around the player.
 	constexpr double IDLE_DISTANCE = 1.25;
+	constexpr double IDLE_DISTANCE_SQR = IDLE_DISTANCE * IDLE_DISTANCE;
 
 	// Walking speed of citizens.
 	constexpr double SPEED = 2.25;
@@ -44,28 +49,21 @@ namespace CitizenUtils
 			EntityAnimationInstance &&femaleAnimInst, PaletteID paletteID, int raceID);
 	};
 
-	// Helper functions for determining a citizen's walking direction.
-	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, NewDouble2 *outDirection);
-	CardinalDirectionName getCitizenDirectionNameByIndex(int index);
-	NewDouble2 getCitizenDirectionByIndex(int index);
-	int getRandomCitizenDirectionIndex(Random &random);
-
-	// Gets the number of citizens active in the world.
-	int getCitizenCount(const EntityManager &entityManager);
-	int getCitizenCountInChunk(const ChunkInt2 &chunk, const EntityManager &entityManager);
-
+	bool canMapTypeSpawnCitizens(MapType mapType);
 	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
 		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
+	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef,
+		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
 
-	bool trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityManager &entityManager);
+	// Helper functions for determining a citizen's walking direction.
+	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection);
+	CardinalDirectionName getCitizenDirectionNameByIndex(int index);
+	WorldDouble2 getCitizenDirectionByIndex(int index);
+	int getRandomCitizenDirectionIndex(Random &random);
 
-	// Writes the citizen textures to the renderer. This is done once for all citizens in a level.
-	void writeCitizenTextures(const EntityDefinition &maleEntityDef, const EntityDefinition &femaleEntityDef,
-		TextureManager &textureManager, Renderer &renderer);
-
-	// Used when the player commits a crime and the guards are called.
-	void clearCitizens(EntityManager &entityManager);
+	// Gets the number of citizens active in the world or a chunk.
+	int getCitizenCountInChunk(const ChunkInt2 &chunkPos, const EntityChunkManager &entityChunkManager);
+	int getCitizenCount(const EntityChunkManager &entityChunkManager);
 }
 
 #endif

@@ -1,15 +1,14 @@
 #include <algorithm>
 
 #include "ArenaCityUtils.h"
-#include "ArenaVoxelUtils.h"
-#include "ArenaWeatherUtils.h"
 #include "ArenaWildUtils.h"
 #include "MapType.h"
-#include "VoxelDefinition.h"
-#include "WeatherDefinition.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
+#include "../Voxels/ArenaVoxelUtils.h"
+#include "../Weather/ArenaWeatherUtils.h"
+#include "../Weather/WeatherDefinition.h"
 
 #include "components/debug/Debug.h"
 
@@ -281,9 +280,9 @@ OriginalInt2 ArenaWildUtils::getRelativeWildOrigin(const Int2 &voxel)
 		voxel.y - (voxel.y % (RMDFile::DEPTH * 2)));
 }
 
-NewInt2 ArenaWildUtils::getCenteredWildOrigin(const NewInt2 &voxel)
+WorldInt2 ArenaWildUtils::getCenteredWildOrigin(const WorldInt2 &voxel)
 {
-	return NewInt2(
+	return WorldInt2(
 		(std::max(voxel.x - 32, 0) / RMDFile::WIDTH) * RMDFile::WIDTH,
 		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
 }

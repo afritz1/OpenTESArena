@@ -49,7 +49,7 @@ Radians MathUtils::fullAtan2(double y, double x)
 	return (angle >= 0.0) ? angle : (Constants::TwoPi + angle);
 }
 
-Radians MathUtils::fullAtan2(const NewDouble2 &v)
+Radians MathUtils::fullAtan2(const WorldDouble2 &v)
 {
 	// Flip +X south/+Y west to +X east/+Y north.
 	return MathUtils::fullAtan2(-v.x, -v.y);
@@ -73,7 +73,36 @@ Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint,
 	const Double2 &normal)
 {
-	return (point - dividerPoint).normalized().dot(normal) >= 0.0;
+	return (point - dividerPoint).dot(normal) >= 0.0;
+}
+
+bool MathUtils::lineSegmentIntersection(const Double2 &a0, const Double2 &a1, const Double2 &b0, const Double2 &b1)
+{
+	const Double2 aDiff = a1 - a0;
+	const Double2 bDiff = b1 - b0;
+	const double dotPerp = (aDiff.x * bDiff.y) - (aDiff.y * bDiff.x);
+	if (std::abs(dotPerp) < Constants::Epsilon)
+	{
+		// Line segments are parallel.
+		return false;
+	}
+
+	const Double2 abDiff = b0 - a0;
+	const double s = ((abDiff.x * aDiff.y) - (abDiff.y * aDiff.x)) / dotPerp;
+	if ((s < 0.0) || (s > 1.0))
+	{
+		// Intersection is outside line segment A.
+		return false;
+	}
+
+	const double t = ((abDiff.x * bDiff.y) - (abDiff.y * bDiff.x)) / dotPerp;
+	if ((t < 0.0) || (t > 1.0))
+	{
+		// Intersection is outside line segment B.
+		return false;
+	}
+
+	return true;
 }
 
 bool MathUtils::triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
@@ -154,6 +183,71 @@ bool MathUtils::triangleCircleIntersection(const Double2 &triangleP0, const Doub
 	return false;
 }
 
+bool MathUtils::triangleRectangleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
+	const Double2 &triangleP2, const Double2 &rectLow, const Double2 &rectHigh)
+{
+	const Double2 triangleP0P1 = triangleP1 - triangleP0;
+	const Double2 triangleP1P2 = triangleP2 - triangleP1;
+	const Double2 triangleP2P0 = triangleP0 - triangleP2;
+
+	const Double2 trianglePerp0 = triangleP0P1.rightPerp();
+	const Double2 trianglePerp1 = triangleP1P2.rightPerp();
+	const Double2 trianglePerp2 = triangleP2P0.rightPerp();
+
+	const Double2 rectP0 = rectLow;
+	const Double2 rectP1(rectP0.x + (rectHigh.x - rectLow.x), rectP0.y);
+	const Double2 rectP2 = rectHigh;
+	const Double2 rectP3(rectP0.x, rectP0.y + (rectHigh.y - rectLow.y));
+
+	auto isInTriangle = [&triangleP0, &triangleP1, &triangleP2, &trianglePerp0, &trianglePerp1, &trianglePerp2](const Double2 &p)
+	{
+		return MathUtils::isPointInHalfSpace(p, triangleP0, trianglePerp0) &&
+			MathUtils::isPointInHalfSpace(p, triangleP1, trianglePerp1) &&
+			MathUtils::isPointInHalfSpace(p, triangleP2, trianglePerp2);
+	};
+
+	// Check if rectangle is completely inside triangle.
+	if (isInTriangle(rectP0) && isInTriangle(rectP1) && isInTriangle(rectP2) && isInTriangle(rectP3))
+	{
+		return true;
+	}
+
+	auto isInRect = [&rectLow, &rectHigh](const Double2 &p)
+	{
+		return (p.x >= rectLow.x) && (p.x <= rectHigh.x) && (p.y >= rectLow.y) && (p.y <= rectHigh.y);
+	};
+
+	// Check if triangle is completely inside rectangle.
+	if (isInRect(triangleP0) && isInRect(triangleP1) && isInRect(triangleP2))
+	{
+		return true;
+	}
+
+	// Check if any triangle line segment intersects any rectangle line segment.
+	const bool isTriangleP0P1Intersecting =
+		MathUtils::lineSegmentIntersection(triangleP0, triangleP1, rectP0, rectP1) ||
+		MathUtils::lineSegmentIntersection(triangleP0, triangleP1, rectP1, rectP2) ||
+		MathUtils::lineSegmentIntersection(triangleP0, triangleP1, rectP2, rectP3) ||
+		MathUtils::lineSegmentIntersection(triangleP0, triangleP1, rectP3, rectP0);
+	const bool isTriangleP1P2Intersecting =
+		MathUtils::lineSegmentIntersection(triangleP1, triangleP2, rectP0, rectP1) ||
+		MathUtils::lineSegmentIntersection(triangleP1, triangleP2, rectP1, rectP2) ||
+		MathUtils::lineSegmentIntersection(triangleP1, triangleP2, rectP2, rectP3) ||
+		MathUtils::lineSegmentIntersection(triangleP1, triangleP2, rectP3, rectP0);
+	const bool isTriangleP2P0Intersecting =
+		MathUtils::lineSegmentIntersection(triangleP2, triangleP0, rectP0, rectP1) ||
+		MathUtils::lineSegmentIntersection(triangleP2, triangleP0, rectP1, rectP2) ||
+		MathUtils::lineSegmentIntersection(triangleP2, triangleP0, rectP2, rectP3) ||
+		MathUtils::lineSegmentIntersection(triangleP2, triangleP0, rectP3, rectP0);
+
+	if (isTriangleP0P1Intersecting || isTriangleP1P2Intersecting || isTriangleP2P0Intersecting)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 	const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint)
 {
@@ -174,6 +268,52 @@ bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &ray
 	}
 
 	return false;
+}
+
+bool MathUtils::rayTriangleIntersection(const Double3 &rayStart, const Double3 &rayDirection,
+	const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT)
+{
+	// Möller-Trumbore
+	const Double3 v0v1 = v1 - v0;
+	const Double3 v0v2 = v2 - v0;
+	const Double3 dirV0V2Cross = rayDirection.cross(v0v2);
+	const double v0v1CrossDot = v0v1.dot(dirV0V2Cross);
+	if (std::abs(v0v1CrossDot) < Constants::Epsilon)
+	{
+		// Ray is parallel to triangle.
+		return false;
+	}
+
+	const double invDot = 1.0 / v0v1CrossDot;
+	const Double3 startV0Diff = rayStart - v0;
+	
+	// First barycentric coordinate.
+	const double u = invDot * startV0Diff.dot(dirV0V2Cross);
+	if ((u < 0.0) || (u > 1.0))
+	{
+		// Outside the triangle.
+		return false;
+	}
+
+	const Double3 diffV0V1Cross = startV0Diff.cross(v0v1);
+	
+	// Second barycentric coordinate.
+	const double v = invDot * rayDirection.dot(diffV0V1Cross);
+	if ((v < 0.0) || ((u + v) > 1.0))
+	{
+		// Outside the triangle.
+		return false;
+	}
+
+	const double t = invDot * v0v2.dot(diffV0V1Cross);
+	if (t <= Constants::Epsilon)
+	{
+		// Too close or the ray starts past the triangle.
+		return false;
+	}
+
+	*outT = t;
+	return true;
 }
 
 bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
@@ -207,6 +347,11 @@ bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayD
 	}
 
 	return false;
+}
+
+double MathUtils::distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal)
+{
+	return point.dot(planeNormal) - planePoint.dot(planeNormal);
 }
 
 double MathUtils::distanceBetweenLineSegments(const Double3 &p0, const Double3 &p1,

@@ -1,14 +1,14 @@
 #ifndef LOGBOOK_UI_VIEW_H
 #define LOGBOOK_UI_VIEW_H
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 namespace LogbookUiView
 {
@@ -27,8 +27,8 @@ namespace LogbookUiView
 	constexpr int BackButtonWidth = 34;
 	constexpr int BackButtonHeight = 14;
 
-	TextureAssetReference getBackgroundPaletteTextureAssetRef();
-	TextureAssetReference getBackgroundTextureAssetRef();
+	TextureAsset getBackgroundPaletteTextureAsset();
+	TextureAsset getBackgroundTextureAsset();
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 }

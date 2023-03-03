@@ -9,30 +9,21 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector3.h"
-#include "../World/VoxelDefinition.h"
-#include "../World/VoxelUtils.h"
+#include "../Utilities/Color.h"
+#include "../Utilities/Palette.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/BufferView.h"
 
-class Chunk;
+class VoxelChunk;
 class WeatherInstance;
+
+struct RenderCamera;
 
 namespace RendererUtils
 {
-	struct LoadedEntityTextureEntry
-	{
-		TextureAssetReference textureAssetRef;
-		bool flipped;
-		bool reflective;
-
-		void init(TextureAssetReference &&textureAssetRef, bool flipped, bool reflective);
-	};
-
-	// Loaded texture asset caches so the rest of the engine can see what texture assets are already loaded
-	// in the renderer.
-	// @todo: this should eventually be a hash table of texture asset refs to texture handles
-	using LoadedVoxelTextureCache = std::vector<TextureAssetReference>;
-	using LoadedEntityTextureCache = std::vector<LoadedEntityTextureEntry>;
+	constexpr double NEAR_PLANE = 0.001;
+	constexpr double FAR_PLANE = 1000.0;
 
 	// Vertices used with fog geometry in screen-space around the player.
 	constexpr int FOG_GEOMETRY_VERTEX_COUNT = 8;
@@ -40,6 +31,9 @@ namespace RendererUtils
 	constexpr int FOG_GEOMETRY_INDICES_PER_QUAD = 4;
 	using FogVertexArray = std::array<Double3, FOG_GEOMETRY_VERTEX_COUNT>; // Corners of a cube.
 	using FogIndexArray = std::array<int, FOG_GEOMETRY_INDEX_COUNT>; // 4 faces.
+
+	RenderCamera makeCamera(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction,
+		Degrees fovY, double aspectRatio, bool tallPixelCorrection);
 
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);
@@ -51,40 +45,38 @@ namespace RendererUtils
 	bool isChasmEmissive(ArenaTypes::ChasmType chasmType);
 
 	// Gets the world space coordinates of the given voxel's four corners from a top-down perspective.
-	void getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outTopLeftCorner,
-		NewDouble2 *outTopRightCorner, NewDouble2 *outBottomLeftCorner, NewDouble2 *outBottomRightCorner);
+	void getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outTopLeftCorner,
+		WorldDouble2 *outTopRightCorner, WorldDouble2 *outBottomLeftCorner, WorldDouble2 *outBottomRightCorner);
 
 	// Gets the world space coordinates of the given diagonal voxel's three points (beginning, middle,
 	// and end point). Diag1 includes the top right and bottom left corners, diag2 includes the top left
 	// and bottom right corners.
-	void getDiag1Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outStart,
-		NewDouble2 *outMiddle, NewDouble2 *outEnd);
-	void getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outStart,
-		NewDouble2 *outMiddle, NewDouble2 *outEnd);
+	void getDiag1Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
+		WorldDouble2 *outMiddle, WorldDouble2 *outEnd);
+	void getDiag2Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
+		WorldDouble2 *outMiddle, WorldDouble2 *outEnd);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
-	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Chunk &chunk);
+	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const VoxelChunk &chunk);
 
 	// Gets the percent fade of a voxel, or 1 if the given voxel is not fading.
-	double getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const Chunk &chunk);
+	double getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const VoxelChunk &chunk);
 
 	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
 	// and the zoom of the camera (dependent on vertical field of view).
 	double getYShear(Radians angleRadians, double zoom);
 
-	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
-	double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
+	// Converts a 3D point or vector in world space to camera space (where Z distance to vertices is relevant).
+	// The W component of the point/vector matters (point=1, vector=0)!
+	Double4 worldSpaceToCameraSpace(const Double4 &point, const Matrix4d &view);
 
-	// Converts a 3D point in world space to camera space (where Z distance to vertices is relevant).
-	Double3 worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view);
+	// Projects a 3D point or vector in camera space to clip space (homogeneous coordinates; does not divide by W).
+	Double4 cameraSpaceToClipSpace(const Double4 &point, const Matrix4d &perspective);
 
-	// Projects a 3D point in camera space to clip space (homogeneous coordinates; does not divide by W).
-	Double4 cameraSpaceToClipSpace(const Double3 &point, const Matrix4d &perspective);
-
-	// Projects a 3D point in world space to clip space (homogeneous coordinates; does not divide by W). The given
-	// transformation matrix is the product of a model, view, and perspective matrix. This function combines the 
-	// camera space step for convenience.
-	Double4 worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform);
+	// Projects a 3D point or vector in world space to clip space (homogeneous coordinates; does not divide by W).
+	// The given transformation matrix is the product of a model, view, and perspective matrix. This function
+	// combines the camera space step for convenience.
+	Double4 worldSpaceToClipSpace(const Double4 &point, const Matrix4d &transform);
 
 	// Converts a point in homogeneous coordinates to normalized device coordinates by dividing by W.
 	Double3 clipSpaceToNDC(const Double4 &point);
@@ -133,6 +125,9 @@ namespace RendererUtils
 
 	// Gets the lightning bolt percent if it's a thunderstorm and a lightning bolt is present.
 	std::optional<double> getLightningBoltPercent(const WeatherInstance &weatherInst);
+
+	// Gets the palette index of the color that most closely matches the given one.
+	int getNearestPaletteColorIndex(const Color &color, const Palette &palette);
 
 	// Gets the vertex buffer and index buffer for screen-space fog. Every quad is ordered in
 	// UV space, where (0, 0) is the top left and (1, 0) is the top right.

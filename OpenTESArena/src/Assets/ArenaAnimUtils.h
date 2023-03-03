@@ -11,7 +11,7 @@
 #include "ArenaTypes.h"
 #include "INFFile.h"
 #include "../Entities/EntityAnimationDefinition.h"
-#include "../Media/Palette.h"
+#include "../Utilities/Palette.h"
 
 class ArenaRandom;
 class BinaryAssetLibrary;
@@ -20,7 +20,6 @@ class CharacterClassLibrary;
 class ExeData;
 class TextureManager;
 
-enum class EntityType;
 enum class MapType;
 
 // Helper values for working with the original animations. These may or may not be directly
@@ -89,16 +88,16 @@ namespace ArenaAnimUtils
 	bool isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex);
 
 	// Returns whether the given flat index is for a static or dynamic entity.
-	EntityType getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
+	bool isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
 
-	// Gets the first creature's *ITEM index (rat).
-	ArenaTypes::ItemIndex getFirstCreatureItemIndex();
+	// The first creature's *ITEM index (rat).
+	constexpr ArenaTypes::ItemIndex FirstCreatureItemIndex = 32;
+
+	// The final boss is a special case, essentially hardcoded at the end of the creatures.
+	constexpr int FinalBossCreatureID = 24;
 
 	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
 	int getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex);
-
-	// The final boss is a special case, essentially hardcoded at the end of the creatures.
-	int getFinalBossCreatureID();
 
 	// Converts the 1-based creature ID to an index usable with .exe data arrays.
 	int getCreatureIndexFromID(int creatureID);
@@ -108,13 +107,13 @@ namespace ArenaAnimUtils
 
 	// Streetlights are hardcoded in the original game to flat index 29. This lets the
 	// game give them a light source and toggle them between on and off states.
-	ArenaTypes::FlatIndex getStreetLightActiveIndex();
-	ArenaTypes::FlatIndex getStreetLightInactiveIndex();
+	constexpr ArenaTypes::FlatIndex StreetLightActiveIndex = 29;
+	constexpr ArenaTypes::FlatIndex StreetLightInactiveIndex = 30;
 	bool isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, MapType mapType);
 
 	// Ruler flats are either a king or queen.
-	ArenaTypes::FlatIndex getRulerKingIndex();
-	ArenaTypes::FlatIndex getRulerQueenIndex();
+	constexpr ArenaTypes::FlatIndex RulerKingIndex = 0;
+	constexpr ArenaTypes::FlatIndex RulerQueenIndex = 1;
 	bool isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, ArenaTypes::InteriorType interiorType);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling

@@ -1,7 +1,7 @@
 #ifndef CHUNK_UTILS_H
 #define CHUNK_UTILS_H
 
-#include "VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 namespace ChunkUtils
 {
@@ -13,6 +13,12 @@ namespace ChunkUtils
 
 	// I.e., given 23, returns 64.
 	int getNextHigherChunkMultiple(int coord);
+
+	// Gets the side length (in chunks) of the active chunks for the given chunk distance.
+	int getChunkCountPerSide(int chunkDistance);
+
+	// Gets the number of chunks needed for the given chunk distance.
+	int getChunkCount(int chunkDistance);
 
 	// Gets the number of chunks in each dimension required to fit the given area that's in
 	// new voxel grid space.
@@ -40,6 +46,16 @@ namespace ChunkUtils
 	CoordDouble3 recalculateCoord(const ChunkInt2 &chunk, const VoxelDouble3 &point);
 	CoordInt2 recalculateCoord(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 	CoordInt3 recalculateCoord(const ChunkInt2 &chunk, const VoxelInt3 &voxel);
+
+	// For iterating only the portion of a level that the chunk overlaps.
+	void GetWritingRanges(const LevelInt2 &levelOffset, SNInt levelWidth, int levelHeight, WEInt levelDepth,
+		SNInt *outStartX, int *outStartY, WEInt *outStartZ, SNInt *outEndX, int *outEndY, WEInt *outEndZ);
+
+	bool IsInWritingRange(const LevelInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
+		WEInt startZ, WEInt endZ);
+
+	VoxelInt3 MakeChunkVoxelFromLevel(const LevelInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ);
+	VoxelDouble3 MakeChunkPointFromLevel(const LevelDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ);
 }
 
 #endif

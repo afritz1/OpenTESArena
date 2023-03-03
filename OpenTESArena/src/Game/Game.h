@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <array>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -12,19 +13,20 @@
 #include "Options.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
+#include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputManager.h"
+#include "../Interface/CinematicLibrary.h"
 #include "../Interface/Panel.h"
-#include "../Media/CinematicLibrary.h"
-#include "../Media/TextureManager.h"
+#include "../Rendering/RenderChunkManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/TextBox.h"
+#include "../World/ChunkManager.h"
 
-#include "components/utilities/Allocator.h"
 #include "components/utilities/FPSCounter.h"
 #include "components/utilities/Profiler.h"
 
@@ -57,13 +59,12 @@ private:
 	CinematicLibrary cinematicLibrary;
 	CharacterClassLibrary charClassLibrary;
 	EntityDefinitionLibrary entityDefLibrary;
-	std::unique_ptr<GameState> gameState;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	GameWorldRenderCallback gameWorldRenderCallback;
 	Options options;
 	Renderer renderer;
 	TextureManager textureManager;
-	
+
 	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
 	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
@@ -72,16 +73,27 @@ private:
 	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
 	std::vector<std::unique_ptr<Panel>> subPanels;
 
+	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
+	std::array<Rect, 9> nativeCursorRegions;
+
 	// Displayed with varying profiler levels.
 	TextBox debugInfoTextBox;
 
 	BinaryAssetLibrary binaryAssetLibrary;
 	TextAssetLibrary textAssetLibrary;
 	Random random; // Convenience random for ease of use.
-	ScratchAllocator scratchAllocator;
 	Profiler profiler;
 	FPSCounter fpsCounter;
-	std::string basePath, optionsPath;
+
+	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
+	GameState gameState;
+	Player player;
+	ChunkManager chunkManager;
+	RenderChunkManager renderChunkManager;
+
+	// Engine variables for what kinds of simulation should be attempted each frame.
+	bool shouldSimulateScene;
+
 	bool requestedSubPanelPop;
 	bool running;
 
@@ -100,22 +112,12 @@ private:
 	// Handles any changes in panels after an SDL event or game tick.
 	void handlePanelChanges();
 
-	// Handles SDL events for the current frame.
-	void handleInput(double dt);
 	void handleApplicationExit();
 	void handleWindowResized(int width, int height);
-
-	// Animates the game state by delta time.
-	void tick(double dt);
-
-	// Updates audio state and attempts to update the 3D audio listener (if any).
-	void updateAudio(double dt);
+	void updateNativeCursorRegions(int windowWidth, int windowHeight);
 
 	// Optionally displays debug profiler info on-screen.
 	void renderDebugInfo();
-
-	// Runs the current panel's render method for drawing to the screen.
-	void render();
 public:
 	Game();
 	Game(const Game&) = delete;
@@ -124,6 +126,8 @@ public:
 
 	Game &operator=(const Game&) = delete;
 	Game &operator=(Game&&) = delete;
+
+	bool init();
 
 	// Gets the audio manager for changing the current music and sound.
 	AudioManager &getAudioManager();
@@ -147,12 +151,21 @@ public:
 	// Gets the entity definition library for obtaining various entity definitions.
 	const EntityDefinitionLibrary &getEntityDefinitionLibrary() const;
 
-	// Determines if a game session is currently running. This is true when a player is loaded into memory.
-	bool gameStateIsActive() const;
-
 	// The game state holds the "session" for the game. If no session is active, do not call this method.
 	// Verify beforehand by calling Game::gameStateIsActive().
-	GameState &getGameState() const;
+	GameState &getGameState();
+
+	Player &getPlayer();
+
+	const ChunkManager &getChunkManager() const;
+
+	RenderChunkManager &getRenderChunkManager();
+
+	// Whether the game loop should animate voxels, entities, and sky that can change over time.
+	// Used when determining if the player is actively in the game world or in menus. This does 
+	// not affect immediate operations like chunk management or scene transitions.
+	bool isSimulatingScene() const;
+	void setIsSimulatingScene(bool active);
 
 	// Returns whether a new character is currently being created.
 	bool characterCreationIsActive() const;
@@ -176,14 +189,17 @@ public:
 	// Gets the global RNG initialized at program start.
 	Random &getRandom();
 
-	// Gets the scratch buffer that is reset each frame.
-	ScratchAllocator &getScratchAllocator();
-
 	// Gets the profiler instance for measuring precise time spans.
 	Profiler &getProfiler();
 
 	// Gets the frames-per-second counter. This is updated in the game loop.
 	const FPSCounter &getFPSCounter() const;
+
+	// Gets a UI rectangle used with classic game world interface for player movement.
+	const Rect &getNativeCursorRegion(int index) const;
+
+	// @todo: find a cleaner way to do this via listener callbacks or something.
+	TextBox *getTriggerTextBox();
 
 	// Sets the panel after the current SDL event has been processed (to avoid 
 	// interfering with the current panel). This uses template parameters for
@@ -226,9 +242,6 @@ public:
 	// then the old sub-panel is popped and replaced by the new sub-panel. Panels should 
 	// never call this, because if they are active, then there are no sub-panels to pop.
 	void popSubPanel();
-
-	// Sets the current game state. A game session is active if the game state is not null.
-	void setGameState(std::unique_ptr<GameState> gameState);
 
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.

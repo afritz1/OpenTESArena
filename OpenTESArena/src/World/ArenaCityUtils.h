@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "ArenaLevelUtils.h"
-#include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView2D.h"

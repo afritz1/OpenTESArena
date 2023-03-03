@@ -18,17 +18,6 @@ class Random;
 class Player
 {
 private:
-	static constexpr double STEPPING_HEIGHT = 0.25; // Allowed change in height for stepping on stairs.
-	static constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
-	
-	// Magnitude of -Y acceleration in the air.
-	static constexpr double GRAVITY = 9.81;
-
-	// Friction for slowing the player down on ground.
-	static constexpr double FRICTION_DYNAMIC = 4.0;
-	static constexpr double FRICTION_STATIC = 16.0;
-	double friction = FRICTION_STATIC;
-
 	std::string displayName;
 	bool male;
 	int raceID;
@@ -37,6 +26,7 @@ private:
 	Camera3D camera;
 	VoxelDouble3 velocity;
 	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
+	double friction;
 	WeaponAnimation weaponAnimation;
 	PrimaryAttributeSet attributes;
 	// Other stats...
@@ -50,15 +40,20 @@ private:
 	// Updates the player's position and velocity based on interactions with the world.
 	void updatePhysics(const LevelInstance &activeLevel, bool collision, double dt);
 public:
+	Player();
+
 	// Make player with rolled attributes based on race & gender.
-	Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
+	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random);
 
 	// Make player with given attributes.
-	Player(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
+	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);
+
+	// Initializes a random player for testing.
+	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, Random &random);
 
 	// Distance from player's feet to head.
 	static constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
@@ -75,10 +70,6 @@ public:
 	int getRaceID() const;
 	int getCharacterClassDefID() const;
 	const PrimaryAttributeSet &getAttributes() const;
-
-	// Generates a random player for testing.
-	static Player makeRandom(const CharacterClassLibrary &charClassLibrary,
-		const ExeData &exeData, Random &random);
 
 	// Gets the direction the player is facing.
 	const Double3 &getDirection() const;

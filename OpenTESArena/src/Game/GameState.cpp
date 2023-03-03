@@ -3,8 +3,6 @@
 #include <cmath>
 #include <tuple>
 
-#include "SDL.h"
-
 #include "ArenaClockUtils.h"
 #include "Game.h"
 #include "GameState.h"
@@ -13,20 +11,20 @@
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
-#include "../Entities/Entity.h"
-#include "../Entities/EntityManager.h"
+#include "../Assets/TextureManager.h"
 #include "../Entities/Player.h"
+#include "../GameLogic/MapLogicController.h"
+#include "../GameLogic/PlayerLogicController.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../Math/Constants.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
-#include "../World/ArenaVoxelUtils.h"
-#include "../World/ArenaWeatherUtils.h"
+#include "../Voxels/ArenaVoxelUtils.h"
+#include "../Weather/ArenaWeatherUtils.h"
+#include "../Weather/WeatherUtils.h"
 #include "../World/MapType.h"
-#include "../World/WeatherUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 #include "../WorldMap/LocationInstance.h"
 
@@ -60,12 +58,21 @@ void GameState::MapTransitionState::init(MapState &&mapState,
 	this->enteringInteriorFromExterior = enteringInteriorFromExterior;
 }
 
-GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
-	: player(std::move(player))
+GameState::GameState()
 {
-	// Most values need to be initialized elsewhere in the program in order to determine
-	// the world state, etc..
 	DebugLog("Initializing.");
+
+	this->clearSession();
+}
+
+GameState::~GameState()
+{
+	DebugLog("Closing.");
+}
+
+void GameState::init(const BinaryAssetLibrary &binaryAssetLibrary)
+{
+	// @todo: might want a clearSession()? Seems weird.
 
 	// Initialize world map definition and instance to default.
 	this->worldMapDef.init(binaryAssetLibrary);
@@ -101,20 +108,28 @@ GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibra
 	// Do initial weather update (to set each value to a valid state).
 	this->updateWeatherList(binaryAssetLibrary.getExeData());
 
+	this->date = Date();
+	this->weatherInst = WeatherInstance();
+}
+
+void GameState::clearSession()
+{
+	// @todo: this function doesn't clear everything, i.e. weather state. Might want to revise later.
+
+	// Don't have to clear on-screen text box durations.
 	this->provinceIndex = -1;
 	this->locationIndex = -1;
 
-	this->triggerTextRemainingSeconds = 0.0;
-	this->actionTextRemainingSeconds = 0.0;
-	this->effectTextRemainingSeconds = 0.0;
-
 	this->isCamping = false;
 	this->chasmAnimSeconds = 0.0;
-}
 
-GameState::~GameState()
-{
-	DebugLog("Closing.");
+	this->travelData = nullptr;
+	this->nextMap = nullptr;
+	this->clearMaps();
+	
+	this->onLevelUpVoxelEnter = std::function<void(Game&)>();
+
+	this->weatherDef.initClear();
 }
 
 /*bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
@@ -343,7 +358,7 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	constexpr int currentDay = 0; // Doesn't matter for interiors.
 
 	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, currentDay, textureManager);
+	mapInstance.init(mapDefinition, currentDay, textureManager, renderer);
 
 	// Save return voxel to the current exterior (if any).
 	if (this->maps.size() > 0)
@@ -393,7 +408,7 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 	constexpr int currentDay = 0; // Doesn't matter for interiors.
 
 	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, currentDay, textureManager);
+	mapInstance.init(mapDefinition, currentDay, textureManager, renderer);
 
 	const CoordInt2 startCoord = [&playerStartOffset, &mapDefinition]()
 	{
@@ -420,9 +435,6 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 	this->nextMap->init(std::move(mapState), worldMapLocationIDs, std::move(citizenGenInfo),
 		startCoord, enteringInteriorFromExterior);
 
-	// @todo: hack to make fast travel not crash when iterating stale distant objects in renderer
-	renderer.clearSky();
-
 	return true;
 }
 
@@ -444,7 +456,7 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	}
 
 	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager);
+	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager, renderer);
 
 	DebugAssert(mapDefinition.getStartPointCount() > 0);
 	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
@@ -492,9 +504,6 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	this->nextMap->init(std::move(mapState), newWorldMapLocationIDs, std::move(citizenGenInfo),
 		startCoord, enteringInteriorFromExterior);
 
-	// @todo: hack to make fast travel not crash when iterating stale distant objects in renderer
-	renderer.clearSky();
-
 	return true;
 }
 
@@ -518,7 +527,7 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	}
 
 	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager);
+	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager, renderer);
 
 	// Wilderness start point depends on city gate the player is coming out of.
 	DebugAssert(mapDefinition.getStartPointCount() == 0);
@@ -579,14 +588,12 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	this->nextMap->init(std::move(mapState), newWorldMapLocationIDs, std::move(citizenGenInfo),
 		actualStartCoord, enteringInteriorFromExterior);
 
-	// @todo: hack to make fast travel not crash when iterating stale distant objects in renderer
-	renderer.clearSky();
-
 	return true;
 }
 
-bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
+bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	if (this->maps.size() == 0)
 	{
@@ -646,8 +653,8 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 	}();
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, std::move(activeWeatherDef), startCoord,
-		citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, player, std::move(activeWeatherDef),
+		startCoord, citizenGenInfo, entityDefLibrary, binaryAssetLibrary, renderChunkManager, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for previously active level.");
 		return false;
@@ -662,11 +669,6 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 	return true;
 }
 
-Player &GameState::getPlayer()
-{
-	return this->player;
-}
-
 const MapDefinition &GameState::getActiveMapDef() const
 {
 	if (this->nextMap != nullptr)
@@ -679,6 +681,11 @@ const MapDefinition &GameState::getActiveMapDef() const
 		const MapState &activeMapState = this->maps.top();
 		return activeMapState.definition;
 	}
+}
+
+bool GameState::hasActiveMapInst() const
+{
+	return !this->maps.empty();
 }
 
 MapInstance &GameState::getActiveMapInst()
@@ -957,23 +964,21 @@ void GameState::resetEffectTextDuration()
 	this->effectTextRemainingSeconds = 0.0;
 }
 
-void GameState::setTransitionedPlayerPosition(const CoordDouble3 &position)
-{
-	this->player.teleport(position);
-	this->player.setVelocityToZero();
-}
-
 bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-	WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
+	Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+	RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	const VoxelDouble2 startVoxelReal = VoxelUtils::getVoxelCenter(startCoord.voxel);
 	const CoordDouble3 playerPos(
 		startCoord.chunk,
 		VoxelDouble3(startVoxelReal.x, levelInst.getCeilingScale() + Player::HEIGHT, startVoxelReal.y));
-	this->setTransitionedPlayerPosition(playerPos);
+
+	// Set transitioned position.
+	player.teleport(playerPos);
+	player.setVelocityToZero();
+
 	this->weatherDef = std::move(weatherDef);
 
 	Random weatherRandom; // Cosmetic random.
@@ -984,8 +989,8 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	DebugAssert(this->maps.size() > 0);
 	const MapDefinition &mapDefinition = this->maps.top().definition;
 
-	if (!levelInst.trySetActive(this->weatherDef, this->nightLightsAreActive(), activeLevelIndex,
-		mapDefinition, citizenGenInfo, textureManager, renderer))
+	// @todo: need to combine setting level and sky active into a renderer.loadScene() call I think.
+	if (!levelInst.trySetActive(renderChunkManager, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer.");
 		return false;
@@ -1009,9 +1014,9 @@ bool GameState::trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &
 	return true;
 }
 
-bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
+bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+	RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	MapState &nextMapState = transitionState.mapState;
 	WeatherDefinition nextWeatherDef = nextMapState.weatherDef;
@@ -1036,9 +1041,9 @@ bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
 	LevelInstance &newLevelInst = newMapInst.getActiveLevel();
 	SkyInstance &newSkyInst = newMapInst.getActiveSky();
 
-	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, std::move(nextWeatherDef),
+	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, player, std::move(nextWeatherDef),
 		transitionState.startCoord, transitionState.citizenGenInfo, entityDefLibrary, binaryAssetLibrary,
-		textureManager, renderer))
+		renderChunkManager, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set new level active.");
 		return false;
@@ -1104,30 +1109,62 @@ void GameState::updateWeatherList(const ExeData &exeData)
 	}
 }
 
-void GameState::tick(double dt, Game &game)
+void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 {
-	DebugAssert(dt >= 0.0);
-
-	// See if there is a pending map transition.
+	Player &player = game.getPlayer();
 	if (this->nextMap != nullptr)
 	{
-		if (!this->tryApplyMapTransition(std::move(*this->nextMap), game.getEntityDefinitionLibrary(),
-			game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
+		if (!this->tryApplyMapTransition(std::move(*this->nextMap), player, game.getEntityDefinitionLibrary(),
+			game.getBinaryAssetLibrary(), game.getRenderChunkManager(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugLogError("Couldn't apply map transition.");
 		}
 
 		this->nextMap = nullptr;
+
+		// This mapInst.update() below is required in case we didn't do a GameWorldPanel::tick() this frame
+		// (i.e. if we did a fast travel tick onAnimationFinished() kind of thing instead).
+		// @todo: consider revising the Game loop more so this is handled more as a primary concern of the engine.
+
+		MapInstance &mapInst = this->getActiveMapInst();
+		const double latitude = [this]()
+		{
+			const LocationDefinition &locationDef = this->getLocationDefinition();
+			return locationDef.getLatitude();
+		}();
+
+		const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
+		TextureManager &textureManager = game.getTextureManager();
+
+		EntityGeneration::EntityGenInfo entityGenInfo;
+		entityGenInfo.init(this->nightLightsAreActive());
+
+		// Tick active map (entities, animated distant land, etc.).
+		const MapDefinition &activeMapDef = this->getActiveMapDef();
+		const MapType mapType = activeMapDef.getMapType();
+		const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+		const LocationDefinition &locationDef = this->getLocationDefinition();
+		const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
+			mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
+
+		mapInst.update(dt, game, activeMapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
+			entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
 	}
+}
+
+void GameState::tick(double dt, Game &game)
+{
+	DebugAssert(dt >= 0.0);
 
 	// Tick the game clock.
-	const int oldHour = this->clock.getHours24();
+	const Clock prevClock = this->clock;
 	const double timeScale = GameState::GAME_TIME_SCALE * (this->isCamping ? 250.0 : 1.0);
 	this->clock.tick(dt * timeScale);
-	const int newHour = this->clock.getHours24();
 
 	// Check if the hour changed.
-	if (newHour != oldHour)
+	const int prevHour = prevClock.getHours24();
+	const int newHour = this->clock.getHours24();
+	if (newHour != prevHour)
 	{
 		// Update the weather list that's used for selecting the current one.
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
@@ -1135,10 +1172,27 @@ void GameState::tick(double dt, Game &game)
 	}
 
 	// Check if the clock hour looped back around.
-	if (newHour < oldHour)
+	if (newHour < prevHour)
 	{
 		// Increment the day.
 		this->date.incrementDay();
+	}
+
+	// See if the clock passed the boundary between night and day, and vice versa.
+	const double oldClockTime = prevClock.getPreciseTotalSeconds();
+	const double newClockTime = this->clock.getPreciseTotalSeconds();
+	const double lamppostActivateTime = ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
+	const double lamppostDeactivateTime = ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
+	const bool activateNightLights = (oldClockTime < lamppostActivateTime) && (newClockTime >= lamppostActivateTime);
+	const bool deactivateNightLights = (oldClockTime < lamppostDeactivateTime) && (newClockTime >= lamppostDeactivateTime);
+
+	if (activateNightLights)
+	{
+		MapLogicController::handleNightLightChange(game, true);
+	}
+	else if (deactivateNightLights)
+	{
+		MapLogicController::handleNightLightChange(game, false);
 	}
 
 	// Tick chasm animation.
@@ -1166,5 +1220,104 @@ void GameState::tick(double dt, Game &game)
 	if (this->effectTextIsVisible())
 	{
 		this->effectTextRemainingSeconds -= dt;
+	}
+
+	// Tick the player.
+	auto &player = game.getPlayer();
+	const CoordDouble3 oldPlayerCoord = player.getPosition();
+	player.tick(game, dt);
+	const CoordDouble3 newPlayerCoord = player.getPosition();
+
+	// Handle input for the player's attack.
+	const auto &inputManager = game.getInputManager();
+	const Int2 mouseDelta = inputManager.getMouseDelta();
+	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
+
+	MapInstance &mapInst = this->getActiveMapInst();
+	const double latitude = [this]()
+	{
+		const LocationDefinition &locationDef = this->getLocationDefinition();
+		return locationDef.getLatitude();
+	}();
+
+	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
+	TextureManager &textureManager = game.getTextureManager();
+
+	EntityGeneration::EntityGenInfo entityGenInfo;
+	entityGenInfo.init(this->nightLightsAreActive());
+
+	// Tick active map (entities, animated distant land, etc.).
+	const MapDefinition &mapDef = this->getActiveMapDef();
+	const MapType mapType = mapDef.getMapType();
+	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
+		mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
+
+	mapInst.update(dt, game, mapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
+		entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
+
+	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
+	// and handle any level transition.
+	const LevelInstance &levelInst = mapInst.getActiveLevel();
+	const double ceilingScale = levelInst.getCeilingScale();
+	const CoordInt3 oldPlayerVoxelCoord(
+		oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
+	const CoordInt3 newPlayerVoxelCoord(
+		newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
+	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
+	{
+		TextBox *triggerTextBox = game.getTriggerTextBox();
+		DebugAssert(triggerTextBox != nullptr);
+		MapLogicController::handleTriggers(game, newPlayerVoxelCoord, *triggerTextBox);
+
+		if (mapType == MapType::Interior)
+		{
+			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
+		}
+	}
+
+	// Check for changes in exterior music depending on the time.
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	const MapType activeMapType = activeMapDef.getMapType();
+	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
+	{
+		AudioManager &audioManager = game.getAudioManager();
+		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
+		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
+		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);
+		const bool changeToNightMusic = (oldClockTime < nightMusicStartTime) && (newClockTime >= nightMusicStartTime);
+		
+		const MusicDefinition *musicDef = nullptr;
+		if (changeToDayMusic)
+		{
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather, game.getRandom(),
+				[this](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+				return weatherMusicDef.weatherDef == this->weatherDef;
+			});
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing weather music.");
+			}
+		}
+		else if (changeToNightMusic)
+		{
+			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing night music.");
+			}
+		}
+
+		if (musicDef != nullptr)
+		{
+			audioManager.setMusic(musicDef);
+		}
 	}
 }

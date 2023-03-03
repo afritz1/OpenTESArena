@@ -166,12 +166,12 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textu
 		const int creatureCount = static_cast<int>(exeData.entities.creatureNames.size());
 		for (int i = 0; i < creatureCount; i++)
 		{
-			const ArenaTypes::ItemIndex itemIndex = ArenaAnimUtils::getFirstCreatureItemIndex() + i;
+			const ArenaTypes::ItemIndex itemIndex = ArenaAnimUtils::FirstCreatureItemIndex + i;
 			const int creatureID = ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			addCreatureDef(creatureID, false);
 		}
 
-		const int finalBossID = ArenaAnimUtils::getFinalBossCreatureID();
+		const int finalBossID = ArenaAnimUtils::FinalBossCreatureID;
 		addCreatureDef(finalBossID, true);
 	};
 

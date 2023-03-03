@@ -17,8 +17,13 @@ int main(int argc, char *argv[])
 	try
 	{
 		// Allocated on the heap to avoid stack overflow warning.
-		auto g = std::make_unique<Game>();
-		g->loop();
+		std::unique_ptr<Game> game = std::make_unique<Game>();
+		if (!game->init())
+		{
+			DebugCrash("Couldn't init Game instance. Closing.");
+		}
+
+		game->loop();
 	}
 	catch (const std::exception &e)
 	{

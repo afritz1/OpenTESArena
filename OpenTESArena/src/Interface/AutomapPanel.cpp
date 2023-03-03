@@ -9,6 +9,7 @@
 #include "GameWorldPanel.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Assets/TextureManager.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
@@ -16,8 +17,6 @@
 #include "../Input/InputActionMapName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
@@ -27,10 +26,10 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
+#include "../Utilities/Color.h"
+#include "../Voxels/VoxelFacing2D.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/MapType.h"
-#include "../World/VoxelDefinition.h"
-#include "../World/VoxelFacing2D.h"
 
 #include "components/debug/Debug.h"
 
@@ -45,7 +44,7 @@ AutomapPanel::~AutomapPanel()
 }
 
 bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
-	const ChunkManager &chunkManager, const std::string &locationName)
+	const VoxelChunkManager &voxelChunkManager, const std::string &locationName)
 {
 	auto &game = this->getGame();
 	
@@ -85,7 +84,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
 	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
 	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(
-		game.getGameState(), playerCoordXZ, playerDirection, chunkManager, renderer);
+		game.getGameState(), playerCoordXZ, playerDirection, voxelChunkManager, renderer);
 	this->mapTextureRef.init(mapTextureID, renderer);
 
 	auto &textureManager = game.getTextureManager();

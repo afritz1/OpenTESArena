@@ -166,6 +166,8 @@ InputManager::InputManager()
 
 void InputManager::init()
 {
+	DebugLog("Initializing.");
+
 	// Add input action maps to be enabled/disabled as needed.
 	this->inputActionMaps = InputActionMap::loadDefaultMaps();
 

@@ -49,8 +49,8 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_RAINDROP = 103;
 	constexpr uint8_t PALETTE_INDEX_SNOWFLAKE = 16;
 
-	constexpr double PLAYER_LIGHT_RADIUS = 5.0; // @todo: this might be a little too high.
-	constexpr double STREETLIGHT_LIGHT_RADIUS = 4.0; // @todo: this might be a little too high.
+	constexpr double PLAYER_LIGHT_RADIUS = 3.0;
+	constexpr double STREETLIGHT_LIGHT_RADIUS = 2.0;
 
 	const std::string CHASM_WATER_FILENAME = "WATERANI.RCI";
 	const std::string CHASM_LAVA_FILENAME = "LAVAANI.RCI";

@@ -4,11 +4,11 @@
 #include <string>
 
 #include "Panel.h"
+#include "../Assets/TextureUtils.h"
 #include "../Math/Vector2.h"
-#include "../Media/TextureUtils.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 // @todo: be able to click somewhere inside the drawable area of the automap and get a 2D voxel
 // coordinate in world space for attaching a note to. Store the note in GameState or something.
@@ -19,8 +19,8 @@
 // - Int2 getChunkPixelPosition(??Int chunkX, ??Int chunkY); // position on-screen in original render coords
 // - just get the surrounding 3x3 chunks. Does it really matter that it's 2x2 like the original game?
 
-class ChunkManager;
 class Renderer;
+class VoxelChunkManager;
 
 class AutomapPanel : public Panel
 {
@@ -36,7 +36,7 @@ public:
 	~AutomapPanel() override;
 
 	bool init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
-		const ChunkManager &chunkManager, const std::string &locationName);
+		const VoxelChunkManager &voxelChunkManager, const std::string &locationName);
 };
 
 #endif

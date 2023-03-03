@@ -7,7 +7,7 @@
 
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Bytes.h"
 
@@ -47,7 +47,7 @@ namespace MathUtils
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	Radians fullAtan2(double y, double x);
-	Radians fullAtan2(const NewDouble2 &v);
+	Radians fullAtan2(const WorldDouble2 &v);
 
 	// Converts vertical field of view to camera zoom (where 90 degrees = 1.0 zoom).
 	double verticalFovToZoom(Degrees fovY);
@@ -58,19 +58,34 @@ namespace MathUtils
 	// Returns whether the given point lies in the half space divided at the given divider point.
 	bool isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint, const Double2 &normal);
 
+	// Returns whether the two line segments intersect.
+	bool lineSegmentIntersection(const Double2 &a0, const Double2 &a1, const Double2 &b0, const Double2 &b1);
+
 	// Returns whether the given triangle and circle intersect each other. Assumes triangle points
 	// are ordered counter-clockwise.
 	bool triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
 		const Double2 &triangleP2, const Double2 &circlePoint, double circleRadius);
 
+	// Returns whether the given triangle and rectangle intersect each other. Assumes triangle points
+	// are ordered counter-clockwise.
+	bool triangleRectangleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
+		const Double2 &triangleP2, const Double2 &rectLow, const Double2 &rectHigh);
+
 	// Finds the intersection of a ray on the given plane. Returns success.
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint);
+
+	// Finds the intersection of a ray with the given triangle. Returns success.
+	bool rayTriangleIntersection(const Double3 &rayStart, const Double3 &rayDirection,
+		const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT);
 
 	// Finds the intersection of a ray and a quad defined by three vertices. The vertex order
 	// must go around the quad (i.e. v0 = top left, v1 = bottom left, v2 = bottom right).
 	bool rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint);
+
+	// Returns the signed distance of the point to the plane (can be negative).
+	double distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal);
 
 	// Finds the shortest distance between points p0 and p1 and between points q0 and q1.
 	// - s is the percent distance along p0p1 that's nearest to q0q1

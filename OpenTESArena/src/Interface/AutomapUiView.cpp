@@ -1,20 +1,20 @@
 #include "AutomapUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Assets/TextureManager.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/GameState.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
-#include "../World/Chunk.h"
+#include "../Voxels/VoxelChunk.h"
+#include "../Voxels/VoxelFacing2D.h"
+#include "../Voxels/VoxelTraitsDefinition.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MapType.h"
 #include "../World/TransitionDefinition.h"
 #include "../World/TransitionType.h"
-#include "../World/VoxelDefinition.h"
-#include "../World/VoxelFacing2D.h"
 
 #include "components/debug/Debug.h"
 
@@ -36,27 +36,27 @@ TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_vi
 		fontLibrary);
 }
 
-TextureAssetReference AutomapUiView::getBackgroundTextureAssetRef()
+TextureAsset AutomapUiView::getBackgroundTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::Automap));
+	return TextureAsset(std::string(ArenaTextureName::Automap));
 }
 
-TextureAssetReference AutomapUiView::getBackgroundPaletteTextureAssetRef()
+TextureAsset AutomapUiView::getBackgroundPaletteTextureAsset()
 {
-	return AutomapUiView::getBackgroundTextureAssetRef();
+	return AutomapUiView::getBackgroundTextureAsset();
 }
 
-TextureAssetReference AutomapUiView::getCursorTextureAssetRef()
+TextureAsset AutomapUiView::getCursorTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::QuillCursor));
+	return TextureAsset(std::string(ArenaTextureName::QuillCursor));
 }
 
-TextureAssetReference AutomapUiView::getCursorPaletteTextureAssetRef()
+TextureAsset AutomapUiView::getCursorPaletteTextureAsset()
 {
-	return AutomapUiView::getBackgroundPaletteTextureAssetRef();
+	return AutomapUiView::getBackgroundPaletteTextureAsset();
 }
 
-const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 	const TransitionDefinition *transitionDef)
 {
 	const ArenaTypes::VoxelType floorType = floorDef.type;
@@ -83,8 +83,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized chasm type \"" +
-				std::to_string(static_cast<int>(chasmType)) + "\".");
+			DebugLogWarning("Unrecognized chasm type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
@@ -119,8 +118,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const
 				}
 				else
 				{
-					DebugLogWarning("Unrecognized transition type \"" +
-						std::to_string(static_cast<int>(transitionType)) + "\".");
+					DebugLogWarning("Unrecognized transition type \"" + std::to_string(static_cast<int>(transitionType)) + "\".");
 					return AutomapUiView::ColorNotImplemented;
 				}
 			}
@@ -139,10 +137,9 @@ const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const
 		}
 		else if (wallType == ArenaTypes::VoxelType::TransparentWall)
 		{
-			// Transparent walls with collision (hedges) are shown, while
-			// ones without collision (archways) are not.
-			const VoxelDefinition::TransparentWallData &transparentWallData = wallDef.transparentWall;
-			return transparentWallData.collider ? AutomapUiView::ColorWall : AutomapUiView::ColorFloor;
+			// Transparent walls with collision (hedges) are shown, while ones without collision (archways) are not.
+			const VoxelTraitsDefinition::TransparentWall &transparentWall = wallDef.transparentWall;
+			return transparentWall.collider ? AutomapUiView::ColorWall : AutomapUiView::ColorFloor;
 		}
 		else if (wallType == ArenaTypes::VoxelType::Edge)
 		{
@@ -150,20 +147,18 @@ const Color &AutomapUiView::getPixelColor(const VoxelDefinition &floorDef, const
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized wall data type \"" +
-				std::to_string(static_cast<int>(wallType)) + "\".");
+			DebugLogWarning("Unrecognized wall data type \"" + std::to_string(static_cast<int>(wallType)) + "\".");
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
 	else
 	{
-		DebugLogWarning("Unrecognized floor data type \"" +
-			std::to_string(static_cast<int>(floorType)) + "\".");
+		DebugLogWarning("Unrecognized floor data type \"" + std::to_string(static_cast<int>(floorType)) + "\".");
 		return AutomapUiView::ColorNotImplemented;
 	}
 }
 
-const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 	const TransitionDefinition *transitionDef)
 {
 	// The wilderness automap focuses more on displaying floor voxels than wall voxels.
@@ -194,8 +189,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized chasm type \"" +
-				std::to_string(static_cast<int>(chasmType)) + "\".");
+			DebugLogWarning("Unrecognized chasm type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
@@ -204,8 +198,8 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 		if (wallType == ArenaTypes::VoxelType::None)
 		{
 			// Regular ground is transparent; all other grounds are wall color.
-			const VoxelDefinition::FloorData &floorData = floorDef.floor;
-			const bool isRegularGround = !floorData.isWildWallColored;
+			const VoxelTraitsDefinition::Floor &floor = floorDef.floor;
+			const bool isRegularGround = !floor.isWildWallColored;
 
 			if (isRegularGround)
 			{
@@ -242,8 +236,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 				}
 				else
 				{
-					DebugLogWarning("Unrecognized transition type \"" +
-						std::to_string(static_cast<int>(transitionType)) + "\".");
+					DebugLogWarning("Unrecognized transition type \"" + std::to_string(static_cast<int>(transitionType)) + "\".");
 					return AutomapUiView::ColorNotImplemented;
 				}
 			}
@@ -266,12 +259,12 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 		}
 		else if (wallType == ArenaTypes::VoxelType::Edge)
 		{
-			const VoxelDefinition::EdgeData &edgeData = wallDef.edge;
+			const VoxelTraitsDefinition::Edge &edge = wallDef.edge;
 
 			// For some reason, most edges are hidden.
-			const bool isHiddenEdge = (edgeData.facing == VoxelFacing2D::PositiveX) ||
-				(edgeData.facing == VoxelFacing2D::NegativeX) ||
-				(edgeData.facing == VoxelFacing2D::NegativeZ);
+			const bool isHiddenEdge = (edge.facing == VoxelFacing2D::PositiveX) ||
+				(edge.facing == VoxelFacing2D::NegativeX) ||
+				(edge.facing == VoxelFacing2D::NegativeZ);
 
 			if (isHiddenEdge)
 			{
@@ -298,7 +291,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelDefinition &floorDef, c
 }
 
 Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
-	bool isWild, const LevelInt2 &levelDims, const ChunkManager &chunkManager)
+	bool isWild, const LevelInt2 &levelDims, const VoxelChunkManager &voxelChunkManager)
 {
 	// Create scratch surface triple the size of the voxel area so that all directions of the player's arrow
 	// are representable in the same texture. This may change in the future for memory optimization.
@@ -347,24 +340,29 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 		for (WEInt chunkZ = minChunk.y; chunkZ <= maxChunk.y; chunkZ++)
 		{
 			const ChunkInt2 chunkPos(chunkX, chunkZ);
-			const Chunk *chunk = chunkManager.tryGetChunk(chunkPos);
-			DebugAssert(chunk != nullptr);
+			const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 			for (SNInt x = 0; x < ChunkUtils::CHUNK_DIM; x++)
 			{
 				for (WEInt z = 0; z < ChunkUtils::CHUNK_DIM; z++)
 				{
-					const Chunk::VoxelID floorVoxelID = chunk->getVoxel(x, 0, z);
-					const Chunk::VoxelID wallVoxelID = chunk->getVoxel(x, 1, z);
-					const VoxelDefinition &floorVoxelDef = chunk->getVoxelDef(floorVoxelID);
-					const VoxelDefinition &wallVoxelDef = chunk->getVoxelDef(wallVoxelID);
-					const TransitionDefinition *transitionDef = chunk->tryGetTransition(VoxelInt3(x, 1, z));
+					const VoxelChunk::VoxelTraitsDefID floorVoxelTraitsDefID = chunk.getTraitsDefID(x, 0, z);
+					const VoxelChunk::VoxelTraitsDefID wallVoxelTraitsDefID = chunk.getTraitsDefID(x, 1, z);
+					const VoxelTraitsDefinition &floorVoxelTraitsDef = chunk.getTraitsDef(floorVoxelTraitsDefID);
+					const VoxelTraitsDefinition &wallVoxelTraitsDef = chunk.getTraitsDef(wallVoxelTraitsDefID);
+					
+					VoxelChunk::TransitionDefID transitionDefID;
+					const TransitionDefinition *transitionDef = nullptr;
+					if (chunk.tryGetTransitionDefID(x, 1, z, &transitionDefID))
+					{
+						transitionDef = &chunk.getTransitionDef(transitionDefID);
+					}
 
 					// Decide which color to use for the automap pixel.
 					Color color;
 					if (isWild)
 					{
-						color = AutomapUiView::getWildPixelColor(floorVoxelDef, wallVoxelDef, transitionDef);
+						color = AutomapUiView::getWildPixelColor(floorVoxelTraitsDef, wallVoxelTraitsDef, transitionDef);
 					}
 					else
 					{
@@ -376,7 +374,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 
 						if (isInsideLevelBounds)
 						{
-							color = AutomapUiView::getPixelColor(floorVoxelDef, wallVoxelDef, transitionDef);
+							color = AutomapUiView::getPixelColor(floorVoxelTraitsDef, wallVoxelTraitsDef, transitionDef);
 						}
 						else
 						{
@@ -417,7 +415,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 }
 
 UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,
-	const VoxelDouble2 &playerDirection, const ChunkManager &chunkManager, Renderer &renderer)
+	const VoxelDouble2 &playerDirection, const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
 	const bool isWild = [&gameState]()
@@ -431,7 +429,7 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 	const LevelDefinition &activeLevelDef = mapDef.getLevel(mapInst.getActiveLevelIndex());
 	const LevelInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
 
-	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, levelDims, chunkManager);
+	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, levelDims, voxelChunkManager);
 	const BufferView2D<const uint32_t> automapBufferView(
 		automapBuffer.get(), automapBuffer.getWidth(), automapBuffer.getHeight());
 
@@ -446,11 +444,11 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 
 UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getBackgroundPaletteTextureAssetRef();
-	const TextureAssetReference textureAssetRef = AutomapUiView::getBackgroundTextureAssetRef();
+	const TextureAsset paletteTextureAsset = AutomapUiView::getBackgroundPaletteTextureAsset();
+	const TextureAsset textureAsset = AutomapUiView::getBackgroundTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for automap background.");
 	}
@@ -460,11 +458,11 @@ UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Render
 
 UiTextureID AutomapUiView::allocCursorTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAssetReference paletteTextureAssetRef = AutomapUiView::getCursorPaletteTextureAssetRef();
-	const TextureAssetReference textureAssetRef = AutomapUiView::getCursorTextureAssetRef();
+	const TextureAsset paletteTextureAsset = AutomapUiView::getCursorPaletteTextureAsset();
+	const TextureAsset textureAsset = AutomapUiView::getCursorTextureAsset();
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAssetRef, paletteTextureAssetRef, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for automap cursor.");
 	}

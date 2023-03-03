@@ -20,7 +20,7 @@ private:
 	int raceIndex;
 	int portraitIndex;
 	bool male;
-	std::optional<PrimaryAttributeSet> attributes; // Optional so it can start empty.
+	PrimaryAttributeSet attributes;
 public:
 	CharacterCreationState();
 

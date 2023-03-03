@@ -40,35 +40,67 @@ LevelDefinition::DoorPlacementDef::DoorPlacementDef(DoorDefID id, std::vector<Le
 	this->id = id;
 }
 
+LevelDefinition::ChasmPlacementDef::ChasmPlacementDef(ChasmDefID id, std::vector<LevelInt3>&& positions)
+	: positions(std::move(positions))
+{
+	this->id = id;
+}
+
 void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
-	this->voxels.init(width, height, depth);
-	this->voxels.fill(0);
+	this->voxelMeshIDs.init(width, height, depth);
+	this->voxelMeshIDs.fill(0);
+
+	this->voxelTextureIDs.init(width, height, depth);
+	this->voxelTextureIDs.fill(0);
+
+	this->voxelTraitsIDs.init(width, height, depth);
+	this->voxelTraitsIDs.fill(0);
 }
 
 SNInt LevelDefinition::getWidth() const
 {
-	return this->voxels.getWidth();
+	return this->voxelMeshIDs.getWidth();
 }
 
 int LevelDefinition::getHeight() const
 {
-	return this->voxels.getHeight();
+	return this->voxelMeshIDs.getHeight();
 }
 
 WEInt LevelDefinition::getDepth() const
 {
-	return this->voxels.getDepth();
+	return this->voxelMeshIDs.getDepth();
 }
 
-LevelDefinition::VoxelDefID LevelDefinition::getVoxel(SNInt x, int y, WEInt z) const
+LevelDefinition::VoxelMeshDefID LevelDefinition::getVoxelMeshID(SNInt x, int y, WEInt z) const
 {
-	return this->voxels.get(x, y, z);
+	return this->voxelMeshIDs.get(x, y, z);
 }
 
-void LevelDefinition::setVoxel(SNInt x, int y, WEInt z, VoxelDefID voxel)
+LevelDefinition::VoxelTextureDefID LevelDefinition::getVoxelTextureID(SNInt x, int y, WEInt z) const
 {
-	this->voxels.set(x, y, z, voxel);
+	return this->voxelTextureIDs.get(x, y, z);
+}
+
+LevelDefinition::VoxelTraitsDefID LevelDefinition::getVoxelTraitsID(SNInt x, int y, WEInt z) const
+{
+	return this->voxelTraitsIDs.get(x, y, z);
+}
+
+void LevelDefinition::setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
+{
+	this->voxelMeshIDs.set(x, y, z, id);
+}
+
+void LevelDefinition::setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
+{
+	this->voxelTextureIDs.set(x, y, z, id);
+}
+
+void LevelDefinition::setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
+{
+	this->voxelTraitsIDs.set(x, y, z, id);
 }
 
 int LevelDefinition::getEntityPlacementDefCount() const
@@ -135,6 +167,17 @@ const LevelDefinition::DoorPlacementDef &LevelDefinition::getDoorPlacementDef(in
 {
 	DebugAssertIndex(this->doorPlacementDefs, index);
 	return this->doorPlacementDefs[index];
+}
+
+int LevelDefinition::getChasmPlacementDefCount() const
+{
+	return static_cast<int>(this->chasmPlacementDefs.size());
+}
+
+const LevelDefinition::ChasmPlacementDef &LevelDefinition::getChasmPlacementDef(int index) const
+{
+	DebugAssertIndex(this->chasmPlacementDefs, index);
+	return this->chasmPlacementDefs[index];
 }
 
 void LevelDefinition::addEntity(EntityDefID id, const LevelDouble3 &position)
@@ -248,5 +291,24 @@ void LevelDefinition::addDoor(DoorDefID id, const LevelInt3 &position)
 	else
 	{
 		this->doorPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+	}
+}
+
+void LevelDefinition::addChasm(ChasmDefID id, const LevelInt3 &position)
+{
+	const auto iter = std::find_if(this->chasmPlacementDefs.begin(),
+		this->chasmPlacementDefs.end(), [id](const ChasmPlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->chasmPlacementDefs.end())
+	{
+		std::vector<LevelInt3> &positions = iter->positions;
+		positions.push_back(position);
+	}
+	else
+	{
+		this->chasmPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
 	}
 }

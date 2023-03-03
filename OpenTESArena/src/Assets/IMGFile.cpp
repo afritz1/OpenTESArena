@@ -6,7 +6,7 @@
 #include "Compression.h"
 #include "IMGFile.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
+#include "../Utilities/Color.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"

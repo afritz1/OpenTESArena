@@ -2,14 +2,16 @@
 #include "PlayerLogicController.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaSoundName.h"
+#include "../Collision/ArenaSelectionUtils.h"
+#include "../Collision/Physics.h"
+#include "../Collision/SelectionUtils.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
-#include "../Game/Physics.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../UI/TextBox.h"
-#include "../World/ArenaVoxelUtils.h"
+#include "../Voxels/ArenaVoxelUtils.h"
 
 #include "components/utilities/String.h"
 
@@ -23,7 +25,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
 	if (!modernInterface)
 	{
 		// Classic interface mode.
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
@@ -105,7 +107,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
 		const int dy = mouseDelta.y;
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 		const auto &weaponAnim = player.getWeaponAnimation();
 		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
 
@@ -132,7 +134,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
 void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
 {
 	const auto &options = game.getOptions();
-	auto &player = game.getGameState().getPlayer();
+	auto &player = game.getPlayer();
 	player.rotate(dx, dy, options.getInput_HorizontalSensitivity(),
 		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 }
@@ -156,7 +158,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelInstance &levelInst = mapInst.getActiveLevel();
 
-	auto& player = game.getGameState().getPlayer();
+	auto& player = game.getPlayer();
 	const bool isOnGround = player.onGround(levelInst);
 
 	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
@@ -337,7 +339,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -408,7 +410,7 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	// maybe the game loop could call a "Panel::fixedTick()" method.
 
 	// Only handle attacking if the player's weapon is currently idle.
-	auto &weaponAnimation = game.getGameState().getPlayer().getWeaponAnimation();
+	auto &weaponAnimation = game.getPlayer().getWeaponAnimation();
 	if (weaponAnimation.isIdle())
 	{
 		const auto &inputManager = game.getInputManager();
@@ -504,12 +506,12 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 					// requirements here.
 					auto &textureManager = game.getTextureManager();
 					auto &renderer = game.getRenderer();
-					const TextureAssetReference gameWorldInterfaceTextureAssetRef = GameWorldUiView::getGameWorldInterfaceTextureAssetRef();
+					const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
 					const std::optional<TextureFileMetadataID> metadataID =
-						textureManager.tryGetMetadataID(gameWorldInterfaceTextureAssetRef.filename.c_str());
+						textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
 					if (!metadataID.has_value())
 					{
-						DebugCrash("Couldn't get game world interface metadata ID for \"" + gameWorldInterfaceTextureAssetRef.filename + "\".");
+						DebugCrash("Couldn't get game world interface metadata ID for \"" + gameWorldInterfaceTextureAsset.filename + "\".");
 					}
 
 					const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
@@ -539,53 +541,37 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint,
 	bool primaryInteraction, bool debugFadeVoxel, TextBox &actionTextBox)
 {
-	auto &gameState = game.getGameState();
 	const auto &options = game.getOptions();
-	auto &player = gameState.getPlayer();
-	const Double3 &cameraDirection = player.getDirection();
+	auto &gameState = game.getGameState();
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
-	ChunkManager &chunkManager = levelInst.getChunkManager();
-	const EntityManager &entityManager = levelInst.getEntityManager();
+	VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
+	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
+	auto &player = game.getPlayer();
+	const Double3 &cameraDirection = player.getDirection();
 	const CoordDouble3 rayStart = player.getPosition();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
-
-	// Pixel-perfect selection determines whether an entity's texture is used in the
-	// selection calculation.
-	const bool pixelPerfectSelection = options.getInput_PixelPerfectSelection();
-
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	auto &textureManager = game.getTextureManager();
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	constexpr bool includeEntities = true;
 
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-		pixelPerfectSelection, palette, includeEntities, levelInst, game.getEntityDefinitionLibrary(),
-		game.getRenderer(), hit);
+		includeEntities, levelInst, game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
 	{
-		if (hit.getType() == Physics::Hit::Type::Voxel)
+		if (hit.getType() == Physics::HitType::Voxel)
 		{
-			const ChunkInt2 chunk = hit.getCoord().chunk;
-			Chunk *chunkPtr = chunkManager.tryGetChunk(chunk);
-			DebugAssert(chunkPtr != nullptr);
-
+			const ChunkInt2 chunkPos = hit.getCoord().chunk;
+			VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
-			const VoxelDefinition &voxelDef = chunkPtr->getVoxelDef(voxelID);
+			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+			const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
 			// Primary interaction handles selection in the game world. Secondary interaction handles
 			// reading names of things.
@@ -593,74 +579,69 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			{
 				// Arbitrary max distance for selection.
 				// @todo: move to some ArenaPlayerUtils maybe
-				constexpr double maxSelectionDist = 1.75;
-
-				if (hit.getT() <= maxSelectionDist)
+				if (hit.getT() <= SelectionUtils::MAX_DISTANCE)
 				{
-					if (voxelDef.type == ArenaTypes::VoxelType::Wall ||
-						voxelDef.type == ArenaTypes::VoxelType::Floor ||
-						voxelDef.type == ArenaTypes::VoxelType::Raised ||
-						voxelDef.type == ArenaTypes::VoxelType::Diagonal ||
-						voxelDef.type == ArenaTypes::VoxelType::TransparentWall ||
-						voxelDef.type == ArenaTypes::VoxelType::Edge)
+					if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
 					{
 						if (!debugFadeVoxel)
 						{
-							const bool isWall = voxelDef.type == ArenaTypes::VoxelType::Wall;
+							const bool isWall = voxelType == ArenaTypes::VoxelType::Wall;
 
 							// The only edge voxels with a transition should be should be palace entrances (with collision).
-							const bool isEdge = (voxelDef.type == ArenaTypes::VoxelType::Edge) && voxelDef.edge.collider;
+							const bool isEdge = (voxelType == ArenaTypes::VoxelType::Edge) && voxelTraitsDef.edge.collider;
 
 							if (isWall || isEdge)
 							{
-								const TransitionDefinition *transitionDef = chunkPtr->tryGetTransition(voxel);
-								if ((transitionDef != nullptr) &&
-									(transitionDef->getType() != TransitionType::LevelChange))
+								VoxelChunk::TransitionDefID transitionDefID;
+								if (chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 								{
-									MapLogicController::handleMapTransition(game, hit, *transitionDef);
+									const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
+									if (transitionDef.getType() != TransitionType::LevelChange)
+									{
+										MapLogicController::handleMapTransition(game, hit, transitionDef);
+									}
 								}
 							}
 						}
 						else
 						{
 							// @temp: add to fading voxels if it doesn't already exist.
-							const VoxelInstance *existingFadingVoxelInst =
-								chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::Fading);
-							const bool isFading = existingFadingVoxelInst != nullptr;
-							if (!isFading)
+							int fadeAnimInstIndex;
+							if (!chunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
 							{
-								VoxelInstance newFadingVoxelInst = VoxelInstance::makeFading(
-									voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-								chunkPtr->addVoxelInst(std::move(newFadingVoxelInst));
+								VoxelFadeAnimationInstance fadeAnimInst;
+								fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
+								chunk.addFadeAnimInst(std::move(fadeAnimInst));
 							}
 						}
 					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Door)
+					else if (voxelType == ArenaTypes::VoxelType::Door)
 					{
-						const VoxelDefinition::DoorData &doorData = voxelDef.door;
-
 						// If the door is closed, then open it.
-						const VoxelInstance *existingOpenDoorInst =
-							chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
-						const bool isClosed = existingOpenDoorInst == nullptr;
-
+						int doorAnimInstIndex;
+						const bool isClosed = !chunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
 						if (isClosed)
 						{
 							// Add the door to the open doors list.
-							VoxelInstance newOpenDoorInst = VoxelInstance::makeDoor(
-								voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-							chunkPtr->addVoxelInst(std::move(newOpenDoorInst));
+							VoxelDoorAnimationInstance newDoorAnimInst;
+							newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
+							chunk.addDoorAnimInst(std::move(newDoorAnimInst));
 
 							// Get the door's opening sound and play it at the center of the voxel.
-							const DoorDefinition *doorDefPtr = chunkPtr->tryGetDoor(voxel);
-							DebugAssert(doorDefPtr != nullptr);
-							const DoorDefinition::OpenSoundDef &openSoundDef = doorDefPtr->getOpenSound();
+							VoxelChunk::DoorDefID doorDefID;
+							if (!chunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+							{
+								DebugCrash("Expected door def ID to exist.");
+							}
+
+							const DoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
+							const DoorDefinition::OpenSoundDef &openSoundDef = doorDef.getOpenSound();
 
 							auto &audioManager = game.getAudioManager();
 							const std::string &soundFilename = openSoundDef.soundFilename;
 
-							const CoordDouble3 soundCoord(chunkPtr->getCoord(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
-							const NewDouble3 soundPosition = VoxelUtils::coordToNewPoint(soundCoord);
+							const CoordDouble3 soundCoord(chunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+							const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
 							audioManager.playSound(soundFilename, soundPosition);
 						}
 					}
@@ -668,21 +649,22 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			}
 			else
 			{
-				// Handle secondary click (i.e., right click).
-				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
+				// Handle secondary click (i.e. right click).
+				if (ArenaSelectionUtils::isVoxelSelectableAsSecondary(voxelType))
 				{
-					const std::string *buildingName = chunkPtr->tryGetBuildingName(voxel);
-					if (buildingName != nullptr)
+					VoxelChunk::BuildingNameID buildingNameID;
+					if (chunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
 					{
-						actionTextBox.setText(*buildingName);
+						const std::string &buildingName = chunk.getBuildingName(buildingNameID);
+						actionTextBox.setText(buildingName);
 
 						auto &gameState = game.getGameState();
-						gameState.setActionTextDuration(*buildingName);
+						gameState.setActionTextDuration(buildingName);
 					}
 				}
 			}
 		}
-		else if (hit.getType() == Physics::Hit::Type::Entity)
+		else if (hit.getType() == Physics::HitType::Entity)
 		{
 			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
 			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
@@ -699,13 +681,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 				}*/
 
-				// Try inspecting the entity (can be from any distance). If they have a display name,
-				// then show it.
-				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
-				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
-
-				const EntityDefinition &entityDef = entityManager.getEntityDef(
-					entityRef.get()->getDefinitionID(), game.getEntityDefinitionLibrary());
+				// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
+				const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
+				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
 				const auto &charClassLibrary = game.getCharacterClassLibrary();
 
 				std::string entityName;
@@ -720,8 +698,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				else
 				{
 					// Placeholder text for testing.
-					text = "Entity " + std::to_string(entityHit.id) + " (" +
-						EntityUtils::defTypeToString(entityDef) + ")";
+					text = "Entity " + std::to_string(entityHit.id) + " (" + EntityUtils::defTypeToString(entityDef) + ")";
 				}
 
 				actionTextBox.setText(text);

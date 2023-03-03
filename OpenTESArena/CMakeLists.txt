@@ -26,6 +26,10 @@ FILE(GLOB TES_AUDIO
     ${SRC_ROOT}/src/Audio/*.h* 
     ${SRC_ROOT}/src/Audio/*.c*)
 
+FILE(GLOB TES_COLLISION
+    ${SRC_ROOT}/src/Collision/*.h* 
+    ${SRC_ROOT}/src/Collision/*.c*)
+
 FILE(GLOB TES_ENTITIES
     ${SRC_ROOT}/src/Entities/*.h* 
     ${SRC_ROOT}/src/Entities/*.c*)
@@ -54,13 +58,13 @@ FILE(GLOB TES_MATH
     ${SRC_ROOT}/src/Math/*.h* 
     ${SRC_ROOT}/src/Math/*.c*)
 
-FILE(GLOB TES_MEDIA
-    ${SRC_ROOT}/src/Media/*.h* 
-    ${SRC_ROOT}/src/Media/*.c*)
-
 FILE(GLOB TES_RENDERING
     ${SRC_ROOT}/src/Rendering/*.h* 
     ${SRC_ROOT}/src/Rendering/*.c*)
+
+FILE(GLOB TES_SKY
+    ${SRC_ROOT}/src/Sky/*.h* 
+    ${SRC_ROOT}/src/Sky/*.c*)
 
 FILE(GLOB TES_UI
     ${SRC_ROOT}/src/UI/*.h* 
@@ -69,6 +73,14 @@ FILE(GLOB TES_UI
 FILE(GLOB TES_UTILITIES
     ${SRC_ROOT}/src/Utilities/*.h* 
     ${SRC_ROOT}/src/Utilities/*.c*)
+
+FILE(GLOB TES_VOXELS
+    ${SRC_ROOT}/src/Voxels/*.h* 
+    ${SRC_ROOT}/src/Voxels/*.c*)
+
+FILE(GLOB TES_WEATHER
+    ${SRC_ROOT}/src/Weather/*.h* 
+    ${SRC_ROOT}/src/Weather/*.c*)
 
 FILE(GLOB TES_WORLD
     ${SRC_ROOT}/src/World/*.h* 
@@ -83,6 +95,7 @@ SET(TES_MAIN ${SRC_ROOT}/src/Main.cpp)
 SET(TES_SOURCES 
     ${TES_ASSETS}
     ${TES_AUDIO}
+    ${TES_COLLISION}
     ${TES_ENTITIES}
     ${TES_GAME}
     ${TES_GAME_LOGIC}
@@ -90,10 +103,12 @@ SET(TES_SOURCES
     ${TES_INTERFACE}
     ${TES_ITEMS}
     ${TES_MATH}
-    ${TES_MEDIA}
     ${TES_RENDERING}
+    ${TES_SKY}
     ${TES_UI}
     ${TES_UTILITIES}
+    ${TES_VOXELS}
+    ${TES_WEATHER}
     ${TES_WORLD}
     ${TES_WORLD_MAP}
     ${TES_MAIN})

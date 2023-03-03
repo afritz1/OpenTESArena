@@ -2,8 +2,8 @@
 #define MAP_INSTANCE_H
 
 #include "LevelInstance.h"
-#include "SkyInstance.h"
 #include "../Entities/EntityGeneration.h"
+#include "../Sky/SkyInstance.h"
 
 #include "components/utilities/Buffer.h"
 
@@ -11,6 +11,7 @@
 // entities, and sky for every level instance in the map.
 
 class AudioManager;
+class Game;
 class MapDefinition;
 class TextureManager;
 
@@ -22,13 +23,13 @@ private:
 	int activeLevelIndex;
 	int activeSkyIndex;
 
-	void initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager);
-	void initCity(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
-	void initWild(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
+	void initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager, Renderer &renderer);
+	void initCity(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
+	void initWild(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
 public:
 	MapInstance();
 
-	void init(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
+	void init(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer);
 
 	int getLevelCount() const;
 	LevelInstance &getLevel(int index);
@@ -45,12 +46,12 @@ public:
 
 	void setActiveLevelIndex(int levelIndex, const MapDefinition &mapDefinition);
 
-	void update(double dt, Game &game, const CoordDouble3 &playerCoord, const MapDefinition &mapDefinition,
-		double latitude, double daytimePercent, int chunkDistance,
-		const EntityGeneration::EntityGenInfo &entityGenInfo,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	void update(double dt, Game &game, const MapDefinition &mapDefinition, double latitude, double daytimePercent,
+		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, AudioManager &audioManager);
+
+	void cleanUp();
 };
 
 #endif

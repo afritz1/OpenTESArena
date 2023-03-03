@@ -27,6 +27,7 @@ namespace
 		{ "LetterboxMode", OptionType::Int },
 		{ "CursorScale", OptionType::Double },
 		{ "ModernInterface", OptionType::Bool },
+		{ "TallPixelCorrection", OptionType::Bool },
 		{ "RenderThreadsMode", OptionType::Int }
 	};
 
@@ -44,8 +45,7 @@ namespace
 	{
 		{ "HorizontalSensitivity", OptionType::Double },
 		{ "VerticalSensitivity", OptionType::Double },
-		{ "CameraPitchLimit", OptionType::Double },
-		{ "PixelPerfectSelection", OptionType::Bool }
+		{ "CameraPitchLimit", OptionType::Double }
 	};
 
 	const std::vector<std::pair<std::string, OptionType>> MiscMappings =

@@ -2,21 +2,26 @@
 #include <cmath>
 #include <tuple>
 
+#include "ArenaRenderUtils.h"
+#include "RenderCamera.h"
 #include "RendererUtils.h"
 #include "../Game/CardinalDirection.h"
 #include "../Math/Constants.h"
 #include "../Utilities/Platform.h"
-#include "../World/Chunk.h"
-#include "../World/WeatherInstance.h"
+#include "../Voxels/VoxelChunk.h"
+#include "../Weather/WeatherInstance.h"
 
 #include "components/debug/Debug.h"
 
-void RendererUtils::LoadedEntityTextureEntry::init(TextureAssetReference &&textureAssetRef, bool flipped,
-	bool reflective)
+RenderCamera RendererUtils::makeCamera(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction,
+	Degrees fovY, double aspectRatio, bool tallPixelCorrection)
 {
-	this->textureAssetRef = std::move(textureAssetRef);
-	this->flipped = flipped;
-	this->reflective = reflective;
+	const double tallPixelRatio = tallPixelCorrection ? ArenaRenderUtils::TALL_PIXEL_RATIO : 1.0;
+
+	RenderCamera camera;
+	camera.init(chunk, point, direction, fovY, aspectRatio, tallPixelRatio);
+
+	return camera;
 }
 
 int RendererUtils::getRenderThreadsFromMode(int mode)
@@ -86,66 +91,60 @@ bool RendererUtils::isChasmEmissive(ArenaTypes::ChasmType chasmType)
 	}
 }
 
-void RendererUtils::getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outTopLeftCorner,
-	NewDouble2 *outTopRightCorner, NewDouble2 *outBottomLeftCorner, NewDouble2 *outBottomRightCorner)
+void RendererUtils::getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outTopLeftCorner,
+	WorldDouble2 *outTopRightCorner, WorldDouble2 *outBottomLeftCorner, WorldDouble2 *outBottomRightCorner)
 {
 	// In the +X south/+Z west coordinate system, the top right of a voxel is its origin.
-	*outTopRightCorner = NewDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
+	*outTopRightCorner = WorldDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
 	*outTopLeftCorner = *outTopRightCorner + CardinalDirection::West;
 	*outBottomRightCorner = *outTopRightCorner + CardinalDirection::South;
 	*outBottomLeftCorner = *outTopRightCorner + CardinalDirection::West + CardinalDirection::South;
 }
 
-void RendererUtils::getDiag1Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outStart,
-	NewDouble2 *outMiddle, NewDouble2 *outEnd)
+void RendererUtils::getDiag1Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
+	WorldDouble2 *outMiddle, WorldDouble2 *outEnd)
 {
 	// Top right to bottom left.
-	const NewDouble2 diff = CardinalDirection::South + CardinalDirection::West;
-	*outStart = NewDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
+	const WorldDouble2 diff = CardinalDirection::South + CardinalDirection::West;
+	*outStart = WorldDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
 	*outMiddle = *outStart + (diff * 0.50);
 	*outEnd = *outStart + (diff * Constants::JustBelowOne);
 }
 
-void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outStart,
-	NewDouble2 *outMiddle, NewDouble2 *outEnd)
+void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
+	WorldDouble2 *outMiddle, WorldDouble2 *outEnd)
 {
 	// Bottom right to top left.
-	const NewDouble2 diff = CardinalDirection::North + CardinalDirection::West;
-	*outStart = NewDouble2(
+	const WorldDouble2 diff = CardinalDirection::North + CardinalDirection::West;
+	*outStart = WorldDouble2(
 		static_cast<SNDouble>(voxelX) + Constants::JustBelowOne,
 		static_cast<WEDouble>(voxelZ));
 	*outMiddle = *outStart + (diff * 0.50);
 	*outEnd = *outStart + (diff * Constants::JustBelowOne);
 }
 
-double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Chunk &chunk)
+double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const VoxelChunk &chunk) // @todo: this should take Y too
 {
-	const VoxelInt3 voxel(voxelX, 1, voxelZ);
-	const VoxelInstance *voxelInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
-	if (voxelInst != nullptr)
-	{
-		const VoxelInstance::DoorState &doorState = voxelInst->getDoorState();
-		return doorState.getPercentOpen();
-	}
-	else
+	int doorAnimInstIndex;
+	if (!chunk.tryGetDoorAnimInstIndex(voxelX, 1, voxelZ, &doorAnimInstIndex))
 	{
 		return 0.0;
 	}
+
+	const VoxelDoorAnimationInstance &animInst = chunk.getDoorAnimInst(doorAnimInstIndex);
+	return animInst.percentOpen;
 }
 
-double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const Chunk &chunk)
+double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const VoxelChunk &chunk)
 {
-	const VoxelInt3 voxel(voxelX, voxelY, voxelZ);
-	const VoxelInstance *voxelInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::Fading);
-	if (voxelInst != nullptr)
-	{
-		const VoxelInstance::FadeState &fadeState = voxelInst->getFadeState();
-		return std::clamp(1.0 - fadeState.getPercentFaded(), 0.0, 1.0);
-	}
-	else
+	int fadeAnimInstIndex;
+	if (!chunk.tryGetFadeAnimInstIndex(voxelX, voxelY, voxelZ, &fadeAnimInstIndex))
 	{
 		return 1.0;
 	}
+
+	const VoxelFadeAnimationInstance &animInst = chunk.getFadeAnimInst(fadeAnimInstIndex);
+	return std::clamp(1.0 - animInst.percentFaded, 0.0, 1.0);
 }
 
 double RendererUtils::getYShear(Radians angleRadians, double zoom)
@@ -153,36 +152,19 @@ double RendererUtils::getYShear(Radians angleRadians, double zoom)
 	return std::tan(angleRadians) * zoom;
 }
 
-double RendererUtils::getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear)
+Double4 RendererUtils::worldSpaceToCameraSpace(const Double4 &point, const Matrix4d &view)
 {
-	// Just do 3D projection for the Y and W coordinates instead of a whole
-	// matrix * vector4 multiplication to keep from doing some unnecessary work.
-	double projectedY, projectedW;
-	transform.ywMultiply(point, projectedY, projectedW);
-
-	// Convert the projected Y to normalized coordinates.
-	projectedY /= projectedW;
-
-	// Calculate the Y position relative to the center row of the screen, and offset it by 
-	// the Y-shear. Multiply by 0.5 for the correct aspect ratio.
-	return (0.50 + yShear) - (projectedY * 0.50);
+	return view * point;
 }
 
-Double3 RendererUtils::worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view)
+Double4 RendererUtils::cameraSpaceToClipSpace(const Double4 &point, const Matrix4d &perspective)
 {
-	// Technically the view matrix would be fine as 3x3 but this isn't a big deal.
-	const Double4 viewPoint = view * Double4(point, 1.0);
-	return Double3(viewPoint.x, viewPoint.y, viewPoint.z);
+	return perspective * point;
 }
 
-Double4 RendererUtils::cameraSpaceToClipSpace(const Double3 &point, const Matrix4d &perspective)
+Double4 RendererUtils::worldSpaceToClipSpace(const Double4 &point, const Matrix4d &transform)
 {
-	return perspective * Double4(point, 1.0);
-}
-
-Double4 RendererUtils::worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform)
-{
-	return transform * Double4(point, 1.0);
+	return transform * point;
 }
 
 Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
@@ -194,8 +176,8 @@ Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
 Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double yShear, double frameWidth, double frameHeight)
 {
 	const Double3 screenSpacePoint(
-		0.50 + point.x,
-		(0.50 + yShear) - (point.y * 0.50),
+		0.50 - (point.x * 0.50),
+		(0.50 + yShear) + (point.y * 0.50),
 		point.z);
 
 	return Double3(
@@ -426,6 +408,36 @@ std::optional<double> RendererUtils::getLightningBoltPercent(const WeatherInstan
 	}
 
 	return thunderstorm->getLightningBoltPercent();
+}
+
+int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette &palette)
+{
+	const Double3 colorRGB = Double3::fromRGB(color.toRGB());
+
+	std::optional<int> nearestIndex;
+	for (int i = 0; i < static_cast<int>(palette.size()); i++)
+	{
+		const Color &paletteColor = palette[i];
+		const Double3 paletteColorRGB = Double3::fromRGB(paletteColor.toRGB());
+
+		if (!nearestIndex.has_value())
+		{
+			nearestIndex = i;
+		}
+		else
+		{
+			const Color &currentNearestColor = palette[*nearestIndex];
+			const Double3 currentNearestColorRGB = Double3::fromRGB(currentNearestColor.toRGB());
+
+			if ((colorRGB - paletteColorRGB).length() < (colorRGB - currentNearestColorRGB).length())
+			{
+				nearestIndex = i;
+			}
+		}
+	}
+
+	DebugAssert(nearestIndex.has_value());
+	return *nearestIndex;
 }
 
 void RendererUtils::getFogGeometry(FogVertexArray *outVertices, FogIndexArray *outIndices)

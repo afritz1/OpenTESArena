@@ -3,53 +3,130 @@
 
 #include "components/debug/Debug.h"
 
-/*ScopedVoxelTextureRef::ScopedVoxelTextureRef(VoxelTextureID id, RendererSystem3D &rendererSystem)
+LockedTexture::LockedTexture(void *texels, int bytesPerTexel)
 {
+	this->texels = texels;
+	this->bytesPerTexel = bytesPerTexel;
+}
+
+bool LockedTexture::isValid()
+{
+	return this->texels != nullptr;
+}
+
+ScopedObjectTextureRef::ScopedObjectTextureRef(ObjectTextureID id, Renderer &renderer)
+{
+	DebugAssert(id >= 0);
 	this->id = id;
-	this->rendererSystem = &rendererSystem;
+	this->renderer = &renderer;
+	this->setDims();
 }
 
-ScopedVoxelTextureRef::~ScopedVoxelTextureRef()
+ScopedObjectTextureRef::ScopedObjectTextureRef()
 {
-	this->rendererSystem->freeVoxelTexture(this->id);
+	this->id = -1;
+	this->renderer = nullptr;
+	this->width = -1;
+	this->height = -1;
 }
 
-VoxelTextureID ScopedVoxelTextureRef::get() const
+ScopedObjectTextureRef::ScopedObjectTextureRef(ScopedObjectTextureRef &&other)
+{
+	this->id = other.id;
+	this->renderer = other.renderer;
+	this->width = other.width;
+	this->height = other.height;
+	other.id = -1;
+	other.renderer = nullptr;
+	other.width = -1;
+	other.height = -1;
+}
+
+ScopedObjectTextureRef::~ScopedObjectTextureRef()
+{
+	this->destroy();
+}
+
+ScopedObjectTextureRef &ScopedObjectTextureRef::operator=(ScopedObjectTextureRef &&other)
+{
+	if (this != &other)
+	{
+		if (this->id >= 0)
+		{
+			this->destroy();
+		}
+
+		this->id = other.id;
+		this->renderer = other.renderer;
+		this->width = other.width;
+		this->height = other.height;
+		other.id = -1;
+		other.renderer = nullptr;
+		other.width = -1;
+		other.height = -1;
+	}
+
+	return *this;
+}
+
+void ScopedObjectTextureRef::init(ObjectTextureID id, Renderer &renderer)
+{
+	DebugAssert(this->id == -1);
+	DebugAssert(this->renderer == nullptr);
+	DebugAssert(id >= 0);
+	this->id = id;
+	this->renderer = &renderer;
+	this->setDims();
+}
+
+void ScopedObjectTextureRef::setDims()
+{
+	const std::optional<Int2> dims = this->renderer->tryGetObjectTextureDims(this->id);
+	if (!dims.has_value())
+	{
+		DebugCrash("Couldn't get object texture dimensions (ID " + std::to_string(this->id) + ").");
+	}
+
+	this->width = dims->x;
+	this->height = dims->y;
+}
+
+ObjectTextureID ScopedObjectTextureRef::get() const
 {
 	return this->id;
 }
 
-ScopedEntityTextureRef::ScopedEntityTextureRef(EntityTextureID id, RendererSystem3D &rendererSystem)
+int ScopedObjectTextureRef::getWidth() const
 {
-	this->id = id;
-	this->rendererSystem = &rendererSystem;
+	return this->width;
 }
 
-ScopedEntityTextureRef::~ScopedEntityTextureRef()
+int ScopedObjectTextureRef::getHeight() const
 {
-	this->rendererSystem->freeEntityTexture(this->id);
+	return this->height;
 }
 
-EntityTextureID ScopedEntityTextureRef::get() const
+LockedTexture ScopedObjectTextureRef::lockTexels()
 {
-	return this->id;
+	return this->renderer->lockObjectTexture(this->id);
 }
 
-ScopedSkyTextureRef::ScopedSkyTextureRef(SkyTextureID id, RendererSystem3D &rendererSystem)
+void ScopedObjectTextureRef::unlockTexels()
 {
-	this->id = id;
-	this->rendererSystem = &rendererSystem;
+	this->renderer->unlockObjectTexture(this->id);
 }
 
-ScopedSkyTextureRef::~ScopedSkyTextureRef()
+void ScopedObjectTextureRef::destroy()
 {
-	this->rendererSystem->freeSkyTexture(this->id);
+	if (this->renderer != nullptr)
+	{
+		this->renderer->freeObjectTexture(this->id);
+		this->renderer = nullptr;
+		this->id = -1;
+		this->width = -1;
+		this->height = -1;
+	}
 }
-
-SkyTextureID ScopedSkyTextureRef::get() const
-{
-	return this->id;
-}*/
 
 ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, Renderer &renderer)
 {

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "../Media/Color.h"
+#include "../Utilities/Color.h"
 
 #include "components/utilities/Buffer.h"
 

@@ -8,11 +8,10 @@
 #include "ProvinceSearchSubPanel.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/TextureManager.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../Input/TextEvents.h"
-#include "../Media/Color.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
@@ -20,6 +19,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextEntry.h"
+#include "../Utilities/Color.h"
 
 #include "components/utilities/String.h"
 

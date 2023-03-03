@@ -5,7 +5,7 @@
 #include <string>
 
 #include "Panel.h"
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 
 #include "components/utilities/Buffer.h"
 

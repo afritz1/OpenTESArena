@@ -6,10 +6,10 @@
 
 #include "ArenaRenderUtils.h"
 #include "SdlUiRenderer.h"
+#include "../Assets/TextureBuilder.h"
+#include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
 #include "../Math/Rect.h"
-#include "../Media/TextureBuilder.h"
-#include "../Media/TextureManager.h"
 #include "../UI/RenderSpace.h"
 
 #include "components/debug/Debug.h"
@@ -82,6 +82,18 @@ bool SdlUiRenderer::tryCreateUiTextureInternal(int width, int height, const Texe
 	return true;
 }
 
+bool SdlUiRenderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
+{
+	TexelsInitFunc initFunc = [width, height](uint32_t *dstTexels)
+	{
+		uint32_t *dstTexelsEnd = dstTexels + (width * height);
+		const Color &debugColor = Color::Magenta;
+		std::fill(dstTexels, dstTexelsEnd, debugColor.toARGB());
+	};
+
+	return this->tryCreateUiTextureInternal(width, height, initFunc, outID);
+}
+
 bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
 {
 	TexelsInitFunc initFunc = [&texels](uint32_t *dstTexels)
@@ -105,17 +117,6 @@ bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels
 	};
 
 	return this->tryCreateUiTextureInternal(texels.getWidth(), texels.getHeight(), initFunc, outID);
-}
-
-bool SdlUiRenderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
-{
-	TexelsInitFunc initFunc = [width, height](uint32_t *dstTexels)
-	{
-		uint32_t *dstTexelsEnd = dstTexels + (width * height);
-		std::fill(dstTexels, dstTexelsEnd, 0xFFFF00FF);
-	};
-
-	return this->tryCreateUiTextureInternal(width, height, initFunc, outID);
 }
 
 bool SdlUiRenderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,

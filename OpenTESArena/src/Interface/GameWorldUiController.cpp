@@ -174,7 +174,6 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 		auto &gameState = game.getGameState();
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const LocationInstance &locationInst = gameState.getLocationInstance();
-		const auto &player = gameState.getPlayer();
 		const MapDefinition &mapDef = gameState.getActiveMapDef();
 		const MapInstance &mapInst = gameState.getActiveMapInst();
 		const int activeLevelIndex = mapInst.getActiveLevelIndex();
@@ -191,8 +190,9 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 			return (isCity || isMainQuestDungeon) ? locationName : std::string();
 		}();
 
+		const auto &player = game.getPlayer();
 		game.setPanel<AutomapPanel>(player.getPosition(), player.getGroundDirection(),
-			levelInst.getChunkManager(), automapLocationName);
+			levelInst.getVoxelChunkManager(), automapLocationName);
 	}
 	else
 	{

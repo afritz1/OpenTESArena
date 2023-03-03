@@ -3,16 +3,16 @@
 
 #include <string>
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
+#include "../Assets/TextureUtils.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 namespace MainMenuUiView
 {
@@ -42,10 +42,10 @@ namespace MainMenuUiView
 	Rect getTestWeatherUpButtonRect();
 	Rect getTestWeatherDownButtonRect();
 
-	TextureAssetReference getBackgroundTextureAssetRef();
-	TextureAssetReference getPaletteTextureAssetRef();
-	TextureAssetReference getTestArrowsTextureAssetRef();
-	TextureAssetReference getTestArrowsPaletteTextureAssetRef();
+	TextureAsset getBackgroundTextureAsset();
+	TextureAsset getPaletteTextureAsset();
+	TextureAsset getTestArrowsTextureAsset();
+	TextureAsset getTestArrowsPaletteTextureAsset();
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocTestArrowsTexture(TextureManager &textureManager, Renderer &renderer);

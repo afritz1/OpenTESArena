@@ -3,13 +3,13 @@
 
 #include <string>
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
+#include "../Assets/TextureUtils.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
+#include "../Utilities/Color.h"
 
 class Game;
 
@@ -23,8 +23,8 @@ namespace WorldMapUiView
 
 	Int2 getProvinceNameOffset(int provinceID, TextureManager &textureManager);
 
-	TextureAssetReference getTextureAssetReference();
-	TextureAssetReference getPaletteTextureAssetReference();
+	TextureAsset getTextureAsset();
+	TextureAsset getPaletteTextureAsset();
 	std::string getProvinceNamesFilename();
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
@@ -37,7 +37,7 @@ namespace FastTravelUiView
 
 	Int2 getAnimationTextureCenter();
 	std::string getAnimationFilename();
-	TextureAssetReference getPaletteTextureAssetRef();
+	TextureAsset getPaletteTextureAsset();
 
 	const std::string CityArrivalFontName = ArenaFontName::Arena;
 	const Color CityArrivalTextColor(251, 239, 77);

@@ -1,6 +1,6 @@
 #include "IntroUiView.h"
 #include "../Assets/ArenaTextureName.h"
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 
 std::string IntroUiView::getIntroBookSequenceFilename()
 {
@@ -12,24 +12,24 @@ std::string IntroUiView::getIntroBookPaletteFilename()
 	return ArenaTextureSequenceName::IntroBook;
 }
 
-TextureAssetReference IntroUiView::getIntroTitleTextureAssetReference()
+TextureAsset IntroUiView::getIntroTitleTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::IntroTitle));
+	return TextureAsset(std::string(ArenaTextureName::IntroTitle));
 }
 
-TextureAssetReference IntroUiView::getIntroTitlePaletteTextureAssetReference()
+TextureAsset IntroUiView::getIntroTitlePaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::IntroTitle));
+	return TextureAsset(std::string(ArenaTextureName::IntroTitle));
 }
 
-TextureAssetReference IntroUiView::getIntroQuoteTextureAssetReference()
+TextureAsset IntroUiView::getIntroQuoteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::IntroQuote));
+	return TextureAsset(std::string(ArenaTextureName::IntroQuote));
 }
 
-TextureAssetReference IntroUiView::getIntroQuotePaletteTextureAssetReference()
+TextureAsset IntroUiView::getIntroQuotePaletteTextureAsset()
 {
-	return TextureAssetReference(std::string(ArenaTextureName::IntroQuote));
+	return TextureAsset(std::string(ArenaTextureName::IntroQuote));
 }
 
 std::string IntroUiView::getOpeningScrollSequenceFilename()

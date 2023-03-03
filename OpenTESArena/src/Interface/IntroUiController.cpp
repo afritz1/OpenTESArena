@@ -8,22 +8,22 @@
 
 void IntroUiController::onIntroBookFinished(Game &game)
 {
-	const TextureAssetReference paletteTextureAssetRef = IntroUiView::getIntroTitlePaletteTextureAssetReference();
-	const TextureAssetReference textureAssetRef = IntroUiView::getIntroTitleTextureAssetReference();
+	const TextureAsset paletteTextureAsset = IntroUiView::getIntroTitlePaletteTextureAsset();
+	const TextureAsset textureAsset = IntroUiView::getIntroTitleTextureAsset();
 	game.setPanel<ImagePanel>(
-		paletteTextureAssetRef.filename,
-		textureAssetRef.filename,
+		paletteTextureAsset.filename,
+		textureAsset.filename,
 		IntroUiView::IntroTitleSeconds,
 		IntroUiController::onIntroTitleFinished);
 }
 
 void IntroUiController::onIntroTitleFinished(Game &game)
 {
-	const TextureAssetReference paletteTextureAssetRef = IntroUiView::getIntroQuotePaletteTextureAssetReference();
-	const TextureAssetReference textureAssetRef = IntroUiView::getIntroQuoteTextureAssetReference();
+	const TextureAsset paletteTextureAsset = IntroUiView::getIntroQuotePaletteTextureAsset();
+	const TextureAsset textureAsset = IntroUiView::getIntroQuoteTextureAsset();
 	game.setPanel<ImagePanel>(
-		paletteTextureAssetRef.filename,
-		textureAssetRef.filename,
+		paletteTextureAsset.filename,
+		textureAsset.filename,
 		IntroUiView::IntroQuoteSeconds,
 		IntroUiController::onIntroQuoteFinished);
 }

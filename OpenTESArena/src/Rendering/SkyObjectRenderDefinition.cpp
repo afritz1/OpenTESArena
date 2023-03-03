@@ -1,1 +1,0 @@
-#include "SkyObjectRenderDefinition.h"

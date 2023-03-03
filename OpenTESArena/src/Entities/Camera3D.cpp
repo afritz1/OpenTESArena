@@ -6,9 +6,13 @@
 
 #include "components/debug/Debug.h"
 
-Camera3D::Camera3D(const CoordDouble3 &position, const Double3 &direction)
-	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),
-	up(right.cross(forward).normalized()), position(position) { }
+void Camera3D::init(const CoordDouble3 &position, const Double3 &direction)
+{
+	this->position = position;
+	this->forward = direction;
+	this->right = this->forward.cross(Double3::UnitY).normalized();
+	this->up = this->right.cross(this->forward).normalized();
+}
 
 const Double3 &Camera3D::getDirection() const
 {

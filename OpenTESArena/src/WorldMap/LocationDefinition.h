@@ -6,7 +6,7 @@
 
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/CityDataFile.h"
-#include "../World/VoxelUtils.h"
+#include "../Voxels/VoxelUtils.h"
 
 class BinaryAssetLibrary;
 class ExeData;

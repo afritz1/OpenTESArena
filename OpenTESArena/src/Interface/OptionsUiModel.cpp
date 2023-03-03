@@ -337,7 +337,7 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeModernInterfaceO
 		const bool isModernMode = value;
 		if (!isModernMode)
 		{
-			auto &player = game.getGameState().getPlayer();
+			auto &player = game.getPlayer();
 			player.setDirectionToHorizon();
 		}
 
@@ -346,6 +346,20 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeModernInterfaceO
 		const Int2 windowDims = renderer.getWindowDimensions();
 		const bool fullGameWindow = isModernMode;
 		renderer.resize(windowDims.x, windowDims.y, options.getGraphics_ResolutionScale(), fullGameWindow);
+	});
+}
+
+std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeTallPixelCorrectionOption(Game &game)
+{
+	const auto &options = game.getOptions();
+	return std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::TALL_PIXEL_CORRECTION_NAME,
+		"Adjusts the view projection to match the scaling of the original\ngame on a 4:3 monitor.",
+		options.getGraphics_TallPixelCorrection(),
+		[&game](bool value)
+	{
+		auto &options = game.getOptions();
+		options.setGraphics_TallPixelCorrection(value);
 	});
 }
 
@@ -379,6 +393,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 	group.emplace_back(OptionsUiModel::makeLetterboxModeOption(game));
 	group.emplace_back(OptionsUiModel::makeCursorScaleOption(game));
 	group.emplace_back(OptionsUiModel::makeModernInterfaceOption(game));
+	group.emplace_back(OptionsUiModel::makeTallPixelCorrectionOption(game));
 	group.emplace_back(OptionsUiModel::makeRenderThreadsModeOption(game));
 	return group;
 }
@@ -503,22 +518,8 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCameraPitchLim
 		options.setInput_CameraPitchLimit(value);
 
 		// Reset player view to forward.
-		auto &player = game.getGameState().getPlayer();
+		auto &player = game.getPlayer();
 		player.setDirectionToHorizon();
-	});
-}
-
-std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makePixelPerfectSelectionOption(Game &game)
-{
-	const auto &options = game.getOptions();
-	return std::make_unique<OptionsUiModel::BoolOption>(
-		OptionsUiModel::PIXEL_PERFECT_SELECTION_NAME,
-		"Changes entity selection so only clicks on opaque places are\nregistered, if enabled.",
-		options.getInput_PixelPerfectSelection(),
-		[&game](bool value)
-	{
-		auto &options = game.getOptions();
-		options.setInput_PixelPerfectSelection(value);
 	});
 }
 
@@ -528,7 +529,6 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 	group.emplace_back(OptionsUiModel::makeHorizontalSensitivityOption(game));
 	group.emplace_back(OptionsUiModel::makeVerticalSensitivityOption(game));
 	group.emplace_back(OptionsUiModel::makeCameraPitchLimitOption(game));
-	group.emplace_back(OptionsUiModel::makePixelPerfectSelectionOption(game));
 	return group;
 }
 

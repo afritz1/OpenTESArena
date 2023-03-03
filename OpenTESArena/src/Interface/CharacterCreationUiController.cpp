@@ -21,10 +21,10 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../Sky/SkyUtils.h"
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
-#include "../World/SkyUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"
@@ -482,56 +482,13 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 {
 	auto gameStateFunction = [](Game &game)
 	{
-		// Initialize 3D renderer.
-		auto &renderer = game.getRenderer();
-		const auto &options = game.getOptions();
+		GameState &gameState = game.getGameState();
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-		const bool fullGameWindow = options.getGraphics_ModernInterface();
-		renderer.initializeWorldRendering(
-			options.getGraphics_ResolutionScale(),
-			fullGameWindow,
-			options.getGraphics_RenderThreadsMode());
-
-		std::unique_ptr<GameState> gameState = [&game, &renderer, &binaryAssetLibrary]()
-		{
-			const auto &exeData = binaryAssetLibrary.getExeData();
-
-			// Initialize player data (independent of the world).
-			Player player = [&game, &exeData]()
-			{
-				const CoordDouble3 dummyPosition(ChunkInt2::Zero, VoxelDouble3::Zero);
-				const Double3 direction(
-					CardinalDirection::North.x,
-					0.0,
-					CardinalDirection::North.y);
-				const Double3 velocity = Double3::Zero;
-
-				const auto &charCreationState = game.getCharacterCreationState();
-				const std::string_view name = charCreationState.getName();
-				const bool male = charCreationState.isMale();
-				const int raceIndex = charCreationState.getRaceIndex();
-
-				const auto &charClassLibrary = game.getCharacterClassLibrary();
-				const int charClassDefID = charCreationState.getClassDefID();
-				const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-
-				PrimaryAttributeSet attributes = charCreationState.getAttributes();
-
-				const int portraitIndex = charCreationState.getPortraitIndex();
-
-				const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
-				const int weaponID = charClassDef.getAllowedWeapon(game.getRandom().next(allowedWeaponCount));
-
-				return Player(std::string(name), male, raceIndex, charClassDefID, std::move(attributes),
-					portraitIndex, dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
-			}();
-
-			return std::make_unique<GameState>(std::move(player), binaryAssetLibrary);
-		}();
+		gameState.init(binaryAssetLibrary);
 
 		// Find starting dungeon location definition.
-		const int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
-		const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
+		constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
+		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 		const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>
 		{
@@ -568,15 +525,44 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const std::optional<VoxelInt2> playerStartOffset; // Unused for start dungeon.
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-		if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
+
+		gameState.init(binaryAssetLibrary); // @todo: not sure about this; should we init really early in the engine?
+		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
 			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
 			game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
 		}
 
-		// Set the game state before constructing the game world panel.
-		game.setGameState(std::move(gameState));
+		// Initialize player.
+		const auto &exeData = binaryAssetLibrary.getExeData();
+		const CoordDouble3 dummyPosition(ChunkInt2::Zero, VoxelDouble3::Zero);
+		const Double3 direction(
+			CardinalDirection::North.x,
+			0.0,
+			CardinalDirection::North.y);
+		const Double3 velocity = Double3::Zero;
+
+		const auto &charCreationState = game.getCharacterCreationState();
+		const std::string_view name = charCreationState.getName();
+		const bool male = charCreationState.isMale();
+		const int raceIndex = charCreationState.getRaceIndex();
+
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const int charClassDefID = charCreationState.getClassDefID();
+		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+
+		PrimaryAttributeSet attributes = charCreationState.getAttributes();
+
+		const int portraitIndex = charCreationState.getPortraitIndex();
+
+		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
+		const int weaponID = charClassDef.getAllowedWeapon(game.getRandom().next(allowedWeaponCount));
+
+		Player &player = game.getPlayer();
+		player.init(std::string(name), male, raceIndex, charClassDefID, std::move(attributes), portraitIndex,
+			dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED,
+			weaponID, exeData);
 	};
 
 	gameStateFunction(game);
@@ -717,11 +703,11 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 	auto onLevelUpVoxelEnter = [](Game &game)
 	{
 		// Teleport the player to a random location based on their race.
-		auto &gameState = game.getGameState();
-		auto &player = gameState.getPlayer();
+		auto &player = game.getPlayer();
 		player.setVelocityToZero();
 
-		const int provinceID = gameState.getPlayer().getRaceID();
+		auto &gameState = game.getGameState();
+		const int provinceID = player.getRaceID();
 		const int locationID = game.getRandom().next(32);
 
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();

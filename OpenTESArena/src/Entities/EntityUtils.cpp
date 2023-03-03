@@ -4,13 +4,14 @@
 #include "CharacterClassLibrary.h"
 #include "EntityDefinition.h"
 #include "EntityDefinitionLibrary.h"
-#include "EntityType.h"
 #include "EntityUtils.h"
+#include "../Math/Random.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../World/ChunkUtils.h"
 
 #include "components/debug/Debug.h"
 
-EntityType EntityUtils::getEntityTypeFromDefType(EntityDefinition::Type defType)
+bool EntityUtils::isDynamicEntity(EntityDefinition::Type defType)
 {
 	switch (defType)
 	{
@@ -19,13 +20,13 @@ EntityType EntityUtils::getEntityTypeFromDefType(EntityDefinition::Type defType)
 	case EntityDefinition::Type::Container:
 	case EntityDefinition::Type::Transition:
 	case EntityDefinition::Type::Doodad:
-		return EntityType::Static;
+		return false;
 	case EntityDefinition::Type::Enemy:
 	case EntityDefinition::Type::Citizen:
 	case EntityDefinition::Type::Projectile:
-		return EntityType::Dynamic;
+		return true;
 	default:
-		DebugUnhandledReturnMsg(EntityType, std::to_string(static_cast<int>(defType)));
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(defType)));
 	}
 }
 
@@ -117,28 +118,60 @@ std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &ent
 	}
 }
 
-void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth,
-	double *outMaxHeight)
+void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight)
 {
 	double maxAnimWidth = 0.0;
 	double maxAnimHeight = 0.0;
-	for (int i = 0; i < animDef.getStateCount(); i++)
+	for (int i = 0; i < animDef.stateCount; i++)
 	{
-		const EntityAnimationDefinition::State &state = animDef.getState(i);
-		for (int j = 0; j < state.getKeyframeListCount(); j++)
+		const EntityAnimationDefinitionState &state = animDef.states[i];
+		for (int j = 0; j < state.keyframeListCount; j++)
 		{
-			const EntityAnimationDefinition::KeyframeList &keyframeList = state.getKeyframeList(j);
-			for (int k = 0; k < keyframeList.getKeyframeCount(); k++)
+			const int keyframeListIndex = state.keyframeListsIndex + j;
+			const EntityAnimationDefinitionKeyframeList &keyframeList = animDef.keyframeLists[keyframeListIndex];
+			for (int k = 0; k < keyframeList.keyframeCount; k++)
 			{
-				const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
-				maxAnimWidth = std::max(maxAnimWidth, keyframe.getWidth());
-				maxAnimHeight = std::max(maxAnimHeight, keyframe.getHeight());
+				const int keyframeIndex = keyframeList.keyframesIndex + k;
+				const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[keyframeIndex];
+				maxAnimWidth = std::max(maxAnimWidth, keyframe.width);
+				maxAnimHeight = std::max(maxAnimHeight, keyframe.height);
 			}
 		}
 	}
 
 	*outMaxWidth = maxAnimWidth;
 	*outMaxHeight = maxAnimHeight;
+}
+
+void EntityUtils::getViewIndependentBBox2D(const CoordDouble2 &coord, double bboxExtent, CoordDouble2 *outMin, CoordDouble2 *outMax)
+{
+	const double halfExtent = bboxExtent * 0.50;
+
+	// Orient the bounding box so it is largest with respect to the grid. Recalculate the coordinates in case
+	// the min and max are in different chunks.
+	*outMin = ChunkUtils::recalculateCoord(
+		coord.chunk,
+		VoxelDouble2(coord.point.x - halfExtent, coord.point.y - halfExtent));
+	*outMax = ChunkUtils::recalculateCoord(
+		coord.chunk,
+		VoxelDouble2(coord.point.x + halfExtent, coord.point.y + halfExtent));
+}
+
+void EntityUtils::getViewIndependentBBox3D(const CoordDouble3 &coord, const EntityAnimationDefinition &animDef,
+	CoordDouble3 *outMin, CoordDouble3 *outMax)
+{
+	double maxAnimWidth, maxAnimHeight;
+	EntityUtils::getAnimationMaxDims(animDef, &maxAnimWidth, &maxAnimHeight);
+	const double halfMaxWidth = maxAnimWidth * 0.50;
+
+	// Orient the bounding box so it is largest with respect to the grid. Recalculate the coordinates in case
+	// the min and max are in different chunks.
+	*outMin = ChunkUtils::recalculateCoord(
+		coord.chunk,
+		VoxelDouble3(coord.point.x - halfMaxWidth, coord.point.y, coord.point.y - halfMaxWidth));
+	*outMax = ChunkUtils::recalculateCoord(
+		coord.chunk,
+		VoxelDouble3(coord.point.x + halfMaxWidth, coord.point.y + maxAnimHeight, coord.point.y + halfMaxWidth));
 }
 
 bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
@@ -170,4 +203,20 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
 	}
 
 	return true;
+}
+
+bool EntityUtils::withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale)
+{
+	const CoordDouble3 soundCoord3D(
+		soundCoord.chunk,
+		VoxelDouble3(soundCoord.point.x, ceilingScale * 1.50, soundCoord.point.y));
+	const VoxelDouble3 diff = soundCoord3D - listenerCoord;
+	constexpr double hearingDistanceSqr = EntityUtils::HearingDistance * EntityUtils::HearingDistance;
+	return diff.lengthSquared() < hearingDistanceSqr;
+}
+
+double EntityUtils::nextCreatureSoundWaitTime(Random &random)
+{
+	// Arbitrary amount of time.
+	return 2.75 + (random.nextReal() * 4.50);
 }

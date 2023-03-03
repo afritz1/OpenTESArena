@@ -19,12 +19,12 @@ const std::unordered_map<CardinalDirectionName, std::string> CardinalDirectionDi
 	{ CardinalDirectionName::NorthWest, "Northwest" }
 };
 
-CardinalDirectionName CardinalDirection::getDirectionName(const NewDouble2 &direction)
+CardinalDirectionName CardinalDirection::getDirectionName(const WorldDouble2 &direction)
 {
-	const NewDouble2 northEast = CardinalDirection::North.slerp(CardinalDirection::East, 0.5);
-	const NewDouble2 southEast = CardinalDirection::South.slerp(CardinalDirection::East, 0.5);
-	const NewDouble2 southWest = CardinalDirection::South.slerp(CardinalDirection::West, 0.5);
-	const NewDouble2 northWest = CardinalDirection::North.slerp(CardinalDirection::West, 0.5);
+	const WorldDouble2 northEast = CardinalDirection::North.slerp(CardinalDirection::East, 0.5);
+	const WorldDouble2 southEast = CardinalDirection::South.slerp(CardinalDirection::East, 0.5);
+	const WorldDouble2 southWest = CardinalDirection::South.slerp(CardinalDirection::West, 0.5);
+	const WorldDouble2 northWest = CardinalDirection::North.slerp(CardinalDirection::West, 0.5);
 
 	// Each direction gets an equal slice of the circle's area.
 	// (I'm not sure why the deviation is 1/12th; at a glance it should be 1/8th).

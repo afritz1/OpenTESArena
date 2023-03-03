@@ -3,20 +3,20 @@
 
 #include <cstdint>
 
+#include "../Assets/TextureUtils.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
-#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../Utilities/Color.h"
 
 class BinaryAssetLibrary;
 class Game;
 
-struct TextureAssetReference;
+struct TextureAsset;
 
 namespace ProvinceMapUiView
 {
@@ -71,26 +71,26 @@ namespace ProvinceMapUiView
 
 	bool provinceHasStaffDungeonIcon(int provinceID);
 
-	TextureAssetReference getBackgroundTextureAssetRef(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
-	TextureAssetReference getBackgroundPaletteTextureAssetRef(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
+	TextureAsset getBackgroundTextureAsset(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
+	TextureAsset getBackgroundPaletteTextureAsset(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
 
-	TextureAssetReference getCityStateIconTextureAssetRef(HighlightType highlightType);
-	TextureAssetReference getTownIconTextureAssetRef(HighlightType highlightType);
-	TextureAssetReference getVillageIconTextureAssetRef(HighlightType highlightType);
-	TextureAssetReference getDungeonIconTextureAssetRef(HighlightType highlightType);
-	TextureAssetReference getStaffDungeonIconTextureAssetRef(int provinceID);
+	TextureAsset getCityStateIconTextureAsset(HighlightType highlightType);
+	TextureAsset getTownIconTextureAsset(HighlightType highlightType);
+	TextureAsset getVillageIconTextureAsset(HighlightType highlightType);
+	TextureAsset getDungeonIconTextureAsset(HighlightType highlightType);
+	TextureAsset getStaffDungeonIconTextureAsset(int provinceID);
 
 	UiTextureID allocBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocCityStateIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef,
+	UiTextureID allocCityStateIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocTownIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
+	UiTextureID allocTownIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset, 
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocVillageIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
+	UiTextureID allocVillageIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset, 
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocDungeonIconTexture(HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
+	UiTextureID allocDungeonIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset, 
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocStaffDungeonIconTexture(int provinceID, HighlightType highlightType, const TextureAssetReference &paletteTextureAssetRef, 
+	UiTextureID allocStaffDungeonIconTexture(int provinceID, HighlightType highlightType, const TextureAsset &paletteTextureAsset, 
 		TextureManager &textureManager, Renderer &renderer);
 
 	UiTextureID allocTextPopUpTexture(int textWidth, int textHeight, TextureManager &textureManager, Renderer &renderer);
@@ -132,8 +132,8 @@ namespace ProvinceSearchUiView
 	const Rect ListBoxRect(85, 34, 147, 54);
 	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
 
-	TextureAssetReference getListTextureAssetRef();
-	TextureAssetReference getListPaletteTextureAssetRef(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID);
+	TextureAsset getListTextureAsset();
+	TextureAsset getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID);
 
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocListBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,

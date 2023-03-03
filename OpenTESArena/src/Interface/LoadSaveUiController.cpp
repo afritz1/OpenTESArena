@@ -53,7 +53,8 @@ void LoadSaveUiController::onBackInputAction(const InputActionCallbackValues &va
 	if (values.performed)
 	{
 		Game &game = values.game;
-		if (game.gameStateIsActive())
+		const GameState &gameState = game.getGameState();
+		if (gameState.hasActiveMapInst()) // @todo: change this to something like "has a game session been started?". Voxels/entities/sky aren't animating but a game save is "active". What low-level system can we rely on? A non-empty scene?
 		{
 			game.setPanel<PauseMenuPanel>();
 		}

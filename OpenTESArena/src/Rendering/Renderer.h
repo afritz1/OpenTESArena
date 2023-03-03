@@ -10,24 +10,13 @@
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
-#include "../Assets/ArenaTypes.h"
-#include "../Entities/EntityManager.h"
-#include "../Math/Vector2.h"
-#include "../Math/Vector3.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../UI/Texture.h"
 
-// Container for 2D and 3D rendering operations.
-
 class Color;
-class EntityAnimationDefinition;
-class EntityAnimationInstance;
-class EntityDefinitionLibrary;
-class EntityManager;
 class Rect;
 class Surface;
 class TextureManager;
-class WeatherInstance;
 
 enum class CursorAlignment;
 
@@ -37,6 +26,7 @@ struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 
+// Manages the active window and 2D and 3D rendering operations.
 class Renderer
 {
 public:
@@ -61,16 +51,17 @@ public:
 		int width, height;
 
 		int threadCount;
+		int drawCallCount;
 
-		// Visible flats and lights.
-		int potentiallyVisFlatCount, visFlatCount, visLightCount;
+		// Visible triangles and lights.
+		int potentiallyVisTriangleCount, visTriangleCount, visLightCount;
 
 		double frameTime;
 
 		ProfilerData();
 
-		void init(int width, int height, int threadCount, int potentiallyVisFlatCount,
-			int visFlatCount, int visLightCount, double frameTime);
+		void init(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
+			int visTriangleCount, int visLightCount, double frameTime);
 	};
 
 	using ResolutionScaleFunc = std::function<double()>;
@@ -80,7 +71,7 @@ private:
 
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	std::vector<DisplayMode> displayModes;
+	std::vector<DisplayMode> displayModes;	
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
@@ -124,6 +115,7 @@ public:
 	// depends on whether the whole screen is rendered or just the portion above 
 	// the interface. The game interface is 53 pixels tall in 320x200.
 	Int2 getViewDimensions() const;
+	double getViewAspect() const;
 
 	// This is for the "letterbox" part of the screen, scaled to fit the window 
 	// using the given letterbox aspect.
@@ -134,20 +126,6 @@ public:
 
 	// Gets profiler data (timings, renderer properties, etc.).
 	const ProfilerData &getProfilerData() const;
-
-	// Tests whether an entity is intersected by the given ray. Intended for ray cast selection.
-	// 'pixelPerfect' determines whether the entity's texture is involved in the calculation.
-	// Returns whether the entity was able to be tested and was hit by the ray. This is a renderer
-	// function because the exact method of testing may depend on the 3D representation of the entity.
-	bool getEntityRayIntersection(const EntityVisibilityState3D &visState, const EntityDefinition &entityDef,
-		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp,
-		double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
-		bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const;
-
-	// Converts a [0, 1] screen point to a ray through the world. The exact direction is
-	// dependent on renderer details.
-	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
-		double fovY, double aspect) const;
 
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
@@ -164,10 +142,10 @@ public:
 
 	// Wrapper methods for SDL_CreateTexture.
 	Texture createTexture(uint32_t format, int access, int w, int h);
-	Texture createTextureFromSurface(const Surface &surface);
 
-	bool init(int width, int height, WindowMode windowMode, int letterboxMode, const ResolutionScaleFunc &resolutionScaleFunc,
-		RendererSystemType2D systemType2D, RendererSystemType3D systemType3D);
+	bool init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
+		const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
+		RendererSystemType3D systemType3D, int renderThreadsMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
@@ -191,50 +169,41 @@ public:
 	// will not be rendered. If rect is null, then clipping is disabled.
 	void setClipRect(const SDL_Rect *rect);
 
-	// Initialize the renderer for the game world. The "fullGameWindow" argument 
-	// determines whether to render a "fullscreen" 3D image or just the part above 
-	// the game interface. If there is an existing renderer in memory, it will be 
-	// overwritten with the new one.
-	void initializeWorldRendering(double resolutionScale, bool fullGameWindow,
-		int renderThreadsMode);
-
 	// Sets which mode to use for software render threads (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);
 
+	// Geometry management functions.
+	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID);
+	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID);
+	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID);
+	void populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices);
+	void populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes);
+	void populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices);
+	void freeVertexBuffer(VertexBufferID id);
+	void freeAttributeBuffer(AttributeBufferID id);
+	void freeIndexBuffer(IndexBufferID id);
+
 	// Texture handle allocation functions.
-	// @todo: see RendererSystem3D -- these should take TextureBuilders instead and return optional handles.
-	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
-	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
-		TextureManager &textureManager);
-	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID);
+	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID);
+	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID);
 	bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID);
-	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID);
 
-	// Allows for updating all texels in the given UI texture. Must be unlocked to flush the changes.
-	uint32_t *lockUiTexture(UiTextureID textureID);
-	void unlockUiTexture(UiTextureID textureID);
-
-	// Texture handle freeing functions.
-	// @todo: see RendererSystem3D -- these should take texture IDs instead.
-	void freeVoxelTexture(const TextureAssetReference &textureAssetRef);
-	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective);
-	void freeSkyTexture(const TextureAssetReference &textureAssetRef);
-	void freeUiTexture(UiTextureID id);
-
+	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const;
 	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;
 
-	// Helper methods for changing data in the 3D renderer.
-	void setFogDistance(double fogDistance);
-	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
-		int width, int height, const Palette &palette);
-	void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager);
-	void setSkyColors(const uint32_t *colors, int count);
-	void setNightLightsActive(bool active, const Palette &palette);
-	void clearTextures();
-	void clearSky();
+	// Allows for updating all texels in the given texture. Must be unlocked to flush the changes.
+	LockedTexture lockObjectTexture(ObjectTextureID id);
+	uint32_t *lockUiTexture(UiTextureID id);
+	void unlockObjectTexture(ObjectTextureID id);
+	void unlockUiTexture(UiTextureID id);
+
+	// Texture handle freeing functions.
+	void freeObjectTexture(ObjectTextureID id);
+	void freeUiTexture(UiTextureID id);
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);
@@ -252,12 +221,9 @@ public:
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient, double daytimePercent,
-		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingScale, const LevelInstance &levelInst, const SkyInstance &skyInst,
-		const WeatherInstance &weatherInst, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
-		const Palette &palette);
+	void submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &voxelDrawCalls,
+		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

@@ -4,7 +4,7 @@
 #include <string>
 
 #include "../Assets/ArenaTypes.h"
-#include "../World/WeatherDefinition.h"
+#include "../Weather/WeatherDefinition.h"
 #include "../WorldMap/LocationDefinition.h"
 
 class MusicDefinition

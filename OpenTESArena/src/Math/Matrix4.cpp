@@ -79,45 +79,73 @@ Matrix4<T> Matrix4<T>::zRotation(T radians)
 }
 
 template <typename T>
-Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
-	const Vector3f<T> &right, const Vector3f<T> &up)
+Matrix4<T> Matrix4<T>::transpose(const Matrix4<T> &m)
 {
-	Matrix4<T> rotation = Matrix4<T>::identity();
-	rotation.x.x = right.x;
-	rotation.y.x = right.y;
-	rotation.z.x = right.z;
-	rotation.x.y = up.x;
-	rotation.y.y = up.y;
-	rotation.z.y = up.z;
-	rotation.x.z = -forward.x;
-	rotation.y.z = -forward.y;
-	rotation.z.z = -forward.z;
-
-	Matrix4<T> transpose = Matrix4<T>::translation(-eye.x, -eye.y, -eye.z);
-
-	return rotation * transpose;
+	// Flip across diagonal.
+	Matrix4<T> newM;
+	newM.x = Vector4f<T>(m.x.x, m.y.x, m.z.x, m.w.x);
+	newM.y = Vector4f<T>(m.x.y, m.y.y, m.z.y, m.w.y);
+	newM.z = Vector4f<T>(m.x.z, m.y.z, m.z.z, m.w.z);
+	newM.w = Vector4f<T>(m.x.w, m.y.w, m.z.w, m.w.w);
+	return newM;
 }
 
 template <typename T>
-Matrix4<T> Matrix4<T>::projection(T near, T far, T width, T height)
+Matrix4<T> Matrix4<T>::inverseTranslation(const Matrix4<T> &t)
 {
+	// Undo translation.
 	Matrix4<T> m = Matrix4<T>::identity();
-	m.x.x = (static_cast<T>(2.0) * near) / width;
-	m.y.y = (static_cast<T>(2.0) * near) / height;
-	m.z.z = -(far + near) / (far - near);
-	m.z.w = static_cast<T>(-1.0);
-	m.w.z = ((static_cast<T>(-2.0) * far) * near) / (far - near);
-	m.w.w = static_cast<T>(0.0);
+	m.w.x = -t.w.x;
+	m.w.y = -t.w.y;
+	m.w.z = -t.w.z;
 	return m;
+}
+
+template <typename T>
+Matrix4<T> Matrix4<T>::inverseRotation(const Matrix4<T> &r)
+{
+	// Undo rotation. Mathematically equivalent to transpose, but only need 3x3 here.
+	Matrix4<T> m = Matrix4<T>::identity();
+	m.x = Vector4f<T>(r.x.x, r.y.x, r.z.x, static_cast<T>(0.0));
+	m.y = Vector4f<T>(r.x.y, r.y.y, r.z.y, static_cast<T>(0.0));
+	m.z = Vector4f<T>(r.x.z, r.y.z, r.z.z, static_cast<T>(0.0));
+	return m;
+}
+
+template <typename T>
+Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
+	const Vector3f<T> &right, const Vector3f<T> &up)
+{
+	// [ rx  ux  fx  ex ]    [ rx  ry  rz  -ex ]
+	// [ ry  uy  fy  ey ] -> [ ux  uy  uz  -ey ]
+	// [ rz  uz  fz  ez ]    [ fx  fy  fz  -ez ]
+	// [ 0   0   0   1  ]    [ 0   0   0   1   ]
+
+	Matrix4<T> rotationMat = Matrix4<T>::identity();
+	rotationMat.x = Vector4f<T>(right, static_cast<T>(0.0));
+	rotationMat.y = Vector4f<T>(up, static_cast<T>(0.0));
+	rotationMat.z = Vector4f<T>(forward, static_cast<T>(0.0));
+	const Matrix4<T> invRotationMat = Matrix4<T>::inverseRotation(rotationMat);
+
+	const Matrix4<T> translationMat = Matrix4<T>::translation(eye.x, eye.y, eye.z);
+	const Matrix4<T> invTranslationMat = Matrix4<T>::inverseTranslation(translationMat);
+	return invRotationMat * invTranslationMat;
 }
 
 template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
-	const T height = (static_cast<T>(2.0) * near) * static_cast<T>(
-		std::tan((fovY * 0.50) * Constants::DegToRad));
-	const T width = height * aspect;
-	return Matrix4<T>::projection(near, far, width, height);
+	const T zoom = static_cast<T>(1.0 / std::tan((fovY * 0.50) * Constants::DegToRad));
+	const T farNearDiff = far - near;
+
+	Matrix4<T> m = Matrix4<T>::identity();
+	m.x.x = zoom / aspect;
+	m.y.y = zoom;
+	m.z.z = -(far + near) / farNearDiff;
+	m.z.w = static_cast<T>(-1.0);
+	m.w.z = ((static_cast<T>(-2.0) * far) * near) / farNearDiff;
+	m.w.w = static_cast<T>(0.0);
+	return m;
 }
 
 template <typename T>
@@ -224,13 +252,6 @@ Vector4f<T> Matrix4<T>::operator*(const Vector4f<T> &v) const
 	const T newZ = (this->x.z * v.x) + (this->y.z * v.y) + (this->z.z * v.z) + (this->w.z * v.w);
 	const T newW = (this->x.w * v.x) + (this->y.w * v.y) + (this->z.w * v.z) + (this->w.w * v.w);
 	return Vector4f<T>(newX, newY, newZ, newW);
-}
-
-template <typename T>
-void Matrix4<T>::ywMultiply(const Vector3f<T> &v, T &outY, T &outW) const
-{
-	outY = (this->x.y * v.x) + (this->y.y * v.y) + (this->z.y * v.z) + this->w.y;
-	outW = (this->x.w * v.x) + (this->y.w * v.y) + (this->z.w * v.z) + this->w.w;
 }
 
 template <typename T>

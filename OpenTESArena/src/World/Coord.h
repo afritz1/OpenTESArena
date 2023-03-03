@@ -6,21 +6,21 @@
 
 // Aliases for various coordinate systems. All of these are from a top-down perspective.
 using OriginalInt2 = Int2; // +X west, +Y south (original game, origin at top right).
-using NewInt2 = Int2; // +X south, +Y west (DEPRECATE THIS EVENTUALLY IN FAVOR OF ChunkInt2 + VoxelInt2).
+using WorldInt2 = Int2; // +X south, +Y west, relative to world origin.
 using LevelInt2 = Int2; // +X south, +Y west, used with level definitions (independent of chunks).
 using ChunkInt2 = Int2; // +X south, +Y west, [-inf, inf].
 using VoxelInt2 = Int2; // +X south, +Y west, used with chunk voxels, [0, CHUNK_DIM-1].
 
 using OriginalDouble2 = Double2; // +X west, +Y south.
-using NewDouble2 = Double2; // +X south, +Y west (DEPRECATE IN FAVOR OF VoxelDouble2).
+using WorldDouble2 = Double2; // +X south, +Y west, relative to world origin.
 using LevelDouble2 = Double2; // +X south, +Y west, used with level definitions (independent of chunks).
 using VoxelDouble2 = Double2; // +X south, +Y west, in the space of chunk voxels.
 
-using NewInt3 = Int3; // +X south, +Y up, +Z west (DEPRECATE THIS EVENTUALLY IN FAVOR OF ChunkInt2 + VoxelInt3).
+using WorldInt3 = Int3; // +X south, +Y up, +Z west, relative to world origin.
 using LevelInt3 = Int3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
 using VoxelInt3 = Int3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
-using NewDouble3 = Double3; // +X south, +Y up, +Z west (DEPRECATE THIS EVENTUALLY IN FAVOR OF ChunkInt2 + VoxelInt3).
+using WorldDouble3 = Double3; // +X south, +Y up, +Z west, relative to world origin.
 using LevelDouble3 = Double3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
 using VoxelDouble3 = Double3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 

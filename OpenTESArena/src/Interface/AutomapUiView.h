@@ -4,29 +4,30 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../Assets/TextureAssetReference.h"
+#include "../Assets/TextureAsset.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Media/Color.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
+#include "../Utilities/Color.h"
 #include "../World/Coord.h"
 
 #include "components/utilities/Buffer2D.h"
 
-class ChunkManager;
 class GameState;
 class Renderer;
 class Texture;
 class TransitionDefinition;
-class VoxelDefinition;
+class VoxelChunkManager;
 
 enum class CardinalDirectionName;
+
+struct VoxelTraitsDefinition;
 
 namespace AutomapUiView
 {
@@ -93,26 +94,26 @@ namespace AutomapUiView
 		{ CardinalDirectionName::NorthWest, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(0, 1), Int2(0, 2) } }
 	};
 
-	TextureAssetReference getBackgroundTextureAssetRef();
-	TextureAssetReference getBackgroundPaletteTextureAssetRef();
-	TextureAssetReference getCursorTextureAssetRef();
-	TextureAssetReference getCursorPaletteTextureAssetRef();
+	TextureAsset getBackgroundTextureAsset();
+	TextureAsset getBackgroundPaletteTextureAsset();
+	TextureAsset getCursorTextureAsset();
+	TextureAsset getCursorPaletteTextureAsset();
 
 	// Gets the display color for a pixel on the automap, given its associated floor and wall voxel definitions.
 	// The color depends on a couple factors, like whether the voxel is a wall, door, water, etc., and some
 	// context-sensitive cases like whether a dry chasm has a wall over it.
-	const Color &getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+	const Color &getPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 		const TransitionDefinition *transitionDef);
-	const Color &getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+	const Color &getWildPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 		const TransitionDefinition *transitionDef);
 
 	// Generates a texture of the automap.
 	Buffer2D<uint32_t> makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
-		bool isWild, const LevelInt2 &levelDims, const ChunkManager &chunkManager);
+		bool isWild, const LevelInt2 &levelDims, const VoxelChunkManager &voxelChunkManager);
 
 	// Texture allocation functions (must be freed when done).
 	UiTextureID allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,
-		const VoxelDouble2 &playerDirection, const ChunkManager &chunkManager, Renderer &renderer);
+		const VoxelDouble2 &playerDirection, const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 	UiTextureID allocBgTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }

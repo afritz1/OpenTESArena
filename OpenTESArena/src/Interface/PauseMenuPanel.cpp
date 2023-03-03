@@ -8,7 +8,6 @@
 #include "PauseMenuUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../Media/PortraitFile.h"
 #include "../UI/CursorData.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
@@ -131,8 +130,7 @@ bool PauseMenuPanel::init()
 		Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight()),
 		PivotType::TopLeft);
 
-	auto &gameState = game.getGameState();
-	const auto &player = gameState.getPlayer();
+	const auto &player = game.getPlayer();
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
 		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);

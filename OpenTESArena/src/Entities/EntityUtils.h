@@ -5,21 +5,18 @@
 #include <string>
 
 #include "EntityDefinition.h"
-
-// Entity instance handle.
-using EntityID = int;
+#include "../World/Coord.h"
 
 // Entity definition handle.
 using EntityDefID = int;
 
 class CharacterClassLibrary;
 class EntityDefinitionLibrary;
-
-enum class EntityType;
+class Random;
 
 namespace EntityUtils
 {
-	EntityType getEntityTypeFromDefType(EntityDefinition::Type defType);
+	bool isDynamicEntity(EntityDefinition::Type defType);
 
 	// Gets the display name of the entity definition type for debugging.
 	std::string defTypeToString(const EntityDefinition &entityDef);
@@ -40,9 +37,20 @@ namespace EntityUtils
 	// Gets the max width and height from the entity animation's frames.
 	void getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight);
 
+	void getViewIndependentBBox2D(const CoordDouble2 &coord, double bboxExtent, CoordDouble2 *outMin, CoordDouble2 *outMax);
+	void getViewIndependentBBox3D(const CoordDouble3 &coord, const EntityAnimationDefinition &animDef, CoordDouble3 *outMin, CoordDouble3 *outMax);
+
 	// Returns whether the entity definition has a display name.
 	bool tryGetDisplayName(const EntityDefinition &entityDef,
 		const CharacterClassLibrary &charClassLibrary, std::string *outName);
+
+	// Arbitrary value for how far away a creature can be heard from.
+	// @todo: make this be part of the player, not creatures.
+	constexpr double HearingDistance = 6.0;
+
+	bool withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale);
+
+	double nextCreatureSoundWaitTime(Random &random);
 }
 
 #endif

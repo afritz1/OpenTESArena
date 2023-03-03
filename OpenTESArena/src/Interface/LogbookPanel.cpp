@@ -3,10 +3,10 @@
 #include "LogbookUiController.h"
 #include "LogbookUiModel.h"
 #include "LogbookUiView.h"
+#include "../Assets/TextureManager.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 

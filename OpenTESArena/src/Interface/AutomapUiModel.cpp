@@ -1,8 +1,8 @@
 #include "AutomapUiModel.h"
 #include "AutomapUiView.h"
+#include "../Voxels/VoxelUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/ChunkUtils.h"
-#include "../World/VoxelUtils.h"
 
 Double2 AutomapUiModel::makeAutomapOffset(const VoxelInt2 &playerVoxel)
 {
@@ -21,7 +21,7 @@ Double2 AutomapUiModel::makeAutomapOffset(const VoxelInt2 &playerVoxel)
 	return -offsetReal;
 }
 
-NewInt2 AutomapUiModel::makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth)
+WorldInt2 AutomapUiModel::makeRelativeWildOrigin(const WorldInt2 &voxel, SNInt gridWidth, WEInt gridDepth)
 {
 	return ArenaWildUtils::getCenteredWildOrigin(voxel);
 }
