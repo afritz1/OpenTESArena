@@ -80,8 +80,6 @@ public:
 	static constexpr double MAX_VOLUME = 1.0;
 	static constexpr int MIN_SOUND_CHANNELS = 1;
 	static constexpr int RESAMPLING_OPTION_COUNT = 4;
-	static constexpr double MIN_TIME_SCALE = 0.50;
-	static constexpr double MAX_TIME_SCALE = 1.0;
 	static constexpr int MIN_CHUNK_DISTANCE = 1;
 	static constexpr int MIN_STAR_DENSITY_MODE = 0;
 	static constexpr int MAX_STAR_DENSITY_MODE = 2;
@@ -166,7 +164,6 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Misc, ProfilerLevel)
 	OPTION_BOOL(Misc, ShowIntro)
 	OPTION_BOOL(Misc, ShowCompass)
-	OPTION_DOUBLE(Misc, TimeScale)
 	OPTION_INT(Misc, ChunkDistance)
 	OPTION_INT(Misc, StarDensity)
 	OPTION_BOOL(Misc, PlayerHasLight)

@@ -49,7 +49,6 @@ namespace OptionsUiModel
 	// Misc.
 	const std::string SHOW_COMPASS_NAME = "Show Compass";
 	const std::string SHOW_INTRO_NAME = "Show Intro";
-	const std::string TIME_SCALE_NAME = "Time Scale";
 	const std::string CHUNK_DISTANCE_NAME = "Chunk Distance";
 	const std::string STAR_DENSITY_NAME = "Star Density";
 	const std::string PLAYER_HAS_LIGHT_NAME = "Player Has Light";
@@ -205,7 +204,6 @@ namespace OptionsUiModel
 	// Miscellaneous options.
 	std::unique_ptr<OptionsUiModel::BoolOption> makeShowCompassOption(Game &game);
 	std::unique_ptr<OptionsUiModel::BoolOption> makeShowIntroOption(Game &game);
-	std::unique_ptr<OptionsUiModel::DoubleOption> makeTimeScaleOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeChunkDistanceOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeStarDensityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::BoolOption> makePlayerHasLightOption(Game &game);

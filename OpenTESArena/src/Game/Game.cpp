@@ -738,11 +738,6 @@ void Game::loop()
 
 		// Update FPS counter.
 		this->fpsCounter.updateFrameTime(dt);
-		
-		// Multiply delta time by the time scale. I settled on having the effects of this
-		// be application-wide rather than just in the game world since it's intended to
-		// simulate lower DOSBox cycles.
-		const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
 
 		// User input.
 		try
@@ -762,9 +757,9 @@ void Game::loop()
 				const BufferView<const Rect> nativeCursorRegionsView(
 					this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
 				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(
-					*this, timeScaledDt, nativeCursorRegionsView);
+					*this, clampedDt, nativeCursorRegionsView);
 				PlayerLogicController::turnPlayer(*this, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
-				PlayerLogicController::handlePlayerMovement(*this, timeScaledDt, nativeCursorRegionsView);
+				PlayerLogicController::handlePlayerMovement(*this, clampedDt, nativeCursorRegionsView);
 			}
 		}
 		catch (const std::exception &e)
@@ -776,7 +771,7 @@ void Game::loop()
 		try
 		{
 			// Animate the current UI panel by delta time.
-			this->getActivePanel()->tick(timeScaledDt);
+			this->getActivePanel()->tick(clampedDt);
 
 			// See if the panel tick requested any changes in active panels.
 			this->handlePanelChanges();
@@ -789,7 +784,7 @@ void Game::loop()
 				this->chunkManager.update(playerCoord.chunk, chunkDistance);
 
 				// Tick game world state (voxels, entities, daytime clock, etc.).
-				this->gameState.tick(timeScaledDt, *this);
+				this->gameState.tick(clampedDt, *this);
 
 				// Update audio listener and check for finished sounds.
 				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
@@ -811,7 +806,7 @@ void Game::loop()
 			// Handle an edge case with the game loop during map transitions, etc.. This can happen due to the
 			// current tick() design where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this
 			// frame, causing us to miss updating the renderer.
-			this->gameState.tryUpdatePendingMapTransition(*this, timeScaledDt);
+			this->gameState.tryUpdatePendingMapTransition(*this, clampedDt);
 		}
 		catch (const std::exception &e)
 		{

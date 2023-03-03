@@ -56,7 +56,6 @@ namespace
 		{ "ProfilerLevel", OptionType::Int },
 		{ "ShowIntro", OptionType::Bool },
 		{ "ShowCompass", OptionType::Bool },
-		{ "TimeScale", OptionType::Double },
 		{ "ChunkDistance", OptionType::Int },
 		{ "StarDensity", OptionType::Int },
 		{ "PlayerHasLight", OptionType::Bool }
@@ -567,16 +566,6 @@ void Options::checkInput_CameraPitchLimit(double value) const
 	DebugAssertMsg(value <= Options::MAX_CAMERA_PITCH_LIMIT,
 		"Camera pitch limit cannot be greater than " +
 		String::fixedPrecision(Options::MAX_CAMERA_PITCH_LIMIT, 1) + ".");
-}
-
-void Options::checkMisc_TimeScale(double value) const
-{
-	DebugAssertMsg(value >= Options::MIN_TIME_SCALE,
-		"Time scale cannot be less than " +
-		String::fixedPrecision(Options::MIN_TIME_SCALE, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_TIME_SCALE,
-		"Time scale cannot be greater than " +
-		String::fixedPrecision(Options::MAX_TIME_SCALE, 1) + ".");
 }
 
 void Options::checkMisc_ChunkDistance(int value) const

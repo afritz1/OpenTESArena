@@ -559,24 +559,6 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeShowIntroOption(
 	});
 }
 
-std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeTimeScaleOption(Game &game)
-{
-	const auto &options = game.getOptions();
-	return std::make_unique<OptionsUiModel::DoubleOption>(
-		OptionsUiModel::TIME_SCALE_NAME,
-		"Affects speed of gameplay. Lower this to simulate the speed of\nlower cycles in DOSBox.",
-		options.getMisc_TimeScale(),
-		0.050,
-		Options::MIN_TIME_SCALE,
-		Options::MAX_TIME_SCALE,
-		2,
-		[&game](double value)
-	{
-		auto &options = game.getOptions();
-		options.setMisc_TimeScale(value);
-	});
-}
-
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeChunkDistanceOption(Game &game)
 {
 	const auto &options = game.getOptions();
@@ -631,7 +613,6 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 	OptionGroup group;
 	group.emplace_back(OptionsUiModel::makeShowCompassOption(game));
 	group.emplace_back(OptionsUiModel::makeShowIntroOption(game));
-	group.emplace_back(OptionsUiModel::makeTimeScaleOption(game));
 	group.emplace_back(OptionsUiModel::makeChunkDistanceOption(game));
 	group.emplace_back(OptionsUiModel::makeStarDensityOption(game));
 	group.emplace_back(OptionsUiModel::makePlayerHasLightOption(game));

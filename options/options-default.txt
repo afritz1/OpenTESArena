@@ -88,10 +88,6 @@ ProfilerLevel=0
 
 ShowCompass=true
 
-# Affects speed of gameplay by simulating the speed of lower cycles.
-# Accepted values are between 0.50 and 1.0.
-TimeScale=1.0
-
 # Affects the number of chunks around the player simulated and rendered.
 # Min is 1.
 ChunkDistance=1
