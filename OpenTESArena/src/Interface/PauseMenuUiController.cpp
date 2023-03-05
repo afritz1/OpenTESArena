@@ -11,6 +11,13 @@
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
 
+namespace
+{
+	constexpr double VOLUME_MIN = 0.0;
+	constexpr double VOLUME_MAX = 1.0;
+	constexpr double VOLUME_DELTA = 0.10;
+}
+
 void PauseMenuUiController::onNewGameButtonSelected(Game &game)
 {
 	game.getGameState().clearSession();
@@ -64,7 +71,7 @@ void PauseMenuUiController::onOptionsButtonSelected(Game &game)
 void PauseMenuUiController::onSoundUpButtonSelected(Game &game, PauseMenuPanel &panel)
 {
 	auto &options = game.getOptions();
-	options.setAudio_SoundVolume(std::min(options.getAudio_SoundVolume() + 0.050, 1.0));
+	options.setAudio_SoundVolume(std::min(options.getAudio_SoundVolume() + VOLUME_DELTA, VOLUME_MAX));
 
 	auto &audioManager = game.getAudioManager();
 	audioManager.setSoundVolume(options.getAudio_SoundVolume());
@@ -76,10 +83,10 @@ void PauseMenuUiController::onSoundDownButtonSelected(Game &game, PauseMenuPanel
 	auto &options = game.getOptions();
 	const double newVolume = [&options]()
 	{
-		const double volume = std::max(options.getAudio_SoundVolume() - 0.050, 0.0);
+		const double volume = std::max(options.getAudio_SoundVolume() - VOLUME_DELTA, VOLUME_MIN);
 
 		// Clamp very small values to zero to avoid precision issues with tiny numbers.
-		return volume < Constants::Epsilon ? 0.0 : volume;
+		return volume < Constants::Epsilon ? VOLUME_MIN : volume;
 	}();
 
 	options.setAudio_SoundVolume(newVolume);
@@ -92,7 +99,7 @@ void PauseMenuUiController::onSoundDownButtonSelected(Game &game, PauseMenuPanel
 void PauseMenuUiController::onMusicUpButtonSelected(Game &game, PauseMenuPanel &panel)
 {
 	auto &options = game.getOptions();
-	options.setAudio_MusicVolume(std::min(options.getAudio_MusicVolume() + 0.050, 1.0));
+	options.setAudio_MusicVolume(std::min(options.getAudio_MusicVolume() + VOLUME_DELTA, VOLUME_MAX));
 
 	auto &audioManager = game.getAudioManager();
 	audioManager.setMusicVolume(options.getAudio_MusicVolume());
@@ -104,10 +111,10 @@ void PauseMenuUiController::onMusicDownButtonSelected(Game &game, PauseMenuPanel
 	auto &options = game.getOptions();
 	const double newVolume = [&options]()
 	{
-		const double volume = std::max(options.getAudio_MusicVolume() - 0.050, 0.0);
+		const double volume = std::max(options.getAudio_MusicVolume() - VOLUME_DELTA, VOLUME_MIN);
 
 		// Clamp very small values to zero to avoid precision issues with tiny numbers.
-		return volume < Constants::Epsilon ? 0.0 : volume;
+		return volume < Constants::Epsilon ? VOLUME_MIN : volume;
 	}();
 
 	options.setAudio_MusicVolume(newVolume);
