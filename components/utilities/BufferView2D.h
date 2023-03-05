@@ -51,13 +51,13 @@ public:
 	template<typename U>
 	BufferView2D(Buffer2D<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight());
 	}
 
 	template<typename U>
 	BufferView2D(const Buffer2D<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight());
 	}
 
 	void init(T *data, int width, int height, int viewX, int viewY, int viewWidth, int viewHeight)
@@ -87,13 +87,13 @@ public:
 	template<typename U>
 	void init(Buffer2D<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight());
 	}
 
 	template<typename U>
 	void init(const Buffer2D<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight());
 	}
 
 	bool isValid() const
@@ -106,13 +106,13 @@ public:
 		return (this->viewWidth < this->width) || (this->viewHeight < this->height);
 	}
 
-	T *get()
+	T *begin()
 	{
 		DebugAssert(!this->isSlice());
 		return this->data;
 	}
 
-	const T *get() const
+	const T *begin() const
 	{
 		DebugAssert(!this->isSlice());
 		return this->data;

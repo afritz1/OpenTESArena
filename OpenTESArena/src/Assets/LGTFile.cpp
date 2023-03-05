@@ -22,14 +22,14 @@ bool LGTFile::init(const char *filename)
 	// Each row is a palette.
 	this->palettes.init(LGTFile::ELEMENTS_PER_PALETTE, LGTFile::PALETTE_COUNT);
 
-	std::copy(srcPtr, srcEnd, this->palettes.get());
+	std::copy(srcPtr, srcEnd, this->palettes.begin());
 	return true;
 }
 
 BufferView<const uint8_t> LGTFile::getLightPalette(int index) const
 {
 	DebugAssert(index < LGTFile::PALETTE_COUNT);
-	const uint8_t *ptr = this->palettes.get() + (index * this->palettes.getWidth());
+	const uint8_t *ptr = this->palettes.begin() + (index * this->palettes.getWidth());
 	return BufferView(ptr, LGTFile::ELEMENTS_PER_PALETTE);
 }
 

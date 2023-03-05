@@ -99,7 +99,7 @@ bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texel
 	TexelsInitFunc initFunc = [&texels](uint32_t *dstTexels)
 	{
 		DebugAssert(!texels.isSlice());
-		std::copy(texels.get(), texels.end(), dstTexels);
+		std::copy(texels.begin(), texels.end(), dstTexels);
 	};
 
 	return this->tryCreateUiTextureInternal(texels.getWidth(), texels.getHeight(), initFunc, outID);
@@ -109,7 +109,7 @@ bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels
 {
 	TexelsInitFunc initFunc = [&texels, &palette](uint32_t *dstTexels)
 	{
-		std::transform(texels.get(), texels.end(), dstTexels,
+		std::transform(texels.begin(), texels.end(), dstTexels,
 			[&palette](const uint8_t texel)
 		{
 			return palette[texel].toARGB();

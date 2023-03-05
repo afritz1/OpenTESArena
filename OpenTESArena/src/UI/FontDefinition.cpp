@@ -33,7 +33,7 @@ bool FontDefinition::init(const char *filename)
 
 		Buffer2D<Pixel> &characterPixels = this->characters.get(i);
 		characterPixels.init(characterWidth, characterHeight);
-		std::copy(srcPixels, srcPixels + pixelCount, characterPixels.get());
+		std::copy(srcPixels, srcPixels + pixelCount, characterPixels.begin());
 
 		char c;
 		if (!FontFile::tryGetChar(i, &c))

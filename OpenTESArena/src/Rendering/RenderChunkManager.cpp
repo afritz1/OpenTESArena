@@ -333,7 +333,7 @@ namespace sgTexture
 					ScopedObjectTextureRef textureRef(textureID, renderer);
 
 					const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
-					const uint8_t *srcTexels = palettedTexture.texels.get();
+					const uint8_t *srcTexels = palettedTexture.texels.begin();
 
 					LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
 					uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);

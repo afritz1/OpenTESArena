@@ -92,7 +92,7 @@ bool CFAFile::init(const char *filename)
 					uint32_t upTo = std::min(upToMin, count);
 					count -= upTo;
 
-					uint8_t *dstPtr = dst.get();
+					uint8_t *dstPtr = dst.begin();
 					for (uint32_t i = 0; i < upTo; i++)
 					{
 						const int dstIndex = (x * upToMin) + i + dstOffset;
@@ -106,7 +106,7 @@ bool CFAFile::init(const char *filename)
 			if (bitsPerPixel == 8)
 			{
 				// No demuxing needed.
-				uint8_t *dstPtr = dst.get();
+				uint8_t *dstPtr = dst.begin();
 				for (uint32_t x = 0; x < widthCompressed; x++)
 				{
 					const int dstIndex = x + dstOffset;
@@ -185,7 +185,7 @@ const uint8_t *CFAFile::getPixels(int index) const
 	DebugAssert(index >= 0);
 	DebugAssert(index < this->images.getCount());
 	const Buffer2D<uint8_t> &image = this->images.get(index);
-	return image.get();
+	return image.begin();
 }
 
 void CFAFile::demux1(const uint8_t *src, uint8_t *dst)

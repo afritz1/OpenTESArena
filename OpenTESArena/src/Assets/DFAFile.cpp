@@ -33,7 +33,7 @@ bool DFAFile::init(const char *filename)
 	// Uncompress the initial frame.
 	Buffer2D<uint8_t> &firstImage = this->images.get(0);
 	firstImage.init(width, height);
-	Compression::decodeRLE(srcPtr + 12, width * height, firstImage.get(),
+	Compression::decodeRLE(srcPtr + 12, width * height, firstImage.begin(),
 		firstImage.getWidth() * firstImage.getHeight());
 
 	// Make copies of the original frame for each update chunk.
@@ -41,7 +41,7 @@ bool DFAFile::init(const char *filename)
 	{
 		Buffer2D<uint8_t> &image = this->images.get(i);
 		image.init(firstImage.getWidth(), firstImage.getHeight());
-		std::copy(firstImage.get(), firstImage.end(), image.get());
+		std::copy(firstImage.begin(), firstImage.end(), image.begin());
 	}
 
 	// Offset to the beginning of the chunk data; advances as the chunk data is read.
@@ -72,7 +72,7 @@ bool DFAFile::init(const char *filename)
 			// Move the offset past the update header.
 			offset += 4;
 
-			uint8_t *imagePtr = image.get();
+			uint8_t *imagePtr = image.begin();
 			for (uint32_t i = 0; i < updateCount; i++)
 			{
 				const int dstIndex = updateOffset + i;
@@ -106,5 +106,5 @@ const uint8_t *DFAFile::getPixels(int index) const
 {
 	DebugAssert(index >= 0);
 	DebugAssert(index < this->images.getCount());
-	return this->images.get(index).get();
+	return this->images.get(index).begin();
 }

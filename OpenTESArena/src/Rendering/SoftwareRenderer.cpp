@@ -636,7 +636,7 @@ namespace swRender
 	{
 		const int frameBufferWidth = colorBuffer.getWidth();
 		const int frameBufferHeight = colorBuffer.getHeight();
-		uint32_t *colorBufferPtr = colorBuffer.get();
+		uint32_t *colorBufferPtr = colorBuffer.begin();
 
 		for (int y = 0; y < frameBufferHeight; y++)
 		{
@@ -1025,8 +1025,8 @@ namespace swRender
 			}
 
 			PixelShaderFrameBuffer shaderFrameBuffer;
-			shaderFrameBuffer.colors = colorBuffer.get();
-			shaderFrameBuffer.depth = depthBuffer.get();
+			shaderFrameBuffer.colors = colorBuffer.begin();
+			shaderFrameBuffer.depth = depthBuffer.begin();
 			shaderFrameBuffer.palette.colors = paletteTexture.get32Bit();
 			shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 
@@ -1339,14 +1339,14 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
 		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
 		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
-		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
 	{
 		const TextureBuilder::TrueColorTexture &trueColorTexture = textureBuilder.getTrueColor();
 		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
 		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.begin());
-		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
 	}
 	else
 	{
@@ -1400,7 +1400,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	const int frameBufferWidth = this->depthBuffer.getWidth();
 	const int frameBufferHeight = this->depthBuffer.getHeight();
 	BufferView2D<uint32_t> colorBufferView(outputBuffer, frameBufferWidth, frameBufferHeight);
-	BufferView2D<double> depthBufferView(this->depthBuffer.get(), frameBufferWidth, frameBufferHeight);
+	BufferView2D<double> depthBufferView(this->depthBuffer.begin(), frameBufferWidth, frameBufferHeight);
 
 	// Palette for 8-bit -> 32-bit color conversion.
 	const ObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);

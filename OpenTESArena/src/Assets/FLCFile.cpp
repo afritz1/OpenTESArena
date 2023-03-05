@@ -304,11 +304,11 @@ Buffer2D<uint8_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 
 	// Write the decoded frame to the initial (scratch) frame.
 	const uint8_t *srcPixels = decomp.data();
-	std::copy(srcPixels, srcPixels + decomp.size(), initialFrame.get());
+	std::copy(srcPixels, srcPixels + decomp.size(), initialFrame.begin());
 
 	// Return a copy of the decoded frame.
 	Buffer2D<uint8_t> image(this->width, this->height);
-	std::copy(srcPixels, srcPixels + decomp.size(), image.get());
+	std::copy(srcPixels, srcPixels + decomp.size(), image.begin());
 	return image;
 }
 
@@ -333,7 +333,7 @@ Buffer2D<uint8_t> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 		int packetCount = 0;
 
 		// Walk through the data until a non-negative packet is found.
-		uint8_t *initialFramePtr = initialFrame.get();
+		uint8_t *initialFramePtr = initialFrame.begin();
 		while (offset < chunkSize)
 		{
 			const int16_t packet = Bytes::getLE16(chunkData + offset);
@@ -438,9 +438,9 @@ Buffer2D<uint8_t> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 
 	// Use the modified initial frame as the source instead of a separate
 	// decompressed buffer.
-	const uint8_t *srcPixels = initialFrame.get();
+	const uint8_t *srcPixels = initialFrame.begin();
 	Buffer2D<uint8_t> image(this->width, this->height);
-	std::copy(srcPixels, srcPixels + (initialFrame.getWidth() * initialFrame.getHeight()), image.get());
+	std::copy(srcPixels, srcPixels + (initialFrame.getWidth() * initialFrame.getHeight()), image.begin());
 	return std::move(image);
 }
 
@@ -477,5 +477,5 @@ const uint8_t *FLCFile::getPixels(int index) const
 {
 	DebugAssertIndex(this->images, index);
 	const Buffer2D<uint8_t> &image = this->images[index].second;
-	return image.get();
+	return image.begin();
 }

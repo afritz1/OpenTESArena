@@ -48,14 +48,14 @@ bool ArenaRenderUtils::tryMakeFogMatrix(int zeroedRow, Random &random, TextureMa
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 	const TextureBuilder::TrueColorTexture &texture = textureBuilder.getTrueColor();
 	const Buffer2D<uint32_t> &texels = texture.texels;
-	const uint32_t *pixelMaxPtr = std::max_element(texels.get(), texels.end());
+	const uint32_t *pixelMaxPtr = std::max_element(texels.begin(), texels.end());
 	const uint8_t pixelMax = static_cast<uint8_t>((*pixelMaxPtr) >> 8);
 
 	// Generate random pixel values based on the max.
 	const int pixelCount = ArenaRenderUtils::FOG_MATRIX_WIDTH * ArenaRenderUtils::FOG_MATRIX_HEIGHT;
 	for (int i = 0; i < pixelCount; i++)
 	{
-		const uint16_t texel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(texels.get() + i));
+		const uint16_t texel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(texels.begin() + i));
 		const uint8_t highByte = (texel >> 8) & 0xFF;
 		const uint8_t lowByte = texel & 0xFF;
 

@@ -300,7 +300,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 		if (outTextures != nullptr)
 		{
 			const BufferView2D<const uint8_t> lightPalettes = lgt.getAllLightPalettes();
-			TextureBuilder textureBuilder = makePaletted(lightPalettes.getWidth(), lightPalettes.getHeight(), lightPalettes.get());
+			TextureBuilder textureBuilder = makePaletted(lightPalettes.getWidth(), lightPalettes.getHeight(), lightPalettes.begin());
 			outTextures->init(1);
 			outTextures->set(0, std::move(textureBuilder));
 		}

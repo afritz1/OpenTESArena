@@ -48,15 +48,15 @@ public:
 
 	bool isValid() const
 	{
-		return this->data.get() != nullptr;
+		return this->data != nullptr;
 	}
 
-	T *get()
+	T *begin()
 	{
 		return this->data.get();
 	}
 
-	const T *get() const
+	const T *begin() const
 	{
 		return this->data.get();
 	}
@@ -65,26 +65,24 @@ public:
 	{
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
-		return this->data.get()[index];
+		return this->data[index];
 	}
 
 	const T &get(int x, int y) const
 	{
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
-		return this->data.get()[index];
+		return this->data[index];
 	}
 
 	T *end()
 	{
-		DebugAssert(this->isValid());
-		return this->data.get() + (this->width * this->height);
+		return this->isValid() ? (this->data.get() + (this->width * this->height)) : nullptr;
 	}
 
 	const T *end() const
 	{
-		DebugAssert(this->isValid());
-		return this->data.get() + (this->width * this->height);
+		return this->isValid() ? (this->data.get() + (this->width * this->height)) : nullptr;
 	}
 
 	int getWidth() const
@@ -101,20 +99,19 @@ public:
 	{
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
-		this->data.get()[index] = value;
+		this->data[index] = value;
 	}
 
 	void set(int x, int y, T &&value)
 	{
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
-		this->data.get()[index] = std::move(value);
+		this->data[index] = std::move(value);
 	}
 
 	void fill(const T &value)
 	{
-		DebugAssert(this->isValid());
-		std::fill(this->data.get(), this->end(), value);
+		std::fill(this->begin(), this->end(), value);
 	}
 
 	void clear()

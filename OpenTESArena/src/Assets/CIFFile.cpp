@@ -92,7 +92,7 @@ bool CIFFile::init(const char *filename)
 			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
-			uint8_t *dstPixels = this->images.back().get();
+			uint8_t *dstPixels = this->images.back().begin();
 			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
 			offset += headerSize + len;
@@ -120,7 +120,7 @@ bool CIFFile::init(const char *filename)
 			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
-			uint8_t *dstPixels = this->images.back().get();
+			uint8_t *dstPixels = this->images.back().begin();
 			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
 			offset += headerSize + len;
@@ -151,7 +151,7 @@ bool CIFFile::init(const char *filename)
 			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
-			uint8_t *dstPixels = this->images.back().get();
+			uint8_t *dstPixels = this->images.back().begin();
 			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
 			// Skip to the next image header.
@@ -169,7 +169,7 @@ bool CIFFile::init(const char *filename)
 			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = srcPtr + (i * len);
-			uint8_t *dstPixels = this->images.back().get();
+			uint8_t *dstPixels = this->images.back().begin();
 			std::copy(srcPixels, srcPixels + len, dstPixels);
 		}
 	}
@@ -193,7 +193,7 @@ bool CIFFile::init(const char *filename)
 			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = header + headerSize;
-			uint8_t *dstPixels = this->images.back().get();
+			uint8_t *dstPixels = this->images.back().begin();
 			std::copy(srcPixels, srcPixels + len, dstPixels);
 
 			// Skip to the next image header.
@@ -241,5 +241,5 @@ int CIFFile::getHeight(int index) const
 const uint8_t *CIFFile::getPixels(int index) const
 {
 	DebugAssertIndex(this->images, index);
-	return this->images[index].get();
+	return this->images[index].begin();
 }

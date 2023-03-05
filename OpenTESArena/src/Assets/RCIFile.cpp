@@ -26,7 +26,7 @@ bool RCIFile::init(const char *filename)
 		image.init(RCIFile::WIDTH, RCIFile::HEIGHT);
 
 		const uint8_t *srcPixels = srcPtr + (RCIFile::FRAME_SIZE * i);
-		std::copy(srcPixels, srcPixels + RCIFile::FRAME_SIZE, image.get());
+		std::copy(srcPixels, srcPixels + RCIFile::FRAME_SIZE, image.begin());
 	}
 
 	return true;
@@ -41,5 +41,5 @@ const uint8_t *RCIFile::getPixels(int index) const
 {
 	DebugAssert(index >= 0);
 	DebugAssert(index < this->images.getCount());
-	return this->images.get(index).get();
+	return this->images.get(index).begin();
 }

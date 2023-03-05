@@ -116,7 +116,7 @@ Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 
 			uint32_t *dstPixels = static_cast<uint32_t*>(surface.getPixels());
 			const Palette &palette = textureManager.getPaletteHandle(*tilesPaletteID);
-			std::transform(srcTexels.get(), srcTexels.end(), dstPixels,
+			std::transform(srcTexels.begin(), srcTexels.end(), dstPixels,
 				[&palette](const uint8_t srcTexel)
 			{
 				return palette[srcTexel].toARGB();

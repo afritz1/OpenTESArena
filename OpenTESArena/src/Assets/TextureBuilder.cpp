@@ -5,13 +5,13 @@
 void TextureBuilder::PalettedTexture::init(int width, int height, const uint8_t *texels)
 {
 	this->texels.init(width, height);
-	std::copy(texels, texels + (width * height), this->texels.get());
+	std::copy(texels, texels + (width * height), this->texels.begin());
 }
 
 void TextureBuilder::TrueColorTexture::init(int width, int height, const uint32_t *texels)
 {
 	this->texels.init(width, height);
-	std::copy(texels, texels + (width * height), this->texels.get());
+	std::copy(texels, texels + (width * height), this->texels.begin());
 }
 
 TextureBuilder::TextureBuilder()

@@ -95,7 +95,7 @@ bool FontFile::init(const char *filename)
 		Buffer2D<Pixel> &character = this->characters.at(i);
 		character.init(element.width, element.height);
 
-		Pixel *charPixels = character.get();
+		Pixel *charPixels = character.begin();
 		for (uint32_t cy = 0; cy < element.height; cy++)
 		{
 			uint16_t mask = 0x8000;
@@ -163,5 +163,5 @@ int FontFile::getHeight() const
 const FontFile::Pixel *FontFile::getPixels(int index) const
 {
 	DebugAssertIndex(this->characters, index);
-	return this->characters[index].get();
+	return this->characters[index].begin();
 }

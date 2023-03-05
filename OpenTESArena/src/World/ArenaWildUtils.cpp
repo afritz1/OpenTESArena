@@ -83,7 +83,7 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 	ArenaRandom random(wildSeed);
 
 	// Generate a random wilderness .MIF index for each wilderness chunk.
-	std::generate(indices.get(), indices.get() + (indices.getWidth() * indices.getHeight()),
+	std::generate(indices.begin(), indices.begin() + (indices.getWidth() * indices.getHeight()),
 		[&wildData, &random]()
 	{
 		// Determine the wilderness block list to draw from.

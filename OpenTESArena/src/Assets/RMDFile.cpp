@@ -46,9 +46,9 @@ bool RMDFile::init(const char *filename)
 		const auto map1End = srcPtr + ((2 * src.getCount()) / 3);
 		const auto map2End = srcEnd;
 
-		std::copy(florStart, florEnd, reinterpret_cast<uint8_t*>(this->flor.get()));
-		std::copy(florEnd, map1End, reinterpret_cast<uint8_t*>(this->map1.get()));
-		std::copy(map1End, map2End, reinterpret_cast<uint8_t*>(this->map2.get()));
+		std::copy(florStart, florEnd, reinterpret_cast<uint8_t*>(this->flor.begin()));
+		std::copy(florEnd, map1End, reinterpret_cast<uint8_t*>(this->map1.begin()));
+		std::copy(map1End, map2End, reinterpret_cast<uint8_t*>(this->map2.begin()));
 	}
 	else
 	{
@@ -63,9 +63,9 @@ bool RMDFile::init(const char *filename)
 		const auto map1End = decomp.begin() + ((2 * decomp.size()) / 3);
 		const auto map2End = decomp.end();
 
-		std::copy(florStart, florEnd, reinterpret_cast<uint8_t*>(this->flor.get()));
-		std::copy(florEnd, map1End, reinterpret_cast<uint8_t*>(this->map1.get()));
-		std::copy(map1End, map2End, reinterpret_cast<uint8_t*>(this->map2.get()));
+		std::copy(florStart, florEnd, reinterpret_cast<uint8_t*>(this->flor.begin()));
+		std::copy(florEnd, map1End, reinterpret_cast<uint8_t*>(this->map1.begin()));
+		std::copy(map1End, map2End, reinterpret_cast<uint8_t*>(this->map2.begin()));
 	}
 
 	return true;

@@ -113,7 +113,7 @@ bool IMGFile::init(const char *filename)
 	auto makeImage = [this](int width, int height, const uint8_t *data)
 	{
 		this->image.init(width, height);
-		std::copy(data, data + (width * height), this->image.get());
+		std::copy(data, data + (width * height), this->image.begin());
 	};
 
 	// Decide how to use the pixel data.
@@ -126,7 +126,7 @@ bool IMGFile::init(const char *filename)
 			this->image.init(64, 64);
 			this->image.fill(0);
 
-			uint8_t *imagePtr = this->image.get();
+			uint8_t *imagePtr = this->image.begin();
 			for (int y = 0; y < height; y++)
 			{
 				for (int x = 0; x < width; x++)
@@ -258,5 +258,5 @@ const Palette *IMGFile::getPalette() const
 
 const uint8_t *IMGFile::getPixels() const
 {
-	return this->image.get();
+	return this->image.begin();
 }

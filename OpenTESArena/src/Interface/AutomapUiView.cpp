@@ -320,7 +320,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 		const int xOffset = automapX * AutomapUiView::PixelSize;
 		const int yOffset = automapY * AutomapUiView::PixelSize;
 		const uint32_t colorARGB = color.toARGB();
-		uint32_t *pixels = dstBuffer.get();
+		uint32_t *pixels = dstBuffer.begin();
 
 		for (int h = 0; h < AutomapUiView::PixelSize; h++)
 		{
@@ -395,7 +395,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 		const int surfaceX = dstBuffer.getWidth() - AutomapUiView::PixelSize - (z * AutomapUiView::PixelSize);
 		const int surfaceY = x * AutomapUiView::PixelSize;
 
-		uint32_t *pixels = dstBuffer.get();
+		uint32_t *pixels = dstBuffer.begin();
 
 		// Draw the player's arrow within the map pixel.
 		const std::vector<Int2> &offsets = AutomapUiView::PlayerArrowPatterns.at(cardinalDirection);

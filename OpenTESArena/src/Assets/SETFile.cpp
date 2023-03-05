@@ -39,7 +39,7 @@ bool SETFile::init(const char *filename)
 		image.init(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT);
 
 		const uint8_t *srcPixels = srcData.data() + (SETFile::CHUNK_SIZE * i);
-		std::copy(srcPixels, srcPixels + SETFile::CHUNK_SIZE, image.get());
+		std::copy(srcPixels, srcPixels + SETFile::CHUNK_SIZE, image.begin());
 	}
 
 	return true;
@@ -54,5 +54,5 @@ const uint8_t *SETFile::getPixels(int index) const
 {
 	DebugAssert(index >= 0);
 	DebugAssert(index < this->images.getCount());
-	return this->images.get(index).get();
+	return this->images.get(index).begin();
 }

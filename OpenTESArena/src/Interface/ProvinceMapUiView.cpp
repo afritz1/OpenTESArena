@@ -270,7 +270,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
 
 	const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
-	const uint8_t *srcTexels = srcTexture.texels.get();
+	const uint8_t *srcTexels = srcTexture.texels.begin();
 	uint32_t *dstTexels = renderer.lockUiTexture(textureID);
 	if (dstTexels == nullptr)
 	{
