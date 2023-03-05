@@ -49,6 +49,16 @@ public:
 		return this->data.get();
 	}
 
+	T *end()
+	{
+		return this->isValid() ? (this->data.get() + this->count) : nullptr;
+	}
+
+	const T *end() const
+	{
+		return this->isValid() ? (this->data.get() + this->count) : nullptr;
+	}
+
 	T &get(int index)
 	{
 		DebugAssert(this->isValid());
@@ -73,16 +83,6 @@ public:
 	const T &operator[](int index) const
 	{
 		return this->get(index);
-	}
-
-	T *end()
-	{
-		return this->isValid() ? (this->data.get() + this->count) : nullptr;
-	}
-
-	const T *end() const
-	{
-		return this->isValid() ? (this->data.get() + this->count) : nullptr;
 	}
 
 	int getCount() const

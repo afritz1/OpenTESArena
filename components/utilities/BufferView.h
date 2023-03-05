@@ -165,6 +165,16 @@ public:
 		return this->data;
 	}
 
+	T *end()
+	{
+		return (this->data != nullptr) ? (this->data + this->count) : nullptr;
+	}
+
+	const T *end() const
+	{
+		return (this->data != nullptr) ? (this->data + this->count) : nullptr;
+	}
+
 	T &get(int index)
 	{
 		DebugAssert(this->isValid());
@@ -189,16 +199,6 @@ public:
 	const T &operator[](int index) const
 	{
 		return this->get(index);
-	}
-
-	T *end()
-	{
-		return (this->data != nullptr) ? (this->data + this->count) : nullptr;
-	}
-
-	const T *end() const
-	{
-		return (this->data != nullptr) ? (this->data + this->count) : nullptr;
 	}
 
 	int getCount() const

@@ -66,6 +66,16 @@ public:
 		return this->data.get();
 	}
 
+	T *end()
+	{
+		return this->isValid() ? (this->data.get() + (this->width * this->height * this->depth)) : nullptr;
+	}
+
+	const T *end() const
+	{
+		return this->isValid() ? (this->data.get() + (this->width * this->height * this->depth)) : nullptr;
+	}
+
 	T &get(int x, int y, int z)
 	{
 		DebugAssert(this->isValid());
@@ -78,16 +88,6 @@ public:
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y, z);
 		return this->data[index];
-	}
-
-	T *end()
-	{
-		return this->isValid() ? (this->data.get() + (this->width * this->height * this->depth)) : nullptr;
-	}
-
-	const T *end() const
-	{
-		return this->isValid() ? (this->data.get() + (this->width * this->height * this->depth)) : nullptr;
 	}
 
 	int getWidth() const
