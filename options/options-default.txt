@@ -76,8 +76,8 @@ ArenaPath=data/ARENA/
 # Change "ArenaSavesPath" to your classic saves folder (if any).
 ArenaSavesPath=data/ArenaSaves/
 
-# Determines whether collision detection is calculated for the player.
-Collision=true
+# Determines whether the player ignores collision and can fly around.
+GhostMode=false
 
 # Shows the opening cinematic on program start.
 ShowIntro=true

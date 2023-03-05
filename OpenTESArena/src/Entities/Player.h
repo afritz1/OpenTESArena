@@ -38,7 +38,7 @@ private:
 	void handleCollision(const LevelInstance &activeLevel, double dt);
 
 	// Updates the player's position and velocity based on interactions with the world.
-	void updatePhysics(const LevelInstance &activeLevel, bool collision, double dt);
+	void updatePhysics(const LevelInstance &activeLevel, double dt);
 public:
 	Player();
 

@@ -160,7 +160,7 @@ void set##section##_##name(const std::string &value) \
 
 	OPTION_STRING(Misc, ArenaPath)
 	OPTION_STRING(Misc, ArenaSavesPath)
-	OPTION_BOOL(Misc, Collision)
+	OPTION_BOOL(Misc, GhostMode)
 	OPTION_INT(Misc, ProfilerLevel)
 	OPTION_BOOL(Misc, ShowIntro)
 	OPTION_BOOL(Misc, ShowCompass)

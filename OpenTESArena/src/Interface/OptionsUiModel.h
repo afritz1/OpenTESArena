@@ -54,7 +54,7 @@ namespace OptionsUiModel
 	const std::string PLAYER_HAS_LIGHT_NAME = "Player Has Light";
 
 	// Dev.
-	const std::string COLLISION_NAME = "Collision";
+	const std::string GHOST_MODE_NAME = "Ghost Mode";
 	const std::string PROFILER_LEVEL_NAME = "Profiler Level";
 
 	enum class OptionType { Bool, Int, Double, String };
@@ -210,7 +210,7 @@ namespace OptionsUiModel
 	OptionGroup makeMiscOptionGroup(Game &game);
 
 	// Developer options.
-	std::unique_ptr<OptionsUiModel::BoolOption> makeCollisionOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makeGhostModeOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeProfilerLevelOption(Game &game);
 	OptionGroup makeDevOptionGroup(Game &game);
 

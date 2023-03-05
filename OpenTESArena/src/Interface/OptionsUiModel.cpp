@@ -619,17 +619,17 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 	return group;
 }
 
-std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeCollisionOption(Game &game)
+std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeGhostModeOption(Game &game)
 {
 	const auto &options = game.getOptions();
 	return std::make_unique<OptionsUiModel::BoolOption>(
-		OptionsUiModel::COLLISION_NAME,
-		"Enables player collision (not fully implemented yet).",
-		options.getMisc_Collision(),
+		OptionsUiModel::GHOST_MODE_NAME,
+		"Disables player collision and allows flying.",
+		options.getMisc_GhostMode(),
 		[&game](bool value)
 	{
 		auto &options = game.getOptions();
-		options.setMisc_Collision(value);
+		options.setMisc_GhostMode(value);
 	});
 }
 
@@ -653,7 +653,7 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeProfilerLevelOpti
 OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 {
 	OptionGroup group;
-	group.emplace_back(OptionsUiModel::makeCollisionOption(game));
+	group.emplace_back(OptionsUiModel::makeGhostModeOption(game));
 	group.emplace_back(OptionsUiModel::makeProfilerLevelOption(game));
 	return group;
 }

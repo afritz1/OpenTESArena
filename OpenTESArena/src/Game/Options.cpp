@@ -52,7 +52,7 @@ namespace
 	{
 		{ "ArenaPath", OptionType::String },
 		{ "ArenaSavesPath", OptionType::String },
-		{ "Collision", OptionType::Bool },
+		{ "GhostMode", OptionType::Bool },
 		{ "ProfilerLevel", OptionType::Int },
 		{ "ShowIntro", OptionType::Bool },
 		{ "ShowCompass", OptionType::Bool },

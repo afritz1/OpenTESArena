@@ -15,153 +15,10 @@
 
 #include "components/utilities/String.h"
 
-Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
-	const BufferView<const Rect> &nativeCursorRegions)
+namespace PlayerLogicController
 {
-	const auto &inputManager = game.getInputManager();
-
-	const auto &options = game.getOptions();
-	const bool modernInterface = options.getGraphics_ModernInterface();
-	if (!modernInterface)
-	{
-		// Classic interface mode.
-		auto &player = game.getPlayer();
-		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
-		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
-		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
-
-		// Don't turn if LCtrl is held.
-		const bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
-
-		// Mouse turning takes priority over key turning.
-		if (leftClick)
-		{
-			const Int2 mousePosition = inputManager.getMousePosition();
-
-			// Strength of turning is determined by proximity of the mouse cursor to
-			// the left or right screen edge.
-			const double dx = [&mousePosition, &nativeCursorRegions]()
-			{
-				// Measure the magnitude of rotation. -1.0 is left, 1.0 is right.
-				const double percent = [&mousePosition, &nativeCursorRegions]()
-				{
-					const int mouseX = mousePosition.x;
-
-					// Native cursor regions for turning (scaled to the current window).
-					const Rect &topLeft = nativeCursorRegions.get(GameWorldUiView::CursorTopLeftIndex);
-					const Rect &topRight = nativeCursorRegions.get(GameWorldUiView::CursorTopRightIndex);
-					const Rect &middleLeft = nativeCursorRegions.get(GameWorldUiView::CursorMiddleLeftIndex);
-					const Rect &middleRight = nativeCursorRegions.get(GameWorldUiView::CursorMiddleRightIndex);
-
-					if (topLeft.contains(mousePosition))
-					{
-						return -1.0 + (static_cast<double>(mouseX) / topLeft.getWidth());
-					}
-					else if (topRight.contains(mousePosition))
-					{
-						return static_cast<double>(mouseX - topRight.getLeft()) / topRight.getWidth();
-					}
-					else if (middleLeft.contains(mousePosition))
-					{
-						return -1.0 + (static_cast<double>(mouseX) / middleLeft.getWidth());
-					}
-					else if (middleRight.contains(mousePosition))
-					{
-						return static_cast<double>(mouseX - middleRight.getLeft()) / middleRight.getWidth();
-					}
-					else
-					{
-						return 0.0;
-					}
-				}();
-
-				// No NaNs or infinities allowed.
-				return std::isfinite(percent) ? percent : 0.0;
-			}();
-
-			// Yaw the camera left or right. No vertical movement in classic camera mode.
-			// Multiply turning speed by delta time so it behaves correctly with different
-			// frame rates.
-			return Double2(dx * dt, 0.0);
-		}
-		else if (!lCtrl)
-		{
-			// If left control is not held, then turning is permitted.
-			if (left)
-			{
-				// Turn left at a fixed angular velocity.
-				return Double2(-dt, 0.0);
-			}
-			else if (right)
-			{
-				// Turn right at a fixed angular velocity.
-				return Double2(dt, 0.0);
-			}
-		}
-	}
-	else
-	{
-		// Modern interface. Make the camera look around if the player's weapon is not in use.
-		const Int2 mouseDelta = inputManager.getMouseDelta();
-		const int dx = mouseDelta.x;
-		const int dy = mouseDelta.y;
-		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
-
-		auto &player = game.getPlayer();
-		const auto &weaponAnim = player.getWeaponAnimation();
-		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
-
-		if (turning)
-		{
-			const Int2 dimensions = game.getRenderer().getWindowDimensions();
-
-			// Get the smaller of the two dimensions, so the look sensitivity is relative
-			// to a square instead of a rectangle. This keeps the camera look independent
-			// of the aspect ratio.
-			const int minDimension = std::min(dimensions.x, dimensions.y);
-			const double dxx = static_cast<double>(dx) / static_cast<double>(minDimension);
-			const double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
-
-			// Pitch and/or yaw the camera.
-			return Double2(dxx, -dyy);
-		}
-	}
-
-	// No turning.
-	return Double2::Zero;
-}
-
-void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
-{
-	const auto &options = game.getOptions();
-	auto &player = game.getPlayer();
-	player.rotate(dx, dy, options.getInput_HorizontalSensitivity(),
-		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
-}
-
-void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
-	const BufferView<const Rect> &nativeCursorRegions)
-{
-	// @todo: this should be in some game/player logic controller namespace
-
-	// In the future, maybe this could be separated into two methods:
-	// 1) handleClassicMovement()
-	// 2) handleModernMovement()
-
-	const auto &inputManager = game.getInputManager();
-
-	// Arbitrary movement speed.
-	constexpr double walkSpeed = 15.0;
-
-	const GameState &gameState = game.getGameState();
-	const MapInstance &mapInst = gameState.getActiveMapInst();
-	const LevelInstance &levelInst = mapInst.getActiveLevel();
-
-	auto& player = game.getPlayer();
-	const bool isOnGround = player.onGround(levelInst);
-
-	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
-	if (!modernInterface)
+	void handlePlayerMovementClassic(Player &player, double dt, double walkSpeed, bool isOnGround, bool isGhostModeEnabled,
+		const InputManager &inputManager, const BufferView<const Rect> &nativeCursorRegions)
 	{
 		// Classic interface mode.
 		// Arena uses arrow keys, but let's use the left hand side of the keyboard
@@ -174,12 +31,12 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		// Listen for mouse, WASD, and Ctrl.
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 
-		bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
-		bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
-		bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
-		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
-		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
-		bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
+		const bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
+		const bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
+		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
+		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
+		const bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
+		const bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -320,38 +177,83 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 			player.setFrictionToStatic();
 		}
 	}
-	else
+
+	void handlePlayerMovementModern(Player &player, double dt, double walkSpeed, bool isOnGround, bool isGhostModeEnabled,
+		const InputManager &inputManager)
 	{
 		// Modern interface. Listen for WASD.
-		bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
-		bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
-		bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
-		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
-		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
-
-		auto &player = game.getPlayer();
+		const bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
+		const bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
+		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
+		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
+		const bool jump = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
+		const bool down = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
+		const Double3 direction = player.getDirection();
 		const Double2 groundDirection = player.getGroundDirection();
 		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
 		const Double3 &rightDirection = player.getRight();
+		const Double3 upDirection = rightDirection.cross(direction).normalized();
 
-		if ((forward || backward || left || right || space) && isOnGround)
+		if (!isGhostModeEnabled)
 		{
-			player.setFrictionToDynamic();
+			if ((forward || backward || left || right || jump) && isOnGround)
+			{
+				player.setFrictionToDynamic();
 
-			// Calculate the acceleration direction based on input.
-			Double3 accelDirection(0.0, 0.0, 0.0);
+				// Check for jumping first so the player can't slide jump on the first frame.
+				if (jump)
+				{
+					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+				}
+				else
+				{
+					Double3 accelDirection = Double3::Zero;
+					if (forward)
+					{
+						accelDirection = accelDirection + groundDirection3D;
+					}
 
+					if (backward)
+					{
+						accelDirection = accelDirection - groundDirection3D;
+					}
+
+					if (right)
+					{
+						accelDirection = accelDirection + rightDirection;
+					}
+
+					if (left)
+					{
+						accelDirection = accelDirection - rightDirection;
+					}
+
+					if (accelDirection.lengthSquared() > 0.0)
+					{
+						accelDirection = accelDirection.normalized();
+						player.accelerate(accelDirection, walkSpeed, dt);
+					}
+				}
+			}
+			else if (isOnGround)
+			{
+				player.setFrictionToStatic();
+			}
+		}
+		else
+		{
+			Double3 accelDirection = Double3::Zero;
 			if (forward)
 			{
-				accelDirection = accelDirection + groundDirection3D;
+				accelDirection = accelDirection + direction;
 			}
 
 			if (backward)
 			{
-				accelDirection = accelDirection - groundDirection3D;
+				accelDirection = accelDirection - direction;
 			}
 
 			if (right)
@@ -364,29 +266,179 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 				accelDirection = accelDirection - rightDirection;
 			}
 
-			// Use a normalized direction.
-			accelDirection = accelDirection.normalized();
-
-			// Set the magnitude of the acceleration to some arbitrary number. These values
-			// are independent of max speed.
-			double accelMagnitude = walkSpeed;
-
-			// Check for jumping first (so the player can't slide jump on the first frame).
-			if (space)
+			if (jump)
 			{
-				// Jump.
-				player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+				accelDirection = accelDirection + upDirection;
 			}
-			// Change the player's horizontal velocity if valid.
-			else if (std::isfinite(accelDirection.length()))
+
+			if (down)
 			{
-				player.accelerate(accelDirection, accelMagnitude, dt);
+				accelDirection = accelDirection - upDirection;
 			}
-		}
-		else if (isOnGround)
+
+			if (accelDirection.lengthSquared() > 0.0)
+			{
+				accelDirection = accelDirection.normalized();
+
+				const CoordDouble3 &playerCoord = player.getPosition();
+
+				constexpr double ghostSpeed = 10.0;
+				const VoxelDouble3 deltaPoint = accelDirection * (ghostSpeed * dt);
+				const CoordDouble3 newPlayerCoord = ChunkUtils::recalculateCoord(playerCoord.chunk, playerCoord.point + deltaPoint);
+				player.teleport(newPlayerCoord);
+			}
+		}		
+	}
+}
+
+Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
+	const BufferView<const Rect> &nativeCursorRegions)
+{
+	const auto &inputManager = game.getInputManager();
+
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+	if (!modernInterface)
+	{
+		// Classic interface mode.
+		auto &player = game.getPlayer();
+		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
+		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
+		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
+
+		// Don't turn if LCtrl is held.
+		const bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
+
+		// Mouse turning takes priority over key turning.
+		if (leftClick)
 		{
-			player.setFrictionToStatic();
+			const Int2 mousePosition = inputManager.getMousePosition();
+
+			// Strength of turning is determined by proximity of the mouse cursor to
+			// the left or right screen edge.
+			const double dx = [&mousePosition, &nativeCursorRegions]()
+			{
+				// Measure the magnitude of rotation. -1.0 is left, 1.0 is right.
+				const double percent = [&mousePosition, &nativeCursorRegions]()
+				{
+					const int mouseX = mousePosition.x;
+
+					// Native cursor regions for turning (scaled to the current window).
+					const Rect &topLeft = nativeCursorRegions.get(GameWorldUiView::CursorTopLeftIndex);
+					const Rect &topRight = nativeCursorRegions.get(GameWorldUiView::CursorTopRightIndex);
+					const Rect &middleLeft = nativeCursorRegions.get(GameWorldUiView::CursorMiddleLeftIndex);
+					const Rect &middleRight = nativeCursorRegions.get(GameWorldUiView::CursorMiddleRightIndex);
+
+					if (topLeft.contains(mousePosition))
+					{
+						return -1.0 + (static_cast<double>(mouseX) / topLeft.getWidth());
+					}
+					else if (topRight.contains(mousePosition))
+					{
+						return static_cast<double>(mouseX - topRight.getLeft()) / topRight.getWidth();
+					}
+					else if (middleLeft.contains(mousePosition))
+					{
+						return -1.0 + (static_cast<double>(mouseX) / middleLeft.getWidth());
+					}
+					else if (middleRight.contains(mousePosition))
+					{
+						return static_cast<double>(mouseX - middleRight.getLeft()) / middleRight.getWidth();
+					}
+					else
+					{
+						return 0.0;
+					}
+				}();
+
+				// No NaNs or infinities allowed.
+				return std::isfinite(percent) ? percent : 0.0;
+			}();
+
+			// Yaw the camera left or right. No vertical movement in classic camera mode.
+			// Multiply turning speed by delta time so it behaves correctly with different
+			// frame rates.
+			return Double2(dx * dt, 0.0);
 		}
+		else if (!lCtrl)
+		{
+			// If left control is not held, then turning is permitted.
+			if (left)
+			{
+				// Turn left at a fixed angular velocity.
+				return Double2(-dt, 0.0);
+			}
+			else if (right)
+			{
+				// Turn right at a fixed angular velocity.
+				return Double2(dt, 0.0);
+			}
+		}
+	}
+	else
+	{
+		// Modern interface. Make the camera look around if the player's weapon is not in use.
+		const Int2 mouseDelta = inputManager.getMouseDelta();
+		const int dx = mouseDelta.x;
+		const int dy = mouseDelta.y;
+		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+
+		auto &player = game.getPlayer();
+		const auto &weaponAnim = player.getWeaponAnimation();
+		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
+
+		if (turning)
+		{
+			const Int2 dimensions = game.getRenderer().getWindowDimensions();
+
+			// Get the smaller of the two dimensions, so the look sensitivity is relative
+			// to a square instead of a rectangle. This keeps the camera look independent
+			// of the aspect ratio.
+			const int minDimension = std::min(dimensions.x, dimensions.y);
+			const double dxx = static_cast<double>(dx) / static_cast<double>(minDimension);
+			const double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
+
+			// Pitch and/or yaw the camera.
+			return Double2(dxx, -dyy);
+		}
+	}
+
+	// No turning.
+	return Double2::Zero;
+}
+
+void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
+{
+	const auto &options = game.getOptions();
+	auto &player = game.getPlayer();
+	player.rotate(dx, dy, options.getInput_HorizontalSensitivity(),
+		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
+}
+
+void PlayerLogicController::handlePlayerMovement(Game &game, double dt, const BufferView<const Rect> &nativeCursorRegions)
+{
+	const InputManager &inputManager = game.getInputManager();
+
+	// Arbitrary movement speed.
+	constexpr double walkSpeed = 15.0;
+
+	const GameState &gameState = game.getGameState();
+	const MapInstance &mapInst = gameState.getActiveMapInst();
+	const LevelInstance &levelInst = mapInst.getActiveLevel();
+	Player &player = game.getPlayer();
+	const bool isOnGround = player.onGround(levelInst);
+
+	const Options &options = game.getOptions();
+	const bool isGhostModeEnabled = options.getMisc_GhostMode();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+	if (!modernInterface)
+	{
+		PlayerLogicController::handlePlayerMovementClassic(player, dt, walkSpeed, isOnGround, isGhostModeEnabled,
+			inputManager, nativeCursorRegions);
+	}
+	else
+	{
+		PlayerLogicController::handlePlayerMovementModern(player, dt, walkSpeed, isOnGround, isGhostModeEnabled, inputManager);
 	}
 }
 

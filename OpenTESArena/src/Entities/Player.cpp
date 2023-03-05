@@ -460,7 +460,7 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	}
 }
 
-void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, double dt)
+void Player::updatePhysics(const LevelInstance &activeLevel, double dt)
 {
 	// Acceleration from gravity (always).
 	this->accelerate(-Double3::UnitY, GRAVITY, dt);
@@ -469,19 +469,8 @@ void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, dou
 	const double floorY = activeLevel.getCeilingScale();
 
 	// Change the player's velocity based on collision.
-	if (collision)
-	{
-		this->handleCollision(activeLevel, dt);
-
-		// Temp: keep camera Y fixed until Y collision is implemented.
-		this->camera.position.point.y = floorY + Player::HEIGHT;
-	}
-	else
-	{
-		// Keep the player's Y position constant, but otherwise let them act as a ghost.
-		this->camera.position.point.y = floorY + Player::HEIGHT;
-		this->velocity.y = 0.0;
-	}
+	this->handleCollision(activeLevel, dt);
+	this->camera.position.point.y = floorY + Player::HEIGHT; // Temp: keep camera Y fixed until Y collision is implemented.
 
 	// Simple Euler integration for updating the player's position.
 	const VoxelDouble3 newPoint = this->camera.position.point + (this->velocity * dt);
@@ -512,8 +501,11 @@ void Player::tick(Game &game, double dt)
 	const GameState &gameState = game.getGameState();
 	const MapInstance &activeMapInst = gameState.getActiveMapInst();
 	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
-	const bool collisionEnabled = game.getOptions().getMisc_Collision();
-	this->updatePhysics(activeLevelInst, collisionEnabled, dt);
+	const bool isGhostModeEnabled = game.getOptions().getMisc_GhostMode();
+	if (!isGhostModeEnabled)
+	{
+		this->updatePhysics(activeLevelInst, dt);
+	}
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);
