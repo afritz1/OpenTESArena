@@ -150,9 +150,8 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 
 	const auto &inputManager = game.getInputManager();
 
-	// Arbitrary movement speeds.
+	// Arbitrary movement speed.
 	constexpr double walkSpeed = 15.0;
-	constexpr double runSpeed = 30.0;
 
 	const GameState &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
@@ -182,15 +181,10 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
 		bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
-		// The original game didn't have sprinting, but it seems like something
-		// relevant to do anyway (at least for development).
-		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
-
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
 		const Double2 groundDirection = player.getGroundDirection();
-		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0,
-			groundDirection.y).normalized();
+		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
 		const Double3 &rightDirection = player.getRight();
 
 		// Mouse movement takes priority over key movement.
@@ -259,7 +253,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 
 				// Set the magnitude of the acceleration to some arbitrary number. These values
 				// are independent of max speed.
-				double accelMagnitude = percent * (isRunning ? runSpeed : walkSpeed);
+				double accelMagnitude = percent * walkSpeed;
 
 				// Check for jumping first (so the player can't slide jump on the first frame).
 				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
@@ -271,7 +265,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 				// Change the player's velocity if valid.
 				else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
 				{
-					player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+					player.accelerate(accelDirection, accelMagnitude, dt);
 				}
 			}
 		}
@@ -307,7 +301,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 
 			// Set the magnitude of the acceleration to some arbitrary number. These values
 			// are independent of max speed.
-			double accelMagnitude = isRunning ? runSpeed : walkSpeed;
+			double accelMagnitude = walkSpeed;
 
 			// Check for jumping first (so the player can't slide jump on the first frame).
 			if (space)
@@ -318,7 +312,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 			// Change the player's velocity if valid.
 			else if (std::isfinite(accelDirection.length()))
 			{
-				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+				player.accelerate(accelDirection, accelMagnitude, dt);
 			}
 		}
 		else if (isOnGround)
@@ -335,17 +329,12 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
 		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
 
-		// The original game didn't have sprinting, but it seems like something
-		// relevant to do anyway (at least for development).
-		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
-
 		auto &player = game.getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
 		const Double2 groundDirection = player.getGroundDirection();
-		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0,
-			groundDirection.y).normalized();
+		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
 		const Double3 &rightDirection = player.getRight();
 
 		if ((forward || backward || left || right || space) && isOnGround)
@@ -380,7 +369,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 
 			// Set the magnitude of the acceleration to some arbitrary number. These values
 			// are independent of max speed.
-			double accelMagnitude = isRunning ? runSpeed : walkSpeed;
+			double accelMagnitude = walkSpeed;
 
 			// Check for jumping first (so the player can't slide jump on the first frame).
 			if (space)
@@ -391,7 +380,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
 			// Change the player's horizontal velocity if valid.
 			else if (std::isfinite(accelDirection.length()))
 			{
-				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+				player.accelerate(accelDirection, accelMagnitude, dt);
 			}
 		}
 		else if (isOnGround)

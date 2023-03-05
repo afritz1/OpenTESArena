@@ -39,13 +39,12 @@ Player::Player()
 	this->portraitID = -1;
 	this->camera.init(CoordDouble3(), -Double3::UnitX); // To avoid audio listener normalization issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
-	this->maxRunSpeed = 0.0;
 	this->friction = 0.0;
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
-	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random)
+	double maxWalkSpeed, int weaponID, const ExeData &exeData, Random &random)
 {
 	this->displayName = displayName;
 	this->male = male;
@@ -55,7 +54,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->camera.init(position, direction);
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
-	this->maxRunSpeed = maxRunSpeed;
 	this->friction = FRICTION_STATIC;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
@@ -63,7 +61,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 	PrimaryAttributeSet &&attributes, int portraitID, const CoordDouble3 &position, const Double3 &direction,
-	const Double3 &velocity, double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData)
+	const Double3 &velocity, double maxWalkSpeed, int weaponID, const ExeData &exeData)
 {
 	this->displayName = displayName;
 	this->male = male;
@@ -73,7 +71,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->camera.init(position, direction);
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
-	this->maxRunSpeed = maxRunSpeed;
 	this->friction = FRICTION_STATIC;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
@@ -92,7 +89,6 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	this->camera.init(position, direction);
 	this->velocity = Double3::Zero;
 	this->maxWalkSpeed = Player::DEFAULT_WALK_SPEED;
-	this->maxRunSpeed = Player::DEFAULT_RUN_SPEED;
 
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
 	const int weaponID = [&random, &charClassDef]()
@@ -420,8 +416,7 @@ void Player::setDirectionToHorizon()
 	this->lookAt(lookAtCoord);
 }
 
-void Player::accelerate(const Double3 &direction, double magnitude,
-	bool isRunning, double dt)
+void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 {
 	DebugAssert(dt >= 0.0);
 	DebugAssert(magnitude >= 0.0);
@@ -438,7 +433,7 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 
 	// Don't let the horizontal velocity be greater than the max speed for the
 	// current movement state (i.e., walking/running).
-	double maxSpeed = isRunning ? this->maxRunSpeed : this->maxWalkSpeed;
+	double maxSpeed = this->maxWalkSpeed;
 	Double2 velocityXZ(this->velocity.x, this->velocity.z);
 	if (velocityXZ.length() > maxSpeed)
 	{
@@ -468,7 +463,7 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, double dt)
 {
 	// Acceleration from gravity (always).
-	this->accelerate(-Double3::UnitY, GRAVITY, false, dt);
+	this->accelerate(-Double3::UnitY, GRAVITY, dt);
 
 	// Temp: get floor Y until Y collision is implemented.
 	const double floorY = activeLevel.getCeilingScale();
@@ -506,8 +501,7 @@ void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, dou
 
 		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
 		{
-			this->accelerate(Double3(frictionDirection.x, 0.0, frictionDirection.y),
-				frictionMagnitude, true, dt);
+			this->accelerate(Double3(frictionDirection.x, 0.0, frictionDirection.y), frictionMagnitude, dt);
 		}
 	}
 }

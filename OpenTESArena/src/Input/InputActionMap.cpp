@@ -115,8 +115,6 @@ namespace
 		else if (StringView::equals(mapName, InputActionMapName::GameWorld))
 		{
 			// Game world interaction.
-			// @todo: might want Move{...}Fast variations w/ LeftShift if we want to keep sprint (wasn't in the original game).
-			// - might be a good time to remove sprint altogether too.
 			defs.emplace_back(makeKeyDef(
 				InputActionName::MoveForward,
 				InputStateType::Performing,

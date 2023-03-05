@@ -25,7 +25,7 @@ private:
 	int portraitID;
 	Camera3D camera;
 	VoxelDouble3 velocity;
-	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
+	double maxWalkSpeed; // Eventually a function of 'Speed'.
 	double friction;
 	WeaponAnimation weaponAnimation;
 	PrimaryAttributeSet attributes;
@@ -45,12 +45,12 @@ public:
 	// Make player with rolled attributes based on race & gender.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
-		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData, Random &random);
+		double maxWalkSpeed, int weaponID, const ExeData &exeData, Random &random);
 
 	// Make player with given attributes.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
-		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);
+		double maxWalkSpeed, int weaponID, const ExeData &exeData);
 
 	// Initializes a random player for testing.
 	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, Random &random);
@@ -60,7 +60,6 @@ public:
 
 	// Arbitrary values for movement speed.
 	static constexpr double DEFAULT_WALK_SPEED = 2.0;
-	static constexpr double DEFAULT_RUN_SPEED = 8.0;
 
 	const CoordDouble3 &getPosition() const;
 	const std::string &getDisplayName() const;
@@ -116,8 +115,7 @@ public:
 
 	// Changes the velocity (as a force) given a normalized direction, magnitude, 
 	// and delta time, as well as whether the player is running.
-	void accelerate(const Double3 &direction, double magnitude,
-		bool isRunning, double dt);
+	void accelerate(const Double3 &direction, double magnitude, double dt);
 
 	// Changes the velocity instantly. Intended for instantaneous acceleration like 
 	// jumping.
