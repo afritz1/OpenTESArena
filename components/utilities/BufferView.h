@@ -14,7 +14,7 @@
 
 // Data can be null. Only need assertions on things that reach into the buffer itself.
 
-template <typename T>
+template<typename T>
 class BufferView
 {
 private:

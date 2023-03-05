@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "Buffer2D.h"
 #include "../debug/Debug.h"
 
 // Non-owning view over a 2D range of data stored in memory as a 1D array. More complex than 1D buffer
@@ -11,7 +12,7 @@
 
 // Data can be null. Only need assertions on things that reach into the buffer itself.
 
-template <typename T>
+template<typename T>
 class BufferView2D
 {
 private:
@@ -47,6 +48,18 @@ public:
 		this->init(data, width, height);
 	}
 
+	template<typename U>
+	BufferView2D(Buffer2D<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight());
+	}
+
+	template<typename U>
+	BufferView2D(const Buffer2D<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight());
+	}
+
 	void init(T *data, int width, int height, int viewX, int viewY, int viewWidth, int viewHeight)
 	{
 		DebugAssert(width >= 0);
@@ -69,6 +82,18 @@ public:
 	void init(T *data, int width, int height)
 	{
 		this->init(data, width, height, 0, 0, width, height);
+	}
+
+	template<typename U>
+	void init(Buffer2D<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight());
+	}
+
+	template<typename U>
+	void init(const Buffer2D<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight());
 	}
 
 	bool isValid() const
