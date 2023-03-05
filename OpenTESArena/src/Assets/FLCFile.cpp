@@ -164,7 +164,7 @@ bool FLCFile::init(const char *filename)
 						return false;
 					}
 
-					this->palettes.push_back(std::move(palette));
+					this->palettes.emplace_back(std::move(palette));
 				}
 				else if (chunkHeader.type == ChunkType::FLI_BRUN)
 				{
@@ -172,7 +172,7 @@ bool FLCFile::init(const char *filename)
 					Buffer2D<uint8_t> frame = this->decodeFullFrame(
 						chunkData, chunkHeader.size, framePixels);
 					const int paletteIndex = static_cast<int>(this->palettes.size()) - 1;
-					this->images.push_back(std::make_pair(paletteIndex, std::move(frame)));
+					this->images.emplace_back(std::make_pair(paletteIndex, std::move(frame)));
 				}
 				else if (chunkHeader.type == ChunkType::FLI_SS2)
 				{
@@ -180,7 +180,7 @@ bool FLCFile::init(const char *filename)
 					Buffer2D<uint8_t> frame = this->decodeDeltaFrame(
 						chunkData, chunkHeader.size, framePixels);
 					const int paletteIndex = static_cast<int>(this->palettes.size()) - 1;
-					this->images.push_back(std::make_pair(paletteIndex, std::move(frame)));
+					this->images.emplace_back(std::make_pair(paletteIndex, std::move(frame)));
 				}
 				else
 				{

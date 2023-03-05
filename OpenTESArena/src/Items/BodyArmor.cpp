@@ -127,7 +127,7 @@ std::vector<BodyPartName> BodyArmor::getProtectedBodyParts() const
 	// Body armors only protect one body part, unlike shields. 
 	// This returns a vector to retain the same interface with armors.
 	std::vector<BodyPartName> partNames;
-	partNames.push_back(this->getPartName());
+	partNames.emplace_back(this->getPartName());
 
 	DebugAssert(partNames.size() == 1);
 

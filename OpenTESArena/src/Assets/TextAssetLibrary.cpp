@@ -352,7 +352,7 @@ bool TextAssetLibrary::TemplateDat::init()
 		// If no entries yet, create a new vector.
 		if (this->entryLists.size() == 0)
 		{
-			this->entryLists.push_back(std::vector<Entry>());
+			this->entryLists.emplace_back(std::vector<Entry>());
 		}
 
 		// While the current vector contains the given key and optional letter pair, add
@@ -382,7 +382,7 @@ bool TextAssetLibrary::TemplateDat::init()
 			// Create a new vector if necessary.
 			if (this->entryLists.size() == index)
 			{
-				this->entryLists.push_back(std::vector<Entry>());
+				this->entryLists.emplace_back(std::vector<Entry>());
 			}
 		}
 
@@ -422,7 +422,7 @@ bool TextAssetLibrary::TemplateDat::init()
 		entry.values.pop_back();
 
 		// Add entry to the entry list.
-		this->entryLists.at(index).push_back(std::move(entry));
+		this->entryLists.at(index).emplace_back(std::move(entry));
 
 		// Reset key, letter, and value string.
 		key = Entry::NO_KEY;
@@ -577,7 +577,7 @@ bool TextAssetLibrary::initDungeonTxt()
 			}
 
 			// Put the collected data into the list and restart the title and description.
-			this->dungeonTxt.push_back(std::make_pair(title, description));
+			this->dungeonTxt.emplace_back(std::make_pair(title, description));
 			title.clear();
 			description.clear();
 		}
@@ -637,11 +637,11 @@ bool TextAssetLibrary::initNameChunks()
 		for (int i = 0; i < stringCount; i++)
 		{
 			const char *stringPtr = reinterpret_cast<const char*>(chunkPtr) + stringOffset;
-			strings.push_back(std::string(stringPtr));
+			strings.emplace_back(std::string(stringPtr));
 			stringOffset += strings.back().size() + 1;
 		}
 
-		this->nameChunks.push_back(std::move(strings));
+		this->nameChunks.emplace_back(std::move(strings));
 		offset += chunkLength;
 	}
 
@@ -695,7 +695,7 @@ bool TextAssetLibrary::initQuestionTxt()
 			}
 		};
 
-		this->questionTxt.push_back(CharacterQuestion(std::string(description),
+		this->questionTxt.emplace_back(CharacterQuestion(std::string(description),
 			std::make_pair(a, getCategory(a)), std::make_pair(b, getCategory(b)),
 			std::make_pair(c, getCategory(c))));
 	};

@@ -287,8 +287,7 @@ namespace
 void Platform::createDirectoryRecursively(std::string path)
 {
 	const bool pathIsEmpty = path.size() == 0;
-	const bool hasTrailingSlash = !pathIsEmpty &&
-		((path.back() == '/') || (path.back() == '\\'));
+	const bool hasTrailingSlash = !pathIsEmpty && ((path.back() == '/') || (path.back() == '\\'));
 
 	if (!hasTrailingSlash)
 	{

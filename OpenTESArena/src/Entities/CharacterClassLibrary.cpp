@@ -80,7 +80,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 
 				for (const uint8_t shield : shieldsList)
 				{
-					shields.push_back(ShieldIDMappings.at(static_cast<int>(shield) - 7));
+					shields.emplace_back(ShieldIDMappings.at(static_cast<int>(shield) - 7));
 				}
 
 				return shields;
@@ -113,7 +113,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 
 				for (const uint8_t weapon : weaponsList)
 				{
-					weapons.push_back(WeaponIDs.at(weapon));
+					weapons.emplace_back(WeaponIDs.at(weapon));
 				}
 
 				return weapons;
@@ -139,7 +139,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 		def.init(std::move(name), category, std::move(preferredAttributes), allowedArmors, allowedShields, allowedWeapons,
 			mage, healthDie, initialExperienceCap, lockpickPercent, criticalHit, classIndex);
 
-		this->defs.push_back(std::move(def));
+		this->defs.emplace_back(std::move(def));
 	}
 }
 

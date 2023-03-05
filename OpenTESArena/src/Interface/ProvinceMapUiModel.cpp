@@ -348,7 +348,7 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 
 			if (isExactMatch)
 			{
-				locationIndices.push_back(i);
+				locationIndices.emplace_back(i);
 				*exactLocationIndex = &locationIndices.back();
 				break;
 			}
@@ -362,7 +362,7 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 
 				if (isApproxMatch)
 				{
-					locationIndices.push_back(i);
+					locationIndices.emplace_back(i);
 				}
 			}
 		}
@@ -376,7 +376,7 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 			const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
 			if (locationInst.isVisible())
 			{
-				locationIndices.push_back(i);
+				locationIndices.emplace_back(i);
 			}
 		}
 	}

@@ -27,7 +27,7 @@ bool SETFile::init(const char *filename)
 	if (isSpecialCase)
 	{
 		// Add a dummy byte onto the end.
-		srcData.push_back(0);
+		srcData.emplace_back(0);
 	}
 
 	// Number of uncompressed chunks packed in the .SET.

@@ -350,7 +350,7 @@ namespace SkyGeneration
 					subStar.dx = static_cast<int16_t>(random.next()) >> 9;
 					subStar.dy = static_cast<int16_t>(random.next()) >> 9;
 					subStar.color = (random.next() % 10) + 64;
-					starList.push_back(std::move(subStar));
+					starList.emplace_back(std::move(subStar));
 				}
 
 				star.subList = std::move(starList);
@@ -372,7 +372,7 @@ namespace SkyGeneration
 				star.type = value;
 			}
 
-			stars.push_back(std::move(star));
+			stars.emplace_back(std::move(star));
 		}
 
 		// Sort stars so large ones appear in front when rendered (it looks a bit better that way).

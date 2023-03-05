@@ -56,7 +56,7 @@ namespace
 
 				if (value != terminator)
 				{
-					vec.push_back(value);
+					vec.emplace_back(value);
 				}
 				else
 				{

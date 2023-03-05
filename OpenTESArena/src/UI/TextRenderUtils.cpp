@@ -138,7 +138,7 @@ std::vector<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const st
 			charID = fallbackCharID;
 		}
 
-		charIDs.push_back(charID);
+		charIDs.emplace_back(charID);
 	}
 
 	return charIDs;

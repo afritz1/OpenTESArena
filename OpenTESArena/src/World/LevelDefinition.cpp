@@ -191,7 +191,7 @@ void LevelDefinition::addEntity(EntityDefID id, const LevelDouble3 &position)
 	if (iter != this->entityPlacementDefs.end())
 	{
 		std::vector<LevelDouble3> &positions = iter->positions;
-		positions.push_back(position);
+		positions.emplace_back(position);
 	}
 	else
 	{
@@ -210,7 +210,7 @@ void LevelDefinition::addLock(LockDefID id, const LevelInt3 &position)
 	if (iter != this->lockPlacementDefs.end())
 	{
 		std::vector<LevelInt3> &positions = iter->positions;
-		positions.push_back(position);
+		positions.emplace_back(position);
 	}
 	else
 	{
@@ -229,7 +229,7 @@ void LevelDefinition::addTrigger(TriggerDefID id, const LevelInt3 &position)
 	if (iter != this->triggerPlacementDefs.end())
 	{
 		std::vector<LevelInt3> &positions = iter->positions;
-		positions.push_back(position);
+		positions.emplace_back(position);
 	}
 	else
 	{
@@ -248,7 +248,7 @@ void LevelDefinition::addTransition(TransitionDefID id, const LevelInt3 &positio
 	if (iter != this->transitionPlacementDefs.end())
 	{
 		std::vector<LevelInt3> &positions = iter->positions;
-		positions.push_back(position);
+		positions.emplace_back(position);
 	}
 	else
 	{
@@ -267,7 +267,7 @@ void LevelDefinition::addBuildingName(BuildingNameID id, const LevelInt3 &positi
 	if (iter != this->buildingNamePlacementDefs.end())
 	{
 		std::vector<LevelInt3> &positions = iter->positions;
-		positions.push_back(position);
+		positions.emplace_back(position);
 	}
 	else
 	{
@@ -286,7 +286,7 @@ void LevelDefinition::addDoor(DoorDefID id, const LevelInt3 &position)
 	if (iter != this->doorPlacementDefs.end())
 	{
 		std::vector<LevelInt3> &positions = iter->positions;
-		positions.push_back(position);
+		positions.emplace_back(position);
 	}
 	else
 	{
@@ -305,7 +305,7 @@ void LevelDefinition::addChasm(ChasmDefID id, const LevelInt3 &position)
 	if (iter != this->chasmPlacementDefs.end())
 	{
 		std::vector<LevelInt3> &positions = iter->positions;
-		positions.push_back(position);
+		positions.emplace_back(position);
 	}
 	else
 	{

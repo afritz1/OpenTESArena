@@ -329,7 +329,7 @@ bool INFFile::init(const char *filename)
 			if (tokens.size() == 1)
 			{
 				// A regular filename (like an .IMG).
-				this->voxelTextures.push_back(VoxelTextureData(line.c_str()));
+				this->voxelTextures.emplace_back(VoxelTextureData(line.c_str()));
 			}
 			else
 			{
@@ -339,7 +339,7 @@ bool INFFile::init(const char *filename)
 
 				for (int i = 0; i < setSize; i++)
 				{
-					this->voxelTextures.push_back(VoxelTextureData(std::string(textureName).c_str(), i));
+					this->voxelTextures.emplace_back(VoxelTextureData(std::string(textureName).c_str(), i));
 				}
 			}
 		}
@@ -358,8 +358,7 @@ bool INFFile::init(const char *filename)
 					// Just a regular texture (like an .IMG).
 					floorState->textureName = line;
 
-					this->voxelTextures.push_back(
-						VoxelTextureData(std::string(floorState->textureName).c_str()));
+					this->voxelTextures.emplace_back(VoxelTextureData(std::string(floorState->textureName).c_str()));
 					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
@@ -370,8 +369,7 @@ bool INFFile::init(const char *filename)
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->voxelTextures.push_back(
-							VoxelTextureData(std::string(floorState->textureName).c_str(), i));
+						this->voxelTextures.emplace_back(VoxelTextureData(std::string(floorState->textureName).c_str(), i));
 					}
 
 					return static_cast<int>(this->voxelTextures.size()) - setSize;
@@ -436,12 +434,12 @@ bool INFFile::init(const char *filename)
 			if (firstTokenType == BOXCAP_STR)
 			{
 				wallState->mode = WallState::Mode::BoxCap;
-				wallState->boxCapIDs.push_back(std::stoi(std::string(tokens.at(1))));
+				wallState->boxCapIDs.emplace_back(std::stoi(std::string(tokens.at(1))));
 			}
 			else if (firstTokenType == BOXSIDE_STR)
 			{
 				wallState->mode = WallState::Mode::BoxSide;
-				wallState->boxSideIDs.push_back(std::stoi(std::string(tokens.at(1))));
+				wallState->boxSideIDs.emplace_back(std::stoi(std::string(tokens.at(1))));
 			}
 			else if (firstTokenType == DOOR_STR)
 			{
@@ -504,7 +502,7 @@ bool INFFile::init(const char *filename)
 			if (tokens.size() == 1)
 			{
 				// A regular filename (like an .IMG).
-				this->voxelTextures.push_back(VoxelTextureData(line.c_str()));
+				this->voxelTextures.emplace_back(VoxelTextureData(line.c_str()));
 			}
 			else
 			{
@@ -514,8 +512,7 @@ bool INFFile::init(const char *filename)
 
 				for (int i = 0; i < setSize; i++)
 				{
-					this->voxelTextures.push_back(VoxelTextureData(
-						std::string(textureName).c_str(), i));
+					this->voxelTextures.emplace_back(VoxelTextureData(std::string(textureName).c_str(), i));
 				}
 			}
 		}
@@ -534,8 +531,7 @@ bool INFFile::init(const char *filename)
 					// Just a regular texture (like an .IMG).
 					wallState->textureName = line;
 
-					this->voxelTextures.push_back(
-						VoxelTextureData(std::string(wallState->textureName).c_str()));
+					this->voxelTextures.emplace_back(VoxelTextureData(std::string(wallState->textureName).c_str()));
 					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
@@ -546,8 +542,7 @@ bool INFFile::init(const char *filename)
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->voxelTextures.push_back(
-							VoxelTextureData(std::string(wallState->textureName).c_str(), i));
+						this->voxelTextures.emplace_back(VoxelTextureData(std::string(wallState->textureName).c_str(), i));
 					}
 
 					return static_cast<int>(this->voxelTextures.size()) - setSize;
@@ -674,10 +669,10 @@ bool INFFile::init(const char *filename)
 			}();
 
 			// Add the flat's texture name to the textures vector.
-			this->flatTextures.push_back(FlatTextureData(textureName.c_str()));
+			this->flatTextures.emplace_back(FlatTextureData(textureName.c_str()));
 
 			// Add a new flat data record.
-			this->flats.push_back(INFFile::FlatData());
+			this->flats.emplace_back(INFFile::FlatData());
 
 			// Assign the current line's values and modifiers to the new flat.
 			INFFile::FlatData &flat = this->flats.back();
@@ -811,7 +806,7 @@ bool INFFile::init(const char *filename)
 			{
 				// Add the answer to the answers data.
 				const std::string_view answer = StringView::substr(line, 1, line.size() - 1);
-				textState->riddleState->data.answers.push_back(std::string(answer));
+				textState->riddleState->data.answers.emplace_back(std::string(answer));
 			}
 			else if (line.front() == RESPONSE_SECTION_CHAR)
 			{

@@ -427,7 +427,7 @@ bool MusicLibrary::init(const char *filename)
 				continue;
 			}
 
-			definitionsIter->second.push_back(std::move(musicDefinition));
+			definitionsIter->second.emplace_back(std::move(musicDefinition));
 		}
 	}
 

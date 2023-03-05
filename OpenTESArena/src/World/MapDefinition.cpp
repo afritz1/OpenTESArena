@@ -321,7 +321,7 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 			}
 			else
 			{
-				uniqueWildBlockIDs.push_back(blockID);
+				uniqueWildBlockIDs.emplace_back(blockID);
 				levelDefIndex = static_cast<int>(uniqueWildBlockIDs.size()) - 1;
 			}
 

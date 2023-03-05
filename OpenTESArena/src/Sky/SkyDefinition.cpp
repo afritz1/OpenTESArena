@@ -126,7 +126,7 @@ void SkyDefinition::addLand(LandDefID id, Radians angle)
 	if (iter != this->landPlacementDefs.end())
 	{
 		std::vector<Radians> &positions = iter->positions;
-		positions.push_back(angle);
+		positions.emplace_back(angle);
 	}
 	else
 	{
@@ -184,7 +184,7 @@ void SkyDefinition::addSun(SunDefID id, double bonusLatitude)
 	if (iter != this->sunPlacementDefs.end())
 	{
 		std::vector<double> &positions = iter->positions;
-		positions.push_back(bonusLatitude);
+		positions.emplace_back(bonusLatitude);
 	}
 	else
 	{

@@ -24,7 +24,7 @@ std::vector<Accessory*> CharacterEquipment::getAccessories(AccessoryType accesso
 	{
 		if (accessory->getAccessoryType() == accessoryType)
 		{
-			accessories.push_back(accessory);
+			accessories.emplace_back(accessory);
 		}
 	}
 
@@ -49,7 +49,7 @@ std::vector<Trinket*> CharacterEquipment::getTrinkets(TrinketType trinketType) c
 	{
 		if (trinket->getTrinketType() == trinketType)
 		{
-			trinkets.push_back(trinket);
+			trinkets.emplace_back(trinket);
 		}
 	}
 
@@ -99,7 +99,7 @@ bool CharacterEquipment::equipAccessory(Accessory *accessory)
 
 	if (success)
 	{
-		this->accessories.push_back(accessory);
+		this->accessories.emplace_back(accessory);
 	}
 
 	return success;
@@ -138,7 +138,7 @@ bool CharacterEquipment::equipTrinket(Trinket *trinket)
 
 	if (success)
 	{
-		this->trinkets.push_back(trinket);
+		this->trinkets.emplace_back(trinket);
 	}
 
 	return success;

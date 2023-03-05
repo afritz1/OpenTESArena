@@ -9,7 +9,7 @@ void WorldMapDefinition::init(const BinaryAssetLibrary &binaryAssetLibrary)
 	{
 		ProvinceDefinition provinceDef;
 		provinceDef.init(i, binaryAssetLibrary);
-		this->provinces.push_back(std::move(provinceDef));
+		this->provinces.emplace_back(std::move(provinceDef));
 	}
 }
 

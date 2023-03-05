@@ -441,7 +441,7 @@ void ArenaTypes::Log::init(const std::string &data)
 	{
 		// Leave out the ampersand at the start of each entry.
 		const std::string entryStr = data.substr(offset + 1, index - offset - 1);
-		this->entries.push_back(Entry());
+		this->entries.emplace_back(Entry());
 		this->entries.back().init(entryStr);
 
 		offset = index + delimiter.size();

@@ -88,8 +88,8 @@ bool CIFFile::init(const char *filename)
 			Compression::decodeRLE(header + 12, width * height, decomp.data(),
 				static_cast<int>(decomp.size()));
 
-			this->images.push_back(Buffer2D<uint8_t>(width, height));
-			this->offsets.push_back(Int2(xOffset, yOffset));
+			this->images.emplace_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.emplace_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
 			uint8_t *dstPixels = this->images.back().begin();
@@ -116,8 +116,8 @@ bool CIFFile::init(const char *filename)
 			std::vector<uint8_t> decomp(width * height);
 			Compression::decodeType04(header + 12, header + 12 + len, decomp);
 
-			this->images.push_back(Buffer2D<uint8_t>(width, height));
-			this->offsets.push_back(Int2(xOffset, yOffset));
+			this->images.emplace_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.emplace_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
 			uint8_t *dstPixels = this->images.back().begin();
@@ -147,8 +147,8 @@ bool CIFFile::init(const char *filename)
 			// (should be equivalent to width * height).
 			Compression::decodeType08(header + 12 + 2, header + 12 + len, decomp);
 
-			this->images.push_back(Buffer2D<uint8_t>(width, height));
-			this->offsets.push_back(Int2(xOffset, yOffset));
+			this->images.emplace_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.emplace_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
 			uint8_t *dstPixels = this->images.back().begin();
@@ -165,8 +165,8 @@ bool CIFFile::init(const char *filename)
 
 		for (int i = 0; i < imageCount; i++)
 		{
-			this->images.push_back(Buffer2D<uint8_t>(width, height));
-			this->offsets.push_back(Int2(xOffset, yOffset));
+			this->images.emplace_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.emplace_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = srcPtr + (i * len);
 			uint8_t *dstPixels = this->images.back().begin();
@@ -189,8 +189,8 @@ bool CIFFile::init(const char *filename)
 			flags = Bytes::getLE16(header + 8);
 			len = Bytes::getLE16(header + 10);
 
-			this->images.push_back(Buffer2D<uint8_t>(width, height));
-			this->offsets.push_back(Int2(xOffset, yOffset));
+			this->images.emplace_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.emplace_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = header + headerSize;
 			uint8_t *dstPixels = this->images.back().begin();

@@ -1532,7 +1532,7 @@ namespace MapGeneration
 		{
 			LockDefinition lockDef = MapGeneration::makeLockDefFromArenaLock(lock);
 			lockDefID = outLevelInfoDef->addLockDef(std::move(lockDef));
-			lockMappings->push_back(std::make_pair(lock, lockDefID));
+			lockMappings->emplace_back(std::make_pair(lock, lockDefID));
 		}
 
 		const LockDefinition &lockDef = outLevelInfoDef->getLockDef(lockDefID);
@@ -1926,7 +1926,7 @@ namespace MapGeneration
 					const LevelDefinition::BuildingNameID buildingNameID =
 						outLevelInfoDef->addBuildingName(std::move(name));
 					outLevelDef->addBuildingName(buildingNameID, LevelInt3(x, 1, z));
-					seen.push_back(hash);
+					seen.emplace_back(hash);
 				}
 			};
 
@@ -2342,7 +2342,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	std::vector<int> transitions;
 
 	// Handle initial case where transitions list is empty (for i == 0).
-	transitions.push_back(getNextTransBlock());
+	transitions.emplace_back(getNextTransBlock());
 
 	// Handle general case for transitions list additions.
 	for (int i = 1; i < levelCount; i++)
@@ -2353,7 +2353,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 			transBlock = getNextTransBlock();
 		} while (transBlock == transitions.back());
 
-		transitions.push_back(transBlock);
+		transitions.emplace_back(transBlock);
 	}
 
 	// Generate each level, deciding which dungeon blocks to use.

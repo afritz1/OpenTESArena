@@ -36,7 +36,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		{
 			LocationDefinition locationDef;
 			locationDef.initCity(localCityID, provinceID, coastal, premade, type, binaryAssetLibrary);
-			this->locations.push_back(std::move(locationDef));
+			this->locations.emplace_back(std::move(locationDef));
 		}
 	};
 
@@ -47,7 +47,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		{
 			LocationDefinition locationDef;
 			locationDef.initDungeon(localDungeonID, provinceID, locationData, provinceData);
-			this->locations.push_back(std::move(locationDef));
+			this->locations.emplace_back(std::move(locationDef));
 		}
 	};
 
@@ -60,7 +60,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		{
 			LocationDefinition locationDef;
 			locationDef.initMainQuestDungeon(optLocalDungeonID, provinceID, type, binaryAssetLibrary);
-			this->locations.push_back(std::move(locationDef));
+			this->locations.emplace_back(std::move(locationDef));
 		}
 	};
 

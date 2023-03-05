@@ -407,7 +407,7 @@ std::vector<Int2> MathUtils::bresenhamLine(const Int2 &p1, const Int2 &p2)
 
 	while (true)
 	{
-		points.push_back(Int2(pointX, pointY));
+		points.emplace_back(Int2(pointX, pointY));
 
 		if ((pointX == endX) && (pointY == endY))
 		{

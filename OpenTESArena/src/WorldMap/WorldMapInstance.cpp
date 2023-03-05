@@ -11,7 +11,7 @@ void WorldMapInstance::init(const WorldMapDefinition &worldMapDef)
 
 		ProvinceInstance provinceInst;
 		provinceInst.init(i, provinceDef);
-		this->provinces.push_back(std::move(provinceInst));
+		this->provinces.emplace_back(std::move(provinceInst));
 	}
 }
 

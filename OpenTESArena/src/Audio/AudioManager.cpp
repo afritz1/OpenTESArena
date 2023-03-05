@@ -428,7 +428,7 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
 		}
 
-		mFreeSources.push_back(source);
+		mFreeSources.emplace_back(source);
 	}
 
 	this->clearSingleInstanceSounds();

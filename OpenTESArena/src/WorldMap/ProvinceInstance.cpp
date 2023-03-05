@@ -13,7 +13,7 @@ void ProvinceInstance::init(int provinceDefIndex, const ProvinceDefinition &prov
 
 		LocationInstance locationInst;
 		locationInst.init(i, locationDef);
-		this->locations.push_back(std::move(locationInst));
+		this->locations.emplace_back(std::move(locationInst));
 	}
 }
 

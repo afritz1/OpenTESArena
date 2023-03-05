@@ -455,7 +455,7 @@ bool MIFFile::init(const char *filename)
 		levelOffset += level.load(levelStart, mifHeader.mapWidth, mifHeader.mapHeight);
 
 		// Add to list of levels.
-		this->levels.push_back(std::move(level));
+		this->levels.emplace_back(std::move(level));
 	}
 
 	this->width = mifHeader.mapWidth;
