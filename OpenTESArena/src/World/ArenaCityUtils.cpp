@@ -124,16 +124,14 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 	};
 
 	// Set reserved blocks.
-	for (int i = 0; i < reservedBlocks.getCount(); i++)
+	for (const uint8_t reservedBlock : reservedBlocks)
 	{
-		const uint8_t block = reservedBlocks.get(i);
-
 		// The original engine uses a fixed array so all block indices always fall within the
 		// plan, but since a dynamic array is used here, it has to ignore out-of-bounds blocks
 		// explicitly.
-		if (block < plan.size())
+		if (reservedBlock < plan.size())
 		{
-			plan.at(block) = MIFUtils::BlockType::Reserved;
+			plan[reservedBlock] = MIFUtils::BlockType::Reserved;
 		}
 	}
 
@@ -146,8 +144,7 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 	placeBlock(MIFUtils::BlockType::Spacer);
 
 	// Create city plan according to RNG.
-	const int emptyBlocksInPlan = static_cast<int>(
-		std::count(plan.begin(), plan.end(), MIFUtils::BlockType::Empty));
+	const int emptyBlocksInPlan = static_cast<int>(std::count(plan.begin(), plan.end(), MIFUtils::BlockType::Empty));
 	for (int remainingBlocks = emptyBlocksInPlan; remainingBlocks > 0; remainingBlocks--)
 	{
 		const MIFUtils::BlockType blockType = MIFUtils::generateRandomBlockType(random);

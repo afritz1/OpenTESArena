@@ -114,9 +114,8 @@ namespace Physics
 		chunkEntityMap.init(chunk);
 
 		// Build mappings of voxels to entities.
-		for (int i = 0; i < entityInstIDs.getCount(); i++)
+		for (const EntityInstanceID entityInstID : entityInstIDs)
 		{
-			const EntityInstanceID entityInstID = entityInstIDs.get(i);
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
 			EntityVisibilityState3D visState;

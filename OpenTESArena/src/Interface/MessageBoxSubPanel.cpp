@@ -184,9 +184,8 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		Int2(this->titleBackgroundRect.getWidth(), this->titleBackgroundRect.getHeight()),
 		PivotType::Middle);
 
-	for (int i = 0; i < this->items.getCount(); i++)
+	for (const MessageBoxSubPanel::Item &item : this->items)
 	{
-		const MessageBoxSubPanel::Item &item = this->items.get(i);
 		this->addDrawCall(
 			item.backgroundTextureRef.get(),
 			item.backgroundTextureRect.getCenter(),

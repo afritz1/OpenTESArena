@@ -232,10 +232,8 @@ namespace sgTexture
 				std::vector<TextureAsset> newTextureAssets;
 				std::vector<ScopedObjectTextureRef> newObjectTextureRefs;
 
-				const Buffer<TextureAsset> &textureAssets = chasmDef.animated.textureAssets;
-				for (int i = 0; i < textureAssets.getCount(); i++)
+				for (const TextureAsset &textureAsset : chasmDef.animated.textureAssets)
 				{
-					const TextureAsset &textureAsset = textureAssets.get(i);
 					const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 					if (!textureBuilderID.has_value())
 					{
@@ -1360,18 +1358,16 @@ void RenderChunkManager::updateActiveChunks(const BufferView<const ChunkInt2> &a
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
-	for (int i = 0; i < freedChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		RenderChunk &renderChunk = this->getChunkAtIndex(chunkIndex);
 		renderChunk.freeBuffers(renderer);
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 		const int spawnIndex = this->spawnChunk();
@@ -1388,9 +1384,8 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 	const BufferView<const ChunkInt2> &newChunkPositions, double ceilingScale, double chasmAnimPercent,
 	const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
-	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		this->loadVoxelTextures(voxelChunk, textureManager, renderer);
@@ -1399,9 +1394,8 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, true, false);
 	}
 
-	for (int i = 0; i < activeChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const bool updateStatics = (voxelChunk.getDirtyMeshDefPositionCount() > 0) || (voxelChunk.getDirtyFadeAnimInstPositionCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
@@ -1420,9 +1414,8 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer)
 {
-	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		this->loadEntityTextures(entityChunk, entityChunkManager, entityDefLibrary, textureManager, renderer);
@@ -1430,9 +1423,8 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 
 	const Radians rotationAngle = -MathUtils::fullAtan2(cameraDirXZ);
 	const Matrix4d rotationMatrix = Matrix4d::yRotation(rotationAngle - Constants::HalfPi);
-	for (int i = 0; i < activeChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, rotationMatrix, ceilingScale,

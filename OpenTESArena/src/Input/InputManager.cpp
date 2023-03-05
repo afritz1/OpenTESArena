@@ -588,9 +588,8 @@ void InputManager::handleHeldInputs(Game &game, const BufferView<const InputActi
 	const uint8_t *keyboardState = SDL_GetKeyboardState(nullptr);
 	const SDL_Keymod keyboardMod = SDL_GetModState();
 
-	for (int i = 0; i < activeMaps.getCount(); i++)
+	for (const InputActionMap *map : activeMaps)
 	{
-		const InputActionMap *map = activeMaps.get(i);
 		if (map->active && (!this->isInTextEntryMode() || map->allowedDuringTextEntry))
 		{
 			for (const InputActionDefinition &def : map->defs)
@@ -609,9 +608,8 @@ void InputManager::handleHeldInputs(Game &game, const BufferView<const InputActi
 						const bool isKeyHeld = (keyboardState[scancode] != 0) && (keyDef.keymod == keyboardMod);
 						if (isKeyHeld)
 						{
-							for (int j = 0; j < enabledInputActionListeners.getCount(); j++)
+							for (const InputActionListenerEntry *entry : enabledInputActionListeners)
 							{
-								const InputActionListenerEntry *entry = enabledInputActionListeners.get(j);
 								if (entry->actionName == def.name)
 								{
 									InputActionCallbackValues values(game, false, true, false);
@@ -772,9 +770,8 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 					// Check for clicked buttons in the UI.
 					// @todo: a more "accurate" way to check button clicks might be:
 					// - if button press is in rect, then save it, and if button release is also in that rect, then click.
-					for (int i = 0; i < buttonProxies.getCount(); i++)
+					for (const ButtonProxy &buttonProxy : buttonProxies)
 					{
-						const ButtonProxy &buttonProxy = buttonProxies.get(i);
 						const bool isButtonActive = !buttonProxy.isActiveFunc || buttonProxy.isActiveFunc();
 						if (isButtonActive)
 						{

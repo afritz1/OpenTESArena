@@ -430,9 +430,9 @@ std::optional<PaletteIdGroup> TextureManager::tryGetPaletteIDs(const char *filen
 			const PaletteID id = static_cast<PaletteID>(this->palettes.size());
 			PaletteIdGroup ids(id, 1);
 
-			for (int i = 0; i < palettes.getCount(); i++)
+			for (Palette &palette : palettes)
 			{
-				this->palettes.emplace_back(std::move(palettes.get(i)));
+				this->palettes.emplace_back(std::move(palette));
 			}
 
 			iter = this->paletteIDs.emplace(
@@ -497,9 +497,9 @@ std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(con
 		const TextureBuilderID startID = static_cast<TextureBuilderID>(this->textureBuilders.size());
 		TextureBuilderIdGroup ids(startID, textureBuilders.getCount());
 
-		for (int i = 0; i < textureBuilders.getCount(); i++)
+		for (TextureBuilder &textureBuilder : textureBuilders)
 		{
-			this->textureBuilders.emplace_back(std::move(textureBuilders.get(i)));
+			this->textureBuilders.emplace_back(std::move(textureBuilder));
 		}
 
 		iter = this->textureBuilderIDs.emplace(

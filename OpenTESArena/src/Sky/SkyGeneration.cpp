@@ -522,14 +522,11 @@ namespace SkyGeneration
 
 	void generateArenaLightning(TextureManager &textureManager, SkyInfoDefinition *outSkyInfoDef)
 	{
-		Buffer<Buffer<TextureAsset>> lightningBoltTextureAssets =
-			ArenaWeatherUtils::makeLightningBoltTextureAssets(textureManager);
-
-		for (int i = 0; i < lightningBoltTextureAssets.getCount(); i++)
+		Buffer<Buffer<TextureAsset>> lightningBoltTextureAssets = ArenaWeatherUtils::makeLightningBoltTextureAssets(textureManager);
+		for (Buffer<TextureAsset> &textureAssetBuffer : lightningBoltTextureAssets)
 		{
 			SkyLightningDefinition skyLightningDef;
-			skyLightningDef.init(std::move(lightningBoltTextureAssets.get(i)),
-				ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS);
+			skyLightningDef.init(std::move(textureAssetBuffer), ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS);
 
 			// Don't need to store any ID -- lightning bolts are placed randomly.
 			outSkyInfoDef->addLightning(std::move(skyLightningDef));

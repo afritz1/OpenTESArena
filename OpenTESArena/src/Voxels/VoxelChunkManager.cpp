@@ -723,16 +723,14 @@ void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &new
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, double ceilingScale,
 	AudioManager &audioManager)
 {
-	for (int i = 0; i < freedChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		const int spawnIndex = this->spawnChunk();
 		this->populateChunk(spawnIndex, chunkPos, activeLevelIndex, mapDefinition);
 	}

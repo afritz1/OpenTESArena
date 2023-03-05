@@ -835,9 +835,8 @@ void Game::loop()
 			for (const Panel *currentPanel : panelsToRender)
 			{
 				const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
-				for (int i = 0; i < drawCallsView.getCount(); i++)
+				for (const UiDrawCall &drawCall : drawCallsView)
 				{
-					const UiDrawCall &drawCall = drawCallsView.get(i);
 					if (!drawCall.isActive())
 					{
 						continue;

@@ -56,9 +56,8 @@ bool CharacterEquipmentPanel::init()
 
 	Buffer<InventoryUiModel::ItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
 	std::vector<std::pair<std::string, Color>> elements;
-	for (int i = 0; i < itemUiDefs.getCount(); i++)
+	for (InventoryUiModel::ItemUiDefinition &itemUiDef : itemUiDefs)
 	{
-		const InventoryUiModel::ItemUiDefinition &itemUiDef = itemUiDefs.get(i);
 		elements.emplace_back(std::make_pair(std::move(itemUiDef.text), itemUiDef.color));
 	}
 

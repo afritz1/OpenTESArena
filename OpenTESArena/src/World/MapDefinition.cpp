@@ -196,10 +196,9 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	const int levelHeight = ceiling.outdoorDungeon ? 2 : 3;
 	const SNInt levelDepth = mif.getDepth() * depthChunks;
 
-	for (int i = 0; i < this->levels.getCount(); i++)
+	for (LevelDefinition &levelDef : this->levels)
 	{
 		// Transpose .MIF dimensions to new dimensions.
-		LevelDefinition &levelDef = this->levels.get(i);
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 	}
 
@@ -339,11 +338,10 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 	this->skyInfos.init(1);
 	this->skyInfoMappings.init(1);
 
-	for (int i = 0; i < this->levels.getCount(); i++)
+	for (LevelDefinition &levelDef : this->levels)
 	{
 		// Each .RMD file should be one chunk's width and depth.
 		constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
-		LevelDefinition &levelDef = this->levels.get(i);
 		levelDef.init(chunkDim, 6, chunkDim);
 	}
 

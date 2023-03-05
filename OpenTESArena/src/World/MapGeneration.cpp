@@ -1618,11 +1618,8 @@ namespace MapGeneration
 				}
 
 				// Assign locks to the current block.
-				const BufferView<const ArenaTypes::MIFLock> &blockLOCK = blockLevel.getLOCK();
-				for (int i = 0; i < blockLOCK.getCount(); i++)
+				for (const ArenaTypes::MIFLock &lock : blockLevel.getLOCK())
 				{
-					const auto &lock = blockLOCK.get(i);
-
 					ArenaTypes::MIFLock tempLock;
 					tempLock.x = xOffset + lock.x;
 					tempLock.y = zOffset + lock.y;
@@ -1632,19 +1629,15 @@ namespace MapGeneration
 				}
 
 				// Assign text/sound triggers to the current block.
-				const BufferView<const ArenaTypes::MIFTrigger> &blockTRIG = blockLevel.getTRIG();
-				for (int i = 0; i < blockTRIG.getCount(); i++)
+				for (const ArenaTypes::MIFTrigger &trigger : blockLevel.getTRIG())
 				{
-					const auto &trigger = blockTRIG.get(i);
-
 					ArenaTypes::MIFTrigger tempTrigger;
 					tempTrigger.x = xOffset + trigger.x;
 					tempTrigger.y = zOffset + trigger.y;
 					tempTrigger.textIndex = trigger.textIndex;
 					tempTrigger.soundIndex = trigger.soundIndex;
 
-					MapGeneration::readArenaTrigger(tempTrigger, inf, outLevelDef, outLevelInfoDef,
-						triggerMappings);
+					MapGeneration::readArenaTrigger(tempTrigger, inf, outLevelDef, outLevelInfoDef, triggerMappings);
 				}
 			}
 		}
@@ -2589,9 +2582,8 @@ void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels,
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 		const BufferView<const ArenaTypes::MIFLock> locks = level.getLOCK();
 
-		for (int j = 0; j < locks.getCount(); j++)
+		for (const ArenaTypes::MIFLock &lock : locks)
 		{
-			const ArenaTypes::MIFLock &lock = locks.get(j);
 			MapGeneration::readArenaLock(lock, inf, &levelDef, outLevelInfoDef, &lockMappings);
 		}
 	}
@@ -2608,9 +2600,8 @@ void MapGeneration::readMifTriggers(const BufferView<const MIFFile::Level> &leve
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 		const BufferView<const ArenaTypes::MIFTrigger> triggers = level.getTRIG();
 
-		for (int j = 0; j < triggers.getCount(); j++)
+		for (const ArenaTypes::MIFTrigger &trigger : triggers)
 		{
-			const ArenaTypes::MIFTrigger &trigger = triggers.get(j);
 			MapGeneration::readArenaTrigger(trigger, inf, &levelDef, outLevelInfoDef, &triggerMappings);
 		}
 	}

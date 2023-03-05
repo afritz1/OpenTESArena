@@ -862,16 +862,14 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer)
 {
-	for (int i = 0; i < freedChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 		const int spawnIndex = this->spawnChunk();
@@ -891,9 +889,8 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 	const bool isPlayerMoving = player.getVelocity().lengthSquared() >= Constants::Epsilon;
 	const bool isPlayerWeaponSheathed = player.getWeaponAnimation().isSheathed();
 
-	for (int i = 0; i < activeChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);

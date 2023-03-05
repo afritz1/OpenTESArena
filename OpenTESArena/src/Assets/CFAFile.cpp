@@ -56,9 +56,8 @@ bool CFAFile::init(const char *filename)
 
 	// Buffers for frame palette indices.
 	this->images.init(frameCount);
-	for (int i = 0; i < this->images.getCount(); i++)
+	for (Buffer2D<uint8_t> &image : this->images)
 	{
-		Buffer2D<uint8_t> &image = this->images.get(i);
 		image.init(widthUncompressed, height);
 	}
 
@@ -66,10 +65,11 @@ bool CFAFile::init(const char *filename)
 	// so this value can simply be incremented by the compressed width.
 	uint32_t offset = 0;
 
-	for (int i = 0; i < this->images.getCount(); i++)
+	for (Buffer2D<uint8_t> &dst : this->images)
 	{
+		uint8_t *dstPtr = dst.begin();
+
 		// Destination buffer for the frame's decompressed palette indices.
-		Buffer2D<uint8_t> &dst = this->images.get(i);
 		uint32_t dstOffset = 0;
 
 		for (uint32_t y = 0; y < height; y++)
@@ -81,9 +81,8 @@ bool CFAFile::init(const char *filename)
 			std::copy(decompPtr, decompPtr + widthCompressed, encoded.begin());
 
 			// Lambda for which demux routine to do, based on bits per pixel.
-			auto runDemux = [&dst, dstOffset, &count, &encoded, &translate, lookUpTable](
-				uint32_t end, void(*demux)(const uint8_t*, uint8_t*),
-				uint32_t demuxMultiplier, uint32_t upToMin)
+			auto runDemux = [dstOffset, &count, &encoded, &translate, lookUpTable, dstPtr](
+				uint32_t end, void(*demux)(const uint8_t*, uint8_t*), uint32_t demuxMultiplier, uint32_t upToMin)
 			{
 				for (uint32_t x = 0; x < end; x++)
 				{
@@ -92,7 +91,6 @@ bool CFAFile::init(const char *filename)
 					uint32_t upTo = std::min(upToMin, count);
 					count -= upTo;
 
-					uint8_t *dstPtr = dst.begin();
 					for (uint32_t i = 0; i < upTo; i++)
 					{
 						const int dstIndex = (x * upToMin) + i + dstOffset;

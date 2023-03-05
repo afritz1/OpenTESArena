@@ -122,9 +122,8 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock
 	Buffer<uint8_t> &&flashColors, Random &random, TextureManager &textureManager)
 {
 	this->particles.init(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
-	for (int i = 0; i < this->particles.getCount(); i++)
+	for (Particle &particle : this->particles)
 	{
-		Particle &particle = this->particles.get(i);
 		particle.init(random.nextReal(), random.nextReal());
 	}
 
@@ -217,9 +216,8 @@ void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double
 void WeatherInstance::SnowInstance::init(Random &random)
 {
 	this->particles.init(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT);
-	for (int i = 0; i < this->particles.getCount(); i++)
+	for (Particle &particle : this->particles)
 	{
-		Particle &particle = this->particles.get(i);
 		particle.init(random.nextReal(), random.nextReal());
 	}
 

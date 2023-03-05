@@ -173,9 +173,8 @@ int TextRenderUtils::getLinesPixelWidth(const BufferView<const std::string_view>
 	const std::optional<TextShadowInfo> &shadow)
 {
 	int width = 0;
-	for (int i = 0; i < textLines.getCount(); i++)
+	for (const std::string_view &line : textLines)
 	{
-		const std::string_view &line = textLines.get(i);
 		const int linePixelWidth = TextRenderUtils::getLinePixelWidth(line, fontDef, shadow);
 		width = std::max(width, linePixelWidth);
 	}

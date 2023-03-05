@@ -53,25 +53,22 @@ void CollisionChunkManager::update(double dt, const BufferView<const ChunkInt2> 
 	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager)
 {
-	for (int i = 0; i < freedChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = freedChunkPositions.get(i);
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (int i = 0; i < newChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = newChunkPositions.get(i);
 		const int spawnIndex = this->spawnChunk();
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		this->populateChunk(spawnIndex, chunkPos, voxelChunk);
 	}
 
 	// Update dirty voxels.
-	for (int i = 0; i < activeChunkPositions.getCount(); i++)
+	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
-		const ChunkInt2 &chunkPos = activeChunkPositions.get(i);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		this->updateDirtyVoxels(chunkPos, voxelChunk);
 	}
