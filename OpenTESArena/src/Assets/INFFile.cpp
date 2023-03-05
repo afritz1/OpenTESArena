@@ -216,17 +216,17 @@ bool INFFile::init(const char *filename)
 		if (textState->mode == TextState::Mode::Key)
 		{
 			// Save key data.
-			this->keys.insert(std::make_pair(textState->id, textState->keyData.value()));
+			this->keys.emplace(textState->id, textState->keyData.value());
 		}
 		else if (textState->mode == TextState::Mode::Riddle)
 		{
 			// Save riddle data.
-			this->riddles.insert(std::make_pair(textState->id, textState->riddleState->data));
+			this->riddles.emplace(textState->id, textState->riddleState->data);
 		}
 		else if (textState->mode == TextState::Mode::Text)
 		{
 			// Save text data.
-			this->texts.insert(std::make_pair(textState->id, textState->textData.value()));
+			this->texts.emplace(textState->id, textState->textData.value());
 		}
 	};
 
@@ -860,7 +860,7 @@ bool INFFile::init(const char *filename)
 				if (textState->mode == TextState::Mode::Key)
 				{
 					// Save key data and empty the key data state.
-					this->keys.insert(std::make_pair(textState->id, textState->keyData.value()));
+					this->keys.emplace(textState->id, textState->keyData.value());
 					textState->keyData.reset();
 				}
 

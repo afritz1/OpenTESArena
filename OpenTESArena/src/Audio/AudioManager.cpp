@@ -582,7 +582,7 @@ void AudioManager::playSound(const std::string &filename, const std::optional<Do
 				static_cast<ALsizei>(audioData.size()),
 				static_cast<ALsizei>(voc.getSampleRate()));
 
-			vocIter = mSoundBuffers.insert(std::make_pair(filename, bufferID)).first;
+			vocIter = mSoundBuffers.emplace(filename, bufferID).first;
 		}
 
 		// Set up the sound source.

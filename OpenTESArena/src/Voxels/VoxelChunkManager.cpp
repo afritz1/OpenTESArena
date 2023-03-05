@@ -315,7 +315,7 @@ void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
 				else
 				{
 					chunkBuildingNameID = chunk.addBuildingName(std::string(buildingName));
-					buildingNameIDs.emplace(std::make_pair(buildingNameID, chunkBuildingNameID));
+					buildingNameIDs.emplace(buildingNameID, chunkBuildingNameID);
 				}
 
 				chunk.addBuildingNamePosition(chunkBuildingNameID, VoxelInt3(x, y, z));

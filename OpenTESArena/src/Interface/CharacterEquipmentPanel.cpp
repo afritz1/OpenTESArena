@@ -58,7 +58,7 @@ bool CharacterEquipmentPanel::init()
 	std::vector<std::pair<std::string, Color>> elements;
 	for (InventoryUiModel::ItemUiDefinition &itemUiDef : itemUiDefs)
 	{
-		elements.emplace_back(std::make_pair(std::move(itemUiDef.text), itemUiDef.color));
+		elements.emplace_back(std::move(itemUiDef.text), itemUiDef.color);
 	}
 
 	this->inventoryListBox.init(InventoryUiView::PlayerInventoryRect,

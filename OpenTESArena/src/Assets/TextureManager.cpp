@@ -435,8 +435,7 @@ std::optional<PaletteIdGroup> TextureManager::tryGetPaletteIDs(const char *filen
 				this->palettes.emplace_back(std::move(palette));
 			}
 
-			iter = this->paletteIDs.emplace(
-				std::make_pair(std::move(paletteName), std::move(ids))).first;
+			iter = this->paletteIDs.emplace(std::move(paletteName), std::move(ids)).first;
 		}
 		else
 		{
@@ -502,8 +501,7 @@ std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(con
 			this->textureBuilders.emplace_back(std::move(textureBuilder));
 		}
 
-		iter = this->textureBuilderIDs.emplace(
-			std::make_pair(std::move(filenameStr), std::move(ids))).first;
+		iter = this->textureBuilderIDs.emplace(std::move(filenameStr), std::move(ids)).first;
 	}
 
 	return iter->second;
@@ -558,7 +556,7 @@ std::optional<TextureFileMetadataID> TextureManager::tryGetMetadataID(const char
 		const TextureFileMetadataID id = static_cast<TextureFileMetadataID>(this->metadatas.size());
 		this->metadatas.emplace_back(std::move(metadata));
 
-		iter = this->metadataIndices.emplace(std::make_pair(std::move(filenameStr), id)).first;
+		iter = this->metadataIndices.emplace(std::move(filenameStr), id).first;
 	}
 
 	return static_cast<TextureFileMetadataID>(iter->second);

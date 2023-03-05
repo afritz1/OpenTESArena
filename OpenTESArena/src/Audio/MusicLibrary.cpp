@@ -412,8 +412,7 @@ bool MusicLibrary::init(const char *filename)
 		auto definitionsIter = this->definitions.find(sectionType);
 		if (definitionsIter == this->definitions.end())
 		{
-			definitionsIter = this->definitions.emplace(
-				std::make_pair(sectionType, std::vector<MusicDefinition>())).first;
+			definitionsIter = this->definitions.emplace(sectionType, std::vector<MusicDefinition>()).first;
 		}
 
 		for (int j = 0; j < section.getPairCount(); j++)

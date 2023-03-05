@@ -112,7 +112,7 @@ void CharacterEquipment::equipBodyArmor(BodyArmor *bodyArmor)
 	if (this->bodyArmors.find(bodyArmor->getPartName()) == this->bodyArmors.end())
 	{
 		// Make a new BodyPartName -> BodyArmor mapping.
-		this->bodyArmors.insert(std::make_pair(bodyArmor->getPartName(), bodyArmor));
+		this->bodyArmors.emplace(bodyArmor->getPartName(), bodyArmor);
 	}
 	else
 	{

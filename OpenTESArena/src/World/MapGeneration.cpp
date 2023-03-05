@@ -1230,7 +1230,7 @@ namespace MapGeneration
 						}
 
 						entityDefID = outLevelInfoDef->addEntityDef(std::move(entityDef));
-						entityCache->insert(std::make_pair(florVoxel, entityDefID));
+						entityCache->emplace(florVoxel, entityDefID);
 					}
 
 					const LevelDouble3 entityPos(
@@ -1362,7 +1362,7 @@ namespace MapGeneration
 								rulerIsMale, palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon,
 								mapType, binaryAssetLibrary.getExeData());
 							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
-							transitionCache->insert(std::make_pair(map1Voxel, transitionDefID));
+							transitionCache->emplace(map1Voxel, transitionDefID);
 						}
 
 						outLevelDef->addTransition(transitionDefID, levelPosition);
@@ -1385,7 +1385,7 @@ namespace MapGeneration
 						{
 							DoorDefinition doorDef = MapGeneration::makeDoorDef(*doorDefGenInfo, inf);
 							doorDefID = outLevelInfoDef->addDoorDef(std::move(doorDef));
-							doorCache->insert(std::make_pair(map1Voxel, doorDefID));
+							doorCache->emplace(map1Voxel, doorDefID);
 						}
 
 						outLevelDef->addDoor(doorDefID, levelPosition);
@@ -1414,7 +1414,7 @@ namespace MapGeneration
 						}
 
 						entityDefID = outLevelInfoDef->addEntityDef(std::move(entityDef));
-						entityCache->insert(std::make_pair(map1Voxel, entityDefID));
+						entityCache->emplace(map1Voxel, entityDefID);
 					}
 
 					const LevelDouble3 entityPos(

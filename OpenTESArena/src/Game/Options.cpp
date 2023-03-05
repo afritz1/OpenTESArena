@@ -136,7 +136,7 @@ void Options::load(const char *filename,
 				// Add an empty map group if the section is new.
 				if (groupIter == maps.end())
 				{
-					groupIter = maps.insert(std::make_pair(sectionName, Options::MapGroup())).first;
+					groupIter = maps.emplace(sectionName, Options::MapGroup()).first;
 				}
 
 				Options::MapGroup &mapGroup = groupIter->second;
@@ -148,7 +148,7 @@ void Options::load(const char *filename,
 						DebugCrash("Couldn't get boolean \"" + key + "\" (section \"" + sectionName + "\").");
 					}
 
-					mapGroup.bools.insert(std::make_pair(key, value));
+					mapGroup.bools.emplace(key, value);
 				}
 				else if (type == OptionType::Int)
 				{
@@ -158,7 +158,7 @@ void Options::load(const char *filename,
 						DebugCrash("Couldn't get integer \"" + key + "\" (section \"" + sectionName + "\").");
 					}
 
-					mapGroup.integers.insert(std::make_pair(key, value));
+					mapGroup.integers.emplace(key, value);
 				}
 				else if (type == OptionType::Double)
 				{
@@ -168,7 +168,7 @@ void Options::load(const char *filename,
 						DebugCrash("Couldn't get double \"" + key + "\" (section \"" + sectionName + "\").");
 					}
 
-					mapGroup.doubles.insert(std::make_pair(key, value));
+					mapGroup.doubles.emplace(key, value);
 				}
 				else if (type == OptionType::String)
 				{
@@ -178,7 +178,7 @@ void Options::load(const char *filename,
 						DebugCrash("Couldn't get string \"" + key + "\" (section \"" + sectionName + "\").");
 					}
 
-					mapGroup.strings.insert(std::make_pair(key, std::string(value)));
+					mapGroup.strings.emplace(key, std::string(value));
 				}
 			}
 			else
@@ -359,8 +359,7 @@ void Options::setBool(const std::string &section, const std::string &key, bool v
 	auto sectionIter = this->changedMaps.find(section);
 	if (sectionIter == this->changedMaps.end())
 	{
-		sectionIter = this->changedMaps.insert(
-			std::make_pair(section, Options::MapGroup())).first;
+		sectionIter = this->changedMaps.emplace(section, Options::MapGroup()).first;
 	}
 
 	Options::BoolMap &sectionMap = sectionIter->second.bools;
@@ -369,7 +368,7 @@ void Options::setBool(const std::string &section, const std::string &key, bool v
 	auto iter = sectionMap.find(key);
 	if (iter == sectionMap.end())
 	{
-		iter = sectionMap.insert(std::make_pair(key, value)).first;
+		iter = sectionMap.emplace(key, value).first;
 	}
 
 	iter->second = value;
@@ -381,8 +380,7 @@ void Options::setInt(const std::string &section, const std::string &key, int val
 	auto sectionIter = this->changedMaps.find(section);
 	if (sectionIter == this->changedMaps.end())
 	{
-		sectionIter = this->changedMaps.insert(
-			std::make_pair(section, Options::MapGroup())).first;
+		sectionIter = this->changedMaps.emplace(section, Options::MapGroup()).first;
 	}
 
 	Options::IntegerMap &sectionMap = sectionIter->second.integers;
@@ -391,7 +389,7 @@ void Options::setInt(const std::string &section, const std::string &key, int val
 	auto iter = sectionMap.find(key);
 	if (iter == sectionMap.end())
 	{
-		iter = sectionMap.insert(std::make_pair(key, value)).first;
+		iter = sectionMap.emplace(key, value).first;
 	}
 
 	iter->second = value;
@@ -403,8 +401,7 @@ void Options::setDouble(const std::string &section, const std::string &key, doub
 	auto sectionIter = this->changedMaps.find(section);
 	if (sectionIter == this->changedMaps.end())
 	{
-		sectionIter = this->changedMaps.insert(
-			std::make_pair(section, Options::MapGroup())).first;
+		sectionIter = this->changedMaps.emplace(section, Options::MapGroup()).first;
 	}
 
 	Options::DoubleMap &sectionMap = sectionIter->second.doubles;
@@ -413,7 +410,7 @@ void Options::setDouble(const std::string &section, const std::string &key, doub
 	auto iter = sectionMap.find(key);
 	if (iter == sectionMap.end())
 	{
-		iter = sectionMap.insert(std::make_pair(key, value)).first;
+		iter = sectionMap.emplace(key, value).first;
 	}
 
 	iter->second = value;
@@ -426,8 +423,7 @@ void Options::setString(const std::string &section, const std::string &key,
 	auto sectionIter = this->changedMaps.find(section);
 	if (sectionIter == this->changedMaps.end())
 	{
-		sectionIter = this->changedMaps.insert(
-			std::make_pair(section, Options::MapGroup())).first;
+		sectionIter = this->changedMaps.emplace(section, Options::MapGroup()).first;
 	}
 
 	Options::StringMap &sectionMap = sectionIter->second.strings;
@@ -436,7 +432,7 @@ void Options::setString(const std::string &section, const std::string &key,
 	auto iter = sectionMap.find(key);
 	if (iter == sectionMap.end())
 	{
-		iter = sectionMap.insert(std::make_pair(key, value)).first;
+		iter = sectionMap.emplace(key, value).first;
 	}
 
 	iter->second = value;

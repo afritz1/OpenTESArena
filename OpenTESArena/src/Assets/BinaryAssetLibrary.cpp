@@ -164,7 +164,7 @@ bool BinaryAssetLibrary::initCityBlockMifs()
 				if (mif.init(mifName.c_str()))
 				{
 					// Add the .MIF file pair into the city blocks map.
-					this->cityBlockMifs.emplace(std::make_pair(std::move(mifName), std::move(mif)));
+					this->cityBlockMifs.emplace(std::move(mifName), std::move(mif));
 				}
 				else
 				{

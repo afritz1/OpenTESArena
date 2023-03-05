@@ -52,7 +52,7 @@ bool FontDefinition::init(const char *filename)
 		}
 
 		const CharID charID = static_cast<CharID>(i);
-		this->charIDs.emplace(std::make_pair(std::move(lookupStr), charID));
+		this->charIDs.emplace(std::move(lookupStr), charID);
 	}
 
 	return true;
