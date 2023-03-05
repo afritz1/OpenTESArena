@@ -1684,10 +1684,8 @@ namespace MapGeneration
 		}
 
 		// Convert temp voxel buffers to the modern format.
-		const BufferView2D<const ArenaTypes::VoxelID> levelFlorView(
-			levelFLOR.get(), levelFLOR.getWidth(), levelFLOR.getHeight());
-		const BufferView2D<const ArenaTypes::VoxelID> levelMap1View(
-			levelMAP1.get(), levelMAP1.getWidth(), levelMAP1.getHeight());
+		const BufferView2D<const ArenaTypes::VoxelID> levelFlorView(levelFLOR);
+		const BufferView2D<const ArenaTypes::VoxelID> levelMap1View(levelMAP1);
 		MapGeneration::readArenaFLOR(levelFlorView, mapType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 			outLevelInfoDef, florMappings, entityMappings, chasmMappings);
@@ -2433,9 +2431,9 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	Buffer2D<ArenaTypes::VoxelID> tempFlor(mif.getWidth(), mif.getDepth());
 	Buffer2D<ArenaTypes::VoxelID> tempMap1(mif.getWidth(), mif.getDepth());
 	Buffer2D<ArenaTypes::VoxelID> tempMap2(mif.getWidth(), mif.getDepth());
-	BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-	BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-	BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor);
+	BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1);
+	BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2);
 	ArenaCityUtils::writeSkeleton(mifLevel, tempFlorView, tempMap1View, tempMap2View);
 
 	// Use the city's seed for random chunk generation. It is modified later during building
@@ -2453,12 +2451,9 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
 	ArenaCityUtils::revisePalaceGraphics(tempMap1, mif.getDepth(), mif.getWidth());
 
-	const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
-		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-	const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(
-		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-	const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(
-		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+	const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(tempFlor);
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(tempMap1);
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(tempMap2);
 
 	constexpr MapType mapType = MapType::City;
 	constexpr std::optional<ArenaTypes::InteriorType> interiorType; // City is not an interior.
@@ -2527,25 +2522,17 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 		if (ArenaWildUtils::isWildCityBlock(wildBlockID))
 		{
 			// Change the placeholder WILD00{1..4}.RMD block to the one for the given city.
-			BufferView2D<ArenaTypes::VoxelID> tempFlorView(
-				tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-			BufferView2D<ArenaTypes::VoxelID> tempMap1View(
-				tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-			BufferView2D<ArenaTypes::VoxelID> tempMap2View(
-				tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
-
-			ArenaWildUtils::reviseWildCityBlock(wildBlockID, tempFlorView, tempMap1View, tempMap2View,
-				cityDef, binaryAssetLibrary);
+			BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor);
+			BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1);
+			BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2);
+			ArenaWildUtils::reviseWildCityBlock(wildBlockID, tempFlorView, tempMap1View, tempMap2View, cityDef, binaryAssetLibrary);
 		}
 
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 
-		const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
-			tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-		const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(
-			tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-		const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(
-			tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+		const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(tempFlor);
+		const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(tempMap1);
+		const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(tempMap2);
 
 		constexpr MapType mapType = MapType::Wilderness;
 		constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Wilderness is not an interior.

@@ -173,9 +173,9 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 	Buffer2D<ArenaTypes::VoxelID> cityFlor(mif.getWidth(), mif.getDepth());
 	Buffer2D<ArenaTypes::VoxelID> cityMap1(mif.getWidth(), mif.getDepth());
 	Buffer2D<ArenaTypes::VoxelID> cityMap2(mif.getWidth(), mif.getDepth());
-	BufferView2D<ArenaTypes::VoxelID> cityFlorView(cityFlor.get(), cityFlor.getWidth(), cityFlor.getHeight());
-	BufferView2D<ArenaTypes::VoxelID> cityMap1View(cityMap1.get(), cityMap1.getWidth(), cityMap1.getHeight());
-	BufferView2D<ArenaTypes::VoxelID> cityMap2View(cityMap2.get(), cityMap2.getWidth(), cityMap2.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> cityFlorView(cityFlor);
+	BufferView2D<ArenaTypes::VoxelID> cityMap1View(cityMap1);
+	BufferView2D<ArenaTypes::VoxelID> cityMap2View(cityMap2);
 	ArenaCityUtils::writeSkeleton(level, cityFlorView, cityMap1View, cityMap2View);
 
 	// Run city generation if it's not a premade city. The center province's city does not have

@@ -128,7 +128,7 @@ bool SdlUiRenderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, Palett
 	{
 		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
 		const Buffer2D<uint8_t> &texels = palettedTexture.texels;
-		const BufferView2D<const uint8_t> texelsView(texels.get(), texels.getWidth(), texels.getHeight());
+		const BufferView2D<const uint8_t> texelsView(texels);
 		const Palette &palette = textureManager.getPaletteHandle(paletteID);
 		return this->tryCreateUiTexture(texelsView, palette, outID);
 	}
@@ -136,7 +136,7 @@ bool SdlUiRenderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, Palett
 	{
 		const TextureBuilder::TrueColorTexture &trueColorTexture = textureBuilder.getTrueColor();
 		const Buffer2D<uint32_t> &texels = trueColorTexture.texels;
-		const BufferView2D<const uint32_t> texelsView(texels.get(), texels.getWidth(), texels.getHeight());
+		const BufferView2D<const uint32_t> texelsView(texels);
 		return this->tryCreateUiTexture(texelsView, outID);
 	}
 	else
