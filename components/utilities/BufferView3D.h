@@ -54,13 +54,13 @@ public:
 	template<typename U>
 	BufferView3D(Buffer3D<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
 	}
 
 	template<typename U>
 	BufferView3D(const Buffer3D<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
 	}
 
 	void init(T *data, int width, int height, int depth, int viewX, int viewY, int viewZ,
@@ -98,13 +98,13 @@ public:
 	template<typename U>
 	void init(Buffer3D<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
 	}
 
 	template<typename U>
 	void init(const Buffer3D<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
 	}
 
 	bool isValid() const
