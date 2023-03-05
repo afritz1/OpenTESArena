@@ -419,7 +419,7 @@ bool MIFFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 	const uint16_t headerSize = Bytes::getLE16(srcPtr + 4);
 
 	// Get data from the header (after "MHDR"). Constant for all levels. The header 

@@ -383,10 +383,10 @@ namespace swGeometry
 		const Double4 modelPositionXYZW(modelPosition, 0.0);
 		const Double4 preScaleTranslationXYZW(preScaleTranslation, 1.0);
 
-		const double *verticesPtr = vertexBuffer.vertices.get();
-		const double *normalsPtr = normalBuffer.attributes.get();
-		const double *texCoordsPtr = texCoordBuffer.attributes.get();
-		const int32_t *indicesPtr = indexBuffer.indices.get();
+		const double *verticesPtr = vertexBuffer.vertices.begin();
+		const double *normalsPtr = normalBuffer.attributes.begin();
+		const double *texCoordsPtr = texCoordBuffer.attributes.begin();
+		const int32_t *indicesPtr = indexBuffer.indices.begin();
 		const int triangleCount = indexBuffer.indices.getCount() / 3;
 		for (int i = 0; i < triangleCount; i++)
 		{
@@ -1130,14 +1130,14 @@ const uint8_t *SoftwareRenderer::ObjectTexture::get8Bit() const
 {
 	DebugAssertMsg(this->bytesPerTexel == 1, "Expected object texture (" + std::to_string(this->width) + "x" +
 		std::to_string(this->height) + " to be 1 byte per texel (was " + std::to_string(this->bytesPerTexel) + ").");
-	return reinterpret_cast<const uint8_t*>(this->texels.get());
+	return reinterpret_cast<const uint8_t*>(this->texels.begin());
 }
 
 const uint32_t *SoftwareRenderer::ObjectTexture::get32Bit() const
 {
 	DebugAssertMsg(this->bytesPerTexel == 4, "Expected object texture (" + std::to_string(this->width) + "x" +
 		std::to_string(this->height) + " to be 4 bytes per texel (was " + std::to_string(this->bytesPerTexel) + ").");
-	return reinterpret_cast<const uint32_t*>(this->texels.get());
+	return reinterpret_cast<const uint32_t*>(this->texels.begin());
 }
 
 void SoftwareRenderer::VertexBuffer::init(int vertexCount, int componentsPerVertex)
@@ -1252,9 +1252,9 @@ void SoftwareRenderer::populateVertexBuffer(VertexBufferID id, const BufferView<
 		return;
 	}
 
-	const auto srcBegin = vertices.get();
+	const auto srcBegin = vertices.begin();
 	const auto srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.vertices.get());
+	std::copy(srcBegin, srcEnd, buffer.vertices.begin());
 }
 
 void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes)
@@ -1269,9 +1269,9 @@ void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, const Buffe
 		return;
 	}
 
-	const auto srcBegin = attributes.get();
+	const auto srcBegin = attributes.begin();
 	const auto srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.attributes.get());
+	std::copy(srcBegin, srcEnd, buffer.attributes.begin());
 }
 
 void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices)
@@ -1286,9 +1286,9 @@ void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, const BufferView<co
 		return;
 	}
 
-	const auto srcBegin = indices.get();
+	const auto srcBegin = indices.begin();
 	const auto srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.indices.get());
+	std::copy(srcBegin, srcEnd, buffer.indices.begin());
 }
 
 void SoftwareRenderer::freeVertexBuffer(VertexBufferID id)
@@ -1338,14 +1338,14 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 	{
 		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
 		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
-		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.get());
+		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
 		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
 	{
 		const TextureBuilder::TrueColorTexture &trueColorTexture = textureBuilder.getTrueColor();
 		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
-		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.get());
+		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.begin());
 		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
 	}
 	else
@@ -1359,7 +1359,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
 {
 	ObjectTexture &texture = this->objectTextures.get(id);
-	return LockedTexture(texture.texels.get(), texture.bytesPerTexel);
+	return LockedTexture(texture.texels.begin(), texture.bytesPerTexel);
 }
 
 void SoftwareRenderer::unlockObjectTexture(ObjectTextureID id)

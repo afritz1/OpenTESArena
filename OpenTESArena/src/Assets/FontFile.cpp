@@ -32,7 +32,7 @@ bool FontFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// The character height is in the first byte.
 	const uint8_t charHeight = srcPtr[0];

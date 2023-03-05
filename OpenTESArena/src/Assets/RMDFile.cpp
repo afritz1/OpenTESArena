@@ -17,7 +17,7 @@ bool RMDFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 	const uint8_t *srcEnd = reinterpret_cast<const uint8_t*>(src.end());
 
 	this->flor.init(RMDFile::WIDTH, RMDFile::DEPTH);

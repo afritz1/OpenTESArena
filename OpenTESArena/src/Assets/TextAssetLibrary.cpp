@@ -522,7 +522,7 @@ bool TextAssetLibrary::initArtifactText()
 		}
 
 		// Write the null-terminated strings to the output array.
-		const char *stringPtr = reinterpret_cast<const char*>(src.get());
+		const char *stringPtr = reinterpret_cast<const char*>(src.begin());
 		for (auto &block : artifactTavernTextArray)
 		{
 			auto initStringArray = [&stringPtr](std::array<std::string, 3> &arr)
@@ -559,7 +559,7 @@ bool TextAssetLibrary::initDungeonTxt()
 		return false;
 	}
 
-	const std::string text(reinterpret_cast<const char*>(src.get()), src.getCount());
+	const std::string text(reinterpret_cast<const char*>(src.begin()), src.getCount());
 
 	// Step line by line through the text, inserting data into the dungeon list.
 	std::istringstream iss(text);
@@ -621,7 +621,7 @@ bool TextAssetLibrary::initNameChunks()
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	size_t offset = 0;
 	while (offset < src.getCount())
@@ -658,7 +658,7 @@ bool TextAssetLibrary::initQuestionTxt()
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Read QUESTION.TXT into a string.
 	const std::string text(reinterpret_cast<const char*>(srcPtr), src.getCount());
@@ -782,7 +782,7 @@ bool TextAssetLibrary::initSpellMakerDescriptions()
 		return false;
 	}
 
-	const std::string text(reinterpret_cast<const char*>(src.get()), src.getCount());
+	const std::string text(reinterpret_cast<const char*>(src.begin()), src.getCount());
 
 	struct State
 	{
@@ -856,7 +856,7 @@ bool TextAssetLibrary::initTradeText()
 		}
 
 		// Write the null-terminated strings to the output array.
-		const char *stringPtr = reinterpret_cast<const char*>(src.get());
+		const char *stringPtr = reinterpret_cast<const char*>(src.begin());
 		for (TextAssetLibrary::TradeText::PersonalityArray &personalityArr : functionArr)
 		{
 			for (TextAssetLibrary::TradeText::RandomArray &randomArr : personalityArr)

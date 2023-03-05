@@ -158,7 +158,7 @@ bool INFFile::init(const char *filename)
 		return false;
 	}
 
-	uint8_t *srcPtr = reinterpret_cast<uint8_t*>(src.get());
+	uint8_t *srcPtr = reinterpret_cast<uint8_t*>(src.begin());
 	uint8_t *srcEnd = reinterpret_cast<uint8_t*>(src.end());
 
 	// Check if the .INF is encrypted.

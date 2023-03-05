@@ -62,7 +62,7 @@ bool IMGFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 	uint16_t xOffset, yOffset, width, height, flags, len;
 
 	// Read header data if not raw. Wall .IMGs have no header and are 4096 bytes.
@@ -221,7 +221,7 @@ bool IMGFile::tryExtractPalette(const char *filename, Palette &palette)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Read the flags and .IMG file length. Skip the X and Y offsets and dimensions.
 	// No need to check for raw override. All given filenames should point to IMGs

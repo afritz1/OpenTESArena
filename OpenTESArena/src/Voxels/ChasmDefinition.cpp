@@ -41,7 +41,7 @@ ChasmDefinition::ChasmDefinition(const ChasmDefinition &other)
 	{
 		const Buffer<TextureAsset> &otherTextureAssets = other.animated.textureAssets;
 		Buffer<TextureAsset> textureAssets(otherTextureAssets.getCount());
-		std::copy(otherTextureAssets.get(), otherTextureAssets.end(), textureAssets.get());
+		std::copy(otherTextureAssets.begin(), otherTextureAssets.end(), textureAssets.begin());
 		this->animated.init(std::move(textureAssets));
 	}
 	else

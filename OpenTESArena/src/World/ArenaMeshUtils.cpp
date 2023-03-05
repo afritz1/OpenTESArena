@@ -37,8 +37,8 @@ void ArenaMeshUtils::WriteWallUniqueGeometryBuffers(BufferView<double> outVertic
 		0.0, 0.0, 1.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteWallRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
@@ -150,9 +150,9 @@ void ArenaMeshUtils::WriteWallRendererGeometryBuffers(BufferView<double> outVert
 		1.0, 0.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices,
@@ -192,9 +192,9 @@ void ArenaMeshUtils::WriteWallRendererIndexBuffers(BufferView<int32_t> outOpaque
 		14, 15, 12
 	};
 
-	std::copy(sideIndices.begin(), sideIndices.end(), outOpaqueSideIndices.get());
-	std::copy(bottomIndices.begin(), bottomIndices.end(), outOpaqueBottomIndices.get());
-	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.get());
+	std::copy(sideIndices.begin(), sideIndices.end(), outOpaqueSideIndices.begin());
+	std::copy(bottomIndices.begin(), bottomIndices.end(), outOpaqueBottomIndices.begin());
+	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.begin());
 }
 
 void ArenaMeshUtils::WriteWallCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
@@ -253,7 +253,7 @@ void ArenaMeshUtils::WriteWallCollisionIndexBuffers(BufferView<int32_t> outIndic
 		7, 5
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteFloorUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
@@ -273,8 +273,8 @@ void ArenaMeshUtils::WriteFloorUniqueGeometryBuffers(BufferView<double> outVerti
 		0.0, 1.0, 0.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteFloorRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
@@ -308,9 +308,9 @@ void ArenaMeshUtils::WriteFloorRendererGeometryBuffers(BufferView<double> outVer
 		0.0, 0.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
@@ -326,7 +326,7 @@ void ArenaMeshUtils::WriteFloorRendererIndexBuffers(BufferView<int32_t> outOpaqu
 		2, 3, 0
 	};
 
-	std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
+	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
 void ArenaMeshUtils::WriteFloorCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
@@ -350,7 +350,7 @@ void ArenaMeshUtils::WriteFloorCollisionIndexBuffers(BufferView<int32_t> outIndi
 		2, 0
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteCeilingUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
@@ -370,8 +370,8 @@ void ArenaMeshUtils::WriteCeilingUniqueGeometryBuffers(BufferView<double> outVer
 		0.0, -1.0, 0.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
@@ -405,9 +405,9 @@ void ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(BufferView<double> outV
 		1.0, 0.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
@@ -423,7 +423,7 @@ void ArenaMeshUtils::WriteCeilingRendererIndexBuffers(BufferView<int32_t> outOpa
 		2, 3, 0
 	};
 
-	std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
+	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
 void ArenaMeshUtils::WriteCeilingCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
@@ -447,7 +447,7 @@ void ArenaMeshUtils::WriteCeilingCollisionIndexBuffers(BufferView<int32_t> outIn
 		0, 0
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outVertices,
@@ -485,8 +485,8 @@ void ArenaMeshUtils::WriteRaisedUniqueGeometryBuffers(double yOffset, double ySi
 		0.0, 0.0, 1.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
@@ -599,9 +599,9 @@ void ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(double yOffset, double y
 		1.0, vTop
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
@@ -641,9 +641,9 @@ void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outAlph
 		14, 15, 12
 	};
 
-	std::copy(sideIndices.begin(), sideIndices.end(), outAlphaTestedSideIndices.get());
-	std::copy(bottomIndices.begin(), bottomIndices.end(), outOpaqueBottomIndices.get());
-	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.get());
+	std::copy(sideIndices.begin(), sideIndices.end(), outAlphaTestedSideIndices.begin());
+	std::copy(bottomIndices.begin(), bottomIndices.end(), outOpaqueBottomIndices.begin());
+	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.begin());
 }
 
 void ArenaMeshUtils::WriteRaisedCollisionGeometryBuffers(double yOffset, double ySize, BufferView<double> outVertices,
@@ -703,7 +703,7 @@ void ArenaMeshUtils::WriteRaisedCollisionIndexBuffers(BufferView<int32_t> outInd
 		7, 5
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals)
@@ -747,8 +747,8 @@ void ArenaMeshUtils::WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<d
 	const auto &vertices = type1 ? type1Vertices : type2Vertices;
 	const auto &normals = type1 ? type1Normals : type2Normals;
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outVertices,
@@ -836,9 +836,9 @@ void ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(bool type1, BufferView
 	const auto &vertices = type1 ? type1Vertices : type2Vertices;
 	const auto &normals = type1 ? type1Normals : type2Normals;
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
@@ -858,7 +858,7 @@ void ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(BufferView<int32_t> outOp
 		6, 7, 4
 	};
 
-	std::copy(indices.begin(), indices.end(), outOpaqueIndices.get());
+	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
 void ArenaMeshUtils::WriteDiagonalCollisionGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals)
@@ -888,7 +888,7 @@ void ArenaMeshUtils::WriteDiagonalCollisionIndexBuffers(BufferView<int32_t> outI
 		0, 1
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteTransparentWallUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
@@ -918,8 +918,8 @@ void ArenaMeshUtils::WriteTransparentWallUniqueGeometryBuffers(BufferView<double
 		0.0, 0.0, 1.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(BufferView<double> outVertices,
@@ -1000,9 +1000,9 @@ void ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(BufferView<doub
 		1.0, 0.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
@@ -1027,7 +1027,7 @@ void ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(BufferView<int32_t
 		14, 15, 12
 	};
 
-	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
+	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
 }
 
 void ArenaMeshUtils::WriteTransparentWallCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
@@ -1072,7 +1072,7 @@ void ArenaMeshUtils::WriteTransparentWallCollisionIndexBuffers(BufferView<int32_
 		4, 3
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outVertices,
@@ -1182,8 +1182,8 @@ void ArenaMeshUtils::WriteEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
 	}
 
-	std::copy(vertices->begin(), vertices->end(), outVertices.get());
-	std::copy(normals->begin(), normals->end(), outNormals.get());
+	std::copy(vertices->begin(), vertices->end(), outVertices.begin());
+	std::copy(normals->begin(), normals->end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
@@ -1378,9 +1378,9 @@ void ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(VoxelFacing2D facing, doub
 
 	const std::array<double, texCoordCount> &texCoords = flipped ? flippedTexCoords : unflippedTexCoords;
 
-	std::copy(vertices->begin(), vertices->end(), outVertices.get());
-	std::copy(normals->begin(), normals->end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices->begin(), vertices->end(), outVertices.begin());
+	std::copy(normals->begin(), normals->end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
@@ -1400,7 +1400,7 @@ void ArenaMeshUtils::WriteEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaT
 		6, 7, 4
 	};
 
-	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
+	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
 }
 
 void ArenaMeshUtils::WriteEdgeCollisionGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outVertices,
@@ -1431,7 +1431,7 @@ void ArenaMeshUtils::WriteEdgeCollisionIndexBuffers(BufferView<int32_t> outIndic
 		3, 1
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteChasmUniqueGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices,
@@ -1465,8 +1465,8 @@ void ArenaMeshUtils::WriteChasmUniqueGeometryBuffers(ArenaTypes::ChasmType chasm
 		0.0, 0.0, -1.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteChasmRendererGeometryBuffers(ArenaTypes::ChasmType chasmType,
@@ -1566,9 +1566,9 @@ void ArenaMeshUtils::WriteChasmRendererGeometryBuffers(ArenaTypes::ChasmType cha
 		1.0, 0.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
@@ -1584,7 +1584,7 @@ void ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> out
 		2, 3, 0
 	};
 
-	std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.get());
+	std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.begin());
 }
 
 void ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
@@ -1652,7 +1652,7 @@ void ArenaMeshUtils::WriteChasmFloorCollisionIndexBuffers(BufferView<int32_t> ou
 		3, 2
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteChasmWallCollisionIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
@@ -1726,8 +1726,8 @@ void ArenaMeshUtils::WriteDoorUniqueGeometryBuffers(BufferView<double> outVertic
 		0.0, 0.0, 1.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::WriteDoorRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals,
@@ -1765,9 +1765,9 @@ void ArenaMeshUtils::WriteDoorRendererGeometryBuffers(BufferView<double> outVert
 		1.0, 0.0
 	};
 
-	std::copy(vertices.begin(), vertices.end(), outVertices.get());
-	std::copy(normals.begin(), normals.end(), outNormals.get());
-	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.get());
+	std::copy(vertices.begin(), vertices.end(), outVertices.begin());
+	std::copy(normals.begin(), normals.end(), outNormals.begin());
+	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
 void ArenaMeshUtils::WriteDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
@@ -1783,7 +1783,7 @@ void ArenaMeshUtils::WriteDoorRendererIndexBuffers(BufferView<int32_t> outAlphaT
 		2, 3, 0
 	};
 
-	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.get());
+	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
 }
 
 void ArenaMeshUtils::WriteDoorCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
@@ -1828,5 +1828,5 @@ void ArenaMeshUtils::WriteDoorCollisionIndexBuffers(BufferView<int32_t> outIndic
 		6, 3
 	};
 
-	std::copy(indices.begin(), indices.end(), outIndices.get());
+	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }

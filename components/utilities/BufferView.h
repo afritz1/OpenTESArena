@@ -42,13 +42,13 @@ public:
 	template<typename U>
 	BufferView(Buffer<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getCount());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getCount());
 	}
 
 	template<typename U>
 	BufferView(const Buffer<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getCount());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getCount());
 	}
 
 	template<typename U>
@@ -105,13 +105,13 @@ public:
 	template<typename U>
 	void init(Buffer<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getCount());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getCount());
 	}
 
 	template<typename U>
 	void init(const Buffer<U> &buffer)
 	{
-		this->init(static_cast<T*>(buffer.get()), buffer.getCount());
+		this->init(static_cast<T*>(buffer.begin()), buffer.getCount());
 	}
 
 	template<typename U>
@@ -155,12 +155,12 @@ public:
 		return this->data != nullptr;
 	}
 
-	T *get()
+	T *begin()
 	{
 		return this->data;
 	}
 
-	const T *get() const
+	const T *begin() const
 	{
 		return this->data;
 	}

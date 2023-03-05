@@ -15,7 +15,7 @@ bool RCIFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Number of uncompressed frames packed in the .RCI.
 	const int frameCount = src.getCount() / RCIFile::FRAME_SIZE;

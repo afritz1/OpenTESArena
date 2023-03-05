@@ -22,7 +22,7 @@ bool TXTFile::init(const char *filename)
         return false;
     }
 
-    const uint16_t *srcPixels = reinterpret_cast<const uint16_t*>(src.get());
+    const uint16_t *srcPixels = reinterpret_cast<const uint16_t*>(src.begin());
 
     this->pixels.init(TXTFile::WIDTH, TXTFile::HEIGHT);
     std::copy(srcPixels, srcPixels + srcPixelCount, this->pixels.get());

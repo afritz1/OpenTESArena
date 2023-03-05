@@ -474,8 +474,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	const BufferView<const uint8_t> reservedBlocks(generationInfo.reservedBlocks.get(),
-		generationInfo.reservedBlocks.getCount());
+	const BufferView<const uint8_t> reservedBlocks(generationInfo.reservedBlocks);
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride =
 		generationInfo.mainQuestTempleOverride.has_value() ? &(*generationInfo.mainQuestTempleOverride) : nullptr;
 

@@ -64,7 +64,7 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMesh
 			dstBuffer.resize(opaqueIndexCount);
 			const BufferView<int32_t> &srcBuffer = (i == 0) ? renderMeshInitCache.opaqueIndices0View :
 				((i == 1) ? renderMeshInitCache.opaqueIndices1View : renderMeshInitCache.opaqueIndices2View);
-			std::copy(srcBuffer.get(), srcBuffer.get() + opaqueIndexCount, dstBuffer.data());
+			std::copy(srcBuffer.begin(), srcBuffer.begin() + opaqueIndexCount, dstBuffer.data());
 		}
 
 		if (this->alphaTestedIndicesListCount > 0)
@@ -123,8 +123,8 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(double ceilingScale, Buff
 		outVertices.set(index + 2, dstZ);
 	}
 
-	std::copy(this->rendererNormals.begin(), this->rendererNormals.end(), outNormals.get());
-	std::copy(this->rendererTexCoords.begin(), this->rendererTexCoords.end(), outTexCoords.get());
+	std::copy(this->rendererNormals.begin(), this->rendererNormals.end(), outNormals.begin());
+	std::copy(this->rendererTexCoords.begin(), this->rendererTexCoords.end(), outTexCoords.begin());
 }
 
 void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices0,
@@ -133,21 +133,21 @@ void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outOpaqu
 {
 	if (!this->opaqueIndices0.empty())
 	{
-		std::copy(this->opaqueIndices0.begin(), this->opaqueIndices0.end(), outOpaqueIndices0.get());
+		std::copy(this->opaqueIndices0.begin(), this->opaqueIndices0.end(), outOpaqueIndices0.begin());
 	}
 
 	if (!this->opaqueIndices1.empty())
 	{
-		std::copy(this->opaqueIndices1.begin(), this->opaqueIndices1.end(), outOpaqueIndices1.get());
+		std::copy(this->opaqueIndices1.begin(), this->opaqueIndices1.end(), outOpaqueIndices1.begin());
 	}
 
 	if (!this->opaqueIndices2.empty())
 	{
-		std::copy(this->opaqueIndices2.begin(), this->opaqueIndices2.end(), outOpaqueIndices2.get());
+		std::copy(this->opaqueIndices2.begin(), this->opaqueIndices2.end(), outOpaqueIndices2.begin());
 	}
 
 	if (!this->alphaTestedIndices.empty())
 	{
-		std::copy(this->alphaTestedIndices.begin(), this->alphaTestedIndices.end(), outAlphaTestedIndices.get());
+		std::copy(this->alphaTestedIndices.begin(), this->alphaTestedIndices.end(), outAlphaTestedIndices.begin());
 	}
 }

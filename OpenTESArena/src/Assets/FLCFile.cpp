@@ -98,7 +98,7 @@ bool FLCFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 	const uint8_t *srcEnd = reinterpret_cast<const uint8_t*>(src.end());
 
 	// Get the header data. Some of it is just miscellaneous (last updated, etc.),

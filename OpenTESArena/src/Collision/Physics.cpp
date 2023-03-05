@@ -80,7 +80,7 @@ namespace Physics
 		int entityInsertIndex = 0;
 		auto addEntitiesFromChunk = [&entityChunkManager, &entityInstIDs, &entityInsertIndex](SNInt chunkX, WEInt chunkZ)
 		{
-			EntityInstanceID *entityInstIDsPtr = entityInstIDs.get() + entityInsertIndex;
+			EntityInstanceID *entityInstIDsPtr = entityInstIDs.begin() + entityInsertIndex;
 			const int size = entityInstIDs.getCount() - entityInsertIndex;
 			const EntityChunk *entityChunkPtr = entityChunkManager.tryGetChunkAtPosition(ChunkInt2(chunkX, chunkZ));
 			if (entityChunkPtr != nullptr)

@@ -26,9 +26,9 @@ void CharacterClassDefinition::init(std::string &&name, CategoryID categoryID, s
 	this->allowedArmors.resize(allowedArmors.getCount());
 	this->allowedShields.resize(allowedShields.getCount());
 	this->allowedWeapons.resize(allowedWeapons.getCount());
-	std::copy(allowedArmors.get(), allowedArmors.end(), this->allowedArmors.begin());
-	std::copy(allowedShields.get(), allowedShields.end(), this->allowedShields.begin());
-	std::copy(allowedWeapons.get(), allowedWeapons.end(), this->allowedWeapons.begin());
+	std::copy(allowedArmors.begin(), allowedArmors.end(), this->allowedArmors.begin());
+	std::copy(allowedShields.begin(), allowedShields.end(), this->allowedShields.begin());
+	std::copy(allowedWeapons.begin(), allowedWeapons.end(), this->allowedWeapons.begin());
 
 	this->castsMagic = castsMagic;
 	this->healthDie = healthDie;

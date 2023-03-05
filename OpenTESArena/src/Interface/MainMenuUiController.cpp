@@ -328,7 +328,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
 				DebugAssert(cityReservedBlocks != nullptr);
 				Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-				std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.get());
+				std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
 				return buffer;
 			}();
 
@@ -408,7 +408,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
 				DebugAssert(cityReservedBlocks != nullptr);
 				Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-				std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.get());
+				std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
 				return buffer;
 			}();
 

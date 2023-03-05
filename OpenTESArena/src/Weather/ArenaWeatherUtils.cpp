@@ -99,7 +99,7 @@ Buffer<Color> ArenaWeatherUtils::makeSkyColors(ArenaTypes::WeatherType weatherTy
 	fullPalette.fill(darkness);
 
 	// Copy the sky palette over the center of the full palette.
-	std::copy(palette.begin(), palette.end(), fullPalette.get() + (fullPalette.getCount() / 4));
+	std::copy(palette.begin(), palette.end(), fullPalette.begin() + (fullPalette.getCount() / 4));
 	return fullPalette;
 }
 
@@ -107,7 +107,7 @@ Buffer<uint8_t> ArenaWeatherUtils::makeThunderstormColors(const ExeData &exeData
 {
 	const auto &srcColors = exeData.weather.thunderstormFlashColors;
 	Buffer<uint8_t> colors(static_cast<int>(srcColors.size()));
-	std::copy(srcColors.begin(), srcColors.end(), colors.get());
+	std::copy(srcColors.begin(), srcColors.end(), colors.begin());
 	return colors;
 }
 

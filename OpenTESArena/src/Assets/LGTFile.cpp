@@ -14,7 +14,7 @@ bool LGTFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	constexpr int elementCount = LGTFile::ELEMENTS_PER_PALETTE * LGTFile::PALETTE_COUNT;
 	const uint8_t *srcEnd = srcPtr + elementCount;

@@ -9,7 +9,7 @@
 void RandomUtils::shuffle(BufferView<int> buffer)
 {
 	std::random_device randomDevice;
-	std::shuffle(buffer.get(), buffer.end(), std::default_random_engine(randomDevice()));
+	std::shuffle(buffer.begin(), buffer.end(), std::default_random_engine(randomDevice()));
 }
 
 void RandomUtils::shuffle(BufferView<int> buffer, Random &random)

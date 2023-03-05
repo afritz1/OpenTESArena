@@ -214,7 +214,7 @@ bool ExeUnpacker::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Generate the bit trees for "duplication mode". Since the Duplication1 table has 
 	// a special case at index 11, split the insertions up for the first bit tree.

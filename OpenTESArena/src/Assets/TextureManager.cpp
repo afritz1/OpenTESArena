@@ -386,13 +386,13 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 			// Expand 16-bit to 32-bit for now since I don't want to add another texture builder format.
 			Buffer<uint32_t> trueColorBuffer(srcPixelCount);
-			std::transform(srcPixels, srcPixels + srcPixelCount, trueColorBuffer.get(),
+			std::transform(srcPixels, srcPixels + srcPixelCount, trueColorBuffer.begin(),
 				[](const uint16_t srcPixel)
 			{
 				return static_cast<uint32_t>(Bytes::getLE16(reinterpret_cast<const uint8_t*>(&srcPixel)));
 			});
 
-			TextureBuilder textureBuilder = makeTrueColor(TXTFile::WIDTH, TXTFile::HEIGHT, trueColorBuffer.get());
+			TextureBuilder textureBuilder = makeTrueColor(TXTFile::WIDTH, TXTFile::HEIGHT, trueColorBuffer.begin());
 			outTextures->init(1);
 			outTextures->set(0, std::move(textureBuilder));
 		}

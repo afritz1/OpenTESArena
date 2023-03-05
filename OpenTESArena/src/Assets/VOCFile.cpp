@@ -31,7 +31,7 @@ bool VOCFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Read part of the .VOC header. Bytes 0 to 18 contain "Creative Voice File",
 	// and byte 19 prevents the whole file from being printed by accident.

@@ -364,7 +364,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				{
 					DebugAssert(cityDef.reservedBlocks != nullptr);
 					Buffer<uint8_t> buffer(static_cast<int>(cityDef.reservedBlocks->size()));
-					std::copy(cityDef.reservedBlocks->begin(), cityDef.reservedBlocks->end(), buffer.get());
+					std::copy(cityDef.reservedBlocks->begin(), cityDef.reservedBlocks->end(), buffer.begin());
 					return buffer;
 				}();
 

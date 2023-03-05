@@ -140,7 +140,7 @@ bool Manager::read(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA)
 	stream->seekg(0, std::ios::end);
 	dst->init(static_cast<int>(stream->tellg()));
 	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(dst->get()), dst->getCount());
+	stream->read(reinterpret_cast<char*>(dst->begin()), dst->getCount());
 	return true;
 }
 
@@ -165,7 +165,7 @@ bool Manager::readCaseInsensitive(const char *name, Buffer<std::byte> *dst, bool
 	stream->seekg(0, std::ios::end);
 	dst->init(static_cast<int>(stream->tellg()));
 	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(dst->get()), dst->getCount());
+	stream->read(reinterpret_cast<char*>(dst->begin()), dst->getCount());
 	return true;
 }
 

@@ -720,7 +720,7 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 				return false;
 			}
 
-			const auto iter = std::find(this->lightningAnimIndices.get(), this->lightningAnimIndices.end(), i);
+			const auto iter = std::find(this->lightningAnimIndices.begin(), this->lightningAnimIndices.end(), i);
 			return iter != this->lightningAnimIndices.end();
 		}();
 

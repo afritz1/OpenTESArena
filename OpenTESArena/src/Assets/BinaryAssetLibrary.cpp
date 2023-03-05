@@ -188,7 +188,7 @@ bool BinaryAssetLibrary::initClasses(const ExeData &exeData)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Character class generation members (to be set).
 	auto &classes = this->classesDat.classes;
@@ -235,7 +235,7 @@ bool BinaryAssetLibrary::initStandardSpells()
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 	ArenaTypes::SpellData::initArray(this->standardSpells, srcPtr);
 	return true;
 }
@@ -283,7 +283,7 @@ bool BinaryAssetLibrary::initWorldMapMasks()
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Beginning of the mask data.
 	constexpr int startOffset = 0x87D5;

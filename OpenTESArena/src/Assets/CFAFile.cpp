@@ -19,7 +19,7 @@ bool CFAFile::init(const char *filename)
 		return false;
 	}
 
-	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Read CFA header. Fortunately, all CFAs have headers, unlike IMGs and CIFs.
 	const uint16_t widthUncompressed = Bytes::getLE16(srcPtr);
@@ -78,7 +78,7 @@ bool CFAFile::init(const char *filename)
 
 			// Copy the current line to the scratch buffer.
 			const uint8_t *decompPtr = decomp.data() + offset;
-			std::copy(decompPtr, decompPtr + widthCompressed, encoded.get());
+			std::copy(decompPtr, decompPtr + widthCompressed, encoded.begin());
 
 			// Lambda for which demux routine to do, based on bits per pixel.
 			auto runDemux = [&dst, dstOffset, &count, &encoded, &translate, lookUpTable](
@@ -87,7 +87,7 @@ bool CFAFile::init(const char *filename)
 			{
 				for (uint32_t x = 0; x < end; x++)
 				{
-					demux(encoded.get() + (x * demuxMultiplier), translate.data());
+					demux(encoded.begin() + (x * demuxMultiplier), translate.data());
 
 					uint32_t upTo = std::min(upToMin, count);
 					count -= upTo;
@@ -106,12 +106,11 @@ bool CFAFile::init(const char *filename)
 			if (bitsPerPixel == 8)
 			{
 				// No demuxing needed.
-				const uint8_t *encodedPtr = encoded.get();
 				uint8_t *dstPtr = dst.get();
 				for (uint32_t x = 0; x < widthCompressed; x++)
 				{
 					const int dstIndex = x + dstOffset;
-					dstPtr[dstIndex] = encodedPtr[x];
+					dstPtr[dstIndex] = encoded[x];
 				}
 			}
 			else if (bitsPerPixel == 7)

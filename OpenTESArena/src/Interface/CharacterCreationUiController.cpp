@@ -744,12 +744,12 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
 			DebugAssert(cityReservedBlocks != nullptr);
 			Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-			std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.get());
+			std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
 			return buffer;
 		}();
 
 		const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() ->std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+			[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
 		{
 			if (cityDef.hasMainQuestTempleOverride)
 			{

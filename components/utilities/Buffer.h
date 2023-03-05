@@ -36,15 +36,15 @@ public:
 
 	bool isValid() const
 	{
-		return this->data.get() != nullptr;
+		return this->data != nullptr;
 	}
 
-	T *get()
+	T *begin()
 	{
 		return this->data.get();
 	}
 
-	const T *get() const
+	const T *begin() const
 	{
 		return this->data.get();
 	}
@@ -54,7 +54,7 @@ public:
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
-		return this->data.get()[index];
+		return this->data[index];
 	}
 
 	const T &get(int index) const
@@ -62,19 +62,27 @@ public:
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
-		return this->data.get()[index];
+		return this->data[index];
+	}
+
+	T &operator[](int index)
+	{
+		return this->get(index);
+	}
+
+	const T &operator[](int index) const
+	{
+		return this->get(index);
 	}
 
 	T *end()
 	{
-		DebugAssert(this->isValid());
-		return this->data.get() + this->count;
+		return this->isValid() ? (this->data.get() + this->count) : nullptr;
 	}
 
 	const T *end() const
 	{
-		DebugAssert(this->isValid());
-		return this->data.get() + this->count;
+		return this->isValid() ? (this->data.get() + this->count) : nullptr;
 	}
 
 	int getCount() const
@@ -87,7 +95,7 @@ public:
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
-		this->data.get()[index] = value;
+		this->data[index] = value;
 	}
 
 	void set(int index, T &&value)
@@ -95,13 +103,12 @@ public:
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
-		this->data.get()[index] = std::move(value);
+		this->data[index] = std::move(value);
 	}
 
 	void fill(const T &value)
 	{
-		DebugAssert(this->isValid());
-		std::fill(this->data.get(), this->end(), value);
+		std::fill(this->begin(), this->end(), value);
 	}
 
 	void clear()
