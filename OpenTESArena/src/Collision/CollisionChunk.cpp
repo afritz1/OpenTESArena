@@ -57,9 +57,9 @@ CollisionChunk::CollisionMeshDefID CollisionChunk::getOrAddMeshDefIdMapping(cons
 	else
 	{
 		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
-		const BufferView<const double> verticesView(voxelMeshDef.collisionVertices.data(), static_cast<int>(voxelMeshDef.collisionVertices.size()));
-		const BufferView<const double> normalsView(voxelMeshDef.collisionNormals.data(), static_cast<int>(voxelMeshDef.collisionNormals.size()));
-		const BufferView<const int> indicesView(voxelMeshDef.collisionIndices.data(), static_cast<int>(voxelMeshDef.collisionIndices.size()));
+		const BufferView<const double> verticesView(voxelMeshDef.collisionVertices);
+		const BufferView<const double> normalsView(voxelMeshDef.collisionNormals);
+		const BufferView<const int> indicesView(voxelMeshDef.collisionIndices);
 
 		CollisionMeshDefinition collisionMeshDef;
 		collisionMeshDef.init(verticesView, normalsView, indicesView);

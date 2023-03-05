@@ -561,9 +561,7 @@ void Game::handleWindowResized(int width, int height)
 void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
 {
 	// Update screen regions for classic interface player movement.
-	BufferView<Rect> nativeCursorRegionsView(
-		this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
-	GameWorldUiModel::updateNativeCursorRegions(nativeCursorRegionsView, windowWidth, windowHeight);
+	GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect>(this->nativeCursorRegions), windowWidth, windowHeight);
 }
 
 void Game::renderDebugInfo()
@@ -754,10 +752,8 @@ void Game::loop()
 			if (this->isSimulatingScene())
 			{
 				// Handle input for player motion.
-				const BufferView<const Rect> nativeCursorRegionsView(
-					this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
-				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(
-					*this, clampedDt, nativeCursorRegionsView);
+				const BufferView<const Rect> nativeCursorRegionsView(this->nativeCursorRegions);
+				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(*this, clampedDt, nativeCursorRegionsView);
 				PlayerLogicController::turnPlayer(*this, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
 				PlayerLogicController::handlePlayerMovement(*this, clampedDt, nativeCursorRegionsView);
 			}

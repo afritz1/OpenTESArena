@@ -206,7 +206,7 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow, int lineSpacing)
 {
 	const std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(text);
-	const BufferView<const std::string_view> textLinesView(textLines.data(), static_cast<int>(textLines.size()));
+	const BufferView<const std::string_view> textLinesView(textLines);
 	return TextRenderUtils::makeTextureGenInfo(textLinesView, fontDef, shadow, lineSpacing);
 }
 
@@ -376,7 +376,7 @@ void TextRenderUtils::drawTextLine(const std::string_view &line, const FontDefin
 	BufferView2D<uint32_t> &outBuffer)
 {
 	const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
-	const BufferView<const FontDefinition::CharID> charIdsView(charIDs.data(), static_cast<int>(charIDs.size()));
+	const BufferView<const FontDefinition::CharID> charIdsView(charIDs);
 	TextRenderUtils::drawTextLine(charIdsView, fontDef, dstX, dstY, textColor, colorOverrideInfo, shadow, outBuffer);
 }
 

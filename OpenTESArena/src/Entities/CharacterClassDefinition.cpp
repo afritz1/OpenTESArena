@@ -14,22 +14,21 @@ CharacterClassDefinition::CharacterClassDefinition()
 	this->criticalHit = false;
 }
 
-void CharacterClassDefinition::init(std::string &&name, CategoryID categoryID,
-	std::string &&preferredAttributes, const int *allowedArmors, int allowedArmorCount,
-	const int *allowedShields, int allowedShieldCount, const int *allowedWeapons,
-	int allowedWeaponCount, bool castsMagic, int healthDie, int initialExpCap,
-	double lockpickPercent, bool criticalHit, const std::optional<int> &originalClassIndex)
+void CharacterClassDefinition::init(std::string &&name, CategoryID categoryID, std::string &&preferredAttributes,
+	BufferView<const int> allowedArmors, BufferView<const int> allowedShields, BufferView<const int> allowedWeapons,
+	bool castsMagic, int healthDie, int initialExpCap, double lockpickPercent, bool criticalHit,
+	const std::optional<int> &originalClassIndex)
 {
 	this->name = std::move(name);
 	this->categoryID = categoryID;
 	this->preferredAttributes = std::move(preferredAttributes);
 	
-	this->allowedArmors.resize(allowedArmorCount);
-	this->allowedShields.resize(allowedShieldCount);
-	this->allowedWeapons.resize(allowedWeaponCount);
-	std::copy(allowedArmors, allowedArmors + allowedArmorCount, this->allowedArmors.begin());
-	std::copy(allowedShields, allowedShields + allowedShieldCount, this->allowedShields.begin());
-	std::copy(allowedWeapons, allowedWeapons + allowedWeaponCount, this->allowedWeapons.begin());
+	this->allowedArmors.resize(allowedArmors.getCount());
+	this->allowedShields.resize(allowedShields.getCount());
+	this->allowedWeapons.resize(allowedWeapons.getCount());
+	std::copy(allowedArmors.get(), allowedArmors.end(), this->allowedArmors.begin());
+	std::copy(allowedShields.get(), allowedShields.end(), this->allowedShields.begin());
+	std::copy(allowedWeapons.get(), allowedWeapons.end(), this->allowedWeapons.begin());
 
 	this->castsMagic = castsMagic;
 	this->healthDie = healthDie;

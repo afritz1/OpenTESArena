@@ -266,9 +266,9 @@ namespace Physics
 
 		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
-		const BufferView<const double> verticesView(collisionMeshDef.vertices.get(), collisionMeshDef.vertices.getCount());
-		const BufferView<const double> normalsView(collisionMeshDef.normals.get(), collisionMeshDef.normals.getCount());
-		const BufferView<const int> indicesView(collisionMeshDef.indices.get(), collisionMeshDef.indices.getCount());
+		const BufferView<const double> verticesView(collisionMeshDef.vertices);
+		const BufferView<const double> normalsView(collisionMeshDef.normals);
+		const BufferView<const int> indicesView(collisionMeshDef.indices);
 
 		// Each collision triangle is formed by 6 indices.
 		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
@@ -369,9 +369,9 @@ namespace Physics
 
 		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
-		const BufferView<const double> verticesView(collisionMeshDef.vertices.get(), collisionMeshDef.vertices.getCount());
-		const BufferView<const double> normalsView(collisionMeshDef.normals.get(), collisionMeshDef.normals.getCount());
-		const BufferView<const int> indicesView(collisionMeshDef.indices.get(), collisionMeshDef.indices.getCount());
+		const BufferView<const double> verticesView(collisionMeshDef.vertices);
+		const BufferView<const double> normalsView(collisionMeshDef.normals);
+		const BufferView<const int> indicesView(collisionMeshDef.indices);
 
 		// Each collision triangle is formed by 6 indices.
 		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);

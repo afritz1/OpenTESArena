@@ -12,17 +12,17 @@ ChunkManager::ChunkManager()
 
 BufferView<const ChunkInt2> ChunkManager::getActiveChunkPositions() const
 {
-	return BufferView<const ChunkInt2>(this->activeChunkPositions.data(), static_cast<int>(this->activeChunkPositions.size()));
+	return BufferView<const ChunkInt2>(this->activeChunkPositions);
 }
 
 BufferView<const ChunkInt2> ChunkManager::getNewChunkPositions() const
 {
-	return BufferView<const ChunkInt2>(this->newChunkPositions.data(), static_cast<int>(this->newChunkPositions.size()));
+	return BufferView<const ChunkInt2>(this->newChunkPositions);
 }
 
 BufferView<const ChunkInt2> ChunkManager::getFreedChunkPositions() const
 {
-	return BufferView<const ChunkInt2>(this->freedChunkPositions.data(), static_cast<int>(this->freedChunkPositions.size()));
+	return BufferView<const ChunkInt2>(this->freedChunkPositions);
 }
 
 int ChunkManager::getCenterChunkIndex() const

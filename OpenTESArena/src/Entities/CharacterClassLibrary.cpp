@@ -136,10 +136,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 		const bool criticalHit = (classNumberToID & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
 
 		CharacterClassDefinition def;
-		def.init(std::move(name), category, std::move(preferredAttributes),
-			allowedArmors.data(), static_cast<int>(allowedArmors.size()),
-			allowedShields.data(), static_cast<int>(allowedShields.size()),
-			allowedWeapons.data(), static_cast<int>(allowedWeapons.size()),
+		def.init(std::move(name), category, std::move(preferredAttributes), allowedArmors, allowedShields, allowedWeapons,
 			mage, healthDie, initialExperienceCap, lockpickPercent, criticalHit, classIndex);
 
 		this->defs.push_back(std::move(def));

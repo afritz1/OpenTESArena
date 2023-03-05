@@ -66,12 +66,12 @@ Panel::~Panel()
 
 BufferView<const ButtonProxy> Panel::getButtonProxies() const
 {
-	return BufferView<const ButtonProxy>(this->buttonProxies.data(), static_cast<int>(this->buttonProxies.size()));
+	return BufferView<const ButtonProxy>(this->buttonProxies);
 }
 
 BufferView<const UiDrawCall> Panel::getDrawCalls() const
 {
-	return BufferView<const UiDrawCall>(this->drawCalls.data(), static_cast<int>(this->drawCalls.size()));
+	return BufferView<const UiDrawCall>(this->drawCalls);
 }
 
 void Panel::onPauseChanged(bool paused)

@@ -203,7 +203,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 	}
 
-	BufferView<LevelDefinition> levelDefView(this->levels.get(), this->levels.getCount());
+	BufferView<LevelDefinition> levelDefView(this->levels);
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
@@ -352,11 +352,9 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	const BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(
-		uniqueWildBlockIDs.data(), static_cast<int>(uniqueWildBlockIDs.size()));
-	const BufferView2D<const int> levelDefIndicesConstView(levelDefIndices.get(),
-		levelDefIndices.getWidth(), levelDefIndices.getHeight());
-	BufferView<LevelDefinition> levelDefsView(this->levels.get(), this->levels.getCount());
+	const BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(uniqueWildBlockIDs);
+	const BufferView2D<const int> levelDefIndicesConstView(levelDefIndices.get(), levelDefIndices.getWidth(), levelDefIndices.getHeight());
+	BufferView<LevelDefinition> levelDefsView(this->levels);
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
 	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView, cityDef, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef,

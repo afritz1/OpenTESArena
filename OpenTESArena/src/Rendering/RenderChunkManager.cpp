@@ -570,10 +570,10 @@ void RenderChunkManager::init(Renderer &renderer)
 		2, 3, 0
 	};
 
-	const BufferView<const double> entityVerticesView(entityVertices.data(), static_cast<int>(entityVertices.size()));
-	const BufferView<const double> entityNormalsView(dummyEntityNormals.data(), static_cast<int>(dummyEntityNormals.size()));
-	const BufferView<const double> entityTexCoordsView(entityTexCoords.data(), static_cast<int>(entityTexCoords.size()));
-	const BufferView<const int32_t> entityIndicesView(entityIndices.data(), static_cast<int>(entityIndices.size()));
+	const BufferView<const double> entityVerticesView(entityVertices);
+	const BufferView<const double> entityNormalsView(dummyEntityNormals);
+	const BufferView<const double> entityTexCoordsView(entityTexCoords);
+	const BufferView<const int32_t> entityIndicesView(entityIndices);
 	renderer.populateVertexBuffer(this->entityMeshDef.vertexBufferID, entityVerticesView);
 	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormalsView);
 	renderer.populateAttributeBuffer(this->entityMeshDef.texCoordBufferID, entityTexCoordsView);
@@ -683,17 +683,17 @@ ObjectTextureID RenderChunkManager::getEntityTextureID(EntityInstanceID entityIn
 
 BufferView<const RenderDrawCall> RenderChunkManager::getVoxelDrawCalls() const
 {
-	return BufferView<const RenderDrawCall>(this->voxelDrawCallsCache.data(), static_cast<int>(this->voxelDrawCallsCache.size()));
+	return BufferView<const RenderDrawCall>(this->voxelDrawCallsCache);
 }
 
 BufferView<const RenderDrawCall> RenderChunkManager::getEntityDrawCalls() const
 {
-	return BufferView<const RenderDrawCall>(this->entityDrawCallsCache.data(), static_cast<int>(this->entityDrawCallsCache.size()));
+	return BufferView<const RenderDrawCall>(this->entityDrawCallsCache);
 }
 
 BufferView<const RenderDrawCall> RenderChunkManager::getTotalDrawCalls() const
 {
-	return BufferView<const RenderDrawCall>(this->totalDrawCallsCache.data(), static_cast<int>(this->totalDrawCallsCache.size()));
+	return BufferView<const RenderDrawCall>(this->totalDrawCallsCache);
 }
 
 void RenderChunkManager::loadVoxelTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer)
@@ -1452,7 +1452,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 		entityDir.x, 0.0, entityDir.y
 	};
 
-	const BufferView<const double> entityNormalsView(entityNormals.data(), static_cast<int>(entityNormals.size()));
+	const BufferView<const double> entityNormalsView(entityNormals);
 	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormalsView);
 	
 	// @todo: move this some place better

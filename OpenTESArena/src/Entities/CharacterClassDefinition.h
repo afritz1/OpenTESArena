@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "components/utilities/BufferView.h"
+
 class CharacterClassDefinition
 {
 public:
@@ -27,11 +29,9 @@ public:
 	CharacterClassDefinition();
 
 	void init(std::string &&name, CategoryID categoryID, std::string &&preferredAttributes,
-		const int *allowedArmors, int allowedArmorCount,
-		const int *allowedShields, int allowedShieldCount,
-		const int *allowedWeapons, int allowedWeaponCount,
-		bool castsMagic, int healthDie, int initialExpCap, double lockpickPercent,
-		bool criticalHit, const std::optional<int> &originalClassIndex);
+		BufferView<const int> allowedArmors, BufferView<const int> allowedShields, BufferView<const int> allowedWeapons,
+		bool castsMagic, int healthDie, int initialExpCap, double lockpickPercent, bool criticalHit,
+		const std::optional<int> &originalClassIndex);
 
 	// Gets the experience required for the given level with some initial experience cap.
 	static int getExperienceCap(int level, int initialExpCap);

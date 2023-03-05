@@ -706,9 +706,8 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 	}
 
 	// Handle held mouse buttons and keys.
-	const BufferView<const InputActionMap*> activeMapsView(activeMaps.data(), static_cast<int>(activeMaps.size()));
-	const BufferView<const InputActionListenerEntry*> enabledInputActionListenersView(
-		enabledInputActionListeners.data(), static_cast<int>(enabledInputActionListeners.size()));
+	const BufferView<const InputActionMap*> activeMapsView(activeMaps);
+	const BufferView<const InputActionListenerEntry*> enabledInputActionListenersView(enabledInputActionListeners);
 	Int2 mousePosition;
 	const uint32_t mouseState = SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
 	this->handleHeldInputs(game, activeMapsView, enabledInputActionListenersView, mouseState, mousePosition, dt);

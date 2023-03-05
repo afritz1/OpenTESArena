@@ -55,13 +55,13 @@ namespace ArenaMeshUtils
 			this->alphaTestedIndices0.fill(-1);
 			this->opaqueIndicesPtrs = { &this->opaqueIndices0, &this->opaqueIndices1, &this->opaqueIndices2 };
 
-			this->verticesView = BufferView<double>(this->vertices.data(), static_cast<int>(this->vertices.size()));
-			this->normalsView = BufferView<double>(this->normals.data(), static_cast<int>(this->normals.size()));
-			this->texCoordsView = BufferView<double>(this->texCoords.data(), static_cast<int>(this->texCoords.size()));
-			this->opaqueIndices0View = BufferView<int32_t>(this->opaqueIndices0.data(), static_cast<int>(this->opaqueIndices0.size()));
-			this->opaqueIndices1View = BufferView<int32_t>(this->opaqueIndices1.data(), static_cast<int>(this->opaqueIndices1.size()));
-			this->opaqueIndices2View = BufferView<int32_t>(this->opaqueIndices2.data(), static_cast<int>(this->opaqueIndices2.size()));
-			this->alphaTestedIndices0View = BufferView<int32_t>(this->alphaTestedIndices0.data(), static_cast<int>(this->alphaTestedIndices0.size()));
+			this->verticesView.init(this->vertices);
+			this->normalsView.init(this->normals);
+			this->texCoordsView.init(this->texCoords);
+			this->opaqueIndices0View.init(this->opaqueIndices0);
+			this->opaqueIndices1View.init(this->opaqueIndices1);
+			this->opaqueIndices2View.init(this->opaqueIndices2);
+			this->alphaTestedIndices0View.init(this->alphaTestedIndices0);
 		}
 	};
 
@@ -82,9 +82,9 @@ namespace ArenaMeshUtils
 			this->normals.fill(0.0);
 			this->indices.fill(-1);
 
-			this->verticesView = BufferView<double>(this->vertices.data(), static_cast<int>(this->vertices.size()));
-			this->normalsView = BufferView<double>(this->normals.data(), static_cast<int>(this->normals.size()));
-			this->indicesView = BufferView<int32_t>(this->indices.data(), static_cast<int>(this->indices.size()));
+			this->verticesView = BufferView<double>(this->vertices);
+			this->normalsView = BufferView<double>(this->normals);
+			this->indicesView = BufferView<int32_t>(this->indices);
 		}
 	};
 

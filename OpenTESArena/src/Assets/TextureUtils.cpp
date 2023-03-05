@@ -322,8 +322,8 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 
 	std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(text);
 	constexpr TextAlignment alignment = TextAlignment::TopLeft;
-	TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines.data(), static_cast<int>(textLines.size())),
-		fontDef, dstX, dstY, textColor, alignment, lineSpacing, nullptr, nullptr, surfacePixelsView);
+	TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines), fontDef, dstX, dstY, textColor,
+		alignment, lineSpacing, nullptr, nullptr, surfacePixelsView);
 	
 	return surface;
 }

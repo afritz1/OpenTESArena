@@ -522,7 +522,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					// Shuffle citizen direction indices so they don't all switch to the same
 					// direction every time.
 					std::array<int, 4> randomDirectionIndices = { 0, 1, 2, 3 };
-					RandomUtils::shuffle(randomDirectionIndices.data(), static_cast<int>(randomDirectionIndices.size()), random);
+					RandomUtils::shuffle(randomDirectionIndices, random);
 
 					const auto iter = std::find_if(randomDirectionIndices.begin(), randomDirectionIndices.end(),
 						[&getVoxelAtDistance, &isSuitableVoxel, curDirectionName](int dirIndex)

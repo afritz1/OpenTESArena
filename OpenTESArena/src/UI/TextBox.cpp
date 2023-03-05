@@ -203,9 +203,8 @@ void TextBox::updateTexture()
 			(this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
 		const TextRenderUtils::TextShadowInfo *shadowInfoPtr =
 			this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
-		TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines.data(), static_cast<int>(textLines.size())),
-			fontDef, 0, 0, this->properties.defaultColor, this->properties.alignment, this->properties.lineSpacing,
-			colorOverrideInfoPtr, shadowInfoPtr, textureView);
+		TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines), fontDef, 0, 0, this->properties.defaultColor,
+			this->properties.alignment, this->properties.lineSpacing, colorOverrideInfoPtr, shadowInfoPtr, textureView);
 	}
 
 	this->textureRef.unlockTexels();
