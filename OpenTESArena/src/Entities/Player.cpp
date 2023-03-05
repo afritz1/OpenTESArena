@@ -27,8 +27,7 @@ namespace // @todo: could be in a PlayerUtils instead
 	constexpr double GRAVITY = 9.81;
 
 	// Friction for slowing the player down on ground.
-	constexpr double FRICTION_DYNAMIC = 4.0;
-	constexpr double FRICTION_STATIC = 16.0;
+	constexpr double FRICTION = 3.0;
 }
 
 Player::Player()
@@ -54,7 +53,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->camera.init(position, direction);
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
-	this->friction = FRICTION_STATIC;
+	this->friction = FRICTION;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
 }
@@ -71,7 +70,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->camera.init(position, direction);
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
-	this->friction = FRICTION_STATIC;
+	this->friction = FRICTION;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
 }
@@ -89,6 +88,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	this->camera.init(position, direction);
 	this->velocity = Double3::Zero;
 	this->maxWalkSpeed = Player::DEFAULT_WALK_SPEED;
+	this->friction = FRICTION;
 
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
 	const int weaponID = [&random, &charClassDef]()
@@ -397,16 +397,6 @@ void Player::setVelocityToZero()
 	this->velocity = Double3::Zero;
 }
 
-void Player::setFrictionToDynamic()
-{
-	this->friction = FRICTION_DYNAMIC;
-}
-
-void Player::setFrictionToStatic()
-{
-	this->friction = FRICTION_STATIC;
-}
-
 void Player::setDirectionToHorizon()
 {
 	const CoordDouble3 &coord = this->getPosition();
@@ -505,6 +495,10 @@ void Player::tick(Game &game, double dt)
 	if (!isGhostModeEnabled)
 	{
 		this->updatePhysics(activeLevelInst, dt);
+	}
+	else
+	{
+		this->setVelocityToZero(); // Prevent leftover momentum when switching modes.
 	}
 
 	// Tick weapon animation.

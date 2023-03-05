@@ -103,8 +103,6 @@ namespace PlayerLogicController
 			// Only attempt to accelerate if a direction was chosen.
 			if (accelDirection.lengthSquared() > 0.0)
 			{
-				player.setFrictionToDynamic();
-
 				// Use a normalized direction.
 				accelDirection = accelDirection.normalized();
 
@@ -128,8 +126,6 @@ namespace PlayerLogicController
 		}
 		else if ((forward || backward || ((left || right) && lCtrl) || space) && isOnGround)
 		{
-			player.setFrictionToDynamic();
-
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
 
@@ -174,7 +170,7 @@ namespace PlayerLogicController
 		}
 		else if (isOnGround)
 		{
-			player.setFrictionToStatic();
+			player.setVelocityToZero();
 		}
 	}
 
@@ -201,8 +197,6 @@ namespace PlayerLogicController
 		{
 			if ((forward || backward || left || right || jump) && isOnGround)
 			{
-				player.setFrictionToDynamic();
-
 				// Check for jumping first so the player can't slide jump on the first frame.
 				if (jump)
 				{
@@ -240,7 +234,7 @@ namespace PlayerLogicController
 			}
 			else if (isOnGround)
 			{
-				player.setFrictionToStatic();
+				player.setVelocityToZero();
 			}
 		}
 		else

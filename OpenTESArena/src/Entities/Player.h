@@ -104,12 +104,6 @@ public:
 	// Sets velocity vector to zero. Intended for stopping the player after level transitions.
 	void setVelocityToZero();
 
-	// Sets friction low to speed up walking.
-	void setFrictionToDynamic();
-
-	// Sets friction high to slow down faster.
-	void setFrictionToStatic();
-
 	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
 	void setDirectionToHorizon();
 
