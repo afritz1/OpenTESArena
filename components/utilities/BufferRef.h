@@ -12,6 +12,7 @@ private:
 public:
 	BufferRef(ContainerT *container, int index)
 	{
+		DebugAssert(container != nullptr);
 		this->container = container;
 		this->index = index;
 	}
@@ -32,7 +33,7 @@ public:
 
 	int getCount() const
 	{
-		return static_cast<int>(std::size(this->get()));
+		return static_cast<int>(std::size(*this->container));
 	}
 };
 
