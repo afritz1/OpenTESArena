@@ -564,21 +564,6 @@ std::optional<TextureFileMetadataID> TextureManager::tryGetMetadataID(const char
 	return static_cast<TextureFileMetadataID>(iter->second);
 }
 
-PaletteRef TextureManager::getPaletteRef(PaletteID id) const
-{
-	return PaletteRef(&this->palettes, static_cast<int>(id));
-}
-
-TextureBuilderRef TextureManager::getTextureBuilderRef(TextureBuilderID id) const
-{
-	return TextureBuilderRef(&this->textureBuilders, static_cast<int>(id));
-}
-
-TextureFileMetadataRef TextureManager::getMetadataRef(TextureFileMetadataID id) const
-{
-	return TextureFileMetadataRef(&this->metadatas, static_cast<int>(id));
-}
-
 const Palette &TextureManager::getPaletteHandle(PaletteID id) const
 {
 	DebugAssertIndex(this->palettes, id);

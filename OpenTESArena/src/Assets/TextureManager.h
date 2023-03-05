@@ -14,16 +14,9 @@
 #include "../Utilities/Palette.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferRef.h"
 #include "components/utilities/BufferRef2D.h"
 
 struct TextureAsset;
-
-// BufferRef variations for avoiding returning easily-stale handles from texture manager.
-// All references are read-only interfaces.
-using PaletteRef = BufferRef<const std::vector<Palette>, const Palette>;
-using TextureBuilderRef = BufferRef2D<const std::vector<TextureBuilder>, const TextureBuilder>;
-using TextureFileMetadataRef = BufferRef2D<const std::vector<TextureFileMetadata>, const TextureFileMetadata>;
 
 class TextureManager
 {
@@ -59,12 +52,6 @@ public:
 	std::optional<TextureBuilderID> tryGetTextureBuilderID(const char *filename);
 	std::optional<TextureBuilderID> tryGetTextureBuilderID(const TextureAsset &textureAsset);
 	std::optional<TextureFileMetadataID> tryGetMetadataID(const char *filename);
-
-	// Texture getter functions, fast look-up. These return reference wrappers to avoid dangling pointer
-	// issues with internal buffer resizing.
-	PaletteRef getPaletteRef(PaletteID id) const;
-	TextureBuilderRef getTextureBuilderRef(TextureBuilderID id) const;
-	TextureFileMetadataRef getMetadataRef(TextureFileMetadataID id) const;
 
 	// Texture getter functions, fast look-up. These do not protect against dangling pointers.
 	const Palette &getPaletteHandle(PaletteID id) const;
