@@ -2,8 +2,11 @@
 #define BUFFER_VIEW_H
 
 #include <algorithm>
+#include <array>
 #include <type_traits>
+#include <vector>
 
+#include "Buffer.h"
 #include "../debug/Debug.h"
 
 // Simple non-owning view over a 1D range of data. Useful when separating a container from the usage
@@ -36,6 +39,54 @@ public:
 		this->init(data, count);
 	}
 
+	template<typename U>
+	BufferView(Buffer<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getCount());
+	}
+
+	template<typename U>
+	BufferView(const Buffer<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getCount());
+	}
+
+	template<typename U>
+	BufferView(std::vector<U> &vec)
+	{
+		this->init(static_cast<T*>(vec.data()), static_cast<int>(vec.size()));
+	}
+
+	template<typename U>
+	BufferView(const std::vector<U> &vec)
+	{
+		this->init(static_cast<T*>(vec.data()), static_cast<int>(vec.size()));
+	}
+
+	template<typename U, size_t Length>
+	BufferView(std::array<U, Length> &arr)
+	{
+		this->init(static_cast<T*>(arr.data()), static_cast<int>(arr.size()));
+	}
+
+	template<typename U, size_t Length>
+	BufferView(const std::array<U, Length> &arr)
+	{
+		this->init(static_cast<T*>(arr.data()), static_cast<int>(arr.size()));
+	}
+
+	template<typename U, size_t Length>
+	BufferView(U(&arr)[Length])
+	{
+		this->init(static_cast<T*>(std::begin(arr)), static_cast<int>(std::size(arr)));
+	}
+
+	template<typename U, size_t Length>
+	BufferView(const U(&arr)[Length])
+	{
+		this->init(static_cast<T*>(std::begin(arr)), static_cast<int>(std::size(arr)));
+	}
+
 	void init(T *data, int count, int viewOffset, int viewCount)
 	{
 		DebugAssert(count >= 0);
@@ -51,13 +102,61 @@ public:
 		this->init(data, count, 0, count);
 	}
 
+	template<typename U>
+	void init(Buffer<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getCount());
+	}
+
+	template<typename U>
+	void init(const Buffer<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getCount());
+	}
+
+	template<typename U>
+	void init(std::vector<U> &vec)
+	{
+		this->init(static_cast<T*>(vec.data()), static_cast<int>(vec.size()));
+	}
+
+	template<typename U>
+	void init(const std::vector<U> &vec)
+	{
+		this->init(static_cast<T*>(vec.data()), static_cast<int>(vec.size()));
+	}
+
+	template<typename U, size_t Length>
+	void init(std::array<U, Length> &arr)
+	{
+		this->init(static_cast<T*>(arr.data()), static_cast<int>(arr.size()));
+	}
+
+	template<typename U, size_t Length>
+	void init(const std::array<U, Length> &arr)
+	{
+		this->init(static_cast<T*>(arr.data()), static_cast<int>(arr.size()));
+	}
+
+	template<typename U, size_t Length>
+	void init(U(&arr)[Length])
+	{
+		this->init(static_cast<T*>(std::begin(arr)), static_cast<int>(std::size(arr)));
+	}
+
+	template<typename U, size_t Length>
+	void init(const U(&arr)[Length])
+	{
+		this->init(static_cast<T*>(std::begin(arr)), static_cast<int>(std::size(arr)));
+	}
+
 	bool isValid() const
 	{
 		return this->data != nullptr;
 	}
 
 	T *get()
-	{		
+	{
 		return this->data;
 	}
 
@@ -80,6 +179,16 @@ public:
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
 		return this->data[index];
+	}
+
+	T &operator[](int index)
+	{
+		return this->get(index);
+	}
+
+	const T &operator[](int index) const
+	{
+		return this->get(index);
 	}
 
 	T *end()
