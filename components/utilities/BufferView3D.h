@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "Buffer3D.h"
 #include "../debug/Debug.h"
 
 // Non-owning view over a 3D range of data stored in memory as a 1D array. More complex than 2D buffer
@@ -11,7 +12,7 @@
 
 // Data can be null. Only need assertions on things that reach into the buffer itself.
 
-template <typename T>
+template<typename T>
 class BufferView3D
 {
 private:
@@ -28,8 +29,7 @@ private:
 		DebugAssert(x < this->viewWidth);
 		DebugAssert(y < this->viewHeight);
 		DebugAssert(z < this->viewDepth);
-		return (viewX + x) + ((viewY + y) * this->width) +
-			((viewZ + z) * this->width * this->height);
+		return (viewX + x) + ((viewY + y) * this->width) + ((viewZ + z) * this->width * this->height);
 	}
 public:
 	BufferView3D()
@@ -49,6 +49,18 @@ public:
 	BufferView3D(T *data, int width, int height, int depth)
 	{
 		this->init(data, width, height, depth);
+	}
+
+	template<typename U>
+	BufferView3D(Buffer3D<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
+	}
+
+	template<typename U>
+	BufferView3D(const Buffer3D<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
 	}
 
 	void init(T *data, int width, int height, int depth, int viewX, int viewY, int viewZ,
@@ -81,6 +93,18 @@ public:
 	void init(T *data, int width, int height, int depth)
 	{
 		this->init(data, width, height, depth, 0, 0, 0, width, height, depth);
+	}
+
+	template<typename U>
+	void init(Buffer3D<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
+	}
+
+	template<typename U>
+	void init(const Buffer3D<U> &buffer)
+	{
+		this->init(static_cast<T*>(buffer.get()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
 	}
 
 	bool isValid() const
