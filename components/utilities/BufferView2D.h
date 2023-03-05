@@ -20,6 +20,7 @@ private:
 	int width, height; // Dimensions of original 2D array.
 	int viewX, viewY; // View coordinates.
 	int viewWidth, viewHeight; // View dimensions.
+	bool sliced; // Whether the view is part of a larger buffer, causing it to not be fully contiguous.
 
 	int getIndex(int x, int y) const
 	{
@@ -27,7 +28,15 @@ private:
 		DebugAssert(y >= 0);
 		DebugAssert(x < this->viewWidth);
 		DebugAssert(y < this->viewHeight);
-		return (viewX + x) + ((viewY + y) * this->width);
+
+		if (!this->sliced)
+		{
+			return x + (y * this->width);
+		}
+		else
+		{
+			return (viewX + x) + ((viewY + y) * this->width);
+		}
 	}
 public:
 	BufferView2D()
@@ -77,6 +86,7 @@ public:
 		this->viewY = viewY;
 		this->viewWidth = viewWidth;
 		this->viewHeight = viewHeight;
+		this->sliced = (viewWidth < width) || (viewHeight < height);
 	}
 
 	void init(T *data, int width, int height)
@@ -103,7 +113,7 @@ public:
 
 	bool isSlice() const
 	{
-		return (this->viewWidth < this->width) || (this->viewHeight < this->height);
+		return this->sliced;
 	}
 
 	T *begin()
@@ -176,14 +186,19 @@ public:
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 		
-		DebugAssert(this->isValid());
-
-		for (int y = 0; y < this->viewHeight; y++)
+		if (!this->isSlice())
 		{
-			// Elements in a row are adjacent in memory.
-			T *startPtr = this->data + this->getIndex(0, y);
-			T *endPtr = startPtr + this->viewWidth;
-			std::fill(startPtr, endPtr, value);
+			std::fill(this->begin(), this->end(), value);
+		}
+		else
+		{
+			for (int y = 0; y < this->viewHeight; y++)
+			{
+				// Elements in a row are adjacent in memory.
+				T *startPtr = this->data + this->getIndex(0, y);
+				T *endPtr = startPtr + this->viewWidth;
+				std::fill(startPtr, endPtr, value);
+			}
 		}
 	}
 
@@ -196,6 +211,7 @@ public:
 		this->viewY = 0;
 		this->viewWidth = 0;
 		this->viewHeight = 0;
+		this->sliced = false;
 	}
 };
 

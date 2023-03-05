@@ -230,8 +230,7 @@ public:
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 
-		DebugAssert(this->isValid());
-		std::fill(this->data, this->end(), value);
+		std::fill(this->begin(), this->end(), value);
 	}
 
 	void reset()

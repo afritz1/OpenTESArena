@@ -20,6 +20,7 @@ private:
 	int width, height, depth; // Dimensions of original 3D array.
 	int viewX, viewY, viewZ; // View coordinates.
 	int viewWidth, viewHeight, viewDepth; // View dimensions.
+	bool sliced; // Whether the view is part of a larger buffer, causing it to not be fully contiguous.
 
 	int getIndex(int x, int y, int z) const
 	{
@@ -29,7 +30,15 @@ private:
 		DebugAssert(x < this->viewWidth);
 		DebugAssert(y < this->viewHeight);
 		DebugAssert(z < this->viewDepth);
-		return (viewX + x) + ((viewY + y) * this->width) + ((viewZ + z) * this->width * this->height);
+
+		if (!this->sliced)
+		{
+			return x + (y * this->width) + (z * (this->width * this->height));
+		}
+		else
+		{
+			return (viewX + x) + ((viewY + y) * this->width) + ((viewZ + z) * this->width * this->height);
+		}
 	}
 public:
 	BufferView3D()
@@ -88,6 +97,7 @@ public:
 		this->viewWidth = viewWidth;
 		this->viewHeight = viewHeight;
 		this->viewDepth = viewDepth;
+		this->sliced = (viewWidth < width) || (viewHeight < height) || (viewDepth < depth);
 	}
 
 	void init(T *data, int width, int height, int depth)
@@ -114,7 +124,7 @@ public:
 
 	bool isSlice() const
 	{
-		return (this->viewWidth < this->width) || (this->viewHeight < this->height) || (this->viewDepth < this->depth);
+		return this->sliced;
 	}
 
 	T *begin()
@@ -192,16 +202,21 @@ public:
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 
-		DebugAssert(this->isValid());
-
-		for (int z = 0; z < this->viewDepth; z++)
+		if (!this->isSlice())
 		{
-			for (int y = 0; y < this->viewHeight; y++)
+			std::fill(this->begin(), this->end(), value);
+		}
+		else
+		{
+			for (int z = 0; z < this->viewDepth; z++)
 			{
-				// Elements in a row are adjacent in memory.
-				T *startPtr = this->data + this->getIndex(0, y, z);
-				T *endPtr = startPtr + this->viewWidth;
-				std::fill(startPtr, endPtr, value);
+				for (int y = 0; y < this->viewHeight; y++)
+				{
+					// Elements in a row are adjacent in memory.
+					T *startPtr = this->data + this->getIndex(0, y, z);
+					T *endPtr = startPtr + this->viewWidth;
+					std::fill(startPtr, endPtr, value);
+				}
 			}
 		}
 	}
@@ -218,6 +233,7 @@ public:
 		this->viewWidth = 0;
 		this->viewHeight = 0;
 		this->viewDepth = 0;
+		this->sliced = false;
 	}
 };
 
