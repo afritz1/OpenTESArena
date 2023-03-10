@@ -4,8 +4,8 @@
 #include <array>
 #include <cstdint>
 #include <string_view>
-#include <vector>
 
+#include "Buffer.h"
 #include "String.h"
 
 namespace StringView
@@ -21,17 +21,16 @@ namespace StringView
 	std::string_view substr(const std::string_view &str, size_t offset, size_t count);
 
 	// Splits a string view on the given character.
-	std::vector<std::string_view> split(const std::string_view &str, char separator);
+	Buffer<std::string_view> split(const std::string_view &str, char separator);
 
 	// Splits a string view on whitespace.
-	std::vector<std::string_view> split(const std::string_view &str);
+	Buffer<std::string_view> split(const std::string_view &str);
 
 	// Splits a string view on the given character without allocating the destination array.
 	// Breaks early if too many splits are encountered. Returns whether the split count matches
 	// the destination size.
 	template <size_t T>
-	bool splitExpected(const std::string_view &str, char separator,
-		std::array<std::string_view, T> &dst)
+	bool splitExpected(const std::string_view &str, char separator, std::array<std::string_view, T> &dst)
 	{
 		static_assert(T > 0);
 

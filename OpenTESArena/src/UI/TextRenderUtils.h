@@ -11,6 +11,7 @@
 #include "../Utilities/Color.h"
 #include "../Utilities/Palette.h"
 
+#include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
@@ -72,7 +73,7 @@ namespace TextRenderUtils
 	};
 
 	// Splits a string of text into lines based on newline characters.
-	std::vector<std::string_view> getTextLines(const std::string_view &text);
+	Buffer<std::string_view> getTextLines(const std::string_view &text);
 
 	// Gets the font characters needed to render each character in the given line of text.
 	std::vector<FontDefinition::CharID> getLineFontCharIDs(const std::string_view &line, const FontDefinition &fontDef);

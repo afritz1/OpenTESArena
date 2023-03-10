@@ -217,8 +217,8 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	};
 
 	constexpr char VALUE_SEPARATOR = ',';
-	const std::vector<std::string_view> strs = StringView::split(valueStr, VALUE_SEPARATOR);
-	if (strs.size() == 0)
+	const Buffer<std::string_view> strs = StringView::split(valueStr, VALUE_SEPARATOR);
+	if (strs.getCount() == 0)
 	{
 		DebugLogWarning("No music definition in string \"" + std::string(valueStr) + "\".");
 		return false;
@@ -228,12 +228,12 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 
 	if (type == MusicDefinition::Type::CharacterCreation)
 	{
-		DebugAssert(strs.size() == 1);
+		DebugAssert(strs.getCount() == 1);
 		outDefinition->initCharacterCreation(std::move(musicFilename));
 	}
 	else if (type == MusicDefinition::Type::Cinematic)
 	{
-		DebugAssert(strs.size() == 2);
+		DebugAssert(strs.getCount() == 2);
 
 		MusicDefinition::CinematicMusicDefinition::Type cinematicType;
 		if (!tryParseCinematicType(strs[1], &cinematicType))
@@ -246,7 +246,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	}
 	else if (type == MusicDefinition::Type::Interior)
 	{
-		DebugAssert(strs.size() == 2);
+		DebugAssert(strs.getCount() == 2);
 
 		MusicDefinition::InteriorMusicDefinition::Type interiorType;
 		if (!tryParseInteriorType(strs[1], &interiorType))
@@ -259,7 +259,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	}
 	else if (type == MusicDefinition::Type::Jingle)
 	{
-		DebugAssert(strs.size() == 3);
+		DebugAssert(strs.getCount() == 3);
 
 		ArenaTypes::CityType cityType;
 		if (!tryParseJingleCityType(strs[1], &cityType))
@@ -279,23 +279,23 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	}
 	else if (type == MusicDefinition::Type::MainMenu)
 	{
-		DebugAssert(strs.size() == 1);
+		DebugAssert(strs.getCount() == 1);
 		outDefinition->initMainMenu(std::move(musicFilename));
 	}
 	else if (type == MusicDefinition::Type::Night)
 	{
-		DebugAssert(strs.size() == 1);
+		DebugAssert(strs.getCount() == 1);
 		outDefinition->initNight(std::move(musicFilename));
 	}
 	else if (type == MusicDefinition::Type::Swimming)
 	{
-		DebugAssert(strs.size() == 1);
+		DebugAssert(strs.getCount() == 1);
 		outDefinition->initSwimming(std::move(musicFilename));
 	}
 	else if (type == MusicDefinition::Type::Weather)
 	{
 		// Variable arguments depending on the weather type.
-		DebugAssert(strs.size() >= 2);
+		DebugAssert(strs.getCount() >= 2);
 
 		WeatherDefinition::Type weatherType;
 		if (!tryParseWeatherType(strs[1], &weatherType))
@@ -307,7 +307,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		WeatherDefinition weatherDef;
 		if (weatherType == WeatherDefinition::Type::Clear)
 		{
-			if (strs.size() != 2)
+			if (strs.getCount() != 2)
 			{
 				DebugLogWarning("Incorrect argument count for clear weather music definition \"" + std::string(valueStr) + "\".");
 				return false;
@@ -317,7 +317,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		}
 		else if (weatherType == WeatherDefinition::Type::Overcast)
 		{
-			if (strs.size() != 3)
+			if (strs.getCount() != 3)
 			{
 				DebugLogWarning("Incorrect argument count for overcast weather music definition \"" + std::string(valueStr) + "\".");
 				return false;
@@ -334,7 +334,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		}
 		else if (weatherType == WeatherDefinition::Type::Rain)
 		{
-			if (strs.size() != 3)
+			if (strs.getCount() != 3)
 			{
 				DebugLogWarning("Incorrect argument count for rain weather music definition \"" + std::string(valueStr) + "\".");
 				return false;
@@ -351,7 +351,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		}
 		else if (weatherType == WeatherDefinition::Type::Snow)
 		{
-			if (strs.size() != 4)
+			if (strs.getCount() != 4)
 			{
 				DebugLogWarning("Incorrect argument count for snow weather music definition \"" + std::string(valueStr) + "\".");
 				return false;

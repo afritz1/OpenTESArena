@@ -277,14 +277,14 @@ bool INFFile::init(const char *filename)
 			const std::string TOP_STR = "TOP"; // Only occurs in LABRNTH{1,2}.INF.
 
 			// See what the type in the line is.
-			const std::vector<std::string_view> tokens = StringView::split(line);
-			const std::string_view firstToken = tokens.at(0);
+			const Buffer<std::string_view> tokens = StringView::split(line);
+			const std::string_view firstToken = tokens[0];
 			const std::string_view firstTokenType = firstToken.substr(1, firstToken.size() - 1);
 
 			if (firstTokenType == BOXCAP_STR)
 			{
 				// Write the *BOXCAP's ID to the floor state.
-				floorState->boxCapID = std::stoi(std::string(tokens.at(1)));
+				floorState->boxCapID = std::stoi(std::string(tokens[1]));
 				floorState->mode = FloorState::Mode::BoxCap;
 			}
 			else if (firstTokenType == CEILING_STR)
@@ -295,19 +295,19 @@ bool INFFile::init(const char *filename)
 
 				// Check up to three numbers on the right: ceiling height, box scale,
 				// and indoor/outdoor dungeon boolean. Sometimes there are no numbers.
-				if (tokens.size() >= 2)
+				if (tokens.getCount() >= 2)
 				{
-					floorState->ceilingData->height = std::stoi(std::string(tokens.at(1)));
+					floorState->ceilingData->height = std::stoi(std::string(tokens[1]));
 				}
 
-				if (tokens.size() >= 3)
+				if (tokens.getCount() >= 3)
 				{
-					floorState->ceilingData->boxScale = std::stoi(std::string(tokens.at(2)));
+					floorState->ceilingData->boxScale = std::stoi(std::string(tokens[2]));
 				}
 
-				if (tokens.size() == 4)
+				if (tokens.getCount() == 4)
 				{
-					floorState->ceilingData->outdoorDungeon = tokens.at(3) == "1";
+					floorState->ceilingData->outdoorDungeon = tokens[3] == "1";
 				}
 			}
 			else if (firstTokenType == TOP_STR)
@@ -317,16 +317,16 @@ bool INFFile::init(const char *filename)
 			}
 			else
 			{
-				DebugCrash("Unrecognized @FLOOR section \"" + std::string(tokens.at(0)) + "\".");
+				DebugCrash("Unrecognized @FLOOR section \"" + std::string(tokens[0]) + "\".");
 			}
 		}
 		else if (!floorState.has_value())
 		{
 			// No current floor state, so the current line is a loose texture filename
 			// (found in some city .INFs).
-			const std::vector<std::string_view> tokens = StringView::split(line, '#');
+			const Buffer<std::string_view> tokens = StringView::split(line, '#');
 
-			if (tokens.size() == 1)
+			if (tokens.getCount() == 1)
 			{
 				// A regular filename (like an .IMG).
 				this->voxelTextures.emplace_back(VoxelTextureData(line.c_str()));
@@ -334,8 +334,8 @@ bool INFFile::init(const char *filename)
 			else
 			{
 				// A .SET filename. Expand it for each of the .SET indices.
-				const std::string_view textureName = StringView::trimBack(tokens.at(0));
-				const int setSize = std::stoi(std::string(tokens.at(1)));
+				const std::string_view textureName = StringView::trimBack(tokens[0]);
+				const int setSize = std::stoi(std::string(tokens[1]));
 
 				for (int i = 0; i < setSize; i++)
 				{
@@ -350,10 +350,10 @@ bool INFFile::init(const char *filename)
 			const int currentIndex = [this, &floorState, &line]()
 			{
 				// If the line contains a '#', it's a .SET file.
-				const std::vector<std::string_view> tokens = StringView::split(line, '#');
+				const Buffer<std::string_view> tokens = StringView::split(line, '#');
 
 				// Assign texture data depending on whether the line is for a .SET file.
-				if (tokens.size() == 1)
+				if (tokens.getCount() == 1)
 				{
 					// Just a regular texture (like an .IMG).
 					floorState->textureName = line;
@@ -364,8 +364,8 @@ bool INFFile::init(const char *filename)
 				else
 				{
 					// Left side is the filename, right side is the .SET size.
-					floorState->textureName = StringView::trimBack(tokens.at(0));
-					const int setSize = std::stoi(std::string(tokens.at(1)));
+					floorState->textureName = StringView::trimBack(tokens[0]);
+					const int setSize = std::stoi(std::string(tokens[1]));
 
 					for (int i = 0; i < setSize; i++)
 					{
@@ -427,19 +427,19 @@ bool INFFile::init(const char *filename)
 			const std::string WETCHASM_STR = "WETCHASM";
 
 			// See what the type in the line is.
-			const std::vector<std::string_view> tokens = StringView::split(line);
-			const std::string_view firstToken = tokens.at(0);
+			const Buffer<std::string_view> tokens = StringView::split(line);
+			const std::string_view firstToken = tokens[0];
 			const std::string_view firstTokenType = firstToken.substr(1, firstToken.size() - 1);
 
 			if (firstTokenType == BOXCAP_STR)
 			{
 				wallState->mode = WallState::Mode::BoxCap;
-				wallState->boxCapIDs.emplace_back(std::stoi(std::string(tokens.at(1))));
+				wallState->boxCapIDs.emplace_back(std::stoi(std::string(tokens[1])));
 			}
 			else if (firstTokenType == BOXSIDE_STR)
 			{
 				wallState->mode = WallState::Mode::BoxSide;
-				wallState->boxSideIDs.emplace_back(std::stoi(std::string(tokens.at(1))));
+				wallState->boxSideIDs.emplace_back(std::stoi(std::string(tokens[1])));
 			}
 			else if (firstTokenType == DOOR_STR)
 			{
@@ -467,7 +467,7 @@ bool INFFile::init(const char *filename)
 			else if (firstTokenType == MENU_STR)
 			{
 				wallState->mode = WallState::Mode::Menu;
-				wallState->menuID = std::stoi(std::string(tokens.at(1)));
+				wallState->menuID = std::stoi(std::string(tokens[1]));
 			}
 			else if (firstTokenType == TRANS_STR)
 			{
@@ -497,9 +497,9 @@ bool INFFile::init(const char *filename)
 		else if (!wallState.has_value())
 		{
 			// No existing wall state, so this line contains a "loose" texture name.
-			const std::vector<std::string_view> tokens = StringView::split(line, '#');
+			const Buffer<std::string_view> tokens = StringView::split(line, '#');
 
-			if (tokens.size() == 1)
+			if (tokens.getCount() == 1)
 			{
 				// A regular filename (like an .IMG).
 				this->voxelTextures.emplace_back(VoxelTextureData(line.c_str()));
@@ -507,8 +507,8 @@ bool INFFile::init(const char *filename)
 			else
 			{
 				// A .SET filename. Expand it for each of the .SET indices.
-				const std::string_view textureName = StringView::trimBack(tokens.at(0));
-				const int setSize = std::stoi(std::string(tokens.at(1)));
+				const std::string_view textureName = StringView::trimBack(tokens[0]);
+				const int setSize = std::stoi(std::string(tokens[1]));
 
 				for (int i = 0; i < setSize; i++)
 				{
@@ -523,10 +523,10 @@ bool INFFile::init(const char *filename)
 			const int currentIndex = [this, &wallState, &line]()
 			{
 				// If the line contains a '#', it's a .SET file.
-				const std::vector<std::string_view> tokens = StringView::split(line, '#');
+				const Buffer<std::string_view> tokens = StringView::split(line, '#');
 
 				// Assign texture data depending on whether the line is for a .SET file.
-				if (tokens.size() == 1)
+				if (tokens.getCount() == 1)
 				{
 					// Just a regular texture (like an .IMG).
 					wallState->textureName = line;
@@ -537,8 +537,8 @@ bool INFFile::init(const char *filename)
 				else
 				{
 					// Left side is the filename, right side is the .SET size.
-					wallState->textureName = StringView::trimBack(tokens.at(0));
-					const int setSize = std::stoi(std::string(tokens.at(1)));
+					wallState->textureName = StringView::trimBack(tokens[0]);
+					const int setSize = std::stoi(std::string(tokens[1]));
 
 					for (int i = 0; i < setSize; i++)
 					{
@@ -612,14 +612,14 @@ bool INFFile::init(const char *filename)
 			const std::string ITEM_STR = "ITEM";
 
 			// See what the type in the line is.
-			const std::vector<std::string_view> tokens = StringView::split(line);
-			const std::string_view firstToken = tokens.at(0);
+			const Buffer<std::string_view> tokens = StringView::split(line);
+			const std::string_view firstToken = tokens[0];
 			const std::string_view firstTokenType = firstToken.substr(1, firstToken.size() - 1);
 
 			if (firstTokenType == ITEM_STR)
 			{
 				flatState->mode = FlatState::Mode::Item;
-				flatState->itemID = std::stoi(std::string(tokens.at(1)));
+				flatState->itemID = std::stoi(std::string(tokens[1]));
 			}
 			else
 			{
@@ -694,9 +694,8 @@ bool INFFile::init(const char *filename)
 					const char modifierType = std::toupper(modifierStr.at(0));
 
 					// The modifier value comes after the modifier separator.
-					const std::vector<std::string_view> modifierTokens =
-						StringView::split(modifierStr, MODIFIER_SEPARATOR);
-					const int modifierValue = std::stoi(std::string(modifierTokens.at(1)));
+					const Buffer<std::string_view> modifierTokens = StringView::split(modifierStr, MODIFIER_SEPARATOR);
+					const int modifierValue = std::stoi(std::string(modifierTokens[1]));
 
 					if (modifierType == FLAT_PROPERTIES_MODIFIER)
 					{
@@ -721,8 +720,7 @@ bool INFFile::init(const char *filename)
 					}
 					else
 					{
-						DebugCrash("Unrecognized modifier \""
-							+ std::to_string(modifierType) + "\".");
+						DebugCrash("Unrecognized modifier \"" + std::to_string(modifierType) + "\".");
 					}
 				}
 			}
@@ -735,9 +733,9 @@ bool INFFile::init(const char *filename)
 	auto parseSoundLine = [this](const std::string &line)
 	{
 		// Split into the filename and ID. Make sure the filename is all caps.
-		const std::vector<std::string_view> tokens = StringView::split(line);
-		std::string vocFilename = String::toUppercase(std::string(tokens.front()));
-		const int vocID = std::stoi(std::string(tokens.at(1)));
+		const Buffer<std::string_view> tokens = StringView::split(line);
+		std::string vocFilename = String::toUppercase(std::string(tokens[0]));
+		const int vocID = std::stoi(std::string(tokens[1]));
 		this->sounds.emplace(vocID, std::move(vocFilename));
 	};
 
@@ -753,10 +751,10 @@ bool INFFile::init(const char *filename)
 		// Otherwise, parse the line based on the current mode.
 		if (line.front() == TEXT_CHAR)
 		{
-			const std::vector<std::string_view> tokens = StringView::split(line);
+			const Buffer<std::string_view> tokens = StringView::split(line);
 
 			// Get the ID after *TEXT.
-			const int textID = std::stoi(std::string(tokens.at(1)));
+			const int textID = std::stoi(std::string(tokens[1]));
 
 			// If there is existing text state present, save it.
 			if (textState.has_value())
@@ -780,9 +778,9 @@ bool INFFile::init(const char *filename)
 		{
 			// Get riddle numbers.
 			const std::string_view numbers = StringView::substr(line, 1, line.size() - 1);
-			const std::vector<std::string_view> tokens = StringView::split(numbers);
-			const int firstNumber = std::stoi(std::string(tokens.at(0)));
-			const int secondNumber = std::stoi(std::string(tokens.at(1)));
+			const Buffer<std::string_view> tokens = StringView::split(numbers);
+			const int firstNumber = std::stoi(std::string(tokens[0]));
+			const int secondNumber = std::stoi(std::string(tokens[1]));
 
 			textState->mode = TextState::Mode::Riddle;
 			textState->riddleState = TextState::RiddleState(firstNumber, secondNumber);
@@ -910,13 +908,12 @@ bool INFFile::init(const char *filename)
 			};
 
 			// Separate the '@' token from other things in the line (like @FLATS NOSHOW).
-			const std::vector<std::string_view> tokens = StringView::split(line);
-			line = std::string(tokens.front());
+			const Buffer<std::string_view> tokens = StringView::split(line);
+			line = std::string(tokens[0]);
 
 			// See which token the section is.
 			const auto sectionIter = Sections.find(line);
-			DebugAssertMsg(sectionIter != Sections.end(),
-				"Unrecognized .INF section \"" + line + "\".");
+			DebugAssertMsg(sectionIter != Sections.end(), "Unrecognized .INF section \"" + line + "\".");
 
 			// Flush any existing state.
 			flushAllStates();

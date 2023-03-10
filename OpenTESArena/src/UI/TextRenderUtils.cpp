@@ -111,7 +111,7 @@ void TextRenderUtils::TextShadowInfo::init(int offsetX, int offsetY, const Color
 	this->color = color;
 }
 
-std::vector<std::string_view> TextRenderUtils::getTextLines(const std::string_view &text)
+Buffer<std::string_view> TextRenderUtils::getTextLines(const std::string_view &text)
 {
 	// @todo: might eventually handle "\r\n".
 	return StringView::split(text, '\n');
@@ -204,9 +204,8 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const Buffer
 TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view &text,
 	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow, int lineSpacing)
 {
-	const std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(text);
-	const BufferView<const std::string_view> textLinesView(textLines);
-	return TextRenderUtils::makeTextureGenInfo(textLinesView, fontDef, shadow, lineSpacing);
+	const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(text);
+	return TextRenderUtils::makeTextureGenInfo(textLines, fontDef, shadow, lineSpacing);
 }
 
 std::vector<Int2> TextRenderUtils::makeAlignmentOffsets(const BufferView<const std::string_view> &textLines,

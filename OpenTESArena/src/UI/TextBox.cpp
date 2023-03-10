@@ -196,15 +196,13 @@ void TextBox::updateTexture()
 	// Clear texture.
 	textureView.fill(0);
 
-	if (this->text.size() > 0)
+	if (!this->text.empty())
 	{
-		const std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(this->text);
-		const TextRenderUtils::ColorOverrideInfo *colorOverrideInfoPtr =
-			(this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
-		const TextRenderUtils::TextShadowInfo *shadowInfoPtr =
-			this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
-		TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines), fontDef, 0, 0, this->properties.defaultColor,
-			this->properties.alignment, this->properties.lineSpacing, colorOverrideInfoPtr, shadowInfoPtr, textureView);
+		const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(this->text);
+		const TextRenderUtils::ColorOverrideInfo *colorOverrideInfoPtr = (this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
+		const TextRenderUtils::TextShadowInfo *shadowInfoPtr = this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
+		TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, this->properties.defaultColor, this->properties.alignment,
+			this->properties.lineSpacing, colorOverrideInfoPtr, shadowInfoPtr, textureView);
 	}
 
 	this->textureRef.unlockTexels();

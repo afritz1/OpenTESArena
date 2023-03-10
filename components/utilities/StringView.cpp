@@ -30,35 +30,35 @@ std::string_view StringView::substr(const std::string_view &str, size_t offset, 
 	return str.substr(offset, count);
 }
 
-std::vector<std::string_view> StringView::split(const std::string_view &str, char separator)
+Buffer<std::string_view> StringView::split(const std::string_view &str, char separator)
 {
-	std::vector<std::string_view> strings;
+	// Always have at least one view.
+	const int viewCount = 1 + static_cast<int>(std::count(str.begin(), str.end(), separator));
+	Buffer<std::string_view> buffer(viewCount);
+	buffer[0] = std::string_view(str.data(), 0);
 
-	// Add an empty string view to start off. If the given string view is empty, then a
-	// vector with one empty string view is returned.
-	strings.push_back(std::string_view(str.data(), 0));
-
+	int writeIndex = 0;
 	for (size_t i = 0; i < str.size(); i++)
 	{
 		const char c = str[i];
-
 		if (c == separator)
 		{
 			// Start a new string.
-			strings.push_back(std::string_view(str.data() + i + 1, 0));
+			writeIndex++;
+			buffer[writeIndex] = std::string_view(str.data() + i + 1, 0);
 		}
 		else
 		{
 			// Put the character on the end of the current string.
-			std::string_view old = strings.back();
-			strings.back() = std::string_view(old.data(), old.size() + 1);
+			std::string_view &currentView = buffer.get(writeIndex);
+			currentView = std::string_view(currentView.data(), currentView.size() + 1);
 		}
 	}
 
-	return strings;
+	return buffer;
 }
 
-std::vector<std::string_view> StringView::split(const std::string_view &str)
+Buffer<std::string_view> StringView::split(const std::string_view &str)
 {
 	return StringView::split(str, String::SPACE);
 }
