@@ -22,6 +22,7 @@
 #include "../Math/Vector4.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/BufferView.h"
 #include "components/vfs/manager.hpp"
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
@@ -56,13 +57,13 @@ private:
 	/* Read samples from the song and fill the given OpenAL buffer ID (buffer
 	 * vector is for temporary storage). Returns true if the buffer was filled.
 	 */
-	bool fillBuffer(ALuint bufid, std::vector<char> &buffer)
+	bool fillBuffer(ALuint bufid, BufferView<char> buffer)
 	{
 		size_t totalSize = 0;
-		while (totalSize < buffer.size())
+		while (totalSize < buffer.getCount())
 		{
-			const size_t framesToGet = (buffer.size() - totalSize) / mFrameSize;
-			const size_t framesReceived = mSong->read(buffer.data() + totalSize, framesToGet);
+			const size_t framesToGet = (buffer.getCount() - totalSize) / mFrameSize;
+			const size_t framesReceived = mSong->read(buffer.begin() + totalSize, framesToGet);
 
 			bool shouldBreak = false;
 			if (framesReceived < framesToGet)
@@ -96,15 +97,14 @@ private:
 			return false;
 
 		std::fill(buffer.begin() + totalSize, buffer.end(), 0);
-		alBufferData(bufid, mFormat, buffer.data(),
-			static_cast<ALsizei>(buffer.size()), mSampleRate);
+		alBufferData(bufid, mFormat, buffer.begin(), static_cast<ALsizei>(buffer.getCount()), mSampleRate);
 		return true;
 	}
 
 	/* Fill buffers to fill up the source queue. Returns the number of buffers
 	 * queued.
 	 */
-	ALint fillBufferQueue(std::vector<char> &buffer)
+	ALint fillBufferQueue(BufferView<char> buffer)
 	{
 		ALint queued;
 		alGetSourcei(mSource, AL_BUFFERS_QUEUED, &queued);
@@ -128,7 +128,7 @@ private:
 		/* Temporary storage to read samples into, before passing to OpenAL.
 		 * Kept here to avoid reallocating it during playback.
 		 */
-		std::vector<char> buffer(sBufferFrames * mFrameSize);
+		Buffer<char> buffer(sBufferFrames * mFrameSize);
 
 		while (!mQuit.load())
 		{
@@ -572,14 +572,14 @@ void AudioManager::playSound(const std::string &filename, const std::optional<Do
 			const ALenum status = alGetError();
 			if (status != AL_NO_ERROR)
 			{
-				DebugLogWarning("alGenBuffers() error " + std::to_string(status) + ".");
+				DebugLogWarning("alGenBuffers() error: " + std::to_string(status));
 			}
 
-			const std::vector<uint8_t> &audioData = voc.getAudioData();
+			const BufferView<const uint8_t> audioData = voc.getAudioData();
 
 			alBufferData(bufferID, AL_FORMAT_MONO8,
-				static_cast<const ALvoid*>(audioData.data()),
-				static_cast<ALsizei>(audioData.size()),
+				static_cast<const ALvoid*>(audioData.begin()),
+				static_cast<ALsizei>(audioData.getCount()),
 				static_cast<ALsizei>(voc.getSampleRate()));
 
 			vocIter = mSoundBuffers.emplace(filename, bufferID).first;

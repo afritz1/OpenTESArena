@@ -1,7 +1,10 @@
 #ifndef VOC_FILE_H
 #define VOC_FILE_H
 
+#include <cstdint>
 #include <vector>
+
+#include "components/utilities/BufferView.h"
 
 // A .VOC file contains audio data in the Creative Voice format. It's used with any 
 // sounds in Arena, and in the CD version it's also used with voices in cinematics.
@@ -20,7 +23,7 @@ public:
 	int getSampleRate() const;
 
 	// Gets the 8-bit unsigned PCM audio data.
-	const std::vector<uint8_t> &getAudioData() const;
+	BufferView<const uint8_t> getAudioData() const;
 };
 
 #endif

@@ -169,7 +169,7 @@ int VOCFile::getSampleRate() const
 	return this->sampleRate;
 }
 
-const std::vector<uint8_t> &VOCFile::getAudioData() const
+BufferView<const uint8_t> VOCFile::getAudioData() const
 {
 	return this->audioData;
 }
