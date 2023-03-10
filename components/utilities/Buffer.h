@@ -27,11 +27,22 @@ public:
 		this->init(count);
 	}
 
+	Buffer(std::initializer_list<T> list)
+	{
+		this->init(list);
+	}
+
 	void init(int count)
 	{
 		DebugAssert(count >= 0);
 		this->data = std::make_unique<T[]>(count);
 		this->count = count;
+	}
+
+	void init(std::initializer_list<T> list)
+	{
+		this->init(static_cast<int>(list.size()));
+		std::copy(list.begin(), list.end(), this->begin());
 	}
 
 	bool isValid() const
