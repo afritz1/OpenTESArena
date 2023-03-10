@@ -18,7 +18,7 @@ std::string MainQuestSplashUiModel::getDungeonText(Game &game, int provinceID)
 		DebugAssertIndex(splashIndices, provinceID);
 		const int index = splashIndices[provinceID];
 		
-		const auto &dungeonPairs = textAssetLibrary.getDungeonTxtDungeons();
+		const BufferView<const TextAssetLibrary::DungeonTxtEntry> dungeonPairs = textAssetLibrary.getDungeonTxtDungeons();
 		DebugAssertIndex(dungeonPairs, index);
 		return dungeonPairs[index];
 	}();

@@ -41,7 +41,7 @@ struct VoxelMeshDefinition
 
 	bool isEmpty() const;
 	std::vector<int32_t> &getOpaqueIndicesList(int index);
-	const std::vector<int32_t> &getOpaqueIndicesList(int index) const;
+	BufferView<const int32_t> getOpaqueIndicesList(int index) const;
 
 	void writeRendererGeometryBuffers(double ceilingScale, BufferView<double> outVertices,
 		BufferView<double> outNormals, BufferView<double> outTexCoords) const;

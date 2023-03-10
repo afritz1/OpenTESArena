@@ -76,10 +76,10 @@ namespace TextRenderUtils
 	Buffer<std::string_view> getTextLines(const std::string_view &text);
 
 	// Gets the font characters needed to render each character in the given line of text.
-	std::vector<FontDefinition::CharID> getLineFontCharIDs(const std::string_view &line, const FontDefinition &fontDef);
+	Buffer<FontDefinition::CharID> getLineFontCharIDs(const std::string_view &line, const FontDefinition &fontDef);
 
 	// Gets the number of pixels long a rendered line of characters would be.
-	int getLinePixelWidth(const std::vector<FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
+	int getLinePixelWidth(BufferView<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow = std::nullopt);
 	int getLinePixelWidth(const std::string_view &line, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow = std::nullopt);
@@ -98,7 +98,7 @@ namespace TextRenderUtils
 		const std::optional<TextShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 
 	// Generates XY pixel offsets for each line of a text box based on text alignment.
-	std::vector<Int2> makeAlignmentOffsets(const BufferView<const std::string_view> &textLines, int textureWidth,
+	Buffer<Int2> makeAlignmentOffsets(BufferView<const std::string_view> textLines, int textureWidth,
 		int textureHeight, TextAlignment alignment, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow, int lineSpacing);
 

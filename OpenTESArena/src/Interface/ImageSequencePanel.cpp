@@ -13,21 +13,21 @@
 ImageSequencePanel::ImageSequencePanel(Game &game)
 	: Panel(game) { }
 
-bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
-	const std::vector<std::string> &textureNames, const std::vector<double> &imageDurations,
+bool ImageSequencePanel::init(BufferView<const std::string> paletteNames,
+	BufferView<const std::string> textureNames, BufferView<const double> imageDurations,
 	const OnFinishedFunction &onFinished)
 {
-	if (paletteNames.size() != textureNames.size())
+	if (paletteNames.getCount() != textureNames.getCount())
 	{
-		DebugLogError("Palette names size (" + std::to_string(paletteNames.size()) +
-			") doesn't match texture names size (" + std::to_string(textureNames.size()) + ").");
+		DebugLogError("Palette names size (" + std::to_string(paletteNames.getCount()) +
+			") doesn't match texture names size (" + std::to_string(textureNames.getCount()) + ").");
 		return false;
 	}
 
-	if (paletteNames.size() != imageDurations.size())
+	if (paletteNames.getCount() != imageDurations.getCount())
 	{
-		DebugLogError("Palette names size (" + std::to_string(paletteNames.size()) +
-			") doesn't match image durations size (" + std::to_string(imageDurations.size()) + ").");
+		DebugLogError("Palette names size (" + std::to_string(paletteNames.getCount()) +
+			") doesn't match image durations size (" + std::to_string(imageDurations.getCount()) + ").");
 		return false;
 	}
 
@@ -60,7 +60,7 @@ bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	const int textureCount = static_cast<int>(textureNames.size());
+	const int textureCount = textureNames.getCount();
 	this->textureRefs.init(textureCount);
 	for (int i = 0; i < textureCount; i++)
 	{
@@ -93,7 +93,10 @@ bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 		PivotType::TopLeft);
 
 	this->onFinished = onFinished;
-	this->imageDurations = imageDurations;
+	
+	this->imageDurations.init(imageDurations.getCount());
+	std::copy(imageDurations.begin(), imageDurations.end(), this->imageDurations.begin());
+
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
 	return true;
@@ -109,7 +112,7 @@ void ImageSequencePanel::tick(double dt)
 		this->currentSeconds += dt;
 
 		// Step to the next image if its duration has passed.
-		if (this->currentSeconds >= this->imageDurations.at(this->imageIndex))
+		if (this->currentSeconds >= this->imageDurations[this->imageIndex])
 		{
 			this->currentSeconds = 0.0;
 			this->imageIndex++;

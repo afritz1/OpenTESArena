@@ -7,6 +7,8 @@
 
 #include "../Game/CharacterQuestion.h"
 
+#include "components/utilities/BufferView.h"
+
 // Contains assets that are generally human-readable.
 
 // @todo: refactor text processing so we never convert '\r' to '\n'. The engine should handle
@@ -116,10 +118,10 @@ public:
 	// Returns all of the main quest dungeon names paired with their description. 
 	// These are just the dungeons with a unique icon on the world map, not the 
 	// lesser dungeons.
-	const std::vector<DungeonTxtEntry> &getDungeonTxtDungeons() const;
+	BufferView<const DungeonTxtEntry> getDungeonTxtDungeons() const;
 
 	// Returns all of the questions in QUESTION.TXT.
-	const std::vector<CharacterQuestion> &getQuestionTxtQuestions() const;
+	BufferView<const CharacterQuestion> getQuestionTxtQuestions() const;
 
 	// Gets the list of spell maker description strings.
 	const SpellMakerDescriptionArray &getSpellMakerDescriptions() const;

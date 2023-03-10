@@ -45,32 +45,28 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 
 	auto changeToNewGameStory = [changeToCharCreation](Game &game)
 	{
-		std::vector<std::string> paletteNames
+		std::string paletteNames[] =
 		{
 			"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG",
 			"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG",
 			"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG"
 		};
 
-		std::vector<std::string> textureNames
+		std::string textureNames[] =
 		{
 			"INTRO01.IMG", "INTRO02.IMG", "INTRO03.IMG",
 			"INTRO04.IMG", "INTRO05.IMG", "INTRO06.IMG",
 			"INTRO07.IMG", "INTRO08.IMG", "INTRO09.IMG"
 		};
 
-		std::vector<double> imageDurations
+		double imageDurations[] =
 		{
 			5.0, 5.0, 5.0,
 			5.0, 5.0, 5.0,
 			5.0, 5.0, 5.0
 		};
 
-		game.setPanel<ImageSequencePanel>(
-			paletteNames,
-			textureNames,
-			imageDurations,
-			changeToCharCreation);
+		game.setPanel<ImageSequencePanel>(paletteNames, textureNames, imageDurations, changeToCharCreation);
 	};
 
 	game.setPanel<CinematicPanel>(

@@ -121,7 +121,7 @@ double WeaponAnimation::getTimePerFrame() const
 	}
 }
 
-const std::vector<int> &WeaponAnimation::getCurrentRange() const
+BufferView<const int> WeaponAnimation::getCurrentRange() const
 {
 	// Find the range mapped to the weapon and the current animation state.
 	if (this->weaponID == WeaponAnimation::FISTS_ID)
@@ -163,8 +163,8 @@ int WeaponAnimation::getFrameIndex() const
 	// The sheathe animation's frame index should not be used.
 	DebugAssert(!this->isSheathed());
 
-	const std::vector<int> &indices = this->getCurrentRange();
-	return indices.at(this->rangeIndex);
+	BufferView<const int> indices = this->getCurrentRange();
+	return indices[this->rangeIndex];
 }
 
 void WeaponAnimation::setState(WeaponAnimation::State state)
@@ -239,10 +239,10 @@ void WeaponAnimation::tick(double dt)
 			this->rangeIndex++;
 
 			// Get the current range of frame indices.
-			const std::vector<int> &indices = this->getCurrentRange();
+			BufferView<const int> indices = this->getCurrentRange();
 
 			// If the index is outside the range, decide which state is next.
-			if (this->rangeIndex >= indices.size())
+			if (this->rangeIndex >= indices.getCount())
 			{
 				// Start at the beginning of the new range. The range index is not
 				// used in the sheathed state.

@@ -264,7 +264,7 @@ double Renderer::getWindowAspect() const
 	return static_cast<double>(dims.x) / static_cast<double>(dims.y);
 }
 
-const std::vector<Renderer::DisplayMode> &Renderer::getDisplayModes() const
+BufferView<const Renderer::DisplayMode> Renderer::getDisplayModes() const
 {
 	return this->displayModes;
 }

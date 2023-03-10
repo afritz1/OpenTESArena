@@ -117,8 +117,7 @@ Buffer<std::string_view> TextRenderUtils::getTextLines(const std::string_view &t
 	return StringView::split(text, '\n');
 }
 
-std::vector<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const std::string_view &line,
-	const FontDefinition &fontDef)
+Buffer<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const std::string_view &line, const FontDefinition &fontDef)
 {
 	FontDefinition::CharID fallbackCharID;
 	if (!fontDef.tryGetCharacterID("?", &fallbackCharID))
@@ -126,10 +125,13 @@ std::vector<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const st
 		DebugCrash("Couldn't get fallback font character ID from font \"" + fontDef.getName() + "\".");
 	}
 
+	const int lineLength = static_cast<int>(line.size());
+
 	// @todo: support more than ASCII
-	std::vector<FontDefinition::CharID> charIDs;
-	for (const char c : line)
+	Buffer<FontDefinition::CharID> charIDs(lineLength);
+	for (int i = 0; i < lineLength; i++)
 	{
+		const char c = line[i];
 		const std::string charUtf8(1, c);
 		FontDefinition::CharID charID;
 		if (!fontDef.tryGetCharacterID(charUtf8.c_str(), &charID))
@@ -138,13 +140,13 @@ std::vector<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const st
 			charID = fallbackCharID;
 		}
 
-		charIDs.emplace_back(charID);
+		charIDs[i] = charID;
 	}
 
 	return charIDs;
 }
 
-int TextRenderUtils::getLinePixelWidth(const std::vector<FontDefinition::CharID> &charIDs,
+int TextRenderUtils::getLinePixelWidth(BufferView<const FontDefinition::CharID> charIDs,
 	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow)
 {
 	int width = 0;
@@ -165,7 +167,7 @@ int TextRenderUtils::getLinePixelWidth(const std::vector<FontDefinition::CharID>
 int TextRenderUtils::getLinePixelWidth(const std::string_view &line, const FontDefinition &fontDef,
 	const std::optional<TextShadowInfo> &shadow)
 {
-	const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
+	const Buffer<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
 	return TextRenderUtils::getLinePixelWidth(charIDs, fontDef, shadow);
 }
 
@@ -208,12 +210,12 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	return TextRenderUtils::makeTextureGenInfo(textLines, fontDef, shadow, lineSpacing);
 }
 
-std::vector<Int2> TextRenderUtils::makeAlignmentOffsets(const BufferView<const std::string_view> &textLines,
+Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(BufferView<const std::string_view> textLines,
 	int textureWidth, int textureHeight, TextAlignment alignment, const FontDefinition &fontDef,
 	const std::optional<TextShadowInfo> &shadow, int lineSpacing)
 {
 	// Each offset points to the top-left corner of where the line should be rendered.
-	std::vector<Int2> offsets(textLines.getCount());
+	Buffer<Int2> offsets(textLines.getCount());
 
 	// X offsets.
 	if ((alignment == TextAlignment::TopLeft) ||
@@ -373,7 +375,7 @@ void TextRenderUtils::drawTextLine(const std::string_view &line, const FontDefin
 	const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
 	BufferView2D<uint32_t> &outBuffer)
 {
-	const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
+	const Buffer<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
 	const BufferView<const FontDefinition::CharID> charIdsView(charIDs);
 	TextRenderUtils::drawTextLine(charIdsView, fontDef, dstX, dstY, textColor, colorOverrideInfo, shadow, outBuffer);
 }
@@ -391,9 +393,9 @@ void TextRenderUtils::drawTextLines(const BufferView<const std::string_view> &te
 
 	const int textureWidth = outBuffer.getWidth();
 	const int textureHeight = outBuffer.getHeight();
-	const std::vector<Int2> offsets = TextRenderUtils::makeAlignmentOffsets(
+	const Buffer<Int2> offsets = TextRenderUtils::makeAlignmentOffsets(
 		textLines, textureWidth, textureHeight, alignment, fontDef, shadowInfo, lineSpacing);
-	DebugAssert(offsets.size() == textLines.getCount());
+	DebugAssert(offsets.getCount() == textLines.getCount());
 
 	// Draw text to texture.
 	// @todo: might need to draw all shadow lines before all regular lines.

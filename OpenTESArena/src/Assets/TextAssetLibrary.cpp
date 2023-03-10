@@ -905,12 +905,12 @@ const TextAssetLibrary::ArtifactTavernTextArray &TextAssetLibrary::getArtifactTa
 	return this->artifactTavernText2;
 }
 
-const std::vector<TextAssetLibrary::DungeonTxtEntry> &TextAssetLibrary::getDungeonTxtDungeons() const
+BufferView<const TextAssetLibrary::DungeonTxtEntry> TextAssetLibrary::getDungeonTxtDungeons() const
 {
 	return this->dungeonTxt;
 }
 
-const std::vector<CharacterQuestion> &TextAssetLibrary::getQuestionTxtQuestions() const
+BufferView<const CharacterQuestion> TextAssetLibrary::getQuestionTxtQuestions() const
 {
 	return this->questionTxt;
 }

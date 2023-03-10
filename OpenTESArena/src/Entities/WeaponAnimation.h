@@ -3,7 +3,8 @@
 
 #include <cstddef>
 #include <string>
-#include <vector>
+
+#include "components/utilities/BufferView.h"
 
 // Stores the current state of the player's weapon animation.
 
@@ -41,13 +42,13 @@ private:
 	int weaponID;
 	std::string animationFilename;
 	double currentTime;
-	size_t rangeIndex;
+	int rangeIndex;
 
 	// Gets the time in seconds for each animation frame in the current state.
 	double getTimePerFrame() const;
 
 	// Gets the range of indices associated with the current animation state.
-	const std::vector<int> &getCurrentRange() const;
+	BufferView<const int> getCurrentRange() const;
 public:
 	WeaponAnimation();
 

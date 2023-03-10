@@ -328,8 +328,7 @@ Double3 RendererUtils::getSunColor(const Double3 &sunDirection, bool isExterior)
 	}
 }
 
-void RendererUtils::writeSkyColors(const std::vector<Double3> &skyColors,
-	BufferView<Double3> &outSkyColorsView, double daytimePercent)
+void RendererUtils::writeSkyColors(BufferView<const Double3> skyColors, BufferView<Double3> &outSkyColorsView, double daytimePercent)
 {
 	// The "sliding window" of sky colors is backwards in the AM (horizon is latest in the palette)
 	// and forwards in the PM (horizon is earliest in the palette).
@@ -338,7 +337,7 @@ void RendererUtils::writeSkyColors(const std::vector<Double3> &skyColors,
 
 	// Get the real index (not the integer index) of the color for the current time as a
 	// reference point so each sky color can be interpolated between two samples.
-	const int skyColorCount = static_cast<int>(skyColors.size());
+	const int skyColorCount = skyColors.getCount();
 	const double realIndex = MathUtils::getRealIndex(skyColorCount, daytimePercent);
 	const double percent = realIndex - std::floor(realIndex);
 
@@ -348,8 +347,8 @@ void RendererUtils::writeSkyColors(const std::vector<Double3> &skyColors,
 		const int indexDiff = slideDirection * i;
 		const int index = MathUtils::getWrappedIndex(skyColorCount, static_cast<int>(realIndex) + indexDiff);
 		const int nextIndex = MathUtils::getWrappedIndex(skyColorCount, index + slideDirection);
-		const Double3 &color = skyColors.at(index);
-		const Double3 &nextColor = skyColors.at(nextIndex);
+		const Double3 &color = skyColors[index];
+		const Double3 &nextColor = skyColors[nextIndex];
 		const Double3 skyColor = color.lerp(nextColor, isAM ? (1.0 - percent) : percent);
 		outSkyColorsView.set(i, skyColor);
 	}

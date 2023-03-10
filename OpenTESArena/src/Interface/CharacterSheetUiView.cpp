@@ -50,11 +50,11 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std:
 }
 
 std::map<PrimaryAttributeName, TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
-	const std::vector<PrimaryAttribute> &attributes, const FontLibrary &fontLibrary)
+	BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary)
 {
 	std::map<PrimaryAttributeName, TextBox::InitInfo> textBoxInitInfoMap;
 	
-	for (int i = 0; i < static_cast<int>(attributes.size()); i++)
+	for (int i = 0; i < attributes.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = attributes[i];
 		const PrimaryAttributeName attributeName = attribute.getAttributeName();

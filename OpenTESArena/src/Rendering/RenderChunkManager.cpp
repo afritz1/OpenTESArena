@@ -163,7 +163,7 @@ namespace sgTexture
 	}
 
 	void LoadChasmDefTextures(VoxelChunk::ChasmDefID chasmDefID, const VoxelChunk &voxelChunk,
-		const std::vector<RenderChunkManager::LoadedVoxelTexture> &voxelTextures,
+		BufferView<const RenderChunkManager::LoadedVoxelTexture> voxelTextures,
 		std::vector<RenderChunkManager::LoadedChasmFloorTextureList> &chasmFloorTextureLists,
 		std::vector<RenderChunkManager::LoadedChasmTextureKey> &chasmTextureKeys,
 		TextureManager &textureManager, Renderer &renderer)
@@ -632,7 +632,7 @@ ObjectTextureID RenderChunkManager::getChasmFloorTextureID(const ChunkInt2 &chun
 	const int floorListIndex = keyIter->chasmFloorListIndex;
 	DebugAssertIndex(this->chasmFloorTextureLists, floorListIndex);
 	const LoadedChasmFloorTextureList &textureList = this->chasmFloorTextureLists[floorListIndex];
-	const std::vector<ScopedObjectTextureRef> &objectTextureRefs = textureList.objectTextureRefs;
+	BufferView<const ScopedObjectTextureRef> objectTextureRefs = textureList.objectTextureRefs;
 	const int index = textureList.getTextureIndex(chasmAnimPercent);
 	DebugAssertIndex(objectTextureRefs, index);
 	const ScopedObjectTextureRef &objectTextureRef = objectTextureRefs[index];
@@ -768,7 +768,7 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 			const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
 			for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
 			{
-				const int opaqueIndexCount = static_cast<int>(voxelMeshDef.getOpaqueIndicesList(bufferIndex).size());
+				const int opaqueIndexCount = voxelMeshDef.getOpaqueIndicesList(bufferIndex).getCount();
 				IndexBufferID &opaqueIndexBufferID = renderVoxelMeshDef.opaqueIndexBufferIDs[bufferIndex];
 				if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 				{
@@ -1262,10 +1262,10 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 	for (size_t i = 0; i < this->activeChunks.size(); i++)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		const std::vector<RenderDrawCall> &staticDrawCalls = chunkPtr->staticDrawCalls;
-		const std::vector<RenderDrawCall> &doorDrawCalls = chunkPtr->doorDrawCalls;
-		const std::vector<RenderDrawCall> &chasmDrawCalls = chunkPtr->chasmDrawCalls;
-		const std::vector<RenderDrawCall> &fadingDrawCalls = chunkPtr->fadingDrawCalls;
+		BufferView<const RenderDrawCall> staticDrawCalls = chunkPtr->staticDrawCalls;
+		BufferView<const RenderDrawCall> doorDrawCalls = chunkPtr->doorDrawCalls;
+		BufferView<const RenderDrawCall> chasmDrawCalls = chunkPtr->chasmDrawCalls;
+		BufferView<const RenderDrawCall> fadingDrawCalls = chunkPtr->fadingDrawCalls;
 		this->voxelDrawCallsCache.insert(this->voxelDrawCallsCache.end(), staticDrawCalls.begin(), staticDrawCalls.end());
 		this->voxelDrawCallsCache.insert(this->voxelDrawCallsCache.end(), doorDrawCalls.begin(), doorDrawCalls.end());
 		this->voxelDrawCallsCache.insert(this->voxelDrawCallsCache.end(), chasmDrawCalls.begin(), chasmDrawCalls.end());
@@ -1304,8 +1304,8 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 {
 	renderChunk.entityDrawCalls.clear();
 
-	const std::vector<EntityInstanceID> &entityIDs = entityChunk.entityIDs;
-	const int entityCount = static_cast<int>(entityIDs.size());
+	BufferView<const EntityInstanceID> entityIDs = entityChunk.entityIDs;
+	const int entityCount = entityIDs.getCount();
 	for (int i = 0; i < entityCount; i++)
 	{
 		const EntityInstanceID entityInstID = entityIDs[i];
@@ -1349,7 +1349,7 @@ void RenderChunkManager::rebuildEntityDrawCallsList()
 	for (size_t i = 0; i < this->activeChunks.size(); i++)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		const std::vector<RenderDrawCall> &entityDrawCalls = chunkPtr->entityDrawCalls;
+		BufferView<const RenderDrawCall> entityDrawCalls = chunkPtr->entityDrawCalls;
 		this->entityDrawCallsCache.insert(this->entityDrawCallsCache.end(), entityDrawCalls.begin(), entityDrawCalls.end());
 	}
 }

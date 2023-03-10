@@ -13,6 +13,8 @@
 #include "../Assets/TextureUtils.h"
 #include "../UI/Texture.h"
 
+#include "components/utilities/BufferView.h"
+
 class Color;
 class Rect;
 class Surface;
@@ -106,7 +108,7 @@ public:
 	double getWindowAspect() const;
 
 	// Gets a list of supported fullscreen display modes.
-	const std::vector<DisplayMode> &getDisplayModes() const;
+	BufferView<const DisplayMode> getDisplayModes() const;
 
 	// Gets the active window's pixels-per-inch scale divided by platform DPI.
 	double getDpiScale() const;

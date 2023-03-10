@@ -92,7 +92,7 @@ std::vector<int32_t> &VoxelMeshDefinition::getOpaqueIndicesList(int index)
 	return *ptrs[index];
 }
 
-const std::vector<int32_t> &VoxelMeshDefinition::getOpaqueIndicesList(int index) const
+BufferView<const int32_t> VoxelMeshDefinition::getOpaqueIndicesList(int index) const
 {
 	const std::array<const std::vector<int32_t>*, 3> ptrs = { &this->opaqueIndices0, &this->opaqueIndices1, &this->opaqueIndices2 };
 	DebugAssertIndex(ptrs, index);
