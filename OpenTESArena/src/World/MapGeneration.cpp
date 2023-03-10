@@ -1812,7 +1812,7 @@ namespace MapGeneration
 					{
 						constexpr bool isMale = true;
 						const std::string name = textAssetLibrary.generateNpcName(raceID, isMale, nameRandom);
-						const std::string firstName = String::split(name).front();
+						const std::string firstName = String::split(name)[0];
 						return firstName;
 					}();
 

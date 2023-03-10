@@ -22,17 +22,17 @@ std::string Debug::getShorterPath(const char *__file__)
 {
 	// Replace back-slashes with forward slashes, then split.
 	const std::string path = String::replace(std::string(__file__), '\\', '/');
-	const std::vector<std::string> tokens = String::split(path, '/');
+	const Buffer<std::string> tokens = String::split(path, '/');
 
 	std::string shortPath;
 
-	if (tokens.size() >= 2)
+	if (tokens.getCount() >= 2)
 	{
-		shortPath = tokens.at(tokens.size() - 2) + '/' + tokens.back();
+		shortPath = tokens[tokens.getCount() - 2] + '/' + tokens[tokens.getCount() - 1];
 	}
-	else if (tokens.size() == 1)
+	else if (tokens.getCount() == 1)
 	{
-		shortPath = tokens.front();
+		shortPath = tokens[0];
 	}
 
 	return shortPath;

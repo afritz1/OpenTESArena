@@ -93,7 +93,7 @@ std::vector<std::string> TextCinematicUiModel::getSubtitleTextPages(const std::s
 {
 	const int textLineCount = static_cast<int>(std::count(text.begin(), text.end(), '\n'));
 	const int textPagesToMake = static_cast<int>(std::ceil(textLineCount / 3)) + 1;
-	const std::vector<std::string> textLines = String::split(text, '\n');
+	const Buffer<std::string> textLines = String::split(text, '\n');
 
 	// Group up to three text lines per text box.
 	std::vector<std::string> textPages;

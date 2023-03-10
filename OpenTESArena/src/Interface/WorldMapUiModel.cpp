@@ -263,8 +263,8 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 						&random, isMale]()
 					{
 						const std::string fullName = textAssetLibrary.generateNpcName(provinceID, isMale, random);
-						const std::vector<std::string> tokens = String::split(fullName, ' ');
-						return tokens.front();
+						const Buffer<std::string> tokens = String::split(fullName, ' ');
+						return tokens[0];
 					}();
 
 					description.replace(index, 3, rulerFirstName);

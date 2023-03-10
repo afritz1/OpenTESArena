@@ -124,8 +124,8 @@ const std::string &Player::getDisplayName() const
 
 std::string Player::getFirstName() const
 {
-	std::vector<std::string> nameTokens = String::split(this->displayName);
-	return nameTokens.at(0);
+	Buffer<std::string> nameTokens = String::split(this->displayName);
+	return nameTokens[0];
 }
 
 int Player::getPortraitID() const

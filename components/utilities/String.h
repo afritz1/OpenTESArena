@@ -6,7 +6,8 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <vector>
+
+#include "Buffer.h"
 
 // Various string operations and conversions.
 
@@ -25,10 +26,10 @@ namespace String
 	bool caseInsensitiveEquals(const std::string &a, const std::string &b);
 
 	// Splits a string on the given character.
-	std::vector<std::string> split(const std::string &str, char separator);
+	Buffer<std::string> split(const std::string &str, char separator);
 
 	// Splits a string on whitespace.
-	std::vector<std::string> split(const std::string &str);
+	Buffer<std::string> split(const std::string &str);
 
 	// Splits a string on the given character without allocating the destination array. Breaks
 	// early if too many splits are encountered. Returns whether the split count matches the

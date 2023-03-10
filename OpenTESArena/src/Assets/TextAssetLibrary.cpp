@@ -416,7 +416,10 @@ bool TextAssetLibrary::TemplateDat::init()
 		Entry entry;
 		entry.key = key;
 		entry.letter = letter;
-		entry.values = String::split(trimmedValue, '&');
+
+		Buffer<std::string> trimmedValueTokens = String::split(trimmedValue, '&');
+		entry.values = std::vector<std::string>(trimmedValueTokens.getCount());
+		std::move(trimmedValueTokens.begin(), trimmedValueTokens.end(), entry.values.begin());
 
 		// Remove unused text after the last ampersand.
 		entry.values.pop_back();

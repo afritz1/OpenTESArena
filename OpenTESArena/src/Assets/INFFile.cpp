@@ -635,19 +635,19 @@ bool INFFile::init(const char *filename)
 			// modifiers on the right. Each token might be split by tabs or spaces, so always 
 			// check for both cases. The texture name always has a tab on the right though 
 			// (if there's any whitespace).
-			const std::vector<std::string> tokens = [&line, MODIFIER_SEPARATOR]()
+			const Buffer<std::string> tokens = [&line, MODIFIER_SEPARATOR]()
 			{
 				// Trim any extra whitespace (so there are no adjacent duplicates).
 				const std::string trimmedStr = String::trimExtra(line);
 
 				// Replace tabs with spaces.
-				const std::string replacedStr = String::replace(trimmedStr, '\t', ' ');
+				std::string replacedStr = String::replace(trimmedStr, '\t', ' ');
 
 				// Special case at *ITEM 55 in CRYSTAL3.INF: do not split on whitespace,
 				// because there are no modifiers.
 				if (replacedStr.find(MODIFIER_SEPARATOR) == std::string::npos)
 				{
-					return std::vector<std::string>{ replacedStr };
+					return Buffer<std::string> { std::move(replacedStr) };
 				}
 				else
 				{
@@ -662,10 +662,9 @@ bool INFFile::init(const char *filename)
 			// later as a .CFA (supposedly the placeholder .DFAs are for the level editor).
 			const std::string textureName = [&tokens]()
 			{
-				const std::string &firstToken = tokens.at(0);
+				const std::string &firstToken = tokens[0];
 				const bool hasDash = firstToken.at(0) == '-'; // @todo: not sure what this is.
-				return String::toUppercase(hasDash ?
-					firstToken.substr(1, firstToken.size() - 1) : firstToken);
+				return String::toUppercase(hasDash ? firstToken.substr(1, firstToken.size() - 1) : firstToken);
 			}();
 
 			// Add the flat's texture name to the textures vector.
@@ -682,9 +681,9 @@ bool INFFile::init(const char *filename)
 			// If the flat has modifiers, then check each modifier and mutate the flat accordingly.
 			// If it is a creature then it will ignore these modifiers and use ones from the creature
 			// arrays in the .exe data.
-			if (tokens.size() >= 2)
+			if (tokens.getCount() >= 2)
 			{
-				for (size_t i = 1; i < tokens.size(); i++)
+				for (int i = 1; i < tokens.getCount(); i++)
 				{
 					const char FLAT_PROPERTIES_MODIFIER = 'F';
 					const char LIGHT_MODIFIER = 'S';

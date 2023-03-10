@@ -26,32 +26,33 @@ bool String::caseInsensitiveEquals(const std::string &a, const std::string &b)
 	return true;
 }
 
-std::vector<std::string> String::split(const std::string &str, char separator)
+Buffer<std::string> String::split(const std::string &str, char separator)
 {
-	std::vector<std::string> strings;
+	// Always have at least one string.
+	const int stringCount = 1 + static_cast<int>(std::count(str.begin(), str.end(), separator));
+	Buffer<std::string> buffer(stringCount);
 
-	// Add an empty string to start off. If the given string is empty, then a
-	// vector with one empty string is returned.
-	strings.push_back(std::string());
-
-	for (const char c : str)
+	int writeIndex = 0;
+	for (size_t i = 0; i < str.size(); i++)
 	{
+		const char c = str[i];
 		if (c == separator)
 		{
 			// Start a new string.
-			strings.push_back(std::string());
+			writeIndex++;
 		}
 		else
 		{
 			// Put the character on the end of the current string.
-			strings.back().push_back(c);
+			std::string &currentStr = buffer.get(writeIndex);
+			currentStr.push_back(c);
 		}
 	}
 
-	return strings;
+	return buffer;
 }
 
-std::vector<std::string> String::split(const std::string &str)
+Buffer<std::string> String::split(const std::string &str)
 {
 	return String::split(str, String::SPACE);
 }
