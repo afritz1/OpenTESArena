@@ -11,6 +11,7 @@
 #include "ArenaTypes.h"
 
 #include "components/dos/DOSUtils.h"
+#include "components/utilities/BufferView.h"
 
 // An .INF file contains definitions of what the IDs in a .MIF file point to. These 
 // are mostly texture IDs, but also text IDs and sound IDs telling which voxels have 
@@ -152,8 +153,8 @@ private:
 public:
 	bool init(const char *filename);
 
-	const std::vector<VoxelTextureData> &getVoxelTextures() const;
-	const std::vector<FlatTextureData> &getFlatTextures() const;
+	BufferView<const VoxelTextureData> getVoxelTextures() const;
+	BufferView<const FlatTextureData> getFlatTextures() const;
 	const std::optional<int> &getBoxCap(int index) const;
 	const std::optional<int> &getBoxSide(int index) const;
 	const std::optional<int> &getMenu(int index) const;

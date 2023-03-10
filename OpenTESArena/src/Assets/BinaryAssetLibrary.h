@@ -14,6 +14,8 @@
 #include "WorldMapMask.h"
 #include "../Game/CharacterClassGeneration.h"
 
+#include "components/utilities/BufferView.h"
+
 // Contains assets that are generally not human-readable.
 
 class ArenaRandom;
@@ -109,7 +111,7 @@ public:
 	const ArenaTypes::Spellsg &getStandardSpells() const;
 
 	// Gets all the preloaded .RMD files for wilderness generation.
-	const std::vector<RMDFile> &getWildernessChunks() const;
+	BufferView<const RMDFile> getWildernessChunks() const;
 
 	// Gets the mask rectangles used for registering clicks on the world map. There are
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.

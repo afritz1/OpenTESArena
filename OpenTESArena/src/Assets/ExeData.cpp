@@ -982,8 +982,7 @@ bool ExeData::isFloppyVersion() const
 bool ExeData::init(bool floppyVersion)
 {
 	// Load executable.
-	const std::string &exeFilename = floppyVersion ?
-		ExeData::FLOPPY_VERSION_EXE_FILENAME : ExeData::CD_VERSION_EXE_FILENAME;
+	const std::string &exeFilename = floppyVersion ? ExeData::FLOPPY_VERSION_EXE_FILENAME : ExeData::CD_VERSION_EXE_FILENAME;
 	ExeUnpacker exe;
 	if (!exe.init(exeFilename.c_str()))
 	{
@@ -991,11 +990,10 @@ bool ExeData::init(bool floppyVersion)
 		return false;
 	}
 
-	const char *dataPtr = reinterpret_cast<const char*>(exe.getData().data());
+	const char *dataPtr = reinterpret_cast<const char*>(exe.getData().begin());
 
 	// Load key-value map file.
-	const std::string &mapFilename = floppyVersion ?
-		ExeData::FLOPPY_VERSION_MAP_FILENAME : ExeData::CD_VERSION_MAP_FILENAME;
+	const std::string &mapFilename = floppyVersion ? ExeData::FLOPPY_VERSION_MAP_FILENAME : ExeData::CD_VERSION_MAP_FILENAME;
 	KeyValueFile keyValueFile;
 	if (!keyValueFile.init((Platform::getBasePath() + mapFilename).c_str()))
 	{

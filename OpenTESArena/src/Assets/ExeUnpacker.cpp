@@ -251,7 +251,7 @@ bool ExeUnpacker::init(const char *filename)
 	}
 
 	// Calculate length of decompressed data -- more precise method (for A.EXE).
-	const size_t decompLen = [compressedEnd]()
+	const int decompLen = [compressedEnd]()
 	{
 		const uint16_t segment = Bytes::getLE16(compressedEnd);
 		const uint16_t offset = Bytes::getLE16(compressedEnd + 2);
@@ -259,10 +259,11 @@ bool ExeUnpacker::init(const char *filename)
 	}();
 
 	// Buffer for the decompressed data (also little endian).
-	this->exeData = std::vector<uint8_t>(decompLen, 0);
+	this->exeData.init(decompLen);
+	this->exeData.fill(0);
 
 	// Current position for inserting decompressed data.
-	size_t decompIndex = 0;
+	int decompIndex = 0;
 
 	// A 16-bit array of compressed data.
 	uint16_t bitArray = Bytes::getLE16(compressedStart);
@@ -329,7 +330,7 @@ bool ExeUnpacker::init(const char *filename)
 			auto matchesSpecialCase = [](const BitVector &bitVector)
 			{
 				const std::vector<bool> &specialCase = Duplication1.at(11);
-				const bool equalSize = bitVector.count == specialCase.size();
+				const bool equalSize = bitVector.count == static_cast<int>(specialCase.size());
 
 				if (!equalSize)
 				{
@@ -406,11 +407,11 @@ bool ExeUnpacker::init(const char *filename)
 			const uint16_t offset = leastSigByte | (mostSigByte << 8);
 
 			// Finally, duplicate the decompressed data using the calculated offset and size.
-			const size_t duplicateBegin = decompIndex - offset;
-			const size_t duplicateEnd = duplicateBegin + copyCount;
-			for (size_t i = duplicateBegin; i < duplicateEnd; i++, decompIndex++)
+			const int duplicateBegin = decompIndex - offset;
+			const int duplicateEnd = duplicateBegin + copyCount;
+			for (int i = duplicateBegin; i < duplicateEnd; i++, decompIndex++)
 			{
-				this->exeData.at(decompIndex) = this->exeData.at(i);
+				this->exeData[decompIndex] = this->exeData[i];
 			}
 		}
 		else
@@ -433,7 +434,7 @@ bool ExeUnpacker::init(const char *filename)
 			const uint8_t decryptedByte = decrypt(encryptedByte, bitsRead);
 
 			// Append the decrypted byte onto the decompressed data.
-			this->exeData.at(decompIndex) = decryptedByte;
+			this->exeData[decompIndex] = decryptedByte;
 			decompIndex++;
 		}
 	}
@@ -441,7 +442,7 @@ bool ExeUnpacker::init(const char *filename)
 	return true;
 }
 
-const std::vector<uint8_t> &ExeUnpacker::getData() const
+BufferView<const uint8_t> ExeUnpacker::getData() const
 {
 	return this->exeData;
 }

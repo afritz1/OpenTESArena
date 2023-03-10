@@ -969,12 +969,12 @@ bool INFFile::init(const char *filename)
 	return true;
 }
 
-const std::vector<INFFile::VoxelTextureData> &INFFile::getVoxelTextures() const
+BufferView<const INFFile::VoxelTextureData> INFFile::getVoxelTextures() const
 {
 	return this->voxelTextures;
 }
 
-const std::vector<INFFile::FlatTextureData> &INFFile::getFlatTextures() const
+BufferView<const INFFile::FlatTextureData> INFFile::getFlatTextures() const
 {
 	return this->flatTextures;
 }

@@ -115,7 +115,7 @@ namespace ArenaAnimUtils
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 		const char *flatTextureName = [&inf, &flatData]()
 		{
-			const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
+			const BufferView<const INFFile::FlatTextureData> flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, flatData.textureIndex);
 			const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
 			return flatTextureData.filename.c_str();
@@ -522,7 +522,7 @@ namespace ArenaAnimUtils
 			const INFFile::FlatData *corpseFlat = inf.getFlatWithItemIndex(corpseItemIndex);
 			DebugAssertMsg(corpseFlat != nullptr, "Missing human corpse flat.");
 			const int corpseFlatTextureIndex = corpseFlat->textureIndex;
-			const auto &flatTextures = inf.getFlatTextures();
+			const BufferView<const INFFile::FlatTextureData> flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, corpseFlatTextureIndex);
 			const INFFile::FlatTextureData &flatTextureData = flatTextures[corpseFlatTextureIndex];
 			return String::toUppercase(flatTextureData.filename);

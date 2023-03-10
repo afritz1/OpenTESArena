@@ -380,7 +380,7 @@ const ArenaTypes::Spellsg &BinaryAssetLibrary::getStandardSpells() const
 	return this->standardSpells;
 }
 
-const std::vector<RMDFile> &BinaryAssetLibrary::getWildernessChunks() const
+BufferView<const RMDFile> BinaryAssetLibrary::getWildernessChunks() const
 {
 	return this->wildernessChunks;
 }
