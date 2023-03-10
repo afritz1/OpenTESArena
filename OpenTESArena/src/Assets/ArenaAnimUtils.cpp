@@ -157,7 +157,7 @@ namespace ArenaAnimUtils
 
 	// 'Basic' dynamic entity anim state being one of: Idle, Look, Walk.
 	bool tryAddDynamicEntityCreatureBasicAnimState(int creatureID, const char *stateName, double secondsPerFrame,
-		bool isLooping, const std::vector<int> &animIndices, const ExeData &exeData, TextureManager &textureManager,
+		bool isLooping, BufferView<const int> animIndices, const ExeData &exeData, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef)
 	{
 		DebugAssert(outAnimDef != nullptr);
@@ -240,7 +240,7 @@ namespace ArenaAnimUtils
 
 	// Idle or walk animation state for human enemies.
 	bool tryAddDynamicEntityHumanBasicAnimState(int charClassIndex, bool isMale, const char *stateName, double secondsPerFrame,
-		bool isLooping, const std::vector<int> &animIndices, const CharacterClassLibrary &charClassLibrary,
+		bool isLooping, BufferView<const int> animIndices, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
 		DebugAssert(outAnimDef != nullptr);
@@ -555,7 +555,7 @@ namespace ArenaAnimUtils
 
 	// Citizens have idle and walk animation states.
 	bool tryAddDynamicEntityCitizenBasicAnimState(const char *stateName, double secondsPerFrame, bool isLooping,
-		int citizenIndex, bool isMale, const std::vector<int> &animIndices, const ExeData &exeData,
+		int citizenIndex, bool isMale, BufferView<const int> animIndices, const ExeData &exeData,
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
 		// Animation filename list depends on the gender.

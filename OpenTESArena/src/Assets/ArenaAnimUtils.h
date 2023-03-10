@@ -5,8 +5,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_map>
-#include <vector>
 
 #include "ArenaTypes.h"
 #include "INFFile.h"
@@ -52,10 +50,10 @@ namespace ArenaAnimUtils
 	constexpr bool CreatureWalkLoop = true;
 	constexpr bool CreatureAttackLoop = false;
 	constexpr bool CreatureDeathLoop = false;
-	const std::vector<int> CreatureIdleIndices = { 0 };
-	const std::vector<int> CreatureLookIndices = { 6, 0, 7, 0 };
-	const std::vector<int> CreatureWalkIndices = { 0, 1, 2, 3, 4, 5 };
-	const std::vector<int> CreatureAttackIndices = { 8, 9, 10, 11 };
+	constexpr int CreatureIdleIndices[] = { 0 };
+	constexpr int CreatureLookIndices[] = { 6, 0, 7, 0 };
+	constexpr int CreatureWalkIndices[] = { 0, 1, 2, 3, 4, 5 };
+	constexpr int CreatureAttackIndices[] = { 8, 9, 10, 11 };
 
 	// Animation values for human enemies with .CFA files.
 	constexpr double HumanIdleSecondsPerFrame = CreatureIdleSecondsPerFrame;
@@ -66,16 +64,16 @@ namespace ArenaAnimUtils
 	constexpr bool HumanWalkLoop = CreatureWalkLoop;
 	constexpr bool HumanAttackLoop = CreatureAttackLoop;
 	constexpr bool HumanDeathLoop = CreatureDeathLoop;
-	const std::vector<int> HumanIdleIndices = CreatureIdleIndices;
-	const std::vector<int> HumanWalkIndices = CreatureWalkIndices;
+	constexpr int HumanIdleIndices[] = { 0 };
+	constexpr int HumanWalkIndices[] = { 0, 1, 2, 3, 4, 5 };
 
 	// Animation values for citizens with .CFA files.
 	constexpr double CitizenIdleSecondsPerFrame = 1.0 / 4.0;
 	constexpr double CitizenWalkSecondsPerFrame = 1.0 / 16.0;
 	const bool CitizenIdleLoop = HumanIdleLoop;
 	const bool CitizenWalkLoop = HumanWalkLoop;
-	const std::vector<int> CitizenIdleIndices = { 6, 7, 8 };
-	const std::vector<int> CitizenWalkIndices = HumanWalkIndices;
+	constexpr int CitizenIdleIndices[] = { 6, 7, 8 };
+	constexpr int CitizenWalkIndices[] = { 0, 1, 2, 3, 4, 5 };
 
 	// The final boss is sort of a special case. Their *ITEM index is at the very end of 
 	// human enemies, but they are treated like a creature.
