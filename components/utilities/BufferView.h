@@ -240,4 +240,13 @@ public:
 	}
 };
 
+namespace std
+{
+	template<typename T>
+	size_t size(const BufferView<T> &view)
+	{
+		return static_cast<size_t>(view.getCount());
+	}
+}
+
 #endif

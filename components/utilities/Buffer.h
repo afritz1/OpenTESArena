@@ -118,4 +118,13 @@ public:
 	}
 };
 
+namespace std
+{
+	template<typename T>
+	size_t size(const Buffer<T> &buffer)
+	{
+		return static_cast<size_t>(buffer.getCount());
+	}
+}
+
 #endif
