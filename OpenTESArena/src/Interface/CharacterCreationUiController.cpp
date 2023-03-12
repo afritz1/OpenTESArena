@@ -568,8 +568,9 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 	const auto &cinematicLibrary = game.getCinematicLibrary();
 	int textCinematicDefIndex;
+	const TextCinematicDefinition *defPtr = nullptr;
 	const bool success = cinematicLibrary.findTextDefinitionIndexIf(
-		[](const TextCinematicDefinition &def)
+		[&defPtr](const TextCinematicDefinition &def)
 	{
 		if (def.getType() == TextCinematicDefinition::Type::MainQuest)
 		{
@@ -577,6 +578,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 			const bool isMainQuestStartCinematic = mainQuestCinematicDef.progress == 0;
 			if (isMainQuestStartCinematic)
 			{
+				defPtr = &def;
 				return true;
 			}
 		}
@@ -590,10 +592,19 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	}
 
 	game.setCharacterCreationState(nullptr);
-	game.setPanel<TextCinematicPanel>(
-		textCinematicDefIndex,
-		0.171,
-		ChooseAttributesUiController::onPostCharacterCreationCinematicFinished);
+
+	TextureManager &textureManager = game.getTextureManager();
+	const std::string &cinematicFilename = defPtr->getAnimationFilename();
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogError("Couldn't get texture file metadata for main quest start cinematic \"" + cinematicFilename + "\".");
+		return;
+	}
+
+	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+	const double secondsPerFrame = metadata.getSecondsPerFrame();
+	game.setPanel<TextCinematicPanel>(textCinematicDefIndex, secondsPerFrame, ChooseAttributesUiController::onPostCharacterCreationCinematicFinished);
 
 	// Play dream music.
 	const MusicLibrary &musicLibrary = game.getMusicLibrary();

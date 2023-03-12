@@ -263,7 +263,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 				dimensions.set(i, Int2(flc.getWidth(), flc.getHeight()));
 			}
 
-			outMetadata->init(std::string(filename), std::move(dimensions));
+			outMetadata->init(std::string(filename), std::move(dimensions), flc.getSecondsPerFrame());
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_IMG) ||

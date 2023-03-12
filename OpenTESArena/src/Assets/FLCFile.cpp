@@ -120,7 +120,7 @@ bool FLCFile::init(const char *filename)
 		return false;
 	}
 
-	this->frameDuration = static_cast<double>(header.speed) / 1000.0;
+	this->secondsPerFrame = static_cast<double>(header.speed) / 1000.0;
 	this->width = header.width;
 	this->height = header.height;
 
@@ -449,9 +449,9 @@ int FLCFile::getFrameCount() const
 	return static_cast<int>(this->images.size());
 }
 
-double FLCFile::getFrameDuration() const
+double FLCFile::getSecondsPerFrame() const
 {
-	return this->frameDuration;
+	return this->secondsPerFrame;
 }
 
 int FLCFile::getWidth() const

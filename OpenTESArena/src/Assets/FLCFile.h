@@ -32,7 +32,7 @@ private:
 	// One buffer for each frame. Each integer points into that frame's palette.
 	std::vector<std::pair<int, Buffer2D<uint8_t>>> images;
 	std::vector<Palette> palettes;
-	double frameDuration;
+	double secondsPerFrame;
 	int width;
 	int height;
 
@@ -51,16 +51,9 @@ private:
 public:
 	bool init(const char *filename);
 
-	// Gets the number of frames.
 	int getFrameCount() const;
-
-	// Gets the duration of each frame in seconds.
-	double getFrameDuration() const;
-
-	// Gets the width of each frame.
+	double getSecondsPerFrame() const;
 	int getWidth() const;
-
-	// Gets the height of each frame.
 	int getHeight() const;
 
 	// Gets the palette associated with the given frame index.

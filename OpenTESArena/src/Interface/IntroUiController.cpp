@@ -30,11 +30,20 @@ void IntroUiController::onIntroTitleFinished(Game &game)
 
 void IntroUiController::onIntroQuoteFinished(Game &game)
 {
-	game.setPanel<CinematicPanel>(
-		IntroUiView::getOpeningScrollPaletteFilename(),
-		IntroUiView::getOpeningScrollSequenceFilename(),
-		1.0 / IntroUiView::OpeningScrollFramesPerSecond,
-		IntroUiController::onOpeningScrollFinished);
+	const std::string paletteFilename = IntroUiView::getOpeningScrollPaletteFilename();
+	const std::string sequenceFilename = IntroUiView::getOpeningScrollSequenceFilename();
+
+	TextureManager &textureManager = game.getTextureManager();
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogError("Couldn't get texture file metadata for opening scroll animation \"" + sequenceFilename + "\".");
+		return;
+	}
+
+	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+	const double secondsPerFrame = metadata.getSecondsPerFrame();
+	game.setPanel<CinematicPanel>(paletteFilename, sequenceFilename, secondsPerFrame, IntroUiController::onOpeningScrollFinished);
 }
 
 void IntroUiController::onOpeningScrollFinished(Game &game)

@@ -8,7 +8,6 @@ struct TextureAsset;
 
 namespace IntroUiView
 {
-	constexpr double IntroBookFramesPerSecond = 7.0;
 	std::string getIntroBookSequenceFilename();
 	std::string getIntroBookPaletteFilename();
 
@@ -20,7 +19,6 @@ namespace IntroUiView
 	TextureAsset getIntroQuoteTextureAsset();
 	TextureAsset getIntroQuotePaletteTextureAsset();
 
-	constexpr double OpeningScrollFramesPerSecond = 24.0;
 	std::string getOpeningScrollSequenceFilename();
 	std::string getOpeningScrollPaletteFilename();
 

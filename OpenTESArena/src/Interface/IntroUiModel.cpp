@@ -40,8 +40,20 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 	else
 	{
 		std::unique_ptr<CinematicPanel> panel = std::make_unique<CinematicPanel>(game);
-		if (!panel->init(IntroUiView::getIntroBookPaletteFilename(), IntroUiView::getIntroBookSequenceFilename(),
-			1.0 / IntroUiView::IntroBookFramesPerSecond, IntroUiController::onIntroBookFinished))
+		const std::string paletteFilename = IntroUiView::getIntroBookPaletteFilename();
+		const std::string sequenceFilename = IntroUiView::getIntroBookSequenceFilename();
+
+		TextureManager &textureManager = game.getTextureManager();
+		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceFilename.c_str());
+		if (!metadataID.has_value())
+		{
+			DebugLogError("Couldn't get texture file metadata for start-up cinematic \"" + sequenceFilename + "\".");
+			return nullptr;
+		}
+
+		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+		const double secondsPerFrame = metadata.getSecondsPerFrame();
+		if (!panel->init(paletteFilename, sequenceFilename, secondsPerFrame, IntroUiController::onIntroBookFinished))
 		{
 			DebugLogError("Couldn't init start-up CinematicPanel.");
 			return nullptr;

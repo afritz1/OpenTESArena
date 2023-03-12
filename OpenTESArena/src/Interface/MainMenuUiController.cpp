@@ -69,11 +69,20 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 		game.setPanel<ImageSequencePanel>(paletteNames, textureNames, imageDurations, changeToCharCreation);
 	};
 
-	game.setPanel<CinematicPanel>(
-		ArenaTextureSequenceName::OpeningScroll,
-		ArenaTextureSequenceName::OpeningScroll,
-		1.0 / 24.0,
-		changeToNewGameStory);
+	const std::string &paletteFilename = ArenaTextureSequenceName::OpeningScroll;
+	const std::string &sequenceFilename = ArenaTextureSequenceName::OpeningScroll;
+
+	TextureManager &textureManager = game.getTextureManager();
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogError("Couldn't get texture file metadata for opening scroll animation \"" + sequenceFilename + "\".");
+		return;
+	}
+
+	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+	const double secondsPerFrame = metadata.getSecondsPerFrame();
+	game.setPanel<CinematicPanel>(paletteFilename, sequenceFilename, secondsPerFrame, changeToNewGameStory);
 
 	const MusicLibrary &musicLibrary = game.getMusicLibrary();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(

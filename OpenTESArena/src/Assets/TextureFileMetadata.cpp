@@ -1,15 +1,21 @@
 #include "TextureFileMetadata.h"
 
-void TextureFileMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets)
+void TextureFileMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions)
 {
 	this->filename = std::move(filename);
 	this->dimensions = std::move(dimensions);
+}
+
+void TextureFileMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets)
+{
+	this->init(std::move(filename), std::move(dimensions));
 	this->offsets = std::move(offsets);
 }
 
-void TextureFileMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions)
+void TextureFileMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions, double secondsPerFrame)
 {
-	this->init(std::move(filename), std::move(dimensions), Buffer<Int2>());
+	this->init(std::move(filename), std::move(dimensions));
+	this->secondsPerFrame = secondsPerFrame;
 }
 
 const std::string &TextureFileMetadata::getFilename() const
@@ -43,4 +49,15 @@ const Int2 &TextureFileMetadata::getOffset(int index) const
 {
 	DebugAssert(this->hasOffsets());
 	return this->offsets.get(index);
+}
+
+bool TextureFileMetadata::isMovie() const
+{
+	return this->secondsPerFrame.has_value();
+}
+
+double TextureFileMetadata::getSecondsPerFrame() const
+{
+	DebugAssert(this->isMovie());
+	return *this->secondsPerFrame;
 }
