@@ -64,16 +64,17 @@ bool SdlUiRenderer::tryCreateUiTextureInternal(int width, int height, const Texe
 		return false;
 	}
 
-	uint32_t *dstPixels;
+	uint32_t *dstTexels;
 	int pitch;
-	if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&dstPixels), &pitch) != 0)
+	if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
 	{
 		DebugLogError("Couldn't lock SDL_Texture for writing (dims: " + std::to_string(width) + "x" + std::to_string(height) +
 			", " + std::string(SDL_GetError()) + ").");
 		return false;
 	}
 
-	initFunc(dstPixels);
+	BufferView2D<uint32_t> dstTexelsView(dstTexels, width, height);
+	initFunc(dstTexelsView);
 	SDL_UnlockTexture(texture);
 
 	*outID = this->nextID;
@@ -84,11 +85,10 @@ bool SdlUiRenderer::tryCreateUiTextureInternal(int width, int height, const Texe
 
 bool SdlUiRenderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
 {
-	TexelsInitFunc initFunc = [width, height](uint32_t *dstTexels)
+	TexelsInitFunc initFunc = [](BufferView2D<uint32_t> dstTexels)
 	{
-		uint32_t *dstTexelsEnd = dstTexels + (width * height);
 		const Color &debugColor = Color::Magenta;
-		std::fill(dstTexels, dstTexelsEnd, debugColor.toARGB());
+		dstTexels.fill(debugColor.toARGB());
 	};
 
 	return this->tryCreateUiTextureInternal(width, height, initFunc, outID);
@@ -96,10 +96,9 @@ bool SdlUiRenderer::tryCreateUiTexture(int width, int height, UiTextureID *outID
 
 bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
 {
-	TexelsInitFunc initFunc = [&texels](uint32_t *dstTexels)
+	TexelsInitFunc initFunc = [&texels](BufferView2D<uint32_t> dstTexels)
 	{
-		DebugAssert(!texels.isSlice());
-		std::copy(texels.begin(), texels.end(), dstTexels);
+		std::copy(texels.begin(), texels.end(), dstTexels.begin());
 	};
 
 	return this->tryCreateUiTextureInternal(texels.getWidth(), texels.getHeight(), initFunc, outID);
@@ -107,10 +106,10 @@ bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texel
 
 bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID)
 {
-	TexelsInitFunc initFunc = [&texels, &palette](uint32_t *dstTexels)
+	TexelsInitFunc initFunc = [&texels, &palette](BufferView2D<uint32_t> dstTexels)
 	{
-		std::transform(texels.begin(), texels.end(), dstTexels,
-			[&palette](const uint8_t texel)
+		std::transform(texels.begin(), texels.end(), dstTexels.begin(),
+			[&palette](uint8_t texel)
 		{
 			return palette[texel].toARGB();
 		});

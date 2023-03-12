@@ -6,6 +6,8 @@
 
 #include "RendererSystem2D.h"
 
+#include "components/utilities/BufferView2D.h"
+
 class Rect;
 
 struct SDL_Renderer;
@@ -18,7 +20,7 @@ private:
 	std::unordered_map<UiTextureID, SDL_Texture*> textures;
 	UiTextureID nextID;
 
-	using TexelsInitFunc = std::function<void(uint32_t*)>;
+	using TexelsInitFunc = std::function<void(BufferView2D<uint32_t>)>;
 	bool tryCreateUiTextureInternal(int width, int height, const TexelsInitFunc &initFunc, UiTextureID *outID);
 public:
 	SdlUiRenderer();

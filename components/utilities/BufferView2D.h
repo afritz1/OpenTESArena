@@ -20,7 +20,8 @@ private:
 	int width, height; // Dimensions of original 2D array.
 	int viewX, viewY; // View coordinates.
 	int viewWidth, viewHeight; // View dimensions.
-	bool sliced; // Whether the view is part of a larger buffer, causing it to not be fully contiguous.
+	bool isContiguous; // Whether all bytes are contiguous in memory, allowing for faster operations.
+	bool isSliced; // Whether the view is a smaller area within its buffer, causing it to potentially not be contiguous.
 
 	int getIndex(int x, int y) const
 	{
@@ -29,13 +30,17 @@ private:
 		DebugAssert(x < this->viewWidth);
 		DebugAssert(y < this->viewHeight);
 
-		if (!this->sliced)
+		if (!this->isSliced)
 		{
 			return x + (y * this->width);
 		}
+		else if (this->isContiguous)
+		{
+			return x + ((this->viewY + y) * this->width);
+		}
 		else
 		{
-			return (viewX + x) + ((viewY + y) * this->width);
+			return (this->viewX + x) + ((this->viewY + y) * this->width);
 		}
 	}
 public:
@@ -86,7 +91,8 @@ public:
 		this->viewY = viewY;
 		this->viewWidth = viewWidth;
 		this->viewHeight = viewHeight;
-		this->sliced = (viewWidth < width) || (viewHeight < height);
+		this->isContiguous = viewWidth == width;
+		this->isSliced = (viewWidth < width) || (viewHeight < height);
 	}
 
 	void init(T *data, int width, int height)
@@ -111,33 +117,28 @@ public:
 		return this->data != nullptr;
 	}
 
-	bool isSlice() const
-	{
-		return this->sliced;
-	}
-
 	T *begin()
 	{
-		DebugAssert(!this->isSlice());
-		return this->data;
+		DebugAssert(this->isContiguous);
+		return this->data + (this->viewY * this->width);
 	}
 
 	const T *begin() const
 	{
-		DebugAssert(!this->isSlice());
-		return this->data;
+		DebugAssert(this->isContiguous);
+		return this->data + (this->viewY * this->width);
 	}
 
 	T *end()
 	{
-		DebugAssert(!this->isSlice());
-		return (this->data != nullptr) ? (this->data + (this->width * this->height)) : nullptr;
+		DebugAssert(this->isContiguous);
+		return this->isValid() ? (this->begin() + (this->viewHeight * this->width)) : nullptr;
 	}
 
 	const T *end() const
 	{
-		DebugAssert(!this->isSlice());
-		return (this->data != nullptr) ? (this->data + (this->width * this->height)) : nullptr;
+		DebugAssert(this->isContiguous);
+		return this->isValid() ? (this->begin() + (this->viewHeight * this->width)) : nullptr;
 	}
 
 	T &get(int x, int y)
@@ -166,8 +167,6 @@ public:
 
 	void set(int x, int y, const T &value)
 	{
-		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
 		this->data[index] = value;
@@ -175,8 +174,6 @@ public:
 
 	void set(int x, int y, T &&value)
 	{
-		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
 		this->data[index] = std::move(value);
@@ -184,9 +181,7 @@ public:
 
 	void fill(const T &value)
 	{
-		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-		
-		if (!this->isSlice())
+		if (this->isContiguous)
 		{
 			std::fill(this->begin(), this->end(), value);
 		}
@@ -211,6 +206,7 @@ public:
 		this->viewY = 0;
 		this->viewWidth = 0;
 		this->viewHeight = 0;
+		this->contiguous = false;
 		this->sliced = false;
 	}
 };
