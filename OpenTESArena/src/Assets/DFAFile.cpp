@@ -6,6 +6,7 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
+#include "components/utilities/BufferView.h"
 #include "components/vfs/manager.hpp"
 
 bool DFAFile::init(const char *filename)
@@ -33,8 +34,7 @@ bool DFAFile::init(const char *filename)
 	// Uncompress the initial frame.
 	Buffer2D<uint8_t> &firstImage = this->images.get(0);
 	firstImage.init(width, height);
-	Compression::decodeRLE(srcPtr + 12, width * height, firstImage.begin(),
-		firstImage.getWidth() * firstImage.getHeight());
+	Compression::decodeRLE(srcPtr + 12, width * height, BufferView<uint8_t>(firstImage.begin(), width * height));
 
 	// Make copies of the original frame for each update chunk.
 	for (int i = 1; i < imageCount; i++)

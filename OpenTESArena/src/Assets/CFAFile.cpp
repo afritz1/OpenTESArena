@@ -45,14 +45,11 @@ bool CFAFile::init(const char *filename)
 	// eventually translated into color indices.
 	std::array<uint8_t, 8> translate;
 
-	// Worse-case buffer for decompressed data (due to possible padding
-	// with demux alignment).
-	std::vector<uint8_t> decomp(widthCompressed * height * frameCount *
-		sizeof(uint32_t) + (widthUncompressed * 16));
+	// Worse-case buffer for decompressed data (due to possible padding with demux alignment).
+	Buffer<uint8_t> decomp(widthCompressed * height * frameCount * sizeof(uint32_t) + (widthUncompressed * 16));
 
 	// Decompress the RLE data of the CFA images (they're all packed together).
-	Compression::decodeRLE(srcPtr + headerSize, widthCompressed * height * frameCount,
-		decomp.data(), static_cast<int>(decomp.size()));
+	Compression::decodeRLE(srcPtr + headerSize, widthCompressed * height * frameCount, decomp);
 
 	// Buffers for frame palette indices.
 	this->images.init(frameCount);
@@ -77,7 +74,7 @@ bool CFAFile::init(const char *filename)
 			uint32_t count = widthUncompressed;
 
 			// Copy the current line to the scratch buffer.
-			const uint8_t *decompPtr = decomp.data() + offset;
+			const uint8_t *decompPtr = decomp.begin() + offset;
 			std::copy(decompPtr, decompPtr + widthCompressed, encoded.begin());
 
 			// Lambda for which demux routine to do, based on bits per pixel.

@@ -6,6 +6,7 @@
 #include "Compression.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Buffer.h"
 #include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
@@ -84,14 +85,13 @@ bool CIFFile::init(const char *filename)
 			flags = Bytes::getLE16(header + 8);
 			len = Bytes::getLE16(header + 10);
 
-			std::vector<uint8_t> decomp(width * height);
-			Compression::decodeRLE(header + 12, width * height, decomp.data(),
-				static_cast<int>(decomp.size()));
+			Buffer<uint8_t> decomp(width * height);
+			Compression::decodeRLE(header + 12, width * height, decomp);
 
 			this->images.emplace_back(Buffer2D<uint8_t>(width, height));
 			this->offsets.emplace_back(Int2(xOffset, yOffset));
 
-			const uint8_t *srcPixels = decomp.data();
+			const uint8_t *srcPixels = decomp.begin();
 			uint8_t *dstPixels = this->images.back().begin();
 			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
@@ -113,13 +113,13 @@ bool CIFFile::init(const char *filename)
 			flags = Bytes::getLE16(header + 8);
 			len = Bytes::getLE16(header + 10);
 
-			std::vector<uint8_t> decomp(width * height);
+			Buffer<uint8_t> decomp(width * height);
 			Compression::decodeType04(header + 12, header + 12 + len, decomp);
 
 			this->images.emplace_back(Buffer2D<uint8_t>(width, height));
 			this->offsets.emplace_back(Int2(xOffset, yOffset));
 
-			const uint8_t *srcPixels = decomp.data();
+			const uint8_t *srcPixels = decomp.begin();
 			uint8_t *dstPixels = this->images.back().begin();
 			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 

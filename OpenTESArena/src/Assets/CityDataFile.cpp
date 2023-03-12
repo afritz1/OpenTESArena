@@ -25,23 +25,25 @@ Rect CityDataFile::ProvinceData::getGlobalRect() const
 	return Rect(this->globalX, this->globalY, this->globalW, this->globalH);
 }
 
-const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getLocationData(
-	int locationID) const
+const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getLocationData(int locationID) const
 {
 	if (locationID < 8)
 	{
-		// City.
-		return this->cityStates.at(locationID);
+		const int index = locationID;
+		DebugAssertIndex(this->cityStates, index);
+		return this->cityStates[locationID];
 	}
 	else if (locationID < 16)
 	{
-		// Town.
-		return this->towns.at(locationID - 8);
+		const int index = locationID - 8;
+		DebugAssertIndex(this->towns, index);
+		return this->towns[index];
 	}
 	else if (locationID < 32)
 	{
-		// Village.
-		return this->villages.at(locationID - 16);
+		const int index = locationID - 16;
+		DebugAssertIndex(this->villages, index);
+		return this->villages[index];
 	}
 	else if (locationID == 32)
 	{
@@ -56,7 +58,9 @@ const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getL
 	else if (locationID < 48)
 	{
 		// Named dungeon.
-		return this->randomDungeons.at(locationID - 34);
+		const int index = locationID - 34;
+		DebugAssertIndex(this->randomDungeons, index);
+		return this->randomDungeons[index];
 	}
 	else
 	{
@@ -67,12 +71,14 @@ const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getL
 
 CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index)
 {
-	return this->provinces.at(index);
+	DebugAssertIndex(this->provinces, index);
+	return this->provinces[index];
 }
 
 const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 {
-	return this->provinces.at(index);
+	DebugAssertIndex(this->provinces, index);
+	return this->provinces[index];
 }
 
 bool CityDataFile::init(const char *filename)

@@ -245,7 +245,7 @@ Buffer2D<uint8_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	int chunkSize, Buffer2D<uint8_t> &initialFrame)
 {
 	// Decode a fullscreen image chunk. Most likely the first image in the FLIC.
-	std::vector<uint8_t> decomp(this->width * this->height);
+	Buffer<uint8_t> decomp(this->width * this->height);
 
 	// The chunk data is organized in rows, and each row has packets of compressed
 	// pixels. The number of lines is the height of the FLIC.
@@ -274,7 +274,7 @@ Buffer2D<uint8_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 
 				for (int i = 0; i < type; i++)
 				{
-					decomp.at((rowPixelsDone + i) + (rowsDone * this->width)) = pixel;
+					decomp[(rowPixelsDone + i) + (rowsDone * this->width)] = pixel;
 				}
 
 				rowPixelsDone += type;
@@ -289,7 +289,7 @@ Buffer2D<uint8_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 				for (int i = 0; i < pixelCount; i++)
 				{
 					const uint8_t pixel = *(chunkData + offset + 1 + i);
-					decomp.at((rowPixelsDone + i) + (rowsDone * this->width)) = pixel;
+					decomp[(rowPixelsDone + i) + (rowsDone * this->width)] = pixel;
 				}
 
 				rowPixelsDone += pixelCount;
@@ -303,12 +303,11 @@ Buffer2D<uint8_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	}
 
 	// Write the decoded frame to the initial (scratch) frame.
-	const uint8_t *srcPixels = decomp.data();
-	std::copy(srcPixels, srcPixels + decomp.size(), initialFrame.begin());
+	std::copy(decomp.begin(), decomp.end(), initialFrame.begin());
 
 	// Return a copy of the decoded frame.
 	Buffer2D<uint8_t> image(this->width, this->height);
-	std::copy(srcPixels, srcPixels + decomp.size(), image.begin());
+	std::copy(decomp.begin(), decomp.end(), image.begin());
 	return image;
 }
 

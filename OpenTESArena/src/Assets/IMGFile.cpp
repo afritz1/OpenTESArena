@@ -9,6 +9,7 @@
 #include "../Utilities/Color.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Buffer.h"
 #include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
@@ -160,21 +161,21 @@ bool IMGFile::init(const char *filename)
 		else if ((flags & 0x00FF) == 0x0004)
 		{
 			// Type 4 compression.
-			std::vector<uint8_t> decomp(width * height);
+			Buffer<uint8_t> decomp(width * height);
 			Compression::decodeType04(srcPtr + HeaderSize, srcPtr + HeaderSize + len, decomp);
 
 			// Create 32-bit image.
-			makeImage(width, height, decomp.data());
+			makeImage(width, height, decomp.begin());
 		}
 		else if ((flags & 0x00FF) == 0x0008)
 		{
 			// Type 8 compression. Contains a 2 byte decompressed length after
 			// the header, so skip that (should be equivalent to width * height).
-			std::vector<uint8_t> decomp(width * height);
+			Buffer<uint8_t> decomp(width * height);
 			Compression::decodeType08(srcPtr + HeaderSize + 2, srcPtr + HeaderSize + len, decomp);
 
 			// Create 32-bit image.
-			makeImage(width, height, decomp.data());
+			makeImage(width, height, decomp.begin());
 		}
 		else
 		{

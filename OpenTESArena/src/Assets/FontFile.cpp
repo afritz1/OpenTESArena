@@ -54,7 +54,8 @@ bool FontFile::init(const char *filename)
 		uint32_t maxWidth = 0;
 		for (uint32_t lineNum = 0; lineNum < element.height; lineNum++)
 		{
-			uint16_t &line = element.lines.at(lineNum);
+			DebugAssertIndex(element.lines, lineNum);
+			uint16_t &line = element.lines[lineNum];
 			line = *lines;
 			lines++;
 
@@ -77,22 +78,24 @@ bool FontFile::init(const char *filename)
 	}
 
 	// Assign the exclamation mark's dimensions to space (' ').
-	FontElement &space = symbols.front();
-	space.width = symbols.at(1).width;
+	FontElement &space = symbols[0];
+	space.width = symbols[1].width;
 	space.height = charHeight;
 	
 	// Now that the symbols table is filled with character bits, turn it into a list
 	// of characters paired with a width and pixel data.
 	this->characterHeight = charHeight;
-	this->characters.resize(symbols.size());
+
+	const int symbolCount = static_cast<int>(symbols.size());
+	this->characters.init(symbolCount);
 
 	// Adapted from WinArena "Raster.cpp".
-	for (size_t i = 0; i < symbols.size(); i++)
+	for (int i = 0; i < symbolCount; i++)
 	{
 		// Use white for pixels and transparent for background.
 		FontElement &element = symbols[i];
 
-		Buffer2D<Pixel> &character = this->characters.at(i);
+		Buffer2D<Pixel> &character = this->characters[i];
 		character.init(element.width, element.height);
 
 		Pixel *charPixels = character.begin();
@@ -146,13 +149,7 @@ bool FontFile::tryGetChar(int index, char *outChar)
 
 int FontFile::getCharacterCount() const
 {
-	return static_cast<int>(this->characters.size());
-}
-
-int FontFile::getWidth(int index) const
-{
-	DebugAssertIndex(this->characters, index);
-	return this->characters[index].getWidth();
+	return this->characters.getCount();
 }
 
 int FontFile::getHeight() const
@@ -160,8 +157,8 @@ int FontFile::getHeight() const
 	return this->characterHeight;
 }
 
-const FontFile::Pixel *FontFile::getPixels(int index) const
+BufferView2D<const FontFile::Pixel> FontFile::getPixels(int index) const
 {
 	DebugAssertIndex(this->characters, index);
-	return this->characters[index].begin();
+	return this->characters[index];
 }

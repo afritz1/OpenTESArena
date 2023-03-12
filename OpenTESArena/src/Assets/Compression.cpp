@@ -3,7 +3,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 
-void Compression::decodeRLE(const uint8_t *src, int stopCount, uint8_t *dst, int dstSize)
+void Compression::decodeRLE(const uint8_t *src, int stopCount, BufferView<uint8_t> dst)
 {
 	// Adapted from WinArena.
 	int i = 0;
@@ -23,7 +23,7 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount, uint8_t *dst, int
 			const uint32_t count = static_cast<uint32_t>(sample) - 0x7F;
 
 			DebugAssert(o >= 0);
-			DebugAssert((o + static_cast<int>(count)) <= dstSize);
+			DebugAssert((o + static_cast<int>(count)) <= dst.getCount());
 			for (uint32_t j = 0; j < count; j++)
 			{
 				dst[o] = value;
@@ -35,7 +35,7 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount, uint8_t *dst, int
 			const uint32_t count = static_cast<uint32_t>(sample) + 1;
 
 			DebugAssert(o >= 0);
-			DebugAssert((o + static_cast<int>(count)) <= dstSize);
+			DebugAssert((o + static_cast<int>(count)) <= dst.getCount());
 			for (uint32_t j = 0; j < count; j++)
 			{
 				dst[o] = src[i];
@@ -46,8 +46,7 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount, uint8_t *dst, int
 	}
 }
 
-void Compression::decodeRLEWords(const uint8_t *src, int stopCount, 
-	std::vector<uint8_t> &out)
+void Compression::decodeRLEWords(const uint8_t *src, int stopCount, BufferView<uint8_t> out)
 {
 	int i = 0;
 	int o = 0;
@@ -66,8 +65,8 @@ void Compression::decodeRLEWords(const uint8_t *src, int stopCount,
 				const uint16_t value = Bytes::getLE16(src + i);
 				i += 2;
 
-				out.at(o * 2) = value & 0x00FF;
-				out.at((o * 2) + 1) = (value & 0xFF00) >> 8;
+				out[o * 2] = value & 0x00FF;
+				out[(o * 2) + 1] = (value & 0xFF00) >> 8;
 				o++;
 			}
 		}
@@ -80,8 +79,8 @@ void Compression::decodeRLEWords(const uint8_t *src, int stopCount,
 
 			for (uint16_t j = 0; j < count; j++)
 			{
-				out.at(o * 2) = value & 0x00FF;
-				out.at((o * 2) + 1) = (value & 0xFF00) >> 8;
+				out[o * 2] = value & 0x00FF;
+				out[(o * 2) + 1] = (value & 0xFF00) >> 8;
 				o++;
 			}
 		}
