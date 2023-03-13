@@ -42,17 +42,17 @@ std::string IntroUiView::getOpeningScrollPaletteFilename()
 	return ArenaTextureSequenceName::OpeningScroll;
 }
 
-std::vector<std::string> IntroUiView::getIntroStoryTextureNames()
+Buffer<std::string> IntroUiView::getIntroStoryTextureNames()
 {
 	return { "SCROLL01.IMG", "SCROLL02.IMG", "SCROLL03.IMG" };
 }
 
-std::vector<std::string> IntroUiView::getIntroStoryPaletteNames()
+Buffer<std::string> IntroUiView::getIntroStoryPaletteNames()
 {
 	return { "SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG" };
 }
 
-std::vector<double> IntroUiView::getIntroStoryImageDurations()
+Buffer<double> IntroUiView::getIntroStoryImageDurations()
 {
 	// Last frame is slightly shorter.
 	return { 13.0, 13.0, 10.0 };

@@ -2,7 +2,8 @@
 #define INTRO_UI_VIEW_H
 
 #include <string>
-#include <vector>
+
+#include "components/utilities/Buffer.h"
 
 struct TextureAsset;
 
@@ -22,9 +23,9 @@ namespace IntroUiView
 	std::string getOpeningScrollSequenceFilename();
 	std::string getOpeningScrollPaletteFilename();
 
-	std::vector<std::string> getIntroStoryTextureNames();
-	std::vector<std::string> getIntroStoryPaletteNames();
-	std::vector<double> getIntroStoryImageDurations();
+	Buffer<std::string> getIntroStoryTextureNames();
+	Buffer<std::string> getIntroStoryPaletteNames();
+	Buffer<double> getIntroStoryImageDurations();
 }
 
 #endif

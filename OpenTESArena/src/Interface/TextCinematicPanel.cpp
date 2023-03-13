@@ -89,8 +89,8 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 
 	auto &textureManager = game.getTextureManager();
 	const std::string &animFilename = textCinematicDef.getAnimationFilename();
-	const std::vector<UiTextureID> animTextureIDs = TextCinematicUiView::allocAnimationTextures(animFilename, textureManager, renderer);
-	if (animTextureIDs.size() == 0)
+	const Buffer<UiTextureID> animTextureIDs = TextCinematicUiView::allocAnimationTextures(animFilename, textureManager, renderer);
+	if (animTextureIDs.getCount() == 0)
 	{
 		DebugLogError("No animation frames for text cinematic \"" + animFilename + "\".");
 		return false;
@@ -109,7 +109,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		return this->animTextureRefs[this->animImageIndex].get();
 	};
 
-	const std::optional<Int2> animTextureDims = renderer.tryGetUiTextureDims(animTextureIDs.front());
+	const std::optional<Int2> animTextureDims = renderer.tryGetUiTextureDims(animTextureIDs[0]);
 	DebugAssert(animTextureDims.has_value());
 	this->addDrawCall(
 		animTextureFunc,

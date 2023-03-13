@@ -32,7 +32,7 @@ TextBox::InitInfo TextCinematicUiView::getSubtitlesTextBoxInitInfo(const Color &
 		fontLibrary);
 }
 
-std::vector<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::string &animFilename,
+Buffer<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::string &animFilename,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(animFilename.c_str());
@@ -47,8 +47,9 @@ std::vector<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::
 		DebugCrash("Couldn't get texture builder IDs for \"" + animFilename + "\".");
 	}
 
-	std::vector<UiTextureID> textureIDs;
-	for (int i = 0; i < textureBuilderIDs->getCount(); i++)
+	const int textureCount = textureBuilderIDs->getCount();
+	Buffer<UiTextureID> textureIDs(textureCount);
+	for (int i = 0; i < textureCount; i++)
 	{
 		const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(i);
 		UiTextureID textureID;
@@ -57,7 +58,7 @@ std::vector<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::
 			DebugCrash("Couldn't create UI texture for \"" + animFilename + "\" index " + std::to_string(i) + ".");
 		}
 
-		textureIDs.emplace_back(textureID);
+		textureIDs.set(i, textureID);
 	}
 
 	return textureIDs;

@@ -398,8 +398,8 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 		uint32_t *pixels = dstBuffer.begin();
 
 		// Draw the player's arrow within the map pixel.
-		const std::vector<Int2> &offsets = AutomapUiView::PlayerArrowPatterns.at(cardinalDirection);
-		for (const auto &offset : offsets)
+		BufferView<const Int2> offsets = AutomapUiView::PlayerArrowPatterns.at(cardinalDirection);
+		for (const Int2 &offset : offsets)
 		{
 			const int index = (surfaceX + offset.x) + ((surfaceY + offset.y) * dstBuffer.getWidth());
 			pixels[index] = AutomapUiView::ColorPlayer.toARGB();

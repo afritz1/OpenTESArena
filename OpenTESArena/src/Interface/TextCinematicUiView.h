@@ -2,12 +2,13 @@
 #define TEXT_CINEMATIC_UI_VIEW_H
 
 #include <string>
-#include <vector>
 
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+
+#include "components/utilities/Buffer.h"
 
 class FontLibrary;
 
@@ -22,7 +23,7 @@ namespace TextCinematicUiView
 
 	TextBox::InitInfo getSubtitlesTextBoxInitInfo(const Color &fontColor, const FontLibrary &fontLibrary);
 
-	std::vector<UiTextureID> allocAnimationTextures(const std::string &animFilename,
+	Buffer<UiTextureID> allocAnimationTextures(const std::string &animFilename,
 		TextureManager &textureManager, Renderer &renderer);
 }
 
