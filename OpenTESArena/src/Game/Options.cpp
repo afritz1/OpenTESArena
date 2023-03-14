@@ -6,6 +6,7 @@
 #include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Directory.h"
 #include "components/utilities/KeyValueFile.h"
 #include "components/utilities/String.h"
 
@@ -610,10 +611,9 @@ void Options::saveChanges()
 	const std::string optionsPath = Platform::getOptionsPath();
 	const std::string filename(optionsPath + Options::CHANGES_FILENAME);
 
-	// Create options directory if it doesn't exist.
-	if (!Platform::directoryExists(optionsPath))
+	if (!Directory::exists(optionsPath))
 	{
-		Platform::createDirectoryRecursively(optionsPath);
+		Directory::createRecursively(optionsPath);
 	}
 
 	std::ofstream ofs(filename);

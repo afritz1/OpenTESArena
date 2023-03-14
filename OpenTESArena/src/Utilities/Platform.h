@@ -37,12 +37,6 @@ namespace Platform
 
 	// Gets CPU support for 8-wide float vector intrinsics.
 	bool hasAVX();
-
-	// Returns whether the given directory exists.
-	bool directoryExists(const std::string &path);
-
-	// Creates a directory and all intermediate directories from the given path.
-	void createDirectoryRecursively(std::string path);
 }
 
 #endif
