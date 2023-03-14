@@ -1,5 +1,6 @@
 #include <cctype>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 
 #include "File.h"
@@ -22,9 +23,15 @@ std::string File::readAllText(const char *filename)
 
 bool File::exists(const char *filename)
 {
-	std::ifstream ifs(filename);
-	const bool isOpen = ifs.good();
-	return isOpen;
+	std::error_code code;
+	const bool success = std::filesystem::is_regular_file(filename, code);
+	if (code)
+	{
+		DebugLogWarning("Couldn't check if file \"" + std::string(filename) + "\" exists: " + code.message());
+		return false;
+	}
+
+	return success;
 }
 
 bool File::pathIsRelative(const char *filename)
