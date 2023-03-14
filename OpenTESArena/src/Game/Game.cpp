@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -28,6 +29,7 @@
 #include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Directory.h"
 #include "components/utilities/File.h"
 #include "components/utilities/Path.h"
 #include "components/utilities/String.h"
@@ -476,32 +478,61 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 
 void Game::saveScreenshot(const Surface &surface)
 {
-	// Get the path + filename to use for the new screenshot.
-	const std::string screenshotPath = []()
+	const std::string directoryName = Platform::getScreenshotPath();
+	const char *directoryNamePtr = directoryName.c_str();
+	if (!Directory::exists(directoryNamePtr))
 	{
-		const std::string screenshotFolder = Platform::getScreenshotPath();
-		const std::string screenshotPrefix("screenshot");
-		int imageIndex = 0;
+		Directory::createRecursively(directoryNamePtr);
+	}	
 
-		auto getNextAvailablePath = [&screenshotFolder, &screenshotPrefix, &imageIndex]()
-		{
-			std::stringstream ss;
-			ss << std::setw(3) << std::setfill('0') << imageIndex;
-			imageIndex++;
-			return screenshotFolder + screenshotPrefix + ss.str() + ".bmp";
-		};
+	std::error_code code;
+	const std::filesystem::directory_iterator dirIter(directoryName, code);
+	if (code)
+	{
+		DebugLogWarning("Couldn't create directory iterator for \"" + std::string(directoryName) + "\": " + code.message());
+		return;
+	}
+	
+	const std::string prefix("screenshot");
+	const std::string suffix(".bmp");
+	constexpr size_t expectedNumberDigits = 4; // 0-9999; if it reaches 10000 then that one gets overwritten.
 
-		std::string path = getNextAvailablePath();
-		while (File::exists(path.c_str()))
+	int maxFoundNumber = -1;
+	for (const std::filesystem::directory_entry &entry : dirIter)
+	{
+		if (!entry.is_regular_file())
 		{
-			path = getNextAvailablePath();
+			continue;
 		}
 
-		return path;
-	}();
+		const std::string entryFilename = entry.path().filename().string();
+		const size_t prefixIndex = 0;
+		const size_t numberStartIndex = prefixIndex + prefix.size();
+		const size_t suffixIndex = entryFilename.find(suffix, numberStartIndex);
+		if (suffixIndex == std::string::npos)
+		{
+			continue;
+		}
 
+		const size_t numberEndIndex = suffixIndex;
+		const std::string numberStr = entryFilename.substr(numberStartIndex, numberEndIndex - numberStartIndex);
+		if (numberStr.size() != expectedNumberDigits)
+		{
+			continue;
+		}
+
+		const int number = std::stoi(numberStr.c_str());
+		if (number > maxFoundNumber)
+		{
+			maxFoundNumber = number;
+		}
+	}
+
+	const int actualNumber = maxFoundNumber + 1;
+	std::stringstream ss;
+	ss << std::setw(expectedNumberDigits) << std::setfill('0') << actualNumber;
+	const std::string screenshotPath = directoryName + prefix + ss.str() + suffix;
 	const int status = SDL_SaveBMP(surface.get(), screenshotPath.c_str());
-
 	if (status == 0)
 	{
 		DebugLog("Screenshot saved to \"" + screenshotPath + "\".");
