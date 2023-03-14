@@ -47,12 +47,6 @@ bool File::exists(const char *filename)
 	return success;
 }
 
-bool File::pathIsRelative(const char *filename)
-{
-	const std::filesystem::path path(filename);
-	return path.is_relative();
-}
-
 void File::copy(const char *srcFilename, const char *dstFilename)
 {
 	std::ifstream ifs(srcFilename, std::ios::binary);

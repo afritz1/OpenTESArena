@@ -11,9 +11,6 @@ namespace File
 	// Checks that a file exists.
 	bool exists(const char *filename);
 
-	// Checks if the path to a file is relative or absolute.
-	bool pathIsRelative(const char *filename);
-
 	// Copies a file to a destination file.
 	void copy(const char *srcFilename, const char *dstFilename);
 }

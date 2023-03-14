@@ -6,6 +6,7 @@
 #include "../Utilities/Platform.h"
 
 #include "components/utilities/File.h"
+#include "components/utilities/Path.h"
 #include "components/utilities/String.h"
 
 void LoadSaveUiModel::Entry::init(std::string &&displayText)
@@ -16,7 +17,7 @@ void LoadSaveUiModel::Entry::init(std::string &&displayText)
 std::string LoadSaveUiModel::getSavesPath(Game &game)
 {
 	const std::string &arenaSavesPath = game.getOptions().getMisc_ArenaSavesPath();
-	const bool savesPathIsRelative = File::pathIsRelative(arenaSavesPath.c_str());
+	const bool savesPathIsRelative = Path::isRelative(arenaSavesPath.c_str());
 	const std::string path = (savesPathIsRelative ? Platform::getBasePath() : "") + arenaSavesPath;
 	return String::addTrailingSlashIfMissing(path);
 }

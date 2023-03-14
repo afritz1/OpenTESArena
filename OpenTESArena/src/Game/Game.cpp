@@ -29,6 +29,7 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/File.h"
+#include "components/utilities/Path.h"
 #include "components/utilities/String.h"
 #include "components/utilities/TextLinesFile.h"
 #include "components/vfs/manager.hpp"
@@ -113,7 +114,7 @@ bool Game::init()
 	this->initOptions(basePath, optionsPath);
 
 	// Initialize virtual file system using the Arena path in the options file.
-	const bool arenaPathIsRelative = File::pathIsRelative(this->options.getMisc_ArenaPath().c_str());
+	const bool arenaPathIsRelative = Path::isRelative(this->options.getMisc_ArenaPath().c_str());
 	const std::string vfsFolderPath = String::addTrailingSlashIfMissing(
 		(arenaPathIsRelative ? basePath : "") + this->options.getMisc_ArenaPath());
 	VFS::Manager::get().initialize(std::string(vfsFolderPath));
@@ -128,7 +129,7 @@ bool Game::init()
 	}
 
 	// Initialize audio manager.
-	const bool midiPathIsRelative = File::pathIsRelative(this->options.getAudio_MidiConfig().c_str());
+	const bool midiPathIsRelative = Path::isRelative(this->options.getAudio_MidiConfig().c_str());
 	const std::string midiFilePath = (midiPathIsRelative ? basePath : "") + this->options.getAudio_MidiConfig();
 	this->audioManager.init(this->options.getAudio_MusicVolume(),
 		this->options.getAudio_SoundVolume(), this->options.getAudio_SoundChannels(),
