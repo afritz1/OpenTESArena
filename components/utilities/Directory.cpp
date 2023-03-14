@@ -10,7 +10,7 @@ bool Directory::exists(const char *path)
 	const bool success = std::filesystem::is_directory(path, code);
 	if (code)
 	{
-		DebugLogWarning("Couldn't determine if \"" + std::string(path) + "\" is a directory: " + code.message());
+		DebugLog("Error determining if \"" + std::string(path) + "\" is a directory: " + code.message());
 		return false;
 	}
 
@@ -23,6 +23,10 @@ void Directory::createRecursively(const char *path)
 	const bool success = std::filesystem::create_directories(path, code);
 	if (code)
 	{
-		DebugLogWarning("Couldn't create one or more directories from \"" + std::string(path) + "\": " + code.message());
+		DebugLog("Error creating directories for \"" + std::string(path) + "\": " + code.message());
+	}
+	else if (!success)
+	{
+		DebugLogWarning("Couldn't create directories for \"" + std::string(path) + "\".");
 	}
 }

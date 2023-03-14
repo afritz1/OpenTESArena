@@ -27,7 +27,7 @@ bool File::exists(const char *filename)
 	const bool success = std::filesystem::is_regular_file(filename, code);
 	if (code)
 	{
-		DebugLogWarning("Couldn't check if file \"" + std::string(filename) + "\" exists: " + code.message());
+		DebugLog("Error determining if file \"" + std::string(filename) + "\" exists: " + code.message());
 		return false;
 	}
 
