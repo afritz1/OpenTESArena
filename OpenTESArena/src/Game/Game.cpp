@@ -106,19 +106,27 @@ bool Game::init()
 	DebugLog("Initializing (Platform: " + Platform::getPlatform() + ").");
 
 	// Current working directory (in most cases). This is most relevant for platforms like macOS, where
-	// the base path might be in the app's own "Resources" folder.
+	// the base path might be in the app's Resources folder.
 	const std::string basePath = Platform::getBasePath();
 	const std::string dataFolderPath = basePath + "data/";
 
 	// Initialize options from default and changes files if present. The path is platform-dependent
-	// and points inside the "preferences directory" so it's always writable.
+	// and points inside the preferences directory so it's always writable.
 	const std::string optionsPath = Platform::getOptionsPath();
 	this->initOptions(basePath, optionsPath);
 
+	const std::string &arenaPath = this->options.getMisc_ArenaPath();
+	DebugLog("Using ArenaPath \"" + arenaPath + "\".");
+
 	// Initialize virtual file system using the Arena path in the options file.
-	const bool arenaPathIsRelative = Path::isRelative(this->options.getMisc_ArenaPath().c_str());
-	const std::string vfsFolderPath = String::addTrailingSlashIfMissing(
-		(arenaPathIsRelative ? basePath : "") + this->options.getMisc_ArenaPath());
+	const bool arenaPathIsRelative = Path::isRelative(arenaPath.c_str());
+	const std::string vfsFolderPath = String::addTrailingSlashIfMissing((arenaPathIsRelative ? basePath : "") + arenaPath);
+	if (!Directory::exists(vfsFolderPath.c_str()))
+	{
+		DebugLogError("Data files directory \"" + vfsFolderPath + "\" not found. Is your ArenaPath correct?");
+		return false;
+	}
+
 	VFS::Manager::get().initialize(std::string(vfsFolderPath));
 
 	// Determine which game version the data path is pointing to.
