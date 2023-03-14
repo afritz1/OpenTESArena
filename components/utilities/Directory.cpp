@@ -2,31 +2,27 @@
 
 #include "Directory.h"
 
-#include "String.h"
 #include "../debug/Debug.h"
 
 bool Directory::exists(const char *path)
 {
-	if (String::isNullOrEmpty(path))
+	std::error_code code;
+	const bool success = std::filesystem::is_directory(path, code);
+	if (code)
 	{
-		DebugLogWarning("Can't check if empty path exists.");
+		DebugLogWarning("Couldn't determine if \"" + std::string(path) + "\" is a directory: " + code.message());
 		return false;
 	}
 
-	return std::filesystem::exists(path) && std::filesystem::is_directory(path);
+	return success;
 }
 
 void Directory::createRecursively(const char *path)
 {
-	if (String::isNullOrEmpty(path))
+	std::error_code code;
+	const bool success = std::filesystem::create_directories(path, code);
+	if (code)
 	{
-		DebugLogWarning("Can't create directories from empty path.");
-		return;
-	}
-
-	const bool success = std::filesystem::create_directories(path);
-	if (!success)
-	{
-		DebugLogWarning("Couldn't create one or more directories from \"" + std::string(path) + "\".");
+		DebugLogWarning("Couldn't create one or more directories from \"" + std::string(path) + "\": " + code.message());
 	}
 }
