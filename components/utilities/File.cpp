@@ -24,10 +24,23 @@ std::string File::readAllText(const char *filename)
 bool File::exists(const char *filename)
 {
 	std::error_code code;
-	const bool success = std::filesystem::is_regular_file(filename, code);
+	bool success = std::filesystem::exists(filename, code);
 	if (code)
 	{
-		DebugLog("Error determining if file \"" + std::string(filename) + "\" exists: " + code.message());
+		DebugLogWarning("Couldn't determine if path \"" + std::string(filename) + "\" exists: " + code.message());
+		return false;
+	}
+
+	if (!success)
+	{
+		// Path doesn't point to anything.
+		return false;
+	}
+
+	success = std::filesystem::is_regular_file(filename, code);
+	if (code)
+	{
+		DebugLog("Error determining if path \"" + std::string(filename) + "\" is a file: " + code.message());
 		return false;
 	}
 
