@@ -36,22 +36,8 @@ bool File::exists(const char *filename)
 
 bool File::pathIsRelative(const char *filename)
 {
-	const size_t length = std::strlen(filename);
-	DebugAssertMsg(length > 0, "Path cannot be empty.");
-
-#if defined(_WIN32)
-	// Can't be absolute without a colon at index 1.
-	if (length < 2)
-	{
-		return true;
-	}
-
-	// Needs a drive letter and a colon to be absolute.
-	return !(std::isalpha(static_cast<unsigned char>(filename[0])) && (filename[1] == ':'));
-#else
-	// Needs a leading forward slash to be absolute.
-	return filename[0] != '/';
-#endif
+	const std::filesystem::path path(filename);
+	return path.is_relative();
 }
 
 void File::copy(const char *srcFilename, const char *dstFilename)
