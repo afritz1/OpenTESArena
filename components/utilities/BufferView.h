@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <array>
-#include <type_traits>
 #include <vector>
 
 #include "Buffer.h"
@@ -208,8 +207,6 @@ public:
 
 	void set(int index, const T &value)
 	{
-		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
@@ -218,8 +215,6 @@ public:
 
 	void set(int index, T &&value)
 	{
-		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
@@ -228,8 +223,6 @@ public:
 
 	void fill(const T &value)
 	{
-		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-
 		std::fill(this->begin(), this->end(), value);
 	}
 

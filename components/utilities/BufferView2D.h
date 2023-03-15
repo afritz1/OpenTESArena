@@ -2,7 +2,6 @@
 #define BUFFER_VIEW_2D_H
 
 #include <algorithm>
-#include <type_traits>
 
 #include "Buffer2D.h"
 #include "../debug/Debug.h"
