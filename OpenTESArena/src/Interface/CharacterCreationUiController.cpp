@@ -483,7 +483,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	auto gameStateFunction = [](Game &game)
 	{
 		GameState &gameState = game.getGameState();
-		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+		const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		gameState.init(binaryAssetLibrary);
 
 		// Find starting dungeon location definition.
@@ -529,7 +529,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		gameState.init(binaryAssetLibrary); // @todo: not sure about this; should we init really early in the engine?
 		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
 			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
-			game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
+			BinaryAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
 		}
@@ -793,7 +793,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
-			game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getTextureManager(),
+			BinaryAssetLibrary::getInstance(), game.getTextAssetLibrary(), game.getTextureManager(),
 			renderer))
 		{
 			DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");

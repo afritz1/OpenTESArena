@@ -15,7 +15,7 @@ std::string CharacterSheetUiModel::getPlayerName(Game &game)
 std::string CharacterSheetUiModel::getPlayerRaceName(Game &game)
 {
 	const Player &player = game.getPlayer();
-	const ExeData &exeData = game.getBinaryAssetLibrary().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 	const auto &singularRaceNames = exeData.races.singularNames;
 	const int raceNameIndex = player.getRaceID();

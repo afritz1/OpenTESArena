@@ -702,7 +702,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 		else if (hit.getType() == Physics::HitType::Entity)
 		{
 			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
-			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 			if (primaryInteraction)
 			{

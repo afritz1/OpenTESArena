@@ -21,7 +21,7 @@ std::string GameWorldUiModel::getPlayerNameText(Game &game)
 std::string GameWorldUiModel::getStatusButtonText(Game &game)
 {
 	auto &gameState = game.getGameState();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
 	const LocationInstance &locationInst = gameState.getLocationInstance();
@@ -126,7 +126,7 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 
 std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	GameState &gameState = game.getGameState();
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	const Player &player = game.getPlayer();

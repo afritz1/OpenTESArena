@@ -12,6 +12,7 @@
 #include "Game.h"
 #include "Options.h"
 #include "PlayerInterface.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/TextureManager.h"
 #include "../GameLogic/PlayerLogicController.h"
@@ -202,7 +203,8 @@ bool Game::init()
 		return false;
 	}
 
-	if (!this->binaryAssetLibrary.init(isFloppyDiskVersion))
+	BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	if (!binaryAssetLibrary.init(isFloppyDiskVersion))
 	{
 		DebugLogError("Couldn't init binary asset library.");
 		return false;
@@ -224,7 +226,7 @@ bool Game::init()
 
 	this->cinematicLibrary.init();
 
-	const ExeData &exeData = this->binaryAssetLibrary.getExeData();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	this->charClassLibrary.init(exeData);
 	this->entityDefLibrary.init(exeData, this->textureManager);
 
@@ -371,11 +373,6 @@ Renderer &Game::getRenderer()
 TextureManager &Game::getTextureManager()
 {
 	return this->textureManager;
-}
-
-const BinaryAssetLibrary &Game::getBinaryAssetLibrary() const
-{
-	return this->binaryAssetLibrary;
 }
 
 const TextAssetLibrary &Game::getTextAssetLibrary() const

@@ -59,7 +59,7 @@ void TextCinematicUiModel::SpeechState::resetVoiceIndex()
 
 bool TextCinematicUiModel::shouldPlaySpeech(Game &game)
 {
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	return !exeData.isFloppyVersion();
 }

@@ -138,6 +138,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+
 	// Decide based on the active world type.
 	if (activeMapType == MapType::Interior)
 	{
@@ -151,9 +153,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 		}
 
 		// Leave the interior and go to the saved exterior.
-		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-		if (!gameState.tryPopMap(game.getPlayer(), game.getEntityDefinitionLibrary(),
-			game.getBinaryAssetLibrary(), renderChunkManager, textureManager, renderer))
+		if (!gameState.tryPopMap(game.getPlayer(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+			renderChunkManager, textureManager, renderer))
 		{
 			DebugCrash("Couldn't leave interior.");
 		}
@@ -249,7 +250,6 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef.getInteriorEntrance();
 			const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
 
-			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			if (!gameState.tryPushInterior(interiorGenInfo, returnCoord, game.getCharacterClassLibrary(),
 				game.getEntityDefinitionLibrary(), binaryAssetLibrary, textureManager, renderer))
 			{
@@ -280,7 +280,6 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 		else if (transitionType == TransitionType::CityGate)
 		{
 			// City gate transition.
-			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
 			const LocationDefinition &locationDef = gameState.getLocationDefinition();
 			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
@@ -614,7 +613,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 			newActiveLevel.update(dummyDeltaTime, activeChunkPositions, newChunkPositions, freedChunkPositions,
 				player, levelIndex, interiorMapDef, entityGenInfo, citizenGenInfo, gameState.getChasmAnimPercent(),
-				game.getRandom(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), renderChunkManager,
+				game.getRandom(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(), renderChunkManager,
 				textureManager, game.getAudioManager(), renderer);
 		};
 

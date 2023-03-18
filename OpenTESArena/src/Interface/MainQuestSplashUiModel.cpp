@@ -6,7 +6,7 @@
 
 std::string MainQuestSplashUiModel::getDungeonText(Game &game, int provinceID)
 {
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &textAssetLibrary = game.getTextAssetLibrary();
 
 	// @todo: maybe don't split these two strings in the first place. And convert

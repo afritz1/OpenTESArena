@@ -15,12 +15,13 @@
 #include "../Game/CharacterClassGeneration.h"
 
 #include "components/utilities/BufferView.h"
+#include "components/utilities/Singleton.h"
 
 // Contains assets that are generally not human-readable.
 
 class ArenaRandom;
 
-class BinaryAssetLibrary
+class BinaryAssetLibrary : public Singleton<BinaryAssetLibrary>
 {
 public:
 	class WorldMapTerrain

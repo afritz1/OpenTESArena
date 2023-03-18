@@ -124,7 +124,7 @@ bool ProvinceMapPanel::init(int provinceID)
 	});
 
 	auto &textureManager = game.getTextureManager();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const UiTextureID backgroundTextureID = ProvinceMapUiView::allocBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 	this->addDrawCall(
@@ -218,7 +218,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	// Location icon textures.
 	const TextureAsset backgroundPaletteTextureAsset = ProvinceMapUiView::getBackgroundPaletteTextureAsset(provinceID, binaryAssetLibrary);
@@ -478,7 +478,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 {
 	auto &game = this->getGame();
 	auto &gameState = game.getGameState();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const ProvinceDefinition &currentProvinceDef = gameState.getProvinceDefinition();
@@ -561,7 +561,7 @@ void ProvinceMapPanel::updateHoveredLocationID(const Int2 &originalPosition)
 	std::optional<int> closestIndex;
 	auto &game = this->getGame();
 	auto &gameState = game.getGameState();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);

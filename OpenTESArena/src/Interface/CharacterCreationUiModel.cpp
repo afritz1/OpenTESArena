@@ -21,7 +21,7 @@ std::string CharacterCreationUiModel::getPlayerName(Game &game)
 std::string CharacterCreationUiModel::getPlayerRaceName(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const ExeData &exeData = game.getBinaryAssetLibrary().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 	const auto &singularRaceNames = exeData.races.singularNames;
 	const int raceNameIndex = charCreationState.getRaceIndex();
@@ -47,7 +47,7 @@ std::vector<PrimaryAttribute> CharacterCreationUiModel::getPlayerAttributes(Game
 
 std::string ChooseClassCreationUiModel::getTitleText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseClassCreation;
 	text = String::replace(text, '\r', '\n');
 	return text;
@@ -55,7 +55,7 @@ std::string ChooseClassCreationUiModel::getTitleText(Game &game)
 
 std::string ChooseClassCreationUiModel::getGenerateButtonText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseClassCreationGenerate;
 }
 
@@ -66,7 +66,7 @@ std::string ChooseClassCreationUiModel::getGenerateButtonTooltipText()
 
 std::string ChooseClassCreationUiModel::getSelectButtonText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseClassCreationSelect;
 }
 
@@ -77,7 +77,7 @@ std::string ChooseClassCreationUiModel::getSelectButtonTooltipText()
 
 std::string ChooseClassUiModel::getTitleText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseClassList;
 }
 
@@ -182,7 +182,7 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game)
 {
 	// Get weapon names from the executable.
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &weaponStrings = exeData.equipment.weaponNames;
 
 	std::vector<int> allowedWeapons(charClassDef.getAllowedWeaponCount());
@@ -262,19 +262,19 @@ std::string ChooseClassUiModel::getFullTooltipText(const CharacterClassDefinitio
 
 std::string ChooseGenderUiModel::getTitleText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseGender;
 }
 
 std::string ChooseGenderUiModel::getMaleText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseGenderMale;
 }
 
 std::string ChooseGenderUiModel::getFemaleText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseGenderFemale;
 }
 
@@ -285,7 +285,7 @@ std::string ChooseNameUiModel::getTitleText(Game &game)
 	const int charClassDefID = charCreationState.getClassDefID();
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseName;
 	text = String::replace(text, "%s", charClassDef.getName());
 	return text;
@@ -299,7 +299,7 @@ bool ChooseNameUiModel::isCharacterAccepted(char c)
 
 std::string ChooseRaceUiModel::getTitleText(Game &game)
 {
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	std::string text = exeData.charCreation.chooseRace;
 	text = String::replace(text, '\r', '\n');
@@ -322,7 +322,7 @@ std::string ChooseRaceUiModel::getTitleText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmTitleText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.confirmRace;
 	text = String::replace(text, '\r', '\n');
 
@@ -361,7 +361,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmNoText(Game &game)
 std::string ChooseRaceUiModel::getProvinceTooltipText(Game &game, int provinceID)
 {
 	// Get the race name associated with the province.
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &pluralNames = exeData.races.pluralNames;
 	DebugAssertIndex(pluralNames, provinceID);
 	const std::string &raceName = pluralNames[provinceID];
@@ -370,7 +370,7 @@ std::string ChooseRaceUiModel::getProvinceTooltipText(Game &game, int provinceID
 
 std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 {
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	std::string segment = exeData.charCreation.confirmedRace1;
 	segment = String::replace(segment, '\r', '\n');
@@ -418,7 +418,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmedSecondText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string segment = exeData.charCreation.confirmedRace2;
 	segment = String::replace(segment, '\r', '\n');
 
@@ -447,7 +447,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedSecondText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 {
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	std::string segment = exeData.charCreation.confirmedRace3;
 	segment = String::replace(segment, '\r', '\n');
@@ -474,7 +474,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmedFourthText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string segment = exeData.charCreation.confirmedRace4;
 	segment = String::replace(segment, '\r', '\n');
 
@@ -483,7 +483,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFourthText(Game &game)
 
 std::string ChooseAttributesUiModel::getInitialText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.distributeClassPoints;
 	text = String::replace(text, '\r', '\n');
 	return text;
@@ -491,13 +491,13 @@ std::string ChooseAttributesUiModel::getInitialText(Game &game)
 
 std::string ChooseAttributesUiModel::getMessageBoxTitleText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseAttributes;
 }
 
 std::string ChooseAttributesUiModel::getMessageBoxSaveText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
 
 	// Delete color override characters.
@@ -510,7 +510,7 @@ std::string ChooseAttributesUiModel::getMessageBoxSaveText(Game &game)
 
 std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
 
 	// Delete color override characters.
@@ -523,7 +523,7 @@ std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 
 std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
 
 	auto &textureManager = game.getTextureManager();
@@ -540,7 +540,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 
 std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
 	
 	auto &textureManager = game.getTextureManager();
@@ -557,7 +557,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 
 std::string ChooseAttributesUiModel::getAppearanceText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAppearance;
 	text = String::replace(text, '\r', '\n');
 	return text;

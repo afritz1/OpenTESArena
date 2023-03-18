@@ -1115,7 +1115,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 	if (this->nextMap != nullptr)
 	{
 		if (!this->tryApplyMapTransition(std::move(*this->nextMap), player, game.getEntityDefinitionLibrary(),
-			game.getBinaryAssetLibrary(), game.getRenderChunkManager(), game.getTextureManager(), game.getRenderer()))
+			BinaryAssetLibrary::getInstance(), game.getRenderChunkManager(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugLogError("Couldn't apply map transition.");
 		}
@@ -1148,7 +1148,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 			mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
 
 		mapInst.update(dt, game, activeMapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
-			entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
+			entityDefLibrary, BinaryAssetLibrary::getInstance(), textureManager, game.getAudioManager());
 	}
 }
 
@@ -1167,7 +1167,7 @@ void GameState::tick(double dt, Game &game)
 	if (newHour != prevHour)
 	{
 		// Update the weather list that's used for selecting the current one.
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		this->updateWeatherList(exeData);
 	}
 
@@ -1255,7 +1255,7 @@ void GameState::tick(double dt, Game &game)
 		mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
 
 	mapInst.update(dt, game, mapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
-		entityDefLibrary, game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
+		entityDefLibrary, BinaryAssetLibrary::getInstance(), textureManager, game.getAudioManager());
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.

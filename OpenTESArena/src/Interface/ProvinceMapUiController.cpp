@@ -26,7 +26,7 @@ void ProvinceMapUiController::onTravelButtonSelected(Game &game, ProvinceMapPane
 	else
 	{
 		// Display error message about no selected destination.
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		const std::string errorText = [&exeData]()
 		{
 			std::string text = exeData.travel.noDestination;

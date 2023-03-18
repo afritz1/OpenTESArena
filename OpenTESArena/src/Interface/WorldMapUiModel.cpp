@@ -22,7 +22,7 @@ std::string WorldMapUiModel::getProvinceNameOffsetFilename()
 
 const WorldMapMask &WorldMapUiModel::getMask(const Game &game, int maskID)
 {
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &worldMapMasks = binaryAssetLibrary.getWorldMapMasks();
 
 	DebugAssertIndex(worldMapMasks, maskID);
@@ -33,7 +33,7 @@ std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosit
 	bool ignoreExitButton)
 {
 	const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
-	const auto &worldMapMasks = game.getBinaryAssetLibrary().getWorldMapMasks();
+	const auto &worldMapMasks = BinaryAssetLibrary::getInstance().getWorldMapMasks();
 	const int maskCount = static_cast<int>(worldMapMasks.size());
 	for (int maskID = 0; maskID < maskCount; maskID++)
 	{
@@ -96,7 +96,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 	int targetLocationID, int travelDays)
 {
 	auto &gameState = game.getGameState();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
 	// @todo: change these to 'index' so it's clear they don't rely on original game's 0-32, etc..

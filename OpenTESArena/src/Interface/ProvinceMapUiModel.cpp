@@ -22,7 +22,7 @@ ProvinceMapUiModel::TravelData::TravelData(int locationID, int provinceID, int t
 
 std::string ProvinceMapUiModel::makeAlreadyAtLocationText(Game &game, const std::string &locationName)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.travel.alreadyAtDestination;
 
 	// Remove carriage return at end.
@@ -97,7 +97,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex)
 {
 	auto &gameState = game.getGameState();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceInstance(srcProvinceIndex);
@@ -314,7 +314,7 @@ bool ProvinceSearchUiModel::isCharAllowed(char c)
 
 std::string ProvinceSearchUiModel::getTitleText(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.travel.searchTitleText;
 }
 

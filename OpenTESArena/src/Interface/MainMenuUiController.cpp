@@ -116,7 +116,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 {
 	// Game data instance, to be initialized further by one of the loading methods below.
 	// Create a player with random data for testing.
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	GameState &gameState = game.getGameState();
 	gameState.init(binaryAssetLibrary);
@@ -142,7 +142,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			if (testType == MainMenuUiModel::TestType_MainQuest)
 			{
 				// Fetch from a global function.
-				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+				const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 				MainMenuUiModel::SpecialCaseType specialCaseType;
 				MainMenuUiModel::getMainQuestLocationFromIndex(testIndex, exeData, &locationIndex, &provinceIndex, &specialCaseType);
 
@@ -212,7 +212,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
 			if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
 				game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
-				game.getBinaryAssetLibrary(), game.getTextureManager(), renderer))
+				BinaryAssetLibrary::getInstance(), game.getTextureManager(), renderer))
 			{
 				DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
 			}
@@ -245,7 +245,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 				if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
 					game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
-					game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
+					BinaryAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
 				{
 					DebugCrash("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
 				}

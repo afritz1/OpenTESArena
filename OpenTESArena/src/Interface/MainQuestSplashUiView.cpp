@@ -40,7 +40,7 @@ TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std
 
 TextureAsset MainQuestSplashUiView::getSplashTextureAsset(Game &game, int provinceID)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &staffDungeonSplashIndices = exeData.travel.staffDungeonSplashIndices;
 	DebugAssertIndex(staffDungeonSplashIndices, provinceID);
 	const int index = staffDungeonSplashIndices[provinceID];

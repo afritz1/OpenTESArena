@@ -170,7 +170,7 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 {
 	if (goToAutomap)
 	{
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		auto &gameState = game.getGameState();
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const LocationInstance &locationInst = gameState.getLocationInstance();

@@ -48,7 +48,7 @@ std::string MainMenuUiModel::getSelectedTestName(Game &game, int testType, int t
 {
 	if (testType == MainMenuUiModel::TestType_MainQuest)
 	{
-		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+		const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const auto &exeData = binaryAssetLibrary.getExeData();
 
 		// Decide how to get the main quest dungeon name.

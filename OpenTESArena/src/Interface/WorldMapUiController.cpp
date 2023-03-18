@@ -30,7 +30,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	gameState.setTravelData(nullptr);
 
 	// Handle fast travel behavior and decide which panel to switch to.
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 
@@ -121,7 +121,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		// Load the destination city.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
 			game.getTextAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
@@ -194,7 +194,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
 		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
 			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
@@ -236,7 +236,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
 		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
 			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load main quest interior \"" + travelLocationDef.getName() + "\".");

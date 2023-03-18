@@ -107,7 +107,7 @@ UiTextureID ChooseClassCreationUiView::allocParchmentTexture(TextureManager &tex
 
 Rect ChooseClassUiView::getListRect(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &chooseClassListUI = exeData.ui.chooseClassList;
 	return Rect(
 		chooseClassListUI.area.x,
@@ -118,7 +118,7 @@ Rect ChooseClassUiView::getListRect(Game &game)
 
 Rect ChooseClassUiView::getUpButtonRect(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &chooseClassListUI = exeData.ui.chooseClassList;
 	return Rect(
 		chooseClassListUI.buttonUp.x,
@@ -129,7 +129,7 @@ Rect ChooseClassUiView::getUpButtonRect(Game &game)
 
 Rect ChooseClassUiView::getDownButtonRect(Game &game)
 {
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &chooseClassListUI = exeData.ui.chooseClassList;
 	return Rect(
 		chooseClassListUI.buttonDown.x,

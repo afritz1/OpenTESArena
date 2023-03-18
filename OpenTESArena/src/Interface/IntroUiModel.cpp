@@ -21,7 +21,7 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 		return panel;
 	}
 
-	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const bool isFloppyVersion = exeData.isFloppyVersion();
 	if (isFloppyVersion)
 	{

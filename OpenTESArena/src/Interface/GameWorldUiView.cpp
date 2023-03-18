@@ -615,7 +615,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		case Physics::HitType::Entity:
 		{
 			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
-			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);

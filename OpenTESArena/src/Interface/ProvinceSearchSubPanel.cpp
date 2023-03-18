@@ -173,7 +173,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 
 	// @todo: draw blinking cursor for text entry
 
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const UiTextureID listBackgroundTextureID = ProvinceSearchUiView::allocListBackgroundTexture(
 		provinceID, binaryAssetLibrary, textureManager, renderer);
 	listBackgroundTextureRef.init(listBackgroundTextureID, renderer);
