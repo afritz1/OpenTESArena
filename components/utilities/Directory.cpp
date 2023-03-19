@@ -43,3 +43,59 @@ void Directory::createRecursively(const char *path)
 		DebugLogWarning("Couldn't create directories for \"" + std::string(path) + "\".");
 	}
 }
+
+int Directory::getFileCount(const char *path)
+{
+	if (!Directory::exists(path))
+	{
+		return 0;
+	}
+
+	const std::filesystem::directory_iterator dirIter(path);
+	const std::filesystem::directory_iterator dirIterEnd;
+	const size_t count = std::count_if(dirIter, dirIterEnd,
+		[](const std::filesystem::directory_entry &entry)
+	{
+		std::error_code dummy;
+		return entry.is_regular_file(dummy);
+	});
+
+	return static_cast<int>(count);
+}
+
+void Directory::deleteOldestFile(const char *path)
+{
+	if (!Directory::exists(path))
+	{
+		return;
+	}
+
+	std::error_code code;
+	std::filesystem::file_time_type oldestTime = std::filesystem::file_time_type::max();
+	std::filesystem::path oldestFilePath;
+	for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(path))
+	{
+		const std::filesystem::path &currentFilePath = entry.path();
+		const std::filesystem::file_time_type currentTime = entry.last_write_time(code);
+		if (code)
+		{
+			DebugLogWarning("Couldn't get last write time of file \"" + currentFilePath.string() + "\".");
+			continue;
+		}
+
+		if (currentTime < oldestTime)
+		{
+			oldestTime = currentTime;
+			oldestFilePath = currentFilePath;
+		}
+	}
+
+	if (!oldestFilePath.empty())
+	{
+		std::filesystem::remove(oldestFilePath, code);
+		if (code)
+		{
+			DebugLogWarning("Couldn't delete oldest file \"" + oldestFilePath.string() + "\".");
+		}
+	}
+}

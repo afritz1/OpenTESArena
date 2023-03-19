@@ -52,6 +52,8 @@ namespace
 
 namespace Log
 {
+	constexpr int MAX_FILES = 10;
+
 	char pathBuffer[1024];
 	std::ofstream stream;
 }
@@ -67,6 +69,12 @@ bool Debug::init(const char *logDirectory)
 	if (!Directory::exists(logDirectory))
 	{
 		Directory::createRecursively(logDirectory);
+	}
+
+	const int existingLogFileCount = Directory::getFileCount(logDirectory);
+	if (existingLogFileCount >= Log::MAX_FILES)
+	{
+		Directory::deleteOldestFile(logDirectory);
 	}
 
 	const std::tm tm = GetCalendarDateTime();
