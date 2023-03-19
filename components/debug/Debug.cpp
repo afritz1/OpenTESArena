@@ -11,7 +11,7 @@
 
 namespace
 {
-	std::tm GetTm()
+	std::tm GetCalendarDateTime()
 	{
 		const auto clock = std::chrono::system_clock::now();
 		const std::time_t clockAsTime = std::chrono::system_clock::to_time_t(clock);
@@ -69,7 +69,7 @@ bool Debug::init(const char *logDirectory)
 		Directory::createRecursively(logDirectory);
 	}
 
-	const std::tm tm = GetTm();
+	const std::tm tm = GetCalendarDateTime();
 	char timeStrBuffer[256];
 	std::strftime(timeStrBuffer, std::size(timeStrBuffer), "%H`%M`%S %z %m-%d-%Y", &tm);
 	std::snprintf(Log::pathBuffer, std::size(Log::pathBuffer), "%slog %s.txt", logDirectory, timeStrBuffer);
