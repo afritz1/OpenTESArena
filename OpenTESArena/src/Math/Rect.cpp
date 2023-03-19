@@ -1,3 +1,5 @@
+#include "SDL.h"
+
 #include "Rect.h"
 
 #include "components/debug/Debug.h"
@@ -7,11 +9,10 @@ Rect::Rect(int x, int y, int width, int height)
 	DebugAssert(width >= 0);
 	DebugAssert(height >= 0);
 
-	this->rect = SDL_Rect();
-	this->rect.x = x;
-	this->rect.y = y;
-	this->rect.w = width;
-	this->rect.h = height;
+	this->x = x;
+	this->y = y;
+	this->w = width;
+	this->h = height;
 }
 
 Rect::Rect(const Int2 &center, int width, int height)
@@ -24,21 +25,21 @@ Rect::Rect()
 	: Rect(0, 0, 0, 0) { }
 
 Rect::Rect(const Rect &rect)
-	: Rect(rect.rect.x, rect.rect.y, rect.rect.w, rect.rect.h) { }
+	: Rect(rect.x, rect.y, rect.w, rect.h) { }
 
 int Rect::getWidth() const
 {
-	return this->rect.w;
+	return this->w;
 }
 
 int Rect::getHeight() const
 {
-	return this->rect.h;
+	return this->h;
 }
 
 int Rect::getLeft() const
 {
-	return this->rect.x;
+	return this->x;
 }
 
 int Rect::getRight() const
@@ -48,7 +49,7 @@ int Rect::getRight() const
 
 int Rect::getTop() const
 {
-	return this->rect.y;
+	return this->y;
 }
 
 int Rect::getBottom() const
@@ -78,33 +79,37 @@ Int2 Rect::getBottomRight() const
 
 Int2 Rect::getCenter() const
 {
-	return Int2(this->getLeft() + (this->getWidth() / 2),
-		(this->getTop() + (this->getHeight() / 2)));
+	return Int2(this->getLeft() + (this->getWidth() / 2), (this->getTop() + (this->getHeight() / 2)));
 }
 
-const SDL_Rect &Rect::getRect() const
+SDL_Rect Rect::getSdlRect() const
 {
-	return this->rect;
+	SDL_Rect rect;
+	rect.x = this->x;
+	rect.y = this->y;
+	rect.w = this->w;
+	rect.h = this->h;
+	return rect;
 }
 
 void Rect::setX(int x)
 {
-	this->rect.x = x;
+	this->x = x;
 }
 
 void Rect::setY(int y)
 {
-	this->rect.y = y;
+	this->y = y;
 }
 
 void Rect::setWidth(int width)
 {
-	this->rect.w = width;
+	this->w = width;
 }
 
 void Rect::setHeight(int height)
 {
-	this->rect.h = height;
+	this->h = height;
 }
 
 bool Rect::contains(const Int2 &point) const

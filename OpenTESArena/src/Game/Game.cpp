@@ -855,10 +855,11 @@ void Game::loop()
 						continue;
 					}
 
-					const std::optional<Rect> &clipRect = drawCall.getClipRect();
-					if (clipRect.has_value())
+					const std::optional<Rect> &optClipRect = drawCall.getClipRect();
+					if (optClipRect.has_value())
 					{
-						this->renderer.setClipRect(&clipRect->getRect());
+						const SDL_Rect clipRect = optClipRect->getSdlRect();
+						this->renderer.setClipRect(&clipRect);
 					}
 
 					const UiTextureID textureID = drawCall.getTextureID();
@@ -874,7 +875,7 @@ void Game::loop()
 					const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
 					this->renderer.draw(&renderElement, 1, renderSpace);
 
-					if (clipRect.has_value())
+					if (optClipRect.has_value())
 					{
 						this->renderer.setClipRect(nullptr);
 					}

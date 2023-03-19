@@ -691,8 +691,9 @@ void Renderer::setClipRect(const SDL_Rect *rect)
 	if (rect != nullptr)
 	{
 		// @temp: assume in classic space
-		Rect nativeRect = this->originalToNative(Rect(rect->x, rect->y, rect->w, rect->h));
-		SDL_RenderSetClipRect(this->renderer, &nativeRect.getRect());
+		const Rect nativeRect = this->originalToNative(Rect(rect->x, rect->y, rect->w, rect->h));
+		const SDL_Rect nativeRectSdl = nativeRect.getSdlRect();
+		SDL_RenderSetClipRect(this->renderer, &nativeRectSdl);
 	}
 	else
 	{
@@ -912,7 +913,8 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	const Rect rect = this->originalToNative(Rect(x, y, w, h));
-	SDL_RenderFillRect(this->renderer, &rect.getRect());
+	const SDL_Rect rectSdl = rect.getSdlRect();
+	SDL_RenderFillRect(this->renderer, &rectSdl);
 }
 
 void Renderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &voxelDrawCalls,

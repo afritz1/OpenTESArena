@@ -1,5 +1,7 @@
 #include <algorithm>
 
+#include "SDL.h"
+
 #include "TextureUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/TextureAsset.h"

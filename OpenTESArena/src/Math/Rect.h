@@ -1,14 +1,14 @@
 #ifndef RECTANGLE_H
 #define RECTANGLE_H
 
-#include "SDL.h"
-
 #include "../Math/Vector2.h"
+
+struct SDL_Rect;
 
 class Rect
 {
 private:
-	SDL_Rect rect;
+	int x, y, w, h;
 public:
 	Rect(int x, int y, int width, int height);
 	Rect(const Int2 &center, int width, int height);
@@ -27,7 +27,7 @@ public:
 	Int2 getBottomLeft() const;
 	Int2 getBottomRight() const;
 	Int2 getCenter() const;
-	const SDL_Rect &getRect() const;
+	SDL_Rect getSdlRect() const;
 
 	void setX(int x);
 	void setY(int y);
