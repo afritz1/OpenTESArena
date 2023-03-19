@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "Debug.h"
+#include "../utilities/Directory.h"
 #include "../utilities/String.h"
 
 namespace
@@ -61,6 +62,11 @@ bool Debug::init(const char *logDirectory)
 	{
 		std::cerr << "Can't init debug logging with empty directory.\n";
 		return false;
+	}
+
+	if (!Directory::exists(logDirectory))
+	{
+		Directory::createRecursively(logDirectory);
 	}
 
 	const std::tm tm = GetTm();
