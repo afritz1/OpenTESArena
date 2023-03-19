@@ -10,6 +10,21 @@
 
 namespace
 {
+	std::tm GetTm()
+	{
+		const auto clock = std::chrono::system_clock::now();
+		const std::time_t clockAsTime = std::chrono::system_clock::to_time_t(clock);
+
+		std::tm tm;
+#if defined(_WIN32)
+		gmtime_s(&tm, &clockAsTime);
+#else
+		const std::tm *tmPtr = gmtime(&clockAsTime);
+		tm = *tmPtr;
+#endif
+		return tm;
+	}
+
 	const std::pair<DebugMessageType, std::string> DebugMessageTypeNames[] =
 	{
 		{ DebugMessageType::Status, "" },
@@ -48,12 +63,7 @@ bool Debug::init(const char *logDirectory)
 		return false;
 	}
 
-	const auto clock = std::chrono::system_clock::now();
-	const std::time_t clockAsTime = std::chrono::system_clock::to_time_t(clock);
-
-	std::tm tm;
-	gmtime_s(&tm, &clockAsTime);
-
+	const std::tm tm = GetTm();
 	char timeStrBuffer[256];
 	std::strftime(timeStrBuffer, std::size(timeStrBuffer), "%H`%M`%S %z %m-%d-%Y", &tm);
 	std::snprintf(Log::pathBuffer, std::size(Log::pathBuffer), "%slog %s.txt", logDirectory, timeStrBuffer);
