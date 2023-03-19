@@ -13,7 +13,6 @@
 #include "Options.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputManager.h"
 #include "../Interface/Panel.h"
@@ -49,7 +48,6 @@ private:
 	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
 		takeScreenshotListenerID, debugProfilerListenerID;
 
-	CharacterClassLibrary charClassLibrary;
 	EntityDefinitionLibrary entityDefLibrary;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	GameWorldRenderCallback gameWorldRenderCallback;
@@ -125,9 +123,6 @@ public:
 	// Gets the input manager for obtaining input state. This should be read-only for
 	// all classes except the Game class.
 	InputManager &getInputManager();
-	
-	// Gets the character class library for obtaining various class definitions.
-	const CharacterClassLibrary &getCharacterClassLibrary() const;
 
 	// Gets the entity definition library for obtaining various entity definitions.
 	const EntityDefinitionLibrary &getEntityDefinitionLibrary() const;

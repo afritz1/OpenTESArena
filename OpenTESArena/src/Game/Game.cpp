@@ -17,6 +17,7 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CinematicLibrary.h"
@@ -231,7 +232,7 @@ bool Game::init()
 	CinematicLibrary::getInstance().init();
 
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
-	this->charClassLibrary.init(exeData);
+	CharacterClassLibrary::getInstance().init(exeData);
 	this->entityDefLibrary.init(exeData, this->textureManager);
 
 	// Load single-instance sounds file for the audio manager (new feature with this engine since
@@ -296,11 +297,6 @@ AudioManager &Game::getAudioManager()
 InputManager &Game::getInputManager()
 {
 	return this->inputManager;
-}
-
-const CharacterClassLibrary &Game::getCharacterClassLibrary() const
-{
-	return this->charClassLibrary;
 }
 
 const EntityDefinitionLibrary &Game::getEntityDefinitionLibrary() const

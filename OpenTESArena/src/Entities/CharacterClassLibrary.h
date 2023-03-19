@@ -7,9 +7,11 @@
 
 #include "CharacterClassDefinition.h"
 
+#include "components/utilities/Singleton.h"
+
 class ExeData;
 
-class CharacterClassLibrary
+class CharacterClassLibrary : public Singleton<CharacterClassLibrary>
 {
 public:
 	using Predicate = std::function<bool(const CharacterClassDefinition&)>;

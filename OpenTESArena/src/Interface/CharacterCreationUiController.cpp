@@ -20,6 +20,7 @@
 #include "WorldMapUiModel.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -530,10 +531,11 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
+		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 		gameState.init(binaryAssetLibrary); // @todo: not sure about this; should we init really early in the engine?
 		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
-			BinaryAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
+			charClassLibrary, game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
+			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
 		}
@@ -552,7 +554,6 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const bool male = charCreationState.isMale();
 		const int raceIndex = charCreationState.getRaceIndex();
 
-		const auto &charClassLibrary = game.getCharacterClassLibrary();
 		const int charClassDefID = charCreationState.getClassDefID();
 		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
@@ -796,7 +797,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+			CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(),
 			BinaryAssetLibrary::getInstance(), TextAssetLibrary::getInstance(), game.getTextureManager(),
 			renderer))
 		{

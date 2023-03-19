@@ -5,6 +5,7 @@
 #include "CharacterCreationUiView.h"
 #include "ChooseClassPanel.h"
 #include "CommonUiView.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/FontLibrary.h"
@@ -19,7 +20,7 @@ bool ChooseClassPanel::init()
 	auto &game = this->getGame();
 
 	// Read in character classes.
-	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	this->charClasses = std::vector<CharacterClassDefinition>(charClassLibrary.getDefinitionCount());
 	DebugAssert(this->charClasses.size() > 0);
 	for (int i = 0; i < static_cast<int>(this->charClasses.size()); i++)
@@ -62,7 +63,7 @@ bool ChooseClassPanel::init()
 		this->classesListBox.add(std::string(charClass.getName()));
 		this->classesListBox.setCallback(i, [&game, &charClass]()
 		{
-			const auto &charClassLibrary = game.getCharacterClassLibrary();
+			const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 			int charClassDefID;
 			if (!charClassLibrary.tryGetDefinitionIndex(charClass, &charClassDefID))
 			{

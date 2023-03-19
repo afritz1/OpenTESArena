@@ -3,6 +3,7 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
 #include "../Sky/SkyUtils.h"
@@ -252,7 +253,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef.getInteriorEntrance();
 			const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
 
-			if (!gameState.tryPushInterior(interiorGenInfo, returnCoord, game.getCharacterClassLibrary(),
+			if (!gameState.tryPushInterior(interiorGenInfo, returnCoord, CharacterClassLibrary::getInstance(),
 				game.getEntityDefinitionLibrary(), binaryAssetLibrary, textureManager, renderer))
 			{
 				DebugLogError("Couldn't push new interior.");
@@ -351,7 +352,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
 
 				if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-					worldMapLocationIDs, game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+					worldMapLocationIDs, CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(),
 					binaryAssetLibrary, textureManager, renderer))
 				{
 					DebugLogError("Couldn't switch from city to wilderness for \"" + locationDef.getName() + "\".");
@@ -400,7 +401,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
 
 				if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-					game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+					CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
 					TextAssetLibrary::getInstance(), textureManager, renderer))
 				{
 					DebugLogError("Couldn't switch from wilderness to city for \"" + locationDef.getName() + "\".");

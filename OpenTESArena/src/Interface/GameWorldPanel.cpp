@@ -11,6 +11,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
 #include "../GameLogic/MapLogicController.h"
@@ -544,7 +545,7 @@ void GameWorldPanel::initUiDrawCalls()
 			Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight()),
 			PivotType::TopLeft);
 
-		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 		const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
 		if (!charClassDef.canCastMagic())
 		{

@@ -2,6 +2,7 @@
 
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Player.h"
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/ArenaDateUtils.h"
@@ -198,7 +199,7 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 	if (buttonType == ButtonType::Magic)
 	{
 		const Player &player = game.getPlayer();
-		const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 		const int charClassDefID = player.getCharacterClassDefID();
 		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 		return charClassDef.canCastMagic();

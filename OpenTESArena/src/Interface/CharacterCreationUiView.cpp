@@ -6,6 +6,7 @@
 #include "CharacterSheetUiView.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
@@ -713,7 +714,7 @@ Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const bool isMale = charCreationState.isMale();
 
-	const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.canCastMagic();
@@ -756,7 +757,7 @@ TextureAsset ChooseAttributesUiView::getShirtTextureAsset(Game &game)
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const bool isMale = charCreationState.isMale();
 
-	const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.canCastMagic();

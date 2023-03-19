@@ -6,6 +6,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/PrimaryAttribute.h"
 #include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
@@ -116,7 +117,7 @@ Int2 CharacterSheetUiView::getShirtOffset(Game &game)
 	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 
-	const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = player.getCharacterClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.canCastMagic();
@@ -183,7 +184,7 @@ TextureAsset CharacterSheetUiView::getShirtTextureAsset(Game &game)
 	const Player &player = game.getPlayer();
 	const bool isMale = player.isMale();
 
-	const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = player.getCharacterClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.canCastMagic();

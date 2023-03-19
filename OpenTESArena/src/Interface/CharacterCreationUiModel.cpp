@@ -2,6 +2,7 @@
 #include "CharacterCreationUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
 #include "../Items/ArmorMaterial.h"
@@ -32,7 +33,7 @@ std::string CharacterCreationUiModel::getPlayerRaceName(Game &game)
 
 std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
 {
-	const CharacterClassLibrary &charClassLibrary = game.getCharacterClassLibrary();
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const int defID = charCreationState.getClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
@@ -282,7 +283,7 @@ std::string ChooseGenderUiModel::getFemaleText(Game &game)
 std::string ChooseNameUiModel::getTitleText(Game &game)
 {
 	const auto &charCreationState = game.getCharacterCreationState();
-	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
@@ -306,7 +307,7 @@ std::string ChooseRaceUiModel::getTitleText(Game &game)
 	text = String::replace(text, '\r', '\n');
 
 	const auto &charCreationState = game.getCharacterCreationState();
-	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
@@ -387,7 +388,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 	DebugAssertIndex(pluralRaceNames, raceIndex);
 	const std::string &pluralRaceName = pluralRaceNames[raceIndex];
 
-	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
@@ -454,7 +455,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 	segment = String::replace(segment, '\r', '\n');
 
 	const auto &charCreationState = game.getCharacterCreationState();
-	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 

@@ -6,6 +6,7 @@
 #include "PauseMenuUiController.h"
 #include "PauseMenuUiModel.h"
 #include "PauseMenuUiView.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
@@ -144,7 +145,7 @@ bool PauseMenuPanel::init()
 	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
 	this->noMagicTextureRef.init(noMagicTextureID, renderer);
 
-	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
 	if (!charClassDef.canCastMagic())
 	{

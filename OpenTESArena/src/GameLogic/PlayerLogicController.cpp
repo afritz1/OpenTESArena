@@ -5,6 +5,7 @@
 #include "../Collision/ArenaSelectionUtils.h"
 #include "../Collision/Physics.h"
 #include "../Collision/SelectionUtils.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
@@ -719,7 +720,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 				const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
 				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
-				const auto &charClassLibrary = game.getCharacterClassLibrary();
+				const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 
 				std::string entityName;
 				std::string text;
