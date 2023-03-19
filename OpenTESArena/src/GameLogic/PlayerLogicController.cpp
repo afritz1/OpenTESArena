@@ -6,6 +6,7 @@
 #include "../Collision/Physics.h"
 #include "../Collision/SelectionUtils.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
@@ -594,7 +595,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-		includeEntities, levelInst, game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
+		includeEntities, levelInst, EntityDefinitionLibrary::getInstance(), game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
@@ -719,7 +720,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 				// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 				const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
-				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
+				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, EntityDefinitionLibrary::getInstance());
 				const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 
 				std::string entityName;

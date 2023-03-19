@@ -7,6 +7,8 @@
 #include "EntityUtils.h"
 #include "../Assets/ArenaTypes.h"
 
+#include "components/utilities/Singleton.h"
+
 // Collection of various entity definitions. Not all definition types are supported
 // due to insufficient information for look-up/comparison and therefore the definitions
 // must be split between this library and the currently active level.
@@ -14,7 +16,7 @@
 class ExeData;
 class TextureManager;
 
-class EntityDefinitionLibrary
+class EntityDefinitionLibrary : public Singleton<EntityDefinitionLibrary>
 {
 public:
 	class Key

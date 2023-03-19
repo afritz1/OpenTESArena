@@ -7,6 +7,7 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
@@ -124,7 +125,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		// Load the destination city.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
+			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
 			TextAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
@@ -197,7 +198,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
 		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
+			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
 			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
@@ -239,7 +240,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
 		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
+			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
 			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load main quest interior \"" + travelLocationDef.getName() + "\".");

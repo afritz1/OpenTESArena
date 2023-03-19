@@ -7,6 +7,7 @@
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
 #include "../UI/ArenaFontName.h"
@@ -533,7 +534,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 			constexpr bool includeEntities = false;
 			Physics::Hit hit;
 			const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-				includeEntities, levelInst, game.getEntityDefinitionLibrary(), renderer, hit);
+				includeEntities, levelInst, EntityDefinitionLibrary::getInstance(), renderer, hit);
 
 			if (success)
 			{
@@ -590,10 +591,12 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
 	const double ceilingScale = levelInst.getCeilingScale();
 
+	EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+
 	constexpr bool includeEntities = true;
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection, includeEntities,
-		levelInst, game.getEntityDefinitionLibrary(), renderer, hit);
+		levelInst, entityDefLibrary, renderer, hit);
 
 	std::string text;
 	if (success)
@@ -621,7 +624,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, game.getEntityDefinitionLibrary());
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, entityDefLibrary);
 			const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 
 			std::string entityName;

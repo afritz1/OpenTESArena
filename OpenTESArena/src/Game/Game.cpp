@@ -18,6 +18,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CinematicLibrary.h"
@@ -233,7 +234,7 @@ bool Game::init()
 
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	CharacterClassLibrary::getInstance().init(exeData);
-	this->entityDefLibrary.init(exeData, this->textureManager);
+	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
 
 	// Load single-instance sounds file for the audio manager (new feature with this engine since
 	// the one-sound-at-a-time limit no longer exists).
@@ -297,11 +298,6 @@ AudioManager &Game::getAudioManager()
 InputManager &Game::getInputManager()
 {
 	return this->inputManager;
-}
-
-const EntityDefinitionLibrary &Game::getEntityDefinitionLibrary() const
-{
-	return this->entityDefLibrary;
 }
 
 GameState &Game::getGameState()

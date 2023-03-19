@@ -13,6 +13,7 @@
 #include "../Assets/RMDFile.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/Player.h"
 #include "../GameLogic/MapLogicController.h"
 #include "../GameLogic/PlayerLogicController.h"
@@ -1115,7 +1116,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 	Player &player = game.getPlayer();
 	if (this->nextMap != nullptr)
 	{
-		if (!this->tryApplyMapTransition(std::move(*this->nextMap), player, game.getEntityDefinitionLibrary(),
+		if (!this->tryApplyMapTransition(std::move(*this->nextMap), player, EntityDefinitionLibrary::getInstance(),
 			BinaryAssetLibrary::getInstance(), game.getRenderChunkManager(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugLogError("Couldn't apply map transition.");
@@ -1134,7 +1135,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 			return locationDef.getLatitude();
 		}();
 
-		const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
+		const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 		TextureManager &textureManager = game.getTextureManager();
 
 		EntityGeneration::EntityGenInfo entityGenInfo;
@@ -1241,7 +1242,7 @@ void GameState::tick(double dt, Game &game)
 		return locationDef.getLatitude();
 	}();
 
-	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 	TextureManager &textureManager = game.getTextureManager();
 
 	EntityGeneration::EntityGenInfo entityGenInfo;

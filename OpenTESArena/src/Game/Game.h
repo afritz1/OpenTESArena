@@ -13,7 +13,6 @@
 #include "Options.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
-#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputManager.h"
 #include "../Interface/Panel.h"
 #include "../Rendering/RenderChunkManager.h"
@@ -48,7 +47,6 @@ private:
 	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
 		takeScreenshotListenerID, debugProfilerListenerID;
 
-	EntityDefinitionLibrary entityDefLibrary;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	GameWorldRenderCallback gameWorldRenderCallback;
 	Options options;
@@ -123,9 +121,6 @@ public:
 	// Gets the input manager for obtaining input state. This should be read-only for
 	// all classes except the Game class.
 	InputManager &getInputManager();
-
-	// Gets the entity definition library for obtaining various entity definitions.
-	const EntityDefinitionLibrary &getEntityDefinitionLibrary() const;
 
 	// The game state holds the "session" for the game. If no session is active, do not call this method.
 	// Verify beforehand by calling Game::gameStateIsActive().

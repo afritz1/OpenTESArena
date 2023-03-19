@@ -4,6 +4,7 @@
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
 #include "../Sky/SkyUtils.h"
@@ -17,7 +18,7 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 	GameState &gameState = game.getGameState();
 	MapInstance &mapInst = gameState.getActiveMapInst();
 	LevelInstance &levelInst = mapInst.getActiveLevel();
-	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
+	const auto &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
 	// Turn streetlights on or off.
 	// @todo
@@ -156,7 +157,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 		}
 
 		// Leave the interior and go to the saved exterior.
-		if (!gameState.tryPopMap(game.getPlayer(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+		if (!gameState.tryPopMap(game.getPlayer(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
 			renderChunkManager, textureManager, renderer))
 		{
 			DebugCrash("Couldn't leave interior.");
@@ -254,7 +255,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
 
 			if (!gameState.tryPushInterior(interiorGenInfo, returnCoord, CharacterClassLibrary::getInstance(),
-				game.getEntityDefinitionLibrary(), binaryAssetLibrary, textureManager, renderer))
+				EntityDefinitionLibrary::getInstance(), binaryAssetLibrary, textureManager, renderer))
 			{
 				DebugLogError("Couldn't push new interior.");
 				return;
@@ -352,7 +353,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
 
 				if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-					worldMapLocationIDs, CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(),
+					worldMapLocationIDs, CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
 					binaryAssetLibrary, textureManager, renderer))
 				{
 					DebugLogError("Couldn't switch from city to wilderness for \"" + locationDef.getName() + "\".");
@@ -401,7 +402,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
 
 				if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-					CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+					CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
 					TextAssetLibrary::getInstance(), textureManager, renderer))
 				{
 					DebugLogError("Couldn't switch from wilderness to city for \"" + locationDef.getName() + "\".");
@@ -616,7 +617,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 			newActiveLevel.update(dummyDeltaTime, activeChunkPositions, newChunkPositions, freedChunkPositions,
 				player, levelIndex, interiorMapDef, entityGenInfo, citizenGenInfo, gameState.getChasmAnimPercent(),
-				game.getRandom(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(), renderChunkManager,
+				game.getRandom(), EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(), renderChunkManager,
 				textureManager, game.getAudioManager(), renderer);
 		};
 

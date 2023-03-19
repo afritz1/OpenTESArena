@@ -833,7 +833,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	// @todo: shore up loadScene() and that overall design before attempting to change dirty voxels and entities between frames.
 	/*renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
 		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight(),
-		game.getEntityDefinitionLibrary());*/
+		EntityDefinitionLibrary::getInstance());*/
 
 	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
 	const ObjectTextureID paletteTextureID = activeLevelInst.getPaletteTextureID();

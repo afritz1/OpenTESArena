@@ -15,6 +15,7 @@
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
 #include "../World/MapType.h"
@@ -214,7 +215,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
 			if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(),
+				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
 				BinaryAssetLibrary::getInstance(), game.getTextureManager(), renderer))
 			{
 				DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
@@ -247,7 +248,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 				if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-					CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(),
+					CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
 					BinaryAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
 				{
 					DebugCrash("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
@@ -285,7 +286,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
 				if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-					CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(),
+					CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
 					binaryAssetLibrary, game.getTextureManager(), renderer))
 				{
 					DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
@@ -374,7 +375,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
 				textAssetLibrary, game.getTextureManager(), renderer))
 			{
 				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
@@ -456,7 +457,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			// Load city into game state.
 			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
 				textAssetLibrary, game.getTextureManager(), renderer))
 			{
 				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
@@ -499,7 +500,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		// Load wilderness into game state.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
 		if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-			worldMapLocationIDs, CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(),
+			worldMapLocationIDs, CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
 			binaryAssetLibrary, game.getTextureManager(), renderer))
 		{
 			DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");

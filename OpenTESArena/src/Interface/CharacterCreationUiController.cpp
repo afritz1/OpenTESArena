@@ -21,6 +21,7 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -534,7 +535,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 		gameState.init(binaryAssetLibrary); // @todo: not sure about this; should we init really early in the engine?
 		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			charClassLibrary, game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
+			charClassLibrary, EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
 			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
@@ -797,7 +798,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), game.getEntityDefinitionLibrary(),
+			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
 			BinaryAssetLibrary::getInstance(), TextAssetLibrary::getInstance(), game.getTextureManager(),
 			renderer))
 		{
