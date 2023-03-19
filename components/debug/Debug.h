@@ -18,15 +18,15 @@ enum class DebugMessageType
 class Debug
 {
 private:
-	static const std::string LOG_FILENAME;
-
 	Debug() = delete;
 	~Debug() = delete;
 
 	// Writes a debug message to the console with the file path and line number.
-	static void write(DebugMessageType type, const std::string &filePath,
-		int lineNumber, const std::string &message);
+	static void write(DebugMessageType type, const std::string &filePath, int lineNumber, const std::string &message);
 public:
+	static bool init(const char *logDirectory);
+	static void shutdown();
+
 	// Shortens the __FILE__ macro so it only includes a couple parent folders.
 	static std::string getShorterPath(const char *__file__);
 

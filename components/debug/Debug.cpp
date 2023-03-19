@@ -1,4 +1,7 @@
+#include <algorithm>
+#include <chrono>
 #include <cstdint>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 
@@ -31,7 +34,45 @@ namespace
 	}
 }
 
-const std::string Debug::LOG_FILENAME = "log.txt";
+namespace Log
+{
+	char pathBuffer[1024];
+	std::ofstream stream;
+}
+
+bool Debug::init(const char *logDirectory)
+{
+	if (String::isNullOrEmpty(logDirectory))
+	{
+		std::cerr << "Can't init debug logging with empty directory.\n";
+		return false;
+	}
+
+	const auto clock = std::chrono::system_clock::now();
+	const std::time_t clockAsTime = std::chrono::system_clock::to_time_t(clock);
+
+	std::tm tm;
+	gmtime_s(&tm, &clockAsTime);
+
+	char timeStrBuffer[256];
+	std::strftime(timeStrBuffer, std::size(timeStrBuffer), "%H`%M`%S %z %m-%d-%Y", &tm);
+	std::snprintf(Log::pathBuffer, std::size(Log::pathBuffer), "%slog %s.txt", logDirectory, timeStrBuffer);
+
+	Log::stream.open(Log::pathBuffer, std::ofstream::trunc);
+	if (!Log::stream.is_open())
+	{
+		std::cerr << "Couldn't open log file stream for path \"" + std::string(Log::pathBuffer) + "\".\n";
+		return false;
+	}
+
+	return true;
+}
+
+void Debug::shutdown()
+{
+	Log::stream.close();
+	std::fill(std::begin(Log::pathBuffer), std::end(Log::pathBuffer), '\0');
+}
 
 std::string Debug::getShorterPath(const char *__file__)
 {
@@ -56,7 +97,10 @@ std::string Debug::getShorterPath(const char *__file__)
 void Debug::write(DebugMessageType type, const std::string &filePath, int lineNumber, const std::string &message)
 {
 	const std::string &messageTypeStr = GetDebugMessageTypeString(type);
-	std::cerr << "[" << filePath << "(" << std::to_string(lineNumber) << ")] " << messageTypeStr << message << "\n";
+	const std::string lineNumberStr = std::to_string(lineNumber);
+	const std::string outputStr = "[" + filePath + "(" + lineNumberStr + ")] " + messageTypeStr + message + '\n';
+	std::cerr << outputStr;
+	Log::stream << outputStr;
 }
 
 void Debug::log(const char *__file__, int lineNumber, const std::string &message)
@@ -86,5 +130,6 @@ void Debug::crash(const char *__file__, int lineNumber, const std::string &messa
 	std::getchar();
 #endif
 
+	Debug::shutdown();
 	exit(EXIT_FAILURE);
 }

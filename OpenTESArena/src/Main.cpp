@@ -6,6 +6,7 @@
 #include "SDL.h"
 
 #include "Game/Game.h"
+#include "Utilities/Platform.h"
 
 #include "components/debug/Debug.h"
 
@@ -13,6 +14,13 @@ int main(int argc, char *argv[])
 {
 	static_cast<void>(argc);
 	static_cast<void>(argv);
+
+	const std::string logPath = Platform::getLogPath();
+	if (!Debug::init(logPath.c_str()))
+	{
+		std::cerr << "Couldn't init debug logging.\n";
+		return EXIT_FAILURE;
+	}
 
 	try
 	{
@@ -29,6 +37,8 @@ int main(int argc, char *argv[])
 	{
 		DebugCrash("Exception: " + std::string(e.what()));
 	}
+
+	Debug::shutdown();
 
 	return EXIT_SUCCESS;
 }
