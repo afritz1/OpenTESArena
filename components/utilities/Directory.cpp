@@ -80,7 +80,7 @@ void Directory::deleteOldestFile(const char *path)
 		const std::filesystem::file_time_type currentTime = entry.last_write_time(code);
 		if (code)
 		{
-			DebugLogWarning("Couldn't get last write time of file \"" + currentFilePath.string() + "\".");
+			DebugLog("Error getting last write time of file \"" + currentFilePath.string() + "\": " + code.message());
 			continue;
 		}
 
@@ -96,7 +96,7 @@ void Directory::deleteOldestFile(const char *path)
 		std::filesystem::remove(oldestFilePath, code);
 		if (code)
 		{
-			DebugLogWarning("Couldn't delete oldest file \"" + oldestFilePath.string() + "\".");
+			DebugLog("Error deleting oldest file \"" + oldestFilePath.string() + "\": " + code.message());
 		}
 	}
 }
