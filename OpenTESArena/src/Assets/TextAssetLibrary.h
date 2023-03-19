@@ -8,6 +8,7 @@
 #include "../Game/CharacterQuestion.h"
 
 #include "components/utilities/BufferView.h"
+#include "components/utilities/Singleton.h"
 
 // Contains assets that are generally human-readable.
 
@@ -16,7 +17,7 @@
 
 class ArenaRandom;
 
-class TextAssetLibrary
+class TextAssetLibrary : public Singleton<TextAssetLibrary>
 {
 public:
 	// Each artifact text file (ARTFACT1.DAT, ARTFACT2.DAT) contains conversation strings

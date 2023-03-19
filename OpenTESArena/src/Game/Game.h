@@ -11,7 +11,6 @@
 #include "CharacterCreationState.h"
 #include "GameState.h"
 #include "Options.h"
-#include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Audio/MusicLibrary.h"
@@ -78,7 +77,6 @@ private:
 	// Displayed with varying profiler levels.
 	TextBox debugInfoTextBox;
 
-	TextAssetLibrary textAssetLibrary;
 	Random random; // Convenience random for ease of use.
 	Profiler profiler;
 	FPSCounter fpsCounter;
@@ -179,9 +177,6 @@ public:
 
 	// Gets the texture manager object for loading images from file.
 	TextureManager &getTextureManager();
-
-	// Gets various asset libraries for loading Arena-related files.
-	const TextAssetLibrary &getTextAssetLibrary() const;
 
 	// Gets the global RNG initialized at program start.
 	Random &getRandom();

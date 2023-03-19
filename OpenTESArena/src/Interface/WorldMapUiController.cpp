@@ -4,6 +4,7 @@
 #include "ProvinceMapPanel.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
@@ -122,7 +123,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), BinaryAssetLibrary::getInstance(),
-			game.getTextAssetLibrary(), game.getTextureManager(), game.getRenderer()))
+			TextAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
 		}

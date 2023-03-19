@@ -5,6 +5,7 @@
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../Math/Random.h"
@@ -170,22 +171,20 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 		return text;
 	}();
 
-	const auto &textAssetLibrary = game.getTextAssetLibrary();
 	const std::string locationDescriptionString = [&game, &gameState, &binaryAssetLibrary,
-		&textAssetLibrary, &exeData, provinceID, localCityID, &locationDef]()
+		&exeData, provinceID, localCityID, &locationDef]()
 	{
 		const ArenaTypes::LocationType locationType = ArenaLocationUtils::getCityType(localCityID);
 
 		// Get the description for the local location. If it's a town or village, choose
 		// one of the three substrings randomly. Otherwise, get the city description text
 		// directly.
-		const std::string description = [&gameState, &binaryAssetLibrary, &textAssetLibrary,
-			&exeData, provinceID, localCityID, &locationDef, locationType]()
+		const std::string description = [&gameState, &binaryAssetLibrary, &exeData, provinceID,
+			localCityID, &locationDef, locationType]()
 		{
 			// City descriptions start at #0600. The three town descriptions are at #1422,
 			// and the three village descriptions are at #1423.
-			const std::vector<std::string> &templateDatTexts = [&binaryAssetLibrary, &textAssetLibrary,
-				provinceID, localCityID, locationType]()
+			const std::vector<std::string> &templateDatTexts = [&binaryAssetLibrary, provinceID, localCityID, locationType]()
 			{
 				// Get the key that maps into TEMPLATE.DAT.
 				const int key = [provinceID, localCityID, locationType]()
@@ -204,11 +203,11 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 					}
 					else
 					{
-						DebugUnhandledReturnMsg(int,
-							std::to_string(static_cast<int>(locationType)));
+						DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
 					}
 				}();
 
+				const auto &textAssetLibrary = TextAssetLibrary::getInstance();
 				const auto &templateDat = textAssetLibrary.getTemplateDat();
 				const auto &entry = templateDat.getEntry(key);
 				return entry.values;
@@ -253,15 +252,14 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 					description.replace(index, 2, rulerTitle);
 				}
 
-				// Replace %rf with ruler first name (if it exists). Make sure to reset
-				// the random seed.
+				// Replace %rf with ruler first name (if it exists). Make sure to reset the random seed.
 				random.srand(rulerSeed);
 				index = description.find("%rf");
 				if (index != std::string::npos)
 				{
-					const std::string rulerFirstName = [&textAssetLibrary, provinceID,
-						&random, isMale]()
+					const std::string rulerFirstName = [provinceID, &random, isMale]()
 					{
+						const auto &textAssetLibrary = TextAssetLibrary::getInstance();
 						const std::string fullName = textAssetLibrary.generateNpcName(provinceID, isMale, random);
 						const Buffer<std::string> tokens = String::split(fullName, ' ');
 						return tokens[0];

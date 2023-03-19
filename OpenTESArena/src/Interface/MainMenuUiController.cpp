@@ -11,6 +11,7 @@
 #include "MainMenuUiController.h"
 #include "MainMenuUiModel.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
@@ -296,6 +297,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	}
 	else if (mapType == MapType::City)
 	{
+		TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+
 		// There is only one "premade" city (used by the center province). All others
 		// are randomly generated.
 		// @todo: the IMPERIAL.MIF and random city/town/village branches could be merged a bit.
@@ -370,7 +373,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 				game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-				game.getTextAssetLibrary(), game.getTextureManager(), renderer))
+				textAssetLibrary, game.getTextureManager(), renderer))
 			{
 				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 			}
@@ -452,7 +455,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			// Load city into game state.
 			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 				game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-				game.getTextAssetLibrary(), game.getTextureManager(), renderer))
+				textAssetLibrary, game.getTextureManager(), renderer))
 			{
 				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 			}

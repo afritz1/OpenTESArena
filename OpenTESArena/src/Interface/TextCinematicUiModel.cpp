@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "TextCinematicUiModel.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Interface/TextCinematicDefinition.h"
 
@@ -66,7 +67,7 @@ bool TextCinematicUiModel::shouldPlaySpeech(Game &game)
 
 std::string TextCinematicUiModel::getSubtitleText(Game &game, const TextCinematicDefinition &textCinematicDef)
 {
-	const auto &textAssetLibrary = game.getTextAssetLibrary();
+	const auto &textAssetLibrary = TextAssetLibrary::getInstance();
 	const auto &templateDat = textAssetLibrary.getTemplateDat();
 	const auto &templateDatEntry = templateDat.getEntry(textCinematicDef.getTemplateDatKey());
 	std::string cinematicText = templateDatEntry.values.front();

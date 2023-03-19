@@ -14,6 +14,7 @@
 #include "PlayerInterface.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
@@ -210,7 +211,7 @@ bool Game::init()
 		return false;
 	}
 
-	if (!this->textAssetLibrary.init())
+	if (!TextAssetLibrary::getInstance().init())
 	{
 		DebugLogError("Couldn't init text asset library.");
 		return false;
@@ -373,11 +374,6 @@ Renderer &Game::getRenderer()
 TextureManager &Game::getTextureManager()
 {
 	return this->textureManager;
-}
-
-const TextAssetLibrary &Game::getTextAssetLibrary() const
-{
-	return this->textAssetLibrary;
 }
 
 Random &Game::getRandom()

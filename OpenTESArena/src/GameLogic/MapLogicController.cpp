@@ -1,5 +1,6 @@
 #include "MapLogicController.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
@@ -399,7 +400,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 
 				if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 					game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-					game.getTextAssetLibrary(), textureManager, renderer))
+					TextAssetLibrary::getInstance(), textureManager, renderer))
 				{
 					DebugLogError("Couldn't switch from wilderness to city for \"" + locationDef.getName() + "\".");
 					return;

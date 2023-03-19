@@ -17,6 +17,7 @@
 #include "TextCinematicPanel.h"
 #include "TextSubPanel.h"
 #include "WorldMapUiModel.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -793,7 +794,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
-			BinaryAssetLibrary::getInstance(), game.getTextAssetLibrary(), game.getTextureManager(),
+			BinaryAssetLibrary::getInstance(), TextAssetLibrary::getInstance(), game.getTextureManager(),
 			renderer))
 		{
 			DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
