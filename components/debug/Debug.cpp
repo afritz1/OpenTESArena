@@ -1,19 +1,34 @@
+#include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <unordered_map>
-#include <vector>
 
 #include "Debug.h"
 #include "../utilities/String.h"
 
 namespace
 {
-	const std::unordered_map<Debug::MessageType, std::string> DebugMessageTypeNames =
+	const std::pair<DebugMessageType, std::string> DebugMessageTypeNames[] =
 	{
-		{ Debug::MessageType::Status, "" },
-		{ Debug::MessageType::Warning, "Warning: " },
-		{ Debug::MessageType::Error, "Error: " },
+		{ DebugMessageType::Status, "" },
+		{ DebugMessageType::Warning, "Warning: " },
+		{ DebugMessageType::Error, "Error: " }
 	};
+
+	const std::string &GetDebugMessageTypeString(DebugMessageType messageType)
+	{
+		size_t index = 0;
+		for (size_t i = 0; i < std::size(DebugMessageTypeNames); i++)
+		{
+			const auto &pair = DebugMessageTypeNames[i];
+			if (pair.first == messageType)
+			{
+				index = i;
+				break;
+			}
+		}
+
+		return DebugMessageTypeNames[index].second;
+	}
 }
 
 const std::string Debug::LOG_FILENAME = "log.txt";
@@ -38,36 +53,30 @@ std::string Debug::getShorterPath(const char *__file__)
 	return shortPath;
 }
 
-void Debug::write(Debug::MessageType type, const std::string &filePath,
-	int lineNumber, const std::string &message)
+void Debug::write(DebugMessageType type, const std::string &filePath, int lineNumber, const std::string &message)
 {
-	const std::string &messageType = DebugMessageTypeNames.at(type);
-	std::cerr << "[" << filePath << "(" << std::to_string(lineNumber) << ")] " <<
-		messageType << message << "\n";
+	const std::string &messageTypeStr = GetDebugMessageTypeString(type);
+	std::cerr << "[" << filePath << "(" << std::to_string(lineNumber) << ")] " << messageTypeStr << message << "\n";
 }
 
 void Debug::log(const char *__file__, int lineNumber, const std::string &message)
 {
-	Debug::write(Debug::MessageType::Status, Debug::getShorterPath(__file__),
-		lineNumber, message);
+	Debug::write(DebugMessageType::Status, Debug::getShorterPath(__file__), lineNumber, message);
 }
 
 void Debug::logWarning(const char *__file__, int lineNumber, const std::string &message)
 {
-	Debug::write(Debug::MessageType::Warning, Debug::getShorterPath(__file__),
-		lineNumber, message);
+	Debug::write(DebugMessageType::Warning, Debug::getShorterPath(__file__), lineNumber, message);
 }
 
 void Debug::logError(const char *__file__, int lineNumber, const std::string &message)
 {
-	Debug::write(Debug::MessageType::Error, Debug::getShorterPath(__file__),
-		lineNumber, message);
+	Debug::write(DebugMessageType::Error, Debug::getShorterPath(__file__), lineNumber, message);
 }
 
 void Debug::crash(const char *__file__, int lineNumber, const std::string &message)
 {
-	Debug::write(Debug::MessageType::Error, Debug::getShorterPath(__file__),
-		lineNumber, message);
+	Debug::logError(__file__, lineNumber, message);
 
 #if defined(__APPLE__) && defined(__MACH__)
 	// @todo: implement proper logging alternative to SDL message box.

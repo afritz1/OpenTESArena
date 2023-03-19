@@ -8,15 +8,15 @@
 // Below are various debug methods and macros for replacing asserts or program exits 
 // that might be accompanied with messages and logging.
 
+enum class DebugMessageType
+{
+	Status,
+	Warning,
+	Error
+};
+
 class Debug
 {
-public:
-	enum class MessageType
-	{
-		Status,
-		Warning,
-		Error
-	};
 private:
 	static const std::string LOG_FILENAME;
 
@@ -24,7 +24,7 @@ private:
 	~Debug() = delete;
 
 	// Writes a debug message to the console with the file path and line number.
-	static void write(Debug::MessageType type, const std::string &filePath,
+	static void write(DebugMessageType type, const std::string &filePath,
 		int lineNumber, const std::string &message);
 public:
 	// Shortens the __FILE__ macro so it only includes a couple parent folders.
