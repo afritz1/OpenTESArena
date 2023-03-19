@@ -1,11 +1,12 @@
 #include "GameWorldPanel.h"
 #include "MainQuestSplashUiController.h"
+#include "../Audio/MusicLibrary.h"
 #include "../Game/Game.h"
 
 void MainQuestSplashUiController::onExitButtonSelected(Game &game)
 {
 	// Choose random dungeon music and enter game world.
-	const MusicLibrary &musicLibrary = game.getMusicLibrary();
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
 		MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
 	{

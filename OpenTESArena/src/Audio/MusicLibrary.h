@@ -9,10 +9,11 @@
 #include "MusicDefinition.h"
 
 #include "components/utilities/BufferView.h"
+#include "components/utilities/Singleton.h"
 
 class Random;
 
-class MusicLibrary
+class MusicLibrary : public Singleton<MusicLibrary>
 {
 public:
 	using Predicate = std::function<bool(const MusicDefinition&)>;

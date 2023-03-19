@@ -12,6 +12,7 @@
 #include "MainMenuUiModel.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/TextAssetLibrary.h"
+#include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
@@ -31,7 +32,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 		game.setCharacterCreationState(std::make_unique<CharacterCreationState>());
 		game.setPanel<ChooseClassCreationPanel>();
 
-		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
 			MusicDefinition::Type::CharacterCreation, game.getRandom());
 
@@ -85,7 +86,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 	const double secondsPerFrame = metadata.getSecondsPerFrame();
 	game.setPanel<CinematicPanel>(paletteFilename, sequenceFilename, secondsPerFrame, changeToNewGameStory);
 
-	const MusicLibrary &musicLibrary = game.getMusicLibrary();
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
 		MusicDefinition::Type::Cinematic, game.getRandom(), [](const MusicDefinition &def)
 	{
@@ -513,7 +514,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	clock = Clock(5, 45, 0);
 
 	// Get the music that should be active on start.
-	const MusicLibrary &musicLibrary = game.getMusicLibrary();
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = [&game, &mifName, &optInteriorType, mapType, &gameState, &musicLibrary]()
 	{
 		const bool isExterior = (mapType == MapType::City) || (mapType == MapType::Wilderness);

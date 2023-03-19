@@ -12,6 +12,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Assets/TextureManager.h"
+#include "../Audio/MusicLibrary.h"
 #include "../Entities/Player.h"
 #include "../GameLogic/MapLogicController.h"
 #include "../GameLogic/PlayerLogicController.h"
@@ -1283,7 +1284,7 @@ void GameState::tick(double dt, Game &game)
 	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
 	{
 		AudioManager &audioManager = game.getAudioManager();
-		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
 		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
 		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);

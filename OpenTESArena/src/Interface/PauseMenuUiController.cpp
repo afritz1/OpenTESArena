@@ -8,6 +8,7 @@
 #include "OptionsPanel.h"
 #include "PauseMenuPanel.h"
 #include "PauseMenuUiController.h"
+#include "../Audio/MusicLibrary.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
 
@@ -23,7 +24,7 @@ void PauseMenuUiController::onNewGameButtonSelected(Game &game)
 	game.getGameState().clearSession();
 	game.setPanel<MainMenuPanel>();
 
-	const MusicLibrary &musicLibrary = game.getMusicLibrary();
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
 		MusicDefinition::Type::MainMenu, game.getRandom());
 

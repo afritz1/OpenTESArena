@@ -13,7 +13,6 @@
 #include "Options.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
-#include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputManager.h"
@@ -46,7 +45,6 @@ public:
 	using GameWorldRenderCallback = std::function<bool(Game&)>;
 private:
 	AudioManager audioManager;
-	MusicLibrary musicLibrary;
 
 	// Listener IDs are optional in case of failed Game construction.
 	InputManager inputManager;
@@ -127,9 +125,6 @@ public:
 
 	// Gets the audio manager for changing the current music and sound.
 	AudioManager &getAudioManager();
-
-	// Gets the music library with all the music definitions.
-	const MusicLibrary &getMusicLibrary() const;
 
 	// Gets the input manager for obtaining input state. This should be read-only for
 	// all classes except the Game class.

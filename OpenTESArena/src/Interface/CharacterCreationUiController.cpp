@@ -18,6 +18,7 @@
 #include "TextSubPanel.h"
 #include "WorldMapUiModel.h"
 #include "../Assets/TextAssetLibrary.h"
+#include "../Audio/MusicLibrary.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -38,7 +39,7 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 		game.setCharacterCreationState(nullptr);
 		game.setPanel<MainMenuPanel>();
 
-		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
 			MusicDefinition::Type::MainMenu, game.getRandom());
 
@@ -608,7 +609,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	game.setPanel<TextCinematicPanel>(textCinematicDefIndex, secondsPerFrame, ChooseAttributesUiController::onPostCharacterCreationCinematicFinished);
 
 	// Play dream music.
-	const MusicLibrary &musicLibrary = game.getMusicLibrary();
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
 		MusicDefinition::Type::Cinematic, game.getRandom(), [](const MusicDefinition &def)
 	{
@@ -803,7 +804,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		// Set music based on weather and time.
 		const MusicDefinition *musicDef = [&game, &gameState]()
 		{
-			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			if (!gameState.nightMusicIsActive())
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
@@ -845,7 +846,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 	game.setPanel<GameWorldPanel>();
 
 	// Choose random dungeon music.
-	const MusicLibrary &musicLibrary = game.getMusicLibrary();
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
 		MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
 	{

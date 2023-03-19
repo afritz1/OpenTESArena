@@ -5,6 +5,7 @@
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "../Assets/TextAssetLibrary.h"
+#include "../Audio/MusicLibrary.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
@@ -129,7 +130,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		}
 
 		// Choose time-based music and enter the game world.
-		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = [&game, &gameState, &overrideWeather, &musicLibrary]()
 		{
 			if (!gameState.nightMusicIsActive())
@@ -202,7 +203,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		}
 
 		// Choose random dungeon music and enter game world.
-		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
 			MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
 		{
@@ -251,7 +252,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		else
 		{
 			// Choose random dungeon music and enter game world.
-			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
 				MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
 			{

@@ -1,6 +1,7 @@
 #include "MapLogicController.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
+#include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
@@ -162,7 +163,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 
 		// Change to exterior music.
 		const auto &clock = gameState.getClock();
-		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
 		{
 			if (!gameState.nightMusicIsActive())
@@ -259,7 +260,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			}
 
 			// Change to interior music.
-			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType =
 				MusicUtils::getInteriorMusicType(interiorGenInfo.getInteriorType());
 			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
@@ -414,7 +415,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			}
 
 			// Reset the current music (even if it's the same one).
-			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
 			{
 				if (!gameState.nightMusicIsActive())

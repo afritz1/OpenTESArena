@@ -16,6 +16,7 @@
 #include "../Assets/CityDataFile.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
+#include "../Audio/MusicLibrary.h"
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CommonUiController.h"
@@ -219,7 +220,7 @@ bool Game::init()
 
 	const std::string audioFolderPath = dataFolderPath + "audio/";
 	const std::string musicLibraryPath = audioFolderPath + "MusicDefinitions.txt";
-	if (!this->musicLibrary.init(musicLibraryPath.c_str()))
+	if (!MusicLibrary::getInstance().init(musicLibraryPath.c_str()))
 	{
 		DebugLogError("Couldn't init music library with path \"" + musicLibraryPath + "\".");
 		return false;
@@ -288,11 +289,6 @@ Panel *Game::getActivePanel() const
 AudioManager &Game::getAudioManager()
 {
 	return this->audioManager;
-}
-
-const MusicLibrary &Game::getMusicLibrary() const
-{
-	return this->musicLibrary;
 }
 
 InputManager &Game::getInputManager()
@@ -697,8 +693,8 @@ void Game::loop()
 	// Initialize panel and music to default (bootstrapping the first game frame).
 	this->panel = IntroUiModel::makeStartupPanel(*this);
 
-	const MusicDefinition *mainMenuMusicDef = this->musicLibrary.getRandomMusicDefinition(
-		MusicDefinition::Type::MainMenu, this->random);
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::MainMenu, this->random);
 	if (mainMenuMusicDef == nullptr)
 	{
 		DebugLogWarning("Missing main menu music.");
