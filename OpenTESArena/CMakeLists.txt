@@ -1,4 +1,4 @@
-PROJECT(TESArena CXX)
+PROJECT(otesa CXX)
 
 SET(OpenTESArena_VERSION "0.14.0")
 
@@ -16,7 +16,7 @@ ELSE(WILDMIDI_FOUND)
     MESSAGE(STATUS "WildMIDI not found, no MIDI support!")
 ENDIF(WILDMIDI_FOUND)
 
-SET(SRC_ROOT ${TESArena_SOURCE_DIR}/src)
+SET(SRC_ROOT ${otesa_SOURCE_DIR}/src)
 
 SET(TES_ASSETS
     "${SRC_ROOT}/Assets/ArenaAnimUtils.cpp"
@@ -711,7 +711,7 @@ IF (NOT APPLE)
     # The destination is probably ${OpenTESArena_BINARY_DIR}.
 
     # Add the rest
-    ADD_EXECUTABLE(TESArena ${TES_SOURCES} ${TES_WIN32_RESOURCES})
+    ADD_EXECUTABLE(otesa ${TES_SOURCES} ${TES_WIN32_RESOURCES})
 ELSE (APPLE)
     # Info.plist properties
     SET(MACOSX_BUNDLE_LONG_VERSION_STRING ${OpenTESArena_VERSION})
@@ -728,15 +728,15 @@ ELSE (APPLE)
     # Copy over required files
     # Using direct copy workaround because SET_SOURCE_FILES_PROPERTIES doesn't work recursively due to bug in CMake.
     # See https://gitlab.kitware.com/cmake/cmake/issues/16886
-    FILE(COPY ${TES_DATA_FOLDER} DESTINATION ../TESArena.app/Contents/Resources)
-    FILE(COPY ${TES_OPTIONS_FOLDER} DESTINATION ../TESArena.app/Contents/Resources)
+    FILE(COPY ${TES_DATA_FOLDER} DESTINATION ../otesa.app/Contents/Resources)
+    FILE(COPY ${TES_OPTIONS_FOLDER} DESTINATION ../otesa.app/Contents/Resources)
 
     # Add the rest
-    ADD_EXECUTABLE(TESArena MACOSX_BUNDLE ${TES_SOURCES} ${TES_MAC_ICON})
+    ADD_EXECUTABLE(otesa MACOSX_BUNDLE ${TES_SOURCES} ${TES_MAC_ICON})
 ENDIF()
 
-TARGET_LINK_LIBRARIES(TESArena components ${EXTERNAL_LIBS})
-SET_TARGET_PROPERTIES(TESArena PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OpenTESArena_BINARY_DIR})
+TARGET_LINK_LIBRARIES(otesa components ${EXTERNAL_LIBS})
+SET_TARGET_PROPERTIES(otesa PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OpenTESArena_BINARY_DIR})
 
 # Visual Studio filters.
 SOURCE_GROUP(TREE ${CMAKE_SOURCE_DIR}/OpenTESArena FILES ${TES_SOURCES})
@@ -744,5 +744,5 @@ SOURCE_GROUP(TREE ${CMAKE_SOURCE_DIR}/OpenTESArena FILES ${TES_SOURCES})
 # DPI-awareness for Visual Studio project (no manifest required).
 # Note this is a CMake 3.16 feature.
 IF (MSVC)
-	SET_TARGET_PROPERTIES(TESArena PROPERTIES VS_DPI_AWARE "PerMonitor")
+	SET_TARGET_PROPERTIES(otesa PROPERTIES VS_DPI_AWARE "PerMonitor")
 ENDIF()
