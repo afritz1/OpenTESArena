@@ -23,6 +23,7 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView.h"
+#include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
@@ -376,29 +377,31 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	WildMidiDevice::init(midiConfig);
 #endif
 
-	// Initialize the OpenAL device and context.
+	// Initialize OpenAL device and context.
 	ALCdevice *device = alcOpenDevice(nullptr);
 	if (device == nullptr)
 	{
-		DebugLogWarning("alcOpenDevice() error " + std::to_string(alGetError()) + ".");
+		DebugLogWarning("alcOpenDevice() error 0x" + String::toHexString(alGetError()) + ".");
+		return;
 	}
 
 	ALCcontext *context = alcCreateContext(device, nullptr);
 	if (context == nullptr)
 	{
-		DebugLogWarning("alcCreateContext() error " + std::to_string(alGetError()) + ".");
+		DebugLogWarning("alcCreateContext() error 0x" + String::toHexString(alGetError()) + ".");
+		return;
 	}
 
 	const ALCboolean success = alcMakeContextCurrent(context);
 	if (success != AL_TRUE)
 	{
-		DebugLogWarning("alcMakeContextCurrent() error " + std::to_string(alGetError()) + ".");
+		DebugLogWarning("alcMakeContextCurrent() error 0x" + String::toHexString(alGetError()) + ".");
+		return;
 	}
 
 	// Check for sound resampling extension.
 	mHasResamplerExtension = alIsExtensionPresent("AL_SOFT_source_resampler") != AL_FALSE;
-	mResampler = mHasResamplerExtension ? AudioManager::getResamplingIndex(resamplingOption) :
-		AudioManager::UNSUPPORTED_EXTENSION;
+	mResampler = mHasResamplerExtension ? AudioManager::getResamplingIndex(resamplingOption) : AudioManager::UNSUPPORTED_EXTENSION;
 
 	// Set whether the audio manager should play in 2D or 3D mode.
 	mIs3D = is3D;
@@ -412,7 +415,7 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 		const ALenum status = alGetError();
 		if (status != AL_NO_ERROR)
 		{
-			DebugLogWarning("alGenSources() error " + std::to_string(status) + ".");
+			DebugLogWarning("alGenSources() error 0x" + String::toHexString(status) + ".");
 		}
 
 		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
@@ -572,7 +575,7 @@ void AudioManager::playSound(const std::string &filename, const std::optional<Do
 			const ALenum status = alGetError();
 			if (status != AL_NO_ERROR)
 			{
-				DebugLogWarning("alGenBuffers() error: " + std::to_string(status));
+				DebugLogWarning("alGenBuffers() error 0x" + String::toHexString(status));
 			}
 
 			const BufferView<const uint8_t> audioData = voc.getAudioData();
