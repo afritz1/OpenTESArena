@@ -9,6 +9,7 @@
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../Math/Random.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../WorldMap/ArenaLocationUtils.h"
@@ -318,7 +319,7 @@ std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int t
 		FastTravelUiView::CityArrivalTextAlignment,
 		std::nullopt,
 		FastTravelUiView::CityArrivalLineSpacing,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();

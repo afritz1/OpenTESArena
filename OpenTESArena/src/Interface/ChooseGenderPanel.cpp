@@ -5,6 +5,7 @@
 #include "CommonUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
+#include "../UI/FontLibrary.h"
 
 ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	: Panel(game) { }
@@ -14,7 +15,7 @@ bool ChooseGenderPanel::init()
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseGenderUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo = ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))

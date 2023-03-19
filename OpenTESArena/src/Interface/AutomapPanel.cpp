@@ -48,7 +48,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 {
 	auto &game = this->getGame();
 	
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 	const TextBox::InitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
 	if (!this->locationTextBox.init(locationTextBoxInitInfo, game.getRenderer()))
 	{

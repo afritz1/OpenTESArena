@@ -16,6 +16,7 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextEntry.h"
@@ -30,7 +31,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
@@ -237,7 +238,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
 	this->locationsListBox.init(ProvinceSearchUiView::ListBoxRect,
-		ProvinceSearchUiView::makeListBoxProperties(game.getFontLibrary()), game.getRenderer());
+		ProvinceSearchUiView::makeListBoxProperties(FontLibrary::getInstance()), game.getRenderer());
 
 	this->clearButtonProxies();
 

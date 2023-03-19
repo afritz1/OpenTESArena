@@ -9,6 +9,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
 
@@ -19,7 +20,7 @@ bool PauseMenuPanel::init()
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
 	const TextBox::InitInfo playerNameTextBoxInitInfo =

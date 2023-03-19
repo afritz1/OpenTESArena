@@ -33,7 +33,7 @@ bool ChooseClassCreationPanel::init()
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseClassCreationUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
 		ChooseClassCreationUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);

@@ -15,6 +15,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
@@ -24,7 +25,7 @@ bool ChooseAttributesPanel::init()
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setPortraitIndex(0);

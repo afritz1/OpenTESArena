@@ -27,6 +27,7 @@
 #include "../Interface/Panel.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
@@ -199,7 +200,7 @@ bool Game::init()
 		InputActionName::DebugProfiler, CommonUiController::onDebugInputAction);
 
 	// Load various asset libraries.
-	if (!this->fontLibrary.init())
+	if (!FontLibrary::getInstance().init())
 	{
 		DebugLogError("Couldn't init font library.");
 		return false;
@@ -294,11 +295,6 @@ AudioManager &Game::getAudioManager()
 InputManager &Game::getInputManager()
 {
 	return this->inputManager;
-}
-
-FontLibrary &Game::getFontLibrary()
-{
-	return this->fontLibrary;
 }
 
 const CinematicLibrary &Game::getCinematicLibrary() const
@@ -702,7 +698,7 @@ void Game::loop()
 
 	this->audioManager.setMusic(mainMenuMusicDef);
 
-	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(this->fontLibrary);
+	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
 	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
 	{
 		DebugCrash("Couldn't init debug info text box.");

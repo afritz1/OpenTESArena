@@ -14,6 +14,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 
 #include "components/debug/Debug.h"
 
@@ -30,7 +31,7 @@ bool CharacterPanel::init()
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
 	const TextBox::InitInfo playerNameTextBoxInitInfo =

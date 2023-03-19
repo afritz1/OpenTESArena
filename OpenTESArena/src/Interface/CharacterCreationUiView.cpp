@@ -488,7 +488,7 @@ TextBox::InitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::st
 		ChooseRaceUiView::InitialPopUpAlignment,
 		std::nullopt,
 		ChooseRaceUiView::InitialPopUpLineSpacing,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 }
 
 TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(

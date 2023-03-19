@@ -5,6 +5,7 @@
 #include "MainQuestSplashUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
+#include "../UI/FontLibrary.h"
 
 #include "components/utilities/String.h"
 
@@ -15,7 +16,7 @@ bool MainQuestSplashPanel::init(int provinceID)
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string descriptionText = MainQuestSplashUiModel::getDungeonText(game, provinceID);
 	const TextBox::InitInfo descriptionTextBoxInitInfo =

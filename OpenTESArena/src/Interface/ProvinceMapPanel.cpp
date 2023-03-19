@@ -13,6 +13,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
@@ -35,7 +36,7 @@ bool ProvinceMapPanel::init(int provinceID)
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 	const TextBox::InitInfo hoveredLocationTextBoxInitInfo = ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(fontLibrary);
 	if (!this->hoveredLocationTextBox.init(hoveredLocationTextBoxInitInfo, renderer))
 	{
@@ -151,7 +152,7 @@ bool ProvinceMapPanel::init(int provinceID)
 		const Int2 textBoxCenter = locationCenter - Int2(0, 10);
 
 		// Can't use the text box dimensions with clamping since it's allocated for worst-case location name now.
-		const auto &fontLibrary = game.getFontLibrary();
+		const auto &fontLibrary = FontLibrary::getInstance();
 		const std::string &fontName = ProvinceMapUiView::LocationFontName;
 		int fontDefIndex;
 		if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))

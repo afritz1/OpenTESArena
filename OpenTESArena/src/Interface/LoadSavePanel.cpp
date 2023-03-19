@@ -6,6 +6,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 
 LoadSavePanel::LoadSavePanel(Game &game)
 	: Panel(game) { }
@@ -14,7 +15,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Populate save slots.
 	const std::vector<LoadSaveUiModel::Entry> entries = LoadSaveUiModel::getSaveEntries(game);

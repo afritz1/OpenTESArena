@@ -5,6 +5,7 @@
 #include "CommonUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
+#include "../UI/FontLibrary.h"
 
 ChooseNamePanel::ChooseNamePanel(Game &game)
 	: Panel(game) { }
@@ -14,7 +15,7 @@ bool ChooseNamePanel::init()
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseNameUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo = ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))

@@ -20,7 +20,6 @@
 #include "../Interface/Panel.h"
 #include "../Rendering/RenderChunkManager.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/FontLibrary.h"
 #include "../UI/TextBox.h"
 #include "../World/ChunkManager.h"
 
@@ -51,7 +50,6 @@ private:
 	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
 		takeScreenshotListenerID, debugProfilerListenerID;
 
-	FontLibrary fontLibrary;
 	CinematicLibrary cinematicLibrary;
 	CharacterClassLibrary charClassLibrary;
 	EntityDefinitionLibrary entityDefLibrary;
@@ -129,9 +127,6 @@ public:
 	// Gets the input manager for obtaining input state. This should be read-only for
 	// all classes except the Game class.
 	InputManager &getInputManager();
-
-	// Gets the font library for obtaining various fonts.
-	FontLibrary &getFontLibrary();
 
 	// Gets the cinematic library for obtaining various cinematic definitions.
 	const CinematicLibrary &getCinematicLibrary() const;

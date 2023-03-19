@@ -9,6 +9,7 @@
 #include "../Input/InputActionName.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/FontLibrary.h"
 
 LogbookPanel::LogbookPanel(Game &game)
 	: Panel(game) { }
@@ -23,7 +24,7 @@ bool LogbookPanel::init()
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string titleText = LogbookUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo = LogbookUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);

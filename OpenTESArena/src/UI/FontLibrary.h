@@ -6,7 +6,9 @@
 
 #include "FontDefinition.h"
 
-class FontLibrary
+#include "components/utilities/Singleton.h"
+
+class FontLibrary : public Singleton<FontLibrary>
 {
 private:
 	std::vector<FontDefinition> defs;

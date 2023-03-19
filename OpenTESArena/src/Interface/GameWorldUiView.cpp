@@ -9,6 +9,7 @@
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
 #include "../UI/ArenaFontName.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 
 #include "components/utilities/String.h"
@@ -469,7 +470,7 @@ UiTextureID GameWorldUiView::allocCompassSliderTexture(TextureManager &textureMa
 }
 
 UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType buttonType,
-	FontLibrary &fontLibrary, Renderer &renderer)
+	const FontLibrary &fontLibrary, Renderer &renderer)
 {
 	const std::string text = GameWorldUiModel::getButtonTooltip(buttonType);
 	const Surface surface = TextureUtils::createTooltip(text, fontLibrary);
@@ -653,7 +654,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		ArenaFontName::Arena,
 		Color::White,
 		TextAlignment::TopLeft,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	TextBox textBox;
 	if (!textBox.init(textBoxInitInfo, text, renderer))

@@ -9,6 +9,7 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 
@@ -67,7 +68,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	const FontLibrary &fontLibrary = game.getFontLibrary();
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 
 	// The background expands to fit the text, unless overridden.
 	const int titleBackgroundWidth = backgroundProperties.widthOverride.has_value() ?

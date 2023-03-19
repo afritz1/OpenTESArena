@@ -13,6 +13,7 @@
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../GameLogic/PlayerLogicController.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -133,7 +134,7 @@ void GameWorldUiController::onStatusButtonSelected(Game &game)
 		GameWorldUiView::StatusPopUpTextAlignment,
 		std::nullopt,
 		GameWorldUiView::StatusPopUpTextLineSpacing,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();

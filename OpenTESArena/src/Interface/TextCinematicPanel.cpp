@@ -36,7 +36,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	const auto &cinematicLibrary = game.getCinematicLibrary();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const TextCinematicDefinition &textCinematicDef = cinematicLibrary.getTextDefinition(textCinematicDefIndex);
 	const TextBox::InitInfo subtitlesTextBoxInitInfo = TextCinematicUiView::getSubtitlesTextBoxInitInfo(textCinematicDef.getFontColor(), fontLibrary);

@@ -7,6 +7,7 @@
 #include "CommonUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
+#include "../UI/FontLibrary.h"
 
 #include "components/debug/Debug.h"
 
@@ -36,7 +37,7 @@ bool ChooseClassPanel::init()
 	});
 
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseClassUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo = ChooseClassUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
@@ -53,7 +54,7 @@ bool ChooseClassPanel::init()
 	}
 
 	this->classesListBox.init(ChooseClassUiView::getListRect(game),
-		ChooseClassUiView::makeListBoxProperties(game.getFontLibrary()), game.getRenderer());
+		ChooseClassUiView::makeListBoxProperties(FontLibrary::getInstance()), game.getRenderer());
 
 	for (int i = 0; i < static_cast<int>(this->charClasses.size()); i++)
 	{

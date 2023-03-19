@@ -5,6 +5,7 @@
 #include "../Game/Game.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -25,7 +26,7 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 		TextAlignment::MiddleCenter,
 		std::nullopt,
 		1,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	auto popUpFunction = [](Game &game)
 	{

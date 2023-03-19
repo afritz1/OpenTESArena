@@ -20,6 +20,7 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -51,7 +52,7 @@ bool GameWorldPanel::init()
 	auto &game = this->getGame();
 
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
 	const TextBox::InitInfo playerNameTextBoxInitInfo =
 		GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
@@ -645,7 +646,7 @@ void GameWorldPanel::initUiDrawCalls()
 			[]() { return PivotType::Bottom; },
 			effectTextActiveFunc);
 
-		auto &fontLibrary = game.getFontLibrary();
+		const auto &fontLibrary = FontLibrary::getInstance();
 		this->tooltipTextureRefs.init(GameWorldUiModel::BUTTON_COUNT);
 		for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
 		{

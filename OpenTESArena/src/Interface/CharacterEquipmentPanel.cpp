@@ -9,6 +9,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
 
 #include "components/debug/Debug.h"
 
@@ -25,7 +26,7 @@ bool CharacterEquipmentPanel::init()
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
 	const TextBox::InitInfo playerNameTextBoxInitInfo =
@@ -62,7 +63,7 @@ bool CharacterEquipmentPanel::init()
 	}
 
 	this->inventoryListBox.init(InventoryUiView::PlayerInventoryRect,
-		InventoryUiView::makePlayerInventoryListBoxProperties(game.getFontLibrary()), game.getRenderer());
+		InventoryUiView::makePlayerInventoryListBoxProperties(fontLibrary), game.getRenderer());
 	for (int i = 0; i < static_cast<int>(elements.size()); i++)
 	{
 		auto &pair = elements[i];

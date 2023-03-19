@@ -333,7 +333,7 @@ void MainMenuPanel::initTestUI()
 		Int2(testButtonRect.getWidth(), testButtonRect.getHeight()),
 		PivotType::TopLeft);
 
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string testButtonText = MainMenuUiModel::getTestButtonText();
 	const TextBox::InitInfo testButtonInitInfo = MainMenuUiView::getTestButtonTextBoxInitInfo(testButtonText, fontLibrary);
 	if (!this->testButtonTextBox.init(testButtonInitInfo, testButtonText, renderer))

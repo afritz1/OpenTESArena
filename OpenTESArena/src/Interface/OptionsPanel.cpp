@@ -8,6 +8,7 @@
 #include "OptionsUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
+#include "../UI/FontLibrary.h"
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game) { }
@@ -16,7 +17,7 @@ bool OptionsPanel::init()
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string titleText = OptionsUiModel::TitleText;
 	const TextBox::InitInfo titleTextBoxInitInfo = OptionsUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);

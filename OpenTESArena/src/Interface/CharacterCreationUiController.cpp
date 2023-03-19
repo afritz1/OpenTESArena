@@ -24,6 +24,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Sky/SkyUtils.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
@@ -204,7 +205,7 @@ void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Populate and display province confirm message box.
 	const MessageBoxSubPanel::BackgroundProperties backgroundProperties =
@@ -255,7 +256,7 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 		ChooseRaceUiView::ProvinceConfirmedFirstTextAlignment,
 		std::nullopt,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextLineSpacing,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFirstTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
@@ -298,7 +299,7 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 		ChooseRaceUiView::ProvinceConfirmedSecondTextAlignment,
 		std::nullopt,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextLineSpacing,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedSecondTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
@@ -332,7 +333,7 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 		ChooseRaceUiView::ProvinceConfirmedThirdTextAlignment,
 		std::nullopt,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextLineSpacing,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedThirdTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
@@ -366,7 +367,7 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 		ChooseRaceUiView::ProvinceConfirmedFourthTextAlignment,
 		std::nullopt,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextLineSpacing,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
@@ -416,7 +417,7 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 	// Show message box to save or reroll.
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const MessageBoxSubPanel::BackgroundProperties backgroundProperties =
 		ChooseAttributesUiView::getMessageBoxBackgroundProperties();
@@ -642,7 +643,7 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 		ChooseAttributesUiView::AppearanceTextAlignment,
 		std::nullopt,
 		ChooseAttributesUiView::AppearanceTextLineSpacing,
-		game.getFontLibrary());
+		FontLibrary::getInstance());
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();

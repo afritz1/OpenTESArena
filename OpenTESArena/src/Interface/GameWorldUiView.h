@@ -174,7 +174,7 @@ namespace GameWorldUiView
 	UiTextureID allocWeaponAnimTexture(const std::string &weaponFilename, int index, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocCompassFrameTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, FontLibrary &fontLibrary, Renderer &renderer);
+	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, const FontLibrary &fontLibrary, Renderer &renderer);
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
 
 	void DEBUG_ColorRaycastPixel(Game &game);

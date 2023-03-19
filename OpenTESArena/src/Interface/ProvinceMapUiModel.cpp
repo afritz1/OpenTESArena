@@ -55,7 +55,7 @@ std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int 
 std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::string &text)
 {
 	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = game.getFontLibrary();
+	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string &fontName = ProvinceMapUiView::TextPopUpFontName;
 	int fontDefIndex;
