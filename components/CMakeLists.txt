@@ -1,29 +1,59 @@
 PROJECT(components CXX)
 
-FILE(GLOB COMP_ARCHIVES
-	archives/*.h
-	archives/*.hpp
-	archives/*.cpp)
+SET(COMP_ARCHIVES
+	"archives/archive.cpp"
+	"archives/archive.hpp"
+	"archives/bsaarchive.cpp"
+	"archives/bsaarchive.hpp")
 
-FILE(GLOB COMP_DEBUG
-	debug/*.h
-	debug/*.hpp
-	debug/*.cpp)
+SET(COMP_DEBUG
+	"debug/Debug.cpp"
+	"debug/Debug.h")
 
-FILE(GLOB COMP_DOS
-	dos/*.h
-	dos/*.hpp
-	dos/*.cpp)
+SET(COMP_DOS
+	"dos/DOSUtils.h")
 
-FILE(GLOB COMP_UTILITIES
-	utilities/*.h
-	utilities/*.hpp
-	utilities/*.cpp)
+SET(COMP_UTILITIES
+	"utilities/Allocator.h"
+	"utilities/Buffer.h"
+	"utilities/Buffer2D.h"
+	"utilities/Buffer3D.h"
+	"utilities/BufferRef.h"
+	"utilities/BufferRef2D.h"
+	"utilities/BufferView.h"
+	"utilities/BufferView2D.h"
+	"utilities/BufferView3D.h"
+	"utilities/Bytes.cpp"
+	"utilities/Bytes.h"
+	"utilities/Directory.cpp"
+	"utilities/Directory.h"
+	"utilities/File.cpp"
+	"utilities/File.h"
+	"utilities/FPSCounter.cpp"
+	"utilities/FPSCounter.h"
+	"utilities/HexPrinter.cpp"
+	"utilities/HexPrinter.h"
+	"utilities/KeyValueFile.cpp"
+	"utilities/KeyValueFile.h"
+	"utilities/Path.cpp"
+	"utilities/Path.h"
+	"utilities/Profiler.cpp"
+	"utilities/Profiler.h"
+	"utilities/RecyclablePool.h"
+	"utilities/Singleton.h"
+	"utilities/String.cpp"
+	"utilities/String.h"
+	"utilities/StringView.cpp"
+	"utilities/StringView.h"
+	"utilities/TextLinesFile.cpp"
+	"utilities/TextLinesFile.h"
+	"utilities/VirtualHeap.cpp"
+	"utilities/VirtualHeap.h")
 
-FILE(GLOB COMP_VFS
-	vfs/*.h
-	vfs/*.hpp
-	vfs/*.cpp)
+SET(COMP_VFS
+	"vfs/dirent.h"
+	"vfs/manager.cpp"
+	"vfs/manager.hpp")
 
 SET(COMP_SOURCES
 	${COMP_ARCHIVES}
@@ -33,15 +63,14 @@ SET(COMP_SOURCES
 	${COMP_VFS})
 
 IF (WIN32)
-	FILE(GLOB COMP_WIN32_SOURCES
-		misc/*.h
-		misc/*.hpp
-		misc/*.cpp)
+	SET(COMP_WIN32_SOURCES
+		"misc/fnmatch.cpp"
+		"misc/fnmatch.h")
 
 	SET(COMP_SOURCES ${COMP_SOURCES} ${COMP_WIN32_SOURCES})
 ENDIF (WIN32)
 
-ADD_LIBRARY (components STATIC ${COMP_SOURCES})
+ADD_LIBRARY(components STATIC ${COMP_SOURCES})
 
 # Visual Studio filters.
 SOURCE_GROUP(TREE ${CMAKE_SOURCE_DIR}/components FILES ${COMP_SOURCES})
