@@ -16,7 +16,6 @@
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputManager.h"
-#include "../Interface/CinematicLibrary.h"
 #include "../Interface/Panel.h"
 #include "../Rendering/RenderChunkManager.h"
 #include "../Rendering/Renderer.h"
@@ -50,7 +49,6 @@ private:
 	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
 		takeScreenshotListenerID, debugProfilerListenerID;
 
-	CinematicLibrary cinematicLibrary;
 	CharacterClassLibrary charClassLibrary;
 	EntityDefinitionLibrary entityDefLibrary;
 	std::unique_ptr<CharacterCreationState> charCreationState;
@@ -127,9 +125,6 @@ public:
 	// Gets the input manager for obtaining input state. This should be read-only for
 	// all classes except the Game class.
 	InputManager &getInputManager();
-
-	// Gets the cinematic library for obtaining various cinematic definitions.
-	const CinematicLibrary &getCinematicLibrary() const;
 	
 	// Gets the character class library for obtaining various class definitions.
 	const CharacterClassLibrary &getCharacterClassLibrary() const;

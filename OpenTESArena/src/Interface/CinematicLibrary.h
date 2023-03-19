@@ -6,7 +6,9 @@
 
 #include "TextCinematicDefinition.h"
 
-class CinematicLibrary
+#include "components/utilities/Singleton.h"
+
+class CinematicLibrary : public Singleton<CinematicLibrary>
 {
 public:
 	using TextPredicate = std::function<bool(const TextCinematicDefinition&)>;

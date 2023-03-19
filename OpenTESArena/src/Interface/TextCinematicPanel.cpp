@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 
+#include "CinematicLibrary.h"
 #include "TextCinematicPanel.h"
 #include "TextCinematicUiView.h"
 #include "../Assets/TextureManager.h"
@@ -35,7 +36,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	const auto &cinematicLibrary = game.getCinematicLibrary();
+	const auto &cinematicLibrary = CinematicLibrary::getInstance();
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const TextCinematicDefinition &textCinematicDef = cinematicLibrary.getTextDefinition(textCinematicDefIndex);

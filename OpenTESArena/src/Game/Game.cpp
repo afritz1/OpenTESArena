@@ -19,6 +19,7 @@
 #include "../Audio/MusicLibrary.h"
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
+#include "../Interface/CinematicLibrary.h"
 #include "../Interface/CommonUiController.h"
 #include "../Interface/CommonUiView.h"
 #include "../Interface/GameWorldPanel.h"
@@ -227,7 +228,7 @@ bool Game::init()
 		return false;
 	}
 
-	this->cinematicLibrary.init();
+	CinematicLibrary::getInstance().init();
 
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	this->charClassLibrary.init(exeData);
@@ -295,11 +296,6 @@ AudioManager &Game::getAudioManager()
 InputManager &Game::getInputManager()
 {
 	return this->inputManager;
-}
-
-const CinematicLibrary &Game::getCinematicLibrary() const
-{
-	return this->cinematicLibrary;
 }
 
 const CharacterClassLibrary &Game::getCharacterClassLibrary() const

@@ -11,6 +11,7 @@
 #include "ChooseGenderPanel.h"
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
+#include "CinematicLibrary.h"
 #include "GameWorldPanel.h"
 #include "MainMenuPanel.h"
 #include "MessageBoxSubPanel.h"
@@ -569,7 +570,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 	gameStateFunction(game);
 
-	const auto &cinematicLibrary = game.getCinematicLibrary();
+	const auto &cinematicLibrary = CinematicLibrary::getInstance();
 	int textCinematicDefIndex;
 	const TextCinematicDefinition *defPtr = nullptr;
 	const bool success = cinematicLibrary.findTextDefinitionIndexIf(
