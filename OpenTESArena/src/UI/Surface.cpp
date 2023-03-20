@@ -198,7 +198,8 @@ void Surface::blit(Surface &dst, const Rect &dstRect) const
 		}
 	}
 #else
-	SDL_BlitSurface(this->surface, nullptr, dst.surface, const_cast<SDL_Rect*>(&dstRect.getRect()));
+	SDL_Rect dstRectSdl = dstRect.getSdlRect();
+	SDL_BlitSurface(this->surface, nullptr, dst.surface, &dstRectSdl);
 #endif
 }
 
