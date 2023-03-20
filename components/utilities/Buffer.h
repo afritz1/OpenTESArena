@@ -2,23 +2,23 @@
 #define BUFFER_H
 
 #include <algorithm>
-#include <memory>
+#include <initializer_list>
 
 #include "../debug/Debug.h"
 
 // Slightly cheaper alternative to vector for single-allocation uses.
-
 // Data can be null. Only need assertions on things that reach into the buffer itself.
 
-template <typename T>
+template<typename T>
 class Buffer
 {
 private:
-	std::unique_ptr<T[]> data;
+	T *data;
 	int count;
 public:
 	Buffer()
 	{
+		this->data = nullptr;
 		this->count = 0;
 	}
 
@@ -32,10 +32,40 @@ public:
 		this->init(list);
 	}
 
+	Buffer(Buffer<T> &&other)
+	{
+		this->data = other.data;
+		this->count = other.count;
+		other.data = nullptr;
+		other.count = 0;
+	}
+
+	Buffer &operator=(Buffer<T> &&other)
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		this->data = other.data;
+		this->count = other.count;
+		other.data = nullptr;
+		other.count = 0;
+		return *this;
+	}
+
+	Buffer(const Buffer<T>&) = delete;
+	Buffer &operator=(const Buffer<T>&) = delete;
+
+	~Buffer()
+	{
+		this->clear();
+	}
+
 	void init(int count)
 	{
 		DebugAssert(count >= 0);
-		this->data = std::make_unique<T[]>(count);
+		this->data = new T[count];
 		this->count = count;
 	}
 
@@ -52,22 +82,22 @@ public:
 
 	T *begin()
 	{
-		return this->data.get();
+		return this->data;
 	}
 
 	const T *begin() const
 	{
-		return this->data.get();
+		return this->data;
 	}
 
 	T *end()
 	{
-		return this->isValid() ? (this->data.get() + this->count) : nullptr;
+		return this->isValid() ? (this->data + this->count) : nullptr;
 	}
 
 	const T *end() const
 	{
-		return this->isValid() ? (this->data.get() + this->count) : nullptr;
+		return this->isValid() ? (this->data + this->count) : nullptr;
 	}
 
 	T &get(int index)
@@ -75,7 +105,7 @@ public:
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
-		return this->data[index];
+		return *(this->data + index);
 	}
 
 	const T &get(int index) const
@@ -83,7 +113,7 @@ public:
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
-		return this->data[index];
+		return *(this->data + index);
 	}
 
 	T &operator[](int index)
@@ -106,7 +136,7 @@ public:
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
-		this->data[index] = value;
+		*(this->data + index) = value;
 	}
 
 	void set(int index, T &&value)
@@ -114,7 +144,7 @@ public:
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
-		this->data[index] = std::move(value);
+		*(this->data + index) = std::move(value);
 	}
 
 	void fill(const T &value)
@@ -124,6 +154,7 @@ public:
 
 	void clear()
 	{
+		delete[] this->data;
 		this->data = nullptr;
 		this->count = 0;
 	}
