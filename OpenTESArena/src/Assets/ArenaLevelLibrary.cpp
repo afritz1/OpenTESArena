@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdio>
+#include <vector>
 
 #include "ArenaLevelLibrary.h"
 #include "MIFUtils.h"
@@ -22,6 +23,7 @@ bool ArenaLevelLibrary::initCityBlockMifs()
 	const int rotationCount = MIFUtils::getCityBlockRotationCount();
 
 	bool success = true;
+	std::vector<std::string> mifNames;
 
 	// Iterate over all city block codes, variations, and rotations.
 	for (int i = 0; i < codeCount; i++)
@@ -35,28 +37,31 @@ bool ArenaLevelLibrary::initCityBlockMifs()
 			for (int k = 0; k < rotationCount; k++)
 			{
 				const std::string &rotation = MIFUtils::getCityBlockRotation(k);
-				const std::string mifName = MIFUtils::makeCityBlockMifName(code.c_str(), variation, rotation.c_str());
-
-				const auto existingIter = std::find_if(this->cityBlockMifs.begin(), this->cityBlockMifs.end(),
-					[&mifName](const MIFFile &mif)
-				{
-					return mif.getFilename() == mifName;
-				});
+				std::string mifName = MIFUtils::makeCityBlockMifName(code.c_str(), variation, rotation.c_str());
 
 				// No duplicate .MIFs allowed.
-				DebugAssert(existingIter == this->cityBlockMifs.end());
+				DebugAssert(std::find(mifNames.begin(), mifNames.end(), mifName) == mifNames.end());
 
-				MIFFile mif;
-				if (mif.init(mifName.c_str()))
-				{
-					this->cityBlockMifs.emplace_back(std::move(mif));
-				}
-				else
-				{
-					DebugLogError("Could not init .MIF \"" + mifName + "\".");
-					success = false;
-				}
+				mifNames.emplace_back(std::move(mifName));
 			}
+		}
+	}
+
+	const int mifCount = static_cast<int>(mifNames.size());
+	this->cityBlockMifs.init(mifCount);
+	for (int i = 0; i < mifCount; i++)
+	{
+		const std::string &mifName = mifNames[i];
+
+		MIFFile mif;
+		if (mif.init(mifName.c_str()))
+		{
+			this->cityBlockMifs.set(i, std::move(mif));
+		}
+		else
+		{
+			DebugLogError("Could not init .MIF \"" + mifName + "\".");
+			success = false;
 		}
 	}
 
@@ -66,9 +71,9 @@ bool ArenaLevelLibrary::initCityBlockMifs()
 bool ArenaLevelLibrary::initWildernessChunks()
 {
 	// The first four wilderness files are city blocks but they can be loaded anyway.
-	this->wildernessChunks.resize(70);
+	this->wildernessChunks.init(70);
 
-	for (int i = 0; i < static_cast<int>(this->wildernessChunks.size()); i++)
+	for (int i = 0; i < this->wildernessChunks.getCount(); i++)
 	{
 		const int rmdID = i + 1;
 		DOSUtils::FilenameBuffer rmdFilename;
