@@ -2,6 +2,7 @@
 
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
+#include "../Assets/RMDFile.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Player.h"
 #include "../Game/ArenaClockUtils.h"

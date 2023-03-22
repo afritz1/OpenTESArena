@@ -1,12 +1,8 @@
-#include <cstdio>
-
 #include "BinaryAssetLibrary.h"
-#include "MIFUtils.h"
 #include "../Math/Random.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
-#include "components/dos/DOSUtils.h"
 #include "components/utilities/Buffer.h"
 #include "components/vfs/manager.hpp"
 
@@ -135,49 +131,6 @@ bool BinaryAssetLibrary::initExecutableData(bool floppyVersion)
 	return true;
 }
 
-bool BinaryAssetLibrary::initCityBlockMifs()
-{
-	const int codeCount = MIFUtils::getCityBlockCodeCount();
-	const int variationsCount = MIFUtils::getCityBlockVariationsCount();
-	const int rotationCount = MIFUtils::getCityBlockRotationCount();
-
-	bool success = true;
-
-	// Iterate over all city block codes, variations, and rotations.
-	for (int i = 0; i < codeCount; i++)
-	{
-		const std::string &code = MIFUtils::getCityBlockCode(i);
-		const int variations = MIFUtils::getCityBlockVariations(i);
-
-		// Variation IDs are 1-based.
-		for (int variation = 1; variation <= variations; variation++)
-		{
-			for (int k = 0; k < rotationCount; k++)
-			{
-				const std::string &rotation = MIFUtils::getCityBlockRotation(k);
-				std::string mifName = MIFUtils::makeCityBlockMifName(code.c_str(), variation, rotation.c_str());
-
-				// No duplicate .MIFs.
-				DebugAssert(this->cityBlockMifs.find(mifName) == this->cityBlockMifs.end());
-
-				MIFFile mif;
-				if (mif.init(mifName.c_str()))
-				{
-					// Add the .MIF file pair into the city blocks map.
-					this->cityBlockMifs.emplace(std::move(mifName), std::move(mif));
-				}
-				else
-				{
-					DebugLogError("Could not init .MIF \"" + mifName + "\".");
-					success = false;
-				}
-			}
-		}
-	}
-
-	return success;
-}
-
 bool BinaryAssetLibrary::initClasses(const ExeData &exeData)
 {
 	const char *filename = "CLASSES.DAT";
@@ -237,27 +190,6 @@ bool BinaryAssetLibrary::initStandardSpells()
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 	ArenaTypes::SpellData::initArray(this->standardSpells, srcPtr);
-	return true;
-}
-
-bool BinaryAssetLibrary::initWildernessChunks()
-{
-	// The first four wilderness files are city blocks but they can be loaded anyway.
-	this->wildernessChunks.resize(70);
-
-	for (int i = 0; i < static_cast<int>(this->wildernessChunks.size()); i++)
-	{
-		const int rmdID = i + 1;
-		DOSUtils::FilenameBuffer rmdFilename;
-		std::snprintf(rmdFilename.data(), rmdFilename.size(), "WILD0%02d.RMD", rmdID);
-
-		RMDFile &rmdFile = this->wildernessChunks[i];
-		if (!rmdFile.init(rmdFilename.data()))
-		{
-			DebugLogWarning("Couldn't init .RMD file \"" + std::string(rmdFilename.data()) + "\".");
-		}
-	}
-
 	return true;
 }
 
@@ -345,10 +277,8 @@ bool BinaryAssetLibrary::init(bool floppyVersion)
 {
 	DebugLog("Initializing binary assets.");
 	bool success = this->initExecutableData(floppyVersion);
-	success &= this->initCityBlockMifs();
 	success &= this->initClasses(this->exeData);
 	success &= this->initStandardSpells();
-	success &= this->initWildernessChunks();
 	success &= this->initWorldMapDefs();
 	success &= this->initWorldMapMasks();
 	success &= this->initWorldMapTerrain();
@@ -358,11 +288,6 @@ bool BinaryAssetLibrary::init(bool floppyVersion)
 const ExeData &BinaryAssetLibrary::getExeData() const
 {
 	return this->exeData;
-}
-
-const std::unordered_map<std::string, MIFFile> &BinaryAssetLibrary::getCityBlockMifs() const
-{
-	return this->cityBlockMifs;
 }
 
 const CityDataFile &BinaryAssetLibrary::getCityDataFile() const
@@ -378,11 +303,6 @@ const CharacterClassGeneration &BinaryAssetLibrary::getClassGenData() const
 const ArenaTypes::Spellsg &BinaryAssetLibrary::getStandardSpells() const
 {
 	return this->standardSpells;
-}
-
-BufferView<const RMDFile> BinaryAssetLibrary::getWildernessChunks() const
-{
-	return this->wildernessChunks;
 }
 
 const BinaryAssetLibrary::WorldMapMasks &BinaryAssetLibrary::getWorldMapMasks() const

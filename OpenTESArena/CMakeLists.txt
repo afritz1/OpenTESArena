@@ -22,6 +22,8 @@ SET(TES_ASSETS
     "${SRC_ROOT}/Assets/ArenaAnimUtils.cpp"
     "${SRC_ROOT}/Assets/ArenaAnimUtils.h"
     "${SRC_ROOT}/Assets/ArenaAssetUtils.h"
+    "${SRC_ROOT}/Assets/ArenaLevelLibrary.cpp"
+    "${SRC_ROOT}/Assets/ArenaLevelLibrary.h"
     "${SRC_ROOT}/Assets/ArenaPaletteName.h"
     "${SRC_ROOT}/Assets/ArenaPortraitUtils.cpp"
     "${SRC_ROOT}/Assets/ArenaPortraitUtils.h"

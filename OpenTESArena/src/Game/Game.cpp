@@ -12,6 +12,7 @@
 #include "Game.h"
 #include "Options.h"
 #include "PlayerInterface.h"
+#include "../Assets/ArenaLevelLibrary.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/TextAssetLibrary.h"
@@ -206,6 +207,12 @@ bool Game::init()
 	if (!FontLibrary::getInstance().init())
 	{
 		DebugLogError("Couldn't init font library.");
+		return false;
+	}
+
+	if (!ArenaLevelLibrary::getInstance().init())
+	{
+		DebugLogError("Couldn't init Arena level library.");
 		return false;
 	}
 

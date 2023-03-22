@@ -3,6 +3,7 @@
 
 #include "ArenaCityUtils.h"
 #include "MapType.h"
+#include "../Assets/ArenaLevelLibrary.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextAssetLibrary.h"
@@ -162,14 +163,19 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			const std::string blockMifName = MIFUtils::makeCityBlockMifName(block, random);
 
 			// Load the block's .MIF data into the level.
-			const auto &cityBlockMifs = binaryAssetLibrary.getCityBlockMifs();
-			const auto iter = cityBlockMifs.find(blockMifName);
+			const auto &cityBlockMifs = ArenaLevelLibrary::getInstance().getCityBlockMifs();
+			const auto iter = std::find_if(cityBlockMifs.begin(), cityBlockMifs.end(),
+				[&blockMifName](const MIFFile &mif)
+			{
+				return mif.getFilename() == blockMifName;
+			});
+
 			if (iter == cityBlockMifs.end())
 			{
 				DebugCrash("Could not find .MIF file \"" + blockMifName + "\".");
 			}
 
-			const MIFFile &blockMif = iter->second;
+			const MIFFile &blockMif = *iter;
 			const WEInt blockWidth = blockMif.getWidth();
 			const SNInt blockDepth = blockMif.getDepth();
 			const auto &blockLevel = blockMif.getLevel(0);

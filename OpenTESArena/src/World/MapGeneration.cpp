@@ -15,6 +15,7 @@
 #include "MapType.h"
 #include "TransitionDefinition.h"
 #include "../Assets/ArenaAnimUtils.h"
+#include "../Assets/ArenaLevelLibrary.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
@@ -2491,7 +2492,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 	for (int i = 0; i < uniqueWildBlockIDs.getCount(); i++)
 	{
 		const ArenaWildUtils::WildBlockID wildBlockID = uniqueWildBlockIDs.get(i);
-		const auto &rmdFiles = binaryAssetLibrary.getWildernessChunks();
+		const auto &rmdFiles = ArenaLevelLibrary::getInstance().getWildernessChunks();
 		const int rmdIndex = DebugMakeIndex(rmdFiles, wildBlockID - 1);
 		const RMDFile &rmd = rmdFiles[rmdIndex];
 		const BufferView2D<const ArenaTypes::VoxelID> rmdFLOR = rmd.getFLOR();

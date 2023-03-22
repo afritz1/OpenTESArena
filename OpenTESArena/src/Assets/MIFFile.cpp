@@ -419,6 +419,7 @@ bool MIFFile::init(const char *filename)
 		return false;
 	}
 
+	this->filename = filename;
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 	const uint16_t headerSize = Bytes::getLE16(srcPtr + 4);
 
@@ -462,6 +463,11 @@ bool MIFFile::init(const char *filename)
 	this->depth = mifHeader.mapHeight;
 	this->startingLevelIndex = mifHeader.startingLevelIndex;
 	return true;
+}
+
+const std::string &MIFFile::getFilename() const
+{
+	return this->filename;
 }
 
 WEInt MIFFile::getWidth() const

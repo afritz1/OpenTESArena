@@ -3,14 +3,10 @@
 
 #include <array>
 #include <cstdint>
-#include <unordered_map>
-#include <vector>
 
 #include "ArenaTypes.h"
 #include "CityDataFile.h"
 #include "ExeData.h"
-#include "MIFFile.h"
-#include "RMDFile.h"
 #include "WorldMapMask.h"
 #include "../Game/CharacterClassGeneration.h"
 
@@ -60,11 +56,9 @@ public:
 	using WorldMapMasks = std::array<WorldMapMask, 10>;
 private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
-	std::unordered_map<std::string, MIFFile> cityBlockMifs;
 	CityDataFile cityDataFile;
 	CharacterClassGeneration classesDat;
 	ArenaTypes::Spellsg standardSpells; // From SPELLSG.65.
-	std::vector<RMDFile> wildernessChunks; // WILD001 to WILD070.
 	WorldMapMasks worldMapMasks;
 	WorldMapTerrain worldMapTerrain;
 
@@ -72,17 +66,11 @@ private:
 	// for the floppy version or ACD.EXE for the CD version).
 	bool initExecutableData(bool floppyVersion);
 
-	// Load all city block .MIF files used for city generation.
-	bool initCityBlockMifs();
-
 	// Load CLASSES.DAT and also read class data from the executable.
 	bool initClasses(const ExeData &exeData);
 
 	// Loads SPELLSG.65.
 	bool initStandardSpells();
-
-	// Loads wilderness .RMD files.
-	bool initWildernessChunks();
 
 	// Loads world map definitions from CITYDATA.65.
 	bool initWorldMapDefs();
@@ -100,9 +88,6 @@ public:
 	// on the Arena path in the options).
 	const ExeData &getExeData() const;
 
-	// Gets mappings of city block .MIF filenames to their associated .MIF file.
-	const std::unordered_map<std::string, MIFFile> &getCityBlockMifs() const;
-
 	// Gets the original game's world map location data.
 	const CityDataFile &getCityDataFile() const;
 
@@ -110,9 +95,6 @@ public:
 
 	// Gets the spells list for spell and effect definitions.
 	const ArenaTypes::Spellsg &getStandardSpells() const;
-
-	// Gets all the preloaded .RMD files for wilderness generation.
-	BufferView<const RMDFile> getWildernessChunks() const;
 
 	// Gets the mask rectangles used for registering clicks on the world map. There are
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.

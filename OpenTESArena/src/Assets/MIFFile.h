@@ -80,6 +80,7 @@ public:
 		BufferView<const ArenaTypes::MIFTrigger> getTRIG() const;
 	};
 private:
+	std::string filename;
 	WEInt width;
 	SNInt depth;
 	int startingLevelIndex;
@@ -87,6 +88,8 @@ private:
 	std::vector<MIFFile::Level> levels;
 public:
 	bool init(const char *filename);
+
+	const std::string &getFilename() const;
 
 	// Gets the dimensions of all levels in the map.
 	WEInt getWidth() const;
