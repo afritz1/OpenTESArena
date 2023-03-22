@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <sstream>
 #include <string_view>
-#include <unordered_set>
 
 #include "INFFile.h"
 
@@ -29,6 +28,14 @@ namespace
 		{
 			this->mode = FloorState::Mode::None;
 		}
+
+		void clear()
+		{
+			this->ceilingData = std::nullopt;
+			this->textureName = std::string_view();
+			this->mode = FloorState::Mode::None;
+			this->boxCapID = std::nullopt;
+		}
 	};
 
 	struct WallState
@@ -53,6 +60,18 @@ namespace
 			this->lavaChasm = false;
 			this->wetChasm = false;
 		}
+
+		void clear()
+		{
+			this->boxCapIDs.clear();
+			this->boxSideIDs.clear();
+			this->textureName = std::string_view();
+			this->mode = WallState::Mode::None;
+			this->menuID = std::nullopt;
+			this->dryChasm = false;
+			this->lavaChasm = false;
+			this->wetChasm = false;
+		}
 	};
 
 	struct FlatState
@@ -65,6 +84,12 @@ namespace
 		FlatState()
 		{
 			this->mode = FlatState::Mode::None;
+		}
+
+		void clear()
+		{
+			this->mode = FlatState::Mode::None;
+			this->itemID = std::nullopt;
 		}
 	};
 
@@ -92,10 +117,19 @@ namespace
 		TextState::Mode mode; // Determines which data is in use.
 		int id; // *TEXT ID.
 
-		TextState(int id)
+		TextState()
 		{
 			this->mode = TextState::Mode::None;
-			this->id = id;
+			this->id = -1;
+		}
+
+		void clear()
+		{
+			this->keyData = std::nullopt;
+			this->riddleState = std::nullopt;
+			this->textData = std::nullopt;
+			this->mode = TextState::Mode::None;
+			this->id = -1;
 		}
 	};
 }
@@ -200,61 +234,40 @@ bool INFFile::init(const char *filename)
 		Floors, Walls, Flats, Sound, Text
 	};
 
-	// Initialize loop states to empty (they are non-empty when in use by the loop).
-	// I tried re-organizing them into virtual classes, but this way seems to be the
-	// most practical for now.
-	std::optional<FloorState> floorState;
-	std::optional<WallState> wallState;
-	std::optional<FlatState> flatState;
-	std::optional<TextState> textState;
+	FloorState floorState;
+	WallState wallState;
+	FlatState flatState;
+	TextState textState;
 
 	// Lambda for flushing state to the INFFile. This is useful during the parse loop,
 	// but it's also sometimes necessary at the end of the file because the last element 
 	// of certain sections (i.e., @TEXT) might get missed if there is no data after them.
 	auto flushTextState = [this, &textState]()
 	{
-		if (textState->mode == TextState::Mode::Key)
+		if (textState.mode == TextState::Mode::Key)
 		{
-			// Save key data.
-			this->keys.emplace(textState->id, textState->keyData.value());
+			this->keys.emplace(textState.id, textState.keyData.value());
 		}
-		else if (textState->mode == TextState::Mode::Riddle)
+		else if (textState.mode == TextState::Mode::Riddle)
 		{
-			// Save riddle data.
-			this->riddles.emplace(textState->id, textState->riddleState->data);
+			this->riddles.emplace(textState.id, textState.riddleState->data);
 		}
-		else if (textState->mode == TextState::Mode::Text)
+		else if (textState.mode == TextState::Mode::Text)
 		{
-			// Save text data.
-			this->texts.emplace(textState->id, textState->textData.value());
+			this->texts.emplace(textState.id, textState.textData.value());
 		}
 	};
 
 	// Lambda for flushing all states. Most states don't need an explicit flush because 
 	// they have no risk of leaving data behind.
-	auto flushAllStates = [&floorState, &wallState, &flatState, 
-		&textState, &flushTextState]()
+	auto flushAllStates = [&floorState, &wallState, &flatState, &textState, &flushTextState]()
 	{
-		if (floorState.has_value())
-		{
-			floorState.reset();
-		}
+		floorState.clear();
+		wallState.clear();
+		flatState.clear();
 
-		if (wallState.has_value())
-		{
-			wallState.reset();
-		}
-
-		if (flatState.has_value())
-		{
-			flatState.reset();
-		}
-
-		if (textState.has_value())
-		{
-			flushTextState();
-			textState.reset();
-		}
+		flushTextState();
+		textState.clear();
 	};
 
 	// Lambdas for parsing a line of text.
@@ -266,12 +279,6 @@ bool INFFile::init(const char *filename)
 		// as a texture filename.
 		if (line.front() == TYPE_CHAR)
 		{
-			// Initialize floor state if it is null.
-			if (!floorState.has_value())
-			{
-				floorState = FloorState();
-			}
-
 			const std::string BOXCAP_STR = "BOXCAP";
 			const std::string CEILING_STR = "CEILING";
 			const std::string TOP_STR = "TOP"; // Only occurs in LABRNTH{1,2}.INF.
@@ -284,30 +291,30 @@ bool INFFile::init(const char *filename)
 			if (firstTokenType == BOXCAP_STR)
 			{
 				// Write the *BOXCAP's ID to the floor state.
-				floorState->boxCapID = std::stoi(std::string(tokens[1]));
-				floorState->mode = FloorState::Mode::BoxCap;
+				floorState.boxCapID = std::stoi(std::string(tokens[1]));
+				floorState.mode = FloorState::Mode::BoxCap;
 			}
 			else if (firstTokenType == CEILING_STR)
 			{
 				// Initialize ceiling data.
-				floorState->ceilingData = CeilingData();
-				floorState->mode = FloorState::Mode::Ceiling;
+				floorState.ceilingData = CeilingData();
+				floorState.mode = FloorState::Mode::Ceiling;
 
 				// Check up to three numbers on the right: ceiling height, box scale,
 				// and indoor/outdoor dungeon boolean. Sometimes there are no numbers.
 				if (tokens.getCount() >= 2)
 				{
-					floorState->ceilingData->height = std::stoi(std::string(tokens[1]));
+					floorState.ceilingData->height = std::stoi(std::string(tokens[1]));
 				}
 
 				if (tokens.getCount() >= 3)
 				{
-					floorState->ceilingData->boxScale = std::stoi(std::string(tokens[2]));
+					floorState.ceilingData->boxScale = std::stoi(std::string(tokens[2]));
 				}
 
 				if (tokens.getCount() == 4)
 				{
-					floorState->ceilingData->outdoorDungeon = tokens[3] == "1";
+					floorState.ceilingData->outdoorDungeon = tokens[3] == "1";
 				}
 			}
 			else if (firstTokenType == TOP_STR)
@@ -320,7 +327,7 @@ bool INFFile::init(const char *filename)
 				DebugCrash("Unrecognized @FLOOR section \"" + std::string(tokens[0]) + "\".");
 			}
 		}
-		else if (!floorState.has_value())
+		else if (floorState.mode == FloorState::Mode::None)
 		{
 			// No current floor state, so the current line is a loose texture filename
 			// (found in some city .INFs).
@@ -356,20 +363,20 @@ bool INFFile::init(const char *filename)
 				if (tokens.getCount() == 1)
 				{
 					// Just a regular texture (like an .IMG).
-					floorState->textureName = line;
+					floorState.textureName = line;
 
-					this->voxelTextures.emplace_back(VoxelTextureData(std::string(floorState->textureName).c_str()));
+					this->voxelTextures.emplace_back(VoxelTextureData(std::string(floorState.textureName).c_str()));
 					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
 				{
 					// Left side is the filename, right side is the .SET size.
-					floorState->textureName = StringView::trimBack(tokens[0]);
+					floorState.textureName = StringView::trimBack(tokens[0]);
 					const int setSize = std::stoi(std::string(tokens[1]));
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->voxelTextures.emplace_back(VoxelTextureData(std::string(floorState->textureName).c_str(), i));
+						this->voxelTextures.emplace_back(VoxelTextureData(std::string(floorState.textureName).c_str(), i));
 					}
 
 					return static_cast<int>(this->voxelTextures.size()) - setSize;
@@ -379,22 +386,24 @@ bool INFFile::init(const char *filename)
 			// Write the boxcap data if a *BOXCAP line is currently stored in the floor state.
 			// The floor state ID will be unset for loose filenames that don't have an 
 			// associated *BOXCAP line, but might have an associated *CEILING line.
-			if (floorState->boxCapID.has_value())
+			if (floorState.boxCapID.has_value())
 			{
-				this->boxCaps.at(floorState->boxCapID.value()) = currentIndex;
+				const int boxCapIndex = floorState.boxCapID.value();
+				DebugAssertIndex(this->boxCaps, boxCapIndex);
+				this->boxCaps[boxCapIndex] = currentIndex;
 			}
 
 			// Write to the ceiling data if it is being defined for the current group.
-			if (floorState->ceilingData.has_value())
+			if (floorState.ceilingData.has_value())
 			{
 				this->ceiling.textureIndex = currentIndex;
-				this->ceiling.height = floorState->ceilingData->height;
-				this->ceiling.boxScale = std::move(floorState->ceilingData->boxScale);
-				this->ceiling.outdoorDungeon = floorState->ceilingData->outdoorDungeon;
+				this->ceiling.height = floorState.ceilingData->height;
+				this->ceiling.boxScale = std::move(floorState.ceilingData->boxScale);
+				this->ceiling.outdoorDungeon = floorState.ceilingData->outdoorDungeon;
 			}
 
 			// Reset the floor state for any future floor data.
-			floorState = FloorState();
+			floorState.clear();
 		}
 	};
 
@@ -406,12 +415,6 @@ bool INFFile::init(const char *filename)
 		// as a texture filename.
 		if (line.front() == TYPE_CHAR)
 		{
-			// Initialize wall state if it is null.
-			if (!wallState.has_value())
-			{
-				wallState = WallState();
-			}
-
 			// All the different possible '*' sections for walls.
 			const std::string BOXCAP_STR = "BOXCAP";
 			const std::string BOXSIDE_STR = "BOXSIDE";
@@ -433,13 +436,13 @@ bool INFFile::init(const char *filename)
 
 			if (firstTokenType == BOXCAP_STR)
 			{
-				wallState->mode = WallState::Mode::BoxCap;
-				wallState->boxCapIDs.emplace_back(std::stoi(std::string(tokens[1])));
+				wallState.mode = WallState::Mode::BoxCap;
+				wallState.boxCapIDs.emplace_back(std::stoi(std::string(tokens[1])));
 			}
 			else if (firstTokenType == BOXSIDE_STR)
 			{
-				wallState->mode = WallState::Mode::BoxSide;
-				wallState->boxSideIDs.emplace_back(std::stoi(std::string(tokens[1])));
+				wallState.mode = WallState::Mode::BoxSide;
+				wallState.boxSideIDs.emplace_back(std::stoi(std::string(tokens[1])));
 			}
 			else if (firstTokenType == DOOR_STR)
 			{
@@ -448,26 +451,26 @@ bool INFFile::init(const char *filename)
 			}
 			else if (firstTokenType == DRYCHASM_STR)
 			{
-				wallState->mode = WallState::Mode::DryChasm;
-				wallState->dryChasm = true;
+				wallState.mode = WallState::Mode::DryChasm;
+				wallState.dryChasm = true;
 			}
 			else if (firstTokenType == LAVACHASM_STR)
 			{
-				wallState->mode = WallState::Mode::LavaChasm;
-				wallState->lavaChasm = true;
+				wallState.mode = WallState::Mode::LavaChasm;
+				wallState.lavaChasm = true;
 			}
 			else if (firstTokenType == LEVELDOWN_STR)
 			{
-				wallState->mode = WallState::Mode::LevelDown;
+				wallState.mode = WallState::Mode::LevelDown;
 			}
 			else if (firstTokenType == LEVELUP_STR)
 			{
-				wallState->mode = WallState::Mode::LevelUp;
+				wallState.mode = WallState::Mode::LevelUp;
 			}
 			else if (firstTokenType == MENU_STR)
 			{
-				wallState->mode = WallState::Mode::Menu;
-				wallState->menuID = std::stoi(std::string(tokens[1]));
+				wallState.mode = WallState::Mode::Menu;
+				wallState.menuID = std::stoi(std::string(tokens[1]));
 			}
 			else if (firstTokenType == TRANS_STR)
 			{
@@ -486,15 +489,15 @@ bool INFFile::init(const char *filename)
 			}
 			else if (firstTokenType == WETCHASM_STR)
 			{
-				wallState->mode = WallState::Mode::WetChasm;
-				wallState->wetChasm = true;
+				wallState.mode = WallState::Mode::WetChasm;
+				wallState.wetChasm = true;
 			}
 			else
 			{
 				DebugCrash("Unrecognized @WALLS section \"" + std::string(firstTokenType) + "\".");
 			}
 		}
-		else if (!wallState.has_value())
+		else if (wallState.mode == WallState::Mode::None)
 		{
 			// No existing wall state, so this line contains a "loose" texture name.
 			const Buffer<std::string_view> tokens = StringView::split(line, '#');
@@ -529,69 +532,70 @@ bool INFFile::init(const char *filename)
 				if (tokens.getCount() == 1)
 				{
 					// Just a regular texture (like an .IMG).
-					wallState->textureName = line;
+					wallState.textureName = line;
 
-					this->voxelTextures.emplace_back(VoxelTextureData(std::string(wallState->textureName).c_str()));
+					this->voxelTextures.emplace_back(VoxelTextureData(std::string(wallState.textureName).c_str()));
 					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
 				{
 					// Left side is the filename, right side is the .SET size.
-					wallState->textureName = StringView::trimBack(tokens[0]);
+					wallState.textureName = StringView::trimBack(tokens[0]);
 					const int setSize = std::stoi(std::string(tokens[1]));
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->voxelTextures.emplace_back(VoxelTextureData(std::string(wallState->textureName).c_str(), i));
+						this->voxelTextures.emplace_back(VoxelTextureData(std::string(wallState.textureName).c_str(), i));
 					}
 
 					return static_cast<int>(this->voxelTextures.size()) - setSize;
 				}
 			}();
 
-			// Write ID-related data for each tag (*BOXCAP, *BOXSIDE, etc.) found in the 
-			// current wall state.
-			for (int boxCapID : wallState->boxCapIDs)
+			// Write ID-related data for each tag (*BOXCAP, *BOXSIDE, etc.) found in the current wall state.
+			for (const int boxCapID : wallState.boxCapIDs)
 			{
-				this->boxCaps.at(boxCapID) = currentIndex;
+				this->boxCaps[boxCapID] = currentIndex;
 			}
 
-			for (int boxSideID : wallState->boxSideIDs)
+			for (const int boxSideID : wallState.boxSideIDs)
 			{
-				this->boxSides.at(boxSideID) = currentIndex;
+				this->boxSides[boxSideID] = currentIndex;
 			}
 
 			// Write *MENU ID (if any).
-			if (wallState->menuID.has_value())
+			if (wallState.menuID.has_value())
 			{
-				this->menus.at(wallState->menuID.value()) = currentIndex;
+				const int menusIndex = wallState.menuID.value();
+				DebugAssertIndex(this->menus, menusIndex);
+				this->menus[menusIndex] = currentIndex;
 			}
 
 			// Write texture index for any chasms.
-			if (wallState->dryChasm)
+			if (wallState.dryChasm)
 			{
 				this->dryChasmIndex = currentIndex;
 			}
-			else if (wallState->lavaChasm)
+			else if (wallState.lavaChasm)
 			{
 				this->lavaChasmIndex = currentIndex;
 			}
-			else if (wallState->wetChasm)
+			else if (wallState.wetChasm)
 			{
 				this->wetChasmIndex = currentIndex;
 			}
 
 			// Write the texture index based on remaining wall modes.
-			if (wallState->mode == WallState::Mode::LevelDown)
+			if (wallState.mode == WallState::Mode::LevelDown)
 			{
 				this->levelDownIndex = currentIndex;
 			}
-			else if (wallState->mode == WallState::Mode::LevelUp)
+			else if (wallState.mode == WallState::Mode::LevelUp)
 			{
 				this->levelUpIndex = currentIndex;
 			}
 
-			wallState = WallState();
+			wallState.clear();
 		}
 	};
 
@@ -603,12 +607,6 @@ bool INFFile::init(const char *filename)
 		// as a texture filename, and check for extra tokens on the right (F:, Y:, etc.).
 		if (line.front() == TYPE_CHAR)
 		{
-			// Initialize flat state if it is null.
-			if (!flatState.has_value())
-			{
-				flatState = FlatState();
-			}
-
 			const std::string ITEM_STR = "ITEM";
 
 			// See what the type in the line is.
@@ -618,8 +616,8 @@ bool INFFile::init(const char *filename)
 
 			if (firstTokenType == ITEM_STR)
 			{
-				flatState->mode = FlatState::Mode::Item;
-				flatState->itemID = std::stoi(std::string(tokens[1]));
+				flatState.mode = FlatState::Mode::Item;
+				flatState.itemID = std::stoi(std::string(tokens[1]));
 			}
 			else
 			{
@@ -676,7 +674,7 @@ bool INFFile::init(const char *filename)
 			// Assign the current line's values and modifiers to the new flat.
 			INFFile::FlatData &flat = this->flats.back();
 			flat.textureIndex = static_cast<int>(this->flatTextures.size() - 1);
-			flat.itemIndex = flatState.has_value() ? flatState->itemID : std::nullopt;
+			flat.itemIndex = (flatState.mode != FlatState::Mode::None) ? flatState.itemID : std::nullopt;
 
 			// If the flat has modifiers, then check each modifier and mutate the flat accordingly.
 			// If it is a creature then it will ignore these modifiers and use ones from the creature
@@ -756,13 +754,11 @@ bool INFFile::init(const char *filename)
 			const int textID = std::stoi(std::string(tokens[1]));
 
 			// If there is existing text state present, save it.
-			if (textState.has_value())
-			{
-				flushTextState();
-			}
+			flushTextState();
 
 			// Reset the text state to default with the new *TEXT ID.
-			textState = TextState(textID);
+			textState.clear();
+			textState.id = textID;
 		}
 		else if (line.front() == KEY_INDEX_CHAR)
 		{
@@ -770,8 +766,8 @@ bool INFFile::init(const char *filename)
 			const std::string_view keyStr = StringView::substr(line, 1, line.size() - 1);
 			const int keyNumber = std::stoi(std::string(keyStr));
 
-			textState->mode = TextState::Mode::Key;
-			textState->keyData = KeyData(keyNumber);
+			textState.mode = TextState::Mode::Key;
+			textState.keyData = KeyData(keyNumber);
 		}
 		else if (line.front() == RIDDLE_CHAR)
 		{
@@ -781,20 +777,20 @@ bool INFFile::init(const char *filename)
 			const int firstNumber = std::stoi(std::string(tokens[0]));
 			const int secondNumber = std::stoi(std::string(tokens[1]));
 
-			textState->mode = TextState::Mode::Riddle;
-			textState->riddleState = TextState::RiddleState(firstNumber, secondNumber);
+			textState.mode = TextState::Mode::Riddle;
+			textState.riddleState = TextState::RiddleState(firstNumber, secondNumber);
 		}
 		else if (line.front() == DISPLAYED_ONCE_CHAR)
 		{
-			textState->mode = TextState::Mode::Text;
+			textState.mode = TextState::Mode::Text;
 
 			const bool displayedOnce = true;
-			textState->textData = TextData(displayedOnce);
+			textState.textData = TextData(displayedOnce);
 
 			// Append the rest of the line to the text data.
-			textState->textData->text += line.substr(1, line.size() - 1) + '\n';
+			textState.textData->text += line.substr(1, line.size() - 1) + '\n';
 		}
-		else if (textState->mode == TextState::Mode::Riddle)
+		else if (textState.mode == TextState::Mode::Riddle)
 		{
 			const char ANSWER_CHAR = ':'; // An accepted answer.
 			const char RESPONSE_SECTION_CHAR = '`'; // CORRECT/WRONG.
@@ -803,7 +799,7 @@ bool INFFile::init(const char *filename)
 			{
 				// Add the answer to the answers data.
 				const std::string_view answer = StringView::substr(line, 1, line.size() - 1);
-				textState->riddleState->data.answers.emplace_back(std::string(answer));
+				textState.riddleState->data.answers.emplace_back(std::string(answer));
 			}
 			else if (line.front() == RESPONSE_SECTION_CHAR)
 			{
@@ -814,56 +810,55 @@ bool INFFile::init(const char *filename)
 
 				if (responseSection == CORRECT_STR)
 				{
-					textState->riddleState->mode = TextState::RiddleState::Mode::Correct;
+					textState.riddleState->mode = TextState::RiddleState::Mode::Correct;
 				}
 				else if (responseSection == WRONG_STR)
 				{
-					textState->riddleState->mode = TextState::RiddleState::Mode::Wrong;
+					textState.riddleState->mode = TextState::RiddleState::Mode::Wrong;
 				}
 			}
-			else if (textState->riddleState->mode == TextState::RiddleState::Mode::Riddle)
+			else if (textState.riddleState->mode == TextState::RiddleState::Mode::Riddle)
 			{
 				// Read the line into the riddle text.
-				textState->riddleState->data.riddle += line + '\n';
+				textState.riddleState->data.riddle += line + '\n';
 			}
-			else if (textState->riddleState->mode == TextState::RiddleState::Mode::Correct)
+			else if (textState.riddleState->mode == TextState::RiddleState::Mode::Correct)
 			{
 				// Read the line into the correct text.
-				textState->riddleState->data.correct += line + '\n';
+				textState.riddleState->data.correct += line + '\n';
 			}
-			else if (textState->riddleState->mode == TextState::RiddleState::Mode::Wrong)
+			else if (textState.riddleState->mode == TextState::RiddleState::Mode::Wrong)
 			{
 				// Read the line into the wrong text.
-				textState->riddleState->data.wrong += line + '\n';
+				textState.riddleState->data.wrong += line + '\n';
 			}
 		}
-		else if (textState->mode == TextState::Mode::Text)
+		else if (textState.mode == TextState::Mode::Text)
 		{
 			// Read the line into the text data.
-			textState->textData->text += line + '\n';
+			textState.textData->text += line + '\n';
 		}
 		else
 		{
 			// Plain old text after a *TEXT line, and on rare occasions it's after a key 
 			// line (+123, like in AGTEMPL.INF).
-			if ((textState->mode == TextState::Mode::None) ||
-				(textState->mode == TextState::Mode::Key))
+			if ((textState.mode == TextState::Mode::None) || (textState.mode == TextState::Mode::Key))
 			{
-				if (textState->mode == TextState::Mode::Key)
+				if (textState.mode == TextState::Mode::Key)
 				{
 					// Save key data and empty the key data state.
-					this->keys.emplace(textState->id, textState->keyData.value());
-					textState->keyData.reset();
+					this->keys.emplace(textState.id, textState.keyData.value());
+					textState.keyData.reset();
 				}
 
-				textState->mode = TextState::Mode::Text;
+				textState.mode = TextState::Mode::Text;
 
 				const bool displayedOnce = false;
-				textState->textData = TextData(displayedOnce);
+				textState.textData = TextData(displayedOnce);
 			}
 
 			// Read the line into the text data.
-			textState->textData->text += line + '\n';
+			textState.textData->text += line + '\n';
 		}
 	};
 
@@ -884,10 +879,10 @@ bool INFFile::init(const char *filename)
 		{
 			// Usually, empty lines indicate a separation from two sections, but there are 
 			// some riddles with newlines (like *TEXT 0 in LABRNTH2.INF), so don't skip those.
-			if (textState.has_value() && textState->riddleState.has_value() &&
-				(textState->riddleState->mode == TextState::RiddleState::Mode::Riddle))
+			if (textState.mode != TextState::Mode::None && textState.riddleState.has_value() &&
+				(textState.riddleState->mode == TextState::RiddleState::Mode::Riddle))
 			{
-				textState->riddleState->data.riddle += '\n';
+				textState.riddleState->data.riddle += '\n';
 			}
 			else
 			{
@@ -897,28 +892,22 @@ bool INFFile::init(const char *filename)
 		}
 		else if (line.front() == SECTION_SEPARATOR)
 		{
-			const std::unordered_map<std::string, ParseMode> Sections =
-			{
-				{ "@FLOORS", ParseMode::Floors },
-				{ "@WALLS", ParseMode::Walls },
-				{ "@FLATS", ParseMode::Flats },
-				{ "@SOUND", ParseMode::Sound },
-				{ "@TEXT", ParseMode::Text }
-			};
+			const std::string SectionNames[] = { "@FLOORS", "@WALLS", "@FLATS", "@SOUND", "@TEXT" };
+			const ParseMode SectionParseModes[] = { ParseMode::Floors, ParseMode::Walls, ParseMode::Flats, ParseMode::Sound, ParseMode::Text };
 
 			// Separate the '@' token from other things in the line (like @FLATS NOSHOW).
 			const Buffer<std::string_view> tokens = StringView::split(line);
 			line = std::string(tokens[0]);
 
 			// See which token the section is.
-			const auto sectionIter = Sections.find(line);
-			DebugAssertMsg(sectionIter != Sections.end(), "Unrecognized .INF section \"" + line + "\".");
+			const auto sectionIter = std::find(std::begin(SectionNames), std::end(SectionNames), line);
+			DebugAssertMsg(sectionIter != std::end(SectionNames), "Unrecognized .INF section \"" + line + "\".");
+			const int sectionIndex = static_cast<int>(std::distance(std::begin(SectionNames), sectionIter));
 
 			// Flush any existing state.
 			flushAllStates();
-
-			// Assign the new parse mode.
-			parseMode = sectionIter->second;
+			
+			parseMode = SectionParseModes[sectionIndex];
 		}
 		else if (parseMode == ParseMode::Floors)
 		{
