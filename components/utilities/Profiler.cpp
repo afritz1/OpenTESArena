@@ -56,7 +56,7 @@ double Profiler::getSeconds(const std::string &name) const
 	}
 
 	const ProfilerSampler &sampler = this->samplers[*index];
-	DebugAssert(sampler.endTime >= sampler.startTime);
+	DebugAssertMsg(sampler.endTime >= sampler.startTime, "Invalid start/end times for \"" + name + "\".");
 	const std::chrono::nanoseconds diff = sampler.endTime - sampler.startTime;
 	return static_cast<double>(diff.count()) / static_cast<double>(std::nano::den);
 }
