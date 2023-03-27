@@ -24,6 +24,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
+#include "components/utilities/TextLinesFile.h"
 #include "components/vfs/manager.hpp"
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
@@ -368,8 +369,8 @@ AudioManager::~AudioManager()
 	alcCloseDevice(device);
 }
 
-void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
-	int resamplingOption, bool is3D, const std::string &midiConfig)
+void AudioManager::init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
+	bool is3D, const std::string &midiConfig, const std::string &audioDataPath)
 {
 	DebugLog("Initializing.");
 
@@ -434,11 +435,27 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 		mFreeSources.emplace_back(source);
 	}
 
-	this->clearSingleInstanceSounds();
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
 	this->setListenerPosition(Double3::Zero);
 	this->setListenerOrientation(Double3::UnitX);
+
+	// Load single-instance sounds file, a new feature with this engine since the one-sound-at-a-time limit
+	// no longer exists.
+	TextLinesFile singleInstanceSoundsFile;
+	const std::string singleInstanceSoundsPath = audioDataPath + "SingleInstanceSounds.txt";
+	if (singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
+	{
+		for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
+		{
+			std::string soundFilename = singleInstanceSoundsFile.getLine(i);
+			mSingleInstanceSounds.emplace_back(std::move(soundFilename));
+		}
+	}
+	else
+	{
+		DebugLogWarning("Missing single instance sounds file at \"" + singleInstanceSoundsPath + "\".");
+	}
 }
 
 double AudioManager::getMusicVolume() const
@@ -762,16 +779,6 @@ void AudioManager::set3D(bool is3D)
 {
 	// Any future game world sounds will base their playback on this value.
 	mIs3D = is3D;
-}
-
-void AudioManager::addSingleInstanceSound(std::string &&filename)
-{
-	mSingleInstanceSounds.emplace_back(std::move(filename));
-}
-
-void AudioManager::clearSingleInstanceSounds()
-{
-	mSingleInstanceSounds.clear();
 }
 
 void AudioManager::updateSources()

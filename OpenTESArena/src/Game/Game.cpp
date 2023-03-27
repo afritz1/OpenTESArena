@@ -149,9 +149,10 @@ bool Game::init()
 	// Initialize audio manager.
 	const bool midiPathIsRelative = Path::isRelative(this->options.getAudio_MidiConfig().c_str());
 	const std::string midiFilePath = (midiPathIsRelative ? basePath : "") + this->options.getAudio_MidiConfig();
-	this->audioManager.init(this->options.getAudio_MusicVolume(),
-		this->options.getAudio_SoundVolume(), this->options.getAudio_SoundChannels(),
-		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiFilePath);
+	const std::string audioDataPath = dataFolderPath + "audio/";
+	this->audioManager.init(this->options.getAudio_MusicVolume(), this->options.getAudio_SoundVolume(),
+		this->options.getAudio_SoundChannels(), this->options.getAudio_SoundResampling(),
+		this->options.getAudio_Is3DAudio(), midiFilePath, audioDataPath);
 
 	// Initialize the renderer and window with the given settings.
 	auto resolutionScaleFunc = [this]()
@@ -229,8 +230,7 @@ bool Game::init()
 		return false;
 	}
 
-	const std::string audioFolderPath = dataFolderPath + "audio/";
-	const std::string musicLibraryPath = audioFolderPath + "MusicDefinitions.txt";
+	const std::string musicLibraryPath = audioDataPath + "MusicDefinitions.txt";
 	if (!MusicLibrary::getInstance().init(musicLibraryPath.c_str()))
 	{
 		DebugLogError("Couldn't init music library with path \"" + musicLibraryPath + "\".");
@@ -242,23 +242,6 @@ bool Game::init()
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	CharacterClassLibrary::getInstance().init(exeData);
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
-
-	// Load single-instance sounds file for the audio manager (new feature with this engine since
-	// the one-sound-at-a-time limit no longer exists).
-	TextLinesFile singleInstanceSoundsFile;
-	const std::string singleInstanceSoundsPath = audioFolderPath + "SingleInstanceSounds.txt";
-	if (singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
-	{
-		for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
-		{
-			const std::string &soundFilename = singleInstanceSoundsFile.getLine(i);
-			this->audioManager.addSingleInstanceSound(std::string(soundFilename));
-		}
-	}
-	else
-	{
-		DebugLogWarning("Missing single instance sounds file at \"" + singleInstanceSoundsPath + "\".");
-	}
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";

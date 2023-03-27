@@ -88,7 +88,7 @@ public:
 	~AudioManager();
 
     void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
-		bool is3D, const std::string &midiConfig);
+		bool is3D, const std::string &midiConfig, const std::string &audioDataPath);
 
 	static constexpr double MIN_VOLUME = 0.0;
 	static constexpr double MAX_VOLUME = 1.0;
@@ -134,11 +134,6 @@ public:
 	// Sets whether game world audio should be played in 2D (global) or 3D (with a listener).
 	// The 2D option is provided for parity with the original engine.
 	void set3D(bool is3D);
-
-	// Adds a sound filename to the single-instance sounds list. These sounds can only have one
-	// live instance at a time.
-	void addSingleInstanceSound(std::string &&filename);
-	void clearSingleInstanceSounds();
 
 	// Updates state not handled by a background thread, such as resetting finished sources.
 	void updateSources();
