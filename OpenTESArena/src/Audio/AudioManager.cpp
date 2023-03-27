@@ -774,16 +774,8 @@ void AudioManager::clearSingleInstanceSounds()
 	mSingleInstanceSounds.clear();
 }
 
-void AudioManager::update(double dt, const ListenerData *listenerData)
+void AudioManager::updateSources()
 {
-	// Update listener values if there is a listener currently active.
-	if (listenerData != nullptr)
-	{
-		this->setListenerPosition(listenerData->getPosition());
-		this->setListenerOrientation(listenerData->getDirection());
-	}
-
-	// If a sound source is done, reset it and return the ID to the free sources.
 	for (size_t i = 0; i < mUsedSources.size(); i++)
 	{
 		const ALuint source = mUsedSources[i].second;
@@ -791,6 +783,7 @@ void AudioManager::update(double dt, const ListenerData *listenerData)
 		ALint state;
 		alGetSourcei(source, AL_SOURCE_STATE, &state);
 
+		// If a sound source is done, reset it and return the ID to the free sources.
 		if (state == AL_STOPPED)
 		{
 			alSourceRewind(source);
@@ -819,4 +812,10 @@ void AudioManager::update(double dt, const ListenerData *listenerData)
 			mNextSong.clear();
 		}
 	}
+}
+
+void AudioManager::updateListener(const ListenerData &listenerData)
+{
+	this->setListenerPosition(listenerData.getPosition());
+	this->setListenerOrientation(listenerData.getDirection());
 }

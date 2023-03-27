@@ -140,9 +140,11 @@ public:
 	void addSingleInstanceSound(std::string &&filename);
 	void clearSingleInstanceSounds();
 
-	// Updates any state not handled by a background thread, such as resetting
-	// the sources of finished sounds, and updating listener values (if any).
-	void update(double dt, const ListenerData *listenerData);
+	// Updates state not handled by a background thread, such as resetting finished sources.
+	void updateSources();
+
+	// Updates the position of the 3D listener.
+	void updateListener(const ListenerData &listenerData);
 };
 
 #endif

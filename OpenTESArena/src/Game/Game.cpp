@@ -806,8 +806,10 @@ void Game::loop()
 				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
 				const WorldDouble3 &direction = this->player.getDirection();
 				const AudioManager::ListenerData listenerData(absolutePosition, direction);
-				this->audioManager.update(dt, &listenerData);
+				this->audioManager.updateListener(listenerData);
 			}
+
+			this->audioManager.updateSources();
 		}
 		catch (const std::exception &e)
 		{
