@@ -432,10 +432,8 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 		VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
-		VoxelDouble2 entityVelocity;
 		if (animInst.currentStateIndex == idleStateIndex)
 		{
-			entityVelocity = VoxelDouble2::Zero;
 			const bool shouldChangeToWalking = !isPlayerWeaponSheathed || (distToPlayerSqr > CitizenUtils::IDLE_DISTANCE_SQR) || isPlayerMoving;
 
 			// @todo: need to preserve their previous direction so they stay aligned with
@@ -446,7 +444,6 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 				const int citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
 
 				entityDir = CitizenUtils::getCitizenDirectionByIndex(citizenDirectionIndex);
-				entityVelocity = entityDir * CitizenUtils::SPEED;
 			}
 			else
 			{
@@ -457,13 +454,10 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		}
 		else if (animInst.currentStateIndex == walkStateIndex)
 		{
-			entityVelocity = entityDir * CitizenUtils::SPEED;
-
 			const bool shouldChangeToIdle = isPlayerWeaponSheathed && (distToPlayerSqr <= CitizenUtils::IDLE_DISTANCE_SQR) && !isPlayerMoving;
 			if (shouldChangeToIdle)
 			{
 				animInst.setStateIndex(*idleStateIndex);
-				entityVelocity = WorldDouble2::Zero;
 			}
 		}
 
@@ -471,9 +465,6 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		const int curAnimStateIndex = animInst.currentStateIndex;
 		if (curAnimStateIndex == *walkStateIndex)
 		{
-			// Integrate by delta time.
-			entityCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point + (entityVelocity * dt));
-
 			auto getVoxelAtDistance = [&entityCoord](const VoxelDouble2 &checkDist) -> CoordInt2
 			{
 				const CoordDouble2 pos = entityCoord + checkDist;
@@ -521,10 +512,12 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 
 					// Shuffle citizen direction indices so they don't all switch to the same
 					// direction every time.
-					std::array<int, 4> randomDirectionIndices = { 0, 1, 2, 3 };
+					int randomDirectionIndices[] = { 0, 1, 2, 3 };
 					RandomUtils::shuffle(randomDirectionIndices, random);
 
-					const auto iter = std::find_if(randomDirectionIndices.begin(), randomDirectionIndices.end(),
+					const int *indicesBegin = std::begin(randomDirectionIndices);
+					const int *indicesEnd = std::end(randomDirectionIndices);
+					const auto iter = std::find_if(indicesBegin, indicesEnd,
 						[&getVoxelAtDistance, &isSuitableVoxel, curDirectionName](int dirIndex)
 					{
 						// See if this is a valid direction to go in.
@@ -542,7 +535,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 						return false;
 					});
 
-					if (iter != randomDirectionIndices.end())
+					if (iter != indicesEnd)
 					{
 						const WorldDouble2 &newDirection = CitizenUtils::getCitizenDirectionByIndex(*iter);
 						entityDir = newDirection;
@@ -553,6 +546,10 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					}
 				}
 			}
+
+			// Integrate by delta time.
+			const VoxelDouble2 entityVelocity = entityDir * CitizenUtils::SPEED;
+			entityCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point + (entityVelocity * dt));
 		}
 
 		// Transfer ownership of the entity ID to a new chunk if needed.
