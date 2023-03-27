@@ -943,6 +943,12 @@ namespace swRender
 		lightTableShaderTexture.height = lightTableTexture.height;
 		lightTableShaderTexture.samplingType = TextureSamplingType::Default;
 
+		PixelShaderFrameBuffer shaderFrameBuffer;
+		shaderFrameBuffer.colors = colorBuffer.begin();
+		shaderFrameBuffer.depth = depthBuffer.begin();
+		shaderFrameBuffer.palette.colors = paletteTexture.get32Bit();
+		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
+
 		const int triangleCount = drawListIndices.count;
 		for (int i = 0; i < triangleCount; i++)
 		{
@@ -1023,12 +1029,6 @@ namespace swRender
 				shaderPalette0.colors = texture1.get32Bit();
 				shaderPalette0.count = texture1.width;
 			}
-
-			PixelShaderFrameBuffer shaderFrameBuffer;
-			shaderFrameBuffer.colors = colorBuffer.begin();
-			shaderFrameBuffer.depth = depthBuffer.begin();
-			shaderFrameBuffer.palette.colors = paletteTexture.get32Bit();
-			shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 
 			for (int y = yStart; y < yEnd; y++)
 			{
