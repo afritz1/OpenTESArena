@@ -39,6 +39,8 @@ This implements a simple and safe job system.
        std::this_thread::sleep_for(1000ms);
     });
     
+    jm.submitJobs( { sleep } );
+
     jm.wait();
     std::cout << "\nDone!";
 }
