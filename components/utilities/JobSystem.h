@@ -1,30 +1,15 @@
 #ifndef JOB_SYSTEM_H
 #define JOB_SYSTEM_H
 
-#include <atomic>
-#include <future>
-#include <thread>
-
 #include <algorithm>
+#include <atomic>
 #include <deque>
 #include <functional>
+#include <future>
+#include <thread>
 #include <vector>
 
-class Job
-{
-public:
-	auto operator()()
-	{
-		this->task();
-	}
-
-	Job(std::function<void()> &&task)
-		: task(std::move(task))
-	{
-	}
-private:
-	std::function<void()> task;
-};
+using Job = std::function<void()>;
 
 class JobQueue
 {
