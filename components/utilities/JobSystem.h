@@ -18,7 +18,7 @@ private:
 	std::mutex mt;
 	std::deque<Job> jobs;
 public:
-	void enqueue(Job &job)
+	void push(Job &job)
 	{
 		std::unique_lock<std::mutex> lock(this->mt);
 		this->jobs.emplace_back(job);
@@ -39,7 +39,7 @@ public:
 		return static_cast<int>(this->jobs.size());
 	}
 
-	[[nodiscard]] Job pop_front()
+	[[nodiscard]] Job pop()
 	{
 		std::unique_lock<std::mutex> lock(this->mt);
 		while (this->jobs.empty())
@@ -175,8 +175,10 @@ public:
 	// it kicks things off again.
 	void submitJobs(std::vector<Job> jobs)
 	{
-		for (auto &new_job : jobs)
-			this->job_queue.enqueue(new_job);
+		for (Job &new_job : jobs)
+		{
+			this->job_queue.push(new_job);
+		}
 
 		this->run();
 	}
@@ -226,7 +228,7 @@ private:
 			while (!this->job_queue.empty())
 			{
 				auto worker = this->pool->requestIdleWorker();
-				worker->invoke(this->job_queue.pop_front());
+				worker->invoke(this->job_queue.pop());
 			}
 
 			this->running = false;
