@@ -24,10 +24,10 @@ public:
 		return this->jobs.empty();
 	}
 
-	void push(Job &job)
+	void push(Job &&job)
 	{
 		std::unique_lock<std::mutex> lock(this->mtx);
-		this->jobs.emplace_back(job);
+		this->jobs.emplace_back(std::move(job));
 		lock.unlock();
 
 		this->cv.notify_one();
@@ -203,7 +203,7 @@ public:
 	{
 		for (Job &newJob : jobs)
 		{
-			this->jobQueue.push(newJob);
+			this->jobQueue.push(std::move(newJob));
 		}
 
 		this->run();
