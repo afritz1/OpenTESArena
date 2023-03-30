@@ -13,6 +13,10 @@ using Job = std::function<void()>;
 
 class JobQueue
 {
+private:
+	std::condition_variable cv;
+	std::mutex mt;
+	std::deque<Job> jobs;
 public:
 	// Add a job to the back of the queue.
 	void enqueue(Job &job)
@@ -46,10 +50,6 @@ public:
 		this->jobs.pop_front();
 		return first;
 	}
-private:
-	std::condition_variable cv;
-	std::mutex mt;
-	std::deque<Job> jobs;
 };
 
 // A thin wrapper around std::thread to be used in the thread pool.
@@ -117,6 +117,11 @@ public:
 
 class ThreadPool
 {
+private:
+	std::mutex mt;
+	std::condition_variable cv;
+	std::vector<Worker> workers;
+	std::atomic<std::uint32_t> idle_workers;
 public:
 	// Returns an iterator (NOT a pointer) to the first idle worker it finds in
 	// the pool. If there isn't one, it waits.
@@ -148,11 +153,6 @@ public:
 			workers.emplace_back(&this->cv, &this->idle_workers);
 		this->idle_workers.store(n_workers);
 	}
-private:
-	std::mutex mt;
-	std::condition_variable cv;
-	std::vector<Worker> workers;
-	std::atomic<std::uint32_t> idle_workers;
 };
 
 // TODO: This class was written before Worker was, so a lot of Worker logic is
@@ -161,6 +161,13 @@ private:
 // this->context to be a Worker, would be cool.
 class JobManager
 {
+private:
+	std::mutex mtx;
+	std::condition_variable cv;
+	std::unique_ptr<ThreadPool> pool;
+	std::thread context;
+	std::atomic<bool> running = false;
+	JobQueue job_queue;
 public:
 	// Adds new jobs to the queue, and if the job system is not running
 	// (most likely because it's already gone through all the jobs in the queue)
@@ -227,13 +234,6 @@ private:
 
 		this->context = std::thread(distribute_jobs_across_workers);
 	}
-
-	std::mutex mtx;
-	std::condition_variable cv;
-	std::unique_ptr<ThreadPool> pool;
-	std::thread context;
-	std::atomic<bool> running = false;
-	JobQueue job_queue;
 };
 
 #endif
