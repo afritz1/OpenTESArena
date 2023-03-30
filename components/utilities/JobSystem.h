@@ -204,6 +204,11 @@ public:
 		this->run();
 	}
 
+	void submitJob(Job &job)
+	{
+		this->submitJobs(BufferView<Job>(&job, 1));
+	}
+
 	// Waits the calling thread until it's notified by the job system that there
 	// are no more jobs in the queue.
 	void wait()
