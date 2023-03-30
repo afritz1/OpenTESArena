@@ -124,7 +124,7 @@ public:
 			this->workers[i].init(&this->cv, &this->idleWorkerCount);
 		}
 
-		this->idleWorkerCount.store(threadCount);
+		this->idleWorkerCount = threadCount;
 	}
 
 	int getBusyWorkerCount()
@@ -134,22 +134,28 @@ public:
 
 	int getIdleWorkerCount()
 	{
-		return this->idleWorkerCount.load();
+		return this->idleWorkerCount;
 	}
 
-	// Returns an iterator (NOT a pointer) to the first idle worker it finds in
-	// the pool. If there isn't one, it waits.
+	Worker &getWorker(int index)
+	{
+		return this->workers[index];
+	}
+
+	// Waits for an idle worker to become available then returns its index.
 	// TODO: Optimize this by keeping a cache of idle workers.
-	auto requestIdleWorker()
+	int nextWorkerIndexBlocking()
 	{
 		std::unique_lock<std::mutex> lock(this->mtx);
 		this->cv.wait(lock, [this]() { return this->getIdleWorkerCount() > 0; });
 
-		return std::find_if(this->workers.begin(), this->workers.end(),
-			[](Worker &worker)
+		const auto idleIter = std::find_if(this->workers.begin(), this->workers.end(),
+			[](const Worker &worker)
 		{
-			return !worker.busy.load();
+			return !worker.busy;
 		});
+
+		return static_cast<int>(std::distance(this->workers.begin(), idleIter));
 	}
 };
 
@@ -182,7 +188,7 @@ public:
 
 	bool isRunning()
 	{
-		return this->running.load();
+		return this->running;
 	}
 
 	// Adds new jobs to the queue, and if the job system is not running
@@ -203,7 +209,7 @@ public:
 	void wait()
 	{
 		std::unique_lock<std::mutex> lock(this->mtx);
-		this->cv.wait(lock, [this] { return !this->isRunning(); });
+		this->cv.wait(lock, [this]() { return !this->isRunning(); });
 	}
 private:
 	//  Only call this directly if you know what you're doing.
@@ -224,8 +230,9 @@ private:
 			this->running = true;
 			while (!this->jobQueue.isEmpty())
 			{
-				auto worker = this->pool->requestIdleWorker();
-				worker->invoke(this->jobQueue.pop());
+				const int nextWorkerIndex = this->pool->nextWorkerIndexBlocking();
+				Worker &worker = this->pool->getWorker(nextWorkerIndex);
+				worker.invoke(this->jobQueue.pop());
 			}
 
 			this->running = false;
