@@ -18,34 +18,35 @@ private:
 	std::mutex mt;
 	std::deque<Job> jobs;
 public:
-	// Add a job to the back of the queue.
 	void enqueue(Job &job)
 	{
-		{
-			std::unique_lock<std::mutex> lock(this->mt);
-			this->jobs.push_back(job);
-		}
+		std::unique_lock<std::mutex> lock(this->mt);
+		this->jobs.emplace_back(job);
+		lock.unlock();
+
 		this->cv.notify_one();
 	}
 
 	[[nodiscard]] bool empty()
 	{
-		std::unique_lock<std::mutex> lock(this->mt);
+		std::lock_guard<std::mutex> lock(this->mt);
 		return this->jobs.empty();
 	}
 
 	[[nodiscard]] std::size_t size()
 	{
-		std::unique_lock<std::mutex> lock(this->mt);
+		std::lock_guard<std::mutex> lock(this->mt);
 		return this->jobs.size();
 	}
 
-	// Pop a job from the front of the queue.
 	[[nodiscard]] Job pop_front()
 	{
 		std::unique_lock<std::mutex> lock(this->mt);
 		while (this->jobs.empty())
+		{
 			this->cv.wait(lock);
+		}
+			
 		Job first = std::move(this->jobs.front());
 		this->jobs.pop_front();
 		return first;
