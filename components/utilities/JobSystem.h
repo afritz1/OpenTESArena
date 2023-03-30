@@ -14,39 +14,33 @@ using Job = std::function<void()>;
 class JobQueue
 {
 private:
-	std::condition_variable cv;
-	std::mutex mt;
 	std::deque<Job> jobs;
+	std::condition_variable cv;
+	std::mutex mtx;
 public:
+	[[nodiscard]] bool isEmpty()
+	{
+		std::lock_guard<std::mutex> lock(this->mtx);
+		return this->jobs.empty();
+	}
+
 	void push(Job &job)
 	{
-		std::unique_lock<std::mutex> lock(this->mt);
+		std::unique_lock<std::mutex> lock(this->mtx);
 		this->jobs.emplace_back(job);
 		lock.unlock();
 
 		this->cv.notify_one();
 	}
 
-	[[nodiscard]] bool empty()
-	{
-		std::lock_guard<std::mutex> lock(this->mt);
-		return this->jobs.empty();
-	}
-
-	[[nodiscard]] int size()
-	{
-		std::lock_guard<std::mutex> lock(this->mt);
-		return static_cast<int>(this->jobs.size());
-	}
-
 	[[nodiscard]] Job pop()
 	{
-		std::unique_lock<std::mutex> lock(this->mt);
+		std::unique_lock<std::mutex> lock(this->mtx);
 		while (this->jobs.empty())
 		{
 			this->cv.wait(lock);
 		}
-			
+
 		Job first = std::move(this->jobs.front());
 		this->jobs.pop_front();
 		return first;
@@ -60,39 +54,41 @@ private:
 	std::thread context;
 	std::mutex mtx;
 	// Careful: here be dragons.
-	std::condition_variable *pool__idle_notifier; // Ping this to tell the pool we're idle.
-	std::atomic<int> *pool__idle_counter; // To allow the pool to easily check if it has idle workers.
+	std::condition_variable *poolIdleNotifierCV; // Ping this to tell the pool we're idle.
+	std::atomic<int> *poolIdleCount; // To allow the pool to easily check if it has idle workers.
 public:
 	std::atomic<bool> busy = false;
 
-	Worker(const Worker&) = delete;
-
-	Worker(std::condition_variable *idle_notifier, std::atomic<int> *idle_counter)
-		: pool__idle_notifier(idle_notifier), pool__idle_counter(idle_counter)
+	Worker(std::condition_variable *idleNotifierCV, std::atomic<int> *idleCount)
 	{
+		this->poolIdleNotifierCV = idleNotifierCV;
+		this->poolIdleCount = idleCount;
 	}
 
 	Worker(Worker &&worker)
-		: pool__idle_notifier(std::move(worker.pool__idle_notifier)), pool__idle_counter(std::move(worker.pool__idle_counter))
 	{
+		this->poolIdleNotifierCV = std::move(worker.poolIdleNotifierCV);
+		this->poolIdleCount = std::move(worker.poolIdleCount);
 	}
 
+	Worker(const Worker&) = delete;
+
 	// Do the thing.
-	void invoke(std::function<void()> &&what)
+	void invoke(std::function<void()> &&func)
 	{
 		this->join();
 		this->notifyBusy();
-		this->context = std::thread(([this, what]()
+		this->context = std::thread([this, func]()
 		{
-			what();
+			func();
 			this->notifyIdle(); // It's likely the pool is waiting for an idle worker.
-		}));
+		});
 	}
 
 	// Signal to the pool that we're busy.
 	void notifyBusy()
 	{
-		this->pool__idle_counter->fetch_sub(1);
+		this->poolIdleCount->fetch_sub(1);
 		this->busy = true;
 	}
 
@@ -100,14 +96,16 @@ public:
 	void notifyIdle()
 	{
 		this->busy = false;
-		this->pool__idle_counter->fetch_add(1);
-		this->pool__idle_notifier->notify_all();
+		this->poolIdleCount->fetch_add(1);
+		this->poolIdleNotifierCV->notify_all();
 	}
 
 	void join()
 	{
 		if (this->context.joinable())
+		{
 			this->context.join();
+		}
 	}
 
 	~Worker()
@@ -119,40 +117,44 @@ public:
 class ThreadPool
 {
 private:
-	std::mutex mt;
+	std::mutex mtx;
 	std::condition_variable cv;
 	std::vector<Worker> workers;
-	std::atomic<int> idle_workers;
+	std::atomic<int> idleWorkerCount;
 public:
+	ThreadPool(int workerCount)
+	{
+		for (int n = 0; n < workerCount; n++)
+		{
+			this->workers.emplace_back(&this->cv, &this->idleWorkerCount);
+		}
+
+		this->idleWorkerCount.store(workerCount);
+	}
+
+	int getBusyWorkerCount()
+	{
+		return static_cast<int>(this->workers.size()) - this->getIdleWorkerCount();
+	}
+
+	int getIdleWorkerCount()
+	{
+		return this->idleWorkerCount.load();
+	}
+
 	// Returns an iterator (NOT a pointer) to the first idle worker it finds in
 	// the pool. If there isn't one, it waits.
 	// TODO: Optimize this by keeping a cache of idle workers.
 	auto requestIdleWorker()
 	{
-		std::unique_lock<std::mutex> lock(this->mt);
-		this->cv.wait(lock, [this] { return this->idleWorkers() > 0; });
+		std::unique_lock<std::mutex> lock(this->mtx);
+		this->cv.wait(lock, [this]() { return this->getIdleWorkerCount() > 0; });
 
-		return std::find_if(workers.begin(), workers.end(), [](Worker &worker)
+		return std::find_if(this->workers.begin(), this->workers.end(),
+			[](Worker &worker)
 		{
-			return !(worker.busy.load());
+			return !worker.busy.load();
 		});
-	}
-
-	int busyWorkers()
-	{
-		return static_cast<int>(this->workers.size() - this->idleWorkers());
-	}
-
-	int idleWorkers()
-	{
-		return this->idle_workers.load();
-	}
-
-	ThreadPool(int n_workers)
-	{
-		for (int n = 0; n < n_workers; n++)
-			workers.emplace_back(&this->cv, &this->idle_workers);
-		this->idle_workers.store(n_workers);
 	}
 };
 
@@ -163,21 +165,45 @@ public:
 class JobManager
 {
 private:
-	std::mutex mtx;
-	std::condition_variable cv;
+	JobQueue jobQueue;
 	std::unique_ptr<ThreadPool> pool;
 	std::thread context;
+	std::mutex mtx;
+	std::condition_variable cv;
 	std::atomic<bool> running = false;
-	JobQueue job_queue;
 public:
+	JobManager(int threadCount)
+	{
+		this->pool = std::make_unique<ThreadPool>(threadCount);
+	}
+
+	JobManager(int threadCount, std::vector<Job> &jobs)
+	{
+		this->pool = std::make_unique<ThreadPool>(threadCount);
+		this->submitJobs(jobs);
+	}
+
+	~JobManager()
+	{
+		if (this->context.joinable())
+		{
+			this->context.join();
+		}
+	}
+
+	bool isRunning()
+	{
+		return this->running.load();
+	}
+
 	// Adds new jobs to the queue, and if the job system is not running
 	// (most likely because it's already gone through all the jobs in the queue)
 	// it kicks things off again.
 	void submitJobs(std::vector<Job> jobs)
 	{
-		for (Job &new_job : jobs)
+		for (Job &newJob : jobs)
 		{
-			this->job_queue.push(new_job);
+			this->jobQueue.push(newJob);
 		}
 
 		this->run();
@@ -187,55 +213,37 @@ public:
 	// are no more jobs in the queue.
 	void wait()
 	{
-		std::unique_lock l(this->mtx);
-		this->cv.wait(l, [this] { return !this->isRunning(); });
-	}
-
-	bool isRunning()
-	{
-		return this->running.load();
-	}
-
-	JobManager(int n_threads)
-	{
-		this->pool = std::make_unique<ThreadPool>(n_threads);
-	}
-
-	JobManager(int n_threads, std::vector<Job> &jobs)
-	{
-		this->pool = std::make_unique<ThreadPool>(n_threads);
-		this->submitJobs(jobs);
-	}
-
-	~JobManager()
-	{
-		if (this->context.joinable())
-			this->context.join();
+		std::unique_lock<std::mutex> lock(this->mtx);
+		this->cv.wait(lock, [this] { return !this->isRunning(); });
 	}
 private:
 	//  Only call this directly if you know what you're doing.
 	void run()
 	{
 		if (this->isRunning())
+		{
 			return;
+		}
 
 		if (this->context.joinable())
+		{
 			this->context.join();
+		}
 
-		auto distribute_jobs_across_workers = [this]()
+		auto distributeJobs = [this]()
 		{
 			this->running = true;
-			while (!this->job_queue.empty())
+			while (!this->jobQueue.isEmpty())
 			{
 				auto worker = this->pool->requestIdleWorker();
-				worker->invoke(this->job_queue.pop());
+				worker->invoke(this->jobQueue.pop());
 			}
 
 			this->running = false;
 			this->cv.notify_all(); // If anyone's been waiting for us to get done with it.
 		};
 
-		this->context = std::thread(distribute_jobs_across_workers);
+		this->context = std::thread(distributeJobs);
 	}
 };
 
