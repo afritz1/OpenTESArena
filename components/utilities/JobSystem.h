@@ -33,10 +33,10 @@ public:
 		return this->jobs.empty();
 	}
 
-	[[nodiscard]] std::size_t size()
+	[[nodiscard]] int size()
 	{
 		std::lock_guard<std::mutex> lock(this->mt);
-		return this->jobs.size();
+		return static_cast<int>(this->jobs.size());
 	}
 
 	[[nodiscard]] Job pop_front()
@@ -61,13 +61,13 @@ private:
 	std::mutex mtx;
 	// Careful: here be dragons.
 	std::condition_variable *pool__idle_notifier; // Ping this to tell the pool we're idle.
-	std::atomic<std::uint32_t> *pool__idle_counter; // To allow the pool to easily check if it has idle workers.
+	std::atomic<int> *pool__idle_counter; // To allow the pool to easily check if it has idle workers.
 public:
 	std::atomic<bool> busy = false;
 
 	Worker(const Worker&) = delete;
 
-	Worker(std::condition_variable *idle_notifier, std::atomic<std::uint32_t> *idle_counter)
+	Worker(std::condition_variable *idle_notifier, std::atomic<int> *idle_counter)
 		: pool__idle_notifier(idle_notifier), pool__idle_counter(idle_counter)
 	{
 	}
@@ -122,7 +122,7 @@ private:
 	std::mutex mt;
 	std::condition_variable cv;
 	std::vector<Worker> workers;
-	std::atomic<std::uint32_t> idle_workers;
+	std::atomic<int> idle_workers;
 public:
 	// Returns an iterator (NOT a pointer) to the first idle worker it finds in
 	// the pool. If there isn't one, it waits.
@@ -138,19 +138,19 @@ public:
 		});
 	}
 
-	std::uint32_t busyWorkers()
+	int busyWorkers()
 	{
-		return this->workers.size() - this->idleWorkers();
+		return static_cast<int>(this->workers.size() - this->idleWorkers());
 	}
 
-	std::uint32_t idleWorkers()
+	int idleWorkers()
 	{
 		return this->idle_workers.load();
 	}
 
-	ThreadPool(std::size_t n_workers)
+	ThreadPool(int n_workers)
 	{
-		for (std::size_t n = 0; n < n_workers; n++)
+		for (int n = 0; n < n_workers; n++)
 			workers.emplace_back(&this->cv, &this->idle_workers);
 		this->idle_workers.store(n_workers);
 	}
@@ -194,12 +194,12 @@ public:
 		return this->running.load();
 	}
 
-	JobManager(std::size_t n_threads)
+	JobManager(int n_threads)
 	{
 		this->pool = std::make_unique<ThreadPool>(n_threads);
 	}
 
-	JobManager(std::size_t n_threads, std::vector<Job> &jobs)
+	JobManager(int n_threads, std::vector<Job> &jobs)
 	{
 		this->pool = std::make_unique<ThreadPool>(n_threads);
 		this->submitJobs(jobs);
