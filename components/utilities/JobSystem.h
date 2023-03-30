@@ -5,9 +5,10 @@
 #include <atomic>
 #include <deque>
 #include <functional>
-#include <future>
 #include <thread>
-#include <vector>
+
+#include "Buffer.h"
+#include "BufferView.h"
 
 using Job = std::function<void()>;
 
@@ -57,21 +58,19 @@ private:
 	std::condition_variable *poolIdleNotifierCV; // Ping this to tell the pool we're idle.
 	std::atomic<int> *poolIdleCount; // To allow the pool to easily check if it has idle workers.
 public:
-	std::atomic<bool> busy = false;
+	std::atomic<bool> busy;
 
-	Worker(std::condition_variable *idleNotifierCV, std::atomic<int> *idleCount)
+	void init(std::condition_variable *idleNotifierCV, std::atomic<int> *idleCount)
 	{
 		this->poolIdleNotifierCV = idleNotifierCV;
 		this->poolIdleCount = idleCount;
+		this->busy = false;
 	}
 
-	Worker(Worker &&worker)
+	~Worker()
 	{
-		this->poolIdleNotifierCV = std::move(worker.poolIdleNotifierCV);
-		this->poolIdleCount = std::move(worker.poolIdleCount);
+		this->join();
 	}
-
-	Worker(const Worker&) = delete;
 
 	// Do the thing.
 	void invoke(std::function<void()> &&func)
@@ -107,34 +106,30 @@ public:
 			this->context.join();
 		}
 	}
-
-	~Worker()
-	{
-		this->join();
-	}
 };
 
 class ThreadPool
 {
 private:
+	Buffer<Worker> workers;
 	std::mutex mtx;
 	std::condition_variable cv;
-	std::vector<Worker> workers;
 	std::atomic<int> idleWorkerCount;
 public:
-	ThreadPool(int workerCount)
+	ThreadPool(int threadCount)
 	{
-		for (int n = 0; n < workerCount; n++)
+		this->workers.init(threadCount);
+		for (int i = 0; i < threadCount; i++)
 		{
-			this->workers.emplace_back(&this->cv, &this->idleWorkerCount);
+			this->workers[i].init(&this->cv, &this->idleWorkerCount);
 		}
 
-		this->idleWorkerCount.store(workerCount);
+		this->idleWorkerCount.store(threadCount);
 	}
 
 	int getBusyWorkerCount()
 	{
-		return static_cast<int>(this->workers.size()) - this->getIdleWorkerCount();
+		return this->workers.getCount() - this->getIdleWorkerCount();
 	}
 
 	int getIdleWorkerCount()
@@ -172,15 +167,9 @@ private:
 	std::condition_variable cv;
 	std::atomic<bool> running = false;
 public:
-	JobManager(int threadCount)
+	void init(int threadCount)
 	{
 		this->pool = std::make_unique<ThreadPool>(threadCount);
-	}
-
-	JobManager(int threadCount, std::vector<Job> &jobs)
-	{
-		this->pool = std::make_unique<ThreadPool>(threadCount);
-		this->submitJobs(jobs);
 	}
 
 	~JobManager()
@@ -199,11 +188,11 @@ public:
 	// Adds new jobs to the queue, and if the job system is not running
 	// (most likely because it's already gone through all the jobs in the queue)
 	// it kicks things off again.
-	void submitJobs(std::vector<Job> jobs)
+	void submitJobs(BufferView<Job> jobs)
 	{
-		for (Job &newJob : jobs)
+		for (Job &job : jobs)
 		{
-			this->jobQueue.push(std::move(newJob));
+			this->jobQueue.push(std::move(job));
 		}
 
 		this->run();
