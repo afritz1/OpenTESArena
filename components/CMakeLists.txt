@@ -33,6 +33,7 @@ SET(COMP_UTILITIES
 	"utilities/FPSCounter.h"
 	"utilities/HexPrinter.cpp"
 	"utilities/HexPrinter.h"
+	"utilities/JobSystem.h"
 	"utilities/KeyValueFile.cpp"
 	"utilities/KeyValueFile.h"
 	"utilities/Path.cpp"
