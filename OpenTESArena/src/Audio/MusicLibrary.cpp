@@ -479,7 +479,7 @@ const MusicDefinition *MusicLibrary::getRandomMusicDefinitionIf(MusicDefinition:
 {
 	Buffer<int> musicDefIndices(this->getMusicDefinitionCount(type));
 	std::iota(musicDefIndices.begin(), musicDefIndices.end(), 0);
-	RandomUtils::shuffle(musicDefIndices, random);
+	RandomUtils::shuffle<int>(musicDefIndices, random);
 
 	for (const int index : musicDefIndices)
 	{

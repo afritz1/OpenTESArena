@@ -151,7 +151,7 @@ CardinalDirectionName CitizenUtils::getCitizenDirectionNameByIndex(int index)
 	return CitizenDirections[index].first;
 }
 
-WorldDouble2 CitizenUtils::getCitizenDirectionByIndex(int index)
+const WorldDouble2 &CitizenUtils::getCitizenDirectionByIndex(int index)
 {
 	DebugAssertIndex(CitizenDirections, index);
 	return CitizenDirections[index].second;

@@ -33,6 +33,9 @@ namespace CitizenUtils
 	// Walking speed of citizens.
 	constexpr double SPEED = 2.25;
 
+	// North/east/south/west.
+	constexpr int8_t DIRECTION_INDICES[] = { 0, 1, 2, 3 };
+
 	struct CitizenGenInfo
 	{
 		EntityDefID maleEntityDefID;
@@ -58,7 +61,7 @@ namespace CitizenUtils
 	// Helper functions for determining a citizen's walking direction.
 	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection);
 	CardinalDirectionName getCitizenDirectionNameByIndex(int index);
-	WorldDouble2 getCitizenDirectionByIndex(int index);
+	const WorldDouble2 &getCitizenDirectionByIndex(int index);
 	int getRandomCitizenDirectionIndex(Random &random);
 
 	// Gets the number of citizens active in the world or a chunk.

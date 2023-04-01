@@ -291,6 +291,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			double &entityBBoxExtent = this->boundingBoxes.get(bboxID);
 			entityBBoxExtent = animMaxWidth;
 
+			if (!this->citizenDirectionIndices.tryAlloc(&entityInst.citizenDirectionIndexID))
+			{
+				DebugLogError("Couldn't allocate citizen EntityCitizenDirectionIndexID.");
+				return false;
+			}
+
+			int8_t &citizenDirIndex = this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID);
+			citizenDirIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
+
 			if (!this->directions.tryAlloc(&entityInst.directionID))
 			{
 				DebugLogError("Couldn't allocate citizen EntityDirectionID.");
@@ -298,7 +307,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			}
 
 			VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
-			entityDir = CardinalDirection::North;
+			entityDir = CitizenUtils::getCitizenDirectionByIndex(citizenDirIndex);
 
 			if (!this->animInsts.tryAlloc(&entityInst.animInstID))
 			{
@@ -432,6 +441,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 		VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
+		int8_t &citizenDirIndex = this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID);
 		if (animInst.currentStateIndex == idleStateIndex)
 		{
 			const bool shouldChangeToWalking = !isPlayerWeaponSheathed || (distToPlayerSqr > CitizenUtils::IDLE_DISTANCE_SQR) || isPlayerMoving;
@@ -441,9 +451,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 			if (shouldChangeToWalking)
 			{
 				animInst.setStateIndex(*walkStateIndex);
-				const int citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
-
-				entityDir = CitizenUtils::getCitizenDirectionByIndex(citizenDirectionIndex);
+				entityDir = CitizenUtils::getCitizenDirectionByIndex(citizenDirIndex);
 			}
 			else
 			{
@@ -510,15 +518,16 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					// none exist, then stop walking.
 					const CardinalDirectionName curDirectionName = CardinalDirection::getDirectionName(entityDir);
 
-					// Shuffle citizen direction indices so they don't all switch to the same
-					// direction every time.
-					int randomDirectionIndices[] = { 0, 1, 2, 3 };
-					RandomUtils::shuffle(randomDirectionIndices, random);
+					// Shuffle citizen direction indices so they don't all switch to the same direction every time.
+					constexpr auto &dirIndices = CitizenUtils::DIRECTION_INDICES;
+					int8_t randomDirectionIndices[std::size(dirIndices)];
+					std::copy(std::begin(dirIndices), std::end(dirIndices), std::begin(randomDirectionIndices));
+					RandomUtils::shuffle<int8_t>(randomDirectionIndices, random);
 
-					const int *indicesBegin = std::begin(randomDirectionIndices);
-					const int *indicesEnd = std::end(randomDirectionIndices);
+					const int8_t *indicesBegin = std::begin(randomDirectionIndices);
+					const int8_t *indicesEnd = std::end(randomDirectionIndices);
 					const auto iter = std::find_if(indicesBegin, indicesEnd,
-						[&getVoxelAtDistance, &isSuitableVoxel, curDirectionName](int dirIndex)
+						[&getVoxelAtDistance, &isSuitableVoxel, curDirectionName](int8_t dirIndex)
 					{
 						// See if this is a valid direction to go in.
 						const CardinalDirectionName cardinalDirectionName = CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
@@ -537,8 +546,8 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 
 					if (iter != indicesEnd)
 					{
-						const WorldDouble2 &newDirection = CitizenUtils::getCitizenDirectionByIndex(*iter);
-						entityDir = newDirection;
+						citizenDirIndex = *iter;
+						entityDir = CitizenUtils::getCitizenDirectionByIndex(citizenDirIndex);
 					}
 					else
 					{
@@ -605,6 +614,11 @@ const VoxelDouble2 &EntityChunkManager::getEntityDirection(EntityDirectionID id)
 const EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(EntityAnimationInstanceID id) const
 {
 	return this->animInsts.get(id);
+}
+
+const int8_t &EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const
+{
+	return this->citizenDirectionIndices.get(id);
 }
 
 const Palette &EntityChunkManager::getEntityPalette(EntityPaletteInstanceID id) const

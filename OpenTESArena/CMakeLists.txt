@@ -443,7 +443,6 @@ SET(TES_MATH
     "${SRC_ROOT}/Math/Quaternion.h"
     "${SRC_ROOT}/Math/Random.cpp"
     "${SRC_ROOT}/Math/Random.h"
-    "${SRC_ROOT}/Math/RandomUtils.cpp"
     "${SRC_ROOT}/Math/RandomUtils.h"
     "${SRC_ROOT}/Math/Rect.cpp"
     "${SRC_ROOT}/Math/Rect.h"

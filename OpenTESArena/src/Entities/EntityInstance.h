@@ -9,6 +9,7 @@ using EntityBoundingBoxID = int;
 using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
 using EntityCreatureSoundInstanceID = int;
+using EntityCitizenDirectionIndexID = int;
 using EntityPaletteInstanceID = int;
 
 struct EntityInstance
@@ -20,6 +21,7 @@ struct EntityInstance
 	EntityDirectionID directionID;
 	EntityAnimationInstanceID animInstID;
 	EntityCreatureSoundInstanceID creatureSoundInstID;
+	EntityCitizenDirectionIndexID citizenDirectionIndexID;
 	EntityPaletteInstanceID paletteInstID;
 
 	EntityInstance();

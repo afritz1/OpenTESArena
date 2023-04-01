@@ -37,6 +37,7 @@ private:
 	using EntityDirectionPool = RecyclablePool<VoxelDouble2, EntityDirectionID>;
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
+	using EntityCitizenDirectionIndexPool = RecyclablePool<int8_t, EntityCitizenDirectionIndexID>;
 	using EntityPaletteInstancePool = RecyclablePool<Palette, EntityPaletteInstanceID>;
 
 	EntityPool entities;
@@ -45,6 +46,7 @@ private:
 	EntityDirectionPool directions;
 	EntityAnimationInstancePool animInsts;
 	EntityCreatureSoundPool creatureSoundInsts;
+	EntityCitizenDirectionIndexPool citizenDirectionIndices;
 
 	// Each citizen has a unique palette in place of unique textures for memory savings. It was found
 	// that hardly any citizen instances share textures due to variations in their random palette. As
@@ -86,6 +88,7 @@ public:
 	double getEntityBoundingBox(EntityBoundingBoxID id) const;
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
+	const int8_t &getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
 	const Palette &getEntityPalette(EntityPaletteInstanceID id) const;
 
 	// Count functions for specialized entities.

@@ -188,7 +188,7 @@ std::vector<int> MainMenuUiModel::makeShuffledLocationIndices(const ProvinceDefi
 {
 	std::vector<int> indices(provinceDef.getLocationCount());
 	std::iota(indices.begin(), indices.end(), 0);
-	RandomUtils::shuffle(indices);
+	RandomUtils::shuffle<int>(indices);
 	return indices;
 }
 

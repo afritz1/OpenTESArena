@@ -26,7 +26,7 @@ bool EntityInstance::isDynamic() const
 
 bool EntityInstance::isCitizen() const
 {
-	return this->paletteInstID >= 0;
+	return this->citizenDirectionIndexID >= 0;
 }
 
 void EntityInstance::clear()
@@ -38,5 +38,6 @@ void EntityInstance::clear()
 	this->directionID = -1;
 	this->animInstID = -1;
 	this->creatureSoundInstID = -1;
+	this->citizenDirectionIndexID = -1;
 	this->paletteInstID = -1;
 }
