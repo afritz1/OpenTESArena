@@ -858,6 +858,22 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				this->setMeshDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_MESH_DEF_ID);
 				this->setTextureDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TEXTURE_DEF_ID);
 				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TRAITS_DEF_ID);
+
+				auto tryEraseVoxelMapEntry = [&voxel](auto &map)
+				{
+					const auto mapIter = map.find(voxel);
+					if (mapIter != map.end())
+					{
+						map.erase(mapIter);
+					}
+				};
+
+				tryEraseVoxelMapEntry(this->transitionDefIndices);
+				tryEraseVoxelMapEntry(this->triggerDefIndices);
+				tryEraseVoxelMapEntry(this->lockDefIndices);
+				tryEraseVoxelMapEntry(this->buildingNameIndices);
+				tryEraseVoxelMapEntry(this->doorDefIndices);
+				tryEraseVoxelMapEntry(this->chasmDefIndices);
 			}
 
 			this->fadeAnimInsts.erase(this->fadeAnimInsts.begin() + i);
