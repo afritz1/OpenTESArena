@@ -111,6 +111,8 @@ public:
 		const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer);
 
 	// @todo: support spawning an entity not from the level def
+
+	void cleanUp();
 };
 
 #endif

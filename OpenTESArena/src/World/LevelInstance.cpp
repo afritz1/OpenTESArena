@@ -188,4 +188,5 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 void LevelInstance::cleanUp()
 {
 	this->voxelChunkManager.cleanUp();
+	this->entityChunkManager.cleanUp();
 }

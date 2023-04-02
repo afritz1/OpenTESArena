@@ -567,7 +567,9 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		{
 			EntityChunk &curEntityChunk = this->getChunkAtPosition(curEntityChunkPos);
 			entityChunk.entityIDs.erase(entityChunk.entityIDs.begin() + i);
+			entityChunk.removedEntityIDs.emplace_back(entityInstID);
 			curEntityChunk.entityIDs.emplace_back(entityInstID);
+			curEntityChunk.addedEntityIDs.emplace_back(entityInstID);
 		}
 	}
 }
@@ -918,5 +920,14 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		}
 
 		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, entityDefLibrary, audioManager);
+	}
+}
+
+void EntityChunkManager::cleanUp()
+{
+	for (ChunkPtr &chunkPtr : this->activeChunks)
+	{
+		chunkPtr->addedEntityIDs.clear();
+		chunkPtr->removedEntityIDs.clear();
 	}
 }
