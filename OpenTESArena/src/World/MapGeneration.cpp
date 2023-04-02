@@ -414,6 +414,46 @@ namespace MapGeneration
 		}
 	}
 
+	void writeVoxelInfoForFloorReplacement(const INFFile &inf, ArenaTypes::ChasmType chasmType,
+		ArenaMeshUtils::RenderMeshInitCache *outRenderMeshInitCache, ArenaMeshUtils::CollisionMeshInitCache *outCollisionMeshInitCache,
+		TextureAsset *outTextureAsset)
+	{
+		ArenaMeshUtils::WriteChasmRendererGeometryBuffers(chasmType, outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
+		ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outRenderMeshInitCache->opaqueIndices0View);
+		ArenaMeshUtils::WriteChasmCollisionGeometryBuffers(chasmType, outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
+		ArenaMeshUtils::WriteChasmFloorCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+
+		std::optional<int> textureIndex = inf.getWetChasmIndex();
+		if (!textureIndex.has_value())
+		{
+			DebugLogError("Missing *WETCHASM index for floor replacement voxel info, defaulting to 0.");
+			textureIndex = 0;
+		}
+
+		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(*textureIndex);
+		*outTextureAsset = TextureAsset(
+			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+	}
+
+	void writeDefsForFloorReplacement(const INFFile &inf, TextureManager &textureManager, VoxelMeshDefinition *outMeshDef,
+		VoxelTextureDefinition *outTextureDef, VoxelTraitsDefinition *outTraitsDef, ChasmDefinition *outChasmDef)
+	{
+		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Chasm;
+		constexpr ArenaTypes::ChasmType chasmType = ArenaTypes::ChasmType::Wet;
+
+		ArenaMeshUtils::RenderMeshInitCache renderMeshInitCache;
+		ArenaMeshUtils::CollisionMeshInitCache collisionMeshInitCache;
+		TextureAsset textureAsset;
+		MapGeneration::writeVoxelInfoForFloorReplacement(inf, chasmType, &renderMeshInitCache, &collisionMeshInitCache, &textureAsset);
+
+		constexpr VoxelMeshScaleType scaleType = VoxelMeshScaleType::UnscaledFromMax;
+		outMeshDef->initClassic(voxelType, scaleType, renderMeshInitCache, collisionMeshInitCache);
+		outTextureDef->addTextureAsset(TextureAsset(textureAsset));
+		outTraitsDef->initChasm(chasmType);
+		outChasmDef->initClassic(chasmType, textureAsset, textureManager);
+	}
+
 	void writeVoxelInfoForMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType,
 		const INFFile &inf, const ExeData &exeData, ArenaTypes::VoxelType *outVoxelType,
 		ArenaMeshUtils::RenderMeshInitCache *outRenderMeshInitCache, ArenaMeshUtils::CollisionMeshInitCache *outCollisionMeshInitCache,
@@ -1271,6 +1311,24 @@ namespace MapGeneration
 				}
 			}
 		}
+
+		// Add floor replacement defs. They are not necessarily associated with an existing XYZ coordinate, and might
+		// not even be in the original data.
+		VoxelMeshDefinition floorReplacementMeshDef;
+		VoxelTextureDefinition floorReplacementTextureDef;
+		VoxelTraitsDefinition floorReplacementTraitsDef;
+		ChasmDefinition floorReplacementChasmDef;
+		MapGeneration::writeDefsForFloorReplacement(inf, textureManager, &floorReplacementMeshDef, &floorReplacementTextureDef,
+			&floorReplacementTraitsDef, &floorReplacementChasmDef);
+
+		const LevelDefinition::VoxelMeshDefID floorReplacementVoxelMeshDefID = outLevelInfoDef->addVoxelMeshDef(std::move(floorReplacementMeshDef));
+		const LevelDefinition::VoxelTextureDefID floorReplacementVoxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(floorReplacementTextureDef));
+		const LevelDefinition::VoxelTraitsDefID floorReplacementVoxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(floorReplacementTraitsDef));
+		const LevelDefinition::ChasmDefID floorReplacementChasmDefID = outLevelInfoDef->addChasmDef(std::move(floorReplacementChasmDef));
+		outLevelDef->setFloorReplacementMeshDefID(floorReplacementVoxelMeshDefID);
+		outLevelDef->setFloorReplacementTextureDefID(floorReplacementVoxelTextureDefID);
+		outLevelDef->setFloorReplacementTraitsDefID(floorReplacementVoxelTraitsDefID);
+		outLevelDef->setFloorReplacementChasmDefID(floorReplacementChasmDefID);
 	}
 
 	// Converts .MIF/.RMD MAP1 voxels to modern voxel + entity format.

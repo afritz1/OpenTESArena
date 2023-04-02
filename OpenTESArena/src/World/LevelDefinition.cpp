@@ -46,6 +46,14 @@ LevelDefinition::ChasmPlacementDef::ChasmPlacementDef(ChasmDefID id, std::vector
 	this->id = id;
 }
 
+LevelDefinition::LevelDefinition()
+{
+	this->floorReplacementMeshDefID = -1;
+	this->floorReplacementTextureDefID = -1;
+	this->floorReplacementTraitsDefID = -1;
+	this->floorReplacementChasmDefID = -1;
+}
+
 void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
 	this->voxelMeshIDs.init(width, height, depth);
@@ -101,6 +109,46 @@ void LevelDefinition::setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDef
 void LevelDefinition::setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 {
 	this->voxelTraitsIDs.set(x, y, z, id);
+}
+
+LevelDefinition::VoxelMeshDefID LevelDefinition::getFloorReplacementMeshDefID() const
+{
+	return this->floorReplacementMeshDefID;
+}
+
+LevelDefinition::VoxelTextureDefID LevelDefinition::getFloorReplacementTextureDefID() const
+{
+	return this->floorReplacementTextureDefID;
+}
+
+LevelDefinition::VoxelTraitsDefID LevelDefinition::getFloorReplacementTraitsDefID() const
+{
+	return this->floorReplacementTraitsDefID;
+}
+
+LevelDefinition::ChasmDefID LevelDefinition::getFloorReplacementChasmDefID() const
+{
+	return this->floorReplacementChasmDefID;
+}
+
+void LevelDefinition::setFloorReplacementMeshDefID(VoxelMeshDefID id)
+{
+	this->floorReplacementMeshDefID = id;
+}
+
+void LevelDefinition::setFloorReplacementTextureDefID(VoxelTextureDefID id)
+{
+	this->floorReplacementTextureDefID = id;
+}
+
+void LevelDefinition::setFloorReplacementTraitsDefID(VoxelTraitsDefID id)
+{
+	this->floorReplacementTraitsDefID = id;
+}
+
+void LevelDefinition::setFloorReplacementChasmDefID(ChasmDefID id)
+{
+	this->floorReplacementChasmDefID = id;
 }
 
 int LevelDefinition::getEntityPlacementDefCount() const

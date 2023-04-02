@@ -27,8 +27,8 @@ class LevelInfoDefinition
 private:
 	// Definitions pointed to by a level definition. These should all be engine-independent now
 	// (meaning that they could theoretically work with a standalone editor).
-	std::vector<VoxelMeshDefinition> voxelMeshDefs; // @todo: make sure a player-created chasm voxel mesh exists
-	std::vector<VoxelTextureDefinition> voxelTextureDefs; // @todo: make sure a player-created chasm voxel texture exists
+	std::vector<VoxelMeshDefinition> voxelMeshDefs;
+	std::vector<VoxelTextureDefinition> voxelTextureDefs;
 	std::vector<VoxelTraitsDefinition> voxelTraitsDefs;
 	std::vector<EntityDefinition> entityDefs;
 	std::vector<LockDefinition> lockDefs;

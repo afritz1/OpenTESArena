@@ -6,6 +6,14 @@
 
 #include "components/debug/Debug.h"
 
+VoxelChunk::VoxelChunk()
+{
+	this->floorReplacementMeshDefID = -1;
+	this->floorReplacementTextureDefID = -1;
+	this->floorReplacementTraitsDefID = -1;
+	this->floorReplacementChasmDefID = -1;
+}
+
 void VoxelChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
@@ -425,6 +433,26 @@ void VoxelChunk::setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 	this->traitsDefIDs.set(x, y, z, id);
 }
 
+void VoxelChunk::setFloorReplacementMeshDefID(VoxelMeshDefID id)
+{
+	this->floorReplacementMeshDefID = id;
+}
+
+void VoxelChunk::setFloorReplacementTextureDefID(VoxelTextureDefID id)
+{
+	this->floorReplacementTextureDefID = id;
+}
+
+void VoxelChunk::setFloorReplacementTraitsDefID(VoxelTraitsDefID id)
+{
+	this->floorReplacementTraitsDefID = id;
+}
+
+void VoxelChunk::setFloorReplacementChasmDefID(ChasmDefID id)
+{
+	this->floorReplacementChasmDefID = id;
+}
+
 VoxelChunk::VoxelMeshDefID VoxelChunk::addMeshDef(VoxelMeshDefinition &&voxelMeshDef)
 {
 	const VoxelMeshDefID id = static_cast<VoxelMeshDefID>(this->meshDefs.size());
@@ -739,60 +767,11 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 			const bool willBecomeChasm = voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
 			if (willBecomeChasm)
 			{
-				// Find suitable water chasm definitions for the replacement voxel.
-				// @todo: provide some kind of floor voxel replacement mapping or ID for voxel mesh/texture/traits/chasm
-				// ahead of time (maybe in the level def?) so we don't have to search for them.
-				const auto replacementMeshIter = std::find_if(this->meshDefs.begin(), this->meshDefs.end(),
-					[](const VoxelMeshDefinition &def)
-				{
-					return def.isContextSensitive;
-				});
-
-				if (replacementMeshIter == this->meshDefs.end())
-				{
-					DebugLogError("Couldn't find suitable water VoxelMeshDefinition for faded voxel.");
-					continue;
-				}
-
-				const auto replacementTraitsIter = std::find_if(this->traitsDefs.begin(), this->traitsDefs.end(),
-					[](const VoxelTraitsDefinition &def)
-				{
-					if (def.type != ArenaTypes::VoxelType::Chasm)
-					{
-						return false;
-					}
-
-					const VoxelTraitsDefinition::Chasm &chasm = def.chasm;
-					return chasm.type == ArenaTypes::ChasmType::Wet;
-				});
-
-				if (replacementTraitsIter == this->traitsDefs.end())
-				{
-					DebugLogError("Couldn't find suitable water VoxelTraitsDefinition for faded voxel.");
-					continue;
-				}
-
-				const auto replacementChasmDefIter = std::find_if(this->chasmDefs.begin(), this->chasmDefs.end(),
-					[](const ChasmDefinition &def)
-				{
-					return def.allowsSwimming && !def.isDamaging;
-				});
-
-				if (replacementChasmDefIter == this->chasmDefs.end())
-				{
-					DebugLogError("Couldn't find suitable water ChasmDefinition for faded voxel.");
-					continue;
-				}
-
-				const VoxelMeshDefID replacementMeshDefID = static_cast<VoxelMeshDefID>(std::distance(this->meshDefs.begin(), replacementMeshIter));
-				const VoxelTextureDefID replacementTextureDefID = replacementMeshDefID; // @todo: brittle
-				const VoxelTraitsDefID replacementTraitsDefID = static_cast<VoxelTraitsDefID>(std::distance(this->traitsDefs.begin(), replacementTraitsIter));
-				this->setMeshDefID(voxel.x, voxel.y, voxel.z, replacementMeshDefID);
-				this->setTextureDefID(voxel.x, voxel.y, voxel.z, replacementTextureDefID);
-				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, replacementTraitsDefID);
-
-				const ChasmDefID chasmDefID = static_cast<ChasmDefID>(std::distance(this->chasmDefs.begin(), replacementChasmDefIter));
-				this->chasmDefIndices.emplace(voxel, chasmDefID);
+				// Change to water chasm.
+				this->setMeshDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementMeshDefID);
+				this->setTextureDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTextureDefID);
+				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTraitsDefID);
+				this->chasmDefIndices.emplace(voxel, this->floorReplacementChasmDefID);
 				this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
 			}
 			else

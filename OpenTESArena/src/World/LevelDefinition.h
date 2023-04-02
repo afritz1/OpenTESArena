@@ -87,6 +87,10 @@ private:
 	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
 	Buffer3D<VoxelTextureDefID> voxelTextureIDs;
 	Buffer3D<VoxelTraitsDefID> voxelTraitsIDs;
+	VoxelMeshDefID floorReplacementMeshDefID;
+	VoxelTextureDefID floorReplacementTextureDefID;
+	VoxelTraitsDefID floorReplacementTraitsDefID;
+	ChasmDefID floorReplacementChasmDefID;
 	std::vector<EntityPlacementDef> entityPlacementDefs;
 	std::vector<LockPlacementDef> lockPlacementDefs;
 	std::vector<TriggerPlacementDef> triggerPlacementDefs;
@@ -95,6 +99,8 @@ private:
 	std::vector<DoorPlacementDef> doorPlacementDefs;
 	std::vector<ChasmPlacementDef> chasmPlacementDefs;
 public:
+	LevelDefinition();
+
 	void init(SNInt width, int height, WEInt depth);
 
 	SNInt getWidth() const;
@@ -107,6 +113,15 @@ public:
 	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
 	void setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
 	void setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
+
+	VoxelMeshDefID getFloorReplacementMeshDefID() const;
+	VoxelTextureDefID getFloorReplacementTextureDefID() const;
+	VoxelTraitsDefID getFloorReplacementTraitsDefID() const;
+	ChasmDefID getFloorReplacementChasmDefID() const;
+	void setFloorReplacementMeshDefID(VoxelMeshDefID id);
+	void setFloorReplacementTextureDefID(VoxelTextureDefID id);
+	void setFloorReplacementTraitsDefID(VoxelTraitsDefID id);
+	void setFloorReplacementChasmDefID(ChasmDefID id);
 
 	int getEntityPlacementDefCount() const;
 	const EntityPlacementDef &getEntityPlacementDef(int index) const;

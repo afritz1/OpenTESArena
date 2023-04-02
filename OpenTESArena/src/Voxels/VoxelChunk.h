@@ -63,6 +63,10 @@ private:
 	Buffer3D<VoxelMeshDefID> meshDefIDs;
 	Buffer3D<VoxelTextureDefID> textureDefIDs;
 	Buffer3D<VoxelTraitsDefID> traitsDefIDs;
+	VoxelMeshDefID floorReplacementMeshDefID;
+	VoxelTextureDefID floorReplacementTextureDefID;
+	VoxelTraitsDefID floorReplacementTraitsDefID;
+	ChasmDefID floorReplacementChasmDefID;
 
 	// Voxels that changed this frame. Reset at end-of-frame.
 	Buffer3D<VoxelDirtyType> dirtyVoxelTypes;
@@ -110,6 +114,8 @@ public:
 	static constexpr VoxelMeshDefID AIR_MESH_DEF_ID = 0;
 	static constexpr VoxelTextureDefID AIR_TEXTURE_DEF_ID = 0;
 	static constexpr VoxelTraitsDefID AIR_TRAITS_DEF_ID = 0;
+
+	VoxelChunk();
 
 	void init(const ChunkInt2 &position, int height);
 
@@ -168,6 +174,11 @@ public:
 	void setMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
 	void setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
 	void setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
+	
+	void setFloorReplacementMeshDefID(VoxelMeshDefID id);
+	void setFloorReplacementTextureDefID(VoxelTextureDefID id);
+	void setFloorReplacementTraitsDefID(VoxelTraitsDefID id);
+	void setFloorReplacementChasmDefID(ChasmDefID id);
 
 	VoxelMeshDefID addMeshDef(VoxelMeshDefinition &&meshDef);
 	VoxelTextureDefID addTextureDef(VoxelTextureDefinition &&textureDef);

@@ -269,6 +269,24 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 			}
 		}
 	}
+
+	// Add floor replacement definitions and IDs.
+	const LevelDefinition::VoxelMeshDefID levelFloorReplacementVoxelMeshDefID = levelDefinition.getFloorReplacementMeshDefID();
+	const LevelDefinition::VoxelTextureDefID levelFloorReplacementVoxelTextureDefID = levelDefinition.getFloorReplacementTextureDefID();
+	const LevelDefinition::VoxelTraitsDefID levelFloorReplacementVoxelTraitsDefID = levelDefinition.getFloorReplacementTraitsDefID();
+	const LevelDefinition::ChasmDefID levelFloorReplacementChasmDefID = levelDefinition.getFloorReplacementChasmDefID();
+	VoxelMeshDefinition floorReplacementMeshDef = levelInfoDefinition.getVoxelMeshDef(levelFloorReplacementVoxelMeshDefID);
+	VoxelTextureDefinition floorReplacementTextureDef = levelInfoDefinition.getVoxelTextureDef(levelFloorReplacementVoxelTextureDefID);
+	VoxelTraitsDefinition floorReplacementTraitsDef = levelInfoDefinition.getVoxelTraitsDef(levelFloorReplacementVoxelTraitsDefID);
+	ChasmDefinition floorReplacementChasmDef = levelInfoDefinition.getChasmDef(levelFloorReplacementChasmDefID);
+	const VoxelChunk::VoxelMeshDefID floorReplacementVoxelMeshDefID = chunk.addMeshDef(std::move(floorReplacementMeshDef));
+	const VoxelChunk::VoxelTextureDefID floorReplacementVoxelTextureDefID = chunk.addTextureDef(std::move(floorReplacementTextureDef));
+	const VoxelChunk::VoxelTraitsDefID floorReplacementVoxelTraitsDefID = chunk.addTraitsDef(std::move(floorReplacementTraitsDef));
+	const VoxelChunk::ChasmDefID floorReplacementChasmDefID = chunk.addChasmDef(std::move(floorReplacementChasmDef));
+	chunk.setFloorReplacementMeshDefID(floorReplacementVoxelMeshDefID);
+	chunk.setFloorReplacementTextureDefID(floorReplacementVoxelTextureDefID);
+	chunk.setFloorReplacementTraitsDefID(floorReplacementVoxelTraitsDefID);
+	chunk.setFloorReplacementChasmDefID(floorReplacementChasmDefID);
 }
 
 void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
