@@ -579,102 +579,76 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 	}
 }
 
-void VoxelChunkManager::updateChunkPerimeterChasmInsts(VoxelChunk &chunk)
+void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, WEInt z)
 {
-	auto tryUpdateChasm = [this, &chunk](const VoxelInt3 &voxel)
+	const VoxelInt3 voxel(x, y, z);
+	const CoordInt3 coord(chunk.getPosition(), voxel);
+	auto getChasmFaces = [this, &coord](bool *outNorth, bool *outEast, bool *outSouth, bool *outWest)
 	{
-		const CoordInt3 coord(chunk.getPosition(), voxel);
-		auto getChasmFaces = [this, &coord](bool *outNorth, bool *outEast, bool *outSouth, bool *outWest)
+		auto getChasmFace = [this](const std::optional<int> &chunkIndex, VoxelChunk::VoxelMeshDefID meshDefID)
 		{
-			auto getChasmFace = [this](const std::optional<int> &chunkIndex, VoxelChunk::VoxelMeshDefID meshDefID)
+			if (chunkIndex.has_value())
 			{
-				if (chunkIndex.has_value())
-				{
-					const VoxelChunk &chunk = this->getChunkAtIndex(*chunkIndex);
-					const VoxelMeshDefinition &meshDef = chunk.getMeshDef(meshDefID);
-					return meshDef.enablesNeighborGeometry;
-				}
-				else
-				{
-					return false;
-				}
-			};
-
-			std::optional<int> outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex;
-			VoxelChunk::VoxelMeshDefID northDefID, eastDefID, southDefID, westDefID;
-			this->getAdjacentVoxelMeshDefIDs(coord, &outNorthChunkIndex, &outEastChunkIndex, &outSouthChunkIndex,
-				&outWestChunkIndex, &northDefID, &eastDefID, &southDefID, &westDefID);
-
-			*outNorth = getChasmFace(outNorthChunkIndex, northDefID);
-			*outEast = getChasmFace(outEastChunkIndex, eastDefID);
-			*outSouth = getChasmFace(outSouthChunkIndex, southDefID);
-			*outWest = getChasmFace(outWestChunkIndex, westDefID);
+				const VoxelChunk &chunk = this->getChunkAtIndex(*chunkIndex);
+				const VoxelMeshDefinition &meshDef = chunk.getMeshDef(meshDefID);
+				return meshDef.enablesNeighborGeometry;
+			}
+			else
+			{
+				return false;
+			}
 		};
 
-		int chasmInstIndex;
-		if (chunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmInstIndex))
+		std::optional<int> outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex;
+		VoxelChunk::VoxelMeshDefID northDefID, eastDefID, southDefID, westDefID;
+		this->getAdjacentVoxelMeshDefIDs(coord, &outNorthChunkIndex, &outEastChunkIndex, &outSouthChunkIndex,
+			&outWestChunkIndex, &northDefID, &eastDefID, &southDefID, &westDefID);
+
+		*outNorth = getChasmFace(outNorthChunkIndex, northDefID);
+		*outEast = getChasmFace(outEastChunkIndex, eastDefID);
+		*outSouth = getChasmFace(outSouthChunkIndex, southDefID);
+		*outWest = getChasmFace(outWestChunkIndex, westDefID);
+	};
+
+	int chasmInstIndex;
+	if (chunk.tryGetChasmWallInstIndex(x, y, z, &chasmInstIndex))
+	{
+		// The chasm wall instance already exists. See if it should be updated or removed.
+		bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
+		getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
+
+		if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 		{
-			// The chasm wall instance already exists. See if it should be updated or removed.
+			// The instance is still needed. Update its chasm walls.
+			BufferView<VoxelChasmWallInstance> chasmWallInsts = chunk.getChasmWallInsts();
+			VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmInstIndex];
+			chasmWallInst.north = hasNorthFace;
+			chasmWallInst.east = hasEastFace;
+			chasmWallInst.south = hasSouthFace;
+			chasmWallInst.west = hasWestFace;
+		}
+		else
+		{
+			// The chasm wall instance no longer has any interesting data.
+			chunk.removeChasmWallInst(voxel);
+		}
+	}
+	else
+	{
+		// No instance yet. If it's a chasm, add a new voxel instance.
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(x, y, z);
+		const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+		if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
+		{
 			bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
 			getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
 
 			if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 			{
-				// The instance is still needed. Update its chasm walls.
-				BufferView<VoxelChasmWallInstance> chasmWallInsts = chunk.getChasmWallInsts();
-				VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmInstIndex];
-				chasmWallInst.north = hasNorthFace;
-				chasmWallInst.east = hasEastFace;
-				chasmWallInst.south = hasSouthFace;
-				chasmWallInst.west = hasWestFace;
+				VoxelChasmWallInstance chasmWallInst;
+				chasmWallInst.init(x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+				chunk.addChasmWallInst(std::move(chasmWallInst));
 			}
-			else
-			{
-				// The chasm wall instance no longer has any interesting data.
-				chunk.removeChasmWallInst(voxel);
-			}
-		}
-		else
-		{
-			// No instance yet. If it's a chasm, add a new voxel instance.
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
-			if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
-			{
-				bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
-				getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
-
-				if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
-				{
-					VoxelChasmWallInstance chasmWallInst;
-					chasmWallInst.init(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-					chunk.addChasmWallInst(std::move(chasmWallInst));
-				}
-			}
-		}
-	};
-
-	// North and south sides.
-	for (WEInt z = 0; z < Chunk::DEPTH; z++)
-	{
-		for (int y = 0; y < chunk.getHeight(); y++)
-		{
-			constexpr SNInt northX = 0;
-			constexpr SNInt southX = Chunk::WIDTH - 1;
-			tryUpdateChasm(VoxelInt3(northX, y, z));
-			tryUpdateChasm(VoxelInt3(southX, y, z));
-		}
-	}
-
-	// East and west sides, minus the corners.
-	for (SNInt x = 1; x < (Chunk::WIDTH - 1); x++)
-	{
-		for (int y = 0; y < chunk.getHeight(); y++)
-		{
-			constexpr WEInt eastZ = 0;
-			constexpr WEInt westZ = Chunk::DEPTH - 1;
-			tryUpdateChasm(VoxelInt3(x, y, eastZ));
-			tryUpdateChasm(VoxelInt3(x, y, westZ));
 		}
 	}
 }
@@ -747,25 +721,45 @@ void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &new
 		chunkPtr->update(dt, playerCoord, ceilingScale, audioManager);
 	}
 
-	// Check for newly-generated chasms as a result of fading voxels finishing.
+	// Update chasm wall instances that may be dirty from fading voxels or adjacent chunks.
 	for (int i = 0; i < activeChunkCount; i++)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
-		BufferView<const VoxelInt3> chasmWallInsts = chunkPtr->getDirtyChasmWallInstPositions();
-		if (chasmWallInsts.getCount() > 0)
-		{
-			// @todo
-		}
-	}
+		VoxelChunk &chunk = *chunkPtr;
 
-	// Update chunk perimeters in case voxels on the edge of one chunk affect context-sensitive
-	// voxels in adjacent chunks. It might be a little inefficient to do this every frame, but
-	// it easily handles cases of modified voxels on a chunk edge, and it is only updating chunk
-	// edges, so it should be very fast.
-	for (int i = 0; i < activeChunkCount; i++)
-	{
-		ChunkPtr &chunkPtr = this->activeChunks[i];
-		this->updateChunkPerimeterChasmInsts(*chunkPtr);
+		for (int i = 0; i < activeChunkCount; i++)
+		{
+			ChunkPtr &chunkPtr = this->activeChunks[i];
+			for (const VoxelInt3 &chasmWallPos : chunkPtr->getDirtyChasmWallInstPositions())
+			{
+				this->updateChasmWallInst(chunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
+			}
+		}
+
+		// North and south sides.
+		const int chunkHeight = chunk.getHeight();
+		for (WEInt z = 0; z < Chunk::DEPTH; z++)
+		{
+			for (int y = 0; y < chunkHeight; y++)
+			{
+				constexpr SNInt northX = 0;
+				constexpr SNInt southX = Chunk::WIDTH - 1;
+				this->updateChasmWallInst(chunk, northX, y, z);
+				this->updateChasmWallInst(chunk, southX, y, z);
+			}
+		}
+
+		// East and west sides, minus the corners.
+		for (SNInt x = 1; x < (Chunk::WIDTH - 1); x++)
+		{
+			for (int y = 0; y < chunkHeight; y++)
+			{
+				constexpr WEInt eastZ = 0;
+				constexpr WEInt westZ = Chunk::DEPTH - 1;
+				this->updateChasmWallInst(chunk, x, y, eastZ);
+				this->updateChasmWallInst(chunk, x, y, westZ);
+			}
+		}
 	}
 
 	// Update which door faces are able to be rendered.

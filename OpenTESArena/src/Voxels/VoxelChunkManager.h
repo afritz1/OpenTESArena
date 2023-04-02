@@ -57,8 +57,8 @@ private:
 	void populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition);
 
-	// Updates chasms (context-sensitive voxels) on a chunk's perimeter that may be affected by adjacent chunks.
-	void updateChunkPerimeterChasmInsts(VoxelChunk &chunk);
+	// Updates a chasm (context-sensitive voxel) that may be affected by adjacent chunks.
+	void updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, WEInt z);
 
 	// Updates door visibilities for a chunk; some of which might be on the chunk's perimeter that are affected by adjacent chunks.
 	void updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const CoordDouble3 &playerCoord);
