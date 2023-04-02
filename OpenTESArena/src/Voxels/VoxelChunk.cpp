@@ -787,70 +787,66 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 		const VoxelInt3 voxel(animInst.x, animInst.y, animInst.z);
 		if (animInst.isDoneFading())
 		{
-			// Convert the faded voxel to air or a chasm depending on the Y coordinate.
-			const bool isChasm = voxel.y == 0; // @todo: check if there's a chasm def here instead
-			if (isChasm)
+			const VoxelTraitsDefID voxelTraitsDefID = this->getTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = this->getTraitsDef(voxelTraitsDefID);
+			const bool willBecomeChasm = voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
+			if (willBecomeChasm)
 			{
-				// Replace floor voxel with chasm.
-				DebugNotImplementedMsg("Floor voxel replacement.");
-				/*const std::optional<VoxelID> replacementVoxelID = [this]() -> std::optional<VoxelID>
+				// Find suitable water chasm definitions for the replacement voxel.
+				// @todo: provide some kind of floor voxel replacement mapping or ID for voxel mesh/texture/traits/chasm
+				// ahead of time (maybe in the level def?) so we don't have to search for them.
+				const auto replacementMeshIter = std::find_if(this->meshDefs.begin(), this->meshDefs.end(),
+					[](const VoxelMeshDefinition &def)
 				{
-					// Try to get from existing voxel defs.
-					for (int i = 0; i < static_cast<int>(this->voxelDefs.size()); i++)
+					return def.isContextSensitive;
+				});
+
+				if (replacementMeshIter == this->meshDefs.end())
+				{
+					DebugLogError("Couldn't find suitable water VoxelMeshDefinition for faded voxel.");
+					continue;
+				}
+
+				const auto replacementTraitsIter = std::find_if(this->traitsDefs.begin(), this->traitsDefs.end(),
+					[](const VoxelTraitsDefinition &def)
+				{
+					if (def.type != ArenaTypes::VoxelType::Chasm)
 					{
-						if (this->activeVoxelDefs[i])
-						{
-							const VoxelDefinition &voxelDef = this->voxelDefs[i];
-							if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
-							{
-								const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
-								if (chasmData.type == ArenaTypes::ChasmType::Wet)
-								{
-									return static_cast<VoxelID>(i);
-								}
-							}
-						}
+						return false;
 					}
 
-					// No existing water chasm voxel definition. Make a new one?
-					// @todo: This could be handled better, since walls are just one choice for the texture.
-					// - maybe need a 'fallbackWaterChasm' texture asset ref in LevelInfoDefinition.
-					const TextureAsset *replacementTextureAsset = [this]() -> const TextureAsset*
-					{
-						for (int i = 0; i < static_cast<int>(this->voxelDefs.size()); i++)
-						{
-							if (this->activeVoxelDefs[i])
-							{
-								const VoxelDefinition &voxelDef = this->voxelDefs[i];
-								if (voxelDef.type == ArenaTypes::VoxelType::Wall)
-								{
-									const VoxelDefinition::WallData &wallData = voxelDef.wall;
-									return &wallData.sideTextureAsset;
-								}
-							}
-						}
+					const VoxelTraitsDefinition::Chasm &chasm = def.chasm;
+					return chasm.type == ArenaTypes::ChasmType::Wet;
+				});
 
-						return nullptr;
-					}();
+				if (replacementTraitsIter == this->traitsDefs.end())
+				{
+					DebugLogError("Couldn't find suitable water VoxelTraitsDefinition for faded voxel.");
+					continue;
+				}
 
-					DebugAssert(replacementTextureAsset != nullptr);
-					VoxelDefinition voxelDef = VoxelDefinition::makeChasm(
-						TextureAsset(*replacementTextureAsset), ArenaTypes::ChasmType::Wet);
+				const auto replacementChasmDefIter = std::find_if(this->chasmDefs.begin(), this->chasmDefs.end(),
+					[](const ChasmDefinition &def)
+				{
+					return def.allowsSwimming && !def.isDamaging;
+				});
 
-					VoxelID voxelID;
-					if (this->tryAddVoxelDef(std::move(voxelDef), &voxelID))
-					{
-						return voxelID;
-					}
-					else
-					{
-						return std::nullopt;
-					}
-				}();
+				if (replacementChasmDefIter == this->chasmDefs.end())
+				{
+					DebugLogError("Couldn't find suitable water ChasmDefinition for faded voxel.");
+					continue;
+				}
 
-				DebugAssertMsg(replacementVoxelID.has_value(), "Couldn't find replacement for faded chasm voxel.");
-				this->setVoxelID(voxel.x, voxel.y, voxel.z, *replacementVoxelID);
-				DebugNotImplementedMsg("Need to implement for voxel mesh def.");*/
+				const VoxelMeshDefID replacementMeshDefID = static_cast<VoxelMeshDefID>(std::distance(this->meshDefs.begin(), replacementMeshIter));
+				const VoxelTextureDefID replacementTextureDefID = replacementMeshDefID; // @todo: brittle
+				const VoxelTraitsDefID replacementTraitsDefID = static_cast<VoxelTraitsDefID>(std::distance(this->traitsDefs.begin(), replacementTraitsIter));
+				this->setMeshDefID(voxel.x, voxel.y, voxel.z, replacementMeshDefID);
+				this->setTextureDefID(voxel.x, voxel.y, voxel.z, replacementTextureDefID);
+				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, replacementTraitsDefID);
+
+				const ChasmDefID chasmDefID = static_cast<ChasmDefID>(std::distance(this->chasmDefs.begin(), replacementChasmDefIter));
+				this->chasmDefIndices.emplace(voxel, chasmDefID);
+				this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
 			}
 			else
 			{
