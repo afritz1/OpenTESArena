@@ -31,7 +31,8 @@ private:
 		VoxelChunk::VoxelTraitsDefID *outWestID);
 
 	// Helper function for setting the chunk's voxel definitions.
-	void populateChunkVoxelDefs(VoxelChunk &chunk, const LevelInfoDefinition &levelInfoDefinition);
+	void populateChunkVoxelDefs(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
+		const LevelInfoDefinition &levelInfoDefinition);
 
 	// Helper function for setting the chunk's voxels for the given level. This might not touch all voxels
 	// in the chunk because it does not fully overlap the level.

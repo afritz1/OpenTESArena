@@ -76,7 +76,8 @@ void VoxelChunkManager::getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, std
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-void VoxelChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelInfoDefinition &levelInfoDefinition)
+void VoxelChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
+	const LevelInfoDefinition &levelInfoDefinition)
 {
 	for (int i = 0; i < levelInfoDefinition.getVoxelMeshDefCount(); i++)
 	{
@@ -95,6 +96,24 @@ void VoxelChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelInf
 		VoxelTraitsDefinition voxelTraitsDef = levelInfoDefinition.getVoxelTraitsDef(i);
 		chunk.addTraitsDef(std::move(voxelTraitsDef));
 	}
+
+	// Add floor replacement definitions and IDs.
+	const LevelDefinition::VoxelMeshDefID levelFloorReplacementVoxelMeshDefID = levelDefinition.getFloorReplacementMeshDefID();
+	const LevelDefinition::VoxelTextureDefID levelFloorReplacementVoxelTextureDefID = levelDefinition.getFloorReplacementTextureDefID();
+	const LevelDefinition::VoxelTraitsDefID levelFloorReplacementVoxelTraitsDefID = levelDefinition.getFloorReplacementTraitsDefID();
+	const LevelDefinition::ChasmDefID levelFloorReplacementChasmDefID = levelDefinition.getFloorReplacementChasmDefID();
+	VoxelMeshDefinition floorReplacementMeshDef = levelInfoDefinition.getVoxelMeshDef(levelFloorReplacementVoxelMeshDefID);
+	VoxelTextureDefinition floorReplacementTextureDef = levelInfoDefinition.getVoxelTextureDef(levelFloorReplacementVoxelTextureDefID);
+	VoxelTraitsDefinition floorReplacementTraitsDef = levelInfoDefinition.getVoxelTraitsDef(levelFloorReplacementVoxelTraitsDefID);
+	ChasmDefinition floorReplacementChasmDef = levelInfoDefinition.getChasmDef(levelFloorReplacementChasmDefID);
+	const VoxelChunk::VoxelMeshDefID floorReplacementVoxelMeshDefID = chunk.addMeshDef(std::move(floorReplacementMeshDef));
+	const VoxelChunk::VoxelTextureDefID floorReplacementVoxelTextureDefID = chunk.addTextureDef(std::move(floorReplacementTextureDef));
+	const VoxelChunk::VoxelTraitsDefID floorReplacementVoxelTraitsDefID = chunk.addTraitsDef(std::move(floorReplacementTraitsDef));
+	const VoxelChunk::ChasmDefID floorReplacementChasmDefID = chunk.addChasmDef(std::move(floorReplacementChasmDef));
+	chunk.setFloorReplacementMeshDefID(floorReplacementVoxelMeshDefID);
+	chunk.setFloorReplacementTextureDefID(floorReplacementVoxelTextureDefID);
+	chunk.setFloorReplacementTraitsDefID(floorReplacementVoxelTraitsDefID);
+	chunk.setFloorReplacementChasmDefID(floorReplacementChasmDefID);
 }
 
 void VoxelChunkManager::populateChunkVoxels(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
@@ -269,24 +288,6 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 			}
 		}
 	}
-
-	// Add floor replacement definitions and IDs.
-	const LevelDefinition::VoxelMeshDefID levelFloorReplacementVoxelMeshDefID = levelDefinition.getFloorReplacementMeshDefID();
-	const LevelDefinition::VoxelTextureDefID levelFloorReplacementVoxelTextureDefID = levelDefinition.getFloorReplacementTextureDefID();
-	const LevelDefinition::VoxelTraitsDefID levelFloorReplacementVoxelTraitsDefID = levelDefinition.getFloorReplacementTraitsDefID();
-	const LevelDefinition::ChasmDefID levelFloorReplacementChasmDefID = levelDefinition.getFloorReplacementChasmDefID();
-	VoxelMeshDefinition floorReplacementMeshDef = levelInfoDefinition.getVoxelMeshDef(levelFloorReplacementVoxelMeshDefID);
-	VoxelTextureDefinition floorReplacementTextureDef = levelInfoDefinition.getVoxelTextureDef(levelFloorReplacementVoxelTextureDefID);
-	VoxelTraitsDefinition floorReplacementTraitsDef = levelInfoDefinition.getVoxelTraitsDef(levelFloorReplacementVoxelTraitsDefID);
-	ChasmDefinition floorReplacementChasmDef = levelInfoDefinition.getChasmDef(levelFloorReplacementChasmDefID);
-	const VoxelChunk::VoxelMeshDefID floorReplacementVoxelMeshDefID = chunk.addMeshDef(std::move(floorReplacementMeshDef));
-	const VoxelChunk::VoxelTextureDefID floorReplacementVoxelTextureDefID = chunk.addTextureDef(std::move(floorReplacementTextureDef));
-	const VoxelChunk::VoxelTraitsDefID floorReplacementVoxelTraitsDefID = chunk.addTraitsDef(std::move(floorReplacementTraitsDef));
-	const VoxelChunk::ChasmDefID floorReplacementChasmDefID = chunk.addChasmDef(std::move(floorReplacementChasmDef));
-	chunk.setFloorReplacementMeshDefID(floorReplacementVoxelMeshDefID);
-	chunk.setFloorReplacementTextureDefID(floorReplacementVoxelTextureDefID);
-	chunk.setFloorReplacementTraitsDefID(floorReplacementVoxelTraitsDefID);
-	chunk.setFloorReplacementChasmDefID(floorReplacementChasmDefID);
 }
 
 void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
@@ -438,7 +439,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(*activeLevelIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(*activeLevelIndex);
 		chunk.init(chunkPos, levelDefinition.getHeight());
-		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
+		this->populateChunkVoxelDefs(chunk, levelDefinition, levelInfoDefinition);
 
 		// @todo: populate chunk entirely from default empty chunk (fast copy).
 		// - probably get from MapDefinition::Interior eventually.
@@ -503,7 +504,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
 		chunk.init(chunkPos, levelDefinition.getHeight());
-		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
+		this->populateChunkVoxelDefs(chunk, levelDefinition, levelInfoDefinition);
 
 		// Chunks outside the level are wrapped but only have floor voxels.		
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
@@ -567,7 +568,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(levelDefIndex);
 		chunk.init(chunkPos, levelDefinition.getHeight());
-		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
+		this->populateChunkVoxelDefs(chunk, levelDefinition, levelInfoDefinition);
 
 		// Copy level definition directly into chunk.
 		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
