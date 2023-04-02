@@ -823,7 +823,8 @@ void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const Vox
 					continue;
 				}
 
-				const VoxelChasmWallInstance &chasmWallInst = voxelChunk.getChasmWallInst(chasmWallInstIndex);
+				BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
+				const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
 				DebugAssert(chasmWallInst.getFaceCount() > 0);
 
 				const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
@@ -954,7 +955,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 				const bool isFading = voxelChunk.tryGetFadeAnimInstIndex(x, y, z, &fadeAnimInstIndex);
 				if (isFading)
 				{
-					fadeAnimInst = &voxelChunk.getFadeAnimInst(fadeAnimInstIndex);
+					BufferView<const VoxelFadeAnimationInstance> fadeAnimInsts = voxelChunk.getFadeAnimInsts();
+					fadeAnimInst = &fadeAnimInsts[fadeAnimInstIndex];
 				}
 
 				const bool canAnimate = isDoor || isChasm || isFading;
@@ -1060,7 +1062,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							int doorAnimInstIndex;
 							if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
 							{
-								const VoxelDoorAnimationInstance &doorAnimInst = voxelChunk.getDoorAnimInst(doorAnimInstIndex);
+								BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
+								const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
 								doorAnimPercent = doorAnimInst.percentOpen;
 							}
 
@@ -1072,7 +1075,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 								continue;
 							}
 
-							const VoxelDoorVisibilityInstance &doorVisInst = voxelChunk.getDoorVisibilityInst(doorVisInstIndex);
+							BufferView<const VoxelDoorVisibilityInstance> doorVisInsts = voxelChunk.getDoorVisibilityInsts();
+							const VoxelDoorVisibilityInstance &doorVisInst = doorVisInsts[doorVisInstIndex];
 							bool visibleDoorFaces[DoorUtils::FACE_COUNT];
 							std::fill(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), false);
 
@@ -1398,7 +1402,9 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 	{
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		const bool updateStatics = (voxelChunk.getDirtyMeshDefPositionCount() > 0) || (voxelChunk.getDirtyFadeAnimInstPositionCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
+		BufferView<const VoxelInt3> dirtyMeshDefs = voxelChunk.getDirtyMeshDefPositions();
+		BufferView<const VoxelInt3> dirtyFadeAnimInsts = voxelChunk.getDirtyFadeAnimInstPositions();
+		const bool updateStatics = (dirtyMeshDefs.getCount() > 0) || (dirtyFadeAnimInsts.getCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
 		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 
@@ -1460,7 +1466,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 
 	const BufferView<const double> entityNormalsView(entityNormals);
 	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormalsView);
-	
+
 	// @todo: move this some place better
 	this->totalDrawCallsCache.clear();
 	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->voxelDrawCallsCache.begin(), this->voxelDrawCallsCache.end());

@@ -131,7 +131,8 @@ double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Voxel
 		return 0.0;
 	}
 
-	const VoxelDoorAnimationInstance &animInst = chunk.getDoorAnimInst(doorAnimInstIndex);
+	BufferView<const VoxelDoorAnimationInstance> animInsts = chunk.getDoorAnimInsts();
+	const VoxelDoorAnimationInstance &animInst = animInsts[doorAnimInstIndex];
 	return animInst.percentOpen;
 }
 
@@ -143,7 +144,8 @@ double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxe
 		return 1.0;
 	}
 
-	const VoxelFadeAnimationInstance &animInst = chunk.getFadeAnimInst(fadeAnimInstIndex);
+	BufferView<const VoxelFadeAnimationInstance> animInsts = chunk.getFadeAnimInsts();
+	const VoxelFadeAnimationInstance &animInst = animInsts[fadeAnimInstIndex];
 	return std::clamp(1.0 - animInst.percentFaded, 0.0, 1.0);
 }
 

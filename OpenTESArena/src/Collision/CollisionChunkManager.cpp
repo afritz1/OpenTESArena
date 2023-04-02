@@ -27,21 +27,16 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, const V
 {
 	CollisionChunk &collisionChunk = this->getChunkAtPosition(chunkPos);
 
-	const int dirtyMeshDefPosCount = voxelChunk.getDirtyMeshDefPositionCount();
-	for (int i = 0; i < dirtyMeshDefPosCount; i++)
+	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyMeshDefPositions())
 	{
-		const VoxelInt3 &voxelPos = voxelChunk.getDirtyMeshDefPosition(i);
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(voxelPos.x, voxelPos.y, voxelPos.z);
 		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
 		collisionChunk.meshDefIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, collisionMeshDefID);
 		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, true);
 	}
 
-	const int dirtyDoorAnimInstPosCount = voxelChunk.getDirtyDoorAnimInstPositionCount();
-	for (int i = 0; i < dirtyDoorAnimInstPosCount; i++)
+	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyDoorAnimInstPositions())
 	{
-		const VoxelInt3 &voxelPos = voxelChunk.getDirtyDoorAnimInstPosition(i);
-
 		// The door anim inst might've been destroyed because it finished closing.
 		int doorAnimInstIndex;
 		const bool shouldEnableDoorCollider = !voxelChunk.tryGetDoorAnimInstIndex(voxelPos.x, voxelPos.y, voxelPos.z, &doorAnimInstIndex);

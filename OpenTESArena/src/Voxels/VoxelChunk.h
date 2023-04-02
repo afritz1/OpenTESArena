@@ -138,17 +138,11 @@ public:
 	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
 	VoxelTraitsDefID getTraitsDefID(SNInt x, int y, WEInt z) const;
 
-	int getDirtyMeshDefPositionCount() const;
-	int getDirtyDoorAnimInstPositionCount() const;
-	int getDirtyDoorVisInstPositionCount() const;
-	int getDirtyFadeAnimInstPositionCount() const;
-	int getDirtyChasmWallInstPositionCount() const;
-
-	const VoxelInt3 &getDirtyMeshDefPosition(int index) const;
-	const VoxelInt3 &getDirtyDoorAnimInstPosition(int index) const;
-	const VoxelInt3 &getDirtyDoorVisInstPosition(int index) const;
-	const VoxelInt3 &getDirtyFadeAnimInstPosition(int index) const;
-	const VoxelInt3 &getDirtyChasmWallInstPosition(int index) const;
+	BufferView<const VoxelInt3> getDirtyMeshDefPositions() const;
+	BufferView<const VoxelInt3> getDirtyDoorAnimInstPositions() const;
+	BufferView<const VoxelInt3> getDirtyDoorVisInstPositions() const;
+	BufferView<const VoxelInt3> getDirtyFadeAnimInstPositions() const;
+	BufferView<const VoxelInt3> getDirtyChasmWallInstPositions() const;
 
 	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID *outID) const;
 	bool tryGetTriggerDefID(SNInt x, int y, WEInt z, TriggerDefID *outID) const;
@@ -157,23 +151,18 @@ public:
 	bool tryGetDoorDefID(SNInt x, int y, WEInt z, DoorDefID *outID) const;
 	bool tryGetChasmDefID(SNInt x, int y, WEInt z, ChasmDefID *outID) const;
 
-	int getDoorAnimInstCount() const;
-	int getFadeAnimInstCount() const;
-	const VoxelDoorAnimationInstance &getDoorAnimInst(int index) const;
+	BufferView<const VoxelDoorAnimationInstance> getDoorAnimInsts() const;
 	bool tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	const VoxelFadeAnimationInstance &getFadeAnimInst(int index) const;
+	BufferView<const VoxelFadeAnimationInstance> getFadeAnimInsts() const;
 	bool tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
-	int getChasmWallInstCount() const;
-	int getDoorVisibilityInstCount() const;
-	int getTriggerInstCount() const;
-	VoxelChasmWallInstance &getChasmWallInst(int index);
-	const VoxelChasmWallInstance &getChasmWallInst(int index) const;
+	BufferView<VoxelChasmWallInstance> getChasmWallInsts();
+	BufferView<const VoxelChasmWallInstance> getChasmWallInsts() const;
 	bool tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	VoxelDoorVisibilityInstance &getDoorVisibilityInst(int index);
-	const VoxelDoorVisibilityInstance &getDoorVisibilityInst(int index) const;
+	BufferView<VoxelDoorVisibilityInstance> getDoorVisibilityInsts();
+	BufferView<const VoxelDoorVisibilityInstance> getDoorVisibilityInsts() const;
 	bool tryGetDoorVisibilityInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	const VoxelTriggerInstance &getTriggerInst(int index) const;
+	BufferView<const VoxelTriggerInstance> getTriggerInsts() const;
 	bool tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
 	void setMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);

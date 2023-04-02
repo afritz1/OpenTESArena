@@ -386,7 +386,7 @@ void VoxelChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 
 void VoxelChunkManager::populateChunkDoorVisibilityInsts(VoxelChunk &chunk)
 {
-	DebugAssert(chunk.getDoorVisibilityInstCount() == 0);
+	DebugAssert(chunk.getDoorVisibilityInsts().getCount() == 0);
 
 	const ChunkInt2 &chunkPos = chunk.getPosition();
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
@@ -621,7 +621,8 @@ void VoxelChunkManager::updateChunkPerimeterChasmInsts(VoxelChunk &chunk)
 			if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 			{
 				// The instance is still needed. Update its chasm walls.
-				VoxelChasmWallInstance &chasmWallInst = chunk.getChasmWallInst(chasmInstIndex);
+				BufferView<VoxelChasmWallInstance> chasmWallInsts = chunk.getChasmWallInsts();
+				VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmInstIndex];
 				chasmWallInst.north = hasNorthFace;
 				chasmWallInst.east = hasEastFace;
 				chasmWallInst.south = hasSouthFace;
@@ -683,9 +684,8 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 	const ChunkInt2 &chunkPos = chunk.getPosition();
 	const CoordInt3 playerCoordInt(playerCoord.chunk, VoxelUtils::pointToVoxel(playerCoord.point));
 
-	for (int i = 0; i < chunk.getDoorVisibilityInstCount(); i++)
+	for (VoxelDoorVisibilityInstance &visInst : chunk.getDoorVisibilityInsts())
 	{
-		VoxelDoorVisibilityInstance &visInst = chunk.getDoorVisibilityInst(i);
 		const CoordInt3 doorCoord(chunkPos, VoxelInt3(visInst.x, visInst.y, visInst.z));
 
 		const bool isCameraNorthInclusive = (playerCoordInt.chunk.x < doorCoord.chunk.x) ||
@@ -745,6 +745,17 @@ void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &new
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		chunkPtr->update(dt, playerCoord, ceilingScale, audioManager);
+	}
+
+	// Check for newly-generated chasms as a result of fading voxels finishing.
+	for (int i = 0; i < activeChunkCount; i++)
+	{
+		ChunkPtr &chunkPtr = this->activeChunks[i];
+		BufferView<const VoxelInt3> chasmWallInsts = chunkPtr->getDirtyChasmWallInstPositions();
+		if (chasmWallInsts.getCount() > 0)
+		{
+			// @todo
+		}
 	}
 
 	// Update chunk perimeters in case voxels on the edge of one chunk affect context-sensitive
