@@ -58,6 +58,10 @@ private:
 	// @todo: separate EntityAnimationDefinition from EntityDefinition?
 	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
+	// Entities that should have their resources removed, either because the chunk they were in was unloaded,
+	// or they were otherwise despawned. Cleared at end-of-frame.
+	std::vector<EntityInstanceID> destroyedEntityIDs;
+
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
 	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);
 
@@ -91,6 +95,10 @@ public:
 	const int8_t &getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
 	const Palette &getEntityPalette(EntityPaletteInstanceID id) const;
 
+	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
+	// simulated or rendered.
+	BufferView<const EntityInstanceID> getQueuedDestroyEntityIDs() const;
+
 	// Count functions for specialized entities.
 	int getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const;
 	int getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const;
@@ -109,6 +117,9 @@ public:
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer);
+
+	// Prepares an entity for destruction later this frame.
+	void queueEntityDestroy(EntityInstanceID entityInstID);
 
 	// @todo: support spawning an entity not from the level def
 

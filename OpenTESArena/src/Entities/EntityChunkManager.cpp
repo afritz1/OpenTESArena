@@ -697,6 +697,11 @@ int EntityChunkManager::getCountInChunkWithPalette(const ChunkInt2 &chunkPos) co
 	return count;
 }
 
+BufferView<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs() const
+{
+	return this->destroyedEntityIDs;
+}
+
 void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D,
 	const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const
 {
@@ -878,6 +883,12 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{
 		const int chunkIndex = this->getChunkIndex(chunkPos);
+		const EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+		{
+			this->queueEntityDestroy(entityInstID);
+		}
+
 		this->recycleChunk(chunkIndex);
 	}
 
@@ -923,8 +934,21 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 	}
 }
 
+void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID)
+{
+	const auto iter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
+	if (iter == this->destroyedEntityIDs.end())
+	{
+		this->destroyedEntityIDs.emplace_back(entityInstID);
+	}
+}
+
 void EntityChunkManager::cleanUp()
 {
+	// @todo: for each destroyed entity ID, free their EntityChunkManager resources
+
+	this->destroyedEntityIDs.clear();
+
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
 		chunkPtr->addedEntityIDs.clear();
