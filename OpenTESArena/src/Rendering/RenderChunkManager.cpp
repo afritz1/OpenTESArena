@@ -1414,6 +1414,20 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer)
 {
+	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
+	{
+		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+		if (entityInst.isCitizen())
+		{
+			const EntityPaletteInstanceID paletteInstID = entityInst.paletteInstID;
+			const auto paletteIter = this->entityPaletteTextureRefs.find(paletteInstID);
+			if (paletteIter != this->entityPaletteTextureRefs.end())
+			{
+				this->entityPaletteTextureRefs.erase(paletteIter);
+			}
+		}
+	}
+
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);

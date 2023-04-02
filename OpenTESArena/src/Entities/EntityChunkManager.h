@@ -58,8 +58,8 @@ private:
 	// @todo: separate EntityAnimationDefinition from EntityDefinition?
 	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
-	// Entities that should have their resources removed, either because the chunk they were in was unloaded,
-	// or they were otherwise despawned. Cleared at end-of-frame.
+	// Entities that should have their instance resources freed, either because the chunk they were in
+	// was unloaded, or they were otherwise despawned. Cleared at end-of-frame.
 	std::vector<EntityInstanceID> destroyedEntityIDs;
 
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);

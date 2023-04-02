@@ -945,7 +945,47 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID)
 
 void EntityChunkManager::cleanUp()
 {
-	// @todo: for each destroyed entity ID, free their EntityChunkManager resources
+	for (const EntityInstanceID entityInstID : this->destroyedEntityIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		
+		if (entityInst.positionID >= 0)
+		{
+			this->positions.free(entityInst.positionID);
+		}
+
+		if (entityInst.bboxID >= 0)
+		{
+			this->boundingBoxes.free(entityInst.bboxID);
+		}
+
+		if (entityInst.directionID >= 0)
+		{
+			this->directions.free(entityInst.directionID);
+		}
+
+		if (entityInst.animInstID >= 0)
+		{
+			this->animInsts.free(entityInst.animInstID);
+		}
+
+		if (entityInst.creatureSoundInstID >= 0)
+		{
+			this->creatureSoundInsts.free(entityInst.creatureSoundInstID);
+		}
+
+		if (entityInst.citizenDirectionIndexID >= 0)
+		{
+			this->citizenDirectionIndices.free(entityInst.citizenDirectionIndexID);
+		}
+
+		if (entityInst.paletteInstID >= 0)
+		{
+			this->palettes.free(entityInst.paletteInstID);
+		}
+		
+		this->entities.free(entityInstID);
+	}
 
 	this->destroyedEntityIDs.clear();
 
