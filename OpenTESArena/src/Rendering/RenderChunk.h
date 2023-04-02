@@ -25,7 +25,7 @@ public:
 	std::vector<RenderVoxelMeshDefinition> meshDefs;
 	std::unordered_map<VoxelChunk::VoxelMeshDefID, RenderVoxelMeshDefID> meshDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
 	Buffer3D<RenderVoxelMeshDefID> meshDefIDs; // Points into mesh instances.
-	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDs; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
+	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	std::vector<RenderDrawCall> staticDrawCalls; // Most voxel geometry (walls, floors, etc.).
 	std::vector<RenderDrawCall> doorDrawCalls; // All doors, open or closed.
 	std::vector<RenderDrawCall> chasmDrawCalls; // Chasm walls and floors, separate from static draw calls so their textures can animate.

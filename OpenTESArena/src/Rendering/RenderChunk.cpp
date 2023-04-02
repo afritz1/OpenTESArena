@@ -36,7 +36,7 @@ void RenderChunk::clear()
 	this->meshDefs.clear();
 	this->meshDefMappings.clear();
 	this->meshDefIDs.clear();
-	this->chasmWallIndexBufferIDs.clear();
+	this->chasmWallIndexBufferIDsMap.clear();
 	this->staticDrawCalls.clear();
 	this->doorDrawCalls.clear();
 	this->chasmDrawCalls.clear();

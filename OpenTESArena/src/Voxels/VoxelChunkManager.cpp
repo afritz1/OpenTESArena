@@ -721,6 +721,48 @@ void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &new
 		chunkPtr->update(dt, playerCoord, ceilingScale, audioManager);
 	}
 
+	// Check if new chasms caused surrounding chasms to become dirty.
+	for (int i = 0; i < activeChunkCount; i++)
+	{
+		ChunkPtr &chunkPtr = this->activeChunks[i];
+		BufferView<const VoxelInt3> oldDirtyChasmWallPositions = chunkPtr->getDirtyChasmWallInstPositions();
+		if (oldDirtyChasmWallPositions.getCount() == 0)
+		{
+			continue;
+		}
+
+		// Cache the existing dirty chasm walls since they get invalidated below.
+		Buffer<VoxelInt3> cachedDirtyChasmWallPositions(oldDirtyChasmWallPositions.getCount());
+		std::copy(oldDirtyChasmWallPositions.begin(), oldDirtyChasmWallPositions.end(), cachedDirtyChasmWallPositions.begin());
+
+		for (const VoxelInt3 &dirtyChasmWallPos : cachedDirtyChasmWallPositions)
+		{
+			const CoordInt3 coord(chunkPtr->getPosition(), dirtyChasmWallPos);
+			const CoordInt3 adjacentCoords[] =
+			{
+				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::North),
+				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::East),
+				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::South),
+				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::West)
+			};
+
+			for (const CoordInt3 &adjacentCoord : adjacentCoords)
+			{
+				const std::optional<int> adjacentChunkIndex = this->tryGetChunkIndex(adjacentCoord.chunk);
+				if (adjacentChunkIndex.has_value())
+				{
+					VoxelChunk &adjacentChunk = this->getChunkAtIndex(*adjacentChunkIndex);
+					const VoxelInt3 &adjacentVoxel = adjacentCoord.voxel;
+					int dummyChasmWallInstIndex;
+					if (adjacentChunk.tryGetChasmWallInstIndex(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z, &dummyChasmWallInstIndex))
+					{
+						adjacentChunk.addDirtyChasmWallInstPosition(adjacentVoxel);
+					}
+				}
+			}
+		}
+	}
+
 	// Update chasm wall instances that may be dirty from fading voxels in this chunk or adjacent chunks,
 	// or an adjacent chunk that was wholly added or removed this frame.
 	for (int i = 0; i < activeChunkCount; i++)

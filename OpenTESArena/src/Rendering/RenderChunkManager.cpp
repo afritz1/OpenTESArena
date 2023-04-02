@@ -823,7 +823,17 @@ void RenderChunkManager::loadVoxelChasmWall(RenderChunk &renderChunk, const Voxe
 		chasmWallInst.north, chasmWallInst.east, chasmWallInst.south, chasmWallInst.west);
 	const IndexBufferID indexBufferID = this->chasmWallIndexBufferIDs[chasmWallIndexBufferIndex];
 
-	renderChunk.chasmWallIndexBufferIDs.emplace(VoxelInt3(x, y, z), indexBufferID);
+	const VoxelInt3 voxel(x, y, z);
+	auto &chasmWallIndexBufferIDsMap = renderChunk.chasmWallIndexBufferIDsMap;
+	const auto iter = chasmWallIndexBufferIDsMap.find(voxel);
+	if (iter == chasmWallIndexBufferIDsMap.end())
+	{
+		chasmWallIndexBufferIDsMap.emplace(voxel, indexBufferID);
+	}
+	else
+	{
+		iter->second = indexBufferID;
+	}
 }
 
 void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk)
@@ -1216,8 +1226,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 				if (isChasm)
 				{
-					const auto chasmWallIter = renderChunk.chasmWallIndexBufferIDs.find(voxel);
-					if (chasmWallIter != renderChunk.chasmWallIndexBufferIDs.end())
+					const auto chasmWallIter = renderChunk.chasmWallIndexBufferIDsMap.find(voxel);
+					if (chasmWallIter != renderChunk.chasmWallIndexBufferIDsMap.end())
 					{
 						DebugAssert(voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm);
 						const bool isAnimatingChasm = voxelTraitsDef.chasm.type != ArenaTypes::ChasmType::Dry;
