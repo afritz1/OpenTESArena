@@ -807,31 +807,34 @@ void RenderChunkManager::loadVoxelMeshBuffers(RenderChunk &renderChunk, const Vo
 	}
 }
 
+void RenderChunkManager::loadVoxelChasmWall(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, SNInt x, int y, WEInt z)
+{
+	int chasmWallInstIndex;
+	if (!voxelChunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
+	{
+		return;
+	}
+
+	BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
+	const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
+	DebugAssert(chasmWallInst.getFaceCount() > 0);
+
+	const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
+		chasmWallInst.north, chasmWallInst.east, chasmWallInst.south, chasmWallInst.west);
+	const IndexBufferID indexBufferID = this->chasmWallIndexBufferIDs[chasmWallIndexBufferIndex];
+
+	renderChunk.chasmWallIndexBufferIDs.emplace(VoxelInt3(x, y, z), indexBufferID);
+}
+
 void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk)
 {
-	DebugAssert(renderChunk.chasmWallIndexBufferIDs.empty());
-
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < voxelChunk.getHeight(); y++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				int chasmWallInstIndex;
-				if (!voxelChunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
-				{
-					continue;
-				}
-
-				BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
-				const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
-				DebugAssert(chasmWallInst.getFaceCount() > 0);
-
-				const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
-					chasmWallInst.north, chasmWallInst.east, chasmWallInst.south, chasmWallInst.west);
-				const IndexBufferID indexBufferID = this->chasmWallIndexBufferIDs[chasmWallIndexBufferIndex];
-
-				renderChunk.chasmWallIndexBufferIDs.emplace(VoxelInt3(x, y, z), indexBufferID);
+				this->loadVoxelChasmWall(renderChunk, voxelChunk, x, y, z);
 			}
 		}
 	}
@@ -1402,9 +1405,16 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 	{
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+
+		BufferView<const VoxelInt3> dirtyChasmWallInstPositions = voxelChunk.getDirtyChasmWallInstPositions();
+		for (const VoxelInt3 &chasmWallPos : dirtyChasmWallInstPositions)
+		{
+			this->loadVoxelChasmWall(renderChunk, voxelChunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
+		}
+
 		BufferView<const VoxelInt3> dirtyMeshDefs = voxelChunk.getDirtyMeshDefPositions();
-		BufferView<const VoxelInt3> dirtyFadeAnimInsts = voxelChunk.getDirtyFadeAnimInstPositions();
-		const bool updateStatics = (dirtyMeshDefs.getCount() > 0) || (dirtyFadeAnimInsts.getCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
+		BufferView<const VoxelInt3> dirtyFadeAnimInstPositions = voxelChunk.getDirtyFadeAnimInstPositions();
+		const bool updateStatics = (dirtyMeshDefs.getCount() > 0) || (dirtyFadeAnimInstPositions.getCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
 		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 
