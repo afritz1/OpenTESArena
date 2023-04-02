@@ -164,7 +164,7 @@ int CitizenUtils::getRandomCitizenDirectionIndex(Random &random)
 
 int CitizenUtils::getCitizenCountInChunk(const ChunkInt2 &chunkPos, const EntityChunkManager &entityChunkManager)
 {
-	return entityChunkManager.getCountInChunkWithPalette(chunkPos);
+	return entityChunkManager.getCountInChunkWithCitizenDirection(chunkPos);
 }
 
 int CitizenUtils::getCitizenCount(const EntityChunkManager &entityChunkManager)

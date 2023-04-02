@@ -674,13 +674,13 @@ int EntityChunkManager::getCountInChunkWithCreatureSound(const ChunkInt2 &chunkP
 	return count;
 }
 
-int EntityChunkManager::getCountInChunkWithPalette(const ChunkInt2 &chunkPos) const
+int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const
 {
 	int count = 0;
 	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
 	if (!chunkIndex.has_value())
 	{
-		DebugLogWarning("Missing chunk (" + chunkPos.toString() + ") for counting entities with palette.");
+		DebugLogWarning("Missing chunk (" + chunkPos.toString() + ") for counting entities with citizen direction.");
 		return 0;
 	}
 
@@ -688,7 +688,7 @@ int EntityChunkManager::getCountInChunkWithPalette(const ChunkInt2 &chunkPos) co
 	for (const EntityInstanceID entityInstID : chunk.entityIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.paletteInstID >= 0)
+		if (entityInst.citizenDirectionIndexID >= 0)
 		{
 			count++;
 		}
