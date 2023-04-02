@@ -721,19 +721,16 @@ void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &new
 		chunkPtr->update(dt, playerCoord, ceilingScale, audioManager);
 	}
 
-	// Update chasm wall instances that may be dirty from fading voxels or adjacent chunks.
+	// Update chasm wall instances that may be dirty from fading voxels in this chunk or adjacent chunks,
+	// or an adjacent chunk that was wholly added or removed this frame.
 	for (int i = 0; i < activeChunkCount; i++)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		VoxelChunk &chunk = *chunkPtr;
 
-		for (int i = 0; i < activeChunkCount; i++)
+		for (const VoxelInt3 &chasmWallPos : chunk.getDirtyChasmWallInstPositions())
 		{
-			ChunkPtr &chunkPtr = this->activeChunks[i];
-			for (const VoxelInt3 &chasmWallPos : chunkPtr->getDirtyChasmWallInstPositions())
-			{
-				this->updateChasmWallInst(chunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
-			}
+			this->updateChasmWallInst(chunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
 		}
 
 		// North and south sides.
