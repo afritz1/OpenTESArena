@@ -144,7 +144,7 @@ CoordInt2 VoxelUtils::worldVoxelToCoord(const WorldInt2 &voxel)
 	return CoordInt2(chunk, newVoxel);
 }
 
-CoordInt2 VoxelUtils::levelVoxelToCoord(const LevelInt2 &voxel)
+CoordInt2 VoxelUtils::levelVoxelToCoord(const WorldInt2 &voxel)
 {
 	// @todo: make sure it handles negative coordinates.
 	return VoxelUtils::worldVoxelToCoord(voxel);

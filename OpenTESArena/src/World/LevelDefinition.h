@@ -31,57 +31,57 @@ public:
 	struct EntityPlacementDef
 	{
 		EntityDefID id;
-		std::vector<LevelDouble3> positions;
+		std::vector<WorldDouble3> positions;
 
-		EntityPlacementDef(EntityDefID id, std::vector<LevelDouble3> &&positions);
+		EntityPlacementDef(EntityDefID id, std::vector<WorldDouble3> &&positions);
 	};
 
 	struct LockPlacementDef
 	{
 		LockDefID id;
-		std::vector<LevelInt3> positions;
+		std::vector<WorldInt3> positions;
 
-		LockPlacementDef(LockDefID id, std::vector<LevelInt3> &&positions);
+		LockPlacementDef(LockDefID id, std::vector<WorldInt3> &&positions);
 	};
 
 	struct TriggerPlacementDef
 	{
 		TriggerDefID id;
-		std::vector<LevelInt3> positions;
+		std::vector<WorldInt3> positions;
 
-		TriggerPlacementDef(TriggerDefID id, std::vector<LevelInt3> &&positions);
+		TriggerPlacementDef(TriggerDefID id, std::vector<WorldInt3> &&positions);
 	};
 
 	struct TransitionPlacementDef
 	{
 		TransitionDefID id;
-		std::vector<LevelInt3> positions; // Can also be in EntityDefinitions.
+		std::vector<WorldInt3> positions; // Can also be in EntityDefinitions.
 
-		TransitionPlacementDef(TransitionDefID id, std::vector<LevelInt3> &&positions);
+		TransitionPlacementDef(TransitionDefID id, std::vector<WorldInt3> &&positions);
 	};
 
 	struct BuildingNamePlacementDef
 	{
 		BuildingNameID id;
-		std::vector<LevelInt3> positions;
+		std::vector<WorldInt3> positions;
 
-		BuildingNamePlacementDef(BuildingNameID id, std::vector<LevelInt3> &&positions);
+		BuildingNamePlacementDef(BuildingNameID id, std::vector<WorldInt3> &&positions);
 	};
 
 	struct DoorPlacementDef
 	{
 		DoorDefID id;
-		std::vector<LevelInt3> positions;
+		std::vector<WorldInt3> positions;
 
-		DoorPlacementDef(DoorDefID id, std::vector<LevelInt3> &&positions);
+		DoorPlacementDef(DoorDefID id, std::vector<WorldInt3> &&positions);
 	};
 
 	struct ChasmPlacementDef
 	{
 		ChasmDefID id;
-		std::vector<LevelInt3> positions;
+		std::vector<WorldInt3> positions;
 
-		ChasmPlacementDef(ChasmDefID id, std::vector<LevelInt3> &&positions);
+		ChasmPlacementDef(ChasmDefID id, std::vector<WorldInt3> &&positions);
 	};
 private:
 	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
@@ -138,13 +138,13 @@ public:
 	int getChasmPlacementDefCount() const;
 	const ChasmPlacementDef &getChasmPlacementDef(int index) const;
 
-	void addEntity(EntityDefID id, const LevelDouble3 &position);
-	void addLock(LockDefID id, const LevelInt3 &position);
-	void addTrigger(TriggerDefID id, const LevelInt3 &position);
-	void addTransition(TransitionDefID id, const LevelInt3 &position);
-	void addBuildingName(BuildingNameID id, const LevelInt3 &position);
-	void addDoor(DoorDefID id, const LevelInt3 &position);
-	void addChasm(ChasmDefID id, const LevelInt3 &position);
+	void addEntity(EntityDefID id, const WorldDouble3 &position);
+	void addLock(LockDefID id, const WorldInt3 &position);
+	void addTrigger(TriggerDefID id, const WorldInt3 &position);
+	void addTransition(TransitionDefID id, const WorldInt3 &position);
+	void addBuildingName(BuildingNameID id, const WorldInt3 &position);
+	void addDoor(DoorDefID id, const WorldInt3 &position);
+	void addChasm(ChasmDefID id, const WorldInt3 &position);
 };
 
 #endif

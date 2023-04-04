@@ -68,7 +68,7 @@ private:
 	EntityInstanceID spawnEntity();
 
 	void populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &chunk, const LevelDefinition &levelDefinition,
-		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
+		const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);

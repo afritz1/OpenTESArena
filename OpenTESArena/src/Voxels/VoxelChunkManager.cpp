@@ -117,7 +117,7 @@ void VoxelChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelDef
 }
 
 void VoxelChunkManager::populateChunkVoxels(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
-	const LevelInt2 &levelOffset)
+	const WorldInt2 &levelOffset)
 {
 	SNInt startX, endX;
 	int startY, endY;
@@ -148,7 +148,7 @@ void VoxelChunkManager::populateChunkVoxels(VoxelChunk &chunk, const LevelDefini
 }
 
 void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
-	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset)
+	const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset)
 {
 	SNInt startX, endX;
 	int startY, endY;
@@ -163,7 +163,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const TransitionDefinition &transitionDef = levelInfoDefinition.getTransitionDef(placementDef.id);
 
 		std::optional<VoxelChunk::TransitionDefID> transitionDefID;
-		for (const LevelInt3 &position : placementDef.positions)
+		for (const WorldInt3 &position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -185,7 +185,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const VoxelTriggerDefinition &triggerDef = levelInfoDefinition.getTriggerDef(placementDef.id);
 
 		std::optional<VoxelChunk::TriggerDefID> triggerDefID;
-		for (const LevelInt3 &position : placementDef.positions)
+		for (const WorldInt3 &position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -207,7 +207,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const LockDefinition &lockDef = levelInfoDefinition.getLockDef(placementDef.id);
 
 		std::optional<VoxelChunk::LockDefID> lockDefID;
-		for (const LevelInt3 &position : placementDef.positions)
+		for (const WorldInt3 &position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -230,7 +230,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const std::string &buildingName = levelInfoDefinition.getBuildingName(placementDef.id);
 
 		std::optional<VoxelChunk::BuildingNameID> buildingNameID;
-		for (const LevelInt3 &position : placementDef.positions)
+		for (const WorldInt3 &position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -252,7 +252,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const DoorDefinition &doorDef = levelInfoDefinition.getDoorDef(placementDef.id);
 
 		std::optional<VoxelChunk::DoorDefID> doorDefID;
-		for (const LevelInt3 &position : placementDef.positions)
+		for (const WorldInt3 &position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -274,7 +274,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const ChasmDefinition &chasmDef = levelInfoDefinition.getChasmDef(placementDef.id);
 
 		std::optional<VoxelChunk::ChasmDefID> chasmDefID;
-		for (const LevelInt3 &position : placementDef.positions)
+		for (const WorldInt3 &position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -487,7 +487,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
-			const LevelInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
+			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkChasmInsts(chunk);
@@ -527,8 +527,8 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 				const WEInt levelDepth = levelDefinition.getDepth();
 
 				// Convert chunk voxel to level voxel, then wrap that between 0 and level width/depth.
-				const LevelInt2 levelVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt2(x, z));
-				const LevelInt2 wrappedLevelVoxel(
+				const WorldInt2 levelVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt2(x, z));
+				const WorldInt2 wrappedLevelVoxel(
 					wrapLevelVoxel(levelVoxel.x, levelWidth),
 					wrapLevelVoxel(levelVoxel.y, levelDepth));
 
@@ -547,7 +547,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
-			const LevelInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
+			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkChasmInsts(chunk);
@@ -573,7 +573,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		// Copy level definition directly into chunk.
 		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
 		DebugAssert(levelDefinition.getDepth() == Chunk::DEPTH);
-		const LevelInt2 levelOffset = LevelInt2::Zero;
+		const WorldInt2 levelOffset = WorldInt2::Zero;
 		this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 		this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 

@@ -168,7 +168,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
 	bool isArtifactDungeon, ArenaRandom &random, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, LevelInt2 *outStartPoint)
+	TextureManager &textureManager, WorldInt2 *outStartPoint)
 {
 	const int levelCount = ArenaInteriorUtils::generateDungeonLevelCount(isArtifactDungeon, random);
 
@@ -431,12 +431,12 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 		ArenaRandom random(dungeonGenInfo.dungeonDef.dungeonSeed);
 
 		// Generate dungeon levels and get the player start point.
-		LevelInt2 startPoint;
+		WorldInt2 startPoint;
 		this->initDungeonLevels(mif, dungeonGenInfo.dungeonDef.widthChunkCount,
 			dungeonGenInfo.dungeonDef.heightChunkCount, dungeonGenInfo.isArtifactDungeon, random,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &startPoint);
 
-		const LevelDouble2 startPointReal = VoxelUtils::getVoxelCenter(startPoint);
+		const WorldDouble2 startPointReal = VoxelUtils::getVoxelCenter(startPoint);
 		this->startPoints.init(1);
 		this->startPoints.set(0, startPointReal);
 		this->startLevelIndex = 0;
@@ -524,7 +524,7 @@ int MapDefinition::getStartPointCount() const
 	return this->startPoints.getCount();
 }
 
-const LevelDouble2 &MapDefinition::getStartPoint(int index) const
+const WorldDouble2 &MapDefinition::getStartPoint(int index) const
 {
 	return this->startPoints.get(index);
 }

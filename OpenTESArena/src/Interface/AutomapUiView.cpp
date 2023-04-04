@@ -291,7 +291,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 }
 
 Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
-	bool isWild, const LevelInt2 &levelDims, const VoxelChunkManager &voxelChunkManager)
+	bool isWild, const WorldInt2 &levelDims, const VoxelChunkManager &voxelChunkManager)
 {
 	// Create scratch surface triple the size of the voxel area so that all directions of the player's arrow
 	// are representable in the same texture. This may change in the future for memory optimization.
@@ -367,7 +367,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 					else
 					{
 						// @todo: make a coord-to-level-voxel function for this
-						const LevelInt2 levelPos(
+						const WorldInt2 levelPos(
 							(chunkPos.x * ChunkUtils::CHUNK_DIM) + x,
 							(chunkPos.y * ChunkUtils::CHUNK_DIM) + z);
 						const bool isInsideLevelBounds = (chunkX >= 0) && (chunkZ >= 0) && (levelPos.x < levelDims.x) && (levelPos.y < levelDims.y);
@@ -427,7 +427,7 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
 	const LevelDefinition &activeLevelDef = mapDef.getLevel(mapInst.getActiveLevelIndex());
-	const LevelInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
+	const WorldInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
 
 	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, levelDims, voxelChunkManager);
 	const BufferView2D<const uint32_t> automapBufferView(automapBuffer);

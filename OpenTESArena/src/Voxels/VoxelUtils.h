@@ -46,7 +46,7 @@ namespace VoxelUtils
 	CoordInt2 worldVoxelToCoord(const WorldInt2 &voxel);
 
 	// Converts a voxel from level definition space to chunk voxel space.
-	CoordInt2 levelVoxelToCoord(const LevelInt2 &voxel);
+	CoordInt2 levelVoxelToCoord(const WorldInt2 &voxel);
 
 	// Gets the chunk that a new voxel would be in.
 	ChunkInt2 worldVoxelToChunk(const WorldInt2 &voxel);

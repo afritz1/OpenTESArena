@@ -186,7 +186,7 @@ namespace MapGeneration
 		const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
-		LevelInfoDefinition *outLevelInfoDef, LevelInt2 *outStartPoint);
+		LevelInfoDefinition *outLevelInfoDef, WorldInt2 *outStartPoint);
 
 	// Generates a level from the city .MIF file, optionally generating random city blocks if it
 	// is not a premade city, and converts the level to the modern format.

@@ -104,7 +104,7 @@ EntityInstanceID EntityChunkManager::spawnEntity()
 }
 
 void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
-	const LevelDefinition &levelDefinition, const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
+	const LevelDefinition &levelDefinition, const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
@@ -135,9 +135,9 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		}
 
 		std::optional<EntityDefID> entityDefID; // Global entity def ID (shared across all active chunks).
-		for (const LevelDouble3 &position : placementDef.positions)
+		for (const WorldDouble3 &position : placementDef.positions)
 		{
-			const LevelInt3 voxelPosition = VoxelUtils::pointToVoxel(position, ceilingScale);
+			const WorldInt3 voxelPosition = VoxelUtils::pointToVoxel(position, ceilingScale);
 			if (ChunkUtils::IsInWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!entityDefID.has_value())
@@ -364,7 +364,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
-			const LevelInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
+			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			DebugAssert(!citizenGenInfo.has_value());
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
 				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
@@ -379,7 +379,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
-			const LevelInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
+			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			DebugAssert(citizenGenInfo.has_value());
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
 				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
@@ -398,7 +398,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 		// Copy level definition directly into chunk.
 		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
 		DebugAssert(levelDefinition.getDepth() == Chunk::DEPTH);
-		const LevelInt2 levelOffset = LevelInt2::Zero;
+		const WorldInt2 levelOffset = WorldInt2::Zero;
 
 		DebugAssert(citizenGenInfo.has_value());
 		this->populateChunkEntities(entityChunk, voxelChunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,

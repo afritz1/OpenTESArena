@@ -114,7 +114,7 @@ CoordInt3 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelInt3 &
 	return CoordInt3(coord.chunk, VoxelInt3(newVoxel.x, voxel.y, newVoxel.y));
 }
 
-void ChunkUtils::GetWritingRanges(const LevelInt2 &levelOffset, SNInt levelWidth, int levelHeight, WEInt levelDepth,
+void ChunkUtils::GetWritingRanges(const WorldInt2 &levelOffset, SNInt levelWidth, int levelHeight, WEInt levelDepth,
 	SNInt *outStartX, int *outStartY, WEInt *outStartZ, SNInt *outEndX, int *outEndY, WEInt *outEndZ)
 {
 	*outStartX = levelOffset.x;
@@ -125,14 +125,14 @@ void ChunkUtils::GetWritingRanges(const LevelInt2 &levelOffset, SNInt levelWidth
 	*outEndZ = std::min(*outStartZ + Chunk::DEPTH, levelDepth);
 }
 
-bool ChunkUtils::IsInWritingRange(const LevelInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
+bool ChunkUtils::IsInWritingRange(const WorldInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
 	WEInt startZ, WEInt endZ)
 {
 	return (position.x >= startX) && (position.x < endX) && (position.y >= startY) && (position.y < endY) &&
 		(position.z >= startZ) && (position.z < endZ);
 }
 
-VoxelInt3 ChunkUtils::MakeChunkVoxelFromLevel(const LevelInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
+VoxelInt3 ChunkUtils::MakeChunkVoxelFromLevel(const WorldInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
 {
 	return VoxelInt3(
 		levelPosition.x - chunkStartX,
@@ -140,7 +140,7 @@ VoxelInt3 ChunkUtils::MakeChunkVoxelFromLevel(const LevelInt3 &levelPosition, SN
 		levelPosition.z - chunkStartZ);
 }
 
-VoxelDouble3 ChunkUtils::MakeChunkPointFromLevel(const LevelDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
+VoxelDouble3 ChunkUtils::MakeChunkPointFromLevel(const WorldDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
 {
 	return VoxelDouble3(
 		levelPosition.x - static_cast<SNDouble>(chunkStartX),

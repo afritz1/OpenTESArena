@@ -48,14 +48,14 @@ namespace ChunkUtils
 	CoordInt3 recalculateCoord(const ChunkInt2 &chunk, const VoxelInt3 &voxel);
 
 	// For iterating only the portion of a level that the chunk overlaps.
-	void GetWritingRanges(const LevelInt2 &levelOffset, SNInt levelWidth, int levelHeight, WEInt levelDepth,
+	void GetWritingRanges(const WorldInt2 &levelOffset, SNInt levelWidth, int levelHeight, WEInt levelDepth,
 		SNInt *outStartX, int *outStartY, WEInt *outStartZ, SNInt *outEndX, int *outEndY, WEInt *outEndZ);
 
-	bool IsInWritingRange(const LevelInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
+	bool IsInWritingRange(const WorldInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
 		WEInt startZ, WEInt endZ);
 
-	VoxelInt3 MakeChunkVoxelFromLevel(const LevelInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ);
-	VoxelDouble3 MakeChunkPointFromLevel(const LevelDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ);
+	VoxelInt3 MakeChunkVoxelFromLevel(const WorldInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ);
+	VoxelDouble3 MakeChunkPointFromLevel(const WorldDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ);
 }
 
 #endif

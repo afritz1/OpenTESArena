@@ -6,22 +6,18 @@
 
 // Aliases for various coordinate systems. All of these are from a top-down perspective.
 using OriginalInt2 = Int2; // +X west, +Y south (original game, origin at top right).
-using WorldInt2 = Int2; // +X south, +Y west, relative to world origin.
-using LevelInt2 = Int2; // +X south, +Y west, used with level definitions (independent of chunks).
+using WorldInt2 = Int2; // +X south, +Y west, relative to world origin, independent of chunks.
 using ChunkInt2 = Int2; // +X south, +Y west, [-inf, inf].
 using VoxelInt2 = Int2; // +X south, +Y west, used with chunk voxels, [0, CHUNK_DIM-1].
 
 using OriginalDouble2 = Double2; // +X west, +Y south.
-using WorldDouble2 = Double2; // +X south, +Y west, relative to world origin.
-using LevelDouble2 = Double2; // +X south, +Y west, used with level definitions (independent of chunks).
+using WorldDouble2 = Double2; // +X south, +Y west, relative to world origin, independent of chunks.
 using VoxelDouble2 = Double2; // +X south, +Y west, in the space of chunk voxels.
 
-using WorldInt3 = Int3; // +X south, +Y up, +Z west, relative to world origin.
-using LevelInt3 = Int3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
+using WorldInt3 = Int3; // +X south, +Y up, +Z west, relative to world origin, independent of chunks.
 using VoxelInt3 = Int3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
-using WorldDouble3 = Double3; // +X south, +Y up, +Z west, relative to world origin.
-using LevelDouble3 = Double3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
+using WorldDouble3 = Double3; // +X south, +Y up, +Z west, relative to world origin, independent of chunks.
 using VoxelDouble3 = Double3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
 // Various coordinate structs for representing a unique voxel or point in the game world.
@@ -81,13 +77,9 @@ struct CoordDouble3
 };
 
 // These are here out of desperation after many months of confusing myself.
-//using NSInt = int; // + north, - south
 using SNInt = int; // + south, - north
-//using EWInt = int; // + east, - west
 using WEInt = int; // + west, - east
-//using NSDouble = double; // + north, - south
 using SNDouble = double; // + south, - north
-//using EWDouble = double; // + east, - west
 using WEDouble = double; // + west, - east
 
 #endif

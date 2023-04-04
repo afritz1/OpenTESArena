@@ -71,7 +71,7 @@ private:
 	Buffer<int> levelInfoMappings; // Level info pointed to by each level.
 	Buffer<int> skyMappings; // Sky definition pointed to by each level.
 	Buffer<int> skyInfoMappings; // Sky info pointed to by each sky.
-	Buffer<LevelDouble2> startPoints;
+	Buffer<WorldDouble2> startPoints;
 	std::optional<int> startLevelIndex;
 
 	// Map-type-specific data.
@@ -87,7 +87,7 @@ private:
 	bool initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
 		bool isArtifactDungeon, ArenaRandom &random, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, LevelInt2 *outStartPoint);
+		TextureManager &textureManager, WorldInt2 *outStartPoint);
 	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
 		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
@@ -121,7 +121,7 @@ public:
 
 	// Starting positions for the player.
 	int getStartPointCount() const;
-	const LevelDouble2 &getStartPoint(int index) const;
+	const WorldDouble2 &getStartPoint(int index) const;
 
 	// Gets the number of levels in the map.
 	int getLevelCount() const;

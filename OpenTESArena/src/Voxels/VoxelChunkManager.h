@@ -37,11 +37,11 @@ private:
 	// Helper function for setting the chunk's voxels for the given level. This might not touch all voxels
 	// in the chunk because it does not fully overlap the level.
 	void populateChunkVoxels(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
-		const LevelInt2 &levelOffset);
+		const WorldInt2 &levelOffset);
 
 	// Helper function for setting the chunk's secondary voxel data (transitions, triggers, etc.).
 	void populateChunkDecorators(VoxelChunk &chunk, const LevelDefinition &levelDefinition,
-		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset);
+		const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset);
 
 	// Helper function for setting a wild chunk's building names.
 	void populateWildChunkBuildingNames(VoxelChunk &chunk, const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo,

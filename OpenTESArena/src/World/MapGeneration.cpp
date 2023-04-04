@@ -149,7 +149,7 @@ namespace MapGeneration
 	}
 
 	MapGeneration::InteriorGenInfo makePrefabInteriorGenInfo(ArenaTypes::InteriorType interiorType,
-		const LevelInt3 &position, int menuID, uint32_t rulerSeed, const std::optional<bool> &rulerIsMale,
+		const WorldInt3 &position, int menuID, uint32_t rulerSeed, const std::optional<bool> &rulerIsMale,
 		bool palaceIsMainQuestDungeon, ArenaTypes::CityType cityType, MapType mapType, const ExeData &exeData)
 	{
 		const OriginalInt2 originalPos = VoxelUtils::worldVoxelToOriginalVoxel(WorldInt2(position.x, position.z));
@@ -883,7 +883,7 @@ namespace MapGeneration
 	LockDefinition makeLockDefFromArenaLock(const ArenaTypes::MIFLock &lock)
 	{
 		const OriginalInt2 lockPos(lock.x, lock.y);
-		const LevelInt2 newLockPos = VoxelUtils::originalVoxelToWorldVoxel(lockPos);
+		const WorldInt2 newLockPos = VoxelUtils::originalVoxelToWorldVoxel(lockPos);
 		return LockDefinition::makeLeveledLock(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
 	}
 
@@ -891,7 +891,7 @@ namespace MapGeneration
 		const INFFile &inf)
 	{
 		const OriginalInt2 triggerPos(trigger.x, trigger.y);
-		const LevelInt2 newTriggerPos = VoxelUtils::originalVoxelToWorldVoxel(triggerPos);
+		const WorldInt2 newTriggerPos = VoxelUtils::originalVoxelToWorldVoxel(triggerPos);
 
 		VoxelTriggerDefinition triggerDef;
 		triggerDef.init(newTriggerPos.x, 1, newTriggerPos.y);
@@ -1048,7 +1048,7 @@ namespace MapGeneration
 	}
 
 	TransitionDefinition makeTransitionDef(const MapGeneration::TransitionDefGenInfo &transitionDefGenInfo,
-		const LevelInt3 &position, const std::optional<int> &menuID, const std::optional<uint32_t> &rulerSeed,
+		const WorldInt3 &position, const std::optional<int> &menuID, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
 		const std::optional<bool> &isArtifactDungeon, MapType mapType, const ExeData &exeData)
@@ -1274,7 +1274,7 @@ namespace MapGeneration
 						entityCache->emplace(florVoxel, entityDefID);
 					}
 
-					const LevelDouble3 entityPos(
+					const WorldDouble3 entityPos(
 						static_cast<SNDouble>(levelX) + 0.50,
 						1.0, // Will probably be ignored in favor of raised platform top face.
 						static_cast<WEDouble>(levelZ) + 0.50);
@@ -1399,7 +1399,7 @@ namespace MapGeneration
 					outLevelDef->setVoxelTextureID(levelX, levelY, levelZ, voxelTextureDefID);
 					outLevelDef->setVoxelTraitsID(levelX, levelY, levelZ, voxelTraitsDefID);
 
-					const LevelInt3 levelPosition(levelX, levelY, levelZ);
+					const WorldInt3 levelPosition(levelX, levelY, levelZ);
 
 					// Try to make transition info if this MAP1 voxel is a transition.
 					const std::optional<MapGeneration::TransitionDefGenInfo> transitionDefGenInfo =
@@ -1476,7 +1476,7 @@ namespace MapGeneration
 						entityCache->emplace(map1Voxel, entityDefID);
 					}
 
-					const LevelDouble3 entityPos(
+					const WorldDouble3 entityPos(
 						static_cast<SNDouble>(levelX) + 0.50,
 						1.0,
 						static_cast<WEDouble>(levelZ) + 0.50);
@@ -1598,7 +1598,7 @@ namespace MapGeneration
 		const SNInt x = lockDef.getX();
 		const int y = lockDef.getY();
 		const WEInt z = lockDef.getZ();
-		outLevelDef->addLock(lockDefID, LevelInt3(x, y, z));
+		outLevelDef->addLock(lockDefID, WorldInt3(x, y, z));
 	}
 
 	void readArenaTrigger(const ArenaTypes::MIFTrigger &trigger, const INFFile &inf,
@@ -1625,7 +1625,7 @@ namespace MapGeneration
 			const SNInt x = triggerDef.getX();
 			const int y = triggerDef.getY();
 			const WEInt z = triggerDef.getZ();
-			outLevelDef->addTrigger(triggerDefID, LevelInt3(x, y, z));
+			outLevelDef->addTrigger(triggerDefID, WorldInt3(x, y, z));
 		}
 	}
 
@@ -1776,11 +1776,11 @@ namespace MapGeneration
 				-> std::optional<LevelDefinition::TransitionDefID>
 			{
 				// Find the associated transition for this voxel (if any).
-				const LevelInt3 voxel(x, 1, z);
+				const WorldInt3 voxel(x, 1, z);
 				for (int i = 0; i < outLevelDef->getTransitionPlacementDefCount(); i++)
 				{
 					const auto &placementDef = outLevelDef->getTransitionPlacementDef(i);
-					for (const LevelInt3 &position : placementDef.positions)
+					for (const WorldInt3 &position : placementDef.positions)
 					{
 						if (position == voxel)
 						{
@@ -1984,7 +1984,7 @@ namespace MapGeneration
 
 					const LevelDefinition::BuildingNameID buildingNameID =
 						outLevelInfoDef->addBuildingName(std::move(name));
-					outLevelDef->addBuildingName(buildingNameID, LevelInt3(x, 1, z));
+					outLevelDef->addBuildingName(buildingNameID, WorldInt3(x, 1, z));
 					seen.emplace_back(hash);
 				}
 			};
@@ -2033,7 +2033,7 @@ namespace MapGeneration
 						magesGuildBuildingNameID = outLevelInfoDef->addBuildingName(std::string(magesGuildBuildingName));
 					}
 
-					const LevelInt3 position(x, 1, z);
+					const WorldInt3 position(x, 1, z);
 					outLevelDef->addBuildingName(*magesGuildBuildingNameID, position);
 				}
 			}
@@ -2375,7 +2375,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
-	LevelInfoDefinition *outLevelInfoDef, LevelInt2 *outStartPoint)
+	LevelInfoDefinition *outLevelInfoDef, WorldInt2 *outStartPoint)
 {
 	ArenaVoxelMappingCache florMappings, map1Mappings;
 	ArenaEntityMappingCache entityMappings;

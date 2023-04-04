@@ -308,7 +308,7 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 	}();
 
 	DebugAssert(activeMapDef.getStartPointCount() > 0);
-	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
+	const WorldDouble2 &startPoint = activeMapDef.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&entityDefLibrary, &textureManager,
@@ -370,7 +370,7 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	}
 
 	DebugAssert(mapDefinition.getStartPointCount() > 0);
-	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
+	const WorldDouble2 &startPoint = mapDefinition.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Interiors are always clear weather.
@@ -415,8 +415,8 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 	const CoordInt2 startCoord = [&playerStartOffset, &mapDefinition]()
 	{
 		DebugAssert(mapDefinition.getStartPointCount() > 0);
-		const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
-		const LevelInt2 startVoxel = VoxelUtils::pointToVoxel(startPoint);
+		const WorldDouble2 &startPoint = mapDefinition.getStartPoint(0);
+		const WorldInt2 startVoxel = VoxelUtils::pointToVoxel(startPoint);
 		const CoordInt2 coord = VoxelUtils::levelVoxelToCoord(startVoxel);
 		const VoxelInt2 offset = playerStartOffset.has_value() ? *playerStartOffset : VoxelInt2::Zero;
 		return ChunkUtils::recalculateCoord(coord.chunk, coord.voxel + offset);
@@ -461,7 +461,7 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager, renderer);
 
 	DebugAssert(mapDefinition.getStartPointCount() > 0);
-	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
+	const WorldDouble2 &startPoint = mapDefinition.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	const ProvinceDefinition *provinceDefPtr = nullptr;

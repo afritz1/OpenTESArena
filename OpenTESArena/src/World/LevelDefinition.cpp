@@ -2,45 +2,45 @@
 
 #include "LevelDefinition.h"
 
-LevelDefinition::EntityPlacementDef::EntityPlacementDef(EntityDefID id, std::vector<LevelDouble3> &&positions)
+LevelDefinition::EntityPlacementDef::EntityPlacementDef(EntityDefID id, std::vector<WorldDouble3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::LockPlacementDef::LockPlacementDef(LockDefID id, std::vector<LevelInt3> &&positions)
+LevelDefinition::LockPlacementDef::LockPlacementDef(LockDefID id, std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::TriggerPlacementDef::TriggerPlacementDef(TriggerDefID id, std::vector<LevelInt3> &&positions)
+LevelDefinition::TriggerPlacementDef::TriggerPlacementDef(TriggerDefID id, std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
 LevelDefinition::TransitionPlacementDef::TransitionPlacementDef(TransitionDefID id,
-	std::vector<LevelInt3> &&positions)
+	std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
 LevelDefinition::BuildingNamePlacementDef::BuildingNamePlacementDef(BuildingNameID id,
-	std::vector<LevelInt3> &&positions)
+	std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::DoorPlacementDef::DoorPlacementDef(DoorDefID id, std::vector<LevelInt3> &&positions)
+LevelDefinition::DoorPlacementDef::DoorPlacementDef(DoorDefID id, std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::ChasmPlacementDef::ChasmPlacementDef(ChasmDefID id, std::vector<LevelInt3>&& positions)
+LevelDefinition::ChasmPlacementDef::ChasmPlacementDef(ChasmDefID id, std::vector<WorldInt3>&& positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
@@ -228,7 +228,7 @@ const LevelDefinition::ChasmPlacementDef &LevelDefinition::getChasmPlacementDef(
 	return this->chasmPlacementDefs[index];
 }
 
-void LevelDefinition::addEntity(EntityDefID id, const LevelDouble3 &position)
+void LevelDefinition::addEntity(EntityDefID id, const WorldDouble3 &position)
 {
 	const auto iter = std::find_if(this->entityPlacementDefs.begin(), this->entityPlacementDefs.end(),
 		[id](const EntityPlacementDef &def)
@@ -238,16 +238,16 @@ void LevelDefinition::addEntity(EntityDefID id, const LevelDouble3 &position)
 
 	if (iter != this->entityPlacementDefs.end())
 	{
-		std::vector<LevelDouble3> &positions = iter->positions;
+		std::vector<WorldDouble3> &positions = iter->positions;
 		positions.emplace_back(position);
 	}
 	else
 	{
-		this->entityPlacementDefs.emplace_back(id, std::vector<LevelDouble3> { position });
+		this->entityPlacementDefs.emplace_back(id, std::vector<WorldDouble3> { position });
 	}
 }
 
-void LevelDefinition::addLock(LockDefID id, const LevelInt3 &position)
+void LevelDefinition::addLock(LockDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->lockPlacementDefs.begin(), this->lockPlacementDefs.end(),
 		[id](const LockPlacementDef &def)
@@ -257,16 +257,16 @@ void LevelDefinition::addLock(LockDefID id, const LevelInt3 &position)
 
 	if (iter != this->lockPlacementDefs.end())
 	{
-		std::vector<LevelInt3> &positions = iter->positions;
+		std::vector<WorldInt3> &positions = iter->positions;
 		positions.emplace_back(position);
 	}
 	else
 	{
-		this->lockPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+		this->lockPlacementDefs.emplace_back(id, std::vector<WorldInt3> { position });
 	}
 }
 
-void LevelDefinition::addTrigger(TriggerDefID id, const LevelInt3 &position)
+void LevelDefinition::addTrigger(TriggerDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->triggerPlacementDefs.begin(), this->triggerPlacementDefs.end(),
 		[id](const TriggerPlacementDef &def)
@@ -276,16 +276,16 @@ void LevelDefinition::addTrigger(TriggerDefID id, const LevelInt3 &position)
 
 	if (iter != this->triggerPlacementDefs.end())
 	{
-		std::vector<LevelInt3> &positions = iter->positions;
+		std::vector<WorldInt3> &positions = iter->positions;
 		positions.emplace_back(position);
 	}
 	else
 	{
-		this->triggerPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+		this->triggerPlacementDefs.emplace_back(id, std::vector<WorldInt3> { position });
 	}
 }
 
-void LevelDefinition::addTransition(TransitionDefID id, const LevelInt3 &position)
+void LevelDefinition::addTransition(TransitionDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->transitionPlacementDefs.begin(), this->transitionPlacementDefs.end(),
 		[id](const TransitionPlacementDef &def)
@@ -295,16 +295,16 @@ void LevelDefinition::addTransition(TransitionDefID id, const LevelInt3 &positio
 
 	if (iter != this->transitionPlacementDefs.end())
 	{
-		std::vector<LevelInt3> &positions = iter->positions;
+		std::vector<WorldInt3> &positions = iter->positions;
 		positions.emplace_back(position);
 	}
 	else
 	{
-		this->transitionPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+		this->transitionPlacementDefs.emplace_back(id, std::vector<WorldInt3> { position });
 	}
 }
 
-void LevelDefinition::addBuildingName(BuildingNameID id, const LevelInt3 &position)
+void LevelDefinition::addBuildingName(BuildingNameID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->buildingNamePlacementDefs.begin(),
 		this->buildingNamePlacementDefs.end(), [id](const BuildingNamePlacementDef &def)
@@ -314,16 +314,16 @@ void LevelDefinition::addBuildingName(BuildingNameID id, const LevelInt3 &positi
 
 	if (iter != this->buildingNamePlacementDefs.end())
 	{
-		std::vector<LevelInt3> &positions = iter->positions;
+		std::vector<WorldInt3> &positions = iter->positions;
 		positions.emplace_back(position);
 	}
 	else
 	{
-		this->buildingNamePlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+		this->buildingNamePlacementDefs.emplace_back(id, std::vector<WorldInt3> { position });
 	}
 }
 
-void LevelDefinition::addDoor(DoorDefID id, const LevelInt3 &position)
+void LevelDefinition::addDoor(DoorDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->doorPlacementDefs.begin(),
 		this->doorPlacementDefs.end(), [id](const DoorPlacementDef &def)
@@ -333,16 +333,16 @@ void LevelDefinition::addDoor(DoorDefID id, const LevelInt3 &position)
 
 	if (iter != this->doorPlacementDefs.end())
 	{
-		std::vector<LevelInt3> &positions = iter->positions;
+		std::vector<WorldInt3> &positions = iter->positions;
 		positions.emplace_back(position);
 	}
 	else
 	{
-		this->doorPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+		this->doorPlacementDefs.emplace_back(id, std::vector<WorldInt3> { position });
 	}
 }
 
-void LevelDefinition::addChasm(ChasmDefID id, const LevelInt3 &position)
+void LevelDefinition::addChasm(ChasmDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->chasmPlacementDefs.begin(),
 		this->chasmPlacementDefs.end(), [id](const ChasmPlacementDef &def)
@@ -352,11 +352,11 @@ void LevelDefinition::addChasm(ChasmDefID id, const LevelInt3 &position)
 
 	if (iter != this->chasmPlacementDefs.end())
 	{
-		std::vector<LevelInt3> &positions = iter->positions;
+		std::vector<WorldInt3> &positions = iter->positions;
 		positions.emplace_back(position);
 	}
 	else
 	{
-		this->chasmPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+		this->chasmPlacementDefs.emplace_back(id, std::vector<WorldInt3> { position });
 	}
 }
