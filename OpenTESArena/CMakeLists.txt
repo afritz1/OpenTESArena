@@ -650,6 +650,8 @@ SET(TES_WORLD
     "${SRC_ROOT}/World/MapType.h"
     "${SRC_ROOT}/World/MeshUtils.cpp"
     "${SRC_ROOT}/World/MeshUtils.h"
+    "${SRC_ROOT}/World/SceneManager.cpp"
+    "${SRC_ROOT}/World/SceneManager.h"
     "${SRC_ROOT}/World/SpecializedChunkManager.h"
     "${SRC_ROOT}/World/TransitionDefinition.cpp"
     "${SRC_ROOT}/World/TransitionDefinition.h"
