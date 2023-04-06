@@ -2,7 +2,6 @@
 #define JOB_SYSTEM_H
 
 #include <condition_variable>
-#include <deque>
 #include <functional>
 #include <mutex>
 #include <string>
@@ -38,7 +37,7 @@ class JobManager
 private:
 	ThreadSafeMap<Category, JobQueue> queues;
 	std::unique_ptr<ThreadPool> pool;
-	std::thread context;
+	std::jthread context;
 	std::mutex mtx;
 	std::condition_variable cv;
 	std::atomic<bool> running = false;
@@ -47,14 +46,6 @@ public:
 	void init(int threadCount)
 	{
 		this->pool = std::make_unique<ThreadPool>(threadCount);
-	}
-
-	~JobManager()
-	{
-		if (this->context.joinable())
-		{
-			this->context.join();
-		}
 	}
 
 	bool isRunning()
@@ -137,17 +128,17 @@ private:
 				{
 					JobQueue *queue = &entry.second;
 					if(!queue->isEmpty())
-						return
+						return;
 					auto index = this->pool->nextWorkerIndexBlocking();
 					auto worker = &this->pool->getWorker(index);
 					worker->invoke( std::move(queue->pop().task) );
 				});
 			}
 			this->running = false;
-			this->cv.notify_all(); // IfIf anyone's been waiting for us to get done with it.
+			this->cv.notify_all(); // If anyone's been waiting for us to get done with it.
 		};
 
-		this->context = std::thread(distributeJobs);
+		this->context = std::jthread(distributeJobs);
 	}
 };
 
