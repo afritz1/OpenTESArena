@@ -6,16 +6,19 @@ void Worker::init(ThreadPool *pool)
     this->busy = false;
 }
 
-Worker::~Worker()
+void Worker::join()
 {
-    this->join();
+    if (this->context.joinable())
+    {
+        this->context.join();
+    }
 }
 
 void Worker::invoke(std::function<void()> &&func)
 {
     this->join();
     this->notifyBusy();
-    this->context = std::thread([this, func]()
+    this->context = std::jthread([this, func]()
     {
     	func();
     	this->notifyIdle(); // It's likely the pool is waiting for an idle worker.
@@ -34,13 +37,6 @@ void Worker::notifyIdle()
     this->parentPool->signalWorkerIdle();
 }
 
-void Worker::join()
-{
-    if (this->context.joinable())
-    {
-        this->context.join();
-    }
-}
 
 ThreadPool::ThreadPool(int threadCount)
 {		

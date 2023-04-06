@@ -11,15 +11,13 @@ class ThreadPool;
 class Worker
 {
 private:
-	std::thread context;
+	std::jthread context;
 	std::mutex mtx;
     ThreadPool *parentPool;
 public:
 	std::atomic<bool> busy;
 
 	void init(ThreadPool *pool);
-
-	~Worker();
 
 	// Do the thing.
 	void invoke(std::function<void()> &&func);

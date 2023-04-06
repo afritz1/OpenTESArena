@@ -6,13 +6,17 @@ class ThreadSafeQueue
 {
 private:
 	std::deque<T> items;
-	std::condition_variable cv;
 	std::mutex mtx;
 public:
+	std::condition_variable EmptyCV;  
+	std::condition_variable notEmptyCV;
 	[[nodiscard]] bool isEmpty()
 	{
 		std::lock_guard<std::mutex> lock(this->mtx);
-		return this->items.empty();
+		auto empty = this->items.empty();
+		if(empty)
+			this->EmptyCV.notify_all();
+		return empty;
 	}
 
 	void push(T &&item)
@@ -21,19 +25,21 @@ public:
 		this->items.emplace_back(std::move(item));
 		lock.unlock();
 
-		this->cv.notify_one();
+		this->notEmptyCV.notify_all();
 	}
 
 	[[nodiscard]] T pop()
 	{
 		std::unique_lock<std::mutex> lock(this->mtx);
-		while (this->items.empty())
-		{
-			this->cv.wait(lock);
-		}
+		
+		this->notEmptyCV.wait(lock, [this]{ return !this->items.empty(); });
         
 		T first = std::move(this->items.front());
 		this->items.pop_front();
+
+		if(this->items.empty())
+			this->EmptyCV.notify_all();
+		
 		return first;
 	}
 
