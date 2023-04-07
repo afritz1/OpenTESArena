@@ -11,13 +11,14 @@ class ThreadPool;
 class Worker
 {
 private:
-	std::jthread context;
+	std::thread context;
 	std::mutex mtx;
     ThreadPool *parentPool;
 public:
 	std::atomic<bool> busy;
 
 	void init(ThreadPool *pool);
+	~Worker();
 
 	// Do the thing.
 	void invoke(std::function<void()> &&func);
@@ -28,7 +29,7 @@ public:
 	// Signal to the pool that we're idle.
 	void notifyIdle();
 
-	void join();
+	void checkedJoin();
 };
 
 class ThreadPool

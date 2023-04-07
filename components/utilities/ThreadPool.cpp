@@ -6,7 +6,12 @@ void Worker::init(ThreadPool *pool)
     this->busy = false;
 }
 
-void Worker::join()
+Worker::~Worker()
+{
+    this->checkedJoin();
+}
+
+void Worker::checkedJoin()
 {
     if (this->context.joinable())
     {
@@ -16,9 +21,9 @@ void Worker::join()
 
 void Worker::invoke(std::function<void()> &&func)
 {
-    this->join();
+    this->checkedJoin();
     this->notifyBusy();
-    this->context = std::jthread([this, func]()
+    this->context = std::thread([this, func]()
     {
     	func();
     	this->notifyIdle(); // It's likely the pool is waiting for an idle worker.
