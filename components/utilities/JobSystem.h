@@ -37,7 +37,7 @@ class JobManager
 private:
 	ThreadSafeMap<Category, JobQueue> queues;
 	std::unique_ptr<ThreadPool> pool;
-	std::jthread context;
+	std::thread context;
 	std::mutex mtx;
 	std::condition_variable cv;
 	std::atomic<bool> running = false;
@@ -46,6 +46,14 @@ public:
 	void init(int threadCount)
 	{
 		this->pool = std::make_unique<ThreadPool>(threadCount);
+	}
+
+	~JobManager() 
+	{ 
+		if(this->context.joinable())
+		{
+			this->context.join();
+		}
 	}
 
 	bool isRunning()
@@ -127,7 +135,7 @@ private:
 				this->queues.forEach([this](auto &entry) 
 				{
 					JobQueue *queue = &entry.second;
-					if(!queue->isEmpty())
+					if(queue->isEmpty())
 						return;
 					auto index = this->pool->nextWorkerIndexBlocking();
 					auto worker = &this->pool->getWorker(index);
@@ -138,7 +146,7 @@ private:
 			this->cv.notify_all(); // If anyone's been waiting for us to get done with it.
 		};
 
-		this->context = std::jthread(distributeJobs);
+		this->context = std::thread(distributeJobs);
 	}
 };
 
