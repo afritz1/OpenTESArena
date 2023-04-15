@@ -822,7 +822,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		return locationDef.getLatitude();
 	}();
 
-	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
+	const bool isExterior = activeMapDef.getSubDefinition().type != MapType::Interior;
 
 	auto &renderer = game.getRenderer();
 	const auto &options = game.getOptions();

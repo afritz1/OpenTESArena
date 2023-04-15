@@ -608,7 +608,7 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 	//DebugNotImplementedMsg("trySetActive");
 	//renderer.clearSky();
 
-	const MapType mapType = mapDefinition.getMapType();
+	const MapType mapType = mapDefinition.getSubDefinition().type;
 	const SkyDefinition &skyDefinition = [&activeLevelIndex, &mapDefinition, mapType]() -> const SkyDefinition&
 	{
 		const int skyIndex = [&activeLevelIndex, &mapDefinition, mapType]()

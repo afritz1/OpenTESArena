@@ -134,7 +134,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-	const MapType activeMapType = activeMapDef.getMapType();
+	const MapSubDefinition &activeMapSubDef = activeMapDef.getSubDefinition();
+	const MapType activeMapType = activeMapSubDef.type;
 	MapInstance &activeMapInst = gameState.getActiveMapInst();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 
@@ -192,7 +193,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 
 		// Only play jingle if the exterior is inside the city.
 		const MusicDefinition *jingleMusicDef = nullptr;
-		if (gameState.getActiveMapDef().getMapType() == MapType::City)
+		if (gameState.getActiveMapDef().getSubDefinition().type == MapType::City)
 		{
 			jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
 				game.getRandom(), [&cityDef](const MusicDefinition &def)
@@ -479,7 +480,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 
 	// Level transitions are always between interiors.
 	const MapDefinition &interiorMapDef = gameState.getActiveMapDef();
-	DebugAssert(interiorMapDef.getMapType() == MapType::Interior);
+	DebugAssert(interiorMapDef.getSubDefinition().type == MapType::Interior);
 
 	MapInstance &interiorMapInst = gameState.getActiveMapInst();
 	const LevelInstance &level = interiorMapInst.getActiveLevel();

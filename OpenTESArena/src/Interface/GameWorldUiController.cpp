@@ -178,8 +178,12 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 		const MapDefinition &mapDef = gameState.getActiveMapDef();
 		const MapInstance &mapInst = gameState.getActiveMapInst();
 		const int activeLevelIndex = mapInst.getActiveLevelIndex();
-		const LevelDefinition &levelDef = mapDef.getLevel(activeLevelIndex);
-		const LevelInfoDefinition &levelInfoDef = mapDef.getLevelInfoForLevel(activeLevelIndex);
+		const BufferView<const LevelDefinition> levelDefs = mapDef.getLevels();
+		const BufferView<const int> levelInfoDefIndices = mapDef.getLevelInfoIndices();
+		const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDef.getLevelInfos();
+		const LevelDefinition &levelDef = levelDefs[activeLevelIndex];
+		const int levelInfoDefIndex = levelInfoDefIndices[activeLevelIndex];
+		const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoDefIndex];
 		const LevelInstance &levelInst = mapInst.getLevel(activeLevelIndex);
 
 		// Some places (like named/wild dungeons) do not display a name on the automap.

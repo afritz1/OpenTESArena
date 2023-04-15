@@ -17,8 +17,8 @@
 class AudioManager;
 class BinaryAssetLibrary;
 class EntityDefinitionLibrary;
+class LevelDefinition;
 class LevelInfoDefinition;
-class MapDefinition;
 class Player;
 class Renderer;
 class TextureManager;
@@ -27,6 +27,7 @@ class VoxelChunkManager;
 
 struct EntityVisibilityState2D;
 struct EntityVisibilityState3D;
+struct MapSubDefinition;
 
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
@@ -72,8 +73,8 @@ private:
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
-	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
+	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const LevelDefinition &levelDef,
+		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
@@ -113,7 +114,9 @@ public:
 
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
-		const Player &player, const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
+		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer);

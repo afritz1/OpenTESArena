@@ -169,12 +169,49 @@ void LevelInstance::update(double dt, const BufferView<const ChunkInt2> &activeC
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 	const VoxelDouble2 playerDirXZ = player.getGroundDirection();
 
+	const MapSubDefinition &mapSubDef = mapDefinition.getSubDefinition();
+	const MapType mapType = mapSubDef.type;
+	const BufferView<const LevelDefinition> levelDefs = mapDefinition.getLevels();
+	const BufferView<const int> levelInfoDefIndices = mapDefinition.getLevelInfoIndices();
+	const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDefinition.getLevelInfos();
+	const LevelDefinition *activeLevelDef = nullptr;
+	const LevelInfoDefinition *activeLevelInfoDef = nullptr;
+	switch (mapType)
+	{
+	case MapType::Interior:
+	{
+		DebugAssert(activeLevelIndex.has_value());
+		activeLevelDef = &levelDefs[*activeLevelIndex];
+
+		const int levelInfoDefIndex = levelInfoDefIndices[*activeLevelIndex];
+		activeLevelInfoDef = &levelInfoDefs[levelInfoDefIndex];
+		break;
+	}
+	case MapType::City:
+	{
+		DebugAssert(activeLevelIndex.has_value() && (*activeLevelIndex == 0));
+		activeLevelDef = &levelDefs[0];
+
+		const int levelInfoDefIndex = levelInfoDefIndices[0];
+		activeLevelInfoDef = &levelInfoDefs[levelInfoDefIndex];
+		break;
+	}
+	case MapType::Wilderness:
+		// The wilderness doesn't have an active level index since it picks from a bag of levels for populating chunks.
+		DebugAssert(!activeLevelIndex.has_value() || (*activeLevelIndex == 0));
+		break;
+	default:
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(mapType)));
+		break;
+	}
+
 	// Simulate game world.
-	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelIndex,
-		mapDefinition, this->ceilingScale, audioManager);
+	this->voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, playerCoord, activeLevelDef,
+		activeLevelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs, this->ceilingScale, audioManager);
 	this->entityChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, player,
-		activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo, this->ceilingScale, random, this->voxelChunkManager,
-		entityDefLibrary, binaryAssetLibrary, audioManager, textureManager, renderer);
+		activeLevelDef, activeLevelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs, entityGenInfo,
+		citizenGenInfo, this->ceilingScale, random, this->voxelChunkManager, entityDefLibrary, binaryAssetLibrary,
+		audioManager, textureManager, renderer);
 	this->collisionChunkManager.update(dt, activeChunkPositions, newChunkPositions, freedChunkPositions, this->voxelChunkManager);
 
 	// Update rendering.

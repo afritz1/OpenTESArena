@@ -20,8 +20,7 @@
 #include "components/utilities/BufferView2D.h"
 
 // Modern replacement for .MIF/.RMD files. Helps create a buffer between how the game world data
-// is defined and how it's represented in-engine, so that it doesn't care about things like
-// chunks.
+// is defined and how it's represented in-engine, so that it doesn't care about things like chunks.
 
 class ArenaRandom;
 class BinaryAssetLibrary;
@@ -32,37 +31,47 @@ class TextureManager;
 
 enum class MapType;
 
+struct MapDefinitionInterior
+{
+	ArenaTypes::InteriorType interiorType;
+	// - InteriorDefinition?
+	// - probably store the music filename here, or make it retrievable by the interior type
+
+	MapDefinitionInterior();
+
+	void init(ArenaTypes::InteriorType interiorType);
+};
+
+struct MapDefinitionWild
+{
+	// Each index is a wild chunk pointing into the map's level definitions.
+	Buffer2D<int> levelDefIndices;
+	uint32_t fallbackSeed; // I.e. the world map location seed.
+
+	// Building name infos for each chunk.
+	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
+
+	MapDefinitionWild();
+
+	void init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
+		std::vector<MapGeneration::WildChunkBuildingNameInfo> &&buildingNameInfos);
+
+	int getLevelDefIndex(const ChunkInt2 &chunk) const;
+	const MapGeneration::WildChunkBuildingNameInfo *getBuildingNameInfo(const ChunkInt2 &chunk) const;
+};
+
+// Map-type-specific data.
+struct MapSubDefinition
+{
+	MapType type;
+	MapDefinitionInterior interior;
+	MapDefinitionWild wild;
+
+	MapSubDefinition();
+};
+
 class MapDefinition
 {
-public:
-	class Interior
-	{
-	private:
-		ArenaTypes::InteriorType interiorType;
-		// - InteriorDefinition?
-		// - probably store the music filename here, or make it retrievable by the interior type
-	public:
-		void init(ArenaTypes::InteriorType interiorType);
-
-		ArenaTypes::InteriorType getInteriorType() const;
-	};
-
-	class Wild
-	{
-	private:
-		// Each index is a wild chunk pointing into the map's level definitions.
-		Buffer2D<int> levelDefIndices;
-		uint32_t fallbackSeed; // I.e. the world map location seed.
-
-		// Building name infos for each chunk.
-		std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
-	public:
-		void init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
-			std::vector<MapGeneration::WildChunkBuildingNameInfo> &&buildingNameInfos);
-
-		int getLevelDefIndex(const ChunkInt2 &chunk) const;
-		const MapGeneration::WildChunkBuildingNameInfo *getBuildingNameInfo(const ChunkInt2 &chunk) const;
-	};
 private:
 	Buffer<LevelDefinition> levels;
 	Buffer<LevelInfoDefinition> levelInfos; // Each can be used by one or more levels.
@@ -73,11 +82,7 @@ private:
 	Buffer<int> skyInfoMappings; // Sky info pointed to by each sky.
 	Buffer<WorldDouble2> startPoints;
 	std::optional<int> startLevelIndex;
-
-	// Map-type-specific data.
-	MapType mapType;
-	Interior interior;
-	Wild wild;
+	MapSubDefinition subDefinition;
 
 	void init(MapType mapType);
 	bool initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorType interiorType,
@@ -123,24 +128,22 @@ public:
 	int getStartPointCount() const;
 	const WorldDouble2 &getStartPoint(int index) const;
 
-	// Gets the number of levels in the map.
-	int getLevelCount() const;
-
 	// This has different semantics based on the world type. For interiors, levels are separated by
 	// level up/down transitions. For a city, there is only one level. For the wilderness, it gets
 	// the level associated with a wild chunk whose index is acquired by querying some wild chunk
 	// coordinate.
-	const LevelDefinition &getLevel(int index) const;
+	BufferView<const LevelDefinition> getLevels() const;
 
-	const LevelInfoDefinition &getLevelInfoForLevel(int levelIndex) const;	
+	// Gets the indices for accessing the level info of a level. It's possible that several levels
+	// use the same level info.
+	BufferView<const int> getLevelInfoIndices() const;
+	BufferView<const LevelInfoDefinition> getLevelInfos() const;
 
 	int getSkyIndexForLevel(int levelIndex) const;
 	const SkyDefinition &getSky(int index) const;
 	const SkyInfoDefinition &getSkyInfoForSky(int skyIndex) const;
 
-	MapType getMapType() const;
-	const Interior &getInterior() const;
-	const Wild &getWild() const;
+	const MapSubDefinition &getSubDefinition() const;
 };
 
 #endif

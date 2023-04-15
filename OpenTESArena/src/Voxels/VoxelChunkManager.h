@@ -11,7 +11,7 @@
 
 #include "components/utilities/BufferView.h"
 
-class MapDefinition;
+struct MapSubDefinition;
 
 // Handles the lifetimes of voxel chunks. Relies on the base chunk manager for the active chunk coordinates.
 class VoxelChunkManager final : public SpecializedChunkManager<VoxelChunk>
@@ -55,8 +55,8 @@ private:
 	void populateChunkDoorVisibilityInsts(VoxelChunk &chunk);
 
 	// Fills the chunk with the data required based on its position and the world type.
-	void populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition);
+	void populateChunk(int index, const ChunkInt2 &chunkPos, const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef,
+		const MapSubDefinition &mapSubDef);
 
 	// Updates a chasm (context-sensitive voxel) that may be affected by adjacent chunks.
 	void updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, WEInt z);
@@ -66,8 +66,10 @@ private:
 public:
 	void update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
 		const BufferView<const ChunkInt2> &freedChunkPositions, const CoordDouble3 &playerCoord,
-		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, double ceilingScale,
-		AudioManager &audioManager);
+		const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
+		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
+		double ceilingScale, AudioManager &audioManager);
 
 	// Run at the end of a frame to reset certain frame data like dirty voxels.
 	void cleanUp();

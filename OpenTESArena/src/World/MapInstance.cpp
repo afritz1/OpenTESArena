@@ -13,14 +13,20 @@ MapInstance::MapInstance()
 
 void MapInstance::initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager, Renderer &renderer)
 {
-	DebugAssert(mapDefinition.getMapType() == MapType::Interior);
-	this->levels.init(mapDefinition.getLevelCount());
-	this->skies.init(this->levels.getCount());
+	DebugAssert(mapDefinition.getSubDefinition().type == MapType::Interior);
 
-	for (int i = 0; i < this->levels.getCount(); i++)
+	const BufferView<const LevelDefinition> levelDefs = mapDefinition.getLevels();
+	const int levelCount = levelDefs.getCount();
+	this->levels.init(levelCount);
+	this->skies.init(levelCount);
+
+	for (int i = 0; i < levelCount; i++)
 	{
 		// Initialize level instance.
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(i);
+		const BufferView<const int> levelInfoDefIndices = mapDefinition.getLevelInfoIndices();
+		const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDefinition.getLevelInfos();
+		const int levelInfoDefIndex = levelInfoDefIndices[i];
+		const LevelInfoDefinition &levelInfoDefinition = levelInfoDefs[levelInfoDefIndex];
 		LevelInstance &levelInst = this->levels.get(i);
 		levelInst.init(levelInfoDefinition.getCeilingScale());
 		
@@ -42,12 +48,13 @@ void MapInstance::initInterior(const MapDefinition &mapDefinition, TextureManage
 
 void MapInstance::initCity(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer)
 {
-	DebugAssert(mapDefinition.getMapType() == MapType::City);
+	DebugAssert(mapDefinition.getSubDefinition().type == MapType::City);
 	this->levels.init(1);
 	this->skies.init(1);
 
 	// Initialize level instance for the city.
-	const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
+	const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDefinition.getLevelInfos();
+	const LevelInfoDefinition &levelInfoDefinition = levelInfoDefs[0];
 	LevelInstance &levelInst = this->levels.get(0);
 	levelInst.init(levelInfoDefinition.getCeilingScale());
 
@@ -66,12 +73,13 @@ void MapInstance::initCity(const MapDefinition &mapDefinition, int currentDay, T
 
 void MapInstance::initWild(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer)
 {
-	DebugAssert(mapDefinition.getMapType() == MapType::Wilderness);
+	DebugAssert(mapDefinition.getSubDefinition().type == MapType::Wilderness);
 	this->levels.init(1);
 	this->skies.init(1);
 
 	// Initialize level instance for the wild.
-	const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
+	const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDefinition.getLevelInfos();
+	const LevelInfoDefinition &levelInfoDefinition = levelInfoDefs[0];
 	LevelInstance &levelInst = this->levels.get(0);
 	levelInst.init(levelInfoDefinition.getCeilingScale());
 
@@ -90,7 +98,7 @@ void MapInstance::initWild(const MapDefinition &mapDefinition, int currentDay, T
 
 void MapInstance::init(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager, Renderer &renderer)
 {
-	const MapType mapType = mapDefinition.getMapType();
+	const MapType mapType = mapDefinition.getSubDefinition().type;
 	if (mapType == MapType::Interior)
 	{
 		this->initInterior(mapDefinition, textureManager, renderer);

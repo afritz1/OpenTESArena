@@ -421,12 +421,13 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 	const bool isWild = [&gameState]()
 	{
 		const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-		return activeMapDef.getMapType() == MapType::Wilderness;
+		return activeMapDef.getSubDefinition().type == MapType::Wilderness;
 	}();
 
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
-	const LevelDefinition &activeLevelDef = mapDef.getLevel(mapInst.getActiveLevelIndex());
+	const BufferView<const LevelDefinition> levelDefs = mapDef.getLevels();
+	const LevelDefinition &activeLevelDef = levelDefs[mapInst.getActiveLevelIndex()];
 	const WorldInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
 
 	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, levelDims, voxelChunkManager);

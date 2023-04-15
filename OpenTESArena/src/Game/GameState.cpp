@@ -612,7 +612,7 @@ bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityD
 
 	MapState &activeMapState = this->maps.top();
 	const MapDefinition &activeMapDef = activeMapState.definition;
-	const MapType activeMapType = activeMapDef.getMapType();
+	const MapType activeMapType = activeMapDef.getSubDefinition().type;
 	MapInstance &activeMapInst = activeMapState.instance;
 	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
@@ -824,7 +824,7 @@ double GameState::getAmbientPercent() const
 	}
 
 	DebugAssert(activeMapDef != nullptr);
-	const MapType activeMapType = activeMapDef->getMapType();
+	const MapType activeMapType = activeMapDef->getSubDefinition().type;
 
 	if (activeMapType == MapType::Interior)
 	{
@@ -1143,7 +1143,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 
 		// Tick active map (entities, animated distant land, etc.).
 		const MapDefinition &activeMapDef = this->getActiveMapDef();
-		const MapType mapType = activeMapDef.getMapType();
+		const MapType mapType = activeMapDef.getSubDefinition().type;
 		const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
 		const LocationDefinition &locationDef = this->getLocationDefinition();
 		const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
@@ -1250,7 +1250,7 @@ void GameState::tick(double dt, Game &game)
 
 	// Tick active map (entities, animated distant land, etc.).
 	const MapDefinition &mapDef = this->getActiveMapDef();
-	const MapType mapType = mapDef.getMapType();
+	const MapType mapType = mapDef.getSubDefinition().type;
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
 	const LocationDefinition &locationDef = this->getLocationDefinition();
 	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
@@ -1281,7 +1281,7 @@ void GameState::tick(double dt, Game &game)
 
 	// Check for changes in exterior music depending on the time.
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
-	const MapType activeMapType = activeMapDef.getMapType();
+	const MapType activeMapType = activeMapDef.getSubDefinition().type;
 	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
 	{
 		AudioManager &audioManager = game.getAudioManager();

@@ -21,17 +21,22 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 
-void MapDefinition::Interior::init(ArenaTypes::InteriorType interiorType)
+MapDefinitionInterior::MapDefinitionInterior()
+{
+	this->interiorType = static_cast<ArenaTypes::InteriorType>(-1);
+}
+
+void MapDefinitionInterior::init(ArenaTypes::InteriorType interiorType)
 {
 	this->interiorType = interiorType;
 }
 
-ArenaTypes::InteriorType MapDefinition::Interior::getInteriorType() const
+MapDefinitionWild::MapDefinitionWild()
 {
-	return this->interiorType;
+	this->fallbackSeed = 0;
 }
 
-void MapDefinition::Wild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
+void MapDefinitionWild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> &&buildingNameInfos)
 {
 	this->levelDefIndices = std::move(levelDefIndices);
@@ -39,7 +44,7 @@ void MapDefinition::Wild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbac
 	this->buildingNameInfos = std::move(buildingNameInfos);
 }
 
-int MapDefinition::Wild::getLevelDefIndex(const ChunkInt2 &chunk) const
+int MapDefinitionWild::getLevelDefIndex(const ChunkInt2 &chunk) const
 {
 	const bool isValid = (chunk.x >= 0) && (chunk.x < this->levelDefIndices.getWidth()) &&
 		(chunk.y >= 0) && (chunk.y < this->levelDefIndices.getHeight());
@@ -57,7 +62,7 @@ int MapDefinition::Wild::getLevelDefIndex(const ChunkInt2 &chunk) const
 	}
 }
 
-const MapGeneration::WildChunkBuildingNameInfo *MapDefinition::Wild::getBuildingNameInfo(const ChunkInt2 &chunk) const
+const MapGeneration::WildChunkBuildingNameInfo *MapDefinitionWild::getBuildingNameInfo(const ChunkInt2 &chunk) const
 {
 	const auto iter = std::find_if(this->buildingNameInfos.begin(), this->buildingNameInfos.end(),
 		[&chunk](const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo)
@@ -68,9 +73,14 @@ const MapGeneration::WildChunkBuildingNameInfo *MapDefinition::Wild::getBuilding
 	return (iter != this->buildingNameInfos.end()) ? &(*iter) : nullptr;
 }
 
+MapSubDefinition::MapSubDefinition()
+{
+	this->type = static_cast<MapType>(-1);
+}
+
 void MapDefinition::init(MapType mapType)
 {
-	this->mapType = mapType;
+	this->subDefinition.type = mapType;
 }
 
 bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorType interiorType,
@@ -89,8 +99,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 	this->skyInfoMappings.init(levelCount);
 
 	auto initLevelAndInfo = [this, &mif, interiorType, &rulerSeed, &rulerIsMale, &charClassLibrary,
-		&entityDefLibrary, &binaryAssetLibrary, &textureManager](int levelIndex,
-			const MIFFile::Level &mifLevel, const INFFile &inf)
+		&entityDefLibrary, &binaryAssetLibrary, &textureManager](int levelIndex, const MIFFile::Level &mifLevel, const INFFile &inf)
 	{
 		LevelDefinition &levelDef = this->levels.get(levelIndex);
 		LevelInfoDefinition &levelInfoDef = this->levelInfos.get(levelIndex);
@@ -160,7 +169,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 		this->skyInfoMappings.set(i, i);
 	}
 
-	this->interior.init(interiorType);
+	this->subDefinition.interior.init(interiorType);
 
 	return true;
 }
@@ -211,8 +220,8 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	constexpr ArenaTypes::InteriorType interiorType = ArenaTypes::InteriorType::Dungeon;
 	constexpr std::optional<bool> rulerIsMale;
 	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, inf, random,
-		mapType, interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef, outStartPoint);
+		this->subDefinition.type, interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary,
+		entityDefLibrary, binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef, outStartPoint);
 
 	// Generate sky for each dungeon level.
 	for (int i = 0; i < levelCount; i++)
@@ -241,7 +250,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 		this->skyInfoMappings.set(i, i);
 	}
 
-	this->interior.init(interiorType);
+	this->subDefinition.interior.init(interiorType);
 
 	return true;
 }
@@ -376,7 +385,7 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 	this->skyInfoMappings.set(0, 0);
 
 	// Populate wild chunk look-up values.
-	this->wild.init(std::move(levelDefIndices), fallbackSeed, std::move(buildingNameInfos));
+	this->subDefinition.wild.init(std::move(levelDefIndices), fallbackSeed, std::move(buildingNameInfos));
 
 	return true;
 }
@@ -529,20 +538,19 @@ const WorldDouble2 &MapDefinition::getStartPoint(int index) const
 	return this->startPoints.get(index);
 }
 
-int MapDefinition::getLevelCount() const
+BufferView<const LevelDefinition> MapDefinition::getLevels() const
 {
-	return this->levels.getCount();
+	return this->levels;
 }
 
-const LevelDefinition &MapDefinition::getLevel(int index) const
+BufferView<const int> MapDefinition::getLevelInfoIndices() const
 {
-	return this->levels.get(index);
+	return this->levelInfoMappings;
 }
 
-const LevelInfoDefinition &MapDefinition::getLevelInfoForLevel(int levelIndex) const
+BufferView<const LevelInfoDefinition> MapDefinition::getLevelInfos() const
 {
-	const int levelInfoIndex = this->levelInfoMappings.get(levelIndex);
-	return this->levelInfos.get(levelInfoIndex);
+	return this->levelInfos;
 }
 
 int MapDefinition::getSkyIndexForLevel(int levelIndex) const
@@ -561,19 +569,7 @@ const SkyInfoDefinition &MapDefinition::getSkyInfoForSky(int skyIndex) const
 	return this->skyInfos.get(skyInfoIndex);
 }
 
-MapType MapDefinition::getMapType() const
+const MapSubDefinition &MapDefinition::getSubDefinition() const
 {
-	return this->mapType;
-}
-
-const MapDefinition::Interior &MapDefinition::getInterior() const
-{
-	DebugAssert(this->mapType == MapType::Interior);
-	return this->interior;
-}
-
-const MapDefinition::Wild &MapDefinition::getWild() const
-{
-	DebugAssert(this->mapType == MapType::Wilderness);
-	return this->wild;
+	return this->subDefinition;
 }
