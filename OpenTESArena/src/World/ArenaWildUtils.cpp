@@ -167,7 +167,7 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 		return;
 	}
 
-	const MIFFile::Level &level = mif.getLevel(0);
+	const MIFLevel &level = mif.getLevel(0);
 
 	// Buffers for the city data. Copy the .MIF data into them.
 	Buffer2D<ArenaTypes::VoxelID> cityFlor(mif.getWidth(), mif.getDepth());

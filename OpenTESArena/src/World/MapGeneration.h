@@ -169,7 +169,7 @@ namespace MapGeneration
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
-	void readMifVoxels(const BufferView<const MIFFile::Level> &levels, MapType mapType,
+	void readMifVoxels(const BufferView<const MIFLevel> &levels, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
@@ -210,9 +210,9 @@ namespace MapGeneration
 		LevelInfoDefinition *outLevelInfoDef,
 		std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos);
 
-	void readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
+	void readMifLocks(const BufferView<const MIFLevel> &levels, const INFFile &inf,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
-	void readMifTriggers(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
+	void readMifTriggers(const BufferView<const MIFLevel> &levels, const INFFile &inf,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
 }
 

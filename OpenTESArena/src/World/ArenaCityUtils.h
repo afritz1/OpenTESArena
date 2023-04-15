@@ -30,7 +30,7 @@ namespace ArenaCityUtils
 	std::string generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef);
 
 	// Writes the barebones city layout (just ground and walls).
-	void writeSkeleton(const MIFFile::Level &level, BufferView2D<ArenaTypes::VoxelID> &dstFlor,
+	void writeSkeleton(const MIFLevel &level, BufferView2D<ArenaTypes::VoxelID> &dstFlor,
 		BufferView2D<ArenaTypes::VoxelID> &dstMap1, BufferView2D<ArenaTypes::VoxelID> &dstMap2);
 
 	// Writes generated city building data into the output buffers. The buffers should already

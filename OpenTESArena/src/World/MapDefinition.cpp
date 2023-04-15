@@ -99,7 +99,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 	this->skyInfoMappings.init(levelCount);
 
 	auto initLevelAndInfo = [this, &mif, interiorType, &rulerSeed, &rulerIsMale, &charClassLibrary,
-		&entityDefLibrary, &binaryAssetLibrary, &textureManager](int levelIndex, const MIFFile::Level &mifLevel, const INFFile &inf)
+		&entityDefLibrary, &binaryAssetLibrary, &textureManager](int levelIndex, const MIFLevel &mifLevel, const INFFile &inf)
 	{
 		LevelDefinition &levelDef = this->levels.get(levelIndex);
 		LevelInfoDefinition &levelInfoDef = this->levelInfos.get(levelIndex);
@@ -117,7 +117,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
 		// (due to ceiling, etc.).
-		const BufferView<const MIFFile::Level> mifLevelView(&mifLevel, 1);
+		const BufferView<const MIFLevel> mifLevelView(&mifLevel, 1);
 		constexpr MapType mapType = MapType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
 		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for interiors.
@@ -141,7 +141,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 
 	for (int i = 0; i < mif.getLevelCount(); i++)
 	{
-		const MIFFile::Level &level = mif.getLevel(i);
+		const MIFLevel &level = mif.getLevel(i);
 		const std::string infName = String::toUppercase(level.getInfo());
 		INFFile inf;
 		if (!inf.init(infName.c_str()))
@@ -191,7 +191,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	this->skyInfoMappings.init(levelCount);
 
 	// Use the .INF filename of the first level.
-	const MIFFile::Level &level = mif.getLevel(0);
+	const MIFLevel &level = mif.getLevel(0);
 	const std::string infName = String::toUppercase(level.getInfo());
 	INFFile inf;
 	if (!inf.init(infName.c_str()))

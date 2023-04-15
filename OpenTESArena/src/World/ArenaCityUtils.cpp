@@ -76,7 +76,7 @@ std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType,
 	return std::string { climateLetter, locationLetter, weatherLetter } + ".INF";
 }
 
-void ArenaCityUtils::writeSkeleton(const MIFFile::Level &level,
+void ArenaCityUtils::writeSkeleton(const MIFLevel &level,
 	BufferView2D<ArenaTypes::VoxelID> &dstFlor, BufferView2D<ArenaTypes::VoxelID> &dstMap1,
 	BufferView2D<ArenaTypes::VoxelID> &dstMap2)
 {
