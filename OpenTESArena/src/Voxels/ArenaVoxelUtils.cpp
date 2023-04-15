@@ -158,28 +158,28 @@ int ArenaVoxelUtils::clampVoxelTextureID(int id)
 
 std::string ArenaVoxelUtils::getVoxelTextureFilename(int id, const INFFile &inf)
 {
-	const BufferView<const INFFile::VoxelTextureData> voxelTextures = inf.getVoxelTextures();
+	const BufferView<const INFVoxelTexture> voxelTextures = inf.getVoxelTextures();
 	if ((id < 0) || (id >= voxelTextures.getCount()))
 	{
 		DebugLogError("Couldn't get .INF voxel texture filename for ID \"" + std::to_string(id) + "\".");
 		return std::string();
 	}
 
-	const INFFile::VoxelTextureData &textureData = voxelTextures[id];
+	const INFVoxelTexture &textureData = voxelTextures[id];
 	const char *filename = textureData.filename.c_str();
 	return String::toUppercase(filename);
 }
 
 std::optional<int> ArenaVoxelUtils::getVoxelTextureSetIndex(int id, const INFFile &inf)
 {
-	const BufferView<const INFFile::VoxelTextureData> voxelTextures = inf.getVoxelTextures();
+	const BufferView<const INFVoxelTexture> voxelTextures = inf.getVoxelTextures();
 	if ((id < 0) || (id >= voxelTextures.getCount()))
 	{
 		DebugLogError("Couldn't get .INF voxel texture set index for ID \"" + std::to_string(id) + "\".");
 		return std::nullopt;
 	}
 
-	const INFFile::VoxelTextureData &textureData = voxelTextures[id];
+	const INFVoxelTexture &textureData = voxelTextures[id];
 	return textureData.setIndex;
 }
 

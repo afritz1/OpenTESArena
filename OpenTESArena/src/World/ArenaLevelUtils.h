@@ -48,7 +48,7 @@ namespace ArenaLevelUtils
 	int getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2);
 
 	// Gets the voxel height of a .MIF level with optional ceiling data.
-	int getMifLevelHeight(const MIFLevel &level, const INFFile::CeilingData *ceiling);
+	int getMifLevelHeight(const MIFLevel &level, const INFCeiling *ceiling);
 
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).

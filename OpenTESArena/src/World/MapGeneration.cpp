@@ -182,7 +182,7 @@ namespace MapGeneration
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, EntityDefinition *outDef)
 	{
-		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
+		const INFFlat &flatData = inf.getFlat(flatIndex);
 		const bool isDynamicEntity = ArenaAnimUtils::isDynamicEntity(flatIndex, inf);
 		const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 
@@ -856,7 +856,7 @@ namespace MapGeneration
 		ArenaMeshUtils::WriteCeilingCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
 
 		// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe hardcoding index 1 is enough?
-		const INFFile::CeilingData &ceiling = inf.getCeiling();
+		const INFCeiling &ceiling = inf.getCeiling();
 		const int textureIndex = ceiling.textureIndex.value_or(1);
 
 		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -903,7 +903,7 @@ namespace MapGeneration
 		// Make sure the text index points to a text value (i.e., not a key or riddle).
 		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
 		{
-			const INFFile::TextData &textData = inf.getText(trigger.textIndex);
+			const INFText &textData = inf.getText(trigger.textIndex);
 			triggerDef.setTextDef(std::string(textData.text), textData.displayedOnce);
 		}
 

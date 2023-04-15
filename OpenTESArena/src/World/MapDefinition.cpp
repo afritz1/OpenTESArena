@@ -104,7 +104,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 		LevelDefinition &levelDef = this->levels.get(levelIndex);
 		LevelInfoDefinition &levelInfoDef = this->levelInfos.get(levelIndex);
 
-		const INFFile::CeilingData &ceiling = inf.getCeiling();
+		const INFCeiling &ceiling = inf.getCeiling();
 		const WEInt levelWidth = mif.getWidth();
 		const int levelHeight = ArenaLevelUtils::getMifLevelHeight(mifLevel, &ceiling);
 		const SNInt levelDepth = mif.getDepth();
@@ -200,7 +200,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 		return false;
 	}
 
-	const INFFile::CeilingData &ceiling = inf.getCeiling();
+	const INFCeiling &ceiling = inf.getCeiling();
 	const WEInt levelWidth = mif.getWidth() * widthChunks;
 	const int levelHeight = ceiling.outdoorDungeon ? 2 : 3;
 	const SNInt levelDepth = mif.getDepth() * depthChunks;
@@ -282,7 +282,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	LevelDefinition &levelDef = this->levels.get(0);
 	levelDef.init(levelDepth, levelHeight, levelWidth);
 
-	const INFFile::CeilingData &ceiling = inf.getCeiling();
+	const INFCeiling &ceiling = inf.getCeiling();
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	levelInfoDef.init(ceilingScale);
@@ -355,7 +355,7 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 	}
 
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
-	const INFFile::CeilingData &ceiling = inf.getCeiling();
+	const INFCeiling &ceiling = inf.getCeiling();
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
