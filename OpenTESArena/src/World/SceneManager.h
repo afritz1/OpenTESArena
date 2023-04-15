@@ -11,7 +11,7 @@
 
 struct SceneManager
 {
-	// Chunk managers for this scene.
+	// Chunk managers for the active scene.
 	ChunkManager chunkManager;
 	VoxelChunkManager voxelChunkManager;
 	EntityChunkManager entityChunkManager;
@@ -19,7 +19,7 @@ struct SceneManager
 	RenderChunkManager renderChunkManager;
 
 	// Game world systems not tied to chunks.
-	SkyInstance skyInstance;
+	//SkyInstance skyInstance; // @todo
 	//RenderSkyManager; // @todo
 	//ParticleManager; // @todo
 	//RenderParticleManager; // @todo
@@ -37,6 +37,23 @@ struct SceneManager
 	void init(int mapDefIndex);
 
 	void setLevelActive(int index);
+
+	void cleanUp();
+};
+
+struct SceneTransitionLocationIDs
+{
+	int provinceID;
+	int locationID;
+};
+
+struct SceneTransitionState
+{
+	int mapDefIndex;
+	int levelIndex;
+	int skyIndex;
+	std::optional<SceneTransitionLocationIDs> locationIDs;
+	// @todo
 };
 
 #endif

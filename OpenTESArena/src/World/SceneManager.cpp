@@ -24,3 +24,9 @@ void SceneManager::setLevelActive(int index)
 
 	// @todo: does it need the camera's position?
 }
+
+void SceneManager::cleanUp()
+{
+	this->voxelChunkManager.cleanUp();
+	this->entityChunkManager.cleanUp();
+}
