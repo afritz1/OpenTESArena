@@ -151,6 +151,7 @@ INFCeiling::INFCeiling()
 
 INFFlat::INFFlat()
 {
+	this->textureIndex = -1;
 	this->yOffset = 0;
 	this->health = 0;
 	this->collider = false;
