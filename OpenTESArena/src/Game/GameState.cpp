@@ -64,6 +64,9 @@ GameState::GameState()
 {
 	DebugLog("Initializing.");
 
+	this->triggerTextRemainingSeconds = 0.0;
+	this->actionTextRemainingSeconds = 0.0;
+	this->effectTextRemainingSeconds = 0.0;
 	this->clearSession();
 }
 
