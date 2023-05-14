@@ -12,7 +12,8 @@ class AudioManager;
 class Clock;
 class ExeData;
 class Random;
-class WeatherDefinition;
+
+struct WeatherDefinition;
 
 class WeatherInstance
 {

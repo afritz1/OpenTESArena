@@ -39,16 +39,16 @@ std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType,
 
 	const char weatherLetter = [climateType, &weatherDef]()
 	{
-		const WeatherDefinition::Type weatherDefType = weatherDef.getType();
-		if ((weatherDefType == WeatherDefinition::Type::Clear) || (weatherDefType == WeatherDefinition::Type::Overcast))
+		const WeatherType weatherDefType = weatherDef.type;
+		if ((weatherDefType == WeatherType::Clear) || (weatherDefType == WeatherType::Overcast))
 		{
 			return 'N';
 		}
-		else if (weatherDefType == WeatherDefinition::Type::Rain)
+		else if (weatherDefType == WeatherType::Rain)
 		{
 			return 'R';
 		}
-		else if (weatherDefType == WeatherDefinition::Type::Snow)
+		else if (weatherDefType == WeatherType::Snow)
 		{
 			// Deserts can't have snow.
 			if (climateType != ArenaTypes::ClimateType::Desert)

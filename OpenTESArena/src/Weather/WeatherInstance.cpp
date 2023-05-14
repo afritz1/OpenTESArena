@@ -323,29 +323,29 @@ WeatherInstance::WeatherInstance()
 void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clock,
 	const ExeData &exeData, Random &random, TextureManager &textureManager)
 {
-	const WeatherDefinition::Type weatherDefType = weatherDef.getType();
+	const WeatherType weatherDefType = weatherDef.type;
 
-	if (weatherDefType == WeatherDefinition::Type::Clear)
+	if (weatherDefType == WeatherType::Clear)
 	{
 		// Do nothing.
 	}
-	else if (weatherDefType == WeatherDefinition::Type::Overcast)
+	else if (weatherDefType == WeatherType::Overcast)
 	{
-		const WeatherDefinition::OvercastDefinition &overcastDef = weatherDef.getOvercast();
+		const WeatherOvercastDefinition &overcastDef = weatherDef.overcast;
 		this->fog = overcastDef.heavyFog;
 		this->fogInst.init(random, textureManager);
 	}
-	else if (weatherDefType == WeatherDefinition::Type::Rain)
+	else if (weatherDefType == WeatherType::Rain)
 	{
 		this->rain = true;
 
-		const WeatherDefinition::RainDefinition &rainDef = weatherDef.getRain();
+		const WeatherRainDefinition &rainDef = weatherDef.rain;
 		Buffer<uint8_t> thunderstormColors = ArenaWeatherUtils::makeThunderstormColors(exeData);
 		this->rainInst.init(rainDef.thunderstorm, clock, std::move(thunderstormColors), random, textureManager);
 	}
-	else if (weatherDefType == WeatherDefinition::Type::Snow)
+	else if (weatherDefType == WeatherType::Snow)
 	{
-		const WeatherDefinition::SnowDefinition &snowDef = weatherDef.getSnow();
+		const WeatherSnowDefinition &snowDef = weatherDef.snow;
 		this->fog = snowDef.heavyFog;
 		this->snow = true;
 		this->fogInst.init(random, textureManager);

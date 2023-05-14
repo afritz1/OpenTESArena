@@ -17,7 +17,8 @@ class BinaryAssetLibrary;
 class LocationDefinition;
 class ProvinceDefinition;
 class TextAssetLibrary;
-class WeatherDefinition;
+
+struct WeatherDefinition;
 
 // @todo: these should probably all be BufferView2D instead of Buffer2D
 

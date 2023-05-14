@@ -5,7 +5,7 @@ WeatherDefinition WeatherUtils::getFilteredWeather(const WeatherDefinition &weat
 	ArenaTypes::ClimateType climateType)
 {
 	// Snow in deserts is replaced by rain.
-	if ((weatherDef.getType() == WeatherDefinition::Type::Snow) && (climateType == ArenaTypes::ClimateType::Desert))
+	if ((weatherDef.type == WeatherType::Snow) && (climateType == ArenaTypes::ClimateType::Desert))
 	{
 		constexpr bool thunderstorm = false;
 		WeatherDefinition filteredWeatherDef;

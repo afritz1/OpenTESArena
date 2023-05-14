@@ -74,8 +74,7 @@ namespace SkyGeneration
 	Buffer<Color> makeExteriorSkyColors(const WeatherDefinition &weatherDef, TextureManager &textureManager)
 	{
 		// Get the palette name for the given weather.
-		const std::string &paletteName = (weatherDef.getType() == WeatherDefinition::Type::Clear) ?
-			ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
+		const std::string &paletteName = (weatherDef.type == WeatherType::Clear) ? ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
 
 		// The palettes in the data files only cover half of the day, so some added darkness is
 		// needed for the other half.
@@ -219,7 +218,7 @@ namespace SkyGeneration
 		}
 
 		// Cloud generation, only if the sky is clear.
-		if (weatherDef.getType() == WeatherDefinition::Type::Clear)
+		if (weatherDef.type == WeatherType::Clear)
 		{
 			const uint32_t cloudSeed = random.getSeed() + (currentDay % 32);
 			random.srand(cloudSeed);
@@ -580,8 +579,8 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 			outSkyDef, outSkyInfoDef);
 	}
 
-	const WeatherDefinition::Type weatherDefType = skyGenInfo.weatherDef.getType();
-	if (weatherDefType == WeatherDefinition::Type::Clear)
+	const WeatherType weatherDefType = skyGenInfo.weatherDef.type;
+	if (weatherDefType == WeatherType::Clear)
 	{
 		// Add space objects.
 		SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager,
@@ -590,9 +589,9 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 			outSkyDef, outSkyInfoDef);
 		SkyGeneration::generateArenaSun(exeData, textureManager, outSkyDef, outSkyInfoDef);
 	}
-	else if (weatherDefType == WeatherDefinition::Type::Rain)
+	else if (weatherDefType == WeatherType::Rain)
 	{
-		const WeatherDefinition::RainDefinition &rainDef = skyGenInfo.weatherDef.getRain();
+		const WeatherRainDefinition &rainDef = skyGenInfo.weatherDef.rain;
 		if (rainDef.thunderstorm)
 		{
 			// Add lightning bolt assets, to be spawned randomly during a thunderstorm.

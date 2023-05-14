@@ -22,9 +22,10 @@ class EntityDefinitionLibrary;
 class MapDefinition;
 class RenderChunkManager;
 class Renderer;
-class WeatherDefinition;
 
 enum class MapType;
+
+struct WeatherDefinition;
 
 class LevelInstance
 {

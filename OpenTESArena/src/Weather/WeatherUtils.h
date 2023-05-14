@@ -3,7 +3,7 @@
 
 #include "../Assets/ArenaTypes.h"
 
-class WeatherDefinition;
+struct WeatherDefinition;
 
 namespace WeatherUtils
 {

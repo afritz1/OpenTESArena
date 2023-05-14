@@ -12,7 +12,8 @@
 #include "components/utilities/Buffer2D.h"
 
 class BinaryAssetLibrary;
-class WeatherDefinition;
+
+struct WeatherDefinition;
 
 namespace ArenaWildUtils
 {
