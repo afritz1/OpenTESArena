@@ -668,8 +668,8 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 	// Update lightning (if any).
 	if (weatherInst.hasRain())
 	{
-		const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
-		const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
+		const WeatherRainInstance &rainInst = weatherInst.getRain();
+		const std::optional<WeatherRainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
 		if (thunderstorm.has_value() && thunderstorm->active)
 		{
 			DebugAssert(this->lightningAnimIndices.getCount() > 0);
