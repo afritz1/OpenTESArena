@@ -278,7 +278,11 @@ public:
 	void tryUpdatePendingMapTransition(Game &game, double dt);
 
 	// Ticks the game clock (for the current time of day and date).
-	void tick(double dt, Game &game);
+	void tickGameClock(double dt, Game &game);
+	void tickChasmAnimation(double dt);
+	void tickWeather(double dt, Game &game);
+	void tickUiMessages(double dt);
+	void tickPlayer(double dt, Game &game);
 };
 
 #endif

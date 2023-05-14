@@ -1157,7 +1157,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 	}
 }
 
-void GameState::tick(double dt, Game &game)
+void GameState::tickGameClock(double dt, Game &game)
 {
 	DebugAssert(dt >= 0.0);
 
@@ -1200,18 +1200,69 @@ void GameState::tick(double dt, Game &game)
 		MapLogicController::handleNightLightChange(game, false);
 	}
 
-	// Tick chasm animation.
+	// Check for changes in exterior music depending on the time.
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	const MapType activeMapType = activeMapDef.getSubDefinition().type;
+	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
+	{
+		AudioManager &audioManager = game.getAudioManager();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
+		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
+		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);
+		const bool changeToNightMusic = (oldClockTime < nightMusicStartTime) && (newClockTime >= nightMusicStartTime);
+		
+		const MusicDefinition *musicDef = nullptr;
+		if (changeToDayMusic)
+		{
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather, game.getRandom(),
+				[this](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+				return weatherMusicDef.weatherDef == this->weatherDef;
+			});
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing weather music.");
+			}
+		}
+		else if (changeToNightMusic)
+		{
+			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing night music.");
+			}
+		}
+
+		if (musicDef != nullptr)
+		{
+			audioManager.setMusic(musicDef);
+		}
+	}
+}
+
+void GameState::tickChasmAnimation(double dt)
+{
 	this->chasmAnimSeconds += dt;
 	if (this->chasmAnimSeconds >= ArenaVoxelUtils::CHASM_ANIM_SECONDS)
 	{
 		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, ArenaVoxelUtils::CHASM_ANIM_SECONDS);
 	}
+}
 
-	// Tick weather.
+void GameState::tickWeather(double dt, Game &game)
+{
 	const Renderer &renderer = game.getRenderer();
-	this->weatherInst.update(dt, this->clock, renderer.getWindowAspect(), game.getRandom(), game.getAudioManager());
+	const double windowAspect = renderer.getWindowAspect();
+	this->weatherInst.update(dt, this->clock, windowAspect, game.getRandom(), game.getAudioManager());
+}
 
-	// Tick on-screen text messages.
+void GameState::tickUiMessages(double dt)
+{
 	if (this->triggerTextIsVisible())
 	{
 		this->triggerTextRemainingSeconds -= dt;
@@ -1226,8 +1277,10 @@ void GameState::tick(double dt, Game &game)
 	{
 		this->effectTextRemainingSeconds -= dt;
 	}
+}
 
-	// Tick the player.
+void GameState::tickPlayer(double dt, Game &game)
+{
 	auto &player = game.getPlayer();
 	const CoordDouble3 oldPlayerCoord = player.getPosition();
 	player.tick(game, dt);
@@ -1279,50 +1332,6 @@ void GameState::tick(double dt, Game &game)
 		if (mapType == MapType::Interior)
 		{
 			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
-		}
-	}
-
-	// Check for changes in exterior music depending on the time.
-	const MapDefinition &activeMapDef = this->getActiveMapDef();
-	const MapType activeMapType = activeMapDef.getSubDefinition().type;
-	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
-	{
-		AudioManager &audioManager = game.getAudioManager();
-		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
-		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
-		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);
-		const bool changeToNightMusic = (oldClockTime < nightMusicStartTime) && (newClockTime >= nightMusicStartTime);
-		
-		const MusicDefinition *musicDef = nullptr;
-		if (changeToDayMusic)
-		{
-			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather, game.getRandom(),
-				[this](const MusicDefinition &def)
-			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-				return weatherMusicDef.weatherDef == this->weatherDef;
-			});
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing weather music.");
-			}
-		}
-		else if (changeToNightMusic)
-		{
-			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing night music.");
-			}
-		}
-
-		if (musicDef != nullptr)
-		{
-			audioManager.setMusic(musicDef);
 		}
 	}
 }

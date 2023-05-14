@@ -844,7 +844,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 	// the cinematic finish naturally in the CD version, which causes GameWorldPanel::tick() to not get run
 	// before GameWorldPanel::gameWorldRenderCallback() this frame, which causes first-frame issues and a crash.
 	// Not sure what a better fix would be other than this "first frame poke" method with dt=0.
-	gameState.tick(0.0, game);
+	gameState.tickPlayer(0.0, game);
 
 	// Initialize the game world panel.
 	game.setPanel<GameWorldPanel>();

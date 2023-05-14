@@ -782,8 +782,16 @@ void Game::loop()
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				this->chunkManager.update(playerCoord.chunk, chunkDistance);
 
-				// Tick game world state (voxels, entities, daytime clock, etc.).
-				this->gameState.tick(clampedDt, *this);
+				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
+				// It shouldn't be abstracted into a game state.
+				// - it should be like "do we need to clear the scene? yes/no. update the scene immediately? yes/no"
+
+				// Tick game world state (daytime clock, etc.).
+				this->gameState.tickGameClock(clampedDt, *this);
+				this->gameState.tickChasmAnimation(clampedDt);
+				this->gameState.tickWeather(clampedDt, *this);
+				this->gameState.tickUiMessages(clampedDt);
+				this->gameState.tickPlayer(clampedDt, *this);
 
 				// Update audio listener and check for finished sounds.
 				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
