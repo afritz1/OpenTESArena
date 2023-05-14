@@ -17,7 +17,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef)
+std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType, WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
@@ -42,18 +42,17 @@ std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType,
 	// City/town/village letter.
 	constexpr char locationLetter = 'C';
 
-	const char weatherLetter = [climateType, &weatherDef]()
+	const char weatherLetter = [climateType, weatherType]()
 	{
-		const WeatherType weatherDefType = weatherDef.type;
-		if ((weatherDefType == WeatherType::Clear) || (weatherDefType == WeatherType::Overcast))
+		if ((weatherType == WeatherType::Clear) || (weatherType == WeatherType::Overcast))
 		{
 			return 'N';
 		}
-		else if (weatherDefType == WeatherType::Rain)
+		else if (weatherType == WeatherType::Rain)
 		{
 			return 'R';
 		}
-		else if (weatherDefType == WeatherType::Snow)
+		else if (weatherType == WeatherType::Snow)
 		{
 			// Deserts can't have snow.
 			if (climateType != ArenaTypes::ClimateType::Desert)

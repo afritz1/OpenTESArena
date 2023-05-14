@@ -473,7 +473,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	const std::string infName = ArenaCityUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
+	const std::string infName = ArenaCityUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef.type);
 	INFFile inf;
 	if (!inf.init(infName.c_str()))
 	{
@@ -504,7 +504,7 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 {
 	this->init(MapType::Wilderness);
 
-	const std::string infName = ArenaWildUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
+	const std::string infName = ArenaWildUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef.type);
 	INFFile inf;
 	if (!inf.init(infName.c_str()))
 	{
