@@ -128,7 +128,7 @@ void GameState::clearSession()
 	this->isCamping = false;
 	this->chasmAnimSeconds = 0.0;
 
-	this->travelData = nullptr;
+	this->travelData = std::nullopt;
 	this->nextMap = nullptr;
 	this->clearMaps();
 	
@@ -768,7 +768,7 @@ LocationInstance &GameState::getLocationInstance()
 
 const ProvinceMapUiModel::TravelData *GameState::getTravelData() const
 {
-	return this->travelData.get();
+	return this->travelData.has_value() ? &(*this->travelData) : nullptr;
 }
 
 const GameState::WeatherList &GameState::getWeathersArray() const
@@ -933,7 +933,7 @@ void GameState::setIsCamping(bool isCamping)
 	this->isCamping = isCamping;
 }
 
-void GameState::setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
+void GameState::setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData)
 {
 	this->travelData = std::move(travelData);
 }

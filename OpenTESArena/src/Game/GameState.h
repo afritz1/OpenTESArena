@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <stack>
 #include <string>
 #include <vector>
@@ -103,7 +104,7 @@ private:
 	WorldMapInstance worldMapInst;
 	int provinceIndex;
 	int locationIndex;
-	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData; // Non-null when a destination is selected.
+	std::optional<ProvinceMapUiModel::TravelData> travelData; // Non-null when a destination is selected.
 
 	// Game world interface display texts have an associated time remaining. These values are stored here so
 	// they are not destroyed when switching away from the game world panel.
@@ -257,7 +258,7 @@ public:
 	void setIsCamping(bool isCamping);
 
 	// Sets the player's world map travel data when they select a destination.
-	void setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
+	void setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData);
 
 	// Sets on-screen text duration for various types of in-game messages.
 	void setTriggerTextDuration(const std::string_view &text);

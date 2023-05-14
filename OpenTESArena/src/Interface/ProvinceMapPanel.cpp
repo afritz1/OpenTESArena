@@ -513,7 +513,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 			currentDate.getMonth(), gameState.getWeathersArray(), tempRandom, binaryAssetLibrary);
 
 		// Set selected map location.
-		gameState.setTravelData(std::make_unique<ProvinceMapUiModel::TravelData>(selectedLocationID, this->provinceID, travelDays));
+		gameState.setTravelData(ProvinceMapUiModel::TravelData(selectedLocationID, this->provinceID, travelDays));
 
 		this->blinkState.reset();
 

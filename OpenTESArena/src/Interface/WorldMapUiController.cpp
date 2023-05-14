@@ -17,7 +17,7 @@ void WorldMapUiController::onBackToGameButtonSelected(Game &game)
 {
 	// Clear selected map location.
 	auto &gameState = game.getGameState();
-	gameState.setTravelData(nullptr);
+	gameState.setTravelData(std::nullopt);
 
 	game.setPanel<GameWorldPanel>();
 }
@@ -31,7 +31,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 {
 	// Clear selected map location.
 	auto &gameState = game.getGameState();
-	gameState.setTravelData(nullptr);
+	gameState.setTravelData(std::nullopt);
 
 	// Handle fast travel behavior and decide which panel to switch to.
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
