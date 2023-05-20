@@ -815,14 +815,15 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const BufferView<const RenderDrawCall> drawCalls = renderChunkManager.getTotalDrawCalls();
 
 	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
-	const double ambientPercent = gameState.getAmbientPercent();
+	const MapType activeMapType = activeMapDef.getSubDefinition().type;
+	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType);
 	const double latitude = [&gameState]()
 	{
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		return locationDef.getLatitude();
 	}();
 
-	const bool isExterior = activeMapDef.getSubDefinition().type != MapType::Interior;
+	const bool isExterior = activeMapType != MapType::Interior;
 
 	auto &renderer = game.getRenderer();
 	const auto &options = game.getOptions();

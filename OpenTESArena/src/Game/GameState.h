@@ -128,12 +128,6 @@ private:
 	WeatherDefinition weatherDef;
 	WeatherInstance weatherInst;
 
-	// Helper function for generating a map definition and instance from the given world map location.
-	/*static bool tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
-		int currentDay, int starCount, bool provinceHasAnimatedLand, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapState *outMapState);*/
-
 	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
 	bool trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
 		Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
@@ -161,13 +155,6 @@ public:
 	void init(const BinaryAssetLibrary &binaryAssetLibrary);
 	
 	void clearSession();
-
-	// Clears all maps and attempts to generate one and set it active based on the given province + location pair.
-	// The map type can only be an interior (world map dungeon, etc.) or a city, as viewed from the world map.
-	/*bool trySetFromWorldMap(int provinceID, int locationID, const std::optional<WeatherType> &overrideWeather,
-		int currentDay, int starCount, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer);*/
 
 	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
 	// info. This preserves existing maps for later when the interior is exited.
@@ -231,11 +218,6 @@ public:
 	// Gets the currently selected weather and associated state.
 	const WeatherDefinition &getWeatherDefinition() const;
 	const WeatherInstance &getWeatherInstance() const;
-
-	// Gets the current ambient light percent, based on the current clock time and 
-	// the player's location (interior/exterior). This function is intended to match
-	// the actual calculation done in Arena.
-	double getAmbientPercent() const;
 
 	// Gets the custom function for the *LEVELUP voxel enter event.
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
