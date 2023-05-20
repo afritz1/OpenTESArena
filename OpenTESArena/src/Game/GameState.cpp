@@ -563,9 +563,9 @@ const ProvinceMapUiModel::TravelData *GameState::getTravelData() const
 	return this->travelData.has_value() ? &(*this->travelData) : nullptr;
 }
 
-const GameState::WeatherList &GameState::getWeathersArray() const
+BufferView<const ArenaTypes::WeatherType> GameState::getWorldMapWeathers() const
 {
-	return this->weathers;
+	return this->worldMapWeathers;
 }
 
 Date &GameState::getDate()
@@ -771,12 +771,13 @@ void GameState::updateWeatherList(const ExeData &exeData)
 {
 	const int seasonIndex = this->date.getSeason();
 
-	for (size_t i = 0; i < this->weathers.size(); i++)
+	const size_t weatherCount = std::size(this->worldMapWeathers);
+	const auto &climates = exeData.locations.climates;
+	DebugAssert(climates.size() == weatherCount);
+
+	for (size_t i = 0; i < weatherCount; i++)
 	{
-		static_assert(std::tuple_size<decltype(exeData.locations.climates)>::value ==
-			std::tuple_size<decltype(this->weathers)>::value);
-		
-		const int climateIndex = exeData.locations.climates[i];
+		const int climateIndex = climates[i];
 		const int variantIndex = [this]()
 		{
 			// 40% for 2, 20% for 1, 20% for 3, 10% for 0, and 10% for 4.
@@ -805,8 +806,9 @@ void GameState::updateWeatherList(const ExeData &exeData)
 		}();
 
 		const int weatherTableIndex = (climateIndex * 20) + (seasonIndex * 5) + variantIndex;
-		this->weathers[i] = static_cast<ArenaTypes::WeatherType>(
-			exeData.locations.weatherTable.at(weatherTableIndex));
+		const auto &weatherTable = exeData.locations.weatherTable;
+		DebugAssertIndex(weatherTable, weatherTableIndex);
+		this->worldMapWeathers[i] = static_cast<ArenaTypes::WeatherType>(weatherTable[weatherTableIndex]);
 	}
 }
 

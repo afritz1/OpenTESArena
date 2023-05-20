@@ -184,7 +184,7 @@ int ArenaLocationUtils::getMapDistance(const Int2 &globalSrc, const Int2 &global
 }
 
 int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-	int month, const std::array<ArenaTypes::WeatherType, 36> &weathers, ArenaRandom &random,
+	int month, BufferView<const ArenaTypes::WeatherType> worldMapWeathers, ArenaRandom &random,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();
@@ -196,14 +196,14 @@ int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &
 	for (const Int2 &point : points)
 	{
 		const int monthIndex = (month + (totalTime / 3000)) % 12;
-		const int weatherIndex = [&weathers, &cityData, &point]()
+		const int weatherIndex = [worldMapWeathers, &cityData, &point]()
 		{
 			// Find which province quarter the global point is in.
 			const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(point, cityData);
 
 			// Convert the weather type to its equivalent index.
-			DebugAssertIndex(weathers, quarterIndex);
-			return static_cast<int>(weathers[quarterIndex]);
+			DebugAssertIndex(worldMapWeathers, quarterIndex);
+			return static_cast<int>(worldMapWeathers[quarterIndex]);
 		}();
 
 		// The type of terrain at the world map point.

@@ -75,9 +75,9 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			const auto &cityData = binaryAssetLibrary.getCityDataFile();
 			const int globalQuarter = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityData);
 
-			const auto &weathersArray = gameState.getWeathersArray();
-			DebugAssertIndex(weathersArray, globalQuarter);
-			return ArenaWeatherUtils::getFilteredWeatherType(weathersArray[globalQuarter], cityDef.climateType);
+			BufferView<const ArenaTypes::WeatherType> worldMapWeathers = gameState.getWorldMapWeathers();
+			DebugAssertIndex(worldMapWeathers, globalQuarter);
+			return ArenaWeatherUtils::getFilteredWeatherType(worldMapWeathers[globalQuarter], cityDef.climateType);
 		}();
 
 		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());

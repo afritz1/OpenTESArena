@@ -510,7 +510,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		const Int2 srcGlobalPoint = makeGlobalPoint(currentLocationDef, currentProvinceDef);
 		const Int2 dstGlobalPoint = makeGlobalPoint(selectedLocationDef, selectedProvinceDef);
 		const int travelDays = ArenaLocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint,
-			currentDate.getMonth(), gameState.getWeathersArray(), tempRandom, binaryAssetLibrary);
+			currentDate.getMonth(), gameState.getWorldMapWeathers(), tempRandom, binaryAssetLibrary);
 
 		// Set selected map location.
 		gameState.setTravelData(ProvinceMapUiModel::TravelData(selectedLocationID, this->provinceID, travelDays));

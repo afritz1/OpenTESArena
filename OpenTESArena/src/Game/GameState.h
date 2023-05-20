@@ -58,9 +58,6 @@ public:
 
 		WorldMapLocationIDs(int provinceID, int locationID);
 	};
-
-	// One weather for each of the 36 province quadrants (updated hourly).
-	using WeatherList = std::array<ArenaTypes::WeatherType, 36>;
 private:
 	struct MapState
 	{
@@ -113,7 +110,9 @@ private:
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)
 	double triggerTextRemainingSeconds, actionTextRemainingSeconds, effectTextRemainingSeconds;
 
-	WeatherList weathers;
+	// One weather for each of the 36 province quadrants (updated hourly).
+	static constexpr int WORLD_MAP_WEATHER_QUADRANT_COUNT = 36;
+	ArenaTypes::WeatherType worldMapWeathers[WORLD_MAP_WEATHER_QUADRANT_COUNT];
 
 	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
 	// behavior is to decrement the world's level index.
@@ -203,7 +202,7 @@ public:
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();
 	const ProvinceMapUiModel::TravelData *getTravelData() const;
-	const WeatherList &getWeathersArray() const;
+	BufferView<const ArenaTypes::WeatherType> getWorldMapWeathers() const;
 	Date &getDate();
 	Clock &getClock();
 	ArenaRandom &getRandom();
