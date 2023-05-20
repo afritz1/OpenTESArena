@@ -16,6 +16,7 @@
 #include "../Audio/MusicUtils.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
 #include "../World/MapType.h"
@@ -517,7 +518,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 	// Get the music that should be active on start.
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-	const MusicDefinition *musicDef = [&game, &mifName, &optInteriorType, mapType, &gameState, &musicLibrary]()
+	const MusicDefinition *musicDef = [&game, &mifName, &optInteriorType, mapType, &gameState, &clock, &musicLibrary]()
 	{
 		const bool isExterior = (mapType == MapType::City) || (mapType == MapType::Wilderness);
 
@@ -525,7 +526,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		// on the current location's .MIF name (if any).
 		if (isExterior)
 		{
-			if (!gameState.nightMusicIsActive())
+			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
@@ -558,8 +559,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		}
 	}();
 
-	const MusicDefinition *jingleMusicDef = [&game, mapType, &gameState, &musicLibrary]()
-		-> const MusicDefinition*
+	const MusicDefinition *jingleMusicDef = [&game, mapType, &gameState, &musicLibrary]() -> const MusicDefinition*
 	{
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const bool isCity = (mapType == MapType::City) &&

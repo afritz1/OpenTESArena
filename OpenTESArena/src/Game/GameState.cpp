@@ -882,32 +882,6 @@ double GameState::getAmbientPercent() const
 	}
 }
 
-double GameState::getBetterAmbientPercent() const
-{
-	const double daytimePercent = this->getDaytimePercent();
-	const double minAmbient = 0.20;
-	const double maxAmbient = 0.90;
-	const double diff = maxAmbient - minAmbient;
-	const double center = minAmbient + (diff / 2.0);
-	return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * Constants::Pi)));
-}
-
-bool GameState::nightMusicIsActive() const
-{
-	const double clockTime = this->clock.getPreciseTotalSeconds();
-	const bool beforeDayMusicChange = clockTime < ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
-	const bool afterNightMusicChange = clockTime >= ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
-	return beforeDayMusicChange || afterNightMusicChange;
-}
-
-bool GameState::nightLightsAreActive() const
-{
-	const double clockTime = this->clock.getPreciseTotalSeconds();
-	const bool beforeLamppostDeactivate = clockTime < ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool afterLamppostActivate = clockTime >= ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
-	return beforeLamppostDeactivate || afterLamppostActivate;
-}
-
 std::function<void(Game&)> &GameState::getOnLevelUpVoxelEnter()
 {
 	return this->onLevelUpVoxelEnter;
@@ -1142,7 +1116,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 		TextureManager &textureManager = game.getTextureManager();
 
 		EntityGeneration::EntityGenInfo entityGenInfo;
-		entityGenInfo.init(this->nightLightsAreActive());
+		entityGenInfo.init(ArenaClockUtils::nightLightsAreActive(this->clock));
 
 		// Tick active map (entities, animated distant land, etc.).
 		const MapDefinition &activeMapDef = this->getActiveMapDef();
@@ -1302,7 +1276,7 @@ void GameState::tickPlayer(double dt, Game &game)
 	TextureManager &textureManager = game.getTextureManager();
 
 	EntityGeneration::EntityGenInfo entityGenInfo;
-	entityGenInfo.init(this->nightLightsAreActive());
+	entityGenInfo.init(ArenaClockUtils::nightLightsAreActive(this->clock));
 
 	// Tick active map (entities, animated distant land, etc.).
 	const MapDefinition &mapDef = this->getActiveMapDef();

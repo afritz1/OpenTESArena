@@ -5,6 +5,7 @@
 #include "../Audio/MusicUtils.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
 #include "../Sky/SkyUtils.h"
@@ -165,11 +166,11 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 		}
 
 		// Change to exterior music.
-		const auto &clock = gameState.getClock();
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
 		{
-			if (!gameState.nightMusicIsActive())
+			const Clock &clock = gameState.getClock();
+			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
@@ -421,7 +422,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
 			{
-				if (!gameState.nightMusicIsActive())
+				const Clock &clock = gameState.getClock();
+				if (!ArenaClockUtils::nightMusicIsActive(clock))
 				{
 					const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 					return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
@@ -606,8 +608,11 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			player.lookAt(player.getPosition() + dirToWorldVoxel);
 			player.setVelocityToZero();
 
+			const Clock &clock = gameState.getClock();
+			const bool nightLightsAreActive = ArenaClockUtils::nightLightsAreActive(clock);
+
 			EntityGeneration::EntityGenInfo entityGenInfo;
-			entityGenInfo.init(gameState.nightLightsAreActive());
+			entityGenInfo.init(nightLightsAreActive);
 
 			// Tick the level's chunk manager once during initialization so the renderer is passed valid
 			// chunks this frame.

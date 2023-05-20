@@ -22,6 +22,7 @@
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Game/ArenaClockUtils.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -809,7 +810,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		const MusicDefinition *musicDef = [&game, &gameState]()
 		{
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			if (!gameState.nightMusicIsActive())
+			if (!ArenaClockUtils::nightMusicIsActive(gameState.getClock()))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
@@ -822,8 +823,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(
-					MusicDefinition::Type::Night, game.getRandom());
+				return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
 			}
 		}();
 

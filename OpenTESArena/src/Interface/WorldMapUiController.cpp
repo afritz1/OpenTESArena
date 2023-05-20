@@ -8,6 +8,7 @@
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
@@ -135,7 +136,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = [&game, &gameState, &overrideWeather, &musicLibrary]()
 		{
-			if (!gameState.nightMusicIsActive())
+			const Clock &clock = gameState.getClock();
+			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 					game.getRandom(), [&overrideWeather](const MusicDefinition &def)

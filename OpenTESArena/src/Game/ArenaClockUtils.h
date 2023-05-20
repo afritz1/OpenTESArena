@@ -34,6 +34,12 @@ namespace ArenaClockUtils
 	// Thunderstorm times.
 	const Clock ThunderstormStart(18, 1, 0);
 	const Clock ThunderstormEnd(6, 0, 0);
+
+	// Returns whether the current music should be for day or night.
+	bool nightMusicIsActive(const Clock &clock);
+
+	// Returns whether night lights (i.e., lampposts) should currently be active.
+	bool nightLightsAreActive(const Clock &clock);
 }
 
 #endif

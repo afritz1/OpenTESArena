@@ -173,6 +173,7 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/WeaponAnimation.h")
 
 SET(TES_GAME
+    "${SRC_ROOT}/Game/ArenaClockUtils.cpp"
     "${SRC_ROOT}/Game/ArenaClockUtils.h"
     "${SRC_ROOT}/Game/ArenaDateUtils.cpp"
     "${SRC_ROOT}/Game/ArenaDateUtils.h"

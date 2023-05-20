@@ -237,15 +237,6 @@ public:
 	// the actual calculation done in Arena.
 	double getAmbientPercent() const;
 
-	// A more gradual ambient percent function (maybe useful on the side sometime).
-	double getBetterAmbientPercent() const;
-
-	// Returns whether the current music should be for day or night.
-	bool nightMusicIsActive() const;
-
-	// Returns whether night lights (i.e., lampposts) should currently be active.
-	bool nightLightsAreActive() const;
-
 	// Gets the custom function for the *LEVELUP voxel enter event.
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
 
