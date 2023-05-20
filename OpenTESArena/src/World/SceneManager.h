@@ -24,36 +24,32 @@ struct SceneManager
 	//ParticleManager; // @todo
 	//RenderParticleManager; // @todo
 
-	int mapDefIndex; // Points into map definitions list (there might be an exterior and interior in memory).
-	int activeLevelIndex; // For indexing into map definition.
-	int activeSkyIndex;
-	//int activeWeatherIndex; // @todo
-
 	ScopedObjectTextureRef gameWorldPaletteTextureRef, lightTableTextureRef;
 	double ceilingScale;
 
 	SceneManager();
 
-	void init(int mapDefIndex);
-
-	void setLevelActive(int index);
-
 	void cleanUp();
-};
-
-struct SceneTransitionLocationIDs
-{
-	int provinceID;
-	int locationID;
 };
 
 struct SceneTransitionState
 {
-	int mapDefIndex;
+	MapType mapType;
 	int levelIndex;
 	int skyIndex;
-	std::optional<SceneTransitionLocationIDs> locationIDs;
-	// @todo
 };
+
+struct SceneInteriorSavedState
+{
+	// Don't need to store levelIndex or skyIndex since the LEVELUP/DOWN voxel lets us infer it
+};
+
+struct SceneCitySavedState
+{
+	int weatherIndex;
+	CoordInt3 returnCoord;
+};
+
+using SceneWildSavedState = SceneCitySavedState;
 
 #endif
