@@ -351,6 +351,11 @@ Random &Game::getRandom()
 	return this->random;
 }
 
+ArenaRandom &Game::getArenaRandom()
+{
+	return this->arenaRandom;
+}
+
 Profiler &Game::getProfiler()
 {
 	return this->profiler;

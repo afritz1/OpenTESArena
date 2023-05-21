@@ -67,7 +67,11 @@ private:
 	// Displayed with varying profiler levels.
 	TextBox debugInfoTextBox;
 
-	Random random; // Convenience random for ease of use.
+	// Random number generators; the first is a modern random where accuracy to the original is not needed,
+	// the second is meant to replicate the original game's.
+	Random random;
+	ArenaRandom arenaRandom;
+
 	Profiler profiler;
 	FPSCounter fpsCounter;
 
@@ -155,6 +159,8 @@ public:
 
 	// Gets the global RNG initialized at program start.
 	Random &getRandom();
+
+	ArenaRandom &getArenaRandom();
 
 	// Gets the profiler instance for measuring precise time spans.
 	Profiler &getProfiler();

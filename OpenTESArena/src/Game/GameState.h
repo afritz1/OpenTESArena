@@ -205,7 +205,6 @@ public:
 	BufferView<const ArenaTypes::WeatherType> getWorldMapWeathers() const;
 	Date &getDate();
 	Clock &getClock();
-	ArenaRandom &getRandom();
 
 	// Gets a percentage representing how far along the current day is. 0.0 is 
 	// 12:00am and 0.50 is noon.

@@ -180,8 +180,8 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 		// Get the description for the local location. If it's a town or village, choose
 		// one of the three substrings randomly. Otherwise, get the city description text
 		// directly.
-		const std::string description = [&gameState, &binaryAssetLibrary, &exeData, provinceID,
-			localCityID, &locationDef, locationType]()
+		const std::string description = [&game, &binaryAssetLibrary, &exeData, provinceID, localCityID,
+			&locationDef, locationType]()
 		{
 			// City descriptions start at #0600. The three town descriptions are at #1422,
 			// and the three village descriptions are at #1423.
@@ -220,7 +220,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 			}
 			else
 			{
-				ArenaRandom &random = gameState.getRandom();
+				ArenaRandom &random = game.getArenaRandom();
 				std::string description = [&random, &templateDatTexts]()
 				{
 					const int templateDatTextIndex = random.next() % templateDatTexts.size();

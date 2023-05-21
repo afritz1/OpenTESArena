@@ -499,7 +499,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 
 		// Use a copy of the RNG so displaying the travel pop-up multiple times doesn't
 		// cause different day amounts.
-		ArenaRandom tempRandom = gameState.getRandom();
+		ArenaRandom tempRandom = game.getArenaRandom();
 
 		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
 		{

@@ -578,11 +578,6 @@ Clock &GameState::getClock()
 	return this->clock;
 }
 
-ArenaRandom &GameState::getRandom()
-{
-	return this->arenaRandom;
-}
-
 double GameState::getDaytimePercent() const
 {
 	return this->clock.getPreciseTotalSeconds() / static_cast<double>(Clock::SECONDS_IN_A_DAY);
