@@ -169,7 +169,7 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Interiors are always clear weather.
-	Random weatherRandom(this->arenaRandom.getSeed()); // Cosmetic random.
+	Random weatherRandom;
 	WeatherDefinition weatherDef;
 	weatherDef.initFromClassic(ArenaTypes::WeatherType::Clear, currentDay, weatherRandom);
 
@@ -218,7 +218,7 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 	}();
 
 	// Interiors are always clear weather.
-	Random weatherRandom(this->arenaRandom.getSeed()); // Cosmetic random.
+	Random weatherRandom;
 	WeatherDefinition weatherDef;
 	weatherDef.initFromClassic(ArenaTypes::WeatherType::Clear, currentDay, weatherRandom);
 
