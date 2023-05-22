@@ -466,6 +466,11 @@ bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityD
 	return true;
 }
 
+MapType GameState::getActiveMapType() const
+{
+	return this->getActiveMapDef().getSubDefinition().type;
+}
+
 const MapDefinition &GameState::getActiveMapDef() const
 {
 	if (this->nextMap != nullptr)

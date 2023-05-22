@@ -190,6 +190,7 @@ public:
 		const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager,
 		TextureManager &textureManager, Renderer &renderer);
 
+	MapType getActiveMapType() const; // @todo: store this as a primary member eventually
 	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
 	bool hasActiveMapInst() const; // @todo: don't rely on this forever - we want the engine to always have chunks active (even if empty) at some point.
 	MapInstance &getActiveMapInst(); // @todo: this is bad practice since it becomes dangling when changing the active map.
