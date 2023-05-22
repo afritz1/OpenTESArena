@@ -162,12 +162,11 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 					for (int i = 0; i < tempProvinceDef.getLocationCount(); i++)
 					{
 						const LocationDefinition &curLocationDef = tempProvinceDef.getLocationDef(i);
-						if (curLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+						if (curLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
 						{
-							const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-								curLocationDef.getMainQuestDungeonDefinition();
+							const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = curLocationDef.getMainQuestDungeonDefinition();
 
-							if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+							if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
 							{
 								locationIndex = i;
 								break;
@@ -198,9 +197,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const std::optional<bool> rulerIsMale = [&locationDef]()
 			{
-				if (locationDef.getType() == LocationDefinition::Type::City)
+				if (locationDef.getType() == LocationDefinitionType::City)
 				{
-					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+					const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 					return cityDef.rulerIsMale;
 				}
 				else
@@ -242,7 +241,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				DebugAssertMsg(locationIndex.has_value(), "Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
 
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
-				const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
+				const LocationDungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 
 				MapGeneration::InteriorGenInfo interiorGenInfo;
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
@@ -272,14 +271,14 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 				const int locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceDef);
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
-				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+				const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 				const uint32_t dungeonSeed = cityDef.getWildDungeonSeed(wildBlockX, wildBlockY);
 				constexpr int widthChunkCount = ArenaWildUtils::WILD_DUNGEON_WIDTH_CHUNKS;
 				constexpr int heightChunkCount = ArenaWildUtils::WILD_DUNGEON_HEIGHT_CHUNKS;
 
 				// Need to generate dungeon definition here since we don't have the wild chunk itself.
-				LocationDefinition::DungeonDefinition dungeonDef;
+				LocationDungeonDefinition dungeonDef;
 				dungeonDef.init(dungeonSeed, widthChunkCount, heightChunkCount);
 
 				MapGeneration::InteriorGenInfo interiorGenInfo;
@@ -317,9 +316,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				for (int i = 0; i < provinceDef.getLocationCount(); i++)
 				{
 					const LocationDefinition &curLocationDef = provinceDef.getLocationDef(i);
-					if (curLocationDef.getType() == LocationDefinition::Type::City)
+					if (curLocationDef.getType() == LocationDefinitionType::City)
 					{
-						const LocationDefinition::CityDefinition &cityDef = curLocationDef.getCityDefinition();
+						const LocationCityDefinition &cityDef = curLocationDef.getCityDefinition();
 						if ((cityDef.type == ArenaTypes::CityType::CityState) && cityDef.premade &&
 							cityDef.palaceIsMainQuestDungeon)
 						{
@@ -334,7 +333,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			DebugAssertMsg(locationIndex.has_value(), "Couldn't find premade city with main quest palace dungeon.");
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
 
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 			Buffer<uint8_t> reservedBlocks = [&cityDef]()
 			{
 				const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
@@ -344,8 +343,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return buffer;
 			}();
 
-			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+			const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+				[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
 			{
 				if (cityDef.hasMainQuestTempleOverride)
 				{
@@ -413,7 +412,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			DebugAssertMsg(locationIndex.has_value(), "Couldn't find city for \"" + mifName + "\".");
 
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 			Buffer<uint8_t> reservedBlocks = [&cityDef]()
 			{
@@ -424,8 +423,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return buffer;
 			}();
 
-			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+			const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+				[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
 			{
 				if (cityDef.hasMainQuestTempleOverride)
 				{
@@ -474,7 +473,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 		const int locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceDef);
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
-		const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs =
@@ -563,11 +562,11 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	{
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const bool isCity = (mapType == MapType::City) &&
-			(locationDef.getType() == LocationDefinition::Type::City);
+			(locationDef.getType() == LocationDefinitionType::City);
 
 		if (isCity)
 		{
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 			return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
 				game.getRandom(), [&cityDef](const MusicDefinition &def)
 			{

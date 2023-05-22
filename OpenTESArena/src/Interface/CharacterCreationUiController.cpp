@@ -502,12 +502,11 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 			for (int i = 0; i < provinceDef.getLocationCount(); i++)
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
-				if (locationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+				if (locationDef.getType() == LocationDefinitionType::MainQuestDungeon)
 				{
-					const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-						locationDef.getMainQuestDungeonDefinition();
+					const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
 
-					if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+					if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
 					{
 						return i;
 					}
@@ -521,7 +520,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 		// Load starting dungeon.
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
-		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+		const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
 		const std::string mifName = mainQuestDungeonDef.mapFilename;
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
@@ -756,7 +755,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 		auto &renderer = game.getRenderer();
 
-		const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 		Buffer<uint8_t> reservedBlocks = [&cityDef]()
 		{
 			const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
@@ -766,8 +765,8 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			return buffer;
 		}();
 
-		const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+		const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+			[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
 		{
 			if (cityDef.hasMainQuestTempleOverride)
 			{

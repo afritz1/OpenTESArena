@@ -152,7 +152,7 @@ bool ArenaWildUtils::isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID)
 
 void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID,
 	BufferView2D<ArenaTypes::VoxelID> &flor, BufferView2D<ArenaTypes::VoxelID> &map1,
-	BufferView2D<ArenaTypes::VoxelID> &map2, const LocationDefinition::CityDefinition &cityDef,
+	BufferView2D<ArenaTypes::VoxelID> &map2, const LocationCityDefinition &cityDef,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	DebugAssert(ArenaWildUtils::isWildCityBlock(wildBlockID));

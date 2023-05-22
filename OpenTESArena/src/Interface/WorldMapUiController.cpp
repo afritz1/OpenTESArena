@@ -62,10 +62,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
 
 	// Decide how to load the location.
-	if (travelLocationDef.getType() == LocationDefinition::Type::City)
+	if (travelLocationDef.getType() == LocationDefinitionType::City)
 	{
 		// Get weather type from game state.
-		const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
+		const LocationCityDefinition &cityDef = travelLocationDef.getCityDefinition();
 		const ArenaTypes::WeatherType weatherType = [&game, &gameState, &binaryAssetLibrary,
 			&travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
@@ -92,8 +92,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return buffer;
 		}();
 
-		const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+		const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+			[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
 		{
 			if (cityDef.hasMainQuestTempleOverride)
 			{
@@ -183,13 +183,13 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			game, targetProvinceID, targetLocationID, travelDays);
 		game.pushSubPanel(std::move(arrivalPopUp));
 	}
-	else if (travelLocationDef.getType() == LocationDefinition::Type::Dungeon)
+	else if (travelLocationDef.getType() == LocationDefinitionType::Dungeon)
 	{
 		// Random named dungeon.
 		constexpr bool isArtifactDungeon = false;
 		const auto &travelProvinceDef = worldMapDef.getProvinceDef(targetProvinceID);
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
-		const LocationDefinition::DungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
+		const LocationDungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
@@ -226,11 +226,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		game.setPanel<GameWorldPanel>();
 	}
-	else if (travelLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+	else if (travelLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
 	{
 		// Main quest dungeon. The staff dungeons have a splash image before going to the game world panel.
-		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-			travelLocationDef.getMainQuestDungeonDefinition();
+		const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = travelLocationDef.getMainQuestDungeonDefinition();
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
 
@@ -248,7 +247,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			DebugCrash("Couldn't load main quest interior \"" + travelLocationDef.getName() + "\".");
 		}
 
-		if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
+		if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Staff)
 		{
 			// Go to staff dungeon splash image first.
 			game.setPanel<MainQuestSplashPanel>(targetProvinceID);

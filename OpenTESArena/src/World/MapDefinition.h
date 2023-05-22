@@ -97,13 +97,13 @@ private:
 		bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
 		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
 		bool palaceIsMainQuestDungeon, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
-		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
 	bool initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
-		uint32_t fallbackSeed, const LocationDefinition::CityDefinition &cityDef,
+		uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);

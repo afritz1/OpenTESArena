@@ -201,7 +201,7 @@ std::optional<int> MainMenuUiModel::getRandomCityLocationDefIndexIfType(const Pr
 	for (const int locationIndex : randomLocationIndices)
 	{
 		const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
-		if (curLocationDef.getType() == LocationDefinition::Type::City)
+		if (curLocationDef.getType() == LocationDefinitionType::City)
 		{
 			const auto &curCityDef = curLocationDef.getCityDefinition();
 			if (curCityDef.type == cityType)
@@ -222,7 +222,7 @@ int MainMenuUiModel::getRandomCityLocationIndex(const ProvinceDefinition &provin
 	for (const int locationIndex : randomLocationIndices)
 	{
 		const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
-		if (curLocationDef.getType() == LocationDefinition::Type::City)
+		if (curLocationDef.getType() == LocationDefinitionType::City)
 		{
 			return locationIndex;
 		}
@@ -239,7 +239,7 @@ std::optional<int> MainMenuUiModel::getRandomDungeonLocationDefIndex(const Provi
 	for (const int locationIndex : randomLocationIndices)
 	{
 		const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
-		if (curLocationDef.getType() == LocationDefinition::Type::Dungeon)
+		if (curLocationDef.getType() == LocationDefinitionType::Dungeon)
 		{
 			return locationIndex;
 		}

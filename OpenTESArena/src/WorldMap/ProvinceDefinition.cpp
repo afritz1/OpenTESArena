@@ -53,7 +53,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 
 	auto tryAddMainQuestDungeon = [this, &binaryAssetLibrary, &provinceData, &canAddLocation](
 		const std::optional<int> &optLocalDungeonID, int provinceID,
-		LocationDefinition::MainQuestDungeonDefinition::Type type,
+		LocationMainQuestDungeonDefinitionType type,
 		const CityDataFile::ProvinceData::LocationData &locationData)
 	{
 		if (canAddLocation(locationData))
@@ -105,9 +105,9 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		static_cast<int>(provinceData.cityStates.size() + provinceData.towns.size()));
 
 	tryAddMainQuestDungeon(0, provinceID,
-		LocationDefinition::MainQuestDungeonDefinition::Type::Staff, provinceData.secondDungeon);
+		LocationMainQuestDungeonDefinitionType::Staff, provinceData.secondDungeon);
 	tryAddMainQuestDungeon(1, provinceID,
-		LocationDefinition::MainQuestDungeonDefinition::Type::Map, provinceData.firstDungeon);
+		LocationMainQuestDungeonDefinitionType::Map, provinceData.firstDungeon);
 
 	tryAddDungeons(provinceData.randomDungeons);
 
@@ -122,7 +122,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 
 		// After main quest dungeons and regular dungeons (anywhere's fine in the new layout, I guess).
 		tryAddMainQuestDungeon(std::nullopt, provinceID,
-			LocationDefinition::MainQuestDungeonDefinition::Type::Start, startDungeonLocation);
+			LocationMainQuestDungeonDefinitionType::Start, startDungeonLocation);
 	}
 }
 

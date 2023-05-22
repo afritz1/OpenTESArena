@@ -190,8 +190,8 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 		const std::string automapLocationName = [&gameState, &exeData, &locationDef, &locationInst]()
 		{
 			const std::string &locationName = locationInst.getName(locationDef);
-			const bool isCity = locationDef.getType() == LocationDefinition::Type::City;
-			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
+			const bool isCity = locationDef.getType() == LocationDefinitionType::City;
+			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinitionType::MainQuestDungeon;
 			return (isCity || isMainQuestDungeon) ? locationName : std::string();
 		}();
 

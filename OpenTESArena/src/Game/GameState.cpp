@@ -97,9 +97,9 @@ void GameState::init(const BinaryAssetLibrary &binaryAssetLibrary)
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 			const std::string &locationName = locationInst.getName(locationDef);
 
-			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
+			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinitionType::MainQuestDungeon;
 			const bool isStartDungeon = isMainQuestDungeon &&
-				(locationDef.getMainQuestDungeonDefinition().type == LocationDefinition::MainQuestDungeonDefinition::Type::Start);
+				(locationDef.getMainQuestDungeonDefinition().type == LocationMainQuestDungeonDefinitionType::Start);
 			const bool shouldSetVisible = (locationName.size() > 0) &&
 				isMainQuestDungeon && !isStartDungeon && !locationInst.isVisible();
 
@@ -273,7 +273,7 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 		locationDefPtr = &this->getLocationDefinition();
 	}
 
-	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDefPtr->getCityDefinition();
 	WeatherDefinition weatherDef = [&overrideWeather, &cityDef]()
 	{
 		if (overrideWeather.has_value())
@@ -357,7 +357,7 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 		locationDefPtr = &this->getLocationDefinition();
 	}
 
-	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDefPtr->getCityDefinition();
 	WeatherDefinition weatherDef = [&overrideWeather, &cityDef]()
 	{
 		if (overrideWeather.has_value())
@@ -439,7 +439,7 @@ bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityD
 		{
 			const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
 			const LocationDefinition &locationDef = this->getLocationDefinition();
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
 				entityDefLibrary, textureManager);
 		}

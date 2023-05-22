@@ -52,7 +52,7 @@ namespace ArenaWildUtils
 	// Changes the default filler city skeleton to the one intended for the city.
 	void reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID, BufferView2D<ArenaTypes::VoxelID> &flor,
 		BufferView2D<ArenaTypes::VoxelID> &map1, BufferView2D<ArenaTypes::VoxelID> &map2,
-		const LocationDefinition::CityDefinition &cityDef, const BinaryAssetLibrary &binaryAssetLibrary);
+		const LocationCityDefinition &cityDef, const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the origin of a virtual 128x128 space in the wild as if the player was at the given
 	// position. This space always contains 4 wild chunks.

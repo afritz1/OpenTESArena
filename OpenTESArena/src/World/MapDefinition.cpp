@@ -121,7 +121,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 		constexpr MapType mapType = MapType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
 		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for interiors.
-		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for non-dungeons.
+		constexpr LocationDungeonDefinition *dungeonDef = nullptr; // Not necessary for non-dungeons.
 		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for non-dungeons.
 		BufferView<LevelDefinition> levelDefView(&levelDef, 1);
 		MapGeneration::readMifVoxels(mifLevelView, mapType, interiorType, rulerSeed, rulerIsMale,
@@ -259,7 +259,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
 	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
-	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
@@ -306,7 +306,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 }
 
 bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
-	uint32_t fallbackSeed, const LocationDefinition::CityDefinition &cityDef,
+	uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
@@ -482,7 +482,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 	}
 
 	const BufferView<const uint8_t> reservedBlocks(generationInfo.reservedBlocks);
-	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride =
+	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride =
 		generationInfo.mainQuestTempleOverride.has_value() ? &(*generationInfo.mainQuestTempleOverride) : nullptr;
 
 	// Generate city level (optionally generating random city blocks if not premade).
@@ -513,7 +513,7 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 	}
 	
 	const BufferView2D<const ArenaWildUtils::WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs);
-	const LocationDefinition::CityDefinition &cityDef = *generationInfo.cityDef;
+	const LocationCityDefinition &cityDef = *generationInfo.cityDef;
 
 	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, cityDef, skyGenInfo, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);

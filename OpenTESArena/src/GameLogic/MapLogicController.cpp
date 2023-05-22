@@ -141,8 +141,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	DebugAssert(locationDef.getType() == LocationDefinitionType::City);
+	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
@@ -373,8 +373,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 					return buffer;
 				}();
 
-				const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-					[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+				const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+					[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
 				{
 					if (cityDef.hasMainQuestTempleOverride)
 					{

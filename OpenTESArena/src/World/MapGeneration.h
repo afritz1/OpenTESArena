@@ -57,10 +57,10 @@ namespace MapGeneration
 		// Output: N LevelDefinitions + 1 LevelInfoDefinition
 		struct Dungeon
 		{
-			LocationDefinition::DungeonDefinition dungeonDef;
+			LocationDungeonDefinition dungeonDef;
 			bool isArtifactDungeon;
 
-			void init(const LocationDefinition::DungeonDefinition &dungeonDef, bool isArtifactDungeon);
+			void init(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon);
 		};
 	private:
 		Type type;
@@ -73,7 +73,7 @@ namespace MapGeneration
 
 		void initPrefab(std::string &&mifName, ArenaTypes::InteriorType interiorType,
 			const std::optional<bool> &rulerIsMale);
-		void initDungeon(const LocationDefinition::DungeonDefinition &dungeonDef, bool isArtifactDungeon);
+		void initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon);
 
 		Type getType() const;
 		const Prefab &getPrefab() const;
@@ -99,7 +99,7 @@ namespace MapGeneration
 		// Affects which types of city blocks are used at generation start.
 		Buffer<uint8_t> reservedBlocks;
 
-		std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride;
+		std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride;
 
 		// Generation offset from city origin.
 		WEInt blockStartPosX;
@@ -110,7 +110,7 @@ namespace MapGeneration
 		void init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType, uint32_t citySeed,
 			uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale,
 			bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
-			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
+			const std::optional<LocationCityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
 			WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
 	};
 
@@ -119,11 +119,11 @@ namespace MapGeneration
 	struct WildGenInfo
 	{
 		Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs;
-		const LocationDefinition::CityDefinition *cityDef;
+		const LocationCityDefinition *cityDef;
 		uint32_t fallbackSeed;
 
 		void init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
-			const LocationDefinition::CityDefinition &cityDef, uint32_t fallbackSeed);
+			const LocationCityDefinition &cityDef, uint32_t fallbackSeed);
 	};
 
 	// Building names in the wild are shared per-chunk.
@@ -172,7 +172,7 @@ namespace MapGeneration
 	void readMifVoxels(const BufferView<const MIFLevel> &levels, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
+		const std::optional<ArenaTypes::CityType> &cityType, const LocationDungeonDefinition *dungeonDef,
 		const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
@@ -194,7 +194,7 @@ namespace MapGeneration
 		bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 		const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 		int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
-		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
@@ -203,7 +203,7 @@ namespace MapGeneration
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
 	void generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
-		const BufferView2D<const int> &levelDefIndices, const LocationDefinition::CityDefinition &cityDef,
+		const BufferView2D<const int> &levelDefIndices, const LocationCityDefinition &cityDef,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary,const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
