@@ -175,16 +175,9 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 		auto &gameState = game.getGameState();
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const LocationInstance &locationInst = gameState.getLocationInstance();
-		const MapDefinition &mapDef = gameState.getActiveMapDef();
-		const MapInstance &mapInst = gameState.getActiveMapInst();
-		const int activeLevelIndex = mapInst.getActiveLevelIndex();
-		const BufferView<const LevelDefinition> levelDefs = mapDef.getLevels();
-		const BufferView<const int> levelInfoDefIndices = mapDef.getLevelInfoIndices();
-		const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDef.getLevelInfos();
-		const LevelDefinition &levelDef = levelDefs[activeLevelIndex];
-		const int levelInfoDefIndex = levelInfoDefIndices[activeLevelIndex];
-		const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoDefIndex];
-		const LevelInstance &levelInst = mapInst.getLevel(activeLevelIndex);
+		const int activeLevelIndex = gameState.getActiveLevelIndex();
+		const SceneManager &sceneManager = game.getSceneManager();
+		const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 
 		// Some places (like named/wild dungeons) do not display a name on the automap.
 		const std::string automapLocationName = [&gameState, &exeData, &locationDef, &locationInst]()
@@ -196,8 +189,7 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 		}();
 
 		const auto &player = game.getPlayer();
-		game.setPanel<AutomapPanel>(player.getPosition(), player.getGroundDirection(),
-			levelInst.getVoxelChunkManager(), automapLocationName);
+		game.setPanel<AutomapPanel>(player.getPosition(), player.getGroundDirection(), voxelChunkManager, automapLocationName);
 	}
 	else
 	{

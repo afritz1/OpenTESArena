@@ -25,7 +25,6 @@ struct SceneManager
 	//RenderParticleManager; // @todo
 
 	ScopedObjectTextureRef gameWorldPaletteTextureRef, lightTableTextureRef;
-	double ceilingScale;
 
 	SceneManager();
 

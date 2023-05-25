@@ -129,6 +129,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	Player &player = game.getPlayer();
 	player.initRandom(CharacterClassLibrary::getInstance(), binaryAssetLibrary.getExeData(), game.getRandom());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	const auto &options = game.getOptions();
 	const int starCount = SkyUtils::getStarCountFromDensity(options.getMisc_StarDensity());
@@ -211,15 +212,16 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			MapGeneration::InteriorGenInfo interiorGenInfo;
 			interiorGenInfo.initPrefab(std::string(mifName), interiorType, rulerIsMale);
 
-			const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest/interiors.
-
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-			if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-				BinaryAssetLibrary::getInstance(), game.getTextureManager(), renderer))
+
+			MapDefinition mapDefinition;
+			if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 			{
-				DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
+				DebugLogError("Couldn't init MapDefinition for interior \"" + locationDef.getName() + "\".");
+				return;
 			}
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 		}
 		else
 		{
@@ -231,7 +233,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			constexpr bool isArtifactDungeon = false;
 
-			const std::optional<VoxelInt2> playerStartOffset = VoxelInt2(
+			const VoxelInt2 playerStartOffset(
 				ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_X,
 				ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_Z);
 
@@ -247,12 +249,15 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-				if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-					CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-					BinaryAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
+
+				MapDefinition mapDefinition;
+				if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 				{
-					DebugCrash("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
+					DebugLogError("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
+					return;
 				}
+
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, playerStartOffset, worldMapLocationIDs, true);
 
 				// Set random named dungeon name and visibility for testing.
 				LocationInstance &locationInst = gameState.getLocationInstance();
@@ -285,12 +290,15 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-				if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-					CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-					binaryAssetLibrary, game.getTextureManager(), renderer))
+
+				MapDefinition mapDefinition;
+				if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 				{
-					DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
+					DebugLogError("Couldn't init MapDefinition for wilderness dungeon \"" + locationDef.getName() + "\".");
+					return;
 				}
+				
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, playerStartOffset, worldMapLocationIDs, true);
 			}
 			else
 			{
@@ -374,12 +382,15 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
-				textAssetLibrary, game.getTextureManager(), renderer))
+
+			MapDefinition mapDefinition;
+			if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.getTextureManager()))
 			{
-				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+				DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
+				return;
 			}
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		}
 		else
 		{
@@ -455,13 +466,14 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
-			// Load city into game state.
-			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
-				textAssetLibrary, game.getTextureManager(), renderer))
+			MapDefinition mapDefinition;
+			if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, textureManager))
 			{
-				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+				DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
+				return;
 			}
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -494,17 +506,16 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
-		// No previous start coordinate available. Let the loader decide.
-		const std::optional<CoordInt3> startCoord;
-
-		// Load wilderness into game state.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-		if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-			worldMapLocationIDs, CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-			binaryAssetLibrary, game.getTextureManager(), renderer))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initWild(wildGenInfo, skyGenInfo, textureManager))
 		{
-			DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
+			DebugLogError("Couldn't init MapDefinition for wilderness \"" + locationDef.getName() + "\".");
+			return;
 		}
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 	}
 	else
 	{

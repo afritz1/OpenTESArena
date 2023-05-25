@@ -528,18 +528,19 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		MapGeneration::InteriorGenInfo interiorGenInfo;
 		interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
-		const std::optional<VoxelInt2> playerStartOffset; // Unused for start dungeon.
-
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
 		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 		gameState.init(binaryAssetLibrary); // @todo: not sure about this; should we init really early in the engine?
-		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			charClassLibrary, EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
-			game.getTextureManager(), game.getRenderer()))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initInterior(interiorGenInfo, game.getTextureManager()))
 		{
-			DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
+			DebugLogError("Couldn't init MapDefinition for start dungeon \"" + mifName + "\".");
+			return;
 		}
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		// Initialize player.
 		const auto &exeData = binaryAssetLibrary.getExeData();
@@ -797,13 +798,15 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
-		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-			BinaryAssetLibrary::getInstance(), TextAssetLibrary::getInstance(), game.getTextureManager(),
-			renderer))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.getTextureManager()))
 		{
-			DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+			DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
+			return;
 		}
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 
 		// Set music based on weather and time.
 		const MusicDefinition *musicDef = [&game, &gameState]()

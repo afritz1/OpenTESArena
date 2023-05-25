@@ -519,9 +519,12 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const double viewAspectRatio = renderer.getViewAspect();
 
 	const auto &gameState = game.getGameState();
-	const MapInstance &mapInst = gameState.getActiveMapInst();
-	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const double ceilingScale = levelInst.getCeilingScale();
+	const double ceilingScale = gameState.getActiveCeilingScale();
+
+	const SceneManager &sceneManager = game.getSceneManager();
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 
 	for (int y = 0; y < windowDims.y; y += yOffset)
 	{
@@ -534,7 +537,8 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 			constexpr bool includeEntities = false;
 			Physics::Hit hit;
 			const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-				includeEntities, levelInst, EntityDefinitionLibrary::getInstance(), renderer, hit);
+				includeEntities, voxelChunkManager, entityChunkManager, collisionChunkManager,
+				EntityDefinitionLibrary::getInstance(), renderer, hit);
 
 			if (success)
 			{
@@ -584,19 +588,20 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const CoordDouble3 rayStart = player.getPosition();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, viewCenterPoint);
 
+	const SceneManager &sceneManager = game.getSceneManager();
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
+
 	const auto &gameState = game.getGameState();
-	const MapInstance &mapInst = gameState.getActiveMapInst();
-	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
-	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
-	const double ceilingScale = levelInst.getCeilingScale();
+	const double ceilingScale = gameState.getActiveCeilingScale();
 
 	EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
 	constexpr bool includeEntities = true;
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection, includeEntities,
-		levelInst, entityDefLibrary, renderer, hit);
+		voxelChunkManager, entityChunkManager, collisionChunkManager, entityDefLibrary, renderer, hit);
 
 	std::string text;
 	if (success)

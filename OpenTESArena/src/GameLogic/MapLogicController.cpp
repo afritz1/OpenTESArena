@@ -17,8 +17,6 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 {
 	auto &renderer = game.getRenderer();
 	GameState &gameState = game.getGameState();
-	MapInstance &mapInst = gameState.getActiveMapInst();
-	LevelInstance &levelInst = mapInst.getActiveLevel();
 	const auto &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
 	// Turn streetlights on or off.
@@ -69,9 +67,8 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
 {
 	GameState &gameState = game.getGameState();
-	MapInstance &mapInst = gameState.getActiveMapInst();
-	LevelInstance &levelInst = mapInst.getActiveLevel();
-	VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
+	SceneManager &sceneManager = game.getSceneManager();
+	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(coord.chunk);
 
 	const VoxelInt3 &voxel = coord.voxel;
@@ -120,8 +117,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	}
 }
 
-void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit, 
-	const TransitionDefinition &transitionDef)
+void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit, const TransitionDefinition &transitionDef)
 {
 	const TransitionType transitionType = transitionDef.getType();
 	DebugAssert(transitionType != TransitionType::LevelChange);
@@ -131,14 +127,12 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	const CoordInt3 hitCoord(hit.getCoord().chunk, voxelHit.voxel);
 
 	auto &gameState = game.getGameState();
-	auto &renderChunkManager = game.getRenderChunkManager();
+	auto &sceneManager = game.getSceneManager();
+	auto &renderChunkManager = sceneManager.renderChunkManager;
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-	const MapSubDefinition &activeMapSubDef = activeMapDef.getSubDefinition();
-	const MapType activeMapType = activeMapSubDef.type;
-	MapInstance &activeMapInst = gameState.getActiveMapInst();
-	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const MapType activeMapType = activeMapDef.getMapType();
 
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
 	DebugAssert(locationDef.getType() == LocationDefinitionType::City);
@@ -159,11 +153,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 		}
 
 		// Leave the interior and go to the saved exterior.
-		if (!gameState.tryPopMap(game.getPlayer(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
-			renderChunkManager, textureManager, renderer))
-		{
-			DebugCrash("Couldn't leave interior.");
-		}
+		gameState.queueMapDefPop();
 
 		// Change to exterior music.
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
@@ -194,7 +184,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 
 		// Only play jingle if the exterior is inside the city.
 		const MusicDefinition *jingleMusicDef = nullptr;
-		if (gameState.getActiveMapDef().getSubDefinition().type == MapType::City)
+		if (gameState.getActiveMapDef().getMapType() == MapType::City)
 		{
 			jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
 				game.getRandom(), [&cityDef](const MusicDefinition &def)
@@ -256,12 +246,14 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef.getInteriorEntrance();
 			const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
 
-			if (!gameState.tryPushInterior(interiorGenInfo, returnCoord, CharacterClassLibrary::getInstance(),
-				EntityDefinitionLibrary::getInstance(), binaryAssetLibrary, textureManager, renderer))
+			MapDefinition mapDefinition;
+			if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 			{
-				DebugLogError("Couldn't push new interior.");
+				DebugLogError("Couldn't init MapDefinition for interior type " + std::to_string(static_cast<int>(interiorGenInfo.getInteriorType())) + ".");
 				return;
 			}
+
+			gameState.queueMapDefChange(std::move(mapDefinition), returnCoord);
 
 			// Change to interior music.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
@@ -354,13 +346,14 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
 
-				if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-					worldMapLocationIDs, CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-					binaryAssetLibrary, textureManager, renderer))
+				MapDefinition mapDefinition;
+				if (!mapDefinition.initWild(wildGenInfo, skyGenInfo, textureManager))
 				{
-					DebugLogError("Couldn't switch from city to wilderness for \"" + locationDef.getName() + "\".");
+					DebugLogError("Couldn't init MapDefinition for switch from city to wilderness for \"" + locationDef.getName() + "\".");
 					return;
 				}
+
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, std::nullopt, true);
 			}
 			else if (activeMapType == MapType::Wilderness)
 			{
@@ -403,13 +396,14 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
 
-				if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-					CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
-					TextAssetLibrary::getInstance(), textureManager, renderer))
+				MapDefinition mapDefinition;
+				if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, textureManager))
 				{
-					DebugLogError("Couldn't switch from wilderness to city for \"" + locationDef.getName() + "\".");
+					DebugLogError("Couldn't init MapDefinition for switch from wilderness to city for \"" + locationDef.getName() + "\".");
 					return;
 				}
+
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, std::nullopt, true);
 			}
 			else
 			{
@@ -482,11 +476,10 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 
 	// Level transitions are always between interiors.
 	const MapDefinition &interiorMapDef = gameState.getActiveMapDef();
-	DebugAssert(interiorMapDef.getSubDefinition().type == MapType::Interior);
+	DebugAssert(interiorMapDef.getMapType() == MapType::Interior);
 
-	MapInstance &interiorMapInst = gameState.getActiveMapInst();
-	const LevelInstance &level = interiorMapInst.getActiveLevel();
-	const VoxelChunkManager &voxelChunkManager = level.getVoxelChunkManager();
+	const SceneManager &sceneManager = game.getSceneManager();
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(transitionCoord.chunk);
 
 	const VoxelInt3 &transitionVoxel = transitionCoord.voxel;
@@ -557,75 +550,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		// Player destination after going through a level up/down voxel.
 		auto &player = game.getPlayer();
 		const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
-		const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(
-			transitionCoord.chunk, transitionVoxelCenter + dirToWorldVoxel);
-
-		// Lambda for transitioning the player to the given level.
-		auto switchToLevel = [&game, &gameState, &interiorMapDef, &interiorMapInst, &player, &destinationCoord,
-			&dirToWorldVoxel](int levelIndex)
-		{
-			// Clear all open doors and fading voxels in the level the player is switching away from.
-			// @todo: why wouldn't it just clear them when it gets switched to in setActive()?
-			auto &oldActiveLevel = interiorMapInst.getActiveLevel();
-
-			// @todo: find a modern equivalent for this w/ either the LevelInstance or ChunkManager.
-			//oldActiveLevel.clearTemporaryVoxelInstances();
-
-			// Select the new level.
-			interiorMapInst.setActiveLevelIndex(levelIndex, interiorMapDef);
-
-			// Set the new level active in the renderer.
-			auto &newActiveLevel = interiorMapInst.getActiveLevel();
-			auto &newActiveSky = interiorMapInst.getActiveSky();
-
-			WeatherDefinition weatherDef;
-			weatherDef.initClear();
-
-			const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
-
-			// @todo: should this be called differently so it doesn't badly influence data for the rest of
-			// this frame? Level changing should be done earlier I think.
-			auto &renderChunkManager = game.getRenderChunkManager();
-			auto &textureManager = game.getTextureManager();
-			auto &renderer = game.getRenderer();
-			if (!newActiveLevel.trySetActive(renderChunkManager, textureManager, renderer))
-			{
-				DebugCrash("Couldn't set new level active in renderer.");
-			}
-
-			if (!newActiveSky.trySetActive(levelIndex, interiorMapDef, textureManager, renderer))
-			{
-				DebugCrash("Couldn't set new sky active in renderer.");
-			}
-
-			// Move the player to where they should be in the new level.
-			const VoxelDouble3 playerDestinationPoint(
-				destinationCoord.point.x,
-				newActiveLevel.getCeilingScale() + Player::HEIGHT,
-				destinationCoord.point.z);
-			const CoordDouble3 playerDestinationCoord(destinationCoord.chunk, playerDestinationPoint);
-			player.teleport(playerDestinationCoord);
-			player.lookAt(player.getPosition() + dirToWorldVoxel);
-			player.setVelocityToZero();
-
-			const Clock &clock = gameState.getClock();
-			const bool nightLightsAreActive = ArenaClockUtils::nightLightsAreActive(clock);
-
-			EntityGeneration::EntityGenInfo entityGenInfo;
-			entityGenInfo.init(nightLightsAreActive);
-
-			// Tick the level's chunk manager once during initialization so the renderer is passed valid
-			// chunks this frame.
-			constexpr double dummyDeltaTime = 0.0;
-			const ChunkManager &chunkManager = game.getChunkManager();
-			const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
-			const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
-			const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
-			newActiveLevel.update(dummyDeltaTime, activeChunkPositions, newChunkPositions, freedChunkPositions,
-				player, levelIndex, interiorMapDef, entityGenInfo, citizenGenInfo, gameState.getChasmAnimPercent(),
-				game.getRandom(), EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(), renderChunkManager,
-				textureManager, game.getAudioManager(), renderer);
-		};
+		const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(transitionCoord.chunk, transitionVoxelCenter + dirToWorldVoxel);
 
 		// Lambda for opening the world map when the player enters a transition voxel
 		// that will "lead to the surface of the dungeon".
@@ -649,6 +574,8 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		// See if it's a level up or level down transition. Ignore other transition types.
 		if (transitionDef.getType() == TransitionType::LevelChange)
 		{
+			const int activeLevelIndex = gameState.getActiveLevelIndex();
+			const int levelCount = interiorMapDef.getLevels().getCount();
 			const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef.getLevelChange();
 			if (levelChangeDef.isLevelUp)
 			{
@@ -661,10 +588,10 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 					onLevelUpVoxelEnter(game);
 					onLevelUpVoxelEnter = std::function<void(Game&)>();
 				}
-				else if (interiorMapInst.getActiveLevelIndex() > 0)
+				else if (activeLevelIndex > 0)
 				{
 					// Decrement the world's level index and activate the new level.
-					switchToLevel(interiorMapInst.getActiveLevelIndex() - 1);
+					gameState.queueLevelIndexChange(activeLevelIndex - 1);
 				}
 				else
 				{
@@ -674,10 +601,10 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			else
 			{
 				// Level down transition.
-				if (interiorMapInst.getActiveLevelIndex() < (interiorMapInst.getLevelCount() - 1))
+				if (activeLevelIndex < (levelCount - 1))
 				{
 					// Increment the world's level index and activate the new level.
-					switchToLevel(interiorMapInst.getActiveLevelIndex() + 1);
+					gameState.queueLevelIndexChange(activeLevelIndex + 1);
 				}
 				else
 				{

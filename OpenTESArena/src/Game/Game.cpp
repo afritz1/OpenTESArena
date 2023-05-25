@@ -106,7 +106,8 @@ Game::~Game()
 		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
 
-	this->renderChunkManager.shutdown(this->renderer);
+	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
+	renderChunkManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -173,7 +174,9 @@ bool Game::init()
 		return false;
 	}
 
-	this->renderChunkManager.init(this->renderer);
+	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
+	renderChunkManager.init(this->renderer);
+
 	this->inputManager.init();
 
 	// Add application-level input event handlers.
@@ -300,14 +303,9 @@ Player &Game::getPlayer()
 	return this->player;
 }
 
-const ChunkManager &Game::getChunkManager() const
+SceneManager &Game::getSceneManager()
 {
-	return this->chunkManager;
-}
-
-RenderChunkManager &Game::getRenderChunkManager()
-{
-	return this->renderChunkManager;
+	return this->sceneManager;
 }
 
 bool Game::isSimulatingScene() const
@@ -785,7 +783,8 @@ void Game::loop()
 				// Recalculate the active chunks.
 				const CoordDouble3 playerCoord = this->player.getPosition();
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
-				this->chunkManager.update(playerCoord.chunk, chunkDistance);
+				ChunkManager &chunkManager = this->sceneManager.chunkManager;
+				chunkManager.update(playerCoord.chunk, chunkDistance);
 
 				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
 				// It shouldn't be abstracted into a game state.
@@ -898,13 +897,7 @@ void Game::loop()
 		// End-of-frame clean up.
 		try
 		{
-			if (this->gameState.hasActiveMapInst())
-			{
-				MapInstance &mapInst = this->gameState.getActiveMapInst();
-				mapInst.cleanUp();
-			}
-
-			this->chunkManager.cleanUp();
+			this->sceneManager.cleanUp();
 		}
 		catch (const std::exception &e)
 		{

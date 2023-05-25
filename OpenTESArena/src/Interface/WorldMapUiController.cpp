@@ -61,6 +61,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	const auto &travelProvinceDef = worldMapDef.getProvinceDef(targetProvinceID);
 	const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
 
+	TextureManager &textureManager = game.getTextureManager();
+
 	// Decide how to load the location.
 	if (travelLocationDef.getType() == LocationDefinitionType::City)
 	{
@@ -123,14 +125,17 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
 
-		// Load the destination city.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
-		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
-			TextAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, textureManager))
 		{
-			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
+			DebugCrash("Couldn't init MapDefinition for city \"" + travelLocationDef.getName() + "\".");
+			return;
 		}
+
+		// Load the destination city.
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 
 		// Choose time-based music and enter the game world.
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
@@ -194,17 +199,20 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		MapGeneration::InteriorGenInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
-		const std::optional<VoxelInt2> playerStartOffset = VoxelInt2(
+		const VoxelInt2 playerStartOffset(
 			ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_X,
 			ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_Z);
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
-		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
-			game.getTextureManager(), game.getRenderer()))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 		{
-			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
+			DebugCrash("Couldn't init MapDefinition for named dungeon \"" + travelLocationDef.getName() + "\".");
+			return;
 		}
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, playerStartOffset, worldMapLocationIDs, true);
 
 		// Choose random dungeon music and enter game world.
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
@@ -234,18 +242,19 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(std::string(mainQuestDungeonDef.mapFilename),
-			ArenaTypes::InteriorType::Dungeon, rulerIsMale);
+		interiorGenInfo.initPrefab(std::string(mainQuestDungeonDef.mapFilename), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
 		const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest dungeon.
-
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
-		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
-			game.getTextureManager(), game.getRenderer()))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 		{
-			DebugCrash("Couldn't load main quest interior \"" + travelLocationDef.getName() + "\".");
+			DebugLogError("Couldn't init MapDefinition for main quest interior \"" + travelLocationDef.getName() + "\".");
+			return;
 		}
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Staff)
 		{

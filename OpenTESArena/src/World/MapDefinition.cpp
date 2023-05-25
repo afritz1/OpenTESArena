@@ -13,6 +13,9 @@
 #include "../Assets/MIFFile.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
+#include "../Assets/TextAssetLibrary.h"
+#include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Math/Random.h"
 #include "../Sky/SkyGeneration.h"
 #include "../Weather/WeatherUtils.h"
@@ -401,10 +404,12 @@ void MapDefinition::initStartPoints(const MIFFile &mif)
 	}
 }
 
-bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generationInfo,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
+bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generationInfo, TextureManager &textureManager)
 {
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+
 	this->init(MapType::Interior);
 
 	const MapGeneration::InteriorGenInfo::Type interiorType = generationInfo.getType();
@@ -459,10 +464,13 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 }
 
 bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager)
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager)
 {
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+
 	this->init(MapType::City);
 
 	const std::string &mifName = generationInfo.mifName;
@@ -498,10 +506,12 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 }
 
 bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager)
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager)
 {
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+
 	this->init(MapType::Wilderness);
 
 	const std::string infName = ArenaWildUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef.type);
@@ -521,6 +531,11 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 	// No start level index and no start points in the wilderness due to the nature of chunks.
 	this->startLevelIndex = std::nullopt;
 	return true;
+}
+
+MapType MapDefinition::getMapType() const
+{
+	return this->subDefinition.type;
 }
 
 const std::optional<int> &MapDefinition::getStartLevelIndex() const

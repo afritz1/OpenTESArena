@@ -7,12 +7,14 @@
 #include "Player.h"
 #include "PrimaryAttributeName.h"
 #include "../Collision/CollisionChunk.h"
+#include "../Collision/CollisionChunkManager.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
+#include "../Voxels/VoxelChunkManager.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -195,7 +197,7 @@ double Player::getFeetY() const
 	return cameraY - Player::HEIGHT;
 }
 
-bool Player::onGround(const LevelInstance &activeLevel) const
+bool Player::onGround(const CollisionChunkManager &collisionChunkManager) const
 {
 	// @todo: find a non-hack way to do this.
 
@@ -252,12 +254,9 @@ void Player::lookAt(const CoordDouble3 &point)
 	this->camera.lookAt(point);
 }
 
-void Player::handleCollision(const LevelInstance &activeLevel, double dt)
+void Player::handleCollision(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale)
 {
-	const VoxelChunkManager &voxelChunkManager = activeLevel.getVoxelChunkManager();
-	const CollisionChunkManager &collisionChunkManager = activeLevel.getCollisionChunkManager();
-
-	auto tryGetVoxelTraitsDef = [&activeLevel, &voxelChunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
+	auto tryGetVoxelTraitsDef = [&voxelChunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
 	{
 		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
 		if (chunk != nullptr)
@@ -275,7 +274,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 
 	// Coordinates of the base of the voxel the feet are in.
 	// - @todo: add delta velocity Y?
-	const int feetVoxelY = static_cast<int>(std::floor(this->getFeetY() / activeLevel.getCeilingScale()));
+	const int feetVoxelY = static_cast<int>(std::floor(this->getFeetY() / ceilingScale));
 
 	// Regular old Euler integration in XZ plane.
 	const CoordDouble3 curPlayerCoord = this->getPosition();
@@ -450,16 +449,16 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	}
 }
 
-void Player::updatePhysics(const LevelInstance &activeLevel, double dt)
+void Player::updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale)
 {
 	// Acceleration from gravity (always).
 	this->accelerate(-Double3::UnitY, GRAVITY, dt);
 
-	// Temp: get floor Y until Y collision is implemented.
-	const double floorY = activeLevel.getCeilingScale();
-
 	// Change the player's velocity based on collision.
-	this->handleCollision(activeLevel, dt);
+	this->handleCollision(dt, voxelChunkManager, collisionChunkManager, ceilingScale);
+
+	// Temp: get floor Y until Y collision is implemented.
+	const double floorY = ceilingScale;
 	this->camera.position.point.y = floorY + Player::HEIGHT; // Temp: keep camera Y fixed until Y collision is implemented.
 
 	// Simple Euler integration for updating the player's position.
@@ -471,7 +470,7 @@ void Player::updatePhysics(const LevelInstance &activeLevel, double dt)
 		this->camera.position = ChunkUtils::recalculateCoord(this->camera.position.chunk, newPoint);
 	}
 
-	if (this->onGround(activeLevel))
+	if (this->onGround(collisionChunkManager))
 	{
 		// Slow down the player's horizontal velocity with some friction.
 		Double2 velocityXZ(this->velocity.x, this->velocity.z);
@@ -488,17 +487,21 @@ void Player::updatePhysics(const LevelInstance &activeLevel, double dt)
 void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
-	const GameState &gameState = game.getGameState();
-	const MapInstance &activeMapInst = gameState.getActiveMapInst();
-	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 	const bool isGhostModeEnabled = game.getOptions().getMisc_GhostMode();
 	if (!isGhostModeEnabled)
 	{
-		this->updatePhysics(activeLevelInst, dt);
+		const SceneManager &sceneManager = game.getSceneManager();
+		const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+		const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
+
+		const GameState &gameState = game.getGameState();
+		const double ceilingScale = gameState.getActiveCeilingScale();
+
+		this->updatePhysics(dt, voxelChunkManager, collisionChunkManager, ceilingScale);
 	}
 	else
 	{
-		this->setVelocityToZero(); // Prevent leftover momentum when switching modes.
+		this->setVelocityToZero(); // Prevent leftover momentum when switching cheat modes.
 	}
 
 	// Tick weapon animation.

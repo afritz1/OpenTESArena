@@ -39,30 +39,13 @@ GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int location
 	this->locationID = locationID;
 }
 
-void GameState::MapState::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance,
-	WeatherDefinition &&weatherDef, const std::optional<CoordInt3> &returnCoord)
-{
-	this->definition = std::move(mapDefinition);
-	this->instance = std::move(mapInstance);
-	this->weatherDef = std::move(weatherDef);
-	this->returnCoord = returnCoord;
-}
-
-void GameState::MapTransitionState::init(MapState &&mapState,
-	const std::optional<WorldMapLocationIDs> &worldMapLocationIDs,
-	std::optional<CitizenUtils::CitizenGenInfo> &&citizenGenInfo, const CoordInt2 &startCoord,
-	const std::optional<bool> &enteringInteriorFromExterior)
-{
-	this->mapState = std::move(mapState);
-	this->worldMapLocationIDs = worldMapLocationIDs;
-	this->citizenGenInfo = std::move(citizenGenInfo);
-	this->startCoord = startCoord;
-	this->enteringInteriorFromExterior = enteringInteriorFromExterior;
-}
-
 GameState::GameState()
 {
 	DebugLog("Initializing.");
+
+	this->activeLevelIndex = -1;
+	this->nextMapClearsPrevious = false;
+	this->nextLevelIndex = -1;
 
 	this->triggerTextRemainingSeconds = 0.0;
 	this->actionTextRemainingSeconds = 0.0;
@@ -129,7 +112,6 @@ void GameState::clearSession()
 	this->chasmAnimSeconds = 0.0;
 
 	this->travelData = std::nullopt;
-	this->nextMap = nullptr;
 	this->clearMaps();
 	
 	this->onLevelUpVoxelEnter = std::function<void(Game&)>();
@@ -137,7 +119,70 @@ void GameState::clearSession()
 	this->weatherDef.initClear();
 }
 
-bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
+bool GameState::hasPendingLevelIndexChange() const
+{
+	return this->nextLevelIndex >= 0;
+}
+
+bool GameState::hasPendingMapDefChange() const
+{
+	const MapType nextMapType = this->nextMapDef.getMapType();
+	return static_cast<int>(nextMapType) >= 0;
+}
+
+bool GameState::hasPendingSceneChange() const
+{
+	return this->hasPendingLevelIndexChange() || this->hasPendingMapDefChange();
+}
+
+void GameState::queueLevelIndexChange(int newLevelIndex)
+{
+	if (this->hasPendingLevelIndexChange())
+	{
+		DebugLogError("Already queued level index change to level " + std::to_string(this->nextLevelIndex) + ".");
+		return;
+	}
+
+	if (this->hasPendingMapDefChange())
+	{
+		DebugLogError("Already changing map definition change to " + std::to_string(static_cast<int>(this->nextMapDef.getMapType())) + " this frame.");
+		return;
+	}
+
+	this->nextLevelIndex = newLevelIndex;
+}
+
+void GameState::queueMapDefChange(MapDefinition &&newMapDef, const std::optional<CoordInt3> &returnCoord,
+	const VoxelInt2 &playerStartOffset, const std::optional<WorldMapLocationIDs> &worldMapLocationIDs, bool clearPreviousMap,
+	const std::optional<WeatherDefinition> &weatherDef)
+{
+	if (this->hasPendingMapDefChange())
+	{
+		DebugLogError("Already queued map definition change to " + std::to_string(static_cast<int>(this->nextMapDef.getMapType())) + ".");
+		return;
+	}
+
+	if (this->hasPendingLevelIndexChange())
+	{
+		DebugLogError("Already changing level index to " + std::to_string(this->nextLevelIndex) + " this frame.");
+		return;
+	}
+
+	this->nextMapDef = std::move(newMapDef);
+	this->prevMapReturnCoord = returnCoord;
+	this->nextMapPlayerStartOffset = playerStartOffset;
+	this->nextMapDefLocationIDs = worldMapLocationIDs;
+	this->nextMapClearsPrevious = clearPreviousMap;
+	this->nextMapDefWeatherDef = weatherDef;
+}
+
+void GameState::queueMapDefPop()
+{
+	// @todo: set pending map def as prevMapDef then clear prevMapDef (we don't need a copy)
+	DebugNotImplemented();
+}
+
+/*bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
 	const std::optional<CoordInt3> &returnCoord, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
@@ -185,9 +230,9 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 		startCoord, enteringInteriorFromExterior);
 
 	return true;
-}
+}*/
 
-bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
+/*bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
 	const std::optional<VoxelInt2> &playerStartOffset, const WorldMapLocationIDs &worldMapLocationIDs,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
@@ -233,9 +278,9 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 		startCoord, enteringInteriorFromExterior);
 
 	return true;
-}
+}*/
 
-bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
+/*bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
 	const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
@@ -302,9 +347,9 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 		startCoord, enteringInteriorFromExterior);
 
 	return true;
-}
+}*/
 
-bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
+/*bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
 	const std::optional<CoordInt3> &startCoord, const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
@@ -386,9 +431,9 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 		actualStartCoord, enteringInteriorFromExterior);
 
 	return true;
-}
+}*/
 
-bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
+/*bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
 	Renderer &renderer)
 {
@@ -464,63 +509,44 @@ bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityD
 	}
 
 	return true;
-}
+}*/
 
 MapType GameState::getActiveMapType() const
 {
-	return this->getActiveMapDef().getSubDefinition().type;
+	return this->getActiveMapDef().getMapType();
+}
+
+bool GameState::isActiveMapValid() const
+{
+	return static_cast<int>(this->activeMapDef.getMapType()) >= 0;
+}
+
+int GameState::getActiveLevelIndex() const
+{
+	return this->activeLevelIndex;
 }
 
 const MapDefinition &GameState::getActiveMapDef() const
 {
-	if (this->nextMap != nullptr)
-	{
-		return this->nextMap->mapState.definition;
-	}
-	else
-	{
-		DebugAssert(!this->maps.empty());
-		const MapState &activeMapState = this->maps.top();
-		return activeMapState.definition;
-	}
+	return this->activeMapDef;
 }
 
-bool GameState::hasActiveMapInst() const
+double GameState::getActiveCeilingScale() const
 {
-	return !this->maps.empty();
-}
+	if (!this->isActiveMapValid())
+	{
+		DebugLogError("No valid map for obtaining ceiling scale.");
+		return 0.0;
+	}
 
-MapInstance &GameState::getActiveMapInst()
-{
-	if (this->nextMap != nullptr)
-	{
-		return this->nextMap->mapState.instance;
-	}
-	else
-	{
-		DebugAssert(!this->maps.empty());
-		MapState &activeMapState = this->maps.top();
-		return activeMapState.instance;
-	}
-}
-
-const MapInstance &GameState::getActiveMapInst() const
-{
-	if (this->nextMap != nullptr)
-	{
-		return this->nextMap->mapState.instance;
-	}
-	else
-	{
-		DebugAssert(!this->maps.empty());
-		const MapState &activeMapState = this->maps.top();
-		return activeMapState.instance;
-	}
+	BufferView<const LevelInfoDefinition> levelInfoDefs = this->activeMapDef.getLevelInfos();
+	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[this->activeLevelIndex];
+	return levelInfoDef.getCeilingScale();
 }
 
 bool GameState::isActiveMapNested() const
 {
-	return this->maps.size() >= 2;
+	return static_cast<int>(this->prevMapDef.getMapType()) >= 0;
 }
 
 WorldMapInstance &GameState::getWorldMapInstance()
@@ -535,31 +561,47 @@ const WorldMapDefinition &GameState::getWorldMapDefinition() const
 
 const ProvinceDefinition &GameState::getProvinceDefinition() const
 {
-	const int index = ((this->nextMap != nullptr) && this->nextMap->worldMapLocationIDs.has_value()) ?
-		this->nextMap->worldMapLocationIDs->provinceID : this->provinceIndex;
+	int index = this->provinceIndex;
+	if (this->nextMapDefLocationIDs.has_value())
+	{
+		index = this->nextMapDefLocationIDs->provinceID;
+	}
+
 	return this->worldMapDef.getProvinceDef(index);
 }
 
 const LocationDefinition &GameState::getLocationDefinition() const
 {
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	const int index = ((this->nextMap != nullptr) && this->nextMap->worldMapLocationIDs.has_value()) ?
-		this->nextMap->worldMapLocationIDs->locationID : this->locationIndex;
+	int index = this->locationIndex;
+	if (this->nextMapDefLocationIDs.has_value())
+	{
+		index = this->nextMapDefLocationIDs->locationID;
+	}
+
 	return provinceDef.getLocationDef(index);
 }
 
 ProvinceInstance &GameState::getProvinceInstance()
 {
-	const int index = ((this->nextMap != nullptr) && this->nextMap->worldMapLocationIDs.has_value()) ?
-		this->nextMap->worldMapLocationIDs->provinceID : this->provinceIndex;
+	int index = this->provinceIndex;
+	if (this->nextMapDefLocationIDs.has_value())
+	{
+		index = this->nextMapDefLocationIDs->provinceID;
+	}
+
 	return this->worldMapInst.getProvinceInstance(index);
 }
 
 LocationInstance &GameState::getLocationInstance()
 {
 	ProvinceInstance &provinceInst = this->getProvinceInstance();
-	const int index = ((this->nextMap != nullptr) && this->nextMap->worldMapLocationIDs.has_value()) ?
-		this->nextMap->worldMapLocationIDs->locationID : this->locationIndex;
+	int index = this->locationIndex;
+	if (this->nextMapDefLocationIDs.has_value())
+	{
+		index = this->nextMapDefLocationIDs->locationID;
+	}
+
 	return provinceInst.getLocationInstance(index);
 }
 
@@ -665,7 +707,7 @@ void GameState::resetEffectTextDuration()
 	this->effectTextRemainingSeconds = 0.0;
 }
 
-bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
+/*bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
 	Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -698,9 +740,9 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	}
 
 	return true;
-}
+}*/
 
-bool GameState::trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &activeLevelIndex,
+/*bool GameState::trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &activeLevelIndex,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	DebugAssert(this->maps.size() > 0);
@@ -713,9 +755,9 @@ bool GameState::trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &
 	}
 
 	return true;
-}
+}*/
 
-bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
+/*bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
@@ -757,14 +799,19 @@ bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState, Play
 	}
 
 	return true;
-}
+}*/
 
 void GameState::clearMaps()
 {
-	while (!this->maps.empty())
-	{
-		this->maps.pop();
-	}
+	this->activeMapDef = MapDefinition();
+	this->prevMapDef = MapDefinition();
+	this->nextMapDef = MapDefinition();
+	this->prevMapReturnCoord = std::nullopt;
+	this->nextMapPlayerStartOffset = VoxelInt2::Zero;
+	this->nextMapDefLocationIDs = std::nullopt;
+	this->nextMapDefWeatherDef = std::nullopt;
+	this->nextMapClearsPrevious = false;
+	this->nextLevelIndex = -1;
 }
 
 void GameState::updateWeatherList(const ExeData &exeData)
@@ -815,7 +862,21 @@ void GameState::updateWeatherList(const ExeData &exeData)
 void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 {
 	Player &player = game.getPlayer();
-	if (this->nextMap != nullptr)
+
+	if (this->hasPendingMapDefChange())
+	{
+		DebugLog("Pending map def change.");
+	}
+	else if (this->hasPendingLevelIndexChange())
+	{
+		DebugLog("Pending level index change.");
+	}
+
+	// @todo: replace tryApplyMapTransition()
+	// @todo: for level changes: if nextLevelIndex >= 0 then set activeLevelIndex to that
+	DebugLogError("tryUpdatePendingMapTransition() not implemented");
+
+	/*if (this->nextMap != nullptr)
 	{
 		if (!this->tryApplyMapTransition(std::move(*this->nextMap), player, EntityDefinitionLibrary::getInstance(),
 			BinaryAssetLibrary::getInstance(), game.getRenderChunkManager(), game.getTextureManager(), game.getRenderer()))
@@ -852,7 +913,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 
 		mapInst.update(dt, game, activeMapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
 			entityDefLibrary, BinaryAssetLibrary::getInstance(), textureManager, game.getAudioManager());
-	}
+	}*/
 }
 
 void GameState::tickGameClock(double dt, Game &game)
@@ -900,7 +961,7 @@ void GameState::tickGameClock(double dt, Game &game)
 
 	// Check for changes in exterior music depending on the time.
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
-	const MapType activeMapType = activeMapDef.getSubDefinition().type;
+	const MapType activeMapType = activeMapDef.getMapType();
 	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
 	{
 		AudioManager &audioManager = game.getAudioManager();
@@ -989,7 +1050,8 @@ void GameState::tickPlayer(double dt, Game &game)
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
 
-	MapInstance &mapInst = this->getActiveMapInst();
+	DebugLogError("Ticking mapInst in tickPlayer()");
+	/*MapInstance &mapInst = this->getActiveMapInst();
 	const double latitude = [this]()
 	{
 		const LocationDefinition &locationDef = this->getLocationDefinition();
@@ -1031,5 +1093,5 @@ void GameState::tickPlayer(double dt, Game &game)
 		{
 			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
 		}
-	}
+	}*/
 }

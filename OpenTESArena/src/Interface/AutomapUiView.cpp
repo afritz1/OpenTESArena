@@ -8,6 +8,7 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../Voxels/VoxelChunk.h"
+#include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelFacing2D.h"
 #include "../Voxels/VoxelTraitsDefinition.h"
 #include "../World/ChunkManager.h"
@@ -418,16 +419,10 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 	const VoxelDouble2 &playerDirection, const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
-	const bool isWild = [&gameState]()
-	{
-		const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-		return activeMapDef.getSubDefinition().type == MapType::Wilderness;
-	}();
-
-	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const MapInstance &mapInst = gameState.getActiveMapInst();
-	const BufferView<const LevelDefinition> levelDefs = mapDef.getLevels();
-	const LevelDefinition &activeLevelDef = levelDefs[mapInst.getActiveLevelIndex()];
+	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
+	const bool isWild = activeMapDef.getMapType() == MapType::Wilderness;
+	const BufferView<const LevelDefinition> levelDefs = activeMapDef.getLevels();
+	const LevelDefinition &activeLevelDef = levelDefs[gameState.getActiveLevelIndex()];
 	const WorldInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
 
 	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, levelDims, voxelChunkManager);

@@ -806,24 +806,21 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	auto &gameState = game.getGameState();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-	const MapInstance &activeMapInst = gameState.getActiveMapInst();
-	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
-	const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
+	//const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
-	const RenderChunkManager &renderChunkManager = game.getRenderChunkManager();
+	const SceneManager &sceneManager = game.getSceneManager();
+	const RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
 	const BufferView<const RenderDrawCall> drawCalls = renderChunkManager.getTotalDrawCalls();
 
 	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
-	const MapType activeMapType = activeMapDef.getSubDefinition().type;
+	const MapType activeMapType = activeMapDef.getMapType();
 	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType);
 	const double latitude = [&gameState]()
 	{
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		return locationDef.getLatitude();
 	}();
-
-	const bool isExterior = activeMapType != MapType::Interior;
 
 	auto &renderer = game.getRenderer();
 	const auto &options = game.getOptions();
@@ -837,9 +834,9 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		EntityDefinitionLibrary::getInstance());*/
 
 	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
-	const ObjectTextureID paletteTextureID = activeLevelInst.getPaletteTextureID();
-	const ObjectTextureID lightTableTextureID = activeLevelInst.getLightTableTextureID();
-	const ObjectTextureID skyColorsTextureID = activeSkyInst.getSkyColorsTextureID();
+	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
+	const ObjectTextureID lightTableTextureID = sceneManager.lightTableTextureRef.get();
+	const ObjectTextureID skyColorsTextureID = -1; //activeSkyInst.getSkyColorsTextureID(); // @todo
 	const ObjectTextureID thunderstormColorsTextureID = -1;
 
 	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID,

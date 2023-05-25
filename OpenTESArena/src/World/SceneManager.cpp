@@ -4,11 +4,12 @@
 
 SceneManager::SceneManager()
 {
-	this->ceilingScale = 0.0;
+	
 }
 
 void SceneManager::cleanUp()
 {
+	this->chunkManager.cleanUp();
 	this->voxelChunkManager.cleanUp();
 	this->entityChunkManager.cleanUp();
 }

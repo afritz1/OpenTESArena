@@ -133,7 +133,7 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	const Player &player = game.getPlayer();
 
-	const MapType mapType = mapDef.getSubDefinition().type;
+	const MapType mapType = mapDef.getMapType();
 	const OriginalInt2 displayedCoords = [&player, mapType]()
 	{
 		const WorldDouble3 absolutePlayerPosition = VoxelUtils::coordToWorldPoint(player.getPosition());
