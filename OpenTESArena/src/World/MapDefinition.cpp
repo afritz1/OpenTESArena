@@ -34,6 +34,11 @@ void MapDefinitionInterior::init(ArenaTypes::InteriorType interiorType)
 	this->interiorType = interiorType;
 }
 
+void MapDefinitionInterior::clear()
+{
+	this->interiorType = static_cast<ArenaTypes::InteriorType>(-1);
+}
+
 MapDefinitionWild::MapDefinitionWild()
 {
 	this->fallbackSeed = 0;
@@ -76,9 +81,23 @@ const MapGeneration::WildChunkBuildingNameInfo *MapDefinitionWild::getBuildingNa
 	return (iter != this->buildingNameInfos.end()) ? &(*iter) : nullptr;
 }
 
+void MapDefinitionWild::clear()
+{
+	this->levelDefIndices.clear();
+	this->fallbackSeed = 0;
+	this->buildingNameInfos.clear();
+}
+
 MapSubDefinition::MapSubDefinition()
 {
 	this->type = static_cast<MapType>(-1);
+}
+
+void MapSubDefinition::clear()
+{
+	this->type = static_cast<MapType>(-1);
+	this->interior.clear();
+	this->wild.clear();
 }
 
 void MapDefinition::init(MapType mapType)
@@ -587,4 +606,18 @@ const SkyInfoDefinition &MapDefinition::getSkyInfoForSky(int skyIndex) const
 const MapSubDefinition &MapDefinition::getSubDefinition() const
 {
 	return this->subDefinition;
+}
+
+void MapDefinition::clear()
+{
+	this->levels.clear();
+	this->levelInfos.clear();
+	this->skies.clear();
+	this->skyInfos.clear();
+	this->levelInfoMappings.clear();
+	this->skyMappings.clear();
+	this->skyInfoMappings.clear();
+	this->startPoints.clear();
+	this->startLevelIndex = std::nullopt;
+	this->subDefinition.clear();
 }

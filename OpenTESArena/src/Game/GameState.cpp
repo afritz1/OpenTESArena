@@ -180,6 +180,7 @@ void GameState::queueMapDefPop()
 {
 	// @todo: set pending map def as prevMapDef then clear prevMapDef (we don't need a copy)
 	DebugNotImplemented();
+	this->prevMapDef.clear();
 }
 
 /*bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
@@ -803,9 +804,9 @@ void GameState::resetEffectTextDuration()
 
 void GameState::clearMaps()
 {
-	this->activeMapDef = MapDefinition();
-	this->prevMapDef = MapDefinition();
-	this->nextMapDef = MapDefinition();
+	this->activeMapDef.clear();
+	this->prevMapDef.clear();
+	this->nextMapDef.clear();
 	this->prevMapReturnCoord = std::nullopt;
 	this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	this->nextMapDefLocationIDs = std::nullopt;

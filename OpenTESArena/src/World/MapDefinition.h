@@ -40,6 +40,8 @@ struct MapDefinitionInterior
 	MapDefinitionInterior();
 
 	void init(ArenaTypes::InteriorType interiorType);
+
+	void clear();
 };
 
 struct MapDefinitionWild
@@ -58,6 +60,8 @@ struct MapDefinitionWild
 
 	int getLevelDefIndex(const ChunkInt2 &chunk) const;
 	const MapGeneration::WildChunkBuildingNameInfo *getBuildingNameInfo(const ChunkInt2 &chunk) const;
+
+	void clear();
 };
 
 // Map-type-specific data.
@@ -68,6 +72,8 @@ struct MapSubDefinition
 	MapDefinitionWild wild;
 
 	MapSubDefinition();
+
+	void clear();
 };
 
 class MapDefinition
@@ -140,6 +146,8 @@ public:
 	const SkyInfoDefinition &getSkyInfoForSky(int skyIndex) const;
 
 	const MapSubDefinition &getSubDefinition() const;
+
+	void clear();
 };
 
 #endif
