@@ -122,6 +122,7 @@ public:
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager);
 
 	MapType getMapType() const;
+	bool isValid() const;
 
 	// Gets the initial level index for the map (if any).
 	const std::optional<int> &getStartLevelIndex() const;

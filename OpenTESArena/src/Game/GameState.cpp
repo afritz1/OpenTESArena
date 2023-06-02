@@ -519,7 +519,7 @@ MapType GameState::getActiveMapType() const
 
 bool GameState::isActiveMapValid() const
 {
-	return static_cast<int>(this->activeMapDef.getMapType()) >= 0;
+	return this->activeMapDef.isValid();
 }
 
 int GameState::getActiveLevelIndex() const
@@ -547,7 +547,7 @@ double GameState::getActiveCeilingScale() const
 
 bool GameState::isActiveMapNested() const
 {
-	return static_cast<int>(this->prevMapDef.getMapType()) >= 0;
+	return this->prevMapDef.isValid();
 }
 
 WorldMapInstance &GameState::getWorldMapInstance()

@@ -557,6 +557,11 @@ MapType MapDefinition::getMapType() const
 	return this->subDefinition.type;
 }
 
+bool MapDefinition::isValid() const
+{
+	return static_cast<int>(this->getMapType()) >= 0;
+}
+
 const std::optional<int> &MapDefinition::getStartLevelIndex() const
 {
 	return this->startLevelIndex;

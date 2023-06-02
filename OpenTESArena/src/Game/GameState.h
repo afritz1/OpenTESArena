@@ -180,7 +180,7 @@ public:
 		const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager,
 		TextureManager &textureManager, Renderer &renderer);*/
 
-	MapType getActiveMapType() const; // @todo: store this as a primary member eventually
+	MapType getActiveMapType() const;
 	bool isActiveMapValid() const; // Basically "is there something we can populate the scene with?".
 	int getActiveLevelIndex() const;
 	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
