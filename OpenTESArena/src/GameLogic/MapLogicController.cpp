@@ -145,25 +145,18 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	{
 		DebugAssert(transitionType == TransitionType::ExitInterior);
 
-		// @temp: temporary condition while test interiors are allowed on the main menu.
-		if (!gameState.isActiveMapNested())
+		GameState::SceneChangeMusicFunc musicDefFunc = [](Game &game)
 		{
-			DebugLogWarning("Test interiors have no exterior.");
-			return;
-		}
-
-		// Leave the interior and go to the saved exterior.
-		gameState.queueMapDefPop();
-
-		// Change to exterior music.
-		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
-		{
+			// Change to exterior music.
+			GameState &gameState = game.getGameState();
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const Clock &clock = gameState.getClock();
+
+			const MusicDefinition *musicDef = nullptr;
 			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 					game.getRandom(), [&weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
@@ -173,36 +166,46 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
 			}
-		}();
 
-		if (musicDef == nullptr)
-		{
-			DebugLogWarning("Missing exterior music.");
-		}
-
-		// Only play jingle if the exterior is inside the city.
-		const MusicDefinition *jingleMusicDef = nullptr;
-		if (gameState.getActiveMapDef().getMapType() == MapType::City)
-		{
-			jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
-				game.getRandom(), [&cityDef](const MusicDefinition &def)
+			if (musicDef == nullptr)
 			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-				const auto &jingleMusicDef = def.getJingleMusicDefinition();
-				return (jingleMusicDef.cityType == cityDef.type) &&
-					(jingleMusicDef.climateType == cityDef.climateType);
-			});
-
-			if (jingleMusicDef == nullptr)
-			{
-				DebugLogWarning("Missing jingle music.");
+				DebugLogWarning("Missing exterior music.");
 			}
-		}
 
-		AudioManager &audioManager = game.getAudioManager();
-		audioManager.setMusic(musicDef, jingleMusicDef);
+			return musicDef;
+		};
+
+		GameState::SceneChangeMusicFunc jingleMusicDefFunc = [&cityDef](Game &game)
+		{
+			// Only play jingle if the exterior is inside the city walls.
+			GameState &gameState = game.getGameState();
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+
+			const MusicDefinition *jingleMusicDef = nullptr;
+			if (gameState.getActiveMapDef().getMapType() == MapType::City)
+			{
+				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+					game.getRandom(), [&cityDef](const MusicDefinition &def)
+				{
+					DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+					const auto &jingleMusicDef = def.getJingleMusicDefinition();
+					return (jingleMusicDef.cityType == cityDef.type) && (jingleMusicDef.climateType == cityDef.climateType);
+				});
+
+				if (jingleMusicDef == nullptr)
+				{
+					DebugLogWarning("Missing jingle music.");
+				}
+			}
+
+			return jingleMusicDef;
+		};
+
+		// Leave the interior and go to the saved exterior.
+		gameState.queueMapDefPop();
+		gameState.queueMusicOnSceneChange(musicDefFunc, jingleMusicDefFunc);
 	}
 	else
 	{
@@ -253,27 +256,33 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				return;
 			}
 
+			GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
+			{
+				// Change to interior music.
+				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+				const MapDefinition &activeMapDef = game.getGameState().getActiveMapDef();
+				DebugAssert(activeMapDef.getMapType() == MapType::Interior);
+				const MapDefinitionInterior &mapDefInterior = activeMapDef.getSubDefinition().interior;
+				const ArenaTypes::InteriorType interiorType = mapDefInterior.interiorType;
+				const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
+				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+					MusicDefinition::Type::Interior, game.getRandom(), [interiorMusicType](const MusicDefinition &def)
+				{
+					DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+					const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+					return interiorMusicDef.type == interiorMusicType;
+				});
+
+				if (musicDef == nullptr)
+				{
+					DebugLogWarning("Missing interior music.");
+				}
+
+				return musicDef;
+			};
+
 			gameState.queueMapDefChange(std::move(mapDefinition), returnCoord);
-
-			// Change to interior music.
-			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType =
-				MusicUtils::getInteriorMusicType(interiorGenInfo.getInteriorType());
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Interior, game.getRandom(), [interiorMusicType](const MusicDefinition &def)
-			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-				return interiorMusicDef.type == interiorMusicType;
-			});
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing interior music.");
-			}
-
-			AudioManager &audioManager = game.getAudioManager();
-			audioManager.setMusic(musicDef);
+			gameState.queueMusicOnSceneChange(musicFunc);
 		}
 		else if (transitionType == TransitionType::CityGate)
 		{
@@ -413,54 +422,67 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			}
 
 			// Reset the current music (even if it's the same one).
-			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
+			GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 			{
-				const Clock &clock = gameState.getClock();
-				if (!ArenaClockUtils::nightMusicIsActive(clock))
+				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+				const MusicDefinition *musicDef = [&game, &musicLibrary]()
 				{
-					const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-					return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-						game.getRandom(), [&weatherDef](const MusicDefinition &def)
+					GameState &gameState = game.getGameState();
+					const Clock &clock = gameState.getClock();
+					if (!ArenaClockUtils::nightMusicIsActive(clock))
 					{
-						DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-						const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-						return weatherMusicDef.weatherDef == weatherDef;
+						const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
+						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+							game.getRandom(), [&weatherDef](const MusicDefinition &def)
+						{
+							DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+							const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+							return weatherMusicDef.weatherDef == weatherDef;
+						});
+					}
+					else
+					{
+						return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+					}
+				}();
+
+				if (musicDef == nullptr)
+				{
+					DebugLogWarning("Missing exterior music.");
+				}
+
+				return musicDef;
+			};
+
+			const ArenaTypes::CityType cityDefType = cityDef.type;
+			const ArenaTypes::ClimateType cityDefClimateType = cityDef.climateType;
+			GameState::SceneChangeMusicFunc jingleMusicFunc = [cityDefType, cityDefClimateType](Game &game)
+			{
+				// Only play jingle when going wilderness to city.
+				GameState &gameState = game.getGameState();
+				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+				const MapDefinition &activeMapDef = gameState.getActiveMapDef();
+				const MusicDefinition *jingleMusicDef = nullptr;
+				if (activeMapDef.getMapType() == MapType::City)
+				{
+					jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+						game.getRandom(), [cityDefType, cityDefClimateType](const MusicDefinition &def)
+					{
+						DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+						const auto &jingleMusicDef = def.getJingleMusicDefinition();
+						return (jingleMusicDef.cityType == cityDefType) && (jingleMusicDef.climateType == cityDefClimateType);
 					});
+
+					if (jingleMusicDef == nullptr)
+					{
+						DebugLogWarning("Missing jingle music.");
+					}
 				}
-				else
-				{
-					return musicLibrary.getRandomMusicDefinition(
-						MusicDefinition::Type::Night, game.getRandom());
-				}
-			}();
 
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing exterior music.");
-			}
+				return jingleMusicDef;
+			};
 
-			// Only play jingle when going wilderness to city.
-			const MusicDefinition *jingleMusicDef = nullptr;
-			if (activeMapType == MapType::Wilderness)
-			{
-				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
-					game.getRandom(), [&cityDef](const MusicDefinition &def)
-				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-					const auto &jingleMusicDef = def.getJingleMusicDefinition();
-					return (jingleMusicDef.cityType == cityDef.type) &&
-						(jingleMusicDef.climateType == cityDef.climateType);
-				});
-
-				if (jingleMusicDef == nullptr)
-				{
-					DebugLogWarning("Missing jingle music.");
-				}
-			}
-
-			AudioManager &audioManager = game.getAudioManager();
-			audioManager.setMusic(musicDef, jingleMusicDef);
+			gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 		}
 		else
 		{

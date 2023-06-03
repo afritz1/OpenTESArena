@@ -38,6 +38,7 @@ class INFFile;
 class LocationDefinition;
 class LocationInstance;
 class MIFFile;
+class MusicDefinition;
 class ProvinceDefinition;
 class Renderer;
 class TextAssetLibrary;
@@ -49,6 +50,8 @@ enum class MapType;
 class GameState
 {
 public:
+	using SceneChangeMusicFunc = std::function<const MusicDefinition*(Game&)>;
+
 	// Used with the currently selected world map location.
 	struct WorldMapLocationIDs
 	{
@@ -74,6 +77,7 @@ private:
 	std::optional<WeatherDefinition> nextMapDefWeatherDef; // Used with fast travel, etc..
 	bool nextMapClearsPrevious; // Clears any previously-loaded map defs (such as when fast travelling).
 	int nextLevelIndex;
+	SceneChangeMusicFunc nextMusicFunc, nextJingleMusicFunc; // Music changes after a map change.
 	
 	// Player's current world map location data.
 	WorldMapDefinition worldMapDef;
@@ -144,6 +148,7 @@ public:
 		const std::optional<WorldMapLocationIDs> &worldMapLocationIDs = std::nullopt,
 		bool clearPreviousMap = false, const std::optional<WeatherDefinition> &weatherDef = std::nullopt);
 	void queueMapDefPop();
+	void queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, const SceneChangeMusicFunc &jingleMusicFunc = SceneChangeMusicFunc());
 
 	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
 	// info. This preserves existing maps for later when the interior is exited.

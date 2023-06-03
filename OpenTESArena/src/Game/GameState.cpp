@@ -126,8 +126,7 @@ bool GameState::hasPendingLevelIndexChange() const
 
 bool GameState::hasPendingMapDefChange() const
 {
-	const MapType nextMapType = this->nextMapDef.getMapType();
-	return static_cast<int>(nextMapType) >= 0;
+	return this->nextMapDef.isValid();
 }
 
 bool GameState::hasPendingSceneChange() const
@@ -178,9 +177,27 @@ void GameState::queueMapDefChange(MapDefinition &&newMapDef, const std::optional
 
 void GameState::queueMapDefPop()
 {
+	if (!this->isActiveMapNested())
+	{
+		DebugLogWarning("No exterior map to return to.");
+		return;
+	}
+
 	// @todo: set pending map def as prevMapDef then clear prevMapDef (we don't need a copy)
 	DebugNotImplemented();
 	this->prevMapDef.clear();
+}
+
+void GameState::queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, const SceneChangeMusicFunc &jingleMusicFunc)
+{
+	if (this->nextMusicFunc || this->nextJingleMusicFunc)
+	{
+		DebugLogError("Already have music queued on map change.");
+		return;
+	}
+
+	this->nextMusicFunc = musicFunc;
+	this->nextJingleMusicFunc = jingleMusicFunc;
 }
 
 /*bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
@@ -813,6 +830,8 @@ void GameState::clearMaps()
 	this->nextMapDefWeatherDef = std::nullopt;
 	this->nextMapClearsPrevious = false;
 	this->nextLevelIndex = -1;
+	this->nextMusicFunc = SceneChangeMusicFunc();
+	this->nextJingleMusicFunc = SceneChangeMusicFunc();
 }
 
 void GameState::updateWeatherList(const ExeData &exeData)
@@ -875,6 +894,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 
 	// @todo: replace tryApplyMapTransition()
 	// @todo: for level changes: if nextLevelIndex >= 0 then set activeLevelIndex to that
+	// @todo: change music if nextMusicFunc is valid
 	DebugLogError("tryUpdatePendingMapTransition() not implemented");
 
 	/*if (this->nextMap != nullptr)

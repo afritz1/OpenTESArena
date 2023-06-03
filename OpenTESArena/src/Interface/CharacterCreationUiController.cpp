@@ -806,16 +806,16 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			return;
 		}
 
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
-
-		// Set music based on weather and time.
-		const MusicDefinition *musicDef = [&game, &gameState]()
+		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 		{
+			// Set music based on weather and time.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+			GameState &gameState = game.getGameState();
+			const MusicDefinition *musicDef = nullptr;
 			if (!ArenaClockUtils::nightMusicIsActive(gameState.getClock()))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 					game.getRandom(), [&weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
@@ -825,17 +825,19 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
 			}
-		}();
 
-		if (musicDef == nullptr)
-		{
-			DebugLogWarning("Missing exterior music.");
-		}
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing exterior music.");
+			}
 
-		AudioManager &audioManager = game.getAudioManager();
-		audioManager.setMusic(musicDef);
+			return musicDef;
+		};
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+		gameState.queueMusicOnSceneChange(musicFunc);
 	};
 
 	// Set the *LEVELUP voxel enter event.

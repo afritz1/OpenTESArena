@@ -134,52 +134,62 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return;
 		}
 
-		// Load the destination city.
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
-
-		// Choose time-based music and enter the game world.
-		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const MusicDefinition *musicDef = [&game, &gameState, &overrideWeather, &musicLibrary]()
+		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 		{
+			// Choose time-based music and enter the game world.
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+			GameState &gameState = game.getGameState();
 			const Clock &clock = gameState.getClock();
+			const MusicDefinition *musicDef = nullptr;
 			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
-				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-					game.getRandom(), [&overrideWeather](const MusicDefinition &def)
+				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+					game.getRandom(), [&weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-					return weatherMusicDef.weatherDef == overrideWeather;
+					return weatherMusicDef.weatherDef == weatherDef;
 				});
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(
-					MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
 			}
-		}();
 
-		const MusicDefinition *jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(
-			MusicDefinition::Type::Jingle, game.getRandom(), [&cityDef](const MusicDefinition &def)
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing exterior music.");
+			}
+
+			return musicDef;
+		};
+
+		const ArenaTypes::CityType cityDefType = cityDef.type;
+		const ArenaTypes::ClimateType cityDefClimateType = cityDef.climateType;
+		GameState::SceneChangeMusicFunc jingleMusicFunc = [cityDefType, cityDefClimateType](Game &game)
 		{
-			DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-			const auto &jingleMusicDef = def.getJingleMusicDefinition();
-			return (jingleMusicDef.cityType == cityDef.type) &&
-				(jingleMusicDef.climateType == cityDef.climateType);
-		});
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+			const MusicDefinition *jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(
+				MusicDefinition::Type::Jingle, game.getRandom(),
+				[cityDefType, cityDefClimateType](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+				const auto &jingleMusicDef = def.getJingleMusicDefinition();
+				return (jingleMusicDef.cityType == cityDefType) && (jingleMusicDef.climateType == cityDefClimateType);
+			});
 
-		if (musicDef == nullptr)
-		{
-			DebugLogWarning("Missing exterior music.");
-		}
+			if (jingleMusicDef == nullptr)
+			{
+				DebugLogWarning("Missing jingle music.");
+			}
 
-		if (jingleMusicDef == nullptr)
-		{
-			DebugLogWarning("Missing jingle music.");
-		}
+			return jingleMusicDef;
+		};
 
-		AudioManager &audioManager = game.getAudioManager();
-		audioManager.setMusic(musicDef, jingleMusicDef);
+		// Load the destination city.
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+		gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
 		game.setPanel<GameWorldPanel>();
 
@@ -190,7 +200,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	}
 	else if (travelLocationDef.getType() == LocationDefinitionType::Dungeon)
 	{
-		// Random named dungeon.
+		// Named dungeon.
 		constexpr bool isArtifactDungeon = false;
 		const auto &travelProvinceDef = worldMapDef.getProvinceDef(targetProvinceID);
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
@@ -212,25 +222,28 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return;
 		}
 
+		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
+		{
+			// Choose random dungeon music and enter game world.
+			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+				MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+				return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+			});
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing dungeon music.");
+			}
+
+			return musicDef;
+		};
+
 		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, playerStartOffset, worldMapLocationIDs, true);
-
-		// Choose random dungeon music and enter game world.
-		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-			MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
-		{
-			DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-			const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-			return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
-		});
-
-		if (musicDef == nullptr)
-		{
-			DebugLogWarning("Missing dungeon music.");
-		}
-
-		AudioManager &audioManager = game.getAudioManager();
-		audioManager.setMusic(musicDef);
+		gameState.queueMusicOnSceneChange(musicFunc);
 
 		game.setPanel<GameWorldPanel>();
 	}
@@ -263,24 +276,27 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		}
 		else
 		{
-			// Choose random dungeon music and enter game world.
-			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
+			GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-				return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
-			});
+				// Choose random dungeon music and enter game world.
+				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+					MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
+				{
+					DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+					const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+					return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+				});
 
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing dungeon music.");
-			}
+				if (musicDef == nullptr)
+				{
+					DebugLogWarning("Missing dungeon music.");
+				}
 
-			AudioManager &audioManager = game.getAudioManager();
-			audioManager.setMusic(musicDef);
+				return musicDef;
+			};
 
+			gameState.queueMusicOnSceneChange(musicFunc);
 			game.setPanel<GameWorldPanel>();
 		}
 	}
