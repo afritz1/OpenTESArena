@@ -260,7 +260,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, playerStartOffset, worldMapLocationIDs, true);
 
 				// Set random named dungeon name and visibility for testing.
-				LocationInstance &locationInst = gameState.getLocationInstance();
+				WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
+				ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(worldMapLocationIDs.provinceID);
+				LocationInstance &locationInst = provinceInst.getLocationInstance(worldMapLocationIDs.locationID);
 				locationInst.setNameOverride("Test Dungeon");
 
 				if (!locationInst.isVisible())
