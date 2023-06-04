@@ -1,4 +1,5 @@
-#include <ctime>
+#include <chrono>
+#include <limits>
 
 #include "Random.h"
 
@@ -21,7 +22,10 @@ void Random::init(int seed)
 
 void Random::init()
 {
-	this->init(static_cast<int>(std::time(nullptr)));
+	const auto currentTime = std::chrono::high_resolution_clock::now();
+	const int64_t microsecondsSinceEpoch = std::chrono::duration_cast<std::chrono::microseconds>(currentTime.time_since_epoch()).count();
+	const int seed = static_cast<int>(microsecondsSinceEpoch % std::numeric_limits<int>::max());
+	this->init(seed);
 }
 
 int Random::next()
