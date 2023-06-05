@@ -199,6 +199,7 @@ public:
 	LocationInstance &getLocationInstance();
 	const ProvinceMapUiModel::TravelData *getTravelData() const;
 	BufferView<const ArenaTypes::WeatherType> getWorldMapWeathers() const;
+	ArenaTypes::WeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
 	Date &getDate();
 	Clock &getClock();
 

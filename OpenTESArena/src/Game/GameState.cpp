@@ -209,16 +209,10 @@ void GameState::queueMapDefPop()
 	this->nextMapDefLocationIDs = std::nullopt;
 
 	// Calculate weather.
-	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	const LocationDefinition &locationDef = this->getLocationDefinition();
-	const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
-	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
-	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, binaryAssetLibrary.getCityDataFile());
-	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
+	const ArenaTypes::WeatherType weatherType = this->getWeatherForLocation(this->provinceIndex, this->locationIndex);
 	Random random; // @todo: get from Game
 	this->nextMapDefWeatherDef = WeatherDefinition();
-	this->nextMapDefWeatherDef->initFromClassic(this->worldMapWeathers[quarterIndex], this->date.getDay(), random);
+	this->nextMapDefWeatherDef->initFromClassic(weatherType, this->date.getDay(), random);
 
 	this->nextMapClearsPrevious = true;
 
@@ -726,6 +720,18 @@ const ProvinceMapUiModel::TravelData *GameState::getTravelData() const
 BufferView<const ArenaTypes::WeatherType> GameState::getWorldMapWeathers() const
 {
 	return this->worldMapWeathers;
+}
+
+ArenaTypes::WeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
+{
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = this->worldMapDef.getProvinceDef(provinceIndex);
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+	const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
+	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
+	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, binaryAssetLibrary.getCityDataFile());
+	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
+	return this->worldMapWeathers[quarterIndex];
 }
 
 Date &GameState::getDate()
