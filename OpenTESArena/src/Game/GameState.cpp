@@ -982,60 +982,84 @@ void GameState::updateWeatherList(const ExeData &exeData)
 
 void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 {
-	Player &player = game.getPlayer();
+	if (!this->hasPendingSceneChange())
+	{
+		return;
+	}
 
 	if (this->hasPendingMapDefChange())
 	{
-		DebugLog("Pending map def change.");
+		DebugLog("Applying map definition change.");
+
+		if (!this->nextMapClearsPrevious)
+		{
+			this->prevMapDef = std::move(this->activeMapDef);
+		}
+
+		this->activeMapDef.clear();
+		this->nextMapClearsPrevious = false;
+
+		if (this->nextMapDefLocationIDs.has_value())
+		{
+			this->provinceIndex = this->nextMapDefLocationIDs->provinceID;
+			this->locationIndex = this->nextMapDefLocationIDs->locationID;
+			this->nextMapDefLocationIDs = std::nullopt;
+		}
+
+		const std::optional<int> &nextMapStartLevelIndex = this->nextMapDef.getStartLevelIndex();
+		this->activeLevelIndex = nextMapStartLevelIndex.value_or(0);
+
+		this->activeMapDef = std::move(this->nextMapDef);
+		this->nextMapDef.clear();
+
+		if (this->nextMapDefWeatherDef.has_value())
+		{
+			this->weatherDef = std::move(*this->nextMapDefWeatherDef);
+			this->nextMapDefWeatherDef = std::nullopt;
+		}
+
+		// @todo: teleport player, using prevMapReturnCoord and nextMapPlayerStartOffset as needed
 	}
 	else if (this->hasPendingLevelIndexChange())
 	{
-		DebugLog("Pending level index change.");
+		DebugLog("Applying level index change.");
+
+		this->activeLevelIndex = this->nextLevelIndex;
+		this->nextLevelIndex = -1;
+
+		// @todo: teleport player? or do they stay in the same voxel when it's an interior?
+	}
+	else
+	{
+		DebugNotImplementedMsg("Unhandled map transition case.");
 	}
 
-	// @todo: replace tryApplyMapTransition()
-	// @todo: for level changes: if nextLevelIndex >= 0 then set activeLevelIndex to that
-	// @todo: change music if nextMusicFunc is valid
-	DebugLogError("tryUpdatePendingMapTransition() not implemented");
+	SceneManager &sceneManager = game.getSceneManager();
+	Player &player = game.getPlayer();
 
-	/*if (this->nextMap != nullptr)
+	DebugLogError("Not implemented: palette init in tryUpdatePendingMapTransition().");
+	DebugLogError("Not implemented: clearing scene and re-populating in tryUpdatePendingMapTransition().");
+
+	// @todo: set palettes as LevelInstance::trySetActive() would
+	// @todo: clear scene manager and populate everything (base ChunkManager, voxels, entities, collision, render)
+	// - since this function happens after the regular ChunkManager::update(), etc. and right before the game loop
+	//   render, it needs to populate everything immediately.
+
+	if (this->nextMusicFunc)
 	{
-		if (!this->tryApplyMapTransition(std::move(*this->nextMap), player, EntityDefinitionLibrary::getInstance(),
-			BinaryAssetLibrary::getInstance(), game.getRenderChunkManager(), game.getTextureManager(), game.getRenderer()))
+		const MusicDefinition *musicDef = this->nextMusicFunc(game);
+		const MusicDefinition *jingleMusicDef = nullptr;
+		if (this->nextJingleMusicFunc)
 		{
-			DebugLogError("Couldn't apply map transition.");
+			jingleMusicDef = this->nextJingleMusicFunc(game);
 		}
 
-		this->nextMap = nullptr;
+		AudioManager &audioManager = game.getAudioManager();
+		audioManager.setMusic(musicDef, jingleMusicDef);
 
-		// This mapInst.update() below is required in case we didn't do a GameWorldPanel::tick() this frame
-		// (i.e. if we did a fast travel tick onAnimationFinished() kind of thing instead).
-		// @todo: consider revising the Game loop more so this is handled more as a primary concern of the engine.
-
-		MapInstance &mapInst = this->getActiveMapInst();
-		const double latitude = [this]()
-		{
-			const LocationDefinition &locationDef = this->getLocationDefinition();
-			return locationDef.getLatitude();
-		}();
-
-		const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-		TextureManager &textureManager = game.getTextureManager();
-
-		EntityGeneration::EntityGenInfo entityGenInfo;
-		entityGenInfo.init(ArenaClockUtils::nightLightsAreActive(this->clock));
-
-		// Tick active map (entities, animated distant land, etc.).
-		const MapDefinition &activeMapDef = this->getActiveMapDef();
-		const MapType mapType = activeMapDef.getSubDefinition().type;
-		const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-		const LocationDefinition &locationDef = this->getLocationDefinition();
-		const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
-			mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
-
-		mapInst.update(dt, game, activeMapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
-			entityDefLibrary, BinaryAssetLibrary::getInstance(), textureManager, game.getAudioManager());
-	}*/
+		this->nextMusicFunc = SceneChangeMusicFunc();
+		this->nextJingleMusicFunc = SceneChangeMusicFunc();
+	}
 }
 
 void GameState::tickGameClock(double dt, Game &game)

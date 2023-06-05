@@ -778,7 +778,7 @@ void Game::loop()
 			// See if the panel tick requested any changes in active panels.
 			this->handlePanelChanges();
 
-			if (this->isSimulatingScene())
+			if (this->isSimulatingScene() && this->gameState.isActiveMapValid())
 			{
 				// Recalculate the active chunks.
 				const CoordDouble3 playerCoord = this->player.getPosition();
@@ -797,7 +797,7 @@ void Game::loop()
 				this->gameState.tickUiMessages(clampedDt);
 				this->gameState.tickPlayer(clampedDt, *this);
 
-				// Update audio listener and check for finished sounds.
+				// Update audio listener orientation.
 				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
 				const WorldDouble3 &direction = this->player.getDirection();
 				const AudioManager::ListenerData listenerData(absolutePosition, direction);
@@ -811,14 +811,10 @@ void Game::loop()
 			DebugCrash("Tick exception: " + std::string(e.what()));
 		}
 
-		// Late tick.
-		// @todo: this should probably be "handle scene change" instead, since user input, ticking the active panel,
-		// and simulating the game state all have the potential to start a scene change.
+		// Late tick. User input, ticking the active panel, and simulating the game state all have the potential
+		// to queue a scene change which needs to be fully processed before we render.
 		try
 		{
-			// Handle an edge case with the game loop during map transitions, etc.. This can happen due to the
-			// current tick() design where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this
-			// frame, causing us to miss updating the renderer.
 			this->gameState.tryUpdatePendingMapTransition(*this, clampedDt);
 		}
 		catch (const std::exception &e)
