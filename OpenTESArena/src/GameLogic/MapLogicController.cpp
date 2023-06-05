@@ -177,7 +177,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			return musicDef;
 		};
 
-		GameState::SceneChangeMusicFunc jingleMusicDefFunc = [&cityDef](Game &game)
+		GameState::SceneChangeMusicFunc jingleMusicDefFunc = [](Game &game)
 		{
 			// Only play jingle if the exterior is inside the city walls.
 			GameState &gameState = game.getGameState();
@@ -186,12 +186,14 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 			const MusicDefinition *jingleMusicDef = nullptr;
 			if (gameState.getActiveMapDef().getMapType() == MapType::City)
 			{
+				const LocationDefinition &locationDef = gameState.getLocationDefinition();
+				const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
 				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
-					game.getRandom(), [&cityDef](const MusicDefinition &def)
+					game.getRandom(), [&locationCityDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
 					const auto &jingleMusicDef = def.getJingleMusicDefinition();
-					return (jingleMusicDef.cityType == cityDef.type) && (jingleMusicDef.climateType == cityDef.climateType);
+					return (jingleMusicDef.cityType == locationCityDef.type) && (jingleMusicDef.climateType == locationCityDef.climateType);
 				});
 
 				if (jingleMusicDef == nullptr)

@@ -27,6 +27,7 @@
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../Weather/WeatherUtils.h"
 #include "../World/MapType.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 #include "../WorldMap/LocationInstance.h"
 
@@ -177,15 +178,109 @@ void GameState::queueMapDefChange(MapDefinition &&newMapDef, const std::optional
 
 void GameState::queueMapDefPop()
 {
+	if (this->hasPendingMapDefChange())
+	{
+		DebugLogError("Already queued map definition change to " + std::to_string(static_cast<int>(this->nextMapDef.getMapType())) + ".");
+		return;
+	}
+
+	if (this->hasPendingLevelIndexChange())
+	{
+		DebugLogError("Already changing level index to " + std::to_string(this->nextLevelIndex) + " this frame.");
+		return;
+	}
+
 	if (!this->isActiveMapNested())
 	{
 		DebugLogWarning("No exterior map to return to.");
 		return;
 	}
 
-	// @todo: set pending map def as prevMapDef then clear prevMapDef (we don't need a copy)
-	DebugNotImplemented();
+	if (!this->prevMapReturnCoord.has_value())
+	{
+		DebugLogWarning("Expected previous map return coord to be set.");
+		return;
+	}
+
+	this->nextMapDef = std::move(this->prevMapDef);
 	this->prevMapDef.clear();
+
+	this->nextMapPlayerStartOffset = VoxelInt2::Zero;
+	this->nextMapDefLocationIDs = std::nullopt;
+
+	// Calculate weather.
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+	const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
+	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
+	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, binaryAssetLibrary.getCityDataFile());
+	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
+	Random random; // @todo: get from Game
+	this->nextMapDefWeatherDef = WeatherDefinition();
+	this->nextMapDefWeatherDef->initFromClassic(this->worldMapWeathers[quarterIndex], this->date.getDay(), random);
+
+	this->nextMapClearsPrevious = true;
+
+	this->nextMusicFunc = [](Game &game)
+	{
+		// Change to exterior music.
+		GameState &gameState = game.getGameState();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+		const Clock &clock = gameState.getClock();
+
+		const MusicDefinition *musicDef = nullptr;
+		if (!ArenaClockUtils::nightMusicIsActive(clock))
+		{
+			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				game.getRandom(), [&weatherDef](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+				return weatherMusicDef.weatherDef == weatherDef;
+			});
+		}
+		else
+		{
+			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+		}
+
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing exterior music.");
+		}
+
+		return musicDef;
+	};
+
+	this->nextJingleMusicFunc = [](Game &game)
+	{
+		// Only play jingle if the exterior is inside the city walls.
+		GameState &gameState = game.getGameState();
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+
+		const MusicDefinition *jingleMusicDef = nullptr;
+		if (gameState.getActiveMapDef().getMapType() == MapType::City)
+		{
+			const LocationDefinition &locationDef = gameState.getLocationDefinition();
+			const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+			jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+				game.getRandom(), [&locationCityDef](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+				const auto &jingleMusicDef = def.getJingleMusicDefinition();
+				return (jingleMusicDef.cityType == locationCityDef.type) && (jingleMusicDef.climateType == locationCityDef.climateType);
+			});
+
+			if (jingleMusicDef == nullptr)
+			{
+				DebugLogWarning("Missing jingle music.");
+			}
+		}
+
+		return jingleMusicDef;
+	};
 }
 
 void GameState::queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, const SceneChangeMusicFunc &jingleMusicFunc)
