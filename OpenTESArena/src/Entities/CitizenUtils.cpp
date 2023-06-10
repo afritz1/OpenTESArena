@@ -51,10 +51,12 @@ bool CitizenUtils::canMapTypeSpawnCitizens(MapType mapType)
 }
 
 CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
-	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
+	TextureManager &textureManager)
 {
 	// Citizen entity definitions are level-independent and stored in a library beforehand.
 	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinition::Type::Citizen));
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+
 	EntityDefinitionLibrary::Key maleEntityDefKey, femaleEntityDefKey;
 	maleEntityDefKey.initCitizen(true, climateType);
 	femaleEntityDefKey.initCitizen(false, climateType);
@@ -108,7 +110,7 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 }
 
 std::optional<CitizenUtils::CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapType, int raceID,
-	const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
+	const LocationDefinition &locationDef, TextureManager &textureManager)
 {
 	if (!CitizenUtils::canMapTypeSpawnCitizens(mapType))
 	{
@@ -123,7 +125,7 @@ std::optional<CitizenUtils::CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(
 	
 	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 	const ArenaTypes::ClimateType climateType = cityDef.climateType;
-	return CitizenUtils::makeCitizenGenInfo(raceID, climateType, entityDefLibrary, textureManager);
+	return CitizenUtils::makeCitizenGenInfo(raceID, climateType, textureManager);
 }
 
 bool CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection)

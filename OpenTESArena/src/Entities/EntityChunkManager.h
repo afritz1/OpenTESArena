@@ -118,8 +118,8 @@ public:
 		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
 		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, AudioManager &audioManager, TextureManager &textureManager, Renderer &renderer);
+		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Prepares an entity for destruction later this frame.
 	void queueEntityDestroy(EntityInstanceID entityInstID);

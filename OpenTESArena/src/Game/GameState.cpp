@@ -924,9 +924,10 @@ void GameState::resetEffectTextDuration()
 void GameState::clearMaps()
 {
 	this->activeMapDef.clear();
+	this->activeLevelIndex = -1;
 	this->prevMapDef.clear();
-	this->nextMapDef.clear();
 	this->prevMapReturnCoord = std::nullopt;
+	this->nextMapDef.clear();
 	this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	this->nextMapDefLocationIDs = std::nullopt;
 	this->nextMapDefWeatherDef = std::nullopt;
@@ -1221,4 +1222,101 @@ void GameState::tickPlayer(double dt, Game &game)
 			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
 		}
 	}
+}
+
+void GameState::tickVoxels(double dt, Game &game)
+{
+	SceneManager &sceneManager = game.getSceneManager();
+	const ChunkManager &chunkManager = sceneManager.chunkManager;
+
+	const Player &player = game.getPlayer();
+
+	const MapDefinition &mapDef = this->getActiveMapDef();
+	const int levelIndex = this->getActiveLevelIndex();
+	const BufferView<const LevelDefinition> levelDefs = mapDef.getLevels();
+	const BufferView<const int> levelInfoDefIndices = mapDef.getLevelInfoIndices();
+	const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDef.getLevelInfos();
+	const LevelDefinition &levelDef = levelDefs[levelIndex];
+	const int levelInfoIndex = levelInfoDefIndices[levelIndex];
+	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoIndex];
+	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
+
+	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	voxelChunkManager.update(dt, chunkManager.getNewChunkPositions(), chunkManager.getFreedChunkPositions(),
+		player.getPosition(), &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs,
+		this->getActiveCeilingScale(), game.getAudioManager());
+}
+
+void GameState::tickEntities(double dt, Game &game)
+{
+	SceneManager &sceneManager = game.getSceneManager();
+	const ChunkManager &chunkManager = sceneManager.chunkManager;
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+
+	const Player &player = game.getPlayer();
+
+	const MapDefinition &mapDef = this->getActiveMapDef();
+	const MapType mapType = mapDef.getMapType();
+	const int levelIndex = this->getActiveLevelIndex();
+	const BufferView<const LevelDefinition> levelDefs = mapDef.getLevels();
+	const BufferView<const int> levelInfoDefIndices = mapDef.getLevelInfoIndices();
+	const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDef.getLevelInfos();
+	const LevelDefinition &levelDef = levelDefs[levelIndex];
+	const int levelInfoIndex = levelInfoDefIndices[levelIndex];
+	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoIndex];
+	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
+
+	EntityGeneration::EntityGenInfo entityGenInfo;
+	entityGenInfo.init(ArenaClockUtils::nightLightsAreActive(this->clock));
+
+	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
+		mapType, provinceDef.getRaceID(), locationDef, game.getTextureManager());
+
+	const double ceilingScale = this->getActiveCeilingScale();
+
+	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	entityChunkManager.update(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
+		chunkManager.getFreedChunkPositions(), player, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices,
+		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game.getRandom(), voxelChunkManager, game.getAudioManager(),
+		game.getTextureManager(), game.getRenderer());
+}
+
+void GameState::tickCollision(double dt, Game &game)
+{
+	SceneManager &sceneManager = game.getSceneManager();
+	const ChunkManager &chunkManager = sceneManager.chunkManager;
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+
+	CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
+	collisionChunkManager.update(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
+		chunkManager.getFreedChunkPositions(), voxelChunkManager);
+}
+
+void GameState::tickRendering(double dt, Game &game)
+{
+	SceneManager &sceneManager = game.getSceneManager();
+	const ChunkManager &chunkManager = sceneManager.chunkManager;
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+
+	const double ceilingScale = this->getActiveCeilingScale();
+	const double chasmAnimPercent = this->getChasmAnimPercent();
+
+	const Player &player = game.getPlayer();
+	const CoordDouble3 &playerCoord = player.getPosition();
+	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
+	const Double2 playerDirXZ = player.getGroundDirection();
+
+	TextureManager &textureManager = game.getTextureManager();
+	Renderer &renderer = game.getRenderer();
+
+	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
+	renderChunkManager.updateActiveChunks(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
+		chunkManager.getFreedChunkPositions(), voxelChunkManager, renderer);
+	renderChunkManager.updateVoxels(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(), ceilingScale, chasmAnimPercent,
+		voxelChunkManager, textureManager, renderer);
+	renderChunkManager.updateEntities(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(), playerCoordXZ, playerDirXZ, ceilingScale,
+		voxelChunkManager, entityChunkManager, textureManager, renderer);
 }

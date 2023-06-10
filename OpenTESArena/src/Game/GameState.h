@@ -251,6 +251,10 @@ public:
 	void tickWeather(double dt, Game &game);
 	void tickUiMessages(double dt);
 	void tickPlayer(double dt, Game &game);
+	void tickVoxels(double dt, Game &game);
+	void tickEntities(double dt, Game &game);
+	void tickCollision(double dt, Game &game);
+	void tickRendering(double dt, Game &game);
 };
 
 #endif

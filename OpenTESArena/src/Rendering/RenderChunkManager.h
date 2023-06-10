@@ -164,8 +164,7 @@ public:
 		Renderer &renderer);
 	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager,
-		Renderer &renderer);
+		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all rendering resources (voxels, entities, sky, weather).
 	void unloadScene(Renderer &renderer);

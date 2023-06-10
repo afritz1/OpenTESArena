@@ -12,7 +12,6 @@
 class BinaryAssetLibrary;
 class EntityChunkManager;
 class EntityDefinition;
-class EntityDefinitionLibrary;
 class LocationDefinition;
 class Random;
 class VoxelChunk;
@@ -53,10 +52,9 @@ namespace CitizenUtils
 	};
 
 	bool canMapTypeSpawnCitizens(MapType mapType);
-	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
-		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
+	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType, TextureManager &textureManager);
 	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef,
-		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
+		TextureManager &textureManager);
 
 	// Helper functions for determining a citizen's walking direction.
 	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection);
