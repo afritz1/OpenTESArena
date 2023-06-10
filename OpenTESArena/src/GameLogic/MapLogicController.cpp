@@ -69,8 +69,14 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	GameState &gameState = game.getGameState();
 	SceneManager &sceneManager = game.getSceneManager();
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(coord.chunk);
+	VoxelChunk *chunkPtr = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
+	if (chunkPtr == nullptr)
+	{
+		DebugLogError("No voxel chunk at (" + coord.chunk.toString() + ") for checking triggers.");
+		return;
+	}
 
+	VoxelChunk &chunk = *chunkPtr;
 	const VoxelInt3 &voxel = coord.voxel;
 	VoxelChunk::TriggerDefID triggerDefID;
 	if (!chunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
@@ -504,8 +510,14 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 
 	const SceneManager &sceneManager = game.getSceneManager();
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(transitionCoord.chunk);
+	const VoxelChunk *chunkPtr = voxelChunkManager.tryGetChunkAtPosition(transitionCoord.chunk);
+	if (chunkPtr == nullptr)
+	{
+		DebugLogError("No voxel chunk at (" + transitionCoord.chunk.toString() + ") for checking level transition.");
+		return;
+	}
 
+	const VoxelChunk &chunk = *chunkPtr;
 	const VoxelInt3 &transitionVoxel = transitionCoord.voxel;
 	if (!chunk.isValidVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z))
 	{

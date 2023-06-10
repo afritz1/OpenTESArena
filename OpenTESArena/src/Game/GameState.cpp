@@ -1204,48 +1204,21 @@ void GameState::tickPlayer(double dt, Game &game)
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
 
-	DebugLogError("Ticking mapInst in tickPlayer()");
-	/*MapInstance &mapInst = this->getActiveMapInst();
-	const double latitude = [this]()
-	{
-		const LocationDefinition &locationDef = this->getLocationDefinition();
-		return locationDef.getLatitude();
-	}();
-
-	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-	TextureManager &textureManager = game.getTextureManager();
-
-	EntityGeneration::EntityGenInfo entityGenInfo;
-	entityGenInfo.init(ArenaClockUtils::nightLightsAreActive(this->clock));
-
-	// Tick active map (entities, animated distant land, etc.).
-	const MapDefinition &mapDef = this->getActiveMapDef();
-	const MapType mapType = mapDef.getSubDefinition().type;
-	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	const LocationDefinition &locationDef = this->getLocationDefinition();
-	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
-		mapType, provinceDef.getRaceID(), locationDef, entityDefLibrary, textureManager);
-
-	mapInst.update(dt, game, mapDef, latitude, this->getDaytimePercent(), entityGenInfo, citizenGenInfo,
-		entityDefLibrary, BinaryAssetLibrary::getInstance(), textureManager, game.getAudioManager());
-
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.
-	const LevelInstance &levelInst = mapInst.getActiveLevel();
-	const double ceilingScale = levelInst.getCeilingScale();
-	const CoordInt3 oldPlayerVoxelCoord(
-		oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
-	const CoordInt3 newPlayerVoxelCoord(
-		newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
+	const double ceilingScale = this->getActiveCeilingScale();
+	const CoordInt3 oldPlayerVoxelCoord(oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
+	const CoordInt3 newPlayerVoxelCoord(newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
 	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
 	{
 		TextBox *triggerTextBox = game.getTriggerTextBox();
 		DebugAssert(triggerTextBox != nullptr);
 		MapLogicController::handleTriggers(game, newPlayerVoxelCoord, *triggerTextBox);
 
-		if (mapType == MapType::Interior)
+		const MapType activeMapType = this->getActiveMapType();
+		if (activeMapType == MapType::Interior)
 		{
 			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
 		}
-	}*/
+	}
 }
