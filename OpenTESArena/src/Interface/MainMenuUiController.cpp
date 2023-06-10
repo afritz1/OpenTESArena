@@ -524,24 +524,28 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		DebugCrash("Unrecognized world type \"" + std::to_string(static_cast<int>(mapType)) + "\".");
 	}
 
-	// Set clock to 5:45am.
+	// Set clock to 5:45am for testing.
 	auto &clock = gameState.getClock();
 	clock = Clock(5, 45, 0);
 
-	// Get the music that should be active on start.
-	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-	const MusicDefinition *musicDef = [&game, &mifName, &optInteriorType, mapType, &gameState, &clock, &musicLibrary]()
+	GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 	{
+		// Get the music that should be active on start.
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+		GameState &gameState = game.getGameState();
+		const MapType mapType = gameState.getActiveMapType();
 		const bool isExterior = (mapType == MapType::City) || (mapType == MapType::Wilderness);
 
 		// Exteriors depend on the time of day for which music to use. Interiors depend
 		// on the current location's .MIF name (if any).
+		const MusicDefinition *musicDef = nullptr;
 		if (isExterior)
 		{
+			const Clock &clock = gameState.getClock();
 			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 					game.getRandom(), [weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
@@ -551,17 +555,16 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(
-					MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
 			}
 		}
 		else
 		{
-			DebugAssert(optInteriorType.has_value());
-			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType =
-				MusicUtils::getInteriorMusicType(*optInteriorType);
+			const MapSubDefinition &mapSubDef = gameState.getActiveMapDef().getSubDefinition();
+			const ArenaTypes::InteriorType interiorType = mapSubDef.interior.interiorType;
+			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
 
-			return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
 				game.getRandom(), [interiorMusicType](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
@@ -569,42 +572,43 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return interiorMusicDef.type == interiorMusicType;
 			});
 		}
-	}();
 
-	const MusicDefinition *jingleMusicDef = [&game, mapType, &gameState, &musicLibrary]() -> const MusicDefinition*
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing start music.");
+		}
+
+		return musicDef;
+	};
+
+	GameState::SceneChangeMusicFunc jingleMusicFunc = [](Game &game)
 	{
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+		GameState &gameState = game.getGameState();
+		const MapType mapType = gameState.getActiveMapType();
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		const bool isCity = (mapType == MapType::City) &&
-			(locationDef.getType() == LocationDefinitionType::City);
+		const bool isCity = (mapType == MapType::City) && (locationDef.getType() == LocationDefinitionType::City);
 
+		const MusicDefinition *musicDef = nullptr;
 		if (isCity)
 		{
 			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-			return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
 				game.getRandom(), [&cityDef](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
 				const auto &jingleMusicDef = def.getJingleMusicDefinition();
-				return (jingleMusicDef.cityType == cityDef.type) &&
-					(jingleMusicDef.climateType == cityDef.climateType);
+				return (jingleMusicDef.cityType == cityDef.type) && (jingleMusicDef.climateType == cityDef.climateType);
 			});
 		}
-		else
-		{
-			return nullptr;
-		}
-	}();
 
-	if (musicDef == nullptr)
-	{
-		DebugLogWarning("Missing start music.");
-	}
+		return musicDef;
+	};
+
+	gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
 	// Initialize game world panel.
 	game.setPanel<GameWorldPanel>();
-
-	AudioManager &audioManager = game.getAudioManager();
-	audioManager.setMusic(musicDef, jingleMusicDef);
 }
 
 void MainMenuUiController::onTestTypeUpButtonSelected(int *testType, int *testIndex, int *testIndex2, int *testWeather)
