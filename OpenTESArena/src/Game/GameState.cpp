@@ -216,66 +216,6 @@ void GameState::queueMapDefPop()
 	this->nextMapDefWeatherDef->initFromClassic(weatherType, this->date.getDay(), random);
 
 	this->nextMapClearsPrevious = true;
-
-	this->nextMusicFunc = [](Game &game)
-	{
-		// Change to exterior music.
-		GameState &gameState = game.getGameState();
-		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const Clock &clock = gameState.getClock();
-
-		const MusicDefinition *musicDef = nullptr;
-		if (!ArenaClockUtils::nightMusicIsActive(clock))
-		{
-			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-				game.getRandom(), [&weatherDef](const MusicDefinition &def)
-			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-				return weatherMusicDef.weatherDef == weatherDef;
-			});
-		}
-		else
-		{
-			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
-		}
-
-		if (musicDef == nullptr)
-		{
-			DebugLogWarning("Missing exterior music.");
-		}
-
-		return musicDef;
-	};
-
-	this->nextJingleMusicFunc = [](Game &game)
-	{
-		// Only play jingle if the exterior is inside the city walls.
-		GameState &gameState = game.getGameState();
-		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-
-		const MusicDefinition *jingleMusicDef = nullptr;
-		if (gameState.getActiveMapDef().getMapType() == MapType::City)
-		{
-			const LocationDefinition &locationDef = gameState.getLocationDefinition();
-			const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
-			jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
-				game.getRandom(), [&locationCityDef](const MusicDefinition &def)
-			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-				const auto &jingleMusicDef = def.getJingleMusicDefinition();
-				return (jingleMusicDef.cityType == locationCityDef.type) && (jingleMusicDef.climateType == locationCityDef.climateType);
-			});
-
-			if (jingleMusicDef == nullptr)
-			{
-				DebugLogWarning("Missing jingle music.");
-			}
-		}
-
-		return jingleMusicDef;
-	};
 }
 
 void GameState::queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, const SceneChangeMusicFunc &jingleMusicFunc)
