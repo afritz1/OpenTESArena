@@ -259,17 +259,21 @@ void Player::handleCollision(double dt, const VoxelChunkManager &voxelChunkManag
 	auto tryGetVoxelTraitsDef = [&voxelChunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
 	{
 		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
-		if (chunk != nullptr)
-		{
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(coord.voxel.x, coord.voxel.y, coord.voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
-			return &voxelTraitsDef;
-		}
-		else
+		if (chunk == nullptr)
 		{
 			// Chunks not in the chunk manager are air.
 			return nullptr;
 		}
+
+		const VoxelInt3 voxel = coord.voxel;
+		if (!chunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
+		{
+			return nullptr;
+		}
+
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
+		return &voxelTraitsDef;
 	};
 
 	// Coordinates of the base of the voxel the feet are in.
