@@ -819,7 +819,10 @@ void Game::loop()
 		// to queue a scene change which needs to be fully processed before we render.
 		try
 		{
-			this->gameState.tryUpdatePendingMapTransition(*this, clampedDt);
+			if (this->gameState.hasPendingSceneChange())
+			{
+				this->gameState.applyPendingSceneChange(*this, clampedDt);
+			}
 		}
 		catch (const std::exception &e)
 		{

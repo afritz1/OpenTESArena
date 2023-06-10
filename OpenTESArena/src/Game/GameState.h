@@ -241,9 +241,8 @@ public:
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeatherList(const ExeData &exeData);
 
-	// Checks if there is a map transition in progress and applies it if so, setting the new level active in
-	// the game world and renderer.
-	void tryUpdatePendingMapTransition(Game &game, double dt);
+	// Applies any pending scene transition, setting the new level active in the game world and renderer.
+	void applyPendingSceneChange(Game &game, double dt);
 
 	// Ticks the game clock (for the current time of day and date).
 	void tickGameClock(double dt, Game &game);

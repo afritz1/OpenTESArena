@@ -982,13 +982,8 @@ void GameState::updateWeatherList(const ExeData &exeData)
 	}
 }
 
-void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
+void GameState::applyPendingSceneChange(Game &game, double dt)
 {
-	if (!this->hasPendingSceneChange())
-	{
-		return;
-	}
-
 	if (this->hasPendingMapDefChange())
 	{
 		DebugLog("Applying map definition change.");
@@ -1033,7 +1028,7 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 	}
 	else
 	{
-		DebugNotImplementedMsg("Unhandled map transition case.");
+		DebugNotImplementedMsg("Unhandled scene change case.");
 	}
 
 	TextureManager &textureManager = game.getTextureManager();
