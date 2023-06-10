@@ -962,8 +962,6 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 {
 	if (this->hasPendingMapDefChange())
 	{
-		DebugLog("Applying map definition change.");
-
 		if (!this->nextMapClearsPrevious)
 		{
 			this->prevMapDef = std::move(this->activeMapDef);
@@ -995,8 +993,6 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	}
 	else if (this->hasPendingLevelIndexChange())
 	{
-		DebugLog("Applying level index change.");
-
 		this->activeLevelIndex = this->nextLevelIndex;
 		this->nextLevelIndex = -1;
 
