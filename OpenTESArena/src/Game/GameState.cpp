@@ -669,48 +669,24 @@ const WorldMapDefinition &GameState::getWorldMapDefinition() const
 
 const ProvinceDefinition &GameState::getProvinceDefinition() const
 {
-	int index = this->provinceIndex;
-	if (this->nextMapDefLocationIDs.has_value())
-	{
-		index = this->nextMapDefLocationIDs->provinceID;
-	}
-
-	return this->worldMapDef.getProvinceDef(index);
+	return this->worldMapDef.getProvinceDef(this->provinceIndex);
 }
 
 const LocationDefinition &GameState::getLocationDefinition() const
 {
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	int index = this->locationIndex;
-	if (this->nextMapDefLocationIDs.has_value())
-	{
-		index = this->nextMapDefLocationIDs->locationID;
-	}
-
-	return provinceDef.getLocationDef(index);
+	return provinceDef.getLocationDef(this->locationIndex);
 }
 
 ProvinceInstance &GameState::getProvinceInstance()
 {
-	int index = this->provinceIndex;
-	if (this->nextMapDefLocationIDs.has_value())
-	{
-		index = this->nextMapDefLocationIDs->provinceID;
-	}
-
-	return this->worldMapInst.getProvinceInstance(index);
+	return this->worldMapInst.getProvinceInstance(this->provinceIndex);
 }
 
 LocationInstance &GameState::getLocationInstance()
 {
 	ProvinceInstance &provinceInst = this->getProvinceInstance();
-	int index = this->locationIndex;
-	if (this->nextMapDefLocationIDs.has_value())
-	{
-		index = this->nextMapDefLocationIDs->locationID;
-	}
-
-	return provinceInst.getLocationInstance(index);
+	return provinceInst.getLocationInstance(this->locationIndex);
 }
 
 const ProvinceMapUiModel::TravelData *GameState::getTravelData() const
