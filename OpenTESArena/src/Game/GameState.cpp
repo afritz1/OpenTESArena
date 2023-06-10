@@ -1047,12 +1047,23 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 	sceneManager.lightTableTextureRef.init(lightTableTextureID, renderer);
 
 	Player &player = game.getPlayer();
+	const CoordDouble3 &playerCoord = player.getPosition();
 
-	DebugLogError("Not implemented: clearing scene and re-populating in tryUpdatePendingMapTransition().");
+	// Clear and re-populate scene immediately so it's ready for rendering this frame (otherwise we get a black frame).
+	const Options &options = game.getOptions();
+	ChunkManager &chunkManager = sceneManager.chunkManager;
+	chunkManager.clear();
+	chunkManager.update(playerCoord.chunk, options.getMisc_ChunkDistance());
 
-	// @todo: clear scene manager and populate everything (base ChunkManager, voxels, entities, collision, render)
-	// - since this function happens after the regular ChunkManager::update(), etc. and right before the game loop
-	//   render, it needs to populate everything immediately.
+	sceneManager.voxelChunkManager.recycleAllChunks();	
+	sceneManager.entityChunkManager.clear();
+	sceneManager.collisionChunkManager.recycleAllChunks();
+	sceneManager.renderChunkManager.unloadScene(renderer);
+
+	this->tickVoxels(0.0, game);
+	this->tickEntities(0.0, game);
+	this->tickCollision(0.0, game);
+	this->tickRendering(game);
 
 	if (this->nextMusicFunc)
 	{
@@ -1294,7 +1305,7 @@ void GameState::tickCollision(double dt, Game &game)
 		chunkManager.getFreedChunkPositions(), voxelChunkManager);
 }
 
-void GameState::tickRendering(double dt, Game &game)
+void GameState::tickRendering(Game &game)
 {
 	SceneManager &sceneManager = game.getSceneManager();
 	const ChunkManager &chunkManager = sceneManager.chunkManager;

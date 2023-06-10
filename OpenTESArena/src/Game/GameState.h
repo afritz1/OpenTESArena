@@ -254,7 +254,7 @@ public:
 	void tickVoxels(double dt, Game &game);
 	void tickEntities(double dt, Game &game);
 	void tickCollision(double dt, Game &game);
-	void tickRendering(double dt, Game &game);
+	void tickRendering(Game &game);
 };
 
 #endif

@@ -127,6 +127,7 @@ public:
 	// @todo: support spawning an entity not from the level def
 
 	void cleanUp();
+	void clear();
 };
 
 #endif

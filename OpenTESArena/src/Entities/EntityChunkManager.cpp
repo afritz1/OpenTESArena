@@ -1002,3 +1002,17 @@ void EntityChunkManager::cleanUp()
 		chunkPtr->removedEntityIDs.clear();
 	}
 }
+
+void EntityChunkManager::clear()
+{
+	for (ChunkPtr &chunkPtr : this->activeChunks)
+	{
+		for (const EntityInstanceID entityInstID : chunkPtr->entityIDs)
+		{
+			this->queueEntityDestroy(entityInstID);
+		}
+	}
+
+	this->cleanUp();
+	this->recycleAllChunks();
+}

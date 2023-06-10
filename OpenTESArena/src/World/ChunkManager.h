@@ -26,6 +26,7 @@ public:
 
 	void update(const ChunkInt2 &centerChunkPos, int chunkDistance);
 	void cleanUp();
+	void clear();
 };
 
 #endif

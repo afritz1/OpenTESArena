@@ -124,3 +124,11 @@ void ChunkManager::cleanUp()
 	this->newChunkPositions.clear();
 	this->freedChunkPositions.clear();
 }
+
+void ChunkManager::clear()
+{
+	this->activeChunkPositions.clear();
+	this->newChunkPositions.clear();
+	this->freedChunkPositions.clear();
+	this->centerChunkPosIndex = -1;
+}

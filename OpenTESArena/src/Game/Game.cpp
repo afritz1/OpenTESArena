@@ -799,7 +799,7 @@ void Game::loop()
 				this->gameState.tickVoxels(clampedDt, *this);
 				this->gameState.tickEntities(clampedDt, *this);
 				this->gameState.tickCollision(clampedDt, *this);
-				this->gameState.tickRendering(clampedDt, *this);
+				this->gameState.tickRendering(*this);
 
 				// Update audio listener orientation.
 				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
