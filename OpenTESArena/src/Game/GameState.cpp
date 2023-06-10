@@ -7,6 +7,7 @@
 #include "Game.h"
 #include "GameState.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
@@ -1034,13 +1035,20 @@ void GameState::tryUpdatePendingMapTransition(Game &game, double dt)
 		DebugNotImplementedMsg("Unhandled map transition case.");
 	}
 
+	TextureManager &textureManager = game.getTextureManager();
+	Renderer &renderer = game.getRenderer();
 	SceneManager &sceneManager = game.getSceneManager();
+
+	ObjectTextureID gameWorldPaletteTextureID = ArenaLevelUtils::allocGameWorldPaletteTexture(ArenaPaletteName::Default, textureManager, renderer);
+	sceneManager.gameWorldPaletteTextureRef.init(gameWorldPaletteTextureID, renderer);
+
+	ObjectTextureID lightTableTextureID = ArenaLevelUtils::allocLightTableTexture(ArenaTextureName::NormalLightTable, textureManager, renderer);
+	sceneManager.lightTableTextureRef.init(lightTableTextureID, renderer);
+
 	Player &player = game.getPlayer();
 
-	DebugLogError("Not implemented: palette init in tryUpdatePendingMapTransition().");
 	DebugLogError("Not implemented: clearing scene and re-populating in tryUpdatePendingMapTransition().");
 
-	// @todo: set palettes as LevelInstance::trySetActive() would
 	// @todo: clear scene manager and populate everything (base ChunkManager, voxels, entities, collision, render)
 	// - since this function happens after the regular ChunkManager::update(), etc. and right before the game loop
 	//   render, it needs to populate everything immediately.
