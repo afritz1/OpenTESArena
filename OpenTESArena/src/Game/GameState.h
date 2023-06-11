@@ -72,6 +72,7 @@ private:
 
 	// Scene transition request variables.
 	MapDefinition nextMapDef;
+	std::optional<CoordInt2> nextMapStartCoord; // Overrides map definition start points; used with city -> wilderness transition.
 	VoxelInt2 nextMapPlayerStartOffset; // Used with interior level changes and random dungeons.
 	std::optional<WorldMapLocationIDs> nextMapDefLocationIDs;
 	std::optional<WeatherDefinition> nextMapDefWeatherDef; // Used with fast travel, etc..
@@ -126,8 +127,8 @@ public:
 	bool hasPendingSceneChange() const;
 
 	void queueLevelIndexChange(int newLevelIndex, const VoxelInt2 &playerStartOffset);
-	void queueMapDefChange(MapDefinition &&newMapDef, const std::optional<CoordInt3> &returnCoord = std::nullopt,
-		const VoxelInt2 &playerStartOffset = VoxelInt2::Zero,
+	void queueMapDefChange(MapDefinition &&newMapDef, const std::optional<CoordInt2> &startCoord = std::nullopt,
+		const std::optional<CoordInt3> &returnCoord = std::nullopt, const VoxelInt2 &playerStartOffset = VoxelInt2::Zero,
 		const std::optional<WorldMapLocationIDs> &worldMapLocationIDs = std::nullopt,
 		bool clearPreviousMap = false, const std::optional<WeatherDefinition> &weatherDef = std::nullopt);
 	void queueMapDefPop();

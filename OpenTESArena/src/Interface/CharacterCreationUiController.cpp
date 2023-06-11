@@ -540,7 +540,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 			return;
 		}
 
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		// Initialize player.
 		const auto &exeData = binaryAssetLibrary.getExeData();
@@ -836,7 +836,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			return musicDef;
 		};
 
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		gameState.queueMusicOnSceneChange(musicFunc);
 	};
 

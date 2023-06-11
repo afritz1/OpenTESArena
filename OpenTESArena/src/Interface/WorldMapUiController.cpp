@@ -188,7 +188,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		};
 
 		// Load the destination city.
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
 		game.setPanel<GameWorldPanel>();
@@ -242,7 +242,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return musicDef;
 		};
 
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, playerStartOffset, worldMapLocationIDs, true);
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, playerStartOffset, worldMapLocationIDs, true);
 		gameState.queueMusicOnSceneChange(musicFunc);
 
 		game.setPanel<GameWorldPanel>();
@@ -267,7 +267,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return;
 		}
 
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Staff)
 		{

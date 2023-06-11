@@ -221,7 +221,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return;
 			}
 
-			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 		}
 		else
 		{
@@ -257,7 +257,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 					return;
 				}
 
-				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, playerStartOffset, worldMapLocationIDs, true);
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, playerStartOffset, worldMapLocationIDs, true);
 
 				// Set random named dungeon name and visibility for testing.
 				WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
@@ -300,7 +300,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 					return;
 				}
 				
-				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, playerStartOffset, worldMapLocationIDs, true);
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, playerStartOffset, worldMapLocationIDs, true);
 			}
 			else
 			{
@@ -392,7 +392,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return;
 			}
 
-			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		}
 		else
 		{
@@ -475,7 +475,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return;
 			}
 
-			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -517,7 +517,12 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			return;
 		}
 
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+		// Don't have a city gate reference. Just pick somewhere in the center of the wilderness.
+		const CoordInt2 startCoord(
+			ChunkInt2(ArenaWildUtils::WILD_WIDTH / 2, ArenaWildUtils::WILD_HEIGHT / 2),
+			VoxelInt2::Zero);
+
+		gameState.queueMapDefChange(std::move(mapDefinition), startCoord, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 	}
 	else
 	{

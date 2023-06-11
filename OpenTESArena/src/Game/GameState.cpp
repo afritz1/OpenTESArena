@@ -154,8 +154,9 @@ void GameState::queueLevelIndexChange(int newLevelIndex, const VoxelInt2 &player
 	this->nextMapPlayerStartOffset = playerStartOffset;
 }
 
-void GameState::queueMapDefChange(MapDefinition &&newMapDef, const std::optional<CoordInt3> &returnCoord,
-	const VoxelInt2 &playerStartOffset, const std::optional<WorldMapLocationIDs> &worldMapLocationIDs, bool clearPreviousMap,
+void GameState::queueMapDefChange(MapDefinition &&newMapDef, const std::optional<CoordInt2> &startCoord,
+	const std::optional<CoordInt3> &returnCoord, const VoxelInt2 &playerStartOffset,
+	const std::optional<WorldMapLocationIDs> &worldMapLocationIDs, bool clearPreviousMap,
 	const std::optional<WeatherDefinition> &weatherDef)
 {
 	if (this->hasPendingMapDefChange())
@@ -171,6 +172,7 @@ void GameState::queueMapDefChange(MapDefinition &&newMapDef, const std::optional
 	}
 
 	this->nextMapDef = std::move(newMapDef);
+	this->nextMapStartCoord = startCoord;
 	this->prevMapReturnCoord = returnCoord;
 	this->nextMapPlayerStartOffset = playerStartOffset;
 	this->nextMapDefLocationIDs = worldMapLocationIDs;
@@ -516,11 +518,20 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 		}
 
 		CoordDouble2 startCoord;
-		if (shouldPopReturnCoord)
+		if (this->nextMapStartCoord.has_value())
 		{
-			startCoord = CoordDouble2(
-				this->prevMapReturnCoord->chunk,
-				VoxelDouble2(static_cast<SNDouble>(this->prevMapReturnCoord->voxel.x) + 0.50, static_cast<WEDouble>(this->prevMapReturnCoord->voxel.z) + 0.50));
+			const VoxelInt2 startVoxelXZ(
+				this->nextMapStartCoord->voxel.x,
+				this->nextMapStartCoord->voxel.y);
+			startCoord = CoordDouble2(this->nextMapStartCoord->chunk, VoxelUtils::getVoxelCenter(startVoxelXZ));
+			this->nextMapStartCoord = std::nullopt;
+		}
+		else if (shouldPopReturnCoord)
+		{
+			const VoxelInt2 returnVoxelXZ(
+				this->prevMapReturnCoord->voxel.x,
+				this->prevMapReturnCoord->voxel.z);
+			startCoord = CoordDouble2(this->prevMapReturnCoord->chunk, VoxelUtils::getVoxelCenter(returnVoxelXZ));
 			this->prevMapReturnCoord = std::nullopt;
 		}
 		else if (this->activeMapDef.getStartPointCount() > 0)
@@ -530,17 +541,7 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 		}
 		else
 		{
-			if (this->getActiveMapType() == MapType::Wilderness)
-			{
-				// Don't have a city gate reference. Just pick somewhere in the center of the wilderness.
-				startCoord = CoordDouble2(
-					ChunkInt2(ArenaWildUtils::WILD_WIDTH / 2, ArenaWildUtils::WILD_HEIGHT / 2),
-					VoxelDouble2::Zero);
-			}
-			else
-			{
-				DebugLogWarning("No valid start coord for map definition change.");
-			}
+			DebugLogWarning("No valid start coord for map definition change.");
 		}
 
 		const double ceilingScale = this->getActiveCeilingScale();
@@ -549,6 +550,8 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 			VoxelDouble3(startCoord.point.x + startOffset.x, ceilingScale + Player::HEIGHT, startCoord.point.y + startOffset.y));
 
 		player.teleport(newPlayerPos);
+
+		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	}
 	else if (this->hasPendingLevelIndexChange())
 	{
@@ -566,13 +569,14 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 
 		player.teleport(newPlayerPos);
 		player.lookAt(newPlayerPos + VoxelDouble3(startOffset.x, 0.0, startOffset.y));
+
+		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	}
 	else
 	{
 		DebugNotImplementedMsg("Unhandled scene change case.");
 	}
 
-	this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	player.setVelocityToZero();
 
 	TextureManager &textureManager = game.getTextureManager();

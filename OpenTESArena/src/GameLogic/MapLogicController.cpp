@@ -289,7 +289,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				return musicDef;
 			};
 
-			gameState.queueMapDefChange(std::move(mapDefinition), returnCoord);
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord);
 			gameState.queueMusicOnSceneChange(musicFunc);
 		}
 		else if (transitionType == TransitionType::CityGate)
@@ -349,15 +349,15 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				const WeatherDefinition &overrideWeather = weatherDef;
 
 				// Calculate wilderness position based on the gate's voxel in the city.
-				const CoordInt3 startCoord = [&hitCoord, &transitionDir]()
+				const CoordInt2 startCoord = [&hitCoord, &transitionDir]()
 				{
 					// Origin of the city in the wilderness.
 					const ChunkInt2 wildCityChunk(ArenaWildUtils::CITY_ORIGIN_CHUNK_X, ArenaWildUtils::CITY_ORIGIN_CHUNK_Z);
 
 					// Player position bias based on selected gate face.
-					const VoxelInt3 offset(transitionDir.x, 0, transitionDir.y);
+					const VoxelInt2 offset(transitionDir.x, transitionDir.y);
 
-					return CoordInt3(wildCityChunk + hitCoord.chunk, hitCoord.voxel + offset);
+					return CoordInt2(wildCityChunk + hitCoord.chunk, VoxelInt2(hitCoord.voxel.x, hitCoord.voxel.z) + offset);
 				}();
 
 				// No need to change world map location here.
@@ -370,7 +370,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 					return;
 				}
 
-				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, std::nullopt, true);
+				gameState.queueMapDefChange(std::move(mapDefinition), startCoord, std::nullopt, VoxelInt2::Zero, std::nullopt, true);
 			}
 			else if (activeMapType == MapType::Wilderness)
 			{
@@ -420,7 +420,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 					return;
 				}
 
-				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, VoxelInt2::Zero, std::nullopt, true);
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, std::nullopt, true);
 			}
 			else
 			{
