@@ -136,7 +136,7 @@ bool GameState::hasPendingSceneChange() const
 	return this->hasPendingLevelIndexChange() || this->hasPendingMapDefChange();
 }
 
-void GameState::queueLevelIndexChange(int newLevelIndex)
+void GameState::queueLevelIndexChange(int newLevelIndex, const VoxelInt2 &playerStartOffset)
 {
 	if (this->hasPendingLevelIndexChange())
 	{
@@ -151,6 +151,7 @@ void GameState::queueLevelIndexChange(int newLevelIndex)
 	}
 
 	this->nextLevelIndex = newLevelIndex;
+	this->nextMapPlayerStartOffset = playerStartOffset;
 }
 
 void GameState::queueMapDefChange(MapDefinition &&newMapDef, const std::optional<CoordInt3> &returnCoord,
@@ -229,335 +230,6 @@ void GameState::queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, c
 	this->nextMusicFunc = musicFunc;
 	this->nextJingleMusicFunc = jingleMusicFunc;
 }
-
-/*bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-	const std::optional<CoordInt3> &returnCoord, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
-
-	MapDefinition mapDefinition;
-	if (!mapDefinition.initInterior(interiorGenInfo, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager))
-	{
-		DebugLogError("Couldn't init interior map from generation info.");
-		return false;
-	}
-
-	constexpr int currentDay = 0; // Doesn't matter for interiors.
-
-	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, currentDay, textureManager, renderer);
-
-	// Save return voxel to the current exterior (if any).
-	if (this->maps.size() > 0)
-	{
-		MapState &activeMapState = this->maps.top();
-		activeMapState.returnCoord = returnCoord;
-	}
-
-	DebugAssert(mapDefinition.getStartPointCount() > 0);
-	const WorldDouble2 &startPoint = mapDefinition.getStartPoint(0);
-	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
-
-	// Interiors are always clear weather.
-	Random weatherRandom;
-	WeatherDefinition weatherDef;
-	weatherDef.initFromClassic(ArenaTypes::WeatherType::Clear, currentDay, weatherRandom);
-
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::move(weatherDef), std::nullopt);
-
-	const std::optional<WorldMapLocationIDs> worldMapLocationIDs; // Doesn't change when pushing an interior.
-	std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // No citizens in interiors.
-	constexpr bool enteringInteriorFromExterior = true;
-
-	this->nextMap = std::make_unique<MapTransitionState>();
-	this->nextMap->init(std::move(mapState), worldMapLocationIDs, std::move(citizenGenInfo),
-		startCoord, enteringInteriorFromExterior);
-
-	return true;
-}*/
-
-/*bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-	const std::optional<VoxelInt2> &playerStartOffset, const WorldMapLocationIDs &worldMapLocationIDs,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
-{
-	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
-
-	MapDefinition mapDefinition;
-	if (!mapDefinition.initInterior(interiorGenInfo, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager))
-	{
-		DebugLogError("Couldn't init interior map from generation info.");
-		return false;
-	}
-
-	constexpr int currentDay = 0; // Doesn't matter for interiors.
-
-	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, currentDay, textureManager, renderer);
-
-	const CoordInt2 startCoord = [&playerStartOffset, &mapDefinition]()
-	{
-		DebugAssert(mapDefinition.getStartPointCount() > 0);
-		const WorldDouble2 &startPoint = mapDefinition.getStartPoint(0);
-		const WorldInt2 startVoxel = VoxelUtils::pointToVoxel(startPoint);
-		const CoordInt2 coord = VoxelUtils::levelVoxelToCoord(startVoxel);
-		const VoxelInt2 offset = playerStartOffset.has_value() ? *playerStartOffset : VoxelInt2::Zero;
-		return ChunkUtils::recalculateCoord(coord.chunk, coord.voxel + offset);
-	}();
-
-	// Interiors are always clear weather.
-	Random weatherRandom;
-	WeatherDefinition weatherDef;
-	weatherDef.initFromClassic(ArenaTypes::WeatherType::Clear, currentDay, weatherRandom);
-
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::move(weatherDef), std::nullopt);
-
-	std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // No citizens in interiors.
-	constexpr bool enteringInteriorFromExterior = false; // This method doesn't keep an exterior alive.
-
-	this->nextMap = std::make_unique<MapTransitionState>();
-	this->nextMap->init(std::move(mapState), worldMapLocationIDs, std::move(citizenGenInfo),
-		startCoord, enteringInteriorFromExterior);
-
-	return true;
-}*/
-
-/*bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
-	const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
-
-	MapDefinition mapDefinition;
-	if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textAssetLibrary, textureManager))
-	{
-		DebugLogError("Couldn't init city map from generation info.");
-		return false;
-	}
-
-	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager, renderer);
-
-	DebugAssert(mapDefinition.getStartPointCount() > 0);
-	const WorldDouble2 &startPoint = mapDefinition.getStartPoint(0);
-	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
-
-	const ProvinceDefinition *provinceDefPtr = nullptr;
-	const LocationDefinition *locationDefPtr = nullptr;
-	if (newWorldMapLocationIDs.has_value())
-	{
-		provinceDefPtr = &this->worldMapDef.getProvinceDef(newWorldMapLocationIDs->provinceID);
-		locationDefPtr = &provinceDefPtr->getLocationDef(newWorldMapLocationIDs->locationID);
-	}
-	else
-	{
-		// Use existing world map location (likely a wilderness->city transition).
-		provinceDefPtr = &this->getProvinceDefinition();
-		locationDefPtr = &this->getLocationDefinition();
-	}
-
-	const LocationCityDefinition &cityDef = locationDefPtr->getCityDefinition();
-	WeatherDefinition weatherDef = [&overrideWeather, &cityDef]()
-	{
-		if (overrideWeather.has_value())
-		{
-			// Use this when we don't want to randomly generate the weather.
-			return WeatherUtils::getFilteredWeather(*overrideWeather, cityDef.climateType);
-		}
-		else
-		{
-			WeatherDefinition def;
-			def.initClear(); // @todo: generate the weather for this location.
-			return def; 
-		}
-	}();
-
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::move(weatherDef), std::nullopt);
-	
-	CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
-		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
-
-	constexpr std::optional<bool> enteringInteriorFromExterior; // Unused for exteriors.
-
-	this->nextMap = std::make_unique<MapTransitionState>();
-	this->nextMap->init(std::move(mapState), newWorldMapLocationIDs, std::move(citizenGenInfo),
-		startCoord, enteringInteriorFromExterior);
-
-	return true;
-}*/
-
-/*bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
-	const std::optional<CoordInt3> &startCoord, const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
-{
-	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
-
-	// @todo: try to get gate position if current active map is for city -- need to have saved it from when the
-	// gate was clicked in GameWorldPanel.
-	
-	MapDefinition mapDefinition;
-	if (!mapDefinition.initWild(wildGenInfo, skyGenInfo, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager))
-	{
-		DebugLogError("Couldn't init wild map from generation info.");
-		return false;
-	}
-
-	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager, renderer);
-
-	// Wilderness start point depends on city gate the player is coming out of.
-	DebugAssert(mapDefinition.getStartPointCount() == 0);
-	const CoordInt2 actualStartCoord = [&startCoord]()
-	{
-		if (startCoord.has_value())
-		{
-			return CoordInt2(startCoord->chunk, VoxelInt2(startCoord->voxel.x, startCoord->voxel.z));
-		}
-		else
-		{
-			// Don't have a city gate reference. Just pick somewhere in the center of the wilderness.
-			return CoordInt2(
-				ChunkInt2(ArenaWildUtils::WILD_WIDTH / 2, ArenaWildUtils::WILD_HEIGHT / 2),
-				VoxelInt2::Zero);
-		}
-	}();
-
-	const ProvinceDefinition *provinceDefPtr = nullptr;
-	const LocationDefinition *locationDefPtr = nullptr;
-	if (newWorldMapLocationIDs.has_value())
-	{
-		provinceDefPtr = &this->worldMapDef.getProvinceDef(newWorldMapLocationIDs->provinceID);
-		locationDefPtr = &provinceDefPtr->getLocationDef(newWorldMapLocationIDs->locationID);
-	}
-	else
-	{
-		// Use existing world map location (likely a city->wilderness transition).
-		provinceDefPtr = &this->getProvinceDefinition();
-		locationDefPtr = &this->getLocationDefinition();
-	}
-
-	const LocationCityDefinition &cityDef = locationDefPtr->getCityDefinition();
-	WeatherDefinition weatherDef = [&overrideWeather, &cityDef]()
-	{
-		if (overrideWeather.has_value())
-		{
-			// Use this when we don't want to randomly generate the weather.
-			return WeatherUtils::getFilteredWeather(*overrideWeather, cityDef.climateType);
-		}
-		else
-		{
-			WeatherDefinition def;
-			def.initClear(); // @todo: generate the weather for this location.
-			return def;
-		}
-	}();
-
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::move(weatherDef), std::nullopt);
-
-	CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
-		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
-
-	constexpr std::optional<bool> enteringInteriorFromExterior; // Unused for exteriors.
-
-	this->nextMap = std::make_unique<MapTransitionState>();
-	this->nextMap->init(std::move(mapState), newWorldMapLocationIDs, std::move(citizenGenInfo),
-		actualStartCoord, enteringInteriorFromExterior);
-
-	return true;
-}*/
-
-/*bool GameState::tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager, TextureManager &textureManager,
-	Renderer &renderer)
-{
-	if (this->maps.size() == 0)
-	{
-		DebugLogError("No map available to pop.");
-		return false;
-	}
-
-	this->maps.pop();
-	if (this->maps.size() == 0)
-	{
-		DebugLogError("No map available to set active.");
-		return false;
-	}
-
-	MapState &activeMapState = this->maps.top();
-	const MapDefinition &activeMapDef = activeMapState.definition;
-	const MapType activeMapType = activeMapDef.getSubDefinition().type;
-	MapInstance &activeMapInst = activeMapState.instance;
-	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
-	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
-	SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
-	const std::optional<CoordInt3> &returnCoord = activeMapState.returnCoord;
-
-	// @todo: need a condition to determine if we need to recalculate the weather (i.e., if the player slept
-	// in an interior).
-	WeatherDefinition activeWeatherDef = activeMapState.weatherDef;
-
-	const CoordInt2 startCoord = [&activeMapDef, &returnCoord]()
-	{
-		// Use the return voxel as the start point if the now-activated map has one.
-		if (returnCoord.has_value())
-		{
-			return CoordInt2(returnCoord->chunk, VoxelInt2(returnCoord->voxel.x, returnCoord->voxel.z));
-		}
-		else
-		{
-			// Too complex to determine (based on interior/city/wild), so just don't support for now.
-			DebugUnhandledReturn(CoordInt2);
-		}
-	}();
-
-	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [this, &entityDefLibrary, &textureManager,
-		activeMapType]() -> std::optional<CitizenUtils::CitizenGenInfo>
-	{
-		if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
-		{
-			const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-			const LocationDefinition &locationDef = this->getLocationDefinition();
-			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
-				entityDefLibrary, textureManager);
-		}
-		else
-		{
-			return std::nullopt;
-		}
-	}();
-
-	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, player, std::move(activeWeatherDef),
-		startCoord, citizenGenInfo, entityDefLibrary, binaryAssetLibrary, renderChunkManager, textureManager, renderer))
-	{
-		DebugLogError("Couldn't set level active in the renderer for previously active level.");
-		return false;
-	}
-
-	if (!this->trySetSkyActive(activeSkyInst, activeLevelIndex, textureManager, renderer))
-	{
-		DebugLogError("Couldn't set sky active in the renderer for previously active level.");
-		return false;
-	}
-
-	return true;
-}*/
 
 MapType GameState::getActiveMapType() const
 {
@@ -743,100 +415,6 @@ void GameState::resetEffectTextDuration()
 	this->effectTextRemainingSeconds = 0.0;
 }
 
-/*bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-	Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer)
-{
-	const VoxelDouble2 startVoxelReal = VoxelUtils::getVoxelCenter(startCoord.voxel);
-	const CoordDouble3 playerPos(
-		startCoord.chunk,
-		VoxelDouble3(startVoxelReal.x, levelInst.getCeilingScale() + Player::HEIGHT, startVoxelReal.y));
-
-	// Set transitioned position.
-	player.teleport(playerPos);
-	player.setVelocityToZero();
-
-	this->weatherDef = std::move(weatherDef);
-
-	Random weatherRandom; // Cosmetic random.
-	this->weatherInst = WeatherInstance(); // Make sure to reset weather instance.
-	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(),
-		weatherRandom, textureManager);
-
-	DebugAssert(this->maps.size() > 0);
-	const MapDefinition &mapDefinition = this->maps.top().definition;
-
-	// @todo: need to combine setting level and sky active into a renderer.loadScene() call I think.
-	if (!levelInst.trySetActive(renderChunkManager, textureManager, renderer))
-	{
-		DebugLogError("Couldn't set level active in the renderer.");
-		return false;
-	}
-
-	return true;
-}*/
-
-/*bool GameState::trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &activeLevelIndex,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	DebugAssert(this->maps.size() > 0);
-	const MapDefinition &mapDefinition = this->maps.top().definition;
-
-	if (!skyInst.trySetActive(activeLevelIndex, mapDefinition, textureManager, renderer))
-	{
-		DebugLogError("Couldn't set sky active in renderer.");
-		return false;
-	}
-
-	return true;
-}*/
-
-/*bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer)
-{
-	MapState &nextMapState = transitionState.mapState;
-	WeatherDefinition nextWeatherDef = nextMapState.weatherDef;
-
-	// Clear map stack if it's not entering an interior from an exterior.
-	if (!transitionState.enteringInteriorFromExterior.has_value() ||
-		!(*transitionState.enteringInteriorFromExterior))
-	{
-		this->clearMaps();
-	}
-
-	this->maps.emplace(std::move(nextMapState));
-
-	if (transitionState.worldMapLocationIDs.has_value())
-	{
-		this->provinceIndex = transitionState.worldMapLocationIDs->provinceID;
-		this->locationIndex = transitionState.worldMapLocationIDs->locationID;
-	}
-
-	MapInstance &newMapInst = this->maps.top().instance;
-	const int newLevelInstIndex = newMapInst.getActiveLevelIndex();
-	LevelInstance &newLevelInst = newMapInst.getActiveLevel();
-	SkyInstance &newSkyInst = newMapInst.getActiveSky();
-
-	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, player, std::move(nextWeatherDef),
-		transitionState.startCoord, transitionState.citizenGenInfo, entityDefLibrary, binaryAssetLibrary,
-		renderChunkManager, textureManager, renderer))
-	{
-		DebugLogError("Couldn't set new level active.");
-		return false;
-	}
-
-	if (!this->trySetSkyActive(newSkyInst, newLevelInstIndex, textureManager, renderer))
-	{
-		DebugLogError("Couldn't set new sky active.");
-		return false;
-	}
-
-	return true;
-}*/
-
 void GameState::clearMaps()
 {
 	this->activeMapDef.clear();
@@ -900,6 +478,12 @@ void GameState::updateWeatherList(const ExeData &exeData)
 
 void GameState::applyPendingSceneChange(Game &game, double dt)
 {
+	Player &player = game.getPlayer();
+
+	const VoxelDouble2 startOffset(
+		static_cast<SNDouble>(this->nextMapPlayerStartOffset.x),
+		static_cast<WEDouble>(this->nextMapPlayerStartOffset.y));
+
 	if (this->hasPendingMapDefChange())
 	{
 		if (!this->nextMapClearsPrevious)
@@ -908,6 +492,8 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 		}
 
 		this->activeMapDef.clear();
+
+		const bool shouldPopReturnCoord = this->prevMapReturnCoord.has_value() && this->nextMapClearsPrevious;
 		this->nextMapClearsPrevious = false;
 
 		if (this->nextMapDefLocationIDs.has_value())
@@ -929,19 +515,65 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 			this->nextMapDefWeatherDef = std::nullopt;
 		}
 
-		// @todo: teleport player, using prevMapReturnCoord and nextMapPlayerStartOffset as needed
+		CoordDouble2 startCoord;
+		if (shouldPopReturnCoord)
+		{
+			startCoord = CoordDouble2(
+				this->prevMapReturnCoord->chunk,
+				VoxelDouble2(static_cast<SNDouble>(this->prevMapReturnCoord->voxel.x) + 0.50, static_cast<WEDouble>(this->prevMapReturnCoord->voxel.z) + 0.50));
+			this->prevMapReturnCoord = std::nullopt;
+		}
+		else if (this->activeMapDef.getStartPointCount() > 0)
+		{
+			const WorldDouble2 startPoint = this->activeMapDef.getStartPoint(0);
+			startCoord = VoxelUtils::worldPointToCoord(startPoint);
+		}
+		else
+		{
+			if (this->getActiveMapType() == MapType::Wilderness)
+			{
+				// Don't have a city gate reference. Just pick somewhere in the center of the wilderness.
+				startCoord = CoordDouble2(
+					ChunkInt2(ArenaWildUtils::WILD_WIDTH / 2, ArenaWildUtils::WILD_HEIGHT / 2),
+					VoxelDouble2::Zero);
+			}
+			else
+			{
+				DebugLogWarning("No valid start coord for map definition change.");
+			}
+		}
+
+		const double ceilingScale = this->getActiveCeilingScale();
+		const CoordDouble3 newPlayerPos(
+			startCoord.chunk,
+			VoxelDouble3(startCoord.point.x + startOffset.x, ceilingScale + Player::HEIGHT, startCoord.point.y + startOffset.y));
+
+		player.teleport(newPlayerPos);
 	}
 	else if (this->hasPendingLevelIndexChange())
 	{
 		this->activeLevelIndex = this->nextLevelIndex;
 		this->nextLevelIndex = -1;
 
-		// @todo: teleport player? or do they stay in the same voxel when it's an interior?
+		const double ceilingScale = this->getActiveCeilingScale();
+
+		const CoordDouble3 oldPlayerPos = player.getPosition(); // The player should be inside the transition voxel.
+		const VoxelInt3 oldPlayerVoxel = VoxelUtils::pointToVoxel(oldPlayerPos.point);
+		const VoxelDouble3 oldPlayerCenteredPoint = VoxelUtils::getVoxelCenter(oldPlayerVoxel);
+		const CoordDouble3 newPlayerPos(
+			oldPlayerPos.chunk,
+			VoxelDouble3(oldPlayerCenteredPoint.x + startOffset.x, ceilingScale + Player::HEIGHT, oldPlayerCenteredPoint.z + startOffset.y));
+
+		player.teleport(newPlayerPos);
+		player.lookAt(newPlayerPos + VoxelDouble3(startOffset.x, 0.0, startOffset.y));
 	}
 	else
 	{
 		DebugNotImplementedMsg("Unhandled scene change case.");
 	}
+
+	this->nextMapPlayerStartOffset = VoxelInt2::Zero;
+	player.setVelocityToZero();
 
 	TextureManager &textureManager = game.getTextureManager();
 	Renderer &renderer = game.getRenderer();
@@ -953,7 +585,6 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	ObjectTextureID lightTableTextureID = ArenaLevelUtils::allocLightTableTexture(ArenaTextureName::NormalLightTable, textureManager, renderer);
 	sceneManager.lightTableTextureRef.init(lightTableTextureID, renderer);
 
-	Player &player = game.getPlayer();
 	const CoordDouble3 &playerCoord = player.getPosition();
 
 	// Clear and re-populate scene immediately so it's ready for rendering this frame (otherwise we get a black frame).

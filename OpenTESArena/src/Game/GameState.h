@@ -72,7 +72,7 @@ private:
 
 	// Scene transition request variables.
 	MapDefinition nextMapDef;
-	VoxelInt2 nextMapPlayerStartOffset; // Used with random dungeons.
+	VoxelInt2 nextMapPlayerStartOffset; // Used with interior level changes and random dungeons.
 	std::optional<WorldMapLocationIDs> nextMapDefLocationIDs;
 	std::optional<WeatherDefinition> nextMapDefWeatherDef; // Used with fast travel, etc..
 	bool nextMapClearsPrevious; // Clears any previously-loaded map defs (such as when fast travelling).
@@ -110,23 +110,6 @@ private:
 	WeatherDefinition weatherDef;
 	WeatherInstance weatherInst;
 
-	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
-	/*bool trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-		Player &player, WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer);*/
-
-	// Attempts to set the sky active in the systems (i.e. renderer) that need its data. This must
-	// be run after trySetLevelActive() (not sure that's a good idea though).
-	/*bool trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &activeLevelIndex,
-		TextureManager &textureManager, Renderer &renderer);*/
-
-	// Attempts to apply the map transition state saved from the previous frame to the current game state.
-	/*bool tryApplyMapTransition(MapTransitionState &&transitionState, Player &player,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		RenderChunkManager &renderChunkManager, TextureManager &textureManager, Renderer &renderer);*/
-
 	void clearMaps();
 public:
 	// Creates incomplete game state with no active world, to be further initialized later.
@@ -142,48 +125,13 @@ public:
 	bool hasPendingMapDefChange() const;
 	bool hasPendingSceneChange() const;
 
-	void queueLevelIndexChange(int newLevelIndex);
+	void queueLevelIndexChange(int newLevelIndex, const VoxelInt2 &playerStartOffset);
 	void queueMapDefChange(MapDefinition &&newMapDef, const std::optional<CoordInt3> &returnCoord = std::nullopt,
 		const VoxelInt2 &playerStartOffset = VoxelInt2::Zero,
 		const std::optional<WorldMapLocationIDs> &worldMapLocationIDs = std::nullopt,
 		bool clearPreviousMap = false, const std::optional<WeatherDefinition> &weatherDef = std::nullopt);
 	void queueMapDefPop();
 	void queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, const SceneChangeMusicFunc &jingleMusicFunc = SceneChangeMusicFunc());
-
-	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
-	// info. This preserves existing maps for later when the interior is exited.
-	/*bool tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-		const std::optional<CoordInt3> &returnCoord, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);*/
-
-	// Clears all maps and attempts to generate an interior and set it active based on the given generation info.
-	// This is simpler than pushing an interior since there is no exterior to return to. Intended for world map
-	// dungeons.
-	/*bool trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-		const std::optional<VoxelInt2> &playerStartOffset, const WorldMapLocationIDs &worldMapLocationIDs,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);*/
-
-	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
-	/*bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
-		const std::optional<WeatherDefinition> &overrideWeather,
-		const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);*/
-
-	// Clears all maps and attempts to generate a wilderness and set it active based on the given generation info.
-	/*bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
-		const std::optional<CoordInt3> &startCoord, const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);*/
-
-	// Pops the top-most map from the stack and sets the next map active if there is one available.
-	/*bool tryPopMap(Player &player, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, RenderChunkManager &renderChunkManager,
-		TextureManager &textureManager, Renderer &renderer);*/
 
 	MapType getActiveMapType() const;
 	bool isActiveMapValid() const; // Basically "is there something we can populate the scene with?".

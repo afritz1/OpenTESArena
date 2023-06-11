@@ -547,7 +547,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		// The direction from a level up/down voxel to where the player should end up after
 		// going through. In other words, it points to the destination voxel adjacent to the
 		// level up/down voxel.
-		const VoxelDouble3 dirToWorldVoxel = [&playerCoord, &transitionCoord]()
+		const VoxelInt3 dirToWorldVoxel = [&playerCoord, &transitionCoord]()
 		{
 			const VoxelInt3 diff = transitionCoord - playerCoord;
 
@@ -560,22 +560,22 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			if (diff.x > 0)
 			{
 				// From south to north.
-				return -Double3::UnitX;
+				return -Int3::UnitX;
 			}
 			else if (diff.x < 0)
 			{
 				// From north to south.
-				return Double3::UnitX;
+				return Int3::UnitX;
 			}
 			else if (diff.z > 0)
 			{
 				// From west to east.
-				return -Double3::UnitZ;
+				return -Int3::UnitZ;
 			}
 			else if (diff.z < 0)
 			{
 				// From east to west.
-				return Double3::UnitZ;
+				return Int3::UnitZ;
 			}
 			else
 			{
@@ -586,7 +586,12 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		// Player destination after going through a level up/down voxel.
 		auto &player = game.getPlayer();
 		const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
-		const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(transitionCoord.chunk, transitionVoxelCenter + dirToWorldVoxel);
+		const VoxelInt2 dirToWorldVoxelXZ(dirToWorldVoxel.x, dirToWorldVoxel.z);
+		const VoxelDouble3 dirToWorldPoint(
+			static_cast<SNDouble>(dirToWorldVoxel.x),
+			static_cast<double>(dirToWorldVoxel.y),
+			static_cast<WEDouble>(dirToWorldVoxel.z));
+		const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(transitionCoord.chunk, transitionVoxelCenter + dirToWorldPoint);
 
 		// Lambda for opening the world map when the player enters a transition voxel
 		// that will "lead to the surface of the dungeon".
@@ -627,7 +632,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 				else if (activeLevelIndex > 0)
 				{
 					// Decrement the world's level index and activate the new level.
-					gameState.queueLevelIndexChange(activeLevelIndex - 1);
+					gameState.queueLevelIndexChange(activeLevelIndex - 1, dirToWorldVoxelXZ);
 				}
 				else
 				{
@@ -640,7 +645,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 				if (activeLevelIndex < (levelCount - 1))
 				{
 					// Increment the world's level index and activate the new level.
-					gameState.queueLevelIndexChange(activeLevelIndex + 1);
+					gameState.queueLevelIndexChange(activeLevelIndex + 1, dirToWorldVoxelXZ);
 				}
 				else
 				{
