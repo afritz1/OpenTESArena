@@ -14,6 +14,12 @@ class Vector4i
 public:
 	static_assert(std::is_integral<T>::value);
 
+	static const Vector4i<T> Zero;
+	static const Vector4i<T> UnitX;
+	static const Vector4i<T> UnitY;
+	static const Vector4i<T> UnitZ;
+	static const Vector4i<T> UnitW;
+
 	T x, y, z, w;
 
 	Vector4i(T x, T y, T z, T w);
@@ -85,25 +91,27 @@ public:
 };
 
 // Unit vector definitions (can't be in .cpp file on Clang).
-template <typename T>
-const Vector4f<T> Vector4f<T>::Zero(
-	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
+template<typename T>
+const Vector4i<T> Vector4i<T>::Zero(static_cast<T>(0), static_cast<T>(0), static_cast<T>(0), static_cast<T>(0));
+template<typename T>
+const Vector4i<T> Vector4i<T>::UnitX(static_cast<T>(1), static_cast<T>(0), static_cast<T>(0), static_cast<T>(0));
+template<typename T>
+const Vector4i<T> Vector4i<T>::UnitY(static_cast<T>(0), static_cast<T>(1), static_cast<T>(0), static_cast<T>(0));
+template<typename T>
+const Vector4i<T> Vector4i<T>::UnitZ(static_cast<T>(0), static_cast<T>(0), static_cast<T>(1), static_cast<T>(0));
+template<typename T>
+const Vector4i<T> Vector4i<T>::UnitW(static_cast<T>(0), static_cast<T>(0), static_cast<T>(0), static_cast<T>(1));
 
-template <typename T>
-const Vector4f<T> Vector4f<T>::UnitX(
-	static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
-
-template <typename T>
-const Vector4f<T> Vector4f<T>::UnitY(
-	static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0));
-
-template <typename T>
-const Vector4f<T> Vector4f<T>::UnitZ(
-	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0));
-
-template <typename T>
-const Vector4f<T> Vector4f<T>::UnitW(
-	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
+template<typename T>
+const Vector4f<T> Vector4f<T>::Zero(static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
+template<typename T>
+const Vector4f<T> Vector4f<T>::UnitX(static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
+template<typename T>
+const Vector4f<T> Vector4f<T>::UnitY(static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0));
+template<typename T>
+const Vector4f<T> Vector4f<T>::UnitZ(static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0));
+template<typename T>
+const Vector4f<T> Vector4f<T>::UnitW(static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
 
 // The template instantiations are at the end of the .cpp file.
 using Char4 = Vector4i<char>;
