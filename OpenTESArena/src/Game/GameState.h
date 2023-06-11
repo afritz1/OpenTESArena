@@ -104,7 +104,6 @@ private:
 
 	Date date;
 	Clock clock;
-	ArenaRandom arenaRandom;
 	double chasmAnimSeconds;
 	bool isCamping;
 
@@ -118,7 +117,7 @@ public:
 	GameState(GameState&&) = default;
 	~GameState();
 
-	void init(const BinaryAssetLibrary &binaryAssetLibrary);
+	void init(ArenaRandom &random);
 	
 	void clearSession();
 
@@ -188,7 +187,7 @@ public:
 	void resetEffectTextDuration();
 
 	// Recalculates the weather for each global quarter (done hourly).
-	void updateWeatherList(const ExeData &exeData);
+	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
 	void applyPendingSceneChange(Game &game, double dt);

@@ -124,7 +124,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	GameState &gameState = game.getGameState();
-	gameState.init(binaryAssetLibrary);
+	gameState.init(game.getArenaRandom());
 
 	Player &player = game.getPlayer();
 	player.initRandom(CharacterClassLibrary::getInstance(), binaryAssetLibrary.getExeData(), game.getRandom());

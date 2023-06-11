@@ -60,11 +60,12 @@ GameState::~GameState()
 	DebugLog("Closing.");
 }
 
-void GameState::init(const BinaryAssetLibrary &binaryAssetLibrary)
+void GameState::init(ArenaRandom &random)
 {
 	// @todo: might want a clearSession()? Seems weird.
 
 	// Initialize world map definition and instance to default.
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->worldMapDef.init(binaryAssetLibrary);
 	this->worldMapInst.init(this->worldMapDef);
 
@@ -96,7 +97,7 @@ void GameState::init(const BinaryAssetLibrary &binaryAssetLibrary)
 	}
 
 	// Do initial weather update (to set each value to a valid state).
-	this->updateWeatherList(binaryAssetLibrary.getExeData());
+	this->updateWeatherList(random, binaryAssetLibrary.getExeData());
 
 	this->date = Date();
 	this->weatherInst = WeatherInstance();
@@ -433,7 +434,7 @@ void GameState::clearMaps()
 	this->nextJingleMusicFunc = SceneChangeMusicFunc();
 }
 
-void GameState::updateWeatherList(const ExeData &exeData)
+void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 {
 	const int seasonIndex = this->date.getSeason();
 
@@ -444,10 +445,10 @@ void GameState::updateWeatherList(const ExeData &exeData)
 	for (size_t i = 0; i < weatherCount; i++)
 	{
 		const int climateIndex = climates[i];
-		const int variantIndex = [this]()
+		const int variantIndex = [&random]()
 		{
 			// 40% for 2, 20% for 1, 20% for 3, 10% for 0, and 10% for 4.
-			const int val = this->arenaRandom.next() % 100;
+			const int val = random.next() % 100;
 
 			if (val >= 60)
 			{
@@ -640,7 +641,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	{
 		// Update the weather list that's used for selecting the current one.
 		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		this->updateWeatherList(exeData);
+		this->updateWeatherList(game.getArenaRandom(), exeData);
 	}
 
 	// Check if the clock hour looped back around.

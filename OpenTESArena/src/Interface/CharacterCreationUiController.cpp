@@ -490,8 +490,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	auto gameStateFunction = [](Game &game)
 	{
 		GameState &gameState = game.getGameState();
-		const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-		gameState.init(binaryAssetLibrary);
+		gameState.init(game.getArenaRandom());
 
 		// Find starting dungeon location definition.
 		constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
@@ -530,9 +529,6 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
-		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-		gameState.init(binaryAssetLibrary); // @todo: not sure about this; should we init really early in the engine?
-
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initInterior(interiorGenInfo, game.getTextureManager()))
 		{
@@ -543,7 +539,6 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		// Initialize player.
-		const auto &exeData = binaryAssetLibrary.getExeData();
 		const CoordDouble3 dummyPosition(ChunkInt2::Zero, VoxelDouble3::Zero);
 		const Double3 direction(
 			CardinalDirection::North.x,
@@ -555,6 +550,10 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const std::string_view name = charCreationState.getName();
 		const bool male = charCreationState.isMale();
 		const int raceIndex = charCreationState.getRaceIndex();
+
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+		const auto &exeData = binaryAssetLibrary.getExeData();
 
 		const int charClassDefID = charCreationState.getClassDefID();
 		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);

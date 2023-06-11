@@ -44,7 +44,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	FastTravelUiModel::tickTravelTime(game, travelDays);
 
 	// Update weathers.
-	gameState.updateWeatherList(exeData);
+	gameState.updateWeatherList(game.getArenaRandom(), exeData);
 
 	// Clear the lore text (action text and effect text are unchanged).
 	gameState.resetTriggerTextDuration();
