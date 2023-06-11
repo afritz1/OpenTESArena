@@ -4,12 +4,62 @@
 #include "ArenaRenderUtils.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
+#include "../Game/ArenaClockUtils.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Math/Vector4.h"
+#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
+
+double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
+{
+	if (mapType == MapType::Interior)
+	{
+		return 0.0;
+	}
+	else if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
+	{
+		const double clockPreciseSeconds = clock.getPreciseTotalSeconds();
+
+		// Time ranges where the ambient light changes. The start times are inclusive, and the end times are exclusive.
+		const double startBrighteningTime = ArenaClockUtils::AmbientStartBrightening.getPreciseTotalSeconds();
+		const double endBrighteningTime = ArenaClockUtils::AmbientEndBrightening.getPreciseTotalSeconds();
+		const double startDimmingTime = ArenaClockUtils::AmbientStartDimming.getPreciseTotalSeconds();
+		const double endDimmingTime = ArenaClockUtils::AmbientEndDimming.getPreciseTotalSeconds();
+
+		constexpr double minAmbient = 0.0;
+		constexpr double maxAmbient = 1.0;
+
+		if ((clockPreciseSeconds >= endBrighteningTime) && (clockPreciseSeconds < startDimmingTime))
+		{
+			// Daytime ambient.
+			return maxAmbient;
+		}
+		else if ((clockPreciseSeconds >= startBrighteningTime) && (clockPreciseSeconds < endBrighteningTime))
+		{
+			// Interpolate brightening light (in the morning).
+			const double timePercent = (clockPreciseSeconds - startBrighteningTime) / (endBrighteningTime - startBrighteningTime);
+			return minAmbient + ((maxAmbient - minAmbient) * timePercent);
+		}
+		else if ((clockPreciseSeconds >= startDimmingTime) && (clockPreciseSeconds < endDimmingTime))
+		{
+			// Interpolate dimming light (in the evening).
+			const double timePercent = (clockPreciseSeconds - startDimmingTime) / (endDimmingTime - startDimmingTime);
+			return maxAmbient + ((minAmbient - maxAmbient) * timePercent);
+		}
+		else
+		{
+			// Night ambient.
+			return minAmbient;
+		}
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(double, std::to_string(static_cast<int>(mapType)));
+	}
+}
 
 bool ArenaRenderUtils::isGhostTexel(uint8_t texel)
 {

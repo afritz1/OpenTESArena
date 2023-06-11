@@ -17,7 +17,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef)
+std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType, WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
@@ -42,18 +42,17 @@ std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType,
 	// City/town/village letter.
 	constexpr char locationLetter = 'C';
 
-	const char weatherLetter = [climateType, &weatherDef]()
+	const char weatherLetter = [climateType, weatherType]()
 	{
-		const WeatherDefinition::Type weatherDefType = weatherDef.getType();
-		if ((weatherDefType == WeatherDefinition::Type::Clear) || (weatherDefType == WeatherDefinition::Type::Overcast))
+		if ((weatherType == WeatherType::Clear) || (weatherType == WeatherType::Overcast))
 		{
 			return 'N';
 		}
-		else if (weatherDefType == WeatherDefinition::Type::Rain)
+		else if (weatherType == WeatherType::Rain)
 		{
 			return 'R';
 		}
-		else if (weatherDefType == WeatherDefinition::Type::Snow)
+		else if (weatherType == WeatherType::Snow)
 		{
 			// Deserts can't have snow.
 			if (climateType != ArenaTypes::ClimateType::Desert)
@@ -76,7 +75,7 @@ std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType,
 	return std::string { climateLetter, locationLetter, weatherLetter } + ".INF";
 }
 
-void ArenaCityUtils::writeSkeleton(const MIFFile::Level &level,
+void ArenaCityUtils::writeSkeleton(const MIFLevel &level,
 	BufferView2D<ArenaTypes::VoxelID> &dstFlor, BufferView2D<ArenaTypes::VoxelID> &dstMap1,
 	BufferView2D<ArenaTypes::VoxelID> &dstMap2)
 {

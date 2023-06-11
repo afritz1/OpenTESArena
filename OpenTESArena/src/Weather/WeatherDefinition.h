@@ -8,48 +8,47 @@
 class Color;
 class Random;
 
-class WeatherDefinition
+enum class WeatherType
 {
-public:
-	enum class Type
-	{
-		Clear,
-		Overcast,
-		Rain,
-		Snow
-	};
+	Clear,
+	Overcast,
+	Rain,
+	Snow
+};
 
-	struct OvercastDefinition
-	{
-		bool heavyFog;
+struct WeatherOvercastDefinition
+{
+	bool heavyFog;
 
-		void init(bool heavyFog);
-	};
+	void init(bool heavyFog);
+};
 
-	struct RainDefinition
-	{
-		bool thunderstorm;
+struct WeatherRainDefinition
+{
+	bool thunderstorm;
 
-		void init(bool thunderstorm);
-	};
+	void init(bool thunderstorm);
+};
 
-	struct SnowDefinition
-	{
-		bool overcast; // Affects music.
-		bool heavyFog;
+struct WeatherSnowDefinition
+{
+	bool overcast; // Affects music.
+	bool heavyFog;
 
-		void init(bool overcast, bool heavyFog);
-	};
-private:
-	Type type;
+	void init(bool overcast, bool heavyFog);
+};
+
+struct WeatherDefinition
+{
+	WeatherType type;
 
 	union
 	{
-		OvercastDefinition overcast;
-		RainDefinition rain;
-		SnowDefinition snow;
+		WeatherOvercastDefinition overcast;
+		WeatherRainDefinition rain;
+		WeatherSnowDefinition snow;
 	};
-public:
+
 	WeatherDefinition();
 
 	bool operator==(const WeatherDefinition &other) const;
@@ -59,12 +58,6 @@ public:
 	void initRain(bool thunderstorm);
 	void initSnow(bool overcast, bool heavyFog);
 	void initFromClassic(ArenaTypes::WeatherType weatherType, int currentDay, Random &random);
-
-	Type getType() const;
-	double getFogDistance() const;
-	const OvercastDefinition &getOvercast() const;
-	const RainDefinition &getRain() const;
-	const SnowDefinition &getSnow() const;
 };
 
 #endif

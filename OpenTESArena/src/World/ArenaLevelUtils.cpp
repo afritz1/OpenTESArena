@@ -4,7 +4,9 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
+#include "../Assets/TextureManager.h"
 #include "../Math/Random.h"
+#include "../Rendering/Renderer.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 
 #include "components/debug/Debug.h"
@@ -64,7 +66,7 @@ int ArenaLevelUtils::getMap2Height(const BufferView2D<const ArenaTypes::VoxelID>
 	return currentMap2Height;
 }
 
-int ArenaLevelUtils::getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling)
+int ArenaLevelUtils::getMifLevelHeight(const MIFLevel &level, const INFCeiling *ceiling)
 {
 	const BufferView2D<const ArenaTypes::VoxelID> map2 = level.getMAP2();
 
@@ -235,4 +237,60 @@ int ArenaLevelUtils::getServiceSaveFileNumber(WEInt doorX, SNInt doorY)
 int ArenaLevelUtils::getWildernessServiceSaveFileNumber(int wildX, int wildY)
 {
 	return (wildY << 16) + wildX;
+}
+
+ObjectTextureID ArenaLevelUtils::allocGameWorldPaletteTexture(const std::string &filename, TextureManager &textureManager, Renderer &renderer)
+{
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(filename.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID from \"" + filename + "\".");
+		return -1;
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	ObjectTextureID paletteTextureID;
+	if (!renderer.tryCreateObjectTexture(static_cast<int>(palette.size()), 1, 4, &paletteTextureID))
+	{
+		DebugLogError("Couldn't create palette texture \"" + filename + "\".");
+		return -1;
+	}
+
+	LockedTexture lockedTexture = renderer.lockObjectTexture(paletteTextureID);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogError("Couldn't lock palette texture \"" + filename + "\" for writing.");
+		return -1;
+	}
+
+	DebugAssert(lockedTexture.bytesPerTexel == 4);
+	uint32_t *paletteTexels = static_cast<uint32_t*>(lockedTexture.texels);
+	std::transform(palette.begin(), palette.end(), paletteTexels,
+		[](const Color &paletteColor)
+	{
+		return paletteColor.toARGB();
+	});
+
+	renderer.unlockObjectTexture(paletteTextureID);
+	return paletteTextureID;
+}
+
+ObjectTextureID ArenaLevelUtils::allocLightTableTexture(const std::string &filename, TextureManager &textureManager, Renderer &renderer)
+{
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
+	if (!textureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get light table texture builder ID from \"" + filename + "\".");
+		return -1;
+	}
+
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	ObjectTextureID textureID;
+	if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
+	{
+		DebugLogError("Couldn't create light table texture \"" + filename + "\".");
+		return -1;
+	}
+
+	return textureID;
 }

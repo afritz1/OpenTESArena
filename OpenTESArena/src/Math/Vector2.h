@@ -17,6 +17,8 @@ public:
 	static_assert(std::is_integral<T>::value);
 
 	static const Vector2i<T> Zero;
+	static const Vector2i<T> UnitX;
+	static const Vector2i<T> UnitY;
 
 	T x, y;
 
@@ -90,16 +92,18 @@ public:
 };
 
 // Unit vector definitions (can't be in .cpp file on Clang).
-template <typename T>
+template<typename T>
 const Vector2i<T> Vector2i<T>::Zero(static_cast<T>(0), static_cast<T>(0));
+template<typename T>
+const Vector2i<T> Vector2i<T>::UnitX(static_cast<T>(1), static_cast<T>(0));
+template<typename T>
+const Vector2i<T> Vector2i<T>::UnitY(static_cast<T>(0), static_cast<T>(1));
 
-template <typename T>
+template<typename T>
 const Vector2f<T> Vector2f<T>::Zero(static_cast<T>(0.0), static_cast<T>(0.0));
-
-template <typename T>
+template<typename T>
 const Vector2f<T> Vector2f<T>::UnitX(static_cast<T>(1.0), static_cast<T>(0.0));
-
-template <typename T>
+template<typename T>
 const Vector2f<T> Vector2f<T>::UnitY(static_cast<T>(0.0), static_cast<T>(1.0));
 
 // The template instantiations are at the end of the .cpp file.

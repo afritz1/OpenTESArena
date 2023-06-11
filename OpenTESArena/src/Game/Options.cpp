@@ -225,8 +225,8 @@ bool Options::getBool(const std::string &section, const std::string &key) const
 		}
 		else
 		{
-			throw DebugException("Boolean \"" + key +
-				"\" (section \"" + section + "\") not in options.");
+			DebugLogWarning("Boolean \"" + key + "\" (section \"" + section + "\") not in options, defaulting to false.");
+			return false;
 		}
 	}
 }
@@ -266,8 +266,8 @@ int Options::getInt(const std::string &section, const std::string &key) const
 		}
 		else
 		{
-			throw DebugException("Integer \"" + key +
-				"\" (section \"" + section + "\") not in options.");
+			DebugLogWarning("Integer \"" + key + "\" (section \"" + section + "\") not in options, defaulting to 0.");
+			return 0;
 		}
 	}
 }
@@ -307,8 +307,8 @@ double Options::getDouble(const std::string &section, const std::string &key) co
 		}
 		else
 		{
-			throw DebugException("Double \"" + key +
-				"\" (section \"" + section + "\") not in options.");
+			DebugLogWarning("Double \"" + key + "\" (section \"" + section + "\") not in options, defaulting to 0.");
+			return 0.0;
 		}
 	}
 }
@@ -348,8 +348,9 @@ const std::string &Options::getString(const std::string &section, const std::str
 		}
 		else
 		{
-			throw DebugException("String \"" + key +
-				"\" (section \"" + section + "\") not in options.");
+			DebugLogWarning("String \"" + key + "\" (section \"" + section + "\") not in options, defaulting to \"\".");
+			static const std::string fallbackString;
+			return fallbackString;
 		}
 	}
 }

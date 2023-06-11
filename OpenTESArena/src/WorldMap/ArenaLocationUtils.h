@@ -9,6 +9,8 @@
 #include "../Assets/CityDataFile.h"
 #include "../Math/Vector2.h"
 
+#include "components/utilities/BufferView.h"
+
 class ArenaRandom;
 class BinaryAssetLibrary;
 class Rect;
@@ -72,7 +74,7 @@ namespace ArenaLocationUtils
 
 	// Gets the number of days required to travel from one province's local point to another.
 	int getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-		int month, const std::array<ArenaTypes::WeatherType, 36> &weathers, ArenaRandom &random,
+		int month, BufferView<const ArenaTypes::WeatherType> worldMapWeathers, ArenaRandom &random,
 		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the 32-bit seed for a city in the given province.

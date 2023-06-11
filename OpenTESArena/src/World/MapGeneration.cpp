@@ -166,7 +166,7 @@ namespace MapGeneration
 	}
 
 	MapGeneration::InteriorGenInfo makeProceduralInteriorGenInfo(
-		const LocationDefinition::DungeonDefinition &dungeonDef, bool isArtifactDungeon)
+		const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
 	{
 		MapGeneration::InteriorGenInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
@@ -182,7 +182,7 @@ namespace MapGeneration
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, EntityDefinition *outDef)
 	{
-		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
+		const INFFlat &flatData = inf.getFlat(flatIndex);
 		const bool isDynamicEntity = ArenaAnimUtils::isDynamicEntity(flatIndex, inf);
 		const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 
@@ -856,7 +856,7 @@ namespace MapGeneration
 		ArenaMeshUtils::WriteCeilingCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
 
 		// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe hardcoding index 1 is enough?
-		const INFFile::CeilingData &ceiling = inf.getCeiling();
+		const INFCeiling &ceiling = inf.getCeiling();
 		const int textureIndex = ceiling.textureIndex.value_or(1);
 
 		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -903,7 +903,7 @@ namespace MapGeneration
 		// Make sure the text index points to a text value (i.e., not a key or riddle).
 		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
 		{
-			const INFFile::TextData &textData = inf.getText(trigger.textIndex);
+			const INFText &textData = inf.getText(trigger.textIndex);
 			triggerDef.setTextDef(std::string(textData.text), textData.displayedOnce);
 		}
 
@@ -1050,7 +1050,7 @@ namespace MapGeneration
 	TransitionDefinition makeTransitionDef(const MapGeneration::TransitionDefGenInfo &transitionDefGenInfo,
 		const WorldInt3 &position, const std::optional<int> &menuID, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
+		const std::optional<ArenaTypes::CityType> &cityType, const LocationDungeonDefinition *dungeonDef,
 		const std::optional<bool> &isArtifactDungeon, MapType mapType, const ExeData &exeData)
 	{
 		TransitionDefinition transitionDef;
@@ -1336,7 +1336,7 @@ namespace MapGeneration
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<ArenaTypes::CityType> &cityType,
-		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
+		const LocationDungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
@@ -1745,7 +1745,7 @@ namespace MapGeneration
 		constexpr std::optional<uint32_t> rulerSeed; // Not necessary for dungeons.
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for dungeons.
 		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for dungeons.
-		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for dungeons.
+		constexpr LocationDungeonDefinition *dungeonDef = nullptr; // Not necessary for dungeons.
 
 		MapGeneration::readArenaMAP1(levelMap1View, mapType, interiorType, rulerSeed, rulerIsMale,
 			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
@@ -1761,7 +1761,7 @@ namespace MapGeneration
 
 	void generateArenaCityBuildingNames(uint32_t citySeed, int raceID, bool coastal,
 		const std::string_view &cityTypeName,
-		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
 		LevelInfoDefinition *outLevelInfoDef)
@@ -2170,7 +2170,7 @@ void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, ArenaTy
 	this->rulerIsMale = rulerIsMale;
 }
 
-void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDefinition::DungeonDefinition &dungeonDef,
+void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDungeonDefinition &dungeonDef,
 	bool isArtifactDungeon)
 {
 	this->dungeonDef = dungeonDef;
@@ -2194,7 +2194,7 @@ void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, ArenaType
 	this->prefab.init(std::move(mifName), interiorType, rulerIsMale);
 }
 
-void MapGeneration::InteriorGenInfo::initDungeon(const LocationDefinition::DungeonDefinition &dungeonDef,
+void MapGeneration::InteriorGenInfo::initDungeon(const LocationDungeonDefinition &dungeonDef,
 	bool isArtifactDungeon)
 {
 	this->init(InteriorGenInfo::Type::Dungeon);
@@ -2237,7 +2237,7 @@ ArenaTypes::InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
 void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType,
 	uint32_t citySeed, uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale,
 	bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
-	const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
+	const std::optional<LocationCityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
 	this->mifName = std::move(mifName);
@@ -2258,7 +2258,7 @@ void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityT
 }
 
 void MapGeneration::WildGenInfo::init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
-	const LocationDefinition::CityDefinition &cityDef, uint32_t fallbackSeed)
+	const LocationCityDefinition &cityDef, uint32_t fallbackSeed)
 {
 	this->wildBlockIDs = std::move(wildBlockIDs);
 	this->cityDef = &cityDef;
@@ -2328,10 +2328,10 @@ void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int open
 	this->closeType = closeType;
 }
 
-void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, MapType mapType,
+void MapGeneration::readMifVoxels(const BufferView<const MIFLevel> &levels, MapType mapType,
 	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 	const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-	const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
+	const std::optional<ArenaTypes::CityType> &cityType, const LocationDungeonDefinition *dungeonDef,
 	const std::optional<bool> &isArtifactDungeon, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
@@ -2346,7 +2346,7 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
-		const MIFFile::Level &level = levels.get(i);
+		const MIFLevel &level = levels.get(i);
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 		MapGeneration::readArenaFLOR(level.getFLOR(), mapType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
@@ -2464,7 +2464,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 	int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
-	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
@@ -2477,7 +2477,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	ArenaChasmMappingCache chasmMappings;
 
 	// Only one level in a city .MIF.
-	const MIFFile::Level &mifLevel = mif.getLevel(0);
+	const MIFLevel &mifLevel = mif.getLevel(0);
 
 	// Create temp voxel data buffers and write the city skeleton data to them.
 	Buffer2D<ArenaTypes::VoxelID> tempFlor(mif.getWidth(), mif.getDepth());
@@ -2509,7 +2509,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 
 	constexpr MapType mapType = MapType::City;
 	constexpr std::optional<ArenaTypes::InteriorType> interiorType; // City is not an interior.
-	constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for city.
+	constexpr LocationDungeonDefinition *dungeonDef = nullptr; // Not necessary for city.
 	constexpr std::optional<bool> isArtifactDungeon; // Not necessary for city.
 
 	MapGeneration::readArenaFLOR(tempFlorConstView, mapType, interiorType, rulerIsMale, inf,
@@ -2526,7 +2526,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 }
 
 void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
-	const BufferView2D<const int> &levelDefIndices, const LocationDefinition::CityDefinition &cityDef,
+	const BufferView2D<const int> &levelDefIndices, const LocationCityDefinition &cityDef,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
@@ -2591,7 +2591,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 
 		// Dungeon definition if this chunk has any dungeons.
 		const uint32_t dungeonSeed = cityDef.provinceSeed;
-		LocationDefinition::DungeonDefinition dungeonDef;
+		LocationDungeonDefinition dungeonDef;
 		dungeonDef.init(dungeonSeed, ArenaWildUtils::WILD_DUNGEON_WIDTH_CHUNKS, ArenaWildUtils::WILD_DUNGEON_HEIGHT_CHUNKS);
 
 		constexpr std::optional<bool> isArtifactDungeon = false; // No artifacts in wild dungeons.
@@ -2630,14 +2630,14 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 	}
 }
 
-void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
+void MapGeneration::readMifLocks(const BufferView<const MIFLevel> &levels, const INFFile &inf,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaLockMappingCache lockMappings;
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
-		const MIFFile::Level &level = levels.get(i);
+		const MIFLevel &level = levels.get(i);
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 		const BufferView<const ArenaTypes::MIFLock> locks = level.getLOCK();
 
@@ -2648,14 +2648,14 @@ void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels,
 	}
 }
 
-void MapGeneration::readMifTriggers(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
+void MapGeneration::readMifTriggers(const BufferView<const MIFLevel> &levels, const INFFile &inf,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaTriggerMappingCache triggerMappings;
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
-		const MIFFile::Level &level = levels.get(i);
+		const MIFLevel &level = levels.get(i);
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 		const BufferView<const ArenaTypes::MIFTrigger> triggers = level.getTRIG();
 

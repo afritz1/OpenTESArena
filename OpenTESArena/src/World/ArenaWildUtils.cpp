@@ -12,7 +12,7 @@
 
 #include "components/debug/Debug.h"
 
-std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef)
+std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType, WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
@@ -37,18 +37,17 @@ std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType,
 	// Wilderness is "W".
 	constexpr char locationLetter = 'W';
 
-	const char weatherLetter = [climateType, &weatherDef]()
+	const char weatherLetter = [climateType, weatherType]()
 	{
-		const WeatherDefinition::Type weatherDefType = weatherDef.getType();
-		if ((weatherDefType == WeatherDefinition::Type::Clear) || (weatherDefType == WeatherDefinition::Type::Overcast))
+		if ((weatherType == WeatherType::Clear) || (weatherType == WeatherType::Overcast))
 		{
 			return 'N';
 		}
-		else if (weatherDefType == WeatherDefinition::Type::Rain)
+		else if (weatherType == WeatherType::Rain)
 		{
 			return 'R';
 		}
-		else if (weatherDefType == WeatherDefinition::Type::Snow)
+		else if (weatherType == WeatherType::Snow)
 		{
 			// Deserts can't have snow.
 			if (climateType != ArenaTypes::ClimateType::Desert)
@@ -153,7 +152,7 @@ bool ArenaWildUtils::isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID)
 
 void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID,
 	BufferView2D<ArenaTypes::VoxelID> &flor, BufferView2D<ArenaTypes::VoxelID> &map1,
-	BufferView2D<ArenaTypes::VoxelID> &map2, const LocationDefinition::CityDefinition &cityDef,
+	BufferView2D<ArenaTypes::VoxelID> &map2, const LocationCityDefinition &cityDef,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	DebugAssert(ArenaWildUtils::isWildCityBlock(wildBlockID));
@@ -167,7 +166,7 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 		return;
 	}
 
-	const MIFFile::Level &level = mif.getLevel(0);
+	const MIFLevel &level = mif.getLevel(0);
 
 	// Buffers for the city data. Copy the .MIF data into them.
 	Buffer2D<ArenaTypes::VoxelID> cityFlor(mif.getWidth(), mif.getDepth());

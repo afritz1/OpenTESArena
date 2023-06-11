@@ -7,12 +7,12 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 #include "../Voxels/VoxelUtils.h"
+#include "../Weather/WeatherDefinition.h"
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/utilities/Buffer2D.h"
 
 class BinaryAssetLibrary;
-class WeatherDefinition;
 
 namespace ArenaWildUtils
 {
@@ -37,7 +37,7 @@ namespace ArenaWildUtils
 	constexpr ArenaTypes::FlatIndex WILD_DEN_FLAT_INDEX = 37;
 
 	// Generates the .INF name for the wilderness given a climate and current weather.
-	std::string generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef);
+	std::string generateInfName(ArenaTypes::ClimateType climateType, WeatherType weatherType);
 
 	// Makes a 32-bit seed for a wilderness chunk. Intended for building names.
 	uint32_t makeWildChunkSeed(int wildX, int wildY);
@@ -52,7 +52,7 @@ namespace ArenaWildUtils
 	// Changes the default filler city skeleton to the one intended for the city.
 	void reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID, BufferView2D<ArenaTypes::VoxelID> &flor,
 		BufferView2D<ArenaTypes::VoxelID> &map1, BufferView2D<ArenaTypes::VoxelID> &map2,
-		const LocationDefinition::CityDefinition &cityDef, const BinaryAssetLibrary &binaryAssetLibrary);
+		const LocationCityDefinition &cityDef, const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the origin of a virtual 128x128 space in the wild as if the player was at the given
 	// position. This space always contains 4 wild chunks.

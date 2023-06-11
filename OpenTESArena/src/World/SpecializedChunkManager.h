@@ -160,6 +160,14 @@ public:
 		const int index = this->getChunkIndex(position);
 		return this->getChunkAtIndex(index);
 	}
+
+	void recycleAllChunks()
+	{
+		for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
+		{
+			this->recycleChunk(i);
+		}
+	}
 };
 
 #endif

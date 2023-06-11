@@ -7,7 +7,6 @@
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../World/ChunkUtils.h"
-#include "../World/MapDefinition.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -426,30 +425,30 @@ void VoxelChunkManager::populateChunkDoorVisibilityInsts(VoxelChunk &chunk)
 	}
 }
 
-void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition)
+void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, const LevelDefinition &levelDef,
+	const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef)
 {
 	VoxelChunk &chunk = this->getChunkAtIndex(index);
+	const SNInt levelWidth = levelDef.getWidth();
+	const int levelHeight = levelDef.getHeight();
+	const WEInt levelDepth = levelDef.getDepth();
 
 	// Populate all or part of the chunk from a level definition depending on the world type.
-	const MapType mapType = mapDefinition.getMapType();
+	const MapType mapType = mapSubDef.type;
 	if (mapType == MapType::Interior)
 	{
-		DebugAssert(activeLevelIndex.has_value());
-		const LevelDefinition &levelDefinition = mapDefinition.getLevel(*activeLevelIndex);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(*activeLevelIndex);
-		chunk.init(chunkPos, levelDefinition.getHeight());
-		this->populateChunkVoxelDefs(chunk, levelDefinition, levelInfoDefinition);
+		chunk.init(chunkPos, levelHeight);
+		this->populateChunkVoxelDefs(chunk, levelDef, levelInfoDef);
 
 		// @todo: populate chunk entirely from default empty chunk (fast copy).
-		// - probably get from MapDefinition::Interior eventually.
+		// - probably get from MapDefinitionInterior eventually.
 		constexpr VoxelChunk::VoxelMeshDefID floorVoxelMeshDefID = 2;
-		const VoxelChunk::VoxelMeshDefID ceilingVoxelMeshDefID = [&levelInfoDefinition]()
+		const VoxelChunk::VoxelMeshDefID ceilingVoxelMeshDefID = [&levelInfoDef]()
 		{
-			for (int i = 0; i < levelInfoDefinition.getVoxelTraitsDefCount(); i++)
+			for (int i = 0; i < levelInfoDef.getVoxelTraitsDefCount(); i++)
 			{
 				// @todo: from the looks of this, the engine needs to care about the concept of a "ceiling"?
-				const VoxelTraitsDefinition &voxelTraitsDef = levelInfoDefinition.getVoxelTraitsDef(i);
+				const VoxelTraitsDefinition &voxelTraitsDef = levelInfoDef.getVoxelTraitsDef(i);
 				if (voxelTraitsDef.type == ArenaTypes::VoxelType::Ceiling)
 				{
 					return LevelVoxelMeshDefIdToChunkVoxelMeshDefID(i); // @todo: this is probably brittle; can't assume mesh def ID -> traits def ID mapping.
@@ -484,27 +483,20 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 			}
 		}
 
-		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
+		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelWidth, levelDepth))
 		{
 			// Populate chunk from the part of the level it overlaps.
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
-			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
-			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+			this->populateChunkVoxels(chunk, levelDef, levelOffset);
+			this->populateChunkDecorators(chunk, levelDef, levelInfoDef, levelOffset);
 			this->populateChunkChasmInsts(chunk);
 			this->populateChunkDoorVisibilityInsts(chunk);
-
-			/*DebugAssert(!citizenGenInfo.has_value());
-			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
-				citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);*/
 		}
 	}
 	else if (mapType == MapType::City)
 	{
-		DebugAssert(activeLevelIndex.has_value() && (*activeLevelIndex == 0));
-		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
-		chunk.init(chunkPos, levelDefinition.getHeight());
-		this->populateChunkVoxelDefs(chunk, levelDefinition, levelInfoDefinition);
+		chunk.init(chunkPos, levelHeight);
+		this->populateChunkVoxelDefs(chunk, levelDef, levelInfoDef);
 
 		// Chunks outside the level are wrapped but only have floor voxels.		
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
@@ -523,18 +515,15 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 					}
 				};
 
-				const SNInt levelWidth = levelDefinition.getWidth();
-				const WEInt levelDepth = levelDefinition.getDepth();
-
 				// Convert chunk voxel to level voxel, then wrap that between 0 and level width/depth.
 				const WorldInt2 levelVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt2(x, z));
 				const WorldInt2 wrappedLevelVoxel(
 					wrapLevelVoxel(levelVoxel.x, levelWidth),
 					wrapLevelVoxel(levelVoxel.y, levelDepth));
 
-				const LevelDefinition::VoxelMeshDefID levelVoxelMeshDefID = levelDefinition.getVoxelMeshID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
-				const LevelDefinition::VoxelTextureDefID levelVoxelTextureDefID = levelDefinition.getVoxelTextureID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
-				const LevelDefinition::VoxelTraitsDefID levelVoxelTraitsDefID = levelDefinition.getVoxelTraitsID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const LevelDefinition::VoxelMeshDefID levelVoxelMeshDefID = levelDef.getVoxelMeshID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const LevelDefinition::VoxelTextureDefID levelVoxelTextureDefID = levelDef.getVoxelTextureID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const LevelDefinition::VoxelTraitsDefID levelVoxelTraitsDefID = levelDef.getVoxelTraitsID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = LevelVoxelMeshDefIdToChunkVoxelMeshDefID(levelVoxelMeshDefID);
 				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
 				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
@@ -544,53 +533,39 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 			}
 		}
 
-		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelDefinition.getWidth(), levelDefinition.getDepth()))
+		if (ChunkUtils::touchesLevelDimensions(chunkPos, levelWidth, levelDepth))
 		{
 			// Populate chunk from the part of the level it overlaps.
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
-			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
-			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+			this->populateChunkVoxels(chunk, levelDef, levelOffset);
+			this->populateChunkDecorators(chunk, levelDef, levelInfoDef, levelOffset);
 			this->populateChunkChasmInsts(chunk);
 			this->populateChunkDoorVisibilityInsts(chunk);
-
-			/*DebugAssert(citizenGenInfo.has_value());
-			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
-				citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);*/
 		}
 	}
 	else if (mapType == MapType::Wilderness)
 	{
-		// The wilderness doesn't have an active level index since it's always just the one level.
-		DebugAssert(!activeLevelIndex.has_value() || (*activeLevelIndex == 0));
-
-		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
-		const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkPos);
-		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(levelDefIndex);
-		chunk.init(chunkPos, levelDefinition.getHeight());
-		this->populateChunkVoxelDefs(chunk, levelDefinition, levelInfoDefinition);
+		chunk.init(chunkPos, levelHeight);
+		this->populateChunkVoxelDefs(chunk, levelDef, levelInfoDef);
 
 		// Copy level definition directly into chunk.
-		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
-		DebugAssert(levelDefinition.getDepth() == Chunk::DEPTH);
+		DebugAssert(levelWidth == Chunk::WIDTH);
+		DebugAssert(levelDepth == Chunk::DEPTH);
 		const WorldInt2 levelOffset = WorldInt2::Zero;
-		this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
-		this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+		this->populateChunkVoxels(chunk, levelDef, levelOffset);
+		this->populateChunkDecorators(chunk, levelDef, levelInfoDef, levelOffset);
 
 		// Load building names for the given chunk. The wilderness might use the same level definition in
 		// multiple places, so the building names have to be generated separately.
+		const MapDefinitionWild &mapDefWild = mapSubDef.wild;
 		const MapGeneration::WildChunkBuildingNameInfo *buildingNameInfo = mapDefWild.getBuildingNameInfo(chunkPos);
 		if (buildingNameInfo != nullptr)
 		{
-			this->populateWildChunkBuildingNames(chunk, *buildingNameInfo, levelInfoDefinition);
+			this->populateWildChunkBuildingNames(chunk, *buildingNameInfo, levelInfoDef);
 		}
 
 		this->populateChunkChasmInsts(chunk);
 		this->populateChunkDoorVisibilityInsts(chunk);
-
-		/*DebugAssert(citizenGenInfo.has_value());
-		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
-			citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);*/
 	}
 	else
 	{
@@ -713,8 +688,10 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 
 void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
 	const BufferView<const ChunkInt2> &freedChunkPositions, const CoordDouble3 &playerCoord,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, double ceilingScale,
-	AudioManager &audioManager)
+	const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+	const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
+	BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
+	double ceilingScale, AudioManager &audioManager)
 {
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{
@@ -722,10 +699,25 @@ void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &new
 		this->recycleChunk(chunkIndex);
 	}
 
+	const MapType mapType = mapSubDef.type;
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
 		const int spawnIndex = this->spawnChunk();
-		this->populateChunk(spawnIndex, chunkPos, activeLevelIndex, mapDefinition);
+
+		// Default to the active level def unless it's the wilderness which relies on this chunk coordinate.
+		const LevelDefinition *levelDefPtr = activeLevelDef;
+		const LevelInfoDefinition *levelInfoDefPtr = activeLevelInfoDef;
+		if (mapType == MapType::Wilderness)
+		{
+			const MapDefinitionWild &mapDefWild = mapSubDef.wild;
+			const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkPos);
+			levelDefPtr = &levelDefs[levelDefIndex];
+
+			const int levelInfoDefIndex = levelInfoDefIndices[levelDefIndex];
+			levelInfoDefPtr = &levelInfoDefs[levelInfoDefIndex];
+		}
+
+		this->populateChunk(spawnIndex, chunkPos, *levelDefPtr, *levelInfoDefPtr, mapSubDef);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large

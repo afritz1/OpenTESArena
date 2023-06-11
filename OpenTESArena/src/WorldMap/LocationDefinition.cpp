@@ -7,15 +7,14 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-void LocationDefinition::CityDefinition::MainQuestTempleOverride::init(int modelIndex,
-	int suffixIndex, int menuNamesIndex)
+void LocationCityDefinition::MainQuestTempleOverride::init(int modelIndex, int suffixIndex, int menuNamesIndex)
 {
 	this->modelIndex = modelIndex;
 	this->suffixIndex = suffixIndex;
 	this->menuNamesIndex = menuNamesIndex;
 }
 
-void LocationDefinition::CityDefinition::init(ArenaTypes::CityType type, const char *typeDisplayName,
+void LocationCityDefinition::init(ArenaTypes::CityType type, const char *typeDisplayName,
 	const char *mapFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
 	uint32_t rulerSeed, uint32_t skySeed, ArenaTypes::ClimateType climateType,
 	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
@@ -53,12 +52,12 @@ void LocationDefinition::CityDefinition::init(ArenaTypes::CityType type, const c
 	this->palaceIsMainQuestDungeon = palaceIsMainQuestDungeon;
 }
 
-uint32_t LocationDefinition::CityDefinition::getWildDungeonSeed(int wildBlockX, int wildBlockY) const
+uint32_t LocationCityDefinition::getWildDungeonSeed(int wildBlockX, int wildBlockY) const
 {
 	return (this->provinceSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 
-void LocationDefinition::DungeonDefinition::init(uint32_t dungeonSeed, int widthChunkCount,
+void LocationDungeonDefinition::init(uint32_t dungeonSeed, int widthChunkCount,
 	int heightChunkCount)
 {
 	this->dungeonSeed = dungeonSeed;
@@ -66,21 +65,20 @@ void LocationDefinition::DungeonDefinition::init(uint32_t dungeonSeed, int width
 	this->heightChunkCount = heightChunkCount;
 }
 
-void LocationDefinition::MainQuestDungeonDefinition::init(MainQuestDungeonDefinition::Type type,
-	const char *mapFilename)
+void LocationMainQuestDungeonDefinition::init(LocationMainQuestDungeonDefinitionType type, const char *mapFilename)
 {
 	this->type = type;
 	std::snprintf(this->mapFilename, std::size(this->mapFilename), "%s", mapFilename);
 }
 
-void LocationDefinition::init(LocationDefinition::Type type, const std::string &name,
+void LocationDefinition::init(LocationDefinitionType type, const std::string &name,
 	int x, int y, double latitude)
 {
 	this->name = name;
 	this->x = x;
 	this->y = y;
 	this->latitude = latitude;
-	this->visibleByDefault = (type == LocationDefinition::Type::City) && (name.size() > 0);
+	this->visibleByDefault = (type == LocationDefinitionType::City) && (name.size() > 0);
 	this->type = type;
 }
 
@@ -98,7 +96,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		return ArenaLocationUtils::getLatitude(globalPoint);
 	}();
 
-	this->init(LocationDefinition::Type::City, locationData.name,
+	this->init(LocationDefinitionType::City, locationData.name,
 		locationData.x, locationData.y, latitude);
 
 	const auto &exeData = binaryAssetLibrary.getExeData();
@@ -206,8 +204,8 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		}
 	}();
 
-	CityDefinition::MainQuestTempleOverride mainQuestTempleOverride;
-	const CityDefinition::MainQuestTempleOverride *mainQuestTempleOverridePtr = &mainQuestTempleOverride;
+	LocationCityDefinition::MainQuestTempleOverride mainQuestTempleOverride;
+	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverridePtr = &mainQuestTempleOverride;
 	if (globalCityID == 2)
 	{
 		mainQuestTempleOverride.init(1, 7, 23);
@@ -244,7 +242,7 @@ void LocationDefinition::initDungeon(int localDungeonID, int provinceID,
 		return ArenaLocationUtils::getLatitude(globalPoint);
 	}();
 
-	this->init(LocationDefinition::Type::Dungeon, locationData.name,
+	this->init(LocationDefinitionType::Dungeon, locationData.name,
 		locationData.x, locationData.y, latitude);
 
 	const uint32_t dungeonSeed = ArenaLocationUtils::getDungeonSeed(localDungeonID, provinceID, provinceData);
@@ -255,7 +253,7 @@ void LocationDefinition::initDungeon(int localDungeonID, int provinceID,
 }
 
 void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocalDungeonID,
-	int provinceID, MainQuestDungeonDefinition::Type type, const BinaryAssetLibrary &binaryAssetLibrary)
+	int provinceID, LocationMainQuestDungeonDefinitionType type, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
@@ -269,10 +267,10 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 	{
 		switch (type)
 		{
-		case MainQuestDungeonDefinition::Type::Start:
+		case LocationMainQuestDungeonDefinitionType::Start:
 			return exeData.locations.startDungeonName;
-		case MainQuestDungeonDefinition::Type::Map:
-		case MainQuestDungeonDefinition::Type::Staff:
+		case LocationMainQuestDungeonDefinitionType::Map:
+		case LocationMainQuestDungeonDefinitionType::Staff:
 		{
 			const int locationID = ArenaLocationUtils::dungeonToLocationID(*optLocalDungeonID);
 			const auto &locationData = provinceData.getLocationData(locationID);
@@ -284,7 +282,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 	}();
 
 	int localPointX, localPointY;
-	if (type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+	if (type == LocationMainQuestDungeonDefinitionType::Start)
 	{
 		// Not well-defined in original game.
 		localPointX = 0;
@@ -300,7 +298,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 
 	const double latitude = [type, &optLocalDungeonID, &provinceData]()
 	{
-		if (type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+		if (type == LocationMainQuestDungeonDefinitionType::Start)
 		{
 			// Not well-defined in original game.
 			return 0.0;
@@ -315,18 +313,17 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 		}
 	}();
 
-	this->init(LocationDefinition::Type::MainQuestDungeon, std::move(name),
-		localPointX, localPointY, latitude);
+	this->init(LocationDefinitionType::MainQuestDungeon, std::move(name), localPointX, localPointY, latitude);
 
 	const std::string mapFilename = [type, &optLocalDungeonID, provinceID, &cityData,
 		&provinceData, &exeData]()
 	{
-		if (type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+		if (type == LocationMainQuestDungeonDefinitionType::Start)
 		{
 			return String::toUppercase(exeData.locations.startDungeonMifName);
 		}
-		else if ((type == LocationDefinition::MainQuestDungeonDefinition::Type::Map) ||
-			(type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff))
+		else if ((type == LocationMainQuestDungeonDefinitionType::Map) ||
+			(type == LocationMainQuestDungeonDefinitionType::Staff))
 		{
 			const uint32_t dungeonSeed = ArenaLocationUtils::getDungeonSeed(*optLocalDungeonID, provinceID, provinceData);
 			const std::string mifName = ArenaLocationUtils::getMainQuestDungeonMifName(dungeonSeed);
@@ -366,26 +363,26 @@ bool LocationDefinition::isVisibleByDefault() const
 	return this->visibleByDefault;
 }
 
-LocationDefinition::Type LocationDefinition::getType() const
+LocationDefinitionType LocationDefinition::getType() const
 {
 	return this->type;
 }
 
-const LocationDefinition::CityDefinition &LocationDefinition::getCityDefinition() const
+const LocationCityDefinition &LocationDefinition::getCityDefinition() const
 {
-	DebugAssert(this->type == LocationDefinition::Type::City);
+	DebugAssert(this->type == LocationDefinitionType::City);
 	return this->city;
 }
 
-const LocationDefinition::DungeonDefinition &LocationDefinition::getDungeonDefinition() const
+const LocationDungeonDefinition &LocationDefinition::getDungeonDefinition() const
 {
-	DebugAssert(this->type == LocationDefinition::Type::Dungeon);
+	DebugAssert(this->type == LocationDefinitionType::Dungeon);
 	return this->dungeon;
 }
 
-const LocationDefinition::MainQuestDungeonDefinition &LocationDefinition::getMainQuestDungeonDefinition() const
+const LocationMainQuestDungeonDefinition &LocationDefinition::getMainQuestDungeonDefinition() const
 {
-	DebugAssert(this->type == LocationDefinition::Type::MainQuestDungeon);
+	DebugAssert(this->type == LocationDefinitionType::MainQuestDungeon);
 	return this->mainQuest;
 }
 

@@ -419,10 +419,9 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, const Bu
 	constexpr double walkSpeed = 15.0;
 
 	const GameState &gameState = game.getGameState();
-	const MapInstance &mapInst = gameState.getActiveMapInst();
-	const LevelInstance &levelInst = mapInst.getActiveLevel();
+	const SceneManager &sceneManager = game.getSceneManager();
 	Player &player = game.getPlayer();
-	const bool isOnGround = player.onGround(levelInst);
+	const bool isOnGround = player.onGround(sceneManager.collisionChunkManager);
 
 	const Options &options = game.getOptions();
 	const bool isGhostModeEnabled = options.getMisc_GhostMode();
@@ -581,11 +580,10 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	const auto &options = game.getOptions();
 	auto &gameState = game.getGameState();
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	MapInstance &mapInst = gameState.getActiveMapInst();
-	LevelInstance &levelInst = mapInst.getActiveLevel();
-	VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
-	const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
-	const double ceilingScale = levelInst.getCeilingScale();
+	SceneManager &sceneManager = game.getSceneManager();
+	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const double ceilingScale = gameState.getActiveCeilingScale();
 
 	auto &player = game.getPlayer();
 	const Double3 &cameraDirection = player.getDirection();
@@ -593,9 +591,12 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 	constexpr bool includeEntities = true;
 
+	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
+
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-		includeEntities, levelInst, EntityDefinitionLibrary::getInstance(), game.getRenderer(), hit);
+		includeEntities, voxelChunkManager, entityChunkManager, collisionChunkManager,
+		EntityDefinitionLibrary::getInstance(), game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)

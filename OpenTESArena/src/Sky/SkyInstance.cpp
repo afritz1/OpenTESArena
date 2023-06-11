@@ -608,7 +608,7 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 	//DebugNotImplementedMsg("trySetActive");
 	//renderer.clearSky();
 
-	const MapType mapType = mapDefinition.getMapType();
+	const MapType mapType = mapDefinition.getSubDefinition().type;
 	const SkyDefinition &skyDefinition = [&activeLevelIndex, &mapDefinition, mapType]() -> const SkyDefinition&
 	{
 		const int skyIndex = [&activeLevelIndex, &mapDefinition, mapType]()
@@ -668,8 +668,8 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 	// Update lightning (if any).
 	if (weatherInst.hasRain())
 	{
-		const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
-		const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
+		const WeatherRainInstance &rainInst = weatherInst.getRain();
+		const std::optional<WeatherRainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
 		if (thunderstorm.has_value() && thunderstorm->active)
 		{
 			DebugAssert(this->lightningAnimIndices.getCount() > 0);

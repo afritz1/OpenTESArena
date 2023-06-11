@@ -71,8 +71,11 @@ ScopedObjectTextureRef &ScopedObjectTextureRef::operator=(ScopedObjectTextureRef
 
 void ScopedObjectTextureRef::init(ObjectTextureID id, Renderer &renderer)
 {
-	DebugAssert(this->id == -1);
-	DebugAssert(this->renderer == nullptr);
+	if (this->id >= 0)
+	{
+		this->destroy();
+	}
+
 	DebugAssert(id >= 0);
 	this->id = id;
 	this->renderer = &renderer;

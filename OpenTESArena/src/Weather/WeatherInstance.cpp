@@ -41,13 +41,13 @@ namespace
 	}
 }
 
-void WeatherInstance::Particle::init(double xPercent, double yPercent)
+void WeatherParticle::init(double xPercent, double yPercent)
 {
 	this->xPercent = xPercent;
 	this->yPercent = yPercent;
 }
 
-void WeatherInstance::FogInstance::init(Random &random, TextureManager &textureManager)
+void WeatherFogInstance::init(Random &random, TextureManager &textureManager)
 {
 	// Put the zeroed row in the middle of the texture since fog works a bit differently in this engine.
 	constexpr int zeroedRow = ArenaRenderUtils::FOG_MATRIX_HEIGHT / 2;
@@ -57,12 +57,12 @@ void WeatherInstance::FogInstance::init(Random &random, TextureManager &textureM
 	}
 }
 
-void WeatherInstance::FogInstance::update(double dt)
+void WeatherFogInstance::update(double dt)
 {
 	// Do nothing for now.
 }
 
-void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
+void WeatherRainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
 {
 	this->flashColors = std::move(flashColors);
 	this->secondsSincePrevLightning = std::numeric_limits<double>::infinity();
@@ -71,7 +71,7 @@ void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashCo
 	this->active = active;
 }
 
-std::optional<double> WeatherInstance::RainInstance::Thunderstorm::getFlashPercent() const
+std::optional<double> WeatherRainInstance::Thunderstorm::getFlashPercent() const
 {
 	const double percent = this->secondsSincePrevLightning / ArenaWeatherUtils::THUNDERSTORM_SKY_FLASH_SECONDS;
 	if ((percent >= 0.0) && (percent < 1.0))
@@ -84,7 +84,7 @@ std::optional<double> WeatherInstance::RainInstance::Thunderstorm::getFlashPerce
 	}
 }
 
-std::optional<double> WeatherInstance::RainInstance::Thunderstorm::getLightningBoltPercent() const
+std::optional<double> WeatherRainInstance::Thunderstorm::getLightningBoltPercent() const
 {
 	const double percent = this->secondsSincePrevLightning / ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS;
 	if ((percent >= 0.0) && (percent < 1.0))
@@ -97,7 +97,7 @@ std::optional<double> WeatherInstance::RainInstance::Thunderstorm::getLightningB
 	}
 }
 
-void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock &clock,
+void WeatherRainInstance::Thunderstorm::update(double dt, const Clock &clock,
 	Random &random, AudioManager &audioManager)
 {
 	this->active = IsDuringThunderstorm(clock);
@@ -118,11 +118,11 @@ void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock 
 	}
 }
 
-void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock,
+void WeatherRainInstance::init(bool isThunderstorm, const Clock &clock,
 	Buffer<uint8_t> &&flashColors, Random &random, TextureManager &textureManager)
 {
 	this->particles.init(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
-	for (Particle &particle : this->particles)
+	for (WeatherParticle &particle : this->particles)
 	{
 		particle.init(random.nextReal(), random.nextReal());
 	}
@@ -138,7 +138,7 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock
 	}
 }
 
-void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double aspectRatio,
+void WeatherRainInstance::update(double dt, const Clock &clock, double aspectRatio,
 	Random &random, AudioManager &audioManager)
 {
 	auto animateRaindropRange = [this, dt, aspectRatio, &random](int startIndex, int endIndex,
@@ -146,7 +146,7 @@ void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double
 	{
 		for (int i = startIndex; i < endIndex; i++)
 		{
-			Particle &particle = this->particles.get(i);
+			WeatherParticle &particle = this->particles.get(i);
 			const bool canBeRestarted = (particle.xPercent < 0.0) || (particle.yPercent >= 1.0);
 			if (canBeRestarted)
 			{
@@ -213,10 +213,10 @@ void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double
 	}
 }
 
-void WeatherInstance::SnowInstance::init(Random &random)
+void WeatherSnowInstance::init(Random &random)
 {
 	this->particles.init(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT);
-	for (Particle &particle : this->particles)
+	for (WeatherParticle &particle : this->particles)
 	{
 		particle.init(random.nextReal(), random.nextReal());
 	}
@@ -231,14 +231,14 @@ void WeatherInstance::SnowInstance::init(Random &random)
 	this->lastDirectionChangeSeconds.fill(0.0);
 }
 
-void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random &random)
+void WeatherSnowInstance::update(double dt, double aspectRatio, Random &random)
 {
 	auto animateSnowflakeRange = [this, dt, aspectRatio, &random](int startIndex, int endIndex,
 		double velocityPercentX, double velocityPercentY)
 	{
 		for (int i = startIndex; i < endIndex; i++)
 		{
-			Particle &particle = this->particles.get(i);
+			WeatherParticle &particle = this->particles.get(i);
 			const bool canBeRestarted = particle.yPercent >= 1.0;
 			if (canBeRestarted)
 			{
@@ -323,29 +323,29 @@ WeatherInstance::WeatherInstance()
 void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clock,
 	const ExeData &exeData, Random &random, TextureManager &textureManager)
 {
-	const WeatherDefinition::Type weatherDefType = weatherDef.getType();
+	const WeatherType weatherDefType = weatherDef.type;
 
-	if (weatherDefType == WeatherDefinition::Type::Clear)
+	if (weatherDefType == WeatherType::Clear)
 	{
 		// Do nothing.
 	}
-	else if (weatherDefType == WeatherDefinition::Type::Overcast)
+	else if (weatherDefType == WeatherType::Overcast)
 	{
-		const WeatherDefinition::OvercastDefinition &overcastDef = weatherDef.getOvercast();
+		const WeatherOvercastDefinition &overcastDef = weatherDef.overcast;
 		this->fog = overcastDef.heavyFog;
 		this->fogInst.init(random, textureManager);
 	}
-	else if (weatherDefType == WeatherDefinition::Type::Rain)
+	else if (weatherDefType == WeatherType::Rain)
 	{
 		this->rain = true;
 
-		const WeatherDefinition::RainDefinition &rainDef = weatherDef.getRain();
+		const WeatherRainDefinition &rainDef = weatherDef.rain;
 		Buffer<uint8_t> thunderstormColors = ArenaWeatherUtils::makeThunderstormColors(exeData);
 		this->rainInst.init(rainDef.thunderstorm, clock, std::move(thunderstormColors), random, textureManager);
 	}
-	else if (weatherDefType == WeatherDefinition::Type::Snow)
+	else if (weatherDefType == WeatherType::Snow)
 	{
-		const WeatherDefinition::SnowDefinition &snowDef = weatherDef.getSnow();
+		const WeatherSnowDefinition &snowDef = weatherDef.snow;
 		this->fog = snowDef.heavyFog;
 		this->snow = true;
 		this->fogInst.init(random, textureManager);
@@ -372,19 +372,19 @@ bool WeatherInstance::hasSnow() const
 	return this->snow;
 }
 
-const WeatherInstance::FogInstance &WeatherInstance::getFog() const
+const WeatherFogInstance &WeatherInstance::getFog() const
 {
 	DebugAssert(this->hasFog());
 	return this->fogInst;
 }
 
-const WeatherInstance::RainInstance &WeatherInstance::getRain() const
+const WeatherRainInstance &WeatherInstance::getRain() const
 {
 	DebugAssert(this->hasRain());
 	return this->rainInst;
 }
 
-const WeatherInstance::SnowInstance &WeatherInstance::getSnow() const
+const WeatherSnowInstance &WeatherInstance::getSnow() const
 {
 	DebugAssert(this->hasSnow());
 	return this->snowInst;

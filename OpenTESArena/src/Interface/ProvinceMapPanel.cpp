@@ -271,10 +271,10 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const LocationTextureRefGroup *textureRefGroupPtr = [this, &locationDef]() -> const LocationTextureRefGroup*
 				{
-					const LocationDefinition::Type locationDefType = locationDef.getType();
-					if (locationDefType == LocationDefinition::Type::City)
+					const LocationDefinitionType locationDefType = locationDef.getType();
+					if (locationDefType == LocationDefinitionType::City)
 					{
-						const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+						const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 						const ArenaTypes::CityType cityType = cityDef.type;
 						switch (cityType)
 						{
@@ -289,20 +289,20 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 							return nullptr;
 						}
 					}
-					else if (locationDefType == LocationDefinition::Type::Dungeon)
+					else if (locationDefType == LocationDefinitionType::Dungeon)
 					{
 						return &this->dungeonTextureRefs;
 					}
-					else if (locationDefType == LocationDefinition::Type::MainQuestDungeon)
+					else if (locationDefType == LocationDefinitionType::MainQuestDungeon)
 					{
-						const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
-						const LocationDefinition::MainQuestDungeonDefinition::Type mainQuestDungeonType = mainQuestDungeonDef.type;
+						const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+						const LocationMainQuestDungeonDefinitionType mainQuestDungeonType = mainQuestDungeonDef.type;
 						switch (mainQuestDungeonType)
 						{
-						case LocationDefinition::MainQuestDungeonDefinition::Type::Start:
-						case LocationDefinition::MainQuestDungeonDefinition::Type::Map:
+						case LocationMainQuestDungeonDefinitionType::Start:
+						case LocationMainQuestDungeonDefinitionType::Map:
 							return &this->dungeonTextureRefs;
-						case LocationDefinition::MainQuestDungeonDefinition::Type::Staff:
+						case LocationMainQuestDungeonDefinitionType::Staff:
 							return &this->staffDungeonTextureRefs;
 						default:
 							DebugCrash("Unhandled main quest dungeon type \"" + std::to_string(static_cast<int>(mainQuestDungeonType)) + "\".");
@@ -355,10 +355,10 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 
 				const LocationTextureRefGroup *textureRefGroupPtr = [this, &locationDef]() -> const LocationTextureRefGroup*
 				{
-					const LocationDefinition::Type locationDefType = locationDef.getType();
-					if (locationDefType == LocationDefinition::Type::City)
+					const LocationDefinitionType locationDefType = locationDef.getType();
+					if (locationDefType == LocationDefinitionType::City)
 					{
-						const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+						const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 						const ArenaTypes::CityType cityType = cityDef.type;
 						switch (cityType)
 						{
@@ -373,20 +373,20 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 							return nullptr;
 						}
 					}
-					else if (locationDefType == LocationDefinition::Type::Dungeon)
+					else if (locationDefType == LocationDefinitionType::Dungeon)
 					{
 						return &this->dungeonTextureRefs;
 					}
-					else if (locationDefType == LocationDefinition::Type::MainQuestDungeon)
+					else if (locationDefType == LocationDefinitionType::MainQuestDungeon)
 					{
-						const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
-						const LocationDefinition::MainQuestDungeonDefinition::Type mainQuestDungeonType = mainQuestDungeonDef.type;
+						const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+						const LocationMainQuestDungeonDefinitionType mainQuestDungeonType = mainQuestDungeonDef.type;
 						switch (mainQuestDungeonType)
 						{
-						case LocationDefinition::MainQuestDungeonDefinition::Type::Start:
-						case LocationDefinition::MainQuestDungeonDefinition::Type::Map:
+						case LocationMainQuestDungeonDefinitionType::Start:
+						case LocationMainQuestDungeonDefinitionType::Map:
 							return &this->dungeonTextureRefs;
-						case LocationDefinition::MainQuestDungeonDefinition::Type::Staff:
+						case LocationMainQuestDungeonDefinitionType::Staff:
 							return &this->staffDungeonTextureRefs;
 						default:
 							DebugCrash("Unhandled main quest dungeon type \"" + std::to_string(static_cast<int>(mainQuestDungeonType)) + "\".");
@@ -499,7 +499,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 
 		// Use a copy of the RNG so displaying the travel pop-up multiple times doesn't
 		// cause different day amounts.
-		ArenaRandom tempRandom = gameState.getRandom();
+		ArenaRandom tempRandom = game.getArenaRandom();
 
 		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
 		{
@@ -510,10 +510,10 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		const Int2 srcGlobalPoint = makeGlobalPoint(currentLocationDef, currentProvinceDef);
 		const Int2 dstGlobalPoint = makeGlobalPoint(selectedLocationDef, selectedProvinceDef);
 		const int travelDays = ArenaLocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint,
-			currentDate.getMonth(), gameState.getWeathersArray(), tempRandom, binaryAssetLibrary);
+			currentDate.getMonth(), gameState.getWorldMapWeathers(), tempRandom, binaryAssetLibrary);
 
 		// Set selected map location.
-		gameState.setTravelData(std::make_unique<ProvinceMapUiModel::TravelData>(selectedLocationID, this->provinceID, travelDays));
+		gameState.setTravelData(ProvinceMapUiModel::TravelData(selectedLocationID, this->provinceID, travelDays));
 
 		this->blinkState.reset();
 

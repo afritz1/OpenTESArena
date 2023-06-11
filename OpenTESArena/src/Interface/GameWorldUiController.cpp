@@ -175,25 +175,21 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 		auto &gameState = game.getGameState();
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const LocationInstance &locationInst = gameState.getLocationInstance();
-		const MapDefinition &mapDef = gameState.getActiveMapDef();
-		const MapInstance &mapInst = gameState.getActiveMapInst();
-		const int activeLevelIndex = mapInst.getActiveLevelIndex();
-		const LevelDefinition &levelDef = mapDef.getLevel(activeLevelIndex);
-		const LevelInfoDefinition &levelInfoDef = mapDef.getLevelInfoForLevel(activeLevelIndex);
-		const LevelInstance &levelInst = mapInst.getLevel(activeLevelIndex);
+		const int activeLevelIndex = gameState.getActiveLevelIndex();
+		const SceneManager &sceneManager = game.getSceneManager();
+		const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 
 		// Some places (like named/wild dungeons) do not display a name on the automap.
 		const std::string automapLocationName = [&gameState, &exeData, &locationDef, &locationInst]()
 		{
 			const std::string &locationName = locationInst.getName(locationDef);
-			const bool isCity = locationDef.getType() == LocationDefinition::Type::City;
-			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
+			const bool isCity = locationDef.getType() == LocationDefinitionType::City;
+			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinitionType::MainQuestDungeon;
 			return (isCity || isMainQuestDungeon) ? locationName : std::string();
 		}();
 
 		const auto &player = game.getPlayer();
-		game.setPanel<AutomapPanel>(player.getPosition(), player.getGroundDirection(),
-			levelInst.getVoxelChunkManager(), automapLocationName);
+		game.setPanel<AutomapPanel>(player.getPosition(), player.getGroundDirection(), voxelChunkManager, automapLocationName);
 	}
 	else
 	{

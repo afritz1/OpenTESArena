@@ -8,6 +8,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
 #include "../Voxels/VoxelUtils.h"
+#include "../Weather/WeatherDefinition.h"
 
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView2D.h"
@@ -17,7 +18,6 @@ class BinaryAssetLibrary;
 class LocationDefinition;
 class ProvinceDefinition;
 class TextAssetLibrary;
-class WeatherDefinition;
 
 // @todo: these should probably all be BufferView2D instead of Buffer2D
 
@@ -27,10 +27,10 @@ namespace ArenaCityUtils
 	constexpr int LEVEL_HEIGHT = 6;
 
 	// Generates the .INF name for a city given a climate and current weather.
-	std::string generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef);
+	std::string generateInfName(ArenaTypes::ClimateType climateType, WeatherType weatherType);
 
 	// Writes the barebones city layout (just ground and walls).
-	void writeSkeleton(const MIFFile::Level &level, BufferView2D<ArenaTypes::VoxelID> &dstFlor,
+	void writeSkeleton(const MIFLevel &level, BufferView2D<ArenaTypes::VoxelID> &dstFlor,
 		BufferView2D<ArenaTypes::VoxelID> &dstMap1, BufferView2D<ArenaTypes::VoxelID> &dstMap2);
 
 	// Writes generated city building data into the output buffers. The buffers should already

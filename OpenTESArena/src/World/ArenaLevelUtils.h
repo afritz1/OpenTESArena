@@ -8,6 +8,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Rendering/RenderTextureUtils.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 
@@ -15,6 +16,8 @@
 
 class ArenaRandom;
 class ExeData;
+class Renderer;
+class TextureManager;
 
 enum class MapType;
 
@@ -48,7 +51,7 @@ namespace ArenaLevelUtils
 	int getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2);
 
 	// Gets the voxel height of a .MIF level with optional ceiling data.
-	int getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling);
+	int getMifLevelHeight(const MIFLevel &level, const INFCeiling *ceiling);
 
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).
@@ -65,6 +68,10 @@ namespace ArenaLevelUtils
 	// Gets the '#' number used in IN#.0x and RE#.0x save files.
 	int getServiceSaveFileNumber(WEInt doorX, SNInt doorY);
 	int getWildernessServiceSaveFileNumber(int wildX, int wildY);
+
+	// Allocation for game world palette textures used with the renderer.
+	ObjectTextureID allocGameWorldPaletteTexture(const std::string &filename, TextureManager &textureManager, Renderer &renderer);
+	ObjectTextureID allocLightTableTexture(const std::string &filename, TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

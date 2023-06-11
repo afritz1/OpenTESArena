@@ -4,14 +4,16 @@
 #include "Physics.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
+#include "../Collision/CollisionChunkManager.h"
+#include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityVisibilityState.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Voxels/ArenaVoxelUtils.h"
+#include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelFacing3D.h"
 #include "../World/ChunkUtils.h"
-#include "../World/LevelInstance.h"
 #include "../World/MeshUtils.h"
 
 #include "components/debug/Debug.h"
@@ -494,13 +496,10 @@ namespace Physics
 	// against voxels and entities.
 	template <bool NonNegativeDirX, bool NonNegativeDirY, bool NonNegativeDirZ>
 	void rayCastInternal(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelDouble3 &cameraForward,
-		double ceilingScale, const LevelInstance &levelInst, bool includeEntities, const EntityDefinitionLibrary &entityDefLibrary,
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
+		const CollisionChunkManager &collisionChunkManager, bool includeEntities, const EntityDefinitionLibrary &entityDefLibrary,
 		const Renderer &renderer, std::vector<ChunkEntityMap> &chunkEntityMaps, Physics::Hit &hit)
 	{
-		const VoxelChunkManager &voxelChunkManager = levelInst.getVoxelChunkManager();
-		const CollisionChunkManager &collisionChunkManager = levelInst.getCollisionChunkManager();
-		const EntityChunkManager &entityChunkManager = levelInst.getEntityChunkManager();
-
 		// Each flat shares the same axes. Their forward direction always faces opposite to the camera direction.
 		const VoxelDouble3 flatForward = VoxelDouble3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
 		const VoxelDouble3 flatUp = Double3::UnitY;
@@ -832,7 +831,8 @@ void Physics::Hit::setT(double t)
 }
 
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, double ceilingScale,
-	const VoxelDouble3 &cameraForward, bool includeEntities, const LevelInstance &levelInst,
+	const VoxelDouble3 &cameraForward, bool includeEntities, const VoxelChunkManager &voxelChunkManager,
+	const EntityChunkManager &entityChunkManager, const CollisionChunkManager &collisionChunkManager,
 	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
@@ -855,12 +855,14 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<true, true, true>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
+					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
+					renderer, chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, true, false>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
+					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
+					renderer, chunkEntityMaps, hit);
 			}
 		}
 		else
@@ -868,12 +870,14 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<true, false, true>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
+					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
+					renderer, chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, false, false>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
+					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
+					renderer, chunkEntityMaps, hit);
 			}
 		}
 	}
@@ -884,12 +888,14 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<false, true, true>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
+					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
+					renderer, chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, true, false>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
+					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
+					renderer, chunkEntityMaps, hit);
 			}
 		}
 		else
@@ -897,12 +903,14 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<false, false, true>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
+					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
+					renderer, chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, false, false>(rayStart, rayDirection, cameraForward, ceilingScale,
-					levelInst, includeEntities, entityDefLibrary, renderer, chunkEntityMaps, hit);
+					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
+					renderer, chunkEntityMaps, hit);
 			}
 		}
 	}
@@ -912,10 +920,11 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 }
 
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection,
-	const VoxelDouble3 &cameraForward, bool includeEntities, const LevelInstance &levelInst,
+	const VoxelDouble3 &cameraForward, bool includeEntities, const VoxelChunkManager &voxelChunkManager,
+	const EntityChunkManager &entityChunkManager, const CollisionChunkManager &collisionChunkManager,
 	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 {
 	constexpr double ceilingScale = 1.0;
-	return Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraForward, includeEntities, levelInst,
-		entityDefLibrary, renderer, hit);
+	return Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraForward, includeEntities, voxelChunkManager,
+		entityChunkManager, collisionChunkManager, entityDefLibrary, renderer, hit);
 }

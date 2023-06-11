@@ -10,14 +10,16 @@
 #include "RendererSystem3D.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
+#include "../Entities/EntityChunkManager.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/EntityVisibilityState.h"
 #include "../Math/Constants.h"
 #include "../Math/Matrix4.h"
 #include "../Voxels/DoorUtils.h"
+#include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelFacing2D.h"
 #include "../World/ArenaMeshUtils.h"
 #include "../World/ChunkManager.h"
-#include "../World/LevelInstance.h"
 #include "../World/MapDefinition.h"
 #include "../World/MapType.h"
 
@@ -1438,8 +1440,10 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions,
 	const BufferView<const ChunkInt2> &newChunkPositions, const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ,
 	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer)
 {
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);

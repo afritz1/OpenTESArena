@@ -119,7 +119,7 @@ namespace ArenaAnimUtils
 	void getBaseFlatDimensions(int width, int height, uint16_t scale, int *baseWidth, int *baseHeight);
 
 	// Scaler for world-space dimensions depending on special .INF-related modifiers.
-	double getDimensionModifier(const INFFile::FlatData &flatData);
+	double getDimensionModifier(const INFFlat &flatData);
 
 	// Returns whether the given original animation state ID would be for a flipped animation.
 	// Animation state IDs are 1-based, 1 being the entity looking at the player.

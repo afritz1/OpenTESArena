@@ -19,7 +19,7 @@ namespace
 	{
 		enum class Mode { None, BoxCap, Ceiling };
 
-		std::optional<INFFile::CeilingData> ceilingData;
+		std::optional<INFCeiling> ceilingData;
 		std::string_view textureName;
 		FloorState::Mode mode;
 		std::optional<int> boxCapID;
@@ -101,7 +101,7 @@ namespace
 		{
 			enum class Mode { Riddle, Correct, Wrong };
 
-			INFFile::RiddleData data;
+			INFRiddle data;
 			RiddleState::Mode mode;
 
 			RiddleState(int firstNumber, int secondNumber)
@@ -111,9 +111,9 @@ namespace
 			}
 		};
 
-		std::optional<INFFile::KeyData> keyData;
+		std::optional<INFKey> keyData;
 		std::optional<RiddleState> riddleState;
-		std::optional<INFFile::TextData> textData;
+		std::optional<INFText> textData;
 		TextState::Mode mode; // Determines which data is in use.
 		int id; // *TEXT ID.
 
@@ -134,23 +134,24 @@ namespace
 	};
 }
 
-INFFile::VoxelTextureData::VoxelTextureData(const char *filename, const std::optional<int> &setIndex)
+INFVoxelTexture::INFVoxelTexture(const char *filename, const std::optional<int> &setIndex)
 	: filename(filename), setIndex(setIndex) { }
 
-INFFile::VoxelTextureData::VoxelTextureData(const char *filename)
-	: VoxelTextureData(filename, std::nullopt) { }
+INFVoxelTexture::INFVoxelTexture(const char *filename)
+	: INFVoxelTexture(filename, std::nullopt) { }
 
-INFFile::FlatTextureData::FlatTextureData(const char *filename)
+INFFlatTexture::INFFlatTexture(const char *filename)
 	: filename(filename) { }
 
-INFFile::CeilingData::CeilingData()
+INFCeiling::INFCeiling()
 {
-	this->height = CeilingData::DEFAULT_HEIGHT;
+	this->height = INFCeiling::DEFAULT_HEIGHT;
 	this->outdoorDungeon = false;
 }
 
-INFFile::FlatData::FlatData()
+INFFlat::INFFlat()
 {
+	this->textureIndex = -1;
 	this->yOffset = 0;
 	this->health = 0;
 	this->collider = false;
@@ -162,18 +163,18 @@ INFFile::FlatData::FlatData()
 	this->mediumScale = false;
 }
 
-INFFile::KeyData::KeyData(int id)
+INFKey::INFKey(int id)
 {
 	this->id = id;
 }
 
-INFFile::RiddleData::RiddleData(int firstNumber, int secondNumber)
+INFRiddle::INFRiddle(int firstNumber, int secondNumber)
 {
 	this->firstNumber = firstNumber;
 	this->secondNumber = secondNumber;
 }
 
-INFFile::TextData::TextData(bool displayedOnce)
+INFText::INFText(bool displayedOnce)
 {
 	this->displayedOnce = displayedOnce;
 }
@@ -297,7 +298,7 @@ bool INFFile::init(const char *filename)
 			else if (firstTokenType == CEILING_STR)
 			{
 				// Initialize ceiling data.
-				floorState.ceilingData = CeilingData();
+				floorState.ceilingData = INFCeiling();
 				floorState.mode = FloorState::Mode::Ceiling;
 
 				// Check up to three numbers on the right: ceiling height, box scale,
@@ -336,7 +337,7 @@ bool INFFile::init(const char *filename)
 			if (tokens.getCount() == 1)
 			{
 				// A regular filename (like an .IMG).
-				this->voxelTextures.emplace_back(VoxelTextureData(line.c_str()));
+				this->voxelTextures.emplace_back(INFVoxelTexture(line.c_str()));
 			}
 			else
 			{
@@ -346,7 +347,7 @@ bool INFFile::init(const char *filename)
 
 				for (int i = 0; i < setSize; i++)
 				{
-					this->voxelTextures.emplace_back(VoxelTextureData(std::string(textureName).c_str(), i));
+					this->voxelTextures.emplace_back(INFVoxelTexture(std::string(textureName).c_str(), i));
 				}
 			}
 		}
@@ -365,7 +366,7 @@ bool INFFile::init(const char *filename)
 					// Just a regular texture (like an .IMG).
 					floorState.textureName = line;
 
-					this->voxelTextures.emplace_back(VoxelTextureData(std::string(floorState.textureName).c_str()));
+					this->voxelTextures.emplace_back(INFVoxelTexture(std::string(floorState.textureName).c_str()));
 					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
@@ -376,7 +377,7 @@ bool INFFile::init(const char *filename)
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->voxelTextures.emplace_back(VoxelTextureData(std::string(floorState.textureName).c_str(), i));
+						this->voxelTextures.emplace_back(INFVoxelTexture(std::string(floorState.textureName).c_str(), i));
 					}
 
 					return static_cast<int>(this->voxelTextures.size()) - setSize;
@@ -505,7 +506,7 @@ bool INFFile::init(const char *filename)
 			if (tokens.getCount() == 1)
 			{
 				// A regular filename (like an .IMG).
-				this->voxelTextures.emplace_back(VoxelTextureData(line.c_str()));
+				this->voxelTextures.emplace_back(INFVoxelTexture(line.c_str()));
 			}
 			else
 			{
@@ -515,7 +516,7 @@ bool INFFile::init(const char *filename)
 
 				for (int i = 0; i < setSize; i++)
 				{
-					this->voxelTextures.emplace_back(VoxelTextureData(std::string(textureName).c_str(), i));
+					this->voxelTextures.emplace_back(INFVoxelTexture(std::string(textureName).c_str(), i));
 				}
 			}
 		}
@@ -534,7 +535,7 @@ bool INFFile::init(const char *filename)
 					// Just a regular texture (like an .IMG).
 					wallState.textureName = line;
 
-					this->voxelTextures.emplace_back(VoxelTextureData(std::string(wallState.textureName).c_str()));
+					this->voxelTextures.emplace_back(INFVoxelTexture(std::string(wallState.textureName).c_str()));
 					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
@@ -545,7 +546,7 @@ bool INFFile::init(const char *filename)
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->voxelTextures.emplace_back(VoxelTextureData(std::string(wallState.textureName).c_str(), i));
+						this->voxelTextures.emplace_back(INFVoxelTexture(std::string(wallState.textureName).c_str(), i));
 					}
 
 					return static_cast<int>(this->voxelTextures.size()) - setSize;
@@ -666,13 +667,13 @@ bool INFFile::init(const char *filename)
 			}();
 
 			// Add the flat's texture name to the textures vector.
-			this->flatTextures.emplace_back(FlatTextureData(textureName.c_str()));
+			this->flatTextures.emplace_back(INFFlatTexture(textureName.c_str()));
 
 			// Add a new flat data record.
-			this->flats.emplace_back(INFFile::FlatData());
+			this->flats.emplace_back(INFFlat());
 
 			// Assign the current line's values and modifiers to the new flat.
-			INFFile::FlatData &flat = this->flats.back();
+			INFFlat &flat = this->flats.back();
 			flat.textureIndex = static_cast<int>(this->flatTextures.size() - 1);
 			flat.itemIndex = (flatState.mode != FlatState::Mode::None) ? flatState.itemID : std::nullopt;
 
@@ -767,7 +768,7 @@ bool INFFile::init(const char *filename)
 			const int keyNumber = std::stoi(std::string(keyStr));
 
 			textState.mode = TextState::Mode::Key;
-			textState.keyData = KeyData(keyNumber);
+			textState.keyData = INFKey(keyNumber);
 		}
 		else if (line.front() == RIDDLE_CHAR)
 		{
@@ -785,7 +786,7 @@ bool INFFile::init(const char *filename)
 			textState.mode = TextState::Mode::Text;
 
 			const bool displayedOnce = true;
-			textState.textData = TextData(displayedOnce);
+			textState.textData = INFText(displayedOnce);
 
 			// Append the rest of the line to the text data.
 			textState.textData->text += line.substr(1, line.size() - 1) + '\n';
@@ -854,7 +855,7 @@ bool INFFile::init(const char *filename)
 				textState.mode = TextState::Mode::Text;
 
 				const bool displayedOnce = false;
-				textState.textData = TextData(displayedOnce);
+				textState.textData = INFText(displayedOnce);
 			}
 
 			// Read the line into the text data.
@@ -954,12 +955,12 @@ bool INFFile::init(const char *filename)
 	return true;
 }
 
-BufferView<const INFFile::VoxelTextureData> INFFile::getVoxelTextures() const
+BufferView<const INFVoxelTexture> INFFile::getVoxelTextures() const
 {
 	return this->voxelTextures;
 }
 
-BufferView<const INFFile::FlatTextureData> INFFile::getFlatTextures() const
+BufferView<const INFFlatTexture> INFFile::getFlatTextures() const
 {
 	return this->flatTextures;
 }
@@ -1008,16 +1009,16 @@ std::optional<int> INFFile::getMenuIndex(int textureID) const
 	}
 }
 
-const INFFile::FlatData &INFFile::getFlat(int index) const
+const INFFlat &INFFile::getFlat(int index) const
 {
 	DebugAssertIndex(this->flats, index);
 	return this->flats[index];
 }
 
-const INFFile::FlatData *INFFile::getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) const
+const INFFlat *INFFile::getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) const
 {
 	const auto iter = std::find_if(this->flats.begin(), this->flats.end(),
-		[itemIndex](const FlatData &flat)
+		[itemIndex](const INFFlat &flat)
 	{
 		return flat.itemIndex.has_value() && (*flat.itemIndex == itemIndex);
 	});
@@ -1058,17 +1059,17 @@ bool INFFile::hasTextIndex(int index) const
 	return this->texts.find(index) != this->texts.end();
 }
 
-const INFFile::KeyData &INFFile::getKey(int index) const
+const INFKey &INFFile::getKey(int index) const
 {
 	return this->keys.at(index);
 }
 
-const INFFile::RiddleData &INFFile::getRiddle(int index) const
+const INFRiddle &INFFile::getRiddle(int index) const
 {
 	return this->riddles.at(index);
 }
 
-const INFFile::TextData &INFFile::getText(int index) const
+const INFText &INFFile::getText(int index) const
 {
 	return this->texts.at(index);
 }
@@ -1103,7 +1104,7 @@ const std::optional<int> &INFFile::getWetChasmIndex() const
 	return this->wetChasmIndex;
 }
 
-const INFFile::CeilingData &INFFile::getCeiling() const
+const INFCeiling &INFFile::getCeiling() const
 {
 	return this->ceiling;
 }

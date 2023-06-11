@@ -106,7 +106,8 @@ Game::~Game()
 		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
 
-	this->renderChunkManager.shutdown(this->renderer);
+	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
+	renderChunkManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -173,7 +174,9 @@ bool Game::init()
 		return false;
 	}
 
-	this->renderChunkManager.init(this->renderer);
+	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
+	renderChunkManager.init(this->renderer);
+
 	this->inputManager.init();
 
 	// Add application-level input event handlers.
@@ -300,14 +303,9 @@ Player &Game::getPlayer()
 	return this->player;
 }
 
-const ChunkManager &Game::getChunkManager() const
+SceneManager &Game::getSceneManager()
 {
-	return this->chunkManager;
-}
-
-RenderChunkManager &Game::getRenderChunkManager()
-{
-	return this->renderChunkManager;
+	return this->sceneManager;
 }
 
 bool Game::isSimulatingScene() const
@@ -349,6 +347,11 @@ TextureManager &Game::getTextureManager()
 Random &Game::getRandom()
 {
 	return this->random;
+}
+
+ArenaRandom &Game::getArenaRandom()
+{
+	return this->arenaRandom;
 }
 
 Profiler &Game::getProfiler()
@@ -775,17 +778,30 @@ void Game::loop()
 			// See if the panel tick requested any changes in active panels.
 			this->handlePanelChanges();
 
-			if (this->isSimulatingScene())
+			if (this->isSimulatingScene() && this->gameState.isActiveMapValid())
 			{
 				// Recalculate the active chunks.
 				const CoordDouble3 playerCoord = this->player.getPosition();
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
-				this->chunkManager.update(playerCoord.chunk, chunkDistance);
+				ChunkManager &chunkManager = this->sceneManager.chunkManager;
+				chunkManager.update(playerCoord.chunk, chunkDistance);
 
-				// Tick game world state (voxels, entities, daytime clock, etc.).
-				this->gameState.tick(clampedDt, *this);
+				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
+				// It shouldn't be abstracted into a game state.
+				// - it should be like "do we need to clear the scene? yes/no. update the scene immediately? yes/no"
 
-				// Update audio listener and check for finished sounds.
+				// Tick game world state (daytime clock, etc.).
+				this->gameState.tickGameClock(clampedDt, *this);
+				this->gameState.tickChasmAnimation(clampedDt);
+				this->gameState.tickWeather(clampedDt, *this);
+				this->gameState.tickUiMessages(clampedDt);
+				this->gameState.tickPlayer(clampedDt, *this);
+				this->gameState.tickVoxels(clampedDt, *this);
+				this->gameState.tickEntities(clampedDt, *this);
+				this->gameState.tickCollision(clampedDt, *this);
+				this->gameState.tickRendering(*this);
+
+				// Update audio listener orientation.
 				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
 				const WorldDouble3 &direction = this->player.getDirection();
 				const AudioManager::ListenerData listenerData(absolutePosition, direction);
@@ -799,15 +815,14 @@ void Game::loop()
 			DebugCrash("Tick exception: " + std::string(e.what()));
 		}
 
-		// Late tick.
-		// @todo: this should probably be "handle scene change" instead, since user input, ticking the active panel,
-		// and simulating the game state all have the potential to start a scene change.
+		// Late tick. User input, ticking the active panel, and simulating the game state all have the potential
+		// to queue a scene change which needs to be fully processed before we render.
 		try
 		{
-			// Handle an edge case with the game loop during map transitions, etc.. This can happen due to the
-			// current tick() design where FastTravelSubPanel::tick() might replace GameWorldPanel::tick() this
-			// frame, causing us to miss updating the renderer.
-			this->gameState.tryUpdatePendingMapTransition(*this, clampedDt);
+			if (this->gameState.hasPendingSceneChange())
+			{
+				this->gameState.applyPendingSceneChange(*this, clampedDt);
+			}
 		}
 		catch (const std::exception &e)
 		{
@@ -885,13 +900,7 @@ void Game::loop()
 		// End-of-frame clean up.
 		try
 		{
-			if (this->gameState.hasActiveMapInst())
-			{
-				MapInstance &mapInst = this->gameState.getActiveMapInst();
-				mapInst.cleanUp();
-			}
-
-			this->chunkManager.cleanUp();
+			this->sceneManager.cleanUp();
 		}
 		catch (const std::exception &e)
 		{

@@ -169,23 +169,23 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseWeatherType = [](const std::string_view &str, WeatherDefinition::Type *outWeatherType)
+	auto tryParseWeatherType = [](const std::string_view &str, WeatherType *outWeatherType)
 	{
 		if (str == "Clear")
 		{
-			*outWeatherType = WeatherDefinition::Type::Clear;
+			*outWeatherType = WeatherType::Clear;
 		}
 		else if (str == "Overcast")
 		{
-			*outWeatherType = WeatherDefinition::Type::Overcast;
+			*outWeatherType = WeatherType::Overcast;
 		}
 		else if (str == "Rain")
 		{
-			*outWeatherType = WeatherDefinition::Type::Rain;
+			*outWeatherType = WeatherType::Rain;
 		}
 		else if (str == "Snow")
 		{
-			*outWeatherType = WeatherDefinition::Type::Snow;
+			*outWeatherType = WeatherType::Snow;
 		}
 		else
 		{
@@ -297,7 +297,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		// Variable arguments depending on the weather type.
 		DebugAssert(strs.getCount() >= 2);
 
-		WeatherDefinition::Type weatherType;
+		WeatherType weatherType;
 		if (!tryParseWeatherType(strs[1], &weatherType))
 		{
 			DebugLogWarning("Couldn't parse weather type in weather music definition \"" + std::string(valueStr) + "\".");
@@ -305,7 +305,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		}
 
 		WeatherDefinition weatherDef;
-		if (weatherType == WeatherDefinition::Type::Clear)
+		if (weatherType == WeatherType::Clear)
 		{
 			if (strs.getCount() != 2)
 			{
@@ -315,7 +315,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 
 			weatherDef.initClear();
 		}
-		else if (weatherType == WeatherDefinition::Type::Overcast)
+		else if (weatherType == WeatherType::Overcast)
 		{
 			if (strs.getCount() != 3)
 			{
@@ -332,7 +332,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 
 			weatherDef.initOvercast(heavyFog);
 		}
-		else if (weatherType == WeatherDefinition::Type::Rain)
+		else if (weatherType == WeatherType::Rain)
 		{
 			if (strs.getCount() != 3)
 			{
@@ -349,7 +349,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 
 			weatherDef.initRain(thunderstorm);
 		}
-		else if (weatherType == WeatherDefinition::Type::Snow)
+		else if (weatherType == WeatherType::Snow)
 		{
 			if (strs.getCount() != 4)
 			{

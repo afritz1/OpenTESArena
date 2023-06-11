@@ -19,6 +19,7 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/TextBox.h"
 #include "../World/ChunkManager.h"
+#include "../World/SceneManager.h"
 
 #include "components/utilities/FPSCounter.h"
 #include "components/utilities/Profiler.h"
@@ -67,15 +68,19 @@ private:
 	// Displayed with varying profiler levels.
 	TextBox debugInfoTextBox;
 
-	Random random; // Convenience random for ease of use.
+	// Random number generators; the first is a modern random where accuracy to the original is not needed,
+	// the second is meant to replicate the original game's.
+	Random random;
+	ArenaRandom arenaRandom;
+
 	Profiler profiler;
 	FPSCounter fpsCounter;
+
+	SceneManager sceneManager;
 
 	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
 	GameState gameState;
 	Player player;
-	ChunkManager chunkManager;
-	RenderChunkManager renderChunkManager;
 
 	// Engine variables for what kinds of simulation should be attempted each frame.
 	bool shouldSimulateScene;
@@ -127,10 +132,7 @@ public:
 	GameState &getGameState();
 
 	Player &getPlayer();
-
-	const ChunkManager &getChunkManager() const;
-
-	RenderChunkManager &getRenderChunkManager();
+	SceneManager &getSceneManager();
 
 	// Whether the game loop should animate voxels, entities, and sky that can change over time.
 	// Used when determining if the player is actively in the game world or in menus. This does 
@@ -155,6 +157,8 @@ public:
 
 	// Gets the global RNG initialized at program start.
 	Random &getRandom();
+
+	ArenaRandom &getArenaRandom();
 
 	// Gets the profiler instance for measuring precise time spans.
 	Profiler &getProfiler();

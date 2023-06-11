@@ -3,17 +3,17 @@
 
 #include "components/debug/Debug.h"
 
-void WeatherDefinition::OvercastDefinition::init(bool heavyFog)
+void WeatherOvercastDefinition::init(bool heavyFog)
 {
 	this->heavyFog = heavyFog;
 }
 
-void WeatherDefinition::RainDefinition::init(bool thunderstorm)
+void WeatherRainDefinition::init(bool thunderstorm)
 {
 	this->thunderstorm = thunderstorm;
 }
 
-void WeatherDefinition::SnowDefinition::init(bool overcast, bool heavyFog)
+void WeatherSnowDefinition::init(bool overcast, bool heavyFog)
 {
 	this->overcast = overcast;
 	this->heavyFog = heavyFog;
@@ -21,7 +21,7 @@ void WeatherDefinition::SnowDefinition::init(bool overcast, bool heavyFog)
 
 WeatherDefinition::WeatherDefinition()
 {
-	this->type = static_cast<WeatherDefinition::Type>(-1);
+	this->type = static_cast<WeatherType>(-1);
 }
 
 bool WeatherDefinition::operator==(const WeatherDefinition &other) const
@@ -31,26 +31,26 @@ bool WeatherDefinition::operator==(const WeatherDefinition &other) const
 		return false;
 	}
 
-	if (this->type == WeatherDefinition::Type::Clear)
+	if (this->type == WeatherType::Clear)
 	{
 		return true;
 	}
-	else if (this->type == WeatherDefinition::Type::Overcast)
+	else if (this->type == WeatherType::Overcast)
 	{
-		const WeatherDefinition::OvercastDefinition &aOvercast = this->overcast;
-		const WeatherDefinition::OvercastDefinition &bOvercast = other.overcast;
+		const WeatherOvercastDefinition &aOvercast = this->overcast;
+		const WeatherOvercastDefinition &bOvercast = other.overcast;
 		return aOvercast.heavyFog == bOvercast.heavyFog;
 	}
-	else if (this->type == WeatherDefinition::Type::Rain)
+	else if (this->type == WeatherType::Rain)
 	{
-		const WeatherDefinition::RainDefinition &aRain = this->rain;
-		const WeatherDefinition::RainDefinition &bRain = other.rain;
+		const WeatherRainDefinition &aRain = this->rain;
+		const WeatherRainDefinition &bRain = other.rain;
 		return aRain.thunderstorm == bRain.thunderstorm;
 	}
-	else if (this->type == WeatherDefinition::Type::Snow)
+	else if (this->type == WeatherType::Snow)
 	{
-		const WeatherDefinition::SnowDefinition &aSnow = this->snow;
-		const WeatherDefinition::SnowDefinition &bSnow = other.snow;
+		const WeatherSnowDefinition &aSnow = this->snow;
+		const WeatherSnowDefinition &bSnow = other.snow;
 		return (aSnow.overcast == bSnow.overcast) && (aSnow.heavyFog == bSnow.heavyFog);
 	}
 	else
@@ -61,24 +61,24 @@ bool WeatherDefinition::operator==(const WeatherDefinition &other) const
 
 void WeatherDefinition::initClear()
 {
-	this->type = WeatherDefinition::Type::Clear;
+	this->type = WeatherType::Clear;
 }
 
 void WeatherDefinition::initOvercast(bool heavyFog)
 {
-	this->type = WeatherDefinition::Type::Overcast;
+	this->type = WeatherType::Overcast;
 	this->overcast.init(heavyFog);
 }
 
 void WeatherDefinition::initRain(bool thunderstorm)
 {
-	this->type = WeatherDefinition::Type::Rain;
+	this->type = WeatherType::Rain;
 	this->rain.init(thunderstorm);
 }
 
 void WeatherDefinition::initSnow(bool overcast, bool heavyFog)
 {
-	this->type = WeatherDefinition::Type::Snow;
+	this->type = WeatherType::Snow;
 	this->snow.init(overcast, heavyFog);
 }
 
@@ -109,52 +109,4 @@ void WeatherDefinition::initFromClassic(ArenaTypes::WeatherType weatherType, int
 	{
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(weatherType)));
 	}
-}
-
-WeatherDefinition::Type WeatherDefinition::getType() const
-{
-	return this->type;
-}
-
-double WeatherDefinition::getFogDistance() const
-{
-	// Arbitrary fog distances.
-	if (this->type == WeatherDefinition::Type::Clear)
-	{
-		return 100.0;
-	}
-	else if (this->type == WeatherDefinition::Type::Overcast)
-	{
-		return this->overcast.heavyFog ? 25.0 : 40.0;
-	}
-	else if (this->type == WeatherDefinition::Type::Rain)
-	{
-		return this->rain.thunderstorm ? 40.0 : 50.0;
-	}
-	else if (this->type == WeatherDefinition::Type::Snow)
-	{
-		return this->snow.heavyFog ? 20.0 : 35.0;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(double, std::to_string(static_cast<int>(this->type)));
-	}
-}
-
-const WeatherDefinition::OvercastDefinition &WeatherDefinition::getOvercast() const
-{
-	DebugAssert(this->type == WeatherDefinition::Type::Overcast);
-	return this->overcast;
-}
-
-const WeatherDefinition::RainDefinition &WeatherDefinition::getRain() const
-{
-	DebugAssert(this->type == WeatherDefinition::Type::Rain);
-	return this->rain;
-}
-
-const WeatherDefinition::SnowDefinition &WeatherDefinition::getSnow() const
-{
-	DebugAssert(this->type == WeatherDefinition::Type::Snow);
-	return this->snow;
 }

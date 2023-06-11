@@ -5,8 +5,11 @@
 #include <cstdint>
 #include <string>
 
+class Clock;
 class Random;
 class TextureManager;
+
+enum class MapType;
 
 namespace ArenaRenderUtils
 {
@@ -54,6 +57,9 @@ namespace ArenaRenderUtils
 
 	const std::string CHASM_WATER_FILENAME = "WATERANI.RCI";
 	const std::string CHASM_LAVA_FILENAME = "LAVAANI.RCI";
+
+	// Gets the current ambient light percent for the scene.
+	double getAmbientPercent(const Clock &clock, MapType mapType);
 
 	// Various functions for determining the type of palette index.
 	bool isGhostTexel(uint8_t texel);

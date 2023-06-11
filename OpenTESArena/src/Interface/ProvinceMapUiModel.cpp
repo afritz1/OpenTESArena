@@ -138,7 +138,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 			if (srcProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_ID)
 			{
 				// Determine whether to use the city format or dungeon format.
-				if (dstLocationDef.getType() == LocationDefinition::Type::City)
+				if (dstLocationDef.getType() == LocationDefinitionType::City)
 				{
 					// City format.
 					const int locationFormatTextsIndex = 2;
@@ -146,7 +146,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 					std::string text = locationFormatTexts[locationFormatTextsIndex];
 
 					// Replace first %s with location type.
-					const LocationDefinition::CityDefinition &cityDef = dstLocationDef.getCityDefinition();
+					const LocationCityDefinition &cityDef = dstLocationDef.getCityDefinition();
 					const std::string_view locationTypeName = cityDef.typeDisplayName;
 
 					size_t index = text.find("%s");
@@ -162,8 +162,8 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 
 					return text;
 				}
-				else if ((dstLocationDef.getType() == LocationDefinition::Type::Dungeon) ||
-					(dstLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon))
+				else if ((dstLocationDef.getType() == LocationDefinitionType::Dungeon) ||
+					(dstLocationDef.getType() == LocationDefinitionType::MainQuestDungeon))
 				{
 					// Dungeon format.
 					const int locationFormatTextsIndex = 0;

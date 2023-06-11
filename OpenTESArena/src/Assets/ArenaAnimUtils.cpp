@@ -20,8 +20,8 @@
 namespace ArenaAnimUtils
 {
 	// Animation scale helper values based on the original game.
-	constexpr double MediumScale = INFFile::FlatData::MEDIUM_SCALE / 100.0;
-	constexpr double LargeScale = INFFile::FlatData::LARGE_SCALE / 100.0;
+	constexpr double MediumScale = INFFlat::MEDIUM_SCALE / 100.0;
+	constexpr double LargeScale = INFFlat::LARGE_SCALE / 100.0;
 
 	constexpr int HumanFilenameTypeIndexPlate = 0;
 
@@ -112,12 +112,12 @@ namespace ArenaAnimUtils
 	bool tryAddStaticEntityAnimState(ArenaTypes::FlatIndex flatIndex, const char *stateName, double secondsPerFrame,
 		bool isLooping, const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
-		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
+		const INFFlat &flatData = inf.getFlat(flatIndex);
 		const char *flatTextureName = [&inf, &flatData]()
 		{
-			const BufferView<const INFFile::FlatTextureData> flatTextures = inf.getFlatTextures();
+			const BufferView<const INFFlatTexture> flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, flatData.textureIndex);
-			const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
+			const INFFlatTexture &flatTextureData = flatTextures[flatData.textureIndex];
 			return flatTextureData.filename.c_str();
 		}();
 
@@ -519,12 +519,12 @@ namespace ArenaAnimUtils
 		const std::string animName = [&inf]()
 		{
 			constexpr ArenaTypes::ItemIndex corpseItemIndex = 2;
-			const INFFile::FlatData *corpseFlat = inf.getFlatWithItemIndex(corpseItemIndex);
+			const INFFlat *corpseFlat = inf.getFlatWithItemIndex(corpseItemIndex);
 			DebugAssertMsg(corpseFlat != nullptr, "Missing human corpse flat.");
 			const int corpseFlatTextureIndex = corpseFlat->textureIndex;
-			const BufferView<const INFFile::FlatTextureData> flatTextures = inf.getFlatTextures();
+			const BufferView<const INFFlatTexture> flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, corpseFlatTextureIndex);
-			const INFFile::FlatTextureData &flatTextureData = flatTextures[corpseFlatTextureIndex];
+			const INFFlatTexture &flatTextureData = flatTextures[corpseFlatTextureIndex];
 			return String::toUppercase(flatTextureData.filename);
 		}();
 
@@ -711,7 +711,7 @@ void ArenaAnimUtils::getBaseFlatDimensions(int width, int height, uint16_t scale
 	*baseHeight = (((height * scale) / 256) * 200) / 256;
 }
 
-double ArenaAnimUtils::getDimensionModifier(const INFFile::FlatData &flatData)
+double ArenaAnimUtils::getDimensionModifier(const INFFlat &flatData)
 {
 	if (flatData.largeScale)
 	{
@@ -1029,7 +1029,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, 
 	DebugAssert(outAnimDef != nullptr);
 
 	const auto &exeData = binaryAssetLibrary.getExeData();
-	const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
+	const INFFlat &flatData = inf.getFlat(flatIndex);
 	const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 	if (!optItemIndex.has_value())
 	{

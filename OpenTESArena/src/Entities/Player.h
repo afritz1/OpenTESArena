@@ -8,12 +8,13 @@
 #include "../World/Coord.h"
 
 class CharacterClassLibrary;
+class CollisionChunkManager;
 class ExeData;
 class Game;
 class LevelDefinition;
 class LevelInfoDefinition;
-class LevelInstance;
 class Random;
+class VoxelChunkManager;
 
 class Player
 {
@@ -35,10 +36,10 @@ private:
 	double getFeetY() const;
 
 	// Changes the player's velocity based on collision with objects in the world.
-	void handleCollision(const LevelInstance &activeLevel, double dt);
+	void handleCollision(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale);
 
 	// Updates the player's position and velocity based on interactions with the world.
-	void updatePhysics(const LevelInstance &activeLevel, double dt);
+	void updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale);
 public:
 	Player();
 
@@ -90,7 +91,7 @@ public:
 	const WeaponAnimation &getWeaponAnimation() const;
 
 	// Returns whether the player is standing on ground and with no Y velocity.
-	bool onGround(const LevelInstance &activeLevel) const;
+	bool onGround(const CollisionChunkManager &collisionChunkManager) const;
 
 	// Teleports the player to a point.
 	void teleport(const CoordDouble3 &position);

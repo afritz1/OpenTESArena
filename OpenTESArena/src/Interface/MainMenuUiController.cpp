@@ -16,6 +16,7 @@
 #include "../Audio/MusicUtils.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
 #include "../World/MapType.h"
@@ -128,6 +129,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	Player &player = game.getPlayer();
 	player.initRandom(CharacterClassLibrary::getInstance(), binaryAssetLibrary.getExeData(), game.getRandom());
 
+	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	const auto &options = game.getOptions();
 	const int starCount = SkyUtils::getStarCountFromDensity(options.getMisc_StarDensity());
@@ -161,12 +163,11 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 					for (int i = 0; i < tempProvinceDef.getLocationCount(); i++)
 					{
 						const LocationDefinition &curLocationDef = tempProvinceDef.getLocationDef(i);
-						if (curLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+						if (curLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
 						{
-							const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-								curLocationDef.getMainQuestDungeonDefinition();
+							const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = curLocationDef.getMainQuestDungeonDefinition();
 
-							if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+							if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
 							{
 								locationIndex = i;
 								break;
@@ -197,9 +198,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const std::optional<bool> rulerIsMale = [&locationDef]()
 			{
-				if (locationDef.getType() == LocationDefinition::Type::City)
+				if (locationDef.getType() == LocationDefinitionType::City)
 				{
-					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+					const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 					return cityDef.rulerIsMale;
 				}
 				else
@@ -211,15 +212,16 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			MapGeneration::InteriorGenInfo interiorGenInfo;
 			interiorGenInfo.initPrefab(std::string(mifName), interiorType, rulerIsMale);
 
-			const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest/interiors.
-
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-			if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-				BinaryAssetLibrary::getInstance(), game.getTextureManager(), renderer))
+
+			MapDefinition mapDefinition;
+			if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 			{
-				DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
+				DebugLogError("Couldn't init MapDefinition for interior \"" + locationDef.getName() + "\".");
+				return;
 			}
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 		}
 		else
 		{
@@ -231,7 +233,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			constexpr bool isArtifactDungeon = false;
 
-			const std::optional<VoxelInt2> playerStartOffset = VoxelInt2(
+			const VoxelInt2 playerStartOffset(
 				ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_X,
 				ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_Z);
 
@@ -241,21 +243,26 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				DebugAssertMsg(locationIndex.has_value(), "Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
 
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
-				const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
+				const LocationDungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 
 				MapGeneration::InteriorGenInfo interiorGenInfo;
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-				if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-					CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-					BinaryAssetLibrary::getInstance(), game.getTextureManager(), game.getRenderer()))
+
+				MapDefinition mapDefinition;
+				if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 				{
-					DebugCrash("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
+					DebugLogError("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
+					return;
 				}
 
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, playerStartOffset, worldMapLocationIDs, true);
+
 				// Set random named dungeon name and visibility for testing.
-				LocationInstance &locationInst = gameState.getLocationInstance();
+				WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
+				ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(worldMapLocationIDs.provinceID);
+				LocationInstance &locationInst = provinceInst.getLocationInstance(worldMapLocationIDs.locationID);
 				locationInst.setNameOverride("Test Dungeon");
 
 				if (!locationInst.isVisible())
@@ -271,26 +278,29 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 				const int locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceDef);
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
-				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+				const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 				const uint32_t dungeonSeed = cityDef.getWildDungeonSeed(wildBlockX, wildBlockY);
 				constexpr int widthChunkCount = ArenaWildUtils::WILD_DUNGEON_WIDTH_CHUNKS;
 				constexpr int heightChunkCount = ArenaWildUtils::WILD_DUNGEON_HEIGHT_CHUNKS;
 
 				// Need to generate dungeon definition here since we don't have the wild chunk itself.
-				LocationDefinition::DungeonDefinition dungeonDef;
+				LocationDungeonDefinition dungeonDef;
 				dungeonDef.init(dungeonSeed, widthChunkCount, heightChunkCount);
 
 				MapGeneration::InteriorGenInfo interiorGenInfo;
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-				if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-					CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-					binaryAssetLibrary, game.getTextureManager(), renderer))
+
+				MapDefinition mapDefinition;
+				if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 				{
-					DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
+					DebugLogError("Couldn't init MapDefinition for wilderness dungeon \"" + locationDef.getName() + "\".");
+					return;
 				}
+				
+				gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, playerStartOffset, worldMapLocationIDs, true);
 			}
 			else
 			{
@@ -316,9 +326,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				for (int i = 0; i < provinceDef.getLocationCount(); i++)
 				{
 					const LocationDefinition &curLocationDef = provinceDef.getLocationDef(i);
-					if (curLocationDef.getType() == LocationDefinition::Type::City)
+					if (curLocationDef.getType() == LocationDefinitionType::City)
 					{
-						const LocationDefinition::CityDefinition &cityDef = curLocationDef.getCityDefinition();
+						const LocationCityDefinition &cityDef = curLocationDef.getCityDefinition();
 						if ((cityDef.type == ArenaTypes::CityType::CityState) && cityDef.premade &&
 							cityDef.palaceIsMainQuestDungeon)
 						{
@@ -333,7 +343,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			DebugAssertMsg(locationIndex.has_value(), "Couldn't find premade city with main quest palace dungeon.");
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
 
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 			Buffer<uint8_t> reservedBlocks = [&cityDef]()
 			{
 				const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
@@ -343,8 +353,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return buffer;
 			}();
 
-			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+			const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+				[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
 			{
 				if (cityDef.hasMainQuestTempleOverride)
 				{
@@ -374,12 +384,15 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
-				textAssetLibrary, game.getTextureManager(), renderer))
+
+			MapDefinition mapDefinition;
+			if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.getTextureManager()))
 			{
-				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+				DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
+				return;
 			}
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		}
 		else
 		{
@@ -412,7 +425,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			DebugAssertMsg(locationIndex.has_value(), "Couldn't find city for \"" + mifName + "\".");
 
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 			Buffer<uint8_t> reservedBlocks = [&cityDef]()
 			{
@@ -423,8 +436,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return buffer;
 			}();
 
-			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+			const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+				[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
 			{
 				if (cityDef.hasMainQuestTempleOverride)
 				{
@@ -455,13 +468,14 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
-			// Load city into game state.
-			if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-				CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(), binaryAssetLibrary,
-				textAssetLibrary, game.getTextureManager(), renderer))
+			MapDefinition mapDefinition;
+			if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, textureManager))
 			{
-				DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+				DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
+				return;
 			}
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -473,7 +487,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 		const int locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceDef);
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
-		const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs =
@@ -494,41 +508,49 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
-		// No previous start coordinate available. Let the loader decide.
-		const std::optional<CoordInt3> startCoord;
-
-		// Load wilderness into game state.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-		if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-			worldMapLocationIDs, CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-			binaryAssetLibrary, game.getTextureManager(), renderer))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initWild(wildGenInfo, skyGenInfo, textureManager))
 		{
-			DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
+			DebugLogError("Couldn't init MapDefinition for wilderness \"" + locationDef.getName() + "\".");
+			return;
 		}
+
+		// Don't have a city gate reference. Just pick somewhere in the center of the wilderness.
+		const CoordInt2 startCoord(
+			ChunkInt2(ArenaWildUtils::WILD_WIDTH / 2, ArenaWildUtils::WILD_HEIGHT / 2),
+			VoxelInt2::Zero);
+
+		gameState.queueMapDefChange(std::move(mapDefinition), startCoord, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 	}
 	else
 	{
 		DebugCrash("Unrecognized world type \"" + std::to_string(static_cast<int>(mapType)) + "\".");
 	}
 
-	// Set clock to 5:45am.
+	// Set clock to 5:45am for testing.
 	auto &clock = gameState.getClock();
 	clock = Clock(5, 45, 0);
 
-	// Get the music that should be active on start.
-	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-	const MusicDefinition *musicDef = [&game, &mifName, &optInteriorType, mapType, &gameState, &musicLibrary]()
+	GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 	{
+		// Get the music that should be active on start.
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+		GameState &gameState = game.getGameState();
+		const MapType mapType = gameState.getActiveMapType();
 		const bool isExterior = (mapType == MapType::City) || (mapType == MapType::Wilderness);
 
 		// Exteriors depend on the time of day for which music to use. Interiors depend
 		// on the current location's .MIF name (if any).
+		const MusicDefinition *musicDef = nullptr;
 		if (isExterior)
 		{
-			if (!gameState.nightMusicIsActive())
+			const Clock &clock = gameState.getClock();
+			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 					game.getRandom(), [weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
@@ -538,17 +560,16 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(
-					MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
 			}
 		}
 		else
 		{
-			DebugAssert(optInteriorType.has_value());
-			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType =
-				MusicUtils::getInteriorMusicType(*optInteriorType);
+			const MapSubDefinition &mapSubDef = gameState.getActiveMapDef().getSubDefinition();
+			const ArenaTypes::InteriorType interiorType = mapSubDef.interior.interiorType;
+			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
 
-			return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
 				game.getRandom(), [interiorMusicType](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
@@ -556,43 +577,43 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return interiorMusicDef.type == interiorMusicType;
 			});
 		}
-	}();
 
-	const MusicDefinition *jingleMusicDef = [&game, mapType, &gameState, &musicLibrary]()
-		-> const MusicDefinition*
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing start music.");
+		}
+
+		return musicDef;
+	};
+
+	GameState::SceneChangeMusicFunc jingleMusicFunc = [](Game &game)
 	{
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+		GameState &gameState = game.getGameState();
+		const MapType mapType = gameState.getActiveMapType();
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		const bool isCity = (mapType == MapType::City) &&
-			(locationDef.getType() == LocationDefinition::Type::City);
+		const bool isCity = (mapType == MapType::City) && (locationDef.getType() == LocationDefinitionType::City);
 
+		const MusicDefinition *musicDef = nullptr;
 		if (isCity)
 		{
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-			return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
 				game.getRandom(), [&cityDef](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
 				const auto &jingleMusicDef = def.getJingleMusicDefinition();
-				return (jingleMusicDef.cityType == cityDef.type) &&
-					(jingleMusicDef.climateType == cityDef.climateType);
+				return (jingleMusicDef.cityType == cityDef.type) && (jingleMusicDef.climateType == cityDef.climateType);
 			});
 		}
-		else
-		{
-			return nullptr;
-		}
-	}();
 
-	if (musicDef == nullptr)
-	{
-		DebugLogWarning("Missing start music.");
-	}
+		return musicDef;
+	};
+
+	gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
 	// Initialize game world panel.
 	game.setPanel<GameWorldPanel>();
-
-	AudioManager &audioManager = game.getAudioManager();
-	audioManager.setMusic(musicDef, jingleMusicDef);
 }
 
 void MainMenuUiController::onTestTypeUpButtonSelected(int *testType, int *testIndex, int *testIndex2, int *testWeather)

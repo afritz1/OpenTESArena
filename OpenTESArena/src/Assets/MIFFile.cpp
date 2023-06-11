@@ -28,37 +28,37 @@ namespace
 	const std::string Tag_TRIG = "TRIG";
 
 	// Mappings of .MIF level tags to functions for decoding data, excluding "LEVL".
-	using LevelTagFuncTable = std::unordered_map<std::string, int(*)(MIFFile::Level&, const uint8_t*)>;
-	using LevelTagWithDimsFuncTable = std::unordered_map<std::string, int(*)(MIFFile::Level&, const uint8_t*, WEInt, SNInt)>;
+	using LevelTagFuncTable = std::unordered_map<std::string, int(*)(MIFLevel&, const uint8_t*)>;
+	using LevelTagWithDimsFuncTable = std::unordered_map<std::string, int(*)(MIFLevel&, const uint8_t*, WEInt, SNInt)>;
 
 	const LevelTagFuncTable MIFLevelTags =
 	{
-		{ Tag_FLAT, MIFFile::Level::loadFLAT },
-		{ Tag_INFO, MIFFile::Level::loadINFO },
-		{ Tag_INNS, MIFFile::Level::loadINNS },
-		{ Tag_LOCK, MIFFile::Level::loadLOCK },
-		{ Tag_LOOT, MIFFile::Level::loadLOOT },
-		{ Tag_NAME, MIFFile::Level::loadNAME },
-		{ Tag_NUMF, MIFFile::Level::loadNUMF },
-		{ Tag_STOR, MIFFile::Level::loadSTOR },
-		{ Tag_TARG, MIFFile::Level::loadTARG },
-		{ Tag_TRIG, MIFFile::Level::loadTRIG }
+		{ Tag_FLAT, MIFLevel::loadFLAT },
+		{ Tag_INFO, MIFLevel::loadINFO },
+		{ Tag_INNS, MIFLevel::loadINNS },
+		{ Tag_LOCK, MIFLevel::loadLOCK },
+		{ Tag_LOOT, MIFLevel::loadLOOT },
+		{ Tag_NAME, MIFLevel::loadNAME },
+		{ Tag_NUMF, MIFLevel::loadNUMF },
+		{ Tag_STOR, MIFLevel::loadSTOR },
+		{ Tag_TARG, MIFLevel::loadTARG },
+		{ Tag_TRIG, MIFLevel::loadTRIG }
 	};
 
 	const LevelTagWithDimsFuncTable MIFLevelTagsWithDims =
 	{
-		{ Tag_FLOR, MIFFile::Level::loadFLOR },
-		{ Tag_MAP1, MIFFile::Level::loadMAP1 },
-		{ Tag_MAP2, MIFFile::Level::loadMAP2 }
+		{ Tag_FLOR, MIFLevel::loadFLOR },
+		{ Tag_MAP1, MIFLevel::loadMAP1 },
+		{ Tag_MAP2, MIFLevel::loadMAP2 }
 	};
 }
 
-MIFFile::Level::Level()
+MIFLevel::MIFLevel()
 {
 	this->numf = 0;
 }
 
-int MIFFile::Level::load(const uint8_t *levelStart, WEInt levelWidth, SNInt levelDepth)
+int MIFLevel::load(const uint8_t *levelStart, WEInt levelWidth, SNInt levelDepth)
 {
 	// Get the size of the level data.
 	const uint16_t levelSize = Bytes::getLE16(levelStart + 4);
@@ -106,7 +106,7 @@ int MIFFile::Level::load(const uint8_t *levelStart, WEInt levelWidth, SNInt leve
 	return static_cast<int>(std::distance(levelStart, tagStart));
 }
 
-int MIFFile::Level::loadFLAT(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadFLAT(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 	const uint8_t *tagDataStart = tagStart + 6;
@@ -118,8 +118,7 @@ int MIFFile::Level::loadFLAT(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadFLOR(MIFFile::Level &level, const uint8_t *tagStart,
-	WEInt levelWidth, SNInt levelDepth)
+int MIFLevel::loadFLOR(MIFLevel &level, const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth)
 {
 	// Compressed size is in chunks and contains a 2 byte decompressed length after it, which
 	// should not be included when determining the end of the compressed range.
@@ -151,8 +150,7 @@ int MIFFile::Level::loadFLOR(MIFFile::Level &level, const uint8_t *tagStart,
 	return compressedSize + 6;
 }
 
-int MIFFile::Level::loadMAP1(MIFFile::Level &level, const uint8_t *tagStart,
-	WEInt levelWidth, SNInt levelDepth)
+int MIFLevel::loadMAP1(MIFLevel &level, const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth)
 {
 	const uint16_t compressedSize = Bytes::getLE16(tagStart + 4);
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
@@ -182,8 +180,7 @@ int MIFFile::Level::loadMAP1(MIFFile::Level &level, const uint8_t *tagStart,
 	return compressedSize + 6;
 }
 
-int MIFFile::Level::loadMAP2(MIFFile::Level &level, const uint8_t *tagStart,
-	WEInt levelWidth, SNInt levelDepth)
+int MIFLevel::loadMAP2(MIFLevel &level, const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth)
 {
 	const uint16_t compressedSize = Bytes::getLE16(tagStart + 4);
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
@@ -213,7 +210,7 @@ int MIFFile::Level::loadMAP2(MIFFile::Level &level, const uint8_t *tagStart,
 	return compressedSize + 6;
 }
 
-int MIFFile::Level::loadINFO(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadINFO(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 	const uint8_t *tagDataStart = tagStart + 6;
@@ -225,7 +222,7 @@ int MIFFile::Level::loadINFO(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadINNS(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadINNS(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 	const uint8_t *tagDataStart = tagStart + 6;
@@ -237,7 +234,7 @@ int MIFFile::Level::loadINNS(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadLOCK(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadLOCK(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 
@@ -257,7 +254,7 @@ int MIFFile::Level::loadLOCK(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadLOOT(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadLOOT(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 	const uint8_t *tagDataStart = tagStart + 6;
@@ -269,7 +266,7 @@ int MIFFile::Level::loadLOOT(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadNAME(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadNAME(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 	const uint8_t *tagDataStart = tagStart + 6;
@@ -281,7 +278,7 @@ int MIFFile::Level::loadNAME(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadNUMF(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadNUMF(MIFLevel &level, const uint8_t *tagStart)
 {
 	// Size should always be 1.
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
@@ -293,7 +290,7 @@ int MIFFile::Level::loadNUMF(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadSTOR(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadSTOR(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 	const uint8_t *tagDataStart = tagStart + 6;
@@ -305,7 +302,7 @@ int MIFFile::Level::loadSTOR(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadTARG(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadTARG(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 
@@ -325,7 +322,7 @@ int MIFFile::Level::loadTARG(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::loadTRIG(MIFFile::Level &level, const uint8_t *tagStart)
+int MIFLevel::loadTRIG(MIFLevel &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
 
@@ -345,67 +342,67 @@ int MIFFile::Level::loadTRIG(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-const std::string &MIFFile::Level::getName() const
+const std::string &MIFLevel::getName() const
 {
 	return this->name;
 }
 
-const std::string &MIFFile::Level::getInfo() const
+const std::string &MIFLevel::getInfo() const
 {
 	return this->info;
 }
 
-int MIFFile::Level::getNumf() const
+int MIFLevel::getNumf() const
 {
 	return this->numf;
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFFile::Level::getFLOR() const
+BufferView2D<const ArenaTypes::VoxelID> MIFLevel::getFLOR() const
 {
 	return BufferView2D<const ArenaTypes::VoxelID>(this->flor);
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFFile::Level::getMAP1() const
+BufferView2D<const ArenaTypes::VoxelID> MIFLevel::getMAP1() const
 {
 	return BufferView2D<const ArenaTypes::VoxelID>(this->map1);
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFFile::Level::getMAP2() const
+BufferView2D<const ArenaTypes::VoxelID> MIFLevel::getMAP2() const
 {
 	return BufferView2D<const ArenaTypes::VoxelID>(this->map2);
 }
 
-BufferView<const uint8_t> MIFFile::Level::getFLAT() const
+BufferView<const uint8_t> MIFLevel::getFLAT() const
 {
 	return BufferView<const uint8_t>(this->flat);
 }
 
-BufferView<const uint8_t> MIFFile::Level::getINNS() const
+BufferView<const uint8_t> MIFLevel::getINNS() const
 {
 	return BufferView<const uint8_t>(this->inns);
 }
 
-BufferView<const uint8_t> MIFFile::Level::getLOOT() const
+BufferView<const uint8_t> MIFLevel::getLOOT() const
 {
 	return BufferView<const uint8_t>(this->loot);
 }
 
-BufferView<const uint8_t> MIFFile::Level::getSTOR() const
+BufferView<const uint8_t> MIFLevel::getSTOR() const
 {
 	return BufferView<const uint8_t>(this->stor);
 }
 
-BufferView<const ArenaTypes::MIFTarget> MIFFile::Level::getTARG() const
+BufferView<const ArenaTypes::MIFTarget> MIFLevel::getTARG() const
 {
 	return BufferView<const ArenaTypes::MIFTarget>(this->targ);
 }
 
-BufferView<const ArenaTypes::MIFLock> MIFFile::Level::getLOCK() const
+BufferView<const ArenaTypes::MIFLock> MIFLevel::getLOCK() const
 {
 	return BufferView<const ArenaTypes::MIFLock>(this->lock);
 }
 
-BufferView<const ArenaTypes::MIFTrigger> MIFFile::Level::getTRIG() const
+BufferView<const ArenaTypes::MIFTrigger> MIFLevel::getTRIG() const
 {
 	return BufferView<const ArenaTypes::MIFTrigger>(this->trig);
 }
@@ -448,7 +445,7 @@ bool MIFFile::init(const char *filename)
 	// The level count is unused since it's inferred by this level loading loop.
 	while (levelOffset < src.getCount())
 	{
-		MIFFile::Level level;
+		MIFLevel level;
 
 		// Begin loading the level data at the current LEVL, and get the offset
 		// to the next LEVL.
@@ -501,7 +498,7 @@ int MIFFile::getLevelCount() const
 	return static_cast<int>(this->levels.size());
 }
 
-const MIFFile::Level &MIFFile::getLevel(int index) const
+const MIFLevel &MIFFile::getLevel(int index) const
 {
 	DebugAssertIndex(this->levels, index);
 	return this->levels[index];

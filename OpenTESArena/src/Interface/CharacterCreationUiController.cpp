@@ -22,6 +22,7 @@
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Game/ArenaClockUtils.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -501,12 +502,11 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 			for (int i = 0; i < provinceDef.getLocationCount(); i++)
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
-				if (locationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+				if (locationDef.getType() == LocationDefinitionType::MainQuestDungeon)
 				{
-					const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-						locationDef.getMainQuestDungeonDefinition();
+					const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
 
-					if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+					if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
 					{
 						return i;
 					}
@@ -520,7 +520,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 		// Load starting dungeon.
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
-		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+		const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
 		const std::string mifName = mainQuestDungeonDef.mapFilename;
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
@@ -528,18 +528,19 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		MapGeneration::InteriorGenInfo interiorGenInfo;
 		interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
-		const std::optional<VoxelInt2> playerStartOffset; // Unused for start dungeon.
-
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
 		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 		gameState.init(binaryAssetLibrary); // @todo: not sure about this; should we init really early in the engine?
-		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
-			charClassLibrary, EntityDefinitionLibrary::getInstance(), BinaryAssetLibrary::getInstance(),
-			game.getTextureManager(), game.getRenderer()))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initInterior(interiorGenInfo, game.getTextureManager()))
 		{
-			DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
+			DebugLogError("Couldn't init MapDefinition for start dungeon \"" + mifName + "\".");
+			return;
 		}
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		// Initialize player.
 		const auto &exeData = binaryAssetLibrary.getExeData();
@@ -755,7 +756,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 		auto &renderer = game.getRenderer();
 
-		const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 		Buffer<uint8_t> reservedBlocks = [&cityDef]()
 		{
 			const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
@@ -765,8 +766,8 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			return buffer;
 		}();
 
-		const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+		const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+			[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
 		{
 			if (cityDef.hasMainQuestTempleOverride)
 			{
@@ -797,22 +798,24 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
-		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-			CharacterClassLibrary::getInstance(), EntityDefinitionLibrary::getInstance(),
-			BinaryAssetLibrary::getInstance(), TextAssetLibrary::getInstance(), game.getTextureManager(),
-			renderer))
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.getTextureManager()))
 		{
-			DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+			DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
+			return;
 		}
 
-		// Set music based on weather and time.
-		const MusicDefinition *musicDef = [&game, &gameState]()
+		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 		{
+			// Set music based on weather and time.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			if (!gameState.nightMusicIsActive())
+			GameState &gameState = game.getGameState();
+			const MusicDefinition *musicDef = nullptr;
+			if (!ArenaClockUtils::nightMusicIsActive(gameState.getClock()))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 					game.getRandom(), [&weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
@@ -822,29 +825,24 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(
-					MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
 			}
-		}();
 
-		if (musicDef == nullptr)
-		{
-			DebugLogWarning("Missing exterior music.");
-		}
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing exterior music.");
+			}
 
-		AudioManager &audioManager = game.getAudioManager();
-		audioManager.setMusic(musicDef);
+			return musicDef;
+		};
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+		gameState.queueMusicOnSceneChange(musicFunc);
 	};
 
 	// Set the *LEVELUP voxel enter event.
 	auto &gameState = game.getGameState();
 	gameState.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
-
-	// Update game state so the pending map change can get applied (if any). This matters only when letting
-	// the cinematic finish naturally in the CD version, which causes GameWorldPanel::tick() to not get run
-	// before GameWorldPanel::gameWorldRenderCallback() this frame, which causes first-frame issues and a crash.
-	// Not sure what a better fix would be other than this "first frame poke" method with dt=0.
-	gameState.tick(0.0, game);
 
 	// Initialize the game world panel.
 	game.setPanel<GameWorldPanel>();
