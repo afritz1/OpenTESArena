@@ -915,6 +915,46 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
+	void PixelShader_AlphaTestedWithLightLevelTransparency(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderTexture &lightLevelTexture, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+		const int texelIndex = texelX + (texelY * texture.width);
+		const uint8_t texel = texture.texels[texelIndex];
+
+		const bool isTransparent = texel == 0;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		uint8_t resultTexel;
+		if (ArenaRenderUtils::isGhostTexel(texel))
+		{
+			const int lightLevelCount = lightLevelTexture.height;
+			const int lightLevel = static_cast<int>(texel) - ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
+			const uint8_t prevFrameBufferPixel = frameBuffer.colors[frameBuffer.pixelIndex];
+			const int lightTableTextureIndex = prevFrameBufferPixel + (lightLevel * lightLevelTexture.width);
+			resultTexel = lightLevelTexture.texels[lightTableTextureIndex];
+		}
+		else if (texel == ArenaRenderUtils::PALETTE_INDEX_RED_SRC1)
+		{
+			resultTexel = ArenaRenderUtils::PALETTE_INDEX_RED_DST1;
+		}
+		else if (texel == ArenaRenderUtils::PALETTE_INDEX_RED_SRC2)
+		{
+			resultTexel = ArenaRenderUtils::PALETTE_INDEX_RED_DST2;
+		}
+		else
+		{
+			resultTexel = texel;
+		}
+		
+		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+	}
+
 	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
 		TextureSamplingType textureSamplingType1, PixelShaderType pixelShaderType, double pixelShaderParam0,
@@ -1090,6 +1130,9 @@ namespace swRender
 								break;
 							case PixelShaderType::AlphaTestedWithPalette:
 								PixelShader_AlphaTestedWithPalette(shaderPerspective, shaderTexture0, shaderPalette0, shaderFrameBuffer);
+								break;
+							case PixelShaderType::AlphaTestedWithLightLevelTransparency:
+								PixelShader_AlphaTestedWithLightLevelTransparency(shaderPerspective, shaderTexture0, lightTableShaderTexture, shaderFrameBuffer);
 								break;
 							default:
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(pixelShaderType)));

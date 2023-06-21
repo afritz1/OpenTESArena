@@ -14,12 +14,13 @@ enum class VertexShaderType
 enum class PixelShaderType
 {
 	Opaque,
-	OpaqueWithAlphaTestLayer,
+	OpaqueWithAlphaTestLayer, // Chasm walls.
 	OpaqueWithFade,
 	AlphaTested,
 	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
 	AlphaTestedWithVariableTexCoordVMin, // Raising doors.
-	AlphaTestedWithPalette // Citizens.
+	AlphaTestedWithPalette, // Citizens.
+	AlphaTestedWithLightLevelTransparency // Ghosts and distant moons.
 };
 
 enum class TextureSamplingType
