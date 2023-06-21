@@ -1129,14 +1129,14 @@ void SoftwareRenderer::ObjectTexture::clear()
 const uint8_t *SoftwareRenderer::ObjectTexture::get8Bit() const
 {
 	DebugAssertMsg(this->bytesPerTexel == 1, "Expected object texture (" + std::to_string(this->width) + "x" +
-		std::to_string(this->height) + " to be 1 byte per texel (was " + std::to_string(this->bytesPerTexel) + ").");
+		std::to_string(this->height) + ") to be 1 byte per texel (was " + std::to_string(this->bytesPerTexel) + ").");
 	return reinterpret_cast<const uint8_t*>(this->texels.begin());
 }
 
 const uint32_t *SoftwareRenderer::ObjectTexture::get32Bit() const
 {
 	DebugAssertMsg(this->bytesPerTexel == 4, "Expected object texture (" + std::to_string(this->width) + "x" +
-		std::to_string(this->height) + " to be 4 bytes per texel (was " + std::to_string(this->bytesPerTexel) + ").");
+		std::to_string(this->height) + ") to be 4 bytes per texel (was " + std::to_string(this->bytesPerTexel) + ").");
 	return reinterpret_cast<const uint32_t*>(this->texels.begin());
 }
 
