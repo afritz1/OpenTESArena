@@ -66,6 +66,7 @@ private:
 	using AttributeBufferPool = RecyclablePool<AttributeBuffer, AttributeBufferID>;
 	using IndexBufferPool = RecyclablePool<IndexBuffer, IndexBufferID>;
 
+	Buffer2D<uint8_t> paletteIndexBuffer; // Intermediate buffer to support back-to-front transparencies.
 	Buffer2D<double> depthBuffer;
 	VertexBufferPool vertexBuffers;
 	AttributeBufferPool attributeBuffers;

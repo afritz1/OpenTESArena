@@ -666,10 +666,12 @@ namespace swRender
 		}
 	}
 
-	void ClearFrameBuffers(uint32_t clearColor, BufferView2D<uint32_t> &colorBuffer, BufferView2D<double> &depthBuffer)
+	void ClearFrameBuffers(BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer,
+		BufferView2D<uint32_t> colorBuffer)
 	{
-		colorBuffer.fill(clearColor);
+		paletteIndexBuffer.fill(0);
 		depthBuffer.fill(std::numeric_limits<double>::infinity());
+		colorBuffer.fill(0);
 	}
 
 	void ClearTriangleDrawList()
@@ -722,7 +724,7 @@ namespace swRender
 
 	struct PixelShaderFrameBuffer
 	{
-		uint32_t *colors;
+		uint8_t *colors;
 		double *depth;
 		PixelShaderPalette palette;
 		double xPercent, yPercent;
@@ -788,8 +790,7 @@ namespace swRender
 
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
-		const uint32_t color = frameBuffer.palette.colors[texel];
-		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
@@ -814,8 +815,7 @@ namespace swRender
 			texel = opaqueTexture.texels[texelIndex];
 		}
 
-		const uint32_t color = frameBuffer.palette.colors[texel];
-		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
@@ -836,8 +836,7 @@ namespace swRender
 		const double lightLevelPercent = std::clamp(lightLevelValue - std::floor(lightLevelValue), 0.0, Constants::JustBelowOne);
 		const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
 		const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
-		const uint32_t color = frameBuffer.palette.colors[shadedTexel];
-		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
@@ -854,8 +853,7 @@ namespace swRender
 			return;
 		}
 
-		const uint32_t color = frameBuffer.palette.colors[texel];
-		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
@@ -874,8 +872,7 @@ namespace swRender
 			return;
 		}
 
-		const uint32_t color = frameBuffer.palette.colors[texel];
-		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
@@ -895,8 +892,7 @@ namespace swRender
 			return;
 		}
 
-		const uint32_t color = frameBuffer.palette.colors[texel];
-		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
@@ -914,8 +910,8 @@ namespace swRender
 			return;
 		}
 
-		const uint32_t color = palette.colors[texel];
-		frameBuffer.colors[frameBuffer.pixelIndex] = color;
+		// @todo: need to pass in the citizen's palette indices, not palette colors
+		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
@@ -923,13 +919,14 @@ namespace swRender
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
 		TextureSamplingType textureSamplingType1, PixelShaderType pixelShaderType, double pixelShaderParam0,
 		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
-		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer,
-		BufferView2D<double> &depthBuffer)
+		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera, BufferView2D<uint8_t> paletteIndexBuffer,
+		BufferView2D<double> depthBuffer, BufferView2D<uint32_t> colorBuffer)
 	{
-		const int frameBufferWidth = colorBuffer.getWidth();
-		const int frameBufferHeight = colorBuffer.getHeight();
+		const int frameBufferWidth = paletteIndexBuffer.getWidth();
+		const int frameBufferHeight = paletteIndexBuffer.getHeight();
 		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
+		uint32_t *colorBufferPtr = colorBuffer.begin();
 
 		const Double2 eye2D(camera.worldPoint.x, camera.worldPoint.z); // For 2D lighting.
 		const Matrix4d &viewMatrix = camera.viewMatrix;
@@ -944,7 +941,7 @@ namespace swRender
 		lightTableShaderTexture.samplingType = TextureSamplingType::Default;
 
 		PixelShaderFrameBuffer shaderFrameBuffer;
-		shaderFrameBuffer.colors = colorBuffer.begin();
+		shaderFrameBuffer.colors = paletteIndexBuffer.begin();
 		shaderFrameBuffer.depth = depthBuffer.begin();
 		shaderFrameBuffer.palette.colors = paletteTexture.get32Bit();
 		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
@@ -1098,6 +1095,10 @@ namespace swRender
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(pixelShaderType)));
 								break;
 							}
+
+							// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
+							const uint8_t writtenPaletteIndex = shaderFrameBuffer.colors[shaderFrameBuffer.pixelIndex];
+							colorBufferPtr[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
 						}
 					}
 				}
@@ -1169,11 +1170,13 @@ SoftwareRenderer::~SoftwareRenderer()
 
 void SoftwareRenderer::init(const RenderInitSettings &settings)
 {
+	this->paletteIndexBuffer.init(settings.width, settings.height);
 	this->depthBuffer.init(settings.width, settings.height);
 }
 
 void SoftwareRenderer::shutdown()
 {
+	this->paletteIndexBuffer.clear();
 	this->depthBuffer.clear();
 	this->vertexBuffers.clear();
 	this->attributeBuffers.clear();
@@ -1188,6 +1191,9 @@ bool SoftwareRenderer::isInited() const
 
 void SoftwareRenderer::resize(int width, int height)
 {
+	this->paletteIndexBuffer.init(width, height);
+	this->paletteIndexBuffer.fill(0);
+
 	this->depthBuffer.init(width, height);
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
 }
@@ -1381,8 +1387,8 @@ std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id
 
 RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 {
-	const int renderWidth = this->depthBuffer.getWidth();
-	const int renderHeight = this->depthBuffer.getHeight();
+	const int renderWidth = this->paletteIndexBuffer.getWidth();
+	const int renderHeight = this->paletteIndexBuffer.getHeight();
 
 	const int threadCount = 1;
 	const int drawCallCount = swGeometry::g_totalDrawCallCount;
@@ -1397,10 +1403,11 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,
 	const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
-	const int frameBufferWidth = this->depthBuffer.getWidth();
-	const int frameBufferHeight = this->depthBuffer.getHeight();
-	BufferView2D<uint32_t> colorBufferView(outputBuffer, frameBufferWidth, frameBufferHeight);
+	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();
+	const int frameBufferHeight = this->paletteIndexBuffer.getHeight();
+	BufferView2D<uint8_t> paletteIndexBufferView(this->paletteIndexBuffer.begin(), frameBufferWidth, frameBufferHeight);
 	BufferView2D<double> depthBufferView(this->depthBuffer.begin(), frameBufferWidth, frameBufferHeight);
+	BufferView2D<uint32_t> colorBufferView(outputBuffer, frameBufferWidth, frameBufferHeight);
 
 	// Palette for 8-bit -> 32-bit color conversion.
 	const ObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
@@ -1408,8 +1415,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 	// Light table for shading/transparency look-ups.
 	const ObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
 
-	const uint32_t clearColor = Color::Black.toARGB();
-	swRender::ClearFrameBuffers(clearColor, colorBufferView, depthBufferView);
+	swRender::ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
 	swRender::ClearTriangleDrawList();
 
 	const swGeometry::ClippingPlanes clippingPlanes = swGeometry::MakeClippingPlanes(camera);
@@ -1440,8 +1446,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
 		const double pixelShaderParam0 = drawCall.pixelShaderParam0;
 		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, pixelShaderType,
-			pixelShaderParam0, this->objectTextures, paletteTexture, lightTableTexture, camera, colorBufferView,
-			depthBufferView);
+			pixelShaderParam0, this->objectTextures, paletteTexture, lightTableTexture, camera, paletteIndexBufferView,
+			depthBufferView, colorBufferView);
 	}
 }
 
