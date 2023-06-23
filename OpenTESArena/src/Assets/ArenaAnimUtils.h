@@ -88,6 +88,8 @@ namespace ArenaAnimUtils
 	// Returns whether the given flat index is for a static or dynamic entity.
 	bool isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
 
+	bool isGhost(int creatureIndex);
+
 	// The first creature's *ITEM index (rat).
 	constexpr ArenaTypes::ItemIndex FirstCreatureItemIndex = 32;
 

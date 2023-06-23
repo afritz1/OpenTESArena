@@ -29,6 +29,8 @@ namespace EntityUtils
 	// do not have their activation state updated in the original game like city streetlights do.
 	bool isStreetlight(const EntityDefinition &entityDef);
 
+	bool isGhost(const EntityDefinition &entityDef);
+
 	int getYOffset(const EntityDefinition &entityDef);
 
 	// Returns the entity definition's light radius, if any.

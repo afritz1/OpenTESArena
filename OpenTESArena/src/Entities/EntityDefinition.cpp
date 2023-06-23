@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "EntityDefinition.h"
+#include "../Assets/ArenaAnimUtils.h"
 
 void EntityDefinition::EnemyDefinition::CreatureDefinition::init(int creatureIndex,
 	bool isFinalBoss, const ExeData &exeData)
@@ -32,6 +33,8 @@ void EntityDefinition::EnemyDefinition::CreatureDefinition::init(int creatureInd
 
 	const auto &srcAttributes = entities.creatureAttributes[creatureIndex];
 	std::copy(srcAttributes.begin(), srcAttributes.end(), std::begin(this->attributes));
+
+	this->ghost = ArenaAnimUtils::isGhost(creatureIndex);
 }
 
 bool EntityDefinition::EnemyDefinition::CreatureDefinition::operator==(const CreatureDefinition &other) const
@@ -122,6 +125,11 @@ bool EntityDefinition::EnemyDefinition::CreatureDefinition::operator==(const Cre
 	}
 
 	if (std::memcmp(std::begin(this->attributes), std::begin(other.attributes), std::size(this->attributes) * sizeof(this->attributes[0])) != 0)
+	{
+		return false;
+	}
+
+	if (this->ghost != other.ghost)
 	{
 		return false;
 	}

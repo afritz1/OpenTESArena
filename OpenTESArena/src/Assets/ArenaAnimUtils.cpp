@@ -667,6 +667,11 @@ bool ArenaAnimUtils::isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFF
 	return isCreatureIndex(itemIndex, &dummy) || isHumanEnemyIndex(itemIndex);
 }
 
+bool ArenaAnimUtils::isGhost(int creatureIndex)
+{
+	return (creatureIndex == 11) || (creatureIndex == 14);
+}
+
 int ArenaAnimUtils::getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex)
 {
 	return ArenaAnimUtils::isFinalBossIndex(itemIndex) ? ArenaAnimUtils::FinalBossCreatureID : (itemIndex - 31);

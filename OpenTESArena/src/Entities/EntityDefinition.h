@@ -55,6 +55,7 @@ public:
 			int bloodIndex;
 			int diseaseChances;
 			int attributes[8];
+			bool ghost;
 
 			void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
 

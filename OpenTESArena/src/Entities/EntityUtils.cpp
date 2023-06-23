@@ -68,6 +68,22 @@ bool EntityUtils::isStreetlight(const EntityDefinition &entityDef)
 	return (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().streetlight;
 }
 
+bool EntityUtils::isGhost(const EntityDefinition &entityDef)
+{
+	if (entityDef.getType() != EntityDefinition::Type::Enemy)
+	{
+		return false;
+	}
+	
+	const EntityDefinition::EnemyDefinition &enemyDef = entityDef.getEnemy();
+	if (enemyDef.getType() != EntityDefinition::EnemyDefinition::Type::Creature)
+	{
+		return false;
+	}
+
+	return enemyDef.getCreature().ghost;
+}
+
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 {
 	const EntityDefinition::Type type = entityDef.getType();

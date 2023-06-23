@@ -1347,13 +1347,19 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		std::optional<ObjectTextureID> textureID1 = std::nullopt;
 		PixelShaderType pixelShaderType = PixelShaderType::AlphaTested;
 
-		if (entityInst.isCitizen())
+		const bool isCitizen = entityInst.isCitizen();
+		const bool isGhost = EntityUtils::isGhost(entityDef);
+		if (isCitizen)
 		{
 			const EntityPaletteInstanceID paletteInstID = entityInst.paletteInstID;
 			const auto paletteIter = this->entityPaletteTextureRefs.find(paletteInstID);
 			DebugAssertMsg(paletteIter != this->entityPaletteTextureRefs.end(), "Expected entity palette texture for ID " + std::to_string(paletteInstID) + ".");
 			textureID1 = paletteIter->second.get();
 			pixelShaderType = PixelShaderType::AlphaTestedWithPalette;
+		}
+		else if (isGhost)
+		{
+			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelTransparency;
 		}
 
 		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID0, textureID1, pixelShaderType, renderChunk.entityDrawCalls);
