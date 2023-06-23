@@ -896,8 +896,8 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
-	void PixelShader_AlphaTestedWithPaletteIndirection(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderTexture &indirectionTexture, PixelShaderFrameBuffer &frameBuffer)
+	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderTexture &lookupTexture, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
@@ -910,7 +910,7 @@ namespace swRender
 			return;
 		}
 
-		const uint8_t replacementTexel = indirectionTexture.texels[texel];
+		const uint8_t replacementTexel = lookupTexture.texels[texel];
 		frameBuffer.colors[frameBuffer.pixelIndex] = replacementTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
@@ -1051,7 +1051,7 @@ namespace swRender
 
 			PixelShaderTexture shaderTexture1;
 			if ((pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
-				(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndirection))
+				(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup))
 			{
 				const SoftwareRenderer::ObjectTexture &texture1 = textures.get(textureID1);
 				shaderTexture1.texels = texture1.get8Bit();
@@ -1121,8 +1121,8 @@ namespace swRender
 							case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
 								PixelShader_AlphaTestedWithVariableTexCoordVMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderFrameBuffer);
 								break;
-							case PixelShaderType::AlphaTestedWithPaletteIndirection:
-								PixelShader_AlphaTestedWithPaletteIndirection(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
+							case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
+								PixelShader_AlphaTestedWithPaletteIndexLookup(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithLightLevelTransparency:
 								PixelShader_AlphaTestedWithLightLevelTransparency(shaderPerspective, shaderTexture0, lightTableShaderTexture, shaderFrameBuffer);

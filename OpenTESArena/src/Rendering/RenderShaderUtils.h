@@ -19,7 +19,7 @@ enum class PixelShaderType
 	AlphaTested,
 	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
 	AlphaTestedWithVariableTexCoordVMin, // Raising doors.
-	AlphaTestedWithPaletteIndirection, // Citizens.
+	AlphaTestedWithPaletteIndexLookup, // Citizens.
 	AlphaTestedWithLightLevelTransparency // Ghosts and distant moons.
 };
 

@@ -1350,7 +1350,7 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 			const auto paletteIndicesIter = this->entityPaletteIndicesTextureRefs.find(paletteIndicesInstID);
 			DebugAssertMsg(paletteIndicesIter != this->entityPaletteIndicesTextureRefs.end(), "Expected entity palette indices texture for ID " + std::to_string(paletteIndicesInstID) + ".");
 			textureID1 = paletteIndicesIter->second.get();
-			pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndirection;
+			pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndexLookup;
 		}
 		else if (isGhost)
 		{
