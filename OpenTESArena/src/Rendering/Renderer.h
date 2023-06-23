@@ -70,9 +70,6 @@ public:
 
 	using ResolutionScaleFunc = std::function<double()>;
 private:
-	static const char *DEFAULT_RENDER_SCALE_QUALITY;
-	static const char *DEFAULT_TITLE;
-
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
 	std::vector<DisplayMode> displayModes;	

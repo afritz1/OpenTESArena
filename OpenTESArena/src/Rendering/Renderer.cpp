@@ -58,6 +58,16 @@ namespace
 		return flags;
 	}
 
+	const char *GetSdlWindowTitle()
+	{
+		return "OpenTESArena";
+	}
+
+	const char *GetSdlRenderScaleQuality()
+	{
+		return "nearest";
+	}
+
 	Int2 GetWindowDimsForMode(Renderer::WindowMode windowMode, int fallbackWidth, int fallbackHeight)
 	{
 		if (windowMode == Renderer::WindowMode::ExclusiveFullscreen)
@@ -114,9 +124,6 @@ void Renderer::ProfilerData::init(int width, int height, int threadCount, int dr
 	this->frameTime = frameTime;
 }
 
-const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
-const char *Renderer::DEFAULT_TITLE = "OpenTESArena";
-
 Renderer::Renderer()
 {
 	DebugAssert(this->nativeTexture.get() == nullptr);
@@ -172,7 +179,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	DebugLog("Created renderer \"" + std::string(rendererInfo.name) + "\" (flags: 0x" + rendererInfoFlags + ").");
 
 	// Set pixel interpolation hint.
-	const SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY);
+	const SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, GetSdlRenderScaleQuality());
 	if (status != SDL_TRUE)
 	{
 		DebugLogWarning("Couldn't set SDL rendering interpolation hint (" + std::string(SDL_GetError()) + ").");
@@ -488,7 +495,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	this->resolutionScaleFunc = resolutionScaleFunc;
 
 	// Initialize SDL window.
-	const char *windowTitle = Renderer::DEFAULT_TITLE;
+	const char *windowTitle = GetSdlWindowTitle();
 	const int windowPosition = GetSdlWindowPosition(windowMode);
 	const uint32_t windowFlags = GetSdlWindowFlags(windowMode);
 	const Int2 windowDims = GetWindowDimsForMode(windowMode, width, height);
