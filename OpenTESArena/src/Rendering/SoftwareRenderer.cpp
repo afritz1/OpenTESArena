@@ -840,7 +840,7 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
-	void PixelShader_AlphaTest(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
+	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
@@ -1120,7 +1120,7 @@ namespace swRender
 								PixelShader_OpaqueWithFade(shaderPerspective, shaderTexture0, lightTableShaderTexture, pixelShaderParam0, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTested:
-								PixelShader_AlphaTest(shaderPerspective, shaderTexture0, shaderFrameBuffer);
+								PixelShader_AlphaTested(shaderPerspective, shaderTexture0, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
 								PixelShader_AlphaTestedWithVariableTexCoordUMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderFrameBuffer);
