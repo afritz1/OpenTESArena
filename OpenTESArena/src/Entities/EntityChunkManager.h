@@ -39,7 +39,7 @@ private:
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
 	using EntityCitizenDirectionIndexPool = RecyclablePool<int8_t, EntityCitizenDirectionIndexID>;
-	using EntityPaletteInstancePool = RecyclablePool<Palette, EntityPaletteInstanceID>;
+	using EntityPaletteIndicesInstancePool = RecyclablePool<PaletteIndices, EntityPaletteIndicesInstanceID>;
 
 	EntityPool entities;
 	EntityPositionPool positions;
@@ -49,10 +49,10 @@ private:
 	EntityCreatureSoundPool creatureSoundInsts;
 	EntityCitizenDirectionIndexPool citizenDirectionIndices;
 
-	// Each citizen has a unique palette in place of unique textures for memory savings. It was found
-	// that hardly any citizen instances share textures due to variations in their random palette. As
-	// a result, citizen textures will need to be 8-bit.
-	EntityPaletteInstancePool palettes;
+	// Each citizen has a unique palette indirection in place of unique textures for memory savings. It was found
+	// that hardly any citizen instances share textures due to variations in their random palette. As a result,
+	// citizen textures will need to be 8-bit.
+	EntityPaletteIndicesInstancePool paletteIndices;
 
 	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
@@ -94,7 +94,7 @@ public:
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
 	const int8_t &getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
-	const Palette &getEntityPalette(EntityPaletteInstanceID id) const;
+	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;
 
 	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
 	// simulated or rendered.

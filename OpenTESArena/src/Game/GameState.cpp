@@ -826,7 +826,7 @@ void GameState::tickEntities(double dt, Game &game)
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
 	const LocationDefinition &locationDef = this->getLocationDefinition();
 	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
-		mapType, provinceDef.getRaceID(), locationDef, game.getTextureManager());
+		mapType, provinceDef.getRaceID(), locationDef);
 
 	const double ceilingScale = this->getActiveCeilingScale();
 

@@ -172,10 +172,9 @@ namespace ArenaAnimUtils
 	bool tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bool isMale, const ExeData &exeData,
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
-	// Transforms the palette used for a citizen's clothes and skin. The given seed value is
+	// Transforms the palette indices used for a citizen's clothes and skin. The given seed value is
 	// "pure random" and can essentially be anything.
-	Palette transformCitizenColors(int raceIndex, uint16_t seed, const Palette &palette,
-		const ExeData &exeData);
+	PaletteIndices transformCitizenColors(int raceIndex, uint16_t seed, const ExeData &exeData);
 }
 
 #endif

@@ -318,17 +318,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 			animInst = isMale ? citizenGenInfo->maleAnimInst : citizenGenInfo->femaleAnimInst;
 
-			if (!this->palettes.tryAlloc(&entityInst.paletteInstID))
+			if (!this->paletteIndices.tryAlloc(&entityInst.paletteIndicesInstID))
 			{
-				DebugLogError("Couldn't allocate citizen EntityPaletteInstanceID.");
+				DebugLogError("Couldn't allocate citizen EntityPaletteIndicesInstanceID.");
 				return false;
 			}
 
-			const Palette &srcPalette = textureManager.getPaletteHandle(citizenGenInfo->paletteID);
 			const uint16_t colorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
-
-			Palette &palette = this->palettes.get(entityInst.paletteInstID);
-			palette = ArenaAnimUtils::transformCitizenColors(citizenGenInfo->raceID, colorSeed, srcPalette, binaryAssetLibrary.getExeData());
+			PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
+			paletteIndices = ArenaAnimUtils::transformCitizenColors(citizenGenInfo->raceID, colorSeed, binaryAssetLibrary.getExeData());
 
 			entityChunk.entityIDs.emplace_back(entityInstID);
 
@@ -611,9 +609,9 @@ const int8_t &EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDi
 	return this->citizenDirectionIndices.get(id);
 }
 
-const Palette &EntityChunkManager::getEntityPalette(EntityPaletteInstanceID id) const
+const PaletteIndices &EntityChunkManager::getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const
 {
-	return this->palettes.get(id);
+	return this->paletteIndices.get(id);
 }
 
 int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
@@ -986,9 +984,9 @@ void EntityChunkManager::cleanUp()
 			this->citizenDirectionIndices.free(entityInst.citizenDirectionIndexID);
 		}
 
-		if (entityInst.paletteInstID >= 0)
+		if (entityInst.paletteIndicesInstID >= 0)
 		{
-			this->palettes.free(entityInst.paletteInstID);
+			this->paletteIndices.free(entityInst.paletteIndicesInstID);
 		}
 		
 		this->entities.free(entityInstID);

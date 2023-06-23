@@ -43,18 +43,16 @@ namespace CitizenUtils
 		const EntityDefinition *femaleEntityDef;
 		EntityAnimationInstance maleAnimInst;
 		EntityAnimationInstance femaleAnimInst;
-		PaletteID paletteID;
 		int raceID;
 
 		void init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID, const EntityDefinition *maleEntityDef,
 			const EntityDefinition *femaleEntityDef, EntityAnimationInstance &&maleAnimInst,
-			EntityAnimationInstance &&femaleAnimInst, PaletteID paletteID, int raceID);
+			EntityAnimationInstance &&femaleAnimInst, int raceID);
 	};
 
 	bool canMapTypeSpawnCitizens(MapType mapType);
-	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType, TextureManager &textureManager);
-	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef,
-		TextureManager &textureManager);
+	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType);
+	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef);
 
 	// Helper functions for determining a citizen's walking direction.
 	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection);

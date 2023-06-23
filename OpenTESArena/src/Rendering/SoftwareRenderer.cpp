@@ -896,8 +896,8 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
-	void PixelShader_AlphaTestedWithPalette(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderPalette &palette, PixelShaderFrameBuffer &frameBuffer)
+	void PixelShader_AlphaTestedWithPaletteIndirection(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderTexture &indirectionTexture, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
@@ -910,8 +910,8 @@ namespace swRender
 			return;
 		}
 
-		// @todo: need to pass in the citizen's palette indices, not palette colors
-		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
+		const uint8_t replacementTexel = indirectionTexture.texels[texel];
+		frameBuffer.colors[frameBuffer.pixelIndex] = replacementTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
 	}
 
@@ -930,7 +930,7 @@ namespace swRender
 		}
 
 		uint8_t resultTexel;
-		if (ArenaRenderUtils::isGhostTexel(texel))
+		if (ArenaRenderUtils::isLightLevelTexel(texel))
 		{
 			const int lightLevelCount = lightLevelTexture.height;
 			const int lightLevel = static_cast<int>(texel) - ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
@@ -938,13 +938,13 @@ namespace swRender
 			const int lightTableTextureIndex = prevFrameBufferPixel + (lightLevel * lightLevelTexture.width);
 			resultTexel = lightLevelTexture.texels[lightTableTextureIndex];
 		}
-		else if (texel == ArenaRenderUtils::PALETTE_INDEX_RED_SRC1)
+		else if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC1)
 		{
-			resultTexel = ArenaRenderUtils::PALETTE_INDEX_RED_DST1;
+			resultTexel = ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST1;
 		}
-		else if (texel == ArenaRenderUtils::PALETTE_INDEX_RED_SRC2)
+		else if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC2)
 		{
-			resultTexel = ArenaRenderUtils::PALETTE_INDEX_RED_DST2;
+			resultTexel = ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST2;
 		}
 		else
 		{
@@ -1050,21 +1050,14 @@ namespace swRender
 			shaderTexture0.samplingType = textureSamplingType0;
 
 			PixelShaderTexture shaderTexture1;
-			if (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer)
+			if ((pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
+				(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndirection))
 			{
 				const SoftwareRenderer::ObjectTexture &texture1 = textures.get(textureID1);
 				shaderTexture1.texels = texture1.get8Bit();
 				shaderTexture1.width = texture1.width;
 				shaderTexture1.height = texture1.height;
 				shaderTexture1.samplingType = textureSamplingType1;
-			}
-
-			PixelShaderPalette shaderPalette0;
-			if (pixelShaderType == PixelShaderType::AlphaTestedWithPalette)
-			{
-				const SoftwareRenderer::ObjectTexture &texture1 = textures.get(textureID1);
-				shaderPalette0.colors = texture1.get32Bit();
-				shaderPalette0.count = texture1.width;
 			}
 
 			for (int y = yStart; y < yEnd; y++)
@@ -1128,8 +1121,8 @@ namespace swRender
 							case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
 								PixelShader_AlphaTestedWithVariableTexCoordVMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderFrameBuffer);
 								break;
-							case PixelShaderType::AlphaTestedWithPalette:
-								PixelShader_AlphaTestedWithPalette(shaderPerspective, shaderTexture0, shaderPalette0, shaderFrameBuffer);
+							case PixelShaderType::AlphaTestedWithPaletteIndirection:
+								PixelShader_AlphaTestedWithPaletteIndirection(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithLightLevelTransparency:
 								PixelShader_AlphaTestedWithLightLevelTransparency(shaderPerspective, shaderTexture0, lightTableShaderTexture, shaderFrameBuffer);

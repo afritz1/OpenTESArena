@@ -1,5 +1,6 @@
 #include <array>
 #include <limits>
+#include <numeric>
 
 #include "ArenaAnimUtils.h"
 #include "ArenaTypes.h"
@@ -1090,14 +1091,14 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bo
 	return true;
 }
 
-Palette ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t seed, const Palette &palette,
-	const ExeData &exeData)
+PaletteIndices ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t seed, const ExeData &exeData)
 {
-	const std::array<uint8_t, 16> &colorBase = exeData.entities.citizenColorBase;
+	PaletteIndices newPaletteIndices;
+	std::iota(newPaletteIndices.begin(), newPaletteIndices.end(), 0);
 
 	// Clothes transformation.
+	const BufferView<const uint8_t> colorBase = exeData.entities.citizenColorBase;
 	uint16_t val = seed & 0x7FFF;
-	Palette newPalette = palette;
 	for (const uint8_t color : colorBase)
 	{
 		const bool flag = (val & 0x8000) != 0;
@@ -1119,17 +1120,16 @@ Palette ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t seed, con
 			{
 				const int oldIndex = dest + j;
 				const int newIndex = src + j;
-				DebugAssertIndex(newPalette, oldIndex);
-				DebugAssertIndex(palette, newIndex);
-				newPalette[oldIndex] = palette[newIndex];
+				DebugAssertIndex(newPaletteIndices, oldIndex);
+				newPaletteIndices[oldIndex] = newIndex;
 			}
 		}
 	}
 
-	const std::array<uint8_t, 10> &skinColors = exeData.entities.citizenSkinColors;
+	const BufferView<const uint8_t> skinColors = exeData.entities.citizenSkinColors;
 
 	// Skin transformation, only if the given race should have its colors transformed.
-	constexpr std::array<int, 9> RaceOffsets = { -1, 148, -1, 52, 192, -1, -1, 116, 148 };
+	constexpr int RaceOffsets[] = { -1, 148, -1, 52, 192, -1, -1, 116, 148 };
 	DebugAssertIndex(RaceOffsets, raceIndex);
 	const int raceOffset = RaceOffsets[raceIndex];
 	const bool hasTransformation = raceOffset != -1;
@@ -1139,11 +1139,10 @@ Palette ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t seed, con
 		{
 			const int oldIndex = raceOffset + i;
 			const int newIndex = skinColors[i];
-			DebugAssertIndex(palette, oldIndex);
-			DebugAssertIndex(newPalette, newIndex);
-			newPalette[newIndex] = palette[oldIndex];
+			DebugAssertIndex(newPaletteIndices, newIndex);
+			newPaletteIndices[newIndex] = oldIndex;
 		}
 	}
 
-	return newPalette;
+	return newPaletteIndices;
 }

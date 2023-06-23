@@ -36,19 +36,16 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DIVISOR = 14;
-	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_LOWEST = 1;
-	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_HIGHEST = 13;
-	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_DIVISOR = 14;
-	constexpr uint8_t PALETTE_INDEX_RED_SRC1 = 14;
-	constexpr uint8_t PALETTE_INDEX_RED_SRC2 = 15;
-	constexpr uint8_t PALETTE_INDEX_RED_DST1 = 158;
-	constexpr uint8_t PALETTE_INDEX_RED_DST2 = 159;
+	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_SRC1 = 14;
+	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_SRC2 = 15;
+	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DST1 = 158;
+	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DST2 = 159;
 	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT = 113;
 	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_ACTIVE = 97;
 	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_INACTIVE = 112;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
-	constexpr uint8_t PALETTE_INDEX_DRY_CHASM_COLOR = 112; // @todo: might not be correct, need to check with light tables
+	constexpr uint8_t PALETTE_INDEX_DRY_CHASM_COLOR = 112;
 	constexpr uint8_t PALETTE_INDEX_RAINDROP = 103;
 	constexpr uint8_t PALETTE_INDEX_SNOWFLAKE = 16;
 
@@ -61,10 +58,10 @@ namespace ArenaRenderUtils
 	// Gets the current ambient light percent for the scene.
 	double getAmbientPercent(const Clock &clock, MapType mapType);
 
-	// Various functions for determining the type of palette index.
-	bool isGhostTexel(uint8_t texel);
+	// Used with ghosts and some sky objects.
+	bool isLightLevelTexel(uint8_t texel);
+
 	bool isPuddleTexel(uint8_t texel);
-	bool isCloudTexel(uint8_t texel);
 
 	// Values for screen-space fog.
 	constexpr int FOG_MATRIX_WIDTH = 40;

@@ -361,26 +361,21 @@ namespace sgTexture
 		return textureRefs;
 	}
 
-	ScopedObjectTextureRef MakeEntityPaletteTextureRef(const Palette &palette, Renderer &renderer)
+	ScopedObjectTextureRef MakeEntityPaletteIndicesTextureRef(const PaletteIndices &paletteIndices, Renderer &renderer)
 	{
-		const int textureWidth = static_cast<int>(palette.size());
-		const int textureHeight = 1;
-		constexpr int bytesPerTexel = 4;
+		const int textureWidth = static_cast<int>(paletteIndices.size());
+		constexpr int textureHeight = 1;
+		constexpr int bytesPerTexel = 1;
 
 		ObjectTextureID textureID;
 		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
 		{
-			DebugCrash("Couldn't create entity palette texture.");
+			DebugCrash("Couldn't create entity palette indices texture.");
 		}
 
 		LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-		uint32_t *dstTexels = static_cast<uint32_t*>(lockedTexture.texels);
-		std::transform(palette.begin(), palette.end(), dstTexels,
-			[](const Color &color)
-		{
-			return color.toARGB();
-		});
-
+		uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);
+		std::copy(paletteIndices.begin(), paletteIndices.end(), dstTexels);
 		renderer.unlockObjectTexture(textureID);
 		return ScopedObjectTextureRef(textureID, renderer);
 	}
@@ -600,7 +595,7 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 	this->chasmTextureKeys.clear();
 	this->entityAnims.clear();
 	this->entityMeshDef.freeBuffers(renderer);
-	this->entityPaletteTextureRefs.clear();
+	this->entityPaletteIndicesTextureRefs.clear();
 	this->voxelDrawCallsCache.clear();
 	this->entityDrawCallsCache.clear();
 	this->totalDrawCallsCache.clear();
@@ -879,13 +874,13 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 
 		if (entityInst.isCitizen())
 		{
-			const EntityPaletteInstanceID paletteInstID = entityInst.paletteInstID;
-			const auto paletteIter = this->entityPaletteTextureRefs.find(paletteInstID);
-			if (paletteIter == this->entityPaletteTextureRefs.end())
+			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
+			const auto paletteIndicesIter = this->entityPaletteIndicesTextureRefs.find(paletteIndicesInstID);
+			if (paletteIndicesIter == this->entityPaletteIndicesTextureRefs.end())
 			{
-				const Palette &palette = entityChunkManager.getEntityPalette(paletteInstID);
-				ScopedObjectTextureRef paletteTextureRef = sgTexture::MakeEntityPaletteTextureRef(palette, renderer);
-				this->entityPaletteTextureRefs.emplace(paletteInstID, std::move(paletteTextureRef));
+				const PaletteIndices &paletteIndices = entityChunkManager.getEntityPaletteIndices(paletteIndicesInstID);
+				ScopedObjectTextureRef paletteIndicesTextureRef = sgTexture::MakeEntityPaletteIndicesTextureRef(paletteIndices, renderer);
+				this->entityPaletteIndicesTextureRefs.emplace(paletteIndicesInstID, std::move(paletteIndicesTextureRef));
 			}
 		}
 	}
@@ -1351,11 +1346,11 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		const bool isGhost = EntityUtils::isGhost(entityDef);
 		if (isCitizen)
 		{
-			const EntityPaletteInstanceID paletteInstID = entityInst.paletteInstID;
-			const auto paletteIter = this->entityPaletteTextureRefs.find(paletteInstID);
-			DebugAssertMsg(paletteIter != this->entityPaletteTextureRefs.end(), "Expected entity palette texture for ID " + std::to_string(paletteInstID) + ".");
-			textureID1 = paletteIter->second.get();
-			pixelShaderType = PixelShaderType::AlphaTestedWithPalette;
+			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
+			const auto paletteIndicesIter = this->entityPaletteIndicesTextureRefs.find(paletteIndicesInstID);
+			DebugAssertMsg(paletteIndicesIter != this->entityPaletteIndicesTextureRefs.end(), "Expected entity palette indices texture for ID " + std::to_string(paletteIndicesInstID) + ".");
+			textureID1 = paletteIndicesIter->second.get();
+			pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndirection;
 		}
 		else if (isGhost)
 		{
@@ -1455,11 +1450,11 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		if (entityInst.isCitizen())
 		{
-			const EntityPaletteInstanceID paletteInstID = entityInst.paletteInstID;
-			const auto paletteIter = this->entityPaletteTextureRefs.find(paletteInstID);
-			if (paletteIter != this->entityPaletteTextureRefs.end())
+			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
+			const auto paletteIndicesIter = this->entityPaletteIndicesTextureRefs.find(paletteIndicesInstID);
+			if (paletteIndicesIter != this->entityPaletteIndicesTextureRefs.end())
 			{
-				this->entityPaletteTextureRefs.erase(paletteIter);
+				this->entityPaletteIndicesTextureRefs.erase(paletteIndicesIter);
 			}
 		}
 	}
@@ -1509,7 +1504,7 @@ void RenderChunkManager::unloadScene(Renderer &renderer)
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
 	this->entityAnims.clear();
-	this->entityPaletteTextureRefs.clear();
+	this->entityPaletteIndicesTextureRefs.clear();
 
 	// Free vertex/attribute/index buffer IDs.
 	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)

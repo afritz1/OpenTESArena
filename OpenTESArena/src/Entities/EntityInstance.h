@@ -10,7 +10,7 @@ using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
 using EntityCreatureSoundInstanceID = int;
 using EntityCitizenDirectionIndexID = int;
-using EntityPaletteInstanceID = int;
+using EntityPaletteIndicesInstanceID = int;
 
 struct EntityInstance
 {
@@ -22,7 +22,7 @@ struct EntityInstance
 	EntityAnimationInstanceID animInstID;
 	EntityCreatureSoundInstanceID creatureSoundInstID;
 	EntityCitizenDirectionIndexID citizenDirectionIndexID;
-	EntityPaletteInstanceID paletteInstID;
+	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 
 	EntityInstance();
 
