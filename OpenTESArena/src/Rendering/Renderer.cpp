@@ -3,8 +3,6 @@
 #include <cmath>
 #include <string>
 
-#include "SDL.h"
-
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
 #include "Renderer.h"
@@ -118,8 +116,6 @@ void Renderer::ProfilerData::init(int width, int height, int threadCount, int dr
 
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const char *Renderer::DEFAULT_TITLE = "OpenTESArena";
-const int Renderer::DEFAULT_BPP = 32;
-const uint32_t Renderer::DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
 
 Renderer::Renderer()
 {

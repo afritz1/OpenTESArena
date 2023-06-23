@@ -7,6 +7,8 @@
 #include <optional>
 #include <vector>
 
+#include "SDL.h"
+
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
@@ -93,10 +95,10 @@ public:
 	~Renderer();
 
 	// Default bits per pixel.
-	static const int DEFAULT_BPP;
+	static constexpr int DEFAULT_BPP = 32;
 
 	// The default pixel format for all software surfaces, ARGB8888.
-	static const uint32_t DEFAULT_PIXELFORMAT;
+	static constexpr uint32_t DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
 
 	// Gets the letterbox aspect associated with the current letterbox mode.
 	double getLetterboxAspect() const;
