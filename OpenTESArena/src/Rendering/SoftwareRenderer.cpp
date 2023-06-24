@@ -704,7 +704,8 @@ namespace swRender
 
 	struct PixelShaderPerspectiveCorrection
 	{
-		double depth;
+		double cameraZDepth;
+		double trueDepth;
 		Double2 texelPercent;
 	};
 
@@ -791,7 +792,7 @@ namespace swRender
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
@@ -816,7 +817,7 @@ namespace swRender
 		}
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_OpaqueWithFade(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -837,7 +838,7 @@ namespace swRender
 		const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
 		const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
@@ -854,7 +855,7 @@ namespace swRender
 		}
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithVariableTexCoordUMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -873,7 +874,7 @@ namespace swRender
 		}
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -893,7 +894,7 @@ namespace swRender
 		}
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -912,7 +913,7 @@ namespace swRender
 
 		const uint8_t replacementTexel = lookupTexture.texels[texel];
 		frameBuffer.colors[frameBuffer.pixelIndex] = replacementTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithLightLevelTransparency(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -952,7 +953,7 @@ namespace swRender
 		}
 		
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.depth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	// The provided triangles are assumed to be back-face culled and clipped.
@@ -968,7 +969,6 @@ namespace swRender
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 		uint32_t *colorBufferPtr = colorBuffer.begin();
 
-		const Double2 eye2D(camera.worldPoint.x, camera.worldPoint.z); // For 2D lighting.
 		const Matrix4d &viewMatrix = camera.viewMatrix;
 		const Matrix4d &perspectiveMatrix = camera.perspectiveMatrix;
 
@@ -1032,6 +1032,13 @@ namespace swRender
 			const double z1Recip = 1.0 / z1;
 			const double z2Recip = 1.0 / z2;
 
+			const double trueDepth0 = (v0 - camera.worldPoint).length();
+			const double trueDepth1 = (v1 - camera.worldPoint).length();
+			const double trueDepth2 = (v2 - camera.worldPoint).length();
+			const double trueDepth0Recip = 1.0 / trueDepth0;
+			const double trueDepth1Recip = 1.0 / trueDepth1;
+			const double trueDepth2Recip = 1.0 / trueDepth2;
+
 			const Double2 &uv0 = swGeometry::g_visibleTriangleUV0s[index];
 			const Double2 &uv1 = swGeometry::g_visibleTriangleUV1s[index];
 			const Double2 &uv2 = swGeometry::g_visibleTriangleUV2s[index];
@@ -1093,10 +1100,11 @@ namespace swRender
 						const double u = 1.0 - v - w;
 
 						PixelShaderPerspectiveCorrection shaderPerspective;
-						shaderPerspective.depth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
+						shaderPerspective.cameraZDepth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip)); // For depth checks.
+						shaderPerspective.trueDepth = 1.0 / ((u * trueDepth0Recip) + (v * trueDepth1Recip) + (w * trueDepth2Recip)); // For shading. @todo: this should not be view-dependent but it is wobbly when moving/looking around. Blame u,v,w.
 
 						shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
-						if (shaderPerspective.depth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
+						if (shaderPerspective.cameraZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
 						{
 							shaderPerspective.texelPercent.x = ((u * uv0Perspective.x) + (v * uv1Perspective.x) + (w * uv2Perspective.x)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 							shaderPerspective.texelPercent.y = ((u * uv0Perspective.y) + (v * uv1Perspective.y) + (w * uv2Perspective.y)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
