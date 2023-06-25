@@ -729,19 +729,19 @@ bool Renderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID)
 	return this->renderer3D->tryCreateIndexBuffer(indexCount, outID);
 }
 
-void Renderer::populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices)
+void Renderer::populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateVertexBuffer(id, vertices);
 }
 
-void Renderer::populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes)
+void Renderer::populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateAttributeBuffer(id, attributes);
 }
 
-void Renderer::populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices)
+void Renderer::populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateIndexBuffer(id, indices);
@@ -782,12 +782,12 @@ bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
 	return this->renderer2D->tryCreateUiTexture(width, height, outID);
 }
 
-bool Renderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
+bool Renderer::tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(texels, outID);
 }
 
-bool Renderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID)
+bool Renderer::tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(texels, palette, outID);
 }
@@ -920,7 +920,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rectSdl);
 }
 
-void Renderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &voxelDrawCalls,
+void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
 	double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
 	ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode)
 {

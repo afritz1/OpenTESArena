@@ -177,9 +177,9 @@ public:
 	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID);
 	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID);
 	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID);
-	void populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices);
-	void populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes);
-	void populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices);
+	void populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices);
+	void populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes);
+	void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices);
 	void freeVertexBuffer(VertexBufferID id);
 	void freeAttributeBuffer(AttributeBufferID id);
 	void freeIndexBuffer(IndexBufferID id);
@@ -188,8 +188,8 @@ public:
 	bool tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID);
 	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID);
 	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
-	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID);
-	bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID);
+	bool tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID);
+	bool tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID);
 	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID);
 
@@ -222,7 +222,7 @@ public:
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	void submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &voxelDrawCalls,
+	void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
 		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
 		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode);
 
