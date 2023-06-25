@@ -31,6 +31,8 @@ public:
 	void shutdown(Renderer &renderer);
 
 	RenderDrawCall getBgDrawCall() const;
+
+	void update(const CoordDouble3 &cameraCoord);
 };
 
 #endif

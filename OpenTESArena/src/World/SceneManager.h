@@ -5,6 +5,7 @@
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
 #include "../Rendering/RenderChunkManager.h"
+#include "../Rendering/RenderSkyManager.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../Sky/SkyInstance.h"
 #include "../Voxels/VoxelChunkManager.h"
@@ -20,7 +21,7 @@ struct SceneManager
 
 	// Game world systems not tied to chunks.
 	//SkyInstance skyInstance; // @todo
-	//RenderSkyManager; // @todo
+	RenderSkyManager renderSkyManager;
 	//ParticleManager; // @todo
 	//RenderParticleManager; // @todo
 

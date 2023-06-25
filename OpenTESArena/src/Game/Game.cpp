@@ -108,6 +108,9 @@ Game::~Game()
 
 	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
 	renderChunkManager.shutdown(this->renderer);
+
+	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
+	renderSkyManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -176,6 +179,9 @@ bool Game::init()
 
 	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
 	renderChunkManager.init(this->renderer);
+
+	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
+	renderSkyManager.init(this->renderer);
 
 	this->inputManager.init();
 

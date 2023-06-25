@@ -873,4 +873,7 @@ void GameState::tickRendering(Game &game)
 		voxelChunkManager, textureManager, renderer);
 	renderChunkManager.updateEntities(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(), playerCoordXZ, playerDirXZ, ceilingScale,
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
+
+	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
+	renderSkyManager.update(playerCoord);
 }

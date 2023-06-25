@@ -811,7 +811,14 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	const SceneManager &sceneManager = game.getSceneManager();
 	const RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	const BufferView<const RenderDrawCall> drawCalls = renderChunkManager.getTotalDrawCalls();
+	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
+	std::vector<RenderDrawCall> drawCalls;
+	for (const RenderDrawCall &drawCall : renderChunkManager.getTotalDrawCalls())
+	{
+		drawCalls.emplace_back(drawCall);
+	}
+
+	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
 
 	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
 	const MapType activeMapType = activeMapDef.getMapType();
