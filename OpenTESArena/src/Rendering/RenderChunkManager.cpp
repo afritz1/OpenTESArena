@@ -565,14 +565,10 @@ void RenderChunkManager::init(Renderer &renderer)
 		2, 3, 0
 	};
 
-	const BufferView<const double> entityVerticesView(entityVertices);
-	const BufferView<const double> entityNormalsView(dummyEntityNormals);
-	const BufferView<const double> entityTexCoordsView(entityTexCoords);
-	const BufferView<const int32_t> entityIndicesView(entityIndices);
-	renderer.populateVertexBuffer(this->entityMeshDef.vertexBufferID, entityVerticesView);
-	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormalsView);
-	renderer.populateAttributeBuffer(this->entityMeshDef.texCoordBufferID, entityTexCoordsView);
-	renderer.populateIndexBuffer(this->entityMeshDef.indexBufferID, entityIndicesView);
+	renderer.populateVertexBuffer(this->entityMeshDef.vertexBufferID, entityVertices);
+	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, dummyEntityNormals);
+	renderer.populateAttributeBuffer(this->entityMeshDef.texCoordBufferID, entityTexCoords);
+	renderer.populateIndexBuffer(this->entityMeshDef.indexBufferID, entityIndices);
 }
 
 void RenderChunkManager::shutdown(Renderer &renderer)

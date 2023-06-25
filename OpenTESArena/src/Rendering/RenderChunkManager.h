@@ -94,12 +94,6 @@ private:
 	RenderEntityMeshDefinition entityMeshDef; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> entityPaletteIndicesTextureRefs;
 
-	// @todo: sky rendering resources
-	// - hemisphere geometry w/ texture IDs and coordinates for colors (use some trig functions for vertex generation?)
-	// - list of vertex buffer IDs
-	// - list of transforms for sky positions
-	// - order matters: stars, sun, planets, clouds, mountains (etc.)
-
 	// @todo: weather particles
 	// - list of texture IDs
 	// - list of vertex buffer ids (all in 2D and in model space)

@@ -484,6 +484,8 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderInitSettings.cpp"
     "${SRC_ROOT}/Rendering/RenderInitSettings.h"
     "${SRC_ROOT}/Rendering/RenderShaderUtils.h"
+    "${SRC_ROOT}/Rendering/RenderSkyManager.h"
+    "${SRC_ROOT}/Rendering/RenderSkyManager.cpp"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.h"
     "${SRC_ROOT}/Rendering/RenderVoxelMeshDefinition.cpp"
