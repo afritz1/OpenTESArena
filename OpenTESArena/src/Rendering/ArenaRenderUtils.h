@@ -48,6 +48,8 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_DRY_CHASM_COLOR = 112;
 	constexpr uint8_t PALETTE_INDEX_RAINDROP = 103;
 	constexpr uint8_t PALETTE_INDEX_SNOWFLAKE = 16;
+	constexpr uint8_t PALETTE_INDICES_SKY_COLOR_MORNING[] = { 114, 115 }; // @todo: probably not correct
+	constexpr uint8_t PALETTE_INDICES_SKY_COLOR_EVENING[] = { 115, 114 }; // @todo: probably not correct
 
 	constexpr double PLAYER_LIGHT_RADIUS = 3.0;
 	constexpr double STREETLIGHT_LIGHT_RADIUS = 2.0;

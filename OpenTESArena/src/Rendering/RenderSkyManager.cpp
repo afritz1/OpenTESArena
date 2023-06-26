@@ -1,6 +1,7 @@
 #include <numeric>
 #include <vector>
 
+#include "ArenaRenderUtils.h"
 #include "Renderer.h"
 #include "RenderSkyManager.h"
 #include "../Math/Constants.h"
@@ -138,8 +139,9 @@ void RenderSkyManager::init(Renderer &renderer)
 	renderer.populateAttributeBuffer(this->bgTexCoordBufferID, bgTexCoords);
 	renderer.populateIndexBuffer(this->bgIndexBufferID, bgIndices);
 
+	BufferView<const uint8_t> bgPaletteIndices = ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR_MORNING;
 	constexpr int bgTextureWidth = 1;
-	constexpr int bgTextureHeight = 2; // @todo: figure out sky background texture coloring; probably lock+update the main world palette in an update() with DAYTIME.COL indices as times goes on?
+	const int bgTextureHeight = bgPaletteIndices.getCount(); // @todo: figure out sky background texture coloring; probably lock+update the main world palette in an update() with DAYTIME.COL indices as times goes on?
 	constexpr int bgBytesPerTexel = 1;
 	if (!renderer.tryCreateObjectTexture(bgTextureWidth, bgTextureHeight, bgBytesPerTexel, &this->bgObjectTextureID))
 	{
@@ -150,7 +152,7 @@ void RenderSkyManager::init(Renderer &renderer)
 
 	LockedTexture bgLockedTexture = renderer.lockObjectTexture(this->bgObjectTextureID);
 	uint8_t *bgTexels = static_cast<uint8_t*>(bgLockedTexture.texels);
-	std::iota(bgTexels, bgTexels + (bgTextureWidth * bgTextureHeight), 126); // @todo: figure out which palette indices are used for the sky
+	std::copy(bgPaletteIndices.begin(), bgPaletteIndices.end(), bgTexels);
 	renderer.unlockObjectTexture(this->bgObjectTextureID);
 
 	this->bgDrawCall.position = Double3::Zero;
