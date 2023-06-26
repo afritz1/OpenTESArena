@@ -1,3 +1,4 @@
+#include <numeric>
 #include <vector>
 
 #include "Renderer.h"
@@ -22,117 +23,103 @@ void RenderSkyManager::init(Renderer &renderer)
 	std::vector<double> bgTexCoords;
 	std::vector<int32_t> bgIndices;
 
-	// Zenith and nadir.
-	bgVertices.emplace_back(0.0);
-	bgVertices.emplace_back(1.0);
-	bgVertices.emplace_back(0.0);
+	const double pointDistance = 1000.0; // @todo: this is a hack while the sky is using naive depth testing w/o any occlusion culling, etc.
 
-	bgVertices.emplace_back(0.0);
-	bgVertices.emplace_back(-1.0);
-	bgVertices.emplace_back(0.0);
+	constexpr int zenithVertexIndex = 0;
+	constexpr int nadirVertexIndex = 1;
+	const Double3 zenithPoint(0.0, 1.0 * pointDistance, 0.0);
+	const Double3 nadirPoint(0.0, -1.0 * pointDistance, 0.0);
+	bgVertices.emplace_back(zenithPoint.x);
+	bgVertices.emplace_back(zenithPoint.y);
+	bgVertices.emplace_back(zenithPoint.z);
+	bgVertices.emplace_back(nadirPoint.x);
+	bgVertices.emplace_back(nadirPoint.y);
+	bgVertices.emplace_back(nadirPoint.z);
 
-	const Double3 zenithPoint(bgVertices[0], bgVertices[1], bgVertices[2]);
-	const Double3 nadirPoint(bgVertices[3], bgVertices[4], bgVertices[5]);
 	const Double3 zenithNormal = -zenithPoint.normalized();
 	const Double3 nadirNormal = -nadirPoint.normalized();
 	bgNormals.emplace_back(zenithNormal.x);
 	bgNormals.emplace_back(zenithNormal.y);
 	bgNormals.emplace_back(zenithNormal.z);
-
 	bgNormals.emplace_back(nadirNormal.x);
 	bgNormals.emplace_back(nadirNormal.y);
 	bgNormals.emplace_back(nadirNormal.z);
 
-	bgTexCoords.emplace_back(0.50);
-	bgTexCoords.emplace_back(0.0);
+	const Double2 zenithTexCoord(0.50, 0.0);
+	const Double2 nadirTexCoord(0.50, 1.0);
+	bgTexCoords.emplace_back(zenithTexCoord.x);
+	bgTexCoords.emplace_back(zenithTexCoord.y);
+	bgTexCoords.emplace_back(nadirTexCoord.x);
+	bgTexCoords.emplace_back(nadirTexCoord.y);
 
-	bgTexCoords.emplace_back(0.50);
-	bgTexCoords.emplace_back(0.0);
-
-	constexpr int bgHorizonVertexCount = 8; // Arbitrary number of vertices.
-	for (int i = 0; i <= bgHorizonVertexCount; i++)
+	constexpr int bgAboveHorizonTriangleCount = 16; // Arbitrary number of triangles, increases smoothness of cone shape.
+	for (int i = 0; i < bgAboveHorizonTriangleCount; i++)
 	{
-		const double percent = static_cast<double>(i) / static_cast<double>(bgHorizonVertexCount);
+		// Generate two triangles: one above horizon, one below.
+		const double percent = static_cast<double>(i) / static_cast<double>(bgAboveHorizonTriangleCount);
+		const double nextPercent = static_cast<double>(i + 1) / static_cast<double>(bgAboveHorizonTriangleCount);
 		const double period = percent * Constants::TwoPi;
-		const double x = std::cos(period);
-		const double z = std::sin(period);
+		const double nextPeriod = nextPercent * Constants::TwoPi;
 
-		if (i < bgHorizonVertexCount)
-		{
-			// Add new horizon vertex.
-			bgVertices.emplace_back(x);
-			bgVertices.emplace_back(0.0);
-			bgVertices.emplace_back(z);
-		}
+		const Double3 point(std::cos(period) * pointDistance, 0.0, std::sin(period) * pointDistance);
+		const Double3 nextPoint(std::cos(nextPeriod) * pointDistance, 0.0, std::sin(nextPeriod) * pointDistance);
 
-		if (i > 0)
-		{
-			// Generate vertex attributes + indices for two triangles. All normals should point at the player.
-			const int bgVertexCount = static_cast<int>(bgVertices.size());
-			const Double3 prevPoint(bgVertices[bgVertexCount - 6], bgVertices[bgVertexCount - 5], bgVertices[bgVertexCount - 4]);
-			const Double3 curPoint(bgVertices[bgVertexCount - 3], bgVertices[bgVertexCount - 2], bgVertices[bgVertexCount - 1]);
+		bgVertices.emplace_back(point.x);
+		bgVertices.emplace_back(point.y);
+		bgVertices.emplace_back(point.z);
+		bgVertices.emplace_back(nextPoint.x);
+		bgVertices.emplace_back(nextPoint.y);
+		bgVertices.emplace_back(nextPoint.z);
 
-			const Double3 prevNormal = -prevPoint.normalized();
-			const Double3 curNormal = -curPoint.normalized();
+		// Normals point toward the player.
+		const Double3 normal = -point.normalized();
+		const Double3 nextNormal = -nextPoint.normalized();
+		bgNormals.emplace_back(normal.x);
+		bgNormals.emplace_back(normal.y);
+		bgNormals.emplace_back(normal.z);
+		bgNormals.emplace_back(nextNormal.x);
+		bgNormals.emplace_back(nextNormal.y);
+		bgNormals.emplace_back(nextNormal.z);
 
-			// Above-horizon winding: cur -> prev -> zenith
-			bgNormals.emplace_back(curNormal.x);
-			bgNormals.emplace_back(curNormal.y);
-			bgNormals.emplace_back(curNormal.z);
+		const Double2 texCoord(1.0, 1.0);
+		const Double2 nextTexCoord(0.0, 1.0);
+		bgTexCoords.emplace_back(texCoord.x);
+		bgTexCoords.emplace_back(texCoord.y);
+		bgTexCoords.emplace_back(nextTexCoord.x);
+		bgTexCoords.emplace_back(nextTexCoord.y);
 
-			bgNormals.emplace_back(prevNormal.x);
-			bgNormals.emplace_back(prevNormal.y);
-			bgNormals.emplace_back(prevNormal.z);
+		// Above-horizon winding: next -> cur -> zenith
+		const int32_t vertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 2);
+		const int32_t nextVertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 1);
+		bgIndices.emplace_back(nextVertexIndex);
+		bgIndices.emplace_back(vertexIndex);
+		bgIndices.emplace_back(zenithVertexIndex);
 
-			bgTexCoords.emplace_back(0.0);
-			bgTexCoords.emplace_back(1.0);
-
-			bgTexCoords.emplace_back(1.0);
-			bgTexCoords.emplace_back(1.0);
-
-			bgIndices.emplace_back(bgVertexCount - 1);
-			bgIndices.emplace_back(bgVertexCount - 2);
-			bgIndices.emplace_back(0);
-
-			// Below-horizon winding: prev -> cur -> nadir
-			bgNormals.emplace_back(prevNormal.x);
-			bgNormals.emplace_back(prevNormal.y);
-			bgNormals.emplace_back(prevNormal.z);
-
-			bgNormals.emplace_back(curNormal.x);
-			bgNormals.emplace_back(curNormal.y);
-			bgNormals.emplace_back(curNormal.z);
-
-			bgTexCoords.emplace_back(1.0);
-			bgTexCoords.emplace_back(1.0);
-
-			bgTexCoords.emplace_back(0.0);
-			bgTexCoords.emplace_back(1.0);
-
-			bgIndices.emplace_back(bgVertexCount - 2);
-			bgIndices.emplace_back(bgVertexCount - 1);
-			bgIndices.emplace_back(1);
-		}
+		// Below-horizon winding: cur -> next -> nadir
+		bgIndices.emplace_back(vertexIndex);
+		bgIndices.emplace_back(nextVertexIndex);
+		bgIndices.emplace_back(nadirVertexIndex);
 	}
 
 	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
-	if (!renderer.tryCreateVertexBuffer(static_cast<int>(bgVertices.size()) / 3, positionComponentsPerVertex, &this->bgVertexBufferID))
+	const int bgVertexCount = static_cast<int>(bgVertices.size()) / 3;
+	if (!renderer.tryCreateVertexBuffer(bgVertexCount, positionComponentsPerVertex, &this->bgVertexBufferID))
 	{
 		DebugLogError("Couldn't create vertex buffer for sky background mesh ID.");
 		return;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(static_cast<int>(bgNormals.size()) / 3, normalComponentsPerVertex, &this->bgNormalBufferID))
+	if (!renderer.tryCreateAttributeBuffer(bgVertexCount, normalComponentsPerVertex, &this->bgNormalBufferID))
 	{
 		DebugLogError("Couldn't create normal attribute buffer for sky background mesh ID.");
 		this->freeBgBuffers(renderer);
 		return;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(static_cast<int>(bgTexCoords.size()) / 2, texCoordComponentsPerVertex, &this->bgTexCoordBufferID))
+	if (!renderer.tryCreateAttributeBuffer(bgVertexCount, texCoordComponentsPerVertex, &this->bgTexCoordBufferID))
 	{
 		DebugLogError("Couldn't create tex coord attribute buffer for sky background mesh ID.");
 		this->freeBgBuffers(renderer);
@@ -152,8 +139,9 @@ void RenderSkyManager::init(Renderer &renderer)
 	renderer.populateIndexBuffer(this->bgIndexBufferID, bgIndices);
 
 	constexpr int bgTextureWidth = 1;
-	constexpr int bgTextureHeight = 1;
-	if (!renderer.tryCreateObjectTexture(bgTextureWidth, bgTextureHeight, 1, &this->bgObjectTextureID))
+	constexpr int bgTextureHeight = 2; // @todo: figure out sky background texture coloring; probably lock+update the main world palette in an update() with DAYTIME.COL indices as times goes on?
+	constexpr int bgBytesPerTexel = 1;
+	if (!renderer.tryCreateObjectTexture(bgTextureWidth, bgTextureHeight, bgBytesPerTexel, &this->bgObjectTextureID))
 	{
 		DebugLogError("Couldn't create object texture for sky background texture ID.");
 		this->freeBgBuffers(renderer);
@@ -162,7 +150,7 @@ void RenderSkyManager::init(Renderer &renderer)
 
 	LockedTexture bgLockedTexture = renderer.lockObjectTexture(this->bgObjectTextureID);
 	uint8_t *bgTexels = static_cast<uint8_t*>(bgLockedTexture.texels);
-	*bgTexels = 50; // @todo just a random palette index
+	std::iota(bgTexels, bgTexels + (bgTextureWidth * bgTextureHeight), 126); // @todo: figure out which palette indices are used for the sky
 	renderer.unlockObjectTexture(this->bgObjectTextureID);
 
 	this->bgDrawCall.position = Double3::Zero;
