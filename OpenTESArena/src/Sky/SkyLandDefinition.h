@@ -12,26 +12,18 @@ enum class SkyLandShadingType
 	Bright // Max brightness.
 };
 
-class SkyLandDefinition
+struct SkyLandDefinition
 {
-private:
 	Buffer<TextureAsset> textureAssets;
 	double animSeconds;
+	bool hasAnimation;
 	SkyLandShadingType shadingType;
-public:
-	// Initializer for an animated land.
+
+	// Animated land.
 	void init(Buffer<TextureAsset> &&textureAssets, double animSeconds, SkyLandShadingType shadingType);
 
-	// Initializer for a non-animated land.
+	// Non-animated land.
 	void init(TextureAsset &&textureAsset, SkyLandShadingType shadingType);
-
-	int getTextureCount() const;
-	const TextureAsset &getTextureAsset(int index) const;
-
-	bool hasAnimation() const;
-	double getAnimationSeconds() const;
-
-	SkyLandShadingType getShadingType() const;
 };
 
 #endif

@@ -255,7 +255,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		this->objectInsts.emplace_back(std::move(objectInst));
 	};
 
-	auto addAnimInst = [this](int objectIndex, const Buffer<TextureAsset> &textureAssets, double targetSeconds)
+	auto addAnimInst = [this](int objectIndex, BufferView<const TextureAsset> textureAssets, double targetSeconds)
 	{
 		// It is assumed that only general sky objects (not small stars) can have animations, and that their
 		// textures have already been loaded earlier in SkyInstance::init().
@@ -286,32 +286,26 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyLandDefinition &skyLandDef = skyInfoDefinition.getLand(defID);
 
 		// Load all textures for this land (mostly meant for volcanoes).
-		for (int textureAssetIndex = 0; textureAssetIndex < skyLandDef.getTextureCount(); textureAssetIndex++)
+		for (const TextureAsset &textureAsset : skyLandDef.textureAssets)
 		{
-			const TextureAsset &textureAsset = skyLandDef.getTextureAsset(textureAssetIndex);
 			loadGeneralSkyObjectTexture(textureAsset);
 		}
 
-		const TextureAsset &firstTextureAsset = skyLandDef.getTextureAsset(0);
+		const TextureAsset &firstTextureAsset = skyLandDef.textureAssets.get(0);
 		for (const Radians position : placementDef.positions)
 		{
 			// Convert radians to direction.
 			const Radians angleY = 0.0;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(position, angleY);
-			const bool emissive = skyLandDef.getShadingType() == SkyLandShadingType::Bright;
+			const bool emissive = skyLandDef.shadingType == SkyLandShadingType::Bright;
 			addGeneralObjectInst(direction, firstTextureAsset, emissive);
 
 			// Only land objects support animations (for now).
-			if (skyLandDef.hasAnimation())
+			if (skyLandDef.hasAnimation)
 			{
 				const int objectIndex = static_cast<int>(this->objectInsts.size()) - 1;
-				Buffer<TextureAsset> textureAssets(skyLandDef.getTextureCount());
-				for (int assetRefIndex = 0; assetRefIndex < skyLandDef.getTextureCount(); assetRefIndex++)
-				{
-					textureAssets.set(assetRefIndex, skyLandDef.getTextureAsset(assetRefIndex));
-				}
-
-				const double targetSeconds = static_cast<double>(skyLandDef.getTextureCount()) * ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME;
+				BufferView<const TextureAsset> textureAssets(skyLandDef.textureAssets);
+				const double targetSeconds = static_cast<double>(textureAssets.getCount()) * ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME;
 				addAnimInst(objectIndex, textureAssets, targetSeconds);
 			}
 
@@ -332,7 +326,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::AirPlacementDef &placementDef = skyDefinition.getAirPlacementDef(i);
 		const SkyDefinition::AirDefID defID = placementDef.id;
 		const SkyAirDefinition &skyAirDef = skyInfoDefinition.getAir(defID);
-		const TextureAsset &textureAsset = skyAirDef.getTextureAsset();
+		const TextureAsset &textureAsset = skyAirDef.textureAsset;
 		loadGeneralSkyObjectTexture(textureAsset);
 
 		for (const std::pair<Radians, Radians> &position : placementDef.positions)
@@ -363,8 +357,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyMoonDefinition &skyMoonDef = skyInfoDefinition.getMoon(defID);
 
 		// Get the image from the current day.
-		DebugAssert(skyMoonDef.getTextureCount() > 0);
-		const TextureAsset &textureAsset = skyMoonDef.getTextureAsset(currentDay);
+		DebugAssert(skyMoonDef.textureAssets.getCount() > 0);
+		const TextureAsset &textureAsset = skyMoonDef.textureAssets.get(currentDay);
 		loadGeneralSkyObjectTexture(textureAsset);
 
 		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
@@ -395,7 +389,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
 		const SkyDefinition::SunDefID defID = placementDef.id;
 		const SkySunDefinition &skySunDef = skyInfoDefinition.getSun(defID);
-		const TextureAsset &textureAsset = skySunDef.getTextureAsset();
+		const TextureAsset &textureAsset = skySunDef.textureAsset;
 		loadGeneralSkyObjectTexture(textureAsset);
 
 		for (const double position : placementDef.positions)
@@ -425,11 +419,11 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		// @todo: this is where the texture-id-from-texture-manager design is breaking, and getting
 		// a renderer texture handle would be better. SkyInstance::init() should be able to allocate
 		// textures IDs from the renderer eventually, and look up cached ones by string.
-		const SkyStarType starType = skyStarDef.getType();
+		const SkyStarType starType = skyStarDef.type;
 		if (starType == SkyStarType::Small)
 		{
 			// Small stars are 1x1 pixels.
-			const SkySmallStarDefinition &smallStar = skyStarDef.getSmallStar();
+			const SkySmallStarDefinition &smallStar = skyStarDef.smallStar;
 			const uint8_t paletteIndex = smallStar.paletteIndex;
 			loadSmallStarTexture(paletteIndex);
 
@@ -441,7 +435,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		}
 		else if (starType == SkyStarType::Large)
 		{
-			const SkyLargeStarDefinition &largeStar = skyStarDef.getLargeStar();
+			const SkyLargeStarDefinition &largeStar = skyStarDef.largeStar;
 			const TextureAsset &textureAsset = largeStar.textureAsset;
 			loadGeneralSkyObjectTexture(textureAsset);
 
@@ -474,22 +468,16 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const SkyLightningDefinition &skyLightningDef = skyInfoDefinition.getLightning(i);
 
 			// Load all textures for this lightning bolt.
-			for (int textureAssetIndex = 0; textureAssetIndex < skyLightningDef.getTextureCount(); textureAssetIndex++)
+			for (const TextureAsset &textureAsset : skyLightningDef.textureAssets)
 			{
-				const TextureAsset &textureAsset = skyLightningDef.getTextureAsset(textureAssetIndex);
 				loadGeneralSkyObjectTexture(textureAsset);
 			}
 
-			const TextureAsset &firstTextureAsset = skyLightningDef.getTextureAsset(0);
+			const TextureAsset &firstTextureAsset = skyLightningDef.textureAssets.get(0);
 			addGeneralObjectInst(Double3::Zero, firstTextureAsset, true);
 			
-			Buffer<TextureAsset> textureAssets(skyLightningDef.getTextureCount());
-			for (int assetRefIndex = 0; assetRefIndex < skyLightningDef.getTextureCount(); assetRefIndex++)
-			{
-				textureAssets.set(assetRefIndex, skyLightningDef.getTextureAsset(assetRefIndex));
-			}
-
-			addAnimInst(static_cast<int>(this->objectInsts.size()) - 1, textureAssets, skyLightningDef.getAnimationSeconds());
+			BufferView<const TextureAsset> textureAssets(skyLightningDef.textureAssets);
+			addAnimInst(static_cast<int>(this->objectInsts.size()) - 1, textureAssets, skyLightningDef.animSeconds);
 
 			this->lightningAnimIndices.set(i, static_cast<int>(this->animInsts.size()) - 1);
 		}

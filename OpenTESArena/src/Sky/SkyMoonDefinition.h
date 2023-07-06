@@ -2,20 +2,15 @@
 #define SKY_MOON_DEFINITION_H
 
 #include "../Assets/TextureAsset.h"
-#include "../Assets/TextureUtils.h"
 
 #include "components/utilities/Buffer.h"
 
-class SkyMoonDefinition
+struct SkyMoonDefinition
 {
-private:
 	// One texture per phase.
 	Buffer<TextureAsset> textureAssets;
-public:
-	void init(Buffer<TextureAsset> &&textureAssets);
 
-	int getTextureCount() const;
-	const TextureAsset &getTextureAsset(int index) const;
+	void init(Buffer<TextureAsset> &&textureAssets);
 };
 
 #endif

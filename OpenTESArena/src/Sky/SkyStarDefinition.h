@@ -25,21 +25,14 @@ struct SkyLargeStarDefinition
 	void init(TextureAsset &&textureAsset);
 };
 
-class SkyStarDefinition
+struct SkyStarDefinition
 {
-private:
 	SkyStarType type;
 	SkySmallStarDefinition smallStar;
 	SkyLargeStarDefinition largeStar;
 
-	void init(SkyStarType type);
-public:
 	void initSmall(uint8_t paletteIndex);
 	void initLarge(TextureAsset &&textureAsset);
-	
-	SkyStarType getType() const;
-	const SkySmallStarDefinition &getSmallStar() const;
-	const SkyLargeStarDefinition &getLargeStar() const;
 };
 
 #endif

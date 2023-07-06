@@ -3,14 +3,11 @@
 
 #include "../Assets/TextureAsset.h"
 
-class SkySunDefinition
+struct SkySunDefinition
 {
-private:
 	TextureAsset textureAsset;
-public:
-	void init(TextureAsset &&textureAsset);
 
-	const TextureAsset &getTextureAsset() const;
+	void init(TextureAsset &&textureAsset);
 };
 
 #endif

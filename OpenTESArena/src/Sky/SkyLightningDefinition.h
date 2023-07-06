@@ -7,18 +7,12 @@
 
 // Similar to animated land but conditionally rendered based on thunderstorm state.
 
-class SkyLightningDefinition
+struct SkyLightningDefinition
 {
-private:
 	Buffer<TextureAsset> textureAssets;
 	double animSeconds;
-public:
+
 	void init(Buffer<TextureAsset> &&textureAssets, double animSeconds);
-
-	int getTextureCount() const;
-	const TextureAsset &getTextureAsset(int index) const;
-
-	double getAnimationSeconds() const;
 };
 
 #endif
