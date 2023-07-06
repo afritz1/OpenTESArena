@@ -150,7 +150,7 @@ namespace SkyGeneration
 			else
 			{
 				SkyLandDefinition skyLandDef;
-				skyLandDef.init(std::move(textureAsset), SkyLandDefinition::ShadingType::Ambient);
+				skyLandDef.init(std::move(textureAsset), SkyLandShadingType::Ambient);
 				landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
 				landCache->emplace(imageFilename, landDefID);
 			}
@@ -292,7 +292,7 @@ namespace SkyGeneration
 			static_cast<double>(textureAssets.getCount());
 
 		SkyLandDefinition skyLandDef;
-		skyLandDef.init(std::move(textureAssets), animSeconds, SkyLandDefinition::ShadingType::Bright);
+		skyLandDef.init(std::move(textureAssets), animSeconds, SkyLandShadingType::Bright);
 		const SkyDefinition::LandDefID landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
 		outSkyDef->addLand(landDefID, angleX);
 	}

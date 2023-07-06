@@ -3,14 +3,14 @@
 #include "components/debug/Debug.h"
 
 void SkyLandDefinition::init(Buffer<TextureAsset> &&textureAssets, double animSeconds,
-	ShadingType shadingType)
+	SkyLandShadingType shadingType)
 {
 	this->textureAssets = std::move(textureAssets);
 	this->animSeconds = animSeconds;
 	this->shadingType = shadingType;
 }
 
-void SkyLandDefinition::init(TextureAsset &&textureAsset, ShadingType shadingType)
+void SkyLandDefinition::init(TextureAsset &&textureAsset, SkyLandShadingType shadingType)
 {
 	Buffer<TextureAsset> textureAssets(1);
 	textureAssets.set(0, std::move(textureAsset));
@@ -40,7 +40,7 @@ double SkyLandDefinition::getAnimationSeconds() const
 	return this->animSeconds;
 }
 
-SkyLandDefinition::ShadingType SkyLandDefinition::getShadingType() const
+SkyLandShadingType SkyLandDefinition::getShadingType() const
 {
 	return this->shadingType;
 }

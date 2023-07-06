@@ -6,24 +6,24 @@
 
 #include "components/utilities/Buffer.h"
 
+enum class SkyLandShadingType
+{
+	Ambient, // Affected by ambient sky intensity.
+	Bright // Max brightness.
+};
+
 class SkyLandDefinition
 {
-public:
-	enum class ShadingType
-	{
-		Ambient, // Affected by ambient sky intensity.
-		Bright // Max brightness.
-	};
 private:
 	Buffer<TextureAsset> textureAssets;
 	double animSeconds;
-	ShadingType shadingType;
+	SkyLandShadingType shadingType;
 public:
 	// Initializer for an animated land.
-	void init(Buffer<TextureAsset> &&textureAssets, double animSeconds, ShadingType shadingType);
+	void init(Buffer<TextureAsset> &&textureAssets, double animSeconds, SkyLandShadingType shadingType);
 
 	// Initializer for a non-animated land.
-	void init(TextureAsset &&textureAsset, ShadingType shadingType);
+	void init(TextureAsset &&textureAsset, SkyLandShadingType shadingType);
 
 	int getTextureCount() const;
 	const TextureAsset &getTextureAsset(int index) const;
@@ -31,7 +31,7 @@ public:
 	bool hasAnimation() const;
 	double getAnimationSeconds() const;
 
-	ShadingType getShadingType() const;
+	SkyLandShadingType getShadingType() const;
 };
 
 #endif

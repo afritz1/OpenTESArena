@@ -5,41 +5,41 @@
 
 #include "../Assets/TextureAsset.h"
 
+enum class SkyStarType
+{
+	Small,
+	Large
+};
+
+struct SkySmallStarDefinition
+{
+	uint8_t paletteIndex;
+
+	void init(uint8_t paletteIndex);
+};
+
+struct SkyLargeStarDefinition
+{
+	TextureAsset textureAsset;
+
+	void init(TextureAsset &&textureAsset);
+};
+
 class SkyStarDefinition
 {
-public:
-	enum class Type
-	{
-		Small,
-		Large
-	};
-
-	struct SmallStar
-	{
-		uint8_t paletteIndex;
-
-		void init(uint8_t paletteIndex);
-	};
-
-	struct LargeStar
-	{
-		TextureAsset textureAsset;
-
-		void init(TextureAsset &&textureAsset);
-	};
 private:
-	Type type;
-	SmallStar smallStar;
-	LargeStar largeStar;
+	SkyStarType type;
+	SkySmallStarDefinition smallStar;
+	SkyLargeStarDefinition largeStar;
 
-	void init(Type type);
+	void init(SkyStarType type);
 public:
 	void initSmall(uint8_t paletteIndex);
 	void initLarge(TextureAsset &&textureAsset);
 	
-	Type getType() const;
-	const SmallStar &getSmallStar() const;
-	const LargeStar &getLargeStar() const;
+	SkyStarType getType() const;
+	const SkySmallStarDefinition &getSmallStar() const;
+	const SkyLargeStarDefinition &getLargeStar() const;
 };
 
 #endif

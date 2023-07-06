@@ -298,7 +298,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert radians to direction.
 			const Radians angleY = 0.0;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(position, angleY);
-			const bool emissive = skyLandDef.getShadingType() == SkyLandDefinition::ShadingType::Bright;
+			const bool emissive = skyLandDef.getShadingType() == SkyLandShadingType::Bright;
 			addGeneralObjectInst(direction, firstTextureAsset, emissive);
 
 			// Only land objects support animations (for now).
@@ -425,11 +425,11 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		// @todo: this is where the texture-id-from-texture-manager design is breaking, and getting
 		// a renderer texture handle would be better. SkyInstance::init() should be able to allocate
 		// textures IDs from the renderer eventually, and look up cached ones by string.
-		const SkyStarDefinition::Type starType = skyStarDef.getType();
-		if (starType == SkyStarDefinition::Type::Small)
+		const SkyStarType starType = skyStarDef.getType();
+		if (starType == SkyStarType::Small)
 		{
 			// Small stars are 1x1 pixels.
-			const SkyStarDefinition::SmallStar &smallStar = skyStarDef.getSmallStar();
+			const SkySmallStarDefinition &smallStar = skyStarDef.getSmallStar();
 			const uint8_t paletteIndex = smallStar.paletteIndex;
 			loadSmallStarTexture(paletteIndex);
 
@@ -439,9 +439,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 				addSmallStarObjectInst(position, paletteIndex);
 			}
 		}
-		else if (starType == SkyStarDefinition::Type::Large)
+		else if (starType == SkyStarType::Large)
 		{
-			const SkyStarDefinition::LargeStar &largeStar = skyStarDef.getLargeStar();
+			const SkyLargeStarDefinition &largeStar = skyStarDef.getLargeStar();
 			const TextureAsset &textureAsset = largeStar.textureAsset;
 			loadGeneralSkyObjectTexture(textureAsset);
 
