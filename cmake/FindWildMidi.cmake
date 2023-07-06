@@ -44,7 +44,7 @@ find_path(WILDMIDI_INCLUDE_DIR NAMES wildmidi_lib.h
 	DOC "The WildMidi include directory"
 )
 
-find_library(WILDMIDI_LIBRARY NAMES WildMidi wildmidi_dynamic
+find_library(WILDMIDI_LIBRARY NAMES WildMidi wildmidi_dynamic libWildMidi
 	HINTS $ENV{WILDMIDIDIR}
      DOC "The WildMidi library"
 )
