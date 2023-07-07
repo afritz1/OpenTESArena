@@ -25,6 +25,7 @@ class WeatherInstance;
 class SkyInstance
 {
 private:
+	// @todo: move to RenderSkyManager
 	struct LoadedSkyObjectTextureEntry
 	{
 		TextureAsset textureAsset;
@@ -33,6 +34,7 @@ private:
 		void init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
+	// @todo: move to RenderSkyManager
 	struct LoadedSmallStarTextureEntry
 	{
 		uint8_t paletteIndex;
@@ -84,7 +86,6 @@ private:
 
 	std::vector<LoadedSkyObjectTextureEntry> loadedSkyObjectTextures;
 	std::vector<LoadedSmallStarTextureEntry> loadedSmallStarTextures;
-	ScopedObjectTextureRef skyColorsTextureRef; // Renderer-allocated colors for all times during the day.
 
 	std::vector<ObjectInstance> objectInsts; // Each sky object instance.
 	std::vector<AnimInstance> animInsts; // Data for each sky object with an animation.
@@ -121,16 +122,10 @@ public:
 
 	std::optional<double> tryGetObjectAnimPercent(int index) const;
 
-	ObjectTextureID getSkyColorsTextureID() const;
-
-	// Attempts to set this sky active in the renderer.
-	// @todo: maybe this and LevelInstance::trySetActive() should be replaced by some MapInstance::trySetLevelActive(int)
-	// that does the work for both the level and the sky.
-	bool trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		TextureManager &textureManager, Renderer &renderer);
-
 	void update(double dt, double latitude, double daytimePercent, const WeatherInstance &weatherInst,
 		Random &random, const TextureManager &textureManager);
+
+	void clear();
 };
 
 #endif

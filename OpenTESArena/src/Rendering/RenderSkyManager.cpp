@@ -4,9 +4,33 @@
 #include "ArenaRenderUtils.h"
 #include "Renderer.h"
 #include "RenderSkyManager.h"
+#include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
 #include "../Math/Vector3.h"
+#include "../Sky/SkyDefinition.h"
+#include "../Sky/SkyInfoDefinition.h"
+#include "../Sky/SkyInstance.h"
 #include "../World/MeshUtils.h"
+
+RenderSkyManager::LoadedSkyObjectTexture::LoadedSkyObjectTexture()
+{
+	this->type = static_cast<LoadedSkyObjectTextureType>(-1);
+	this->paletteIndex = 0;
+}
+
+void RenderSkyManager::LoadedSkyObjectTexture::initPaletteIndex(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef)
+{
+	this->type = LoadedSkyObjectTextureType::PaletteIndex;
+	this->paletteIndex = paletteIndex;
+	this->objectTextureRef = std::move(objectTextureRef);
+}
+
+void RenderSkyManager::LoadedSkyObjectTexture::initTextureAsset(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef)
+{
+	this->type = LoadedSkyObjectTextureType::TextureAsset;
+	this->textureAsset = textureAsset;
+	this->objectTextureRef = std::move(objectTextureRef);
+}
 
 RenderSkyManager::RenderSkyManager()
 {
@@ -15,6 +39,11 @@ RenderSkyManager::RenderSkyManager()
 	this->bgTexCoordBufferID = -1;
 	this->bgIndexBufferID = -1;
 	this->bgObjectTextureID = -1;
+
+	this->objectVertexBufferID = -1;
+	this->objectNormalBufferID = -1;
+	this->objectTexCoordBufferID = -1;
+	this->objectIndexBufferID = -1;
 }
 
 void RenderSkyManager::init(Renderer &renderer)
@@ -170,12 +199,98 @@ void RenderSkyManager::init(Renderer &renderer)
 	this->bgDrawCall.vertexShaderType = VertexShaderType::Voxel; // @todo: SkyBackground?
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
+
+	// Initialize sky object mesh buffers shared with all sky objects.
+	// @todo: to be more accurate, land/air vertices could rest on the horizon, while star/planet/sun vertices would sit halfway under the horizon, etc., and these would be separate buffers for the draw calls to pick from.
+	constexpr int objectMeshVertexCount = 4;
+	constexpr int objectMeshIndexCount = 6;
+	if (!renderer.tryCreateVertexBuffer(objectMeshVertexCount, positionComponentsPerVertex, &this->objectVertexBufferID))
+	{
+		DebugLogError("Couldn't create vertex buffer for sky object mesh ID.");
+		return;
+	}
+
+	if (!renderer.tryCreateAttributeBuffer(objectMeshVertexCount, normalComponentsPerVertex, &this->objectNormalBufferID))
+	{
+		DebugLogError("Couldn't create normal attribute buffer for sky object mesh def.");
+		this->freeObjectBuffers(renderer);
+		return;
+	}
+
+	if (!renderer.tryCreateAttributeBuffer(objectMeshVertexCount, texCoordComponentsPerVertex, &this->objectTexCoordBufferID))
+	{
+		DebugLogError("Couldn't create tex coord attribute buffer for sky object mesh def.");
+		this->freeObjectBuffers(renderer);
+		return;
+	}
+
+	if (!renderer.tryCreateIndexBuffer(objectMeshIndexCount, &this->objectIndexBufferID))
+	{
+		DebugLogError("Couldn't create index buffer for sky object mesh def.");
+		this->freeObjectBuffers(renderer);
+		return;
+	}
+
+	constexpr std::array<double, objectMeshVertexCount * positionComponentsPerVertex> objectVertices =
+	{
+		0.0, 1.0, -0.50,
+		0.0, 0.0, -0.50,
+		0.0, 0.0, 0.50,
+		0.0, 1.0, 0.50
+	};
+
+	constexpr std::array<double, objectMeshVertexCount * normalComponentsPerVertex> objectNormals =
+	{
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0
+	};
+
+	constexpr std::array<double, objectMeshVertexCount * texCoordComponentsPerVertex> objectTexCoords =
+	{
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0
+	};
+
+	constexpr std::array<int32_t, objectMeshIndexCount> objectIndices =
+	{
+		0, 1, 2,
+		2, 3, 0
+	};
+
+	renderer.populateVertexBuffer(this->objectVertexBufferID, objectVertices);
+	renderer.populateAttributeBuffer(this->objectNormalBufferID, objectNormals);
+	renderer.populateAttributeBuffer(this->objectTexCoordBufferID, objectTexCoords);
+	renderer.populateIndexBuffer(this->objectIndexBufferID, objectIndices);
 }
 
 void RenderSkyManager::shutdown(Renderer &renderer)
 {
 	this->freeBgBuffers(renderer);
 	this->bgDrawCall.clear();
+
+	this->freeObjectBuffers(renderer);
+	this->objectDrawCalls.clear();
+}
+
+ObjectTextureID RenderSkyManager::getSkyObjectTextureID(const TextureAsset &textureAsset) const
+{
+	const auto iter = std::find_if(this->objectTextures.begin(), this->objectTextures.end(),
+		[&textureAsset](const LoadedSkyObjectTexture &loadedTexture)
+	{
+		return loadedTexture.textureAsset == textureAsset;
+	});
+
+	if (iter == this->objectTextures.end())
+	{
+		DebugLogError("Couldn't find loaded sky object texture for \"" + textureAsset.filename + "\".");
+		return -1;
+	}
+
+	return iter->objectTextureRef.get();
 }
 
 void RenderSkyManager::freeBgBuffers(Renderer &renderer)
@@ -211,13 +326,185 @@ void RenderSkyManager::freeBgBuffers(Renderer &renderer)
 	}
 }
 
+void RenderSkyManager::freeObjectBuffers(Renderer &renderer)
+{
+	if (this->objectVertexBufferID >= 0)
+	{
+		renderer.freeVertexBuffer(this->objectVertexBufferID);
+		this->objectVertexBufferID = -1;
+	}
+
+	if (this->objectNormalBufferID >= 0)
+	{
+		renderer.freeAttributeBuffer(this->objectNormalBufferID);
+		this->objectNormalBufferID = -1;
+	}
+
+	if (this->objectTexCoordBufferID >= 0)
+	{
+		renderer.freeAttributeBuffer(this->objectTexCoordBufferID);
+		this->objectTexCoordBufferID = -1;
+	}
+
+	if (this->objectIndexBufferID >= 0)
+	{
+		renderer.freeIndexBuffer(this->objectIndexBufferID);
+		this->objectIndexBufferID = -1;
+	}
+
+	this->objectTextures.clear();
+}
+
 RenderDrawCall RenderSkyManager::getBgDrawCall() const
 {
 	return this->bgDrawCall;
+}
+
+BufferView<const RenderDrawCall> RenderSkyManager::getObjectDrawCalls() const
+{
+	return this->objectDrawCalls;
+}
+
+void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, 
+	TextureManager &textureManager, Renderer &renderer)
+{
+	auto tryLoadTextureAsset = [this, &textureManager, &renderer](const TextureAsset &textureAsset)
+	{
+		const auto iter = std::find_if(this->objectTextures.begin(), this->objectTextures.end(),
+			[&textureAsset](const LoadedSkyObjectTexture &loadedTexture)
+		{
+			return (loadedTexture.type == LoadedSkyObjectTextureType::TextureAsset) && (loadedTexture.textureAsset == textureAsset);
+		});
+
+		if (iter == this->objectTextures.end())
+		{
+			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
+			if (!textureBuilderID.has_value())
+			{
+				DebugLogError("Couldn't get texture builder ID for sky object texture \"" + textureAsset.filename + "\".");
+				return;
+			}
+
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+			ObjectTextureID textureID;
+			if (!renderer.tryCreateObjectTexture(textureBuilder.getWidth(), textureBuilder.getHeight(), textureBuilder.getBytesPerTexel(), &textureID))
+			{
+				DebugLogError("Couldn't create object texture for sky object texture \"" + textureAsset.filename + "\".");
+				return;
+			}
+
+			LoadedSkyObjectTexture loadedTexture;
+			loadedTexture.initTextureAsset(textureAsset, ScopedObjectTextureRef(textureID, renderer));
+			this->objectTextures.emplace_back(std::move(loadedTexture));
+		}
+	};
+
+	auto tryLoadPaletteColor = [this, &renderer](uint8_t paletteIndex)
+	{
+		const auto iter = std::find_if(this->objectTextures.begin(), this->objectTextures.end(),
+			[paletteIndex](const LoadedSkyObjectTexture &loadedTexture)
+		{
+			return (loadedTexture.type == LoadedSkyObjectTextureType::PaletteIndex) && (loadedTexture.paletteIndex == paletteIndex);
+		});
+
+		if (iter == this->objectTextures.end())
+		{
+			constexpr int textureWidth = 1;
+			constexpr int textureHeight = textureWidth;
+			constexpr int bytesPerTexel = 1;
+			ObjectTextureID textureID;
+			if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
+			{
+				DebugLogError("Couldn't create object texture for sky object texture palette index \"" + std::to_string(paletteIndex) + "\".");
+				return;
+			}
+
+			LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
+			if (!lockedTexture.isValid())
+			{
+				DebugLogError("Couldn't lock sky object texture for writing palette index \"" + std::to_string(paletteIndex) + "\".");
+				return;
+			}
+
+			DebugAssert(lockedTexture.bytesPerTexel == 1);
+			uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);
+			*dstTexels = paletteIndex;
+			renderer.unlockObjectTexture(textureID);
+
+			LoadedSkyObjectTexture loadedTexture;
+			loadedTexture.initPaletteIndex(paletteIndex, ScopedObjectTextureRef(textureID, renderer));
+			this->objectTextures.emplace_back(std::move(loadedTexture));
+		}		
+	};
+
+	for (int i = 0; i < skyInfoDef.getLandCount(); i++)
+	{
+		const SkyLandDefinition &landDef = skyInfoDef.getLand(i);
+		for (const TextureAsset &textureAsset : landDef.textureAssets)
+		{
+			tryLoadTextureAsset(textureAsset);
+		}
+	}
+
+	for (int i = 0; i < skyInfoDef.getAirCount(); i++)
+	{
+		const SkyAirDefinition &airDef = skyInfoDef.getAir(i);
+		tryLoadTextureAsset(airDef.textureAsset);
+	}
+
+	for (int i = 0; i < skyInfoDef.getStarCount(); i++)
+	{
+		const SkyStarDefinition &starDef = skyInfoDef.getStar(i);
+		switch (starDef.type)
+		{
+		case SkyStarType::Small:
+		{
+			const SkySmallStarDefinition &smallStarDef = starDef.smallStar;
+			tryLoadPaletteColor(smallStarDef.paletteIndex);
+			break;
+		}
+		case SkyStarType::Large:
+		{
+			const SkyLargeStarDefinition &largeStarDef = starDef.largeStar;
+			tryLoadTextureAsset(largeStarDef.textureAsset);
+			break;
+		}
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(starDef.type)));
+			break;
+		}
+	}
+
+	for (int i = 0; i < skyInfoDef.getSunCount(); i++)
+	{
+		const SkySunDefinition &sunDef = skyInfoDef.getSun(i);
+		tryLoadTextureAsset(sunDef.textureAsset);
+	}
+
+	for (int i = 0; i < skyInfoDef.getMoonCount(); i++)
+	{
+		const SkyMoonDefinition &moonDef = skyInfoDef.getMoon(i);
+		for (const TextureAsset &textureAsset : moonDef.textureAssets)
+		{
+			tryLoadTextureAsset(textureAsset);
+		}
+	}
+
+	// @todo: load draw calls for all the sky objects (ideally here, but can be in update() for now if convenient)
 }
 
 void RenderSkyManager::update(const CoordDouble3 &cameraCoord)
 {
 	// Keep the sky centered on the player.
 	this->bgDrawCall.position = VoxelUtils::coordToWorldPoint(cameraCoord);
+
+	// @todo: create draw calls for sky objects. later this can be in loadScene() as an optimization
+	// @todo: update sky object draw call transforms if they are affected by planet rotation
+	DebugLogWarning("Not implemented: RenderSkyManager::update() sky object draw calls");
+}
+
+void RenderSkyManager::unloadScene(Renderer &renderer)
+{
+	this->objectTextures.clear();
+	this->objectDrawCalls.clear();
 }

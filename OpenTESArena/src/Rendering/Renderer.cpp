@@ -921,16 +921,14 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 }
 
 void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
-	double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-	ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode)
+	double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, int renderThreadsMode)
 {
 	DebugAssert(this->renderer3D->isInited());
 
 	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
 
 	RenderFrameSettings renderFrameSettings;
-	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
-		thunderstormColorsTextureID, renderDims.x, renderDims.y, renderThreadsMode);
+	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, renderDims.x, renderDims.y, renderThreadsMode);
 
 	uint32_t *outputBuffer;
 	int gameWorldPitch;

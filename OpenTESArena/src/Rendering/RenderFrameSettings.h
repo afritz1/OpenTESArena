@@ -10,12 +10,11 @@
 struct RenderFrameSettings
 {
 	double ambientPercent;
-	ObjectTextureID paletteTextureID, lightTableTextureID, skyColorsTextureID, thunderstormColorsTextureID;
+	ObjectTextureID paletteTextureID, lightTableTextureID;
 	int renderWidth, renderHeight, renderThreadsMode;
 
 	void init(double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderWidth, int renderHeight,
-		int renderThreadsMode);
+		int renderWidth, int renderHeight, int renderThreadsMode);
 };
 
 #endif

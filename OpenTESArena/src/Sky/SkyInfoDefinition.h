@@ -25,13 +25,18 @@ private:
 	// Not referenced by SkyDefinition since lightning bolts are generated at random placements.
 	std::vector<SkyLightningDefinition> lightnings;
 public:
+	int getLandCount() const;
+	int getAirCount() const;
+	int getStarCount() const;
+	int getSunCount() const;
+	int getMoonCount() const;
+	int getLightningCount() const;
+
 	const SkyLandDefinition &getLand(SkyDefinition::LandDefID id) const;
 	const SkyAirDefinition &getAir(SkyDefinition::AirDefID id) const;
 	const SkyStarDefinition &getStar(SkyDefinition::StarDefID id) const;
 	const SkySunDefinition &getSun(SkyDefinition::SunDefID id) const;
 	const SkyMoonDefinition &getMoon(SkyDefinition::MoonDefID id) const;
-
-	int getLightningCount() const;
 	const SkyLightningDefinition &getLightning(int index) const;
 
 	SkyDefinition::LandDefID addLand(SkyLandDefinition &&def);

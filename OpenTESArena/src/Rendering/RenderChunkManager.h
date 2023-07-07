@@ -138,7 +138,6 @@ private:
 		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary);
 	void rebuildEntityDrawCallsList();
 
-	// @todo: loadSky()
 	// @todo: loadWeather()
 public:
 	void init(Renderer &renderer);
@@ -160,7 +159,7 @@ public:
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 
-	// Clears all rendering resources (voxels, entities, sky, weather).
+	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);
 };
 

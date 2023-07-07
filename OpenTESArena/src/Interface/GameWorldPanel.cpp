@@ -806,19 +806,22 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	auto &gameState = game.getGameState();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-	//const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
+	std::vector<RenderDrawCall> drawCalls;
 	const SceneManager &sceneManager = game.getSceneManager();
 	const RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	std::vector<RenderDrawCall> drawCalls;
 	for (const RenderDrawCall &drawCall : renderChunkManager.getTotalDrawCalls())
 	{
 		drawCalls.emplace_back(drawCall);
 	}
 
+	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
+	for (const RenderDrawCall &drawCall : renderSkyManager.getObjectDrawCalls())
+	{
+		drawCalls.emplace_back(drawCall);
+	}
 
 	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
 	const MapType activeMapType = activeMapDef.getMapType();
@@ -835,19 +838,11 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const double viewAspectRatio = renderer.getViewAspect();
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
 
-	// @todo: shore up loadScene() and that overall design before attempting to change dirty voxels and entities between frames.
-	/*renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
-		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight(),
-		EntityDefinitionLibrary::getInstance());*/
-
 	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
 	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
 	const ObjectTextureID lightTableTextureID = sceneManager.lightTableTextureRef.get();
-	const ObjectTextureID skyColorsTextureID = -1; //activeSkyInst.getSkyColorsTextureID(); // @todo
-	const ObjectTextureID thunderstormColorsTextureID = -1;
 
-	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID,
-		skyColorsTextureID, thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
+	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, options.getGraphics_RenderThreadsMode());
 
 	return true;
 }

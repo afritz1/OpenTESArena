@@ -241,12 +241,23 @@ MapType GameState::getActiveMapType() const
 
 bool GameState::isActiveMapValid() const
 {
-	return this->activeMapDef.isValid();
+	return this->activeMapDef.isValid() && (this->activeLevelIndex >= 0);
 }
 
 int GameState::getActiveLevelIndex() const
 {
 	return this->activeLevelIndex;
+}
+
+int GameState::getActiveSkyIndex() const
+{
+	if (!this->isActiveMapValid())
+	{
+		DebugLogError("No valid map for obtaining active sky index.");
+		return -1;
+	}
+
+	return this->activeMapDef.getSkyIndexForLevel(this->activeLevelIndex);
 }
 
 const MapDefinition &GameState::getActiveMapDef() const
@@ -598,11 +609,19 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	chunkManager.clear();
 	chunkManager.update(playerCoord.chunk, options.getMisc_ChunkDistance());
 
-	sceneManager.voxelChunkManager.recycleAllChunks();	
+	sceneManager.voxelChunkManager.recycleAllChunks();
 	sceneManager.entityChunkManager.clear();
 	sceneManager.collisionChunkManager.recycleAllChunks();
 	sceneManager.renderChunkManager.unloadScene(renderer);
+	
+	sceneManager.skyInstance.clear();
+	sceneManager.renderSkyManager.unloadScene(renderer);
 
+	const int activeSkyIndex = this->getActiveSkyIndex();
+	const SkyDefinition &activeSkyDef = this->activeMapDef.getSky(activeSkyIndex);
+	const SkyInfoDefinition &activeSkyInfoDef = this->activeMapDef.getSkyInfoForSky(activeSkyIndex);
+	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager, renderer);
+	sceneManager.renderSkyManager.loadScene(sceneManager.skyInstance, activeSkyInfoDef, textureManager, renderer);
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
 	this->tickCollision(0.0, game);
@@ -720,6 +739,16 @@ void GameState::tickChasmAnimation(double dt)
 	{
 		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, ArenaVoxelUtils::CHASM_ANIM_SECONDS);
 	}
+}
+
+void GameState::tickSky(double dt, Game &game)
+{
+	SceneManager &sceneManager = game.getSceneManager();
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+
+	SkyInstance &skyInst = sceneManager.skyInstance;
+	skyInst.update(dt, locationDef.getLatitude(), this->getDaytimePercent(), this->weatherInst,
+		game.getRandom(), game.getTextureManager());
 }
 
 void GameState::tickWeather(double dt, Game &game)

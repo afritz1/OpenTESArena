@@ -580,76 +580,6 @@ std::optional<double> SkyInstance::tryGetObjectAnimPercent(int index) const
 	return std::nullopt;
 }
 
-ObjectTextureID SkyInstance::getSkyColorsTextureID() const
-{
-	return this->skyColorsTextureRef.get();
-}
-
-bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	// Although the sky could be treated the same way as visible entities (regenerated every frame), keep it this
-	// way because the sky is not added to and removed from like entities are. The sky is baked once per level
-	// and that's it.
-	
-	// @todo: tell RenderChunkManager to clear its sky geometry
-	//DebugNotImplementedMsg("trySetActive");
-	//renderer.clearSky();
-
-	const MapType mapType = mapDefinition.getSubDefinition().type;
-	const SkyDefinition &skyDefinition = [&activeLevelIndex, &mapDefinition, mapType]() -> const SkyDefinition&
-	{
-		const int skyIndex = [&activeLevelIndex, &mapDefinition, mapType]()
-		{
-			if ((mapType == MapType::Interior) || (mapType == MapType::City))
-			{
-				DebugAssert(activeLevelIndex.has_value());
-				return mapDefinition.getSkyIndexForLevel(*activeLevelIndex);
-			}
-			else if (mapType == MapType::Wilderness)
-			{
-				return mapDefinition.getSkyIndexForLevel(0);
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(mapType)));
-			}
-		}();
-
-		return mapDefinition.getSky(skyIndex);
-	}();
-
-	// Set sky gradient colors.
-	Buffer<uint32_t> skyColors(skyDefinition.getSkyColorCount());
-	for (int i = 0; i < skyColors.getCount(); i++)
-	{
-		const Color &color = skyDefinition.getSkyColor(i);
-		skyColors.set(i, color.toARGB());
-	}
-
-	ObjectTextureID skyColorsTextureID;
-	if (!renderer.tryCreateObjectTexture(skyColors.getCount(), 1, 1, &skyColorsTextureID))
-	{
-		DebugLogError("Couldn't create sky colors texture.");
-		return false;
-	}
-
-	this->skyColorsTextureRef = ScopedObjectTextureRef(skyColorsTextureID, renderer);
-	LockedTexture lockedSkyColorsTexture = renderer.lockObjectTexture(this->skyColorsTextureRef.get());
-	DebugAssert(lockedSkyColorsTexture.bytesPerTexel == 1);
-	uint8_t *lockedSkyColorsTexels = static_cast<uint8_t*>(lockedSkyColorsTexture.texels);
-	// @todo: change SkyDefinition sky colors to be 8-bit, or a TextureBuilder maybe in case of modding
-	std::fill(lockedSkyColorsTexels, lockedSkyColorsTexels + skyColors.getCount(), 0);
-	renderer.unlockObjectTexture(this->skyColorsTextureRef.get());
-
-	// Set sky objects in the renderer.
-	// @todo: I think we're going to be leaking/making duplicates of textures for every new sky instance we create
-	// unless the sky instances get deleted automatically when MapInstance goes out of scope. Need to investigate.
-	//renderer.setSky(*this, palette, textureManager); // @todo: this should set all the distant sky intermediate values in the render chunk manager equivalent for the sky I think.
-
-	return true;
-}
-
 void SkyInstance::update(double dt, double latitude, double daytimePercent, const WeatherInstance &weatherInst,
 	Random &random, const TextureManager &textureManager)
 {
@@ -758,4 +688,21 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 	transformObjectsInRange(this->moonStart, this->moonEnd);
 	transformObjectsInRange(this->sunStart, this->sunEnd);
 	transformObjectsInRange(this->starStart, this->starEnd);
+}
+
+void SkyInstance::clear()
+{
+	this->landStart = -1;
+	this->landEnd = -1;
+	this->airStart = -1;
+	this->airEnd = -1;
+	this->moonStart = -1;
+	this->moonEnd = -1;
+	this->sunStart = -1;
+	this->sunEnd = -1;
+	this->starStart = -1;
+	this->starEnd = -1;
+	this->lightningStart = -1;
+	this->lightningEnd = -1;
+	this->objectInsts.clear();
 }

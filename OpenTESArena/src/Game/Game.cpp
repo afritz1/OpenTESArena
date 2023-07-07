@@ -796,9 +796,10 @@ void Game::loop()
 				// It shouldn't be abstracted into a game state.
 				// - it should be like "do we need to clear the scene? yes/no. update the scene immediately? yes/no"
 
-				// Tick game world state (daytime clock, etc.).
+				// Tick the various pieces of game world state.
 				this->gameState.tickGameClock(clampedDt, *this);
 				this->gameState.tickChasmAnimation(clampedDt);
+				this->gameState.tickSky(clampedDt, *this);
 				this->gameState.tickWeather(clampedDt, *this);
 				this->gameState.tickUiMessages(clampedDt);
 				this->gameState.tickPlayer(clampedDt, *this);

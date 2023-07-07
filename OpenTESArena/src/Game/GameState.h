@@ -136,7 +136,8 @@ public:
 	MapType getActiveMapType() const;
 	bool isActiveMapValid() const; // Basically "is there something we can populate the scene with?".
 	int getActiveLevelIndex() const;
-	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
+	int getActiveSkyIndex() const;
+	const MapDefinition &getActiveMapDef() const;
 	double getActiveCeilingScale() const;
 	bool isActiveMapNested() const; // True if the active interior is inside an exterior.
 	const WorldMapDefinition &getWorldMapDefinition() const;
@@ -195,6 +196,7 @@ public:
 	// Ticks the game clock (for the current time of day and date).
 	void tickGameClock(double dt, Game &game);
 	void tickChasmAnimation(double dt);
+	void tickSky(double dt, Game &game);
 	void tickWeather(double dt, Game &game);
 	void tickUiMessages(double dt);
 	void tickPlayer(double dt, Game &game);

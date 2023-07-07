@@ -20,7 +20,7 @@ struct SceneManager
 	RenderChunkManager renderChunkManager;
 
 	// Game world systems not tied to chunks.
-	//SkyInstance skyInstance; // @todo
+	SkyInstance skyInstance;
 	RenderSkyManager renderSkyManager;
 	//ParticleManager; // @todo
 	//RenderParticleManager; // @todo
