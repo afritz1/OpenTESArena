@@ -13,23 +13,20 @@ class SkyInstance;
 class RenderSkyManager
 {
 private:
-	enum class LoadedSkyObjectTextureType
+	struct LoadedGeneralSkyObjectTextureEntry
 	{
-		PaletteIndex,
-		TextureAsset
-	};
-
-	struct LoadedSkyObjectTexture
-	{
-		LoadedSkyObjectTextureType type;
-		uint8_t paletteIndex;
 		TextureAsset textureAsset;
 		ScopedObjectTextureRef objectTextureRef;
 
-		LoadedSkyObjectTexture();
+		void init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef);
+	};
 
-		void initPaletteIndex(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
-		void initTextureAsset(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef);
+	struct LoadedSmallStarTextureEntry
+	{
+		uint8_t paletteIndex;
+		ScopedObjectTextureRef objectTextureRef;
+
+		void init(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
 	VertexBufferID bgVertexBufferID;
@@ -44,10 +41,12 @@ private:
 	AttributeBufferID objectNormalBufferID;
 	AttributeBufferID objectTexCoordBufferID;
 	IndexBufferID objectIndexBufferID;
-	std::vector<LoadedSkyObjectTexture> objectTextures;
+	std::vector<LoadedGeneralSkyObjectTextureEntry> generalSkyObjectTextures;
+	std::vector<LoadedSmallStarTextureEntry> smallStarTextures;
 	std::vector<RenderDrawCall> objectDrawCalls; // Order matters: stars, sun, planets, clouds, mountains.
 
-	ObjectTextureID getSkyObjectTextureID(const TextureAsset &textureAsset) const;
+	ObjectTextureID getGeneralSkyObjectTextureID(const TextureAsset &textureAsset) const;
+	ObjectTextureID getSmallStarTextureID(uint8_t paletteIndex) const;
 
 	void freeBgBuffers(Renderer &renderer);
 	void freeObjectBuffers(Renderer &renderer);
@@ -60,8 +59,8 @@ public:
 	RenderDrawCall getBgDrawCall() const;
 	BufferView<const RenderDrawCall> getObjectDrawCalls() const;
 
-	void loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
-	void update(const CoordDouble3 &cameraCoord);
+	void loadScene(const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
+	void update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord);
 	void unloadScene(Renderer &renderer);
 };
 

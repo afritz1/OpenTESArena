@@ -12,23 +12,16 @@
 #include "../Sky/SkyInstance.h"
 #include "../World/MeshUtils.h"
 
-RenderSkyManager::LoadedSkyObjectTexture::LoadedSkyObjectTexture()
+void RenderSkyManager::LoadedGeneralSkyObjectTextureEntry::init(const TextureAsset &textureAsset,
+	ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->type = static_cast<LoadedSkyObjectTextureType>(-1);
-	this->paletteIndex = 0;
-}
-
-void RenderSkyManager::LoadedSkyObjectTexture::initPaletteIndex(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef)
-{
-	this->type = LoadedSkyObjectTextureType::PaletteIndex;
-	this->paletteIndex = paletteIndex;
+	this->textureAsset = textureAsset;
 	this->objectTextureRef = std::move(objectTextureRef);
 }
 
-void RenderSkyManager::LoadedSkyObjectTexture::initTextureAsset(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef)
+void RenderSkyManager::LoadedSmallStarTextureEntry::init(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->type = LoadedSkyObjectTextureType::TextureAsset;
-	this->textureAsset = textureAsset;
+	this->paletteIndex = paletteIndex;
 	this->objectTextureRef = std::move(objectTextureRef);
 }
 
@@ -276,17 +269,34 @@ void RenderSkyManager::shutdown(Renderer &renderer)
 	this->objectDrawCalls.clear();
 }
 
-ObjectTextureID RenderSkyManager::getSkyObjectTextureID(const TextureAsset &textureAsset) const
+ObjectTextureID RenderSkyManager::getGeneralSkyObjectTextureID(const TextureAsset &textureAsset) const
 {
-	const auto iter = std::find_if(this->objectTextures.begin(), this->objectTextures.end(),
-		[&textureAsset](const LoadedSkyObjectTexture &loadedTexture)
+	const auto iter = std::find_if(this->generalSkyObjectTextures.begin(), this->generalSkyObjectTextures.end(),
+		[&textureAsset](const LoadedGeneralSkyObjectTextureEntry &loadedTexture)
 	{
 		return loadedTexture.textureAsset == textureAsset;
 	});
 
-	if (iter == this->objectTextures.end())
+	if (iter == this->generalSkyObjectTextures.end())
 	{
 		DebugLogError("Couldn't find loaded sky object texture for \"" + textureAsset.filename + "\".");
+		return -1;
+	}
+
+	return iter->objectTextureRef.get();
+}
+
+ObjectTextureID RenderSkyManager::getSmallStarTextureID(uint8_t paletteIndex) const
+{
+	const auto iter = std::find_if(this->smallStarTextures.begin(), this->smallStarTextures.end(),
+		[paletteIndex](const LoadedSmallStarTextureEntry &loadedTexture)
+	{
+		return loadedTexture.paletteIndex == paletteIndex;
+	});
+
+	if (iter == this->smallStarTextures.end())
+	{
+		DebugLogError("Couldn't find loaded small star texture with palette index \"" + std::to_string(paletteIndex) + "\".");
 		return -1;
 	}
 
@@ -352,7 +362,8 @@ void RenderSkyManager::freeObjectBuffers(Renderer &renderer)
 		this->objectIndexBufferID = -1;
 	}
 
-	this->objectTextures.clear();
+	this->generalSkyObjectTextures.clear();
+	this->smallStarTextures.clear();
 }
 
 RenderDrawCall RenderSkyManager::getBgDrawCall() const
@@ -365,18 +376,17 @@ BufferView<const RenderDrawCall> RenderSkyManager::getObjectDrawCalls() const
 	return this->objectDrawCalls;
 }
 
-void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, 
-	TextureManager &textureManager, Renderer &renderer)
+void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer)
 {
 	auto tryLoadTextureAsset = [this, &textureManager, &renderer](const TextureAsset &textureAsset)
 	{
-		const auto iter = std::find_if(this->objectTextures.begin(), this->objectTextures.end(),
-			[&textureAsset](const LoadedSkyObjectTexture &loadedTexture)
+		const auto iter = std::find_if(this->generalSkyObjectTextures.begin(), this->generalSkyObjectTextures.end(),
+			[&textureAsset](const LoadedGeneralSkyObjectTextureEntry &loadedTexture)
 		{
-			return (loadedTexture.type == LoadedSkyObjectTextureType::TextureAsset) && (loadedTexture.textureAsset == textureAsset);
+			return loadedTexture.textureAsset == textureAsset;
 		});
 
-		if (iter == this->objectTextures.end())
+		if (iter == this->generalSkyObjectTextures.end())
 		{
 			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 			if (!textureBuilderID.has_value())
@@ -393,21 +403,21 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 				return;
 			}
 
-			LoadedSkyObjectTexture loadedTexture;
-			loadedTexture.initTextureAsset(textureAsset, ScopedObjectTextureRef(textureID, renderer));
-			this->objectTextures.emplace_back(std::move(loadedTexture));
+			LoadedGeneralSkyObjectTextureEntry loadedEntry;
+			loadedEntry.init(textureAsset, ScopedObjectTextureRef(textureID, renderer));
+			this->generalSkyObjectTextures.emplace_back(std::move(loadedEntry));
 		}
 	};
 
 	auto tryLoadPaletteColor = [this, &renderer](uint8_t paletteIndex)
 	{
-		const auto iter = std::find_if(this->objectTextures.begin(), this->objectTextures.end(),
-			[paletteIndex](const LoadedSkyObjectTexture &loadedTexture)
+		const auto iter = std::find_if(this->smallStarTextures.begin(), this->smallStarTextures.end(),
+			[paletteIndex](const LoadedSmallStarTextureEntry &loadedTexture)
 		{
-			return (loadedTexture.type == LoadedSkyObjectTextureType::PaletteIndex) && (loadedTexture.paletteIndex == paletteIndex);
+			return loadedTexture.paletteIndex == paletteIndex;
 		});
 
-		if (iter == this->objectTextures.end())
+		if (iter == this->smallStarTextures.end())
 		{
 			constexpr int textureWidth = 1;
 			constexpr int textureHeight = textureWidth;
@@ -431,9 +441,9 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 			*dstTexels = paletteIndex;
 			renderer.unlockObjectTexture(textureID);
 
-			LoadedSkyObjectTexture loadedTexture;
-			loadedTexture.initPaletteIndex(paletteIndex, ScopedObjectTextureRef(textureID, renderer));
-			this->objectTextures.emplace_back(std::move(loadedTexture));
+			LoadedSmallStarTextureEntry loadedEntry;
+			loadedEntry.init(paletteIndex, ScopedObjectTextureRef(textureID, renderer));
+			this->smallStarTextures.emplace_back(std::move(loadedEntry));
 		}		
 	};
 
@@ -493,18 +503,60 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 	// @todo: load draw calls for all the sky objects (ideally here, but can be in update() for now if convenient)
 }
 
-void RenderSkyManager::update(const CoordDouble3 &cameraCoord)
+void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord)
 {
 	// Keep the sky centered on the player.
 	this->bgDrawCall.position = VoxelUtils::coordToWorldPoint(cameraCoord);
 
+	auto addDrawCall = [this]()
+	{
+		RenderDrawCall drawCall;
+		drawCall.position = Double3::Zero; // @todo
+		drawCall.preScaleTranslation = Double3::Zero;
+		drawCall.rotation = Matrix4d::identity();
+		drawCall.scale = Matrix4d::identity();
+		drawCall.vertexBufferID = this->objectVertexBufferID;
+		drawCall.normalBufferID = this->objectNormalBufferID;
+		drawCall.texCoordBufferID = this->objectTexCoordBufferID;
+		drawCall.indexBufferID = this->objectIndexBufferID;
+		drawCall.textureIDs[0] = std::nullopt; // @todo
+		drawCall.textureIDs[1] = std::nullopt;
+		drawCall.textureSamplingType0 = TextureSamplingType::Default;
+		drawCall.textureSamplingType1 = TextureSamplingType::Default;
+		drawCall.vertexShaderType = VertexShaderType::Voxel; // @todo
+		drawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelTransparency;
+		drawCall.pixelShaderParam0 = 0.0; // @todo: maybe use for full-bright distant objects like volcanoes?
+		this->objectDrawCalls.emplace_back(std::move(drawCall));
+	};
+
 	// @todo: create draw calls for sky objects. later this can be in loadScene() as an optimization
 	// @todo: update sky object draw call transforms if they are affected by planet rotation
 	DebugLogWarning("Not implemented: RenderSkyManager::update() sky object draw calls");
+
+	this->objectDrawCalls.clear(); // @todo: don't clear every frame, just change their transforms/animation texture ID
+
+	for (int i = skyInst.getLandStartIndex(); i <= skyInst.getLandEndIndex(); i++)
+	{
+		Double3 direction;
+		ObjectTextureID textureID;
+		bool emissive;
+		double width, height;
+		skyInst.getSkyObject(i, &direction, &textureID, &emissive, &width, &height);
+
+		addDrawCall();
+	}
+
+	for (int i = skyInst.getAirStartIndex(); i <= skyInst.getAirEndIndex(); i++)
+	{
+
+	}
+
+	// ...
 }
 
 void RenderSkyManager::unloadScene(Renderer &renderer)
 {
-	this->objectTextures.clear();
+	this->generalSkyObjectTextures.clear();
+	this->smallStarTextures.clear();
 	this->objectDrawCalls.clear();
 }

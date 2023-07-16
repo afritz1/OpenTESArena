@@ -621,7 +621,7 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	const SkyDefinition &activeSkyDef = this->activeMapDef.getSky(activeSkyIndex);
 	const SkyInfoDefinition &activeSkyInfoDef = this->activeMapDef.getSkyInfoForSky(activeSkyIndex);
 	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager, renderer);
-	sceneManager.renderSkyManager.loadScene(sceneManager.skyInstance, activeSkyInfoDef, textureManager, renderer);
+	sceneManager.renderSkyManager.loadScene(activeSkyInfoDef, textureManager, renderer);
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
 	this->tickCollision(0.0, game);
@@ -883,6 +883,7 @@ void GameState::tickRendering(Game &game)
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const SkyInstance &skyInst = sceneManager.skyInstance;
 
 	const double ceilingScale = this->getActiveCeilingScale();
 	const double chasmAnimPercent = this->getChasmAnimPercent();
@@ -904,5 +905,5 @@ void GameState::tickRendering(Game &game)
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
 
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.update(playerCoord);
+	renderSkyManager.update(skyInst, playerCoord);
 }
