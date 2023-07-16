@@ -620,7 +620,7 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	const int activeSkyIndex = this->getActiveSkyIndex();
 	const SkyDefinition &activeSkyDef = this->activeMapDef.getSky(activeSkyIndex);
 	const SkyInfoDefinition &activeSkyInfoDef = this->activeMapDef.getSkyInfoForSky(activeSkyIndex);
-	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager, renderer);
+	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager);
 	sceneManager.renderSkyManager.loadScene(activeSkyInfoDef, textureManager, renderer);
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
@@ -747,8 +747,7 @@ void GameState::tickSky(double dt, Game &game)
 	const LocationDefinition &locationDef = this->getLocationDefinition();
 
 	SkyInstance &skyInst = sceneManager.skyInstance;
-	skyInst.update(dt, locationDef.getLatitude(), this->getDaytimePercent(), this->weatherInst,
-		game.getRandom(), game.getTextureManager());
+	skyInst.update(dt, locationDef.getLatitude(), this->getDaytimePercent(), this->weatherInst, game.getRandom());
 }
 
 void GameState::tickWeather(double dt, Game &game)

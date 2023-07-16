@@ -535,23 +535,32 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 
 	this->objectDrawCalls.clear(); // @todo: don't clear every frame, just change their transforms/animation texture ID
 
-	for (int i = skyInst.getLandStartIndex(); i <= skyInst.getLandEndIndex(); i++)
+	for (int i = skyInst.landStart; i < skyInst.landEnd; i++)
 	{
-		Double3 direction;
-		ObjectTextureID textureID;
-		bool emissive;
-		double width, height;
-		skyInst.getSkyObject(i, &direction, &textureID, &emissive, &width, &height);
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
 
 		addDrawCall();
 	}
 
-	for (int i = skyInst.getAirStartIndex(); i <= skyInst.getAirEndIndex(); i++)
+	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
 	{
 
 	}
 
-	// ...
+	for (int i = skyInst.moonStart; i < skyInst.moonEnd; i++)
+	{
+
+	}
+
+	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
+	{
+
+	}
+
+	for (int i = skyInst.starStart; i < skyInst.starEnd; i++)
+	{
+
+	}
 }
 
 void RenderSkyManager::unloadScene(Renderer &renderer)
