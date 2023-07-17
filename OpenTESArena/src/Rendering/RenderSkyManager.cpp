@@ -505,61 +505,117 @@ void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureMan
 
 void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord)
 {
-	// Keep the sky centered on the player.
-	this->bgDrawCall.position = VoxelUtils::coordToWorldPoint(cameraCoord);
+	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
 
-	auto addDrawCall = [this]()
+	// Keep the sky centered on the player.
+	this->bgDrawCall.position = cameraPos;
+
+	auto addDrawCall = [this, &cameraPos](const Double3 &direction, ObjectTextureID textureID)
 	{
 		RenderDrawCall drawCall;
-		drawCall.position = Double3::Zero; // @todo
+		drawCall.position = cameraPos + (direction * 250.0); // Arbitrary distance.
 		drawCall.preScaleTranslation = Double3::Zero;
-		drawCall.rotation = Matrix4d::identity();
+		
+		const Radians xzRotationRadians = MathUtils::fullAtan2(Double2(direction.z, direction.x)) + Constants::Pi;
+		drawCall.rotation = Matrix4d::yRotation(xzRotationRadians);
+		// @todo: need to combine with a rotation that turns it towards the player from above and below
+
 		drawCall.scale = Matrix4d::identity();
 		drawCall.vertexBufferID = this->objectVertexBufferID;
 		drawCall.normalBufferID = this->objectNormalBufferID;
 		drawCall.texCoordBufferID = this->objectTexCoordBufferID;
 		drawCall.indexBufferID = this->objectIndexBufferID;
-		drawCall.textureIDs[0] = std::nullopt; // @todo
+		drawCall.textureIDs[0] = textureID;
 		drawCall.textureIDs[1] = std::nullopt;
 		drawCall.textureSamplingType0 = TextureSamplingType::Default;
 		drawCall.textureSamplingType1 = TextureSamplingType::Default;
-		drawCall.vertexShaderType = VertexShaderType::Voxel; // @todo
-		drawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelTransparency;
+		drawCall.vertexShaderType = VertexShaderType::SlidingDoor; // @todo: make a sky object vertex shader
+		drawCall.pixelShaderType = PixelShaderType::AlphaTested; // @todo: some things need to use light level transparency shader
 		drawCall.pixelShaderParam0 = 0.0; // @todo: maybe use for full-bright distant objects like volcanoes?
 		this->objectDrawCalls.emplace_back(std::move(drawCall));
 	};
 
-	// @todo: create draw calls for sky objects. later this can be in loadScene() as an optimization
+	// @todo: create draw calls in loadScene() as an optimization
 	// @todo: update sky object draw call transforms if they are affected by planet rotation
-	DebugLogWarning("Not implemented: RenderSkyManager::update() sky object draw calls");
 
 	this->objectDrawCalls.clear(); // @todo: don't clear every frame, just change their transforms/animation texture ID
 
 	for (int i = skyInst.landStart; i < skyInst.landEnd; i++)
 	{
 		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky land objects to use TextureAsset texture type.");
 
-		addDrawCall();
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0); // @todo: if animation exists for this, use its percent to determine index.
+		ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+
+		addDrawCall(skyObjectInst.transformedDirection, textureID);
 	}
 
 	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
 	{
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky air objects to use TextureAsset texture type.");
 
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
+		ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+
+		addDrawCall(skyObjectInst.transformedDirection, textureID);
 	}
 
 	for (int i = skyInst.moonStart; i < skyInst.moonEnd; i++)
 	{
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky moon objects to use TextureAsset texture type.");
 
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
+		ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+
+		addDrawCall(skyObjectInst.transformedDirection, textureID);
 	}
 
 	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
 	{
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky sun objects to use TextureAsset texture type.");
 
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
+		ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+
+		addDrawCall(skyObjectInst.transformedDirection, textureID);
 	}
 
 	for (int i = skyInst.starStart; i < skyInst.starEnd; i++)
 	{
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
 
+		ObjectTextureID textureID = -1;
+		if (textureType == SkyObjectTextureType::TextureAsset)
+		{
+			const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+			const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
+			textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+		}
+		else if (textureType == SkyObjectTextureType::PaletteIndex)
+		{
+			const SkyObjectPaletteIndexEntry &paletteIndexEntry = skyInst.getPaletteIndexEntry(skyObjectInst.paletteIndexEntryID);
+			const uint8_t paletteIndex = paletteIndexEntry.paletteIndex;
+			textureID = this->getSmallStarTextureID(paletteIndex);
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(textureType)));
+		}
+
+		addDrawCall(skyObjectInst.transformedDirection, textureID);
 	}
 }
 
