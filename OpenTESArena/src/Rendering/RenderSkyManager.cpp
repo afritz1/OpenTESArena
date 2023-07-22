@@ -558,7 +558,19 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky land objects to use TextureAsset texture type.");
 
 		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
-		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0); // @todo: if animation exists for this, use its percent to determine index.
+		const BufferView<const TextureAsset> textureAssets = textureAssetEntry.textureAssets;
+		const int textureCount = textureAssets.getCount();
+
+		int textureAssetIndex = 0;
+		const int animIndex = skyObjectInst.animIndex;
+		if (animIndex >= 0)
+		{
+			const SkyObjectAnimationInstance &animInst = skyInst.getAnimInst(animIndex);
+			const double animPercent = animInst.percentDone;
+			textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
+		}
+
+		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
 		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, landDistance, PixelShaderType::AlphaTested);

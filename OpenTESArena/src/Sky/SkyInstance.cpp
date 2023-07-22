@@ -215,7 +215,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			animInst.init(skyObjectIndex, targetSeconds);
 			this->animInsts.emplace_back(animInst);
 
-			const int animIndex = static_cast<int>(this->animInsts.size());
+			const int animIndex = static_cast<int>(this->animInsts.size()) - 1;
 			skyObjectInst.initTextured(baseDirection, width, height, textureAssetEntryID, emissive, animIndex);
 		}
 		else
