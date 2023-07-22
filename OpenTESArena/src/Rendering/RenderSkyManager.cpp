@@ -397,7 +397,7 @@ void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureMan
 
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 			ObjectTextureID textureID;
-			if (!renderer.tryCreateObjectTexture(textureBuilder.getWidth(), textureBuilder.getHeight(), textureBuilder.getBytesPerTexel(), &textureID))
+			if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
 			{
 				DebugLogError("Couldn't create object texture for sky object texture \"" + textureAsset.filename + "\".");
 				return;
@@ -503,24 +503,35 @@ void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureMan
 	// @todo: load draw calls for all the sky objects (ideally here, but can be in update() for now if convenient)
 }
 
-void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord)
+void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord, const Renderer &renderer)
 {
 	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
 
 	// Keep the sky centered on the player.
 	this->bgDrawCall.position = cameraPos;
 
-	auto addDrawCall = [this, &cameraPos](const Double3 &direction, ObjectTextureID textureID)
+	// @temp fix for Z ordering. Later I think we should just not do depth testing in the sky?
+	constexpr double landDistance = 250.0;
+	constexpr double airDistance = landDistance + 20.0;
+	constexpr double moonDistance = airDistance + 20.0;
+	constexpr double sunDistance = moonDistance + 20.0;
+	constexpr double starDistance = sunDistance + 20.0;
+
+	auto addDrawCall = [this, &renderer, &cameraPos](const Double3 &direction, double width, double height, ObjectTextureID textureID,
+		double arbitraryDistance, PixelShaderType pixelShaderType)
 	{
 		RenderDrawCall drawCall;
-		drawCall.position = cameraPos + (direction * 250.0); // Arbitrary distance.
+		drawCall.position = cameraPos + (direction * arbitraryDistance);
 		drawCall.preScaleTranslation = Double3::Zero;
 		
-		const Radians xzRotationRadians = MathUtils::fullAtan2(Double2(direction.z, direction.x)) + Constants::Pi;
+		const Radians xzRotationRadians = MathUtils::fullAtan2(Double2(direction.z, direction.x).normalized()) + Constants::Pi;
 		drawCall.rotation = Matrix4d::yRotation(xzRotationRadians);
 		// @todo: need to combine with a rotation that turns it towards the player from above and below
 
-		drawCall.scale = Matrix4d::identity();
+		const double scaledWidth = width * arbitraryDistance;
+		const double scaledHeight = height * arbitraryDistance;
+		drawCall.scale = Matrix4d::scale(1.0, scaledHeight, scaledWidth);
+
 		drawCall.vertexBufferID = this->objectVertexBufferID;
 		drawCall.normalBufferID = this->objectNormalBufferID;
 		drawCall.texCoordBufferID = this->objectTexCoordBufferID;
@@ -530,7 +541,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 		drawCall.textureSamplingType0 = TextureSamplingType::Default;
 		drawCall.textureSamplingType1 = TextureSamplingType::Default;
 		drawCall.vertexShaderType = VertexShaderType::SlidingDoor; // @todo: make a sky object vertex shader
-		drawCall.pixelShaderType = PixelShaderType::AlphaTested; // @todo: some things need to use light level transparency shader
+		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = 0.0; // @todo: maybe use for full-bright distant objects like volcanoes?
 		this->objectDrawCalls.emplace_back(std::move(drawCall));
 	};
@@ -548,9 +559,9 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 
 		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
 		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0); // @todo: if animation exists for this, use its percent to determine index.
-		ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
-		addDrawCall(skyObjectInst.transformedDirection, textureID);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, landDistance, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
@@ -561,9 +572,9 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 
 		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
 		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
-		ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
-		addDrawCall(skyObjectInst.transformedDirection, textureID);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, airDistance, PixelShaderType::AlphaTestedWithLightLevelTransparency);
 	}
 
 	for (int i = skyInst.moonStart; i < skyInst.moonEnd; i++)
@@ -574,9 +585,9 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 
 		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
 		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
-		ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
-		addDrawCall(skyObjectInst.transformedDirection, textureID);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, moonDistance, PixelShaderType::AlphaTestedWithLightLevelTransparency);
 	}
 
 	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
@@ -587,9 +598,9 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 
 		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
 		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
-		ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
-		addDrawCall(skyObjectInst.transformedDirection, textureID);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, sunDistance, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.starStart; i < skyInst.starEnd; i++)
@@ -615,7 +626,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(textureType)));
 		}
 
-		addDrawCall(skyObjectInst.transformedDirection, textureID);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, starDistance, PixelShaderType::AlphaTested);
 	}
 }
 

@@ -60,7 +60,7 @@ public:
 	BufferView<const RenderDrawCall> getObjectDrawCalls() const;
 
 	void loadScene(const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
-	void update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord);
+	void update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord, const Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
 

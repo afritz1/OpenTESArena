@@ -904,5 +904,5 @@ void GameState::tickRendering(Game &game)
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
 
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.update(skyInst, playerCoord);
+	renderSkyManager.update(skyInst, playerCoord, renderer);
 }
