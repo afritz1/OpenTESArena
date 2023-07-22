@@ -164,7 +164,7 @@ namespace SkyGeneration
 				constexpr int yPosLimit = 64;
 				const int yPos = random.next() % yPosLimit;
 				const double heightPercent = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
-				const Radians angleLimit = 45.0 * Constants::DegToRad;
+				const Radians angleLimit = 30.0 * Constants::DegToRad;
 				return heightPercent * angleLimit;
 			}();
 
