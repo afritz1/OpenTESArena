@@ -625,6 +625,7 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
 	this->tickCollision(0.0, game);
+	this->tickSky(0.0, game);
 	this->tickRendering(game);
 
 	if (this->nextMusicFunc)
