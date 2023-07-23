@@ -524,9 +524,11 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 		drawCall.position = cameraPos + (direction * arbitraryDistance);
 		drawCall.preScaleTranslation = Double3::Zero;
 		
-		const Radians xzRotationRadians = MathUtils::fullAtan2(Double2(direction.z, direction.x).normalized()) + Constants::Pi;
-		drawCall.rotation = Matrix4d::yRotation(xzRotationRadians);
-		// @todo: need to combine with a rotation that turns it towards the player from above and below
+		const Radians pitchRadians = direction.getYAngleRadians();
+		const Radians yawRadians = MathUtils::fullAtan2(Double2(direction.z, direction.x).normalized()) + Constants::Pi;
+		const Matrix4d pitchRotation = Matrix4d::zRotation(pitchRadians);
+		const Matrix4d yawRotation = Matrix4d::yRotation(yawRadians);
+		drawCall.rotation = yawRotation * pitchRotation;
 
 		const double scaledWidth = width * arbitraryDistance;
 		const double scaledHeight = height * arbitraryDistance;
