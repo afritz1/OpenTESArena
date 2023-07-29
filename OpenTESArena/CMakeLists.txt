@@ -490,6 +490,8 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderTextureUtils.h"
     "${SRC_ROOT}/Rendering/RenderVoxelMeshDefinition.cpp"
     "${SRC_ROOT}/Rendering/RenderVoxelMeshDefinition.h"
+    "${SRC_ROOT}/Rendering/RenderWeatherManager.h"
+    "${SRC_ROOT}/Rendering/RenderWeatherManager.cpp"
     "${SRC_ROOT}/Rendering/SdlUiRenderer.cpp"
     "${SRC_ROOT}/Rendering/SdlUiRenderer.h"
     "${SRC_ROOT}/Rendering/SoftwareRenderer.cpp"
