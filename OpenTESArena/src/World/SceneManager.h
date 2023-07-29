@@ -7,6 +7,7 @@
 #include "../Rendering/RenderChunkManager.h"
 #include "../Rendering/RenderSkyManager.h"
 #include "../Rendering/RenderTextureUtils.h"
+#include "../Rendering/RenderWeatherManager.h"
 #include "../Sky/SkyInstance.h"
 #include "../Voxels/VoxelChunkManager.h"
 
@@ -22,8 +23,7 @@ struct SceneManager
 	// Game world systems not tied to chunks.
 	SkyInstance skyInstance;
 	RenderSkyManager renderSkyManager;
-	//ParticleManager; // @todo
-	//RenderParticleManager; // @todo
+	RenderWeatherManager renderWeatherManager;
 
 	ScopedObjectTextureRef gameWorldPaletteTextureRef, lightTableTextureRef;
 

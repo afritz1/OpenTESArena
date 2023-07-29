@@ -20,7 +20,9 @@
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../Math/Constants.h"
+#include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RendererUtils.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
@@ -616,12 +618,15 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	
 	sceneManager.skyInstance.clear();
 	sceneManager.renderSkyManager.unloadScene(renderer);
+	sceneManager.renderWeatherManager.unloadScene();
 
 	const int activeSkyIndex = this->getActiveSkyIndex();
 	const SkyDefinition &activeSkyDef = this->activeMapDef.getSky(activeSkyIndex);
 	const SkyInfoDefinition &activeSkyInfoDef = this->activeMapDef.getSkyInfoForSky(activeSkyIndex);
 	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager);
 	sceneManager.renderSkyManager.loadScene(activeSkyInfoDef, textureManager, renderer);
+	sceneManager.renderWeatherManager.loadScene();
+
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.getRandom(), textureManager);
 
@@ -909,4 +914,12 @@ void GameState::tickRendering(Game &game)
 
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	renderSkyManager.update(skyInst, playerCoord, renderer);
+
+	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
+	const auto &options = game.getOptions();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+
+	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
+	renderWeatherManager.update(weatherInst, renderCamera);
 }

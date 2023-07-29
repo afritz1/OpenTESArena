@@ -50,7 +50,9 @@ public:
 	BufferView<const RenderDrawCall> getSnowDrawCalls() const;
 	const RenderDrawCall &getFogDrawCall() const;
 
+	void loadScene();
 	void update(const WeatherInstance &weatherInst, const RenderCamera &camera);
+	void unloadScene();
 };
 
 #endif

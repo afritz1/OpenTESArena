@@ -5,6 +5,23 @@
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../Weather/WeatherInstance.h"
 
+namespace
+{
+	constexpr int RainTextureWidth = ArenaRenderUtils::RAINDROP_TEXTURE_WIDTH;
+	constexpr int RainTextureHeight = ArenaRenderUtils::RAINDROP_TEXTURE_HEIGHT;
+	constexpr int BytesPerTexel = 1;
+
+	int GetSnowTextureWidth(size_t index)
+	{
+		return ArenaRenderUtils::SNOWFLAKE_TEXTURE_WIDTHS[index];
+	}
+
+	int GetSnowTextureHeight(size_t index)
+	{
+		return ArenaRenderUtils::SNOWFLAKE_TEXTURE_HEIGHTS[index];
+	}
+}
+
 RenderWeatherManager::RenderWeatherManager()
 {
 	this->rainVertexBufferID = -1;
@@ -42,11 +59,8 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 bool RenderWeatherManager::initTextures(Renderer &renderer)
 {
 	// Init rain texture.
-	constexpr int rainTextureWidth = ArenaRenderUtils::RAINDROP_TEXTURE_WIDTH;
-	constexpr int rainTextureHeight = ArenaRenderUtils::RAINDROP_TEXTURE_HEIGHT;
-	constexpr int rainTexelCount = rainTextureWidth * rainTextureHeight;
-	constexpr int rainBytesPerTexel = 1;
-	if (!renderer.tryCreateObjectTexture(rainTextureWidth, rainTextureHeight, rainBytesPerTexel, &this->rainTextureID))
+	constexpr int rainTexelCount = RainTextureWidth * RainTextureHeight;
+	if (!renderer.tryCreateObjectTexture(RainTextureWidth, RainTextureHeight, BytesPerTexel, &this->rainTextureID))
 	{
 		DebugLogError("Couldn't create rain object texture.");
 		return false;
@@ -68,12 +82,11 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 	// Init snow textures.
 	for (size_t i = 0; i < std::size(this->snowTextureIDs); i++)
 	{
-		const int snowTextureWidth = ArenaRenderUtils::SNOWFLAKE_TEXTURE_WIDTHS[i];
-		const int snowTextureHeight = ArenaRenderUtils::SNOWFLAKE_TEXTURE_HEIGHTS[i];
+		const int snowTextureWidth = GetSnowTextureWidth(i);
+		const int snowTextureHeight = GetSnowTextureHeight(i);
 		const int snowTexelCount = snowTextureWidth * snowTextureHeight;
-		constexpr int snowBytesPerTexel = rainBytesPerTexel;
 		ObjectTextureID &snowTextureID = this->snowTextureIDs[i];
-		if (!renderer.tryCreateObjectTexture(snowTextureWidth, snowTextureHeight, snowBytesPerTexel, &snowTextureID))
+		if (!renderer.tryCreateObjectTexture(snowTextureWidth, snowTextureHeight, BytesPerTexel, &snowTextureID))
 		{
 			DebugLogError("Couldn't create snow object texture \"" + std::to_string(i) + "\".");
 			this->freeParticleBuffers(renderer);
@@ -264,22 +277,125 @@ void RenderWeatherManager::freeFogBuffers(Renderer &renderer)
 	}
 }
 
+void RenderWeatherManager::loadScene()
+{
+	// @todo: load draw calls here instead of update() for optimization. take weatherdef/weatherinst parameter so we know what to enable
+}
+
 void RenderWeatherManager::update(const WeatherInstance &weatherInst, const RenderCamera &camera)
 {
-	// @todo: might need camera for doing the projection coordinates right
+	this->rainDrawCalls.clear();
+	this->snowDrawCalls.clear();
+	this->fogDrawCall.clear();
+
+	auto populateParticleDrawCall = [this, &camera](RenderDrawCall &drawCall, double xPercent, double yPercent, int width, int height,
+		VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
+		ObjectTextureID textureID)
+	{
+		// @todo: might need camera for doing the projection coordinates right
+		// @todo: need window dimensions for converting width and height to screen percents
+		drawCall.position = Double3::Zero; // @todo
+
+		drawCall.preScaleTranslation = Double3::Zero;
+		drawCall.rotation = Matrix4d::identity();
+		drawCall.scale = Matrix4d::identity();
+		drawCall.vertexBufferID = vertexBufferID;
+		drawCall.normalBufferID = normalBufferID;
+		drawCall.texCoordBufferID = texCoordBufferID;
+		drawCall.indexBufferID = indexBufferID;
+		drawCall.textureIDs[0] = textureID;
+		drawCall.textureIDs[1] = std::nullopt;
+		drawCall.textureSamplingType0 = TextureSamplingType::Default;
+		drawCall.textureSamplingType1 = TextureSamplingType::Default;
+		drawCall.vertexShaderType = VertexShaderType::SlidingDoor;
+		drawCall.pixelShaderType = PixelShaderType::AlphaTested;
+		drawCall.pixelShaderParam0 = 0.0;
+	};
+
+	auto populateRainDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, double xPercent, double yPercent)
+	{
+		populateParticleDrawCall(drawCall, xPercent, yPercent, RainTextureWidth, RainTextureHeight, this->rainVertexBufferID,
+			this->rainNormalBufferID, this->rainTexCoordBufferID, this->rainIndexBufferID, this->rainTextureID);
+	};
+
+	auto populateSnowDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, double xPercent, double yPercent, int sizeIndex)
+	{
+		const int textureWidth = GetSnowTextureWidth(sizeIndex);
+		const int textureHeight = GetSnowTextureHeight(sizeIndex);
+		const IndexBufferID indexBufferID = this->snowIndexBufferIDs[sizeIndex];
+		const ObjectTextureID textureID = this->snowTextureIDs[sizeIndex];
+		populateParticleDrawCall(drawCall, xPercent, yPercent, textureWidth, textureHeight, this->snowVertexBufferID,
+			this->snowNormalBufferID, this->snowTexCoordBufferID, indexBufferID, textureID);
+	};
 
 	if (weatherInst.hasRain())
 	{
-		// @todo: make draw calls
+		const WeatherRainInstance &rainInst = weatherInst.getRain();
+		const BufferView<const WeatherParticle> rainParticles = rainInst.particles;
+		const int rainParticleCount = rainParticles.getCount();
+
+		if (this->rainDrawCalls.getCount() != rainParticleCount)
+		{
+			this->rainDrawCalls.init(rainParticleCount);
+		}
+
+		for (int i = 0; i < rainParticleCount; i++)
+		{
+			const WeatherParticle &rainParticle = rainInst.particles[i];
+			populateRainDrawCall(this->rainDrawCalls[i], rainParticle.xPercent, rainParticle.yPercent);
+		}
 	}
 
 	if (weatherInst.hasSnow())
 	{
-		// @todo: make draw calls
+		const WeatherSnowInstance &snowInst = weatherInst.getSnow();
+		const BufferView<const WeatherParticle> snowParticles = snowInst.particles;
+		const int snowParticleCount = snowParticles.getCount();
+
+		if (this->snowDrawCalls.getCount() != snowParticleCount)
+		{
+			this->snowDrawCalls.init(snowParticleCount);
+		}
+
+		constexpr int fastSnowParticleCount = ArenaWeatherUtils::SNOWFLAKE_FAST_COUNT;
+		constexpr int mediumSnowParticleCount = ArenaWeatherUtils::SNOWFLAKE_MEDIUM_COUNT;
+		constexpr int slowSnowParticleCount = ArenaWeatherUtils::SNOWFLAKE_SLOW_COUNT;
+		DebugAssert((fastSnowParticleCount + mediumSnowParticleCount + slowSnowParticleCount) == snowParticleCount);
+
+		constexpr int fastSnowParticleStart = 0;
+		constexpr int fastSnowParticleEnd = fastSnowParticleStart + fastSnowParticleCount;
+		for (int i = 0; i < fastSnowParticleCount; i++)
+		{
+			const WeatherParticle &snowParticle = snowInst.particles[i];
+			populateSnowDrawCall(this->snowDrawCalls[i], snowParticle.xPercent, snowParticle.yPercent, 0);
+		}
+
+		constexpr int mediumSnowParticleStart = fastSnowParticleEnd;
+		constexpr int mediumSnowParticleEnd = mediumSnowParticleStart + mediumSnowParticleCount;
+		for (int i = mediumSnowParticleStart; i < mediumSnowParticleEnd; i++)
+		{
+			const WeatherParticle &snowParticle = snowInst.particles[i];
+			populateSnowDrawCall(this->snowDrawCalls[i], snowParticle.xPercent, snowParticle.yPercent, 1);
+		}
+
+		constexpr int slowSnowParticleStart = mediumSnowParticleEnd;
+		constexpr int slowSnowParticleEnd = slowSnowParticleStart + slowSnowParticleCount;
+		for (int i = slowSnowParticleStart; i < slowSnowParticleEnd; i++)
+		{
+			const WeatherParticle &snowParticle = snowInst.particles[i];
+			populateSnowDrawCall(this->snowDrawCalls[i], snowParticle.xPercent, snowParticle.yPercent, 2);
+		}
 	}
 
 	if (weatherInst.hasFog())
 	{
 		// @todo: update fog state + texture
 	}
+}
+
+void RenderWeatherManager::unloadScene()
+{
+	this->rainDrawCalls.clear();
+	this->snowDrawCalls.clear();
+	this->fogDrawCall.clear();
 }

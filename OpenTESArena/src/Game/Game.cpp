@@ -111,6 +111,9 @@ Game::~Game()
 
 	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
 	renderSkyManager.shutdown(this->renderer);
+
+	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
+	renderWeatherManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -182,6 +185,13 @@ bool Game::init()
 
 	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
 	renderSkyManager.init(this->renderer);
+
+	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
+	if (!renderWeatherManager.init(this->renderer))
+	{
+		DebugLogError("Couldn't init render weather manager.");
+		return false;
+	}
 
 	this->inputManager.init();
 

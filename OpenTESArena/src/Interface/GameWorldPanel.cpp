@@ -823,6 +823,28 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		drawCalls.emplace_back(drawCall);
 	}
 
+	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
+	if (activeWeatherInst.hasRain())
+	{
+		for (const RenderDrawCall &drawCall : renderWeatherManager.getRainDrawCalls())
+		{
+			drawCalls.emplace_back(drawCall);
+		}
+	}
+
+	if (activeWeatherInst.hasSnow())
+	{
+		for (const RenderDrawCall &drawCall : renderWeatherManager.getSnowDrawCalls())
+		{
+			drawCalls.emplace_back(drawCall);
+		}
+	}
+
+	if (activeWeatherInst.hasFog())
+	{
+		drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
+	}
+
 	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
 	const MapType activeMapType = activeMapDef.getMapType();
 	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType);
