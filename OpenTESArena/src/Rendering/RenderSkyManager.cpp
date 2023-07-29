@@ -553,70 +553,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 
 	this->objectDrawCalls.clear(); // @todo: don't clear every frame, just change their transforms/animation texture ID
 
-	for (int i = skyInst.landStart; i < skyInst.landEnd; i++)
-	{
-		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
-		const SkyObjectTextureType textureType = skyObjectInst.textureType;
-		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky land objects to use TextureAsset texture type.");
-
-		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
-		const BufferView<const TextureAsset> textureAssets = textureAssetEntry.textureAssets;
-		const int textureCount = textureAssets.getCount();
-
-		int textureAssetIndex = 0;
-		const int animIndex = skyObjectInst.animIndex;
-		if (animIndex >= 0)
-		{
-			const SkyObjectAnimationInstance &animInst = skyInst.getAnimInst(animIndex);
-			const double animPercent = animInst.percentDone;
-			textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
-		}
-
-		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
-		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
-
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, landDistance, PixelShaderType::AlphaTested);
-	}
-
-	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
-	{
-		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
-		const SkyObjectTextureType textureType = skyObjectInst.textureType;
-		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky air objects to use TextureAsset texture type.");
-
-		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
-		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
-		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
-
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, airDistance, PixelShaderType::AlphaTestedWithLightLevelTransparency);
-	}
-
-	for (int i = skyInst.moonStart; i < skyInst.moonEnd; i++)
-	{
-		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
-		const SkyObjectTextureType textureType = skyObjectInst.textureType;
-		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky moon objects to use TextureAsset texture type.");
-
-		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
-		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
-		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
-
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, moonDistance, PixelShaderType::AlphaTestedWithLightLevelTransparency);
-	}
-
-	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
-	{
-		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
-		const SkyObjectTextureType textureType = skyObjectInst.textureType;
-		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky sun objects to use TextureAsset texture type.");
-
-		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
-		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
-		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
-
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, sunDistance, PixelShaderType::AlphaTested);
-	}
-
+	// Order draw calls back to front.
 	for (int i = skyInst.starStart; i < skyInst.starEnd; i++)
 	{
 		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
@@ -641,6 +578,70 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 		}
 
 		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, starDistance, PixelShaderType::AlphaTested);
+	}
+
+	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
+	{
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky sun objects to use TextureAsset texture type.");
+
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, sunDistance, PixelShaderType::AlphaTested);
+	}
+
+	for (int i = skyInst.moonStart; i < skyInst.moonEnd; i++)
+	{
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky moon objects to use TextureAsset texture type.");
+
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, moonDistance, PixelShaderType::AlphaTestedWithLightLevelTransparency);
+	}
+
+	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
+	{
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky air objects to use TextureAsset texture type.");
+
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, airDistance, PixelShaderType::AlphaTestedWithLightLevelTransparency);
+	}
+
+	for (int i = skyInst.landStart; i < skyInst.landEnd; i++)
+	{
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky land objects to use TextureAsset texture type.");
+
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const BufferView<const TextureAsset> textureAssets = textureAssetEntry.textureAssets;
+		const int textureCount = textureAssets.getCount();
+
+		int textureAssetIndex = 0;
+		const int animIndex = skyObjectInst.animIndex;
+		if (animIndex >= 0)
+		{
+			const SkyObjectAnimationInstance &animInst = skyInst.getAnimInst(animIndex);
+			const double animPercent = animInst.percentDone;
+			textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
+		}
+
+		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, landDistance, PixelShaderType::AlphaTested);
 	}
 }
 
