@@ -366,7 +366,7 @@ void RenderSkyManager::freeObjectBuffers(Renderer &renderer)
 	this->smallStarTextures.clear();
 }
 
-RenderDrawCall RenderSkyManager::getBgDrawCall() const
+const RenderDrawCall &RenderSkyManager::getBgDrawCall() const
 {
 	return this->bgDrawCall;
 }
