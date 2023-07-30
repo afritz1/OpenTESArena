@@ -117,7 +117,169 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 	renderer.populateAttributeBuffer(this->particleTexCoordBufferID, particleTexCoords);
 	renderer.populateIndexBuffer(this->particleIndexBufferID, particleIndices);
 
-	// @todo: fog
+	constexpr int fogMeshVertexCount = 24; // 4 vertices per cube face
+	constexpr int fogMeshIndexCount = 36;
+
+	// Turned inward to face the camera.
+	constexpr double fogVertices[fogMeshVertexCount * positionComponentsPerVertex] =
+	{
+		// X=0
+		-0.5, 0.5, 0.5,
+		-0.5, -0.5, 0.5,
+		-0.5, -0.5, -0.5,
+		-0.5, 0.5, -0.5,
+		// X=1
+		0.5, 0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, -0.5, 0.5,
+		0.5, 0.5, 0.5,
+		// Y=0
+		-0.5, -0.5, 0.5,
+		0.5, -0.5, 0.5,
+		0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		// Y=1
+		-0.5, 0.5, -0.5,
+		0.5, 0.5, -0.5,
+		0.5, 0.5, 0.5,
+		-0.5, 0.5, 0.5,
+		// Z=0
+		-0.5, 0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, 0.5, -0.5,
+		// Z=1
+		0.5, 0.5, 0.5,
+		0.5, -0.5, 0.5,
+		-0.5, -0.5, 0.5,
+		-0.5, 0.5, 0.5
+	};
+
+	constexpr double fogNormals[fogMeshVertexCount * normalComponentsPerVertex] =
+	{
+		// X=0
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		1.0, 0.0, 0.0,
+		// X=1
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		// Y=0
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		0.0, 1.0, 0.0,
+		// Y=1
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 0.0,
+		// Z=0
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		0.0, 0.0, 1.0,
+		// Z=1
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0,
+		0.0, 0.0, -1.0
+	};
+
+	constexpr double fogTexCoords[fogMeshVertexCount * texCoordComponentsPerVertex] =
+	{
+		// X=0
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0,
+		// X=1
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0,
+		// Y=0
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0,
+		// Y=1
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0,
+		// Z=0
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0,
+		// Z=1
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0
+	};
+
+	constexpr int32_t fogIndices[fogMeshIndexCount] =
+	{
+		// X=0
+		0, 1, 2,
+		2, 3, 0,
+		// X=1
+		4, 5, 6,
+		6, 7, 4,
+		// Y=0
+		8, 9, 10,
+		10, 11, 8,
+		// Y=1
+		12, 13, 14,
+		14, 15, 12,
+		// Z=0
+		16, 17, 18,
+		18, 19, 16,
+		// Z=1
+		20, 21, 22,
+		22, 23, 20
+	};
+
+	if (!renderer.tryCreateVertexBuffer(fogMeshVertexCount, positionComponentsPerVertex, &this->fogVertexBufferID))
+	{
+		DebugLogError("Couldn't create vertex buffer for fog mesh ID.");
+		this->freeParticleBuffers(renderer);
+		return false;
+	}
+
+	if (!renderer.tryCreateAttributeBuffer(fogMeshVertexCount, normalComponentsPerVertex, &this->fogNormalBufferID))
+	{
+		DebugLogError("Couldn't create normal attribute buffer for fog mesh def.");
+		this->freeParticleBuffers(renderer);
+		this->freeFogBuffers(renderer);
+		return false;
+	}
+
+	if (!renderer.tryCreateAttributeBuffer(fogMeshVertexCount, texCoordComponentsPerVertex, &this->fogTexCoordBufferID))
+	{
+		DebugLogError("Couldn't create tex coord attribute buffer for fog mesh def.");
+		this->freeParticleBuffers(renderer);
+		this->freeFogBuffers(renderer);
+		return false;
+	}
+
+	if (!renderer.tryCreateIndexBuffer(fogMeshIndexCount, &this->fogIndexBufferID))
+	{
+		DebugLogError("Couldn't create index buffer for fog mesh def.");
+		this->freeParticleBuffers(renderer);
+		this->freeFogBuffers(renderer);
+		return false;
+	}
+
+	renderer.populateVertexBuffer(this->fogVertexBufferID, fogVertices);
+	renderer.populateAttributeBuffer(this->fogNormalBufferID, fogNormals);
+	renderer.populateAttributeBuffer(this->fogTexCoordBufferID, fogTexCoords);
+	renderer.populateIndexBuffer(this->fogIndexBufferID, fogIndices);
 
 	return true;
 }
@@ -175,11 +337,10 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 	}
 
 	// Init fog texture (currently temp, not understood).
-	constexpr int fogTextureWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH;
-	constexpr int fogTextureHeight = ArenaRenderUtils::FOG_MATRIX_HEIGHT;
+	constexpr int fogTextureWidth = 2;// ArenaRenderUtils::FOG_MATRIX_WIDTH;
+	constexpr int fogTextureHeight = 2;// ArenaRenderUtils::FOG_MATRIX_HEIGHT;
 	constexpr int fogTexelCount = fogTextureWidth * fogTextureHeight;
-	constexpr int fogBytesPerTexel = 1;
-	if (!renderer.tryCreateObjectTexture(fogTextureWidth, fogTextureHeight, fogBytesPerTexel, &this->fogTextureID))
+	if (!renderer.tryCreateObjectTexture(fogTextureWidth, fogTextureHeight, BytesPerTexel, &this->fogTextureID))
 	{
 		DebugLogError("Couldn't create fog object texture.");
 		return false;
@@ -192,7 +353,7 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 		return false;
 	}
 
-	const uint8_t tempFogTexelColors[] = { 1, 2, 3, 4 };
+	const uint8_t tempFogTexelColors[] = { 5, 6, 7, 8 };
 	const uint8_t *srcFogTexels = tempFogTexelColors;
 	uint8_t *dstFogTexels = static_cast<uint8_t*>(lockedFogTexture.texels);
 	std::copy(srcFogTexels, srcFogTexels + fogTexelCount, dstFogTexels);
@@ -443,7 +604,21 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 
 	if (weatherInst.hasFog())
 	{
-		// @todo: update fog state + texture
+		this->fogDrawCall.position = camera.worldPoint;
+		this->fogDrawCall.preScaleTranslation = Double3::Zero;
+		this->fogDrawCall.rotation = Matrix4d::identity();
+		this->fogDrawCall.scale = Matrix4d::identity();
+		this->fogDrawCall.vertexBufferID = this->fogVertexBufferID;
+		this->fogDrawCall.normalBufferID = this->fogNormalBufferID;
+		this->fogDrawCall.texCoordBufferID = this->fogTexCoordBufferID;
+		this->fogDrawCall.indexBufferID = this->fogIndexBufferID;
+		this->fogDrawCall.textureIDs[0] = this->fogTextureID;
+		this->fogDrawCall.textureIDs[1] = std::nullopt;
+		this->fogDrawCall.textureSamplingType0 = TextureSamplingType::Default;
+		this->fogDrawCall.textureSamplingType1 = TextureSamplingType::Default;
+		this->fogDrawCall.vertexShaderType = VertexShaderType::Voxel;
+		this->fogDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelTransparency; // @todo: don't depth test
+		this->fogDrawCall.pixelShaderParam0 = 0.0;
 	}
 }
 
