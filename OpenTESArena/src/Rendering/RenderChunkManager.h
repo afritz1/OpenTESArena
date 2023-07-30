@@ -14,17 +14,6 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
 
-// Objectives:
-// - efficient visible voxel determination (use quadtree per chunk to find ranges of visible voxel columns)
-// - efficient visible entity determination (don't have notion of a 'chunk' for entities yet, might want bounding box hierarchy per chunk?)
-// - efficient visible sky determination (simple dot product >0 against camera direction at first? or use +/- sign of each star direction? camera can specify which +/- octants are visible to it)
-
-// Wishlist:
-// - make groups of voxels/entities/sky batchable (mesh combining, texture atlasing, etc.)
-// - batching/ordering draw list by texture
-// - occlusion culling system or hierarchical Z buffer to reduce/eliminate overdraw
-// - avoid requiring a screen clear
-
 class EntityChunk;
 class EntityChunkManager;
 class EntityDefinitionLibrary;
@@ -94,11 +83,6 @@ private:
 	RenderEntityMeshDefinition entityMeshDef; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> entityPaletteIndicesTextureRefs;
 
-	// @todo: weather particles
-	// - list of texture IDs
-	// - list of vertex buffer ids (all in 2D and in model space)
-	// - list of transforms for screen positions
-
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache, totalDrawCallsCache;
 
@@ -137,8 +121,6 @@ private:
 		const Matrix4d &rotationMatrix, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary);
 	void rebuildEntityDrawCallsList();
-
-	// @todo: loadWeather()
 public:
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
