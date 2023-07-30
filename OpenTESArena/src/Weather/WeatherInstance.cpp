@@ -327,17 +327,23 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 
 	if (weatherDefType == WeatherType::Clear)
 	{
-		// Do nothing.
+		this->fog = false;
+		this->rain = false;
+		this->snow = false;
 	}
 	else if (weatherDefType == WeatherType::Overcast)
 	{
 		const WeatherOvercastDefinition &overcastDef = weatherDef.overcast;
 		this->fog = overcastDef.heavyFog;
+		this->rain = false;
+		this->snow = false;
 		this->fogInst.init(random, textureManager);
 	}
 	else if (weatherDefType == WeatherType::Rain)
 	{
+		this->fog = false;
 		this->rain = true;
+		this->snow = false;
 
 		const WeatherRainDefinition &rainDef = weatherDef.rain;
 		Buffer<uint8_t> thunderstormColors = ArenaWeatherUtils::makeThunderstormColors(exeData);
@@ -347,6 +353,7 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 	{
 		const WeatherSnowDefinition &snowDef = weatherDef.snow;
 		this->fog = snowDef.heavyFog;
+		this->rain = false;
 		this->snow = true;
 		this->fogInst.init(random, textureManager);
 		this->snowInst.init(random);

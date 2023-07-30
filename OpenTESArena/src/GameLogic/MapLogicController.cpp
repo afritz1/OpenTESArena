@@ -289,7 +289,11 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				return musicDef;
 			};
 
-			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord);
+			// Always use clear weather in interiors.
+			WeatherDefinition overrideWeather;
+			overrideWeather.initClear();
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord, VoxelInt2::Zero, std::nullopt, false, overrideWeather);
 			gameState.queueMusicOnSceneChange(musicFunc);
 		}
 		else if (transitionType == TransitionType::CityGate)
