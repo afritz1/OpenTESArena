@@ -14,18 +14,15 @@ struct RenderCamera;
 class RenderWeatherManager
 {
 private:
-	VertexBufferID rainVertexBufferID;
-	AttributeBufferID rainNormalBufferID;
-	AttributeBufferID rainTexCoordBufferID;
-	IndexBufferID rainIndexBufferID;
+	VertexBufferID particleVertexBufferID;
+	AttributeBufferID particleNormalBufferID;
+	AttributeBufferID particleTexCoordBufferID;
+	IndexBufferID particleIndexBufferID;
+
 	ObjectTextureID rainTextureID;
 	Buffer<RenderDrawCall> rainDrawCalls;
 
-	VertexBufferID snowVertexBufferID;
-	AttributeBufferID snowNormalBufferID;
-	AttributeBufferID snowTexCoordBufferID;
-	IndexBufferID snowIndexBufferIDs[3]; // Each snowflake size has its own geometry and texture.
-	ObjectTextureID snowTextureIDs[3];
+	ObjectTextureID snowTextureIDs[3]; // Each snowflake size has its own texture.
 	Buffer<RenderDrawCall> snowDrawCalls;
 
 	VertexBufferID fogVertexBufferID;

@@ -1,9 +1,12 @@
 #include <algorithm>
 
+#include "RenderCamera.h"
 #include "Renderer.h"
 #include "RenderWeatherManager.h"
+#include "../Math/Constants.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../Weather/WeatherInstance.h"
+#include "../World/MeshUtils.h"
 
 namespace
 {
@@ -24,20 +27,12 @@ namespace
 
 RenderWeatherManager::RenderWeatherManager()
 {
-	this->rainVertexBufferID = -1;
-	this->rainNormalBufferID = -1;
-	this->rainTexCoordBufferID = -1;
-	this->rainIndexBufferID = -1;
+	this->particleVertexBufferID = -1;
+	this->particleNormalBufferID = -1;
+	this->particleTexCoordBufferID = -1;
+	this->particleIndexBufferID = -1;
+
 	this->rainTextureID = -1;
-
-	this->snowVertexBufferID = -1;
-	this->snowNormalBufferID = -1;	
-	this->snowTexCoordBufferID = -1;	
-	for (IndexBufferID &indexBufferID : this->snowIndexBufferIDs)
-	{
-		indexBufferID = -1;
-	}
-
 	for (ObjectTextureID &textureID : this->snowTextureIDs)
 	{
 		textureID = -1;
@@ -52,7 +47,78 @@ RenderWeatherManager::RenderWeatherManager()
 
 bool RenderWeatherManager::initMeshes(Renderer &renderer)
 {
-	DebugLogError("Not implemented: RenderWeatherManager::initMeshes()");
+	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+	constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
+
+	constexpr int particleMeshVertexCount = 4;
+	constexpr int particleMeshIndexCount = 6;
+
+	constexpr double particleVertices[particleMeshVertexCount * positionComponentsPerVertex] =
+	{
+		0.0, 0.0, 0.0, // Let the top left be the origin so each particle is positioned like a cursor icon
+		0.0, -1.0, 0.0,
+		0.0, -1.0, 1.0,
+		0.0, 0.0, 1.0
+	};
+
+	constexpr double particleNormals[particleMeshVertexCount * normalComponentsPerVertex] =
+	{
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0,
+		-1.0, 0.0, 0.0
+	};
+
+	constexpr double particleTexCoords[particleMeshVertexCount * texCoordComponentsPerVertex] =
+	{
+		0.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+		1.0, 0.0
+	};
+
+	constexpr int32_t particleIndices[particleMeshIndexCount] =
+	{
+		0, 1, 2,
+		2, 3, 0
+	};
+
+	if (!renderer.tryCreateVertexBuffer(particleMeshVertexCount, positionComponentsPerVertex, &this->particleVertexBufferID))
+	{
+		DebugLogError("Couldn't create vertex buffer for rain mesh ID.");
+		this->freeParticleBuffers(renderer);
+		return false;
+	}
+
+	if (!renderer.tryCreateAttributeBuffer(particleMeshVertexCount, normalComponentsPerVertex, &this->particleNormalBufferID))
+	{
+		DebugLogError("Couldn't create normal attribute buffer for rain mesh def.");
+		this->freeParticleBuffers(renderer);
+		return false;
+	}
+
+	if (!renderer.tryCreateAttributeBuffer(particleMeshVertexCount, texCoordComponentsPerVertex, &this->particleTexCoordBufferID))
+	{
+		DebugLogError("Couldn't create tex coord attribute buffer for rain mesh def.");
+		this->freeParticleBuffers(renderer);
+		return false;
+	}
+
+	if (!renderer.tryCreateIndexBuffer(particleMeshIndexCount, &this->particleIndexBufferID))
+	{
+		DebugLogError("Couldn't create index buffer for rain mesh def.");
+		this->freeParticleBuffers(renderer);
+		return false;
+	}
+
+	renderer.populateVertexBuffer(this->particleVertexBufferID, particleVertices);
+	renderer.populateAttributeBuffer(this->particleNormalBufferID, particleNormals);
+	renderer.populateAttributeBuffer(this->particleTexCoordBufferID, particleTexCoords);
+	renderer.populateIndexBuffer(this->particleIndexBufferID, particleIndices);
+
+	// @todo: fog
+
 	return true;
 }
 
@@ -63,6 +129,7 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 	if (!renderer.tryCreateObjectTexture(RainTextureWidth, RainTextureHeight, BytesPerTexel, &this->rainTextureID))
 	{
 		DebugLogError("Couldn't create rain object texture.");
+		this->freeParticleBuffers(renderer);
 		return false;
 	}
 
@@ -177,61 +244,34 @@ const RenderDrawCall &RenderWeatherManager::getFogDrawCall() const
 
 void RenderWeatherManager::freeParticleBuffers(Renderer &renderer)
 {
-	if (this->rainVertexBufferID >= 0)
+	if (this->particleVertexBufferID >= 0)
 	{
-		renderer.freeVertexBuffer(this->rainVertexBufferID);
-		this->rainVertexBufferID = -1;
+		renderer.freeVertexBuffer(this->particleVertexBufferID);
+		this->particleVertexBufferID = -1;
 	}
 
-	if (this->rainNormalBufferID >= 0)
+	if (this->particleNormalBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->rainNormalBufferID);
-		this->rainNormalBufferID = -1;
+		renderer.freeAttributeBuffer(this->particleNormalBufferID);
+		this->particleNormalBufferID = -1;
 	}
 
-	if (this->rainTexCoordBufferID >= 0)
+	if (this->particleTexCoordBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->rainTexCoordBufferID);
-		this->rainTexCoordBufferID = -1;
+		renderer.freeAttributeBuffer(this->particleTexCoordBufferID);
+		this->particleTexCoordBufferID = -1;
 	}
 
-	if (this->rainIndexBufferID >= 0)
+	if (this->particleIndexBufferID >= 0)
 	{
-		renderer.freeIndexBuffer(this->rainIndexBufferID);
-		this->rainIndexBufferID = -1;
+		renderer.freeIndexBuffer(this->particleIndexBufferID);
+		this->particleIndexBufferID = -1;
 	}
 
 	if (this->rainTextureID >= 0)
 	{
 		renderer.freeObjectTexture(this->rainTextureID);
 		this->rainTextureID = -1;
-	}
-
-	if (this->snowVertexBufferID >= 0)
-	{
-		renderer.freeVertexBuffer(this->snowVertexBufferID);
-		this->snowVertexBufferID = -1;
-	}
-
-	if (this->snowNormalBufferID >= 0)
-	{
-		renderer.freeAttributeBuffer(this->snowNormalBufferID);
-		this->snowNormalBufferID = -1;
-	}
-
-	if (this->snowTexCoordBufferID >= 0)
-	{
-		renderer.freeAttributeBuffer(this->snowTexCoordBufferID);
-		this->snowTexCoordBufferID = -1;
-	}
-
-	for (IndexBufferID &snowIndexBufferID : this->snowIndexBufferIDs)
-	{
-		if (snowIndexBufferID >= 0)
-		{
-			renderer.freeIndexBuffer(snowIndexBufferID);
-			snowIndexBufferID = -1;
-		}
 	}
 
 	for (ObjectTextureID &snowTextureID : this->snowTextureIDs)
@@ -288,21 +328,38 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 	this->snowDrawCalls.clear();
 	this->fogDrawCall.clear();
 
-	auto populateParticleDrawCall = [this, &camera](RenderDrawCall &drawCall, double xPercent, double yPercent, int width, int height,
-		VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
-		ObjectTextureID textureID)
+	auto populateParticleDrawCall = [this, &camera](RenderDrawCall &drawCall, double xPercent, double yPercent,
+		int textureWidth, int textureHeight, ObjectTextureID textureID)
 	{
-		// @todo: might need camera for doing the projection coordinates right
-		// @todo: need window dimensions for converting width and height to screen percents
-		drawCall.position = Double3::Zero; // @todo
+		constexpr double arbitraryDistance = 0.005; // Close to camera but in front of near plane. @todo: use shader w/ no depth test
+
+		const Double3 &basePosition = camera.worldPoint;
+		const Double3 centerDir = camera.forwardScaled * arbitraryDistance;
+		const Double3 rightDir = camera.rightScaled * arbitraryDistance;
+		const Double3 upDir = camera.upScaled * arbitraryDistance;
+		const Double3 topLeftPoint = basePosition + centerDir - rightDir + upDir;
+		drawCall.position = topLeftPoint + (rightDir * (2.0 * xPercent)) - (upDir * (2.0 * yPercent));
 
 		drawCall.preScaleTranslation = Double3::Zero;
-		drawCall.rotation = Matrix4d::identity();
-		drawCall.scale = Matrix4d::identity();
-		drawCall.vertexBufferID = vertexBufferID;
-		drawCall.normalBufferID = normalBufferID;
-		drawCall.texCoordBufferID = texCoordBufferID;
-		drawCall.indexBufferID = indexBufferID;
+
+		const Radians pitchRadians = camera.forward.getYAngleRadians();
+		const Radians yawRadians = MathUtils::fullAtan2(Double2(camera.forward.z, camera.forward.x).normalized()) + Constants::Pi;
+		const Matrix4d pitchRotation = Matrix4d::zRotation(pitchRadians);
+		const Matrix4d yawRotation = Matrix4d::yRotation(yawRadians);
+		drawCall.rotation = yawRotation * pitchRotation;
+
+		const double baseWidth = static_cast<double>(textureWidth) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
+		const double baseHeight = static_cast<double>(textureHeight) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
+		const double widthScaleAmount = arbitraryDistance; // @todo: seems like this should be higher
+		const double heightScaleAmount = arbitraryDistance;
+		const double scaledWidth = baseWidth * widthScaleAmount;
+		const double scaledHeight = baseHeight * heightScaleAmount;
+		drawCall.scale = Matrix4d::scale(1.0, scaledHeight, scaledWidth);
+
+		drawCall.vertexBufferID = this->particleVertexBufferID;
+		drawCall.normalBufferID = this->particleNormalBufferID;
+		drawCall.texCoordBufferID = this->particleTexCoordBufferID;
+		drawCall.indexBufferID = this->particleIndexBufferID;
 		drawCall.textureIDs[0] = textureID;
 		drawCall.textureIDs[1] = std::nullopt;
 		drawCall.textureSamplingType0 = TextureSamplingType::Default;
@@ -314,18 +371,15 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 
 	auto populateRainDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, double xPercent, double yPercent)
 	{
-		populateParticleDrawCall(drawCall, xPercent, yPercent, RainTextureWidth, RainTextureHeight, this->rainVertexBufferID,
-			this->rainNormalBufferID, this->rainTexCoordBufferID, this->rainIndexBufferID, this->rainTextureID);
+		populateParticleDrawCall(drawCall, xPercent, yPercent, RainTextureWidth, RainTextureHeight, this->rainTextureID);
 	};
 
 	auto populateSnowDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, double xPercent, double yPercent, int sizeIndex)
 	{
 		const int textureWidth = GetSnowTextureWidth(sizeIndex);
 		const int textureHeight = GetSnowTextureHeight(sizeIndex);
-		const IndexBufferID indexBufferID = this->snowIndexBufferIDs[sizeIndex];
 		const ObjectTextureID textureID = this->snowTextureIDs[sizeIndex];
-		populateParticleDrawCall(drawCall, xPercent, yPercent, textureWidth, textureHeight, this->snowVertexBufferID,
-			this->snowNormalBufferID, this->snowTexCoordBufferID, indexBufferID, textureID);
+		populateParticleDrawCall(drawCall, xPercent, yPercent, textureWidth, textureHeight, textureID);
 	};
 
 	if (weatherInst.hasRain())
