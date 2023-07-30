@@ -509,12 +509,10 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		const Matrix4d yawRotation = Matrix4d::yRotation(yawRadians);
 		drawCall.rotation = yawRotation * pitchRotation;
 
-		const double baseWidth = static_cast<double>(textureWidth) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
-		const double baseHeight = static_cast<double>(textureHeight) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
-		const double widthScaleAmount = arbitraryDistance; // @todo: seems like this should be higher
-		const double heightScaleAmount = arbitraryDistance;
-		const double scaledWidth = baseWidth * widthScaleAmount;
-		const double scaledHeight = baseHeight * heightScaleAmount;
+		const double baseWidth = static_cast<double>(textureWidth) / 100.0;
+		const double baseHeight = static_cast<double>(textureHeight) / 100.0;
+		const double scaledWidth = baseWidth * arbitraryDistance;
+		const double scaledHeight = baseHeight * arbitraryDistance;
 		drawCall.scale = Matrix4d::scale(1.0, scaledHeight, scaledWidth);
 
 		drawCall.vertexBufferID = this->particleVertexBufferID;
