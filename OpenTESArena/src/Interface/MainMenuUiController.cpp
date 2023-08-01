@@ -19,6 +19,7 @@
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
+#include "../Weather/ArenaWeatherUtils.h"
 #include "../World/MapType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
@@ -372,10 +373,12 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
-			const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 			{
+				const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+
 				WeatherDefinition weatherDef;
-				weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+				weatherDef.initFromClassic(filteredWeatherType, currentDay, game.getRandom());
 				return weatherDef;
 			}();
 
@@ -455,10 +458,12 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
-			const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 			{
+				const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+
 				WeatherDefinition weatherDef;
-				weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+				weatherDef.initFromClassic(filteredWeatherType, currentDay, game.getRandom());
 				return weatherDef;
 			}();
 
@@ -496,11 +501,12 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		MapGeneration::WildGenInfo wildGenInfo;
 		wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
-		// Use current weather.
-		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+		const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 		{
+			const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+
 			WeatherDefinition weatherDef;
-			weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+			weatherDef.initFromClassic(filteredWeatherType, currentDay, game.getRandom());
 			return weatherDef;
 		}();
 

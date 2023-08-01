@@ -336,7 +336,17 @@ ArenaTypes::WeatherType GameState::getWeatherForLocation(int provinceIndex, int 
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
 	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, binaryAssetLibrary.getCityDataFile());
 	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
-	return this->worldMapWeathers[quarterIndex];
+	ArenaTypes::WeatherType weatherType = this->worldMapWeathers[quarterIndex];
+
+	if (locationDef.getType() == LocationDefinitionType::City)
+	{
+		// Filter the possible weathers (in case it's trying to have snow in a desert).
+		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+		const ArenaTypes::ClimateType climateType = locationCityDef.climateType;
+		weatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, climateType);
+	}
+
+	return weatherType;
 }
 
 Date &GameState::getDate()
