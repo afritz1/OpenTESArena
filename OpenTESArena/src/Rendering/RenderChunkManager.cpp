@@ -445,14 +445,18 @@ void RenderChunkManager::LoadedEntityAnimation::init(EntityDefID defID, Buffer<S
 	this->textureRefs = std::move(textureRefs);
 }
 
+RenderChunkManager::RenderChunkManager()
+{
+	this->chasmWallIndexBufferIDs.fill(-1);
+	this->playerLightID = -1;
+}
+
 void RenderChunkManager::init(Renderer &renderer)
 {
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
 	ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
 	constexpr int indicesPerFace = static_cast<int>(northIndices.size());
-
-	this->chasmWallIndexBufferIDs.fill(-1);
 
 	for (int i = 0; i < static_cast<int>(this->chasmWallIndexBufferIDs.size()); i++)
 	{
@@ -569,6 +573,16 @@ void RenderChunkManager::init(Renderer &renderer)
 	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, dummyEntityNormals);
 	renderer.populateAttributeBuffer(this->entityMeshDef.texCoordBufferID, entityTexCoords);
 	renderer.populateIndexBuffer(this->entityMeshDef.indexBufferID, entityIndices);
+
+	// Populate global lights.
+	if (!renderer.tryCreateLight(&this->playerLightID))
+	{
+		DebugLogError("Couldn't create render light ID for player.");
+		this->entityMeshDef.freeBuffers(renderer);
+		return;
+	}
+
+	renderer.setLightIntensity(this->playerLightID, ArenaRenderUtils::PLAYER_LIGHT_RADIUS);
 }
 
 void RenderChunkManager::shutdown(Renderer &renderer)
@@ -584,6 +598,12 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 	{
 		renderer.freeIndexBuffer(indexBufferID);
 		indexBufferID = -1;
+	}
+
+	if (this->playerLightID >= 0)
+	{
+		renderer.freeLight(this->playerLightID);
+		this->playerLightID = -1;
 	}
 
 	this->voxelTextures.clear();
@@ -900,7 +920,9 @@ void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3
 	drawCall.textureIDs[0] = textureID0;
 	drawCall.textureIDs[1] = textureID1;
 	drawCall.textureSamplingType0 = textureSamplingType0;
-	drawCall.textureSamplingType1 = textureSamplingType1;
+	drawCall.textureSamplingType1 = textureSamplingType1;	
+	drawCall.lightIDs[0] = this->playerLightID;
+	drawCall.lightCount = 1;
 	drawCall.vertexShaderType = vertexShaderType;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = pixelShaderParam0;
@@ -1300,6 +1322,8 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 	drawCall.textureIDs[1] = textureID1;
 	drawCall.textureSamplingType0 = TextureSamplingType::Default;
 	drawCall.textureSamplingType1 = TextureSamplingType::Default;
+	drawCall.lightIDs[0] = this->playerLightID;
+	drawCall.lightCount = 1;
 	drawCall.vertexShaderType = VertexShaderType::Entity;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = 0.0;
@@ -1492,6 +1516,12 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	this->totalDrawCallsCache.clear();
 	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->voxelDrawCallsCache.begin(), this->voxelDrawCallsCache.end());
 	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->entityDrawCallsCache.begin(), this->entityDrawCallsCache.end());
+}
+
+void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, Renderer &renderer)
+{
+	const WorldDouble3 cameraWorldPoint = VoxelUtils::coordToWorldPoint(cameraCoord);
+	renderer.setLightPosition(this->playerLightID, cameraWorldPoint);
 }
 
 void RenderChunkManager::unloadScene(Renderer &renderer)

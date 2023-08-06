@@ -83,6 +83,8 @@ private:
 	RenderEntityMeshDefinition entityMeshDef; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> entityPaletteIndicesTextureRefs;
 
+	RenderLightID playerLightID;
+
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache, totalDrawCallsCache;
 
@@ -122,6 +124,8 @@ private:
 		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary);
 	void rebuildEntityDrawCallsList();
 public:
+	RenderChunkManager();
+
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
@@ -140,6 +144,7 @@ public:
 	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
+	void updateLights(const CoordDouble3 &cameraCoord, Renderer &renderer);
 
 	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);
