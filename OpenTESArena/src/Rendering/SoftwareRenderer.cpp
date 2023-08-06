@@ -975,7 +975,7 @@ namespace swRender
 		constexpr double yShear = 0.0;
 
 		PixelShaderTexture lightTableShaderTexture;
-		lightTableShaderTexture.texels = lightTableTexture.get8Bit();
+		lightTableShaderTexture.texels = lightTableTexture.texels8Bit;
 		lightTableShaderTexture.width = lightTableTexture.width;
 		lightTableShaderTexture.height = lightTableTexture.height;
 		lightTableShaderTexture.samplingType = TextureSamplingType::Default;
@@ -983,7 +983,7 @@ namespace swRender
 		PixelShaderFrameBuffer shaderFrameBuffer;
 		shaderFrameBuffer.colors = paletteIndexBuffer.begin();
 		shaderFrameBuffer.depth = depthBuffer.begin();
-		shaderFrameBuffer.palette.colors = paletteTexture.get32Bit();
+		shaderFrameBuffer.palette.colors = paletteTexture.texels32Bit;
 		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 
 		const int triangleCount = drawListIndices.count;
@@ -1051,7 +1051,7 @@ namespace swRender
 			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID0);
 
 			PixelShaderTexture shaderTexture0;
-			shaderTexture0.texels = texture0.get8Bit();
+			shaderTexture0.texels = texture0.texels8Bit;
 			shaderTexture0.width = texture0.width;
 			shaderTexture0.height = texture0.height;
 			shaderTexture0.samplingType = textureSamplingType0;
@@ -1061,7 +1061,7 @@ namespace swRender
 				(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup))
 			{
 				const SoftwareRenderer::ObjectTexture &texture1 = textures.get(textureID1);
-				shaderTexture1.texels = texture1.get8Bit();
+				shaderTexture1.texels = texture1.texels8Bit;
 				shaderTexture1.width = texture1.width;
 				shaderTexture1.height = texture1.height;
 				shaderTexture1.samplingType = textureSamplingType1;
@@ -1151,6 +1151,16 @@ namespace swRender
 	}
 }
 
+SoftwareRenderer::ObjectTexture::ObjectTexture()
+{
+	this->texels8Bit = nullptr;
+	this->texels32Bit = nullptr;
+	this->width = 0;
+	this->height = 0;
+	this->texelCount = 0;
+	this->bytesPerTexel = 0;
+}
+
 void SoftwareRenderer::ObjectTexture::init(int width, int height, int bytesPerTexel)
 {
 	DebugAssert(width > 0);
@@ -1161,6 +1171,19 @@ void SoftwareRenderer::ObjectTexture::init(int width, int height, int bytesPerTe
 	this->texels.init(this->texelCount * bytesPerTexel);
 	this->texels.fill(static_cast<std::byte>(0));
 
+	switch (bytesPerTexel)
+	{
+	case 1:
+		this->texels8Bit = reinterpret_cast<const uint8_t*>(this->texels.begin());
+		break;
+	case 4:
+		this->texels32Bit = reinterpret_cast<const uint32_t*>(this->texels.begin());
+		break;
+	default:
+		DebugNotImplementedMsg(std::to_string(bytesPerTexel));
+		break;
+	}
+
 	this->width = width;
 	this->height = height;
 	this->bytesPerTexel = bytesPerTexel;
@@ -1169,20 +1192,6 @@ void SoftwareRenderer::ObjectTexture::init(int width, int height, int bytesPerTe
 void SoftwareRenderer::ObjectTexture::clear()
 {
 	this->texels.clear();
-}
-
-const uint8_t *SoftwareRenderer::ObjectTexture::get8Bit() const
-{
-	DebugAssertMsg(this->bytesPerTexel == 1, "Expected object texture (" + std::to_string(this->width) + "x" +
-		std::to_string(this->height) + ") to be 1 byte per texel (was " + std::to_string(this->bytesPerTexel) + ").");
-	return reinterpret_cast<const uint8_t*>(this->texels.begin());
-}
-
-const uint32_t *SoftwareRenderer::ObjectTexture::get32Bit() const
-{
-	DebugAssertMsg(this->bytesPerTexel == 4, "Expected object texture (" + std::to_string(this->width) + "x" +
-		std::to_string(this->height) + ") to be 4 bytes per texel (was " + std::to_string(this->bytesPerTexel) + ").");
-	return reinterpret_cast<const uint32_t*>(this->texels.begin());
 }
 
 void SoftwareRenderer::VertexBuffer::init(int vertexCount, int componentsPerVertex)

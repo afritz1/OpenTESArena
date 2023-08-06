@@ -29,14 +29,15 @@ public:
 	struct ObjectTexture
 	{
 		Buffer<std::byte> texels;
+		const uint8_t *texels8Bit;
+		const uint32_t *texels32Bit;
 		int width, height, texelCount;
 		int bytesPerTexel;
 
+		ObjectTexture();
+
 		void init(int width, int height, int bytesPerTexel);
 		void clear();
-
-		const uint8_t *get8Bit() const;
-		const uint32_t *get32Bit() const;
 	};
 
 	using ObjectTexturePool = RecyclablePool<ObjectTexture, ObjectTextureID>;
