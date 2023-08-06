@@ -20,7 +20,7 @@ enum class PixelShaderType
 	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
 	AlphaTestedWithVariableTexCoordVMin, // Raising doors.
 	AlphaTestedWithPaletteIndexLookup, // Citizens.
-	AlphaTestedWithLightLevelTransparency // Ghosts and distant moons.
+	AlphaTestedWithLightLevelTransparency // Ghosts, clouds, distant moons.
 };
 
 enum class TextureSamplingType
@@ -28,5 +28,8 @@ enum class TextureSamplingType
 	Default,
 	ScreenSpaceRepeatY // Chasms.
 };
+
+// Unique ID for a light allocated in the renderer's internal format.
+using RenderLightID = int;
 
 #endif

@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "RenderGeometryUtils.h"
+#include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
@@ -62,6 +63,12 @@ public:
 	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
 	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
+
+	// Shading management functions.
+	virtual bool tryCreateLight(RenderLightID *outID) = 0;
+	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
+	virtual void setLightIntensity(RenderLightID id, double intensity) = 0;
+	virtual void freeLight(RenderLightID id) = 0;
 
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;

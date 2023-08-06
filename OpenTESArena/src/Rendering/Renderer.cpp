@@ -142,7 +142,7 @@ Renderer::~Renderer()
 	{
 		this->renderer2D->shutdown();
 	}
-	
+
 	if (this->renderer3D)
 	{
 		this->renderer3D->shutdown();
@@ -187,7 +187,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 
 	int windowWidth, windowHeight;
 	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-	
+
 	auto isValidWindowSize = [](int width, int height)
 	{
 		return (width > 0) && (height > 0);
@@ -274,7 +274,7 @@ BufferView<const Renderer::DisplayMode> Renderer::getDisplayModes() const
 
 double Renderer::getDpiScale() const
 {
-	const double platformDpi = Platform::getDefaultDPI();	
+	const double platformDpi = Platform::getDefaultDPI();
 	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
 
 	float hdpi;
@@ -840,6 +840,30 @@ void Renderer::freeObjectTexture(ObjectTextureID id)
 void Renderer::freeUiTexture(UiTextureID id)
 {
 	this->renderer2D->freeUiTexture(id);
+}
+
+bool Renderer::tryCreateLight(RenderLightID *outID)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateLight(outID);
+}
+
+void Renderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->setLightPosition(id, worldPoint);
+}
+
+void Renderer::setLightIntensity(RenderLightID id, double intensity)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->setLightIntensity(id, intensity);
+}
+
+void Renderer::freeLight(RenderLightID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->freeLight(id);
 }
 
 void Renderer::clear(const Color &color)

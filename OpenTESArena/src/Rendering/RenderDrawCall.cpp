@@ -8,6 +8,13 @@ RenderDrawCall::RenderDrawCall()
 	this->indexBufferID = -1;
 	this->textureSamplingType0 = static_cast<TextureSamplingType>(-1);
 	this->textureSamplingType1 = static_cast<TextureSamplingType>(-1);
+
+	for (RenderLightID &lightID : this->lightIDs)
+	{
+		lightID = -1;
+	}
+
+	this->lightCount = 0;
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
 	this->pixelShaderParam0 = 0.0;
@@ -23,6 +30,7 @@ void RenderDrawCall::clear()
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
+	
 	for (std::optional<ObjectTextureID> &textureID : this->textureIDs)
 	{
 		textureID = std::nullopt;
@@ -30,6 +38,13 @@ void RenderDrawCall::clear()
 
 	this->textureSamplingType0 = static_cast<TextureSamplingType>(-1);
 	this->textureSamplingType1 = static_cast<TextureSamplingType>(-1);
+	
+	for (RenderLightID &lightID : this->lightIDs)
+	{
+		lightID = -1;
+	}
+
+	this->lightCount = 0;
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
 	this->pixelShaderParam0 = 0.0;

@@ -1202,6 +1202,17 @@ void SoftwareRenderer::IndexBuffer::init(int indexCount)
 	this->indices.init(indexCount);
 }
 
+SoftwareRenderer::Light::Light()
+{
+	this->intensity = 0.0;
+}
+
+void SoftwareRenderer::Light::init(const Double3 &worldPoint, double intensity)
+{
+	this->worldPoint = worldPoint;
+	this->intensity = intensity;
+}
+
 SoftwareRenderer::SoftwareRenderer()
 {
 
@@ -1226,6 +1237,7 @@ void SoftwareRenderer::shutdown()
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();
 	this->objectTextures.clear();
+	this->lights.clear();
 }
 
 bool SoftwareRenderer::isInited() const
@@ -1427,6 +1439,34 @@ std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id
 {
 	const ObjectTexture &texture = this->objectTextures.get(id);
 	return Int2(texture.width, texture.height);
+}
+
+bool SoftwareRenderer::tryCreateLight(RenderLightID *outID)
+{
+	if (!this->lights.tryAlloc(outID))
+	{
+		DebugLogError("Couldn't allocate render light ID.");
+		return false;
+	}
+
+	return true;
+}
+
+void SoftwareRenderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
+{
+	Light &light = this->lights.get(id);
+	light.worldPoint = worldPoint;
+}
+
+void SoftwareRenderer::setLightIntensity(RenderLightID id, double intensity)
+{
+	Light &light = this->lights.get(id);
+	light.intensity = intensity;
+}
+
+void SoftwareRenderer::freeLight(RenderLightID id)
+{
+	this->lights.free(id);
 }
 
 RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const

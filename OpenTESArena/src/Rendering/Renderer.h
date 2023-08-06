@@ -206,6 +206,12 @@ public:
 	void freeObjectTexture(ObjectTextureID id);
 	void freeUiTexture(UiTextureID id);
 
+	// Shading management functions.
+	bool tryCreateLight(RenderLightID *outID);
+	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
+	void setLightIntensity(RenderLightID id, double intensity);
+	void freeLight(RenderLightID id);
+
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);
 	void clear();
