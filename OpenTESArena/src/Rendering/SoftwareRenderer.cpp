@@ -958,8 +958,8 @@ namespace swRender
 
 	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
-		TextureSamplingType textureSamplingType1, PixelShaderType pixelShaderType, double pixelShaderParam0,
-		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
+		TextureSamplingType textureSamplingType1, BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType,
+		double pixelShaderParam0, const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
 		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera, BufferView2D<uint8_t> paletteIndexBuffer,
 		BufferView2D<double> depthBuffer, BufferView2D<uint32_t> colorBuffer)
 	{
@@ -1527,9 +1527,19 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 
 		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingType0;
 		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingType1;
+
+		const Light *lightPtrs[RenderDrawCall::MAX_LIGHTS];
+		for (int lightIndex = 0; lightIndex < drawCall.lightCount; lightIndex++)
+		{
+			DebugAssertIndex(drawCall.lightIDs, lightIndex);
+			const RenderLightID lightID = drawCall.lightIDs[lightIndex];
+			lightPtrs[lightIndex] = &this->lights.get(lightID);
+		}
+
+		const BufferView<const Light*> lightsView(lightPtrs, drawCall.lightCount);
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
 		const double pixelShaderParam0 = drawCall.pixelShaderParam0;
-		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, pixelShaderType,
+		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, lightsView, pixelShaderType,
 			pixelShaderParam0, this->objectTextures, paletteTexture, lightTableTexture, camera, paletteIndexBufferView,
 			depthBufferView, colorBufferView);
 	}
