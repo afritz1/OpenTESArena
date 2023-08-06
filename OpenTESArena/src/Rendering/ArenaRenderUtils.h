@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <string>
 
+#include "../Assets/MIFUtils.h"
+
 class Clock;
 class Random;
 class TextureManager;
@@ -110,7 +112,7 @@ namespace ArenaRenderUtils
 		SNOWFLAKE_SLOW_TEXELS
 	};
 
-	constexpr double PLAYER_LIGHT_RADIUS = 3.0;
+	constexpr double PLAYER_LIGHT_RADIUS = 150.0 / MIFUtils::ARENA_UNITS;
 	constexpr double STREETLIGHT_LIGHT_RADIUS = 2.0;
 
 	const std::string CHASM_WATER_FILENAME = "WATERANI.RCI";
