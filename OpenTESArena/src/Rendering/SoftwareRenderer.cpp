@@ -834,7 +834,6 @@ namespace swRender
 		const uint8_t *lightLevelTexels = lightTableTexture.texels;
 		const double lightLevelValue = fadePercent * lightLevelCountReal;
 		const int lightLevelIndex = std::clamp(static_cast<int>(lightLevelValue), 0, lightLevelCount - 1);
-		const double lightLevelPercent = std::clamp(lightLevelValue - std::floor(lightLevelValue), 0.0, Constants::JustBelowOne);
 		const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
 		const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
@@ -986,6 +985,19 @@ namespace swRender
 		shaderFrameBuffer.palette.colors = paletteTexture.texels32Bit;
 		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 
+		const bool requiresTwoTextures =
+			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
+			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
+		const bool requiresWorldPointForLightIntensity =
+			(pixelShaderType == PixelShaderType::Opaque) ||
+			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
+			(pixelShaderType == PixelShaderType::AlphaTested) ||
+			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
+			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin) ||
+			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
+		const bool requiresFadePercentForLightIntensity =
+			(pixelShaderType == PixelShaderType::OpaqueWithFade);
+
 		const int triangleCount = drawListIndices.count;
 		for (int i = 0; i < triangleCount; i++)
 		{
@@ -1057,8 +1069,7 @@ namespace swRender
 			shaderTexture0.samplingType = textureSamplingType0;
 
 			PixelShaderTexture shaderTexture1;
-			if ((pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
-				(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup))
+			if (requiresTwoTextures)
 			{
 				const SoftwareRenderer::ObjectTexture &texture1 = textures.get(textureID1);
 				shaderTexture1.texels = texture1.texels8Bit;
@@ -1109,6 +1120,31 @@ namespace swRender
 							shaderPerspective.texelPercent.x = ((u * uv0Perspective.x) + (v * uv1Perspective.x) + (w * uv2Perspective.x)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 							shaderPerspective.texelPercent.y = ((u * uv0Perspective.y) + (v * uv1Perspective.y) + (w * uv2Perspective.y)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 
+							double lightIntensitySum = 0.0;
+							if (requiresWorldPointForLightIntensity)
+							{
+								// Accumulate light intensity based on distance.
+								for (int lightIndex = 0; lightIndex < lights.getCount(); lightIndex++)
+								{
+									const SoftwareRenderer::Light &light = *lights[lightIndex];
+									const Double3 lightEyeDiff = light.worldPoint - camera.worldPoint;
+									const double lightDistance = lightEyeDiff.length();
+									const double lightIntensity = (lightDistance - light.intensity) / light.intensity;
+									lightIntensitySum += lightIntensity;
+
+									if (lightIntensitySum >= 1.0)
+									{
+										lightIntensitySum = 1.0;
+										break;
+									}
+								}
+							}
+							else if (requiresFadePercentForLightIntensity)
+							{
+								// Same light intensity across the mesh.
+								lightIntensitySum = pixelShaderParam0;
+							}
+
 							switch (pixelShaderType)
 							{
 							case PixelShaderType::Opaque:
@@ -1118,7 +1154,7 @@ namespace swRender
 								PixelShader_OpaqueWithAlphaTestLayer(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
 								break;
 							case PixelShaderType::OpaqueWithFade:
-								PixelShader_OpaqueWithFade(shaderPerspective, shaderTexture0, lightTableShaderTexture, pixelShaderParam0, shaderFrameBuffer);
+								PixelShader_OpaqueWithFade(shaderPerspective, shaderTexture0, lightTableShaderTexture, lightIntensitySum, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTested:
 								PixelShader_AlphaTested(shaderPerspective, shaderTexture0, shaderFrameBuffer);
