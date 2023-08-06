@@ -32,28 +32,31 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
 		constexpr double minAmbient = 0.0;
 		constexpr double maxAmbient = 1.0;
 
+		double ambient;
 		if ((clockPreciseSeconds >= endBrighteningTime) && (clockPreciseSeconds < startDimmingTime))
 		{
 			// Daytime ambient.
-			return maxAmbient;
+			ambient = maxAmbient;
 		}
 		else if ((clockPreciseSeconds >= startBrighteningTime) && (clockPreciseSeconds < endBrighteningTime))
 		{
 			// Interpolate brightening light (in the morning).
 			const double timePercent = (clockPreciseSeconds - startBrighteningTime) / (endBrighteningTime - startBrighteningTime);
-			return minAmbient + ((maxAmbient - minAmbient) * timePercent);
+			ambient = minAmbient + ((maxAmbient - minAmbient) * timePercent);
 		}
 		else if ((clockPreciseSeconds >= startDimmingTime) && (clockPreciseSeconds < endDimmingTime))
 		{
 			// Interpolate dimming light (in the evening).
 			const double timePercent = (clockPreciseSeconds - startDimmingTime) / (endDimmingTime - startDimmingTime);
-			return maxAmbient + ((minAmbient - maxAmbient) * timePercent);
+			ambient = maxAmbient + ((minAmbient - maxAmbient) * timePercent);
 		}
 		else
 		{
 			// Night ambient.
-			return minAmbient;
+			ambient = minAmbient;
 		}
+
+		return std::clamp(ambient, minAmbient, maxAmbient);
 	}
 	else
 	{
