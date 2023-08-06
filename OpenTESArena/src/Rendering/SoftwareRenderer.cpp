@@ -723,6 +723,15 @@ namespace swRender
 		int count;
 	};
 
+	struct PixelShaderLighting
+	{
+		const uint8_t *lightTableTexels;
+		int lightLevelCount; // # of shades from light to dark.
+		double lightLevelCountReal;
+		int texelsPerLightLevel; // Should be 256 for 8-bit colors.
+		int lightLevel; // The selected row of shades between light and dark.
+	};
+
 	struct PixelShaderFrameBuffer
 	{
 		uint8_t *colors;
@@ -732,46 +741,8 @@ namespace swRender
 		int pixelIndex;
 	};
 
-	// @todo: lighting/shading
-	/*const int lightLevelTexelCount = lightTableTexture.texels.getWidth(); // Per light level, not the whole table.
-	const int lightLevelCount = lightTableTexture.texels.getHeight();
-	const double lightLevelCountReal = static_cast<double>(lightLevelCount);
-	const uint8_t *lightLevelTexels = lightTableTexture.texels.get();*/
-
-	/*double shadingPercent;
-	if (isFading)
-	{
-		shadingPercent = fadePercent;
-	}
-	else
-	{
-		// @todo: fix interpolated world space point calculation
-		// XZ position of pixel center in world space.
-		//const Double2 v2D(
-		//	(u * v0.x) + (v * v1.x) + (w * v2.x),
-		//	(u * v0.z) + (v * v1.z) + (w * v2.z));
-		//const double distanceToLight = (v2D - eye2D).length();
-		//shadingPercent = std::clamp(distanceToLight / swConstants::PLAYER_LIGHT_DISTANCE, 0.0, 1.0);
-		//shadingPercent = 0.0; // Full-bright
-	}
-
-	const double lightLevelValue = shadingPercent * lightLevelCountReal;
-
-	// Index into light table palettes.
-	const int lightLevelIndex = std::clamp(static_cast<int>(lightLevelValue), 0, lightLevelCount - 1);
-
-	// Percent through the current light level.
-	const double lightLevelPercent = std::clamp(lightLevelValue - std::floor(lightLevelValue), 0.0, Constants::JustBelowOne);
-
-	const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
-	const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
-	const uint32_t shadedTexelColor = paletteTexels[shadedTexel];
-
-	colorBufferPtr[outputIndex] = shadedTexelColor;
-	depthBufferPtr[outputIndex] = depth;*/
-
-	// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.
-	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
+	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		int texelX = -1;
 		int texelY = -1;
@@ -782,6 +753,7 @@ namespace swRender
 		}
 		else if (texture.samplingType == TextureSamplingType::ScreenSpaceRepeatY)
 		{
+			// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.
 			texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * texture.width), 0, texture.width - 1);
 
 			const double v = frameBuffer.yPercent * 2.0;
@@ -791,12 +763,15 @@ namespace swRender
 
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
+
+		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
+		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
-		const PixelShaderTexture &alphaTestTexture, PixelShaderFrameBuffer &frameBuffer)
+		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercent.x * alphaTestTexture.width), 0, alphaTestTexture.width - 1);
 		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercent.y * alphaTestTexture.height), 0, alphaTestTexture.height - 1);
@@ -816,31 +791,28 @@ namespace swRender
 			texel = opaqueTexture.texels[texelIndex];
 		}
 
-		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
+		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
+		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_OpaqueWithFade(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderTexture &lightTableTexture, double fadePercent, PixelShaderFrameBuffer &frameBuffer)
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
-
-		const int lightLevelTexelCount = lightTableTexture.width;
-		const int lightLevelCount = lightTableTexture.height;
-		const double lightLevelCountReal = static_cast<double>(lightLevelCount);
-		const uint8_t *lightLevelTexels = lightTableTexture.texels;
-		const double lightLevelValue = fadePercent * lightLevelCountReal;
-		const int lightLevelIndex = std::clamp(static_cast<int>(lightLevelValue), 0, lightLevelCount - 1);
-		const int shadedTexelIndex = texel + (lightLevelIndex * lightLevelTexelCount);
-		const uint8_t shadedTexel = lightLevelTexels[shadedTexelIndex];
+		
+		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
-	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
+	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
@@ -853,12 +825,14 @@ namespace swRender
 			return;
 		}
 
-		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
+		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
+		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithVariableTexCoordUMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		double uMin, PixelShaderFrameBuffer &frameBuffer)
+		double uMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const double u = std::clamp(uMin + ((1.0 - uMin) * perspective.texelPercent.x), uMin, 1.0);
 		const int texelX = std::clamp(static_cast<int>(u * texture.width), 0, texture.width - 1);
@@ -872,12 +846,14 @@ namespace swRender
 			return;
 		}
 
-		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
+		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
+		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		double vMin, PixelShaderFrameBuffer &frameBuffer)
+		double vMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
 		const double v = std::clamp(vMin + ((1.0 - vMin) * perspective.texelPercent.y), vMin, 1.0);
@@ -892,12 +868,14 @@ namespace swRender
 			return;
 		}
 
-		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
+		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
+		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderTexture &lookupTexture, PixelShaderFrameBuffer &frameBuffer)
+		const PixelShaderTexture &lookupTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
@@ -911,12 +889,15 @@ namespace swRender
 		}
 
 		const uint8_t replacementTexel = lookupTexture.texels[texel];
-		frameBuffer.colors[frameBuffer.pixelIndex] = replacementTexel;
+
+		const int shadedTexelIndex = replacementTexel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
+		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithLightLevelTransparency(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderTexture &lightLevelTexture, PixelShaderFrameBuffer &frameBuffer)
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
@@ -932,11 +913,10 @@ namespace swRender
 		uint8_t resultTexel;
 		if (ArenaRenderUtils::isLightLevelTexel(texel))
 		{
-			const int lightLevelCount = lightLevelTexture.height;
 			const int lightLevel = static_cast<int>(texel) - ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
 			const uint8_t prevFrameBufferPixel = frameBuffer.colors[frameBuffer.pixelIndex];
-			const int lightTableTextureIndex = prevFrameBufferPixel + (lightLevel * lightLevelTexture.width);
-			resultTexel = lightLevelTexture.texels[lightTableTextureIndex];
+			const int lightTableTextureIndex = prevFrameBufferPixel + (lightLevel * lighting.texelsPerLightLevel);
+			resultTexel = lighting.lightTableTexels[lightTableTextureIndex];
 		}
 		else if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC1)
 		{
@@ -973,11 +953,12 @@ namespace swRender
 
 		constexpr double yShear = 0.0;
 
-		PixelShaderTexture lightTableShaderTexture;
-		lightTableShaderTexture.texels = lightTableTexture.texels8Bit;
-		lightTableShaderTexture.width = lightTableTexture.width;
-		lightTableShaderTexture.height = lightTableTexture.height;
-		lightTableShaderTexture.samplingType = TextureSamplingType::Default;
+		PixelShaderLighting shaderLighting;
+		shaderLighting.lightTableTexels = lightTableTexture.texels8Bit;
+		shaderLighting.lightLevelCount = lightTableTexture.height;
+		shaderLighting.lightLevelCountReal = static_cast<double>(shaderLighting.lightLevelCount);
+		shaderLighting.texelsPerLightLevel = lightTableTexture.width;
+		shaderLighting.lightLevel = 0;
 
 		PixelShaderFrameBuffer shaderFrameBuffer;
 		shaderFrameBuffer.colors = paletteIndexBuffer.begin();
@@ -997,6 +978,7 @@ namespace swRender
 			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
 		const bool requiresFadePercentForLightIntensity =
 			(pixelShaderType == PixelShaderType::OpaqueWithFade);
+		const bool requiresFullBrightLightIntensity = false; // @todo for volcanoes and sky
 
 		const int triangleCount = drawListIndices.count;
 		for (int i = 0; i < triangleCount; i++)
@@ -1112,24 +1094,25 @@ namespace swRender
 
 						PixelShaderPerspectiveCorrection shaderPerspective;
 						shaderPerspective.cameraZDepth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip)); // For depth checks.
-						shaderPerspective.trueDepth = 1.0 / ((u * trueDepth0Recip) + (v * trueDepth1Recip) + (w * trueDepth2Recip)); // For shading. @todo: this should not be view-dependent but it is wobbly when moving/looking around. Blame u,v,w.
 
 						shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
 						if (shaderPerspective.cameraZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
 						{
+							shaderPerspective.trueDepth = 1.0 / ((u * trueDepth0Recip) + (v * trueDepth1Recip) + (w * trueDepth2Recip)); // For shading. @todo: this should not be view-dependent but it is wobbly when moving/looking around. Blame u,v,w.
 							shaderPerspective.texelPercent.x = ((u * uv0Perspective.x) + (v * uv1Perspective.x) + (w * uv2Perspective.x)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 							shaderPerspective.texelPercent.y = ((u * uv0Perspective.y) + (v * uv1Perspective.y) + (w * uv2Perspective.y)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
+
+							const Double3 shaderWorldPoint = (v0 * u) + (v1 * v) + (v2 * w);
 
 							double lightIntensitySum = 0.0;
 							if (requiresWorldPointForLightIntensity)
 							{
-								// Accumulate light intensity based on distance.
 								for (int lightIndex = 0; lightIndex < lights.getCount(); lightIndex++)
 								{
 									const SoftwareRenderer::Light &light = *lights[lightIndex];
-									const Double3 lightEyeDiff = light.worldPoint - camera.worldPoint;
-									const double lightDistance = lightEyeDiff.length();
-									const double lightIntensity = (lightDistance - light.intensity) / light.intensity;
+									const Double3 lightPointDiff = light.worldPoint - shaderWorldPoint;
+									const double lightDistance = lightPointDiff.length();
+									const double lightIntensity = std::clamp(1.0 - (lightDistance - light.intensity) / light.intensity, 0.0, 1.0);
 									lightIntensitySum += lightIntensity;
 
 									if (lightIntensitySum >= 1.0)
@@ -1141,35 +1124,41 @@ namespace swRender
 							}
 							else if (requiresFadePercentForLightIntensity)
 							{
-								// Same light intensity across the mesh.
-								lightIntensitySum = pixelShaderParam0;
+								lightIntensitySum = std::max(1.0 - pixelShaderParam0, 0.0);
 							}
+							else if (requiresFullBrightLightIntensity)
+							{
+								lightIntensitySum = 1.0;
+							}
+
+							const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
+							shaderLighting.lightLevel = (shaderLighting.lightLevelCount - 1) - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lightLevelCount - 1);
 
 							switch (pixelShaderType)
 							{
 							case PixelShaderType::Opaque:
-								PixelShader_Opaque(shaderPerspective, shaderTexture0, shaderFrameBuffer);
+								PixelShader_Opaque(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::OpaqueWithAlphaTestLayer:
-								PixelShader_OpaqueWithAlphaTestLayer(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
+								PixelShader_OpaqueWithAlphaTestLayer(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::OpaqueWithFade:
-								PixelShader_OpaqueWithFade(shaderPerspective, shaderTexture0, lightTableShaderTexture, lightIntensitySum, shaderFrameBuffer);
+								PixelShader_OpaqueWithFade(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTested:
-								PixelShader_AlphaTested(shaderPerspective, shaderTexture0, shaderFrameBuffer);
+								PixelShader_AlphaTested(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
-								PixelShader_AlphaTestedWithVariableTexCoordUMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderFrameBuffer);
+								PixelShader_AlphaTestedWithVariableTexCoordUMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
-								PixelShader_AlphaTestedWithVariableTexCoordVMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderFrameBuffer);
+								PixelShader_AlphaTestedWithVariableTexCoordVMin(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
-								PixelShader_AlphaTestedWithPaletteIndexLookup(shaderPerspective, shaderTexture0, shaderTexture1, shaderFrameBuffer);
+								PixelShader_AlphaTestedWithPaletteIndexLookup(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithLightLevelTransparency:
-								PixelShader_AlphaTestedWithLightLevelTransparency(shaderPerspective, shaderTexture0, lightTableShaderTexture, shaderFrameBuffer);
+								PixelShader_AlphaTestedWithLightLevelTransparency(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 								break;
 							default:
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(pixelShaderType)));
