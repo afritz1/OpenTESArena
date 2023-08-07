@@ -145,7 +145,7 @@ public:
 	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
-	void updateLights(const CoordDouble3 &cameraCoord, Renderer &renderer);
+	void updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, Renderer &renderer);
 
 	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);

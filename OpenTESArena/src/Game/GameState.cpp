@@ -380,6 +380,23 @@ const WeatherInstance &GameState::getWeatherInstance() const
 	return this->weatherInst;
 }
 
+bool GameState::isFogActive() const
+{
+	const MapType mapType = this->getActiveMapType();
+	if (mapType == MapType::Interior)
+	{
+		const int skyIndex = this->getActiveSkyIndex();
+		const SkyInfoDefinition &skyInfoDef = this->activeMapDef.getSkyInfoForSky(skyIndex);
+		return skyInfoDef.isOutdoorDungeon();
+	}
+	else
+	{
+		const bool canDaytimeFogBeActive = ArenaClockUtils::isDaytimeFogActive(this->clock);
+		const WeatherType activeWeatherType = this->getWeatherDefinition().type;
+		return canDaytimeFogBeActive && ((activeWeatherType == WeatherType::Overcast) || (activeWeatherType == WeatherType::Snow));
+	}
+}
+
 std::function<void(Game&)> &GameState::getOnLevelUpVoxelEnter()
 {
 	return this->onLevelUpVoxelEnter;
@@ -917,11 +934,11 @@ void GameState::tickRendering(Game &game)
 		voxelChunkManager, textureManager, renderer);
 	renderChunkManager.updateEntities(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(), playerCoordXZ, playerDirXZ, ceilingScale,
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
-	renderChunkManager.updateLights(playerCoord, renderer);
 
-	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(this->clock, this->getActiveMapType());
-	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(ambientPercent);
+	const bool isFoggy = this->isFogActive();
+	renderChunkManager.updateLights(playerCoord, isFoggy, renderer);
 
+	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(this->clock);
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	renderSkyManager.update(skyInst, playerCoord, distantAmbientPercent, renderer);
 

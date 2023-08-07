@@ -1532,10 +1532,24 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->entityDrawCallsCache.begin(), this->entityDrawCallsCache.end());
 }
 
-void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, Renderer &renderer)
+void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, Renderer &renderer)
 {
 	const WorldDouble3 cameraWorldPoint = VoxelUtils::coordToWorldPoint(cameraCoord);
 	renderer.setLightPosition(this->playerLightID, cameraWorldPoint);
+
+	double playerLightRadiusStart, playerLightRadiusEnd;
+	if (isFogActive)
+	{
+		playerLightRadiusStart = ArenaRenderUtils::PLAYER_FOG_LIGHT_START_RADIUS;
+		playerLightRadiusEnd = ArenaRenderUtils::PLAYER_FOG_LIGHT_END_RADIUS;
+	}
+	else
+	{
+		playerLightRadiusStart = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
+		playerLightRadiusEnd = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
+	}
+
+	renderer.setLightRadius(this->playerLightID, playerLightRadiusStart, playerLightRadiusEnd);
 }
 
 void RenderChunkManager::unloadScene(Renderer &renderer)

@@ -163,6 +163,9 @@ public:
 	const WeatherDefinition &getWeatherDefinition() const;
 	const WeatherInstance &getWeatherInstance() const;
 
+	// Refers to fog in outdoor dungeons and daytime fog, not the heavy fog screen effect.
+	bool isFogActive() const;
+
 	// Gets the custom function for the *LEVELUP voxel enter event.
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
 

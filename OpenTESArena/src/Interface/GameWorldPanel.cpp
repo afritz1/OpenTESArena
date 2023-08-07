@@ -845,9 +845,9 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
 	}
 
-	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
 	const MapType activeMapType = activeMapDef.getMapType();
-	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType);
+	const bool isFoggy = gameState.isFogActive();
+	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType, isFoggy);
 	const double latitude = [&gameState]()
 	{
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
@@ -859,24 +859,9 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const Degrees fovY = options.getGraphics_VerticalFOV();
 	const double viewAspectRatio = renderer.getViewAspect();
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
-	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();	
+	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
 	
-	// Use normal or fog light table depending on whether it's foggy.
 	ObjectTextureID lightTableTextureID = sceneManager.normalLightTableTextureRef.get();
-	const int activeSkyIndex = gameState.getActiveSkyIndex();
-	const SkyInfoDefinition &activeSkyInfoDef = activeMapDef.getSkyInfoForSky(activeSkyIndex);
-	bool isFoggy = false;
-	if (activeMapType == MapType::Interior)
-	{
-		isFoggy = activeSkyInfoDef.isOutdoorDungeon();
-	}
-	else
-	{
-		const WeatherType activeWeatherType = gameState.getWeatherDefinition().type;
-		const bool canDaytimeFogBeActive = ArenaClockUtils::isDaytimeFogActive(gameState.getClock());
-		isFoggy = canDaytimeFogBeActive && ((activeWeatherType == WeatherType::Overcast) || (activeWeatherType == WeatherType::Snow));
-	}
-
 	if (isFoggy)
 	{
 		lightTableTextureID = sceneManager.fogLightTableTextureRef.get();

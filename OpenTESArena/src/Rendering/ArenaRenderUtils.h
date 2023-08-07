@@ -114,16 +114,18 @@ namespace ArenaRenderUtils
 
 	constexpr double PLAYER_LIGHT_START_RADIUS = 150.0 / MIFUtils::ARENA_UNITS;
 	constexpr double PLAYER_LIGHT_END_RADIUS = 275.0 / MIFUtils::ARENA_UNITS;
+	constexpr double PLAYER_FOG_LIGHT_START_RADIUS = 250.0 / MIFUtils::ARENA_UNITS;
+	constexpr double PLAYER_FOG_LIGHT_END_RADIUS = 575.0 / MIFUtils::ARENA_UNITS;
 	constexpr double STREETLIGHT_LIGHT_RADIUS = 2.0;
 
 	const std::string CHASM_WATER_FILENAME = "WATERANI.RCI";
 	const std::string CHASM_LAVA_FILENAME = "LAVAANI.RCI";
 
 	// Gets the current ambient light percent for the scene.
-	double getAmbientPercent(const Clock &clock, MapType mapType);
+	double getAmbientPercent(const Clock &clock, MapType mapType, bool isFoggy);
 
-	// Gets the ambient percent applied to distant sky as a function of global ambient.
-	double getDistantAmbientPercent(double ambientPercent);
+	// Gets the ambient percent applied to distant objects.
+	double getDistantAmbientPercent(const Clock &clock);
 
 	// Used with ghosts and some sky objects.
 	bool isLightLevelTexel(uint8_t texel);

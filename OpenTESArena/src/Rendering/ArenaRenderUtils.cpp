@@ -13,7 +13,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 
-double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
+double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType, bool isFoggy)
 {
 	if (mapType == MapType::Interior)
 	{
@@ -21,6 +21,11 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
 	}
 	else if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
 	{
+		if (isFoggy)
+		{
+			return 0.0; // This assumes it is during the daytime.
+		}
+
 		const double clockPreciseSeconds = clock.getPreciseTotalSeconds();
 
 		// Time ranges where the ambient light changes. The start times are inclusive, and the end times are exclusive.
@@ -64,9 +69,11 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
 	}
 }
 
-double ArenaRenderUtils::getDistantAmbientPercent(double ambientPercent)
+double ArenaRenderUtils::getDistantAmbientPercent(const Clock &clock)
 {
-	return std::clamp(ambientPercent, 0.15, 1.0);
+	constexpr MapType mapType = MapType::City;
+	constexpr bool isFoggy = false;
+	return ArenaRenderUtils::getAmbientPercent(clock, mapType, isFoggy);
 }
 
 bool ArenaRenderUtils::isLightLevelTexel(uint8_t texel)
