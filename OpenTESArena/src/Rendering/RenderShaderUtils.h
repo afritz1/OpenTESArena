@@ -15,7 +15,6 @@ enum class PixelShaderType
 {
 	Opaque,
 	OpaqueWithAlphaTestLayer, // Chasm walls.
-	OpaqueWithFade,
 	AlphaTested,
 	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
 	AlphaTestedWithVariableTexCoordVMin, // Raising doors.

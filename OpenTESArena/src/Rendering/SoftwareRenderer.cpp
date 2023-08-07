@@ -797,20 +797,6 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
-	void PixelShader_OpaqueWithFade(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
-	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-		
-		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
-	}
-
 	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
@@ -1135,9 +1121,6 @@ namespace swRender
 								break;
 							case PixelShaderType::OpaqueWithAlphaTestLayer:
 								PixelShader_OpaqueWithAlphaTestLayer(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
-								break;
-							case PixelShaderType::OpaqueWithFade:
-								PixelShader_OpaqueWithFade(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTested:
 								PixelShader_AlphaTested(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);

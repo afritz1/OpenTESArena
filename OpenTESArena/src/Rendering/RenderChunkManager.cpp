@@ -1033,12 +1033,10 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 						RenderLightingType lightingType = RenderLightingType::PerPixel;
 						double meshLightPercent = 0.0;
-						PixelShaderType pixelShaderType = PixelShaderType::Opaque;
 						if (isFading)
 						{
 							lightingType = RenderLightingType::PerMesh;
 							meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
-							pixelShaderType = PixelShaderType::OpaqueWithFade;
 						}
 
 						std::vector<RenderDrawCall> *drawCallsPtr = nullptr;
@@ -1055,6 +1053,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							drawCallsPtr = &renderChunk.staticDrawCalls;
 						}
 
+						const PixelShaderType pixelShaderType = PixelShaderType::Opaque;
 						const double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
