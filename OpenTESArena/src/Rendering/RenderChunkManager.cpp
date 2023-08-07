@@ -582,7 +582,7 @@ void RenderChunkManager::init(Renderer &renderer)
 		return;
 	}
 
-	renderer.setLightIntensity(this->playerLightID, ArenaRenderUtils::PLAYER_LIGHT_RADIUS);
+	renderer.setLightRadius(this->playerLightID, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS);
 }
 
 void RenderChunkManager::shutdown(Renderer &renderer)

@@ -67,7 +67,7 @@ public:
 	// Shading management functions.
 	virtual bool tryCreateLight(RenderLightID *outID) = 0;
 	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
-	virtual void setLightIntensity(RenderLightID id, double intensity) = 0;
+	virtual void setLightRadius(RenderLightID id, double startRadius, double endRadius) = 0;
 	virtual void freeLight(RenderLightID id) = 0;
 
 	// Returns the texture's dimensions, if it exists.

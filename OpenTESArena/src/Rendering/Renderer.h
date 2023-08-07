@@ -209,7 +209,7 @@ public:
 	// Shading management functions.
 	bool tryCreateLight(RenderLightID *outID);
 	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
-	void setLightIntensity(RenderLightID id, double intensity);
+	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
 	void freeLight(RenderLightID id);
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.

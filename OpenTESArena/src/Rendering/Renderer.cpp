@@ -854,10 +854,10 @@ void Renderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
 	this->renderer3D->setLightPosition(id, worldPoint);
 }
 
-void Renderer::setLightIntensity(RenderLightID id, double intensity)
+void Renderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setLightIntensity(id, intensity);
+	this->renderer3D->setLightRadius(id, startRadius, endRadius);
 }
 
 void Renderer::freeLight(RenderLightID id)

@@ -66,11 +66,11 @@ public:
 	struct Light
 	{
 		Double3 worldPoint;
-		double intensity;
+		double startRadius, endRadius;
 
 		Light();
 
-		void init(const Double3 &worldPoint, double intensity);
+		void init(const Double3 &worldPoint, double startRadius, double endRadius);
 	};
 private:
 	using VertexBufferPool = RecyclablePool<VertexBuffer, VertexBufferID>;
@@ -114,7 +114,7 @@ public:
 
 	bool tryCreateLight(RenderLightID *outID) override;
 	void setLightPosition(RenderLightID id, const Double3 &worldPoint) override;
-	void setLightIntensity(RenderLightID id, double intensity) override;
+	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
 	void freeLight(RenderLightID id) override;
 
 	ProfilerData getProfilerData() const override;

@@ -1096,7 +1096,20 @@ namespace swRender
 									const SoftwareRenderer::Light &light = *lightsPtr[lightIndex];
 									const Double3 lightPointDiff = light.worldPoint - shaderWorldPoint;
 									const double lightDistance = lightPointDiff.length();
-									const double lightIntensity = std::clamp(1.0 - (lightDistance - light.intensity) / light.intensity, 0.0, 1.0);
+									double lightIntensity;
+									if (lightDistance <= light.startRadius)
+									{
+										lightIntensity = 1.0;
+									}
+									else if (lightDistance >= light.endRadius)
+									{
+										lightIntensity = 0.0;
+									}
+									else
+									{
+										lightIntensity = std::clamp(1.0 - ((lightDistance - light.startRadius) / (light.endRadius - light.startRadius)), 0.0, 1.0);
+									}
+
 									lightIntensitySum += lightIntensity;
 
 									if (lightIntensitySum >= 1.0)
@@ -1215,13 +1228,15 @@ void SoftwareRenderer::IndexBuffer::init(int indexCount)
 
 SoftwareRenderer::Light::Light()
 {
-	this->intensity = 0.0;
+	this->startRadius = 0.0;
+	this->endRadius = 0.0;
 }
 
-void SoftwareRenderer::Light::init(const Double3 &worldPoint, double intensity)
+void SoftwareRenderer::Light::init(const Double3 &worldPoint, double startRadius, double endRadius)
 {
 	this->worldPoint = worldPoint;
-	this->intensity = intensity;
+	this->startRadius = startRadius;
+	this->endRadius = endRadius;
 }
 
 SoftwareRenderer::SoftwareRenderer()
@@ -1469,10 +1484,13 @@ void SoftwareRenderer::setLightPosition(RenderLightID id, const Double3 &worldPo
 	light.worldPoint = worldPoint;
 }
 
-void SoftwareRenderer::setLightIntensity(RenderLightID id, double intensity)
+void SoftwareRenderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)
 {
+	DebugAssert(startRadius >= 0.0);
+	DebugAssert(endRadius >= startRadius);
 	Light &light = this->lights.get(id);
-	light.intensity = intensity;
+	light.startRadius = startRadius;
+	light.endRadius = endRadius;
 }
 
 void SoftwareRenderer::freeLight(RenderLightID id)
