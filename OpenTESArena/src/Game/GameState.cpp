@@ -607,12 +607,6 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	Renderer &renderer = game.getRenderer();
 	SceneManager &sceneManager = game.getSceneManager();
 
-	ObjectTextureID gameWorldPaletteTextureID = ArenaLevelUtils::allocGameWorldPaletteTexture(ArenaPaletteName::Default, textureManager, renderer);
-	sceneManager.gameWorldPaletteTextureRef.init(gameWorldPaletteTextureID, renderer);
-
-	ObjectTextureID lightTableTextureID = ArenaLevelUtils::allocLightTableTexture(ArenaTextureName::NormalLightTable, textureManager, renderer);
-	sceneManager.lightTableTextureRef.init(lightTableTextureID, renderer);
-
 	const CoordDouble3 &playerCoord = player.getPosition();
 
 	// Clear and re-populate scene immediately so it's ready for rendering this frame (otherwise we get a black frame).
@@ -630,9 +624,39 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	sceneManager.renderSkyManager.unloadScene(renderer);
 	sceneManager.renderWeatherManager.unloadScene();
 
+	ObjectTextureID gameWorldPaletteTextureID = ArenaLevelUtils::allocGameWorldPaletteTexture(ArenaPaletteName::Default, textureManager, renderer);
+	sceneManager.gameWorldPaletteTextureRef.init(gameWorldPaletteTextureID, renderer);
+
+	const MapType activeMapType = this->getActiveMapType();
 	const int activeSkyIndex = this->getActiveSkyIndex();
 	const SkyDefinition &activeSkyDef = this->activeMapDef.getSky(activeSkyIndex);
 	const SkyInfoDefinition &activeSkyInfoDef = this->activeMapDef.getSkyInfoForSky(activeSkyIndex);
+
+	bool isFoggy = false;
+	if (activeMapType == MapType::Interior)
+	{
+		isFoggy = activeSkyInfoDef.isOutdoorDungeon();
+	}
+	else
+	{
+		const WeatherType activeWeatherType = this->weatherDef.type;
+		const bool hasDaytimeFog = ArenaClockUtils::isDaytimeFogActive(this->clock);
+		isFoggy = hasDaytimeFog && ((activeWeatherType == WeatherType::Overcast) || (activeWeatherType == WeatherType::Snow));
+	}
+
+	std::string lightTableFilename;
+	if (isFoggy)
+	{
+		lightTableFilename = ArenaTextureName::FogLightTable;
+	}
+	else
+	{
+		lightTableFilename = ArenaTextureName::NormalLightTable;
+	}
+
+	ObjectTextureID lightTableTextureID = ArenaLevelUtils::allocLightTableTexture(lightTableFilename, textureManager, renderer);
+	sceneManager.lightTableTextureRef.init(lightTableTextureID, renderer);
+
 	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager);
 	sceneManager.renderSkyManager.loadScene(activeSkyInfoDef, textureManager, renderer);
 	sceneManager.renderWeatherManager.loadScene();

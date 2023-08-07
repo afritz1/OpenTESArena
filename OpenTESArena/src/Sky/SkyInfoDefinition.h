@@ -24,7 +24,15 @@ private:
 
 	// Not referenced by SkyDefinition since lightning bolts are generated at random placements.
 	std::vector<SkyLightningDefinition> lightnings;
+
+	bool outdoorDungeon; // @todo: this might be better as an override light table filename?
 public:
+	SkyInfoDefinition();
+
+	void init(bool outdoorDungeon);
+
+	bool isOutdoorDungeon() const;
+
 	int getLandCount() const;
 	int getAirCount() const;
 	int getStarCount() const;

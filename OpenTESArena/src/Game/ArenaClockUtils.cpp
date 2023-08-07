@@ -15,3 +15,11 @@ bool ArenaClockUtils::nightLightsAreActive(const Clock &clock)
 	const bool afterLamppostActivate = clockTime >= ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
+
+bool ArenaClockUtils::isDaytimeFogActive(const Clock &clock)
+{
+	const double clockTime = clock.getPreciseTotalSeconds();
+	const bool afterAmbientEndBrightening = clockTime >= ArenaClockUtils::AmbientEndBrightening.getPreciseTotalSeconds();
+	const bool beforeAmbientStartDimming = clockTime < ArenaClockUtils::AmbientStartDimming.getPreciseTotalSeconds();
+	return afterAmbientEndBrightening && beforeAmbientStartDimming;
+}

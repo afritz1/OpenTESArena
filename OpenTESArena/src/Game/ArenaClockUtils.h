@@ -40,6 +40,9 @@ namespace ArenaClockUtils
 
 	// Returns whether night lights (i.e., lampposts) should currently be active.
 	bool nightLightsAreActive(const Clock &clock);
+
+	// The original game doesn't supply nighttime colors in FOG.LGT, so it disables it.
+	bool isDaytimeFogActive(const Clock &clock);
 }
 
 #endif

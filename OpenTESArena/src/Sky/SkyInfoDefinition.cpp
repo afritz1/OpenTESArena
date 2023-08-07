@@ -2,6 +2,21 @@
 
 #include "components/debug/Debug.h"
 
+SkyInfoDefinition::SkyInfoDefinition()
+{
+	this->outdoorDungeon = false;
+}
+
+void SkyInfoDefinition::init(bool outdoorDungeon)
+{
+	this->outdoorDungeon = outdoorDungeon;
+}
+
+bool SkyInfoDefinition::isOutdoorDungeon() const
+{
+	return this->outdoorDungeon;
+}
+
 int SkyInfoDefinition::getLandCount() const
 {
 	return static_cast<int>(this->lands.size());

@@ -556,6 +556,7 @@ void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, Te
 	// Only worry about sky color for interior skies.
 	Buffer<Color> skyColors = SkyGeneration::makeInteriorSkyColors(skyGenInfo.outdoorDungeon, textureManager);
 	outSkyDef->init(std::move(skyColors));
+	outSkyInfoDef->init(skyGenInfo.outdoorDungeon);
 }
 
 void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
@@ -567,6 +568,7 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 	// Generate sky colors.
 	Buffer<Color> skyColors = SkyGeneration::makeExteriorSkyColors(skyGenInfo.weatherDef, textureManager);
 	outSkyDef->init(std::move(skyColors));
+	outSkyInfoDef->init(false);
 
 	// Generate static land and air objects.
 	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherDef,
