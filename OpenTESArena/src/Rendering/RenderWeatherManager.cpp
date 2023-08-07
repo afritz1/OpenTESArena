@@ -523,6 +523,9 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.textureIDs[1] = std::nullopt;
 		drawCall.textureSamplingType0 = TextureSamplingType::Default;
 		drawCall.textureSamplingType1 = TextureSamplingType::Default;
+		drawCall.lightingType = RenderLightingType::PerMesh;
+		drawCall.lightPercent = 1.0;
+		drawCall.lightIdCount = 0;
 		drawCall.vertexShaderType = VertexShaderType::SlidingDoor;
 		drawCall.pixelShaderType = PixelShaderType::AlphaTested;
 		drawCall.pixelShaderParam0 = 0.0;
@@ -614,6 +617,9 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.textureIDs[1] = std::nullopt;
 		this->fogDrawCall.textureSamplingType0 = TextureSamplingType::Default;
 		this->fogDrawCall.textureSamplingType1 = TextureSamplingType::Default;
+		this->fogDrawCall.lightingType = RenderLightingType::PerMesh;
+		this->fogDrawCall.lightPercent = 1.0;
+		this->fogDrawCall.lightIdCount = 0;
 		this->fogDrawCall.vertexShaderType = VertexShaderType::Voxel;
 		this->fogDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelTransparency; // @todo: don't depth test
 		this->fogDrawCall.pixelShaderParam0 = 0.0;

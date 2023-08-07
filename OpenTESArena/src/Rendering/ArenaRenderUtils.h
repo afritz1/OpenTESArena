@@ -121,6 +121,9 @@ namespace ArenaRenderUtils
 	// Gets the current ambient light percent for the scene.
 	double getAmbientPercent(const Clock &clock, MapType mapType);
 
+	// Gets the ambient percent applied to distant sky as a function of global ambient.
+	double getDistantAmbientPercent(double ambientPercent);
+
 	// Used with ghosts and some sky objects.
 	bool isLightLevelTexel(uint8_t texel);
 

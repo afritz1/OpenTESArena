@@ -923,8 +923,11 @@ void GameState::tickRendering(Game &game)
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
 	renderChunkManager.updateLights(playerCoord, renderer);
 
+	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(this->clock, this->getActiveMapType());
+	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(ambientPercent);
+
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.update(skyInst, playerCoord, renderer);
+	renderSkyManager.update(skyInst, playerCoord, distantAmbientPercent, renderer);
 
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
 	const auto &options = game.getOptions();

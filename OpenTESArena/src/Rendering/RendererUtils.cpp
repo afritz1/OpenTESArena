@@ -356,12 +356,6 @@ void RendererUtils::writeSkyColors(BufferView<const Double3> skyColors, BufferVi
 	}
 }
 
-double RendererUtils::getDistantAmbientPercent(double ambientPercent)
-{
-	// At their darkest, distant objects are ~1/4 of their intensity.
-	return std::clamp(ambientPercent, 0.25, 1.0);
-}
-
 bool RendererUtils::isBeforeNoon(double daytimePercent)
 {
 	return daytimePercent < 0.50;

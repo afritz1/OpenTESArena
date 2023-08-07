@@ -905,8 +905,9 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 	const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 	IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, VertexShaderType vertexShaderType,
-	PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
+	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType, 
+	double meshLightPercent, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0,
+	std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
 	drawCall.position = position;
@@ -921,8 +922,10 @@ void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3
 	drawCall.textureIDs[1] = textureID1;
 	drawCall.textureSamplingType0 = textureSamplingType0;
 	drawCall.textureSamplingType1 = textureSamplingType1;	
+	drawCall.lightingType = lightingType;
+	drawCall.lightPercent = meshLightPercent;
 	drawCall.lightIDs[0] = this->playerLightID;
-	drawCall.lightCount = 1;
+	drawCall.lightIdCount = 1;
 	drawCall.vertexShaderType = vertexShaderType;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = pixelShaderParam0;
@@ -1028,12 +1031,14 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const Matrix4d scaleMatrix = Matrix4d::identity();
 						const TextureSamplingType textureSamplingType = !isChasm ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
 
+						RenderLightingType lightingType = RenderLightingType::PerPixel;
+						double meshLightPercent = 0.0;
 						PixelShaderType pixelShaderType = PixelShaderType::Opaque;
-						double pixelShaderParam0 = 0.0;
 						if (isFading)
 						{
+							lightingType = RenderLightingType::PerMesh;
+							meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
 							pixelShaderType = PixelShaderType::OpaqueWithFade;
-							pixelShaderParam0 = fadeAnimInst->percentFaded;
 						}
 
 						std::vector<RenderDrawCall> *drawCallsPtr = nullptr;
@@ -1050,9 +1055,11 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							drawCallsPtr = &renderChunk.staticDrawCalls;
 						}
 
+						const double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
-							textureSamplingType, textureSamplingType, VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);
+							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, VertexShaderType::Voxel, pixelShaderType,
+							pixelShaderParam0, *drawCallsPtr);
 					}
 				}
 
@@ -1148,11 +1155,13 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle + rotationAmount);
 									const Matrix4d doorScaleMatrix = Matrix4d::identity();
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
+									constexpr double meshLightPercent = 0.0;
 									constexpr double pixelShaderParam0 = 0.0;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.doorDrawCalls);
+										RenderLightingType::PerPixel, meshLightPercent, VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested,
+										pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
 								break;
@@ -1176,12 +1185,13 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle);
 									const Matrix4d doorScaleMatrix = Matrix4d::scale(1.0, 1.0, scaleAmount);
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
+									constexpr double meshLightPercent = 0.0;
 									const double pixelShaderParam0 = uMin;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										VertexShaderType::SlidingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, pixelShaderParam0,
-										renderChunk.doorDrawCalls);
+										RenderLightingType::PerPixel, meshLightPercent, VertexShaderType::SlidingDoor,
+										PixelShaderType::AlphaTestedWithVariableTexCoordUMin, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
 								break;
@@ -1206,12 +1216,13 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle);
 									const Matrix4d doorScaleMatrix = Matrix4d::scale(1.0, scaleAmount, 1.0);
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
+									constexpr double meshLightPercent = 0.0;
 									const double pixelShaderParam0 = vMin;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, pixelShaderParam0,
-										renderChunk.doorDrawCalls);
+										RenderLightingType::PerPixel, meshLightPercent, VertexShaderType::RaisingDoor,
+										PixelShaderType::AlphaTestedWithVariableTexCoordVMin, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
 								break;
@@ -1230,11 +1241,12 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							const Matrix4d rotationMatrix = Matrix4d::identity();
 							const Matrix4d scaleMatrix = Matrix4d::identity();
 							const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
+							constexpr double meshLightPercent = 0.0;
 							constexpr double pixelShaderParam0 = 0.0;
 							this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID,
-								textureID, std::nullopt, textureSamplingType, textureSamplingType, VertexShaderType::Voxel,
-								PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.staticDrawCalls);
+								textureID, std::nullopt, textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent,
+								VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.staticDrawCalls);
 						}
 					}
 				}
@@ -1256,11 +1268,12 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const Matrix4d rotationMatrix = Matrix4d::identity();
 						const Matrix4d scaleMatrix = Matrix4d::identity();
 						const TextureSamplingType textureSamplingType = isAnimatingChasm ? TextureSamplingType::ScreenSpaceRepeatY : TextureSamplingType::Default;
+						constexpr double meshLightPercent = 0.0;
 						constexpr double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
-							textureSamplingType, textureSamplingType, VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
-							pixelShaderParam0, renderChunk.chasmDrawCalls);
+							textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent, VertexShaderType::Voxel,
+							PixelShaderType::OpaqueWithAlphaTestLayer, pixelShaderParam0, renderChunk.chasmDrawCalls);
 					}
 				}
 			}
@@ -1322,8 +1335,10 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 	drawCall.textureIDs[1] = textureID1;
 	drawCall.textureSamplingType0 = TextureSamplingType::Default;
 	drawCall.textureSamplingType1 = TextureSamplingType::Default;
+	drawCall.lightingType = RenderLightingType::PerPixel;
+	drawCall.lightPercent = 0.0;
 	drawCall.lightIDs[0] = this->playerLightID;
-	drawCall.lightCount = 1;
+	drawCall.lightIdCount = 1;
 	drawCall.vertexShaderType = VertexShaderType::Entity;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = 0.0;

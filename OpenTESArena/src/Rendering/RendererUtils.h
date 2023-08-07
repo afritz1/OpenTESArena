@@ -112,9 +112,6 @@ namespace RendererUtils
 	// make is variable but five seems enough for clean gradient generation across the screen.
 	void writeSkyColors(BufferView<const Double3> skyColors, BufferView<Double3> &outSkyColorsView, double daytimePercent);
 
-	// Gets the ambient percent applied to distant sky as a function of global ambient.
-	double getDistantAmbientPercent(double ambientPercent);
-
 	// Returns whether the given percent through the day is before noon. This affects
 	// the sliding window direction of the sky palette.
 	bool isBeforeNoon(double daytimePercent);

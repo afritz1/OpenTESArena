@@ -189,6 +189,9 @@ void RenderSkyManager::init(Renderer &renderer)
 	this->bgDrawCall.textureIDs[1] = std::nullopt;
 	this->bgDrawCall.textureSamplingType0 = TextureSamplingType::Default;
 	this->bgDrawCall.textureSamplingType1 = TextureSamplingType::Default;
+	this->bgDrawCall.lightingType = RenderLightingType::PerMesh;
+	this->bgDrawCall.lightPercent = 1.0;
+	this->bgDrawCall.lightIdCount = 0;
 	this->bgDrawCall.vertexShaderType = VertexShaderType::Voxel; // @todo: SkyBackground?
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
@@ -503,7 +506,7 @@ void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureMan
 	// @todo: load draw calls for all the sky objects (ideally here, but can be in update() for now if convenient)
 }
 
-void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord, const Renderer &renderer)
+void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord, double distantAmbientPercent, const Renderer &renderer)
 {
 	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
 
@@ -517,8 +520,10 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 	constexpr double sunDistance = moonDistance + 20.0;
 	constexpr double starDistance = sunDistance + 20.0;
 
+	constexpr double fullBrightLightPercent = 1.0;
+
 	auto addDrawCall = [this, &renderer, &cameraPos](const Double3 &direction, double width, double height, ObjectTextureID textureID,
-		double arbitraryDistance, PixelShaderType pixelShaderType)
+		double arbitraryDistance, double meshLightPercent, PixelShaderType pixelShaderType)
 	{
 		RenderDrawCall drawCall;
 		drawCall.position = cameraPos + (direction * arbitraryDistance);
@@ -542,9 +547,12 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 		drawCall.textureIDs[1] = std::nullopt;
 		drawCall.textureSamplingType0 = TextureSamplingType::Default;
 		drawCall.textureSamplingType1 = TextureSamplingType::Default;
+		drawCall.lightingType = RenderLightingType::PerMesh;
+		drawCall.lightPercent = meshLightPercent;
+		drawCall.lightIdCount = 0;
 		drawCall.vertexShaderType = VertexShaderType::SlidingDoor; // @todo: make a sky object vertex shader
 		drawCall.pixelShaderType = pixelShaderType;
-		drawCall.pixelShaderParam0 = 0.0; // @todo: maybe use for full-bright distant objects like volcanoes?
+		drawCall.pixelShaderParam0 = 0.0;
 		this->objectDrawCalls.emplace_back(std::move(drawCall));
 	};
 
@@ -577,7 +585,8 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(textureType)));
 		}
 
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, starDistance, PixelShaderType::AlphaTested);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, starDistance,
+			fullBrightLightPercent, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
@@ -590,7 +599,8 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, sunDistance, PixelShaderType::AlphaTested);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, sunDistance,
+			fullBrightLightPercent, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.moonStart; i < skyInst.moonEnd; i++)
@@ -603,7 +613,8 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, moonDistance, PixelShaderType::AlphaTestedWithLightLevelTransparency);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, moonDistance,
+			fullBrightLightPercent, PixelShaderType::AlphaTestedWithLightLevelTransparency);
 	}
 
 	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
@@ -616,7 +627,8 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 		const TextureAsset &textureAsset = textureAssetEntry.textureAssets.get(0);
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, airDistance, PixelShaderType::AlphaTestedWithLightLevelTransparency);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, airDistance,
+			distantAmbientPercent, PixelShaderType::AlphaTestedWithLightLevelTransparency);
 	}
 
 	for (int i = skyInst.landStart; i < skyInst.landEnd; i++)
@@ -631,17 +643,20 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &ca
 
 		int textureAssetIndex = 0;
 		const int animIndex = skyObjectInst.animIndex;
-		if (animIndex >= 0)
+		double meshLightPercent = distantAmbientPercent;
+		const bool hasAnimation = animIndex >= 0;
+		if (hasAnimation)
 		{
 			const SkyObjectAnimationInstance &animInst = skyInst.getAnimInst(animIndex);
 			const double animPercent = animInst.percentDone;
 			textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
+			meshLightPercent = fullBrightLightPercent; // For volcanoes.
 		}
 
 		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
-
-		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, landDistance, PixelShaderType::AlphaTested);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, landDistance,
+			meshLightPercent, PixelShaderType::AlphaTested);
 	}
 }
 

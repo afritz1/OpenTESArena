@@ -928,7 +928,8 @@ namespace swRender
 		}
 		else
 		{
-			resultTexel = texel;
+			const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+			resultTexel = lighting.lightTableTexels[shadedTexelIndex];
 		}
 		
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
@@ -937,11 +938,11 @@ namespace swRender
 
 	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
-		TextureSamplingType textureSamplingType1, double ambientPercent, BufferView<const SoftwareRenderer::Light*> lights,
-		PixelShaderType pixelShaderType, double pixelShaderParam0, const SoftwareRenderer::ObjectTexturePool &textures,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const RenderCamera &camera, BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer,
-		BufferView2D<uint32_t> colorBuffer)
+		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, double ambientPercent,
+		BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType, double pixelShaderParam0,
+		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
+		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera,
+		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView2D<uint32_t> colorBuffer)
 	{
 		const int frameBufferWidth = paletteIndexBuffer.getWidth();
 		const int frameBufferHeight = paletteIndexBuffer.getHeight();
@@ -953,6 +954,9 @@ namespace swRender
 		const Matrix4d &perspectiveMatrix = camera.perspectiveMatrix;
 
 		constexpr double yShear = 0.0;
+
+		const int lightCount = lights.getCount();
+		const SoftwareRenderer::Light **lightsPtr = lights.begin();
 
 		PixelShaderLighting shaderLighting;
 		shaderLighting.lightTableTexels = lightTableTexture.texels8Bit;
@@ -970,16 +974,8 @@ namespace swRender
 		const bool requiresTwoTextures =
 			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
-		const bool requiresWorldPointForLightIntensity =
-			(pixelShaderType == PixelShaderType::Opaque) ||
-			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
-			(pixelShaderType == PixelShaderType::AlphaTested) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
-		const bool requiresFadePercentForLightIntensity =
-			(pixelShaderType == PixelShaderType::OpaqueWithFade);
-		const bool requiresFullBrightLightIntensity = false; // @todo for volcanoes and sky
+		const bool requiresPerPixelLightIntensity = lightingType == RenderLightingType::PerPixel;
+		const bool requiresPerMeshLightIntensity = lightingType == RenderLightingType::PerMesh;
 
 		const int triangleCount = drawListIndices.count;
 		for (int i = 0; i < triangleCount; i++)
@@ -1106,12 +1102,12 @@ namespace swRender
 							const Double3 shaderWorldPoint = (v0 * u) + (v1 * v) + (v2 * w);
 
 							double lightIntensitySum = 0.0;
-							if (requiresWorldPointForLightIntensity)
+							if (requiresPerPixelLightIntensity)
 							{
 								lightIntensitySum = ambientPercent;
-								for (int lightIndex = 0; lightIndex < lights.getCount(); lightIndex++)
+								for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
 								{
-									const SoftwareRenderer::Light &light = *lights[lightIndex];
+									const SoftwareRenderer::Light &light = *lightsPtr[lightIndex];
 									const Double3 lightPointDiff = light.worldPoint - shaderWorldPoint;
 									const double lightDistance = lightPointDiff.length();
 									const double lightIntensity = std::clamp(1.0 - (lightDistance - light.intensity) / light.intensity, 0.0, 1.0);
@@ -1124,13 +1120,9 @@ namespace swRender
 									}
 								}
 							}
-							else if (requiresFadePercentForLightIntensity)
+							else if (requiresPerMeshLightIntensity)
 							{
-								lightIntensitySum = std::max(1.0 - pixelShaderParam0, 0.0);
-							}
-							else if (requiresFullBrightLightIntensity)
-							{
-								lightIntensitySum = 1.0;
+								lightIntensitySum = meshLightPercent;
 							}
 
 							const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
@@ -1564,21 +1556,32 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<
 		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingType0;
 		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingType1;
 
-		const double ambientPercent = settings.ambientPercent;
+		const RenderLightingType lightingType = drawCall.lightingType;
+		double meshLightPercent = 0.0;
 		const Light *lightPtrs[RenderDrawCall::MAX_LIGHTS];
-		for (int lightIndex = 0; lightIndex < drawCall.lightCount; lightIndex++)
+		BufferView<const Light*> lightsView;
+		if (lightingType == RenderLightingType::PerMesh)
 		{
-			DebugAssertIndex(drawCall.lightIDs, lightIndex);
-			const RenderLightID lightID = drawCall.lightIDs[lightIndex];
-			lightPtrs[lightIndex] = &this->lights.get(lightID);
+			meshLightPercent = drawCall.lightPercent;
+		}
+		else if (lightingType == RenderLightingType::PerPixel)
+		{
+			for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
+			{
+				DebugAssertIndex(drawCall.lightIDs, lightIndex);
+				const RenderLightID lightID = drawCall.lightIDs[lightIndex];
+				lightPtrs[lightIndex] = &this->lights.get(lightID);
+			}
+
+			lightsView.init(lightPtrs, drawCall.lightIdCount);
 		}
 
-		const BufferView<const Light*> lightsView(lightPtrs, drawCall.lightCount);
+		const double ambientPercent = settings.ambientPercent;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
 		const double pixelShaderParam0 = drawCall.pixelShaderParam0;
-		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, ambientPercent, lightsView,
-			pixelShaderType, pixelShaderParam0, this->objectTextures, paletteTexture, lightTableTexture, camera,
-			paletteIndexBufferView, depthBufferView, colorBufferView);
+		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent,
+			ambientPercent, lightsView, pixelShaderType, pixelShaderParam0, this->objectTextures, paletteTexture, lightTableTexture,
+			camera, paletteIndexBufferView, depthBufferView, colorBufferView);
 	}
 }
 
