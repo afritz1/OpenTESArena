@@ -66,8 +66,7 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
 
 double ArenaRenderUtils::getDistantAmbientPercent(double ambientPercent)
 {
-	// At their darkest, distant objects are ~1/4 of their intensity.
-	return std::clamp(ambientPercent, 0.25, 1.0);
+	return std::clamp(ambientPercent, 0.15, 1.0);
 }
 
 bool ArenaRenderUtils::isLightLevelTexel(uint8_t texel)
