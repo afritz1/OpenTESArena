@@ -25,10 +25,14 @@ struct SceneManager
 	RenderSkyManager renderSkyManager;
 	RenderWeatherManager renderWeatherManager;
 
-	ScopedObjectTextureRef gameWorldPaletteTextureRef, lightTableTextureRef;
+	ScopedObjectTextureRef gameWorldPaletteTextureRef;
+
+	// Light tables; these might be switched between instantaneously depending on weather and time of day.
+	ScopedObjectTextureRef normalLightTableTextureRef, fogLightTableTextureRef;
 
 	SceneManager();
 
+	void init(TextureManager &textureManager, Renderer &renderer);
 	void cleanUp();
 };
 

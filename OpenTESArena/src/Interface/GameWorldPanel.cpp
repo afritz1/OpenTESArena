@@ -859,10 +859,28 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const Degrees fovY = options.getGraphics_VerticalFOV();
 	const double viewAspectRatio = renderer.getViewAspect();
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
+	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();	
+	
+	// Use normal or fog light table depending on whether it's foggy.
+	ObjectTextureID lightTableTextureID = sceneManager.normalLightTableTextureRef.get();
+	const int activeSkyIndex = gameState.getActiveSkyIndex();
+	const SkyInfoDefinition &activeSkyInfoDef = activeMapDef.getSkyInfoForSky(activeSkyIndex);
+	bool isFoggy = false;
+	if (activeMapType == MapType::Interior)
+	{
+		isFoggy = activeSkyInfoDef.isOutdoorDungeon();
+	}
+	else
+	{
+		const WeatherType activeWeatherType = gameState.getWeatherDefinition().type;
+		const bool canDaytimeFogBeActive = ArenaClockUtils::isDaytimeFogActive(gameState.getClock());
+		isFoggy = canDaytimeFogBeActive && ((activeWeatherType == WeatherType::Overcast) || (activeWeatherType == WeatherType::Snow));
+	}
 
-	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
-	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
-	const ObjectTextureID lightTableTextureID = sceneManager.lightTableTextureRef.get();
+	if (isFoggy)
+	{
+		lightTableTextureID = sceneManager.fogLightTableTextureRef.get();
+	}
 
 	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, options.getGraphics_RenderThreadsMode());
 

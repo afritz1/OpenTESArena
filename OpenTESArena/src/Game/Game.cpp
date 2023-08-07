@@ -180,6 +180,8 @@ bool Game::init()
 		return false;
 	}
 
+	this->sceneManager.init(this->textureManager, this->renderer);
+
 	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
 	renderChunkManager.init(this->renderer);
 
