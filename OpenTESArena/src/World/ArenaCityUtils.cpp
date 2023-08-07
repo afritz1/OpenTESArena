@@ -44,13 +44,17 @@ std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType,
 
 	const char weatherLetter = [climateType, weatherType]()
 	{
-		if ((weatherType == WeatherType::Clear) || (weatherType == WeatherType::Overcast))
+		if (weatherType == WeatherType::Clear)
 		{
 			return 'N';
 		}
-		else if (weatherType == WeatherType::Rain)
+		else if (weatherType == WeatherType::Overcast)
 		{
 			return 'R';
+		}
+		else if (weatherType == WeatherType::Rain)
+		{
+			return 'W';
 		}
 		else if (weatherType == WeatherType::Snow)
 		{
@@ -67,8 +71,7 @@ std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType,
 		}
 		else
 		{
-			// Not sure what this means.
-			return 'W';
+			DebugUnhandledReturnMsg(char, std::to_string(static_cast<int>(weatherType)));
 		}
 	}();
 
