@@ -69,8 +69,8 @@ void RenderSkyManager::init(const ExeData &exeData, Renderer &renderer)
 	bgNormals.emplace_back(nadirNormal.y);
 	bgNormals.emplace_back(nadirNormal.z);
 
-	const Double2 zenithTexCoord(0.50, 0.0);
-	const Double2 nadirTexCoord(0.50, 1.0);
+	const Double2 zenithTexCoord(1.0, 0.50);
+	const Double2 nadirTexCoord(1.0, 0.50);
 	bgTexCoords.emplace_back(zenithTexCoord.x);
 	bgTexCoords.emplace_back(zenithTexCoord.y);
 	bgTexCoords.emplace_back(nadirTexCoord.x);
@@ -105,8 +105,8 @@ void RenderSkyManager::init(const ExeData &exeData, Renderer &renderer)
 		bgNormals.emplace_back(nextNormal.y);
 		bgNormals.emplace_back(nextNormal.z);
 
-		const Double2 texCoord(1.0, 1.0);
-		const Double2 nextTexCoord(0.0, 1.0);
+		const Double2 texCoord(0.0, 1.0);
+		const Double2 nextTexCoord(0.0, 0.0);
 		bgTexCoords.emplace_back(texCoord.x);
 		bgTexCoords.emplace_back(texCoord.y);
 		bgTexCoords.emplace_back(nextTexCoord.x);
