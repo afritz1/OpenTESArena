@@ -608,6 +608,12 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 
 	this->objectDrawCalls.clear(); // @todo: don't clear every frame, just change their transforms/animation texture ID
 
+	// No sky objects during fog.
+	if (isFoggy)
+	{
+		return;
+	}
+
 	// Order draw calls back to front.
 	for (int i = skyInst.starStart; i < skyInst.starEnd; i++)
 	{
