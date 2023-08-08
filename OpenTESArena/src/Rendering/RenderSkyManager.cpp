@@ -4,12 +4,14 @@
 #include "ArenaRenderUtils.h"
 #include "Renderer.h"
 #include "RenderSkyManager.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
 #include "../Math/Vector3.h"
 #include "../Sky/SkyDefinition.h"
 #include "../Sky/SkyInfoDefinition.h"
 #include "../Sky/SkyInstance.h"
+#include "../Weather/WeatherInstance.h"
 #include "../World/MeshUtils.h"
 
 void RenderSkyManager::LoadedGeneralSkyObjectTextureEntry::init(const TextureAsset &textureAsset,
@@ -31,7 +33,6 @@ RenderSkyManager::RenderSkyManager()
 	this->bgNormalBufferID = -1;
 	this->bgTexCoordBufferID = -1;
 	this->bgIndexBufferID = -1;
-	this->bgObjectTextureID = -1;
 
 	this->objectVertexBufferID = -1;
 	this->objectNormalBufferID = -1;
@@ -39,7 +40,7 @@ RenderSkyManager::RenderSkyManager()
 	this->objectIndexBufferID = -1;
 }
 
-void RenderSkyManager::init(Renderer &renderer)
+void RenderSkyManager::init(const ExeData &exeData, Renderer &renderer)
 {
 	std::vector<double> bgVertices;
 	std::vector<double> bgNormals;
@@ -161,21 +162,41 @@ void RenderSkyManager::init(Renderer &renderer)
 	renderer.populateAttributeBuffer(this->bgTexCoordBufferID, bgTexCoords);
 	renderer.populateIndexBuffer(this->bgIndexBufferID, bgIndices);
 
-	BufferView<const uint8_t> bgPaletteIndices = ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR_MORNING;
-	constexpr int bgTextureWidth = 1;
-	const int bgTextureHeight = bgPaletteIndices.getCount(); // @todo: figure out sky background texture coloring; probably lock+update the main world palette in an update() with DAYTIME.COL indices as times goes on?
-	constexpr int bgBytesPerTexel = 1;
-	if (!renderer.tryCreateObjectTexture(bgTextureWidth, bgTextureHeight, bgBytesPerTexel, &this->bgObjectTextureID))
+	auto allocBgTextureID = [this, &renderer](BufferView<const uint8_t> texels)
 	{
-		DebugLogError("Couldn't create object texture for sky background texture ID.");
-		this->freeBgBuffers(renderer);
-		return;
-	}
+		const int textureWidth = texels.getCount();
+		const int textureHeight = 1;
+		const int bytesPerTexel = 1;
+		ObjectTextureID textureID;
+		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
+		{
+			DebugLogError("Couldn't create object texture for sky background texture ID.");
+			this->freeBgBuffers(renderer);
+			return -1;
+		}
 
-	LockedTexture bgLockedTexture = renderer.lockObjectTexture(this->bgObjectTextureID);
-	uint8_t *bgTexels = static_cast<uint8_t*>(bgLockedTexture.texels);
-	std::copy(bgPaletteIndices.begin(), bgPaletteIndices.end(), bgTexels);
-	renderer.unlockObjectTexture(this->bgObjectTextureID);
+		LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
+		uint8_t *bgTexels = static_cast<uint8_t*>(lockedTexture.texels);
+		std::copy(texels.begin(), texels.end(), bgTexels);
+		renderer.unlockObjectTexture(textureID);
+
+		return textureID;
+	};
+
+	const ObjectTextureID skyGradientAmTextureID = allocBgTextureID(ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR_BEFORE_NOON);
+	const ObjectTextureID skyGradientPmTextureID = allocBgTextureID(ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR_AFTER_NOON);
+	const ObjectTextureID skyFogTextureID = allocBgTextureID(BufferView<const uint8_t>(&ArenaRenderUtils::PALETTE_INDEX_SKY_COLOR_FOG, 1));
+	this->skyGradientAmTextureRef.init(skyGradientAmTextureID, renderer);
+	this->skyGradientPmTextureRef.init(skyGradientPmTextureID, renderer);
+	this->skyFogTextureRef.init(skyFogTextureID, renderer);
+
+	const BufferView<const uint8_t> thunderstormColorsView(exeData.weather.thunderstormFlashColors);
+	this->skyThunderstormTextureRefs.init(thunderstormColorsView.getCount());
+	for (int i = 0; i < thunderstormColorsView.getCount(); i++)
+	{
+		const ObjectTextureID flashTextureID = allocBgTextureID(BufferView<const uint8_t>(&thunderstormColorsView[i], 1));
+		this->skyThunderstormTextureRefs.set(i, ScopedObjectTextureRef(flashTextureID, renderer));
+	}
 
 	this->bgDrawCall.position = Double3::Zero;
 	this->bgDrawCall.preScaleTranslation = Double3::Zero;
@@ -185,7 +206,7 @@ void RenderSkyManager::init(Renderer &renderer)
 	this->bgDrawCall.normalBufferID = this->bgNormalBufferID;
 	this->bgDrawCall.texCoordBufferID = this->bgTexCoordBufferID;
 	this->bgDrawCall.indexBufferID = this->bgIndexBufferID;
-	this->bgDrawCall.textureIDs[0] = this->bgObjectTextureID;
+	this->bgDrawCall.textureIDs[0] = this->skyGradientAmTextureRef.get(); // ID is updated depending on weather.
 	this->bgDrawCall.textureIDs[1] = std::nullopt;
 	this->bgDrawCall.textureSamplingType0 = TextureSamplingType::Default;
 	this->bgDrawCall.textureSamplingType1 = TextureSamplingType::Default;
@@ -330,12 +351,6 @@ void RenderSkyManager::freeBgBuffers(Renderer &renderer)
 	{
 		renderer.freeIndexBuffer(this->bgIndexBufferID);
 		this->bgIndexBufferID = -1;
-	}
-
-	if (this->bgObjectTextureID >= 0)
-	{
-		renderer.freeObjectTexture(this->bgObjectTextureID);
-		this->bgObjectTextureID = -1;
 	}
 }
 
@@ -506,12 +521,44 @@ void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureMan
 	// @todo: load draw calls for all the sky objects (ideally here, but can be in update() for now if convenient)
 }
 
-void RenderSkyManager::update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord, double distantAmbientPercent, const Renderer &renderer)
+void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance &weatherInst, const CoordDouble3 &cameraCoord,
+	bool isAM, bool isFoggy, double distantAmbientPercent, const Renderer &renderer)
 {
 	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
 
-	// Keep the sky centered on the player.
+	// Keep background centered on the player.
 	this->bgDrawCall.position = cameraPos;
+
+	// Update background texture ID based on active weather.
+	std::optional<double> thunderstormFlashPercent;
+	if (weatherInst.hasRain())
+	{
+		const WeatherRainInstance &rainInst = weatherInst.getRain();
+		if (rainInst.thunderstorm.has_value())
+		{
+			const WeatherRainInstance::Thunderstorm &thunderstormInst = *rainInst.thunderstorm;
+			thunderstormFlashPercent = thunderstormInst.getFlashPercent();
+		}
+	}
+
+	if (thunderstormFlashPercent.has_value())
+	{
+		const int flashTextureCount = this->skyThunderstormTextureRefs.getCount();
+		const int flashIndex = std::clamp(static_cast<int>(static_cast<double>(flashTextureCount) * (*thunderstormFlashPercent)), 0, flashTextureCount - 1);
+		this->bgDrawCall.textureIDs[0] = this->skyThunderstormTextureRefs[flashIndex].get();
+	}
+	else if (isFoggy)
+	{
+		this->bgDrawCall.textureIDs[0] = this->skyFogTextureRef.get();
+	}
+	else if (isAM)
+	{
+		this->bgDrawCall.textureIDs[0] = this->skyGradientAmTextureRef.get();
+	}
+	else
+	{
+		this->bgDrawCall.textureIDs[0] = this->skyGradientPmTextureRef.get();
+	}
 
 	// @temp fix for Z ordering. Later I think we should just not do depth testing in the sky?
 	constexpr double landDistance = 250.0;

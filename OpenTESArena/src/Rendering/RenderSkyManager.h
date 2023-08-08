@@ -6,9 +6,11 @@
 #include "RenderTextureUtils.h"
 #include "../Assets/TextureAsset.h"
 
+class ExeData;
 class Renderer;
 class SkyInfoDefinition;
 class SkyInstance;
+class WeatherInstance;
 
 class RenderSkyManager
 {
@@ -29,11 +31,17 @@ private:
 		void init(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
+	// All the possible sky color textures to choose from, dependent on the active weather. These are used by
+	// the renderer to look up palette colors.
+	ScopedObjectTextureRef skyGradientAmTextureRef;
+	ScopedObjectTextureRef skyGradientPmTextureRef;
+	ScopedObjectTextureRef skyFogTextureRef;
+	Buffer<ScopedObjectTextureRef> skyThunderstormTextureRefs; // One for each frame of flash animation.
+
 	VertexBufferID bgVertexBufferID;
 	AttributeBufferID bgNormalBufferID;
 	AttributeBufferID bgTexCoordBufferID;
 	IndexBufferID bgIndexBufferID;
-	ObjectTextureID bgObjectTextureID;
 	RenderDrawCall bgDrawCall;
 
 	// All sky objects share simple vertex + attribute + index buffers.
@@ -53,14 +61,15 @@ private:
 public:
 	RenderSkyManager();
 
-	void init(Renderer &renderer);
+	void init(const ExeData &exeData, Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
 	const RenderDrawCall &getBgDrawCall() const;
 	BufferView<const RenderDrawCall> getObjectDrawCalls() const;
 
 	void loadScene(const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
-	void update(const SkyInstance &skyInst, const CoordDouble3 &cameraCoord, double distantAmbientPercent, const Renderer &renderer);
+	void update(const SkyInstance &skyInst, const WeatherInstance &weatherInst, const CoordDouble3 &cameraCoord,
+		bool isAM, bool isFoggy, double distantAmbientPercent, const Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
 

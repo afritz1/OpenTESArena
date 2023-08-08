@@ -180,21 +180,6 @@ bool Game::init()
 		return false;
 	}
 
-	this->sceneManager.init(this->textureManager, this->renderer);
-
-	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
-	renderChunkManager.init(this->renderer);
-
-	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-	renderSkyManager.init(this->renderer);
-
-	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
-	if (!renderWeatherManager.init(this->renderer))
-	{
-		DebugLogError("Couldn't init render weather manager.");
-		return false;
-	}
-
 	this->inputManager.init();
 
 	// Add application-level input event handlers.
@@ -263,6 +248,21 @@ bool Game::init()
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	CharacterClassLibrary::getInstance().init(exeData);
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
+
+	this->sceneManager.init(this->textureManager, this->renderer);
+
+	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
+	renderChunkManager.init(this->renderer);
+
+	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
+	renderSkyManager.init(exeData, this->renderer);
+
+	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
+	if (!renderWeatherManager.init(this->renderer))
+	{
+		DebugLogError("Couldn't init render weather manager.");
+		return false;
+	}
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";
