@@ -8,6 +8,7 @@
 #include "RenderChunk.h"
 #include "RenderDrawCall.h"
 #include "RenderEntityMeshDefinition.h"
+#include "RenderShaderUtils.h"
 #include "../Entities/EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"
 
@@ -84,6 +85,7 @@ private:
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> entityPaletteIndicesTextureRefs;
 
 	RenderLightID playerLightID;
+	std::unordered_map<EntityInstanceID, RenderLightID> entityLightIDs; // All lights have an associated entity.
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache, totalDrawCallsCache;
@@ -145,7 +147,7 @@ public:
 	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
-	void updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, Renderer &renderer);
+	void updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, const EntityChunkManager &entityChunkManager, Renderer &renderer);
 
 	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);

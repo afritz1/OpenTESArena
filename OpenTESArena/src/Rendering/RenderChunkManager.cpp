@@ -606,6 +606,17 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 		this->playerLightID = -1;
 	}
 
+	for (auto &pair : this->entityLightIDs)
+	{
+		RenderLightID &lightID = pair.second;
+		if (lightID >= 0)
+		{
+			renderer.freeLight(lightID);
+			lightID = -1;
+		}
+	}
+
+	this->entityLightIDs.clear();
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
@@ -1532,8 +1543,19 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->entityDrawCallsCache.begin(), this->entityDrawCallsCache.end());
 }
 
-void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, Renderer &renderer)
+void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
+	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
+	{
+		const auto iter = this->entityLightIDs.find(entityInstID);
+		if (iter != this->entityLightIDs.end())
+		{
+			const RenderLightID lightID = iter->second;
+			renderer.freeLight(lightID);
+			this->entityLightIDs.erase(iter);
+		}
+	}
+
 	const WorldDouble3 cameraWorldPoint = VoxelUtils::coordToWorldPoint(cameraCoord);
 	renderer.setLightPosition(this->playerLightID, cameraWorldPoint);
 
@@ -1568,6 +1590,17 @@ void RenderChunkManager::unloadScene(Renderer &renderer)
 		this->recycleChunk(i);
 	}
 
+	for (auto &pair : this->entityLightIDs)
+	{
+		RenderLightID &lightID = pair.second;
+		if (lightID >= 0)
+		{
+			renderer.freeLight(lightID);
+			lightID = -1;
+		}
+	}
+
+	this->entityLightIDs.clear();
 	this->voxelDrawCallsCache.clear();
 	this->entityDrawCallsCache.clear();
 	this->totalDrawCallsCache.clear();

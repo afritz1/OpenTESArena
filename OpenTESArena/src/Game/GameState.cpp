@@ -936,7 +936,7 @@ void GameState::tickRendering(Game &game)
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
 
 	const bool isFoggy = this->isFogActive();
-	renderChunkManager.updateLights(playerCoord, isFoggy, renderer);
+	renderChunkManager.updateLights(playerCoord, isFoggy, entityChunkManager, renderer);
 
 	const bool isAM = this->clock.isAM();
 	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(this->clock);
