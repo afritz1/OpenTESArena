@@ -10,7 +10,10 @@ class ExeData;
 class Renderer;
 class SkyInfoDefinition;
 class SkyInstance;
+class TextureManager;
 class WeatherInstance;
+
+enum class WeatherType;
 
 class RenderSkyManager
 {
@@ -33,8 +36,7 @@ private:
 
 	// All the possible sky color textures to choose from, dependent on the active weather. These are used by
 	// the renderer to look up palette colors.
-	ScopedObjectTextureRef skyGradientAmTextureRef;
-	ScopedObjectTextureRef skyGradientPmTextureRef;
+	ScopedObjectTextureRef skyGradientTextureRef;
 	ScopedObjectTextureRef skyFogTextureRef;
 	Buffer<ScopedObjectTextureRef> skyThunderstormTextureRefs; // One for each frame of flash animation.
 
@@ -58,6 +60,9 @@ private:
 
 	void freeBgBuffers(Renderer &renderer);
 	void freeObjectBuffers(Renderer &renderer);
+
+	void updateGameWorldPalette(WeatherType weatherType, bool isInterior, double daytimePercent,
+		ScopedObjectTextureRef &gameWorldPaletteTextureRef, TextureManager &textureManager, Renderer &renderer);
 public:
 	RenderSkyManager();
 
@@ -68,8 +73,9 @@ public:
 	BufferView<const RenderDrawCall> getObjectDrawCalls() const;
 
 	void loadScene(const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
-	void update(const SkyInstance &skyInst, const WeatherInstance &weatherInst, const CoordDouble3 &cameraCoord,
-		bool isAM, bool isFoggy, double distantAmbientPercent, const Renderer &renderer);
+	void update(const SkyInstance &skyInst, WeatherType weatherType, const WeatherInstance &weatherInst,
+		const CoordDouble3 &cameraCoord, bool isInterior, double daytimePercent, bool isFoggy, double distantAmbientPercent,
+		ScopedObjectTextureRef &gameWorldPaletteTextureRef, TextureManager &textureManager, Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
 

@@ -50,8 +50,7 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_DRY_CHASM_COLOR = 112;
 	constexpr uint8_t PALETTE_INDEX_RAINDROP = 103;
 	constexpr uint8_t PALETTE_INDEX_SNOWFLAKE = 16;
-	constexpr uint8_t PALETTE_INDICES_SKY_COLOR_BEFORE_NOON[] = { 100, 101, 102, 103, 104, 105 }; // @todo: probably not correct
-	constexpr uint8_t PALETTE_INDICES_SKY_COLOR_AFTER_NOON[] = { 105, 104, 103, 102, 101, 100 }; // @todo: probably not correct
+	constexpr uint8_t PALETTE_INDICES_SKY_COLOR[] = { 1, 2, 3, 4, 5, 6, 7, 8 };
 	constexpr uint8_t PALETTE_INDEX_SKY_COLOR_FOG = 100;
 	// Thunderstorm sky colors come from the executable.
 
