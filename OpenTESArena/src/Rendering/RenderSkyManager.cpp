@@ -269,7 +269,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.lightingType = RenderLightingType::PerMesh;
 	this->bgDrawCall.lightPercent = 1.0;
 	this->bgDrawCall.lightIdCount = 0;
-	this->bgDrawCall.vertexShaderType = VertexShaderType::SwingingDoor; // @todo: SkyBackground?
+	this->bgDrawCall.vertexShaderType = VertexShaderType::Voxel; // @todo: SkyBackground?
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
 
