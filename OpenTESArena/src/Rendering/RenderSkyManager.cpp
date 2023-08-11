@@ -74,14 +74,15 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	bgNormals.emplace_back(nadirNormal.y);
 	bgNormals.emplace_back(nadirNormal.z);
 
-	const Double2 zenithTexCoord(1.0, 0.50);
-	const Double2 nadirTexCoord(1.0, 0.50);
+	const Double2 zenithTexCoord(0.50, 0.0);
+	const Double2 nadirTexCoord(0.50, 0.0);
 	bgTexCoords.emplace_back(zenithTexCoord.x);
 	bgTexCoords.emplace_back(zenithTexCoord.y);
 	bgTexCoords.emplace_back(nadirTexCoord.x);
 	bgTexCoords.emplace_back(nadirTexCoord.y);
 
-	constexpr int bgHorizonEdgeCount = 16; // # of hemisphere edges on the horizon, determines # of triangles and smoothness of cone shape.
+	constexpr int textureTileCount = 32; // # of times the sky gradient texture tiles around the horizon.
+	constexpr int bgHorizonEdgeCount = 32; // # of hemisphere edges on the horizon, determines # of triangles and smoothness of cone shape.
 	for (int i = 0; i < bgHorizonEdgeCount; i++)
 	{
 		// Each horizon edge has a quad above it, and a triangle above that. Generate above and below horizon.
@@ -125,10 +126,14 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		bgNormals.emplace_back(nextAboveNormal.y);
 		bgNormals.emplace_back(nextAboveNormal.z);
 
-		const Double2 texCoord(0.0, 1.0);
-		const Double2 nextTexCoord(0.0, 0.0);
-		const Double2 aboveTexCoord(1.0, 1.0);
-		const Double2 nextAboveTexCoord(1.0, 0.0);
+		const double coordXStart = static_cast<double>(i % (bgHorizonEdgeCount / textureTileCount)) / static_cast<double>(bgHorizonEdgeCount / textureTileCount);
+		const double coordXEnd = coordXStart + (1.0 / static_cast<double>(bgHorizonEdgeCount / textureTileCount));
+		const double coordYStart = 0.0;
+		const double coordYEnd = 1.0;
+		const Double2 texCoord(coordXStart, coordYEnd);
+		const Double2 nextTexCoord(coordXEnd, coordYEnd);
+		const Double2 aboveTexCoord(coordXStart, coordYStart);
+		const Double2 nextAboveTexCoord(coordXEnd, coordYStart);
 		bgTexCoords.emplace_back(texCoord.x);
 		bgTexCoords.emplace_back(texCoord.y);
 		bgTexCoords.emplace_back(nextTexCoord.x);
@@ -198,10 +203,10 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	renderer.populateAttributeBuffer(this->bgTexCoordBufferID, bgTexCoords);
 	renderer.populateIndexBuffer(this->bgIndexBufferID, bgIndices);
 
-	auto allocBgTextureID = [this, &renderer](BufferView<const uint8_t> texels)
+	auto allocBgTextureID = [this, &renderer](BufferView2D<const uint8_t> texels)
 	{
-		const int textureWidth = texels.getCount();
-		const int textureHeight = 1;
+		const int textureWidth = texels.getWidth();
+		const int textureHeight = texels.getHeight();
 		const int bytesPerTexel = 1;
 		ObjectTextureID textureID;
 		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
@@ -231,13 +236,12 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*skyGradientTextureBuilderID);
 		DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
 		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
-		const int texelCount = textureBuilder.getWidth() * textureBuilder.getHeight();
-		return allocBgTextureID(BufferView<const uint8_t>(palettedTexture.texels.begin(), texelCount));
+		return allocBgTextureID(BufferView2D<const uint8_t>(palettedTexture.texels.begin(), textureBuilder.getWidth(), textureBuilder.getHeight()));
 	};
 
 	const ObjectTextureID skyGradientAMTextureID = allocBgTextureIdByFilename(ArenaTextureName::SkyDitherAM);
 	const ObjectTextureID skyGradientPMTextureID = allocBgTextureIdByFilename(ArenaTextureName::SkyDitherPM);
-	const ObjectTextureID skyFogTextureID = allocBgTextureID(BufferView<const uint8_t>(&ArenaRenderUtils::PALETTE_INDEX_SKY_COLOR_FOG, 1));
+	const ObjectTextureID skyFogTextureID = allocBgTextureID(BufferView2D<const uint8_t>(&ArenaRenderUtils::PALETTE_INDEX_SKY_COLOR_FOG, 1, 1));
 	this->skyGradientAMTextureRef.init(skyGradientAMTextureID, renderer);
 	this->skyGradientPMTextureRef.init(skyGradientPMTextureID, renderer);
 	this->skyFogTextureRef.init(skyFogTextureID, renderer);
@@ -246,12 +250,12 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->skyThunderstormTextureRefs.init(thunderstormColorsView.getCount());
 	for (int i = 0; i < thunderstormColorsView.getCount(); i++)
 	{
-		const ObjectTextureID flashTextureID = allocBgTextureID(BufferView<const uint8_t>(&thunderstormColorsView[i], 1));
+		const ObjectTextureID flashTextureID = allocBgTextureID(BufferView2D<const uint8_t>(&thunderstormColorsView[i], 1, 1));
 		this->skyThunderstormTextureRefs.set(i, ScopedObjectTextureRef(flashTextureID, renderer));
 	}
 
 	const uint8_t skyInteriorColor = 0; // Black
-	const ObjectTextureID skyInteriorTextureID = allocBgTextureID(BufferView<const uint8_t>(&skyInteriorColor, 1));
+	const ObjectTextureID skyInteriorTextureID = allocBgTextureID(BufferView2D<const uint8_t>(&skyInteriorColor, 1, 1));
 	this->skyInteriorTextureRef.init(skyInteriorTextureID, renderer);
 
 	this->bgDrawCall.position = Double3::Zero;

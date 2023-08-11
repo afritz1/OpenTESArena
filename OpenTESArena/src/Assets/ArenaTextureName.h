@@ -104,8 +104,8 @@ namespace ArenaTextureName
 	const std::string SpellMakerBackground = "SPELLMKR.IMG";
 
 	// Sky gradients.
-	const std::string SkyDitherAM = "DITHER2.IMG";
-	const std::string SkyDitherPM = "DITHER.IMG";
+	const std::string SkyDitherAM = "DITHER.IMG";
+	const std::string SkyDitherPM = "DITHER2.IMG";
 }
 
 // Cinematics in the CD version:
