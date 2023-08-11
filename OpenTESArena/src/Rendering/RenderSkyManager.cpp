@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "RenderSkyManager.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
@@ -42,7 +43,7 @@ RenderSkyManager::RenderSkyManager()
 	this->objectIndexBufferID = -1;
 }
 
-void RenderSkyManager::init(const ExeData &exeData, Renderer &renderer)
+void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
 {
 	std::vector<double> bgVertices;
 	std::vector<double> bgNormals;
@@ -185,9 +186,27 @@ void RenderSkyManager::init(const ExeData &exeData, Renderer &renderer)
 		return textureID;
 	};
 
-	const ObjectTextureID skyGradientTextureID = allocBgTextureID(ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR);
+	auto allocBgTextureIdByFilename = [this, &textureManager, &allocBgTextureID](const std::string &filename)
+	{
+		const std::optional<TextureBuilderID> skyGradientTextureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
+		if (!skyGradientTextureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for background \"" + filename + "\".");
+			return -1;
+		}
+
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*skyGradientTextureBuilderID);
+		DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+		const int texelCount = textureBuilder.getWidth() * textureBuilder.getHeight();
+		return allocBgTextureID(BufferView<const uint8_t>(palettedTexture.texels.begin(), texelCount));
+	};
+
+	const ObjectTextureID skyGradientAMTextureID = allocBgTextureIdByFilename(ArenaTextureName::SkyDitherAM);
+	const ObjectTextureID skyGradientPMTextureID = allocBgTextureIdByFilename(ArenaTextureName::SkyDitherPM);
 	const ObjectTextureID skyFogTextureID = allocBgTextureID(BufferView<const uint8_t>(&ArenaRenderUtils::PALETTE_INDEX_SKY_COLOR_FOG, 1));
-	this->skyGradientTextureRef.init(skyGradientTextureID, renderer);
+	this->skyGradientAMTextureRef.init(skyGradientAMTextureID, renderer);
+	this->skyGradientPMTextureRef.init(skyGradientPMTextureID, renderer);
 	this->skyFogTextureRef.init(skyFogTextureID, renderer);
 
 	const BufferView<const uint8_t> thunderstormColorsView(exeData.weather.thunderstormFlashColors);
@@ -206,7 +225,7 @@ void RenderSkyManager::init(const ExeData &exeData, Renderer &renderer)
 	this->bgDrawCall.normalBufferID = this->bgNormalBufferID;
 	this->bgDrawCall.texCoordBufferID = this->bgTexCoordBufferID;
 	this->bgDrawCall.indexBufferID = this->bgIndexBufferID;
-	this->bgDrawCall.textureIDs[0] = this->skyGradientTextureRef.get(); // ID is updated depending on weather.
+	this->bgDrawCall.textureIDs[0] = this->skyGradientAMTextureRef.get(); // ID is updated depending on weather.
 	this->bgDrawCall.textureIDs[1] = std::nullopt;
 	this->bgDrawCall.textureSamplingType0 = TextureSamplingType::Default;
 	this->bgDrawCall.textureSamplingType1 = TextureSamplingType::Default;
@@ -593,6 +612,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, WeatherType weatherTyp
 		}
 	}
 
+	const bool isAM = daytimePercent < 0.50;
 	if (thunderstormFlashPercent.has_value())
 	{
 		const int flashTextureCount = this->skyThunderstormTextureRefs.getCount();
@@ -603,9 +623,13 @@ void RenderSkyManager::update(const SkyInstance &skyInst, WeatherType weatherTyp
 	{
 		this->bgDrawCall.textureIDs[0] = this->skyFogTextureRef.get();
 	}
+	else if (isAM)
+	{
+		this->bgDrawCall.textureIDs[0] = this->skyGradientAMTextureRef.get();
+	}
 	else
 	{
-		this->bgDrawCall.textureIDs[0] = this->skyGradientTextureRef.get();
+		this->bgDrawCall.textureIDs[0] = this->skyGradientPMTextureRef.get();
 	}
 
 	// @temp fix for Z ordering. Later I think we should just not do depth testing in the sky?

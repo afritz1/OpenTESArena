@@ -255,7 +255,7 @@ bool Game::init()
 	renderChunkManager.init(this->renderer);
 
 	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-	renderSkyManager.init(exeData, this->renderer);
+	renderSkyManager.init(exeData, this->textureManager, this->renderer);
 
 	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
 	if (!renderWeatherManager.init(this->renderer))

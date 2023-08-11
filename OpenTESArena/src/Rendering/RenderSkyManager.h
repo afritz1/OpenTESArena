@@ -36,7 +36,8 @@ private:
 
 	// All the possible sky color textures to choose from, dependent on the active weather. These are used by
 	// the renderer to look up palette colors.
-	ScopedObjectTextureRef skyGradientTextureRef;
+	ScopedObjectTextureRef skyGradientAMTextureRef;
+	ScopedObjectTextureRef skyGradientPMTextureRef;
 	ScopedObjectTextureRef skyFogTextureRef;
 	Buffer<ScopedObjectTextureRef> skyThunderstormTextureRefs; // One for each frame of flash animation.
 
@@ -66,7 +67,7 @@ private:
 public:
 	RenderSkyManager();
 
-	void init(const ExeData &exeData, Renderer &renderer);
+	void init(const ExeData &exeData, TextureManager &textureManager, Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
 	const RenderDrawCall &getBgDrawCall() const;
