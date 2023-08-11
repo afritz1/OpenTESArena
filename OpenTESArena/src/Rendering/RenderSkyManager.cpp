@@ -217,6 +217,10 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		this->skyThunderstormTextureRefs.set(i, ScopedObjectTextureRef(flashTextureID, renderer));
 	}
 
+	const uint8_t skyInteriorColor = 0; // Black
+	const ObjectTextureID skyInteriorTextureID = allocBgTextureID(BufferView<const uint8_t>(&skyInteriorColor, 1));
+	this->skyInteriorTextureRef.init(skyInteriorTextureID, renderer);
+
 	this->bgDrawCall.position = Double3::Zero;
 	this->bgDrawCall.preScaleTranslation = Double3::Zero;
 	this->bgDrawCall.rotation = Matrix4d::identity();
@@ -622,6 +626,10 @@ void RenderSkyManager::update(const SkyInstance &skyInst, WeatherType weatherTyp
 	else if (isFoggy)
 	{
 		this->bgDrawCall.textureIDs[0] = this->skyFogTextureRef.get();
+	}
+	else if (isInterior)
+	{
+		this->bgDrawCall.textureIDs[0] = this->skyInteriorTextureRef.get();
 	}
 	else if (isAM)
 	{

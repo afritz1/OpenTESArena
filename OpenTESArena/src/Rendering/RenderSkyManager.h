@@ -40,6 +40,7 @@ private:
 	ScopedObjectTextureRef skyGradientPMTextureRef;
 	ScopedObjectTextureRef skyFogTextureRef;
 	Buffer<ScopedObjectTextureRef> skyThunderstormTextureRefs; // One for each frame of flash animation.
+	ScopedObjectTextureRef skyInteriorTextureRef; // Default black for interiors.
 
 	VertexBufferID bgVertexBufferID;
 	AttributeBufferID bgNormalBufferID;
