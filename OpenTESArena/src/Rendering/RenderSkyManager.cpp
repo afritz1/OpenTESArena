@@ -50,7 +50,9 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	std::vector<double> bgTexCoords;
 	std::vector<int32_t> bgIndices;
 
-	const double pointDistance = 1000.0; // @todo: this is a hack while the sky is using naive depth testing w/o any occlusion culling, etc.
+	constexpr double pointDistance = 1000.0; // @todo: hack while the sky is using naive depth testing w/o any occlusion culling, etc.
+	constexpr Radians angleAboveHorizon = 20.0 * Constants::DegToRad;
+	const double aboveHorizonPointHeight = pointDistance * std::tan(angleAboveHorizon);
 
 	constexpr int zenithVertexIndex = 0;
 	constexpr int nadirVertexIndex = 1;
@@ -79,53 +81,84 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	bgTexCoords.emplace_back(nadirTexCoord.x);
 	bgTexCoords.emplace_back(nadirTexCoord.y);
 
-	constexpr int bgAboveHorizonTriangleCount = 16; // Arbitrary number of triangles, increases smoothness of cone shape.
-	for (int i = 0; i < bgAboveHorizonTriangleCount; i++)
+	constexpr int bgHorizonEdgeCount = 16; // # of hemisphere edges on the horizon, determines # of triangles and smoothness of cone shape.
+	for (int i = 0; i < bgHorizonEdgeCount; i++)
 	{
-		// Generate two triangles: one above horizon, one below.
-		const double percent = static_cast<double>(i) / static_cast<double>(bgAboveHorizonTriangleCount);
-		const double nextPercent = static_cast<double>(i + 1) / static_cast<double>(bgAboveHorizonTriangleCount);
+		// Each horizon edge has a quad above it, and a triangle above that. Generate above and below horizon.
+		const double percent = static_cast<double>(i) / static_cast<double>(bgHorizonEdgeCount);
+		const double nextPercent = static_cast<double>(i + 1) / static_cast<double>(bgHorizonEdgeCount);
 		const double period = percent * Constants::TwoPi;
 		const double nextPeriod = nextPercent * Constants::TwoPi;
 
-		const Double3 point(std::cos(period) * pointDistance, 0.0, std::sin(period) * pointDistance);
-		const Double3 nextPoint(std::cos(nextPeriod) * pointDistance, 0.0, std::sin(nextPeriod) * pointDistance);
-
-		bgVertices.emplace_back(point.x);
-		bgVertices.emplace_back(point.y);
-		bgVertices.emplace_back(point.z);
-		bgVertices.emplace_back(nextPoint.x);
-		bgVertices.emplace_back(nextPoint.y);
-		bgVertices.emplace_back(nextPoint.z);
+		const Double3 horizonPoint(std::cos(period) * pointDistance, 0.0, std::sin(period) * pointDistance);
+		const Double3 nextHorizonPoint(std::cos(nextPeriod) * pointDistance, 0.0, std::sin(nextPeriod) * pointDistance);
+		const Double3 aboveHorizonPoint(horizonPoint.x, aboveHorizonPointHeight, horizonPoint.z);
+		const Double3 nextAboveHorizonPoint(nextHorizonPoint.x, aboveHorizonPointHeight, nextHorizonPoint.z);
+		bgVertices.emplace_back(horizonPoint.x);
+		bgVertices.emplace_back(horizonPoint.y);
+		bgVertices.emplace_back(horizonPoint.z);
+		bgVertices.emplace_back(nextHorizonPoint.x);
+		bgVertices.emplace_back(nextHorizonPoint.y);
+		bgVertices.emplace_back(nextHorizonPoint.z);
+		bgVertices.emplace_back(aboveHorizonPoint.x);
+		bgVertices.emplace_back(aboveHorizonPoint.y);
+		bgVertices.emplace_back(aboveHorizonPoint.z);
+		bgVertices.emplace_back(nextAboveHorizonPoint.x);
+		bgVertices.emplace_back(nextAboveHorizonPoint.y);
+		bgVertices.emplace_back(nextAboveHorizonPoint.z);
 
 		// Normals point toward the player.
-		const Double3 normal = -point.normalized();
-		const Double3 nextNormal = -nextPoint.normalized();
+		const Double3 normal = -horizonPoint.normalized();
+		const Double3 nextNormal = -nextHorizonPoint.normalized();
+		const Double3 aboveNormal = -aboveHorizonPoint.normalized();
+		const Double3 nextAboveNormal = -nextAboveHorizonPoint.normalized();
 		bgNormals.emplace_back(normal.x);
 		bgNormals.emplace_back(normal.y);
 		bgNormals.emplace_back(normal.z);
 		bgNormals.emplace_back(nextNormal.x);
 		bgNormals.emplace_back(nextNormal.y);
 		bgNormals.emplace_back(nextNormal.z);
+		bgNormals.emplace_back(aboveNormal.x);
+		bgNormals.emplace_back(aboveNormal.y);
+		bgNormals.emplace_back(aboveNormal.z);
+		bgNormals.emplace_back(nextAboveNormal.x);
+		bgNormals.emplace_back(nextAboveNormal.y);
+		bgNormals.emplace_back(nextAboveNormal.z);
 
 		const Double2 texCoord(0.0, 1.0);
 		const Double2 nextTexCoord(0.0, 0.0);
+		const Double2 aboveTexCoord(1.0, 1.0);
+		const Double2 nextAboveTexCoord(1.0, 0.0);
 		bgTexCoords.emplace_back(texCoord.x);
 		bgTexCoords.emplace_back(texCoord.y);
 		bgTexCoords.emplace_back(nextTexCoord.x);
 		bgTexCoords.emplace_back(nextTexCoord.y);
+		bgTexCoords.emplace_back(aboveTexCoord.x);
+		bgTexCoords.emplace_back(aboveTexCoord.y);
+		bgTexCoords.emplace_back(nextAboveTexCoord.x);
+		bgTexCoords.emplace_back(nextAboveTexCoord.y);
 
-		// Above-horizon winding: next -> cur -> zenith
-		const int32_t vertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 2);
-		const int32_t nextVertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 1);
-		bgIndices.emplace_back(nextVertexIndex);
+		// Above-horizon
+		const int32_t vertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 4);
+		const int32_t nextVertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 3);
+		const int32_t aboveVertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 2);
+		const int32_t nextAboveVertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 1);
+		bgIndices.emplace_back(aboveVertexIndex);
 		bgIndices.emplace_back(vertexIndex);
+		bgIndices.emplace_back(nextVertexIndex);
+		
+		bgIndices.emplace_back(nextVertexIndex);
+		bgIndices.emplace_back(nextAboveVertexIndex);
+		bgIndices.emplace_back(aboveVertexIndex);
+
 		bgIndices.emplace_back(zenithVertexIndex);
+		bgIndices.emplace_back(aboveVertexIndex);
+		bgIndices.emplace_back(nextAboveVertexIndex);
 
-		// Below-horizon winding: cur -> next -> nadir
-		bgIndices.emplace_back(vertexIndex);
-		bgIndices.emplace_back(nextVertexIndex);
+		// Below-horizon
 		bgIndices.emplace_back(nadirVertexIndex);
+		bgIndices.emplace_back(nextVertexIndex);
+		bgIndices.emplace_back(vertexIndex);
 	}
 
 	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -236,7 +269,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.lightingType = RenderLightingType::PerMesh;
 	this->bgDrawCall.lightPercent = 1.0;
 	this->bgDrawCall.lightIdCount = 0;
-	this->bgDrawCall.vertexShaderType = VertexShaderType::Voxel; // @todo: SkyBackground?
+	this->bgDrawCall.vertexShaderType = VertexShaderType::SwingingDoor; // @todo: SkyBackground?
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
 
