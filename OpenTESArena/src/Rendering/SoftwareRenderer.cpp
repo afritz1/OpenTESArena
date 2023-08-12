@@ -925,14 +925,16 @@ namespace swRender
 	void PixelShader_AlphaTestedWithPreviousBrightnessLimit(const PixelShaderPerspectiveCorrection &perspective,
 		const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
 	{
+		constexpr int brightnessLimit = 0x3F; // Highest value each RGB component can be.
+		constexpr uint8_t brightnessMask = ~brightnessLimit;
+		constexpr uint32_t brightnessMaskR = brightnessMask << 16;
+		constexpr uint32_t brightnessMaskG = brightnessMask << 8;
+		constexpr uint32_t brightnessMaskB = brightnessMask;
+		constexpr uint32_t brightnessMaskRGB = brightnessMaskR | brightnessMaskG | brightnessMaskB;
+
 		const uint8_t prevFrameBufferPixel = frameBuffer.colors[frameBuffer.pixelIndex];
 		const uint32_t prevFrameBufferColor = frameBuffer.palette.colors[prevFrameBufferPixel];
-		const uint8_t prevR = static_cast<uint8_t>((prevFrameBufferColor >> 16) & 0xFF);
-		const uint8_t prevG = static_cast<uint8_t>((prevFrameBufferColor >> 8) & 0xFF);
-		const uint8_t prevB = static_cast<uint8_t>(prevFrameBufferColor & 0xFF);
-
-		constexpr int brightnessLimit = 64;
-		const bool isDarkEnough = (prevR <= brightnessLimit) && (prevG <= brightnessLimit) && (prevB <= brightnessLimit);
+		const bool isDarkEnough = (prevFrameBufferColor & brightnessMaskRGB) == 0;
 		if (!isDarkEnough)
 		{
 			return;
