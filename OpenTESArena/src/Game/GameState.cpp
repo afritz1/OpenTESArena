@@ -936,7 +936,8 @@ void GameState::tickRendering(Game &game)
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
 
 	const bool isFoggy = this->isFogActive();
-	renderChunkManager.updateLights(playerCoord, isFoggy, entityChunkManager, renderer);
+	const Options &options = game.getOptions();
+	renderChunkManager.updateLights(playerCoord, isFoggy, options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
 
 	const WeatherType weatherType = this->weatherDef.type;
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;
@@ -947,7 +948,6 @@ void GameState::tickRendering(Game &game)
 		isFoggy, distantAmbientPercent, sceneManager.gameWorldPaletteTextureRef, textureManager, renderer);
 
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
-	const auto &options = game.getOptions();
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 

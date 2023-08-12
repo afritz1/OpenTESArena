@@ -1543,7 +1543,8 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->entityDrawCallsCache.begin(), this->entityDrawCallsCache.end());
 }
 
-void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, const EntityChunkManager &entityChunkManager, Renderer &renderer)
+void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, bool playerHasLight,
+	const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
@@ -1569,6 +1570,12 @@ void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, bool isFo
 	{
 		playerLightRadiusStart = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
 		playerLightRadiusEnd = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
+	}
+
+	if (!playerHasLight)
+	{
+		playerLightRadiusStart = 0.0;
+		playerLightRadiusEnd = 0.0;
 	}
 
 	renderer.setLightRadius(this->playerLightID, playerLightRadiusStart, playerLightRadiusEnd);
