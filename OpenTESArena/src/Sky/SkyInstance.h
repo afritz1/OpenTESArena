@@ -8,6 +8,9 @@
 #include "../Assets/TextureUtils.h"
 #include "../Math/Vector3.h"
 
+#include "components/utilities/Buffer.h"
+#include "components/utilities/BufferView.h"
+
 class MapDefinition;
 class Random;
 class Renderer;

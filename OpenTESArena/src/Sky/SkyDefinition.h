@@ -4,10 +4,6 @@
 #include <vector>
 
 #include "../Math/MathUtils.h"
-#include "../Utilities/Color.h"
-
-#include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
 
 // Contains a location's distant sky values and objects (mountains, clouds, stars, etc.).
 // Similar to LevelDefinition where it defines where various sky objects will be once they
@@ -86,13 +82,7 @@ private:
 	std::vector<StarPlacementDef> starPlacementDefs;
 	std::vector<SunPlacementDef> sunPlacementDefs;
 	std::vector<MoonPlacementDef> moonPlacementDefs;
-	Buffer<Color> skyColors; // Colors for an entire day.
 public:
-	void init(Buffer<Color> &&skyColors);
-
-	int getSkyColorCount() const;
-	const Color &getSkyColor(int index) const;
-
 	int getLandPlacementDefCount() const;
 	const LandPlacementDef &getLandPlacementDef(int index) const;
 	int getAirPlacementDefCount() const;
@@ -108,8 +98,7 @@ public:
 	void addAir(AirDefID id, Radians angleX, Radians angleY);
 	void addStar(StarDefID id, const Double3 &direction);
 	void addSun(SunDefID id, double bonusLatitude);
-	void addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent, double bonusLatitude,
-		int imageIndex);
+	void addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent, double bonusLatitude, int imageIndex);
 };
 
 #endif

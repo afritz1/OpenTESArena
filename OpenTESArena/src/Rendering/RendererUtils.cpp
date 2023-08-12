@@ -62,21 +62,6 @@ int RendererUtils::getRenderThreadsFromMode(int mode)
 	}
 }
 
-int RendererUtils::getChasmIdFromType(ArenaTypes::ChasmType chasmType)
-{
-	switch (chasmType)
-	{
-	case ArenaTypes::ChasmType::Dry:
-		return 0;
-	case ArenaTypes::ChasmType::Wet:
-		return 1;
-	case ArenaTypes::ChasmType::Lava:
-		return 2;
-	default:
-		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(chasmType)));
-	}
-}
-
 bool RendererUtils::isChasmEmissive(ArenaTypes::ChasmType chasmType)
 {
 	switch (chasmType)
@@ -89,64 +74,6 @@ bool RendererUtils::isChasmEmissive(ArenaTypes::ChasmType chasmType)
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(chasmType)));
 	}
-}
-
-void RendererUtils::getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outTopLeftCorner,
-	WorldDouble2 *outTopRightCorner, WorldDouble2 *outBottomLeftCorner, WorldDouble2 *outBottomRightCorner)
-{
-	// In the +X south/+Z west coordinate system, the top right of a voxel is its origin.
-	*outTopRightCorner = WorldDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
-	*outTopLeftCorner = *outTopRightCorner + CardinalDirection::West;
-	*outBottomRightCorner = *outTopRightCorner + CardinalDirection::South;
-	*outBottomLeftCorner = *outTopRightCorner + CardinalDirection::West + CardinalDirection::South;
-}
-
-void RendererUtils::getDiag1Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
-	WorldDouble2 *outMiddle, WorldDouble2 *outEnd)
-{
-	// Top right to bottom left.
-	const WorldDouble2 diff = CardinalDirection::South + CardinalDirection::West;
-	*outStart = WorldDouble2(static_cast<SNDouble>(voxelX), static_cast<WEDouble>(voxelZ));
-	*outMiddle = *outStart + (diff * 0.50);
-	*outEnd = *outStart + (diff * Constants::JustBelowOne);
-}
-
-void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, WorldDouble2 *outStart,
-	WorldDouble2 *outMiddle, WorldDouble2 *outEnd)
-{
-	// Bottom right to top left.
-	const WorldDouble2 diff = CardinalDirection::North + CardinalDirection::West;
-	*outStart = WorldDouble2(
-		static_cast<SNDouble>(voxelX) + Constants::JustBelowOne,
-		static_cast<WEDouble>(voxelZ));
-	*outMiddle = *outStart + (diff * 0.50);
-	*outEnd = *outStart + (diff * Constants::JustBelowOne);
-}
-
-double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const VoxelChunk &chunk) // @todo: this should take Y too
-{
-	int doorAnimInstIndex;
-	if (!chunk.tryGetDoorAnimInstIndex(voxelX, 1, voxelZ, &doorAnimInstIndex))
-	{
-		return 0.0;
-	}
-
-	BufferView<const VoxelDoorAnimationInstance> animInsts = chunk.getDoorAnimInsts();
-	const VoxelDoorAnimationInstance &animInst = animInsts[doorAnimInstIndex];
-	return animInst.percentOpen;
-}
-
-double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const VoxelChunk &chunk)
-{
-	int fadeAnimInstIndex;
-	if (!chunk.tryGetFadeAnimInstIndex(voxelX, voxelY, voxelZ, &fadeAnimInstIndex))
-	{
-		return 1.0;
-	}
-
-	BufferView<const VoxelFadeAnimationInstance> animInsts = chunk.getFadeAnimInsts();
-	const VoxelFadeAnimationInstance &animInst = animInsts[fadeAnimInstIndex];
-	return std::clamp(1.0 - animInst.percentFaded, 0.0, 1.0);
 }
 
 double RendererUtils::getYShear(Radians angleRadians, double zoom)
@@ -310,101 +237,6 @@ Matrix4d RendererUtils::getTimeOfDayRotation(double daytimePercent)
 	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
 }
 
-Double3 RendererUtils::getSunColor(const Double3 &sunDirection, bool isExterior)
-{
-	if (isExterior)
-	{
-		// @todo: model this better/differently?
-		const Double3 baseSunColor(0.90, 0.875, 0.85); // Arbitrary value.
-
-		// Darken the sun color if it's below the horizon so wall faces aren't lit 
-		// as much during the night. This is just a made-up artistic value to compensate
-		// for the lack of shadows.
-		return (sunDirection.y >= 0.0) ? baseSunColor :
-			(baseSunColor * (1.0 - (5.0 * std::abs(sunDirection.y)))).clamped();
-	}
-	else
-	{
-		// No sunlight indoors.
-		return Double3::Zero;
-	}
-}
-
-void RendererUtils::writeSkyColors(BufferView<const Double3> skyColors, BufferView<Double3> &outSkyColorsView, double daytimePercent)
-{
-	// The "sliding window" of sky colors is backwards in the AM (horizon is latest in the palette)
-	// and forwards in the PM (horizon is earliest in the palette).
-	const bool isAM = RendererUtils::isBeforeNoon(daytimePercent);
-	const int slideDirection = isAM ? -1 : 1;
-
-	// Get the real index (not the integer index) of the color for the current time as a
-	// reference point so each sky color can be interpolated between two samples.
-	const int skyColorCount = skyColors.getCount();
-	const double realIndex = MathUtils::getRealIndex(skyColorCount, daytimePercent);
-	const double percent = realIndex - std::floor(realIndex);
-
-	// Calculate sky colors based on the time of day.
-	for (int i = 0; i < outSkyColorsView.getCount(); i++)
-	{
-		const int indexDiff = slideDirection * i;
-		const int index = MathUtils::getWrappedIndex(skyColorCount, static_cast<int>(realIndex) + indexDiff);
-		const int nextIndex = MathUtils::getWrappedIndex(skyColorCount, index + slideDirection);
-		const Double3 &color = skyColors[index];
-		const Double3 &nextColor = skyColors[nextIndex];
-		const Double3 skyColor = color.lerp(nextColor, isAM ? (1.0 - percent) : percent);
-		outSkyColorsView.set(i, skyColor);
-	}
-}
-
-bool RendererUtils::isBeforeNoon(double daytimePercent)
-{
-	return daytimePercent < 0.50;
-}
-
-std::optional<double> RendererUtils::getThunderstormFlashPercent(const WeatherInstance &weatherInst)
-{
-	if (!weatherInst.hasRain())
-	{
-		return std::nullopt;
-	}
-
-	const WeatherRainInstance &rainInst = weatherInst.getRain();
-	const std::optional<WeatherRainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
-	if (!thunderstorm.has_value())
-	{
-		return std::nullopt;
-	}
-
-	if (!thunderstorm->active)
-	{
-		return std::nullopt;
-	}
-
-	return thunderstorm->getFlashPercent();
-}
-
-std::optional<double> RendererUtils::getLightningBoltPercent(const WeatherInstance &weatherInst)
-{
-	if (!weatherInst.hasRain())
-	{
-		return std::nullopt;
-	}
-
-	const WeatherRainInstance &rainInst = weatherInst.getRain();
-	const std::optional<WeatherRainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
-	if (!thunderstorm.has_value())
-	{
-		return std::nullopt;
-	}
-
-	if (!thunderstorm->active)
-	{
-		return std::nullopt;
-	}
-
-	return thunderstorm->getLightningBoltPercent();
-}
-
 int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette &palette)
 {
 	const Double3 colorRGB = Double3::fromRGB(color.toRGB());
@@ -433,44 +265,4 @@ int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette
 
 	DebugAssert(nearestIndex.has_value());
 	return *nearestIndex;
-}
-
-void RendererUtils::getFogGeometry(FogVertexArray *outVertices, FogIndexArray *outIndices)
-{
-	// Working with a cube with 4 faces (no top/bottom).
-	static_assert(std::tuple_size_v<FogVertexArray> == 8);
-	static_assert(std::tuple_size_v<FogIndexArray> == 16);
-
-	(*outVertices)[0] = Double3(0.50, 0.50, 0.50);
-	(*outVertices)[1] = Double3(-0.50, 0.50, 0.50);
-	(*outVertices)[2] = Double3(0.50, -0.50, 0.50);
-	(*outVertices)[3] = Double3(-0.50, -0.50, 0.50);
-	(*outVertices)[4] = Double3(0.50, 0.50, -0.50);
-	(*outVertices)[5] = Double3(-0.50, 0.50, -0.50);
-	(*outVertices)[6] = Double3(0.50, -0.50, -0.50);
-	(*outVertices)[7] = Double3(-0.50, -0.50, -0.50);
-
-	// +X
-	(*outIndices)[0] = 4;
-	(*outIndices)[1] = 0;
-	(*outIndices)[2] = 6;
-	(*outIndices)[3] = 2;
-
-	// -X
-	(*outIndices)[4] = 1;
-	(*outIndices)[5] = 5;
-	(*outIndices)[6] = 3;
-	(*outIndices)[7] = 7;
-
-	// +Z
-	(*outIndices)[8] = 0;
-	(*outIndices)[9] = 1;
-	(*outIndices)[10] = 2;
-	(*outIndices)[11] = 3;
-
-	// -Z
-	(*outIndices)[12] = 5;
-	(*outIndices)[13] = 4;
-	(*outIndices)[14] = 7;
-	(*outIndices)[15] = 6;
 }
