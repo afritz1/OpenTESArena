@@ -627,6 +627,15 @@ void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureMan
 		}
 	}
 
+	for (int i = 0; i < skyInfoDef.getLightningCount(); i++)
+	{
+		const SkyLightningDefinition &lightningDef = skyInfoDef.getLightning(i);
+		for (const TextureAsset &textureAsset : lightningDef.textureAssets)
+		{
+			tryLoadTextureAsset(textureAsset);
+		}
+	}
+
 	// @todo: load draw calls for all the sky objects (ideally here, but can be in update() for now if convenient)
 }
 
@@ -822,6 +831,37 @@ void RenderSkyManager::update(const SkyInstance &skyInst, WeatherType weatherTyp
 			textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
 			meshLightPercent = fullBrightLightPercent; // For volcanoes.
 		}
+
+		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
+		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, landDistance,
+			meshLightPercent, PixelShaderType::AlphaTested);
+	}
+
+	for (int i = skyInst.lightningStart; i < skyInst.lightningEnd; i++)
+	{
+		if (!skyInst.isLightningVisible(i))
+		{
+			continue;
+		}
+
+		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
+		const SkyObjectTextureType textureType = skyObjectInst.textureType;
+		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky lightning objects to use TextureAsset texture type.");
+
+		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
+		const BufferView<const TextureAsset> textureAssets = textureAssetEntry.textureAssets;
+		const int textureCount = textureAssets.getCount();
+
+		int textureAssetIndex = 0;
+		const int animIndex = skyObjectInst.animIndex;
+		double meshLightPercent = fullBrightLightPercent;
+		const bool hasAnimation = animIndex >= 0;
+		DebugAssert(hasAnimation);
+
+		const SkyObjectAnimationInstance &animInst = skyInst.getAnimInst(animIndex);
+		const double animPercent = animInst.percentDone;
+		textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
 
 		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
