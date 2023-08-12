@@ -922,6 +922,37 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
+	void PixelShader_AlphaTestedWithPreviousBrightnessLimit(const PixelShaderPerspectiveCorrection &perspective,
+		const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const uint8_t prevFrameBufferPixel = frameBuffer.colors[frameBuffer.pixelIndex];
+		const uint32_t prevFrameBufferColor = frameBuffer.palette.colors[prevFrameBufferPixel];
+		const uint8_t prevR = static_cast<uint8_t>((prevFrameBufferColor >> 16) & 0xFF);
+		const uint8_t prevG = static_cast<uint8_t>((prevFrameBufferColor >> 8) & 0xFF);
+		const uint8_t prevB = static_cast<uint8_t>(prevFrameBufferColor & 0xFF);
+
+		constexpr int brightnessLimit = 64;
+		const bool isDarkEnough = (prevR <= brightnessLimit) && (prevG <= brightnessLimit) && (prevB <= brightnessLimit);
+		if (!isDarkEnough)
+		{
+			return;
+		}
+
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+		const int texelIndex = texelX + (texelY * texture.width);
+		const uint8_t texel = texture.texels[texelIndex];
+
+		const bool isTransparent = texel == 0;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+	}
+
 	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
 		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, double ambientPercent,
@@ -1149,6 +1180,9 @@ namespace swRender
 								break;
 							case PixelShaderType::AlphaTestedWithLightLevelTransparency:
 								PixelShader_AlphaTestedWithLightLevelTransparency(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+								break;
+							case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
+								PixelShader_AlphaTestedWithPreviousBrightnessLimit(shaderPerspective, shaderTexture0, shaderFrameBuffer);
 								break;
 							default:
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(pixelShaderType)));

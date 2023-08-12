@@ -756,7 +756,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, WeatherType weatherTyp
 		}
 
 		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, starDistance,
-			fullBrightLightPercent, PixelShaderType::AlphaTested);
+			fullBrightLightPercent, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit);
 	}
 
 	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
