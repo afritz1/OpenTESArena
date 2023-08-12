@@ -32,6 +32,7 @@ public:
 		const uint8_t *texels8Bit;
 		const uint32_t *texels32Bit;
 		int width, height, texelCount;
+		double widthReal, heightReal;
 		int bytesPerTexel;
 
 		ObjectTexture();

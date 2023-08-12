@@ -712,9 +712,19 @@ namespace swRender
 	struct PixelShaderTexture
 	{
 		const uint8_t *texels;
-		int width;
-		int height;
+		int width, height;
+		double widthReal, heightReal;
 		TextureSamplingType samplingType;
+
+		void init(const uint8_t *texels, int width, int height, TextureSamplingType samplingType)
+		{
+			this->texels = texels;
+			this->width = width;
+			this->height = height;
+			this->widthReal = static_cast<double>(width);
+			this->heightReal = static_cast<double>(height);
+			this->samplingType = samplingType;
+		}
 	};
 
 	struct PixelShaderPalette
@@ -748,13 +758,13 @@ namespace swRender
 		int texelY = -1;
 		if (texture.samplingType == TextureSamplingType::Default)
 		{
-			texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
-			texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+			texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
+			texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.heightReal), 0, texture.height - 1);
 		}
 		else if (texture.samplingType == TextureSamplingType::ScreenSpaceRepeatY)
 		{
 			// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.
-			texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * texture.width), 0, texture.width - 1);
+			texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * texture.widthReal), 0, texture.width - 1);
 
 			const double v = frameBuffer.yPercent * 2.0;
 			const double actualV = v >= 1.0 ? (v - 1.0) : v;
@@ -773,19 +783,19 @@ namespace swRender
 	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
 		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercent.x * alphaTestTexture.width), 0, alphaTestTexture.width - 1);
-		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercent.y * alphaTestTexture.height), 0, alphaTestTexture.height - 1);
+		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercent.x * alphaTestTexture.widthReal), 0, alphaTestTexture.width - 1);
+		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercent.y * alphaTestTexture.heightReal), 0, alphaTestTexture.height - 1);
 		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
 		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
 
 		const bool isTransparent = texel == 0;
 		if (isTransparent)
 		{
-			const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * opaqueTexture.width), 0, opaqueTexture.width - 1);
+			const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * opaqueTexture.widthReal), 0, opaqueTexture.width - 1);
 
 			const double v = frameBuffer.yPercent * 2.0;
 			const double actualV = v >= 1.0 ? (v - 1.0) : v;
-			const int texelY = std::clamp(static_cast<int>(actualV * opaqueTexture.height), 0, opaqueTexture.height - 1);
+			const int texelY = std::clamp(static_cast<int>(actualV * opaqueTexture.heightReal), 0, opaqueTexture.height - 1);
 
 			const int texelIndex = texelX + (texelY * opaqueTexture.width);
 			texel = opaqueTexture.texels[texelIndex];
@@ -800,8 +810,8 @@ namespace swRender
 	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.heightReal), 0, texture.height - 1);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -821,7 +831,7 @@ namespace swRender
 		double uMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const double u = std::clamp(uMin + ((1.0 - uMin) * perspective.texelPercent.x), uMin, 1.0);
-		const int texelX = std::clamp(static_cast<int>(u * texture.width), 0, texture.width - 1);
+		const int texelX = std::clamp(static_cast<int>(u * texture.widthReal), 0, texture.width - 1);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
@@ -841,9 +851,9 @@ namespace swRender
 	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		double vMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
 		const double v = std::clamp(vMin + ((1.0 - vMin) * perspective.texelPercent.y), vMin, 1.0);
-		const int texelY = std::clamp(static_cast<int>(v * texture.height), 0, texture.height - 1);
+		const int texelY = std::clamp(static_cast<int>(v * texture.heightReal), 0, texture.height - 1);
 
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
@@ -863,8 +873,8 @@ namespace swRender
 	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderTexture &lookupTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.heightReal), 0, texture.height - 1);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -885,8 +895,8 @@ namespace swRender
 	void PixelShader_AlphaTestedWithLightLevelTransparency(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.heightReal), 0, texture.height - 1);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -940,8 +950,8 @@ namespace swRender
 			return;
 		}
 
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.width), 0, texture.width - 1);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.height), 0, texture.height - 1);
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.heightReal), 0, texture.height - 1);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -1061,19 +1071,13 @@ namespace swRender
 			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID0);
 
 			PixelShaderTexture shaderTexture0;
-			shaderTexture0.texels = texture0.texels8Bit;
-			shaderTexture0.width = texture0.width;
-			shaderTexture0.height = texture0.height;
-			shaderTexture0.samplingType = textureSamplingType0;
+			shaderTexture0.init(texture0.texels8Bit, texture0.width, texture0.height, textureSamplingType0);
 
 			PixelShaderTexture shaderTexture1;
 			if (requiresTwoTextures)
 			{
 				const SoftwareRenderer::ObjectTexture &texture1 = textures.get(textureID1);
-				shaderTexture1.texels = texture1.texels8Bit;
-				shaderTexture1.width = texture1.width;
-				shaderTexture1.height = texture1.height;
-				shaderTexture1.samplingType = textureSamplingType1;
+				shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height, textureSamplingType1);
 			}
 
 			for (int y = yStart; y < yEnd; y++)
@@ -1237,6 +1241,8 @@ void SoftwareRenderer::ObjectTexture::init(int width, int height, int bytesPerTe
 
 	this->width = width;
 	this->height = height;
+	this->widthReal = static_cast<double>(width);
+	this->heightReal = static_cast<double>(height);
 	this->bytesPerTexel = bytesPerTexel;
 }
 
