@@ -51,7 +51,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	std::vector<int32_t> bgIndices;
 
 	constexpr double pointDistance = 1000.0; // @todo: hack while the sky is using naive depth testing w/o any occlusion culling, etc.
-	constexpr Radians angleAboveHorizon = 20.0 * Constants::DegToRad;
+	constexpr Radians angleAboveHorizon = 25.0 * Constants::DegToRad;
 	const double aboveHorizonPointHeight = pointDistance * std::tan(angleAboveHorizon);
 
 	constexpr int zenithVertexIndex = 0;
@@ -81,8 +81,8 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	bgTexCoords.emplace_back(nadirTexCoord.x);
 	bgTexCoords.emplace_back(nadirTexCoord.y);
 
-	constexpr int textureTileCount = 32; // # of times the sky gradient texture tiles around the horizon.
-	constexpr int bgHorizonEdgeCount = 32; // # of hemisphere edges on the horizon, determines # of triangles and smoothness of cone shape.
+	constexpr int textureTileCount = 150; // # of times the sky gradient texture tiles around the horizon.
+	constexpr int bgHorizonEdgeCount = 150; // # of hemisphere edges on the horizon, determines # of triangles and smoothness of cone shape.
 	for (int i = 0; i < bgHorizonEdgeCount; i++)
 	{
 		// Each horizon edge has a quad above it, and a triangle above that. Generate above and below horizon.

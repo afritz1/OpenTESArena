@@ -22,8 +22,8 @@ namespace
 	{
 		{ "ARENARW.IMG", { 16, 16 } },
 		{ "CITY.IMG", { 16, 11 } },
-		{ "DITHER.IMG", { 16, 50 } },
-		{ "DITHER2.IMG", { 16, 50 } },
+		{ "DITHER.IMG", { 8, 100 } },
+		{ "DITHER2.IMG", { 8, 100 } },
 		{ "DUNGEON.IMG", { 14,  8 } },
 		{ "DZTTAV.IMG", { 32, 34 } },
 		{ "NOCAMP.IMG", { 25, 19 } },
