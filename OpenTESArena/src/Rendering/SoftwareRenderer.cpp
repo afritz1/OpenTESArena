@@ -1212,6 +1212,8 @@ SoftwareRenderer::ObjectTexture::ObjectTexture()
 	this->texels32Bit = nullptr;
 	this->width = 0;
 	this->height = 0;
+	this->widthReal = 0.0;
+	this->heightReal = 0.0;
 	this->texelCount = 0;
 	this->bytesPerTexel = 0;
 }
