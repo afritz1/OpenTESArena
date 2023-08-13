@@ -23,6 +23,7 @@ ChasmDefinition::ChasmDefinition()
 {
 	this->allowsSwimming = false;
 	this->isDamaging = false;
+	this->isEmissive = false;
 	this->animType = static_cast<AnimationType>(-1);
 }
 
@@ -30,6 +31,7 @@ ChasmDefinition::ChasmDefinition(const ChasmDefinition &other)
 {
 	this->allowsSwimming = other.allowsSwimming;
 	this->isDamaging = other.isDamaging;
+	this->isEmissive = other.isEmissive;
 	this->wallTextureAsset = other.wallTextureAsset;
 	this->animType = other.animType;
 
@@ -55,6 +57,7 @@ void ChasmDefinition::initClassic(ArenaTypes::ChasmType chasmType, const Texture
 {
 	this->allowsSwimming = ArenaChasmUtils::allowsSwimming(chasmType);
 	this->isDamaging = ArenaChasmUtils::isDamaging(chasmType);
+	this->isEmissive = this->isDamaging;
 	this->wallTextureAsset = wallTextureAsset;
 
 	if (chasmType == ArenaTypes::ChasmType::Dry)

@@ -8,6 +8,7 @@
 #include "RenderChunkManager.h"
 #include "Renderer.h"
 #include "RendererSystem3D.h"
+#include "RendererUtils.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
 #include "../Entities/EntityChunkManager.h"
@@ -1053,6 +1054,13 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						std::vector<RenderDrawCall> *drawCallsPtr = nullptr;
 						if (isChasm)
 						{
+							const ChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
+							if (chasmDef.isEmissive)
+							{
+								lightingType = RenderLightingType::PerMesh;
+								meshLightPercent = 1.0;
+							}
+							
 							drawCallsPtr = &renderChunk.chasmDrawCalls;
 						}
 						else if (isFading)
@@ -1267,7 +1275,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 					if (chasmWallIter != renderChunk.chasmWallIndexBufferIDsMap.end())
 					{
 						DebugAssert(voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm);
-						const bool isAnimatingChasm = voxelTraitsDef.chasm.type != ArenaTypes::ChasmType::Dry;
+						const ArenaTypes::ChasmType chasmType = voxelTraitsDef.chasm.type;
+						const bool isAnimatingChasm = chasmType != ArenaTypes::ChasmType::Dry;
 						const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
 
 						// Need to give two textures since chasm walls are multi-textured.
@@ -1278,11 +1287,19 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const Matrix4d rotationMatrix = Matrix4d::identity();
 						const Matrix4d scaleMatrix = Matrix4d::identity();
 						const TextureSamplingType textureSamplingType = isAnimatingChasm ? TextureSamplingType::ScreenSpaceRepeatY : TextureSamplingType::Default;
-						constexpr double meshLightPercent = 0.0;
+
+						double meshLightPercent = 0.0;
+						RenderLightingType lightingType = RenderLightingType::PerPixel;
+						if (RendererUtils::isChasmEmissive(chasmType))
+						{
+							meshLightPercent = 1.0;
+							lightingType = RenderLightingType::PerMesh;
+						}
+
 						constexpr double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
-							textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent, VertexShaderType::Voxel,
+							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, VertexShaderType::Voxel,
 							PixelShaderType::OpaqueWithAlphaTestLayer, pixelShaderParam0, renderChunk.chasmDrawCalls);
 					}
 				}

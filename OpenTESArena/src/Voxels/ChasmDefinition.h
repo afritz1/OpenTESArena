@@ -36,6 +36,7 @@ struct ChasmDefinition
 	
 	bool allowsSwimming;
 	bool isDamaging;
+	bool isEmissive;
 	TextureAsset wallTextureAsset;
 
 	AnimationType animType; // Determines solid color/animated access.
