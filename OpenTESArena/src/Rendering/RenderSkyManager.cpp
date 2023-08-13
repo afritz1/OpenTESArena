@@ -50,7 +50,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	std::vector<double> bgTexCoords;
 	std::vector<int32_t> bgIndices;
 
-	constexpr double pointDistance = 1000.0; // @todo: hack while the sky is using naive depth testing w/o any occlusion culling, etc.
+	constexpr double pointDistance = 2000.0; // @todo: hack while the sky is using naive depth testing w/o any occlusion culling, etc.
 	constexpr Radians angleAboveHorizon = 25.0 * Constants::DegToRad;
 	const double aboveHorizonPointHeight = pointDistance * std::tan(angleAboveHorizon);
 
@@ -636,11 +636,11 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 	}
 
 	// @temp fix for Z ordering. Later I think we should just not do depth testing in the sky?
-	constexpr double landDistance = 250.0;
-	constexpr double airDistance = landDistance + 20.0;
-	constexpr double moonDistance = airDistance + 20.0;
-	constexpr double sunDistance = moonDistance + 20.0;
-	constexpr double starDistance = sunDistance + 20.0;
+	constexpr double landDistance = 500.0;
+	constexpr double airDistance = landDistance + 100.0;
+	constexpr double moonDistance = airDistance + 100.0;
+	constexpr double sunDistance = moonDistance + 100.0;
+	constexpr double starDistance = sunDistance + 100.0;
 
 	constexpr double fullBrightLightPercent = 1.0;
 
@@ -657,8 +657,9 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 		const Matrix4d yawRotation = Matrix4d::yRotation(yawRadians);
 		drawCall.rotation = yawRotation * pitchRotation;
 
-		const double scaledWidth = width * arbitraryDistance;
-		const double scaledHeight = height * arbitraryDistance;
+		constexpr double arbitraryScale = 2.0; // Increase everything to better match original game.
+		const double scaledWidth = width * (arbitraryDistance * arbitraryScale);
+		const double scaledHeight = height * (arbitraryDistance * arbitraryScale);
 		drawCall.scale = Matrix4d::scale(1.0, scaledHeight, scaledWidth);
 
 		drawCall.vertexBufferID = this->objectVertexBufferID;
