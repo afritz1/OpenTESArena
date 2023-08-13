@@ -45,7 +45,7 @@ int SkyUtils::getStarCountFromDensity(int starDensity)
 	else if (starDensity == 2)
 	{
 		// High.
-		return 8000;
+		return 3000;
 	}
 	else
 	{
