@@ -50,7 +50,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	std::vector<double> bgTexCoords;
 	std::vector<int32_t> bgIndices;
 
-	constexpr double pointDistance = 2500.0; // @todo: hack while the sky is using naive depth testing w/o any occlusion culling, etc.
+	constexpr double pointDistance = 3000.0; // @todo: hack while the sky is using naive depth testing w/o any occlusion culling, etc.
 	constexpr Radians angleAboveHorizon = 25.0 * Constants::DegToRad;
 	const double aboveHorizonPointHeight = pointDistance * std::tan(angleAboveHorizon);
 
