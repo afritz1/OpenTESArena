@@ -917,7 +917,7 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 	const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 	IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType, 
+	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType,
 	double meshLightPercent, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0,
 	std::vector<RenderDrawCall> &drawCalls)
 {
@@ -933,7 +933,7 @@ void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3
 	drawCall.textureIDs[0] = textureID0;
 	drawCall.textureIDs[1] = textureID1;
 	drawCall.textureSamplingType0 = textureSamplingType0;
-	drawCall.textureSamplingType1 = textureSamplingType1;	
+	drawCall.textureSamplingType1 = textureSamplingType1;
 	drawCall.lightingType = lightingType;
 	drawCall.lightPercent = meshLightPercent;
 	drawCall.lightIDs[0] = this->playerLightID;
@@ -1060,7 +1060,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 								lightingType = RenderLightingType::PerMesh;
 								meshLightPercent = 1.0;
 							}
-							
+
 							drawCallsPtr = &renderChunk.chasmDrawCalls;
 						}
 						else if (isFading)
@@ -1259,12 +1259,22 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							const Matrix4d rotationMatrix = Matrix4d::identity();
 							const Matrix4d scaleMatrix = Matrix4d::identity();
 							const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
-							constexpr double meshLightPercent = 0.0;
+
+							RenderLightingType lightingType = RenderLightingType::PerPixel;
+							double meshLightPercent = 0.0;
+							std::vector<RenderDrawCall> *drawCallsPtr = &renderChunk.staticDrawCalls;
+							if (isFading)
+							{
+								lightingType = RenderLightingType::PerMesh;
+								meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
+								drawCallsPtr = &renderChunk.fadingDrawCalls;
+							}
+
 							constexpr double pixelShaderParam0 = 0.0;
 							this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID,
-								textureID, std::nullopt, textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent,
-								VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.staticDrawCalls);
+								textureID, std::nullopt, textureSamplingType, textureSamplingType, lightingType, meshLightPercent,
+								VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, *drawCallsPtr);
 						}
 					}
 				}
