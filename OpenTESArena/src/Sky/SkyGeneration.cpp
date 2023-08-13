@@ -99,8 +99,11 @@ namespace SkyGeneration
 				constexpr int yPosLimit = 64;
 				const int yPos = random.next() % yPosLimit;
 				const double heightPercent = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
-				const Radians angleLimit = 30.0 * Constants::DegToRad;
-				return heightPercent * angleLimit;
+
+				// Clouds can be slightly below the horizon.
+				constexpr Radians minAngle = -10.0 * Constants::DegToRad;
+				constexpr Radians maxAngle = 20.0 * Constants::DegToRad;
+				return minAngle + ((maxAngle - minAngle) * heightPercent);
 			}();
 
 			SkyDefinition::AirDefID airDefID;
