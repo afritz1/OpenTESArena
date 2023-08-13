@@ -73,7 +73,10 @@ double ArenaRenderUtils::getDistantAmbientPercent(const Clock &clock)
 {
 	constexpr MapType mapType = MapType::City;
 	constexpr bool isFoggy = false;
-	return ArenaRenderUtils::getAmbientPercent(clock, mapType, isFoggy);
+	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(clock, mapType, isFoggy);
+	constexpr double minDistantAmbient = 0.10;
+	constexpr double maxDistantAmbient = 1.0;
+	return std::clamp(ambientPercent, minDistantAmbient, maxDistantAmbient);
 }
 
 bool ArenaRenderUtils::isLightLevelTexel(uint8_t texel)
