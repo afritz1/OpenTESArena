@@ -454,55 +454,6 @@ BufferView<const RenderDrawCall> RenderSkyManager::getObjectDrawCalls() const
 	return this->objectDrawCalls;
 }
 
-void RenderSkyManager::updateGameWorldPalette(WeatherType weatherType, bool isInterior, double daytimePercent,
-	ScopedObjectTextureRef &gameWorldPaletteTextureRef, TextureManager &textureManager, Renderer &renderer)
-{
-	constexpr int paletteLength = 256;
-
-	// Update sky gradient. Write to palette indices 1-8 using one of the three palettes.
-	const std::string *skyGradientFilename = &ArenaPaletteName::Default;
-	std::optional<int> daytimePaletteIndexOffset;
-	if (!isInterior)
-	{
-		skyGradientFilename = (weatherType == WeatherType::Clear) ? &ArenaPaletteName::Daytime : &ArenaPaletteName::Dreary;
-
-		const double daytimePercent6AM = 0.25;
-		const double daytimePercent6PM = 0.75;
-		const double skyGradientDaytimePercent = (daytimePercent - daytimePercent6AM) / (daytimePercent6PM - daytimePercent6AM);
-		daytimePaletteIndexOffset = std::clamp(static_cast<int>(skyGradientDaytimePercent * static_cast<double>(paletteLength)), 0, paletteLength - 1);
-	}
-
-	const std::optional<PaletteID> skyGradientPaletteID = textureManager.tryGetPaletteID(skyGradientFilename->c_str());
-	if (!skyGradientPaletteID.has_value())
-	{
-		DebugLogError("Couldn't get palette ID for sky gradient \"" + (*skyGradientFilename) + "\".");
-		return;
-	}
-
-	const Palette &skyGradientPalette = textureManager.getPaletteHandle(*skyGradientPaletteID);
-	const BufferView<const Color> skyGradientPaletteTexels(skyGradientPalette);
-	LockedTexture lockedTexture = gameWorldPaletteTextureRef.lockTexels();
-	if (!lockedTexture.isValid())
-	{
-		DebugLogError("Couldn't lock sky gradient texture \"" + (*skyGradientFilename) + "\" for updating.");
-		return;
-	}
-
-	DebugAssert(lockedTexture.bytesPerTexel == 4);
-	DebugAssert((gameWorldPaletteTextureRef.getWidth() * gameWorldPaletteTextureRef.getHeight()) == skyGradientPaletteTexels.getCount());
-
-	int srcTexelsIndexStart = daytimePaletteIndexOffset.has_value() ? *daytimePaletteIndexOffset : 1;
-	const int skyGradientColorCount = static_cast<int>(std::size(ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR));
-	BufferView<uint32_t> dstTexels(reinterpret_cast<uint32_t*>(lockedTexture.texels) + 1, skyGradientColorCount);
-	for (int i = 0; i < skyGradientColorCount; i++)
-	{
-		const int srcIndex = (srcTexelsIndexStart + i) % paletteLength;
-		dstTexels[i] = skyGradientPaletteTexels[srcIndex].toARGB();
-	}
-
-	gameWorldPaletteTextureRef.unlockTexels();
-}
-
 void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer)
 {
 	auto tryLoadTextureAsset = [this, &textureManager, &renderer](const TextureAsset &textureAsset)
@@ -639,13 +590,11 @@ void RenderSkyManager::loadScene(const SkyInfoDefinition &skyInfoDef, TextureMan
 	// @todo: load draw calls for all the sky objects (ideally here, but can be in update() for now if convenient)
 }
 
-void RenderSkyManager::update(const SkyInstance &skyInst, WeatherType weatherType, const WeatherInstance &weatherInst,
+void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance &weatherInst,
 	const CoordDouble3 &cameraCoord, bool isInterior, double daytimePercent, bool isFoggy, double distantAmbientPercent,
-	ScopedObjectTextureRef &gameWorldPaletteTextureRef, TextureManager &textureManager, Renderer &renderer)
+	Renderer &renderer)
 {
 	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
-
-	this->updateGameWorldPalette(weatherType, isInterior, daytimePercent, gameWorldPaletteTextureRef, textureManager, renderer);
 
 	// Keep background centered on the player.
 	this->bgDrawCall.position = cameraPos;

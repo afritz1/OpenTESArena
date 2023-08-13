@@ -62,9 +62,6 @@ private:
 
 	void freeBgBuffers(Renderer &renderer);
 	void freeObjectBuffers(Renderer &renderer);
-
-	void updateGameWorldPalette(WeatherType weatherType, bool isInterior, double daytimePercent,
-		ScopedObjectTextureRef &gameWorldPaletteTextureRef, TextureManager &textureManager, Renderer &renderer);
 public:
 	RenderSkyManager();
 
@@ -75,9 +72,8 @@ public:
 	BufferView<const RenderDrawCall> getObjectDrawCalls() const;
 
 	void loadScene(const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
-	void update(const SkyInstance &skyInst, WeatherType weatherType, const WeatherInstance &weatherInst,
-		const CoordDouble3 &cameraCoord, bool isInterior, double daytimePercent, bool isFoggy, double distantAmbientPercent,
-		ScopedObjectTextureRef &gameWorldPaletteTextureRef, TextureManager &textureManager, Renderer &renderer);
+	void update(const SkyInstance &skyInst, const WeatherInstance &weatherInst, const CoordDouble3 &cameraCoord, bool isInterior,
+		double daytimePercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
 

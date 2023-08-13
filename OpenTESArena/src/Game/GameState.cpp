@@ -939,13 +939,14 @@ void GameState::tickRendering(Game &game)
 	const Options &options = game.getOptions();
 	renderChunkManager.updateLights(playerCoord, isFoggy, options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
 
-	const WeatherType weatherType = this->weatherDef.type;
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;
+	const WeatherType weatherType = this->weatherDef.type;
 	const double daytimePercent = this->getDaytimePercent();
+	sceneManager.updateGameWorldPalette(isInterior, weatherType, daytimePercent, textureManager);
+
 	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(this->clock);
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.update(skyInst, weatherType, this->weatherInst, playerCoord, isInterior, daytimePercent,
-		isFoggy, distantAmbientPercent, sceneManager.gameWorldPaletteTextureRef, textureManager, renderer);
+	renderSkyManager.update(skyInst, this->weatherInst, playerCoord, isInterior, daytimePercent, isFoggy, distantAmbientPercent, renderer);
 
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),

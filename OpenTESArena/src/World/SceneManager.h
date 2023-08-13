@@ -11,6 +11,11 @@
 #include "../Sky/SkyInstance.h"
 #include "../Voxels/VoxelChunkManager.h"
 
+class TextureManager;
+class Renderer;
+
+enum class WeatherType;
+
 struct SceneManager
 {
 	// Chunk managers for the active scene.
@@ -35,6 +40,7 @@ struct SceneManager
 	SceneManager();
 
 	void init(TextureManager &textureManager, Renderer &renderer);
+	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, double daytimePercent, TextureManager &textureManager);
 	void cleanUp();
 };
 
