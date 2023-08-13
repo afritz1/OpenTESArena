@@ -28,7 +28,9 @@ struct SceneManager
 	ScopedObjectTextureRef gameWorldPaletteTextureRef;
 
 	// Light tables; these might be switched between instantaneously depending on weather and time of day.
-	ScopedObjectTextureRef normalLightTableTextureRef, fogLightTableTextureRef;
+	ScopedObjectTextureRef normalLightTableDaytimeTextureRef;
+	ScopedObjectTextureRef normalLightTableNightTextureRef;
+	ScopedObjectTextureRef fogLightTableTextureRef;
 
 	SceneManager();
 

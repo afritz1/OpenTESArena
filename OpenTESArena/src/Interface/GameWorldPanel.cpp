@@ -861,10 +861,19 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
 	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
 	
-	ObjectTextureID lightTableTextureID = sceneManager.normalLightTableTextureRef.get();
+	const bool isInterior = gameState.getActiveMapType() == MapType::Interior;
+	const double daytimePercent = gameState.getDaytimePercent();
+	const bool isBefore6AM = daytimePercent < 0.25;
+	const bool isAfter6PM = daytimePercent > 0.75;
+
+	ObjectTextureID lightTableTextureID = sceneManager.normalLightTableDaytimeTextureRef.get();
 	if (isFoggy)
 	{
 		lightTableTextureID = sceneManager.fogLightTableTextureRef.get();
+	}
+	else if (isInterior || isBefore6AM || isAfter6PM)
+	{
+		lightTableTextureID = sceneManager.normalLightTableNightTextureRef.get();
 	}
 
 	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, options.getGraphics_RenderThreadsMode());
