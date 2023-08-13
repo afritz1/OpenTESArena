@@ -771,18 +771,17 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 
 		int textureAssetIndex = 0;
 		const int animIndex = skyObjectInst.animIndex;
-		double meshLightPercent = distantAmbientPercent;
 		const bool hasAnimation = animIndex >= 0;
 		if (hasAnimation)
 		{
 			const SkyObjectAnimationInstance &animInst = skyInst.getAnimInst(animIndex);
 			const double animPercent = animInst.percentDone;
 			textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
-			meshLightPercent = fullBrightLightPercent; // For volcanoes.
 		}
 
 		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
+		const double meshLightPercent = skyObjectInst.emissive ? fullBrightLightPercent : distantAmbientPercent;
 		addDrawCall(skyObjectInst.transformedDirection, skyObjectInst.width, skyObjectInst.height, textureID, landDistance,
 			meshLightPercent, PixelShaderType::AlphaTested);
 	}
