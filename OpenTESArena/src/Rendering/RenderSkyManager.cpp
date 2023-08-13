@@ -690,7 +690,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 	}
 
 	// Order draw calls back to front.
-	for (int i = skyInst.starStart; i < skyInst.starEnd; i++)
+	for (int i = skyInst.starEnd - 1; i >= skyInst.starStart; i--)
 	{
 		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
 		const SkyObjectTextureType textureType = skyObjectInst.textureType;
