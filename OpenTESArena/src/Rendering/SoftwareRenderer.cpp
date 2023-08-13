@@ -892,7 +892,7 @@ namespace swRender
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
 
-	void PixelShader_AlphaTestedWithLightLevelTransparency(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+	void PixelShader_AlphaTestedWithLightLevelColor(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
@@ -906,28 +906,52 @@ namespace swRender
 			return;
 		}
 
-		uint8_t resultTexel;
+		const int lightTableTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
+		
+		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+	}
+
+	void PixelShader_AlphaTestedWithLightLevelOpacity(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.heightReal), 0, texture.height - 1);
+		const int texelIndex = texelX + (texelY * texture.width);
+		const uint8_t texel = texture.texels[texelIndex];
+
+		const bool isTransparent = texel == 0;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		int lightTableTexelIndex;
 		if (ArenaRenderUtils::isLightLevelTexel(texel))
 		{
 			const int lightLevel = static_cast<int>(texel) - ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
 			const uint8_t prevFrameBufferPixel = frameBuffer.colors[frameBuffer.pixelIndex];
-			const int lightTableTextureIndex = prevFrameBufferPixel + (lightLevel * lighting.texelsPerLightLevel);
-			resultTexel = lighting.lightTableTexels[lightTableTextureIndex];
-		}
-		else if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC1)
-		{
-			resultTexel = ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST1;
-		}
-		else if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC2)
-		{
-			resultTexel = ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST2;
+			lightTableTexelIndex = prevFrameBufferPixel + (lightLevel * lighting.texelsPerLightLevel);
 		}
 		else
 		{
-			const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-			resultTexel = lighting.lightTableTexels[shadedTexelIndex];
+			const int lightTableOffset = lighting.lightLevel * lighting.texelsPerLightLevel;
+			if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC1)
+			{
+				lightTableTexelIndex = lightTableOffset + ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST1;
+			}
+			else if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC2)
+			{
+				lightTableTexelIndex = lightTableOffset + ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST2;
+			}
+			else
+			{
+				lightTableTexelIndex = lightTableOffset + texel;
+			}
 		}
-		
+
+		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
@@ -1184,8 +1208,11 @@ namespace swRender
 							case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
 								PixelShader_AlphaTestedWithPaletteIndexLookup(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
 								break;
-							case PixelShaderType::AlphaTestedWithLightLevelTransparency:
-								PixelShader_AlphaTestedWithLightLevelTransparency(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+							case PixelShaderType::AlphaTestedWithLightLevelColor:
+								PixelShader_AlphaTestedWithLightLevelColor(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+								break;
+							case PixelShaderType::AlphaTestedWithLightLevelOpacity:
+								PixelShader_AlphaTestedWithLightLevelOpacity(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
 								PixelShader_AlphaTestedWithPreviousBrightnessLimit(shaderPerspective, shaderTexture0, shaderFrameBuffer);

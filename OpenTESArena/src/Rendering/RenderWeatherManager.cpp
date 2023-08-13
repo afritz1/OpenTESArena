@@ -621,7 +621,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.lightPercent = 1.0;
 		this->fogDrawCall.lightIdCount = 0;
 		this->fogDrawCall.vertexShaderType = VertexShaderType::Voxel;
-		this->fogDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelTransparency; // @todo: don't depth test
+		this->fogDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity; // @todo: don't depth test
 		this->fogDrawCall.pixelShaderParam0 = 0.0;
 	}
 }

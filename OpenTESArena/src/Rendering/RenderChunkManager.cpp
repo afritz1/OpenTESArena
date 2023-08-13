@@ -1426,7 +1426,7 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		}
 		else if (isGhost)
 		{
-			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelTransparency;
+			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
 		}
 
 		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID0, textureID1, pixelShaderType, renderChunk.entityDrawCalls);
