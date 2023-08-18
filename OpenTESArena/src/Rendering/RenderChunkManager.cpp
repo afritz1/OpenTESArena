@@ -626,7 +626,6 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 	this->entityPaletteIndicesTextureRefs.clear();
 	this->voxelDrawCallsCache.clear();
 	this->entityDrawCallsCache.clear();
-	this->totalDrawCallsCache.clear();
 }
 
 ObjectTextureID RenderChunkManager::getVoxelTextureID(const TextureAsset &textureAsset) const
@@ -712,11 +711,6 @@ BufferView<const RenderDrawCall> RenderChunkManager::getVoxelDrawCalls() const
 BufferView<const RenderDrawCall> RenderChunkManager::getEntityDrawCalls() const
 {
 	return BufferView<const RenderDrawCall>(this->entityDrawCallsCache);
-}
-
-BufferView<const RenderDrawCall> RenderChunkManager::getTotalDrawCalls() const
-{
-	return BufferView<const RenderDrawCall>(this->totalDrawCallsCache);
 }
 
 void RenderChunkManager::loadVoxelTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer)
@@ -1563,11 +1557,6 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 
 	const BufferView<const double> entityNormalsView(entityNormals);
 	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormalsView);
-
-	// @todo: move this some place better
-	this->totalDrawCallsCache.clear();
-	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->voxelDrawCallsCache.begin(), this->voxelDrawCallsCache.end());
-	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->entityDrawCallsCache.begin(), this->entityDrawCallsCache.end());
 }
 
 void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, bool playerHasLight,
@@ -1637,5 +1626,4 @@ void RenderChunkManager::unloadScene(Renderer &renderer)
 	this->entityLightIDs.clear();
 	this->voxelDrawCallsCache.clear();
 	this->entityDrawCallsCache.clear();
-	this->totalDrawCallsCache.clear();
 }

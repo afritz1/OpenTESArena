@@ -88,7 +88,7 @@ private:
 	std::unordered_map<EntityInstanceID, RenderLightID> entityLightIDs; // All lights have an associated entity.
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
-	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache, totalDrawCallsCache;
+	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache;
 
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
@@ -134,7 +134,6 @@ public:
 
 	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
 	BufferView<const RenderDrawCall> getEntityDrawCalls() const;
-	BufferView<const RenderDrawCall> getTotalDrawCalls() const;
 
 	// Chunk allocating/freeing update function, called before voxel or entity resources are updated.
 	void updateActiveChunks(const BufferView<const ChunkInt2> &activeChunkPositions,

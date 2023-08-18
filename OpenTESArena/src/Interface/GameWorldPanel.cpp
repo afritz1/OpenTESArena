@@ -798,6 +798,9 @@ void GameWorldPanel::initUiDrawCalls()
 
 bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 {
+	static std::vector<RenderDrawCall> drawCalls; // Preserved between frames for less fragmentation.
+	drawCalls.clear();
+
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
 	const auto &player = game.getPlayer();
@@ -808,36 +811,29 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
-	std::vector<RenderDrawCall> drawCalls;
 	const SceneManager &sceneManager = game.getSceneManager();
 	const RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	for (const RenderDrawCall &drawCall : renderChunkManager.getTotalDrawCalls())
-	{
-		drawCalls.emplace_back(drawCall);
-	}
+	const BufferView<const RenderDrawCall> voxelDrawCalls = renderChunkManager.getVoxelDrawCalls();
+	const BufferView<const RenderDrawCall> entityDrawCalls = renderChunkManager.getEntityDrawCalls();
+	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
+	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
 
 	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
+	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
 	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
-	for (const RenderDrawCall &drawCall : renderSkyManager.getObjectDrawCalls())
-	{
-		drawCalls.emplace_back(drawCall);
-	}
+	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
 
 	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
 	if (activeWeatherInst.hasRain())
 	{
-		for (const RenderDrawCall &drawCall : renderWeatherManager.getRainDrawCalls())
-		{
-			drawCalls.emplace_back(drawCall);
-		}
+		const BufferView<const RenderDrawCall> rainDrawCalls = renderWeatherManager.getRainDrawCalls();
+		drawCalls.insert(drawCalls.end(), rainDrawCalls.begin(), rainDrawCalls.end());
 	}
 
 	if (activeWeatherInst.hasSnow())
 	{
-		for (const RenderDrawCall &drawCall : renderWeatherManager.getSnowDrawCalls())
-		{
-			drawCalls.emplace_back(drawCall);
-		}
+		const BufferView<const RenderDrawCall> snowDrawCalls = renderWeatherManager.getSnowDrawCalls();
+		drawCalls.insert(drawCalls.end(), snowDrawCalls.begin(), snowDrawCalls.end());
 	}
 
 	if (activeWeatherInst.hasFog())
