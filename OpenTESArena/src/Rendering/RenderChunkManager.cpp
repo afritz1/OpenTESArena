@@ -681,7 +681,7 @@ ObjectTextureID RenderChunkManager::getChasmWallTextureID(const ChunkInt2 &chunk
 }
 
 ObjectTextureID RenderChunkManager::getEntityTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ,
-	const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary) const
+	const EntityChunkManager &entityChunkManager) const
 {
 	const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 	const EntityDefID entityDefID = entityInst.defID;
@@ -694,9 +694,9 @@ ObjectTextureID RenderChunkManager::getEntityTextureID(EntityInstanceID entityIn
 	DebugAssertMsg(defIter != this->entityAnims.end(), "Expected loaded entity animation for def ID " + std::to_string(entityDefID) + ".");
 
 	EntityVisibilityState2D visState;
-	entityChunkManager.getEntityVisibilityState2D(entityInstID, cameraCoordXZ, entityDefLibrary, visState);
+	entityChunkManager.getEntityVisibilityState2D(entityInstID, cameraCoordXZ, visState);
 
-	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID, entityDefLibrary);
+	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
 	const Buffer<ScopedObjectTextureRef> &textureRefs = defIter->textureRefs;
@@ -870,7 +870,7 @@ void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const Vox
 }
 
 void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 	{
@@ -885,7 +885,7 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 
 		if (animIter == this->entityAnims.end())
 		{
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID, entityDefLibrary);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 			Buffer<ScopedObjectTextureRef> textureRefs = sgTexture::MakeEntityAnimationTextures(animDef, textureManager, renderer);
 
@@ -1379,8 +1379,7 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 
 void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk,
 	const CoordDouble2 &cameraCoordXZ, const Matrix4d &rotationMatrix, double ceilingScale,
-	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary)
+	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager)
 {
 	renderChunk.entityDrawCalls.clear();
 
@@ -1391,11 +1390,11 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		const EntityInstanceID entityInstID = entityIDs[i];
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
-		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, entityDefLibrary);
+		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 		EntityVisibilityState3D visState;
-		entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, entityDefLibrary, visState);
+		entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, visState);
 		const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
 		DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
 		const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
@@ -1404,7 +1403,7 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		const Double3 worldPos = VoxelUtils::coordToWorldPoint(visState.flatPosition);
 		const Matrix4d scaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
 
-		const ObjectTextureID textureID0 = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager, entityDefLibrary);
+		const ObjectTextureID textureID0 = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager);
 		std::optional<ObjectTextureID> textureID1 = std::nullopt;
 		PixelShaderType pixelShaderType = PixelShaderType::AlphaTested;
 
@@ -1440,8 +1439,8 @@ void RenderChunkManager::rebuildEntityDrawCallsList()
 	}
 }
 
-void RenderChunkManager::updateActiveChunks(const BufferView<const ChunkInt2> &activeChunkPositions,
-	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+void RenderChunkManager::updateActiveChunks(BufferView<const ChunkInt2> activeChunkPositions,
+	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)
@@ -1466,8 +1465,8 @@ void RenderChunkManager::updateActiveChunks(const BufferView<const ChunkInt2> &a
 	this->chunkPool.clear();
 }
 
-void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeChunkPositions,
-	const BufferView<const ChunkInt2> &newChunkPositions, double ceilingScale, double chasmAnimPercent,
+void RenderChunkManager::updateVoxels(BufferView<const ChunkInt2> activeChunkPositions,
+	BufferView<const ChunkInt2> newChunkPositions, double ceilingScale, double chasmAnimPercent,
 	const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
@@ -1504,13 +1503,11 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 	}
 }
 
-void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions,
-	const BufferView<const ChunkInt2> &newChunkPositions, const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ,
+void RenderChunkManager::updateEntities(BufferView<const ChunkInt2> activeChunkPositions,
+	BufferView<const ChunkInt2> newChunkPositions, const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ,
 	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
@@ -1529,7 +1526,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	{
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		this->loadEntityTextures(entityChunk, entityChunkManager, entityDefLibrary, textureManager, renderer);
+		this->loadEntityTextures(entityChunk, entityChunkManager, textureManager, renderer);
 	}
 
 	const Radians rotationAngle = -MathUtils::fullAtan2(cameraDirXZ);
@@ -1539,7 +1536,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, rotationMatrix, ceilingScale,
-			voxelChunkManager, entityChunkManager, entityDefLibrary);
+			voxelChunkManager, entityChunkManager);
 	}
 
 	this->rebuildEntityDrawCallsList();
@@ -1547,7 +1544,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	// Update normals buffer.
 	const VoxelDouble2 entityDir = -cameraDirXZ;
 	constexpr int entityMeshVertexCount = 4;
-	std::array<double, entityMeshVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> entityNormals =
+	const std::array<double, entityMeshVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> entityNormals =
 	{
 		entityDir.x, 0.0, entityDir.y,
 		entityDir.x, 0.0, entityDir.y,
@@ -1555,12 +1552,11 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 		entityDir.x, 0.0, entityDir.y
 	};
 
-	const BufferView<const double> entityNormalsView(entityNormals);
-	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormalsView);
+	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormals);
 }
 
-void RenderChunkManager::updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, bool playerHasLight,
-	const EntityChunkManager &entityChunkManager, Renderer &renderer)
+void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositions, const CoordDouble3 &cameraCoord,
+	bool isFogActive, bool playerHasLight, const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{

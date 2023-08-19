@@ -94,7 +94,7 @@ private:
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const;
 	ObjectTextureID getEntityTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ,
-		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary) const;
+		const EntityChunkManager &entityChunkManager) const;
 
 	void loadVoxelTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer);
 	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
@@ -102,7 +102,7 @@ private:
 	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk);
 
 	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer);
+		TextureManager &textureManager, Renderer &renderer);
 
 	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
@@ -124,7 +124,7 @@ private:
 		std::vector<RenderDrawCall> &drawCalls);
 	void rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk, const CoordDouble2 &cameraCoordXZ,
 		const Matrix4d &rotationMatrix, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary);
+		const EntityChunkManager &entityChunkManager);
 	void rebuildEntityDrawCallsList();
 public:
 	RenderChunkManager();
@@ -136,18 +136,18 @@ public:
 	BufferView<const RenderDrawCall> getEntityDrawCalls() const;
 
 	// Chunk allocating/freeing update function, called before voxel or entity resources are updated.
-	void updateActiveChunks(const BufferView<const ChunkInt2> &activeChunkPositions,
-		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+	void updateActiveChunks(BufferView<const ChunkInt2> activeChunkPositions,
+		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 
-	void updateVoxels(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
+	void updateVoxels(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
 		Renderer &renderer);
-	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
+	void updateEntities(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
-	void updateLights(const CoordDouble3 &cameraCoord, bool isFogActive, bool playerHasLight, const EntityChunkManager &entityChunkManager,
-		Renderer &renderer);
+	void updateLights(BufferView<const ChunkInt2> newChunkPositions, const CoordDouble3 &cameraCoord, bool isFogActive, bool playerHasLight,
+		const EntityChunkManager &entityChunkManager, Renderer &renderer);
 
 	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);

@@ -912,6 +912,10 @@ void GameState::tickRendering(Game &game)
 {
 	SceneManager &sceneManager = game.getSceneManager();
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
+	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
+
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const SkyInstance &skyInst = sceneManager.skyInstance;
@@ -927,17 +931,16 @@ void GameState::tickRendering(Game &game)
 	TextureManager &textureManager = game.getTextureManager();
 	Renderer &renderer = game.getRenderer();
 
-	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	renderChunkManager.updateActiveChunks(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
-		chunkManager.getFreedChunkPositions(), voxelChunkManager, renderer);
-	renderChunkManager.updateVoxels(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(), ceilingScale, chasmAnimPercent,
-		voxelChunkManager, textureManager, renderer);
-	renderChunkManager.updateEntities(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(), playerCoordXZ, playerDirXZ, ceilingScale,
-		voxelChunkManager, entityChunkManager, textureManager, renderer);
-
 	const bool isFoggy = this->isFogActive();
 	const Options &options = game.getOptions();
-	renderChunkManager.updateLights(playerCoord, isFoggy, options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
+
+	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
+	renderChunkManager.updateActiveChunks(activeChunkPositions, newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
+	renderChunkManager.updateLights(newChunkPositions, playerCoord, isFoggy, options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
+	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
+		voxelChunkManager, textureManager, renderer);
+	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
+		voxelChunkManager, entityChunkManager, textureManager, renderer);
 
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;
 	const WeatherType weatherType = this->weatherDef.type;
