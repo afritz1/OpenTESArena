@@ -105,22 +105,26 @@ Renderer::ProfilerData::ProfilerData()
 	this->height = -1;
 	this->threadCount = -1;
 	this->drawCallCount = -1;
-	this->potentiallyVisTriangleCount = -1;
+	this->sceneTriangleCount = -1;
 	this->visTriangleCount = -1;
-	this->visLightCount = -1;
+	this->objectTextureCount = -1;
+	this->objectTextureByteCount = -1;
+	this->totalLightCount = -1;
 	this->frameTime = 0.0;
 }
 
-void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
-	int visTriangleCount, int visLightCount, double frameTime)
+void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
+	int visTriangleCount, int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, double frameTime)
 {
 	this->width = width;
 	this->height = height;
 	this->threadCount = threadCount;
 	this->drawCallCount = drawCallCount;
-	this->potentiallyVisTriangleCount = potentiallyVisTriangleCount;
+	this->sceneTriangleCount = sceneTriangleCount;
 	this->visTriangleCount = visTriangleCount;
-	this->visLightCount = visLightCount;
+	this->objectTextureCount = objectTextureCount;
+	this->objectTextureByteCount = objectTextureByteCount;
+	this->totalLightCount = totalLightCount;
 	this->frameTime = frameTime;
 }
 
@@ -969,8 +973,8 @@ void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDr
 	// Update profiler stats.
 	const RendererSystem3D::ProfilerData swProfilerData = this->renderer3D->getProfilerData();
 	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
-		swProfilerData.drawCallCount, swProfilerData.potentiallyVisTriangleCount, swProfilerData.visTriangleCount,
-		swProfilerData.visLightCount, frameTime);
+		swProfilerData.drawCallCount, swProfilerData.sceneTriangleCount, swProfilerData.visTriangleCount,
+		swProfilerData.textureCount, swProfilerData.textureByteCount, swProfilerData.totalLightCount, frameTime);
 
 	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
 	SDL_UnlockTexture(this->gameWorldTexture.get());

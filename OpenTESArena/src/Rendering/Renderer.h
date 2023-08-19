@@ -57,15 +57,22 @@ public:
 		int threadCount;
 		int drawCallCount;
 
-		// Visible triangles and lights.
-		int potentiallyVisTriangleCount, visTriangleCount, visLightCount;
+		// Geometry.
+		int sceneTriangleCount, visTriangleCount;
+
+		// Textures.
+		int objectTextureCount;
+		int64_t objectTextureByteCount;
+		
+		// Lights.
+		int totalLightCount;
 
 		double frameTime;
 
 		ProfilerData();
 
-		void init(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
-			int visTriangleCount, int visLightCount, double frameTime);
+		void init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount, int visTriangleCount,
+			int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, double frameTime);
 	};
 
 	using ResolutionScaleFunc = std::function<double()>;

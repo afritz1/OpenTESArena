@@ -1575,13 +1575,27 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	const int renderHeight = this->paletteIndexBuffer.getHeight();
 
 	const int threadCount = 1;
-	const int drawCallCount = swGeometry::g_totalDrawCallCount;
-	const int potentiallyVisTriangleCount = swGeometry::g_totalTriangleCount;
-	const int visTriangleCount = swGeometry::g_visibleTriangleCount;
-	const int visLightCount = 0;
 
-	return ProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, potentiallyVisTriangleCount,
-		visTriangleCount, visLightCount);
+	const int drawCallCount = swGeometry::g_totalDrawCallCount;
+	const int sceneTriangleCount = swGeometry::g_totalTriangleCount;
+	const int visTriangleCount = swGeometry::g_visibleTriangleCount;
+
+	const int textureCount = this->objectTextures.getUsedCount();
+	int textureByteCount = 0;
+	for (int i = 0; i < this->objectTextures.getTotalCount(); i++)
+	{
+		const ObjectTextureID id = static_cast<ObjectTextureID>(i);
+		const ObjectTexture *texturePtr = this->objectTextures.tryGet(id);
+		if (texturePtr != nullptr)
+		{
+			textureByteCount += texturePtr->texels.getCount();
+		}
+	}
+
+	const int totalLightCount = this->lights.getUsedCount();
+
+	return ProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, sceneTriangleCount,
+		visTriangleCount, textureCount, textureByteCount, totalLightCount);
 }
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,

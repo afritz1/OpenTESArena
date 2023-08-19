@@ -634,12 +634,14 @@ void Game::renderDebugInfo()
 			const std::string renderThreadCount = std::to_string(profilerData.threadCount);
 			const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
 			const std::string renderDrawCallCount = std::to_string(profilerData.drawCallCount);
+			const std::string objectTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.objectTextureByteCount) / (1024.0 * 1024.0), 2);
 			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
 				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
-				"3D render: " + renderTime + "ms" + "\n" +
-				"Draw calls: " + renderDrawCallCount + "\n" +
-				"Vis triangles: " + std::to_string(profilerData.visTriangleCount) + " (" + std::to_string(profilerData.potentiallyVisTriangleCount) + ")" +
-				", lights: " + std::to_string(profilerData.visLightCount));
+				"3D render: " + renderTime + "ms" + '\n' +
+				"Textures: " + std::to_string(profilerData.objectTextureCount) + " (" + objectTextureMbCount + "MB)" + '\n' +
+				"Draw calls: " + renderDrawCallCount + '\n' +
+				"Triangles: " + std::to_string(profilerData.visTriangleCount) + " / " + std::to_string(profilerData.sceneTriangleCount) + '\n' +
+				"Lights: " + std::to_string(profilerData.totalLightCount));
 		}
 		else
 		{
