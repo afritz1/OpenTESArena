@@ -36,7 +36,13 @@ public:
 
 	Buffer3D(int width, int height, int depth)
 	{
-		this->init(width, height, depth);
+		DebugAssert(width >= 0);
+		DebugAssert(height >= 0);
+		DebugAssert(depth >= 0);
+		this->data = new T[width * height * depth];
+		this->width = width;
+		this->height = height;
+		this->depth = depth;
 	}
 
 	Buffer3D(Buffer3D<T> &&other)
@@ -56,6 +62,11 @@ public:
 		if (this == &other)
 		{
 			return *this;
+		}
+
+		if (this->isValid())
+		{
+			this->clear();
 		}
 
 		this->data = other.data;
@@ -82,6 +93,12 @@ public:
 		DebugAssert(width >= 0);
 		DebugAssert(height >= 0);
 		DebugAssert(depth >= 0);
+
+		if (this->isValid())
+		{
+			this->clear();
+		}
+
 		this->data = new T[width * height * depth];
 		this->width = width;
 		this->height = height;

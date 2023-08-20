@@ -24,12 +24,17 @@ public:
 
 	Buffer(int count)
 	{
-		this->init(count);
+		DebugAssert(count >= 0);
+		this->data = new T[count];
+		this->count = count;
 	}
 
 	Buffer(std::initializer_list<T> list)
 	{
-		this->init(list);
+		const int count = static_cast<int>(list.size());
+		this->data = new T[count];
+		this->count = count;
+		std::copy(list.begin(), list.end(), this->begin());
 	}
 
 	Buffer(Buffer<T> &&other)
@@ -45,6 +50,11 @@ public:
 		if (this == &other)
 		{
 			return *this;
+		}
+
+		if (this->isValid())
+		{
+			this->clear();
 		}
 
 		this->data = other.data;
@@ -65,6 +75,12 @@ public:
 	void init(int count)
 	{
 		DebugAssert(count >= 0);
+
+		if (this->isValid())
+		{
+			this->clear();
+		}
+
 		this->data = new T[count];
 		this->count = count;
 	}

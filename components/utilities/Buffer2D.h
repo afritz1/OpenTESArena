@@ -33,7 +33,11 @@ public:
 
 	Buffer2D(int width, int height)
 	{
-		this->init(width, height);
+		DebugAssert(width >= 0);
+		DebugAssert(height >= 0);
+		this->data = new T[width * height];
+		this->width = width;
+		this->height = height;
 	}
 
 	Buffer2D(Buffer2D<T> &&other)
@@ -51,6 +55,11 @@ public:
 		if (this == &other)
 		{
 			return *this;
+		}
+
+		if (this->isValid())
+		{
+			this->clear();
 		}
 
 		this->data = other.data;
@@ -74,6 +83,12 @@ public:
 	{
 		DebugAssert(width >= 0);
 		DebugAssert(height >= 0);
+
+		if (this->isValid())
+		{
+			this->clear();
+		}
+
 		this->data = new T[width * height];
 		this->width = width;
 		this->height = height;
