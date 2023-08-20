@@ -932,11 +932,13 @@ void GameState::tickRendering(Game &game)
 	Renderer &renderer = game.getRenderer();
 
 	const bool isFoggy = this->isFogActive();
+	const bool nightLightsAreActive = ArenaClockUtils::nightLightsAreActive(this->clock);	
 	const Options &options = game.getOptions();
 
 	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
 	renderChunkManager.updateActiveChunks(activeChunkPositions, newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
-	renderChunkManager.updateLights(newChunkPositions, playerCoord, isFoggy, options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
+	renderChunkManager.updateLights(newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
+		options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
 	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
 		voxelChunkManager, textureManager, renderer);
 	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,

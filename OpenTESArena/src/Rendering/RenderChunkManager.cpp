@@ -1556,7 +1556,8 @@ void RenderChunkManager::updateEntities(BufferView<const ChunkInt2> activeChunkP
 }
 
 void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositions, const CoordDouble3 &cameraCoord,
-	bool isFogActive, bool playerHasLight, const EntityChunkManager &entityChunkManager, Renderer &renderer)
+	double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
+	const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
@@ -1566,6 +1567,40 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 			const RenderLightID lightID = iter->second;
 			renderer.freeLight(lightID);
 			this->entityLightIDs.erase(iter);
+		}
+	}
+
+	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	{
+		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+		{
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			const std::optional<double> entityLightRadius = EntityUtils::tryGetLightRadius(entityDef, nightLightsAreActive);
+			const bool isLight = entityLightRadius.has_value();
+			if (isLight)
+			{
+				RenderLightID lightID;
+				if (!renderer.tryCreateLight(&lightID))
+				{
+					DebugLogError("Couldn't allocate render light ID in chunk (" + chunkPos.toString() + ").");
+					continue;
+				}
+
+				this->entityLightIDs.emplace(entityInstID, lightID);
+
+				const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
+				const WorldDouble2 entityPos = VoxelUtils::coordToWorldPoint(entityCoord);
+
+				double dummyAnimMaxWidth, animMaxHeight;
+				EntityUtils::getAnimationMaxDims(entityDef.getAnimDef(), &dummyAnimMaxWidth, &animMaxHeight);
+
+				const double entityPosY = ceilingScale + (animMaxHeight * 0.50);
+				const WorldDouble3 entityPos3D(entityPos.x, entityPosY, entityPos.y);
+				renderer.setLightPosition(lightID, entityPos3D);
+				renderer.setLightRadius(lightID, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius);
+			}
 		}
 	}
 
@@ -1591,6 +1626,8 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 	}
 
 	renderer.setLightRadius(this->playerLightID, playerLightRadiusStart, playerLightRadiusEnd);
+
+	// @todo: recalculate light bounding boxes for voxel and entity draw call generators to check this frame.
 }
 
 void RenderChunkManager::unloadScene(Renderer &renderer)
