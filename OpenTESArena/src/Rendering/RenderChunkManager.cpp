@@ -1507,9 +1507,12 @@ void RenderChunkManager::updateVoxels(BufferView<const ChunkInt2> activeChunkPos
 			this->loadVoxelChasmWall(renderChunk, voxelChunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
 		}
 
-		BufferView<const VoxelInt3> dirtyMeshDefs = voxelChunk.getDirtyMeshDefPositions();
+		BufferView<const VoxelInt3> dirtyMeshDefPositions = voxelChunk.getDirtyMeshDefPositions();
 		BufferView<const VoxelInt3> dirtyFadeAnimInstPositions = voxelChunk.getDirtyFadeAnimInstPositions();
-		const bool updateStatics = (dirtyMeshDefs.getCount() > 0) || (dirtyFadeAnimInstPositions.getCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
+		BufferView<const VoxelInt3> dirtyLightPositions = renderChunk.dirtyLightPositions;
+		bool updateStatics = dirtyMeshDefPositions.getCount() > 0;
+		updateStatics |= dirtyFadeAnimInstPositions.getCount() > 0; // @temp fix for fading voxels being covered by their non-fading draw call
+		updateStatics |= dirtyLightPositions.getCount() > 0; // @temp fix for player light movement, eventually other moving lights too
 		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 
@@ -1621,8 +1624,9 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 		}
 	}
 
-	const WorldDouble3 cameraWorldPoint = VoxelUtils::coordToWorldPoint(cameraCoord);
-	renderer.setLightPosition(this->playerLightID, cameraWorldPoint);
+	const WorldDouble3 prevPlayerLightPosition = renderer.getLightPosition(this->playerLightID);
+	const WorldDouble3 playerLightPosition = VoxelUtils::coordToWorldPoint(cameraCoord);
+	renderer.setLightPosition(this->playerLightID, playerLightPosition);
 
 	double playerLightRadiusStart, playerLightRadiusEnd;
 	if (isFogActive)
@@ -1655,18 +1659,17 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 		}
 	}
 
-	auto populateTouchedVoxelLightIdLists = [this, &renderer, ceilingScale](RenderLightID lightID)
+	auto getLightMinAndMaxVoxels = [ceilingScale](const WorldDouble3 &lightPosition, double endRadius, WorldInt3 *outMin, WorldInt3 *outMax)
 	{
-		const WorldDouble3 &lightPos = renderer.getLightPosition(lightID);
+		const WorldDouble3 lightPosMin = lightPosition - WorldDouble3(endRadius, endRadius, endRadius);
+		const WorldDouble3 lightPosMax = lightPosition + WorldDouble3(endRadius, endRadius, endRadius);
+		*outMin = VoxelUtils::pointToVoxel(lightPosMin, ceilingScale);
+		*outMax = VoxelUtils::pointToVoxel(lightPosMax, ceilingScale);
+	};
 
-		double dummyLightStartRadius, lightEndRadius;
-		renderer.getLightRadii(lightID, &dummyLightStartRadius, &lightEndRadius);
-
-		const WorldDouble3 lightPosMin = lightPos - WorldDouble3(lightEndRadius, lightEndRadius, lightEndRadius);
-		const WorldDouble3 lightPosMax = lightPos + WorldDouble3(lightEndRadius, lightEndRadius, lightEndRadius);
-		const WorldInt3 lightVoxelMin = VoxelUtils::pointToVoxel(lightPosMin, ceilingScale);
-		const WorldInt3 lightVoxelMax = VoxelUtils::pointToVoxel(lightPosMax, ceilingScale);
-
+	auto populateTouchedVoxelLightIdLists = [this, &renderer, ceilingScale](RenderLightID lightID, const WorldDouble3 &lightPosition,
+		const WorldInt3 &lightVoxelMin, const WorldInt3 &lightVoxelMax)
+	{
 		// Iterate over all voxels the light's bounding box touches.
 		for (WEInt z = lightVoxelMin.z; z <= lightVoxelMax.z; z++)
 		{
@@ -1690,7 +1693,9 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 		}
 	};
 
-	populateTouchedVoxelLightIdLists(this->playerLightID);
+	WorldInt3 playerLightVoxelMin, playerLightVoxelMax;
+	getLightMinAndMaxVoxels(playerLightPosition, playerLightRadiusEnd, &playerLightVoxelMin, &playerLightVoxelMax);
+	populateTouchedVoxelLightIdLists(this->playerLightID, playerLightPosition, playerLightVoxelMin, playerLightVoxelMax);
 
 	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
 	// - @todo: this method doesn't implicitly allow sorting by distance because it doesn't check lights per voxel, it checks voxels per light.
@@ -1698,7 +1703,54 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 	for (const auto &pair : this->entityLightIDs)
 	{
 		const RenderLightID lightID = pair.second;
-		populateTouchedVoxelLightIdLists(lightID);
+		const WorldDouble3 &lightPosition = renderer.getLightPosition(lightID);
+
+		double dummyLightStartRadius, lightEndRadius;
+		renderer.getLightRadii(lightID, &dummyLightStartRadius, &lightEndRadius);
+
+		WorldInt3 lightVoxelMin, lightVoxelMax;
+		getLightMinAndMaxVoxels(lightPosition, lightEndRadius, &lightVoxelMin, &lightVoxelMax);
+		populateTouchedVoxelLightIdLists(lightID, lightPosition, lightVoxelMin, lightVoxelMax);
+	}
+
+	WorldInt3 prevPlayerLightVoxelMin, prevPlayerLightVoxelMax;
+	getLightMinAndMaxVoxels(prevPlayerLightPosition, playerLightRadiusEnd, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
+
+	// See which voxels affected by the player's light are getting their light references updated.
+	// This is for dirty voxel draw calls mainly, not about setting light references (might change later).
+	if ((prevPlayerLightVoxelMin != playerLightVoxelMin) || (prevPlayerLightVoxelMax != playerLightVoxelMax))
+	{
+		for (WEInt z = playerLightVoxelMin.z; z <= playerLightVoxelMax.z; z++)
+		{
+			for (int y = playerLightVoxelMin.y; y <= playerLightVoxelMax.y; y++)
+			{
+				for (SNInt x = playerLightVoxelMin.x; x <= playerLightVoxelMax.x; x++)
+				{
+					const bool isInPrevRange =
+						(x >= prevPlayerLightVoxelMin.x) && (x <= prevPlayerLightVoxelMax.x) &&
+						(y >= prevPlayerLightVoxelMin.y) && (y <= prevPlayerLightVoxelMax.y) &&
+						(z >= prevPlayerLightVoxelMin.z) && (z <= prevPlayerLightVoxelMax.z);
+					
+					if (!isInPrevRange)
+					{
+						const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(WorldInt3(x, y, z));
+						RenderChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+						if (renderChunkPtr != nullptr)
+						{
+							renderChunkPtr->addDirtyLightPosition(curLightCoord.voxel);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void RenderChunkManager::cleanUp()
+{
+	for (ChunkPtr &chunkPtr : this->activeChunks)
+	{
+		chunkPtr->dirtyLightPositions.clear();
 	}
 }
 

@@ -55,6 +55,15 @@ RenderVoxelMeshDefID RenderChunk::addMeshDefinition(RenderVoxelMeshDefinition &&
 	return id;
 }
 
+void RenderChunk::addDirtyLightPosition(const VoxelInt3 &position)
+{
+	const auto iter = std::find(this->dirtyLightPositions.begin(), this->dirtyLightPositions.end(), position);
+	if (iter == this->dirtyLightPositions.end())
+	{
+		this->dirtyLightPositions.emplace_back(position);
+	}
+}
+
 void RenderChunk::freeBuffers(Renderer &renderer)
 {
 	for (RenderVoxelMeshDefinition &meshDef : this->meshDefs)
@@ -71,6 +80,7 @@ void RenderChunk::clear()
 	this->meshDefIDs.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
 	this->voxelLightIdLists.clear();
+	this->dirtyLightPositions.clear();
 	this->staticDrawCalls.clear();
 	this->doorDrawCalls.clear();
 	this->chasmDrawCalls.clear();

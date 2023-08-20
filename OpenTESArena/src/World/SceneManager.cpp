@@ -104,4 +104,5 @@ void SceneManager::cleanUp()
 	this->chunkManager.cleanUp();
 	this->voxelChunkManager.cleanUp();
 	this->entityChunkManager.cleanUp();
+	this->renderChunkManager.cleanUp();
 }
