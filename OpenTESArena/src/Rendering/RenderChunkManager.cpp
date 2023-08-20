@@ -1355,8 +1355,8 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 }
 
 void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
-	ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, PixelShaderType pixelShaderType,
-	std::vector<RenderDrawCall> &drawCalls)
+	ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs,
+	PixelShaderType pixelShaderType, std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
 	drawCall.position = position;
@@ -1373,8 +1373,11 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 	drawCall.textureSamplingType1 = TextureSamplingType::Default;
 	drawCall.lightingType = RenderLightingType::PerPixel;
 	drawCall.lightPercent = 0.0;
-	drawCall.lightIDs[0] = this->playerLightID;
-	drawCall.lightIdCount = 1;
+
+	DebugAssert(std::size(drawCall.lightIDs) >= lightIDs.getCount());
+	std::copy(lightIDs.begin(), lightIDs.end(), std::begin(drawCall.lightIDs));
+	drawCall.lightIdCount = lightIDs.getCount();
+
 	drawCall.vertexShaderType = VertexShaderType::Entity;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = 0.0;
@@ -1427,7 +1430,19 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
 		}
 
-		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID0, textureID1, pixelShaderType, renderChunk.entityDrawCalls);
+		double dummyMaxAnimWidth, maxAnimHeight;
+		EntityUtils::getAnimationMaxDims(animDef, &dummyMaxAnimWidth, &maxAnimHeight);
+
+		const VoxelDouble3 entityLightPoint = visState.flatPosition.point + VoxelDouble3(0.0, maxAnimHeight * 0.50, 0.0); // Center of entity.
+		const VoxelInt3 entityLightVoxel = VoxelUtils::pointToVoxel(entityLightPoint, ceilingScale);
+		BufferView<const RenderLightID> lightIdsView; // Limitation of reusing lights per voxel: entity is unlit if they are outside the world.
+		if (renderChunk.isValidVoxel(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z))
+		{
+			const RenderVoxelLightIdList &voxelLightIdList = renderChunk.voxelLightIdLists.get(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z);
+			lightIdsView = voxelLightIdList.getLightIDs();
+		}
+
+		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID0, textureID1, lightIdsView, pixelShaderType, renderChunk.entityDrawCalls);
 	}
 }
 
