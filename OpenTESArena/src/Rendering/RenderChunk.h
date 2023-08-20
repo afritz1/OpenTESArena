@@ -5,6 +5,7 @@
 
 #include "RenderDrawCall.h"
 #include "RenderGeometryUtils.h"
+#include "RenderShaderUtils.h"
 #include "RenderVoxelMeshDefinition.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelUtils.h"
@@ -12,10 +13,25 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer3D.h"
+#include "components/utilities/BufferView.h"
 
 class Renderer;
 
 using RenderVoxelMeshDefID = int;
+
+// Lights relevant to a particular voxel. Each light might be touching several voxels.
+struct RenderVoxelLightIdList
+{
+	RenderLightID lightIDs[RenderDrawCall::MAX_LIGHTS];
+	int lightCount;
+
+	RenderVoxelLightIdList();
+
+	BufferView<RenderLightID> getLightIDs();
+	BufferView<const RenderLightID> getLightIDs() const;
+	void tryAddLight(RenderLightID id);
+	void clear();
+};
 
 class RenderChunk final : public Chunk
 {
@@ -26,6 +42,7 @@ public:
 	std::unordered_map<VoxelChunk::VoxelMeshDefID, RenderVoxelMeshDefID> meshDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
 	Buffer3D<RenderVoxelMeshDefID> meshDefIDs; // Points into mesh instances.
 	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
+	Buffer3D<RenderVoxelLightIdList> voxelLightIdLists; // Lights touching each voxel. IDs are owned by RenderChunkManager.
 	std::vector<RenderDrawCall> staticDrawCalls; // Most voxel geometry (walls, floors, etc.).
 	std::vector<RenderDrawCall> doorDrawCalls; // All doors, open or closed.
 	std::vector<RenderDrawCall> chasmDrawCalls; // Chasm walls and floors, separate from static draw calls so their textures can animate.

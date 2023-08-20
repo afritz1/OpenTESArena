@@ -215,6 +215,8 @@ public:
 
 	// Shading management functions.
 	bool tryCreateLight(RenderLightID *outID);
+	const Double3 &getLightPosition(RenderLightID id);
+	void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius);
 	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
 	void freeLight(RenderLightID id);
