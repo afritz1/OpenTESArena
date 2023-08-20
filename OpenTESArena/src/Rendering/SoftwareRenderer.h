@@ -114,6 +114,8 @@ public:
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
 
 	bool tryCreateLight(RenderLightID *outID) override;
+	const Double3 &getLightPosition(RenderLightID id) override;
+	void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius) override;
 	void setLightPosition(RenderLightID id, const Double3 &worldPoint) override;
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
 	void freeLight(RenderLightID id) override;
