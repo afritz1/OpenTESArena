@@ -20,16 +20,18 @@ namespace ArenaRenderUtils
 	constexpr double SCREEN_WIDTH_REAL = static_cast<double>(SCREEN_WIDTH);
 	constexpr double SCREEN_HEIGHT_REAL = static_cast<double>(SCREEN_HEIGHT);
 	constexpr double ASPECT_RATIO = SCREEN_WIDTH_REAL / SCREEN_HEIGHT_REAL;
+	constexpr double PRESENTED_ASPECT_RATIO = 4.0 / 3.0;
 	constexpr int BITS_PER_PIXEL = 8;
+
+	// Height multiplier for pixels due to the difference between how the game renders internally and how it appeared
+	// on players' monitors.
+	constexpr double TALL_PIXEL_RATIO = ASPECT_RATIO / PRESENTED_ASPECT_RATIO;
 
 	constexpr int FRAMES_PER_SECOND = 25;
 
 	// Texture limits.
 	constexpr int DEFAULT_VOXEL_TEXTURE_COUNT = 64;
 	constexpr int DEFAULT_FLAT_TEXTURE_COUNT = 256;
-
-	// Height ratio between normal pixels and tall pixels.
-	constexpr double TALL_PIXEL_RATIO = 1.20;
 
 	// Amount of a sliding/raising door that is visible when fully open.
 	constexpr double DOOR_MIN_VISIBLE = 0.10;
