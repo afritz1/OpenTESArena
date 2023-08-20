@@ -152,8 +152,7 @@ public:
 	Date &getDate();
 	Clock &getClock();
 
-	// Gets a percentage representing how far along the current day is. 0.0 is 
-	// 12:00am and 0.50 is noon.
+	// Gets a percentage representing how far along the current day is. 0.0 is 12:00am and 0.50 is noon.
 	double getDaytimePercent() const;
 
 	// Gets a percentage representing the current progress through the looping chasm animation.

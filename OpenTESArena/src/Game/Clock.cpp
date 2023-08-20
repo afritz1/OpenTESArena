@@ -60,6 +60,11 @@ double Clock::getPreciseTotalSeconds() const
 	return static_cast<double>(this->getTotalSeconds()) + this->currentSecond;
 }
 
+double Clock::getDaytimePercent() const
+{
+	return this->getPreciseTotalSeconds() / static_cast<double>(Clock::SECONDS_IN_A_DAY);
+}
+
 bool Clock::isAM() const
 {
 	return this->hours < 12;

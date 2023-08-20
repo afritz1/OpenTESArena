@@ -51,6 +51,9 @@ public:
 	// more precise measurement of the current time in seconds.
 	double getPreciseTotalSeconds() const;
 
+	// Gets the percent of how far along the current day is. 0.0 is 12am and 0.50 is 12pm.
+	double getDaytimePercent() const;
+
 	// Returns whether the current hour is before noon.
 	bool isAM() const;
 
