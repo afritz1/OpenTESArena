@@ -1430,10 +1430,7 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
 		}
 
-		double dummyMaxAnimWidth, maxAnimHeight;
-		EntityUtils::getAnimationMaxDims(animDef, &dummyMaxAnimWidth, &maxAnimHeight);
-
-		const VoxelDouble3 entityLightPoint = visState.flatPosition.point + VoxelDouble3(0.0, maxAnimHeight * 0.50, 0.0); // Center of entity.
+		const VoxelDouble3 &entityLightPoint = visState.flatPosition.point; // Where the entity receives its light (can't use center due to some really tall entities reaching outside the chunk).
 		const VoxelInt3 entityLightVoxel = VoxelUtils::pointToVoxel(entityLightPoint, ceilingScale);
 		BufferView<const RenderLightID> lightIdsView; // Limitation of reusing lights per voxel: entity is unlit if they are outside the world.
 		if (renderChunk.isValidVoxel(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z))
