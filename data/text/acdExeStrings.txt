@@ -148,6 +148,10 @@ EnhancementItemBasePrices=0x3DA4A
 BodyPartNames=0x3DE91
 WeaponAnimationFilenames=0x4214E
 
+[Light]
+WindowTwilightColors=0x3F766
+WaterTwilightLightLevels=0x3F747
+
 [Locations]
 ProvinceNames=0x394F8
 CharCreationProvinceNames=0x3E906

@@ -283,6 +283,14 @@ public:
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
+	struct Light
+	{
+		std::array<uint8_t, 48> windowTwilightColors; // VGA (6-bit, 63 = 255) RGB triplets for window color transition.
+		std::array<uint16_t, 14> waterTwilightLightLevels;
+
+		bool init(const char *data, const KeyValueFile &keyValueFile);
+	};
+
 	struct Locations
 	{
 		// Province names, ordered by appearance on the world map reading from left to
@@ -559,6 +567,7 @@ public:
 	CityGeneration cityGen;
 	Entities entities;
 	Equipment equipment;
+	Light light;
 	Locations locations;
 	Logbook logbook;
 	Meta meta;

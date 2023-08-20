@@ -542,6 +542,25 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	return true;
 }
 
+bool ExeData::Light::init(const char *data, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Light";
+	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		return false;
+	}
+
+	const int windowTwilightColorsOffset = ExeData::get(*section, "WindowTwilightColors");
+	const int waterTwilightLightLevelsOffset = ExeData::get(*section, "WaterTwilightLightLevels");
+
+	initInt8Array(this->windowTwilightColors, data + windowTwilightColorsOffset);
+	initInt16Array(this->waterTwilightLightLevels, data + waterTwilightLightLevelsOffset);
+
+	return true;
+}
+
 bool ExeData::Locations::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Locations";
@@ -1008,6 +1027,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->cityGen.init(dataPtr, keyValueFile);
 	success &= this->entities.init(dataPtr, keyValueFile);
 	success &= this->equipment.init(dataPtr, keyValueFile);
+	success &= this->light.init(dataPtr, keyValueFile);
 	success &= this->locations.init(dataPtr, keyValueFile);
 	success &= this->logbook.init(dataPtr, keyValueFile);
 	success &= this->meta.init(dataPtr, keyValueFile);
