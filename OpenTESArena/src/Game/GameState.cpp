@@ -361,7 +361,7 @@ Clock &GameState::getClock()
 
 double GameState::getDaytimePercent() const
 {
-	return this->clock.getPreciseTotalSeconds() / static_cast<double>(Clock::SECONDS_IN_A_DAY);
+	return this->clock.getDaytimePercent();
 }
 
 double GameState::getChasmAnimPercent() const
