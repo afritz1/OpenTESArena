@@ -912,8 +912,8 @@ void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3
 	const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 	IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
 	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType,
-	double meshLightPercent, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0,
-	std::vector<RenderDrawCall> &drawCalls)
+	double meshLightPercent, BufferView<const RenderLightID> lightIDs, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
+	double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
 	drawCall.position = position;
@@ -930,8 +930,11 @@ void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3
 	drawCall.textureSamplingType1 = textureSamplingType1;
 	drawCall.lightingType = lightingType;
 	drawCall.lightPercent = meshLightPercent;
-	drawCall.lightIDs[0] = this->playerLightID;
-	drawCall.lightIdCount = 1;
+
+	DebugAssert(std::size(drawCall.lightIDs) >= lightIDs.getCount());
+	std::copy(lightIDs.begin(), lightIDs.end(), std::begin(drawCall.lightIDs));
+	drawCall.lightIdCount = lightIDs.getCount();
+
 	drawCall.vertexShaderType = vertexShaderType;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = pixelShaderParam0;
@@ -995,6 +998,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 					BufferView<const VoxelFadeAnimationInstance> fadeAnimInsts = voxelChunk.getFadeAnimInsts();
 					fadeAnimInst = &fadeAnimInsts[fadeAnimInstIndex];
 				}
+
+				const RenderVoxelLightIdList &voxelLightIdList = renderChunk.voxelLightIdLists.get(x, y, z);
 
 				const bool canAnimate = isDoor || isChasm || isFading;
 				if ((!canAnimate && updateStatics) || (canAnimate && updateAnimating))
@@ -1070,8 +1075,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
-							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, VertexShaderType::Voxel, pixelShaderType,
-							pixelShaderParam0, *drawCallsPtr);
+							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
+							VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);
 					}
 				}
 
@@ -1172,8 +1177,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										RenderLightingType::PerPixel, meshLightPercent, VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested,
-										pixelShaderParam0, renderChunk.doorDrawCalls);
+										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::SwingingDoor,
+										PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
 								break;
@@ -1202,7 +1207,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										RenderLightingType::PerPixel, meshLightPercent, VertexShaderType::SlidingDoor,
+										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::SlidingDoor,
 										PixelShaderType::AlphaTestedWithVariableTexCoordUMin, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
@@ -1233,7 +1238,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										RenderLightingType::PerPixel, meshLightPercent, VertexShaderType::RaisingDoor,
+										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::RaisingDoor,
 										PixelShaderType::AlphaTestedWithVariableTexCoordVMin, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
@@ -1268,7 +1273,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID,
 								textureID, std::nullopt, textureSamplingType, textureSamplingType, lightingType, meshLightPercent,
-								VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, *drawCallsPtr);
+								voxelLightIdList.getLightIDs(), VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, *drawCallsPtr);
 						}
 					}
 				}
@@ -1303,8 +1308,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						constexpr double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
-							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, VertexShaderType::Voxel,
-							PixelShaderType::OpaqueWithAlphaTestLayer, pixelShaderParam0, renderChunk.chasmDrawCalls);
+							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
+							VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer, pixelShaderParam0, renderChunk.chasmDrawCalls);
 					}
 				}
 			}
@@ -1638,12 +1643,8 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 		}
 	}
 
-	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
-	// - @todo: this method doesn't implicitly allow sorting by distance because it doesn't check lights per voxel, it checks voxels per light.
-	//   If sorting is desired then do it after this loop. It should also sort by intensity at the voxel center, not just distance to the light.
-	for (const auto &pair : this->entityLightIDs)
+	auto populateTouchedVoxelLightIdLists = [this, &renderer, ceilingScale](RenderLightID lightID)
 	{
-		const RenderLightID lightID = pair.second;
 		const WorldDouble3 &lightPos = renderer.getLightPosition(lightID);
 
 		double dummyLightStartRadius, lightEndRadius;
@@ -1675,6 +1676,17 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 				}
 			}
 		}
+	};
+
+	populateTouchedVoxelLightIdLists(this->playerLightID);
+
+	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
+	// - @todo: this method doesn't implicitly allow sorting by distance because it doesn't check lights per voxel, it checks voxels per light.
+	//   If sorting is desired then do it after this loop. It should also sort by intensity at the voxel center, not just distance to the light.
+	for (const auto &pair : this->entityLightIDs)
+	{
+		const RenderLightID lightID = pair.second;
+		populateTouchedVoxelLightIdLists(lightID);
 	}
 }
 
