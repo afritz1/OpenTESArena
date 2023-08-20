@@ -44,9 +44,7 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_SRC2 = 15;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DST1 = 158;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DST2 = 159;
-	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT = 113;
-	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_ACTIVE = 97;
-	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_INACTIVE = 112;
+	constexpr uint8_t PALETTE_INDEX_WINDOW = 113;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
 	constexpr uint8_t PALETTE_INDEX_DRY_CHASM_COLOR = 112;
@@ -54,7 +52,7 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_SNOWFLAKE = 16;
 	constexpr uint8_t PALETTE_INDICES_SKY_COLOR[] = { 1, 2, 3, 4, 5, 6, 7, 8 };
 	constexpr uint8_t PALETTE_INDEX_SKY_COLOR_FOG = 100;
-	// Thunderstorm sky colors come from the executable.
+	// Thunderstorm sky colors and window colors come from the executable.
 
 	constexpr int RAINDROP_TEXTURE_WIDTH = 3;
 	constexpr int RAINDROP_TEXTURE_HEIGHT = 8;

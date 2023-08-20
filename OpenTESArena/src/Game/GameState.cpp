@@ -947,7 +947,7 @@ void GameState::tickRendering(Game &game)
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;
 	const WeatherType weatherType = this->weatherDef.type;
 	const double daytimePercent = this->getDaytimePercent();
-	sceneManager.updateGameWorldPalette(isInterior, weatherType, daytimePercent, textureManager);
+	sceneManager.updateGameWorldPalette(isInterior, weatherType, isFoggy, daytimePercent, textureManager);
 
 	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(this->clock);
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;

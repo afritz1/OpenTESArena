@@ -1,7 +1,10 @@
 #include "SceneManager.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
+#include "../Game/ArenaClockUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/debug/Debug.h"
@@ -51,7 +54,7 @@ void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 	this->fogLightTableTextureRef.unlockTexels();
 }
 
-void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherType, double daytimePercent, TextureManager &textureManager)
+void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double daytimePercent, TextureManager &textureManager)
 {
 	constexpr int paletteLength = 256;
 
@@ -89,12 +92,79 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 
 	int srcTexelsIndexStart = daytimePaletteIndexOffset.has_value() ? *daytimePaletteIndexOffset : 1;
 	const int skyGradientColorCount = static_cast<int>(std::size(ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR));
-	BufferView<uint32_t> dstTexels(reinterpret_cast<uint32_t*>(lockedTexture.texels) + 1, skyGradientColorCount);
+	BufferView<uint32_t> gameWorldTexels(reinterpret_cast<uint32_t*>(lockedTexture.texels), paletteLength);
+	BufferView<uint32_t> gameWorldSkyGradientTexels(gameWorldTexels.begin() + 1, skyGradientColorCount);
 	for (int i = 0; i < skyGradientColorCount; i++)
 	{
 		const int srcIndex = (srcTexelsIndexStart + i) % paletteLength;
-		dstTexels[i] = skyGradientPaletteTexels[srcIndex].toARGB();
+		gameWorldSkyGradientTexels[i] = skyGradientPaletteTexels[srcIndex].toARGB();
 	}
+
+	// Update window color in the palette.
+	uint32_t windowColor;
+	if (isInterior)
+	{
+		windowColor = gameWorldTexels[0]; // Black by default.
+	}
+	else if (isFoggy)
+	{
+		windowColor = gameWorldTexels[ArenaRenderUtils::PALETTE_INDEX_SKY_COLOR_FOG];
+	}
+	else
+	{
+		// Use transition colors if during sunrise/sunset.
+		const double startBrighteningPercent = ArenaClockUtils::AmbientStartBrightening.getDaytimePercent();
+		const double endBrighteningPercent = ArenaClockUtils::AmbientEndBrightening.getDaytimePercent();
+		const double startDimmingPercent = ArenaClockUtils::AmbientStartDimming.getDaytimePercent();
+		const double endDimmingPercent = ArenaClockUtils::AmbientEndDimming.getDaytimePercent();
+		const bool isDuringSunrise = (daytimePercent >= startBrighteningPercent) && (daytimePercent < endBrighteningPercent);
+		const bool isDuringSunset = (daytimePercent >= startDimmingPercent) && (daytimePercent < endDimmingPercent);
+		const bool isDuringNight = (daytimePercent >= endDimmingPercent) || (daytimePercent < startBrighteningPercent);
+
+		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
+		const BufferView<const uint8_t> windowColorBytes = exeData.light.windowTwilightColors;
+
+		auto getWindowRGBForTransitionPercent = [&windowColorBytes](double percent)
+		{
+			constexpr int bytesPerWindowColor = 3;
+			const int totalWindowColors = windowColorBytes.getCount() / bytesPerWindowColor;
+			const int windowColorIndex = std::clamp(static_cast<int>(static_cast<double>(totalWindowColors) * percent), 0, totalWindowColors - 1);
+			const int windowColorByteOffset = windowColorIndex * bytesPerWindowColor;
+
+			// Convert 6-bit RGB bytes to 32-bit integer.
+			constexpr int componentMultiplier = 4;
+			const uint8_t windowR = windowColorBytes[windowColorByteOffset];
+			const uint8_t windowG = windowColorBytes[windowColorByteOffset + 1];
+			const uint8_t windowB = windowColorBytes[windowColorByteOffset + 2];
+			const uint8_t windowRCorrected = windowR * componentMultiplier;
+			const uint8_t windowGCorrected = windowG * componentMultiplier;
+			const uint8_t windowBCorrected = windowB * componentMultiplier;
+			const uint32_t windowRGBCorrected = (windowRCorrected << 16) | (windowGCorrected << 8) | windowBCorrected;
+			return windowRGBCorrected;
+		};
+
+		if (isDuringSunrise)
+		{
+			const double transitionPercent = std::clamp((daytimePercent - startBrighteningPercent) / (endBrighteningPercent - startBrighteningPercent), 0.0, 1.0);
+			windowColor = getWindowRGBForTransitionPercent(transitionPercent);
+		}
+		else if (isDuringSunset)
+		{
+			const double transitionPercent = std::clamp(1.0 - ((daytimePercent - startDimmingPercent) / (endDimmingPercent - startDimmingPercent)), 0.0, 1.0);
+			windowColor = getWindowRGBForTransitionPercent(transitionPercent);
+		}
+		else if (isDuringNight)
+		{
+			windowColor = getWindowRGBForTransitionPercent(0.0);
+		}
+		else
+		{
+			windowColor = gameWorldTexels[0]; // Black during the day.
+		}
+	}
+
+	gameWorldTexels[ArenaRenderUtils::PALETTE_INDEX_WINDOW] = windowColor;
 
 	this->gameWorldPaletteTextureRef.unlockTexels();
 }

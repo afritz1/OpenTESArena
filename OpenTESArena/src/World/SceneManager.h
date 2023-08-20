@@ -40,7 +40,7 @@ struct SceneManager
 	SceneManager();
 
 	void init(TextureManager &textureManager, Renderer &renderer);
-	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, double daytimePercent, TextureManager &textureManager);
+	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double daytimePercent, TextureManager &textureManager);
 	void cleanUp();
 };
 
