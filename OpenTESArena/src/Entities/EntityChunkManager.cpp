@@ -56,8 +56,9 @@ namespace
 	}
 }
 
-const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const
+const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID) const
 {
+	const EntityDefinitionLibrary &defLibrary = EntityDefinitionLibrary::getInstance();
 	const auto iter = this->entityDefs.find(defID);
 	if (iter != this->entityDefs.end())
 	{
@@ -393,8 +394,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 }
 
 void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk, const CoordDouble2 &playerCoordXZ,
-	bool isPlayerMoving, bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary)
+	bool isPlayerMoving, bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager)
 {
 	for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
 	{
@@ -410,7 +410,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		const VoxelDouble2 dirToPlayer = playerCoordXZ - entityCoord;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
-		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID, entityDefLibrary);
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 		const std::optional<int> idleStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
@@ -560,9 +560,9 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 	}
 }
 
-std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID, const EntityDefinitionLibrary &entityDefLibrary) const
+std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID) const
 {
-	const EntityDefinition &entityDef = this->getEntityDef(defID, entityDefLibrary);
+	const EntityDefinition &entityDef = this->getEntityDef(defID);
 	if (entityDef.getType() != EntityDefinition::Type::Enemy)
 	{
 		return std::string();
@@ -688,11 +688,10 @@ BufferView<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs
 	return this->destroyedEntityIDs;
 }
 
-void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D,
-	const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const
+void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D, EntityVisibilityState2D &outVisState) const
 {
 	const EntityInstance &entityInst = this->entities.get(id);
-	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID, entityDefLibrary);
+	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 
@@ -767,14 +766,13 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 }
 
 void EntityChunkManager::getEntityVisibilityState3D(EntityInstanceID id, const CoordDouble2 &eye2D,
-	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-	EntityVisibilityState3D &outVisState) const
+	double ceilingScale, const VoxelChunkManager &voxelChunkManager, EntityVisibilityState3D &outVisState) const
 {
 	EntityVisibilityState2D visState2D;
-	this->getEntityVisibilityState2D(id, eye2D, entityDefLibrary, visState2D);
+	this->getEntityVisibilityState2D(id, eye2D, visState2D);
 
 	const EntityInstance &entityInst = this->entities.get(id);
-	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID, entityDefLibrary);
+	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 	const int baseYOffset = EntityUtils::getYOffset(entityDef);
 	const double flatYOffset = static_cast<double>(-baseYOffset) / MIFUtils::ARENA_UNITS;
 
@@ -822,7 +820,7 @@ void EntityChunkManager::getEntityVisibilityState3D(EntityInstanceID id, const C
 }
 
 void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,
-	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, AudioManager &audioManager)
+	double ceilingScale, Random &random, AudioManager &audioManager)
 {
 	const int entityCount = static_cast<int>(entityChunk.entityIDs.size());
 	for (int i = 0; i < entityCount; i++)
@@ -839,7 +837,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 				if (EntityUtils::withinHearingDistance(playerCoord, entityCoord, ceilingScale))
 				{
 					// @todo: store some kind of sound def ID w/ the secondsTillCreatureSound instead of generating the sound filename here.
-					const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID, entityDefLibrary);
+					const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID);
 					if (creatureSoundFilename.empty())
 					{
 						continue;
@@ -904,9 +902,8 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 			levelInfoDefPtr = &levelInfoDefs[levelInfoDefIndex];
 		}
 
-		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef,
-			entityGenInfo, citizenGenInfo, ceilingScale, random, entityDefLibrary, binaryAssetLibrary,
-			textureManager, renderer);
+		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef, entityGenInfo, citizenGenInfo,
+			ceilingScale, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
@@ -925,8 +922,7 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 		// @todo: simulate/animate AI
-		this->updateCitizenStates(dt, entityChunk, playerCoordXZ, isPlayerMoving, isPlayerWeaponSheathed, random,
-			voxelChunkManager, entityDefLibrary);
+		this->updateCitizenStates(dt, entityChunk, playerCoordXZ, isPlayerMoving, isPlayerWeaponSheathed, random, voxelChunkManager);
 
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
@@ -935,7 +931,7 @@ void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &ac
 			animInst.update(dt);
 		}
 
-		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, entityDefLibrary, audioManager);
+		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, audioManager);
 	}
 }
 

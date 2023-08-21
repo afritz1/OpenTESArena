@@ -63,6 +63,22 @@ int TextureBuilder::getHeight() const
 	}
 }
 
+int TextureBuilder::getBytesPerTexel() const
+{
+	if (this->type == TextureBuilder::Type::Paletted)
+	{
+		return 1;
+	}
+	else if (this->type == TextureBuilder::Type::TrueColor)
+	{
+		return 4;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
 TextureBuilder::Type TextureBuilder::getType() const
 {
 	return this->type;

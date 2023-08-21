@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "RenderGeometryUtils.h"
+#include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
@@ -30,10 +31,13 @@ public:
 		int width, height;
 		int threadCount;
 		int drawCallCount;
-		int potentiallyVisTriangleCount, visTriangleCount, visLightCount;
+		int sceneTriangleCount, visTriangleCount;
+		int textureCount;
+		int64_t textureByteCount;
+		int totalLightCount;
 
-		ProfilerData(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
-			int visTriangleCount, int visLightCount);
+		ProfilerData(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
+			int visTriangleCount, int textureCount, int64_t textureByteCount, int totalLightCount);
 	};
 
 	virtual ~RendererSystem3D();
@@ -62,6 +66,14 @@ public:
 	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
 	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
+
+	// Shading management functions.
+	virtual bool tryCreateLight(RenderLightID *outID) = 0;
+	virtual const Double3 &getLightPosition(RenderLightID id) = 0;
+	virtual void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius) = 0;
+	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
+	virtual void setLightRadius(RenderLightID id, double startRadius, double endRadius) = 0;
+	virtual void freeLight(RenderLightID id) = 0;
 
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;

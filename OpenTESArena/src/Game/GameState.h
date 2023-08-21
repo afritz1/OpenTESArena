@@ -136,7 +136,8 @@ public:
 	MapType getActiveMapType() const;
 	bool isActiveMapValid() const; // Basically "is there something we can populate the scene with?".
 	int getActiveLevelIndex() const;
-	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
+	int getActiveSkyIndex() const;
+	const MapDefinition &getActiveMapDef() const;
 	double getActiveCeilingScale() const;
 	bool isActiveMapNested() const; // True if the active interior is inside an exterior.
 	const WorldMapDefinition &getWorldMapDefinition() const;
@@ -151,8 +152,7 @@ public:
 	Date &getDate();
 	Clock &getClock();
 
-	// Gets a percentage representing how far along the current day is. 0.0 is 
-	// 12:00am and 0.50 is noon.
+	// Gets a percentage representing how far along the current day is. 0.0 is 12:00am and 0.50 is noon.
 	double getDaytimePercent() const;
 
 	// Gets a percentage representing the current progress through the looping chasm animation.
@@ -161,6 +161,9 @@ public:
 	// Gets the currently selected weather and associated state.
 	const WeatherDefinition &getWeatherDefinition() const;
 	const WeatherInstance &getWeatherInstance() const;
+
+	// Refers to fog in outdoor dungeons and daytime fog, not the heavy fog screen effect.
+	bool isFogActive() const;
 
 	// Gets the custom function for the *LEVELUP voxel enter event.
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
@@ -195,6 +198,7 @@ public:
 	// Ticks the game clock (for the current time of day and date).
 	void tickGameClock(double dt, Game &game);
 	void tickChasmAnimation(double dt);
+	void tickSky(double dt, Game &game);
 	void tickWeather(double dt, Game &game);
 	void tickUiMessages(double dt);
 	void tickPlayer(double dt, Game &game);

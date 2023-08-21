@@ -730,27 +730,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
 
-		// Random weather for now.
-		// - @todo: make it depend on the location (no need to prevent deserts from having snow
-		//   since the climates are still hardcoded).
-		const ArenaTypes::WeatherType weatherType = [&game]()
-		{
-			constexpr std::array<ArenaTypes::WeatherType, 8> Weathers =
-			{
-				ArenaTypes::WeatherType::Clear,
-				ArenaTypes::WeatherType::Overcast,
-				ArenaTypes::WeatherType::Rain,
-				ArenaTypes::WeatherType::Snow,
-				ArenaTypes::WeatherType::SnowOvercast,
-				ArenaTypes::WeatherType::Rain2,
-				ArenaTypes::WeatherType::Overcast2,
-				ArenaTypes::WeatherType::SnowOvercast2
-			};
-
-			const int index = game.getRandom().next(static_cast<int>(Weathers.size()));
-			DebugAssertIndex(Weathers, index);
-			return Weathers[index];
-		}();
+		const ArenaTypes::WeatherType weatherType = gameState.getWeatherForLocation(provinceID, locationID);
 
 		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 		auto &renderer = game.getRenderer();

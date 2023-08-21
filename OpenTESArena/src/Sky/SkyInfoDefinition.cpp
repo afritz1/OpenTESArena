@@ -2,6 +2,51 @@
 
 #include "components/debug/Debug.h"
 
+SkyInfoDefinition::SkyInfoDefinition()
+{
+	this->outdoorDungeon = false;
+}
+
+void SkyInfoDefinition::init(bool outdoorDungeon)
+{
+	this->outdoorDungeon = outdoorDungeon;
+}
+
+bool SkyInfoDefinition::isOutdoorDungeon() const
+{
+	return this->outdoorDungeon;
+}
+
+int SkyInfoDefinition::getLandCount() const
+{
+	return static_cast<int>(this->lands.size());
+}
+
+int SkyInfoDefinition::getAirCount() const
+{
+	return static_cast<int>(this->airs.size());
+}
+
+int SkyInfoDefinition::getStarCount() const
+{
+	return static_cast<int>(this->stars.size());
+}
+
+int SkyInfoDefinition::getSunCount() const
+{
+	return static_cast<int>(this->suns.size());
+}
+
+int SkyInfoDefinition::getMoonCount() const
+{
+	return static_cast<int>(this->moons.size());
+}
+
+int SkyInfoDefinition::getLightningCount() const
+{
+	return static_cast<int>(this->lightnings.size());
+}
+
 const SkyLandDefinition &SkyInfoDefinition::getLand(SkyDefinition::LandDefID id) const
 {
 	DebugAssertIndex(this->lands, id);
@@ -30,11 +75,6 @@ const SkyMoonDefinition &SkyInfoDefinition::getMoon(SkyDefinition::MoonDefID id)
 {
 	DebugAssertIndex(this->moons, id);
 	return this->moons[id];
-}
-
-int SkyInfoDefinition::getLightningCount() const
-{
-	return static_cast<int>(this->lightnings.size());
 }
 
 const SkyLightningDefinition &SkyInfoDefinition::getLightning(int index) const

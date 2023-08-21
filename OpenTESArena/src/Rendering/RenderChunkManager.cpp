@@ -8,6 +8,7 @@
 #include "RenderChunkManager.h"
 #include "Renderer.h"
 #include "RendererSystem3D.h"
+#include "RendererUtils.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
 #include "../Entities/EntityChunkManager.h"
@@ -445,14 +446,18 @@ void RenderChunkManager::LoadedEntityAnimation::init(EntityDefID defID, Buffer<S
 	this->textureRefs = std::move(textureRefs);
 }
 
+RenderChunkManager::RenderChunkManager()
+{
+	this->chasmWallIndexBufferIDs.fill(-1);
+	this->playerLightID = -1;
+}
+
 void RenderChunkManager::init(Renderer &renderer)
 {
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
 	ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
 	constexpr int indicesPerFace = static_cast<int>(northIndices.size());
-
-	this->chasmWallIndexBufferIDs.fill(-1);
 
 	for (int i = 0; i < static_cast<int>(this->chasmWallIndexBufferIDs.size()); i++)
 	{
@@ -569,6 +574,16 @@ void RenderChunkManager::init(Renderer &renderer)
 	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, dummyEntityNormals);
 	renderer.populateAttributeBuffer(this->entityMeshDef.texCoordBufferID, entityTexCoords);
 	renderer.populateIndexBuffer(this->entityMeshDef.indexBufferID, entityIndices);
+
+	// Populate global lights.
+	if (!renderer.tryCreateLight(&this->playerLightID))
+	{
+		DebugLogError("Couldn't create render light ID for player.");
+		this->entityMeshDef.freeBuffers(renderer);
+		return;
+	}
+
+	renderer.setLightRadius(this->playerLightID, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS);
 }
 
 void RenderChunkManager::shutdown(Renderer &renderer)
@@ -586,6 +601,23 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 		indexBufferID = -1;
 	}
 
+	if (this->playerLightID >= 0)
+	{
+		renderer.freeLight(this->playerLightID);
+		this->playerLightID = -1;
+	}
+
+	for (auto &pair : this->entityLightIDs)
+	{
+		RenderLightID &lightID = pair.second;
+		if (lightID >= 0)
+		{
+			renderer.freeLight(lightID);
+			lightID = -1;
+		}
+	}
+
+	this->entityLightIDs.clear();
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
@@ -594,7 +626,6 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 	this->entityPaletteIndicesTextureRefs.clear();
 	this->voxelDrawCallsCache.clear();
 	this->entityDrawCallsCache.clear();
-	this->totalDrawCallsCache.clear();
 }
 
 ObjectTextureID RenderChunkManager::getVoxelTextureID(const TextureAsset &textureAsset) const
@@ -650,7 +681,7 @@ ObjectTextureID RenderChunkManager::getChasmWallTextureID(const ChunkInt2 &chunk
 }
 
 ObjectTextureID RenderChunkManager::getEntityTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ,
-	const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary) const
+	const EntityChunkManager &entityChunkManager) const
 {
 	const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 	const EntityDefID entityDefID = entityInst.defID;
@@ -663,9 +694,9 @@ ObjectTextureID RenderChunkManager::getEntityTextureID(EntityInstanceID entityIn
 	DebugAssertMsg(defIter != this->entityAnims.end(), "Expected loaded entity animation for def ID " + std::to_string(entityDefID) + ".");
 
 	EntityVisibilityState2D visState;
-	entityChunkManager.getEntityVisibilityState2D(entityInstID, cameraCoordXZ, entityDefLibrary, visState);
+	entityChunkManager.getEntityVisibilityState2D(entityInstID, cameraCoordXZ, visState);
 
-	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID, entityDefLibrary);
+	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
 	const Buffer<ScopedObjectTextureRef> &textureRefs = defIter->textureRefs;
@@ -680,11 +711,6 @@ BufferView<const RenderDrawCall> RenderChunkManager::getVoxelDrawCalls() const
 BufferView<const RenderDrawCall> RenderChunkManager::getEntityDrawCalls() const
 {
 	return BufferView<const RenderDrawCall>(this->entityDrawCallsCache);
-}
-
-BufferView<const RenderDrawCall> RenderChunkManager::getTotalDrawCalls() const
-{
-	return BufferView<const RenderDrawCall>(this->totalDrawCallsCache);
 }
 
 void RenderChunkManager::loadVoxelTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer)
@@ -844,7 +870,7 @@ void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const Vox
 }
 
 void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 	{
@@ -859,7 +885,7 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 
 		if (animIter == this->entityAnims.end())
 		{
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID, entityDefLibrary);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 			Buffer<ScopedObjectTextureRef> textureRefs = sgTexture::MakeEntityAnimationTextures(animDef, textureManager, renderer);
 
@@ -885,8 +911,9 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 	const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 	IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, VertexShaderType vertexShaderType,
-	PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
+	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType,
+	double meshLightPercent, BufferView<const RenderLightID> lightIDs, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
+	double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
 	drawCall.position = position;
@@ -901,6 +928,13 @@ void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3
 	drawCall.textureIDs[1] = textureID1;
 	drawCall.textureSamplingType0 = textureSamplingType0;
 	drawCall.textureSamplingType1 = textureSamplingType1;
+	drawCall.lightingType = lightingType;
+	drawCall.lightPercent = meshLightPercent;
+
+	DebugAssert(std::size(drawCall.lightIDs) >= lightIDs.getCount());
+	std::copy(lightIDs.begin(), lightIDs.end(), std::begin(drawCall.lightIDs));
+	drawCall.lightIdCount = lightIDs.getCount();
+
 	drawCall.vertexShaderType = vertexShaderType;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = pixelShaderParam0;
@@ -965,6 +999,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 					fadeAnimInst = &fadeAnimInsts[fadeAnimInstIndex];
 				}
 
+				const RenderVoxelLightIdList &voxelLightIdList = renderChunk.voxelLightIdLists.get(x, y, z);
+
 				const bool canAnimate = isDoor || isChasm || isFading;
 				if ((!canAnimate && updateStatics) || (canAnimate && updateAnimating))
 				{
@@ -1006,17 +1042,24 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const Matrix4d scaleMatrix = Matrix4d::identity();
 						const TextureSamplingType textureSamplingType = !isChasm ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
 
-						PixelShaderType pixelShaderType = PixelShaderType::Opaque;
-						double pixelShaderParam0 = 0.0;
+						RenderLightingType lightingType = RenderLightingType::PerPixel;
+						double meshLightPercent = 0.0;
 						if (isFading)
 						{
-							pixelShaderType = PixelShaderType::OpaqueWithFade;
-							pixelShaderParam0 = fadeAnimInst->percentFaded;
+							lightingType = RenderLightingType::PerMesh;
+							meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
 						}
 
 						std::vector<RenderDrawCall> *drawCallsPtr = nullptr;
 						if (isChasm)
 						{
+							const ChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
+							if (chasmDef.isEmissive)
+							{
+								lightingType = RenderLightingType::PerMesh;
+								meshLightPercent = 1.0;
+							}
+
 							drawCallsPtr = &renderChunk.chasmDrawCalls;
 						}
 						else if (isFading)
@@ -1028,9 +1071,12 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							drawCallsPtr = &renderChunk.staticDrawCalls;
 						}
 
+						const PixelShaderType pixelShaderType = PixelShaderType::Opaque;
+						const double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
-							textureSamplingType, textureSamplingType, VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);
+							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
+							VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);
 					}
 				}
 
@@ -1126,11 +1172,13 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle + rotationAmount);
 									const Matrix4d doorScaleMatrix = Matrix4d::identity();
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
+									constexpr double meshLightPercent = 0.0;
 									constexpr double pixelShaderParam0 = 0.0;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.doorDrawCalls);
+										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::SwingingDoor,
+										PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
 								break;
@@ -1154,12 +1202,13 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle);
 									const Matrix4d doorScaleMatrix = Matrix4d::scale(1.0, 1.0, scaleAmount);
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
+									constexpr double meshLightPercent = 0.0;
 									const double pixelShaderParam0 = uMin;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										VertexShaderType::SlidingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, pixelShaderParam0,
-										renderChunk.doorDrawCalls);
+										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::SlidingDoor,
+										PixelShaderType::AlphaTestedWithVariableTexCoordUMin, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
 								break;
@@ -1184,12 +1233,13 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 									const Matrix4d doorRotationMatrix = Matrix4d::yRotation(doorBaseAngle);
 									const Matrix4d doorScaleMatrix = Matrix4d::scale(1.0, scaleAmount, 1.0);
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
+									constexpr double meshLightPercent = 0.0;
 									const double pixelShaderParam0 = vMin;
 									this->addVoxelDrawCall(doorHingePosition, doorPreScaleTranslation, doorRotationMatrix, doorScaleMatrix,
 										renderMeshDef.vertexBufferID, renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID,
 										renderMeshDef.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, pixelShaderParam0,
-										renderChunk.doorDrawCalls);
+										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::RaisingDoor,
+										PixelShaderType::AlphaTestedWithVariableTexCoordVMin, pixelShaderParam0, renderChunk.doorDrawCalls);
 								}
 
 								break;
@@ -1208,11 +1258,22 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 							const Matrix4d rotationMatrix = Matrix4d::identity();
 							const Matrix4d scaleMatrix = Matrix4d::identity();
 							const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
+
+							RenderLightingType lightingType = RenderLightingType::PerPixel;
+							double meshLightPercent = 0.0;
+							std::vector<RenderDrawCall> *drawCallsPtr = &renderChunk.staticDrawCalls;
+							if (isFading)
+							{
+								lightingType = RenderLightingType::PerMesh;
+								meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
+								drawCallsPtr = &renderChunk.fadingDrawCalls;
+							}
+
 							constexpr double pixelShaderParam0 = 0.0;
 							this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID,
-								textureID, std::nullopt, textureSamplingType, textureSamplingType, VertexShaderType::Voxel,
-								PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.staticDrawCalls);
+								textureID, std::nullopt, textureSamplingType, textureSamplingType, lightingType, meshLightPercent,
+								voxelLightIdList.getLightIDs(), VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, *drawCallsPtr);
 						}
 					}
 				}
@@ -1223,7 +1284,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 					if (chasmWallIter != renderChunk.chasmWallIndexBufferIDsMap.end())
 					{
 						DebugAssert(voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm);
-						const bool isAnimatingChasm = voxelTraitsDef.chasm.type != ArenaTypes::ChasmType::Dry;
+						const ArenaTypes::ChasmType chasmType = voxelTraitsDef.chasm.type;
+						const bool isAnimatingChasm = chasmType != ArenaTypes::ChasmType::Dry;
 						const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
 
 						// Need to give two textures since chasm walls are multi-textured.
@@ -1234,11 +1296,20 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						const Matrix4d rotationMatrix = Matrix4d::identity();
 						const Matrix4d scaleMatrix = Matrix4d::identity();
 						const TextureSamplingType textureSamplingType = isAnimatingChasm ? TextureSamplingType::ScreenSpaceRepeatY : TextureSamplingType::Default;
+
+						double meshLightPercent = 0.0;
+						RenderLightingType lightingType = RenderLightingType::PerPixel;
+						if (RendererUtils::isChasmEmissive(chasmType))
+						{
+							meshLightPercent = 1.0;
+							lightingType = RenderLightingType::PerMesh;
+						}
+
 						constexpr double pixelShaderParam0 = 0.0;
 						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
-							textureSamplingType, textureSamplingType, VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
-							pixelShaderParam0, renderChunk.chasmDrawCalls);
+							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
+							VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer, pixelShaderParam0, renderChunk.chasmDrawCalls);
 					}
 				}
 			}
@@ -1284,8 +1355,8 @@ void RenderChunkManager::rebuildVoxelDrawCallsList()
 }
 
 void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
-	ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, PixelShaderType pixelShaderType,
-	std::vector<RenderDrawCall> &drawCalls)
+	ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs,
+	PixelShaderType pixelShaderType, std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
 	drawCall.position = position;
@@ -1300,6 +1371,13 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 	drawCall.textureIDs[1] = textureID1;
 	drawCall.textureSamplingType0 = TextureSamplingType::Default;
 	drawCall.textureSamplingType1 = TextureSamplingType::Default;
+	drawCall.lightingType = RenderLightingType::PerPixel;
+	drawCall.lightPercent = 0.0;
+
+	DebugAssert(std::size(drawCall.lightIDs) >= lightIDs.getCount());
+	std::copy(lightIDs.begin(), lightIDs.end(), std::begin(drawCall.lightIDs));
+	drawCall.lightIdCount = lightIDs.getCount();
+
 	drawCall.vertexShaderType = VertexShaderType::Entity;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = 0.0;
@@ -1309,8 +1387,7 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, const Matrix
 
 void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk,
 	const CoordDouble2 &cameraCoordXZ, const Matrix4d &rotationMatrix, double ceilingScale,
-	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary)
+	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager)
 {
 	renderChunk.entityDrawCalls.clear();
 
@@ -1321,11 +1398,11 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		const EntityInstanceID entityInstID = entityIDs[i];
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
-		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, entityDefLibrary);
+		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 		EntityVisibilityState3D visState;
-		entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, entityDefLibrary, visState);
+		entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, visState);
 		const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
 		DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
 		const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
@@ -1334,7 +1411,7 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		const Double3 worldPos = VoxelUtils::coordToWorldPoint(visState.flatPosition);
 		const Matrix4d scaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
 
-		const ObjectTextureID textureID0 = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager, entityDefLibrary);
+		const ObjectTextureID textureID0 = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager);
 		std::optional<ObjectTextureID> textureID1 = std::nullopt;
 		PixelShaderType pixelShaderType = PixelShaderType::AlphaTested;
 
@@ -1350,10 +1427,19 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 		}
 		else if (isGhost)
 		{
-			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelTransparency;
+			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
 		}
 
-		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID0, textureID1, pixelShaderType, renderChunk.entityDrawCalls);
+		const VoxelDouble3 &entityLightPoint = visState.flatPosition.point; // Where the entity receives its light (can't use center due to some really tall entities reaching outside the chunk).
+		const VoxelInt3 entityLightVoxel = VoxelUtils::pointToVoxel(entityLightPoint, ceilingScale);
+		BufferView<const RenderLightID> lightIdsView; // Limitation of reusing lights per voxel: entity is unlit if they are outside the world.
+		if (renderChunk.isValidVoxel(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z))
+		{
+			const RenderVoxelLightIdList &voxelLightIdList = renderChunk.voxelLightIdLists.get(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z);
+			lightIdsView = voxelLightIdList.getLightIDs();
+		}
+
+		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID0, textureID1, lightIdsView, pixelShaderType, renderChunk.entityDrawCalls);
 	}
 }
 
@@ -1370,8 +1456,8 @@ void RenderChunkManager::rebuildEntityDrawCallsList()
 	}
 }
 
-void RenderChunkManager::updateActiveChunks(const BufferView<const ChunkInt2> &activeChunkPositions,
-	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+void RenderChunkManager::updateActiveChunks(BufferView<const ChunkInt2> activeChunkPositions,
+	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)
@@ -1396,8 +1482,8 @@ void RenderChunkManager::updateActiveChunks(const BufferView<const ChunkInt2> &a
 	this->chunkPool.clear();
 }
 
-void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeChunkPositions,
-	const BufferView<const ChunkInt2> &newChunkPositions, double ceilingScale, double chasmAnimPercent,
+void RenderChunkManager::updateVoxels(BufferView<const ChunkInt2> activeChunkPositions,
+	BufferView<const ChunkInt2> newChunkPositions, double ceilingScale, double chasmAnimPercent,
 	const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
@@ -1421,9 +1507,12 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 			this->loadVoxelChasmWall(renderChunk, voxelChunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
 		}
 
-		BufferView<const VoxelInt3> dirtyMeshDefs = voxelChunk.getDirtyMeshDefPositions();
+		BufferView<const VoxelInt3> dirtyMeshDefPositions = voxelChunk.getDirtyMeshDefPositions();
 		BufferView<const VoxelInt3> dirtyFadeAnimInstPositions = voxelChunk.getDirtyFadeAnimInstPositions();
-		const bool updateStatics = (dirtyMeshDefs.getCount() > 0) || (dirtyFadeAnimInstPositions.getCount() > 0); // @temp fix for fading voxels being covered by their non-fading draw call
+		BufferView<const VoxelInt3> dirtyLightPositions = renderChunk.dirtyLightPositions;
+		bool updateStatics = dirtyMeshDefPositions.getCount() > 0;
+		updateStatics |= dirtyFadeAnimInstPositions.getCount() > 0; // @temp fix for fading voxels being covered by their non-fading draw call
+		updateStatics |= dirtyLightPositions.getCount() > 0; // @temp fix for player light movement, eventually other moving lights too
 		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 
@@ -1434,13 +1523,11 @@ void RenderChunkManager::updateVoxels(const BufferView<const ChunkInt2> &activeC
 	}
 }
 
-void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions,
-	const BufferView<const ChunkInt2> &newChunkPositions, const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ,
+void RenderChunkManager::updateEntities(BufferView<const ChunkInt2> activeChunkPositions,
+	BufferView<const ChunkInt2> newChunkPositions, const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ,
 	double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
@@ -1459,7 +1546,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	{
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		this->loadEntityTextures(entityChunk, entityChunkManager, entityDefLibrary, textureManager, renderer);
+		this->loadEntityTextures(entityChunk, entityChunkManager, textureManager, renderer);
 	}
 
 	const Radians rotationAngle = -MathUtils::fullAtan2(cameraDirXZ);
@@ -1469,7 +1556,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, rotationMatrix, ceilingScale,
-			voxelChunkManager, entityChunkManager, entityDefLibrary);
+			voxelChunkManager, entityChunkManager);
 	}
 
 	this->rebuildEntityDrawCallsList();
@@ -1477,7 +1564,7 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 	// Update normals buffer.
 	const VoxelDouble2 entityDir = -cameraDirXZ;
 	constexpr int entityMeshVertexCount = 4;
-	std::array<double, entityMeshVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> entityNormals =
+	const std::array<double, entityMeshVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> entityNormals =
 	{
 		entityDir.x, 0.0, entityDir.y,
 		entityDir.x, 0.0, entityDir.y,
@@ -1485,13 +1572,186 @@ void RenderChunkManager::updateEntities(const BufferView<const ChunkInt2> &activ
 		entityDir.x, 0.0, entityDir.y
 	};
 
-	const BufferView<const double> entityNormalsView(entityNormals);
-	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormalsView);
+	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormals);
+}
 
-	// @todo: move this some place better
-	this->totalDrawCallsCache.clear();
-	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->voxelDrawCallsCache.begin(), this->voxelDrawCallsCache.end());
-	this->totalDrawCallsCache.insert(this->totalDrawCallsCache.end(), this->entityDrawCallsCache.begin(), this->entityDrawCallsCache.end());
+void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositions, const CoordDouble3 &cameraCoord,
+	double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
+	const EntityChunkManager &entityChunkManager, Renderer &renderer)
+{
+	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
+	{
+		const auto iter = this->entityLightIDs.find(entityInstID);
+		if (iter != this->entityLightIDs.end())
+		{
+			const RenderLightID lightID = iter->second;
+			renderer.freeLight(lightID);
+			this->entityLightIDs.erase(iter);
+		}
+	}
+
+	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	{
+		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+		{
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			const std::optional<double> entityLightRadius = EntityUtils::tryGetLightRadius(entityDef, nightLightsAreActive);
+			const bool isLight = entityLightRadius.has_value();
+			if (isLight)
+			{
+				RenderLightID lightID;
+				if (!renderer.tryCreateLight(&lightID))
+				{
+					DebugLogError("Couldn't allocate render light ID in chunk (" + chunkPos.toString() + ").");
+					continue;
+				}
+
+				this->entityLightIDs.emplace(entityInstID, lightID);
+
+				const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
+				const WorldDouble2 entityPos = VoxelUtils::coordToWorldPoint(entityCoord);
+
+				double dummyAnimMaxWidth, animMaxHeight;
+				EntityUtils::getAnimationMaxDims(entityDef.getAnimDef(), &dummyAnimMaxWidth, &animMaxHeight);
+
+				const double entityPosY = ceilingScale + (animMaxHeight * 0.50);
+				const WorldDouble3 entityPos3D(entityPos.x, entityPosY, entityPos.y);
+				renderer.setLightPosition(lightID, entityPos3D);
+				renderer.setLightRadius(lightID, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius);
+			}
+		}
+	}
+
+	const WorldDouble3 prevPlayerLightPosition = renderer.getLightPosition(this->playerLightID);
+	const WorldDouble3 playerLightPosition = VoxelUtils::coordToWorldPoint(cameraCoord);
+	renderer.setLightPosition(this->playerLightID, playerLightPosition);
+
+	double playerLightRadiusStart, playerLightRadiusEnd;
+	if (isFogActive)
+	{
+		playerLightRadiusStart = ArenaRenderUtils::PLAYER_FOG_LIGHT_START_RADIUS;
+		playerLightRadiusEnd = ArenaRenderUtils::PLAYER_FOG_LIGHT_END_RADIUS;
+	}
+	else
+	{
+		playerLightRadiusStart = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
+		playerLightRadiusEnd = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
+	}
+
+	if (!playerHasLight)
+	{
+		playerLightRadiusStart = 0.0;
+		playerLightRadiusEnd = 0.0;
+	}
+
+	renderer.setLightRadius(this->playerLightID, playerLightRadiusStart, playerLightRadiusEnd);
+
+	// Clear all previous light references in voxels.
+	// @todo: track touched, newly-touched, and no-longer-touched voxels each frame for moving lights so we don't have to iterate all voxels
+	for (int i = 0; i < this->getChunkCount(); i++)
+	{
+		RenderChunk &renderChunk = this->getChunkAtIndex(i);
+		for (RenderVoxelLightIdList &voxelLightIdList : renderChunk.voxelLightIdLists)
+		{
+			voxelLightIdList.clear();
+		}
+	}
+
+	auto getLightMinAndMaxVoxels = [ceilingScale](const WorldDouble3 &lightPosition, double endRadius, WorldInt3 *outMin, WorldInt3 *outMax)
+	{
+		const WorldDouble3 lightPosMin = lightPosition - WorldDouble3(endRadius, endRadius, endRadius);
+		const WorldDouble3 lightPosMax = lightPosition + WorldDouble3(endRadius, endRadius, endRadius);
+		*outMin = VoxelUtils::pointToVoxel(lightPosMin, ceilingScale);
+		*outMax = VoxelUtils::pointToVoxel(lightPosMax, ceilingScale);
+	};
+
+	auto populateTouchedVoxelLightIdLists = [this, &renderer, ceilingScale](RenderLightID lightID, const WorldDouble3 &lightPosition,
+		const WorldInt3 &lightVoxelMin, const WorldInt3 &lightVoxelMax)
+	{
+		// Iterate over all voxels the light's bounding box touches.
+		for (WEInt z = lightVoxelMin.z; z <= lightVoxelMax.z; z++)
+		{
+			for (int y = lightVoxelMin.y; y <= lightVoxelMax.y; y++)
+			{
+				for (SNInt x = lightVoxelMin.x; x <= lightVoxelMax.x; x++)
+				{
+					const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(WorldInt3(x, y, z));
+					RenderChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+					if (renderChunkPtr != nullptr)
+					{
+						const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
+						if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
+						{
+							RenderVoxelLightIdList &voxelLightIdList = renderChunkPtr->voxelLightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
+							voxelLightIdList.tryAddLight(lightID);
+						}
+					}
+				}
+			}
+		}
+	};
+
+	WorldInt3 playerLightVoxelMin, playerLightVoxelMax;
+	getLightMinAndMaxVoxels(playerLightPosition, playerLightRadiusEnd, &playerLightVoxelMin, &playerLightVoxelMax);
+	populateTouchedVoxelLightIdLists(this->playerLightID, playerLightPosition, playerLightVoxelMin, playerLightVoxelMax);
+
+	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
+	// - @todo: this method doesn't implicitly allow sorting by distance because it doesn't check lights per voxel, it checks voxels per light.
+	//   If sorting is desired then do it after this loop. It should also sort by intensity at the voxel center, not just distance to the light.
+	for (const auto &pair : this->entityLightIDs)
+	{
+		const RenderLightID lightID = pair.second;
+		const WorldDouble3 &lightPosition = renderer.getLightPosition(lightID);
+
+		double dummyLightStartRadius, lightEndRadius;
+		renderer.getLightRadii(lightID, &dummyLightStartRadius, &lightEndRadius);
+
+		WorldInt3 lightVoxelMin, lightVoxelMax;
+		getLightMinAndMaxVoxels(lightPosition, lightEndRadius, &lightVoxelMin, &lightVoxelMax);
+		populateTouchedVoxelLightIdLists(lightID, lightPosition, lightVoxelMin, lightVoxelMax);
+	}
+
+	WorldInt3 prevPlayerLightVoxelMin, prevPlayerLightVoxelMax;
+	getLightMinAndMaxVoxels(prevPlayerLightPosition, playerLightRadiusEnd, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
+
+	// See which voxels affected by the player's light are getting their light references updated.
+	// This is for dirty voxel draw calls mainly, not about setting light references (might change later).
+	if ((prevPlayerLightVoxelMin != playerLightVoxelMin) || (prevPlayerLightVoxelMax != playerLightVoxelMax))
+	{
+		for (WEInt z = playerLightVoxelMin.z; z <= playerLightVoxelMax.z; z++)
+		{
+			for (int y = playerLightVoxelMin.y; y <= playerLightVoxelMax.y; y++)
+			{
+				for (SNInt x = playerLightVoxelMin.x; x <= playerLightVoxelMax.x; x++)
+				{
+					const bool isInPrevRange =
+						(x >= prevPlayerLightVoxelMin.x) && (x <= prevPlayerLightVoxelMax.x) &&
+						(y >= prevPlayerLightVoxelMin.y) && (y <= prevPlayerLightVoxelMax.y) &&
+						(z >= prevPlayerLightVoxelMin.z) && (z <= prevPlayerLightVoxelMax.z);
+					
+					if (!isInPrevRange)
+					{
+						const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(WorldInt3(x, y, z));
+						RenderChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+						if (renderChunkPtr != nullptr)
+						{
+							renderChunkPtr->addDirtyLightPosition(curLightCoord.voxel);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void RenderChunkManager::cleanUp()
+{
+	for (ChunkPtr &chunkPtr : this->activeChunks)
+	{
+		chunkPtr->dirtyLightPositions.clear();
+	}
 }
 
 void RenderChunkManager::unloadScene(Renderer &renderer)
@@ -1510,7 +1770,17 @@ void RenderChunkManager::unloadScene(Renderer &renderer)
 		this->recycleChunk(i);
 	}
 
+	for (auto &pair : this->entityLightIDs)
+	{
+		RenderLightID &lightID = pair.second;
+		if (lightID >= 0)
+		{
+			renderer.freeLight(lightID);
+			lightID = -1;
+		}
+	}
+
+	this->entityLightIDs.clear();
 	this->voxelDrawCallsCache.clear();
 	this->entityDrawCallsCache.clear();
-	this->totalDrawCallsCache.clear();
 }

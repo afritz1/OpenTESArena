@@ -13,7 +13,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 
-double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
+double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType, bool isFoggy)
 {
 	if (mapType == MapType::Interior)
 	{
@@ -21,6 +21,11 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
 	}
 	else if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
 	{
+		if (isFoggy)
+		{
+			return 0.0; // This assumes it is during the daytime.
+		}
+
 		const double clockPreciseSeconds = clock.getPreciseTotalSeconds();
 
 		// Time ranges where the ambient light changes. The start times are inclusive, and the end times are exclusive.
@@ -32,33 +37,46 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType)
 		constexpr double minAmbient = 0.0;
 		constexpr double maxAmbient = 1.0;
 
+		double ambient;
 		if ((clockPreciseSeconds >= endBrighteningTime) && (clockPreciseSeconds < startDimmingTime))
 		{
 			// Daytime ambient.
-			return maxAmbient;
+			ambient = maxAmbient;
 		}
 		else if ((clockPreciseSeconds >= startBrighteningTime) && (clockPreciseSeconds < endBrighteningTime))
 		{
 			// Interpolate brightening light (in the morning).
 			const double timePercent = (clockPreciseSeconds - startBrighteningTime) / (endBrighteningTime - startBrighteningTime);
-			return minAmbient + ((maxAmbient - minAmbient) * timePercent);
+			ambient = minAmbient + ((maxAmbient - minAmbient) * timePercent);
 		}
 		else if ((clockPreciseSeconds >= startDimmingTime) && (clockPreciseSeconds < endDimmingTime))
 		{
 			// Interpolate dimming light (in the evening).
 			const double timePercent = (clockPreciseSeconds - startDimmingTime) / (endDimmingTime - startDimmingTime);
-			return maxAmbient + ((minAmbient - maxAmbient) * timePercent);
+			ambient = maxAmbient + ((minAmbient - maxAmbient) * timePercent);
 		}
 		else
 		{
 			// Night ambient.
-			return minAmbient;
+			ambient = minAmbient;
 		}
+
+		return std::clamp(ambient, minAmbient, maxAmbient);
 	}
 	else
 	{
 		DebugUnhandledReturnMsg(double, std::to_string(static_cast<int>(mapType)));
 	}
+}
+
+double ArenaRenderUtils::getDistantAmbientPercent(const Clock &clock)
+{
+	constexpr MapType mapType = MapType::City;
+	constexpr bool isFoggy = false;
+	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(clock, mapType, isFoggy);
+	constexpr double minDistantAmbient = 0.10;
+	constexpr double maxDistantAmbient = 1.0;
+	return std::clamp(ambientPercent, minDistantAmbient, maxDistantAmbient);
 }
 
 bool ArenaRenderUtils::isLightLevelTexel(uint8_t texel)

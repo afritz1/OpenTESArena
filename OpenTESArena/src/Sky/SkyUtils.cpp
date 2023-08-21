@@ -25,8 +25,9 @@ VoxelDouble3 SkyUtils::getSkyObjectDirection(Radians angleX, Radians angleY)
 
 void SkyUtils::getSkyObjectDimensions(int imageWidth, int imageHeight, double *outWidth, double *outHeight)
 {
-	*outWidth = static_cast<double>(imageWidth) / ArenaSkyUtils::IDENTITY_DIM;
-	*outHeight = static_cast<double>(imageHeight) / ArenaSkyUtils::IDENTITY_DIM;
+	constexpr double divisor = static_cast<double>(ArenaSkyUtils::IDENTITY_DIM) / 2.0; // Had to halve this for the new renderer.
+	*outWidth = static_cast<double>(imageWidth) / divisor;
+	*outHeight = static_cast<double>(imageHeight) / divisor;
 }
 
 int SkyUtils::getStarCountFromDensity(int starDensity)
@@ -44,7 +45,7 @@ int SkyUtils::getStarCountFromDensity(int starDensity)
 	else if (starDensity == 2)
 	{
 		// High.
-		return 8000;
+		return 3000;
 	}
 	else
 	{

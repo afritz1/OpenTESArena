@@ -798,6 +798,9 @@ void GameWorldPanel::initUiDrawCalls()
 
 bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 {
+	static std::vector<RenderDrawCall> drawCalls; // Preserved between frames for less fragmentation.
+	drawCalls.clear();
+
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
 	const auto &player = game.getPlayer();
@@ -806,23 +809,41 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	auto &gameState = game.getGameState();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-	//const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
 	const SceneManager &sceneManager = game.getSceneManager();
 	const RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
+	const BufferView<const RenderDrawCall> voxelDrawCalls = renderChunkManager.getVoxelDrawCalls();
+	const BufferView<const RenderDrawCall> entityDrawCalls = renderChunkManager.getEntityDrawCalls();
+	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
+	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
+
 	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	std::vector<RenderDrawCall> drawCalls;
-	for (const RenderDrawCall &drawCall : renderChunkManager.getTotalDrawCalls())
+	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
+	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
+	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
+
+	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
+	if (activeWeatherInst.hasRain())
 	{
-		drawCalls.emplace_back(drawCall);
+		const BufferView<const RenderDrawCall> rainDrawCalls = renderWeatherManager.getRainDrawCalls();
+		drawCalls.insert(drawCalls.end(), rainDrawCalls.begin(), rainDrawCalls.end());
 	}
 
-	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
+	if (activeWeatherInst.hasSnow())
+	{
+		const BufferView<const RenderDrawCall> snowDrawCalls = renderWeatherManager.getSnowDrawCalls();
+		drawCalls.insert(drawCalls.end(), snowDrawCalls.begin(), snowDrawCalls.end());
+	}
 
-	// @todo: determine which of these per-frame values will go in draw calls instead for voxels/entities/sky
+	if (activeWeatherInst.hasFog())
+	{
+		drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
+	}
+
 	const MapType activeMapType = activeMapDef.getMapType();
-	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType);
+	const bool isFoggy = gameState.isFogActive();
+	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType, isFoggy);
 	const double latitude = [&gameState]()
 	{
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
@@ -834,20 +855,24 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const Degrees fovY = options.getGraphics_VerticalFOV();
 	const double viewAspectRatio = renderer.getViewAspect();
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
-
-	// @todo: shore up loadScene() and that overall design before attempting to change dirty voxels and entities between frames.
-	/*renderer.updateScene(renderCamera, activeLevelInst, activeSkyInst, gameState.getDaytimePercent(),
-		latitude, gameState.getChasmAnimPercent(), gameState.nightLightsAreActive(), options.getMisc_PlayerHasLight(),
-		EntityDefinitionLibrary::getInstance());*/
-
-	// @todo: get all object texture IDs properly (probably want whoever owns them to use ScopedObjectTextureRef)
 	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
-	const ObjectTextureID lightTableTextureID = sceneManager.lightTableTextureRef.get();
-	const ObjectTextureID skyColorsTextureID = -1; //activeSkyInst.getSkyColorsTextureID(); // @todo
-	const ObjectTextureID thunderstormColorsTextureID = -1;
+	
+	const bool isInterior = gameState.getActiveMapType() == MapType::Interior;
+	const double daytimePercent = gameState.getDaytimePercent();
+	const bool isBefore6AM = daytimePercent < 0.25;
+	const bool isAfter6PM = daytimePercent > 0.75;
 
-	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID,
-		skyColorsTextureID, thunderstormColorsTextureID, options.getGraphics_RenderThreadsMode());
+	ObjectTextureID lightTableTextureID = sceneManager.normalLightTableDaytimeTextureRef.get();
+	if (isFoggy)
+	{
+		lightTableTextureID = sceneManager.fogLightTableTextureRef.get();
+	}
+	else if (isInterior || isBefore6AM || isAfter6PM)
+	{
+		lightTableTextureID = sceneManager.normalLightTableNightTextureRef.get();
+	}
+
+	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, options.getGraphics_RenderThreadsMode());
 
 	return true;
 }

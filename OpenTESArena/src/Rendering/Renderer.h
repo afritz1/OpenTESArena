@@ -57,15 +57,22 @@ public:
 		int threadCount;
 		int drawCallCount;
 
-		// Visible triangles and lights.
-		int potentiallyVisTriangleCount, visTriangleCount, visLightCount;
+		// Geometry.
+		int sceneTriangleCount, visTriangleCount;
+
+		// Textures.
+		int objectTextureCount;
+		int64_t objectTextureByteCount;
+		
+		// Lights.
+		int totalLightCount;
 
 		double frameTime;
 
 		ProfilerData();
 
-		void init(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
-			int visTriangleCount, int visLightCount, double frameTime);
+		void init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount, int visTriangleCount,
+			int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, double frameTime);
 	};
 
 	using ResolutionScaleFunc = std::function<double()>;
@@ -206,6 +213,14 @@ public:
 	void freeObjectTexture(ObjectTextureID id);
 	void freeUiTexture(UiTextureID id);
 
+	// Shading management functions.
+	bool tryCreateLight(RenderLightID *outID);
+	const Double3 &getLightPosition(RenderLightID id);
+	void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius);
+	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
+	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
+	void freeLight(RenderLightID id);
+
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);
 	void clear();
@@ -224,7 +239,7 @@ public:
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
 		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode);
+		int renderThreadsMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

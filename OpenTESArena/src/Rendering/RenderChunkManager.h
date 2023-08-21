@@ -8,22 +8,12 @@
 #include "RenderChunk.h"
 #include "RenderDrawCall.h"
 #include "RenderEntityMeshDefinition.h"
+#include "RenderShaderUtils.h"
 #include "../Entities/EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
-
-// Objectives:
-// - efficient visible voxel determination (use quadtree per chunk to find ranges of visible voxel columns)
-// - efficient visible entity determination (don't have notion of a 'chunk' for entities yet, might want bounding box hierarchy per chunk?)
-// - efficient visible sky determination (simple dot product >0 against camera direction at first? or use +/- sign of each star direction? camera can specify which +/- octants are visible to it)
-
-// Wishlist:
-// - make groups of voxels/entities/sky batchable (mesh combining, texture atlasing, etc.)
-// - batching/ordering draw list by texture
-// - occlusion culling system or hierarchical Z buffer to reduce/eliminate overdraw
-// - avoid requiring a screen clear
 
 class EntityChunk;
 class EntityChunkManager;
@@ -94,19 +84,17 @@ private:
 	RenderEntityMeshDefinition entityMeshDef; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> entityPaletteIndicesTextureRefs;
 
-	// @todo: weather particles
-	// - list of texture IDs
-	// - list of vertex buffer ids (all in 2D and in model space)
-	// - list of transforms for screen positions
+	RenderLightID playerLightID;
+	std::unordered_map<EntityInstanceID, RenderLightID> entityLightIDs; // All lights have an associated entity.
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
-	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache, totalDrawCallsCache;
+	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache;
 
 	ObjectTextureID getVoxelTextureID(const TextureAsset &textureAsset) const;
 	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const;
 	ObjectTextureID getEntityTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ,
-		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary) const;
+		const EntityChunkManager &entityChunkManager) const;
 
 	void loadVoxelTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer);
 	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
@@ -114,13 +102,14 @@ private:
 	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk);
 
 	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager, Renderer &renderer);
+		TextureManager &textureManager, Renderer &renderer);
 
 	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
 		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
 		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-		TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, VertexShaderType vertexShaderType,
-		PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
+		TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType,
+		double meshLightPercent, BufferView<const RenderLightID> lightIDs, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
+		double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
 	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 
@@ -131,36 +120,39 @@ private:
 	void rebuildVoxelDrawCallsList();
 
 	void addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
-		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, PixelShaderType pixelShaderType,
-		std::vector<RenderDrawCall> &drawCalls);
+		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs,
+		PixelShaderType pixelShaderType, std::vector<RenderDrawCall> &drawCalls);
 	void rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk, const CoordDouble2 &cameraCoordXZ,
 		const Matrix4d &rotationMatrix, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const EntityChunkManager &entityChunkManager, const EntityDefinitionLibrary &entityDefLibrary);
+		const EntityChunkManager &entityChunkManager);
 	void rebuildEntityDrawCallsList();
-
-	// @todo: loadSky()
-	// @todo: loadWeather()
 public:
+	RenderChunkManager();
+
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
 	BufferView<const RenderDrawCall> getVoxelDrawCalls() const;
 	BufferView<const RenderDrawCall> getEntityDrawCalls() const;
-	BufferView<const RenderDrawCall> getTotalDrawCalls() const;
 
 	// Chunk allocating/freeing update function, called before voxel or entity resources are updated.
-	void updateActiveChunks(const BufferView<const ChunkInt2> &activeChunkPositions,
-		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+	void updateActiveChunks(BufferView<const ChunkInt2> activeChunkPositions,
+		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 
-	void updateVoxels(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
+	void updateVoxels(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
 		Renderer &renderer);
-	void updateEntities(const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
+	void updateEntities(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
+	void updateLights(BufferView<const ChunkInt2> newChunkPositions, const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive,
+		bool nightLightsAreActive, bool playerHasLight, const EntityChunkManager &entityChunkManager, Renderer &renderer);
 
-	// Clears all rendering resources (voxels, entities, sky, weather).
+	// End of frame clean-up.
+	void cleanUp();
+
+	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);
 };
 

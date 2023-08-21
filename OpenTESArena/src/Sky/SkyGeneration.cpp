@@ -33,71 +33,6 @@ namespace SkyGeneration
 	using ArenaSmallStarMappingCache = std::unordered_map<uint8_t, SkyDefinition::StarDefID>;
 	using ArenaLargeStarMappingCache = std::unordered_map<std::string, SkyDefinition::StarDefID>;
 
-	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon, TextureManager &textureManager)
-	{
-		// Interior sky color comes from the darkest row of an .LGT light palette.
-		const char *lightPaletteName = outdoorDungeon ? "FOG.LGT" : "NORMAL.LGT";
-
-		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-			textureManager.tryGetTextureBuilderIDs(lightPaletteName);
-		if (!textureBuilderIDs.has_value())
-		{
-			DebugLogWarning("Couldn't get texture builder IDs for \"" + std::string(lightPaletteName) + "\".");
-			return Buffer<Color>();
-		}
-
-		// Get darkest light palette and a suitable color for 'dark'.
-		const TextureBuilderID darkestTextureBuilderID = textureBuilderIDs->getID(textureBuilderIDs->getCount() - 1);
-		const TextureBuilder &lightPaletteTextureBuilder = textureManager.getTextureBuilderHandle(darkestTextureBuilderID);
-		DebugAssert(lightPaletteTextureBuilder.getType() == TextureBuilder::Type::Paletted);
-		const TextureBuilder::PalettedTexture &lightPaletteTexture = lightPaletteTextureBuilder.getPaletted();
-		const Buffer2D<uint8_t> &lightPaletteTexels = lightPaletteTexture.texels;
-		const uint8_t lightColor = lightPaletteTexels.get(16, 0);
-
-		const std::string &paletteName = ArenaPaletteName::Default;
-		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-		if (!paletteID.has_value())
-		{
-			DebugLogWarning("Couldn't get palette ID for \"" + paletteName + "\".");
-			return Buffer<Color>();
-		}
-
-		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-		DebugAssertIndex(palette, lightColor);
-		const Color &paletteColor = palette[lightColor];
-
-		Buffer<Color> skyColors(1);
-		skyColors.set(0, paletteColor);
-		return skyColors;
-	}
-
-	Buffer<Color> makeExteriorSkyColors(const WeatherDefinition &weatherDef, TextureManager &textureManager)
-	{
-		// Get the palette name for the given weather.
-		const std::string &paletteName = (weatherDef.type == WeatherType::Clear) ? ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
-
-		// The palettes in the data files only cover half of the day, so some added darkness is
-		// needed for the other half.
-		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-		if (!paletteID.has_value())
-		{
-			DebugLogWarning("Couldn't get palette ID for \"" + paletteName + "\".");
-			return Buffer<Color>();
-		}
-
-		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-
-		// Fill sky palette with darkness. The first color in the palette is the closest to night.
-		const Color &darkness = palette[0];
-		Buffer<Color> fullPalette(static_cast<int>(palette.size()) * 2);
-		fullPalette.fill(darkness);
-
-		// Copy the sky palette over the center of the full palette.
-		std::copy(palette.begin(), palette.end(), fullPalette.begin() + (fullPalette.getCount() / 4));
-
-		return fullPalette;
-	}
-
 	// Used with mountains and clouds.
 	bool tryGenerateArenaStaticObject(const std::string &baseFilename, int position, int variation,
 		int maxDigits, ArenaRandom &random, TextureManager &textureManager, SkyDefinition *outSkyDef,
@@ -164,8 +99,11 @@ namespace SkyGeneration
 				constexpr int yPosLimit = 64;
 				const int yPos = random.next() % yPosLimit;
 				const double heightPercent = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
-				const Radians angleLimit = 45.0 * Constants::DegToRad;
-				return heightPercent * angleLimit;
+
+				// Clouds can be slightly below the horizon.
+				constexpr Radians minAngle = -10.0 * Constants::DegToRad;
+				constexpr Radians maxAngle = 20.0 * Constants::DegToRad;
+				return minAngle + ((maxAngle - minAngle) * heightPercent);
 			}();
 
 			SkyDefinition::AirDefID airDefID;
@@ -553,20 +491,16 @@ void SkyGeneration::ExteriorSkyGenInfo::init(ArenaTypes::ClimateType climateType
 void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
 	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 {
-	// Only worry about sky color for interior skies.
-	Buffer<Color> skyColors = SkyGeneration::makeInteriorSkyColors(skyGenInfo.outdoorDungeon, textureManager);
-	outSkyDef->init(std::move(skyColors));
+	// Only worry about sky color/fog for interiors.
+	outSkyInfoDef->init(skyGenInfo.outdoorDungeon);
 }
 
-void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 {
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
-	// Generate sky colors.
-	Buffer<Color> skyColors = SkyGeneration::makeExteriorSkyColors(skyGenInfo.weatherDef, textureManager);
-	outSkyDef->init(std::move(skyColors));
+	outSkyInfoDef->init(false);
 
 	// Generate static land and air objects.
 	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherDef,

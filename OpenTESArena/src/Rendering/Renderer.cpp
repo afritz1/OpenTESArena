@@ -105,22 +105,26 @@ Renderer::ProfilerData::ProfilerData()
 	this->height = -1;
 	this->threadCount = -1;
 	this->drawCallCount = -1;
-	this->potentiallyVisTriangleCount = -1;
+	this->sceneTriangleCount = -1;
 	this->visTriangleCount = -1;
-	this->visLightCount = -1;
+	this->objectTextureCount = -1;
+	this->objectTextureByteCount = -1;
+	this->totalLightCount = -1;
 	this->frameTime = 0.0;
 }
 
-void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int potentiallyVisTriangleCount,
-	int visTriangleCount, int visLightCount, double frameTime)
+void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
+	int visTriangleCount, int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, double frameTime)
 {
 	this->width = width;
 	this->height = height;
 	this->threadCount = threadCount;
 	this->drawCallCount = drawCallCount;
-	this->potentiallyVisTriangleCount = potentiallyVisTriangleCount;
+	this->sceneTriangleCount = sceneTriangleCount;
 	this->visTriangleCount = visTriangleCount;
-	this->visLightCount = visLightCount;
+	this->objectTextureCount = objectTextureCount;
+	this->objectTextureByteCount = objectTextureByteCount;
+	this->totalLightCount = totalLightCount;
 	this->frameTime = frameTime;
 }
 
@@ -142,7 +146,7 @@ Renderer::~Renderer()
 	{
 		this->renderer2D->shutdown();
 	}
-	
+
 	if (this->renderer3D)
 	{
 		this->renderer3D->shutdown();
@@ -187,7 +191,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 
 	int windowWidth, windowHeight;
 	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-	
+
 	auto isValidWindowSize = [](int width, int height)
 	{
 		return (width > 0) && (height > 0);
@@ -274,7 +278,7 @@ BufferView<const Renderer::DisplayMode> Renderer::getDisplayModes() const
 
 double Renderer::getDpiScale() const
 {
-	const double platformDpi = Platform::getDefaultDPI();	
+	const double platformDpi = Platform::getDefaultDPI();
 	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
 
 	float hdpi;
@@ -842,6 +846,42 @@ void Renderer::freeUiTexture(UiTextureID id)
 	this->renderer2D->freeUiTexture(id);
 }
 
+bool Renderer::tryCreateLight(RenderLightID *outID)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateLight(outID);
+}
+
+const Double3 &Renderer::getLightPosition(RenderLightID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->getLightPosition(id);
+}
+
+void Renderer::getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->getLightRadii(id, outStartRadius, outEndRadius);
+}
+
+void Renderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->setLightPosition(id, worldPoint);
+}
+
+void Renderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->setLightRadius(id, startRadius, endRadius);
+}
+
+void Renderer::freeLight(RenderLightID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->freeLight(id);
+}
+
 void Renderer::clear(const Color &color)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
@@ -921,16 +961,14 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 }
 
 void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
-	double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-	ObjectTextureID skyColorsTextureID, ObjectTextureID thunderstormColorsTextureID, int renderThreadsMode)
+	double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, int renderThreadsMode)
 {
 	DebugAssert(this->renderer3D->isInited());
 
 	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
 
 	RenderFrameSettings renderFrameSettings;
-	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyColorsTextureID,
-		thunderstormColorsTextureID, renderDims.x, renderDims.y, renderThreadsMode);
+	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, renderDims.x, renderDims.y, renderThreadsMode);
 
 	uint32_t *outputBuffer;
 	int gameWorldPitch;
@@ -947,8 +985,8 @@ void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDr
 	// Update profiler stats.
 	const RendererSystem3D::ProfilerData swProfilerData = this->renderer3D->getProfilerData();
 	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
-		swProfilerData.drawCallCount, swProfilerData.potentiallyVisTriangleCount, swProfilerData.visTriangleCount,
-		swProfilerData.visLightCount, frameTime);
+		swProfilerData.drawCallCount, swProfilerData.sceneTriangleCount, swProfilerData.visTriangleCount,
+		swProfilerData.textureCount, swProfilerData.textureByteCount, swProfilerData.totalLightCount, frameTime);
 
 	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
 	SDL_UnlockTexture(this->gameWorldTexture.get());

@@ -80,14 +80,13 @@ private:
 		TextureManager &textureManager, Renderer &renderer);
 
 	void updateCitizenStates(double dt, EntityChunk &entityChunk, const CoordDouble2 &playerCoordXZ, bool isPlayerMoving,
-		bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary);
+		bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager);
 
-	std::string getCreatureSoundFilename(const EntityDefID defID, const EntityDefinitionLibrary &entityDefLibrary) const;
+	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,
-		double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, AudioManager &audioManager);
+		double ceilingScale, Random &random, AudioManager &audioManager);
 public:
-	const EntityDefinition &getEntityDef(EntityDefID defID, const EntityDefinitionLibrary &defLibrary) const;
+	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	const EntityInstance &getEntity(EntityInstanceID id) const;
 	const CoordDouble2 &getEntityPosition(EntityPositionID id) const;
 	double getEntityBoundingBox(EntityBoundingBoxID id) const;
@@ -106,11 +105,9 @@ public:
 	int getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const;
 
 	// Gets the entity visibility data necessary for rendering and ray cast selection.
-	void getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D,
-		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState2D &outVisState) const;
-	void getEntityVisibilityState3D(EntityInstanceID id, const CoordDouble2 &eye2D,
-		double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary, EntityVisibilityState3D &outVisState) const;
+	void getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D, EntityVisibilityState2D &outVisState) const;
+	void getEntityVisibilityState3D(EntityInstanceID id, const CoordDouble2 &eye2D, double ceilingScale,
+		const VoxelChunkManager &voxelChunkManager, EntityVisibilityState3D &outVisState) const;
 
 	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
 		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,

@@ -721,7 +721,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 				// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 				const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
-				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, EntityDefinitionLibrary::getInstance());
+				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 				const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 
 				std::string entityName;

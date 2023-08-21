@@ -289,7 +289,11 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				return musicDef;
 			};
 
-			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord);
+			// Always use clear weather in interiors.
+			WeatherDefinition overrideWeather;
+			overrideWeather.initClear();
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord, VoxelInt2::Zero, std::nullopt, false, overrideWeather);
 			gameState.queueMusicOnSceneChange(musicFunc);
 		}
 		else if (transitionType == TransitionType::CityGate)
@@ -344,9 +348,6 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
-				// Use current weather.
-				const WeatherDefinition &overrideWeather = weatherDef;
 
 				// Calculate wilderness position based on the gate's voxel in the city.
 				const CoordInt2 startCoord = [&hitCoord, &transitionDir]()
@@ -406,9 +407,6 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
-				// Use current weather.
-				const WeatherDefinition &overrideWeather = weatherDef;
 
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;

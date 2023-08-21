@@ -49,6 +49,22 @@ public:
 		this->nextID = 0;
 	}
 
+	// Gets total number of slots; not all are always in use.
+	int getTotalCount() const
+	{
+		return static_cast<int>(this->elements.size());
+	}
+
+	int getFreeCount() const
+	{
+		return static_cast<int>(this->freedIDs.size());
+	}
+
+	int getUsedCount() const
+	{
+		return this->getTotalCount() - this->getFreeCount();
+	}
+
 	ElementT &get(IdT id)
 	{
 		DebugAssert(this->isValidID(id));
@@ -61,6 +77,28 @@ public:
 		DebugAssert(this->isValidID(id));
 		DebugAssertIndex(this->elements, id);
 		return this->elements[id];
+	}
+
+	ElementT *tryGet(IdT id)
+	{
+		if (!this->isValidID(id))
+		{
+			return nullptr;
+		}
+
+		DebugAssertIndex(this->elements, id);
+		return &this->elements[id];
+	}
+
+	const ElementT *tryGet(IdT id) const
+	{
+		if (!this->isValidID(id))
+		{
+			return nullptr;
+		}
+
+		DebugAssertIndex(this->elements, id);
+		return &this->elements[id];
 	}
 
 	bool tryAlloc(IdT *outID)

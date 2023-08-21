@@ -242,7 +242,11 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return musicDef;
 		};
 
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, playerStartOffset, worldMapLocationIDs, true);
+		// Always use clear weather in interiors.
+		WeatherDefinition overrideWeather;
+		overrideWeather.initClear();
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, playerStartOffset, worldMapLocationIDs, true, overrideWeather);
 		gameState.queueMusicOnSceneChange(musicFunc);
 
 		game.setPanel<GameWorldPanel>();
@@ -267,7 +271,11 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return;
 		}
 
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
+		// Always use clear weather in interiors.
+		WeatherDefinition overrideWeather;
+		overrideWeather.initClear();
+
+		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 
 		if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Staff)
 		{

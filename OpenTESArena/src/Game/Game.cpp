@@ -111,6 +111,9 @@ Game::~Game()
 
 	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
 	renderSkyManager.shutdown(this->renderer);
+
+	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
+	renderWeatherManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -176,12 +179,6 @@ bool Game::init()
 			", 3D: " + std::to_string(static_cast<int>(rendererSystemType3D)) + ").");
 		return false;
 	}
-
-	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
-	renderChunkManager.init(this->renderer);
-
-	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-	renderSkyManager.init(this->renderer);
 
 	this->inputManager.init();
 
@@ -251,6 +248,21 @@ bool Game::init()
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	CharacterClassLibrary::getInstance().init(exeData);
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
+
+	this->sceneManager.init(this->textureManager, this->renderer);
+
+	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
+	renderChunkManager.init(this->renderer);
+
+	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
+	renderSkyManager.init(exeData, this->textureManager, this->renderer);
+
+	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
+	if (!renderWeatherManager.init(this->renderer))
+	{
+		DebugLogError("Couldn't init render weather manager.");
+		return false;
+	}
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";
@@ -622,12 +634,14 @@ void Game::renderDebugInfo()
 			const std::string renderThreadCount = std::to_string(profilerData.threadCount);
 			const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
 			const std::string renderDrawCallCount = std::to_string(profilerData.drawCallCount);
+			const std::string objectTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.objectTextureByteCount) / (1024.0 * 1024.0), 2);
 			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
 				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
-				"3D render: " + renderTime + "ms" + "\n" +
-				"Draw calls: " + renderDrawCallCount + "\n" +
-				"Vis triangles: " + std::to_string(profilerData.visTriangleCount) + " (" + std::to_string(profilerData.potentiallyVisTriangleCount) + ")" +
-				", lights: " + std::to_string(profilerData.visLightCount));
+				"3D render: " + renderTime + "ms" + '\n' +
+				"Textures: " + std::to_string(profilerData.objectTextureCount) + " (" + objectTextureMbCount + "MB)" + '\n' +
+				"Draw calls: " + renderDrawCallCount + '\n' +
+				"Triangles: " + std::to_string(profilerData.visTriangleCount) + " / " + std::to_string(profilerData.sceneTriangleCount) + '\n' +
+				"Lights: " + std::to_string(profilerData.totalLightCount));
 		}
 		else
 		{
@@ -796,9 +810,10 @@ void Game::loop()
 				// It shouldn't be abstracted into a game state.
 				// - it should be like "do we need to clear the scene? yes/no. update the scene immediately? yes/no"
 
-				// Tick game world state (daytime clock, etc.).
+				// Tick the various pieces of game world state.
 				this->gameState.tickGameClock(clampedDt, *this);
 				this->gameState.tickChasmAnimation(clampedDt);
+				this->gameState.tickSky(clampedDt, *this);
 				this->gameState.tickWeather(clampedDt, *this);
 				this->gameState.tickUiMessages(clampedDt);
 				this->gameState.tickPlayer(clampedDt, *this);

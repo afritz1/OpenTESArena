@@ -20,7 +20,9 @@
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../Math/Constants.h"
+#include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RendererUtils.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
@@ -241,12 +243,23 @@ MapType GameState::getActiveMapType() const
 
 bool GameState::isActiveMapValid() const
 {
-	return this->activeMapDef.isValid();
+	return this->activeMapDef.isValid() && (this->activeLevelIndex >= 0);
 }
 
 int GameState::getActiveLevelIndex() const
 {
 	return this->activeLevelIndex;
+}
+
+int GameState::getActiveSkyIndex() const
+{
+	if (!this->isActiveMapValid())
+	{
+		DebugLogError("No valid map for obtaining active sky index.");
+		return -1;
+	}
+
+	return this->activeMapDef.getSkyIndexForLevel(this->activeLevelIndex);
 }
 
 const MapDefinition &GameState::getActiveMapDef() const
@@ -323,7 +336,17 @@ ArenaTypes::WeatherType GameState::getWeatherForLocation(int provinceIndex, int 
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
 	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, binaryAssetLibrary.getCityDataFile());
 	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
-	return this->worldMapWeathers[quarterIndex];
+	ArenaTypes::WeatherType weatherType = this->worldMapWeathers[quarterIndex];
+
+	if (locationDef.getType() == LocationDefinitionType::City)
+	{
+		// Filter the possible weathers (in case it's trying to have snow in a desert).
+		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+		const ArenaTypes::ClimateType climateType = locationCityDef.climateType;
+		weatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, climateType);
+	}
+
+	return weatherType;
 }
 
 Date &GameState::getDate()
@@ -338,7 +361,7 @@ Clock &GameState::getClock()
 
 double GameState::getDaytimePercent() const
 {
-	return this->clock.getPreciseTotalSeconds() / static_cast<double>(Clock::SECONDS_IN_A_DAY);
+	return this->clock.getDaytimePercent();
 }
 
 double GameState::getChasmAnimPercent() const
@@ -355,6 +378,23 @@ const WeatherDefinition &GameState::getWeatherDefinition() const
 const WeatherInstance &GameState::getWeatherInstance() const
 {
 	return this->weatherInst;
+}
+
+bool GameState::isFogActive() const
+{
+	const MapType mapType = this->getActiveMapType();
+	if (mapType == MapType::Interior)
+	{
+		const int skyIndex = this->getActiveSkyIndex();
+		const SkyInfoDefinition &skyInfoDef = this->activeMapDef.getSkyInfoForSky(skyIndex);
+		return skyInfoDef.isOutdoorDungeon();
+	}
+	else
+	{
+		const bool canDaytimeFogBeActive = ArenaClockUtils::isDaytimeFogActive(this->clock);
+		const WeatherType activeWeatherType = this->getWeatherDefinition().type;
+		return canDaytimeFogBeActive && ((activeWeatherType == WeatherType::Overcast) || (activeWeatherType == WeatherType::Snow));
+	}
 }
 
 std::function<void(Game&)> &GameState::getOnLevelUpVoxelEnter()
@@ -584,12 +624,6 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	Renderer &renderer = game.getRenderer();
 	SceneManager &sceneManager = game.getSceneManager();
 
-	ObjectTextureID gameWorldPaletteTextureID = ArenaLevelUtils::allocGameWorldPaletteTexture(ArenaPaletteName::Default, textureManager, renderer);
-	sceneManager.gameWorldPaletteTextureRef.init(gameWorldPaletteTextureID, renderer);
-
-	ObjectTextureID lightTableTextureID = ArenaLevelUtils::allocLightTableTexture(ArenaTextureName::NormalLightTable, textureManager, renderer);
-	sceneManager.lightTableTextureRef.init(lightTableTextureID, renderer);
-
 	const CoordDouble3 &playerCoord = player.getPosition();
 
 	// Clear and re-populate scene immediately so it's ready for rendering this frame (otherwise we get a black frame).
@@ -598,14 +632,31 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	chunkManager.clear();
 	chunkManager.update(playerCoord.chunk, options.getMisc_ChunkDistance());
 
-	sceneManager.voxelChunkManager.recycleAllChunks();	
+	sceneManager.voxelChunkManager.recycleAllChunks();
 	sceneManager.entityChunkManager.clear();
 	sceneManager.collisionChunkManager.recycleAllChunks();
 	sceneManager.renderChunkManager.unloadScene(renderer);
+	
+	sceneManager.skyInstance.clear();
+	sceneManager.renderSkyManager.unloadScene(renderer);
+	sceneManager.renderWeatherManager.unloadScene();
+
+	const MapType activeMapType = this->getActiveMapType();
+	const int activeSkyIndex = this->getActiveSkyIndex();
+	const SkyDefinition &activeSkyDef = this->activeMapDef.getSky(activeSkyIndex);
+	const SkyInfoDefinition &activeSkyInfoDef = this->activeMapDef.getSkyInfoForSky(activeSkyIndex);
+
+	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager);
+	sceneManager.renderSkyManager.loadScene(activeSkyInfoDef, textureManager, renderer);
+	sceneManager.renderWeatherManager.loadScene();
+
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.getRandom(), textureManager);
 
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
 	this->tickCollision(0.0, game);
+	this->tickSky(0.0, game);
 	this->tickRendering(game);
 
 	if (this->nextMusicFunc)
@@ -720,6 +771,15 @@ void GameState::tickChasmAnimation(double dt)
 	{
 		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, ArenaVoxelUtils::CHASM_ANIM_SECONDS);
 	}
+}
+
+void GameState::tickSky(double dt, Game &game)
+{
+	SceneManager &sceneManager = game.getSceneManager();
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+
+	SkyInstance &skyInst = sceneManager.skyInstance;
+	skyInst.update(dt, locationDef.getLatitude(), this->getDaytimePercent(), this->weatherInst, game.getRandom());
 }
 
 void GameState::tickWeather(double dt, Game &game)
@@ -852,8 +912,13 @@ void GameState::tickRendering(Game &game)
 {
 	SceneManager &sceneManager = game.getSceneManager();
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
+	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
+
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const SkyInstance &skyInst = sceneManager.skyInstance;
 
 	const double ceilingScale = this->getActiveCeilingScale();
 	const double chasmAnimPercent = this->getChasmAnimPercent();
@@ -866,14 +931,32 @@ void GameState::tickRendering(Game &game)
 	TextureManager &textureManager = game.getTextureManager();
 	Renderer &renderer = game.getRenderer();
 
+	const bool isFoggy = this->isFogActive();
+	const bool nightLightsAreActive = ArenaClockUtils::nightLightsAreActive(this->clock);	
+	const Options &options = game.getOptions();
+
 	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	renderChunkManager.updateActiveChunks(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
-		chunkManager.getFreedChunkPositions(), voxelChunkManager, renderer);
-	renderChunkManager.updateVoxels(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(), ceilingScale, chasmAnimPercent,
+	renderChunkManager.updateActiveChunks(activeChunkPositions, newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
+	renderChunkManager.updateLights(newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
+		options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
+	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
 		voxelChunkManager, textureManager, renderer);
-	renderChunkManager.updateEntities(chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(), playerCoordXZ, playerDirXZ, ceilingScale,
+	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
 
+	const bool isInterior = this->getActiveMapType() == MapType::Interior;
+	const WeatherType weatherType = this->weatherDef.type;
+	const double daytimePercent = this->getDaytimePercent();
+	sceneManager.updateGameWorldPalette(isInterior, weatherType, isFoggy, daytimePercent, textureManager);
+
+	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(this->clock);
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.update(playerCoord);
+	renderSkyManager.update(skyInst, this->weatherInst, playerCoord, isInterior, daytimePercent, isFoggy, distantAmbientPercent, renderer);
+
+	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+
+	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
+	renderWeatherManager.update(weatherInst, renderCamera);
 }

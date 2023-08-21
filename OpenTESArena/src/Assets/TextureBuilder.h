@@ -41,6 +41,7 @@ public:
 
 	int getWidth() const;
 	int getHeight() const;
+	int getBytesPerTexel() const;
 	Type getType() const;
 	const PalettedTexture &getPaletted() const;
 	const TrueColorTexture &getTrueColor() const;

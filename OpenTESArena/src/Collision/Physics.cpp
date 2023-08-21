@@ -121,10 +121,9 @@ namespace Physics
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
 			EntityVisibilityState3D visState;
-			entityChunkManager.getEntityVisibilityState3D(entityInstID, viewCoordXZ, ceilingScale, voxelChunkManager,
-				entityDefLibrary, visState);
+			entityChunkManager.getEntityVisibilityState3D(entityInstID, viewCoordXZ, ceilingScale, voxelChunkManager, visState);
 
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, entityDefLibrary);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 			// Get the entity's view-independent bounding box to help determine which voxels they are in.
@@ -458,7 +457,7 @@ namespace Physics
 			{
 				const EntityInstanceID entityInstID = visState.entityInstID;
 				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID, entityDefLibrary);
+				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 				const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 				const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
 

@@ -29,14 +29,16 @@ public:
 	struct ObjectTexture
 	{
 		Buffer<std::byte> texels;
+		const uint8_t *texels8Bit;
+		const uint32_t *texels32Bit;
 		int width, height, texelCount;
+		double widthReal, heightReal;
 		int bytesPerTexel;
+
+		ObjectTexture();
 
 		void init(int width, int height, int bytesPerTexel);
 		void clear();
-
-		const uint8_t *get8Bit() const;
-		const uint32_t *get32Bit() const;
 	};
 
 	using ObjectTexturePool = RecyclablePool<ObjectTexture, ObjectTextureID>;
@@ -61,10 +63,21 @@ public:
 
 		void init(int indexCount);
 	};
+
+	struct Light
+	{
+		Double3 worldPoint;
+		double startRadius, endRadius;
+
+		Light();
+
+		void init(const Double3 &worldPoint, double startRadius, double endRadius);
+	};
 private:
 	using VertexBufferPool = RecyclablePool<VertexBuffer, VertexBufferID>;
 	using AttributeBufferPool = RecyclablePool<AttributeBuffer, AttributeBufferID>;
 	using IndexBufferPool = RecyclablePool<IndexBuffer, IndexBufferID>;
+	using LightPool = RecyclablePool<Light, RenderLightID>;
 
 	Buffer2D<uint8_t> paletteIndexBuffer; // Intermediate buffer to support back-to-front transparencies.
 	Buffer2D<double> depthBuffer;
@@ -72,6 +85,7 @@ private:
 	AttributeBufferPool attributeBuffers;
 	IndexBufferPool indexBuffers;
 	ObjectTexturePool objectTextures;
+	LightPool lights;
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer() override;
@@ -98,6 +112,13 @@ public:
 	void unlockObjectTexture(ObjectTextureID id) override;
 	void freeObjectTexture(ObjectTextureID id) override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
+
+	bool tryCreateLight(RenderLightID *outID) override;
+	const Double3 &getLightPosition(RenderLightID id) override;
+	void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius) override;
+	void setLightPosition(RenderLightID id, const Double3 &worldPoint) override;
+	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
+	void freeLight(RenderLightID id) override;
 
 	ProfilerData getProfilerData() const override;
 

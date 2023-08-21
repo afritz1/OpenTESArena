@@ -38,26 +38,10 @@ SkyDefinition::MoonPlacementDef::Position::Position(const Double3 &baseDir, doub
 	this->imageIndex = imageIndex;
 }
 
-SkyDefinition::MoonPlacementDef::MoonPlacementDef(MoonDefID id,
-	std::vector<MoonPlacementDef::Position> &&positions)
+SkyDefinition::MoonPlacementDef::MoonPlacementDef(MoonDefID id, std::vector<MoonPlacementDef::Position> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
-}
-
-void SkyDefinition::init(Buffer<Color> &&skyColors)
-{
-	this->skyColors = std::move(skyColors);
-}
-
-int SkyDefinition::getSkyColorCount() const
-{
-	return this->skyColors.getCount();
-}
-
-const Color &SkyDefinition::getSkyColor(int index) const
-{
-	return this->skyColors.get(index);
 }
 
 int SkyDefinition::getLandPlacementDefCount() const
@@ -192,8 +176,7 @@ void SkyDefinition::addSun(SunDefID id, double bonusLatitude)
 	}
 }
 
-void SkyDefinition::addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent,
-	double bonusLatitude, int imageIndex)
+void SkyDefinition::addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent, double bonusLatitude, int imageIndex)
 {
 	const auto iter = std::find_if(this->moonPlacementDefs.begin(), this->moonPlacementDefs.end(),
 		[id](const MoonPlacementDef &def)
