@@ -1188,6 +1188,15 @@ namespace swRender
 							const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
 							shaderLighting.lightLevel = (shaderLighting.lightLevelCount - 1) - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lightLevelCount - 1);
 
+							if (requiresPerPixelLightIntensity)
+							{
+								// Dither the light level in screen space.
+								if (((x + y) & 0x1) != 0)
+								{
+									shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lightLevelCount - 1);
+								}
+							}
+
 							switch (pixelShaderType)
 							{
 							case PixelShaderType::Opaque:
