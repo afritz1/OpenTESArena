@@ -1191,7 +1191,42 @@ namespace swRender
 							if (requiresPerPixelLightIntensity)
 							{
 								// Dither the light level in screen space.
-								if (((x + y) & 0x1) != 0)
+								bool shouldDither = false;
+
+								constexpr bool betterDither = false;
+								if (betterDither)
+								{
+									if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
+									{
+										// Modern 2x2, four levels of dither depending on percent between two light levels.
+										constexpr int ditherMaskCount = 4;
+										const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
+										const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(ditherMaskCount) * lightLevelFraction), 0, ditherMaskCount - 1);
+
+										switch (maskIndex)
+										{
+										case 0:
+											shouldDither = (((x + y) & 0x1) == 0) || (((x % 2) == 1) && ((y % 2) == 0)); // Top left, bottom right, top right
+											break;
+										case 1:
+											shouldDither = ((x + y) & 0x1) == 0; // Top left + bottom right
+											break;
+										case 2:
+											shouldDither = ((x % 2) == 0) && ((y % 2) == 0); // Top left
+											break;
+										case 3:
+											shouldDither = false;
+											break;
+										}
+									}
+								}
+								else
+								{
+									// Original game: 2x2, top left + bottom right are darkened.
+									shouldDither = ((x + y) & 0x1) == 0;
+								}
+
+								if (shouldDither)
 								{
 									shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lightLevelCount - 1);
 								}
