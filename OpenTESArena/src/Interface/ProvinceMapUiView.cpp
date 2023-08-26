@@ -267,7 +267,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	// Modify icon background texels based on the highlight type.
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+	DebugAssert(textureBuilder.getType() == TextureBuilderType::Paletted);
 
 	const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
 	const uint8_t *srcTexels = srcTexture.texels.begin();

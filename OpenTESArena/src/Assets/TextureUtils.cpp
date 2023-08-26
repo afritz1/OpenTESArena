@@ -112,7 +112,7 @@ Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 			// Parchment tiles should all be 8-bit for now.
-			DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+			DebugAssert(textureBuilder.getType() == TextureBuilderType::Paletted);
 			const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
 			const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
 

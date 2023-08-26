@@ -7,15 +7,15 @@
 
 // Intermediate texture data for initializing renderer-specific textures (voxels, entities, UI, etc.).
 
+enum class TextureBuilderType
+{
+	Paletted,
+	TrueColor
+};
+
 class TextureBuilder
 {
 public:
-	enum class Type
-	{
-		Paletted,
-		TrueColor
-	};
-
 	struct PalettedTexture
 	{
 		Buffer2D<uint8_t> texels;
@@ -30,7 +30,7 @@ public:
 		void init(int width, int height, const uint32_t *texels);
 	};
 private:
-	Type type;
+	TextureBuilderType type;
 	PalettedTexture paletteTexture;
 	TrueColorTexture trueColorTexture;
 public:
@@ -42,7 +42,7 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 	int getBytesPerTexel() const;
-	Type getType() const;
+	TextureBuilderType getType() const;
 	const PalettedTexture &getPaletted() const;
 	const TrueColorTexture &getTrueColor() const;
 };

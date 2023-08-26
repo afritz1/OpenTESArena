@@ -234,7 +234,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		}
 
 		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*skyGradientTextureBuilderID);
-		DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+		DebugAssert(textureBuilder.getType() == TextureBuilderType::Paletted);
 		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
 		return allocBgTextureID(BufferView2D<const uint8_t>(palettedTexture.texels.begin(), textureBuilder.getWidth(), textureBuilder.getHeight()));
 	};

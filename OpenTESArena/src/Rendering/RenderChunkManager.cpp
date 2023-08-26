@@ -322,7 +322,7 @@ namespace sgTexture
 					const int textureHeight = textureBuilder.getHeight();
 					const int texelCount = textureWidth * textureHeight;
 					constexpr int bytesPerTexel = 1;
-					DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+					DebugAssert(textureBuilder.getType() == TextureBuilderType::Paletted);
 
 					ObjectTextureID textureID;
 					if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))

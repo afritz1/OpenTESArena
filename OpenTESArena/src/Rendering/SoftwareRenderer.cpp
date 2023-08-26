@@ -1526,25 +1526,23 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 {
 	const int width = textureBuilder.getWidth();
 	const int height = textureBuilder.getHeight();
-	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
-	const int bytesPerTexel = (textureBuilderType == TextureBuilder::Type::Paletted) ? 1 :
-		((textureBuilderType == TextureBuilder::Type::TrueColor) ? 4 : -1);
-
+	const int bytesPerTexel = textureBuilder.getBytesPerTexel();
 	if (!this->tryCreateObjectTexture(width, height, bytesPerTexel, outID))
 	{
 		DebugLogWarning("Couldn't create " + std::to_string(width) + "x" + std::to_string(height) + " object texture.");
 		return false;
 	}
 
+	const TextureBuilderType textureBuilderType = textureBuilder.getType();
 	ObjectTexture &texture = this->objectTextures.get(*outID);
-	if (textureBuilderType == TextureBuilder::Type::Paletted)
+	if (textureBuilderType == TextureBuilderType::Paletted)
 	{
 		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
 		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
 		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
 		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
 	}
-	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
+	else if (textureBuilderType == TextureBuilderType::TrueColor)
 	{
 		const TextureBuilder::TrueColorTexture &trueColorTexture = textureBuilder.getTrueColor();
 		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
