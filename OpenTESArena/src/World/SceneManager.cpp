@@ -56,7 +56,7 @@ void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 
 void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double daytimePercent, TextureManager &textureManager)
 {
-	constexpr int paletteLength = 256;
+	constexpr int paletteLength = PaletteLength;
 
 	// Update sky gradient. Write to palette indices 1-8 using one of the three palettes.
 	const std::string *skyGradientFilename = &ArenaPaletteName::Default;

@@ -5,7 +5,8 @@
 
 #include "Color.h"
 
-using Palette = std::array<Color, 256>;
-using PaletteIndices = std::array<uint8_t, 256>;
+static constexpr int PaletteLength = 256;
+using Palette = std::array<Color, PaletteLength>;
+using PaletteIndices = std::array<uint8_t, PaletteLength>;
 
 #endif
