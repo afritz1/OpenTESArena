@@ -72,6 +72,16 @@ public:
 
 		void init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs);
 	};
+
+	struct Light
+	{
+		RenderLightID lightID;
+		bool enabled;
+
+		Light();
+
+		void init(RenderLightID lightID, bool enabled);
+	};
 private:
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
@@ -85,7 +95,7 @@ private:
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> entityPaletteIndicesTextureRefs;
 
 	RenderLightID playerLightID;
-	std::unordered_map<EntityInstanceID, RenderLightID> entityLightIDs; // All lights have an associated entity.
+	std::unordered_map<EntityInstanceID, Light> entityLights; // All lights have an associated entity.
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> voxelDrawCallsCache, entityDrawCallsCache;

@@ -446,6 +446,18 @@ void RenderChunkManager::LoadedEntityAnimation::init(EntityDefID defID, Buffer<S
 	this->textureRefs = std::move(textureRefs);
 }
 
+RenderChunkManager::Light::Light()
+{
+	this->lightID = -1;
+	this->enabled = false;
+}
+
+void RenderChunkManager::Light::init(RenderLightID lightID, bool enabled)
+{
+	this->lightID = lightID;
+	this->enabled = enabled;
+}
+
 RenderChunkManager::RenderChunkManager()
 {
 	this->chasmWallIndexBufferIDs.fill(-1);
@@ -607,17 +619,17 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 		this->playerLightID = -1;
 	}
 
-	for (auto &pair : this->entityLightIDs)
+	for (auto &pair : this->entityLights)
 	{
-		RenderLightID &lightID = pair.second;
-		if (lightID >= 0)
+		Light &light = pair.second;
+		if (light.lightID >= 0)
 		{
-			renderer.freeLight(lightID);
-			lightID = -1;
+			renderer.freeLight(light.lightID);
+			light.lightID = -1;
 		}
 	}
 
-	this->entityLightIDs.clear();
+	this->entityLights.clear();
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
@@ -1581,12 +1593,12 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 {
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
-		const auto iter = this->entityLightIDs.find(entityInstID);
-		if (iter != this->entityLightIDs.end())
+		const auto iter = this->entityLights.find(entityInstID);
+		if (iter != this->entityLights.end())
 		{
-			const RenderLightID lightID = iter->second;
-			renderer.freeLight(lightID);
-			this->entityLightIDs.erase(iter);
+			const Light &light = iter->second;
+			renderer.freeLight(light.lightID);
+			this->entityLights.erase(iter);
 		}
 	}
 
@@ -1597,7 +1609,7 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 		{
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-			const std::optional<double> entityLightRadius = EntityUtils::tryGetLightRadius(entityDef, nightLightsAreActive);
+			const std::optional<double> entityLightRadius = EntityUtils::tryGetLightRadius(entityDef, nightLightsAreActive); // @todo: don't care about night time here
 			const bool isLight = entityLightRadius.has_value();
 			if (isLight)
 			{
@@ -1608,7 +1620,9 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 					continue;
 				}
 
-				this->entityLightIDs.emplace(entityInstID, lightID);
+				Light light;
+				light.init(lightID, true); // @todo: pass whether it should actually be on right now instead of always true
+				this->entityLights.emplace(entityInstID, std::move(light));
 
 				const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
 				const WorldDouble2 entityPos = VoxelUtils::coordToWorldPoint(entityCoord);
@@ -1623,6 +1637,8 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 			}
 		}
 	}
+
+	// @todo: iterate through active chunks, updating light enabled states based on night time if their entity def is a streetlight
 
 	const WorldDouble3 prevPlayerLightPosition = renderer.getLightPosition(this->playerLightID);
 	const WorldDouble3 playerLightPosition = VoxelUtils::coordToWorldPoint(cameraCoord);
@@ -1700,17 +1716,21 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
 	// - @todo: this method doesn't implicitly allow sorting by distance because it doesn't check lights per voxel, it checks voxels per light.
 	//   If sorting is desired then do it after this loop. It should also sort by intensity at the voxel center, not just distance to the light.
-	for (const auto &pair : this->entityLightIDs)
+	for (const auto &pair : this->entityLights)
 	{
-		const RenderLightID lightID = pair.second;
-		const WorldDouble3 &lightPosition = renderer.getLightPosition(lightID);
+		const Light &light = pair.second;
+		if (light.enabled)
+		{
+			const RenderLightID lightID = light.lightID;
+			const WorldDouble3 &lightPosition = renderer.getLightPosition(lightID);
 
-		double dummyLightStartRadius, lightEndRadius;
-		renderer.getLightRadii(lightID, &dummyLightStartRadius, &lightEndRadius);
+			double dummyLightStartRadius, lightEndRadius;
+			renderer.getLightRadii(lightID, &dummyLightStartRadius, &lightEndRadius);
 
-		WorldInt3 lightVoxelMin, lightVoxelMax;
-		getLightMinAndMaxVoxels(lightPosition, lightEndRadius, &lightVoxelMin, &lightVoxelMax);
-		populateTouchedVoxelLightIdLists(lightID, lightPosition, lightVoxelMin, lightVoxelMax);
+			WorldInt3 lightVoxelMin, lightVoxelMax;
+			getLightMinAndMaxVoxels(lightPosition, lightEndRadius, &lightVoxelMin, &lightVoxelMax);
+			populateTouchedVoxelLightIdLists(lightID, lightPosition, lightVoxelMin, lightVoxelMax);
+		}
 	}
 
 	WorldInt3 prevPlayerLightVoxelMin, prevPlayerLightVoxelMax;
@@ -1770,17 +1790,17 @@ void RenderChunkManager::unloadScene(Renderer &renderer)
 		this->recycleChunk(i);
 	}
 
-	for (auto &pair : this->entityLightIDs)
+	for (auto &pair : this->entityLights)
 	{
-		RenderLightID &lightID = pair.second;
-		if (lightID >= 0)
+		Light &light = pair.second;
+		if (light.lightID >= 0)
 		{
-			renderer.freeLight(lightID);
-			lightID = -1;
+			renderer.freeLight(light.lightID);
+			light.lightID = -1;
 		}
 	}
 
-	this->entityLightIDs.clear();
+	this->entityLights.clear();
 	this->voxelDrawCallsCache.clear();
 	this->entityDrawCallsCache.clear();
 }
