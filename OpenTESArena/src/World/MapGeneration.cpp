@@ -1198,7 +1198,7 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD FLOR voxels to modern voxel + entity format.
-	void readArenaFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, MapType mapType,
+	void readArenaFLOR(BufferView2D<const ArenaTypes::VoxelID> flor, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -1332,7 +1332,7 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD MAP1 voxels to modern voxel + entity format.
-	void readArenaMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, MapType mapType,
+	void readArenaMAP1(BufferView2D<const ArenaTypes::VoxelID> map1, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<ArenaTypes::CityType> &cityType,
@@ -1487,9 +1487,8 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD MAP2 voxels to modern voxel + entity format.
-	void readArenaMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, const INFFile &inf,
-		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
-		ArenaVoxelMappingCache *voxelCache)
+	void readArenaMAP2(BufferView2D<const ArenaTypes::VoxelID> map2, const INFFile &inf,
+		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef, ArenaVoxelMappingCache *voxelCache)
 	{
 		for (SNInt map2Z = 0; map2Z < map2.getHeight(); map2Z++)
 		{
@@ -1659,8 +1658,8 @@ namespace MapGeneration
 				// Get the selected level from the random chunks .MIF file.
 				const int blockIndex = (tileSet * 8) + (random.next() % 8);
 				const auto &blockLevel = mif.getLevel(blockIndex);
-				const BufferView2D<const ArenaTypes::VoxelID> &blockFLOR = blockLevel.getFLOR();
-				const BufferView2D<const ArenaTypes::VoxelID> &blockMAP1 = blockLevel.getMAP1();
+				const BufferView2D<const ArenaTypes::VoxelID> blockFLOR = blockLevel.getFLOR();
+				const BufferView2D<const ArenaTypes::VoxelID> blockMAP1 = blockLevel.getMAP1();
 
 				// Copy block data to temp buffers.
 				for (SNInt z = 0; z < ArenaInteriorUtils::DUNGEON_CHUNK_DIM; z++)
@@ -2328,7 +2327,7 @@ void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int open
 	this->closeType = closeType;
 }
 
-void MapGeneration::readMifVoxels(const BufferView<const MIFLevel> &levels, MapType mapType,
+void MapGeneration::readMifVoxels(BufferView<const MIFLevel> levels, MapType mapType,
 	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 	const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 	const std::optional<ArenaTypes::CityType> &cityType, const LocationDungeonDefinition *dungeonDef,
@@ -2461,13 +2460,11 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 }
 
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-	int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
-	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
-	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
+	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon, BufferView<const uint8_t> reservedBlocks,
+	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName,
+	ArenaTypes::CityType cityType, const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
 	LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
@@ -2525,8 +2522,8 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 		outLevelInfoDef);
 }
 
-void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
-	const BufferView2D<const int> &levelDefIndices, const LocationCityDefinition &cityDef,
+void MapGeneration::generateRmdWilderness(BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIDs,
+	BufferView2D<const int> levelDefIndices, const LocationCityDefinition &cityDef,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
@@ -2630,7 +2627,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 	}
 }
 
-void MapGeneration::readMifLocks(const BufferView<const MIFLevel> &levels, const INFFile &inf,
+void MapGeneration::readMifLocks(BufferView<const MIFLevel> levels, const INFFile &inf,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaLockMappingCache lockMappings;
@@ -2648,7 +2645,7 @@ void MapGeneration::readMifLocks(const BufferView<const MIFLevel> &levels, const
 	}
 }
 
-void MapGeneration::readMifTriggers(const BufferView<const MIFLevel> &levels, const INFFile &inf,
+void MapGeneration::readMifTriggers(BufferView<const MIFLevel> levels, const INFFile &inf,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaTriggerMappingCache triggerMappings;

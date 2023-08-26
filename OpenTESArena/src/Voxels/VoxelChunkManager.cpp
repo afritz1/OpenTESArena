@@ -686,12 +686,10 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 	}
 }
 
-void VoxelChunkManager::update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
-	const BufferView<const ChunkInt2> &freedChunkPositions, const CoordDouble3 &playerCoord,
-	const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
-	const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
-	BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
-	double ceilingScale, AudioManager &audioManager)
+void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+	const CoordDouble3 &playerCoord, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+	const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs, BufferView<const int> levelInfoDefIndices,
+	BufferView<const LevelInfoDefinition> levelInfoDefs, double ceilingScale, AudioManager &audioManager)
 {
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{

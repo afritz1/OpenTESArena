@@ -169,7 +169,7 @@ namespace MapGeneration
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
-	void readMifVoxels(const BufferView<const MIFLevel> &levels, MapType mapType,
+	void readMifVoxels(BufferView<const MIFLevel> levels, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<ArenaTypes::CityType> &cityType, const LocationDungeonDefinition *dungeonDef,
@@ -192,7 +192,7 @@ namespace MapGeneration
 	// is not a premade city, and converts the level to the modern format.
 	void generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-		const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+		BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 		int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
@@ -202,17 +202,17 @@ namespace MapGeneration
 
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
-	void generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
-		const BufferView2D<const int> &levelDefIndices, const LocationCityDefinition &cityDef,
+	void generateRmdWilderness(BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIDs,
+		BufferView2D<const int> levelDefIndices, const LocationCityDefinition &cityDef,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary,const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
 		LevelInfoDefinition *outLevelInfoDef,
 		std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos);
 
-	void readMifLocks(const BufferView<const MIFLevel> &levels, const INFFile &inf,
+	void readMifLocks(BufferView<const MIFLevel> levels, const INFFile &inf,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
-	void readMifTriggers(const BufferView<const MIFLevel> &levels, const INFFile &inf,
+	void readMifTriggers(BufferView<const MIFLevel> levels, const INFFile &inf,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
 }
 

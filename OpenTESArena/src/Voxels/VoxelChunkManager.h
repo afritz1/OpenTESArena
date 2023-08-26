@@ -64,9 +64,8 @@ private:
 	// Updates door visibilities for a chunk; some of which might be on the chunk's perimeter that are affected by adjacent chunks.
 	void updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const CoordDouble3 &playerCoord);
 public:
-	void update(double dt, const BufferView<const ChunkInt2> &newChunkPositions,
-		const BufferView<const ChunkInt2> &freedChunkPositions, const CoordDouble3 &playerCoord,
-		const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+	void update(double dt, BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+		const CoordDouble3 &playerCoord, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
 		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
 		double ceilingScale, AudioManager &audioManager);

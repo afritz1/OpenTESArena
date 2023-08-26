@@ -100,7 +100,7 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, WorldInt2 *outStartPoint);
 	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-		bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
+		bool isPremade, BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX,
 		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
 		bool palaceIsMainQuestDungeon, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
@@ -108,7 +108,7 @@ private:
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
-	bool initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
+	bool initWildLevels(BufferView2D<const ArenaWildUtils::WildBlockID> wildBlockIDs,
 		uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,

@@ -20,7 +20,7 @@
 namespace PlayerLogicController
 {
 	void handlePlayerMovementClassic(Player &player, double dt, double walkSpeed, bool isOnGround, bool isGhostModeEnabled,
-		const InputManager &inputManager, const BufferView<const Rect> &nativeCursorRegions)
+		const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
 	{
 		// Classic interface mode.
 		// Arena uses arrow keys, but let's use the left hand side of the keyboard
@@ -287,8 +287,7 @@ namespace PlayerLogicController
 	}
 }
 
-Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
-	const BufferView<const Rect> &nativeCursorRegions)
+Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
 {
 	const auto &inputManager = game.getInputManager();
 
@@ -411,7 +410,7 @@ void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
 		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 }
 
-void PlayerLogicController::handlePlayerMovement(Game &game, double dt, const BufferView<const Rect> &nativeCursorRegions)
+void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
 {
 	const InputManager &inputManager = game.getInputManager();
 

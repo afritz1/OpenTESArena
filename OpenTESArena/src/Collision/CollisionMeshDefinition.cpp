@@ -7,8 +7,7 @@ CollisionMeshDefinition::CollisionMeshDefinition()
 	this->triangleCount = -1;
 }
 
-void CollisionMeshDefinition::init(const BufferView<const double> &vertices, const BufferView<const double> &normals,
-	const BufferView<const int> &indices)
+void CollisionMeshDefinition::init(BufferView<const double> vertices, BufferView<const double> normals, BufferView<const int> indices)
 {
 	this->vertices.init(vertices.getCount());
 	std::copy(vertices.begin(), vertices.end(), this->vertices.begin());

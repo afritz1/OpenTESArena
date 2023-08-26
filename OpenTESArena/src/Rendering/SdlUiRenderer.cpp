@@ -94,7 +94,7 @@ bool SdlUiRenderer::tryCreateUiTexture(int width, int height, UiTextureID *outID
 	return this->tryCreateUiTextureInternal(width, height, initFunc, outID);
 }
 
-bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID)
+bool SdlUiRenderer::tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID)
 {
 	TexelsInitFunc initFunc = [&texels](BufferView2D<uint32_t> dstTexels)
 	{
@@ -104,7 +104,7 @@ bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint32_t> &texel
 	return this->tryCreateUiTextureInternal(texels.getWidth(), texels.getHeight(), initFunc, outID);
 }
 
-bool SdlUiRenderer::tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID)
+bool SdlUiRenderer::tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID)
 {
 	TexelsInitFunc initFunc = [&texels, &palette](BufferView2D<uint32_t> dstTexels)
 	{

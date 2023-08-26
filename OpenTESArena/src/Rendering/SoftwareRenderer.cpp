@@ -1443,7 +1443,7 @@ bool SoftwareRenderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID
 	return true;
 }
 
-void SoftwareRenderer::populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices)
+void SoftwareRenderer::populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices)
 {
 	VertexBuffer &buffer = this->vertexBuffers.get(id);
 	const int srcCount = vertices.getCount();
@@ -1460,7 +1460,7 @@ void SoftwareRenderer::populateVertexBuffer(VertexBufferID id, const BufferView<
 	std::copy(srcBegin, srcEnd, buffer.vertices.begin());
 }
 
-void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes)
+void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes)
 {
 	AttributeBuffer &buffer = this->attributeBuffers.get(id);
 	const int srcCount = attributes.getCount();
@@ -1477,7 +1477,7 @@ void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, const Buffe
 	std::copy(srcBegin, srcEnd, buffer.attributes.begin());
 }
 
-void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices)
+void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices)
 {
 	IndexBuffer &buffer = this->indexBuffers.get(id);
 	const int srcCount = indices.getCount();
@@ -1655,7 +1655,7 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 		visTriangleCount, textureCount, textureByteCount, totalLightCount);
 }
 
-void SoftwareRenderer::submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,
+void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> drawCalls,
 	const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
 	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();

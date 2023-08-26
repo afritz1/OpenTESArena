@@ -48,7 +48,7 @@ int ArenaLevelUtils::getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel)
 	}
 }
 
-int ArenaLevelUtils::getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2)
+int ArenaLevelUtils::getMap2Height(BufferView2D<const ArenaTypes::VoxelID> map2)
 {
 	DebugAssert(map2.isValid());
 

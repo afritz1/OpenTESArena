@@ -110,8 +110,8 @@ public:
 	void getEntityVisibilityState3D(EntityInstanceID id, const CoordDouble2 &eye2D, double ceilingScale,
 		const VoxelChunkManager &voxelChunkManager, EntityVisibilityState3D &outVisState) const;
 
-	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
-		const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+	void update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
+		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 		const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
 		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,

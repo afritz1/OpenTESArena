@@ -53,9 +53,9 @@ public:
 	virtual bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID) = 0;
 	virtual bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID) = 0;
 	virtual bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID) = 0;
-	virtual void populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices) = 0;
-	virtual void populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes) = 0;
-	virtual void populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices) = 0;
+	virtual void populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices) = 0;
+	virtual void populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes) = 0;
+	virtual void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices) = 0;
 	virtual void freeVertexBuffer(VertexBufferID id) = 0;
 	virtual void freeAttributeBuffer(AttributeBufferID id) = 0;
 	virtual void freeIndexBuffer(IndexBufferID id) = 0;
@@ -83,7 +83,7 @@ public:
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.
-	virtual void submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,
+	virtual void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> drawCalls,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer) = 0;
 
 	// Presents the finished frame to the screen. This may just be a copy to the screen frame buffer that

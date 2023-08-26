@@ -16,8 +16,7 @@ struct CollisionMeshDefinition
 
 	CollisionMeshDefinition();
 
-	void init(const BufferView<const double> &vertices, const BufferView<const double> &normals,
-		const BufferView<const int> &indices);
+	void init(BufferView<const double> vertices, BufferView<const double> normals, BufferView<const int> indices);
 };
 
 #endif

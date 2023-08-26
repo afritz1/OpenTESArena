@@ -29,8 +29,8 @@ public:
 	void shutdown() override;
 
 	bool tryCreateUiTexture(int width, int height, UiTextureID *outID) override;
-	bool tryCreateUiTexture(const BufferView2D<const uint32_t> &texels, UiTextureID *outID) override;
-	bool tryCreateUiTexture(const BufferView2D<const uint8_t> &texels, const Palette &palette, UiTextureID *outID) override;
+	bool tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID) override;
+	bool tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID) override;
 	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID) override;
 

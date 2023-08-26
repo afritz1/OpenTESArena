@@ -17,8 +17,8 @@ private:
 	void populateChunk(int index, const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk);
 	void updateDirtyVoxels(const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk);
 public:
-	void update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions, const BufferView<const ChunkInt2> &newChunkPositions,
-		const BufferView<const ChunkInt2> &freedChunkPositions, const VoxelChunkManager &voxelChunkManager);
+	void update(double dt, BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+		BufferView<const ChunkInt2> freedChunkPositions, const VoxelChunkManager &voxelChunkManager);
 };
 
 #endif

@@ -160,8 +160,8 @@ private:
 	ListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
 		std::vector<int> &freedListenerIndices);
 	
-	void handleHeldInputs(Game &game, const BufferView<const InputActionMap*> &activeMaps,
-		const BufferView<const InputActionListenerEntry*> &enabledInputActionListeners, uint32_t mouseState,
+	void handleHeldInputs(Game &game, BufferView<const InputActionMap*> activeMaps,
+		BufferView<const InputActionListenerEntry*> enabledInputActionListeners, uint32_t mouseState,
 		const Int2 &mousePosition, double dt);
 public:
 	InputManager();
@@ -211,7 +211,7 @@ public:
 	void setTextInputMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(Game &game, double dt, const BufferView<const ButtonProxy> &buttonProxies,
+	void update(Game &game, double dt, BufferView<const ButtonProxy> buttonProxies,
 		const std::function<void()> &onFinishedProcessingEvent);
 };
 

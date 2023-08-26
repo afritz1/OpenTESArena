@@ -44,8 +44,8 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, const V
 	}
 }
 
-void CollisionChunkManager::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
-	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+void CollisionChunkManager::update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
+	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager)
 {
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)

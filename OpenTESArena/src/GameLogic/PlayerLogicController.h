@@ -13,14 +13,14 @@ namespace PlayerLogicController
 {
 	// Determines how much to turn the player by, given user input and delta time.
 	// @todo: make these be Radians instead of "units".
-	Double2 makeTurningAngularValues(Game &game, double dt, const BufferView<const Rect> &nativeCursorRegions);
+	Double2 makeTurningAngularValues(Game &game, double dt, BufferView<const Rect> nativeCursorRegions);
 
 	// Turns the player by some angle values (note: the units are not yet formalized to be degrees/radians).
 	// @todo: this should take like delta angles or something, not sure.
 	void turnPlayer(Game &game, double dx, double dy);
 
 	// Handles input for player movement in the game world.
-	void handlePlayerMovement(Game &game, double dt, const BufferView<const Rect> &nativeCursorRegions);
+	void handlePlayerMovement(Game &game, double dt, BufferView<const Rect> nativeCursorRegions);
 
 	// Handles input for the player's attack. Takes the change in mouse position since the previous frame.
 	void handlePlayerAttack(Game &game, const Int2 &mouseDelta);

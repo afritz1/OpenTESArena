@@ -862,8 +862,8 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 	}
 }
 
-void EntityChunkManager::update(double dt, const BufferView<const ChunkInt2> &activeChunkPositions,
-	const BufferView<const ChunkInt2> &newChunkPositions, const BufferView<const ChunkInt2> &freedChunkPositions,
+void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
+	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 	const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
 	BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,

@@ -99,9 +99,9 @@ public:
 	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID) override;
 	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID) override;
 	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID) override;
-	void populateVertexBuffer(VertexBufferID id, const BufferView<const double> &vertices) override;
-	void populateAttributeBuffer(AttributeBufferID id, const BufferView<const double> &attributes) override;
-	void populateIndexBuffer(IndexBufferID id, const BufferView<const int32_t> &indices) override;
+	void populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices) override;
+	void populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes) override;
+	void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices) override;
 	void freeVertexBuffer(VertexBufferID id) override;
 	void freeAttributeBuffer(AttributeBufferID id) override;
 	void freeIndexBuffer(IndexBufferID id) override;
@@ -122,7 +122,7 @@ public:
 
 	ProfilerData getProfilerData() const override;
 
-	void submitFrame(const RenderCamera &camera, const BufferView<const RenderDrawCall> &drawCalls,
+	void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> drawCalls,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer) override;
 	void present() override;
 };
