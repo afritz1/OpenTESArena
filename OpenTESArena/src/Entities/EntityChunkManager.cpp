@@ -168,10 +168,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				entityCoord.chunk = voxelChunk.getPosition();
 				entityCoord.point = VoxelDouble2(point.x, point.z);
 
-				double animMaxWidth, dummyAnimMaxHeight;
-				EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &dummyAnimMaxHeight);
-				double &entityBBoxExtent = this->boundingBoxes.get(bboxID);
-				entityBBoxExtent = animMaxWidth;
+				double animMaxWidth, animMaxHeight;
+				EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
+				const double halfAnimMaxWidth = animMaxWidth * 0.50;
+
+				// Bounding box is centered on the entity in model space.
+				const WorldDouble3 entityBBoxMin(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
+				const WorldDouble3 entityBBoxMax(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
+				BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
+				entityBBox.init(entityBBoxMin, entityBBoxMax);
 
 				if (isDynamicEntity) // Dynamic entities have a direction.
 				{
@@ -287,10 +292,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			CoordDouble2 &entityCoord = this->positions.get(positionID);
 			entityCoord = CoordDouble2(chunkPos, VoxelUtils::getVoxelCenter(*spawnVoxel));
 
-			double animMaxWidth, dummyAnimMaxHeight;
-			EntityUtils::getAnimationMaxDims(entityAnimDef, &animMaxWidth, &dummyAnimMaxHeight);
-			double &entityBBoxExtent = this->boundingBoxes.get(bboxID);
-			entityBBoxExtent = animMaxWidth;
+			double animMaxWidth, animMaxHeight;
+			EntityUtils::getAnimationMaxDims(entityAnimDef, &animMaxWidth, &animMaxHeight);
+			const double halfAnimMaxWidth = animMaxWidth * 0.50;
+
+			// Bounding box is centered on the entity in model space.
+			const WorldDouble3 entityBBoxMin(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
+			const WorldDouble3 entityBBoxMax(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
+			BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
+			entityBBox.init(entityBBoxMin, entityBBoxMax);
 
 			if (!this->citizenDirectionIndices.tryAlloc(&entityInst.citizenDirectionIndexID))
 			{
@@ -589,7 +599,7 @@ const CoordDouble2 &EntityChunkManager::getEntityPosition(EntityPositionID id) c
 	return this->positions.get(id);
 }
 
-double EntityChunkManager::getEntityBoundingBox(EntityBoundingBoxID id) const
+const BoundingBox3D &EntityChunkManager::getEntityBoundingBox(EntityBoundingBoxID id) const
 {
 	return this->boundingBoxes.get(id);
 }

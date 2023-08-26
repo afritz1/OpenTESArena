@@ -8,6 +8,7 @@
 #include "EntityGeneration.h"
 #include "EntityInstance.h"
 #include "EntityUtils.h"
+#include "../Math/BoundingBox.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
@@ -34,7 +35,7 @@ class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 private:
 	using EntityPool = RecyclablePool<EntityInstance, EntityInstanceID>;
 	using EntityPositionPool = RecyclablePool<CoordDouble2, EntityPositionID>;
-	using EntityBoundingBoxPool = RecyclablePool<double, EntityBoundingBoxID>;
+	using EntityBoundingBoxPool = RecyclablePool<BoundingBox3D, EntityBoundingBoxID>;
 	using EntityDirectionPool = RecyclablePool<VoxelDouble2, EntityDirectionID>;
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
@@ -89,7 +90,7 @@ public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	const EntityInstance &getEntity(EntityInstanceID id) const;
 	const CoordDouble2 &getEntityPosition(EntityPositionID id) const;
-	double getEntityBoundingBox(EntityBoundingBoxID id) const;
+	const BoundingBox3D &getEntityBoundingBox(EntityBoundingBoxID id) const;
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
 	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
