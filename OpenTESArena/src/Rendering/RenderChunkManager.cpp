@@ -1468,8 +1468,7 @@ void RenderChunkManager::rebuildEntityDrawCallsList()
 	}
 }
 
-void RenderChunkManager::updateActiveChunks(BufferView<const ChunkInt2> activeChunkPositions,
-	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void RenderChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)

@@ -146,8 +146,7 @@ public:
 	BufferView<const RenderDrawCall> getEntityDrawCalls() const;
 
 	// Chunk allocating/freeing update function, called before voxel or entity resources are updated.
-	void updateActiveChunks(BufferView<const ChunkInt2> activeChunkPositions,
-		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 
 	void updateVoxels(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,

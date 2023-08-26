@@ -10,6 +10,7 @@
 #include "../Rendering/RenderWeatherManager.h"
 #include "../Sky/SkyInstance.h"
 #include "../Voxels/VoxelChunkManager.h"
+#include "../Voxels/VoxelVisibilityChunkManager.h"
 
 class TextureManager;
 class Renderer;
@@ -23,6 +24,7 @@ struct SceneManager
 	VoxelChunkManager voxelChunkManager;
 	EntityChunkManager entityChunkManager;
 	CollisionChunkManager collisionChunkManager;
+	VoxelVisibilityChunkManager voxelVisibilityChunkManager;
 	RenderChunkManager renderChunkManager;
 
 	// Game world systems not tied to chunks.
