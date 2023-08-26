@@ -125,8 +125,8 @@ namespace Physics
 
 			// Get the entity's view-independent bounding box to help determine which voxels they are in.
 			const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-			const CoordDouble3 minCoord = ChunkUtils::recalculateCoord(visState.flatPosition.chunk, visState.flatPosition.point - entityBBox.min);
-			const CoordDouble3 maxCoord = ChunkUtils::recalculateCoord(visState.flatPosition.chunk, visState.flatPosition.point + entityBBox.max);
+			const CoordDouble3 minCoord = ChunkUtils::recalculateCoord(visState.flatPosition.chunk, visState.flatPosition.point - Double3(entityBBox.halfWidth, 0.0, entityBBox.halfDepth));
+			const CoordDouble3 maxCoord = ChunkUtils::recalculateCoord(visState.flatPosition.chunk, visState.flatPosition.point + Double3(entityBBox.halfWidth, entityBBox.height, entityBBox.halfDepth));
 
 			// Get min and max coordinates in chunk space and get the difference for iteration.
 			const CoordInt3 minVoxelCoord(minCoord.chunk, VoxelUtils::pointToVoxel(minCoord.point, ceilingScale));

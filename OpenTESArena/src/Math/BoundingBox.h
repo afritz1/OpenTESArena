@@ -7,6 +7,7 @@ struct BoundingBox3D
 {
 	Double3 min, max;
 	double width, height, depth;
+	double halfWidth, halfHeight, halfDepth;
 
 	BoundingBox3D();
 

@@ -7,6 +7,9 @@ BoundingBox3D::BoundingBox3D()
 	this->width = 0.0;
 	this->height = 0.0;
 	this->depth = 0.0;
+	this->halfWidth = 0.0;
+	this->halfHeight = 0.0;
+	this->halfDepth = 0.0;
 }
 
 void BoundingBox3D::init(const Double3 &min, const Double3 &max)
@@ -19,6 +22,9 @@ void BoundingBox3D::init(const Double3 &min, const Double3 &max)
 	this->width = max.x - min.x;
 	this->height = max.y - min.y;
 	this->depth = max.z - min.z;
+	this->halfWidth = this->width * 0.50;
+	this->halfHeight = this->height * 0.50;
+	this->halfDepth = this->depth * 0.50;
 }
 
 void BoundingBox3D::init(const Double3 &center, double width, double height, double depth)
@@ -26,11 +32,11 @@ void BoundingBox3D::init(const Double3 &center, double width, double height, dou
 	DebugAssert(width >= 0);
 	DebugAssert(height >= 0);
 	DebugAssert(depth >= 0);
-	const double halfWidth = width * 0.50;
-	const double halfHeight = height * 0.50;
-	const double halfDepth = depth * 0.50;
-	this->min = Double3(center.x - halfWidth, center.y - halfHeight, center.z - halfDepth);
-	this->max = Double3(center.x + halfWidth, center.y + halfHeight, center.z + halfDepth);
+	this->halfWidth = width * 0.50;
+	this->halfHeight = height * 0.50;
+	this->halfDepth = depth * 0.50;
+	this->min = Double3(center.x - this->halfWidth, center.y - this->halfHeight, center.z - this->halfDepth);
+	this->max = Double3(center.x + this->halfWidth, center.y + this->halfHeight, center.z + this->halfDepth);
 	this->width = width;
 	this->height = height;
 	this->depth = depth;
@@ -84,6 +90,9 @@ void BoundingBox3D::expandToInclude(const Double3 &point)
 	this->width = this->max.x - this->min.x;
 	this->height = this->max.y - this->min.y;
 	this->depth = this->max.z - this->min.z;
+	this->halfWidth = this->width * 0.50;
+	this->halfHeight = this->height * 0.50;
+	this->halfDepth = this->depth * 0.50;
 }
 
 void BoundingBox3D::expandToInclude(const BoundingBox3D &bbox)
@@ -121,4 +130,7 @@ void BoundingBox3D::expandToInclude(const BoundingBox3D &bbox)
 	this->width = this->max.x - this->min.x;
 	this->height = this->max.y - this->min.y;
 	this->depth = this->max.z - this->min.z;
+	this->halfWidth = this->width * 0.50;
+	this->halfHeight = this->height * 0.50;
+	this->halfDepth = this->depth * 0.50;
 }
