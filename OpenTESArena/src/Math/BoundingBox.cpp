@@ -29,9 +29,9 @@ void BoundingBox3D::init(const Double3 &min, const Double3 &max)
 
 void BoundingBox3D::init(const Double3 &center, double width, double height, double depth)
 {
-	DebugAssert(width >= 0);
-	DebugAssert(height >= 0);
-	DebugAssert(depth >= 0);
+	DebugAssert(width >= 0.0);
+	DebugAssert(height >= 0.0);
+	DebugAssert(depth >= 0.0);
 	this->halfWidth = width * 0.50;
 	this->halfHeight = height * 0.50;
 	this->halfDepth = depth * 0.50;
