@@ -134,3 +134,15 @@ void BoundingBox3D::expandToInclude(const BoundingBox3D &bbox)
 	this->halfHeight = this->height * 0.50;
 	this->halfDepth = this->depth * 0.50;
 }
+
+void BoundingBox3D::clear()
+{
+	this->min = Double3::Zero;
+	this->max = Double3::Zero;
+	this->width = 0.0;
+	this->height = 0.0;
+	this->depth = 0.0;
+	this->halfWidth = 0.0;
+	this->halfHeight = 0.0;
+	this->halfDepth = 0.0;
+}

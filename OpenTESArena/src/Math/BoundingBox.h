@@ -19,6 +19,8 @@ struct BoundingBox3D
 	
 	void expandToInclude(const Double3 &point);
 	void expandToInclude(const BoundingBox3D &bbox);
+
+	void clear();
 };
 
 #endif
