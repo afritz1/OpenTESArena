@@ -91,6 +91,7 @@ public:
 	const CoordDouble2 &getEntityPosition(EntityPositionID id) const;
 	double getEntityBoundingBox(EntityBoundingBoxID id) const;
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
+	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
 	const int8_t &getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
 	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;

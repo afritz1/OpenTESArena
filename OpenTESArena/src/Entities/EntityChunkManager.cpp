@@ -599,6 +599,11 @@ const VoxelDouble2 &EntityChunkManager::getEntityDirection(EntityDirectionID id)
 	return this->directions.get(id);
 }
 
+EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(EntityAnimationInstanceID id)
+{
+	return this->animInsts.get(id);
+}
+
 const EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(EntityAnimationInstanceID id) const
 {
 	return this->animInsts.get(id);

@@ -15,53 +15,36 @@
 
 void MapLogicController::handleNightLightChange(Game &game, bool active)
 {
-	auto &renderer = game.getRenderer();
-	GameState &gameState = game.getGameState();
-	const auto &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	SceneManager &sceneManager = game.getSceneManager();
 
 	// Turn streetlights on or off.
-	// @todo
-	DebugLogError("Not implemented: turning streetlights on/off");
-	/*Buffer<Entity*> entityBuffer(entityManager.getCountOfType(EntityType::Static));
-	const int entityCount = entityManager.getEntitiesOfType(
-		EntityType::Static, entityBuffer.get(), entityBuffer.getCount());
-
-	for (int i = 0; i < entityCount; i++)
+	const std::string &newStreetlightAnimStateName = active ? EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
+	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	for (int i = 0; i < entityChunkManager.getChunkCount(); i++)
 	{
-		Entity *entity = entityBuffer.get(i);
-		const EntityDefID defID = entity->getDefinitionID();
-		const EntityDefinition &entityDef = entityManager.getEntityDef(defID, entityDefLibrary);
-
-		if (EntityUtils::isStreetlight(entityDef))
+		EntityChunk &entityChunk = entityChunkManager.getChunkAtIndex(i);
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
-			const std::string &newStateName = active ?
-				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
-
-			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-			const std::optional<int> newStateIndex = animDef.tryGetStateIndex(newStateName.c_str());
-			if (!newStateIndex.has_value())
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			if (EntityUtils::isStreetlight(entityDef))
 			{
-				DebugLogWarning("Missing entity animation state \"" + newStateName + "\".");
-				continue;
+				const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
+				const std::optional<int> newAnimStateIndex = entityAnimDef.tryGetStateIndex(newStreetlightAnimStateName.c_str());
+				if (!newAnimStateIndex.has_value())
+				{
+					DebugLogError("Couldn't find \"" + newStreetlightAnimStateName + "\" animation state for streetlight entity \"" + std::to_string(entityInstID) + "\".");
+					continue;
+				}
+
+				EntityAnimationInstance &entityAnimInst = entityChunkManager.getEntityAnimationInstance(entityInst.animInstID);
+				entityAnimInst.setStateIndex(*newAnimStateIndex);				
 			}
-
-			EntityAnimationInstance &animInst = entity->getAnimInstance();
-			animInst.setStateIndex(*newStateIndex);
 		}
-	}*/
-
-	TextureManager &textureManager = game.getTextureManager();
-	const std::string paletteName = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	
-	DebugLogError("Not implemented: handleNightLightChange"); // @todo: make this night light value a bool in GameState or something so it can be given to RenderFrameSettings.
-	//renderer.setNightLightsActive(active, palette);
+	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
+	renderChunkManager.setNightLightsActive(active, entityChunkManager);
 }
 
 void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)

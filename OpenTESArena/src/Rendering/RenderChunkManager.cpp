@@ -1640,25 +1640,6 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> activeChunkPos
 		}
 	}
 
-	// Update streetlight enabled states.
-	for (const ChunkInt2 &chunkPos : activeChunkPositions)
-	{
-		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
-		{
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-			if (EntityUtils::isStreetlight(entityDef))
-			{
-				const auto lightIter = this->entityLights.find(entityInstID);
-				DebugAssertMsg(lightIter != this->entityLights.end(), "Couldn't find light for streetlight entity \"" + std::to_string(entityInstID) + "\" in chunk (" + chunkPos.toString() + ").");
-
-				Light &light = lightIter->second;
-				light.enabled = nightLightsAreActive;
-			}
-		}
-	}
-
 	const WorldDouble3 prevPlayerLightPosition = renderer.getLightPosition(this->playerLightID);
 	const WorldDouble3 playerLightPosition = VoxelUtils::coordToWorldPoint(cameraCoord);
 	renderer.setLightPosition(this->playerLightID, playerLightPosition);
@@ -1780,6 +1761,29 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> activeChunkPos
 						}
 					}
 				}
+			}
+		}
+	}
+}
+
+void RenderChunkManager::setNightLightsActive(bool enabled, const EntityChunkManager &entityChunkManager)
+{
+	// Update streetlight enabled states.
+	for (ChunkPtr &chunkPtr : this->activeChunks)
+	{
+		const ChunkInt2 &chunkPos = chunkPtr->getPosition();
+		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+		{
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			if (EntityUtils::isStreetlight(entityDef))
+			{
+				const auto lightIter = this->entityLights.find(entityInstID);
+				DebugAssertMsg(lightIter != this->entityLights.end(), "Couldn't find light for streetlight entity \"" + std::to_string(entityInstID) + "\" in chunk (" + chunkPos.toString() + ").");
+
+				Light &light = lightIter->second;
+				light.enabled = enabled;
 			}
 		}
 	}
