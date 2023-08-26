@@ -11,6 +11,7 @@ struct BoundingBox3D
 	BoundingBox3D();
 
 	void init(const Double3 &min, const Double3 &max);
+	void init(const Double3 &center, double width, double height, double depth);
 
 	bool contains(const Double3 &point) const;
 	bool contains(const BoundingBox3D &bbox) const;

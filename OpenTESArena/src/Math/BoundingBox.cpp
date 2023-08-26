@@ -1,5 +1,7 @@
 #include "BoundingBox.h"
 
+#include "components/debug/Debug.h"
+
 BoundingBox3D::BoundingBox3D()
 {
 	this->width = 0.0;
@@ -9,11 +11,29 @@ BoundingBox3D::BoundingBox3D()
 
 void BoundingBox3D::init(const Double3 &min, const Double3 &max)
 {
+	DebugAssert(min.x <= max.x);
+	DebugAssert(min.y <= max.y);
+	DebugAssert(min.z <= max.z);
 	this->min = min;
 	this->max = max;
 	this->width = max.x - min.x;
 	this->height = max.y - min.y;
 	this->depth = max.z - min.z;
+}
+
+void BoundingBox3D::init(const Double3 &center, double width, double height, double depth)
+{
+	DebugAssert(width >= 0);
+	DebugAssert(height >= 0);
+	DebugAssert(depth >= 0);
+	const double halfWidth = width * 0.50;
+	const double halfHeight = height * 0.50;
+	const double halfDepth = depth * 0.50;
+	this->min = Double3(center.x - halfWidth, center.y - halfHeight, center.z - halfDepth);
+	this->max = Double3(center.x + halfWidth, center.y + halfHeight, center.z + halfDepth);
+	this->width = width;
+	this->height = height;
+	this->depth = depth;
 }
 
 bool BoundingBox3D::contains(const Double3 &point) const
