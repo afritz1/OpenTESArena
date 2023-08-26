@@ -159,37 +159,6 @@ void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, 
 	*outMaxHeight = maxAnimHeight;
 }
 
-void EntityUtils::getViewIndependentBBox2D(const CoordDouble2 &coord, double bboxExtent, CoordDouble2 *outMin, CoordDouble2 *outMax)
-{
-	const double halfExtent = bboxExtent * 0.50;
-
-	// Orient the bounding box so it is largest with respect to the grid. Recalculate the coordinates in case
-	// the min and max are in different chunks.
-	*outMin = ChunkUtils::recalculateCoord(
-		coord.chunk,
-		VoxelDouble2(coord.point.x - halfExtent, coord.point.y - halfExtent));
-	*outMax = ChunkUtils::recalculateCoord(
-		coord.chunk,
-		VoxelDouble2(coord.point.x + halfExtent, coord.point.y + halfExtent));
-}
-
-void EntityUtils::getViewIndependentBBox3D(const CoordDouble3 &coord, const EntityAnimationDefinition &animDef,
-	CoordDouble3 *outMin, CoordDouble3 *outMax)
-{
-	double maxAnimWidth, maxAnimHeight;
-	EntityUtils::getAnimationMaxDims(animDef, &maxAnimWidth, &maxAnimHeight);
-	const double halfMaxWidth = maxAnimWidth * 0.50;
-
-	// Orient the bounding box so it is largest with respect to the grid. Recalculate the coordinates in case
-	// the min and max are in different chunks.
-	*outMin = ChunkUtils::recalculateCoord(
-		coord.chunk,
-		VoxelDouble3(coord.point.x - halfMaxWidth, coord.point.y, coord.point.y - halfMaxWidth));
-	*outMax = ChunkUtils::recalculateCoord(
-		coord.chunk,
-		VoxelDouble3(coord.point.x + halfMaxWidth, coord.point.y + maxAnimHeight, coord.point.y + halfMaxWidth));
-}
-
 bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
 	const CharacterClassLibrary &charClassLibrary, std::string *outName)
 {

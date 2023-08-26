@@ -123,20 +123,14 @@ namespace Physics
 			EntityVisibilityState3D visState;
 			entityChunkManager.getEntityVisibilityState3D(entityInstID, viewCoordXZ, ceilingScale, voxelChunkManager, visState);
 
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-
 			// Get the entity's view-independent bounding box to help determine which voxels they are in.
-			CoordDouble3 minCoord, maxCoord;
-			EntityUtils::getViewIndependentBBox3D(visState.flatPosition, animDef, &minCoord, &maxCoord);
-
-			// Normalize Y values.
-			const VoxelDouble3 minPoint(minCoord.point.x, minCoord.point.y / ceilingScale, minCoord.point.z);
-			const VoxelDouble3 maxPoint(maxCoord.point.x, maxCoord.point.y / ceilingScale, maxCoord.point.z);
+			const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+			const CoordDouble3 minCoord(visState.flatPosition.chunk, visState.flatPosition.point - entityBBox.min);
+			const CoordDouble3 maxCoord(visState.flatPosition.chunk, visState.flatPosition.point + entityBBox.max);
 
 			// Get min and max coordinates in chunk space and get the difference for iteration.
-			const CoordInt3 minVoxelCoord(minCoord.chunk, VoxelUtils::pointToVoxel(minPoint));
-			const CoordInt3 maxVoxelCoord(maxCoord.chunk, VoxelUtils::pointToVoxel(maxPoint));
+			const CoordInt3 minVoxelCoord(minCoord.chunk, VoxelUtils::pointToVoxel(minCoord.point, ceilingScale));
+			const CoordInt3 maxVoxelCoord(maxCoord.chunk, VoxelUtils::pointToVoxel(maxCoord.point, ceilingScale));
 			const VoxelInt3 voxelCoordDiff = maxVoxelCoord - minVoxelCoord;
 
 			// Iterate over the voxels the entity's bounding box touches.

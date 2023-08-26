@@ -1629,10 +1629,9 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> activeChunkPos
 				const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
 				const WorldDouble2 entityPos = VoxelUtils::coordToWorldPoint(entityCoord);
 
-				double dummyAnimMaxWidth, animMaxHeight;
-				EntityUtils::getAnimationMaxDims(entityDef.getAnimDef(), &dummyAnimMaxWidth, &animMaxHeight);
-
-				const double entityPosY = ceilingScale + (animMaxHeight * 0.50);
+				// @todo: use entityChunkManager.getEntityVisibilityState3D() to get the context-sensitive base Y
+				const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+				const double entityPosY = ceilingScale + (entityBBox.height * 0.50);
 				const WorldDouble3 entityPos3D(entityPos.x, entityPosY, entityPos.y);
 				renderer.setLightPosition(lightID, entityPos3D);
 				renderer.setLightRadius(lightID, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius);
