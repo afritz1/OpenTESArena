@@ -34,7 +34,7 @@ namespace EntityUtils
 	int getYOffset(const EntityDefinition &entityDef);
 
 	// Returns the entity definition's light radius, if any.
-	std::optional<double> tryGetLightRadius(const EntityDefinition &entityDef, bool nightLightsAreActive);
+	std::optional<double> tryGetLightRadius(const EntityDefinition &entityDef);
 
 	// Gets the max width and height from the entity animation's frames.
 	void getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight);

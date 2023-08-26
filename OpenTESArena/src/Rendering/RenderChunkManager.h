@@ -156,8 +156,9 @@ public:
 	void updateEntities(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
-	void updateLights(BufferView<const ChunkInt2> newChunkPositions, const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive,
-		bool nightLightsAreActive, bool playerHasLight, const EntityChunkManager &entityChunkManager, Renderer &renderer);
+	void updateLights(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+		const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
+		const EntityChunkManager &entityChunkManager, Renderer &renderer);
 
 	// End of frame clean-up.
 	void cleanUp();

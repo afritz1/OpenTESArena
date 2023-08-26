@@ -1587,8 +1587,8 @@ void RenderChunkManager::updateEntities(BufferView<const ChunkInt2> activeChunkP
 	renderer.populateAttributeBuffer(this->entityMeshDef.normalBufferID, entityNormals);
 }
 
-void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositions, const CoordDouble3 &cameraCoord,
-	double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
+void RenderChunkManager::updateLights(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+	const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
 	const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
@@ -1609,7 +1609,7 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 		{
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-			const std::optional<double> entityLightRadius = EntityUtils::tryGetLightRadius(entityDef, nightLightsAreActive); // @todo: don't care about night time here
+			const std::optional<double> entityLightRadius = EntityUtils::tryGetLightRadius(entityDef);
 			const bool isLight = entityLightRadius.has_value();
 			if (isLight)
 			{
@@ -1620,8 +1620,10 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 					continue;
 				}
 
+				const bool isLightEnabled = !EntityUtils::isStreetlight(entityDef) || nightLightsAreActive;
+
 				Light light;
-				light.init(lightID, true); // @todo: pass whether it should actually be on right now instead of always true
+				light.init(lightID, isLightEnabled);
 				this->entityLights.emplace(entityInstID, std::move(light));
 
 				const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
@@ -1638,7 +1640,24 @@ void RenderChunkManager::updateLights(BufferView<const ChunkInt2> newChunkPositi
 		}
 	}
 
-	// @todo: iterate through active chunks, updating light enabled states based on night time if their entity def is a streetlight
+	// Update streetlight enabled states.
+	for (const ChunkInt2 &chunkPos : activeChunkPositions)
+	{
+		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+		{
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			if (EntityUtils::isStreetlight(entityDef))
+			{
+				const auto lightIter = this->entityLights.find(entityInstID);
+				DebugAssertMsg(lightIter != this->entityLights.end(), "Couldn't find light for streetlight entity \"" + std::to_string(entityInstID) + "\" in chunk (" + chunkPos.toString() + ").");
+
+				Light &light = lightIter->second;
+				light.enabled = nightLightsAreActive;
+			}
+		}
+	}
 
 	const WorldDouble3 prevPlayerLightPosition = renderer.getLightPosition(this->playerLightID);
 	const WorldDouble3 playerLightPosition = VoxelUtils::coordToWorldPoint(cameraCoord);

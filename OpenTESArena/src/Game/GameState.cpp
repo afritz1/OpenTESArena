@@ -937,7 +937,7 @@ void GameState::tickRendering(Game &game)
 
 	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
 	renderChunkManager.updateActiveChunks(activeChunkPositions, newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
-	renderChunkManager.updateLights(newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
+	renderChunkManager.updateLights(activeChunkPositions, newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
 		options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
 	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
 		voxelChunkManager, textureManager, renderer);

@@ -112,7 +112,7 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 	}
 }
 
-std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef, bool nightLightsAreActive)
+std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef)
 {
 	if (entityDef.getType() != EntityDefinition::Type::Doodad)
 	{
@@ -120,7 +120,7 @@ std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &ent
 	}
 
 	const EntityDefinition::DoodadDefinition &doodadDef = entityDef.getDoodad();
-	if (doodadDef.streetlight && nightLightsAreActive)
+	if (doodadDef.streetlight)
 	{
 		return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
 	}
