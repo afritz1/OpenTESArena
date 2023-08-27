@@ -497,7 +497,8 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/SdlUiRenderer.cpp"
     "${SRC_ROOT}/Rendering/SdlUiRenderer.h"
     "${SRC_ROOT}/Rendering/SoftwareRenderer.cpp"
-    "${SRC_ROOT}/Rendering/SoftwareRenderer.h")
+    "${SRC_ROOT}/Rendering/SoftwareRenderer.h"
+    "${SRC_ROOT}/Rendering/VisibilityType.h")
 
 SET(TES_SKY
     "${SRC_ROOT}/Sky/ArenaSkyUtils.cpp"
