@@ -2,22 +2,75 @@
 #define VOXEL_VISIBILITY_CHUNK_H
 
 #include "../Math/BoundingBox.h"
+#include "../Rendering/VisibilityType.h"
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer3D.h"
 
 struct RenderCamera;
 
+// Implements a quadtree for fast visibility tests against the camera.
 struct VoxelVisibilityChunk final : public Chunk
 {
-	BoundingBox3D bbox; // Contains the entire chunk.
-	// @todo: mipmapped bounding boxes for each quadtree level; all are the same Y size
-	// - each bounding box should have a set of voxel indices it covers
+	static constexpr int NODE_COUNT_LEVEL0 = 1; // Entire chunk.
+	static constexpr int NODE_COUNT_LEVEL1 = 4;
+	static constexpr int NODE_COUNT_LEVEL2 = 16;
+	static constexpr int NODE_COUNT_LEVEL3 = 64;
+	static constexpr int NODE_COUNT_LEVEL4 = 256;
+	static constexpr int NODE_COUNT_LEVEL5 = 1024;
+	static constexpr int NODE_COUNT_LEVEL6 = 4096; // Each voxel column.
+
+	static constexpr int NODE_COUNTS[] =
+	{
+		NODE_COUNT_LEVEL0, NODE_COUNT_LEVEL1, NODE_COUNT_LEVEL2, NODE_COUNT_LEVEL3, NODE_COUNT_LEVEL4, NODE_COUNT_LEVEL5, NODE_COUNT_LEVEL6
+	};
+
+	static constexpr int TOTAL_NODE_COUNT = NODE_COUNT_LEVEL0 + NODE_COUNT_LEVEL1 + NODE_COUNT_LEVEL2 + NODE_COUNT_LEVEL3 + NODE_COUNT_LEVEL4 + NODE_COUNT_LEVEL5 + NODE_COUNT_LEVEL6;
+	static constexpr int LEAF_NODE_COUNT = NODE_COUNT_LEVEL6;
+	static constexpr int INTERNAL_NODE_COUNT = TOTAL_NODE_COUNT - LEAF_NODE_COUNT;
 	
-	Buffer3D<bool> insideFrustumTests;
-	
-	// @todo: a "visibleToEyeTests" Buffer3D which would check occlusion too. Cares about ceilingScale-corrected corners and opaque faces. Projects into camera space?
-	// - this could potentially get very complicated (i.e. each occlusion test could check a 3D tile of voxels instead of just one...)
+	static constexpr int TREE_LEVEL_COUNT = static_cast<int>(std::size(NODE_COUNTS));
+	static constexpr int INTERIOR_LEVEL_COUNT = TREE_LEVEL_COUNT - 1;
+	static_assert(NODE_COUNTS[0] == 1);
+	static_assert(NODE_COUNTS[TREE_LEVEL_COUNT - 1] == (Chunk::WIDTH * Chunk::DEPTH));
+
+	static constexpr int NODE_OFFSETS[] =
+	{
+		0,
+		NODE_COUNT_LEVEL0,
+		NODE_COUNT_LEVEL0 + NODE_COUNT_LEVEL1,
+		NODE_COUNT_LEVEL0 + NODE_COUNT_LEVEL1 + NODE_COUNT_LEVEL2,
+		NODE_COUNT_LEVEL0 + NODE_COUNT_LEVEL1 + NODE_COUNT_LEVEL2 + NODE_COUNT_LEVEL3,
+		NODE_COUNT_LEVEL0 + NODE_COUNT_LEVEL1 + NODE_COUNT_LEVEL2 + NODE_COUNT_LEVEL3 + NODE_COUNT_LEVEL4,
+		NODE_COUNT_LEVEL0 + NODE_COUNT_LEVEL1 + NODE_COUNT_LEVEL2 + NODE_COUNT_LEVEL3 + NODE_COUNT_LEVEL4 + NODE_COUNT_LEVEL5
+	};
+
+	static constexpr int NODES_PER_SIDE[] =
+	{
+		1, 2, 4, 8, 16, 32, 64
+	};
+
+	static constexpr int CHILD_COUNT_LEVEL0 = NODE_COUNT_LEVEL1;
+	static constexpr int CHILD_COUNT_LEVEL1 = NODE_COUNT_LEVEL2;
+	static constexpr int CHILD_COUNT_LEVEL2 = NODE_COUNT_LEVEL3;
+	static constexpr int CHILD_COUNT_LEVEL3 = NODE_COUNT_LEVEL4;
+	static constexpr int CHILD_COUNT_LEVEL4 = NODE_COUNT_LEVEL5;
+	static constexpr int CHILD_COUNT_LEVEL5 = NODE_COUNT_LEVEL6;
+	static constexpr int CHILD_COUNT_LEVEL6 = 0;
+
+	static constexpr int CHILD_COUNTS[] =
+	{
+		CHILD_COUNT_LEVEL0, CHILD_COUNT_LEVEL1, CHILD_COUNT_LEVEL2, CHILD_COUNT_LEVEL3, CHILD_COUNT_LEVEL4, CHILD_COUNT_LEVEL5, CHILD_COUNT_LEVEL6
+	};
+
+	static constexpr int TOTAL_CHILD_COUNT = CHILD_COUNT_LEVEL0 + CHILD_COUNT_LEVEL1 + CHILD_COUNT_LEVEL2 + CHILD_COUNT_LEVEL3 + CHILD_COUNT_LEVEL4 + CHILD_COUNT_LEVEL5 + CHILD_COUNT_LEVEL6;
+
+	// Various quadtree values populated in breadth-first order.
+	BoundingBox3D nodeBBoxes[TOTAL_NODE_COUNT]; // Bounding boxes for each quadtree level. All have the same Y size.
+	VisibilityType internalNodeVisibilityTypes[INTERNAL_NODE_COUNT]; // Non-leaf quadtree bbox tests against the camera this frame.
+	bool leafNodeFrustumTests[LEAF_NODE_COUNT];
+
+	VoxelVisibilityChunk();
 
 	void init(const ChunkInt2 &position, int height, double ceilingScale);
 
