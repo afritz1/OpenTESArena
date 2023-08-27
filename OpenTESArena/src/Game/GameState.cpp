@@ -635,6 +635,7 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	sceneManager.voxelChunkManager.recycleAllChunks();
 	sceneManager.entityChunkManager.clear();
 	sceneManager.collisionChunkManager.recycleAllChunks();
+	sceneManager.voxelVisChunkManager.recycleAllChunks();
 	sceneManager.renderChunkManager.unloadScene(renderer);
 	
 	sceneManager.skyInstance.clear();
@@ -934,13 +935,18 @@ void GameState::tickRendering(Game &game)
 	const bool isFoggy = this->isFogActive();
 	const bool nightLightsAreActive = ArenaClockUtils::nightLightsAreActive(this->clock);	
 	const Options &options = game.getOptions();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+
+	VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
+	voxelVisChunkManager.update(newChunkPositions, freedChunkPositions, renderCamera, ceilingScale, voxelChunkManager);
 
 	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
 	renderChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
 	renderChunkManager.updateLights(activeChunkPositions, newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
 		options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
 	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
-		voxelChunkManager, textureManager, renderer);
+		voxelChunkManager, voxelVisChunkManager, textureManager, renderer);
 	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
 		voxelChunkManager, entityChunkManager, textureManager, renderer);
 
@@ -954,8 +960,6 @@ void GameState::tickRendering(Game &game)
 	renderSkyManager.update(skyInst, this->weatherInst, playerCoord, isInterior, daytimePercent, isFoggy, distantAmbientPercent, renderer);
 
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
-		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 
 	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
 	renderWeatherManager.update(weatherInst, renderCamera);

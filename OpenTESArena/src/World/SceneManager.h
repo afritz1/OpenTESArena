@@ -24,7 +24,7 @@ struct SceneManager
 	VoxelChunkManager voxelChunkManager;
 	EntityChunkManager entityChunkManager;
 	CollisionChunkManager collisionChunkManager;
-	VoxelVisibilityChunkManager voxelVisibilityChunkManager;
+	VoxelVisibilityChunkManager voxelVisChunkManager;
 	RenderChunkManager renderChunkManager;
 
 	// Game world systems not tied to chunks.

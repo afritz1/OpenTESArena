@@ -21,9 +21,11 @@ class EntityDefinitionLibrary;
 class Renderer;
 class TextureManager;
 class VoxelChunkManager;
+class VoxelVisibilityChunkManager;
 
 struct EntityAnimationInstance;
 struct RenderCamera;
+struct VoxelVisibilityChunk;
 
 class RenderChunkManager final : public SpecializedChunkManager<RenderChunk>
 {
@@ -150,8 +152,8 @@ public:
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 
 	void updateVoxels(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
-		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager,
-		Renderer &renderer);
+		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager,
+		const VoxelVisibilityChunkManager &voxelVisChunkManager, TextureManager &textureManager, Renderer &renderer);
 	void updateEntities(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);

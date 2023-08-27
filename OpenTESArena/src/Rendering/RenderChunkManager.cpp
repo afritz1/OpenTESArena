@@ -19,6 +19,7 @@
 #include "../Voxels/DoorUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelFacing2D.h"
+#include "../Voxels/VoxelVisibilityChunkManager.h"
 #include "../World/ArenaMeshUtils.h"
 #include "../World/ChunkManager.h"
 #include "../World/MapDefinition.h"
@@ -1493,9 +1494,9 @@ void RenderChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunk
 	this->chunkPool.clear();
 }
 
-void RenderChunkManager::updateVoxels(BufferView<const ChunkInt2> activeChunkPositions,
-	BufferView<const ChunkInt2> newChunkPositions, double ceilingScale, double chasmAnimPercent,
-	const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer)
+void RenderChunkManager::updateVoxels(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+	double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager,
+	const VoxelVisibilityChunkManager &voxelVisChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
