@@ -14,7 +14,7 @@ namespace Bytes
 	uint32_t getLE32(const uint8_t *buf);
 
 	// Counts number of 1's in an integer's bits.
-	template <typename T>
+	template<typename T>
 	constexpr int getSetBitCount(T value)
 	{
 		static_assert(std::is_integral_v<T>);
@@ -32,25 +32,40 @@ namespace Bytes
 	}
 
 	// Circular rotation of an integer to the right.
-	template <typename T>
+	template<typename T>
 	T ror(T value, unsigned int count)
 	{
 		static_assert(std::is_integral_v<T>);
 		constexpr unsigned int mask = (CHAR_BIT * sizeof(value)) - 1;
 		count &= mask;
-		return (value >> count) |
-			(value << (static_cast<unsigned int>(-static_cast<int>(count)) & mask));
+		return (value >> count) | (value << (static_cast<unsigned int>(-static_cast<int>(count)) & mask));
 	}
 
 	// Circular rotation of an integer to the left.
-	template <typename T>
+	template<typename T>
 	T rol(T value, unsigned int count)
 	{
 		static_assert(std::is_integral_v<T>);
 		constexpr unsigned int mask = (CHAR_BIT * sizeof(value)) - 1;
 		count &= mask;
-		return (value << count) |
-			(value >> (static_cast<unsigned int>(-static_cast<int>(count)) & mask));
+		return (value << count) | (value >> (static_cast<unsigned int>(-static_cast<int>(count)) & mask));
+	}
+
+	// Number of bytes to increment the address by to get a valid aligned address for the type.
+	template<typename T>
+	int getBytesToNextAlignment(uintptr_t address)
+	{
+		constexpr size_t alignment = alignof(T);
+		const size_t modulo = address % alignment;
+		return (modulo != 0) ? static_cast<int>(alignment - modulo) : 0;
+	}
+
+	// Gets the next aligned address given a potentially unaligned address for the type.
+	// If the given address is aligned then the return value is unchanged.
+	template<typename T>
+	uintptr_t getAlignedAddress(uintptr_t address)
+	{
+		return address + Bytes::getBytesToNextAlignment<T>(address);
 	}
 }
 
