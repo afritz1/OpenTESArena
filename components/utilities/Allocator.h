@@ -28,7 +28,7 @@ private:
 	int getAlignmentByteCount() const
 	{
 		DebugAssert(this->data.isValid());
-		return Bytes::getBytesToNextAlignment(reinterpret_cast<uintptr_t>(this->data.get()) + this->index);
+		return Bytes::getBytesToNextAlignment<T>(reinterpret_cast<uintptr_t>(this->data.get() + this->index));
 	}
 
 	template<typename T>
