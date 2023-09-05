@@ -64,6 +64,77 @@ public:
 		void init(int indexCount);
 	};
 
+	struct UniformBuffer
+	{
+		Buffer<std::byte> bytes;
+		int elementCount;
+		size_t sizeOfElement;
+
+		UniformBuffer()
+		{
+			this->elementCount = 0;
+			this->sizeOfElement = 0;
+		}
+
+		template<typename T>
+		void init(int elementCount)
+		{
+			static_assert(sizeof(T) > 0);
+			static_assert(std::is_trivially_destructible_v<T>);
+
+			DebugAssert(elementCount >= 0);
+			this->elementCount = elementCount;
+			this->sizeOfElement = sizeof(T);
+
+			const int padding = static_cast<int>(this->sizeOfElement) - 1; // Add padding in case of alignment.
+			const int byteCount = (elementCount * this->sizeOfElement) + padding;
+			this->bytes.init(byteCount);
+		}
+
+		template<typename T>
+		T *begin()
+		{
+			const uintptr_t unalignedAddress = reinterpret_cast<uintptr_t>(this->bytes.begin());
+			if (unalignedAddress == 0)
+			{
+				return nullptr;
+			}
+
+			const uintptr_t alignedAddress = Bytes::getAlignedAddress<T>(unalignedAddress);
+			return reinterpret_cast<T*>(alignedAddress);
+		}
+
+		template<typename T>
+		T *end()
+		{
+			T *beginPtr = this->begin<T>();
+			if (beginPtr == nullptr)
+			{
+				return nullptr;
+			}
+
+			return beginPtr + this->elementCount;
+		}
+
+		template<typename T>
+		T &get(int index)
+		{
+			DebugAssert(index >= 0);
+			DebugAssert(index < this->elementCount);
+			T *elementPtr = this->begin();
+			return elementPtr[index];
+		}
+
+		template<typename T>
+		const T &get(int index) const
+		{
+			DebugAssert(index >= 0);
+			DebugAssert(index < this->elementCount);
+			T *elementPtr = this->begin();
+			return elementPtr[index];
+		}
+	};
+
 	struct Light
 	{
 		Double3 worldPoint;
