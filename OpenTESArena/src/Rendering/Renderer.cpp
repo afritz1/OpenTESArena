@@ -846,6 +846,30 @@ void Renderer::freeUiTexture(UiTextureID id)
 	this->renderer2D->freeUiTexture(id);
 }
 
+bool Renderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID)
+{
+	DebugAssert(this->renderer3D->isInited());
+	return this->renderer3D->tryCreateUniformBuffer(elementCount, sizeOfElement, outID);
+}
+
+void Renderer::populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->populateUniformBuffer(id, data);
+}
+
+void Renderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->populateUniformAtIndex(id, uniformIndex, uniformData);
+}
+
+void Renderer::freeUniformBuffer(UniformBufferID id)
+{
+	DebugAssert(this->renderer3D->isInited());
+	this->renderer3D->freeUniformBuffer(id);
+}
+
 bool Renderer::tryCreateLight(RenderLightID *outID)
 {
 	DebugAssert(this->renderer3D->isInited());

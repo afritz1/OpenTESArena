@@ -214,6 +214,10 @@ public:
 	void freeUiTexture(UiTextureID id);
 
 	// Shading management functions.
+	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID);
+	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data);
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData);
+	void freeUniformBuffer(UniformBufferID id);
 	bool tryCreateLight(RenderLightID *outID);
 	const Double3 &getLightPosition(RenderLightID id);
 	void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius);

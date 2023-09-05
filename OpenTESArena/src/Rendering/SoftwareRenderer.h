@@ -105,9 +105,34 @@ public:
 		}
 
 		template<typename T>
+		const T *begin() const
+		{
+			const uintptr_t unalignedAddress = reinterpret_cast<uintptr_t>(this->bytes.begin());
+			if (unalignedAddress == 0)
+			{
+				return nullptr;
+			}
+
+			const uintptr_t alignedAddress = Bytes::getAlignedAddress<T>(unalignedAddress);
+			return reinterpret_cast<const T*>(alignedAddress);
+		}
+
+		template<typename T>
 		T *end()
 		{
 			T *beginPtr = this->begin<T>();
+			if (beginPtr == nullptr)
+			{
+				return nullptr;
+			}
+
+			return beginPtr + this->elementCount;
+		}
+
+		template<typename T>
+		const T *end() const
+		{
+			const T *beginPtr = this->begin<T>();
 			if (beginPtr == nullptr)
 			{
 				return nullptr;
@@ -121,7 +146,7 @@ public:
 		{
 			DebugAssert(index >= 0);
 			DebugAssert(index < this->elementCount);
-			T *elementPtr = this->begin();
+			T *elementPtr = this->begin<T>();
 			return elementPtr[index];
 		}
 
@@ -130,7 +155,7 @@ public:
 		{
 			DebugAssert(index >= 0);
 			DebugAssert(index < this->elementCount);
-			T *elementPtr = this->begin();
+			const T *elementPtr = this->begin<T>();
 			return elementPtr[index];
 		}
 	};
@@ -148,6 +173,7 @@ private:
 	using VertexBufferPool = RecyclablePool<VertexBuffer, VertexBufferID>;
 	using AttributeBufferPool = RecyclablePool<AttributeBuffer, AttributeBufferID>;
 	using IndexBufferPool = RecyclablePool<IndexBuffer, IndexBufferID>;
+	using UniformBufferPool = RecyclablePool<UniformBuffer, UniformBufferID>;
 	using LightPool = RecyclablePool<Light, RenderLightID>;
 
 	Buffer2D<uint8_t> paletteIndexBuffer; // Intermediate buffer to support back-to-front transparencies.
@@ -155,6 +181,7 @@ private:
 	VertexBufferPool vertexBuffers;
 	AttributeBufferPool attributeBuffers;
 	IndexBufferPool indexBuffers;
+	UniformBufferPool uniformBuffers;
 	ObjectTexturePool objectTextures;
 	LightPool lights;
 public:
@@ -184,6 +211,10 @@ public:
 	void freeObjectTexture(ObjectTextureID id) override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
 
+	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID) override;
+	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) override;
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) override;
+	void freeUniformBuffer(UniformBufferID id) override;
 	bool tryCreateLight(RenderLightID *outID) override;
 	const Double3 &getLightPosition(RenderLightID id) override;
 	void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius) override;

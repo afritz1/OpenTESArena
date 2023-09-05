@@ -11,6 +11,7 @@
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
+#include "RenderTransform.h"
 #include "SoftwareRenderer.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Math/Constants.h"
@@ -1377,6 +1378,7 @@ void SoftwareRenderer::shutdown()
 	this->vertexBuffers.clear();
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();
+	this->uniformBuffers.clear();
 	this->objectTextures.clear();
 	this->lights.clear();
 }
@@ -1580,6 +1582,57 @@ std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id
 	return Int2(texture.width, texture.height);
 }
 
+bool SoftwareRenderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID)
+{
+	if (!this->uniformBuffers.tryAlloc(outID))
+	{
+		DebugLogError("Couldn't allocate uniform buffer ID.");
+		return false;
+	}
+
+	return true;
+}
+
+void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data)
+{
+	UniformBuffer &buffer = this->uniformBuffers.get(id);
+	const int srcCount = data.getCount();
+	const int dstCount = buffer.bytes.getCount();
+	if (srcCount != dstCount)
+	{
+		DebugLogError("Mismatched uniform buffer sizes for ID " + std::to_string(id) + ": " +
+			std::to_string(srcCount) + " != " + std::to_string(dstCount));
+		return;
+	}
+
+	const auto srcBegin = data.begin();
+	const auto srcEnd = srcBegin + srcCount;
+	std::copy(srcBegin, srcEnd, buffer.bytes.begin());
+}
+
+void SoftwareRenderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData)
+{
+	UniformBuffer &buffer = this->uniformBuffers.get(id);
+	const int srcByteCount = uniformData.getCount();
+	const int dstByteCount = static_cast<int>(buffer.sizeOfElement);
+	if (srcByteCount != dstByteCount)
+	{
+		DebugLogError("Mismatched uniform size for uniform buffer ID " + std::to_string(id) + " index " +
+			std::to_string(uniformIndex) + ": " + std::to_string(srcByteCount) + " != " + std::to_string(dstByteCount));
+		return;
+	}
+
+	const auto srcBegin = uniformData.begin();
+	const auto srcEnd = srcBegin + srcByteCount;
+	const auto dstBegin = buffer.bytes.begin() + (dstByteCount * uniformIndex);
+	std::copy(srcBegin, srcEnd, dstBegin);
+}
+
+void SoftwareRenderer::freeUniformBuffer(UniformBufferID id)
+{
+	this->uniformBuffers.free(id);
+}
+
 bool SoftwareRenderer::tryCreateLight(RenderLightID *outID)
 {
 	if (!this->lights.tryAlloc(outID))
@@ -1680,9 +1733,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
 		const Double3 &meshPosition = drawCall.position;
-		const Double3 &preScaleTranslation = drawCall.preScaleTranslation;
-		const Matrix4d &rotationMatrix = drawCall.rotation;
-		const Matrix4d &scaleMatrix = drawCall.scale;
+
+		const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
+		const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
 		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
@@ -1691,8 +1744,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			meshPosition, preScaleTranslation, rotationMatrix, scaleMatrix, vertexBuffer, normalBuffer, texCoordBuffer,
-			indexBuffer, textureID0, textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
+			meshPosition, transform.preScaleTranslation, transform.rotation, transform.scale, vertexBuffer, normalBuffer,
+			texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingType0;
 		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingType1;

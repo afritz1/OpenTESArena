@@ -30,6 +30,8 @@ enum class TextureSamplingType
 	ScreenSpaceRepeatY // Chasms.
 };
 
+using UniformBufferID = int;
+
 // Unique ID for a light allocated in the renderer's internal format.
 using RenderLightID = int;
 
