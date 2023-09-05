@@ -15,8 +15,9 @@ struct RenderDrawCall
 	static constexpr int MAX_LIGHTS = 8;
 
 	Double3 position;
-	Double3 preScaleTranslation; // For scaling around arbitrary point.
-	Matrix4d rotation, scale;
+	UniformBufferID transformBufferID; // For additional translation/rotation/scaling besides just world offset.
+	int transformIndex;
+
 	VertexBufferID vertexBufferID;
 	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;

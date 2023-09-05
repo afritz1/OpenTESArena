@@ -8,6 +8,6 @@ RenderTransform::RenderTransform()
 void RenderTransform::clear()
 {
 	this->preScaleTranslation = Double3::Zero;
-	this->rotation = Matrix4d::identity();
-	this->scale = Matrix4d::identity();
+	this->rotation = Matrix4d();
+	this->scale = Matrix4d();
 }

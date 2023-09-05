@@ -2,6 +2,8 @@
 
 RenderDrawCall::RenderDrawCall()
 {
+	this->transformBufferID = -1;
+	this->transformIndex = -1;
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
@@ -25,9 +27,8 @@ RenderDrawCall::RenderDrawCall()
 void RenderDrawCall::clear()
 {
 	this->position = Double3::Zero;
-	this->preScaleTranslation = Double3::Zero;
-	this->rotation = Matrix4d();
-	this->scale = Matrix4d();
+	this->transformBufferID = -1;
+	this->transformIndex = -1;
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;

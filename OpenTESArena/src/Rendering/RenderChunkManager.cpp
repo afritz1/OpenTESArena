@@ -461,12 +461,26 @@ void RenderChunkManager::Light::init(RenderLightID lightID, bool enabled)
 
 RenderChunkManager::RenderChunkManager()
 {
+	this->voxelDefaultTransformBufferID = -1;
 	this->chasmWallIndexBufferIDs.fill(-1);
 	this->playerLightID = -1;
 }
 
 void RenderChunkManager::init(Renderer &renderer)
 {
+	// Populate default voxel transform.
+	if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &this->voxelDefaultTransformBufferID))
+	{
+		DebugLogError("Couldn't create uniform buffer for voxel default transform.");
+		return;
+	}
+
+	RenderTransform voxelDefaultTransform;
+	voxelDefaultTransform.preScaleTranslation = Double3::Zero;
+	voxelDefaultTransform.rotation = Matrix4d::identity();
+	voxelDefaultTransform.scale = Matrix4d::identity();
+	renderer.populateUniformBuffer(this->voxelDefaultTransformBufferID, BufferView<const std::byte>(reinterpret_cast<const std::byte*>(&voxelDefaultTransform), 1));
+
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
 	ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
@@ -606,6 +620,12 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		chunkPtr->freeBuffers(renderer);
 		this->recycleChunk(i);
+	}
+
+	if (this->voxelDefaultTransformBufferID >= 0)
+	{
+		renderer.freeUniformBuffer(this->voxelDefaultTransformBufferID);
+		this->voxelDefaultTransformBufferID = -1;
 	}
 
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
@@ -921,18 +941,16 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 	}
 }
 
-void RenderChunkManager::addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
-	const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
-	IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-	TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType,
-	double meshLightPercent, BufferView<const RenderLightID> lightIDs, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
-	double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
+void RenderChunkManager::addVoxelDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex,
+	VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
+	ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0,
+	TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs,
+	VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
 	drawCall.position = position;
-	drawCall.preScaleTranslation = preScaleTranslation;
-	drawCall.rotation = rotationMatrix;
-	drawCall.scale = scaleMatrix;
+	drawCall.transformBufferID = transformBufferID;
+	drawCall.transformIndex = transformIndex;
 	drawCall.vertexBufferID = vertexBufferID;
 	drawCall.normalBufferID = normalBufferID;
 	drawCall.texCoordBufferID = texCoordBufferID;
@@ -1050,9 +1068,8 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 						}
 
 						const IndexBufferID opaqueIndexBufferID = renderMeshDef.opaqueIndexBufferIDs[bufferIndex];
-						const Double3 preScaleTranslation = Double3::Zero;
-						const Matrix4d rotationMatrix = Matrix4d::identity();
-						const Matrix4d scaleMatrix = Matrix4d::identity();
+						const UniformBufferID transformBufferID = this->voxelDefaultTransformBufferID;
+						const int transformIndex = 0;
 						const TextureSamplingType textureSamplingType = !isChasm ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
 
 						RenderLightingType lightingType = RenderLightingType::PerPixel;
@@ -1086,7 +1103,7 @@ void RenderChunkManager::loadVoxelDrawCalls(RenderChunk &renderChunk, const Voxe
 
 						const PixelShaderType pixelShaderType = PixelShaderType::Opaque;
 						const double pixelShaderParam0 = 0.0;
-						this->addVoxelDrawCall(worldPos, preScaleTranslation, rotationMatrix, scaleMatrix, renderMeshDef.vertexBufferID,
+						this->addVoxelDrawCall(worldPos, transformBufferID, transformIndex, renderMeshDef.vertexBufferID,
 							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
 							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
 							VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);

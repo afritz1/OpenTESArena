@@ -9,6 +9,7 @@
 #include "RenderDrawCall.h"
 #include "RenderEntityMeshDefinition.h"
 #include "RenderShaderUtils.h"
+#include "RenderTransform.h"
 #include "../Entities/EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"
 
@@ -85,6 +86,9 @@ public:
 		void init(RenderLightID lightID, bool enabled);
 	};
 private:
+	// Default identity transform for voxels that are only offset from the origin and nothing else.
+	UniformBufferID voxelDefaultTransformBufferID;
+
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
 
@@ -116,12 +120,11 @@ private:
 	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
 		TextureManager &textureManager, Renderer &renderer);
 
-	void addVoxelDrawCall(const Double3 &position, const Double3 &preScaleTranslation, const Matrix4d &rotationMatrix,
-		const Matrix4d &scaleMatrix, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
-		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1,
-		TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType,
-		double meshLightPercent, BufferView<const RenderLightID> lightIDs, VertexShaderType vertexShaderType, PixelShaderType pixelShaderType,
-		double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
+	void addVoxelDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex, VertexBufferID vertexBufferID,
+		AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID, ObjectTextureID textureID0,
+		const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1,
+		RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs, VertexShaderType vertexShaderType,
+		PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
 	void loadVoxelDrawCalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 
