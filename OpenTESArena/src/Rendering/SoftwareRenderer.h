@@ -69,30 +69,31 @@ public:
 		Buffer<std::byte> bytes;
 		int elementCount;
 		size_t sizeOfElement;
+		size_t alignmentOfElement;
 
 		UniformBuffer()
 		{
 			this->elementCount = 0;
 			this->sizeOfElement = 0;
+			this->alignmentOfElement = 0;
 		}
 
-		template<typename T>
-		void init(int elementCount)
+		void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
 		{
-			static_assert(sizeof(T) > 0);
-			static_assert(std::is_trivially_destructible_v<T>);
-
 			DebugAssert(elementCount >= 0);
+			DebugAssert(sizeOfElement > 0);
+			DebugAssert(alignmentOfElement > 0);
+
 			this->elementCount = elementCount;
-			this->sizeOfElement = sizeof(T);
+			this->sizeOfElement = sizeOfElement;
+			this->alignmentOfElement = alignmentOfElement;
 
-			const int padding = static_cast<int>(this->sizeOfElement) - 1; // Add padding in case of alignment.
-			const int byteCount = (elementCount * this->sizeOfElement) + padding;
-			this->bytes.init(byteCount);
+			const size_t padding = this->alignmentOfElement - 1; // Add padding in case of alignment.
+			const size_t byteCount = (elementCount * this->sizeOfElement) + padding;
+			this->bytes.init(static_cast<int>(byteCount));
 		}
 
-		template<typename T>
-		T *begin()
+		std::byte *begin()
 		{
 			const uintptr_t unalignedAddress = reinterpret_cast<uintptr_t>(this->bytes.begin());
 			if (unalignedAddress == 0)
@@ -100,12 +101,11 @@ public:
 				return nullptr;
 			}
 
-			const uintptr_t alignedAddress = Bytes::getAlignedAddress<T>(unalignedAddress);
-			return reinterpret_cast<T*>(alignedAddress);
+			const uintptr_t alignedAddress = Bytes::getAlignedAddress(unalignedAddress, this->alignmentOfElement);
+			return reinterpret_cast<std::byte*>(alignedAddress);
 		}
 
-		template<typename T>
-		const T *begin() const
+		const std::byte *begin() const
 		{
 			const uintptr_t unalignedAddress = reinterpret_cast<uintptr_t>(this->bytes.begin());
 			if (unalignedAddress == 0)
@@ -113,49 +113,51 @@ public:
 				return nullptr;
 			}
 
-			const uintptr_t alignedAddress = Bytes::getAlignedAddress<T>(unalignedAddress);
-			return reinterpret_cast<const T*>(alignedAddress);
+			const uintptr_t alignedAddress = Bytes::getAlignedAddress(unalignedAddress, this->alignmentOfElement);
+			return reinterpret_cast<const std::byte*>(alignedAddress);
 		}
 
-		template<typename T>
-		T *end()
+		std::byte *end()
 		{
-			T *beginPtr = this->begin<T>();
+			std::byte *beginPtr = this->begin();
 			if (beginPtr == nullptr)
 			{
 				return nullptr;
 			}
 
-			return beginPtr + this->elementCount;
+			return beginPtr + (this->elementCount * this->sizeOfElement);
 		}
 
-		template<typename T>
-		const T *end() const
+		const std::byte *end() const
 		{
-			const T *beginPtr = this->begin<T>();
+			const std::byte *beginPtr = this->begin();
 			if (beginPtr == nullptr)
 			{
 				return nullptr;
 			}
 
-			return beginPtr + this->elementCount;
+			return beginPtr + (this->elementCount * this->sizeOfElement);
 		}
 
 		template<typename T>
 		T &get(int index)
 		{
+			DebugAssert(sizeof(T) == this->sizeOfElement);
+			DebugAssert(alignof(T) == this->alignmentOfElement);
 			DebugAssert(index >= 0);
 			DebugAssert(index < this->elementCount);
-			T *elementPtr = this->begin<T>();
+			T *elementPtr = reinterpret_cast<T*>(this->begin());
 			return elementPtr[index];
 		}
 
 		template<typename T>
 		const T &get(int index) const
 		{
+			DebugAssert(sizeof(T) == this->sizeOfElement);
+			DebugAssert(alignof(T) == this->alignmentOfElement);
 			DebugAssert(index >= 0);
 			DebugAssert(index < this->elementCount);
-			const T *elementPtr = this->begin<T>();
+			const T *elementPtr = reinterpret_cast<const T*>(this->begin());
 			return elementPtr[index];
 		}
 	};
@@ -211,7 +213,7 @@ public:
 	void freeObjectTexture(ObjectTextureID id) override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
 
-	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID) override;
+	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID) override;
 	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) override;
 	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) override;
 	void freeUniformBuffer(UniformBufferID id) override;

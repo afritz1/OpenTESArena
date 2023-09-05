@@ -1582,14 +1582,20 @@ std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id
 	return Int2(texture.width, texture.height);
 }
 
-bool SoftwareRenderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID)
+bool SoftwareRenderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID)
 {
+	DebugAssert(elementCount >= 0);
+	DebugAssert(sizeOfElement > 0);
+	DebugAssert(alignmentOfElement > 0);
+
 	if (!this->uniformBuffers.tryAlloc(outID))
 	{
 		DebugLogError("Couldn't allocate uniform buffer ID.");
 		return false;
 	}
 
+	UniformBuffer &buffer = this->uniformBuffers.get(*outID);
+	buffer.init(elementCount, sizeOfElement, alignmentOfElement);
 	return true;
 }
 
@@ -1605,9 +1611,9 @@ void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<cons
 		return;
 	}
 
-	const auto srcBegin = data.begin();
-	const auto srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.bytes.begin());
+	const std::byte *srcBegin = data.begin();
+	const std::byte *srcEnd = srcBegin + srcCount;
+	std::copy(srcBegin, srcEnd, buffer.begin());
 }
 
 void SoftwareRenderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData)
@@ -1622,9 +1628,9 @@ void SoftwareRenderer::populateUniformAtIndex(UniformBufferID id, int uniformInd
 		return;
 	}
 
-	const auto srcBegin = uniformData.begin();
-	const auto srcEnd = srcBegin + srcByteCount;
-	const auto dstBegin = buffer.bytes.begin() + (dstByteCount * uniformIndex);
+	const std::byte *srcBegin = uniformData.begin();
+	const std::byte *srcEnd = srcBegin + srcByteCount;
+	std::byte *dstBegin = buffer.begin() + (dstByteCount * uniformIndex);
 	std::copy(srcBegin, srcEnd, dstBegin);
 }
 

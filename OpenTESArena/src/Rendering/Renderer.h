@@ -214,7 +214,7 @@ public:
 	void freeUiTexture(UiTextureID id);
 
 	// Shading management functions.
-	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID);
+	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID);
 	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data);
 	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData);
 	void freeUniformBuffer(UniformBufferID id);

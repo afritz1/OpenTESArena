@@ -68,7 +68,7 @@ public:
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
 
 	// Shading management functions.
-	virtual bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID) = 0;
+	virtual bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID) = 0;
 	virtual void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) = 0;
 	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) = 0;
 	virtual void freeUniformBuffer(UniformBufferID id) = 0;

@@ -846,10 +846,10 @@ void Renderer::freeUiTexture(UiTextureID id)
 	this->renderer2D->freeUiTexture(id);
 }
 
-bool Renderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, UniformBufferID *outID)
+bool Renderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateUniformBuffer(elementCount, sizeOfElement, outID);
+	return this->renderer3D->tryCreateUniformBuffer(elementCount, sizeOfElement, alignmentOfElement, outID);
 }
 
 void Renderer::populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data)
