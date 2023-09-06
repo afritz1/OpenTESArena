@@ -116,6 +116,7 @@ private:
 	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 	void loadVoxelChasmWall(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, SNInt x, int y, WEInt z);
 	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk);
+	void loadVoxelDoorUniformBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, Renderer &renderer);
 
 	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
 		TextureManager &textureManager, Renderer &renderer);
@@ -134,7 +135,7 @@ private:
 		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 	void rebuildVoxelDrawCallsList();
 
-	void addEntityDrawCall(const Double3 &position, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
+	void addEntityDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex,
 		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs,
 		PixelShaderType pixelShaderType, std::vector<RenderDrawCall> &drawCalls);
 	void rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk, const CoordDouble2 &cameraCoordXZ,

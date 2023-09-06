@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "RenderChunk.h"
+#include "Renderer.h"
 #include "RendererSystem3D.h"
 #include "../World/ChunkUtils.h"
 
@@ -70,6 +71,11 @@ void RenderChunk::freeBuffers(Renderer &renderer)
 	{
 		meshDef.freeBuffers(renderer);
 	}
+
+	for (const auto &pair : this->doorTransformBuffers)
+	{
+		renderer.freeUniformBuffer(pair.second);
+	}
 }
 
 void RenderChunk::clear()
@@ -79,6 +85,7 @@ void RenderChunk::clear()
 	this->meshDefMappings.clear();
 	this->meshDefIDs.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
+	this->doorTransformBuffers.clear();
 	this->voxelLightIdLists.clear();
 	this->dirtyLightPositions.clear();
 	this->staticDrawCalls.clear();
