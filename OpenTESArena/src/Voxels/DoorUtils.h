@@ -50,6 +50,10 @@ namespace DoorUtils
 		// Z=1
 		Double3::UnitZ
 	};
+
+	Radians getSwingingRotationRadians(Radians baseRadians, double animPercent);
+	double getAnimatedTexCoordPercent(double animPercent);
+	double getAnimatedScaleAmount(double texCoordPercent);
 }
 
 #endif

@@ -583,6 +583,7 @@ SET(TES_VOXELS
     "${SRC_ROOT}/Voxels/ChasmDefinition.h"
     "${SRC_ROOT}/Voxels/DoorDefinition.cpp"
     "${SRC_ROOT}/Voxels/DoorDefinition.h"
+    "${SRC_ROOT}/Voxels/DoorUtils.cpp"
     "${SRC_ROOT}/Voxels/DoorUtils.h"
     "${SRC_ROOT}/Voxels/VoxelChasmWallInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelChasmWallInstance.h"
