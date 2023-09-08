@@ -216,7 +216,23 @@ public:
 	// Shading management functions.
 	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID);
 	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data);
+
+	template<typename T>
+	void populateUniformBuffer(UniformBufferID id, const T &value)
+	{
+		BufferView<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
+		this->populateUniformBuffer(id, valueAsBytes);
+	}
+
 	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData);
+
+	template<typename T>
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, const T &value)
+	{
+		BufferView<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
+		this->populateUniformAtIndex(id, uniformIndex, valueAsBytes);
+	}
+
 	void freeUniformBuffer(UniformBufferID id);
 	bool tryCreateLight(RenderLightID *outID);
 	const Double3 &getLightPosition(RenderLightID id);
