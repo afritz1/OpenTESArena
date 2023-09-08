@@ -479,7 +479,7 @@ void RenderChunkManager::init(Renderer &renderer)
 	voxelDefaultTransform.preScaleTranslation = Double3::Zero;
 	voxelDefaultTransform.rotation = Matrix4d::identity();
 	voxelDefaultTransform.scale = Matrix4d::identity();
-	renderer.populateUniformBuffer(this->voxelDefaultTransformBufferID, BufferView<const std::byte>(reinterpret_cast<const std::byte*>(&voxelDefaultTransform), sizeof(RenderTransform)));
+	renderer.populateUniformBuffer(this->voxelDefaultTransformBufferID, voxelDefaultTransform);
 
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
@@ -940,7 +940,7 @@ void RenderChunkManager::loadVoxelDoorUniformBuffers(RenderChunk &renderChunk, c
 
 					for (int i = 0; i < DoorUtils::FACE_COUNT; i++)
 					{
-						renderer.populateUniformAtIndex(doorTransformBufferID, i, BufferView<const std::byte>(reinterpret_cast<const std::byte*>(&renderTransform), sizeof(RenderTransform)));
+						renderer.populateUniformAtIndex(doorTransformBufferID, i, renderTransform);
 					}
 
 					renderChunk.doorTransformBuffers.emplace(voxel, doorTransformBufferID);
@@ -1009,7 +1009,7 @@ void RenderChunkManager::loadEntityUniformBuffers(const EntityChunk &entityChunk
 		renderTransform.rotation = Matrix4d::identity();
 		renderTransform.scale = Matrix4d::identity();
 
-		renderer.populateUniformBuffer(entityTransformBufferID, BufferView(reinterpret_cast<const std::byte*>(&renderTransform), sizeof(RenderTransform)));
+		renderer.populateUniformBuffer(entityTransformBufferID, renderTransform);
 	}
 }
 
@@ -1657,7 +1657,7 @@ void RenderChunkManager::updateVoxels(BufferView<const ChunkInt2> activeChunkPos
 				const auto doorTransformIter = renderChunk.doorTransformBuffers.find(doorVoxel);
 				DebugAssert(doorTransformIter != renderChunk.doorTransformBuffers.end());
 				const UniformBufferID doorTransformBufferID = doorTransformIter->second;
-				renderer.populateUniformAtIndex(doorTransformBufferID, i, BufferView<const std::byte>(reinterpret_cast<const std::byte*>(&faceRenderTransform), sizeof(RenderTransform)));
+				renderer.populateUniformAtIndex(doorTransformBufferID, i, faceRenderTransform);
 			}
 		}
 
@@ -1746,7 +1746,7 @@ void RenderChunkManager::updateEntities(BufferView<const ChunkInt2> activeChunkP
 			entityRenderTransform.preScaleTranslation = Double3::Zero;
 			entityRenderTransform.rotation = allEntitiesRotationMatrix;
 			entityRenderTransform.scale = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
-			renderer.populateUniformBuffer(entityTransformBufferID, BufferView<const std::byte>(reinterpret_cast<const std::byte*>(&entityRenderTransform), sizeof(RenderTransform)));
+			renderer.populateUniformBuffer(entityTransformBufferID, entityRenderTransform);
 		}
 		
 		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, ceilingScale, voxelChunkManager, entityChunkManager);
