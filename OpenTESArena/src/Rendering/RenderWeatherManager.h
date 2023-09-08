@@ -19,9 +19,11 @@ private:
 	AttributeBufferID particleTexCoordBufferID;
 	IndexBufferID particleIndexBufferID;
 
+	UniformBufferID rainTransformBufferID; // Contains render transforms for each raindrop.
 	ObjectTextureID rainTextureID;
 	Buffer<RenderDrawCall> rainDrawCalls;
 
+	UniformBufferID snowTransformBufferID; // Contains render transforms for each snowflake. 
 	ObjectTextureID snowTextureIDs[3]; // Each snowflake size has its own texture.
 	Buffer<RenderDrawCall> snowDrawCalls;
 
@@ -29,10 +31,12 @@ private:
 	AttributeBufferID fogNormalBufferID;
 	AttributeBufferID fogTexCoordBufferID;
 	IndexBufferID fogIndexBufferID;
+	UniformBufferID fogTransformBufferID;
 	ObjectTextureID fogTextureID;
 	RenderDrawCall fogDrawCall;
 
 	bool initMeshes(Renderer &renderer);
+	bool initUniforms(Renderer &renderer);
 	bool initTextures(Renderer &renderer);
 
 	void freeParticleBuffers(Renderer &renderer);
@@ -48,7 +52,7 @@ public:
 	const RenderDrawCall &getFogDrawCall() const;
 
 	void loadScene();
-	void update(const WeatherInstance &weatherInst, const RenderCamera &camera);
+	void update(const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer);
 	void unloadScene();
 };
 

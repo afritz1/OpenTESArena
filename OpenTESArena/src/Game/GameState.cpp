@@ -962,5 +962,5 @@ void GameState::tickRendering(Game &game)
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
 
 	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
-	renderWeatherManager.update(weatherInst, renderCamera);
+	renderWeatherManager.update(weatherInst, renderCamera, renderer);
 }
