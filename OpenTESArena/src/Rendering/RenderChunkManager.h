@@ -89,6 +89,10 @@ private:
 	// Default identity transform for voxels that are only offset from the origin and nothing else.
 	UniformBufferID voxelDefaultTransformBufferID;
 
+	// Transform buffer IDs for each entity.
+	// @optimization: instead of a uniform buffer per entity, all could share one buffer, and a RecyclablePool would store the indices into that uniform buffer.
+	std::unordered_map<EntityInstanceID, UniformBufferID> entityTransformBufferIDs;
+
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
 
@@ -120,6 +124,7 @@ private:
 
 	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
 		TextureManager &textureManager, Renderer &renderer);
+	void loadEntityUniformBuffers(const EntityChunk &entityChunk, Renderer &renderer);
 
 	void addVoxelDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex, VertexBufferID vertexBufferID,
 		AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID, ObjectTextureID textureID0,
@@ -139,8 +144,7 @@ private:
 		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs,
 		PixelShaderType pixelShaderType, std::vector<RenderDrawCall> &drawCalls);
 	void rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk, const CoordDouble2 &cameraCoordXZ,
-		const Matrix4d &rotationMatrix, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const EntityChunkManager &entityChunkManager);
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager);
 	void rebuildEntityDrawCallsList();
 public:
 	RenderChunkManager();

@@ -628,6 +628,14 @@ void RenderChunkManager::shutdown(Renderer &renderer)
 		this->voxelDefaultTransformBufferID = -1;
 	}
 
+	for (const auto &pair : this->entityTransformBufferIDs)
+	{
+		const UniformBufferID entityTransformBufferID = pair.second;
+		renderer.freeUniformBuffer(entityTransformBufferID);
+	}
+
+	this->entityTransformBufferIDs.clear();
+
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
 	{
 		renderer.freeIndexBuffer(indexBufferID);
@@ -978,6 +986,30 @@ void RenderChunkManager::loadEntityTextures(const EntityChunk &entityChunk, cons
 				this->entityPaletteIndicesTextureRefs.emplace(paletteIndicesInstID, std::move(paletteIndicesTextureRef));
 			}
 		}
+	}
+}
+
+void RenderChunkManager::loadEntityUniformBuffers(const EntityChunk &entityChunk, Renderer &renderer)
+{
+	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	{
+		DebugAssert(this->entityTransformBufferIDs.find(entityInstID) == this->entityTransformBufferIDs.end());
+
+		// Each entity has a uniform buffer.
+		UniformBufferID entityTransformBufferID;
+		if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &entityTransformBufferID))
+		{
+			DebugLogError("Couldn't create uniform buffer for entity transform.");
+			return;
+		}
+
+		// Initialize to default transform; it gets updated each frame.
+		RenderTransform renderTransform;
+		renderTransform.preScaleTranslation = Double3::Zero;
+		renderTransform.rotation = Matrix4d::identity();
+		renderTransform.scale = Matrix4d::identity();
+
+		renderer.populateUniformBuffer(entityTransformBufferID, BufferView(reinterpret_cast<const std::byte*>(&renderTransform), sizeof(RenderTransform)));
 	}
 }
 
@@ -1443,30 +1475,23 @@ void RenderChunkManager::addEntityDrawCall(const Double3 &position, UniformBuffe
 }
 
 void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, const EntityChunk &entityChunk,
-	const CoordDouble2 &cameraCoordXZ, const Matrix4d &rotationMatrix, double ceilingScale,
-	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager)
+	const CoordDouble2 &cameraCoordXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+	const EntityChunkManager &entityChunkManager)
 {
 	renderChunk.entityDrawCalls.clear();
 
-	BufferView<const EntityInstanceID> entityIDs = entityChunk.entityIDs;
-	const int entityCount = entityIDs.getCount();
-	for (int i = 0; i < entityCount; i++)
+	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 	{
-		const EntityInstanceID entityInstID = entityIDs[i];
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
+		// Get visibility state for true Y position (@todo: separate position from the anim index values).
 		EntityVisibilityState3D visState;
 		entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, visState);
-		const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
-		DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
-		const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
 
 		// Convert entity XYZ to world space.
 		const Double3 worldPos = VoxelUtils::coordToWorldPoint(visState.flatPosition);
-		const Matrix4d scaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
 
 		const ObjectTextureID textureID0 = this->getEntityTextureID(entityInstID, cameraCoordXZ, entityChunkManager);
 		std::optional<ObjectTextureID> textureID1 = std::nullopt;
@@ -1496,7 +1521,12 @@ void RenderChunkManager::rebuildEntityChunkDrawCalls(RenderChunk &renderChunk, c
 			lightIdsView = voxelLightIdList.getLightIDs();
 		}
 
-		this->addEntityDrawCall(worldPos, rotationMatrix, scaleMatrix, textureID0, textureID1, lightIdsView, pixelShaderType, renderChunk.entityDrawCalls);
+		const auto transformBufferIter = this->entityTransformBufferIDs.find(entityInstID);
+		DebugAssert(transformBufferIter != this->entityTransformBufferIDs.end());
+		const UniformBufferID entityTransformBufferID = transformBufferIter->second;
+		const int entityTransformIndex = 0; // Each entity has their own transform buffer.
+		this->addEntityDrawCall(worldPos, entityTransformBufferID, entityTransformIndex, textureID0, textureID1,
+			lightIdsView, pixelShaderType, renderChunk.entityDrawCalls);
 	}
 }
 
@@ -1664,6 +1694,12 @@ void RenderChunkManager::updateEntities(BufferView<const ChunkInt2> activeChunkP
 				this->entityPaletteIndicesTextureRefs.erase(paletteIndicesIter);
 			}
 		}
+
+		const auto transformBufferIter = this->entityTransformBufferIDs.find(entityInstID);
+		DebugAssert(transformBufferIter != this->entityTransformBufferIDs.end());
+		const UniformBufferID entityTransformBufferID = transformBufferIter->second;
+		renderer.freeUniformBuffer(entityTransformBufferID);
+		this->entityTransformBufferIDs.erase(transformBufferIter);
 	}
 
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
@@ -1671,16 +1707,49 @@ void RenderChunkManager::updateEntities(BufferView<const ChunkInt2> activeChunkP
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		this->loadEntityTextures(entityChunk, entityChunkManager, textureManager, renderer);
+		this->loadEntityUniformBuffers(entityChunk, renderer);
 	}
 
-	const Radians rotationAngle = -MathUtils::fullAtan2(cameraDirXZ);
-	const Matrix4d rotationMatrix = Matrix4d::yRotation(rotationAngle - Constants::HalfPi);
+	// The rotation for entities so they face the camera.
+	const Radians allEntitiesRotationRadians = -MathUtils::fullAtan2(cameraDirXZ) - Constants::HalfPi;
+	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
+
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, rotationMatrix, ceilingScale,
-			voxelChunkManager, entityChunkManager);
+
+		// Update entity render transforms.
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+		{
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+
+			// Get visibility state for animation index values (@todo: separate vis state from the true Y position calculation).
+			EntityVisibilityState3D visState;
+			entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, visState);
+			const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
+			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
+			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
+
+			// Convert entity XYZ to world space.
+			const Double3 worldPos = VoxelUtils::coordToWorldPoint(visState.flatPosition);
+			const Matrix4d scaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
+			
+			const auto transformBufferIter = this->entityTransformBufferIDs.find(entityInstID);
+			DebugAssert(transformBufferIter != this->entityTransformBufferIDs.end());
+			const UniformBufferID entityTransformBufferID = transformBufferIter->second;
+
+			RenderTransform entityRenderTransform;
+			entityRenderTransform.preScaleTranslation = Double3::Zero;
+			entityRenderTransform.rotation = allEntitiesRotationMatrix;
+			entityRenderTransform.scale = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
+			renderer.populateUniformBuffer(entityTransformBufferID, BufferView<const std::byte>(reinterpret_cast<const std::byte*>(&entityRenderTransform), sizeof(RenderTransform)));
+		}
+		
+		this->rebuildEntityChunkDrawCalls(renderChunk, entityChunk, cameraCoordXZ, ceilingScale, voxelChunkManager, entityChunkManager);
 	}
 
 	this->rebuildEntityDrawCallsList();
