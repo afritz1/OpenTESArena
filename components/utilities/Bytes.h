@@ -52,18 +52,11 @@ namespace Bytes
 	}
 
 	// Number of bytes to increment the address by to get a valid aligned address for the type.
-	int getBytesToNextAlignment(uintptr_t address, size_t alignment)
-	{
-		const size_t modulo = address % alignment;
-		return (modulo != 0) ? static_cast<int>(alignment - modulo) : 0;
-	}
+	int getBytesToNextAlignment(uintptr_t address, size_t alignment);
 
 	// Gets the next aligned address given a potentially unaligned address for the type.
 	// If the given address is aligned then the return value is unchanged.
-	uintptr_t getAlignedAddress(uintptr_t address, size_t alignment)
-	{
-		return address + Bytes::getBytesToNextAlignment(address, alignment);
-	}
+	uintptr_t getAlignedAddress(uintptr_t address, size_t alignment);
 
 	template<typename T>
 	uintptr_t getAlignedAddress(uintptr_t address)
