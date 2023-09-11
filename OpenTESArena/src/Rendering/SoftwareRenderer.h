@@ -160,6 +160,12 @@ public:
 			const T *elementPtr = reinterpret_cast<const T*>(this->begin());
 			return elementPtr[index];
 		}
+
+		// Potentially a subset of the bytes range due to padding/alignment.
+		int getValidByteCount() const
+		{
+			return static_cast<int>(this->end() - this->begin());
+		}
 	};
 
 	struct Light

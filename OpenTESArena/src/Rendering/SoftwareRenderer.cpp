@@ -1603,7 +1603,7 @@ void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<cons
 {
 	UniformBuffer &buffer = this->uniformBuffers.get(id);
 	const int srcCount = data.getCount();
-	const int dstCount = buffer.bytes.getCount();
+	const int dstCount = buffer.getValidByteCount();
 	if (srcCount != dstCount)
 	{
 		DebugLogError("Mismatched uniform buffer sizes for ID " + std::to_string(id) + ": " +
