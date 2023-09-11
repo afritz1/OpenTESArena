@@ -43,6 +43,7 @@ RenderSkyManager::RenderSkyManager()
 	this->objectNormalBufferID = -1;
 	this->objectTexCoordBufferID = -1;
 	this->objectIndexBufferID = -1;
+	this->objectTransformBufferID = -1;
 }
 
 void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
