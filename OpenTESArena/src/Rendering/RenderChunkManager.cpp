@@ -1008,8 +1008,9 @@ void RenderChunkManager::loadEntityUniformBuffers(const EntityChunk &entityChunk
 		renderTransform.preScaleTranslation = Double3::Zero;
 		renderTransform.rotation = Matrix4d::identity();
 		renderTransform.scale = Matrix4d::identity();
-
 		renderer.populateUniformBuffer(entityTransformBufferID, renderTransform);
+
+		this->entityTransformBufferIDs.emplace(entityInstID, entityTransformBufferID);
 	}
 }
 
@@ -1979,6 +1980,13 @@ void RenderChunkManager::cleanUp()
 
 void RenderChunkManager::unloadScene(Renderer &renderer)
 {
+	for (const auto &pair : this->entityTransformBufferIDs)
+	{
+		const UniformBufferID transformBufferID = pair.second;
+		renderer.freeUniformBuffer(transformBufferID);
+	}
+
+	this->entityTransformBufferIDs.clear();
 	this->voxelTextures.clear();
 	this->chasmFloorTextureLists.clear();
 	this->chasmTextureKeys.clear();
