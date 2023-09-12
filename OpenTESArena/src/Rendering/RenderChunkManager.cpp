@@ -383,6 +383,49 @@ namespace sgTexture
 	}
 }
 
+namespace
+{
+	RenderTransform MakeDoorFaceRenderTransform(ArenaTypes::DoorType doorType, Radians faceBaseRadians, double animPercent, double ceilingScale)
+	{
+		RenderTransform renderTransform;
+
+		switch (doorType)
+		{
+		case ArenaTypes::DoorType::Swinging:
+		{
+			const Radians rotationRadians = DoorUtils::getSwingingRotationRadians(faceBaseRadians, animPercent);
+			renderTransform.preScaleTranslation = Double3::Zero;
+			renderTransform.rotation = Matrix4d::yRotation(rotationRadians);
+			renderTransform.scale = Matrix4d::identity();
+			break;
+		}
+		case ArenaTypes::DoorType::Sliding:
+		{
+			const double uMin = DoorUtils::getAnimatedTexCoordPercent(animPercent);
+			const double scaleAmount = DoorUtils::getAnimatedScaleAmount(uMin);
+			renderTransform.preScaleTranslation = Double3::Zero;
+			renderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
+			renderTransform.scale = Matrix4d::scale(1.0, 1.0, scaleAmount);
+			break;
+		}
+		case ArenaTypes::DoorType::Raising:
+		{
+			const double vMin = DoorUtils::getAnimatedTexCoordPercent(animPercent);
+			const double scaleAmount = DoorUtils::getAnimatedScaleAmount(vMin);
+			renderTransform.preScaleTranslation = Double3(1.0, -ceilingScale, 1.0);
+			renderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
+			renderTransform.scale = Matrix4d::scale(1.0, scaleAmount, 1.0);
+			break;
+		}
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(doorType)));
+			break;
+		}
+
+		return renderTransform;
+	}
+}
+
 void RenderChunkManager::LoadedVoxelTexture::init(const TextureAsset &textureAsset,
 	ScopedObjectTextureRef &&objectTextureRef)
 {
@@ -910,7 +953,7 @@ void RenderChunkManager::loadVoxelChasmWalls(RenderChunk &renderChunk, const Vox
 	}
 }
 
-void RenderChunkManager::loadVoxelDoorUniformBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, Renderer &renderer)
+void RenderChunkManager::loadVoxelDoorUniformBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
 {
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
@@ -919,32 +962,37 @@ void RenderChunkManager::loadVoxelDoorUniformBuffers(RenderChunk &renderChunk, c
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				VoxelChunk::DoorDefID doorDefID;
-				if (voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID))
+				if (!voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID))
 				{
-					const VoxelInt3 voxel(x, y, z);
-					DebugAssert(renderChunk.doorTransformBuffers.find(voxel) == renderChunk.doorTransformBuffers.end());
-
-					// Each door voxel has a uniform buffer, one render transform per face.
-					UniformBufferID doorTransformBufferID;
-					if (!renderer.tryCreateUniformBuffer(4, sizeof(RenderTransform), alignof(RenderTransform), &doorTransformBufferID))
-					{
-						DebugLogError("Couldn't create uniform buffer for door transform.");
-						continue;
-					}
-
-					// Initialize to default transform; it gets updated each frame.
-					RenderTransform renderTransform;
-					renderTransform.preScaleTranslation = Double3::Zero;
-					renderTransform.rotation = Matrix4d::identity();
-					renderTransform.scale = Matrix4d::identity();
-
-					for (int i = 0; i < DoorUtils::FACE_COUNT; i++)
-					{
-						renderer.populateUniformAtIndex(doorTransformBufferID, i, renderTransform);
-					}
-
-					renderChunk.doorTransformBuffers.emplace(voxel, doorTransformBufferID);
+					continue;
 				}
+
+				const DoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+				const ArenaTypes::DoorType doorType = doorDef.getType();
+				const VoxelInt3 voxel(x, y, z);
+				DebugAssert(renderChunk.doorTransformBuffers.find(voxel) == renderChunk.doorTransformBuffers.end());
+
+				constexpr int faceCount = DoorUtils::FACE_COUNT;
+
+				// Each door voxel has a uniform buffer, one render transform per face.
+				UniformBufferID doorTransformBufferID;
+				if (!renderer.tryCreateUniformBuffer(faceCount, sizeof(RenderTransform), alignof(RenderTransform), &doorTransformBufferID))
+				{
+					DebugLogError("Couldn't create uniform buffer for door transform.");
+					continue;
+				}
+
+				const double doorAnimPercent = DoorUtils::getAnimPercentOrZero(voxel.x, voxel.y, voxel.z, voxelChunk);
+
+				// Initialize to default appearance. Dirty door animations trigger an update.
+				for (int i = 0; i < faceCount; i++)
+				{
+					const Radians faceBaseRadians = DoorUtils::BaseAngles[i];
+					const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, faceBaseRadians, doorAnimPercent, ceilingScale);
+					renderer.populateUniformAtIndex(doorTransformBufferID, i, faceRenderTransform);
+				}
+
+				renderChunk.doorTransformBuffers.emplace(voxel, doorTransformBufferID);
 			}
 		}
 	}
@@ -1577,10 +1625,10 @@ void RenderChunkManager::updateVoxels(BufferView<const ChunkInt2> activeChunkPos
 	{
 		RenderChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		this->loadVoxelTextures(voxelChunk, textureManager, renderer);
 		this->loadVoxelMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
+		this->loadVoxelTextures(voxelChunk, textureManager, renderer);
 		this->loadVoxelChasmWalls(renderChunk, voxelChunk);
-		this->loadVoxelDoorUniformBuffers(renderChunk, voxelChunk, renderer);
+		this->loadVoxelDoorUniformBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->rebuildVoxelChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, true, false);
 	}
 
@@ -1608,52 +1656,12 @@ void RenderChunkManager::updateVoxels(BufferView<const ChunkInt2> activeChunkPos
 
 			const DoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 			const ArenaTypes::DoorType doorType = doorDef.getType();
-			double doorAnimPercent = 0.0;
-			int doorAnimInstIndex;
-			if (voxelChunk.tryGetDoorAnimInstIndex(doorVoxel.x, doorVoxel.y, doorVoxel.z, &doorAnimInstIndex))
-			{
-				BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
-				const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
-				doorAnimPercent = doorAnimInst.percentOpen;
-			}
+			const double doorAnimPercent = DoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
 
 			for (int i = 0; i < DoorUtils::FACE_COUNT; i++)
 			{
 				const Radians faceBaseRadians = DoorUtils::BaseAngles[i];
-				RenderTransform faceRenderTransform;
-
-				switch (doorType)
-				{
-				case ArenaTypes::DoorType::Swinging:
-				{
-					const Radians rotationRadians = DoorUtils::getSwingingRotationRadians(faceBaseRadians, doorAnimPercent);
-					faceRenderTransform.preScaleTranslation = Double3::Zero;
-					faceRenderTransform.rotation = Matrix4d::yRotation(rotationRadians);
-					faceRenderTransform.scale = Matrix4d::identity();
-					break;
-				}
-				case ArenaTypes::DoorType::Sliding:
-				{
-					const double uMin = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
-					const double scaleAmount = DoorUtils::getAnimatedScaleAmount(uMin);
-					faceRenderTransform.preScaleTranslation = Double3::Zero;
-					faceRenderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
-					faceRenderTransform.scale = Matrix4d::scale(1.0, 1.0, scaleAmount);
-					break;
-				}
-				case ArenaTypes::DoorType::Raising:
-				{
-					const double vMin = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
-					const double scaleAmount = DoorUtils::getAnimatedScaleAmount(vMin);
-					faceRenderTransform.preScaleTranslation = Double3(1.0, -ceilingScale, 1.0);
-					faceRenderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
-					faceRenderTransform.scale = Matrix4d::scale(1.0, scaleAmount, 1.0);
-					break;
-				}
-				default:
-					DebugNotImplementedMsg(std::to_string(static_cast<int>(doorType)));
-					break;
-				}
+				const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, faceBaseRadians, doorAnimPercent, ceilingScale);
 
 				const auto doorTransformIter = renderChunk.doorTransformBuffers.find(doorVoxel);
 				DebugAssert(doorTransformIter != renderChunk.doorTransformBuffers.end());

@@ -1,7 +1,22 @@
 #include <algorithm>
 
 #include "DoorUtils.h"
+#include "VoxelChunk.h"
 #include "../Rendering/ArenaRenderUtils.h"
+
+double DoorUtils::getAnimPercentOrZero(SNInt x, int y, WEInt z, const VoxelChunk &voxelChunk)
+{
+	double animPercent = 0.0;
+	int animInstIndex;
+	if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &animInstIndex))
+	{
+		BufferView<const VoxelDoorAnimationInstance> animInsts = voxelChunk.getDoorAnimInsts();
+		const VoxelDoorAnimationInstance &animInst = animInsts[animInstIndex];
+		animPercent = animInst.percentOpen;
+	}
+
+	return animPercent;
+}
 
 Radians DoorUtils::getSwingingRotationRadians(Radians baseRadians, double animPercent)
 {

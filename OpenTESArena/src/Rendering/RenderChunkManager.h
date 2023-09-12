@@ -120,7 +120,7 @@ private:
 	void loadVoxelMeshBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 	void loadVoxelChasmWall(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, SNInt x, int y, WEInt z);
 	void loadVoxelChasmWalls(RenderChunk &renderChunk, const VoxelChunk &voxelChunk);
-	void loadVoxelDoorUniformBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, Renderer &renderer);
+	void loadVoxelDoorUniformBuffers(RenderChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
 	void loadEntityTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
 		TextureManager &textureManager, Renderer &renderer);

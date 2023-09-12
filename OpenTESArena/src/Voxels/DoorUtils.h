@@ -9,6 +9,8 @@
 #include "../Math/Vector3.h"
 #include "../World/ArenaMeshUtils.h"
 
+class VoxelChunk;
+
 namespace DoorUtils
 {
 	static constexpr int FACE_COUNT = ArenaMeshUtils::GetUniqueFaceCount(ArenaTypes::VoxelType::Door);
@@ -51,6 +53,7 @@ namespace DoorUtils
 		Double3::UnitZ
 	};
 
+	double getAnimPercentOrZero(SNInt x, int y, WEInt z, const VoxelChunk &voxelChunk);
 	Radians getSwingingRotationRadians(Radians baseRadians, double animPercent);
 	double getAnimatedTexCoordPercent(double animPercent);
 	double getAnimatedScaleAmount(double texCoordPercent);
