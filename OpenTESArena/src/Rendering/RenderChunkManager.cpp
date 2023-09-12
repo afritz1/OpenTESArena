@@ -294,7 +294,7 @@ namespace sgTexture
 	{
 		Buffer<ScopedObjectTextureRef> textureRefs(animDef.keyframeCount);
 
-		// Need to go by state + keyframe list because the keyframes don't know whether they're flipped.
+		// Need to go by state + keyframe list because the keyframes don't know whether they're mirrored.
 		int writeIndex = 0;
 		for (int i = 0; i < animDef.stateCount; i++)
 		{
@@ -345,7 +345,7 @@ namespace sgTexture
 					{
 						for (int x = 0; x < textureWidth; x++)
 						{
-							const int srcX = !keyframeList.isFlipped ? x : (textureWidth - 1 - x);
+							const int srcX = !keyframeList.isMirrored ? x : (textureWidth - 1 - x);
 							const int srcIndex = srcX + (y * textureWidth);
 							const int dstIndex = x + (y * textureWidth);
 							dstTexels[dstIndex] = srcTexels[srcIndex];

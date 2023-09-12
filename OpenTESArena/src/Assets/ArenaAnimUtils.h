@@ -22,15 +22,14 @@ enum class MapType;
 
 // Helper values for working with the original animations. These may or may not be directly
 // referencing original values and may only exist for convenience in the new engine.
-
 namespace ArenaAnimUtils
 {
 	// Number of directions a .CFA entity can face.
 	constexpr int Directions = 8;
 
-	// First flipped animation ID that requires a mapping to a non-flipped ID for use
+	// First mirrored animation ID that requires a mapping to a non-mirrored ID for use
 	// with a creature .CFA file.
-	constexpr int FirstFlippedAnimID = 6;
+	constexpr int FirstMirroredAnimID = 6;
 
 	// Animation values for static .DFA files.
 	constexpr double StaticIdleSecondsPerFrame = 1.0 / 12.0;
@@ -123,12 +122,12 @@ namespace ArenaAnimUtils
 	// Scaler for world-space dimensions depending on special .INF-related modifiers.
 	double getDimensionModifier(const INFFlat &flatData);
 
-	// Returns whether the given original animation state ID would be for a flipped animation.
+	// Returns whether the given original animation state ID would be for a mirrored animation.
 	// Animation state IDs are 1-based, 1 being the entity looking at the player.
-	bool isAnimDirectionFlipped(int animDirectionID);
+	bool isAnimDirectionMirrored(int animDirectionID);
 
-	// Given a creature direction anim ID like 7, will return the index of the non-flipped anim.
-	int getDynamicEntityCorrectedAnimDirID(int animDirectionID, bool *outIsFlipped);
+	// Given a creature direction anim ID like 7, will return the index of the non-mirrored anim.
+	int getDynamicEntityCorrectedAnimDirID(int animDirectionID, bool *outIsMirrored);
 
 	// Works for both creature and human enemy filenames.
 	bool trySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID);

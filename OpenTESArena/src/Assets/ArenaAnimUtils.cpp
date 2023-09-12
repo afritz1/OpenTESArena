@@ -141,8 +141,8 @@ namespace ArenaAnimUtils
 		const double stateSeconds = static_cast<double>(keyframeCount) * secondsPerFrame;
 		const int stateIndex = outAnimDef->addState(stateName, stateSeconds, isLooping);
 
-		constexpr bool flipped = false; // Static anims cannot be flipped.
-		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, flipped);
+		constexpr bool isMirrored = false; // Static anims never appear mirrored.
+		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 
 		const double dimensionModifier = ArenaAnimUtils::getDimensionModifier(flatData);
 		for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
@@ -168,8 +168,8 @@ namespace ArenaAnimUtils
 			DebugAssert(direction >= 1);
 			DebugAssert(direction <= ArenaAnimUtils::Directions);
 
-			bool animIsFlipped;
-			const int correctedDirection = ArenaAnimUtils::getDynamicEntityCorrectedAnimDirID(direction, &animIsFlipped);
+			bool isMirrored;
+			const int correctedDirection = ArenaAnimUtils::getDynamicEntityCorrectedAnimDirID(direction, &isMirrored);
 
 			const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
 			const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
@@ -191,7 +191,7 @@ namespace ArenaAnimUtils
 			}
 
 			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, animIsFlipped);
+			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 			for (const int frameIndex : animIndices)
 			{
 				// Certain creatures don't have anim frames for a look animation, so just use
@@ -255,8 +255,8 @@ namespace ArenaAnimUtils
 			DebugAssert(direction >= 1);
 			DebugAssert(direction <= ArenaAnimUtils::Directions);
 
-			bool animIsFlipped;
-			const int correctedDirection = ArenaAnimUtils::getDynamicEntityCorrectedAnimDirID(direction, &animIsFlipped);
+			bool isMirrored;
+			const int correctedDirection = ArenaAnimUtils::getDynamicEntityCorrectedAnimDirID(direction, &isMirrored);
 
 			// Revise the filename based on which direction is being initialized.
 			constexpr int templateIndex = 0; // Idle/walk template index.
@@ -300,7 +300,7 @@ namespace ArenaAnimUtils
 			}
 
 			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, animIsFlipped);
+			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 			for (const int frameIndex : animIndices)
 			{
 				double width, height;
@@ -346,9 +346,9 @@ namespace ArenaAnimUtils
 	bool tryAddDynamicEntityCreatureAttackAnimState(int creatureID, const ExeData &exeData, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef)
 	{
-		// Attack state is only in the first .CFA file and is never flipped because it only faces forward.
+		// Attack state is only in the first .CFA file and is never mirrored because it only faces forward.
 		constexpr int direction = 1;
-		constexpr bool animIsFlipped = false;
+		constexpr bool isMirrored = false;
 
 		const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
 		const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
@@ -373,7 +373,7 @@ namespace ArenaAnimUtils
 
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_ATTACK.c_str(), 0.0, CreatureAttackLoop);
-		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, animIsFlipped);
+		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 
 		for (const int frameIndex : CreatureAttackIndices)
 		{
@@ -395,9 +395,9 @@ namespace ArenaAnimUtils
 	bool tryAddDynamicEntityHumanAttackAnimState(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
-		// Attack state is only in the first .CFA file and is never flipped because it only faces forward.
+		// Attack state is only in the first .CFA file and is never mirrored because it only faces forward.
 		constexpr int direction = 1;
-		constexpr bool animIsFlipped = false;
+		constexpr bool isMirrored = false;
 
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		int humanFilenameTypeIndex;
@@ -444,7 +444,7 @@ namespace ArenaAnimUtils
 		
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_ATTACK.c_str(), 0.0, HumanAttackLoop);
-		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, animIsFlipped);
+		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 
 		// No need for extra anim indices list, just use sequential image IDs.
 		for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
@@ -468,7 +468,7 @@ namespace ArenaAnimUtils
 	{
 		// Death state is only in the last .CFA file.
 		constexpr int direction = 6;
-		constexpr bool animIsFlipped = false;
+		constexpr bool isMirrored = false;
 
 		const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
 		const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
@@ -492,7 +492,7 @@ namespace ArenaAnimUtils
 
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_DEATH.c_str(), 0.0, CreatureDeathLoop);
-		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, animIsFlipped);
+		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 
 		// No need for extra anim indices list, just use sequential image IDs.
 		for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
@@ -514,7 +514,7 @@ namespace ArenaAnimUtils
 
 	bool tryAddDynamicEntityHumanDeathAnimState(const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
-		constexpr bool animIsFlipped = false;
+		constexpr bool isMirrored = false;
 
 		// Humans use a single dead body image.
 		const std::string animName = [&inf]()
@@ -540,7 +540,7 @@ namespace ArenaAnimUtils
 		
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_DEATH.c_str(), 0.0, HumanDeathLoop);
-		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, animIsFlipped);
+		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 
 		const double width = MakeDefaultKeyframeDimension(textureFileMetadata.getWidth(0));
 		const double height = MakeDefaultKeyframeDimension(textureFileMetadata.getHeight(0));
@@ -568,8 +568,8 @@ namespace ArenaAnimUtils
 			DebugAssert(direction >= 1);
 			DebugAssert(direction <= ArenaAnimUtils::Directions);
 
-			bool animIsFlipped;
-			const int correctedDirection = ArenaAnimUtils::getDynamicEntityCorrectedAnimDirID(direction, &animIsFlipped);
+			bool isMirrored;
+			const int correctedDirection = ArenaAnimUtils::getDynamicEntityCorrectedAnimDirID(direction, &isMirrored);
 
 			DebugAssertIndex(citizenAnimFilenames, citizenIndex);
 			std::string citizenFilename = String::toUppercase(citizenAnimFilenames[citizenIndex]);
@@ -587,7 +587,7 @@ namespace ArenaAnimUtils
 			}
 
 			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, animIsFlipped);
+			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 			for (const int frameIndex : animIndices)
 			{
 				// Citizens only have forward-facing idle animations, so use frame 0 for other facings.
@@ -733,25 +733,25 @@ double ArenaAnimUtils::getDimensionModifier(const INFFlat &flatData)
 	}
 }
 
-bool ArenaAnimUtils::isAnimDirectionFlipped(int animDirectionID)
+bool ArenaAnimUtils::isAnimDirectionMirrored(int animDirectionID)
 {
 	DebugAssert(animDirectionID >= 1);
 	DebugAssert(animDirectionID <= Directions);
-	return animDirectionID >= FirstFlippedAnimID;
+	return animDirectionID >= FirstMirroredAnimID;
 }
 
-int ArenaAnimUtils::getDynamicEntityCorrectedAnimDirID(int animDirectionID, bool *outIsFlipped)
+int ArenaAnimUtils::getDynamicEntityCorrectedAnimDirID(int animDirectionID, bool *outIsMirrored)
 {
-	// If the animation direction points to a flipped animation, the ID needs to be
-	// corrected to point to the non-flipped version.
-	if (isAnimDirectionFlipped(animDirectionID))
+	// If the animation direction points to a mirrored animation, the ID needs to be
+	// corrected to point to the non-mirrored version.
+	if (isAnimDirectionMirrored(animDirectionID))
 	{
-		*outIsFlipped = true;
-		return ((FirstFlippedAnimID - 1) * 2) - animDirectionID;
+		*outIsMirrored = true;
+		return ((FirstMirroredAnimID - 1) * 2) - animDirectionID;
 	}
 	else
 	{
-		*outIsFlipped = false;
+		*outIsMirrored = false;
 		return animDirectionID;
 	}
 }
