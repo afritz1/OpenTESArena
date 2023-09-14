@@ -77,30 +77,122 @@ void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ce
 
 void VoxelVisibilityChunk::update(const RenderCamera &camera)
 {
-	const ChunkInt2 &chunkPos = this->getPosition();
 	const WorldDouble3 cameraEye = camera.worldPoint;
-	const Double3 frustumNormals[4] =
+	const Double3 frustumNormals[5] =
 	{
-		camera.leftFrustumNormal, camera.rightFrustumNormal, camera.bottomFrustumNormal, camera.topFrustumNormal
+		camera.forward, camera.leftFrustumNormal, camera.rightFrustumNormal, camera.bottomFrustumNormal, camera.topFrustumNormal
 	};
 
-	DebugLogError("Not implemented: VoxelVisibilityChunk::update()");
-
-	// @todo: do chunk test
-
-	/*int nodeLevelIndex = 0; // Start with the whole chunk.
-	while (nodeLevelIndex < TREE_LEVEL_COUNT)
+	// @todo: need a way to know if the current tree level needs further splitting or if it can stop
+	// - maybe move the for loop guts to another updateTreeLevel(int) that returns whether it is done splitting.
+	
+	// Update all the visibility types and frustum tests so they can be read by draw call generation code later.
+	for (int treeLevelIndex = 0; treeLevelIndex < TREE_LEVEL_COUNT; treeLevelIndex++)
 	{
+		const int levelNodeOffset = NODE_OFFSETS[treeLevelIndex];
+		const int levelNodeCount = NODE_COUNTS[treeLevelIndex];
+		const int levelNodesPerSide = NODES_PER_SIDE[treeLevelIndex];
+		const bool levelHasChildNodes = CHILD_COUNTS[treeLevelIndex] > 0;
 
+		for (WEInt z = 0; z < levelNodesPerSide; z++)
+		{
+			for (SNInt x = 0; x < levelNodesPerSide; x++)
+			{
+				const int curNodeIndex = x + (z * levelNodesPerSide);
+				const int bboxIndex = levelNodeOffset + curNodeIndex;
+				DebugAssert(bboxIndex < (levelNodeOffset + levelNodeCount));
+				DebugAssertIndex(this->nodeBBoxes, bboxIndex);
+				const BoundingBox3D &bbox = this->nodeBBoxes[bboxIndex];
 
-		nodeLevelIndex++;
-	}*/
+				constexpr int bboxCornerCount = 8;
+				const WorldDouble3 bboxCorners[bboxCornerCount] =
+				{
+					bbox.min,
+					bbox.min + WorldDouble3(bbox.width, 0.0, 0.0),
+					bbox.min + WorldDouble3(0.0, bbox.height, 0.0),
+					bbox.min + WorldDouble3(bbox.width, bbox.height, 0.0),
+					bbox.min + WorldDouble3(0.0, 0.0, bbox.depth),
+					bbox.min + WorldDouble3(bbox.width, 0.0, bbox.depth),
+					bbox.min + WorldDouble3(0.0, bbox.height, bbox.depth),
+					bbox.max
+				};
 
-	//std::fill(std::begin(this->nonLeafVisibilityTypes), std::end(this->nonLeafVisibilityTypes), VisibilityType::Inside);
+				if (levelHasChildNodes)
+				{
+					// Test bounding box against frustum planes.
+					bool isBBoxCompletelyVisible = true;
+					bool isBBoxCompletelyInvisible = false;
+					for (const Double3 &frustumNormal : frustumNormals)
+					{
+						int insidePoints = 0;
+						int outsidePoints = 0;
+						for (const WorldDouble3 &cornerPoint : bboxCorners)
+						{
+							const double dist = MathUtils::distanceToPlane(cornerPoint, cameraEye, frustumNormal);
+							if (dist >= 0.0)
+							{
+								insidePoints++;
+							}
+							else
+							{
+								outsidePoints++;
+							}
+						}
 
-	// @todo: do quadtree tests
-	//std::fill(std::begin(this->leafFrustumTests), std::end(this->leafFrustumTests), true);
-	//DebugNotImplemented();
+						if (insidePoints < bboxCornerCount)
+						{
+							isBBoxCompletelyVisible = false;
+						}
+
+						if (outsidePoints == bboxCornerCount)
+						{
+							isBBoxCompletelyInvisible = true;
+							break;
+						}
+					}
+
+					const int visibilityTypeIndex = bboxIndex;
+					DebugAssertIndex(this->internalNodeVisibilityTypes, visibilityTypeIndex);
+
+					if (isBBoxCompletelyVisible)
+					{
+						this->internalNodeVisibilityTypes[visibilityTypeIndex] = VisibilityType::Inside;
+
+						// @todo: need another for loop in here that sets all this node's child visibility types and frustum test bools
+					}
+					else if (isBBoxCompletelyInvisible)
+					{
+						this->internalNodeVisibilityTypes[visibilityTypeIndex] = VisibilityType::Outside;
+
+						// @todo: need another for loop in here that sets all this node's child visibility types and frustum test bools
+					}
+					else
+					{
+						this->internalNodeVisibilityTypes[visibilityTypeIndex] = VisibilityType::Partial;
+
+						// @todo: tell the tree level index loop to continue for this node
+						// - hmm, it's like a recursive step. Should be able to do iterative with all these index values though.
+
+						// @todo: would be nice to be able to get the four child indices of a node, with -1 for leaf nodes' children
+					}
+				}
+				else
+				{
+					// Populate frustum test bool since it's a leaf node.
+					bool isVoxelColumnVisible = false;
+
+					//DebugNotImplemented();
+
+					const int leafNodeIndex = curNodeIndex;
+					DebugAssertIndex(this->leafNodeFrustumTests, leafNodeIndex);
+					this->leafNodeFrustumTests[leafNodeIndex] = isVoxelColumnVisible;
+				}
+			}
+		}
+
+		// @todo: if all nodes on this tree level are done testing, break.
+		// - they are done if none are Partial visibility
+	}
 }
 
 void VoxelVisibilityChunk::clear()
