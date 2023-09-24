@@ -34,7 +34,11 @@ struct VoxelVisibilityChunk final : public Chunk
 	static_assert(NODE_COUNTS[0] == 1);
 	static_assert(NODE_COUNTS[TREE_LEVEL_COUNT - 1] == (Chunk::WIDTH * Chunk::DEPTH));
 
-	static constexpr int NODE_OFFSETS[] =
+	static constexpr int TREE_LEVEL_INDEX_ROOT = 0;
+	static constexpr int TREE_LEVEL_INDEX_LEAF = TREE_LEVEL_COUNT - 1;
+	static_assert(TREE_LEVEL_INDEX_LEAF > TREE_LEVEL_INDEX_ROOT);
+
+	static constexpr int GLOBAL_NODE_OFFSETS[] =
 	{
 		0,
 		NODE_COUNT_LEVEL0,
@@ -49,6 +53,8 @@ struct VoxelVisibilityChunk final : public Chunk
 	{
 		1, 2, 4, 8, 16, 32, 64
 	};
+
+	static constexpr int CHILD_COUNT_PER_NODE = 4;
 
 	static constexpr int CHILD_COUNT_LEVEL0 = NODE_COUNT_LEVEL1;
 	static constexpr int CHILD_COUNT_LEVEL1 = NODE_COUNT_LEVEL2;

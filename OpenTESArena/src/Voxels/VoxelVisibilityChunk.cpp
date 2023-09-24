@@ -15,6 +15,89 @@ namespace
 			CHILD_INDICES[i] = i + 1;
 		}
 	}
+
+	// Quadtree visibility test state for a node that has to be pushed on the stack so its children nodes can be tested.
+	struct SavedSubtreeTestState
+	{
+		int localNodeIndex; // One of the four child nodes.
+
+		SavedSubtreeTestState()
+		{
+			this->clear();
+		}
+
+		void init(int localNodeIndex)
+		{
+			this->localNodeIndex = localNodeIndex;
+		}
+
+		void clear()
+		{
+			this->localNodeIndex = -1;
+		}
+	};
+
+	// Converts the tree level + local node index to a global index for efficiently looking up a node in a chunk.
+	int GetGlobalNodeIndex(int treeLevelIndex, int localNodeIndex)
+	{
+		DebugAssertIndex(VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS, treeLevelIndex);
+		return VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS[treeLevelIndex] + (localNodeIndex * VoxelVisibilityChunk::CHILD_COUNT_PER_NODE);
+	}
+
+	// Gets the first of four child indices for a node on some tree level, or -1 if it's a leaf node.
+	int GetFirstChildGlobalNodeIndex(int treeLevelIndex, int localNodeIndex)
+	{
+		DebugAssert(treeLevelIndex >= 0);
+		DebugAssert(localNodeIndex >= 0);
+		DebugAssert(localNodeIndex < VoxelVisibilityChunk::TOTAL_NODE_COUNT);
+
+		if (treeLevelIndex == VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF)
+		{
+			return -1;
+		}
+
+		return GetGlobalNodeIndex(treeLevelIndex + 1, localNodeIndex);
+	}
+
+	void BroadcastCompleteVisibilityResult(VoxelVisibilityChunk &chunk, int treeLevelIndex, int localNodeIndex, VisibilityType visibilityType)
+	{
+		static_assert(VoxelVisibilityChunk::CHILD_COUNT_PER_NODE == 4);
+		DebugAssert(visibilityType != VisibilityType::Partial);
+
+		const int nextTreeLevelIndex = treeLevelIndex + 1;
+		const int firstChildIndex = GetGlobalNodeIndex(nextTreeLevelIndex, localNodeIndex);
+		int childrenGlobalNodeIndices[VoxelVisibilityChunk::CHILD_COUNT_PER_NODE];
+		childrenGlobalNodeIndices[0] = firstChildIndex;
+		childrenGlobalNodeIndices[1] = firstChildIndex + 1;
+		childrenGlobalNodeIndices[2] = firstChildIndex + 2;
+		childrenGlobalNodeIndices[3] = firstChildIndex + 3;
+
+		const bool treeLevelHasChildNodes = nextTreeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF;
+		if (treeLevelHasChildNodes)
+		{
+			for (const int childrenGlobalNodeIndex : childrenGlobalNodeIndices)
+			{
+				DebugAssertIndex(chunk.internalNodeVisibilityTypes, childrenGlobalNodeIndex);
+				chunk.internalNodeVisibilityTypes[childrenGlobalNodeIndex] = visibilityType;
+			}
+
+			// @optimization: do this an iterative way instead
+			BroadcastCompleteVisibilityResult(chunk, nextTreeLevelIndex, 0, visibilityType);
+			BroadcastCompleteVisibilityResult(chunk, nextTreeLevelIndex, 1, visibilityType);
+			BroadcastCompleteVisibilityResult(chunk, nextTreeLevelIndex, 2, visibilityType);
+			BroadcastCompleteVisibilityResult(chunk, nextTreeLevelIndex, 3, visibilityType);
+		}
+		else
+		{
+			const bool isAtLeastPartiallyVisible = visibilityType != VisibilityType::Outside;
+			for (const int childrenGlobalNodeIndex : childrenGlobalNodeIndices)
+			{
+				const int childrenLocalNodeIndex = childrenGlobalNodeIndex - VoxelVisibilityChunk::INTERNAL_NODE_COUNT;
+				DebugAssertIndex(chunk.leafNodeFrustumTests, childrenLocalNodeIndex);
+				chunk.leafNodeFrustumTests[childrenLocalNodeIndex] = isAtLeastPartiallyVisible;
+			}
+		}
+	}
 }
 
 VoxelVisibilityChunk::VoxelVisibilityChunk()
@@ -43,7 +126,7 @@ void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ce
 	for (int i = 0; i < TREE_LEVEL_COUNT; i++)
 	{
 		// Each level covers the whole chunk but XZ iteration becomes more granular as level count increases.
-		const int levelNodeOffset = NODE_OFFSETS[i];
+		const int globalNodeOffset = GLOBAL_NODE_OFFSETS[i];
 		const int levelNodeCount = NODE_COUNTS[i];
 		const int levelNodesPerSide = NODES_PER_SIDE[i];
 		const SNInt xDistPerNode = Chunk::WIDTH / levelNodesPerSide;
@@ -53,8 +136,8 @@ void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ce
 		{
 			for (SNInt x = 0; x < levelNodesPerSide; x++)
 			{
-				const int bboxIndex = levelNodeOffset + (x + (z * levelNodesPerSide));
-				DebugAssert(bboxIndex < (levelNodeOffset + levelNodeCount));
+				const int bboxIndex = globalNodeOffset + (x + (z * levelNodesPerSide));
+				DebugAssert(bboxIndex < (globalNodeOffset + levelNodeCount));
 				DebugAssertIndex(this->nodeBBoxes, bboxIndex);
 				BoundingBox3D &bbox = this->nodeBBoxes[bboxIndex];
 
@@ -83,116 +166,119 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 		camera.forward, camera.leftFrustumNormal, camera.rightFrustumNormal, camera.bottomFrustumNormal, camera.topFrustumNormal
 	};
 
-	// @todo: need a way to know if the current tree level needs further splitting or if it can stop
-	// - maybe move the for loop guts to another updateTreeLevel(int) that returns whether it is done splitting.
-	
-	// Update all the visibility types and frustum tests so they can be read by draw call generation code later.
-	for (int treeLevelIndex = 0; treeLevelIndex < TREE_LEVEL_COUNT; treeLevelIndex++)
+	int currentTreeLevelIndex = 0;
+	int currentLocalNodeIndex = 0;
+	SavedSubtreeTestState savedSubtreeTestStates[TREE_LEVEL_COUNT - 1];
+	int savedSubtreeTestStatesCount = 0;
+
+	do
 	{
-		const int levelNodeOffset = NODE_OFFSETS[treeLevelIndex];
-		const int levelNodeCount = NODE_COUNTS[treeLevelIndex];
-		const int levelNodesPerSide = NODES_PER_SIDE[treeLevelIndex];
-		const bool levelHasChildNodes = CHILD_COUNTS[treeLevelIndex] > 0;
+		const int globalNodeIndex = GetGlobalNodeIndex(currentTreeLevelIndex, currentLocalNodeIndex);
+		const BoundingBox3D &bbox = this->nodeBBoxes[globalNodeIndex];
 
-		for (WEInt z = 0; z < levelNodesPerSide; z++)
+		constexpr int bboxCornerCount = 8;
+		const WorldDouble3 bboxCorners[bboxCornerCount] =
 		{
-			for (SNInt x = 0; x < levelNodesPerSide; x++)
+			bbox.min,
+			bbox.min + WorldDouble3(bbox.width, 0.0, 0.0),
+			bbox.min + WorldDouble3(0.0, bbox.height, 0.0),
+			bbox.min + WorldDouble3(bbox.width, bbox.height, 0.0),
+			bbox.min + WorldDouble3(0.0, 0.0, bbox.depth),
+			bbox.min + WorldDouble3(bbox.width, 0.0, bbox.depth),
+			bbox.min + WorldDouble3(0.0, bbox.height, bbox.depth),
+			bbox.max
+		};
+
+		bool isBBoxCompletelyVisible = true;
+		bool isBBoxCompletelyInvisible = false;
+		for (const Double3 &frustumNormal : frustumNormals)
+		{
+			int insidePoints = 0;
+			int outsidePoints = 0;
+			for (const WorldDouble3 &cornerPoint : bboxCorners)
 			{
-				const int curNodeIndex = x + (z * levelNodesPerSide);
-				const int bboxIndex = levelNodeOffset + curNodeIndex;
-				DebugAssert(bboxIndex < (levelNodeOffset + levelNodeCount));
-				DebugAssertIndex(this->nodeBBoxes, bboxIndex);
-				const BoundingBox3D &bbox = this->nodeBBoxes[bboxIndex];
-
-				constexpr int bboxCornerCount = 8;
-				const WorldDouble3 bboxCorners[bboxCornerCount] =
+				const double dist = MathUtils::distanceToPlane(cornerPoint, cameraEye, frustumNormal);
+				if (dist >= 0.0)
 				{
-					bbox.min,
-					bbox.min + WorldDouble3(bbox.width, 0.0, 0.0),
-					bbox.min + WorldDouble3(0.0, bbox.height, 0.0),
-					bbox.min + WorldDouble3(bbox.width, bbox.height, 0.0),
-					bbox.min + WorldDouble3(0.0, 0.0, bbox.depth),
-					bbox.min + WorldDouble3(bbox.width, 0.0, bbox.depth),
-					bbox.min + WorldDouble3(0.0, bbox.height, bbox.depth),
-					bbox.max
-				};
-
-				if (levelHasChildNodes)
-				{
-					// Test bounding box against frustum planes.
-					bool isBBoxCompletelyVisible = true;
-					bool isBBoxCompletelyInvisible = false;
-					for (const Double3 &frustumNormal : frustumNormals)
-					{
-						int insidePoints = 0;
-						int outsidePoints = 0;
-						for (const WorldDouble3 &cornerPoint : bboxCorners)
-						{
-							const double dist = MathUtils::distanceToPlane(cornerPoint, cameraEye, frustumNormal);
-							if (dist >= 0.0)
-							{
-								insidePoints++;
-							}
-							else
-							{
-								outsidePoints++;
-							}
-						}
-
-						if (insidePoints < bboxCornerCount)
-						{
-							isBBoxCompletelyVisible = false;
-						}
-
-						if (outsidePoints == bboxCornerCount)
-						{
-							isBBoxCompletelyInvisible = true;
-							break;
-						}
-					}
-
-					const int visibilityTypeIndex = bboxIndex;
-					DebugAssertIndex(this->internalNodeVisibilityTypes, visibilityTypeIndex);
-
-					if (isBBoxCompletelyVisible)
-					{
-						this->internalNodeVisibilityTypes[visibilityTypeIndex] = VisibilityType::Inside;
-
-						// @todo: need another for loop in here that sets all this node's child visibility types and frustum test bools
-					}
-					else if (isBBoxCompletelyInvisible)
-					{
-						this->internalNodeVisibilityTypes[visibilityTypeIndex] = VisibilityType::Outside;
-
-						// @todo: need another for loop in here that sets all this node's child visibility types and frustum test bools
-					}
-					else
-					{
-						this->internalNodeVisibilityTypes[visibilityTypeIndex] = VisibilityType::Partial;
-
-						// @todo: tell the tree level index loop to continue for this node
-						// - hmm, it's like a recursive step. Should be able to do iterative with all these index values though.
-
-						// @todo: would be nice to be able to get the four child indices of a node, with -1 for leaf nodes' children
-					}
+					insidePoints++;
 				}
 				else
 				{
-					// Populate frustum test bool since it's a leaf node.
-					bool isVoxelColumnVisible = false;
-
-					//DebugNotImplemented();
-
-					const int leafNodeIndex = curNodeIndex;
-					DebugAssertIndex(this->leafNodeFrustumTests, leafNodeIndex);
-					this->leafNodeFrustumTests[leafNodeIndex] = isVoxelColumnVisible;
+					outsidePoints++;
 				}
+			}
+
+			if (insidePoints < bboxCornerCount)
+			{
+				isBBoxCompletelyVisible = false;
+			}
+
+			if (outsidePoints == bboxCornerCount)
+			{
+				isBBoxCompletelyInvisible = true;
+				break;
 			}
 		}
 
-		// @todo: if all nodes on this tree level are done testing, break.
-		// - they are done if none are Partial visibility
-	}
+		const bool treeLevelHasChildNodes = currentTreeLevelIndex < TREE_LEVEL_INDEX_LEAF;
+		if (treeLevelHasChildNodes)
+		{
+			VisibilityType visibilityType;
+			if (isBBoxCompletelyInvisible)
+			{
+				visibilityType = VisibilityType::Outside;
+			}
+			else if (isBBoxCompletelyVisible)
+			{
+				visibilityType = VisibilityType::Inside;
+			}
+			else
+			{
+				visibilityType = VisibilityType::Partial;
+			}
+
+			DebugAssertIndex(this->internalNodeVisibilityTypes, globalNodeIndex);
+			this->internalNodeVisibilityTypes[globalNodeIndex] = visibilityType;
+
+			if (visibilityType == VisibilityType::Partial)
+			{
+				const int newSavedSubtreeTestStateIndex = savedSubtreeTestStatesCount;
+				DebugAssertIndex(savedSubtreeTestStates, newSavedSubtreeTestStateIndex);
+				savedSubtreeTestStates[newSavedSubtreeTestStateIndex].init(currentLocalNodeIndex);
+				savedSubtreeTestStatesCount++;
+				currentTreeLevelIndex++;
+				currentLocalNodeIndex = 0;
+				continue;
+			}
+			else
+			{
+				BroadcastCompleteVisibilityResult(*this, currentTreeLevelIndex, currentLocalNodeIndex, visibilityType);
+			}
+		}
+		else
+		{
+			DebugAssertIndex(this->leafNodeFrustumTests, currentLocalNodeIndex);
+			this->leafNodeFrustumTests[currentLocalNodeIndex] = !isBBoxCompletelyInvisible;
+		}
+
+		if (currentTreeLevelIndex == TREE_LEVEL_INDEX_ROOT)
+		{
+			break;
+		}
+
+		// Pop out of saved states, handling the case where it's the last node on a tree level.
+		while ((currentLocalNodeIndex == (CHILD_COUNT_PER_NODE - 1)) && (savedSubtreeTestStatesCount > 0))
+		{
+			const int savedSubtreeTestStateIndex = savedSubtreeTestStatesCount - 1;
+			SavedSubtreeTestState &savedSubtreeTestState = savedSubtreeTestStates[savedSubtreeTestStateIndex];
+			currentLocalNodeIndex = savedSubtreeTestState.localNodeIndex;
+			currentTreeLevelIndex--;
+			savedSubtreeTestState.clear();
+			savedSubtreeTestStatesCount--;
+		}
+
+		currentLocalNodeIndex++;
+	} while (currentLocalNodeIndex < CHILD_COUNT_PER_NODE);
 }
 
 void VoxelVisibilityChunk::clear()
