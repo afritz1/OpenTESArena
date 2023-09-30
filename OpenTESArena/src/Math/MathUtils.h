@@ -97,6 +97,9 @@ namespace MathUtils
 	// Generates a list of points along a Bresenham line. Only signed integers can be
 	// used in a Bresenham's line due to the error calculation.
 	std::vector<Int2> bresenhamLine(const Int2 &p1, const Int2 &p2);
+
+	// Gets the X and Y coordinates from a Z value in a Z-order curve. Used with quadtree node look-up.
+	Int2 getZOrderCurvePoint(int index);
 }
 
 #endif

@@ -431,3 +431,39 @@ std::vector<Int2> MathUtils::bresenhamLine(const Int2 &p1, const Int2 &p2)
 
 	return points;
 }
+
+
+Int2 MathUtils::getZOrderCurvePoint(int index)
+{
+	DebugAssert(index >= 0);
+	int relevantBitCount = sizeof(index) * CHAR_BIT;
+	for (int i = relevantBitCount - 1; i >= 0; i--)
+	{
+		const bool bit = (index >> i) != 0;
+		if (bit)
+		{
+			break;
+		}
+
+		relevantBitCount--;
+	}
+
+	int x = 0;
+	int y = 0;
+	for (int i = 0; i < relevantBitCount; i++)
+	{
+		const int dstBitIndex = i / 2;
+		const bool bit = ((index >> i) & 1) != 0;
+		const int bitValue = bit ? (1 << dstBitIndex) : 0;
+		if ((i & 1) == 0)
+		{
+			x |= bitValue;
+		}
+		else
+		{
+			y |= bitValue;
+		}
+	}
+
+	return Int2(x, y);
+}
