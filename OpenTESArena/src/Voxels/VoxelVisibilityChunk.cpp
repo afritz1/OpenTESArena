@@ -37,11 +37,17 @@ namespace
 		}
 	};
 
-	// Converts the tree level + tree level node index to a global index for efficiently looking up a node in a chunk.
-	int GetGlobalNodeIndex(int treeLevelIndex, int treeLevelNodeIndex)
+	// Converts a tree level index and tree level node index to a Z-order curve quadkey, where at its most basic is
+	// four adjacent nodes in memory arranged in a 2x2 pattern in space.
+	int GetZOrderCurveNodeIndex(int treeLevelIndex, int treeLevelNodeIndex)
 	{
-		DebugAssertIndex(VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS, treeLevelIndex);
-		return VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS[treeLevelIndex] + treeLevelNodeIndex;
+		DebugAssert(treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT);
+		DebugAssert(treeLevelNodeIndex < VoxelVisibilityChunk::LEAF_NODE_COUNT);
+
+		DebugAssertIndex(VoxelVisibilityChunk::NODES_PER_SIDE, treeLevelIndex);
+		const int nodesPerSide = VoxelVisibilityChunk::NODES_PER_SIDE[treeLevelIndex];
+		const Int2 point = MathUtils::getZOrderCurvePoint(treeLevelNodeIndex);
+		return point.x + (point.y * nodesPerSide);
 	}
 
 	// Gets the first of four child indices one level down from an internal node.
@@ -75,10 +81,9 @@ namespace
 		{
 			for (const int childTreeLevelNodeIndex : childrenTreeLevelNodeIndices)
 			{
-				const int childGlobalNodeIndex = GetGlobalNodeIndex(childrenTreeLevelIndex, childTreeLevelNodeIndex);
-
-				DebugAssertIndex(chunk.internalNodeVisibilityTypes, childGlobalNodeIndex);
-				chunk.internalNodeVisibilityTypes[childGlobalNodeIndex] = visibilityType;
+				const int zOrderCurveNodeIndex = GetZOrderCurveNodeIndex(childrenTreeLevelIndex, childTreeLevelNodeIndex);
+				DebugAssertIndex(chunk.internalNodeVisibilityTypes, zOrderCurveNodeIndex);
+				chunk.internalNodeVisibilityTypes[zOrderCurveNodeIndex] = visibilityType;
 			}
 
 			// @optimization: do this an iterative way instead
@@ -92,8 +97,9 @@ namespace
 			const bool isAtLeastPartiallyVisible = visibilityType != VisibilityType::Outside;
 			for (const int childTreeLevelNodeIndex : childrenTreeLevelNodeIndices)
 			{
-				DebugAssertIndex(chunk.leafNodeFrustumTests, childTreeLevelNodeIndex);
-				chunk.leafNodeFrustumTests[childTreeLevelNodeIndex] = isAtLeastPartiallyVisible;
+				const int zOrderCurveNodeIndex = GetZOrderCurveNodeIndex(childrenTreeLevelIndex, childTreeLevelNodeIndex);
+				DebugAssertIndex(chunk.leafNodeFrustumTests, zOrderCurveNodeIndex);
+				chunk.leafNodeFrustumTests[zOrderCurveNodeIndex] = isAtLeastPartiallyVisible;
 			}
 		}
 	}
@@ -172,8 +178,13 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 
 	do
 	{
-		const int globalNodeIndex = GetGlobalNodeIndex(currentTreeLevelIndex, currentTreeLevelNodeIndex);
-		const BoundingBox3D &bbox = this->nodeBBoxes[globalNodeIndex];
+		const int zOrderCurveNodeIndex = GetZOrderCurveNodeIndex(currentTreeLevelIndex, currentTreeLevelNodeIndex);
+
+		DebugAssertIndex(GLOBAL_NODE_OFFSETS, currentTreeLevelIndex);
+		const int bboxIndex = GLOBAL_NODE_OFFSETS[currentTreeLevelIndex] + zOrderCurveNodeIndex;
+
+		DebugAssertIndex(this->nodeBBoxes, bboxIndex);
+		const BoundingBox3D &bbox = this->nodeBBoxes[bboxIndex];
 
 		constexpr int bboxCornerCount = 8;
 		const WorldDouble3 bboxCorners[bboxCornerCount] =
@@ -236,8 +247,8 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 				visibilityType = VisibilityType::Partial;
 			}
 
-			DebugAssertIndex(this->internalNodeVisibilityTypes, globalNodeIndex);
-			this->internalNodeVisibilityTypes[globalNodeIndex] = visibilityType;
+			DebugAssertIndex(this->internalNodeVisibilityTypes, zOrderCurveNodeIndex);
+			this->internalNodeVisibilityTypes[zOrderCurveNodeIndex] = visibilityType;
 
 			if (visibilityType == VisibilityType::Partial)
 			{
@@ -256,9 +267,8 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 		}
 		else
 		{
-			const int leafNodeIndex = globalNodeIndex - INTERNAL_NODE_COUNT;
-			DebugAssertIndex(this->leafNodeFrustumTests, leafNodeIndex);
-			this->leafNodeFrustumTests[leafNodeIndex] = !isBBoxCompletelyInvisible;
+			DebugAssertIndex(this->leafNodeFrustumTests, zOrderCurveNodeIndex);
+			this->leafNodeFrustumTests[zOrderCurveNodeIndex] = !isBBoxCompletelyInvisible;
 		}
 
 		// Pop out of saved states, handling the case where it's the last node on a tree level.
