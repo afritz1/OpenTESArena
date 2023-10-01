@@ -2,6 +2,7 @@
 #define BYTES_H
 
 #include <climits>
+#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
