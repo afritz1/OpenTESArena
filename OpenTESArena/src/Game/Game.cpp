@@ -27,6 +27,7 @@
 #include "../Interface/CommonUiView.h"
 #include "../Interface/GameWorldPanel.h"
 #include "../Interface/GameWorldUiModel.h"
+#include "../Interface/GameWorldUiView.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
 #include "../Rendering/Renderer.h"
@@ -666,6 +667,8 @@ void Game::renderDebugInfo()
 		debugText.append("\nChunk: " + chunkStr + '\n' +
 			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
+
+		GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(*this);
 	}
 
 	this->debugInfoTextBox.setText(debugText);
