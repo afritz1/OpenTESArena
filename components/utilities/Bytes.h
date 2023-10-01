@@ -32,6 +32,23 @@ namespace Bytes
 		return setBitCount;
 	}
 
+	// Gets the index of the MSB or -1 if the value is 0.
+	template<typename T>
+	constexpr int findHighestSetBitIndex(T value)
+	{
+		static_assert(std::is_integral_v<T>);
+		constexpr int bitCount = CHAR_BIT * sizeof(value);
+		for (int i = bitCount - 1; i >= 0; i--)
+		{
+			if (((value >> i) & 1) == 1)
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
 	// Circular rotation of an integer to the right.
 	template<typename T>
 	T ror(T value, unsigned int count)

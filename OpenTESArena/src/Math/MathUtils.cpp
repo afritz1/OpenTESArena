@@ -432,22 +432,10 @@ std::vector<Int2> MathUtils::bresenhamLine(const Int2 &p1, const Int2 &p2)
 	return points;
 }
 
-
 Int2 MathUtils::getZOrderCurvePoint(int index)
 {
 	DebugAssert(index >= 0);
-	int relevantBitCount = sizeof(index) * CHAR_BIT;
-	for (int i = relevantBitCount - 1; i >= 0; i--)
-	{
-		const bool bit = (index >> i) != 0;
-		if (bit)
-		{
-			break;
-		}
-
-		relevantBitCount--;
-	}
-
+	const int relevantBitCount = Bytes::findHighestSetBitIndex(index) + 1;
 	int x = 0;
 	int y = 0;
 	for (int i = 0; i < relevantBitCount; i++)
