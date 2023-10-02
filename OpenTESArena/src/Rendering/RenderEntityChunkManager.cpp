@@ -340,7 +340,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 	const RenderVoxelChunk &renderVoxelChunk, const CoordDouble2 &cameraCoordXZ, double ceilingScale,
 	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager)
 {
-	renderChunk.entityDrawCalls.clear();
+	renderChunk.drawCalls.clear();
 
 	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 	{
@@ -388,7 +388,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		const UniformBufferID entityTransformBufferID = transformBufferIter->second;
 		const int entityTransformIndex = 0; // Each entity has their own transform buffer.
 		this->addDrawCall(worldPos, entityTransformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView,
-			pixelShaderType, renderChunk.entityDrawCalls);
+			pixelShaderType, renderChunk.drawCalls);
 	}
 }
 
@@ -400,8 +400,8 @@ void RenderEntityChunkManager::rebuildDrawCallsList()
 	for (size_t i = 0; i < this->activeChunks.size(); i++)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		BufferView<const RenderDrawCall> entityDrawCalls = chunkPtr->entityDrawCalls;
-		this->drawCallsCache.insert(this->drawCallsCache.end(), entityDrawCalls.begin(), entityDrawCalls.end());
+		BufferView<const RenderDrawCall> drawCalls = chunkPtr->drawCalls;
+		this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
 	}
 }
 
