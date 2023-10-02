@@ -63,7 +63,7 @@ public:
 	};
 private:
 	// Default identity transform for voxels that are only offset from the origin and nothing else.
-	UniformBufferID voxelDefaultTransformBufferID;
+	UniformBufferID defaultTransformBufferID;
 
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;

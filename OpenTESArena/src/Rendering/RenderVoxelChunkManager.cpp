@@ -3,25 +3,12 @@
 #include <numeric>
 #include <optional>
 
-#include "ArenaRenderUtils.h"
-#include "RenderCamera.h"
 #include "RenderVoxelChunkManager.h"
 #include "Renderer.h"
-#include "RendererSystem3D.h"
 #include "RendererUtils.h"
-#include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
-#include "../Entities/EntityChunkManager.h"
-#include "../Math/Constants.h"
-#include "../Math/Matrix4.h"
 #include "../Voxels/DoorUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
-#include "../Voxels/VoxelFacing2D.h"
-#include "../Voxels/VoxelVisibilityChunkManager.h"
-#include "../World/ArenaMeshUtils.h"
-#include "../World/ChunkManager.h"
-#include "../World/MapDefinition.h"
-#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 
@@ -386,14 +373,14 @@ void RenderVoxelChunkManager::LoadedChasmTextureKey::init(const ChunkInt2 &chunk
 
 RenderVoxelChunkManager::RenderVoxelChunkManager()
 {
-	this->voxelDefaultTransformBufferID = -1;
+	this->defaultTransformBufferID = -1;
 	this->chasmWallIndexBufferIDs.fill(-1);
 }
 
 void RenderVoxelChunkManager::init(Renderer &renderer)
 {
 	// Populate default voxel transform.
-	if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &this->voxelDefaultTransformBufferID))
+	if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &this->defaultTransformBufferID))
 	{
 		DebugLogError("Couldn't create uniform buffer for voxel default transform.");
 		return;
@@ -403,7 +390,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 	voxelDefaultTransform.preScaleTranslation = Double3::Zero;
 	voxelDefaultTransform.rotation = Matrix4d::identity();
 	voxelDefaultTransform.scale = Matrix4d::identity();
-	renderer.populateUniformBuffer(this->voxelDefaultTransformBufferID, voxelDefaultTransform);
+	renderer.populateUniformBuffer(this->defaultTransformBufferID, voxelDefaultTransform);
 
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
@@ -467,10 +454,10 @@ void RenderVoxelChunkManager::shutdown(Renderer &renderer)
 		this->recycleChunk(i);
 	}
 
-	if (this->voxelDefaultTransformBufferID >= 0)
+	if (this->defaultTransformBufferID >= 0)
 	{
-		renderer.freeUniformBuffer(this->voxelDefaultTransformBufferID);
-		this->voxelDefaultTransformBufferID = -1;
+		renderer.freeUniformBuffer(this->defaultTransformBufferID);
+		this->defaultTransformBufferID = -1;
 	}
 
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
@@ -869,7 +856,7 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 						}
 
 						const IndexBufferID opaqueIndexBufferID = renderMeshDef.opaqueIndexBufferIDs[bufferIndex];
-						const UniformBufferID transformBufferID = this->voxelDefaultTransformBufferID;
+						const UniformBufferID transformBufferID = this->defaultTransformBufferID;
 						const int transformIndex = 0;
 						const TextureSamplingType textureSamplingType = !isChasm ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
 
@@ -1075,7 +1062,7 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 						}
 						else
 						{
-							const UniformBufferID transformBufferID = this->voxelDefaultTransformBufferID;
+							const UniformBufferID transformBufferID = this->defaultTransformBufferID;
 							const int transformIndex = 0;
 							const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 
@@ -1112,7 +1099,7 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 						ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
 						ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
 
-						const UniformBufferID transformBufferID = this->voxelDefaultTransformBufferID;
+						const UniformBufferID transformBufferID = this->defaultTransformBufferID;
 						const int transformIndex = 0;
 						const TextureSamplingType textureSamplingType = isAnimatingChasm ? TextureSamplingType::ScreenSpaceRepeatY : TextureSamplingType::Default;
 
