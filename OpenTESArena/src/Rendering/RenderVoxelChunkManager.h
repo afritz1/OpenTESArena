@@ -15,6 +15,7 @@
 #include "components/utilities/BufferView.h"
 
 class Renderer;
+class RenderLightChunkManager;
 class TextureManager;
 class VoxelChunkManager;
 class VoxelVisibilityChunkManager;
@@ -90,13 +91,13 @@ private:
 		const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1,
 		RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs, VertexShaderType vertexShaderType,
 		PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
-	void loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, double chasmAnimPercent,
-		bool updateStatics, bool updateAnimating);
+	void loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const RenderLightChunk &renderLightChunk,
+		double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 
 	// Call once per frame per chunk after all voxel chunk changes have been applied to this manager.
 	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
-	void rebuildChunkDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
-		double chasmAnimPercent, bool updateStatics, bool updateAnimating);
+	void rebuildChunkDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const RenderLightChunk &renderLightChunk,
+		double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 	void rebuildDrawCallsList();
 public:
 	RenderVoxelChunkManager();
@@ -112,7 +113,8 @@ public:
 
 	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager,
-		const VoxelVisibilityChunkManager &voxelVisChunkManager, TextureManager &textureManager, Renderer &renderer);
+		const VoxelVisibilityChunkManager &voxelVisChunkManager, const RenderLightChunkManager &renderLightChunkManager,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// End of frame clean-up.
 	void cleanUp();

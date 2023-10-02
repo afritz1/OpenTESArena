@@ -3,6 +3,7 @@
 #include <numeric>
 #include <optional>
 
+#include "RenderLightChunkManager.h"
 #include "RenderVoxelChunkManager.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
@@ -761,8 +762,9 @@ void RenderVoxelChunkManager::addDrawCall(const Double3 &position, UniformBuffer
 	drawCalls.emplace_back(std::move(drawCall));
 }
 
-void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale,
-	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
+void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
+	const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics,
+	bool updateAnimating)
 {
 	const ChunkInt2 &chunkPos = renderChunk.getPosition();
 
@@ -818,7 +820,7 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 					fadeAnimInst = &fadeAnimInsts[fadeAnimInstIndex];
 				}
 
-				const RenderVoxelLightIdList &voxelLightIdList = renderChunk.voxelLightIdLists.get(x, y, z);
+				const RenderVoxelLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(x, y, z);
 
 				const bool canAnimate = isDoor || isChasm || isFading;
 				if ((!canAnimate && updateStatics) || (canAnimate && updateAnimating))
@@ -1124,7 +1126,8 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 }
 
 void RenderVoxelChunkManager::rebuildChunkDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
-	double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating)
+	const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics,
+	bool updateAnimating)
 {
 	if (updateStatics)
 	{
@@ -1138,7 +1141,7 @@ void RenderVoxelChunkManager::rebuildChunkDrawCalls(RenderVoxelChunk &renderChun
 		renderChunk.fadingDrawCalls.clear();
 	}
 
-	this->loadDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
+	this->loadDrawCalls(renderChunk, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
 }
 
 void RenderVoxelChunkManager::rebuildDrawCallsList()
@@ -1187,23 +1190,26 @@ void RenderVoxelChunkManager::updateActiveChunks(BufferView<const ChunkInt2> new
 
 void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 	double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager,
-	const VoxelVisibilityChunkManager &voxelVisChunkManager, TextureManager &textureManager, Renderer &renderer)
+	const VoxelVisibilityChunkManager &voxelVisChunkManager, const RenderLightChunkManager &renderLightChunkManager,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 		this->loadMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->loadTextures(voxelChunk, textureManager, renderer);
 		this->loadChasmWalls(renderChunk, voxelChunk);
 		this->loadDoorUniformBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
-		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, true, false);
+		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent, true, false);
 	}
 
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 
 		BufferView<const VoxelInt3> dirtyChasmWallInstPositions = voxelChunk.getDirtyChasmWallInstPositions();
 		for (const VoxelInt3 &chasmWallPos : dirtyChasmWallInstPositions)
@@ -1240,11 +1246,11 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 
 		BufferView<const VoxelInt3> dirtyMeshDefPositions = voxelChunk.getDirtyMeshDefPositions();
 		BufferView<const VoxelInt3> dirtyFadeAnimInstPositions = voxelChunk.getDirtyFadeAnimInstPositions();
-		BufferView<const VoxelInt3> dirtyLightPositions = renderChunk.dirtyLightPositions;
+		BufferView<const VoxelInt3> dirtyLightPositions = renderLightChunk.dirtyLightPositions;
 		bool updateStatics = dirtyMeshDefPositions.getCount() > 0;
 		updateStatics |= dirtyFadeAnimInstPositions.getCount() > 0; // @temp fix for fading voxels being covered by their non-fading draw call
 		updateStatics |= dirtyLightPositions.getCount() > 0; // @temp fix for player light movement, eventually other moving lights too
-		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
+		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 
 	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient
@@ -1256,10 +1262,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 
 void RenderVoxelChunkManager::cleanUp()
 {
-	for (ChunkPtr &chunkPtr : this->activeChunks)
-	{
-		chunkPtr->dirtyLightPositions.clear();
-	}
+	
 }
 
 void RenderVoxelChunkManager::unloadScene(Renderer &renderer)

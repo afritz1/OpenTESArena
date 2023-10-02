@@ -43,8 +43,8 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 		}
 	}
 	
-	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	renderChunkManager.setNightLightsActive(active, entityChunkManager);
+	RenderLightChunkManager &renderLightChunkManager = sceneManager.renderLightChunkManager;
+	renderLightChunkManager.setNightLightsActive(active, entityChunkManager);
 }
 
 void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
@@ -116,8 +116,6 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 	const CoordInt3 hitCoord(hit.getCoord().chunk, voxelHit.voxel);
 
 	auto &gameState = game.getGameState();
-	auto &sceneManager = game.getSceneManager();
-	auto &renderChunkManager = sceneManager.renderChunkManager;
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();

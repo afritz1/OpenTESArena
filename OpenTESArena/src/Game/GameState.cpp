@@ -636,7 +636,9 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	sceneManager.entityChunkManager.clear();
 	sceneManager.collisionChunkManager.recycleAllChunks();
 	sceneManager.voxelVisChunkManager.recycleAllChunks();
-	sceneManager.renderChunkManager.unloadScene(renderer);
+	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
+	sceneManager.renderEntityChunkManager.unloadScene(renderer);
+	sceneManager.renderLightChunkManager.unloadScene(renderer);
 	
 	sceneManager.skyInstance.clear();
 	sceneManager.renderSkyManager.unloadScene(renderer);
@@ -941,14 +943,20 @@ void GameState::tickRendering(Game &game)
 	VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
 	voxelVisChunkManager.update(newChunkPositions, freedChunkPositions, renderCamera, ceilingScale, voxelChunkManager);
 
-	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	renderChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
-	renderChunkManager.updateLights(activeChunkPositions, newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
+	RenderLightChunkManager &renderLightChunkManager = sceneManager.renderLightChunkManager;
+	renderLightChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
+	renderLightChunkManager.update(activeChunkPositions, newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
 		options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
-	renderChunkManager.updateVoxels(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
-		voxelChunkManager, voxelVisChunkManager, textureManager, renderer);
-	renderChunkManager.updateEntities(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
-		voxelChunkManager, entityChunkManager, textureManager, renderer);
+
+	RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
+	renderVoxelChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
+	renderVoxelChunkManager.update(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
+		voxelChunkManager, voxelVisChunkManager, renderLightChunkManager, textureManager, renderer);
+
+	RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
+	renderEntityChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
+	renderEntityChunkManager.update(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
+		voxelChunkManager, entityChunkManager, renderLightChunkManager, textureManager, renderer);
 
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;
 	const WeatherType weatherType = this->weatherDef.type;

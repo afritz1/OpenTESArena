@@ -812,9 +812,10 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
 	const SceneManager &sceneManager = game.getSceneManager();
-	const RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	const BufferView<const RenderDrawCall> voxelDrawCalls = renderChunkManager.getVoxelDrawCalls();
-	const BufferView<const RenderDrawCall> entityDrawCalls = renderChunkManager.getEntityDrawCalls();
+	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
+	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
+	const BufferView<const RenderDrawCall> voxelDrawCalls = renderVoxelChunkManager.getDrawCalls();
+	const BufferView<const RenderDrawCall> entityDrawCalls = renderEntityChunkManager.getDrawCalls();
 	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
 	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
 

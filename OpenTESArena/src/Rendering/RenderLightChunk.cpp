@@ -2,6 +2,38 @@
 
 #include "RenderLightChunk.h"
 
+RenderVoxelLightIdList::RenderVoxelLightIdList()
+{
+	this->clear();
+}
+
+BufferView<RenderLightID> RenderVoxelLightIdList::getLightIDs()
+{
+	return BufferView<RenderLightID>(this->lightIDs, this->lightCount);
+}
+
+BufferView<const RenderLightID> RenderVoxelLightIdList::getLightIDs() const
+{
+	return BufferView<const RenderLightID>(this->lightIDs, this->lightCount);
+}
+
+void RenderVoxelLightIdList::tryAddLight(RenderLightID id)
+{
+	if (this->lightCount >= static_cast<int>(std::size(this->lightIDs)))
+	{
+		return;
+	}
+
+	this->lightIDs[this->lightCount] = id;
+	this->lightCount++;
+}
+
+void RenderVoxelLightIdList::clear()
+{
+	std::fill(std::begin(this->lightIDs), std::end(this->lightIDs), -1);
+	this->lightCount = 0;
+}
+
 void RenderLightChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);

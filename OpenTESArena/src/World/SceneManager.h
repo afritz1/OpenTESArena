@@ -4,9 +4,11 @@
 #include "ChunkManager.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
-#include "../Rendering/RenderChunkManager.h"
+#include "../Rendering/RenderEntityChunkManager.h"
+#include "../Rendering/RenderLightChunkManager.h"
 #include "../Rendering/RenderSkyManager.h"
 #include "../Rendering/RenderTextureUtils.h"
+#include "../Rendering/RenderVoxelChunkManager.h"
 #include "../Rendering/RenderWeatherManager.h"
 #include "../Sky/SkyInstance.h"
 #include "../Voxels/VoxelChunkManager.h"
@@ -25,7 +27,9 @@ struct SceneManager
 	EntityChunkManager entityChunkManager;
 	CollisionChunkManager collisionChunkManager;
 	VoxelVisibilityChunkManager voxelVisChunkManager;
-	RenderChunkManager renderChunkManager;
+	RenderVoxelChunkManager renderVoxelChunkManager;
+	RenderEntityChunkManager renderEntityChunkManager;
+	RenderLightChunkManager renderLightChunkManager;
 
 	// Game world systems not tied to chunks.
 	SkyInstance skyInstance;
@@ -45,25 +49,5 @@ struct SceneManager
 	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double daytimePercent, TextureManager &textureManager);
 	void cleanUp();
 };
-
-struct SceneTransitionState
-{
-	MapType mapType;
-	int levelIndex;
-	int skyIndex;
-};
-
-struct SceneInteriorSavedState
-{
-	// Don't need to store levelIndex or skyIndex since the LEVELUP/DOWN voxel lets us infer it
-};
-
-struct SceneCitySavedState
-{
-	int weatherIndex;
-	CoordInt3 returnCoord;
-};
-
-using SceneWildSavedState = SceneCitySavedState;
 
 #endif

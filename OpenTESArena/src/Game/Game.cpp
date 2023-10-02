@@ -107,14 +107,11 @@ Game::~Game()
 		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
 
-	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
-	renderChunkManager.shutdown(this->renderer);
-
-	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-	renderSkyManager.shutdown(this->renderer);
-
-	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
-	renderWeatherManager.shutdown(this->renderer);
+	this->sceneManager.renderVoxelChunkManager.shutdown(this->renderer);
+	this->sceneManager.renderEntityChunkManager.shutdown(this->renderer);
+	this->sceneManager.renderLightChunkManager.shutdown(this->renderer);
+	this->sceneManager.renderSkyManager.shutdown(this->renderer);
+	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -251,15 +248,12 @@ bool Game::init()
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
 
 	this->sceneManager.init(this->textureManager, this->renderer);
+	this->sceneManager.renderVoxelChunkManager.init(this->renderer);
+	this->sceneManager.renderEntityChunkManager.init(this->renderer);
+	this->sceneManager.renderLightChunkManager.init(this->renderer);
+	this->sceneManager.renderSkyManager.init(exeData, this->textureManager, this->renderer);
 
-	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
-	renderChunkManager.init(this->renderer);
-
-	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-	renderSkyManager.init(exeData, this->textureManager, this->renderer);
-
-	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
-	if (!renderWeatherManager.init(this->renderer))
+	if (!this->sceneManager.renderWeatherManager.init(this->renderer))
 	{
 		DebugLogError("Couldn't init render weather manager.");
 		return false;

@@ -15,7 +15,6 @@
 #include "../Audio/AudioManager.h"
 #include "../Input/InputManager.h"
 #include "../Interface/Panel.h"
-#include "../Rendering/RenderChunkManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/TextBox.h"
 #include "../World/ChunkManager.h"

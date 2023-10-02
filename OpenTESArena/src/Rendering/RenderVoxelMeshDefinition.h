@@ -5,6 +5,8 @@
 
 class Renderer;
 
+using RenderVoxelMeshDefID = int;
+
 struct RenderVoxelMeshDefinition
 {
 	static constexpr int MAX_TEXTURES = 3; // Based on VoxelDefinition subtypes (wall and raised).

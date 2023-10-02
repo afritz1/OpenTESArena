@@ -3,8 +3,8 @@
 
 #include "RenderEntityChunkManager.h"
 #include "Renderer.h"
+#include "RenderLightChunkManager.h"
 #include "RenderTransform.h"
-#include "RenderVoxelChunkManager.h"
 #include "../Assets/TextureManager.h"
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityVisibilityState.h"
@@ -337,7 +337,7 @@ void RenderEntityChunkManager::addDrawCall(const Double3 &position, UniformBuffe
 }
 
 void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityChunk &entityChunk,
-	const RenderVoxelChunk &renderVoxelChunk, const CoordDouble2 &cameraCoordXZ, double ceilingScale,
+	const RenderLightChunk &renderLightChunk, const CoordDouble2 &cameraCoordXZ, double ceilingScale,
 	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager)
 {
 	renderChunk.drawCalls.clear();
@@ -377,9 +377,9 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		const VoxelDouble3 &entityLightPoint = visState.flatPosition.point; // Where the entity receives its light (can't use center due to some really tall entities reaching outside the chunk).
 		const VoxelInt3 entityLightVoxel = VoxelUtils::pointToVoxel(entityLightPoint, ceilingScale);
 		BufferView<const RenderLightID> lightIdsView; // Limitation of reusing lights per voxel: entity is unlit if they are outside the world.
-		if (renderVoxelChunk.isValidVoxel(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z))
+		if (renderLightChunk.isValidVoxel(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z))
 		{
-			const RenderVoxelLightIdList &voxelLightIdList = renderVoxelChunk.voxelLightIdLists.get(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z);
+			const RenderVoxelLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z);
 			lightIdsView = voxelLightIdList.getLightIDs();
 		}
 
@@ -430,7 +430,7 @@ void RenderEntityChunkManager::updateActiveChunks(BufferView<const ChunkInt2> ne
 
 void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 	const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-	const EntityChunkManager &entityChunkManager, const RenderVoxelChunkManager &renderVoxelChunkManager, TextureManager &textureManager,
+	const EntityChunkManager &entityChunkManager, const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager,
 	Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
@@ -469,7 +469,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 	{
 		RenderEntityChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		const RenderVoxelChunk &renderVoxelChunk = renderVoxelChunkManager.getChunkAtPosition(chunkPos);
+		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 
 		// Update entity render transforms.
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
@@ -501,7 +501,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 			renderer.populateUniformBuffer(entityTransformBufferID, entityRenderTransform);
 		}
 
-		this->rebuildChunkDrawCalls(renderChunk, entityChunk, renderVoxelChunk, cameraCoordXZ, ceilingScale,
+		this->rebuildChunkDrawCalls(renderChunk, entityChunk, renderLightChunk, cameraCoordXZ, ceilingScale,
 			voxelChunkManager, entityChunkManager);
 	}
 
