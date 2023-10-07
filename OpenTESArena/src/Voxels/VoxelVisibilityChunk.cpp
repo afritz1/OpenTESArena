@@ -68,6 +68,16 @@ namespace
 		DebugAssert(treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF);
 		DebugAssert(visibilityType != VisibilityType::Partial);
 
+		const bool isAtLeastPartiallyVisible = visibilityType != VisibilityType::Outside;
+
+		// Very fast writes if the root node is completely visible/invisible.
+		if (treeLevelIndex == VoxelVisibilityChunk::TREE_LEVEL_INDEX_ROOT)
+		{
+			std::fill(std::begin(chunk.internalNodeVisibilityTypes), std::end(chunk.internalNodeVisibilityTypes), visibilityType);
+			std::fill(std::begin(chunk.leafNodeFrustumTests), std::end(chunk.leafNodeFrustumTests), isAtLeastPartiallyVisible);
+			return;
+		}
+
 		const int firstChildTreeLevelNodeIndex = GetFirstChildTreeLevelNodeIndex(treeLevelNodeIndex);
 		int childrenTreeLevelNodeIndices[VoxelVisibilityChunk::CHILD_COUNT_PER_NODE];
 		childrenTreeLevelNodeIndices[0] = firstChildTreeLevelNodeIndex;
@@ -94,7 +104,6 @@ namespace
 		}
 		else
 		{
-			const bool isAtLeastPartiallyVisible = visibilityType != VisibilityType::Outside;
 			for (const int childTreeLevelNodeIndex : childrenTreeLevelNodeIndices)
 			{
 				const int zOrderCurveNodeIndex = GetZOrderCurveNodeIndex(childrenTreeLevelIndex, childTreeLevelNodeIndex);
