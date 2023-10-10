@@ -555,7 +555,7 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = static_cast<VoxelChunk::VoxelMeshDefID>(meshDefIndex);
 		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
 
-		RenderVoxelMeshDefinition renderVoxelMeshDef;
+		RenderVoxelMeshInstance renderVoxelMeshInst;
 		if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
 		{
 			constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -563,26 +563,26 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
-			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshDef.vertexBufferID))
+			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshInst.vertexBufferID))
 			{
 				DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				continue;
 			}
 
-			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &renderVoxelMeshDef.normalBufferID))
+			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &renderVoxelMeshInst.normalBufferID))
 			{
 				DebugLogError("Couldn't create normal attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
-				renderVoxelMeshDef.freeBuffers(renderer);
+				renderVoxelMeshInst.freeBuffers(renderer);
 				continue;
 			}
 
-			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &renderVoxelMeshDef.texCoordBufferID))
+			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &renderVoxelMeshInst.texCoordBufferID))
 			{
 				DebugLogError("Couldn't create tex coord attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
-				renderVoxelMeshDef.freeBuffers(renderer);
+				renderVoxelMeshInst.freeBuffers(renderer);
 				continue;
 			}
 
@@ -593,27 +593,27 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			voxelMeshDef.writeRendererIndexBuffers(meshInitCache.opaqueIndices0View, meshInitCache.opaqueIndices1View,
 				meshInitCache.opaqueIndices2View, meshInitCache.alphaTestedIndices0View);
 
-			renderer.populateVertexBuffer(renderVoxelMeshDef.vertexBufferID,
+			renderer.populateVertexBuffer(renderVoxelMeshInst.vertexBufferID,
 				BufferView<const double>(meshInitCache.vertices.data(), vertexCount * positionComponentsPerVertex));
-			renderer.populateAttributeBuffer(renderVoxelMeshDef.normalBufferID,
+			renderer.populateAttributeBuffer(renderVoxelMeshInst.normalBufferID,
 				BufferView<const double>(meshInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
-			renderer.populateAttributeBuffer(renderVoxelMeshDef.texCoordBufferID,
+			renderer.populateAttributeBuffer(renderVoxelMeshInst.texCoordBufferID,
 				BufferView<const double>(meshInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
 
 			const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
 			for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
 			{
 				const int opaqueIndexCount = voxelMeshDef.getOpaqueIndicesList(bufferIndex).getCount();
-				IndexBufferID &opaqueIndexBufferID = renderVoxelMeshDef.opaqueIndexBufferIDs[bufferIndex];
+				IndexBufferID &opaqueIndexBufferID = renderVoxelMeshInst.opaqueIndexBufferIDs[bufferIndex];
 				if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 				{
 					DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + voxelChunk.getPosition().toString() + ").");
-					renderVoxelMeshDef.freeBuffers(renderer);
+					renderVoxelMeshInst.freeBuffers(renderer);
 					continue;
 				}
 
-				renderVoxelMeshDef.opaqueIndexBufferIdCount++;
+				renderVoxelMeshInst.opaqueIndexBufferIdCount++;
 
 				const auto &indices = *meshInitCache.opaqueIndicesPtrs[bufferIndex];
 				renderer.populateIndexBuffer(opaqueIndexBufferID,
@@ -624,21 +624,21 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			if (hasAlphaTestedIndexBuffer)
 			{
 				const int alphaTestedIndexCount = static_cast<int>(voxelMeshDef.alphaTestedIndices.size());
-				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &renderVoxelMeshDef.alphaTestedIndexBufferID))
+				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &renderVoxelMeshInst.alphaTestedIndexBufferID))
 				{
 					DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
 						std::to_string(voxelMeshDefID) + " in chunk (" + voxelChunk.getPosition().toString() + ").");
-					renderVoxelMeshDef.freeBuffers(renderer);
+					renderVoxelMeshInst.freeBuffers(renderer);
 					continue;
 				}
 
-				renderer.populateIndexBuffer(renderVoxelMeshDef.alphaTestedIndexBufferID,
+				renderer.populateIndexBuffer(renderVoxelMeshInst.alphaTestedIndexBufferID,
 					BufferView<const int32_t>(meshInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
 			}
 		}
 
-		const RenderVoxelMeshDefID renderMeshDefID = renderChunk.addMeshDefinition(std::move(renderVoxelMeshDef));
-		renderChunk.meshDefMappings.emplace(voxelMeshDefID, renderMeshDefID);
+		const RenderVoxelMeshInstID renderMeshInstID = renderChunk.addMeshInst(std::move(renderVoxelMeshInst));
+		renderChunk.meshInstMappings.emplace(voxelMeshDefID, renderMeshInstID);
 	}
 }
 
@@ -769,11 +769,11 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 	const ChunkInt2 &chunkPos = renderChunk.getPosition();
 
 	// Generate draw calls for each non-air voxel.
-	for (WEInt z = 0; z < renderChunk.meshDefIDs.getDepth(); z++)
+	for (WEInt z = 0; z < renderChunk.meshInstIDs.getDepth(); z++)
 	{
-		for (int y = 0; y < renderChunk.meshDefIDs.getHeight(); y++)
+		for (int y = 0; y < renderChunk.meshInstIDs.getHeight(); y++)
 		{
-			for (SNInt x = 0; x < renderChunk.meshDefIDs.getWidth(); x++)
+			for (SNInt x = 0; x < renderChunk.meshInstIDs.getWidth(); x++)
 			{
 				const VoxelInt3 voxel(x, y, z);
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(x, y, z);
@@ -788,12 +788,12 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 				const VoxelTextureDefinition &voxelTextureDef = voxelChunk.getTextureDef(voxelTextureDefID);
 				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 
-				const auto defIter = renderChunk.meshDefMappings.find(voxelMeshDefID);
-				DebugAssert(defIter != renderChunk.meshDefMappings.end());
-				const RenderVoxelMeshDefID renderMeshDefID = defIter->second;
-				renderChunk.meshDefIDs.set(x, y, z, renderMeshDefID);
+				const auto meshInstIter = renderChunk.meshInstMappings.find(voxelMeshDefID);
+				DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
+				const RenderVoxelMeshInstID renderMeshInstID = meshInstIter->second;
+				renderChunk.meshInstIDs.set(x, y, z, renderMeshInstID);
 
-				const RenderVoxelMeshDefinition &renderMeshDef = renderChunk.meshDefs[renderMeshDefID];
+				const RenderVoxelMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
 
 				// Convert voxel XYZ to world space.
 				const WorldInt2 worldXZ = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt2(x, z));
@@ -825,7 +825,7 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 				const bool canAnimate = isDoor || isChasm || isFading;
 				if ((!canAnimate && updateStatics) || (canAnimate && updateAnimating))
 				{
-					for (int bufferIndex = 0; bufferIndex < renderMeshDef.opaqueIndexBufferIdCount; bufferIndex++)
+					for (int bufferIndex = 0; bufferIndex < renderMeshInst.opaqueIndexBufferIdCount; bufferIndex++)
 					{
 						ObjectTextureID textureID = -1;
 
@@ -857,7 +857,7 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 							continue;
 						}
 
-						const IndexBufferID opaqueIndexBufferID = renderMeshDef.opaqueIndexBufferIDs[bufferIndex];
+						const IndexBufferID opaqueIndexBufferID = renderMeshInst.opaqueIndexBufferIDs[bufferIndex];
 						const UniformBufferID transformBufferID = this->defaultTransformBufferID;
 						const int transformIndex = 0;
 						const TextureSamplingType textureSamplingType = !isChasm ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
@@ -893,14 +893,14 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 
 						const PixelShaderType pixelShaderType = PixelShaderType::Opaque;
 						const double pixelShaderParam0 = 0.0;
-						this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshDef.vertexBufferID,
-							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
+						this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
+							renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
 							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
 							VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);
 					}
 				}
 
-				if (renderMeshDef.alphaTestedIndexBufferID >= 0)
+				if (renderMeshInst.alphaTestedIndexBufferID >= 0)
 				{
 					if (updateStatics || (updateAnimating && isDoor))
 					{
@@ -993,8 +993,8 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									constexpr double meshLightPercent = 0.0;
 									constexpr double pixelShaderParam0 = 0.0;
-									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshDef.vertexBufferID,
-										renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID, textureID,
+									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
+										renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID, textureID,
 										std::nullopt, textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent,
 										voxelLightIdList.getLightIDs(), VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested, pixelShaderParam0,
 										renderChunk.doorDrawCalls);
@@ -1019,8 +1019,8 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									constexpr double meshLightPercent = 0.0;
 									const double pixelShaderParam0 = uMin;
-									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshDef.vertexBufferID,
-										renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID, textureID,
+									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
+										renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID, textureID,
 										std::nullopt, textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent,
 										voxelLightIdList.getLightIDs(), VertexShaderType::SlidingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordUMin,
 										pixelShaderParam0, renderChunk.doorDrawCalls);
@@ -1045,8 +1045,8 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									constexpr double meshLightPercent = 0.0;
 									const double pixelShaderParam0 = vMin;
-									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshDef.vertexBufferID,
-										renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID, textureID,
+									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
+										renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID, textureID,
 										std::nullopt, textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent,
 										voxelLightIdList.getLightIDs(), VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin,
 										pixelShaderParam0, renderChunk.doorDrawCalls);
@@ -1079,8 +1079,8 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 							}
 
 							constexpr double pixelShaderParam0 = 0.0;
-							this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshDef.vertexBufferID,
-								renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, renderMeshDef.alphaTestedIndexBufferID,
+							this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
+								renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID,
 								textureID, std::nullopt, textureSamplingType, textureSamplingType, lightingType, meshLightPercent,
 								voxelLightIdList.getLightIDs(), VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, *drawCallsPtr);
 						}
@@ -1114,8 +1114,8 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 						}
 
 						constexpr double pixelShaderParam0 = 0.0;
-						this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshDef.vertexBufferID,
-							renderMeshDef.normalBufferID, renderMeshDef.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
+						this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
+							renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
 							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
 							VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer, pixelShaderParam0, renderChunk.chasmDrawCalls);
 					}

@@ -1,13 +1,13 @@
-#ifndef RENDER_VOXEL_MESH_DEFINITION_H
-#define RENDER_VOXEL_MESH_DEFINITION_H
+#ifndef RENDER_VOXEL_MESH_INSTANCE_H
+#define RENDER_VOXEL_MESH_INSTANCE_H
 
 #include "RenderGeometryUtils.h"
 
 class Renderer;
 
-using RenderVoxelMeshDefID = int;
+using RenderVoxelMeshInstID = int;
 
-struct RenderVoxelMeshDefinition
+struct RenderVoxelMeshInstance
 {
 	static constexpr int MAX_TEXTURES = 3; // Based on VoxelDefinition subtypes (wall and raised).
 
@@ -17,7 +17,7 @@ struct RenderVoxelMeshDefinition
 	int opaqueIndexBufferIdCount;
 	IndexBufferID alphaTestedIndexBufferID;
 
-	RenderVoxelMeshDefinition();
+	RenderVoxelMeshInstance();
 
 	void freeBuffers(Renderer &renderer);
 };

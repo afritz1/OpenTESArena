@@ -8,26 +8,26 @@
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
-	this->meshDefIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
-	this->meshDefIDs.fill(RenderVoxelChunk::AIR_MESH_DEF_ID);
-	this->meshDefMappings.emplace(VoxelChunk::AIR_MESH_DEF_ID, RenderVoxelChunk::AIR_MESH_DEF_ID);
+	this->meshInstIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
+	this->meshInstIDs.fill(RenderVoxelChunk::AIR_MESH_INST_ID);
+	this->meshInstMappings.emplace(VoxelChunk::AIR_MESH_DEF_ID, RenderVoxelChunk::AIR_MESH_INST_ID);
 
 	// Add empty mesh instance for air.
-	this->addMeshDefinition(RenderVoxelMeshDefinition());
+	this->addMeshInst(RenderVoxelMeshInstance());
 }
 
-RenderVoxelMeshDefID RenderVoxelChunk::addMeshDefinition(RenderVoxelMeshDefinition &&meshDef)
+RenderVoxelMeshInstID RenderVoxelChunk::addMeshInst(RenderVoxelMeshInstance &&meshInst)
 {
-	const RenderVoxelMeshDefID id = static_cast<RenderVoxelMeshDefID>(this->meshDefs.size());
-	this->meshDefs.emplace_back(std::move(meshDef));
+	const RenderVoxelMeshInstID id = static_cast<RenderVoxelMeshInstID>(this->meshInsts.size());
+	this->meshInsts.emplace_back(std::move(meshInst));
 	return id;
 }
 
 void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 {
-	for (RenderVoxelMeshDefinition &meshDef : this->meshDefs)
+	for (RenderVoxelMeshInstance &meshInst : this->meshInsts)
 	{
-		meshDef.freeBuffers(renderer);
+		meshInst.freeBuffers(renderer);
 	}
 
 	for (const auto &pair : this->doorTransformBuffers)
@@ -39,9 +39,9 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 void RenderVoxelChunk::clear()
 {
 	Chunk::clear();
-	this->meshDefs.clear();
-	this->meshDefMappings.clear();
-	this->meshDefIDs.clear();
+	this->meshInsts.clear();
+	this->meshInstMappings.clear();
+	this->meshInstIDs.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
 	this->doorTransformBuffers.clear();
 	this->staticDrawCalls.clear();

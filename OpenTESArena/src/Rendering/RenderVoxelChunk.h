@@ -7,7 +7,7 @@
 #include "RenderDrawCall.h"
 #include "RenderGeometryUtils.h"
 #include "RenderShaderUtils.h"
-#include "RenderVoxelMeshDefinition.h"
+#include "RenderVoxelMeshInstance.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../World/Chunk.h"
@@ -19,11 +19,11 @@ class Renderer;
 class RenderVoxelChunk final : public Chunk
 {
 public:
-	static constexpr RenderVoxelMeshDefID AIR_MESH_DEF_ID = 0;
+	static constexpr RenderVoxelMeshInstID AIR_MESH_INST_ID = 0;
 
-	std::vector<RenderVoxelMeshDefinition> meshDefs;
-	std::unordered_map<VoxelChunk::VoxelMeshDefID, RenderVoxelMeshDefID> meshDefMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
-	Buffer3D<RenderVoxelMeshDefID> meshDefIDs; // Points into mesh instances.
+	std::vector<RenderVoxelMeshInstance> meshInsts;
+	std::unordered_map<VoxelChunk::VoxelMeshDefID, RenderVoxelMeshInstID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
+	Buffer3D<RenderVoxelMeshInstID> meshInstIDs; // Points into mesh instances.
 	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	std::unordered_map<VoxelInt3, UniformBufferID> doorTransformBuffers; // Unique transform buffer per door instance, owned by this chunk.
 	std::vector<RenderDrawCall> staticDrawCalls; // Most voxel geometry (walls, floors, etc.).
@@ -32,7 +32,7 @@ public:
 	std::vector<RenderDrawCall> fadingDrawCalls; // Voxels with fade shader. Note that the static draw call in the same voxel needs to be deleted to avoid a conflict in the depth buffer.
 
 	void init(const ChunkInt2 &position, int height);
-	RenderVoxelMeshDefID addMeshDefinition(RenderVoxelMeshDefinition &&meshDef);
+	RenderVoxelMeshInstID addMeshInst(RenderVoxelMeshInstance &&meshInst);
 	void freeBuffers(Renderer &renderer);
 	void clear();
 };

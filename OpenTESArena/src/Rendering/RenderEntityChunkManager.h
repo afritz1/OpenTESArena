@@ -7,7 +7,7 @@
 
 #include "RenderDrawCall.h"
 #include "RenderEntityChunk.h"
-#include "RenderEntityMeshDefinition.h"
+#include "RenderEntityMeshInstance.h"
 #include "RenderShaderUtils.h"
 #include "../Entities/EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"
@@ -45,7 +45,7 @@ private:
 	std::unordered_map<EntityInstanceID, UniformBufferID> transformBufferIDs;
 
 	std::vector<LoadedAnimation> anims;
-	RenderEntityMeshDefinition meshDef; // Shared by all entities.
+	RenderEntityMeshInstance meshInst; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> paletteIndicesTextureRefs;
 
 	// All accumulated draw calls from entities each frame. This is sent to the renderer.
