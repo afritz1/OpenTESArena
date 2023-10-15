@@ -30,8 +30,8 @@ using RenderVoxelDrawCallRangeID = int;
 
 struct RenderVoxelDrawCallHeap
 {
-	static constexpr int MAX_DRAW_CALLS = 16384;
-	static constexpr int MAX_DRAW_CALL_RANGES = (5 * MAX_DRAW_CALLS) / 6; // Arbitrary, most ranges will be 1 draw call.
+	static constexpr int MAX_DRAW_CALLS = 24000;
+	static constexpr int MAX_DRAW_CALL_RANGES = (7 * MAX_DRAW_CALLS) / 8; // Arbitrary, most ranges will be 1 draw call.
 
 	RenderDrawCall drawCalls[MAX_DRAW_CALLS];
 	std::vector<int> freedDrawCalls;
