@@ -160,15 +160,14 @@ void RenderVoxelDrawCallHeap::free(RenderVoxelDrawCallRangeID id)
 		RenderDrawCall &drawCallToFree = this->drawCalls[drawCallIndexToFree];
 		drawCallToFree.clear();
 
-		this->freedDrawCalls.push_back(drawCallIndexToFree);
+		// Insert so the freed draw calls stay sorted/coalesced.
+		const auto insertIter = std::lower_bound(this->freedDrawCalls.begin(), this->freedDrawCalls.end(), drawCallIndexToFree);
+		this->freedDrawCalls.insert(insertIter, drawCallIndexToFree);
 	}
 
 	// Free the draw call range slot.
 	drawCallRange.clear();
 	this->freedIDs.push_back(id);
-
-	// Coalesce the draw call slots for future allocations (don't need to coalesce range IDs).
-	std::sort(this->freedDrawCalls.begin(), this->freedDrawCalls.end());
 }
 
 void RenderVoxelDrawCallHeap::clear()
