@@ -13,6 +13,7 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
+#include "components/utilities/BufferView3D.h"
 
 class Renderer;
 class RenderLightChunkManager;
@@ -86,11 +87,11 @@ private:
 	void loadChasmWalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk);
 	void loadDoorUniformBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
-	void addDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex, VertexBufferID vertexBufferID,
-		AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID, ObjectTextureID textureID0,
-		const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1,
-		RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs, VertexShaderType vertexShaderType,
-		PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls);
+	void addDrawCall(RenderVoxelChunk &renderChunk, const VoxelInt3 &voxelPos, const Double3 &worldPosition, UniformBufferID transformBufferID,
+		int transformIndex, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
+		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0,
+		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs,
+		VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0, BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs);
 	void loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const RenderLightChunk &renderLightChunk,
 		double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 

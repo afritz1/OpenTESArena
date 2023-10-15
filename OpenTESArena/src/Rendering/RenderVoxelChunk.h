@@ -16,6 +16,41 @@
 
 class Renderer;
 
+struct RenderVoxelDrawCallRange
+{
+	int index; // Index into the chunk's draw calls.
+	int8_t count; // Number of draw calls for this voxel.
+
+	RenderVoxelDrawCallRange();
+
+	void clear();
+};
+
+using RenderVoxelDrawCallRangeID = int;
+
+struct RenderVoxelDrawCallHeap
+{
+	static constexpr int MAX_DRAW_CALLS = 16384;
+	static constexpr int MAX_DRAW_CALL_RANGES = (5 * MAX_DRAW_CALLS) / 6; // Arbitrary, most ranges will be 1 draw call.
+
+	RenderDrawCall drawCalls[MAX_DRAW_CALLS];
+	std::vector<int> freedDrawCalls;
+	int nextDrawCall;
+
+	RenderVoxelDrawCallRange drawCallRanges[MAX_DRAW_CALL_RANGES];
+	std::vector<RenderVoxelDrawCallRangeID> freedIDs;
+	RenderVoxelDrawCallRangeID nextID;
+
+	RenderVoxelDrawCallHeap();
+
+	BufferView<RenderDrawCall> get(RenderVoxelDrawCallRangeID id);
+	BufferView<const RenderDrawCall> get(RenderVoxelDrawCallRangeID id) const;
+	RenderVoxelDrawCallRangeID alloc(int drawCallCount);
+	RenderVoxelDrawCallRangeID addDrawCall(RenderVoxelDrawCallRangeID id); // @temp hack to add one draw call more conveniently
+	void free(RenderVoxelDrawCallRangeID id);
+	void clear();
+};
+
 class RenderVoxelChunk final : public Chunk
 {
 public:
@@ -26,13 +61,17 @@ public:
 	Buffer3D<RenderVoxelMeshInstID> meshInstIDs; // Points into mesh instances.
 	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	std::unordered_map<VoxelInt3, UniformBufferID> doorTransformBuffers; // Unique transform buffer per door instance, owned by this chunk.
-	std::vector<RenderDrawCall> staticDrawCalls; // Most voxel geometry (walls, floors, etc.).
-	std::vector<RenderDrawCall> doorDrawCalls; // All doors, open or closed.
-	std::vector<RenderDrawCall> chasmDrawCalls; // Chasm walls and floors, separate from static draw calls so their textures can animate.
-	std::vector<RenderDrawCall> fadingDrawCalls; // Voxels with fade shader. Note that the static draw call in the same voxel needs to be deleted to avoid a conflict in the depth buffer.
+
+	RenderVoxelDrawCallHeap drawCallHeap;
+	Buffer3D<RenderVoxelDrawCallRangeID> staticDrawCallRangeIDs; // Most voxel geometry (walls, floors, etc.).
+	Buffer3D<RenderVoxelDrawCallRangeID> doorDrawCallRangeIDs; // All doors, open or closed.
+	Buffer3D<RenderVoxelDrawCallRangeID> chasmDrawCallRangeIDs; // Chasm walls and floors, separate from static draw calls so their textures can animate.
+	Buffer3D<RenderVoxelDrawCallRangeID> fadingDrawCallRangeIDs; // Voxels with fade shader. Note that the static draw call in the same voxel needs to be deleted to avoid a conflict in the depth buffer.
 
 	void init(const ChunkInt2 &position, int height);
 	RenderVoxelMeshInstID addMeshInst(RenderVoxelMeshInstance &&meshInst);
+	void freeStaticDrawCalls();
+	void freeAnimatingDrawCalls();
 	void freeBuffers(Renderer &renderer);
 	void clear();
 };

@@ -730,14 +730,30 @@ void RenderVoxelChunkManager::loadDoorUniformBuffers(RenderVoxelChunk &renderChu
 	}
 }
 
-void RenderVoxelChunkManager::addDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex,
-	VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
-	ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0,
+void RenderVoxelChunkManager::addDrawCall(RenderVoxelChunk &renderChunk, const VoxelInt3 &voxelPos, const Double3 &worldPosition,
+	UniformBufferID transformBufferID, int transformIndex, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
+	IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0,
 	TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs,
-	VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0, std::vector<RenderDrawCall> &drawCalls)
+	VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0, BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs)
 {
-	RenderDrawCall drawCall;
-	drawCall.position = position;
+	RenderVoxelDrawCallRangeID drawCallRangeID = drawCallRangeIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
+	BufferView<RenderDrawCall> drawCallsView;
+	if (drawCallRangeID >= 0)
+	{
+		drawCallRangeID = renderChunk.drawCallHeap.addDrawCall(drawCallRangeID);
+		drawCallsView = renderChunk.drawCallHeap.get(drawCallRangeID);
+	}
+	else
+	{
+		drawCallRangeID = renderChunk.drawCallHeap.alloc(1);
+		DebugAssertMsg(drawCallRangeID >= 0, "Couldn't allocate range ID for voxel (" + voxelPos.toString() + ") in chunk (" + renderChunk.getPosition().toString() + ").");
+		drawCallRangeIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, drawCallRangeID);
+
+		drawCallsView = renderChunk.drawCallHeap.get(drawCallRangeID);
+	}
+
+	RenderDrawCall &drawCall = drawCallsView.get(drawCallsView.getCount() - 1);
+	drawCall.position = worldPosition;
 	drawCall.transformBufferID = transformBufferID;
 	drawCall.transformIndex = transformIndex;
 	drawCall.vertexBufferID = vertexBufferID;
@@ -758,8 +774,6 @@ void RenderVoxelChunkManager::addDrawCall(const Double3 &position, UniformBuffer
 	drawCall.vertexShaderType = vertexShaderType;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = pixelShaderParam0;
-
-	drawCalls.emplace_back(std::move(drawCall));
 }
 
 void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
@@ -870,7 +884,7 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 							meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
 						}
 
-						std::vector<RenderDrawCall> *drawCallsPtr = nullptr;
+						BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDsView;
 						if (isChasm)
 						{
 							const ChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
@@ -880,23 +894,23 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 								meshLightPercent = 1.0;
 							}
 
-							drawCallsPtr = &renderChunk.chasmDrawCalls;
+							drawCallRangeIDsView = renderChunk.chasmDrawCallRangeIDs;
 						}
 						else if (isFading)
 						{
-							drawCallsPtr = &renderChunk.fadingDrawCalls;
+							drawCallRangeIDsView = renderChunk.fadingDrawCallRangeIDs;
 						}
 						else
 						{
-							drawCallsPtr = &renderChunk.staticDrawCalls;
+							drawCallRangeIDsView = renderChunk.staticDrawCallRangeIDs;
 						}
 
 						const PixelShaderType pixelShaderType = PixelShaderType::Opaque;
 						const double pixelShaderParam0 = 0.0;
-						this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
+						this->addDrawCall(renderChunk, voxel, worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
 							renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt,
 							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
-							VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, *drawCallsPtr);
+							VertexShaderType::Voxel, pixelShaderType, pixelShaderParam0, drawCallRangeIDsView);
 					}
 				}
 
@@ -993,11 +1007,11 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									constexpr double meshLightPercent = 0.0;
 									constexpr double pixelShaderParam0 = 0.0;
-									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
+									this->addDrawCall(renderChunk, voxel, doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
 										renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID, textureID,
 										std::nullopt, textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent,
 										voxelLightIdList.getLightIDs(), VertexShaderType::SwingingDoor, PixelShaderType::AlphaTested, pixelShaderParam0,
-										renderChunk.doorDrawCalls);
+										renderChunk.doorDrawCallRangeIDs);
 								}
 
 								break;
@@ -1019,11 +1033,11 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									constexpr double meshLightPercent = 0.0;
 									const double pixelShaderParam0 = uMin;
-									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
+									this->addDrawCall(renderChunk, voxel, doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
 										renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID, textureID,
 										std::nullopt, textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent,
 										voxelLightIdList.getLightIDs(), VertexShaderType::SlidingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordUMin,
-										pixelShaderParam0, renderChunk.doorDrawCalls);
+										pixelShaderParam0, renderChunk.doorDrawCallRangeIDs);
 								}
 
 								break;
@@ -1045,11 +1059,11 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
 									constexpr double meshLightPercent = 0.0;
 									const double pixelShaderParam0 = vMin;
-									this->addDrawCall(doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
+									this->addDrawCall(renderChunk, voxel, doorHingePosition, doorTransformBufferID, doorTransformIndex, renderMeshInst.vertexBufferID,
 										renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID, textureID,
 										std::nullopt, textureSamplingType, textureSamplingType, RenderLightingType::PerPixel, meshLightPercent,
 										voxelLightIdList.getLightIDs(), VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin,
-										pixelShaderParam0, renderChunk.doorDrawCalls);
+										pixelShaderParam0, renderChunk.doorDrawCallRangeIDs);
 								}
 
 								break;
@@ -1070,19 +1084,19 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 
 							RenderLightingType lightingType = RenderLightingType::PerPixel;
 							double meshLightPercent = 0.0;
-							std::vector<RenderDrawCall> *drawCallsPtr = &renderChunk.staticDrawCalls;
+							BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDsView = renderChunk.staticDrawCallRangeIDs;
 							if (isFading)
 							{
 								lightingType = RenderLightingType::PerMesh;
 								meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
-								drawCallsPtr = &renderChunk.fadingDrawCalls;
+								drawCallRangeIDsView = renderChunk.fadingDrawCallRangeIDs;
 							}
 
 							constexpr double pixelShaderParam0 = 0.0;
-							this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
+							this->addDrawCall(renderChunk, voxel, worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
 								renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID,
 								textureID, std::nullopt, textureSamplingType, textureSamplingType, lightingType, meshLightPercent,
-								voxelLightIdList.getLightIDs(), VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, *drawCallsPtr);
+								voxelLightIdList.getLightIDs(), VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, drawCallRangeIDsView);
 						}
 					}
 				}
@@ -1114,10 +1128,10 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 						}
 
 						constexpr double pixelShaderParam0 = 0.0;
-						this->addDrawCall(worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
+						this->addDrawCall(renderChunk, voxel, worldPos, transformBufferID, transformIndex, renderMeshInst.vertexBufferID,
 							renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, chasmWallIndexBufferID, textureID0, textureID1,
 							textureSamplingType, textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(),
-							VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer, pixelShaderParam0, renderChunk.chasmDrawCalls);
+							VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer, pixelShaderParam0, renderChunk.chasmDrawCallRangeIDs);
 					}
 				}
 			}
@@ -1131,14 +1145,12 @@ void RenderVoxelChunkManager::rebuildChunkDrawCalls(RenderVoxelChunk &renderChun
 {
 	if (updateStatics)
 	{
-		renderChunk.staticDrawCalls.clear();
+		renderChunk.freeStaticDrawCalls();
 	}
 
 	if (updateAnimating)
 	{
-		renderChunk.doorDrawCalls.clear();
-		renderChunk.chasmDrawCalls.clear();
-		renderChunk.fadingDrawCalls.clear();
+		renderChunk.freeAnimatingDrawCalls();
 	}
 
 	this->loadDrawCalls(renderChunk, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
@@ -1148,18 +1160,27 @@ void RenderVoxelChunkManager::rebuildDrawCallsList()
 {
 	this->drawCallsCache.clear();
 
+	auto addValidDrawCalls = [this](const RenderVoxelChunk &renderChunk, BufferView3D<const RenderVoxelDrawCallRangeID> rangeIDs)
+	{
+		for (const RenderVoxelDrawCallRangeID rangeID : rangeIDs)
+		{
+			if (rangeID >= 0)
+			{
+				const BufferView<const RenderDrawCall> drawCalls = renderChunk.drawCallHeap.get(rangeID);
+				this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
+			}
+		}
+	};
+
 	// @todo: eventually this should sort by distance from a CoordDouble2
 	for (size_t i = 0; i < this->activeChunks.size(); i++)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		BufferView<const RenderDrawCall> staticDrawCalls = chunkPtr->staticDrawCalls;
-		BufferView<const RenderDrawCall> doorDrawCalls = chunkPtr->doorDrawCalls;
-		BufferView<const RenderDrawCall> chasmDrawCalls = chunkPtr->chasmDrawCalls;
-		BufferView<const RenderDrawCall> fadingDrawCalls = chunkPtr->fadingDrawCalls;
-		this->drawCallsCache.insert(this->drawCallsCache.end(), staticDrawCalls.begin(), staticDrawCalls.end());
-		this->drawCallsCache.insert(this->drawCallsCache.end(), doorDrawCalls.begin(), doorDrawCalls.end());
-		this->drawCallsCache.insert(this->drawCallsCache.end(), chasmDrawCalls.begin(), chasmDrawCalls.end());
-		this->drawCallsCache.insert(this->drawCallsCache.end(), fadingDrawCalls.begin(), fadingDrawCalls.end());
+		const RenderVoxelChunk &renderChunk = *chunkPtr;
+		addValidDrawCalls(renderChunk, renderChunk.staticDrawCallRangeIDs);
+		addValidDrawCalls(renderChunk, renderChunk.doorDrawCallRangeIDs);
+		addValidDrawCalls(renderChunk, renderChunk.chasmDrawCallRangeIDs);
+		addValidDrawCalls(renderChunk, renderChunk.fadingDrawCallRangeIDs);
 	}
 }
 
