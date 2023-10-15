@@ -142,7 +142,7 @@ void RenderVoxelDrawCallHeap::free(RenderVoxelDrawCallRangeID id)
 {
 	DebugAssert(id >= 0);
 
-	auto freedIdIter = std::find(this->freedIDs.begin(), this->freedIDs.end(), id);
+	const auto freedIdIter = std::find(this->freedIDs.begin(), this->freedIDs.end(), id);
 	if (freedIdIter != this->freedIDs.end())
 	{
 		DebugLogWarning("Already freed draw call range ID " + std::to_string(id) + ".");

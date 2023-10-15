@@ -10,6 +10,8 @@
 #include "../Assets/TextureManager.h"
 #include "../Voxels/DoorUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
+#include "../Voxels/VoxelVisibilityChunk.h"
+#include "../Voxels/VoxelVisibilityChunkManager.h"
 
 #include "components/debug/Debug.h"
 
@@ -777,17 +779,25 @@ void RenderVoxelChunkManager::addDrawCall(RenderVoxelChunk &renderChunk, const V
 }
 
 void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
-	const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics,
-	bool updateAnimating)
+	const VoxelVisibilityChunk &voxelVisChunk, const RenderLightChunk &renderLightChunk, double ceilingScale,
+	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
 	const ChunkInt2 &chunkPos = renderChunk.getPosition();
 
 	// Generate draw calls for each non-air voxel.
 	for (WEInt z = 0; z < renderChunk.meshInstIDs.getDepth(); z++)
 	{
-		for (int y = 0; y < renderChunk.meshInstIDs.getHeight(); y++)
+		for (SNInt x = 0; x < renderChunk.meshInstIDs.getWidth(); x++)
 		{
-			for (SNInt x = 0; x < renderChunk.meshInstIDs.getWidth(); x++)
+			const int visibilityLeafNodeIndex = x + (z * renderChunk.meshInstIDs.getWidth());
+			DebugAssertIndex(voxelVisChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
+			const bool isVoxelColumnVisible = voxelVisChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
+			if (!isVoxelColumnVisible)
+			{
+				continue;
+			}
+
+			for (int y = 0; y < renderChunk.meshInstIDs.getHeight(); y++)
 			{
 				const VoxelInt3 voxel(x, y, z);
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(x, y, z);
@@ -1140,8 +1150,8 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 }
 
 void RenderVoxelChunkManager::rebuildChunkDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
-	const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics,
-	bool updateAnimating)
+	const VoxelVisibilityChunk &voxelVisChunk, const RenderLightChunk &renderLightChunk, double ceilingScale,
+	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
 {
 	if (updateStatics)
 	{
@@ -1153,34 +1163,48 @@ void RenderVoxelChunkManager::rebuildChunkDrawCalls(RenderVoxelChunk &renderChun
 		renderChunk.freeAnimatingDrawCalls();
 	}
 
-	this->loadDrawCalls(renderChunk, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
+	this->loadDrawCalls(renderChunk, voxelChunk, voxelVisChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
 }
 
-void RenderVoxelChunkManager::rebuildDrawCallsList()
+void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkManager &voxelVisChunkManager)
 {
 	this->drawCallsCache.clear();
 
-	auto addValidDrawCalls = [this](const RenderVoxelChunk &renderChunk, BufferView3D<const RenderVoxelDrawCallRangeID> rangeIDs)
+	auto addValidDrawCalls = [this](const RenderVoxelChunk &renderChunk, const VoxelVisibilityChunk &voxelVisChunk, BufferView3D<const RenderVoxelDrawCallRangeID> rangeIDs)
 	{
-		for (const RenderVoxelDrawCallRangeID rangeID : rangeIDs)
+		for (WEInt z = 0; z < rangeIDs.getDepth(); z++)
 		{
-			if (rangeID >= 0)
+			for (SNInt x = 0; x < rangeIDs.getWidth(); x++)
 			{
-				const BufferView<const RenderDrawCall> drawCalls = renderChunk.drawCallHeap.get(rangeID);
-				this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
+				const int visibilityLeafNodeIndex = x + (z * rangeIDs.getWidth());
+				DebugAssertIndex(voxelVisChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
+				const bool isVoxelColumnVisible = voxelVisChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
+				if (isVoxelColumnVisible)
+				{
+					for (int y = 0; y < rangeIDs.getHeight(); y++)
+					{
+						const RenderVoxelDrawCallRangeID rangeID = rangeIDs.get(x, y, z);
+						if (rangeID >= 0)
+						{
+							const BufferView<const RenderDrawCall> drawCalls = renderChunk.drawCallHeap.get(rangeID);
+							this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
+						}
+					}
+				}
 			}
 		}
 	};
 
 	// @todo: eventually this should sort by distance from a CoordDouble2
-	for (size_t i = 0; i < this->activeChunks.size(); i++)
+	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
 		const RenderVoxelChunk &renderChunk = *chunkPtr;
-		addValidDrawCalls(renderChunk, renderChunk.staticDrawCallRangeIDs);
-		addValidDrawCalls(renderChunk, renderChunk.doorDrawCallRangeIDs);
-		addValidDrawCalls(renderChunk, renderChunk.chasmDrawCallRangeIDs);
-		addValidDrawCalls(renderChunk, renderChunk.fadingDrawCallRangeIDs);
+		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtIndex(i);
+		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.staticDrawCallRangeIDs);
+		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.doorDrawCallRangeIDs);
+		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.chasmDrawCallRangeIDs);
+		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.fadingDrawCallRangeIDs);
 	}
 }
 
@@ -1218,18 +1242,20 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtPosition(chunkPos);
 		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 		this->loadMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->loadTextures(voxelChunk, textureManager, renderer);
 		this->loadChasmWalls(renderChunk, voxelChunk);
 		this->loadDoorUniformBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
-		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent, true, false);
+		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, voxelVisChunk, renderLightChunk, ceilingScale, chasmAnimPercent, true, false);
 	}
 
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtPosition(chunkPos);
 		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 
 		BufferView<const VoxelInt3> dirtyChasmWallInstPositions = voxelChunk.getDirtyChasmWallInstPositions();
@@ -1271,13 +1297,14 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		bool updateStatics = dirtyMeshDefPositions.getCount() > 0;
 		updateStatics |= dirtyFadeAnimInstPositions.getCount() > 0; // @temp fix for fading voxels being covered by their non-fading draw call
 		updateStatics |= dirtyLightPositions.getCount() > 0; // @temp fix for player light movement, eventually other moving lights too
-		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
+		updateStatics |= true; // @temp fix for draw calls not regenerating in chunks the player is not in (probably because nothing static in them is being marked dirty)
+		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, voxelVisChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
 	}
 
 	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient
 	//if ((freedChunkCount > 0) || (newChunkCount > 0))
 	{
-		this->rebuildDrawCallsList();
+		this->rebuildDrawCallsList(voxelVisChunkManager);
 	}
 }
 
