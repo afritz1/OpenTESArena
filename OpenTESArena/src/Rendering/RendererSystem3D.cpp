@@ -1,7 +1,7 @@
 #include "RendererSystem3D.h"
 
 RendererSystem3D::ProfilerData::ProfilerData(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
-	int visTriangleCount, int textureCount, int64_t textureByteCount, int totalLightCount)
+	int visTriangleCount, int textureCount, int64_t textureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites)
 {
 	this->width = width;
 	this->height = height;
@@ -12,6 +12,8 @@ RendererSystem3D::ProfilerData::ProfilerData(int width, int height, int threadCo
 	this->textureCount = textureCount;
 	this->textureByteCount = textureByteCount;
 	this->totalLightCount = totalLightCount;
+	this->totalDepthTests = totalDepthTests;
+	this->totalColorWrites = totalColorWrites;
 }
 
 RendererSystem3D::~RendererSystem3D()

@@ -627,16 +627,22 @@ void Game::renderDebugInfo()
 			const std::string renderHeight = std::to_string(renderDims.y);
 			const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
 			const std::string renderThreadCount = std::to_string(profilerData.threadCount);
-			const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
+			const std::string renderTime = String::fixedPrecision(profilerData.renderTime * 1000.0, 2);
+			const std::string presentTime = String::fixedPrecision(profilerData.presentTime * 1000.0, 2);
 			const std::string renderDrawCallCount = std::to_string(profilerData.drawCallCount);
+			const std::string renderDepthTestRatio = String::fixedPrecision(static_cast<double>(profilerData.totalDepthTests) / static_cast<double>(profilerData.pixelCount), 2);
+			const std::string renderColorOverdrawRatio = String::fixedPrecision(static_cast<double>(profilerData.totalColorWrites) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string objectTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.objectTextureByteCount) / (1024.0 * 1024.0), 2);
 			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
 				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
 				"3D render: " + renderTime + "ms" + '\n' +
+				"Present: " + presentTime + "ms" + '\n' +
 				"Textures: " + std::to_string(profilerData.objectTextureCount) + " (" + objectTextureMbCount + "MB)" + '\n' +
 				"Draw calls: " + renderDrawCallCount + '\n' +
 				"Triangles: " + std::to_string(profilerData.visTriangleCount) + " / " + std::to_string(profilerData.sceneTriangleCount) + '\n' +
-				"Lights: " + std::to_string(profilerData.totalLightCount));
+				"Lights: " + std::to_string(profilerData.totalLightCount) + '\n' +
+				"Depth tests: " + renderDepthTestRatio + "x" + '\n' +
+				"Overdraw: " + renderColorOverdrawRatio + "x");
 		}
 		else
 		{

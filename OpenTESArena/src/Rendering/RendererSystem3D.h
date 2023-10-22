@@ -35,9 +35,12 @@ public:
 		int textureCount;
 		int64_t textureByteCount;
 		int totalLightCount;
+		int totalDepthTests;
+		int totalColorWrites;
 
 		ProfilerData(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
-			int visTriangleCount, int textureCount, int64_t textureByteCount, int totalLightCount);
+			int visTriangleCount, int textureCount, int64_t textureByteCount, int totalLightCount, int totalDepthTests,
+			int totalColorWrites);
 	};
 
 	virtual ~RendererSystem3D();

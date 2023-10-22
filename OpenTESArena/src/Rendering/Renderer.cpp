@@ -103,6 +103,7 @@ Renderer::ProfilerData::ProfilerData()
 {
 	this->width = -1;
 	this->height = -1;
+	this->pixelCount = -1;
 	this->threadCount = -1;
 	this->drawCallCount = -1;
 	this->sceneTriangleCount = -1;
@@ -110,14 +111,19 @@ Renderer::ProfilerData::ProfilerData()
 	this->objectTextureCount = -1;
 	this->objectTextureByteCount = -1;
 	this->totalLightCount = -1;
-	this->frameTime = 0.0;
+	this->totalDepthTests = -1;
+	this->totalColorWrites = -1;
+	this->renderTime = 0.0;
+	this->presentTime = 0.0;
 }
 
 void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
-	int visTriangleCount, int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, double frameTime)
+	int visTriangleCount, int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests,
+	int totalColorWrites, double renderTime, double presentTime)
 {
 	this->width = width;
 	this->height = height;
+	this->pixelCount = width * height;
 	this->threadCount = threadCount;
 	this->drawCallCount = drawCallCount;
 	this->sceneTriangleCount = sceneTriangleCount;
@@ -125,7 +131,10 @@ void Renderer::ProfilerData::init(int width, int height, int threadCount, int dr
 	this->objectTextureCount = objectTextureCount;
 	this->objectTextureByteCount = objectTextureByteCount;
 	this->totalLightCount = totalLightCount;
-	this->frameTime = frameTime;
+	this->totalDepthTests = totalDepthTests;
+	this->totalColorWrites = totalColorWrites;
+	this->renderTime = renderTime;
+	this->presentTime = presentTime;
 }
 
 Renderer::Renderer()
@@ -996,27 +1005,30 @@ void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDr
 
 	uint32_t *outputBuffer;
 	int gameWorldPitch;
-	int status = SDL_LockTexture(this->gameWorldTexture.get(), nullptr,
-		reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
+	int status = SDL_LockTexture(this->gameWorldTexture.get(), nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
 	DebugAssertMsg(status == 0, "Couldn't lock game world texture for scene rendering (" + std::string(SDL_GetError()) + ").");
 
 	// Render the game world (no UI).
-	const auto startTime = std::chrono::high_resolution_clock::now();
+	const auto renderStartTime = std::chrono::high_resolution_clock::now();
 	this->renderer3D->submitFrame(camera, voxelDrawCalls, renderFrameSettings, outputBuffer);
-	const auto endTime = std::chrono::high_resolution_clock::now();
-	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
+	const auto renderEndTime = std::chrono::high_resolution_clock::now();
+	const double renderTotalTime = static_cast<double>((renderEndTime - renderStartTime).count()) / static_cast<double>(std::nano::den);
+
+	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
+	const auto presentStartTime = std::chrono::high_resolution_clock::now();
+	SDL_UnlockTexture(this->gameWorldTexture.get());
+
+	const Int2 viewDims = this->getViewDimensions();
+	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);
+	const auto presentEndTime = std::chrono::high_resolution_clock::now();
+	const double presentTotalTime = static_cast<double>((presentEndTime - presentStartTime).count()) / static_cast<double>(std::nano::den);
 
 	// Update profiler stats.
 	const RendererSystem3D::ProfilerData swProfilerData = this->renderer3D->getProfilerData();
 	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
 		swProfilerData.drawCallCount, swProfilerData.sceneTriangleCount, swProfilerData.visTriangleCount,
-		swProfilerData.textureCount, swProfilerData.textureByteCount, swProfilerData.totalLightCount, frameTime);
-
-	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
-	SDL_UnlockTexture(this->gameWorldTexture.get());
-
-	const Int2 viewDims = this->getViewDimensions();
-	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);
+		swProfilerData.textureCount, swProfilerData.textureByteCount, swProfilerData.totalLightCount,
+		swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)

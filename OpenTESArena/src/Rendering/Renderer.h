@@ -53,6 +53,7 @@ public:
 	{
 		// Internal renderer resolution.
 		int width, height;
+		int pixelCount;
 
 		int threadCount;
 		int drawCallCount;
@@ -67,12 +68,18 @@ public:
 		// Lights.
 		int totalLightCount;
 
-		double frameTime;
+		// Pixel writes/overdraw.
+		int totalDepthTests;
+		int totalColorWrites;
+
+		double renderTime;
+		double presentTime;
 
 		ProfilerData();
 
 		void init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount, int visTriangleCount,
-			int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, double frameTime);
+			int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites,
+			double renderTime, double presentTime);
 	};
 
 	using ResolutionScaleFunc = std::function<double()>;

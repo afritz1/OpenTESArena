@@ -633,7 +633,11 @@ namespace swGeometry
 // Rendering functions, per-pixel work.
 namespace swRender
 {
-	void DrawDebugRGB(const RenderCamera &camera, BufferView2D<uint32_t> &colorBuffer)
+	// For measuring overdraw.
+	int g_totalDepthTests = 0;
+	int g_totalColorWrites = 0;
+
+	void DrawDebugRGB(const RenderCamera &camera, BufferView2D<uint32_t> colorBuffer)
 	{
 		const int frameBufferWidth = colorBuffer.getWidth();
 		const int frameBufferHeight = colorBuffer.getHeight();
@@ -673,6 +677,8 @@ namespace swRender
 		paletteIndexBuffer.fill(0);
 		depthBuffer.fill(std::numeric_limits<double>::infinity());
 		colorBuffer.fill(0);
+		swRender::g_totalDepthTests = 0;
+		swRender::g_totalColorWrites = 0;
 	}
 
 	void ClearTriangleDrawList()
@@ -1141,6 +1147,8 @@ namespace swRender
 						shaderPerspective.cameraZDepth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip)); // For depth checks.
 
 						shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
+						g_totalDepthTests++;
+
 						if (shaderPerspective.cameraZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
 						{
 							shaderPerspective.trueDepth = 1.0 / ((u * trueDepth0Recip) + (v * trueDepth1Recip) + (w * trueDepth2Recip)); // For shading. @todo: this should not be view-dependent but it is wobbly when moving/looking around. Blame u,v,w.
@@ -1270,6 +1278,7 @@ namespace swRender
 							// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
 							const uint8_t writtenPaletteIndex = shaderFrameBuffer.colors[shaderFrameBuffer.pixelIndex];
 							colorBufferPtr[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
+							g_totalColorWrites++;
 						}
 					}
 				}
@@ -1707,9 +1716,11 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	}
 
 	const int totalLightCount = this->lights.getUsedCount();
+	const int totalDepthTests = swRender::g_totalDepthTests;
+	const int totalColorWrites = swRender::g_totalColorWrites;
 
 	return ProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, sceneTriangleCount,
-		visTriangleCount, textureCount, textureByteCount, totalLightCount);
+		visTriangleCount, textureCount, textureByteCount, totalLightCount, totalDepthTests, totalColorWrites);
 }
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> drawCalls,
