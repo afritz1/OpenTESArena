@@ -30,7 +30,9 @@
 #include "../Interface/GameWorldUiView.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
+#include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RendererUtils.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
@@ -804,10 +806,10 @@ void Game::loop()
 			if (this->isSimulatingScene() && this->gameState.isActiveMapValid())
 			{
 				// Recalculate the active chunks.
-				const CoordDouble3 playerCoord = this->player.getPosition();
+				const CoordDouble3 oldPlayerCoord = this->player.getPosition();
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
-				chunkManager.update(playerCoord.chunk, chunkDistance);
+				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
 
 				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
 				// It shouldn't be abstracted into a game state.
@@ -823,10 +825,16 @@ void Game::loop()
 				this->gameState.tickVoxels(clampedDt, *this);
 				this->gameState.tickEntities(clampedDt, *this);
 				this->gameState.tickCollision(clampedDt, *this);
-				this->gameState.tickRendering(*this);
+
+				const CoordDouble3 newPlayerCoord = this->player.getPosition();
+				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, player.getDirection(),
+					options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+
+				this->gameState.tickVisibility(renderCamera, *this);
+				this->gameState.tickRendering(renderCamera, *this);
 
 				// Update audio listener orientation.
-				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
+				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(newPlayerCoord);
 				const WorldDouble3 &direction = this->player.getDirection();
 				const AudioManager::ListenerData listenerData(absolutePosition, direction);
 				this->audioManager.updateListener(listenerData);

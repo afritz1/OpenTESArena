@@ -47,6 +47,8 @@ class TextureManager;
 
 enum class MapType;
 
+struct RenderCamera;
+
 class GameState
 {
 public:
@@ -205,7 +207,8 @@ public:
 	void tickVoxels(double dt, Game &game);
 	void tickEntities(double dt, Game &game);
 	void tickCollision(double dt, Game &game);
-	void tickRendering(Game &game);
+	void tickVisibility(const RenderCamera &renderCamera, Game &game);
+	void tickRendering(const RenderCamera &renderCamera, Game &game);
 };
 
 #endif

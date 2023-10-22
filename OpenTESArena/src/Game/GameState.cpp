@@ -657,11 +657,15 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.getRandom(), textureManager);
 
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
 	this->tickCollision(0.0, game);
 	this->tickSky(0.0, game);
-	this->tickRendering(game);
+	this->tickVisibility(renderCamera, game);
+	this->tickRendering(renderCamera, game);
 
 	if (this->nextMusicFunc)
 	{
@@ -912,7 +916,27 @@ void GameState::tickCollision(double dt, Game &game)
 		chunkManager.getFreedChunkPositions(), voxelChunkManager);
 }
 
-void GameState::tickRendering(Game &game)
+void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)
+{
+	SceneManager &sceneManager = game.getSceneManager();
+	const ChunkManager &chunkManager = sceneManager.chunkManager;
+	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
+
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const double ceilingScale = this->getActiveCeilingScale();
+
+	VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
+	voxelVisChunkManager.update(newChunkPositions, freedChunkPositions, renderCamera, ceilingScale, voxelChunkManager);
+
+	EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
+	entityVisChunkManager.update(activeChunkPositions, newChunkPositions, freedChunkPositions, renderCamera, ceilingScale,
+		voxelChunkManager, entityChunkManager);
+}
+
+void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 {
 	SceneManager &sceneManager = game.getSceneManager();
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
@@ -938,26 +962,19 @@ void GameState::tickRendering(Game &game)
 	const bool isFoggy = this->isFogActive();
 	const bool nightLightsAreActive = ArenaClockUtils::nightLightsAreActive(this->clock);	
 	const Options &options = game.getOptions();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
-		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
-
-	VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
-	voxelVisChunkManager.update(newChunkPositions, freedChunkPositions, renderCamera, ceilingScale, voxelChunkManager);
-
-	EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
-	entityVisChunkManager.update(activeChunkPositions, newChunkPositions, freedChunkPositions, renderCamera, ceilingScale,
-		voxelChunkManager, entityChunkManager);
 
 	RenderLightChunkManager &renderLightChunkManager = sceneManager.renderLightChunkManager;
 	renderLightChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
 	renderLightChunkManager.update(activeChunkPositions, newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
 		options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
 
+	const VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
 	RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
 	renderVoxelChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
 	renderVoxelChunkManager.update(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
 		voxelChunkManager, voxelVisChunkManager, renderLightChunkManager, textureManager, renderer);
 
+	const EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
 	RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
 	renderEntityChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
 	renderEntityChunkManager.update(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
