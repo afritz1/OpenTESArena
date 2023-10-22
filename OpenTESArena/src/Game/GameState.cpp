@@ -961,7 +961,7 @@ void GameState::tickRendering(Game &game)
 	RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
 	renderEntityChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
 	renderEntityChunkManager.update(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
-		voxelChunkManager, entityChunkManager, renderLightChunkManager, textureManager, renderer);
+		voxelChunkManager, entityChunkManager, entityVisChunkManager, renderLightChunkManager, textureManager, renderer);
 
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;
 	const WeatherType weatherType = this->weatherDef.type;

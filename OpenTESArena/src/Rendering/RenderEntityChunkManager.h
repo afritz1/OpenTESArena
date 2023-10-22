@@ -18,6 +18,7 @@
 class EntityChunk;
 class EntityChunkManager;
 class EntityDefinitionLibrary;
+class EntityVisibilityChunkManager;
 class Renderer;
 class RenderLightChunk;
 class RenderLightChunkManager;
@@ -27,6 +28,7 @@ class TextureManager;
 class VoxelChunkManager;
 
 struct EntityAnimationInstance;
+struct EntityVisibilityChunk;
 struct RenderCamera;
 
 class RenderEntityChunkManager final : public SpecializedChunkManager<RenderEntityChunk>
@@ -59,8 +61,9 @@ private:
 	void addDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
 		const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
 		std::vector<RenderDrawCall> &drawCalls);
-	void rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityChunk &entityChunk, const RenderLightChunk &renderLightChunk,
-		const CoordDouble2 &cameraCoordXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager);
+	void rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityVisibilityChunk &entityVisChunk,
+		const RenderLightChunk &renderLightChunk, const CoordDouble2 &cameraCoordXZ, double ceilingScale,
+		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager);
 	void rebuildDrawCallsList();
 public:
 	RenderEntityChunkManager();
@@ -76,8 +79,8 @@ public:
 
 	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const EntityChunkManager &entityChunkManager, const RenderLightChunkManager &renderLightChunkManager,
-		TextureManager &textureManager, Renderer &renderer);
+		const EntityChunkManager &entityChunkManager, const EntityVisibilityChunkManager &entityVisChunkManager,
+		const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// End of frame clean-up.
 	void cleanUp();

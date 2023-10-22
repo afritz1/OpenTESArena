@@ -7,6 +7,7 @@
 #include "RenderTransform.h"
 #include "../Assets/TextureManager.h"
 #include "../Entities/EntityChunkManager.h"
+#include "../Entities/EntityVisibilityChunkManager.h"
 #include "../Entities/EntityVisibilityState.h"
 #include "../Voxels/DoorUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
@@ -336,13 +337,13 @@ void RenderEntityChunkManager::addDrawCall(const Double3 &position, UniformBuffe
 	drawCalls.emplace_back(std::move(drawCall));
 }
 
-void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityChunk &entityChunk,
+void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityVisibilityChunk &entityVisChunk,
 	const RenderLightChunk &renderLightChunk, const CoordDouble2 &cameraCoordXZ, double ceilingScale,
 	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager)
 {
 	renderChunk.drawCalls.clear();
 
-	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	for (const EntityInstanceID entityInstID : entityVisChunk.visibleEntities)
 	{
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
@@ -430,8 +431,8 @@ void RenderEntityChunkManager::updateActiveChunks(BufferView<const ChunkInt2> ne
 
 void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 	const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-	const EntityChunkManager &entityChunkManager, const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager,
-	Renderer &renderer)
+	const EntityChunkManager &entityChunkManager, const EntityVisibilityChunkManager &entityVisChunkManager,
+	const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
@@ -461,7 +462,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 		this->loadUniformBuffers(entityChunk, renderer);
 	}
 
-	// The rotation for entities so they face the camera.
+	// The rotation all entities share for facing the camera.
 	const Radians allEntitiesRotationRadians = -MathUtils::fullAtan2(cameraDirXZ) - Constants::HalfPi;
 	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
 
@@ -469,6 +470,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 	{
 		RenderEntityChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
+		const EntityVisibilityChunk &entityVisChunk = entityVisChunkManager.getChunkAtPosition(chunkPos);
 		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 
 		// Update entity render transforms.
@@ -501,7 +503,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 			renderer.populateUniformBuffer(entityTransformBufferID, entityRenderTransform);
 		}
 
-		this->rebuildChunkDrawCalls(renderChunk, entityChunk, renderLightChunk, cameraCoordXZ, ceilingScale,
+		this->rebuildChunkDrawCalls(renderChunk, entityVisChunk, renderLightChunk, cameraCoordXZ, ceilingScale,
 			voxelChunkManager, entityChunkManager);
 	}
 
