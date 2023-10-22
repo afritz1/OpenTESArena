@@ -9,6 +9,7 @@
 #include "../Utilities/Palette.h"
 #include "../Voxels/VoxelUtils.h"
 
+struct BoundingBox3D;
 struct RenderCamera;
 
 namespace RendererUtils
@@ -70,6 +71,10 @@ namespace RendererUtils
 
 	// Gets the palette index of the color that most closely matches the given one.
 	int getNearestPaletteColorIndex(const Color &color, const Palette &palette);
+
+	// Writes out visibility results for the bounding box test against the given camera frustum.
+	void getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera,
+		bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible);
 }
 
 #endif

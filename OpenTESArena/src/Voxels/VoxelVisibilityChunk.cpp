@@ -1,5 +1,6 @@
 #include "VoxelVisibilityChunk.h"
 #include "../Rendering/RenderCamera.h"
+#include "../Rendering/RendererUtils.h"
 
 namespace
 {
@@ -174,12 +175,6 @@ void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ce
 
 void VoxelVisibilityChunk::update(const RenderCamera &camera)
 {
-	const WorldDouble3 cameraEye = camera.worldPoint;
-	const Double3 frustumNormals[5] =
-	{
-		camera.forward, camera.leftFrustumNormal, camera.rightFrustumNormal, camera.bottomFrustumNormal, camera.topFrustumNormal
-	};
-
 	int currentTreeLevelIndex = 0; // Starts at root, ends at leaves.
 	int currentTreeLevelNodeIndex = 0; // 0-# of nodes on the current tree level.
 	SavedSubtreeTestState savedSubtreeTestStates[TREE_LEVEL_COUNT - 1];
@@ -195,49 +190,8 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 		DebugAssertIndex(this->nodeBBoxes, bboxIndex);
 		const BoundingBox3D &bbox = this->nodeBBoxes[bboxIndex];
 
-		constexpr int bboxCornerCount = 8;
-		const WorldDouble3 bboxCorners[bboxCornerCount] =
-		{
-			bbox.min,
-			bbox.min + WorldDouble3(bbox.width, 0.0, 0.0),
-			bbox.min + WorldDouble3(0.0, bbox.height, 0.0),
-			bbox.min + WorldDouble3(bbox.width, bbox.height, 0.0),
-			bbox.min + WorldDouble3(0.0, 0.0, bbox.depth),
-			bbox.min + WorldDouble3(bbox.width, 0.0, bbox.depth),
-			bbox.min + WorldDouble3(0.0, bbox.height, bbox.depth),
-			bbox.max
-		};
-
-		bool isBBoxCompletelyVisible = true;
-		bool isBBoxCompletelyInvisible = false;
-		for (const Double3 &frustumNormal : frustumNormals)
-		{
-			int insidePoints = 0;
-			int outsidePoints = 0;
-			for (const WorldDouble3 &cornerPoint : bboxCorners)
-			{
-				const double dist = MathUtils::distanceToPlane(cornerPoint, cameraEye, frustumNormal);
-				if (dist >= 0.0)
-				{
-					insidePoints++;
-				}
-				else
-				{
-					outsidePoints++;
-				}
-			}
-
-			if (insidePoints < bboxCornerCount)
-			{
-				isBBoxCompletelyVisible = false;
-			}
-
-			if (outsidePoints == bboxCornerCount)
-			{
-				isBBoxCompletelyInvisible = true;
-				break;
-			}
-		}
+		bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
+		RendererUtils::getBBoxVisibilityInFrustum(bbox, camera, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
 
 		const bool treeLevelHasChildNodes = currentTreeLevelIndex < TREE_LEVEL_INDEX_LEAF;
 		if (treeLevelHasChildNodes)

@@ -3,65 +3,8 @@
 #include "EntityVisibilityChunk.h"
 #include "EntityVisibilityState.h"
 #include "../Rendering/RenderCamera.h"
+#include "../Rendering/RendererUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
-
-namespace
-{
-	void GetBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera, bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible)
-	{
-		const Double3 frustumNormals[5] =
-		{
-			camera.forward, camera.leftFrustumNormal, camera.rightFrustumNormal, camera.bottomFrustumNormal, camera.topFrustumNormal
-		};
-
-		constexpr int bboxCornerCount = 8;
-		const WorldDouble3 bboxCorners[bboxCornerCount] =
-		{
-			bbox.min,
-			bbox.min + WorldDouble3(bbox.width, 0.0, 0.0),
-			bbox.min + WorldDouble3(0.0, bbox.height, 0.0),
-			bbox.min + WorldDouble3(bbox.width, bbox.height, 0.0),
-			bbox.min + WorldDouble3(0.0, 0.0, bbox.depth),
-			bbox.min + WorldDouble3(bbox.width, 0.0, bbox.depth),
-			bbox.min + WorldDouble3(0.0, bbox.height, bbox.depth),
-			bbox.max
-		};
-
-		bool isCompletelyVisible = true;
-		bool isCompletelyInvisible = false;
-		for (const Double3 &frustumNormal : frustumNormals)
-		{
-			int insidePoints = 0;
-			int outsidePoints = 0;
-			for (const WorldDouble3 &cornerPoint : bboxCorners)
-			{
-				const double dist = MathUtils::distanceToPlane(cornerPoint, camera.worldPoint, frustumNormal);
-				if (dist >= 0.0)
-				{
-					insidePoints++;
-				}
-				else
-				{
-					outsidePoints++;
-				}
-			}
-
-			if (insidePoints < bboxCornerCount)
-			{
-				isCompletelyVisible = false;
-			}
-
-			if (outsidePoints == bboxCornerCount)
-			{
-				isCompletelyInvisible = true;
-				break;
-			}
-		}
-
-		*outIsCompletelyVisible = isCompletelyVisible;
-		*outIsCompletelyInvisible = isCompletelyInvisible;
-	}
-}
 
 void EntityVisibilityChunk::init(const ChunkInt2 &position, int height)
 {
@@ -129,7 +72,7 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 	}
 
 	bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
-	GetBBoxVisibilityInFrustum(this->bbox, camera, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
+	RendererUtils::getBBoxVisibilityInFrustum(this->bbox, camera, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
 
 	if (isBBoxCompletelyInvisible)
 	{
@@ -152,7 +95,7 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 			const BoundingBox3D &entityWorldBBox = this->entityWorldBBoxCache[i];
 
 			bool isEntityBBoxCompletelyVisible, isEntityBBoxCompletelyInvisible;
-			GetBBoxVisibilityInFrustum(entityWorldBBox, camera, &isEntityBBoxCompletelyVisible, &isEntityBBoxCompletelyInvisible);
+			RendererUtils::getBBoxVisibilityInFrustum(entityWorldBBox, camera, &isEntityBBoxCompletelyVisible, &isEntityBBoxCompletelyInvisible);
 
 			if (!isEntityBBoxCompletelyInvisible)
 			{

@@ -6,6 +6,7 @@
 #include "RenderCamera.h"
 #include "RendererUtils.h"
 #include "../Game/CardinalDirection.h"
+#include "../Math/BoundingBox.h"
 #include "../Math/Constants.h"
 #include "../Utilities/Platform.h"
 #include "../Voxels/VoxelChunk.h"
@@ -265,4 +266,60 @@ int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette
 
 	DebugAssert(nearestIndex.has_value());
 	return *nearestIndex;
+}
+
+void RendererUtils::getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera,
+	bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible)
+{
+	const Double3 frustumNormals[5] =
+	{
+		camera.forward, camera.leftFrustumNormal, camera.rightFrustumNormal, camera.bottomFrustumNormal, camera.topFrustumNormal
+	};
+
+	constexpr int bboxCornerCount = 8;
+	const WorldDouble3 bboxCorners[bboxCornerCount] =
+	{
+		bbox.min,
+		bbox.min + WorldDouble3(bbox.width, 0.0, 0.0),
+		bbox.min + WorldDouble3(0.0, bbox.height, 0.0),
+		bbox.min + WorldDouble3(bbox.width, bbox.height, 0.0),
+		bbox.min + WorldDouble3(0.0, 0.0, bbox.depth),
+		bbox.min + WorldDouble3(bbox.width, 0.0, bbox.depth),
+		bbox.min + WorldDouble3(0.0, bbox.height, bbox.depth),
+		bbox.max
+	};
+
+	bool isCompletelyVisible = true;
+	bool isCompletelyInvisible = false;
+	for (const Double3 &frustumNormal : frustumNormals)
+	{
+		int insidePoints = 0;
+		int outsidePoints = 0;
+		for (const WorldDouble3 &cornerPoint : bboxCorners)
+		{
+			const double dist = MathUtils::distanceToPlane(cornerPoint, camera.worldPoint, frustumNormal);
+			if (dist >= 0.0)
+			{
+				insidePoints++;
+			}
+			else
+			{
+				outsidePoints++;
+			}
+		}
+
+		if (insidePoints < bboxCornerCount)
+		{
+			isCompletelyVisible = false;
+		}
+
+		if (outsidePoints == bboxCornerCount)
+		{
+			isCompletelyInvisible = true;
+			break;
+		}
+	}
+
+	*outIsCompletelyVisible = isCompletelyVisible;
+	*outIsCompletelyInvisible = isCompletelyInvisible;
 }
