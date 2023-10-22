@@ -4,6 +4,7 @@
 #include "ChunkManager.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
+#include "../Entities/EntityVisibilityChunkManager.h"
 #include "../Rendering/RenderEntityChunkManager.h"
 #include "../Rendering/RenderLightChunkManager.h"
 #include "../Rendering/RenderSkyManager.h"
@@ -27,6 +28,7 @@ struct SceneManager
 	EntityChunkManager entityChunkManager;
 	CollisionChunkManager collisionChunkManager;
 	VoxelVisibilityChunkManager voxelVisChunkManager;
+	EntityVisibilityChunkManager entityVisChunkManager;
 	RenderVoxelChunkManager renderVoxelChunkManager;
 	RenderEntityChunkManager renderEntityChunkManager;
 	RenderLightChunkManager renderLightChunkManager;

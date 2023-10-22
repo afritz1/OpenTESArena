@@ -636,6 +636,7 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	sceneManager.entityChunkManager.clear();
 	sceneManager.collisionChunkManager.recycleAllChunks();
 	sceneManager.voxelVisChunkManager.recycleAllChunks();
+	sceneManager.entityVisChunkManager.recycleAllChunks();
 	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
 	sceneManager.renderEntityChunkManager.unloadScene(renderer);
 	sceneManager.renderLightChunkManager.unloadScene(renderer);
@@ -942,6 +943,10 @@ void GameState::tickRendering(Game &game)
 
 	VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
 	voxelVisChunkManager.update(newChunkPositions, freedChunkPositions, renderCamera, ceilingScale, voxelChunkManager);
+
+	EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
+	entityVisChunkManager.update(activeChunkPositions, newChunkPositions, freedChunkPositions, renderCamera, ceilingScale,
+		voxelChunkManager, entityChunkManager);
 
 	RenderLightChunkManager &renderLightChunkManager = sceneManager.renderLightChunkManager;
 	renderLightChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
