@@ -14,6 +14,7 @@
 #include "../Sky/SkyDefinition.h"
 #include "../Sky/SkyInfoDefinition.h"
 #include "../Sky/SkyInstance.h"
+#include "../Sky/SkyVisibilityManager.h"
 #include "../Weather/WeatherDefinition.h"
 #include "../Weather/WeatherInstance.h"
 #include "../World/MeshUtils.h"
@@ -627,7 +628,7 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 	}
 }
 
-void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance &weatherInst,
+void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,
 	const CoordDouble3 &cameraCoord, bool isInterior, double daytimePercent, bool isFoggy, double distantAmbientPercent,
 	Renderer &renderer)
 {
@@ -739,6 +740,11 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 	// Order draw calls back to front.
 	for (int i = skyInst.starEnd - 1; i >= skyInst.starStart; i--)
 	{
+		if (!skyVisManager.isObjectInFrustum(i))
+		{
+			continue;
+		}
+
 		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
 		const SkyObjectTextureType textureType = skyObjectInst.textureType;
 
@@ -766,6 +772,11 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 
 	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
 	{
+		if (!skyVisManager.isObjectInFrustum(i))
+		{
+			continue;
+		}
+
 		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
 		const SkyObjectTextureType textureType = skyObjectInst.textureType;
 		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky sun objects to use TextureAsset texture type.");
@@ -780,6 +791,11 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 
 	for (int i = skyInst.moonStart; i < skyInst.moonEnd; i++)
 	{
+		if (!skyVisManager.isObjectInFrustum(i))
+		{
+			continue;
+		}
+
 		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
 		const SkyObjectTextureType textureType = skyObjectInst.textureType;
 		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky moon objects to use TextureAsset texture type.");
@@ -794,6 +810,11 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 
 	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
 	{
+		if (!skyVisManager.isObjectInFrustum(i))
+		{
+			continue;
+		}
+
 		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
 		const SkyObjectTextureType textureType = skyObjectInst.textureType;
 		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky air objects to use TextureAsset texture type.");
@@ -808,6 +829,11 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 
 	for (int i = skyInst.landStart; i < skyInst.landEnd; i++)
 	{
+		if (!skyVisManager.isObjectInFrustum(i))
+		{
+			continue;
+		}
+
 		const SkyObjectInstance &skyObjectInst = skyInst.getSkyObjectInst(i);
 		const SkyObjectTextureType textureType = skyObjectInst.textureType;
 		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky land objects to use TextureAsset texture type.");
@@ -836,6 +862,11 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const WeatherInstance 
 	for (int i = skyInst.lightningStart; i < skyInst.lightningEnd; i++)
 	{
 		if (!skyInst.isLightningVisible(i))
+		{
+			continue;
+		}
+
+		if (!skyVisManager.isObjectInFrustum(i))
 		{
 			continue;
 		}

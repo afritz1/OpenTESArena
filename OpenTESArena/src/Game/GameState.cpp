@@ -642,6 +642,7 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 	sceneManager.renderLightChunkManager.unloadScene(renderer);
 	
 	sceneManager.skyInstance.clear();
+	sceneManager.skyVisManager.clear();
 	sceneManager.renderSkyManager.unloadScene(renderer);
 	sceneManager.renderWeatherManager.unloadScene();
 
@@ -934,6 +935,10 @@ void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)
 	EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
 	entityVisChunkManager.update(activeChunkPositions, newChunkPositions, freedChunkPositions, renderCamera, ceilingScale,
 		voxelChunkManager, entityChunkManager);
+
+	const SkyInstance &skyInst = sceneManager.skyInstance;
+	SkyVisibilityManager &skyVisManager = sceneManager.skyVisManager;
+	skyVisManager.update(renderCamera, skyInst);
 }
 
 void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
@@ -985,9 +990,10 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const double daytimePercent = this->getDaytimePercent();
 	sceneManager.updateGameWorldPalette(isInterior, weatherType, isFoggy, daytimePercent, textureManager);
 
+	const SkyVisibilityManager &skyVisManager = sceneManager.skyVisManager;
 	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(this->clock);
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.update(skyInst, this->weatherInst, playerCoord, isInterior, daytimePercent, isFoggy, distantAmbientPercent, renderer);
+	renderSkyManager.update(skyInst, skyVisManager, this->weatherInst, playerCoord, isInterior, daytimePercent, isFoggy, distantAmbientPercent, renderer);
 
 	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
 

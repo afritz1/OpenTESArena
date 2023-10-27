@@ -538,7 +538,9 @@ SET(TES_SKY
     "${SRC_ROOT}/Sky/SkySunDefinition.cpp"
     "${SRC_ROOT}/Sky/SkySunDefinition.h"
     "${SRC_ROOT}/Sky/SkyUtils.cpp"
-    "${SRC_ROOT}/Sky/SkyUtils.h")
+    "${SRC_ROOT}/Sky/SkyUtils.h"
+    "${SRC_ROOT}/Sky/SkyVisibilityManager.cpp"
+    "${SRC_ROOT}/Sky/SkyVisibilityManager.h")
 
 SET(TES_UI
     "${SRC_ROOT}/UI/AnimationState.cpp"

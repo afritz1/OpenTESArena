@@ -12,6 +12,7 @@
 #include "../Rendering/RenderVoxelChunkManager.h"
 #include "../Rendering/RenderWeatherManager.h"
 #include "../Sky/SkyInstance.h"
+#include "../Sky/SkyVisibilityManager.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelVisibilityChunkManager.h"
 
@@ -35,6 +36,7 @@ struct SceneManager
 
 	// Game world systems not tied to chunks.
 	SkyInstance skyInstance;
+	SkyVisibilityManager skyVisManager;
 	RenderSkyManager renderSkyManager;
 	RenderWeatherManager renderWeatherManager;
 

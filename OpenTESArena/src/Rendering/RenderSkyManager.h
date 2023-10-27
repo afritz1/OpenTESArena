@@ -10,6 +10,7 @@ class ExeData;
 class Renderer;
 class SkyInfoDefinition;
 class SkyInstance;
+class SkyVisibilityManager;
 class TextureManager;
 class WeatherInstance;
 
@@ -74,8 +75,9 @@ public:
 	BufferView<const RenderDrawCall> getObjectDrawCalls() const;
 
 	void loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
-	void update(const SkyInstance &skyInst, const WeatherInstance &weatherInst, const CoordDouble3 &cameraCoord, bool isInterior,
-		double daytimePercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer);
+	void update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,
+		const CoordDouble3 &cameraCoord, bool isInterior, double daytimePercent, bool isFoggy, double distantAmbientPercent,
+		Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
 
