@@ -6,7 +6,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
-#include "../Entities/EntityVisibilityState.h"
+#include "../Entities/EntityObservedResult.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -20,28 +20,40 @@
 
 namespace Physics
 {
+	struct EntityEntry
+	{
+		CoordDouble3 coord;
+		EntityObservedResult observedResult;
+
+		void init(const CoordDouble3 &coord, const EntityObservedResult &observedResult)
+		{
+			this->coord = coord;
+			this->observedResult = observedResult;
+		}
+	};
+
 	// Container of the voxels each entity is touching per chunk. Each chunk needs to look at adjacent chunk
 	// entities in case some of them overlap the chunk edge.
 	struct ChunkEntityMap
 	{
 		ChunkInt2 chunk;
-		std::unordered_map<VoxelInt3, std::vector<EntityVisibilityState3D>> mappings;
+		std::unordered_map<VoxelInt3, std::vector<EntityEntry>> mappings;
 
 		void init(const ChunkInt2 &chunk)
 		{
 			this->chunk = chunk;
 		}
 
-		void add(const VoxelInt3 &voxel, const EntityVisibilityState3D &visState)
+		void add(const VoxelInt3 &voxel, const EntityEntry &entry)
 		{
 			auto iter = this->mappings.find(voxel);
 			if (iter == this->mappings.end())
 			{
-				iter = this->mappings.emplace(voxel, std::vector<EntityVisibilityState3D>()).first;
+				iter = this->mappings.emplace(voxel, std::vector<EntityEntry>()).first;
 			}
 
-			std::vector<EntityVisibilityState3D> &visStateList = iter->second;
-			visStateList.emplace_back(visState);
+			std::vector<EntityEntry> &entryList = iter->second;
+			entryList.emplace_back(entry);
 		}
 	};
 
@@ -120,13 +132,16 @@ namespace Physics
 		{
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
-			EntityVisibilityState3D visState;
-			entityChunkManager.getEntityVisibilityState3D(entityInstID, viewCoordXZ, ceilingScale, voxelChunkManager, visState);
+			
+			EntityObservedResult observedResult;
+			entityChunkManager.getEntityObservedResult(entityInstID, viewCoordXZ, observedResult);
+
+			const CoordDouble3 entityCoord = entityChunkManager.getEntityPosition3D(entityInstID, ceilingScale, voxelChunkManager);
 
 			// Get the entity's view-independent bounding box to help determine which voxels they are in.
 			const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-			const CoordDouble3 minCoord = ChunkUtils::recalculateCoord(visState.flatPosition.chunk, visState.flatPosition.point - Double3(entityBBox.halfWidth, 0.0, entityBBox.halfDepth));
-			const CoordDouble3 maxCoord = ChunkUtils::recalculateCoord(visState.flatPosition.chunk, visState.flatPosition.point + Double3(entityBBox.halfWidth, entityBBox.height, entityBBox.halfDepth));
+			const CoordDouble3 minCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point - Double3(entityBBox.halfWidth, 0.0, entityBBox.halfDepth));
+			const CoordDouble3 maxCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point + Double3(entityBBox.halfWidth, entityBBox.height, entityBBox.halfDepth));
 
 			// Get min and max coordinates in chunk space and get the difference for iteration.
 			const CoordInt3 minVoxelCoord(minCoord.chunk, VoxelUtils::pointToVoxel(minCoord.point, ceilingScale));
@@ -149,7 +164,9 @@ namespace Physics
 						// If it's in the center chunk, add a mapping.
 						if (curCoord.chunk == chunk)
 						{
-							chunkEntityMap.add(curCoord.voxel, visState);
+							EntityEntry entry;
+							entry.init(entityCoord, observedResult);
+							chunkEntityMap.add(curCoord.voxel, entry);
 						}
 					}
 				}
@@ -178,14 +195,13 @@ namespace Physics
 		return chunkEntityMaps.back();
 	}
 
-	bool getEntityRayIntersection(const EntityVisibilityState3D &visState, const EntityDefinition &entityDef,
-		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp,
-		double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
-		CoordDouble3 *outHitPoint)
+	bool getEntityRayIntersection(const EntityObservedResult &observedResult, const CoordDouble3 &entityCoord, const EntityDefinition &entityDef,
+		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp, double entityWidth, double entityHeight,
+		const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection, CoordDouble3 *outHitPoint)
 	{
 		// Do a ray test to see if the ray intersects.
 		const WorldDouble3 absoluteRayPoint = VoxelUtils::coordToWorldPoint(rayPoint);
-		const WorldDouble3 absoluteFlatPosition = VoxelUtils::coordToWorldPoint(visState.flatPosition);
+		const WorldDouble3 absoluteFlatPosition = VoxelUtils::coordToWorldPoint(entityCoord);
 		WorldDouble3 absoluteHitPoint;
 		if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition,
 			entityForward, &absoluteHitPoint))
@@ -198,20 +214,10 @@ namespace Physics
 				1.0 - (diff.dot(entityUp) / entityHeight));
 
 			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-			const EntityAnimationDefinitionState &animState = animDef.states[visState.stateIndex];
-
-			const int keyframeListIndex = animState.keyframeListsIndex + visState.angleIndex;
-			DebugAssert(keyframeListIndex >= 0);
-			DebugAssert(keyframeListIndex < animDef.keyframeListCount);
-			const EntityAnimationDefinitionKeyframeList &animKeyframeList = animDef.keyframeLists[keyframeListIndex];
-
-			const int keyframeIndex = animKeyframeList.keyframesIndex + visState.keyframeIndex;
-			DebugAssert(keyframeIndex >= 0);
-			DebugAssert(keyframeIndex < animDef.keyframeCount);
-			const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[keyframeIndex];
+			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
+			const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
 			const TextureAsset &textureAsset = animKeyframe.textureAsset;
-
-			const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
 
 			// The entity's projected rectangle is hit if the texture coordinates are valid.
 			const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
@@ -445,23 +451,24 @@ namespace Physics
 		const auto iter = entityMappings.find(voxel);
 		if (iter != entityMappings.end())
 		{
-			// Iterate over all the entities that cross this voxel and ray test them.
-			const std::vector<EntityVisibilityState3D> &entityVisStateList = iter->second;
-			for (const EntityVisibilityState3D &visState : entityVisStateList)
+			// Iterate over all entities that cross this voxel and ray test them.
+			BufferView<const EntityEntry> entityEntryList = iter->second;
+			for (const EntityEntry &entry : entityEntryList)
 			{
-				const EntityInstanceID entityInstID = visState.entityInstID;
+				const EntityObservedResult &observedResult = entry.observedResult;
+				const EntityInstanceID entityInstID = observedResult.entityInstID;
+				const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+
 				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 				const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-				const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
-
 				DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
 				const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
 				const double flatWidth = animKeyframe.width;
 				const double flatHeight = animKeyframe.height;
 
 				CoordDouble3 hitCoord;
-				if (Physics::getEntityRayIntersection(visState, entityDef, flatForward, flatRight, flatUp,
+				if (Physics::getEntityRayIntersection(observedResult, entry.coord, entityDef, flatForward, flatRight, flatUp,
 					flatWidth, flatHeight, rayCoord, rayDirection, &hitCoord))
 				{
 					const double distance = (hitCoord - rayCoord).length();

@@ -1,7 +1,6 @@
 #include "EntityChunk.h"
 #include "EntityChunkManager.h"
 #include "EntityVisibilityChunk.h"
-#include "EntityVisibilityState.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
@@ -31,22 +30,18 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
 		const WorldDouble2 entityWorldPosXZ = VoxelUtils::coordToWorldPoint(entityCoord);
-
-		// Need the visibility state for the Y position.
-		// @todo: extract this part of the vis state into some kind of entity Y position utils
-		EntityVisibilityState3D entityVisState;
-		entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, entityVisState);
+		const double entityYPosition = entityChunkManager.getEntityCorrectedY(entityInstID, ceilingScale, voxelChunkManager);
 
 		// Entity's bounding box is in model space centered on them.
 		const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
 
 		const WorldDouble3 entityWorldBBoxMin(
 			entityWorldPosXZ.x + entityBBox.min.x,
-			entityVisState.flatPosition.point.y + entityBBox.min.y,
+			entityYPosition + entityBBox.min.y,
 			entityWorldPosXZ.y + entityBBox.min.z);
 		const WorldDouble3 entityWorldBBoxMax(
 			entityWorldPosXZ.x + entityBBox.max.x,
-			entityVisState.flatPosition.point.y + entityBBox.max.y,
+			entityYPosition + entityBBox.max.y,
 			entityWorldPosXZ.y + entityBBox.max.z);
 
 		BoundingBox3D entityWorldBBox;

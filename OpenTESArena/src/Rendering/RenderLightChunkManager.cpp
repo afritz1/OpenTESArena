@@ -88,7 +88,7 @@ void RenderLightChunkManager::updateActiveChunks(BufferView<const ChunkInt2> new
 
 void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 	const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
-	const EntityChunkManager &entityChunkManager, Renderer &renderer)
+	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
@@ -125,14 +125,13 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 				light.init(lightID, isLightEnabled);
 				this->entityLights.emplace(entityInstID, std::move(light));
 
-				const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
-				const WorldDouble2 entityPos = VoxelUtils::coordToWorldPoint(entityCoord);
+				const CoordDouble3 entityCoord3D = entityChunkManager.getEntityPosition3D(entityInstID, ceilingScale, voxelChunkManager);
+				const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord3D);
 
-				// @todo: use entityChunkManager.getEntityVisibilityState3D() to get the context-sensitive base Y
 				const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-				const double entityPosY = ceilingScale + (entityBBox.height * 0.50);
-				const WorldDouble3 entityPos3D(entityPos.x, entityPosY, entityPos.y);
-				renderer.setLightPosition(lightID, entityPos3D);
+				const double entityCenterYPosition = entityWorldPos.y + (entityBBox.height * 0.50);
+				const WorldDouble3 entityLightWorldPos(entityWorldPos.x, entityCenterYPosition, entityWorldPos.z);
+				renderer.setLightPosition(lightID, entityLightWorldPos);
 				renderer.setLightRadius(lightID, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius);
 			}
 		}

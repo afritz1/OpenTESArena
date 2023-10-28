@@ -7,8 +7,8 @@
 #include "RenderTransform.h"
 #include "../Assets/TextureManager.h"
 #include "../Entities/EntityChunkManager.h"
+#include "../Entities/EntityObservedResult.h"
 #include "../Entities/EntityVisibilityChunkManager.h"
-#include "../Entities/EntityVisibilityState.h"
 #include "../Voxels/DoorUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
 
@@ -228,13 +228,13 @@ ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityIn
 
 	DebugAssertMsg(defIter != this->anims.end(), "Expected loaded entity animation for def ID " + std::to_string(entityDefID) + ".");
 
-	EntityVisibilityState2D visState;
-	entityChunkManager.getEntityVisibilityState2D(entityInstID, cameraCoordXZ, visState);
+	EntityObservedResult observedResult;
+	entityChunkManager.getEntityObservedResult(entityInstID, cameraCoordXZ, observedResult);
 
 	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-	const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
-	const Buffer<ScopedObjectTextureRef> &textureRefs = defIter->textureRefs;
+	const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+	BufferView<const ScopedObjectTextureRef> textureRefs = defIter->textureRefs;
 	return textureRefs.get(linearizedKeyframeIndex).get();
 }
 
@@ -348,13 +348,9 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-
-		// Get visibility state for true Y position (@todo: separate position from the anim index values).
-		EntityVisibilityState3D visState;
-		entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, visState);
-
-		// Convert entity XYZ to world space.
-		const Double3 worldPos = VoxelUtils::coordToWorldPoint(visState.flatPosition);
+		const double entityYPosition = entityChunkManager.getEntityCorrectedY(entityInstID, ceilingScale, voxelChunkManager);
+		const CoordDouble3 entityCoord3D(entityCoord.chunk, VoxelDouble3(entityCoord.point.x, entityYPosition, entityCoord.point.y));
+		const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord3D);
 
 		const ObjectTextureID textureID0 = this->getTextureID(entityInstID, cameraCoordXZ, entityChunkManager);
 		std::optional<ObjectTextureID> textureID1 = std::nullopt;
@@ -375,7 +371,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
 		}
 
-		const VoxelDouble3 &entityLightPoint = visState.flatPosition.point; // Where the entity receives its light (can't use center due to some really tall entities reaching outside the chunk).
+		const VoxelDouble3 &entityLightPoint = entityCoord3D.point; // Where the entity receives its light (can't use center due to some really tall entities reaching outside the chunk).
 		const VoxelInt3 entityLightVoxel = VoxelUtils::pointToVoxel(entityLightPoint, ceilingScale);
 		BufferView<const RenderLightID> lightIdsView; // Limitation of reusing lights per voxel: entity is unlit if they are outside the world.
 		if (renderLightChunk.isValidVoxel(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z))
@@ -388,7 +384,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		DebugAssert(transformBufferIter != this->transformBufferIDs.end());
 		const UniformBufferID entityTransformBufferID = transformBufferIter->second;
 		const int entityTransformIndex = 0; // Each entity has their own transform buffer.
-		this->addDrawCall(worldPos, entityTransformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView,
+		this->addDrawCall(entityWorldPos, entityTransformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView,
 			pixelShaderType, renderChunk.drawCalls);
 	}
 }
@@ -477,20 +473,15 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-			const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
-			// Get visibility state for animation index values (@todo: separate vis state from the true Y position calculation).
-			EntityVisibilityState3D visState;
-			entityChunkManager.getEntityVisibilityState3D(entityInstID, cameraCoordXZ, ceilingScale, voxelChunkManager, visState);
-			const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
+			EntityObservedResult observedResult;
+			entityChunkManager.getEntityObservedResult(entityInstID, cameraCoordXZ, observedResult);
+
+			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
 			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
 			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
-
-			// Convert entity XYZ to world space.
-			const Double3 worldPos = VoxelUtils::coordToWorldPoint(visState.flatPosition);
-			const Matrix4d scaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
 
 			const auto transformBufferIter = this->transformBufferIDs.find(entityInstID);
 			DebugAssert(transformBufferIter != this->transformBufferIDs.end());

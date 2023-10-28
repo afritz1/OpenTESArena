@@ -42,7 +42,7 @@ public:
 	
 	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
-		const EntityChunkManager &entityChunkManager, Renderer &renderer);
+		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, Renderer &renderer);
 
 	void setNightLightsActive(bool enabled, const EntityChunkManager &entityChunkManager);
 

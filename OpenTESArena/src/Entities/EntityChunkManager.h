@@ -26,8 +26,7 @@ class TextureManager;
 class VoxelChunk;
 class VoxelChunkManager;
 
-struct EntityVisibilityState2D;
-struct EntityVisibilityState3D;
+struct EntityObservedResult;
 struct MapSubDefinition;
 
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
@@ -106,10 +105,12 @@ public:
 	int getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const;
 	int getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const;
 
-	// Gets the entity visibility data necessary for rendering and ray cast selection.
-	void getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D, EntityVisibilityState2D &outVisState) const;
-	void getEntityVisibilityState3D(EntityInstanceID id, const CoordDouble2 &eye2D, double ceilingScale,
-		const VoxelChunkManager &voxelChunkManager, EntityVisibilityState3D &outVisState) const;
+	// Gets the entity visibility state necessary for rendering and ray cast selection.
+	void getEntityObservedResult(EntityInstanceID id, const CoordDouble2 &eye2D, EntityObservedResult &result) const;
+
+	// Gets where the entity should be on the Y axis for their current voxel.
+	double getEntityCorrectedY(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const;
+	CoordDouble3 getEntityPosition3D(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const;
 
 	void update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
 		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
