@@ -43,6 +43,7 @@
 #include "components/utilities/Directory.h"
 #include "components/utilities/File.h"
 #include "components/utilities/Path.h"
+#include "components/utilities/Profiler.h"
 #include "components/utilities/String.h"
 #include "components/utilities/TextLinesFile.h"
 #include "components/vfs/manager.hpp"
@@ -367,11 +368,6 @@ Random &Game::getRandom()
 ArenaRandom &Game::getArenaRandom()
 {
 	return this->arenaRandom;
-}
-
-Profiler &Game::getProfiler()
-{
-	return this->profiler;
 }
 
 const FPSCounter &Game::getFPSCounter() const
@@ -728,6 +724,7 @@ void Game::loop()
 	{
 		const auto lastTime = thisTime;
 		thisTime = std::chrono::high_resolution_clock::now();
+		Profiler::startFrame();
 
 		// Shortest allowed frame time.
 		const std::chrono::duration<int64_t, std::nano> minFrameTime(
