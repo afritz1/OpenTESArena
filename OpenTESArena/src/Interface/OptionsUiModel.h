@@ -17,7 +17,6 @@ namespace OptionsUiModel
 	constexpr int TAB_COUNT = 5;
 	constexpr int OPTION_COUNT = 10; // @todo: support list box somehow
 
-	const std::string TitleText = "Options";
 	const std::string BackButtonText = "Return";
 
 	const std::array<std::string, TAB_COUNT> TAB_NAMES =

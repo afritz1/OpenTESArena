@@ -19,14 +19,6 @@ bool OptionsPanel::init()
 	auto &renderer = game.getRenderer();
 	const auto &fontLibrary = FontLibrary::getInstance();
 
-	const std::string titleText = OptionsUiModel::TitleText;
-	const TextBox::InitInfo titleTextBoxInitInfo = OptionsUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
-	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
-	{
-		DebugLogError("Couldn't init title text box.");
-		return false;
-	}
-
 	const TextBox::InitInfo descTextBoxInitInfo = OptionsUiView::getDescriptionTextBoxInitInfo(fontLibrary);
 	if (!this->descriptionTextBox.init(descTextBoxInitInfo, renderer))
 	{
@@ -138,13 +130,6 @@ bool OptionsPanel::init()
 		this->backButtonTextureRef.get(),
 		backButtonRect.getTopLeft(),
 		Int2(backButtonRect.getWidth(), backButtonRect.getHeight()),
-		PivotType::TopLeft);
-
-	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	this->addDrawCall(
-		titleTextBox.getTextureID(),
-		titleTextBoxRect.getTopLeft(),
-		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
 	const Rect &backButtonTextBoxRect = this->backButtonTextBox.getRect();

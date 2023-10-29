@@ -19,13 +19,6 @@ namespace OptionsUiView
 	const Rect getListRect();
 	const Int2 getDescriptionXY();
 
-	const Int2 TitleTextBoxCenterPoint(160, 24);
-	const std::string TitleFontName = ArenaFontName::A;
-	Color getTitleTextColor();  // Global initialization order workaround.
-	constexpr TextAlignment TitleTextAlignment = TextAlignment::MiddleCenter;
-
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-
 	const Int2 BackButtonTextBoxCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH - 30,
 		ArenaRenderUtils::SCREEN_HEIGHT - 15);
