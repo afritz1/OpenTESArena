@@ -383,6 +383,24 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsMode
 	});
 }
 
+std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeDitheringOption(Game &game)
+{
+	const auto &options = game.getOptions();
+	return std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::DITHERING_NAME,
+		"Selects the dither pattern for gradients. This makes a bigger\ndifference at low resolutions.\n\nNone\nClassic\nModern",
+		options.getGraphics_DitheringMode(),
+		1,
+		Options::MIN_DITHERING_MODE,
+		Options::MAX_DITHERING_MODE,
+		std::vector<std::string> { "None", "Classic", "Modern" },
+		[&game](int value)
+	{
+		auto &options = game.getOptions();
+		options.setGraphics_DitheringMode(value);
+	});
+}
+
 OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 {
 	OptionGroup group;
@@ -395,6 +413,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 	group.emplace_back(OptionsUiModel::makeModernInterfaceOption(game));
 	group.emplace_back(OptionsUiModel::makeTallPixelCorrectionOption(game));
 	group.emplace_back(OptionsUiModel::makeRenderThreadsModeOption(game));
+	group.emplace_back(OptionsUiModel::makeDitheringOption(game));
 	return group;
 }
 

@@ -873,7 +873,8 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		lightTableTextureID = sceneManager.normalLightTableNightTextureRef.get();
 	}
 
-	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, options.getGraphics_RenderThreadsMode());
+	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID,
+		options.getGraphics_RenderThreadsMode(), options.getGraphics_DitheringMode());
 
 	return true;
 }

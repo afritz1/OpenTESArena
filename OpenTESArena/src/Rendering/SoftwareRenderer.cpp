@@ -633,6 +633,10 @@ namespace swGeometry
 // Rendering functions, per-pixel work.
 namespace swRender
 {
+	constexpr int DITHERING_MODE_NONE = 0;
+	constexpr int DITHERING_MODE_CLASSIC = 1;
+	constexpr int DITHERING_MODE_MODERN = 2;
+
 	// For measuring overdraw.
 	int g_totalDepthTests = 0;
 	int g_totalColorWrites = 0;
@@ -1001,7 +1005,7 @@ namespace swRender
 		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, double ambientPercent,
 		BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType, double pixelShaderParam0,
 		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
-		const SoftwareRenderer::ObjectTexture &lightTableTexture, const RenderCamera &camera,
+		const SoftwareRenderer::ObjectTexture &lightTableTexture, int ditheringMode, const RenderCamera &camera,
 		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView2D<uint32_t> colorBuffer)
 	{
 		const int frameBufferWidth = paletteIndexBuffer.getWidth();
@@ -1200,10 +1204,18 @@ namespace swRender
 							if (requiresPerPixelLightIntensity)
 							{
 								// Dither the light level in screen space.
-								bool shouldDither = false;
+								bool shouldDither;
 
-								constexpr bool betterDither = false;
-								if (betterDither)
+								if (ditheringMode == DITHERING_MODE_NONE)
+								{
+									shouldDither = false;
+								}
+								else if (ditheringMode == DITHERING_MODE_CLASSIC)
+								{
+									// Original game: 2x2, top left + bottom right are darkened.
+									shouldDither = ((x + y) & 0x1) == 0;
+								}
+								else if (ditheringMode == DITHERING_MODE_MODERN)
 								{
 									if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
 									{
@@ -1231,8 +1243,7 @@ namespace swRender
 								}
 								else
 								{
-									// Original game: 2x2, top left + bottom right are darkened.
-									shouldDither = ((x + y) & 0x1) == 0;
+									shouldDither = false;
 								}
 
 								if (shouldDither)
@@ -1738,6 +1749,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	// Light table for shading/transparency look-ups.
 	const ObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
 
+	const int ditheringMode = settings.ditheringMode;
+
 	swRender::ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
 	swRender::ClearTriangleDrawList();
 
@@ -1792,7 +1805,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const double pixelShaderParam0 = drawCall.pixelShaderParam0;
 		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent,
 			ambientPercent, lightsView, pixelShaderType, pixelShaderParam0, this->objectTextures, paletteTexture, lightTableTexture,
-			camera, paletteIndexBufferView, depthBufferView, colorBufferView);
+			ditheringMode, camera, paletteIndexBufferView, depthBufferView, colorBufferView);
 	}
 }
 

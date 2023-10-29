@@ -70,6 +70,8 @@ public:
 	static constexpr int MAX_LETTERBOX_MODE = 2;
 	static constexpr int MIN_RENDER_THREADS_MODE = 0;
 	static constexpr int MAX_RENDER_THREADS_MODE = 5;
+	static constexpr int MIN_DITHERING_MODE = 0;
+	static constexpr int MAX_DITHERING_MODE = 2;
 	static constexpr double MIN_HORIZONTAL_SENSITIVITY = 0.50;
 	static constexpr double MAX_HORIZONTAL_SENSITIVITY = 50.0;
 	static constexpr double MIN_VERTICAL_SENSITIVITY = 0.50;
@@ -146,6 +148,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_BOOL(Graphics, ModernInterface)
 	OPTION_BOOL(Graphics, TallPixelCorrection)
 	OPTION_INT(Graphics, RenderThreadsMode)
+	OPTION_INT(Graphics, DitheringMode)
 
 	OPTION_DOUBLE(Audio, MusicVolume)
 	OPTION_DOUBLE(Audio, SoundVolume)

@@ -29,7 +29,8 @@ namespace
 		{ "CursorScale", OptionType::Double },
 		{ "ModernInterface", OptionType::Bool },
 		{ "TallPixelCorrection", OptionType::Bool },
-		{ "RenderThreadsMode", OptionType::Int }
+		{ "RenderThreadsMode", OptionType::Int },
+		{ "DitheringMode", OptionType::Int }
 	};
 
 	const std::vector<std::pair<std::string, OptionType>> AudioMappings =
@@ -506,6 +507,12 @@ void Options::checkGraphics_RenderThreadsMode(int value) const
 	DebugAssertMsg(value <= Options::MAX_RENDER_THREADS_MODE,
 		"Render threads mode cannot be greater than " +
 		std::to_string(Options::MAX_RENDER_THREADS_MODE) + ".");
+}
+
+void Options::checkGraphics_DitheringMode(int value) const
+{
+	DebugAssertMsg(value >= Options::MIN_DITHERING_MODE, "Dithering mode cannot be less than " + std::to_string(Options::MIN_DITHERING_MODE) + ".");
+	DebugAssertMsg(value <= Options::MAX_DITHERING_MODE, "Dithering mode cannot be greater than " + std::to_string(Options::MAX_DITHERING_MODE) + ".");
 }
 
 void Options::checkAudio_MusicVolume(double value) const
