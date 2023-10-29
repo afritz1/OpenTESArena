@@ -106,6 +106,9 @@ void Profiler::setStart(const std::string &name)
 
 void Profiler::setStop(const std::string &name)
 {
+	// Cache before sampler look-up to avoid adding extra time.
+	const auto cachedEndTime = std::chrono::high_resolution_clock::now();
+
 	ProfilerSampler *sampler = nullptr;
 	std::optional<int> index = this->tryGetSamplerIndex(name);
 	if (index.has_value())
@@ -118,7 +121,7 @@ void Profiler::setStop(const std::string &name)
 		return;
 	}
 
-	sampler->endTime = std::chrono::high_resolution_clock::now();
+	sampler->endTime = cachedEndTime;
 }
 
 void Profiler::clear()
