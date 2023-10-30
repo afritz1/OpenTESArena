@@ -12,8 +12,9 @@ struct RenderInitSettings
 
 	int width, height;
 	int renderThreadsMode;
+	int ditheringMode;
 
-	void init(int width, int height, int renderThreadsMode);
+	void init(int width, int height, int renderThreadsMode, int ditheringMode);
 };
 
 #endif

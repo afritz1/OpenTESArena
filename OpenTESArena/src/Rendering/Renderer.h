@@ -160,7 +160,7 @@ public:
 
 	bool init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
 		const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
-		RendererSystemType3D systemType3D, int renderThreadsMode);
+		RendererSystemType3D systemType3D, int renderThreadsMode, int ditheringMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
@@ -183,9 +183,6 @@ public:
 	// Sets the clip rectangle of the renderer so that pixels outside the specified area
 	// will not be rendered. If rect is null, then clipping is disabled.
 	void setClipRect(const SDL_Rect *rect);
-
-	// Sets which mode to use for software render threads (low, medium, high, etc.).
-	void setRenderThreadsMode(int mode);
 
 	// Geometry management functions.
 	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID);

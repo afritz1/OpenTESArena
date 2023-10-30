@@ -637,6 +637,8 @@ namespace swRender
 	constexpr int DITHERING_MODE_CLASSIC = 1;
 	constexpr int DITHERING_MODE_MODERN = 2;
 
+	constexpr int DITHERING_MODE_MODERN_MASK_COUNT = 4;
+
 	// For measuring overdraw.
 	int g_totalDepthTests = 0;
 	int g_totalColorWrites = 0;
@@ -672,6 +674,56 @@ namespace swRender
 				const int outputIndex = x + (y * frameBufferWidth);
 				colorBufferPtr[outputIndex] = outputColor;
 			}
+		}
+	}
+
+	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, int ditheringMode)
+	{
+		if (ditheringMode == DITHERING_MODE_CLASSIC)
+		{
+			// Original game: 2x2, top left + bottom right are darkened.
+			ditherBuffer.init(width, height, 1);
+
+			bool *ditherPixels = ditherBuffer.begin();
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					const bool shouldDither = ((x + y) & 0x1) == 0;
+					const int index = x + (y * width);
+					ditherPixels[index] = shouldDither;
+				}
+			}
+		}
+		else if (ditheringMode == DITHERING_MODE_MODERN)
+		{
+			// Modern 2x2, four levels of dither depending on percent between two light levels.
+			ditherBuffer.init(width, height, DITHERING_MODE_MODERN_MASK_COUNT);
+			static_assert(DITHERING_MODE_MODERN_MASK_COUNT == 4);
+
+			bool *ditherPixels = ditherBuffer.begin();
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					const bool shouldDither0 = (((x + y) & 0x1) == 0) || (((x % 2) == 1) && ((y % 2) == 0)); // Top left, bottom right, top right
+					const bool shouldDither1 = ((x + y) & 0x1) == 0; // Top left + bottom right
+					const bool shouldDither2 = ((x % 2) == 0) && ((y % 2) == 0); // Top left
+					const bool shouldDither3 = false;
+					const int index0 = x + (y * width);
+					const int index1 = x + (y * width) + (1 * width * height);
+					const int index2 = x + (y * width) + (2 * width * height);
+					const int index3 = x + (y * width) + (3 * width * height);
+					ditherPixels[index0] = shouldDither0;
+					ditherPixels[index1] = shouldDither1;
+					ditherPixels[index2] = shouldDither2;
+					ditherPixels[index3] = shouldDither3;
+				}
+			}
+		}
+		else
+		{
+			ditherBuffer.clear();
 		}
 	}
 
@@ -1006,12 +1058,14 @@ namespace swRender
 		BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType, double pixelShaderParam0,
 		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
 		const SoftwareRenderer::ObjectTexture &lightTableTexture, int ditheringMode, const RenderCamera &camera,
-		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView2D<uint32_t> colorBuffer)
+		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
+		BufferView2D<uint32_t> colorBuffer)
 	{
 		const int frameBufferWidth = paletteIndexBuffer.getWidth();
 		const int frameBufferHeight = paletteIndexBuffer.getHeight();
 		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
+		const bool *ditherBufferPtr = ditherBuffer.begin();
 		uint32_t *colorBufferPtr = colorBuffer.begin();
 
 		const Matrix4d &viewMatrix = camera.viewMatrix;
@@ -1205,45 +1259,31 @@ namespace swRender
 							{
 								// Dither the light level in screen space.
 								bool shouldDither;
-
-								if (ditheringMode == DITHERING_MODE_NONE)
+								switch (ditheringMode)
 								{
+								case DITHERING_MODE_NONE:
 									shouldDither = false;
-								}
-								else if (ditheringMode == DITHERING_MODE_CLASSIC)
-								{
-									// Original game: 2x2, top left + bottom right are darkened.
-									shouldDither = ((x + y) & 0x1) == 0;
-								}
-								else if (ditheringMode == DITHERING_MODE_MODERN)
-								{
+									break;
+								case DITHERING_MODE_CLASSIC:
+									shouldDither = ditherBufferPtr[x + (y * frameBufferWidth)];
+									break;
+								case DITHERING_MODE_MODERN:
 									if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
 									{
-										// Modern 2x2, four levels of dither depending on percent between two light levels.
-										constexpr int ditherMaskCount = 4;
+										constexpr int maskCount = DITHERING_MODE_MODERN_MASK_COUNT;
 										const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
-										const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(ditherMaskCount) * lightLevelFraction), 0, ditherMaskCount - 1);
-
-										switch (maskIndex)
-										{
-										case 0:
-											shouldDither = (((x + y) & 0x1) == 0) || (((x % 2) == 1) && ((y % 2) == 0)); // Top left, bottom right, top right
-											break;
-										case 1:
-											shouldDither = ((x + y) & 0x1) == 0; // Top left + bottom right
-											break;
-										case 2:
-											shouldDither = ((x % 2) == 0) && ((y % 2) == 0); // Top left
-											break;
-										case 3:
-											shouldDither = false;
-											break;
-										}
+										const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(maskCount) * lightLevelFraction), 0, maskCount - 1);
+										const int ditherBufferIndex = x + (y * frameBufferWidth) + (maskIndex * frameBufferWidth * frameBufferHeight);
+										shouldDither = ditherBufferPtr[ditherBufferIndex];
 									}
-								}
-								else
-								{
+									else
+									{
+										shouldDither = false;
+									}
+									break;
+								default:
 									shouldDither = false;
+									break;
 								}
 
 								if (shouldDither)
@@ -1377,7 +1417,7 @@ void SoftwareRenderer::Light::init(const Double3 &worldPoint, double startRadius
 
 SoftwareRenderer::SoftwareRenderer()
 {
-
+	this->ditheringMode = -1;
 }
 
 SoftwareRenderer::~SoftwareRenderer()
@@ -1389,12 +1429,17 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 {
 	this->paletteIndexBuffer.init(settings.width, settings.height);
 	this->depthBuffer.init(settings.width, settings.height);
+	
+	swRender::CreateDitherBuffer(this->ditherBuffer, settings.width, settings.height, settings.ditheringMode);
+	this->ditheringMode = settings.ditheringMode;
 }
 
 void SoftwareRenderer::shutdown()
 {
 	this->paletteIndexBuffer.clear();
 	this->depthBuffer.clear();
+	this->ditherBuffer.clear();
+	this->ditheringMode = -1;
 	this->vertexBuffers.clear();
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();
@@ -1415,6 +1460,8 @@ void SoftwareRenderer::resize(int width, int height)
 
 	this->depthBuffer.init(width, height);
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
+
+	swRender::CreateDitherBuffer(this->ditherBuffer, width, height, this->ditheringMode);
 }
 
 bool SoftwareRenderer::tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID)
@@ -1739,8 +1786,16 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 {
 	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();
 	const int frameBufferHeight = this->paletteIndexBuffer.getHeight();
+
+	if (this->ditheringMode != settings.ditheringMode)
+	{
+		this->ditheringMode = settings.ditheringMode;
+		swRender::CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
+	}
+
 	BufferView2D<uint8_t> paletteIndexBufferView(this->paletteIndexBuffer.begin(), frameBufferWidth, frameBufferHeight);
 	BufferView2D<double> depthBufferView(this->depthBuffer.begin(), frameBufferWidth, frameBufferHeight);
+	BufferView3D<const bool> ditherBufferView(this->ditherBuffer.begin(), frameBufferWidth, frameBufferHeight, this->ditherBuffer.getDepth());
 	BufferView2D<uint32_t> colorBufferView(outputBuffer, frameBufferWidth, frameBufferHeight);
 
 	// Palette for 8-bit -> 32-bit color conversion.
@@ -1748,8 +1803,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 
 	// Light table for shading/transparency look-ups.
 	const ObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
-
-	const int ditheringMode = settings.ditheringMode;
 
 	swRender::ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
 	swRender::ClearTriangleDrawList();
@@ -1803,9 +1856,10 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const double ambientPercent = settings.ambientPercent;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
 		const double pixelShaderParam0 = drawCall.pixelShaderParam0;
+		const int ditheringMode = settings.ditheringMode;
 		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent,
 			ambientPercent, lightsView, pixelShaderType, pixelShaderParam0, this->objectTextures, paletteTexture, lightTableTexture,
-			ditheringMode, camera, paletteIndexBufferView, depthBufferView, colorBufferView);
+			ditheringMode, camera, paletteIndexBufferView, depthBufferView, ditherBufferView, colorBufferView);
 	}
 }
 

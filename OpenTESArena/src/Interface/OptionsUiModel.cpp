@@ -377,9 +377,7 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsMode
 		[&game](int value)
 	{
 		auto &options = game.getOptions();
-		auto &renderer = game.getRenderer();
 		options.setGraphics_RenderThreadsMode(value);
-		renderer.setRenderThreadsMode(value);
 	});
 }
 

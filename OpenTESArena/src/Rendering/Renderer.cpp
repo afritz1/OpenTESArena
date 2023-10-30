@@ -487,7 +487,7 @@ Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
 
 bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
 	const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
-	int renderThreadsMode)
+	int renderThreadsMode, int ditheringMode)
 {
 	DebugLog("Initializing.");
 	const int result = SDL_Init(SDL_INIT_VIDEO); // Required for SDL_GetDesktopDisplayMode() to work for exclusive fullscreen.
@@ -606,7 +606,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		"Couldn't create game world texture (" + std::string(SDL_GetError()) + ").");
 
 	RenderInitSettings initSettings;
-	initSettings.init(renderWidth, renderHeight, renderThreadsMode);
+	initSettings.init(renderWidth, renderHeight, renderThreadsMode, ditheringMode);
 	this->renderer3D->init(initSettings);
 
 	return true;
@@ -715,13 +715,6 @@ void Renderer::setClipRect(const SDL_Rect *rect)
 	{
 		SDL_RenderSetClipRect(this->renderer, nullptr);
 	}
-}
-
-void Renderer::setRenderThreadsMode(int mode)
-{
-	DebugAssert(this->renderer3D->isInited());
-	DebugNotImplementedMsg("setRenderThreadsMode");
-	//this->renderer3D->setRenderThreadsMode(mode); // @todo: figure out if this should be in RenderFrameSettings and obtained via Options
 }
 
 bool Renderer::tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID)
