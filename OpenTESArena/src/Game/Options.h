@@ -81,7 +81,8 @@ public:
 	static constexpr double MIN_VOLUME = 0.0;
 	static constexpr double MAX_VOLUME = 1.0;
 	static constexpr int MIN_SOUND_CHANNELS = 1;
-	static constexpr int RESAMPLING_OPTION_COUNT = 4;
+	static constexpr int MIN_RESAMPLING_MODE = 0;
+	static constexpr int MAX_RESAMPLING_MODE = 3;
 	static constexpr int MIN_CHUNK_DISTANCE = 1;
 	static constexpr int MIN_STAR_DENSITY_MODE = 0;
 	static constexpr int MAX_STAR_DENSITY_MODE = 2;
@@ -99,31 +100,29 @@ void set##section##_##name(bool value) \
 }
 
 #define OPTION_INT(section, name) \
-void check##section##_##name(int value) const; \
+int clamp##section##_##name(int value) const; \
 int get##section##_##name() const \
 { \
 	const int value = this->getInt(#section, #name); \
-	this->check##section##_##name(value); \
-	return value; \
+	return this->clamp##section##_##name(value); \
 } \
 void set##section##_##name(int value) \
 { \
-	this->check##section##_##name(value); \
-	this->setInt(#section, #name, value); \
+	const int clampedValue = this->clamp##section##_##name(value); \
+	this->setInt(#section, #name, clampedValue); \
 }
 
 #define OPTION_DOUBLE(section, name) \
-void check##section##_##name(double value) const; \
+double clamp##section##_##name(double value) const; \
 double get##section##_##name() const \
 { \
 	const double value = this->getDouble(#section, #name); \
-	this->check##section##_##name(value); \
-	return value; \
+	return this->clamp##section##_##name(value); \
 } \
 void set##section##_##name(double value) \
 { \
-	this->check##section##_##name(value); \
-	this->setDouble(#section, #name, value); \
+	const double clampedValue = this->clamp##section##_##name(value); \
+	this->setDouble(#section, #name, clampedValue); \
 }
 
 #define OPTION_STRING(section, name) \

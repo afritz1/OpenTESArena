@@ -441,163 +441,299 @@ void Options::setString(const std::string &section, const std::string &key,
 	iter->second = value;
 }
 
-void Options::checkGraphics_ScreenWidth(int value) const
+int Options::clampGraphics_ScreenWidth(int value) const
 {
-	DebugAssertMsg(value > 0, "Screen width must be positive.");
+	if (value <= 0)
+	{
+		value = 1280;
+		DebugLogWarning("Screen width must be positive, defaulting to " + std::to_string(value) + ".");
+	}
+	
+	return value;
 }
 
-void Options::checkGraphics_ScreenHeight(int value) const
+int Options::clampGraphics_ScreenHeight(int value) const
 {
-	DebugAssertMsg(value > 0, "Screen height must be positive.");
+	if (value <= 0)
+	{
+		value = 720;
+		DebugLogWarning("Screen height must be positive, defaulting to " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkGraphics_WindowMode(int value) const
+int Options::clampGraphics_WindowMode(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_WINDOW_MODE, "Window mode cannot be less than " +
-		std::to_string(Options::MIN_WINDOW_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_WINDOW_MODE, "Window mode cannot be greater than " +
-		std::to_string(Options::MAX_WINDOW_MODE) + ".");
+	if (value < Options::MIN_WINDOW_MODE)
+	{
+		value = Options::MIN_WINDOW_MODE;
+		DebugLogWarning("Window mode must be at least " + std::to_string(value) + ".");
+	}
+	else if (value > Options::MAX_WINDOW_MODE)
+	{
+		value = Options::MAX_WINDOW_MODE;
+		DebugLogWarning("Window mode must be no greater than " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkGraphics_TargetFPS(int value) const
+int Options::clampGraphics_TargetFPS(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_FPS, "Target FPS cannot be less than " +
-		std::to_string(Options::MIN_FPS) + ".");
+	if (value < Options::MIN_FPS)
+	{
+		value = Options::MIN_FPS;
+		DebugLogWarning("Target FPS must be at least " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkGraphics_ResolutionScale(double value) const
+double Options::clampGraphics_ResolutionScale(double value) const
 {
-	DebugAssertMsg(value > 0.0, "Resolution scale must be positive.");
-	DebugAssertMsg(value <= Options::MAX_RESOLUTION_SCALE,
-		"Resolution scale cannot be greater than " +
-		String::fixedPrecision(Options::MAX_RESOLUTION_SCALE, 2) + ".");
+	if (value < Options::MIN_RESOLUTION_SCALE)
+	{
+		value = Options::MIN_RESOLUTION_SCALE;
+		DebugLogWarning("Resolution scale must be at least " + String::fixedPrecision(value, 2) + ".");
+	}
+	else if (value > Options::MAX_RESOLUTION_SCALE)
+	{
+		value = Options::MAX_RESOLUTION_SCALE;
+		DebugLogWarning("Resolution scale must be no greater than " + String::fixedPrecision(value, 2) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkGraphics_VerticalFOV(double value) const
+double Options::clampGraphics_VerticalFOV(double value) const
 {
-	DebugAssertMsg(value >= Options::MIN_VERTICAL_FOV, "Vertical FOV cannot be less than " +
-		String::fixedPrecision(Options::MIN_VERTICAL_FOV, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_VERTICAL_FOV, "Vertical FOV cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VERTICAL_FOV, 1) + ".");
+	if (value < Options::MIN_VERTICAL_FOV)
+	{
+		value = Options::MIN_VERTICAL_FOV;
+		DebugLogWarning("Vertical FOV must be at least " + String::fixedPrecision(value, 1) + ".");
+	}
+	else if (value > Options::MAX_VERTICAL_FOV)
+	{
+		value = Options::MAX_VERTICAL_FOV;
+		DebugLogWarning("Vertical FOV must be no greater than " + String::fixedPrecision(value, 1) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkGraphics_LetterboxMode(int value) const
+int Options::clampGraphics_LetterboxMode(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_LETTERBOX_MODE, "Letterbox mode cannot be less than " +
-		std::to_string(Options::MIN_LETTERBOX_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_LETTERBOX_MODE, "Letterbox mode cannot be greater than " +
-		std::to_string(Options::MAX_LETTERBOX_MODE) + ".");
+	if (value < Options::MIN_LETTERBOX_MODE)
+	{
+		value = Options::MIN_LETTERBOX_MODE;
+		DebugLogWarning("Letterbox mode must be at least " + std::to_string(value) + ".");
+	}
+	else if (value > Options::MAX_LETTERBOX_MODE)
+	{
+		value = Options::MAX_LETTERBOX_MODE;
+		DebugLogWarning("Letterbox mode must be no greater than " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkGraphics_CursorScale(double value) const
+double Options::clampGraphics_CursorScale(double value) const
 {
-	DebugAssertMsg(value >= Options::MIN_CURSOR_SCALE,
-		"Cursor scale cannot be less than " +
-		String::fixedPrecision(Options::MIN_CURSOR_SCALE, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_CURSOR_SCALE,
-		"Cursor scale cannot be greater than " +
-		String::fixedPrecision(Options::MAX_CURSOR_SCALE, 1) + ".");
+	if (value < Options::MIN_CURSOR_SCALE)
+	{
+		value = Options::MIN_CURSOR_SCALE;
+		DebugLogWarning("Cursor scale must be at least " + String::fixedPrecision(value, 1) + ".");
+	}
+	else if (value > Options::MAX_CURSOR_SCALE)
+	{
+		value = Options::MAX_CURSOR_SCALE;
+		DebugLogWarning("Cursor scale must be no greater than " + String::fixedPrecision(value, 1) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkGraphics_RenderThreadsMode(int value) const
+int Options::clampGraphics_RenderThreadsMode(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_RENDER_THREADS_MODE,
-		"Render threads mode cannot be less than " +
-		std::to_string(Options::MIN_RENDER_THREADS_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_RENDER_THREADS_MODE,
-		"Render threads mode cannot be greater than " +
-		std::to_string(Options::MAX_RENDER_THREADS_MODE) + ".");
+	if (value < Options::MIN_RENDER_THREADS_MODE)
+	{
+		value = Options::MIN_RENDER_THREADS_MODE;
+		DebugLogWarning("Render threads mode must be at least " + std::to_string(value) + ".");
+	}
+	else if (value > Options::MAX_RENDER_THREADS_MODE)
+	{
+		value = Options::MAX_RENDER_THREADS_MODE;
+		DebugLogWarning("Render threads mode must be no greater than " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkGraphics_DitheringMode(int value) const
+int Options::clampGraphics_DitheringMode(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_DITHERING_MODE, "Dithering mode cannot be less than " + std::to_string(Options::MIN_DITHERING_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_DITHERING_MODE, "Dithering mode cannot be greater than " + std::to_string(Options::MAX_DITHERING_MODE) + ".");
+	if (value < Options::MIN_DITHERING_MODE)
+	{
+		value = Options::MIN_DITHERING_MODE;
+		DebugLogWarning("Dithering mode must be at least " + std::to_string(value) + ".");
+	}
+	else if (value > Options::MAX_DITHERING_MODE)
+	{
+		value = Options::MAX_DITHERING_MODE;
+		DebugLogWarning("Dithering mode must be no greater than " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkAudio_MusicVolume(double value) const
+double Options::clampAudio_MusicVolume(double value) const
 {
-	DebugAssertMsg(value >= Options::MIN_VOLUME, "Music volume cannot be negative.");
-	DebugAssertMsg(value <= Options::MAX_VOLUME, "Music volume cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
+	if (value < Options::MIN_VOLUME)
+	{
+		value = Options::MIN_VOLUME;
+		DebugLogWarning("Music volume must be at least " + String::fixedPrecision(value, 1) + ".");
+	}
+	else if (value > Options::MAX_VOLUME)
+	{
+		value = Options::MAX_VOLUME;
+		DebugLogWarning("Music volume must be no greater than " + String::fixedPrecision(value, 1) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkAudio_SoundVolume(double value) const
+double Options::clampAudio_SoundVolume(double value) const
 {
-	DebugAssertMsg(value >= Options::MIN_VOLUME, "Sound volume cannot be negative.");
-	DebugAssertMsg(value <= Options::MAX_VOLUME, "Sound volume cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
+	if (value < Options::MIN_VOLUME)
+	{
+		value = Options::MIN_VOLUME;
+		DebugLogWarning("Sound volume must be at least " + String::fixedPrecision(value, 1) + ".");
+	}
+	else if (value > Options::MAX_VOLUME)
+	{
+		value = Options::MAX_VOLUME;
+		DebugLogWarning("Sound volume must be no greater than " + String::fixedPrecision(value, 1) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkAudio_SoundChannels(int value) const
+int Options::clampAudio_SoundChannels(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_SOUND_CHANNELS, "Sound channel count cannot be less than " +
-		std::to_string(Options::MIN_SOUND_CHANNELS) + ".");
+	if (value < Options::MIN_SOUND_CHANNELS)
+	{
+		value = Options::MIN_SOUND_CHANNELS;
+		DebugLogWarning("Sound channel count must be at least " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkAudio_SoundResampling(int value) const
+int Options::clampAudio_SoundResampling(int value) const
 {
-	DebugAssertMsg(value >= 0, "Sound resampling value cannot be negative.");
-	DebugAssertMsg(value < Options::RESAMPLING_OPTION_COUNT,
-		"Sound resampling value cannot be greater than " +
-		std::to_string(Options::RESAMPLING_OPTION_COUNT - 1) + ".");
+	if (value < Options::MIN_RESAMPLING_MODE)
+	{
+		value = Options::MIN_RESAMPLING_MODE;
+		DebugLogWarning("Sound resampling value must be at least " + std::to_string(value) + ".");
+	}
+	else if (value > Options::MAX_RESAMPLING_MODE)
+	{
+		value = Options::MAX_RESAMPLING_MODE;
+		DebugLogWarning("Sound resampling value must be no greater than " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkInput_HorizontalSensitivity(double value) const
+double Options::clampInput_HorizontalSensitivity(double value) const
 {
-	DebugAssertMsg(value >= Options::MIN_HORIZONTAL_SENSITIVITY,
-		"Horizontal sensitivity cannot be less than " +
-		String::fixedPrecision(Options::MIN_HORIZONTAL_SENSITIVITY, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_HORIZONTAL_SENSITIVITY,
-		"Horizontal sensitivity cannot be greater than " +
-		String::fixedPrecision(Options::MAX_HORIZONTAL_SENSITIVITY, 1) + ".");
+	if (value < Options::MIN_HORIZONTAL_SENSITIVITY)
+	{
+		value = Options::MIN_HORIZONTAL_SENSITIVITY;
+		DebugLogWarning("Horizontal sensitivity must be at least " + String::fixedPrecision(value, 1) + ".");
+	}
+	else if (value > Options::MAX_HORIZONTAL_SENSITIVITY)
+	{
+		value = Options::MAX_HORIZONTAL_SENSITIVITY;
+		DebugLogWarning("Horizontal sensitivity must be no greater than " + String::fixedPrecision(value, 1) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkInput_VerticalSensitivity(double value) const
+double Options::clampInput_VerticalSensitivity(double value) const
 {
-	DebugAssertMsg(value >= Options::MIN_VERTICAL_SENSITIVITY,
-		"Vertical sensitivity cannot be less than " +
-		String::fixedPrecision(Options::MIN_VERTICAL_SENSITIVITY, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_VERTICAL_SENSITIVITY,
-		"Vertical sensitivity cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VERTICAL_SENSITIVITY, 1) + ".");
+	if (value < Options::MIN_VERTICAL_SENSITIVITY)
+	{
+		value = Options::MIN_VERTICAL_SENSITIVITY;
+		DebugLogWarning("Vertical sensitivity must be at least " + String::fixedPrecision(value, 1) + ".");
+	}
+	else if (value > Options::MAX_VERTICAL_SENSITIVITY)
+	{
+		value = Options::MAX_VERTICAL_SENSITIVITY;
+		DebugLogWarning("Vertical sensitivity must be no greater than " + String::fixedPrecision(value, 1) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkInput_CameraPitchLimit(double value) const
+double Options::clampInput_CameraPitchLimit(double value) const
 {
-	DebugAssertMsg(value >= Options::MIN_CAMERA_PITCH_LIMIT,
-		"Camera pitch limit cannot be less than " +
-		String::fixedPrecision(Options::MIN_CAMERA_PITCH_LIMIT, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_CAMERA_PITCH_LIMIT,
-		"Camera pitch limit cannot be greater than " +
-		String::fixedPrecision(Options::MAX_CAMERA_PITCH_LIMIT, 1) + ".");
+	if (value < Options::MIN_CAMERA_PITCH_LIMIT)
+	{
+		value = Options::MIN_CAMERA_PITCH_LIMIT;
+		DebugLogWarning("Camera pitch limit must be at least " + String::fixedPrecision(value, 1) + ".");
+	}
+	else if (value > Options::MAX_CAMERA_PITCH_LIMIT)
+	{
+		value = Options::MAX_CAMERA_PITCH_LIMIT;
+		DebugLogWarning("Camera pitch limit must be no greater than " + String::fixedPrecision(value, 1) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkMisc_ChunkDistance(int value) const
+int Options::clampMisc_ChunkDistance(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_CHUNK_DISTANCE,
-		"Chunk distance cannot be less than " +
-		std::to_string(Options::MIN_CHUNK_DISTANCE) + ".");
+	if (value < Options::MIN_CHUNK_DISTANCE)
+	{
+		value = Options::MIN_CHUNK_DISTANCE;
+		DebugLogWarning("Chunk distance must be at least " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkMisc_StarDensity(int value) const
+int Options::clampMisc_StarDensity(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_STAR_DENSITY_MODE,
-		"Star density cannot be less than " +
-		std::to_string(Options::MIN_STAR_DENSITY_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_STAR_DENSITY_MODE,
-		"Star density cannot be greater than " +
-		std::to_string(Options::MAX_STAR_DENSITY_MODE) + ".");
+	if (value < Options::MIN_STAR_DENSITY_MODE)
+	{
+		value = Options::MIN_STAR_DENSITY_MODE;
+		DebugLogWarning("Star density must be at least " + std::to_string(value) + ".");
+	}
+	else if (value > Options::MAX_STAR_DENSITY_MODE)
+	{
+		value = Options::MAX_STAR_DENSITY_MODE;
+		DebugLogWarning("Star density must be no greater than " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
-void Options::checkMisc_ProfilerLevel(int value) const
+int Options::clampMisc_ProfilerLevel(int value) const
 {
-	DebugAssertMsg(value >= Options::MIN_PROFILER_LEVEL,
-		"Profiler level cannot be less than " +
-		std::to_string(Options::MIN_PROFILER_LEVEL) + ".");
-	DebugAssertMsg(value <= Options::MAX_PROFILER_LEVEL,
-		"Profiler level cannot be greater than " +
-		std::to_string(Options::MAX_PROFILER_LEVEL) + ".");
+	if (value < Options::MIN_PROFILER_LEVEL)
+	{
+		value = Options::MIN_PROFILER_LEVEL;
+		DebugLogWarning("Profiler level must be at least " + std::to_string(value) + ".");
+	}
+	else if (value > Options::MAX_PROFILER_LEVEL)
+	{
+		value = Options::MAX_PROFILER_LEVEL;
+		DebugLogWarning("Profiler level must be no greater than " + std::to_string(value) + ".");
+	}
+
+	return value;
 }
 
 void Options::loadDefaults(const std::string &filename)

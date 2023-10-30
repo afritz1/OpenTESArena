@@ -440,8 +440,8 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeSoundResamplingOp
 		"Affects quality of sounds. Results may vary depending on OpenAL\nversion.",
 		options.getAudio_SoundResampling(),
 		1,
-		0,
-		Options::RESAMPLING_OPTION_COUNT - 1,
+		Options::MIN_RESAMPLING_MODE,
+		Options::MAX_RESAMPLING_MODE,
 		std::vector<std::string> { "Default", "Fastest", "Medium", "Best" },
 		[&game](int value)
 	{
