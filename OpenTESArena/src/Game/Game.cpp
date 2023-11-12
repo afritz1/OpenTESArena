@@ -52,8 +52,8 @@ namespace
 {
 	struct FrameTimer
 	{
-		std::chrono::duration<int64_t, std::nano> maximumTime; // Longest allowed frame time before engine will run in slow motion.
-		std::chrono::duration<int64_t, std::nano> minimumTime; // Shortest allowed frame time if not enough work is happening.
+		std::chrono::nanoseconds maximumTime; // Longest allowed frame time before engine will run in slow motion.
+		std::chrono::nanoseconds minimumTime; // Shortest allowed frame time if not enough work is happening.
 		std::chrono::time_point<std::chrono::high_resolution_clock> previousTime, currentTime;
 		std::chrono::nanoseconds sleepBias; // Thread sleeping takes longer than it should on some platforms.
 		double deltaTime; // Difference between frame times in seconds.
@@ -61,7 +61,7 @@ namespace
 
 		void init()
 		{
-			this->maximumTime = std::chrono::duration<int64_t, std::nano>(std::nano::den / Options::MIN_FPS);
+			this->maximumTime = std::chrono::nanoseconds(std::nano::den / Options::MIN_FPS);
 			this->currentTime = std::chrono::high_resolution_clock::now();
 			this->sleepBias = std::chrono::nanoseconds::zero();
 		}
@@ -69,9 +69,9 @@ namespace
 		void startFrame(int targetFPS)
 		{
 			DebugAssert(targetFPS > 0);
+			this->minimumTime = std::chrono::nanoseconds(std::nano::den / targetFPS);
 			this->previousTime = this->currentTime;
 			this->currentTime = std::chrono::high_resolution_clock::now();
-			this->minimumTime = std::chrono::duration<int64_t, std::nano>(std::nano::den / targetFPS);
 
 			auto previousFrameDuration = this->currentTime - this->previousTime;
 			if (previousFrameDuration < this->minimumTime)
