@@ -824,6 +824,6 @@ void VoxelChunkManager::cleanUp()
 	for (int i = 0; i < activeChunkCount; i++)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
-		chunkPtr->clearDirtyVoxels();
+		chunkPtr->cleanUp();
 	}
 }

@@ -37,9 +37,13 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, const V
 
 	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyDoorAnimInstPositions())
 	{
-		// The door anim inst might've been destroyed because it finished closing.
 		int doorAnimInstIndex;
-		const bool shouldEnableDoorCollider = !voxelChunk.tryGetDoorAnimInstIndex(voxelPos.x, voxelPos.y, voxelPos.z, &doorAnimInstIndex);
+		const bool success = voxelChunk.tryGetDoorAnimInstIndex(voxelPos.x, voxelPos.y, voxelPos.z, &doorAnimInstIndex);
+		DebugAssertMsg(success, "Expected door anim inst to be available for (" + voxelPos.toString() + ").");
+		
+		const BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
+		const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
+		const bool shouldEnableDoorCollider = doorAnimInst.stateType == VoxelDoorAnimationInstance::StateType::Closed;
 		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, shouldEnableDoorCollider);
 	}
 }

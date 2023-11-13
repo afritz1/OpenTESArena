@@ -835,13 +835,14 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 				VoxelChunk::ChasmDefID chasmDefID;
 				const bool isChasm = voxelChunk.tryGetChasmDefID(x, y, z, &chasmDefID);
 
-				int fadeAnimInstIndex;
 				const VoxelFadeAnimationInstance *fadeAnimInst = nullptr;
-				const bool isFading = voxelChunk.tryGetFadeAnimInstIndex(x, y, z, &fadeAnimInstIndex);
-				if (isFading)
+				bool isFading = false;
+				int fadeAnimInstIndex;
+				if (voxelChunk.tryGetFadeAnimInstIndex(x, y, z, &fadeAnimInstIndex))
 				{
 					BufferView<const VoxelFadeAnimationInstance> fadeAnimInsts = voxelChunk.getFadeAnimInsts();
 					fadeAnimInst = &fadeAnimInsts[fadeAnimInstIndex];
+					isFading = !fadeAnimInst->isDoneFading();
 				}
 
 				const RenderVoxelLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(x, y, z);

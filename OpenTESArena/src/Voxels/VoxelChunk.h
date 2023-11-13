@@ -93,6 +93,11 @@ private:
 	std::vector<VoxelDoorVisibilityInstance> doorVisInsts;
 	std::vector<VoxelTriggerInstance> triggerInsts;
 
+	// Destroyed animations to be cleaned up at end of frame. This was added so it's less confusing when
+	// a voxel says it was dirtied (by animating) but there is no anim inst available.
+	std::vector<VoxelInt3> destroyedDoorAnimInsts;
+	std::vector<VoxelInt3> destroyedFadeAnimInsts;
+
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	// This is slightly different than the chunk manager's version since it is chunk-independent (but as
 	// a result, voxels on a chunk edge must be updated by the chunk manager).
@@ -145,9 +150,9 @@ public:
 	VoxelTraitsDefID getTraitsDefID(SNInt x, int y, WEInt z) const;
 
 	BufferView<const VoxelInt3> getDirtyMeshDefPositions() const;
-	BufferView<const VoxelInt3> getDirtyDoorAnimInstPositions() const;
+	BufferView<const VoxelInt3> getDirtyDoorAnimInstPositions() const; // Either animating or just closed this frame.
 	BufferView<const VoxelInt3> getDirtyDoorVisInstPositions() const;
-	BufferView<const VoxelInt3> getDirtyFadeAnimInstPositions() const;
+	BufferView<const VoxelInt3> getDirtyFadeAnimInstPositions() const; // Either animating or just finished this frame.
 	BufferView<const VoxelInt3> getDirtyChasmWallInstPositions() const;
 
 	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID *outID) const;
@@ -157,6 +162,7 @@ public:
 	bool tryGetDoorDefID(SNInt x, int y, WEInt z, DoorDefID *outID) const;
 	bool tryGetChasmDefID(SNInt x, int y, WEInt z, ChasmDefID *outID) const;
 
+	// Animation instance getters. A destroyed instance is still valid to read until end-of-frame.
 	BufferView<const VoxelDoorAnimationInstance> getDoorAnimInsts() const;
 	bool tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 	BufferView<const VoxelFadeAnimationInstance> getFadeAnimInsts() const;
@@ -207,16 +213,16 @@ public:
 	void addTriggerInst(VoxelTriggerInstance &&inst);
 	void removeChasmWallInst(const VoxelInt3 &voxel);
 
-	// Clears all chunk state.
-	void clear();
-
-	// Clears the dirty voxels list, meant to be done at the end of a frame.
-	void clearDirtyVoxels();
-
 	// Simulates the chunk's voxels by delta time.
 	// @todo: evaluate just letting the chunk manager do all the updating for the chunk, due to the complexity
 	// of chunk perimeters, etc. and the amount of almost-identical problem solving between the two classes.
 	void update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager);
+
+	// End-of-frame clean-up.
+	void cleanUp();
+
+	// Clears all chunk state.
+	void clear();
 };
 
 #endif
