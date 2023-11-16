@@ -298,7 +298,7 @@ void RenderEntityChunkManager::loadUniformBuffers(const EntityChunk &entityChunk
 
 		// Initialize to default transform; it gets updated each frame.
 		RenderTransform renderTransform;
-		renderTransform.preScaleTranslation = Double3::Zero;
+		renderTransform.translation = Matrix4d::identity();
 		renderTransform.rotation = Matrix4d::identity();
 		renderTransform.scale = Matrix4d::identity();
 		renderer.populateUniformBuffer(entityTransformBufferID, renderTransform);
@@ -307,14 +307,14 @@ void RenderEntityChunkManager::loadUniformBuffers(const EntityChunk &entityChunk
 	}
 }
 
-void RenderEntityChunkManager::addDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex,
-	ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs,
-	PixelShaderType pixelShaderType, std::vector<RenderDrawCall> &drawCalls)
+void RenderEntityChunkManager::addDrawCall(UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
+	const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
+	std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
-	drawCall.position = position;
 	drawCall.transformBufferID = transformBufferID;
 	drawCall.transformIndex = transformIndex;
+	drawCall.preScaleTranslationBufferID = -1;
 	drawCall.vertexBufferID = this->meshInst.vertexBufferID;
 	drawCall.normalBufferID = this->meshInst.normalBufferID;
 	drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
@@ -350,7 +350,6 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 		const double entityYPosition = entityChunkManager.getEntityCorrectedY(entityInstID, ceilingScale, voxelChunkManager);
 		const CoordDouble3 entityCoord3D(entityCoord.chunk, VoxelDouble3(entityCoord.point.x, entityYPosition, entityCoord.point.y));
-		const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord3D);
 
 		const ObjectTextureID textureID0 = this->getTextureID(entityInstID, cameraCoordXZ, entityChunkManager);
 		std::optional<ObjectTextureID> textureID1 = std::nullopt;
@@ -384,8 +383,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		DebugAssert(transformBufferIter != this->transformBufferIDs.end());
 		const UniformBufferID entityTransformBufferID = transformBufferIter->second;
 		const int entityTransformIndex = 0; // Each entity has their own transform buffer.
-		this->addDrawCall(entityWorldPos, entityTransformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView,
-			pixelShaderType, renderChunk.drawCalls);
+		this->addDrawCall(entityTransformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView, pixelShaderType, renderChunk.drawCalls);
 	}
 }
 
@@ -487,8 +485,13 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 			DebugAssert(transformBufferIter != this->transformBufferIDs.end());
 			const UniformBufferID entityTransformBufferID = transformBufferIter->second;
 
+			const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
+			const double entityYPosition = entityChunkManager.getEntityCorrectedY(entityInstID, ceilingScale, voxelChunkManager);
+			const CoordDouble3 entityCoord3D(entityCoord.chunk, VoxelDouble3(entityCoord.point.x, entityYPosition, entityCoord.point.y));
+			const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord3D);
+
 			RenderTransform entityRenderTransform;
-			entityRenderTransform.preScaleTranslation = Double3::Zero;
+			entityRenderTransform.translation = Matrix4d::translation(entityWorldPos.x, entityWorldPos.y, entityWorldPos.z);
 			entityRenderTransform.rotation = allEntitiesRotationMatrix;
 			entityRenderTransform.scale = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
 			renderer.populateUniformBuffer(entityTransformBufferID, entityRenderTransform);

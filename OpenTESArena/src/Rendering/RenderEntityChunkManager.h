@@ -58,7 +58,7 @@ private:
 	void loadTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 	void loadUniformBuffers(const EntityChunk &entityChunk, Renderer &renderer);
 
-	void addDrawCall(const Double3 &position, UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
+	void addDrawCall(UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
 		const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
 		std::vector<RenderDrawCall> &drawCalls);
 	void rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityVisibilityChunk &entityVisChunk,
