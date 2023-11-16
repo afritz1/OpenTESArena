@@ -29,7 +29,18 @@ namespace
 		return ArenaRenderUtils::SNOWFLAKE_TEXTURE_HEIGHTS[index];
 	}
 
-	Matrix4d GetParticleRotationMatrix(const Double3 &cameraDirection)
+	Matrix4d MakeParticleTranslationMatrix(const RenderCamera &camera, double xPercent, double yPercent)
+	{
+		const Double3 &basePosition = camera.worldPoint;
+		const Double3 centerDir = camera.forwardScaled * ParticleArbitraryZ;
+		const Double3 rightDir = camera.rightScaled * ParticleArbitraryZ;
+		const Double3 upDir = camera.upScaled * ParticleArbitraryZ;
+		const Double3 topLeftPoint = basePosition + centerDir - rightDir + upDir;
+		const Double3 position = topLeftPoint + (rightDir * (2.0 * xPercent)) - (upDir * (2.0 * yPercent));
+		return Matrix4d::translation(position.x, position.y, position.z);
+	}
+
+	Matrix4d MakeParticleRotationMatrix(const Double3 &cameraDirection)
 	{
 		const Radians pitchRadians = cameraDirection.getYAngleRadians();
 		const Radians yawRadians = MathUtils::fullAtan2(Double2(cameraDirection.z, cameraDirection.x).normalized()) + Constants::Pi;
@@ -38,7 +49,7 @@ namespace
 		return yawRotation * pitchRotation;
 	}
 
-	Matrix4d GetParticleScaleMatrix(int textureWidth, int textureHeight)
+	Matrix4d MakeParticleScaleMatrix(int textureWidth, int textureHeight)
 	{
 		const double baseWidth = static_cast<double>(textureWidth) / 100.0;
 		const double baseHeight = static_cast<double>(textureHeight) / 100.0;
@@ -330,7 +341,7 @@ bool RenderWeatherManager::initUniforms(Renderer &renderer)
 	}
 
 	RenderTransform fogRenderTransform;
-	fogRenderTransform.preScaleTranslation = Double3::Zero;
+	fogRenderTransform.translation = Matrix4d::identity();
 	fogRenderTransform.rotation = Matrix4d::identity();
 	fogRenderTransform.scale = Matrix4d::identity();
 	renderer.populateUniformBuffer(this->fogTransformBufferID, fogRenderTransform);
@@ -561,18 +572,12 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 	this->snowDrawCalls.clear();
 	this->fogDrawCall.clear();
 
-	auto populateParticleDrawCall = [this, &camera](RenderDrawCall &drawCall, double xPercent, double yPercent,
-		UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID)
+	// @todo: this isn't doing anything that changes per-frame now, move it to loadScene()
+	auto populateParticleDrawCall = [this](RenderDrawCall &drawCall, UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID)
 	{
-		const Double3 &basePosition = camera.worldPoint;
-		const Double3 centerDir = camera.forwardScaled * ParticleArbitraryZ;
-		const Double3 rightDir = camera.rightScaled * ParticleArbitraryZ;
-		const Double3 upDir = camera.upScaled * ParticleArbitraryZ;
-		const Double3 topLeftPoint = basePosition + centerDir - rightDir + upDir;
-		drawCall.position = topLeftPoint + (rightDir * (2.0 * xPercent)) - (upDir * (2.0 * yPercent));
-
 		drawCall.transformBufferID = transformBufferID;
 		drawCall.transformIndex = transformIndex;
+		drawCall.preScaleTranslationBufferID = -1;
 		drawCall.vertexBufferID = this->particleVertexBufferID;
 		drawCall.normalBufferID = this->particleNormalBufferID;
 		drawCall.texCoordBufferID = this->particleTexCoordBufferID;
@@ -584,22 +589,22 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.lightingType = RenderLightingType::PerMesh;
 		drawCall.lightPercent = 1.0;
 		drawCall.lightIdCount = 0;
-		drawCall.vertexShaderType = VertexShaderType::SlidingDoor;
+		drawCall.vertexShaderType = VertexShaderType::SlidingDoor; // @todo: actually have a dedicated vertex shader
 		drawCall.pixelShaderType = PixelShaderType::AlphaTested;
 		drawCall.pixelShaderParam0 = 0.0;
 	};
 
-	auto populateRainDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, double xPercent, double yPercent, int transformIndex)
+	auto populateRainDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, int transformIndex)
 	{
-		populateParticleDrawCall(drawCall, xPercent, yPercent, this->rainTransformBufferID, transformIndex, this->rainTextureID);
+		populateParticleDrawCall(drawCall, this->rainTransformBufferID, transformIndex, this->rainTextureID);
 	};
 
-	auto populateSnowDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, double xPercent, double yPercent, int transformIndex, ObjectTextureID textureID)
+	auto populateSnowDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, int transformIndex, ObjectTextureID textureID)
 	{
-		populateParticleDrawCall(drawCall, xPercent, yPercent, this->snowTransformBufferID, transformIndex, textureID);
+		populateParticleDrawCall(drawCall, this->snowTransformBufferID, transformIndex, textureID);
 	};
 
-	const Matrix4d particleRotationMatrix = GetParticleRotationMatrix(camera.forward);
+	const Matrix4d particleRotationMatrix = MakeParticleRotationMatrix(camera.forward);
 
 	if (weatherInst.hasRain())
 	{
@@ -613,19 +618,19 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 			this->rainDrawCalls.init(rainParticleCount);
 		}
 
-		const Matrix4d raindropScaleMatrix = GetParticleScaleMatrix(RainTextureWidth, RainTextureHeight);
+		const Matrix4d raindropScaleMatrix = MakeParticleScaleMatrix(RainTextureWidth, RainTextureHeight);
 		for (int i = 0; i < rainParticleCount; i++)
 		{
+			const WeatherParticle &rainParticle = rainInst.particles[i];
 			const int raindropTransformIndex = i;
 
 			RenderTransform raindropRenderTransform;
-			raindropRenderTransform.preScaleTranslation = Double3::Zero;
+			raindropRenderTransform.translation = MakeParticleTranslationMatrix(camera, rainParticle.xPercent, rainParticle.yPercent);
 			raindropRenderTransform.rotation = particleRotationMatrix;
 			raindropRenderTransform.scale = raindropScaleMatrix;
 			renderer.populateUniformAtIndex(this->rainTransformBufferID, raindropTransformIndex, raindropRenderTransform);
 
-			const WeatherParticle &rainParticle = rainInst.particles[i];
-			populateRainDrawCall(this->rainDrawCalls[i], rainParticle.xPercent, rainParticle.yPercent, raindropTransformIndex);
+			populateRainDrawCall(this->rainDrawCalls[i], raindropTransformIndex);
 		}
 	}
 
@@ -666,31 +671,36 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 			const int snowParticleEnd = snowParticleEnds[snowParticleSizeIndex];
 			const int snowParticleTextureWidth = GetSnowTextureWidth(snowParticleSizeIndex);
 			const int snowParticleTextureHeight = GetSnowTextureHeight(snowParticleSizeIndex);
-			const Matrix4d snowParticleScaleMatrix = GetParticleScaleMatrix(snowParticleTextureWidth, snowParticleTextureHeight);
+			const Matrix4d snowParticleScaleMatrix = MakeParticleScaleMatrix(snowParticleTextureWidth, snowParticleTextureHeight);
 
 			for (int i = snowParticleStart; i < snowParticleEnd; i++)
 			{
+				const WeatherParticle &snowParticle = snowInst.particles[i];
 				const int snowParticleTransformIndex = i;
 
 				RenderTransform snowParticleRenderTransform;
-				snowParticleRenderTransform.preScaleTranslation = Double3::Zero;
+				snowParticleRenderTransform.translation = MakeParticleTranslationMatrix(camera, snowParticle.xPercent, snowParticle.yPercent);
 				snowParticleRenderTransform.rotation = particleRotationMatrix;
 				snowParticleRenderTransform.scale = snowParticleScaleMatrix;
 				renderer.populateUniformAtIndex(this->snowTransformBufferID, snowParticleTransformIndex, snowParticleRenderTransform);
 
 				const ObjectTextureID snowParticleTextureID = this->snowTextureIDs[snowParticleSizeIndex];
-
-				const WeatherParticle &snowParticle = snowInst.particles[i];
-				populateSnowDrawCall(this->snowDrawCalls[i], snowParticle.xPercent, snowParticle.yPercent, snowParticleTransformIndex, snowParticleTextureID);
+				populateSnowDrawCall(this->snowDrawCalls[i], snowParticleTransformIndex, snowParticleTextureID);
 			}
 		}
 	}
 
 	if (weatherInst.hasFog())
 	{
-		this->fogDrawCall.position = camera.worldPoint;
+		RenderTransform fogRenderTransform;
+		fogRenderTransform.translation = Matrix4d::translation(camera.worldPoint.x, camera.worldPoint.y, camera.worldPoint.z);
+		fogRenderTransform.rotation = Matrix4d::identity();
+		fogRenderTransform.scale = Matrix4d::identity();
+		renderer.populateUniformBuffer(this->fogTransformBufferID, fogRenderTransform);
+
 		this->fogDrawCall.transformBufferID = this->fogTransformBufferID;
 		this->fogDrawCall.transformIndex = 0;
+		this->fogDrawCall.preScaleTranslationBufferID = -1;
 		this->fogDrawCall.vertexBufferID = this->fogVertexBufferID;
 		this->fogDrawCall.normalBufferID = this->fogNormalBufferID;
 		this->fogDrawCall.texCoordBufferID = this->fogTexCoordBufferID;
