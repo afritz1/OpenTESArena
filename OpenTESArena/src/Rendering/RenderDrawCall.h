@@ -14,9 +14,10 @@ struct RenderDrawCall
 	static constexpr int MAX_TEXTURE_COUNT = 2; // For multi-texturing.
 	static constexpr int MAX_LIGHTS = 8;
 
-	Double3 position;
-	UniformBufferID transformBufferID; // For additional translation/rotation/scaling besides just world offset.
+	UniformBufferID transformBufferID; // Translation/rotation/scale of this model
 	int transformIndex;
+	
+	UniformBufferID preScaleTranslationBufferID; // Extra translation for some vertex shaders (currently shared by all raised doors).
 
 	VertexBufferID vertexBufferID;
 	AttributeBufferID normalBufferID, texCoordBufferID;

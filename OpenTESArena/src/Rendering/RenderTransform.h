@@ -6,8 +6,7 @@
 
 struct RenderTransform
 {
-	Double3 preScaleTranslation; // For scaling around arbitrary point.
-	Matrix4d rotation, scale;
+	Matrix4d translation, rotation, scale; // @todo: this should just be a model transform (T*R*S result) once the renderer is using vertex shaders w/ MVP multiplication
 
 	RenderTransform();
 

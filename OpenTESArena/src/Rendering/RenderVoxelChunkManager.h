@@ -64,8 +64,9 @@ public:
 		void init(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 	};
 private:
-	// Default identity transform for voxels that are only offset from the origin and nothing else.
-	UniformBufferID defaultTransformBufferID;
+	// Buffer for all raising doors' translation to push/pop during vertex shading so they scale towards the ceiling.
+	// Updated on scene change.
+	UniformBufferID raisingDoorPreScaleTranslationBufferID;
 
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
@@ -85,11 +86,11 @@ private:
 	void loadMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 	void loadChasmWall(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, SNInt x, int y, WEInt z);
 	void loadChasmWalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk);
-	void loadDoorUniformBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
+	void loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
-	void addDrawCall(RenderVoxelChunk &renderChunk, const VoxelInt3 &voxelPos, const Double3 &worldPosition, UniformBufferID transformBufferID,
-		int transformIndex, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID, IndexBufferID indexBufferID,
-		ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0,
+	void addDrawCall(RenderVoxelChunk &renderChunk, const VoxelInt3 &voxelPos, UniformBufferID transformBufferID, int transformIndex,
+		UniformBufferID preScaleTranslationBufferID, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
+		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0,
 		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs,
 		VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0, BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs);
 	void loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const VoxelVisibilityChunk &voxelVisChunk,

@@ -279,6 +279,11 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		meshInst.freeBuffers(renderer);
 	}
 
+	for (const auto &pair : this->transformBuffers)
+	{
+		renderer.freeUniformBuffer(pair.second);
+	}
+
 	for (const auto &pair : this->doorTransformBuffers)
 	{
 		renderer.freeUniformBuffer(pair.second);
@@ -292,6 +297,7 @@ void RenderVoxelChunk::clear()
 	this->meshInstMappings.clear();
 	this->meshInstIDs.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
+	this->transformBuffers.clear();
 	this->doorTransformBuffers.clear();
 	this->drawCallHeap.clear();
 	this->staticDrawCallRangeIDs.clear();

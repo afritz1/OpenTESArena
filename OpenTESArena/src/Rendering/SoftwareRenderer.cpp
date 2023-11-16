@@ -1818,10 +1818,18 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	for (int i = 0; i < drawCallCount; i++)
 	{
 		const RenderDrawCall &drawCall = drawCalls.get(i);
-		const Double3 &meshPosition = drawCall.position;
-
 		const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
 		const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
+		const Double4 &modelPosition = transform.translation.w;
+		const Double3 modelPositionXYZ(modelPosition.x, modelPosition.y, modelPosition.z);
+		
+		Double3 preScaleTranslation = Double3::Zero;
+		if (drawCall.preScaleTranslationBufferID >= 0)
+		{
+			const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
+			preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
+		}
+		
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
 		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
@@ -1830,7 +1838,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			meshPosition, transform.preScaleTranslation, transform.rotation, transform.scale, vertexBuffer, normalBuffer,
+			modelPositionXYZ, preScaleTranslation, transform.rotation, transform.scale, vertexBuffer, normalBuffer,
 			texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
 
 		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingType0;
