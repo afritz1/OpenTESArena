@@ -210,8 +210,9 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 				visibilityType = VisibilityType::Partial;
 			}
 
-			DebugAssertIndex(this->internalNodeVisibilityTypes, zOrderCurveNodeIndex);
-			this->internalNodeVisibilityTypes[zOrderCurveNodeIndex] = visibilityType;
+			const int internalNodeVisIndex = bboxIndex;
+			DebugAssertIndex(this->internalNodeVisibilityTypes, internalNodeVisIndex);
+			this->internalNodeVisibilityTypes[internalNodeVisIndex] = visibilityType;
 
 			if (visibilityType == VisibilityType::Partial)
 			{
