@@ -837,13 +837,16 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		drawCalls.insert(drawCalls.end(), snowDrawCalls.begin(), snowDrawCalls.end());
 	}
 
+	const bool isFoggy = gameState.isFogActive();
 	if (activeWeatherInst.hasFog())
 	{
-		drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
+		if (isFoggy)
+		{
+			drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
+		}
 	}
 
 	const MapType activeMapType = activeMapDef.getMapType();
-	const bool isFoggy = gameState.isFogActive();
 	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType, isFoggy);
 	const double latitude = [&gameState]()
 	{
