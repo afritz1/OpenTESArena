@@ -144,7 +144,11 @@ UiTextureID TextBox::getTextureID()
 	if (this->dirty)
 	{
 		this->updateTexture();
-		DebugAssert(!this->dirty);
+
+		if (this->dirty)
+		{
+			DebugLogError("Text box \"" + this->text + "\" did not update properly.");
+		}
 	}
 
 	return this->textureRef.get();

@@ -623,7 +623,11 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 
 	// Reinitialize native frame buffer.
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, width, height);
-	DebugAssertMsg(this->nativeTexture.get() != nullptr, "Couldn't recreate native frame buffer (" + std::string(SDL_GetError()) + ").");
+	if (this->nativeTexture.get() == nullptr)
+	{
+		DebugLogError("Couldn't recreate native frame buffer for resize to " + std::to_string(width) + "x" +
+			std::to_string(height) + " (" + std::string(SDL_GetError()) + ").");
+	}
 
 	this->fullGameWindow = fullGameWindow;
 
@@ -636,7 +640,11 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 
 		// Reinitialize the game world frame buffer.
 		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-		DebugAssertMsg(this->gameWorldTexture.get() != nullptr, "Couldn't recreate game world texture (" + std::string(SDL_GetError()) + ").");
+		if (this->gameWorldTexture.get() == nullptr)
+		{
+			DebugLogError("Couldn't recreate game world texture for resize to " + std::to_string(width) + "x" +
+				std::to_string(height) + " (" + std::string(SDL_GetError()) + ").");
+		}
 
 		this->renderer3D->resize(renderWidth, renderHeight);
 	}
@@ -999,7 +1007,11 @@ void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDr
 	uint32_t *outputBuffer;
 	int gameWorldPitch;
 	int status = SDL_LockTexture(this->gameWorldTexture.get(), nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
-	DebugAssertMsg(status == 0, "Couldn't lock game world texture for scene rendering (" + std::string(SDL_GetError()) + ").");
+	if (status != 0)
+	{
+		DebugLogError("Couldn't lock game world SDL_Texture for scene rendering (" + std::string(SDL_GetError()) + ").");
+		return;
+	}
 
 	// Render the game world (no UI).
 	const auto renderStartTime = std::chrono::high_resolution_clock::now();

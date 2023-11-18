@@ -41,20 +41,38 @@ Texture &Texture::operator=(Texture &&texture)
 
 int Texture::getWidth() const
 {
-	DebugAssert(this->texture != nullptr);
+	if (this->texture == nullptr)
+	{
+		DebugLogError("Can't query width of null SDL_Texture.");
+		return 0;
+	}
 
 	int width;
-	SDL_QueryTexture(this->texture, nullptr, nullptr, &width, nullptr);
+	const int status = SDL_QueryTexture(this->texture, nullptr, nullptr, &width, nullptr);
+	if (status != 0)
+	{
+		DebugLogError("Couldn't query SDL_Texture width (" + std::string(SDL_GetError()) + ").");
+		return 0;
+	}
 
 	return width;
 }
 
 int Texture::getHeight() const
 {
-	DebugAssert(this->texture != nullptr);
+	if (this->texture == nullptr)
+	{
+		DebugLogError("Can't query height of null SDL_Texture.");
+		return 0;
+	}
 
 	int height;
-	SDL_QueryTexture(this->texture, nullptr, nullptr, nullptr, &height);
+	const int status = SDL_QueryTexture(this->texture, nullptr, nullptr, nullptr, &height);
+	if (status != 0)
+	{
+		DebugLogError("Couldn't query SDL_Texture height (" + std::string(SDL_GetError()) + ").");
+		return 0;
+	}
 
 	return height;
 }
