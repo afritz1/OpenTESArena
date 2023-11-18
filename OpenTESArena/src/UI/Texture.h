@@ -26,7 +26,7 @@ public:
 	// Most code shouldn't touch a native texture directly.
 	void init(SDL_Texture *texture);
 
-	void clear();
+	void destroy();
 };
 
 #endif

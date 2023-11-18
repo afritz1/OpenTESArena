@@ -88,7 +88,7 @@ void Texture::init(SDL_Texture *texture)
 	this->texture = texture;
 }
 
-void Texture::clear()
+void Texture::destroy()
 {
 	if (this->texture != nullptr)
 	{
