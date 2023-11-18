@@ -146,6 +146,18 @@ void InputManager::WindowResizedListenerEntry::reset()
 	this->enabled = false;
 }
 
+void InputManager::RenderTargetsResetListenerEntry::init(const RenderTargetsResetCallback &callback)
+{
+	this->callback = callback;
+	this->enabled = true;
+}
+
+void InputManager::RenderTargetsResetListenerEntry::reset()
+{
+	this->callback = []() { };
+	this->enabled = false;
+}
+
 void InputManager::TextInputListenerEntry::init(const TextInputCallback &callback)
 {
 	this->callback = callback;
@@ -257,6 +269,16 @@ bool InputManager::applicationExit(const SDL_Event &e) const
 bool InputManager::windowResized(const SDL_Event &e) const
 {
 	return (e.type == SDL_WINDOWEVENT) && (e.window.event == SDL_WINDOWEVENT_RESIZED);
+}
+
+bool InputManager::renderTargetsReset(const SDL_Event &e) const
+{
+	return e.type == SDL_RENDER_TARGETS_RESET;
+}
+
+bool InputManager::renderDeviceReset(const SDL_Event &e) const
+{
+	return e.type == SDL_RENDER_DEVICE_RESET;
 }
 
 bool InputManager::isTextInput(const SDL_Event &e) const
@@ -407,6 +429,18 @@ InputManager::ListenerID InputManager::addWindowResizedListener(const WindowResi
 		this->windowResizedListeners, this->freedWindowResizedListenerIndices);
 }
 
+InputManager::ListenerID InputManager::addRenderTargetsResetListener(const RenderTargetsResetCallback &callback)
+{
+	return this->addListenerInternal(callback, ListenerType::RenderTargetsReset,
+		this->renderTargetsResetListeners, this->freedRenderTargetsResetListenerIndices);
+}
+
+InputManager::ListenerID InputManager::addTextInputListener(const TextInputCallback &callback)
+{
+	return this->addListenerInternal(callback, ListenerType::TextInput,
+		this->textInputListeners, this->freedTextInputListenerIndices);
+}
+
 void InputManager::setTextInputMode(bool active)
 {
 	if (active)
@@ -417,12 +451,6 @@ void InputManager::setTextInputMode(bool active)
 	{
 		SDL_StopTextInput();
 	}
-}
-
-InputManager::ListenerID InputManager::addTextInputListener(const TextInputCallback &callback)
-{
-	return this->addListenerInternal(callback, ListenerType::TextInput,
-		this->textInputListeners, this->freedTextInputListenerIndices);
 }
 
 void InputManager::removeListener(ListenerID id)
@@ -471,6 +499,10 @@ void InputManager::removeListener(ListenerID id)
 		else if (listenerType == ListenerType::WindowResized)
 		{
 			resetListenerEntry(this->windowResizedListeners, this->freedWindowResizedListenerIndices, index);
+		}
+		else if (listenerType == ListenerType::RenderTargetsReset)
+		{
+			resetListenerEntry(this->renderTargetsResetListeners, this->freedRenderTargetsResetListenerIndices, index);
 		}
 		else if (listenerType == ListenerType::TextInput)
 		{
@@ -694,6 +726,15 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 		}
 	}
 
+	std::vector<const RenderTargetsResetListenerEntry*> enabledRenderTargetsResetListeners;
+	for (const RenderTargetsResetListenerEntry &entry : this->renderTargetsResetListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledRenderTargetsResetListeners.emplace_back(&entry);
+		}
+	}
+
 	std::vector<const TextInputListenerEntry*> enabledTextInputListeners;
 	for (const TextInputListenerEntry &entry : this->textInputListeners)
 	{
@@ -893,6 +934,17 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 			{
 				entry->callback(width, height);
 			}
+		}
+		else if (this->renderTargetsReset(e))
+		{
+			for (const RenderTargetsResetListenerEntry *entry : enabledRenderTargetsResetListeners)
+			{
+				entry->callback();
+			}
+		}
+		else if (this->renderDeviceReset(e))
+		{
+			DebugLogError("Render device reset not implemented.");
 		}
 		else if (this->isTextInput(e))
 		{

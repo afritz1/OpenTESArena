@@ -37,6 +37,7 @@ private:
 		MouseMotion,
 		ApplicationExit,
 		WindowResized,
+		RenderTargetsReset,
 		TextInput
 	};
 
@@ -113,6 +114,15 @@ private:
 		void reset();
 	};
 
+	struct RenderTargetsResetListenerEntry
+	{
+		RenderTargetsResetCallback callback;
+		bool enabled;
+
+		void init(const RenderTargetsResetCallback &callback);
+		void reset();
+	};
+
 	struct TextInputListenerEntry
 	{
 		TextInputCallback callback;
@@ -132,6 +142,7 @@ private:
 	std::vector<MouseMotionListenerEntry> mouseMotionListeners;
 	std::vector<ApplicationExitListenerEntry> applicationExitListeners;
 	std::vector<WindowResizedListenerEntry> windowResizedListeners;
+	std::vector<RenderTargetsResetListenerEntry> renderTargetsResetListeners;
 	std::vector<TextInputListenerEntry> textInputListeners;
 
 	// Look-up values for valid listener entries, shared by all listener containers.
@@ -145,6 +156,7 @@ private:
 	std::vector<int> freedMouseMotionListenerIndices;
 	std::vector<int> freedApplicationExitListenerIndices;
 	std::vector<int> freedWindowResizedListenerIndices;
+	std::vector<int> freedRenderTargetsResetListenerIndices;
 	std::vector<int> freedTextInputListenerIndices;
 
 	ListenerID nextListenerID;
@@ -184,6 +196,8 @@ public:
 	bool mouseWheeledDown(const SDL_Event &e) const;
 	bool applicationExit(const SDL_Event &e) const;
 	bool windowResized(const SDL_Event &e) const;
+	bool renderTargetsReset(const SDL_Event &e) const;
+	bool renderDeviceReset(const SDL_Event &e) const;
 	bool isTextInput(const SDL_Event &e) const;
 	Int2 getMousePosition() const;
 	Int2 getMouseDelta() const;
@@ -197,6 +211,7 @@ public:
 	ListenerID addMouseMotionListener(const MouseMotionCallback &callback);
 	ListenerID addApplicationExitListener(const ApplicationExitCallback &callback);
 	ListenerID addWindowResizedListener(const WindowResizedCallback &callback);
+	ListenerID addRenderTargetsResetListener(const RenderTargetsResetCallback &callback);
 	ListenerID addTextInputListener(const TextInputCallback &callback);
 
 	void removeListener(ListenerID id);
