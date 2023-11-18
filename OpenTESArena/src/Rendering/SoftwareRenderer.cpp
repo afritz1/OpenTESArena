@@ -311,6 +311,39 @@ namespace swShader
 		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
 		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
 	}
+
+	void PixelShader_AlphaTestedWithHorizonMirror(const PixelShaderPerspectiveCorrection &perspective,
+		const PixelShaderTexture &texture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.width - 1);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.heightReal), 0, texture.height - 1);
+		const int texelIndex = texelX + (texelY * texture.width);
+		const uint8_t texel = texture.texels[texelIndex];
+
+		const bool isTransparent = texel == 0;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		uint8_t resultTexel;
+		const bool isReflective = texel == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW;
+		if (isReflective)
+		{
+			// @todo: horizon mirror logic, read from frame buffer or sky mesh texture
+			// - will probably need helper values like some Y value above/below the horizon via projected values
+			const uint8_t mirroredTexel = 0;
+			resultTexel = mirroredTexel;
+		}
+		else
+		{
+			const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+			resultTexel = lighting.lightTableTexels[shadedTexelIndex];
+		}
+
+		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+	}
 }
 
 // Internal geometry types/functions.
@@ -1323,6 +1356,9 @@ namespace swRender
 								break;
 							case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
 								swShader::PixelShader_AlphaTestedWithPreviousBrightnessLimit(shaderPerspective, shaderTexture0, shaderFrameBuffer);
+								break;
+							case PixelShaderType::AlphaTestedWithHorizonMirror:
+								swShader::PixelShader_AlphaTestedWithHorizonMirror(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 								break;
 							default:
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(pixelShaderType)));

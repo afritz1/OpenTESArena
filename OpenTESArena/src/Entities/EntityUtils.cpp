@@ -84,6 +84,17 @@ bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 	return enemyDef.getCreature().ghost;
 }
 
+bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
+{
+	if (entityDef.getType() != EntityDefinition::Type::Doodad)
+	{
+		return false;
+	}
+
+	const EntityDefinition::DoodadDefinition &doodad = entityDef.getDoodad();
+	return doodad.puddle;
+}
+
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 {
 	const EntityDefinition::Type type = entityDef.getType();

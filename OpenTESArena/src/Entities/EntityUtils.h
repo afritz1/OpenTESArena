@@ -30,6 +30,7 @@ namespace EntityUtils
 	bool isStreetlight(const EntityDefinition &entityDef);
 
 	bool isGhost(const EntityDefinition &entityDef);
+	bool isPuddle(const EntityDefinition &entityDef);
 
 	int getYOffset(const EntityDefinition &entityDef);
 

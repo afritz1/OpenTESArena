@@ -357,6 +357,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 
 		const bool isCitizen = entityInst.isCitizen();
 		const bool isGhost = EntityUtils::isGhost(entityDef);
+		const bool isPuddle = EntityUtils::isPuddle(entityDef);
 		if (isCitizen)
 		{
 			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
@@ -368,6 +369,10 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		else if (isGhost)
 		{
 			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
+		}
+		else if (isPuddle)
+		{
+			pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirror;
 		}
 
 		const VoxelDouble3 &entityLightPoint = entityCoord3D.point; // Where the entity receives its light (can't use center due to some really tall entities reaching outside the chunk).

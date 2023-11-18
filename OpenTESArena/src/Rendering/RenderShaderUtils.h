@@ -21,7 +21,8 @@ enum class PixelShaderType
 	AlphaTestedWithPaletteIndexLookup, // Citizens.
 	AlphaTestedWithLightLevelColor, // Clouds, distant moons.
 	AlphaTestedWithLightLevelOpacity, // Ghosts, screen-space fog.
-	AlphaTestedWithPreviousBrightnessLimit // Stars.
+	AlphaTestedWithPreviousBrightnessLimit, // Stars.
+	AlphaTestedWithHorizonMirror // Puddles.
 };
 
 enum class TextureSamplingType
