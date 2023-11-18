@@ -114,7 +114,7 @@ namespace swShader
 		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
 		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * opaqueTexture.widthReal), 0, opaqueTexture.widthMinusOne);
@@ -141,7 +141,7 @@ namespace swShader
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			return;
@@ -162,7 +162,7 @@ namespace swShader
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			return;
@@ -184,7 +184,7 @@ namespace swShader
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			return;
@@ -204,7 +204,7 @@ namespace swShader
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			return;
@@ -226,7 +226,7 @@ namespace swShader
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			return;
@@ -247,7 +247,7 @@ namespace swShader
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			return;
@@ -305,7 +305,7 @@ namespace swShader
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			return;
@@ -323,7 +323,7 @@ namespace swShader
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
-		const bool isTransparent = texel == 0;
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
 			return;
