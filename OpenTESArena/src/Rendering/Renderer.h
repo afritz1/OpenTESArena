@@ -94,12 +94,6 @@ private:
 	ResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
-
-	// Helper method for making a renderer context.
-	static SDL_Renderer *createRenderer(SDL_Window *window);
-
-	// Generates a renderer dimension while avoiding pitfalls of numeric imprecision.
-	static int makeRendererDimension(int value, double resolutionScale);
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();

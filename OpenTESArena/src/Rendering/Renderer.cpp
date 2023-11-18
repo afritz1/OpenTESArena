@@ -90,6 +90,81 @@ namespace
 
 		return Int2(fallbackWidth, fallbackHeight);
 	}
+
+	// Helper method for making a renderer context.
+	SDL_Renderer *CreateSdlRendererForWindow(SDL_Window *window)
+	{
+		// Automatically choose the best driver.
+		constexpr int bestDriver = -1;
+
+		SDL_Renderer *rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_ACCELERATED);
+		if (rendererContext == nullptr)
+		{
+			DebugLogError("Couldn't create SDL_Renderer with driver \"" + std::to_string(bestDriver) + "\" (" + std::string(SDL_GetError()) + ").");
+			return nullptr;
+		}
+
+		SDL_RendererInfo rendererInfo;
+		if (SDL_GetRendererInfo(rendererContext, &rendererInfo) < 0)
+		{
+			DebugLogError("Couldn't get SDL_RendererInfo (" + std::string(SDL_GetError()) + ").");
+			return nullptr;
+		}
+
+		const std::string rendererInfoFlags = String::toHexString(rendererInfo.flags);
+		DebugLog("Created renderer \"" + std::string(rendererInfo.name) + "\" (flags: 0x" + rendererInfoFlags + ").");
+
+		// Set pixel interpolation hint.
+		const SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, GetSdlRenderScaleQuality());
+		if (status != SDL_TRUE)
+		{
+			DebugLogWarning("Couldn't set SDL rendering interpolation hint (" + std::string(SDL_GetError()) + ").");
+		}
+
+		int windowWidth, windowHeight;
+		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+		auto isValidWindowSize = [](int width, int height)
+		{
+			return (width > 0) && (height > 0);
+		};
+
+		// Set the size of the render texture to be the size of the whole screen (it automatically scales otherwise).
+		// If this fails, the OS might not support hardware accelerated renderers for some reason (such as with Linux),
+		// so retry with software.
+		if (!isValidWindowSize(windowWidth, windowHeight))
+		{
+			DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback (" + std::string(SDL_GetError()) + ").");
+			SDL_DestroyRenderer(rendererContext);
+
+			rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
+			if (rendererContext == nullptr)
+			{
+				DebugLogError("Couldn't create software fallback SDL_Renderer (" + std::string(SDL_GetError()) + ").");
+				return nullptr;
+			}
+
+			SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+			if (!isValidWindowSize(windowWidth, windowHeight))
+			{
+				DebugLogError("Couldn't get software fallback SDL_Window dimensions (" + std::string(SDL_GetError()) + ").");
+				return nullptr;
+			}
+		}
+
+		// Set the device-independent resolution for rendering (i.e., the "behind-the-scenes" resolution).
+		SDL_RenderSetLogicalSize(rendererContext, windowWidth, windowHeight);
+
+		return rendererContext;
+	}
+
+	Int2 MakeInternalRendererDimensions(const Int2 &dimensions, double resolutionScale)
+	{
+		// Make sure dimensions are at least 1x1, and round to avoid off-by-one resolutions like 1079p.
+		const int renderWidth = std::max(static_cast<int>(std::round(static_cast<double>(dimensions.x) * resolutionScale)), 1);
+		const int renderHeight = std::max(static_cast<int>(std::round(static_cast<double>(dimensions.y) * resolutionScale)), 1);
+		return Int2(renderWidth, renderHeight);
+	}
 }
 
 Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
@@ -167,80 +242,6 @@ Renderer::~Renderer()
 	SDL_DestroyRenderer(this->renderer);
 
 	SDL_Quit();
-}
-
-SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
-{
-	// Automatically choose the best driver.
-	constexpr int bestDriver = -1;
-
-	SDL_Renderer *rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_ACCELERATED);
-	if (rendererContext == nullptr)
-	{
-		DebugLogError("Couldn't create SDL_Renderer with driver \"" + std::to_string(bestDriver) + "\" (" + std::string(SDL_GetError()) + ").");
-		return nullptr;
-	}
-
-	SDL_RendererInfo rendererInfo;
-	if (SDL_GetRendererInfo(rendererContext, &rendererInfo) < 0)
-	{
-		DebugLogError("Couldn't get SDL_RendererInfo (" + std::string(SDL_GetError()) + ").");
-		return nullptr;
-	}
-
-	const std::string rendererInfoFlags = String::toHexString(rendererInfo.flags);
-	DebugLog("Created renderer \"" + std::string(rendererInfo.name) + "\" (flags: 0x" + rendererInfoFlags + ").");
-
-	// Set pixel interpolation hint.
-	const SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, GetSdlRenderScaleQuality());
-	if (status != SDL_TRUE)
-	{
-		DebugLogWarning("Couldn't set SDL rendering interpolation hint (" + std::string(SDL_GetError()) + ").");
-	}
-
-	int windowWidth, windowHeight;
-	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-
-	auto isValidWindowSize = [](int width, int height)
-	{
-		return (width > 0) && (height > 0);
-	};
-
-	// Set the size of the render texture to be the size of the whole screen (it automatically scales otherwise).
-	// If this fails, the OS might not support hardware accelerated renderers for some reason (such as with Linux),
-	// so retry with software.
-	if (!isValidWindowSize(windowWidth, windowHeight))
-	{
-		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback (" + std::string(SDL_GetError()) + ").");
-		SDL_DestroyRenderer(rendererContext);
-
-		rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
-		if (rendererContext == nullptr)
-		{
-			DebugLogError("Couldn't create software fallback SDL_Renderer (" + std::string(SDL_GetError()) + ").");
-			return nullptr;
-		}
-
-		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-		if (!isValidWindowSize(windowWidth, windowHeight))
-		{
-			DebugLogError("Couldn't get software fallback SDL_Window dimensions (" + std::string(SDL_GetError()) + ").");
-			return nullptr;
-		}
-	}
-
-	// Set the device-independent resolution for rendering (i.e., the "behind-the-scenes" resolution).
-	SDL_RenderSetLogicalSize(rendererContext, windowWidth, windowHeight);
-
-	return rendererContext;
-}
-
-int Renderer::makeRendererDimension(int value, double resolutionScale)
-{
-	// Make sure renderer dimensions are at least 1x1, and round to make sure an
-	// imprecise resolution scale doesn't result in off-by-one resolutions (like 1079p).
-	return std::max(static_cast<int>(
-		std::round(static_cast<double>(value) * resolutionScale)), 1);
 }
 
 double Renderer::getLetterboxAspect() const
@@ -521,7 +522,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	}
 
 	// Initialize SDL renderer context.
-	this->renderer = Renderer::createRenderer(this->window);
+	this->renderer = CreateSdlRendererForWindow(this->window);
 	if (this->renderer == nullptr)
 	{
 		DebugLogError("Couldn't create SDL_Renderer (" + std::string(SDL_GetError()) + ").");
@@ -593,22 +594,20 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		}
 	}();
 
-	// Make sure render dimensions are at least 1x1.
 	const Int2 viewDims = this->getViewDimensions();
 	const double resolutionScale = resolutionScaleFunc();
-	const int renderWidth = Renderer::makeRendererDimension(viewDims.x, resolutionScale);
-	const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
+	const Int2 renderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
 	// Initialize game world destination frame buffer.
-	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
+	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderDims.x, renderDims.y);
 	if (this->gameWorldTexture.get() == nullptr)
 	{
-		DebugLogError("Couldn't create game world texture at " + std::to_string(renderWidth) + "x" +
-			std::to_string(renderHeight) + " (" + std::string(SDL_GetError()) + ").");
+		DebugLogError("Couldn't create game world texture at " + std::to_string(renderDims.x) + "x" +
+			std::to_string(renderDims.y) + " (" + std::string(SDL_GetError()) + ").");
 	}
 
 	RenderInitSettings initSettings;
-	initSettings.init(renderWidth, renderHeight, renderThreadsMode, ditheringMode);
+	initSettings.init(renderDims.x, renderDims.y, renderThreadsMode, ditheringMode);
 	this->renderer3D->init(initSettings);
 
 	return true;
@@ -637,18 +636,17 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	if (this->renderer3D->isInited())
 	{
 		const Int2 viewDims = this->getViewDimensions();
-		const int renderWidth = Renderer::makeRendererDimension(viewDims.x, resolutionScale);
-		const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
+		const Int2 renderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
 		// Reinitialize the game world frame buffer.
-		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
+		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderDims.x, renderDims.y);
 		if (this->gameWorldTexture.get() == nullptr)
 		{
-			DebugLogError("Couldn't recreate game world texture for resize to " + std::to_string(width) + "x" +
-				std::to_string(height) + " (" + std::string(SDL_GetError()) + ").");
+			DebugLogError("Couldn't recreate game world texture for resize to " + std::to_string(renderDims.x) + "x" +
+				std::to_string(renderDims.y) + " (" + std::string(SDL_GetError()) + ").");
 		}
 
-		this->renderer3D->resize(renderWidth, renderHeight);
+		this->renderer3D->resize(renderDims.x, renderDims.y);
 	}
 }
 
@@ -677,17 +675,16 @@ void Renderer::handleRenderTargetsReset()
 	if (this->renderer3D->isInited())
 	{
 		const double resolutionScale = this->resolutionScaleFunc();
-		const int renderWidth = Renderer::makeRendererDimension(viewDims.x, resolutionScale);
-		const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
+		const Int2 renderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
-		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
+		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderDims.x, renderDims.y);
 		if (this->gameWorldTexture.get() == nullptr)
 		{
-			DebugLogError("Couldn't recreate game world texture for render targets reset to " + std::to_string(renderWidth) + "x" +
-				std::to_string(renderHeight) + " (" + std::string(SDL_GetError()) + ").");
+			DebugLogError("Couldn't recreate game world texture for render targets reset to " + std::to_string(renderDims.x) + "x" +
+				std::to_string(renderDims.y) + " (" + std::string(SDL_GetError()) + ").");
 		}
 
-		this->renderer3D->resize(renderWidth, renderHeight);
+		this->renderer3D->resize(renderDims.x, renderDims.y);
 	}
 }
 
