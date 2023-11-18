@@ -147,7 +147,18 @@ UiTextureID TextBox::getTextureID()
 
 		if (this->dirty)
 		{
-			DebugLogError("Text box \"" + this->text + "\" did not update properly.");
+			std::string textPreview;
+			constexpr int maxTextPreviewLength = 15;
+			if (this->text.size() < maxTextPreviewLength)
+			{
+				textPreview = this->text;
+			}
+			else
+			{
+				textPreview = this->text.substr(0, maxTextPreviewLength) + "...";
+			}
+
+			DebugLogError("Text box \"" + textPreview + "\" did not update its UI texture properly.");
 		}
 	}
 
