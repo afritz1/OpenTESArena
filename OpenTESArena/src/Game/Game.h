@@ -44,7 +44,7 @@ private:
 	// Listener IDs are optional in case of failed Game construction.
 	InputManager inputManager;
 	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
-		takeScreenshotListenerID, debugProfilerListenerID;
+		renderTargetsResetListenerID, takeScreenshotListenerID, debugProfilerListenerID;
 
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	GameWorldRenderCallback gameWorldRenderCallback;

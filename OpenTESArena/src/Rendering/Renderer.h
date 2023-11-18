@@ -64,7 +64,7 @@ public:
 		// Textures.
 		int objectTextureCount;
 		int64_t objectTextureByteCount;
-		
+
 		// Lights.
 		int totalLightCount;
 
@@ -86,7 +86,7 @@ public:
 private:
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	std::vector<DisplayMode> displayModes;	
+	std::vector<DisplayMode> displayModes;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
@@ -164,6 +164,9 @@ public:
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
+
+	// Handles resetting render target textures when switching in and out of exclusive fullscreen.
+	void handleRenderTargetsReset();
 
 	// Sets the letterbox mode.
 	void setLetterboxMode(int letterboxMode);

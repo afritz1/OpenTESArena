@@ -600,10 +600,12 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
 
 	// Initialize game world destination frame buffer.
-	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-	DebugAssertMsg(this->gameWorldTexture.get() != nullptr,
-		"Couldn't create game world texture (" + std::string(SDL_GetError()) + ").");
+	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
+	if (this->gameWorldTexture.get() == nullptr)
+	{
+		DebugLogError("Couldn't create game world texture at " + std::to_string(renderWidth) + "x" +
+			std::to_string(renderHeight) + " (" + std::string(SDL_GetError()) + ").");
+	}
 
 	RenderInitSettings initSettings;
 	initSettings.init(renderWidth, renderHeight, renderThreadsMode, ditheringMode);
@@ -644,6 +646,45 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		{
 			DebugLogError("Couldn't recreate game world texture for resize to " + std::to_string(width) + "x" +
 				std::to_string(height) + " (" + std::string(SDL_GetError()) + ").");
+		}
+
+		this->renderer3D->resize(renderWidth, renderHeight);
+	}
+}
+
+void Renderer::handleRenderTargetsReset()
+{
+	if (this->window == nullptr)
+	{
+		DebugLogError("Missing SDL_Window for render targets reset.");
+		return;
+	}
+
+	if (this->renderer == nullptr)
+	{
+		DebugLogError("Missing SDL_Renderer for render targets reset.");
+		return;
+	}
+
+	const Int2 viewDims = this->getViewDimensions();
+	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, viewDims.x, viewDims.y);
+	if (this->nativeTexture.get() == nullptr)
+	{
+		DebugLogError("Couldn't recreate native frame buffer for render targets reset to " + std::to_string(viewDims.x) + "x" +
+			std::to_string(viewDims.y) + " (" + std::string(SDL_GetError()) + ").");
+	}
+
+	if (this->renderer3D->isInited())
+	{
+		const double resolutionScale = this->resolutionScaleFunc();
+		const int renderWidth = Renderer::makeRendererDimension(viewDims.x, resolutionScale);
+		const int renderHeight = Renderer::makeRendererDimension(viewDims.y, resolutionScale);
+
+		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
+		if (this->gameWorldTexture.get() == nullptr)
+		{
+			DebugLogError("Couldn't recreate game world texture for render targets reset to " + std::to_string(renderWidth) + "x" +
+				std::to_string(renderHeight) + " (" + std::string(SDL_GetError()) + ").");
 		}
 
 		this->renderer3D->resize(renderWidth, renderHeight);

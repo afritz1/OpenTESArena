@@ -144,6 +144,11 @@ Game::~Game()
 		this->inputManager.removeListener(*this->windowResizedListenerID);
 	}
 
+	if (this->renderTargetsResetListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->renderTargetsResetListenerID);
+	}
+
 	if (this->takeScreenshotListenerID.has_value())
 	{
 		this->inputManager.removeListener(*this->takeScreenshotListenerID);
@@ -239,6 +244,12 @@ bool Game::init()
 		[this](int width, int height)
 	{
 		this->handleWindowResized(width, height);
+	});
+
+	this->renderTargetsResetListenerID = this->inputManager.addRenderTargetsResetListener(
+		[this]()
+	{
+		this->renderer.handleRenderTargetsReset();
 	});
 
 	this->takeScreenshotListenerID = this->inputManager.addInputActionListener(InputActionName::Screenshot,
