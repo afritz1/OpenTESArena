@@ -812,6 +812,7 @@ void RenderVoxelChunkManager::addDrawCall(RenderVoxelChunk &renderChunk, const V
 	drawCall.pixelShaderParam0 = pixelShaderParam0;
 }
 
+// @todo: delete this
 void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
 	const VoxelVisibilityChunk &voxelVisChunk, const RenderLightChunk &renderLightChunk, double ceilingScale,
 	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
@@ -1183,6 +1184,148 @@ void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const
 	}
 }
 
+void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions,
+	const VoxelChunk &voxelChunk, const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent)
+{
+	// To determine what's in a voxel, have to check:
+	// - voxel mesh ID != air
+	// - door def ID
+	// - chasm def ID
+	// - fade anim inst
+
+	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
+
+	// Regenerate all draw calls in the given dirty voxels.
+	for (const VoxelInt3 &voxel : dirtyVoxelPositions)
+	{
+		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
+
+		// @todo: get voxel def, voxel mesh, determine what to do, etc.
+		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
+		if (voxelMeshDef.isEmpty())
+		{
+			continue;
+		}
+
+		const VoxelChunk::VoxelTextureDefID voxelTextureDefID = voxelChunk.getTextureDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelTextureDefinition &voxelTextureDef = voxelChunk.getTextureDef(voxelTextureDefID);
+		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
+
+		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelMeshDefID);
+		DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
+		const RenderVoxelMeshInstID renderMeshInstID = meshInstIter->second;
+		renderChunk.meshInstIDs.set(voxel.x, voxel.y, voxel.z, renderMeshInstID);
+		DebugAssertIndex(renderChunk.meshInsts, renderMeshInstID);
+		const RenderVoxelMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
+
+		VoxelChunk::DoorDefID doorDefID;
+		const bool isDoor = voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID);
+		const DoorDefinition *doorDef = isDoor ? &voxelChunk.getDoorDef(doorDefID) : nullptr;
+
+		VoxelChunk::ChasmDefID chasmDefID;
+		const bool isChasm = voxelChunk.tryGetChasmDefID(voxel.x, voxel.y, voxel.z, &chasmDefID);
+		const ChasmDefinition *chasmDef = isChasm ? &voxelChunk.getChasmDef(chasmDefID) : nullptr;
+
+		UniformBufferID transformBufferID = -1;
+		UniformBufferID preScaleTranslationBufferID = -1;
+		if (isDoor)
+		{
+			const auto transformIter = renderChunk.doorTransformBuffers.find(voxel);
+			DebugAssert(transformIter != renderChunk.doorTransformBuffers.end());
+			transformBufferID = transformIter->second;
+
+			if (doorDef->getType() == ArenaTypes::DoorType::Raising)
+			{
+				preScaleTranslationBufferID = this->raisingDoorPreScaleTranslationBufferID;
+			}
+		}
+		else
+		{
+			const auto transformIter = renderChunk.transformBuffers.find(voxel);
+			DebugAssert(transformIter != renderChunk.transformBuffers.end());
+			transformBufferID = transformIter->second;
+		}
+
+		const VoxelFadeAnimationInstance *fadeAnimInst = nullptr;
+		bool isFading = false;
+		int fadeAnimInstIndex;
+		if (voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
+		{
+			BufferView<const VoxelFadeAnimationInstance> fadeAnimInsts = voxelChunk.getFadeAnimInsts();
+			fadeAnimInst = &fadeAnimInsts[fadeAnimInstIndex];
+			isFading = !fadeAnimInst->isDoneFading();
+		}
+
+		const RenderVoxelLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(voxel.x, voxel.y, voxel.z);
+
+		int staticDrawCallCount = 0;
+		int doorDrawCallCount = 0;
+		int chasmDrawCallCount = 0;
+		int fadingDrawCallCount = 0;
+
+		if (isDoor)
+		{
+			doorDrawCallCount = renderMeshInst.getTotalDrawCallCount(); // One per door face.
+		}
+		else if (isChasm)
+		{
+			staticDrawCallCount = renderMeshInst.getTotalDrawCallCount(); // Chasm floor.
+
+			int chasmWallInstIndex;
+			if (voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmWallInstIndex))
+			{
+				BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
+				const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
+				chasmDrawCallCount = chasmWallInst.getFaceCount();
+			}
+		}
+		else if (isFading)
+		{
+			fadingDrawCallCount = renderMeshInst.getTotalDrawCallCount();
+		}
+		else
+		{
+			staticDrawCallCount = renderMeshInst.getTotalDrawCallCount();
+		}
+
+		// @todo: get vertex buffers, etc. for the draw calls
+		// - should we iterate opaque index buffers in renderMeshInst, then try alpha-tested index buffer?
+
+		// @todo: determine which vertex/pixel shaders to use per draw call
+		DebugNotImplemented();
+
+		if (staticDrawCallCount > 0)
+		{
+			RenderVoxelDrawCallRangeID staticDrawCallRangeID = drawCallHeap.alloc(staticDrawCallCount);
+			renderChunk.staticDrawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, staticDrawCallRangeID);
+		}
+
+		if (doorDrawCallCount > 0)
+		{
+			RenderVoxelDrawCallRangeID doorDrawCallRangeID = drawCallHeap.alloc(doorDrawCallCount);
+			renderChunk.doorDrawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, doorDrawCallRangeID);
+		}
+
+		if (chasmDrawCallCount > 0)
+		{
+			RenderVoxelDrawCallRangeID chasmDrawCallRangeID = drawCallHeap.alloc(chasmDrawCallCount);
+			renderChunk.chasmDrawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, chasmDrawCallRangeID);
+		}
+
+		if (fadingDrawCallCount > 0)
+		{
+			RenderVoxelDrawCallRangeID fadingDrawCallRangeID = drawCallHeap.alloc(fadingDrawCallCount);
+			renderChunk.fadingDrawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, fadingDrawCallRangeID);
+		}
+
+		// @todo: get the BufferView<RenderDrawCall> for each rangeID and populate them
+	}
+}
+
+// @todo: delete this
 void RenderVoxelChunkManager::rebuildChunkDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
 	const VoxelVisibilityChunk &voxelVisChunk, const RenderLightChunk &renderLightChunk, double ceilingScale,
 	double chasmAnimPercent, bool updateStatics, bool updateAnimating)

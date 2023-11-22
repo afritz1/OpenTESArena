@@ -13,6 +13,17 @@ RenderVoxelMeshInstance::RenderVoxelMeshInstance()
 	this->alphaTestedIndexBufferID = -1;
 }
 
+int RenderVoxelMeshInstance::getTotalDrawCallCount() const
+{
+	int count = this->opaqueIndexBufferIdCount;
+	if (this->alphaTestedIndexBufferID >= 0)
+	{
+		count++;
+	}
+
+	return count;
+}
+
 void RenderVoxelMeshInstance::freeBuffers(Renderer &renderer)
 {
 	if (this->vertexBufferID >= 0)

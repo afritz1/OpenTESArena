@@ -19,6 +19,7 @@ struct RenderVoxelMeshInstance
 
 	RenderVoxelMeshInstance();
 
+	int getTotalDrawCallCount() const;
 	void freeBuffers(Renderer &renderer);
 };
 

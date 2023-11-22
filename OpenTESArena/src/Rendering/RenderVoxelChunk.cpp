@@ -272,6 +272,24 @@ void RenderVoxelChunk::freeAnimatingDrawCalls()
 	freeRangeIDs(this->fadingDrawCallRangeIDs);
 }
 
+void RenderVoxelChunk::freeDrawCalls(SNInt x, int y, WEInt z)
+{
+	auto tryFreeRangeID = [this, x, y, z](BufferView3D<RenderVoxelDrawCallRangeID> ranges)
+	{
+		const RenderVoxelDrawCallRangeID rangeID = ranges.get(x, y, z);
+		if (rangeID >= 0)
+		{
+			this->drawCallHeap.free(rangeID);
+			ranges.set(x, y, z, -1);
+		}
+	};
+
+	tryFreeRangeID(this->staticDrawCallRangeIDs);
+	tryFreeRangeID(this->doorDrawCallRangeIDs);
+	tryFreeRangeID(this->chasmDrawCallRangeIDs);
+	tryFreeRangeID(this->fadingDrawCallRangeIDs);
+}
+
 void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 {
 	for (RenderVoxelMeshInstance &meshInst : this->meshInsts)

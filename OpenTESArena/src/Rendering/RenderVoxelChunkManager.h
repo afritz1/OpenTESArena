@@ -96,6 +96,9 @@ private:
 	void loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const VoxelVisibilityChunk &voxelVisChunk,
 		const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 
+	void updateChunkDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
+		const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent);
+
 	// Call once per frame per chunk after all voxel chunk changes have been applied to this manager.
 	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
 	void rebuildChunkDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const VoxelVisibilityChunk &voxelVisChunk,

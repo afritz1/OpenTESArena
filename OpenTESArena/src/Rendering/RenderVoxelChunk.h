@@ -73,6 +73,7 @@ public:
 	RenderVoxelMeshInstID addMeshInst(RenderVoxelMeshInstance &&meshInst);
 	void freeStaticDrawCalls();
 	void freeAnimatingDrawCalls();
+	void freeDrawCalls(SNInt x, int y, WEInt z);
 	void freeBuffers(Renderer &renderer);
 	void clear();
 };
