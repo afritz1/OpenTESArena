@@ -254,7 +254,11 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 						RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
 						if (renderChunkPtr != nullptr)
 						{
-							renderChunkPtr->addDirtyLightPosition(curLightCoord.voxel);
+							const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
+							if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
+							{
+								renderChunkPtr->addDirtyLightPosition(curLightVoxel);
+							}
 						}
 					}
 				}
