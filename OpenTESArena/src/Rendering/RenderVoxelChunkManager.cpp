@@ -17,6 +17,9 @@
 
 namespace
 {
+	constexpr int DefaultVoxelTextureInitInfoIndices[] = { 0, 1, 2, 3 };
+	constexpr int RaisedVoxelTextureInitInfoIndices[] = { 1, 2, 0, -1 };
+
 	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
 	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef, std::vector<RenderVoxelChunkManager::LoadedTexture> &textures,
 		TextureManager &textureManager, Renderer &renderer)
@@ -906,6 +909,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		}
 
 		DrawCallTextureInitInfo textureInitInfos[maxDrawCallsPerVoxel];
+		BufferView<const int> textureInitInfoIndices = DefaultVoxelTextureInitInfoIndices;
 		int textureInitInfoCount = 0;
 		if (isDoor)
 		{
@@ -948,6 +952,11 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				textureInitInfo.id1 = -1;
 				textureInitInfo.samplingType0 = TextureSamplingType::Default;
 				textureInitInfo.samplingType1 = TextureSamplingType::Default;
+			}
+
+			if (voxelType == ArenaTypes::VoxelType::Raised)
+			{
+				textureInitInfoIndices = RaisedVoxelTextureInitInfoIndices;
 			}
 
 			textureInitInfoCount = voxelTextureDef.textureCount;
@@ -1085,10 +1094,10 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			drawCallCount = meshInitInfoCount;
 		}
 
-		RenderVoxelDrawCallRangeID drawCallRangeID = drawCallHeap.alloc(drawCallCount);
+		const RenderVoxelDrawCallRangeID drawCallRangeID = drawCallHeap.alloc(drawCallCount);
 		renderChunk.drawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, drawCallRangeID);
-
 		BufferView<RenderDrawCall> drawCalls = drawCallHeap.get(drawCallRangeID);
+
 		if (isDoor)
 		{			
 			DebugAssert(transformInitInfoCount == DoorUtils::FACE_COUNT);
@@ -1167,7 +1176,8 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			for (int i = 0; i < drawCallCount; i++)
 			{
 				const DrawCallMeshInitInfo &meshInitInfo = meshInitInfos[i];
-				const DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[i];
+				const int textureInitInfoIndex = textureInitInfoIndices[i];
+				const DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[textureInitInfoIndex];
 				const DrawCallShadingInitInfo &shadingInitInfo = shadingInitInfos[i];
 
 				RenderDrawCall &chasmDrawCall = drawCalls[i];
