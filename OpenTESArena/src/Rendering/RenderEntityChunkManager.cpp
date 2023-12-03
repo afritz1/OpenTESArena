@@ -320,9 +320,9 @@ void RenderEntityChunkManager::addDrawCall(UniformBufferID transformBufferID, in
 	drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
 	drawCall.indexBufferID = this->meshInst.indexBufferID;
 	drawCall.textureIDs[0] = textureID0;
-	drawCall.textureIDs[1] = textureID1;
-	drawCall.textureSamplingType0 = TextureSamplingType::Default;
-	drawCall.textureSamplingType1 = TextureSamplingType::Default;
+	drawCall.textureIDs[1] = textureID1.has_value() ? *textureID1 : -1;
+	drawCall.textureSamplingTypes[0] = TextureSamplingType::Default;
+	drawCall.textureSamplingTypes[1] = TextureSamplingType::Default;
 	drawCall.lightingType = RenderLightingType::PerPixel;
 	drawCall.lightPercent = 0.0;
 

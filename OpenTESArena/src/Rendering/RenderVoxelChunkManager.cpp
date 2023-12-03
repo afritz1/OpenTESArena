@@ -17,68 +17,6 @@
 
 namespace
 {
-	// Indices for looking up VoxelDefinition textures based on which index buffer is being used.
-	int GetVoxelOpaqueTextureAssetIndex(ArenaTypes::VoxelType voxelType, int indexBufferIndex)
-	{
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-			return indexBufferIndex;
-		case ArenaTypes::VoxelType::Raised:
-			if (indexBufferIndex == 0)
-			{
-				return 1;
-			}
-			else if (indexBufferIndex == 1)
-			{
-				return 2;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(indexBufferIndex));
-			}
-		case ArenaTypes::VoxelType::Chasm:
-			if (indexBufferIndex == 0)
-			{
-				return 0;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(indexBufferIndex));
-			}
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Door:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(indexBufferIndex));
-		default:
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	int GetVoxelAlphaTestedTextureAssetIndex(ArenaTypes::VoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Door:
-			return 0;
-		case ArenaTypes::VoxelType::Chasm:
-			return 1;
-		default:
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
 	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
 	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef, std::vector<RenderVoxelChunkManager::LoadedTexture> &textures,
 		TextureManager &textureManager, Renderer &renderer)
@@ -766,433 +704,10 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 	}
 }
 
-void RenderVoxelChunkManager::addDrawCall(RenderVoxelChunk &renderChunk, const VoxelInt3 &voxelPos, UniformBufferID transformBufferID, int transformIndex,
-	UniformBufferID preScaleTranslationBufferID, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
-	IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0,
-	TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs,
-	VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0, BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs)
-{
-	RenderVoxelDrawCallRangeID drawCallRangeID = drawCallRangeIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
-	BufferView<RenderDrawCall> drawCallsView;
-	if (drawCallRangeID >= 0)
-	{
-		drawCallRangeID = renderChunk.drawCallHeap.addDrawCall(drawCallRangeID);
-		drawCallsView = renderChunk.drawCallHeap.get(drawCallRangeID);
-	}
-	else
-	{
-		drawCallRangeID = renderChunk.drawCallHeap.alloc(1);
-		DebugAssertMsg(drawCallRangeID >= 0, "Couldn't allocate range ID for voxel (" + voxelPos.toString() + ") in chunk (" + renderChunk.getPosition().toString() + ").");
-		drawCallRangeIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, drawCallRangeID);
-
-		drawCallsView = renderChunk.drawCallHeap.get(drawCallRangeID);
-	}
-
-	RenderDrawCall &drawCall = drawCallsView.get(drawCallsView.getCount() - 1);
-	drawCall.transformBufferID = transformBufferID;
-	drawCall.transformIndex = transformIndex;
-	drawCall.preScaleTranslationBufferID = preScaleTranslationBufferID;
-	drawCall.vertexBufferID = vertexBufferID;
-	drawCall.normalBufferID = normalBufferID;
-	drawCall.texCoordBufferID = texCoordBufferID;
-	drawCall.indexBufferID = indexBufferID;
-	drawCall.textureIDs[0] = textureID0;
-	drawCall.textureIDs[1] = textureID1;
-	drawCall.textureSamplingType0 = textureSamplingType0;
-	drawCall.textureSamplingType1 = textureSamplingType1;
-	drawCall.lightingType = lightingType;
-	drawCall.lightPercent = meshLightPercent;
-
-	DebugAssert(std::size(drawCall.lightIDs) >= lightIDs.getCount());
-	std::copy(lightIDs.begin(), lightIDs.end(), std::begin(drawCall.lightIDs));
-	drawCall.lightIdCount = lightIDs.getCount();
-
-	drawCall.vertexShaderType = vertexShaderType;
-	drawCall.pixelShaderType = pixelShaderType;
-	drawCall.pixelShaderParam0 = pixelShaderParam0;
-}
-
-// @todo: delete this
-void RenderVoxelChunkManager::loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
-	const VoxelVisibilityChunk &voxelVisChunk, const RenderLightChunk &renderLightChunk, double ceilingScale,
-	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
-{
-	const ChunkInt2 &chunkPos = renderChunk.getPosition();
-
-	// Generate draw calls for each non-air voxel.
-	for (WEInt z = 0; z < renderChunk.meshInstIDs.getDepth(); z++)
-	{
-		for (SNInt x = 0; x < renderChunk.meshInstIDs.getWidth(); x++)
-		{
-			const int visibilityLeafNodeIndex = x + (z * renderChunk.meshInstIDs.getWidth());
-			DebugAssertIndex(voxelVisChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
-			const bool isVoxelColumnVisible = voxelVisChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
-			if (!isVoxelColumnVisible)
-			{
-				continue;
-			}
-
-			for (int y = 0; y < renderChunk.meshInstIDs.getHeight(); y++)
-			{
-				const VoxelInt3 voxel(x, y, z);
-				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(x, y, z);
-				const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
-				if (voxelMeshDef.isEmpty())
-				{
-					continue;
-				}
-
-				const VoxelChunk::VoxelTextureDefID voxelTextureDefID = voxelChunk.getTextureDefID(x, y, z);
-				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
-				const VoxelTextureDefinition &voxelTextureDef = voxelChunk.getTextureDef(voxelTextureDefID);
-				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-
-				const auto meshInstIter = renderChunk.meshInstMappings.find(voxelMeshDefID);
-				DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
-				const RenderVoxelMeshInstID renderMeshInstID = meshInstIter->second;
-				renderChunk.meshInstIDs.set(x, y, z, renderMeshInstID);
-
-				const RenderVoxelMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
-
-				const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
-
-				VoxelChunk::DoorDefID doorDefID;
-				const bool isDoor = voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID);
-				const DoorDefinition *doorDef = isDoor ? &voxelChunk.getDoorDef(doorDefID) : nullptr;
-
-				VoxelChunk::ChasmDefID chasmDefID;
-				const bool isChasm = voxelChunk.tryGetChasmDefID(x, y, z, &chasmDefID);
-
-				UniformBufferID transformBufferID = -1;
-				UniformBufferID preScaleTranslationBufferID = -1;
-				if (isDoor)
-				{
-					const auto transformIter = renderChunk.doorTransformBuffers.find(voxel);
-					DebugAssert(transformIter != renderChunk.doorTransformBuffers.end());
-					transformBufferID = transformIter->second;
-
-					if (doorDef->getType() == ArenaTypes::DoorType::Raising)
-					{
-						preScaleTranslationBufferID = this->raisingDoorPreScaleTranslationBufferID;
-					}
-				}
-				else
-				{
-					const auto transformIter = renderChunk.transformBuffers.find(voxel);
-					DebugAssert(transformIter != renderChunk.transformBuffers.end());
-					transformBufferID = transformIter->second;
-				}
-
-				const VoxelFadeAnimationInstance *fadeAnimInst = nullptr;
-				bool isFading = false;
-				int fadeAnimInstIndex;
-				if (voxelChunk.tryGetFadeAnimInstIndex(x, y, z, &fadeAnimInstIndex))
-				{
-					BufferView<const VoxelFadeAnimationInstance> fadeAnimInsts = voxelChunk.getFadeAnimInsts();
-					fadeAnimInst = &fadeAnimInsts[fadeAnimInstIndex];
-					isFading = !fadeAnimInst->isDoneFading();
-				}
-
-				const RenderVoxelLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(x, y, z);
-
-				const bool canAnimate = isDoor || isChasm || isFading;
-				if ((!canAnimate && updateStatics) || (canAnimate && updateAnimating))
-				{
-					for (int bufferIndex = 0; bufferIndex < renderMeshInst.opaqueIndexBufferIdCount; bufferIndex++)
-					{
-						ObjectTextureID textureID = -1;
-
-						if (!isChasm)
-						{
-							const int textureAssetIndex = GetVoxelOpaqueTextureAssetIndex(voxelType, bufferIndex);
-							const auto voxelTextureIter = std::find_if(this->textures.begin(), this->textures.end(),
-								[&voxelTextureDef, textureAssetIndex](const RenderVoxelChunkManager::LoadedTexture &loadedTexture)
-							{
-								return loadedTexture.textureAsset == voxelTextureDef.getTextureAsset(textureAssetIndex);
-							});
-
-							if (voxelTextureIter != this->textures.end())
-							{
-								textureID = voxelTextureIter->objectTextureRef.get();
-							}
-							else
-							{
-								DebugLogError("Couldn't find opaque texture asset \"" + voxelTextureDef.getTextureAsset(textureAssetIndex).filename + "\".");
-							}
-						}
-						else
-						{
-							textureID = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
-						}
-
-						if (textureID < 0)
-						{
-							continue;
-						}
-
-						const IndexBufferID opaqueIndexBufferID = renderMeshInst.opaqueIndexBufferIDs[bufferIndex];
-						const int transformIndex = 0;
-						const TextureSamplingType textureSamplingType = !isChasm ? TextureSamplingType::Default : TextureSamplingType::ScreenSpaceRepeatY;
-
-						RenderLightingType lightingType = RenderLightingType::PerPixel;
-						double meshLightPercent = 0.0;
-						if (isFading)
-						{
-							lightingType = RenderLightingType::PerMesh;
-							meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
-						}
-
-						BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDsView;
-						if (isChasm)
-						{
-							const ChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
-							if (chasmDef.isEmissive)
-							{
-								lightingType = RenderLightingType::PerMesh;
-								meshLightPercent = 1.0;
-							}
-
-							drawCallRangeIDsView = renderChunk.chasmDrawCallRangeIDs;
-						}
-						else if (isFading)
-						{
-							drawCallRangeIDsView = renderChunk.fadingDrawCallRangeIDs;
-						}
-						else
-						{
-							drawCallRangeIDsView = renderChunk.staticDrawCallRangeIDs;
-						}
-
-						const PixelShaderType pixelShaderType = PixelShaderType::Opaque;
-						const double pixelShaderParam0 = 0.0;
-						this->addDrawCall(renderChunk, voxel, transformBufferID, transformIndex, preScaleTranslationBufferID, renderMeshInst.vertexBufferID,
-							renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, opaqueIndexBufferID, textureID, std::nullopt, textureSamplingType,
-							textureSamplingType, lightingType, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::Voxel, pixelShaderType,
-							pixelShaderParam0, drawCallRangeIDsView);
-					}
-				}
-
-				if (renderMeshInst.alphaTestedIndexBufferID >= 0)
-				{
-					if (updateStatics || (updateAnimating && isDoor))
-					{
-						DebugAssert(!isChasm);
-						ObjectTextureID textureID = -1;
-
-						const int textureAssetIndex = GetVoxelAlphaTestedTextureAssetIndex(voxelType);
-						const auto voxelTextureIter = std::find_if(this->textures.begin(), this->textures.end(),
-							[&voxelTextureDef, textureAssetIndex](const RenderVoxelChunkManager::LoadedTexture &loadedTexture)
-						{
-							return loadedTexture.textureAsset == voxelTextureDef.getTextureAsset(textureAssetIndex);
-						});
-
-						if (voxelTextureIter != this->textures.end())
-						{
-							textureID = voxelTextureIter->objectTextureRef.get();
-						}
-						else
-						{
-							DebugLogError("Couldn't find alpha-tested texture asset \"" + voxelTextureDef.getTextureAsset(textureAssetIndex).filename + "\".");
-						}
-
-						if (textureID < 0)
-						{
-							continue;
-						}
-
-						if (isDoor)
-						{
-							double doorAnimPercent = 0.0;
-							int doorAnimInstIndex;
-							if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
-							{
-								BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
-								const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
-								doorAnimPercent = doorAnimInst.percentOpen;
-							}
-
-							int doorVisInstIndex;
-							if (!voxelChunk.tryGetDoorVisibilityInstIndex(x, y, z, &doorVisInstIndex))
-							{
-								DebugLogError("Expected door visibility instance at (" + std::to_string(x) + ", " +
-									std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + chunkPos.toString() + ").");
-								continue;
-							}
-
-							BufferView<const VoxelDoorVisibilityInstance> doorVisInsts = voxelChunk.getDoorVisibilityInsts();
-							const VoxelDoorVisibilityInstance &doorVisInst = doorVisInsts[doorVisInstIndex];
-							bool visibleDoorFaces[DoorUtils::FACE_COUNT];
-							std::fill(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), false);
-
-							for (size_t i = 0; i < std::size(visibleDoorFaces); i++)
-							{
-								const VoxelFacing2D doorFacing = DoorUtils::Facings[i];
-								bool &canRenderFace = visibleDoorFaces[i];
-								for (int j = 0; j < doorVisInst.visibleFaceCount; j++)
-								{
-									if (doorVisInst.visibleFaces[j] == doorFacing)
-									{
-										canRenderFace = true;
-										break;
-									}
-								}
-							}
-
-							DebugAssert(std::count(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), true) <= VoxelDoorVisibilityInstance::MAX_FACE_COUNT);
-
-							// Get the door type and generate draw calls. One draw call for each door face since they have independent transforms.
-							const ArenaTypes::DoorType doorType = doorDef->getType();
-							switch (doorType)
-							{
-							case ArenaTypes::DoorType::Swinging:
-							{
-								for (int i = 0; i < DoorUtils::FACE_COUNT; i++)
-								{
-									if (!visibleDoorFaces[i])
-									{
-										continue;
-									}
-
-									const int doorTransformIndex = i;
-									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
-									constexpr double meshLightPercent = 0.0;
-									constexpr double pixelShaderParam0 = 0.0;
-									this->addDrawCall(renderChunk, voxel, transformBufferID, doorTransformIndex, preScaleTranslationBufferID,
-										renderMeshInst.vertexBufferID, renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID,
-										renderMeshInst.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::SwingingDoor,
-										PixelShaderType::AlphaTested, pixelShaderParam0, renderChunk.doorDrawCallRangeIDs);
-								}
-
-								break;
-							}
-							case ArenaTypes::DoorType::Sliding:
-							{
-								const double uMin = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
-
-								for (int i = 0; i < DoorUtils::FACE_COUNT; i++)
-								{
-									if (!visibleDoorFaces[i])
-									{
-										continue;
-									}
-
-									const int doorTransformIndex = i;
-									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
-									constexpr double meshLightPercent = 0.0;
-									const double pixelShaderParam0 = uMin;
-									this->addDrawCall(renderChunk, voxel, transformBufferID, doorTransformIndex, preScaleTranslationBufferID,
-										renderMeshInst.vertexBufferID, renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID,
-										renderMeshInst.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::SlidingDoor,
-										PixelShaderType::AlphaTestedWithVariableTexCoordUMin, pixelShaderParam0, renderChunk.doorDrawCallRangeIDs);
-								}
-
-								break;
-							}
-							case ArenaTypes::DoorType::Raising:
-							{
-								const double vMin = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
-
-								for (int i = 0; i < DoorUtils::FACE_COUNT; i++)
-								{
-									if (!visibleDoorFaces[i])
-									{
-										continue;
-									}
-
-									const int doorTransformIndex = i;
-									const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
-									constexpr double meshLightPercent = 0.0;
-									const double pixelShaderParam0 = vMin;
-									this->addDrawCall(renderChunk, voxel, transformBufferID, doorTransformIndex, preScaleTranslationBufferID,
-										renderMeshInst.vertexBufferID, renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID,
-										renderMeshInst.alphaTestedIndexBufferID, textureID, std::nullopt, textureSamplingType, textureSamplingType,
-										RenderLightingType::PerPixel, meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::RaisingDoor,
-										PixelShaderType::AlphaTestedWithVariableTexCoordVMin, pixelShaderParam0, renderChunk.doorDrawCallRangeIDs);
-								}
-
-								break;
-							}
-							case ArenaTypes::DoorType::Splitting:
-								DebugNotImplementedMsg("Splitting door draw calls");
-								break;
-							default:
-								DebugNotImplementedMsg(std::to_string(static_cast<int>(doorType)));
-								break;
-							}
-						}
-						else
-						{
-							const int transformIndex = 0;
-							const TextureSamplingType textureSamplingType = TextureSamplingType::Default;
-
-							RenderLightingType lightingType = RenderLightingType::PerPixel;
-							double meshLightPercent = 0.0;
-							BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDsView = renderChunk.staticDrawCallRangeIDs;
-							if (isFading)
-							{
-								lightingType = RenderLightingType::PerMesh;
-								meshLightPercent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
-								drawCallRangeIDsView = renderChunk.fadingDrawCallRangeIDs;
-							}
-
-							constexpr double pixelShaderParam0 = 0.0;
-							this->addDrawCall(renderChunk, voxel, transformBufferID, transformIndex, preScaleTranslationBufferID, renderMeshInst.vertexBufferID,
-								renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID, renderMeshInst.alphaTestedIndexBufferID,
-								textureID, std::nullopt, textureSamplingType, textureSamplingType, lightingType, meshLightPercent,
-								voxelLightIdList.getLightIDs(), VertexShaderType::Voxel, PixelShaderType::AlphaTested, pixelShaderParam0, drawCallRangeIDsView);
-						}
-					}
-				}
-
-				if (isChasm)
-				{
-					const auto chasmWallIter = renderChunk.chasmWallIndexBufferIDsMap.find(voxel);
-					if (chasmWallIter != renderChunk.chasmWallIndexBufferIDsMap.end())
-					{
-						DebugAssert(voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm);
-						const ArenaTypes::ChasmType chasmType = voxelTraitsDef.chasm.type;
-						const bool isAnimatingChasm = chasmType != ArenaTypes::ChasmType::Dry;
-						const IndexBufferID chasmWallIndexBufferID = chasmWallIter->second;
-
-						// Need to give two textures since chasm walls are multi-textured.
-						ObjectTextureID textureID0 = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
-						ObjectTextureID textureID1 = this->getChasmWallTextureID(chunkPos, chasmDefID);
-
-						const int transformIndex = 0;
-						const TextureSamplingType textureSamplingType = isAnimatingChasm ? TextureSamplingType::ScreenSpaceRepeatY : TextureSamplingType::Default;
-
-						double meshLightPercent = 0.0;
-						RenderLightingType lightingType = RenderLightingType::PerPixel;
-						if (RendererUtils::isChasmEmissive(chasmType))
-						{
-							meshLightPercent = 1.0;
-							lightingType = RenderLightingType::PerMesh;
-						}
-
-						constexpr double pixelShaderParam0 = 0.0;
-						this->addDrawCall(renderChunk, voxel, transformBufferID, transformIndex, preScaleTranslationBufferID,
-							renderMeshInst.vertexBufferID, renderMeshInst.normalBufferID, renderMeshInst.texCoordBufferID,
-							chasmWallIndexBufferID, textureID0, textureID1, textureSamplingType, textureSamplingType, lightingType,
-							meshLightPercent, voxelLightIdList.getLightIDs(), VertexShaderType::Voxel, PixelShaderType::OpaqueWithAlphaTestLayer,
-							pixelShaderParam0, renderChunk.chasmDrawCallRangeIDs);
-					}
-				}
-			}
-		}
-	}
-}
-
 void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions,
 	const VoxelChunk &voxelChunk, const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent)
 {
-	// To determine what's in a voxel, have to check:
-	// - voxel mesh ID != air
-	// - door def ID
-	// - chasm def ID
-	// - fade anim inst
-
+	const ChunkInt2 &chunkPos = renderChunk.getPosition();
 	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
 	// Regenerate all draw calls in the given dirty voxels.
@@ -1200,7 +715,6 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 	{
 		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
 
-		// @todo: get voxel def, voxel mesh, determine what to do, etc.
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
 		if (voxelMeshDef.isEmpty())
@@ -1225,28 +739,33 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		const bool isDoor = voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID);
 		const DoorDefinition *doorDef = isDoor ? &voxelChunk.getDoorDef(doorDefID) : nullptr;
 
+		double doorAnimPercent = 0.0;
+		int doorAnimInstIndex;
+		if (isDoor)
+		{
+			if (voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex))
+			{
+				BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
+				const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
+				doorAnimPercent = doorAnimInst.percentOpen;
+			}
+		}
+
 		VoxelChunk::ChasmDefID chasmDefID;
 		const bool isChasm = voxelChunk.tryGetChasmDefID(voxel.x, voxel.y, voxel.z, &chasmDefID);
 		const ChasmDefinition *chasmDef = isChasm ? &voxelChunk.getChasmDef(chasmDefID) : nullptr;
-
-		UniformBufferID transformBufferID = -1;
-		UniformBufferID preScaleTranslationBufferID = -1;
-		if (isDoor)
+		const bool isAnimatingChasm = isChasm && chasmDef->animType == ChasmDefinition::AnimationType::Animated;
+		const bool isEmissiveChasm = isChasm && chasmDef->isEmissive;
+		bool hasChasmWall = false;
+		IndexBufferID chasmWallIndexBufferID = -1;
+		if (isChasm)
 		{
-			const auto transformIter = renderChunk.doorTransformBuffers.find(voxel);
-			DebugAssert(transformIter != renderChunk.doorTransformBuffers.end());
-			transformBufferID = transformIter->second;
-
-			if (doorDef->getType() == ArenaTypes::DoorType::Raising)
+			const auto chasmWallIndexBufferIdIter = renderChunk.chasmWallIndexBufferIDsMap.find(voxel);
+			if (chasmWallIndexBufferIdIter != renderChunk.chasmWallIndexBufferIDsMap.end())
 			{
-				preScaleTranslationBufferID = this->raisingDoorPreScaleTranslationBufferID;
+				hasChasmWall = true;
+				chasmWallIndexBufferID = chasmWallIndexBufferIdIter->second;
 			}
-		}
-		else
-		{
-			const auto transformIter = renderChunk.transformBuffers.find(voxel);
-			DebugAssert(transformIter != renderChunk.transformBuffers.end());
-			transformBufferID = transformIter->second;
 		}
 
 		const VoxelFadeAnimationInstance *fadeAnimInst = nullptr;
@@ -1261,86 +780,418 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 
 		const RenderVoxelLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(voxel.x, voxel.y, voxel.z);
 
-		int staticDrawCallCount = 0;
-		int doorDrawCallCount = 0;
-		int chasmDrawCallCount = 0;
-		int fadingDrawCallCount = 0;
+		constexpr int maxTransformsPerVoxel = DoorUtils::FACE_COUNT;
+		constexpr int maxDrawCallsPerVoxel = RenderVoxelMeshInstance::MAX_TEXTURES + 1; // Sum of all index buffers.
+
+		struct DrawCallTransformInitInfo
+		{
+			UniformBufferID id;
+			int index;
+			UniformBufferID preScaleTranslationBufferID;
+		};
+
+		struct DrawCallMeshInitInfo
+		{
+			VertexBufferID vertexBufferID;
+			UniformBufferID normalBufferID;
+			UniformBufferID texCoordBufferID;
+			IndexBufferID indexBufferID;
+		};
+
+		struct DrawCallTextureInitInfo
+		{
+			ObjectTextureID id0, id1;
+			TextureSamplingType samplingType0, samplingType1;
+		};
+
+		struct DrawCallShadingInitInfo
+		{
+			VertexShaderType vertexShaderType;
+			PixelShaderType pixelShaderType;
+			double pixelShaderParam0; // For specialized values like texture coordinate manipulation.
+		};
+
+		struct DrawCallLightingInitInfo
+		{
+			RenderLightingType type;
+			double percent;
+			RenderLightID ids[RenderDrawCall::MAX_LIGHTS];
+			int idCount;
+		};
+
+		// Populate various init infos to be used for generating draw calls.
+		DrawCallTransformInitInfo transformInitInfos[maxTransformsPerVoxel];
+		int transformInitInfoCount = 0;
 
 		if (isDoor)
 		{
-			doorDrawCallCount = renderMeshInst.getTotalDrawCallCount(); // One per door face.
-		}
-		else if (isChasm)
-		{
-			staticDrawCallCount = renderMeshInst.getTotalDrawCallCount(); // Chasm floor.
+			const auto transformIter = renderChunk.doorTransformBuffers.find(voxel);
+			DebugAssert(transformIter != renderChunk.doorTransformBuffers.end());
 
-			int chasmWallInstIndex;
-			if (voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmWallInstIndex))
+			const UniformBufferID preScaleTranslationBufferID = (doorDef->getType() == ArenaTypes::DoorType::Raising) ? this->raisingDoorPreScaleTranslationBufferID : -1;
+			for (int i = 0; i < maxTransformsPerVoxel; i++)
 			{
-				BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
-				const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
-				chasmDrawCallCount = chasmWallInst.getFaceCount();
+				DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
+				doorTransformInitInfo.id = transformIter->second;
+				doorTransformInitInfo.index = i;
+				doorTransformInitInfo.preScaleTranslationBufferID = preScaleTranslationBufferID;
 			}
-		}
-		else if (isFading)
-		{
-			fadingDrawCallCount = renderMeshInst.getTotalDrawCallCount();
+
+			transformInitInfoCount = maxTransformsPerVoxel;
 		}
 		else
 		{
-			staticDrawCallCount = renderMeshInst.getTotalDrawCallCount();
+			const auto transformIter = renderChunk.transformBuffers.find(voxel);
+			DebugAssert(transformIter != renderChunk.transformBuffers.end());
+
+			DrawCallTransformInitInfo &transformInitInfo = transformInitInfos[0];
+			transformInitInfo.id = transformIter->second;
+			transformInitInfo.index = 0;
+			transformInitInfo.preScaleTranslationBufferID = -1;
+			transformInitInfoCount = 1;
 		}
 
-		// @todo: get vertex buffers, etc. for the draw calls
-		// - should we iterate opaque index buffers in renderMeshInst, then try alpha-tested index buffer?
-
-		// @todo: determine which vertex/pixel shaders to use per draw call
-		DebugNotImplemented();
-
-		if (staticDrawCallCount > 0)
+		DrawCallMeshInitInfo meshInitInfos[maxDrawCallsPerVoxel];
+		int meshInitInfoCount = 0;
+		if (isDoor)
 		{
-			RenderVoxelDrawCallRangeID staticDrawCallRangeID = drawCallHeap.alloc(staticDrawCallCount);
-			renderChunk.staticDrawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, staticDrawCallRangeID);
+			DrawCallMeshInitInfo &doorMeshInitInfo = meshInitInfos[0];
+			doorMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+			doorMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
+			doorMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
+			doorMeshInitInfo.indexBufferID = renderMeshInst.alphaTestedIndexBufferID;
+			meshInitInfoCount = 1;
 		}
-
-		if (doorDrawCallCount > 0)
+		else if (isChasm)
 		{
-			RenderVoxelDrawCallRangeID doorDrawCallRangeID = drawCallHeap.alloc(doorDrawCallCount);
-			renderChunk.doorDrawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, doorDrawCallRangeID);
-		}
+			DrawCallMeshInitInfo &chasmFloorMeshInitInfo = meshInitInfos[0];
+			chasmFloorMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+			chasmFloorMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
+			chasmFloorMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
+			chasmFloorMeshInitInfo.indexBufferID = renderMeshInst.opaqueIndexBufferIDs[0];
+			meshInitInfoCount = 1;
 
-		if (chasmDrawCallCount > 0)
+			if (hasChasmWall)
+			{
+				DrawCallMeshInitInfo &chasmWallMeshInitInfo = meshInitInfos[1];
+				chasmWallMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+				chasmWallMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
+				chasmWallMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
+				chasmWallMeshInitInfo.indexBufferID = chasmWallIndexBufferID;
+				meshInitInfoCount = 2;
+			}
+		}
+		else
 		{
-			RenderVoxelDrawCallRangeID chasmDrawCallRangeID = drawCallHeap.alloc(chasmDrawCallCount);
-			renderChunk.chasmDrawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, chasmDrawCallRangeID);
+			for (int i = 0; i < renderMeshInst.opaqueIndexBufferIdCount; i++)
+			{
+				DrawCallMeshInitInfo &opaqueMeshInitInfo = meshInitInfos[i];
+				opaqueMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+				opaqueMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
+				opaqueMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
+				opaqueMeshInitInfo.indexBufferID = renderMeshInst.opaqueIndexBufferIDs[i];
+			}
+
+			meshInitInfoCount = renderMeshInst.opaqueIndexBufferIdCount;
+
+			if (renderMeshInst.alphaTestedIndexBufferID >= 0)
+			{
+				DrawCallMeshInitInfo &alphaTestedMeshInitInfo = meshInitInfos[renderMeshInst.opaqueIndexBufferIdCount];
+				alphaTestedMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+				alphaTestedMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
+				alphaTestedMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
+				alphaTestedMeshInitInfo.indexBufferID = renderMeshInst.alphaTestedIndexBufferID;
+				meshInitInfoCount++;
+			}
 		}
 
-		if (fadingDrawCallCount > 0)
+		DrawCallTextureInitInfo textureInitInfos[maxDrawCallsPerVoxel];
+		int textureInitInfoCount = 0;
+		if (isDoor)
 		{
-			RenderVoxelDrawCallRangeID fadingDrawCallRangeID = drawCallHeap.alloc(fadingDrawCallCount);
-			renderChunk.fadingDrawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, fadingDrawCallRangeID);
+			DrawCallTextureInitInfo &doorTextureInitInfo = textureInitInfos[0];
+			doorTextureInitInfo.id0 = this->getTextureID(voxelTextureDef.getTextureAsset(0));
+			doorTextureInitInfo.id1 = -1;
+			doorTextureInitInfo.samplingType0 = TextureSamplingType::Default;
+			doorTextureInitInfo.samplingType1 = TextureSamplingType::Default;
+			textureInitInfoCount = 1;
+		}
+		else if (isChasm)
+		{
+			const ObjectTextureID chasmFloorTextureID = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
+			const ObjectTextureID chasmWallTextureID = this->getChasmWallTextureID(chunkPos, chasmDefID);
+			const TextureSamplingType chasmFloorTextureSamplingType = isAnimatingChasm ? TextureSamplingType::ScreenSpaceRepeatY : TextureSamplingType::Default;
+			const TextureSamplingType chasmWallTextureSamplingType = TextureSamplingType::Default;
+
+			DrawCallTextureInitInfo &chasmFloorTextureInitInfo = textureInitInfos[0];
+			chasmFloorTextureInitInfo.id0 = chasmFloorTextureID;
+			chasmFloorTextureInitInfo.id1 = -1;
+			chasmFloorTextureInitInfo.samplingType0 = chasmFloorTextureSamplingType;
+			chasmFloorTextureInitInfo.samplingType1 = TextureSamplingType::Default;
+
+			DrawCallTextureInitInfo &chasmWallTextureInitInfo = textureInitInfos[1];
+			chasmWallTextureInitInfo.id0 = chasmFloorTextureID;
+			chasmWallTextureInitInfo.id1 = chasmWallTextureID;
+			chasmWallTextureInitInfo.samplingType0 = chasmFloorTextureSamplingType;
+			chasmWallTextureInitInfo.samplingType1 = chasmWallTextureSamplingType;
+
+			textureInitInfoCount = 2;
+		}
+		else
+		{
+			for (int i = 0; i < voxelTextureDef.textureCount; i++)
+			{
+				const TextureAsset &textureAsset = voxelTextureDef.getTextureAsset(i);
+
+				DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[i];
+				textureInitInfo.id0 = this->getTextureID(textureAsset);
+				textureInitInfo.id1 = -1;
+				textureInitInfo.samplingType0 = TextureSamplingType::Default;
+				textureInitInfo.samplingType1 = TextureSamplingType::Default;
+			}
+
+			textureInitInfoCount = voxelTextureDef.textureCount;
 		}
 
-		// @todo: get the BufferView<RenderDrawCall> for each rangeID and populate them
+		DrawCallShadingInitInfo shadingInitInfos[maxDrawCallsPerVoxel];
+		int shadingInitInfoCount = 0;
+		if (isDoor)
+		{
+			DrawCallShadingInitInfo &doorShadingInitInfo = shadingInitInfos[0];
+
+			const ArenaTypes::DoorType doorType = doorDef->getType();
+			switch (doorType)
+			{
+			case ArenaTypes::DoorType::Swinging:
+				doorShadingInitInfo.vertexShaderType = VertexShaderType::SwingingDoor;
+				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTested;
+				doorShadingInitInfo.pixelShaderParam0 = 0.0;
+				break;
+			case ArenaTypes::DoorType::Sliding:
+				doorShadingInitInfo.vertexShaderType = VertexShaderType::SlidingDoor;
+				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin;
+				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+				break;
+			case ArenaTypes::DoorType::Raising:
+				doorShadingInitInfo.vertexShaderType = VertexShaderType::RaisingDoor;
+				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
+				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+				break;
+			case ArenaTypes::DoorType::Splitting:
+				doorShadingInitInfo.vertexShaderType = VertexShaderType::SplittingDoor;
+				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin; // @todo: some "half and half" pixel shader
+				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+				break;
+			default:
+				DebugNotImplementedMsg(std::to_string(static_cast<int>(doorType)));
+				break;
+			}
+
+			shadingInitInfoCount = 1;
+		}
+		else if (isChasm)
+		{
+			DrawCallShadingInitInfo &chasmFloorShadingInitInfo = shadingInitInfos[0];
+			chasmFloorShadingInitInfo.vertexShaderType = VertexShaderType::Voxel;
+			chasmFloorShadingInitInfo.pixelShaderType = PixelShaderType::Opaque;
+			chasmFloorShadingInitInfo.pixelShaderParam0 = 0.0;
+
+			DrawCallShadingInitInfo &chasmWallShadingInitInfo = shadingInitInfos[1];
+			chasmWallShadingInitInfo.vertexShaderType = VertexShaderType::Voxel;
+			chasmWallShadingInitInfo.pixelShaderType = PixelShaderType::OpaqueWithAlphaTestLayer;
+			chasmWallShadingInitInfo.pixelShaderParam0 = 0.0;
+
+			shadingInitInfoCount = 2;
+		}
+		else
+		{
+			for (int i = 0; i < renderMeshInst.opaqueIndexBufferIdCount; i++)
+			{
+				DrawCallShadingInitInfo &opaqueShadingInitInfo = shadingInitInfos[i];
+				opaqueShadingInitInfo.vertexShaderType = VertexShaderType::Voxel;
+				opaqueShadingInitInfo.pixelShaderType = PixelShaderType::Opaque;
+				opaqueShadingInitInfo.pixelShaderParam0 = 0.0;
+			}
+
+			shadingInitInfoCount = renderMeshInst.opaqueIndexBufferIdCount;
+
+			if (renderMeshInst.alphaTestedIndexBufferID >= 0)
+			{
+				DrawCallShadingInitInfo &alphaTestedShadingInitInfo = shadingInitInfos[renderMeshInst.opaqueIndexBufferIdCount];
+				alphaTestedShadingInitInfo.vertexShaderType = VertexShaderType::Voxel;
+				alphaTestedShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTested;
+				alphaTestedShadingInitInfo.pixelShaderParam0 = 0.0;
+			}
+		}
+
+		DrawCallLightingInitInfo lightingInitInfo;
+		if (isFading)
+		{
+			lightingInitInfo.type = RenderLightingType::PerMesh;
+			lightingInitInfo.percent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
+		}
+		else if (isEmissiveChasm)
+		{
+			lightingInitInfo.type = RenderLightingType::PerMesh;
+			lightingInitInfo.percent = 1.0;
+		}
+		else
+		{
+			lightingInitInfo.type = RenderLightingType::PerPixel;
+
+			BufferView<const RenderLightID> voxelLightIDs = voxelLightIdList.getLightIDs();
+			DebugAssert(std::size(lightingInitInfo.ids) >= voxelLightIDs.getCount());
+			std::copy(voxelLightIDs.begin(), voxelLightIDs.end(), std::begin(lightingInitInfo.ids));
+			lightingInitInfo.idCount = voxelLightIDs.getCount();
+		}
+
+		bool visibleDoorFaces[DoorUtils::FACE_COUNT];
+		int drawCallCount = 0;
+		if (isDoor)
+		{
+			int doorVisInstIndex;
+			if (!voxelChunk.tryGetDoorVisibilityInstIndex(voxel.x, voxel.y, voxel.z, &doorVisInstIndex))
+			{
+				DebugLogError("Expected door visibility instance at (" + voxel.toString() + ") in chunk (" + chunkPos.toString() + ").");
+				continue;
+			}
+
+			BufferView<const VoxelDoorVisibilityInstance> doorVisInsts = voxelChunk.getDoorVisibilityInsts();
+			const VoxelDoorVisibilityInstance &doorVisInst = doorVisInsts[doorVisInstIndex];
+			std::fill(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), false);
+			for (size_t i = 0; i < std::size(visibleDoorFaces); i++)
+			{
+				const VoxelFacing2D doorFacing = DoorUtils::Facings[i];
+				bool &canRenderFace = visibleDoorFaces[i];
+				for (int j = 0; j < doorVisInst.visibleFaceCount; j++)
+				{
+					if (doorVisInst.visibleFaces[j] == doorFacing)
+					{
+						canRenderFace = true;
+						break;
+					}
+				}
+			}
+
+			drawCallCount = static_cast<int>(std::count(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), true));
+			DebugAssert(drawCallCount <= VoxelDoorVisibilityInstance::MAX_FACE_COUNT);
+		}
+		else if (isChasm)
+		{
+			drawCallCount = hasChasmWall ? 2 : 1;
+		}
+		else
+		{
+			drawCallCount = meshInitInfoCount;
+		}
+
+		RenderVoxelDrawCallRangeID drawCallRangeID = drawCallHeap.alloc(drawCallCount);
+		renderChunk.drawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, drawCallRangeID);
+
+		BufferView<RenderDrawCall> drawCalls = drawCallHeap.get(drawCallRangeID);
+		if (isDoor)
+		{			
+			DebugAssert(transformInitInfoCount == DoorUtils::FACE_COUNT);
+
+			int doorDrawCallWriteIndex = 0;
+			for (int i = 0; i < transformInitInfoCount; i++)
+			{
+				if (!visibleDoorFaces[i])
+				{
+					continue;
+				}
+				
+				const DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
+				const DrawCallMeshInitInfo &doorMeshInitInfo = meshInitInfos[0];
+				const DrawCallTextureInitInfo &doorTextureInitInfo = textureInitInfos[0];
+				const DrawCallShadingInitInfo &doorShadingInitInfo = shadingInitInfos[0];
+				
+				RenderDrawCall &doorDrawCall = drawCalls[doorDrawCallWriteIndex];
+				doorDrawCall.transformBufferID = doorTransformInitInfo.id;
+				doorDrawCall.transformIndex = doorTransformInitInfo.index;
+				doorDrawCall.preScaleTranslationBufferID = doorTransformInitInfo.preScaleTranslationBufferID;
+				doorDrawCall.vertexBufferID = doorMeshInitInfo.vertexBufferID;
+				doorDrawCall.normalBufferID = doorMeshInitInfo.normalBufferID;
+				doorDrawCall.texCoordBufferID = doorMeshInitInfo.texCoordBufferID;
+				doorDrawCall.indexBufferID = doorMeshInitInfo.indexBufferID;
+				doorDrawCall.textureIDs[0] = doorTextureInitInfo.id0;
+				doorDrawCall.textureIDs[1] = doorTextureInitInfo.id1;
+				doorDrawCall.textureSamplingTypes[0] = doorTextureInitInfo.samplingType0;
+				doorDrawCall.textureSamplingTypes[1] = doorTextureInitInfo.samplingType1;
+				doorDrawCall.vertexShaderType = doorShadingInitInfo.vertexShaderType;
+				doorDrawCall.pixelShaderType = doorShadingInitInfo.pixelShaderType;
+				doorDrawCall.pixelShaderParam0 = doorShadingInitInfo.pixelShaderParam0;
+				doorDrawCall.lightingType = lightingInitInfo.type;
+				doorDrawCall.lightPercent = lightingInitInfo.percent;
+				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(doorDrawCall.lightIDs));
+				doorDrawCall.lightIdCount = lightingInitInfo.idCount;
+				
+				doorDrawCallWriteIndex++;
+			}
+		}
+		else if (isChasm)
+		{
+			const DrawCallTransformInitInfo &chasmTransformInitInfo = transformInitInfos[0];
+
+			for (int i = 0; i < drawCallCount; i++)
+			{
+				const DrawCallMeshInitInfo &chasmMeshInitInfo = meshInitInfos[i];
+				const DrawCallTextureInitInfo &chasmTextureInitInfo = textureInitInfos[i];
+				const DrawCallShadingInitInfo &chasmShadingInitInfo = shadingInitInfos[i];
+				
+				RenderDrawCall &chasmDrawCall = drawCalls[i];
+				chasmDrawCall.transformBufferID = chasmTransformInitInfo.id;
+				chasmDrawCall.transformIndex = chasmTransformInitInfo.index;
+				chasmDrawCall.preScaleTranslationBufferID = chasmTransformInitInfo.preScaleTranslationBufferID;
+				chasmDrawCall.vertexBufferID = chasmMeshInitInfo.vertexBufferID;
+				chasmDrawCall.normalBufferID = chasmMeshInitInfo.normalBufferID;
+				chasmDrawCall.texCoordBufferID = chasmMeshInitInfo.texCoordBufferID;
+				chasmDrawCall.indexBufferID = chasmMeshInitInfo.indexBufferID;
+				chasmDrawCall.textureIDs[0] = chasmTextureInitInfo.id0;
+				chasmDrawCall.textureIDs[1] = chasmTextureInitInfo.id1;
+				chasmDrawCall.textureSamplingTypes[0] = chasmTextureInitInfo.samplingType0;
+				chasmDrawCall.textureSamplingTypes[1] = chasmTextureInitInfo.samplingType1;
+				chasmDrawCall.vertexShaderType = chasmShadingInitInfo.vertexShaderType;
+				chasmDrawCall.pixelShaderType = chasmShadingInitInfo.pixelShaderType;
+				chasmDrawCall.pixelShaderParam0 = chasmShadingInitInfo.pixelShaderParam0;
+				chasmDrawCall.lightingType = lightingInitInfo.type;
+				chasmDrawCall.lightPercent = lightingInitInfo.percent;
+				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(chasmDrawCall.lightIDs));
+				chasmDrawCall.lightIdCount = lightingInitInfo.idCount;
+			}
+		}
+		else
+		{
+			const DrawCallTransformInitInfo &transformInitInfo = transformInitInfos[0];
+
+			for (int i = 0; i < drawCallCount; i++)
+			{
+				const DrawCallMeshInitInfo &meshInitInfo = meshInitInfos[i];
+				const DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[i];
+				const DrawCallShadingInitInfo &shadingInitInfo = shadingInitInfos[i];
+
+				RenderDrawCall &chasmDrawCall = drawCalls[i];
+				chasmDrawCall.transformBufferID = transformInitInfo.id;
+				chasmDrawCall.transformIndex = transformInitInfo.index;
+				chasmDrawCall.preScaleTranslationBufferID = transformInitInfo.preScaleTranslationBufferID;
+				chasmDrawCall.vertexBufferID = meshInitInfo.vertexBufferID;
+				chasmDrawCall.normalBufferID = meshInitInfo.normalBufferID;
+				chasmDrawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
+				chasmDrawCall.indexBufferID = meshInitInfo.indexBufferID;
+				chasmDrawCall.textureIDs[0] = textureInitInfo.id0;
+				chasmDrawCall.textureIDs[1] = textureInitInfo.id1;
+				chasmDrawCall.textureSamplingTypes[0] = textureInitInfo.samplingType0;
+				chasmDrawCall.textureSamplingTypes[1] = textureInitInfo.samplingType1;
+				chasmDrawCall.vertexShaderType = shadingInitInfo.vertexShaderType;
+				chasmDrawCall.pixelShaderType = shadingInitInfo.pixelShaderType;
+				chasmDrawCall.pixelShaderParam0 = shadingInitInfo.pixelShaderParam0;
+				chasmDrawCall.lightingType = lightingInitInfo.type;
+				chasmDrawCall.lightPercent = lightingInitInfo.percent;
+				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(chasmDrawCall.lightIDs));
+				chasmDrawCall.lightIdCount = lightingInitInfo.idCount;
+			}
+		}
 	}
-}
-
-// @todo: delete this
-void RenderVoxelChunkManager::rebuildChunkDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk,
-	const VoxelVisibilityChunk &voxelVisChunk, const RenderLightChunk &renderLightChunk, double ceilingScale,
-	double chasmAnimPercent, bool updateStatics, bool updateAnimating)
-{
-	if (updateStatics)
-	{
-		renderChunk.freeStaticDrawCalls();
-	}
-
-	if (updateAnimating)
-	{
-		renderChunk.freeAnimatingDrawCalls();
-	}
-
-	this->loadDrawCalls(renderChunk, voxelChunk, voxelVisChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, updateAnimating);
 }
 
 void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkManager &voxelVisChunkManager)
@@ -1378,10 +1229,7 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkMan
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
 		const RenderVoxelChunk &renderChunk = *chunkPtr;
 		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtIndex(i);
-		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.staticDrawCallRangeIDs);
-		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.doorDrawCallRangeIDs);
-		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.chasmDrawCallRangeIDs);
-		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.fadingDrawCallRangeIDs);
+		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.drawCallRangeIDs);
 	}
 }
 
@@ -1429,7 +1277,6 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		this->loadTextures(voxelChunk, textureManager, renderer);
 		this->loadChasmWalls(renderChunk, voxelChunk);
 		this->loadTransforms(renderChunk, voxelChunk, ceilingScale, renderer);
-		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, voxelVisChunk, renderLightChunk, ceilingScale, chasmAnimPercent, true, false);
 	}
 
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
@@ -1446,8 +1293,8 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		}
 
 		// Update door render transforms (rotation angle, etc.).
-		BufferView<const VoxelInt3> dirtyDoorAnimPositions = voxelChunk.getDirtyDoorAnimInstPositions();
-		for (const VoxelInt3 &doorVoxel : dirtyDoorAnimPositions)
+		BufferView<const VoxelInt3> dirtyDoorAnimInstPositions = voxelChunk.getDirtyDoorAnimInstPositions();
+		for (const VoxelInt3 &doorVoxel : dirtyDoorAnimInstPositions)
 		{
 			VoxelChunk::DoorDefID doorDefID;
 			if (!voxelChunk.tryGetDoorDefID(doorVoxel.x, doorVoxel.y, doorVoxel.z, &doorDefID))
@@ -1472,26 +1319,26 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 			}
 		}
 
+		// Update draw calls of dirty voxels.
+		// - @todo: there is some double/triple updating possible here, maybe optimize.
 		BufferView<const VoxelInt3> dirtyMeshDefPositions = voxelChunk.getDirtyMeshDefPositions();
+		BufferView<const VoxelInt3> dirtyDoorVisInstPositions = voxelChunk.getDirtyDoorVisInstPositions();
 		BufferView<const VoxelInt3> dirtyFadeAnimInstPositions = voxelChunk.getDirtyFadeAnimInstPositions();
 		BufferView<const VoxelInt3> dirtyLightPositions = renderLightChunk.dirtyLightPositions;
-		bool updateStatics = dirtyMeshDefPositions.getCount() > 0;
-		updateStatics |= dirtyFadeAnimInstPositions.getCount() > 0; // @temp fix for fading voxels being covered by their non-fading draw call
-		updateStatics |= dirtyLightPositions.getCount() > 0; // @temp fix for player light movement, eventually other moving lights too
-		updateStatics |= true; // @temp fix for draw calls not regenerating in chunks the player is not in (probably because nothing static in them is being marked dirty)
-		this->rebuildChunkDrawCalls(renderChunk, voxelChunk, voxelVisChunk, renderLightChunk, ceilingScale, chasmAnimPercent, updateStatics, true);
+		this->updateChunkDrawCalls(renderChunk, dirtyMeshDefPositions, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyDoorAnimInstPositions, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyDoorVisInstPositions, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyFadeAnimInstPositions, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyChasmWallInstPositions, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyLightPositions, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
 	}
 
-	// @todo: only rebuild if needed; currently we assume that all scenes in the game have some kind of animating chasms/etc., which is inefficient
-	//if ((freedChunkCount > 0) || (newChunkCount > 0))
-	{
-		this->rebuildDrawCallsList(voxelVisChunkManager);
-	}
+	this->rebuildDrawCallsList(voxelVisChunkManager);
 }
 
 void RenderVoxelChunkManager::cleanUp()
 {
-	
+
 }
 
 void RenderVoxelChunkManager::unloadScene(Renderer &renderer)

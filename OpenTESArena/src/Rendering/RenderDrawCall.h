@@ -22,8 +22,8 @@ struct RenderDrawCall
 	VertexBufferID vertexBufferID;
 	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
-	std::optional<ObjectTextureID> textureIDs[MAX_TEXTURE_COUNT];
-	TextureSamplingType textureSamplingType0, textureSamplingType1;
+	ObjectTextureID textureIDs[MAX_TEXTURE_COUNT];
+	TextureSamplingType textureSamplingTypes[MAX_TEXTURE_COUNT];
 	
 	RenderLightingType lightingType;
 	double lightPercent; // For per-mesh lighting.

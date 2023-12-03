@@ -88,21 +88,9 @@ private:
 	void loadChasmWalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk);
 	void loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
-	void addDrawCall(RenderVoxelChunk &renderChunk, const VoxelInt3 &voxelPos, UniformBufferID transformBufferID, int transformIndex,
-		UniformBufferID preScaleTranslationBufferID, VertexBufferID vertexBufferID, AttributeBufferID normalBufferID, AttributeBufferID texCoordBufferID,
-		IndexBufferID indexBufferID, ObjectTextureID textureID0, const std::optional<ObjectTextureID> &textureID1, TextureSamplingType textureSamplingType0,
-		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, BufferView<const RenderLightID> lightIDs,
-		VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, double pixelShaderParam0, BufferView3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs);
-	void loadDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const VoxelVisibilityChunk &voxelVisChunk,
-		const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating);
-
 	void updateChunkDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
 		const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent);
 
-	// Call once per frame per chunk after all voxel chunk changes have been applied to this manager.
-	// All context-sensitive data (like for chasm walls) should be available in the voxel chunk.
-	void rebuildChunkDrawCalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const VoxelVisibilityChunk &voxelVisChunk,
-		const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent, bool updateStatics, bool updateAnimating);
 	void rebuildDrawCallsList(const VoxelVisibilityChunkManager &voxelVisChunkManager);
 public:
 	RenderVoxelChunkManager();

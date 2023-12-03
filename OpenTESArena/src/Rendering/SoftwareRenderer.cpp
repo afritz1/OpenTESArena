@@ -1873,15 +1873,15 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
-		const ObjectTextureID textureID0 = drawCall.textureIDs[0].has_value() ? *drawCall.textureIDs[0] : -1;
-		const ObjectTextureID textureID1 = drawCall.textureIDs[1].has_value() ? *drawCall.textureIDs[1] : -1;
+		const ObjectTextureID textureID0 = drawCall.textureIDs[0];
+		const ObjectTextureID textureID1 = drawCall.textureIDs[1];
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
 			modelPositionXYZ, preScaleTranslation, transform.rotation, transform.scale, vertexBuffer, normalBuffer,
 			texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
 
-		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingType0;
-		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingType1;
+		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingTypes[0];
+		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingTypes[1];
 
 		const RenderLightingType lightingType = drawCall.lightingType;
 		double meshLightPercent = 0.0;
