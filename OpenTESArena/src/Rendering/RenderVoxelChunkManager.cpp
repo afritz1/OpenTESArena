@@ -804,6 +804,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		struct DrawCallTextureInitInfo
 		{
 			ObjectTextureID id0, id1;
+			const ObjectTextureID *varyingId0, *varyingId1;
 			TextureSamplingType samplingType0, samplingType1;
 		};
 
@@ -916,26 +917,35 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			DrawCallTextureInitInfo &doorTextureInitInfo = textureInitInfos[0];
 			doorTextureInitInfo.id0 = this->getTextureID(voxelTextureDef.getTextureAsset(0));
 			doorTextureInitInfo.id1 = -1;
+			doorTextureInitInfo.varyingId0 = nullptr;
+			doorTextureInitInfo.varyingId1 = nullptr;
 			doorTextureInitInfo.samplingType0 = TextureSamplingType::Default;
 			doorTextureInitInfo.samplingType1 = TextureSamplingType::Default;
 			textureInitInfoCount = 1;
 		}
 		else if (isChasm)
 		{
-			const ObjectTextureID chasmFloorTextureID = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
+			const auto chasmFloorTextureIter = renderChunk.activeChasmFloorTextureIDs.find(chasmDefID);
+			DebugAssert(chasmFloorTextureIter != renderChunk.activeChasmFloorTextureIDs.end());
+			const ObjectTextureID *chasmFloorTextureIdPtr = &chasmFloorTextureIter->second;
+
 			const ObjectTextureID chasmWallTextureID = this->getChasmWallTextureID(chunkPos, chasmDefID);
 			const TextureSamplingType chasmFloorTextureSamplingType = isAnimatingChasm ? TextureSamplingType::ScreenSpaceRepeatY : TextureSamplingType::Default;
 			const TextureSamplingType chasmWallTextureSamplingType = TextureSamplingType::Default;
 
 			DrawCallTextureInitInfo &chasmFloorTextureInitInfo = textureInitInfos[0];
-			chasmFloorTextureInitInfo.id0 = chasmFloorTextureID;
+			chasmFloorTextureInitInfo.id0 = -1;
 			chasmFloorTextureInitInfo.id1 = -1;
+			chasmFloorTextureInitInfo.varyingId0 = chasmFloorTextureIdPtr;
+			chasmFloorTextureInitInfo.varyingId1 = nullptr;
 			chasmFloorTextureInitInfo.samplingType0 = chasmFloorTextureSamplingType;
 			chasmFloorTextureInitInfo.samplingType1 = TextureSamplingType::Default;
 
 			DrawCallTextureInitInfo &chasmWallTextureInitInfo = textureInitInfos[1];
-			chasmWallTextureInitInfo.id0 = chasmFloorTextureID;
+			chasmWallTextureInitInfo.id0 = -1;
 			chasmWallTextureInitInfo.id1 = chasmWallTextureID;
+			chasmWallTextureInitInfo.varyingId0 = chasmFloorTextureIdPtr;
+			chasmWallTextureInitInfo.varyingId1 = nullptr;
 			chasmWallTextureInitInfo.samplingType0 = chasmFloorTextureSamplingType;
 			chasmWallTextureInitInfo.samplingType1 = chasmWallTextureSamplingType;
 
@@ -950,6 +960,8 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[i];
 				textureInitInfo.id0 = this->getTextureID(textureAsset);
 				textureInitInfo.id1 = -1;
+				textureInitInfo.varyingId0 = nullptr;
+				textureInitInfo.varyingId1 = nullptr;
 				textureInitInfo.samplingType0 = TextureSamplingType::Default;
 				textureInitInfo.samplingType1 = TextureSamplingType::Default;
 			}
@@ -1125,6 +1137,8 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				doorDrawCall.indexBufferID = doorMeshInitInfo.indexBufferID;
 				doorDrawCall.textureIDs[0] = doorTextureInitInfo.id0;
 				doorDrawCall.textureIDs[1] = doorTextureInitInfo.id1;
+				doorDrawCall.varyingTextures[0] = doorTextureInitInfo.varyingId0;
+				doorDrawCall.varyingTextures[1] = doorTextureInitInfo.varyingId1;
 				doorDrawCall.textureSamplingTypes[0] = doorTextureInitInfo.samplingType0;
 				doorDrawCall.textureSamplingTypes[1] = doorTextureInitInfo.samplingType1;
 				doorDrawCall.vertexShaderType = doorShadingInitInfo.vertexShaderType;
@@ -1158,6 +1172,8 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				chasmDrawCall.indexBufferID = chasmMeshInitInfo.indexBufferID;
 				chasmDrawCall.textureIDs[0] = chasmTextureInitInfo.id0;
 				chasmDrawCall.textureIDs[1] = chasmTextureInitInfo.id1;
+				chasmDrawCall.varyingTextures[0] = chasmTextureInitInfo.varyingId0;
+				chasmDrawCall.varyingTextures[1] = chasmTextureInitInfo.varyingId1;
 				chasmDrawCall.textureSamplingTypes[0] = chasmTextureInitInfo.samplingType0;
 				chasmDrawCall.textureSamplingTypes[1] = chasmTextureInitInfo.samplingType1;
 				chasmDrawCall.vertexShaderType = chasmShadingInitInfo.vertexShaderType;
@@ -1180,25 +1196,27 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				const DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[textureInitInfoIndex];
 				const DrawCallShadingInitInfo &shadingInitInfo = shadingInitInfos[i];
 
-				RenderDrawCall &chasmDrawCall = drawCalls[i];
-				chasmDrawCall.transformBufferID = transformInitInfo.id;
-				chasmDrawCall.transformIndex = transformInitInfo.index;
-				chasmDrawCall.preScaleTranslationBufferID = transformInitInfo.preScaleTranslationBufferID;
-				chasmDrawCall.vertexBufferID = meshInitInfo.vertexBufferID;
-				chasmDrawCall.normalBufferID = meshInitInfo.normalBufferID;
-				chasmDrawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
-				chasmDrawCall.indexBufferID = meshInitInfo.indexBufferID;
-				chasmDrawCall.textureIDs[0] = textureInitInfo.id0;
-				chasmDrawCall.textureIDs[1] = textureInitInfo.id1;
-				chasmDrawCall.textureSamplingTypes[0] = textureInitInfo.samplingType0;
-				chasmDrawCall.textureSamplingTypes[1] = textureInitInfo.samplingType1;
-				chasmDrawCall.vertexShaderType = shadingInitInfo.vertexShaderType;
-				chasmDrawCall.pixelShaderType = shadingInitInfo.pixelShaderType;
-				chasmDrawCall.pixelShaderParam0 = shadingInitInfo.pixelShaderParam0;
-				chasmDrawCall.lightingType = lightingInitInfo.type;
-				chasmDrawCall.lightPercent = lightingInitInfo.percent;
-				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(chasmDrawCall.lightIDs));
-				chasmDrawCall.lightIdCount = lightingInitInfo.idCount;
+				RenderDrawCall &drawCall = drawCalls[i];
+				drawCall.transformBufferID = transformInitInfo.id;
+				drawCall.transformIndex = transformInitInfo.index;
+				drawCall.preScaleTranslationBufferID = transformInitInfo.preScaleTranslationBufferID;
+				drawCall.vertexBufferID = meshInitInfo.vertexBufferID;
+				drawCall.normalBufferID = meshInitInfo.normalBufferID;
+				drawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
+				drawCall.indexBufferID = meshInitInfo.indexBufferID;
+				drawCall.textureIDs[0] = textureInitInfo.id0;
+				drawCall.textureIDs[1] = textureInitInfo.id1;
+				drawCall.varyingTextures[0] = textureInitInfo.varyingId0;
+				drawCall.varyingTextures[1] = textureInitInfo.varyingId1;
+				drawCall.textureSamplingTypes[0] = textureInitInfo.samplingType0;
+				drawCall.textureSamplingTypes[1] = textureInitInfo.samplingType1;
+				drawCall.vertexShaderType = shadingInitInfo.vertexShaderType;
+				drawCall.pixelShaderType = shadingInitInfo.pixelShaderType;
+				drawCall.pixelShaderParam0 = shadingInitInfo.pixelShaderParam0;
+				drawCall.lightingType = lightingInitInfo.type;
+				drawCall.lightPercent = lightingInitInfo.percent;
+				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(drawCall.lightIDs));
+				drawCall.lightIdCount = lightingInitInfo.idCount;
 			}
 		}
 	}
@@ -1300,6 +1318,20 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		for (const VoxelInt3 &chasmWallPos : dirtyChasmWallInstPositions)
 		{
 			this->loadChasmWall(renderChunk, voxelChunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
+		}
+
+		// Update chasm animation textures, shared by all chasms in this chunk.
+		for (int i = 0; i < voxelChunk.getChasmDefCount(); i++)
+		{
+			const VoxelChunk::ChasmDefID chasmDefID = static_cast<VoxelChunk::ChasmDefID>(i);
+			auto activeTextureIter = renderChunk.activeChasmFloorTextureIDs.find(chasmDefID);
+			if (activeTextureIter == renderChunk.activeChasmFloorTextureIDs.end())
+			{
+				ObjectTextureID dummyChasmFloorTextureID = -1;
+				activeTextureIter = renderChunk.activeChasmFloorTextureIDs.emplace(chasmDefID, dummyChasmFloorTextureID).first;
+			}
+
+			activeTextureIter->second = this->getChasmFloorTextureID(chunkPos, chasmDefID, chasmAnimPercent);
 		}
 
 		// Update door render transforms (rotation angle, etc.).

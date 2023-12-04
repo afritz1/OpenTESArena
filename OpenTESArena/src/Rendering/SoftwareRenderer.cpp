@@ -1873,8 +1873,10 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
-		const ObjectTextureID textureID0 = drawCall.textureIDs[0];
-		const ObjectTextureID textureID1 = drawCall.textureIDs[1];
+		const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
+		const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
+		const ObjectTextureID textureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
+		const ObjectTextureID textureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
 			modelPositionXYZ, preScaleTranslation, transform.rotation, transform.scale, vertexBuffer, normalBuffer,

@@ -15,6 +15,11 @@ RenderDrawCall::RenderDrawCall()
 		textureID = -1;
 	}
 
+	for (auto &ptr : this->varyingTextures)
+	{
+		ptr = nullptr;
+	}
+
 	for (TextureSamplingType &samplingType : this->textureSamplingTypes)
 	{
 		samplingType = static_cast<TextureSamplingType>(-1);
@@ -46,6 +51,11 @@ void RenderDrawCall::clear()
 	for (ObjectTextureID &textureID : this->textureIDs)
 	{
 		textureID = -1;
+	}
+
+	for (auto &ptr : this->varyingTextures)
+	{
+		ptr = nullptr;
 	}
 
 	for (TextureSamplingType &samplingType : this->textureSamplingTypes)

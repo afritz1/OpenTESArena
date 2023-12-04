@@ -226,6 +226,7 @@ void RenderVoxelChunk::clear()
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
 	this->meshInstIDs.clear();
+	this->activeChasmFloorTextureIDs.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
 	this->transformBuffers.clear();
 	this->doorTransformBuffers.clear();

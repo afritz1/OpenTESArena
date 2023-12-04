@@ -58,6 +58,7 @@ public:
 	std::vector<RenderVoxelMeshInstance> meshInsts;
 	std::unordered_map<VoxelChunk::VoxelMeshDefID, RenderVoxelMeshInstID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
 	Buffer3D<RenderVoxelMeshInstID> meshInstIDs; // Points into mesh instances.
+	std::unordered_map<VoxelChunk::ChasmDefID, ObjectTextureID> activeChasmFloorTextureIDs; // Updated every frame, shared by chasms in this chunk, owned by RenderVoxelChunkManager.
 	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	std::unordered_map<VoxelInt3, UniformBufferID> transformBuffers; // Unique transform buffer per voxel, owned by this chunk. One RenderTransform per buffer.
 	std::unordered_map<VoxelInt3, UniformBufferID> doorTransformBuffers; // Unique transform buffer per door instance, owned by this chunk. Four RenderTransforms (one per door face) per buffer.
