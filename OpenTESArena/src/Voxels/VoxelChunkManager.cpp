@@ -682,7 +682,9 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 		const bool isEastAir = isVoxelAir(eastChunkIndex, eastVoxelMeshDefID);
 		const bool isSouthAir = isVoxelAir(southChunkIndex, southVoxelMeshDefID);
 		const bool isWestAir = isVoxelAir(westChunkIndex, westVoxelMeshDefID);
+
 		visInst.update(isCameraNorthInclusive, isCameraEastInclusive, isNorthAir, isEastAir, isSouthAir, isWestAir);
+		chunk.addDirtyDoorVisInstPosition(doorCoord.voxel);
 	}
 }
 

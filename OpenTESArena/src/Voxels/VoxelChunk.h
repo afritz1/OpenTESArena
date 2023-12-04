@@ -204,6 +204,7 @@ public:
 	void addChasmDefPosition(ChasmDefID id, const VoxelInt3 &voxel);
 
 	void addDirtyChasmWallInstPosition(const VoxelInt3 &voxel);
+	void addDirtyDoorVisInstPosition(const VoxelInt3 &voxel);
 
 	void addDoorAnimInst(VoxelDoorAnimationInstance &&animInst);
 	void addFadeAnimInst(VoxelFadeAnimationInstance &&animInst);

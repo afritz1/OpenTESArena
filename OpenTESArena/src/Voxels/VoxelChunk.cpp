@@ -556,6 +556,10 @@ void VoxelChunk::addDirtyChasmWallInstPosition(const VoxelInt3 &voxel)
 {
 	this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
 }
+
+void VoxelChunk::addDirtyDoorVisInstPosition(const VoxelInt3 &voxel)
+{
+	this->setDoorVisInstDirty(voxel.x, voxel.y, voxel.z);
 }
 
 void VoxelChunk::addDoorAnimInst(VoxelDoorAnimationInstance &&animInst)
