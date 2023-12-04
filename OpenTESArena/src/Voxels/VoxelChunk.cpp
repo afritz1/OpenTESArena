@@ -554,11 +554,8 @@ void VoxelChunk::addChasmDefPosition(ChasmDefID id, const VoxelInt3 &voxel)
 
 void VoxelChunk::addDirtyChasmWallInstPosition(const VoxelInt3 &voxel)
 {
-	const auto iter = std::find(this->dirtyChasmWallInstPositions.begin(), this->dirtyChasmWallInstPositions.end(), voxel);
-	if (iter == this->dirtyChasmWallInstPositions.end())
-	{
-		this->dirtyChasmWallInstPositions.emplace_back(voxel);
-	}
+	this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
+}
 }
 
 void VoxelChunk::addDoorAnimInst(VoxelDoorAnimationInstance &&animInst)

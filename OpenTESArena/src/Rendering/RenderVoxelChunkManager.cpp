@@ -601,30 +601,38 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 
 void RenderVoxelChunkManager::loadChasmWall(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, SNInt x, int y, WEInt z)
 {
-	int chasmWallInstIndex;
-	if (!voxelChunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
-	{
-		return;
-	}
-
-	BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
-	const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
-	DebugAssert(chasmWallInst.getFaceCount() > 0);
-
-	const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
-		chasmWallInst.north, chasmWallInst.east, chasmWallInst.south, chasmWallInst.west);
-	const IndexBufferID indexBufferID = this->chasmWallIndexBufferIDs[chasmWallIndexBufferIndex];
-
 	const VoxelInt3 voxel(x, y, z);
 	auto &chasmWallIndexBufferIDsMap = renderChunk.chasmWallIndexBufferIDsMap;
-	const auto iter = chasmWallIndexBufferIDsMap.find(voxel);
-	if (iter == chasmWallIndexBufferIDsMap.end())
+
+	int chasmWallInstIndex;
+	if (voxelChunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
 	{
-		chasmWallIndexBufferIDsMap.emplace(voxel, indexBufferID);
+		BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
+		const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
+		DebugAssert(chasmWallInst.getFaceCount() > 0);
+
+		const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
+			chasmWallInst.north, chasmWallInst.east, chasmWallInst.south, chasmWallInst.west);
+		const IndexBufferID indexBufferID = this->chasmWallIndexBufferIDs[chasmWallIndexBufferIndex];
+
+		const auto iter = chasmWallIndexBufferIDsMap.find(voxel);
+		if (iter == chasmWallIndexBufferIDsMap.end())
+		{
+			chasmWallIndexBufferIDsMap.emplace(voxel, indexBufferID);
+		}
+		else
+		{
+			iter->second = indexBufferID;
+		}
 	}
 	else
 	{
-		iter->second = indexBufferID;
+		// Clear index buffer mapping if this chasm wall was removed.
+		const auto iter = chasmWallIndexBufferIDsMap.find(voxel);
+		if (iter != chasmWallIndexBufferIDsMap.end())
+		{
+			chasmWallIndexBufferIDsMap.erase(iter);
+		}
 	}
 }
 
