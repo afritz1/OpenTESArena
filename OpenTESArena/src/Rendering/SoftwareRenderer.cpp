@@ -77,6 +77,46 @@ namespace swShader
 		int pixelIndex;
 	};
 
+	// @todo: take model + view + projection matrices and change output vertex to clip space
+	void VertexShader_Voxel(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, Double4 &outVertex, Double4 &outNormal)
+	{
+		outVertex = vertex + modelPosition;
+		outNormal = normal;
+	}
+
+	void VertexShader_SwingingDoor(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, const Matrix4d &rotation,
+		Double4 &outVertex, Double4 &outNormal)
+	{
+		outVertex = (rotation * vertex) + modelPosition;
+		outNormal = rotation * normal;
+	}
+
+	void VertexShader_SlidingDoor(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, const Matrix4d &rotation,
+		const Matrix4d &scale, Double4 &outVertex, Double4 &outNormal)
+	{
+		outVertex = (rotation * (scale * vertex)) + modelPosition;
+		outNormal = rotation * normal;
+	}
+
+	void VertexShader_RaisingDoor(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, const Double4 &preScaleTranslation,
+		const Matrix4d &rotation, const Matrix4d &scale, Double4 &outVertex, Double4 &outNormal)
+	{
+		// Push + pop a translation so it scales towards the ceiling.
+		Double4 tempVertex = vertex + preScaleTranslation;
+		tempVertex = scale * tempVertex;
+		tempVertex = tempVertex - preScaleTranslation;
+
+		outVertex = (rotation * tempVertex) + modelPosition;
+		outNormal = rotation * normal;
+	}
+
+	void VertexShader_Entity(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, const Matrix4d &rotation,
+		const Matrix4d &scale, Double4 &outVertex, Double4 &outNormal)
+	{
+		outVertex = (rotation * (scale * vertex)) + modelPosition;
+		outNormal = normal; // Already rotated.
+	}
+
 	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
@@ -764,60 +804,32 @@ namespace swGeometry
 			switch (vertexShaderType)
 			{
 			case VertexShaderType::Voxel:
-				shadedV0 = unshadedV0 + modelPositionXYZW;
-				shadedV1 = unshadedV1 + modelPositionXYZW;
-				shadedV2 = unshadedV2 + modelPositionXYZW;
-				shadedNormal0 = unshadedNormal0;
-				shadedNormal1 = unshadedNormal1;
-				shadedNormal2 = unshadedNormal2;
+				swShader::VertexShader_Voxel(unshadedV0, unshadedNormal0, modelPositionXYZW, shadedV0, shadedNormal0);
+				swShader::VertexShader_Voxel(unshadedV1, unshadedNormal1, modelPositionXYZW, shadedV1, shadedNormal1);
+				swShader::VertexShader_Voxel(unshadedV2, unshadedNormal2, modelPositionXYZW, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::SwingingDoor:
-				shadedV0 = (rotation * unshadedV0) + modelPositionXYZW;
-				shadedV1 = (rotation * unshadedV1) + modelPositionXYZW;
-				shadedV2 = (rotation * unshadedV2) + modelPositionXYZW;
-				shadedNormal0 = rotation * unshadedNormal0;
-				shadedNormal1 = rotation * unshadedNormal1;
-				shadedNormal2 = rotation * unshadedNormal2;
+				swShader::VertexShader_SwingingDoor(unshadedV0, unshadedNormal0, modelPositionXYZW, rotation, shadedV0, shadedNormal0);
+				swShader::VertexShader_SwingingDoor(unshadedV1, unshadedNormal1, modelPositionXYZW, rotation, shadedV1, shadedNormal1);
+				swShader::VertexShader_SwingingDoor(unshadedV2, unshadedNormal2, modelPositionXYZW, rotation, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::SlidingDoor:
-				shadedV0 = (rotation * (scale * unshadedV0)) + modelPositionXYZW;
-				shadedV1 = (rotation * (scale * unshadedV1)) + modelPositionXYZW;
-				shadedV2 = (rotation * (scale * unshadedV2)) + modelPositionXYZW;
-				shadedNormal0 = rotation * unshadedNormal0;
-				shadedNormal1 = rotation * unshadedNormal1;
-				shadedNormal2 = rotation * unshadedNormal2;
+				swShader::VertexShader_SlidingDoor(unshadedV0, unshadedNormal0, modelPositionXYZW, rotation, scale, shadedV0, shadedNormal0);
+				swShader::VertexShader_SlidingDoor(unshadedV1, unshadedNormal1, modelPositionXYZW, rotation, scale, shadedV1, shadedNormal1);
+				swShader::VertexShader_SlidingDoor(unshadedV2, unshadedNormal2, modelPositionXYZW, rotation, scale, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::RaisingDoor:
-				// Need to push + pop a translation so it scales towards the ceiling.
-				shadedV0 = unshadedV0 + preScaleTranslationXYZW;
-				shadedV1 = unshadedV1 + preScaleTranslationXYZW;
-				shadedV2 = unshadedV2 + preScaleTranslationXYZW;
-				shadedV0 = scale * shadedV0;
-				shadedV1 = scale * shadedV1;
-				shadedV2 = scale * shadedV2;
-				shadedV0 = shadedV0 - preScaleTranslationXYZW;
-				shadedV1 = shadedV1 - preScaleTranslationXYZW;
-				shadedV2 = shadedV2 - preScaleTranslationXYZW;
-
-				shadedV0 = (rotation * shadedV0) + modelPositionXYZW;
-				shadedV1 = (rotation * shadedV1) + modelPositionXYZW;
-				shadedV2 = (rotation * shadedV2) + modelPositionXYZW;
-				shadedNormal0 = rotation * unshadedNormal0;
-				shadedNormal1 = rotation * unshadedNormal1;
-				shadedNormal2 = rotation * unshadedNormal2;
+				swShader::VertexShader_RaisingDoor(unshadedV0, unshadedNormal0, modelPositionXYZW, preScaleTranslationXYZW, rotation, scale, shadedV0, shadedNormal0);
+				swShader::VertexShader_RaisingDoor(unshadedV1, unshadedNormal1, modelPositionXYZW, preScaleTranslationXYZW, rotation, scale, shadedV1, shadedNormal1);
+				swShader::VertexShader_RaisingDoor(unshadedV2, unshadedNormal2, modelPositionXYZW, preScaleTranslationXYZW, rotation, scale, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::SplittingDoor:
-			{
 				DebugNotImplemented();
 				break;
-			}
 			case VertexShaderType::Entity:
-				shadedV0 = (rotation * (scale * unshadedV0)) + modelPositionXYZW;
-				shadedV1 = (rotation * (scale * unshadedV1)) + modelPositionXYZW;
-				shadedV2 = (rotation * (scale * unshadedV2)) + modelPositionXYZW;
-				shadedNormal0 = unshadedNormal0;
-				shadedNormal1 = unshadedNormal1;
-				shadedNormal2 = unshadedNormal2;
+				swShader::VertexShader_Entity(unshadedV0, unshadedNormal0, modelPositionXYZW, rotation, scale, shadedV0, shadedNormal0);
+				swShader::VertexShader_Entity(unshadedV1, unshadedNormal1, modelPositionXYZW, rotation, scale, shadedV1, shadedNormal1);
+				swShader::VertexShader_Entity(unshadedV2, unshadedNormal2, modelPositionXYZW, rotation, scale, shadedV2, shadedNormal2);
 				break;
 			default:
 				DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
@@ -841,6 +853,7 @@ namespace swGeometry
 				*(texCoordsPtr + (index2 * 2) + 1));
 
 			// Discard back-facing.
+			// - @todo: this will probably be moved to the rasterization stage (checking vertex order via isCounterClockwise) once clipping is done in clip space
 			const Double3 v0ToEye = eye - shadedV0XYZ;
 			if (v0ToEye.dot(shadedNormal0XYZ) < Constants::Epsilon)
 			{
