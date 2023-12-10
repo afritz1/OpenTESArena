@@ -23,7 +23,7 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->upScaledRecip = this->up / tallPixelRatio;
 
 	this->viewMatrix = Matrix4d::view(this->worldPoint, this->forward, this->right, this->upScaled); // Adjust for tall pixels.
-	this->perspectiveMatrix = Matrix4d::perspective(fovY, aspectRatio, RendererUtils::NEAR_PLANE, RendererUtils::FAR_PLANE);
+	this->projectionMatrix = Matrix4d::perspective(fovY, aspectRatio, RendererUtils::NEAR_PLANE, RendererUtils::FAR_PLANE);
 
 	this->leftFrustumDir = (this->forwardScaled - this->rightScaled).normalized();
 	this->rightFrustumDir = (this->forwardScaled + this->rightScaled).normalized();

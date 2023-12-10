@@ -87,9 +87,9 @@ Double4 RendererUtils::worldSpaceToCameraSpace(const Double4 &point, const Matri
 	return view * point;
 }
 
-Double4 RendererUtils::cameraSpaceToClipSpace(const Double4 &point, const Matrix4d &perspective)
+Double4 RendererUtils::cameraSpaceToClipSpace(const Double4 &point, const Matrix4d &projection)
 {
-	return perspective * point;
+	return projection * point;
 }
 
 Double4 RendererUtils::worldSpaceToClipSpace(const Double4 &point, const Matrix4d &transform)

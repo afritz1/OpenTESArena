@@ -1108,7 +1108,7 @@ namespace swRender
 		uint32_t *colorBufferPtr = colorBuffer.begin();
 
 		const Matrix4d &viewMatrix = camera.viewMatrix;
-		const Matrix4d &perspectiveMatrix = camera.perspectiveMatrix;
+		const Matrix4d &projectionMatrix = camera.projectionMatrix;
 
 		constexpr double yShear = 0.0;
 
@@ -1144,9 +1144,9 @@ namespace swRender
 			const Double4 view0 = RendererUtils::worldSpaceToCameraSpace(Double4(v0, 1.0), viewMatrix);
 			const Double4 view1 = RendererUtils::worldSpaceToCameraSpace(Double4(v1, 1.0), viewMatrix);
 			const Double4 view2 = RendererUtils::worldSpaceToCameraSpace(Double4(v2, 1.0), viewMatrix);
-			const Double4 clip0 = RendererUtils::cameraSpaceToClipSpace(view0, perspectiveMatrix);
-			const Double4 clip1 = RendererUtils::cameraSpaceToClipSpace(view1, perspectiveMatrix);
-			const Double4 clip2 = RendererUtils::cameraSpaceToClipSpace(view2, perspectiveMatrix);
+			const Double4 clip0 = RendererUtils::cameraSpaceToClipSpace(view0, projectionMatrix);
+			const Double4 clip1 = RendererUtils::cameraSpaceToClipSpace(view1, projectionMatrix);
+			const Double4 clip2 = RendererUtils::cameraSpaceToClipSpace(view2, projectionMatrix);
 			const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clip0);
 			const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clip1);
 			const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clip2);

@@ -35,7 +35,7 @@ namespace RendererUtils
 	Double4 worldSpaceToCameraSpace(const Double4 &point, const Matrix4d &view);
 
 	// Projects a 3D point or vector in camera space to clip space (homogeneous coordinates; does not divide by W).
-	Double4 cameraSpaceToClipSpace(const Double4 &point, const Matrix4d &perspective);
+	Double4 cameraSpaceToClipSpace(const Double4 &point, const Matrix4d &projection);
 
 	// Projects a 3D point or vector in world space to clip space (homogeneous coordinates; does not divide by W).
 	// The given transformation matrix is the product of a model, view, and perspective matrix. This function

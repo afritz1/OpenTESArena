@@ -19,7 +19,7 @@ struct RenderCamera
 	Double3 upScaledRecip; // Scaled by 1.0 / tall pixel ratio.
 
 	Matrix4d viewMatrix;
-	Matrix4d perspectiveMatrix;
+	Matrix4d projectionMatrix;
 
 	// Frustum directions pointing away from the camera eye.
 	Double3 leftFrustumDir, rightFrustumDir, bottomFrustumDir, topFrustumDir;
