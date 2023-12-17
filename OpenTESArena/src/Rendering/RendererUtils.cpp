@@ -63,20 +63,6 @@ int RendererUtils::getRenderThreadsFromMode(int mode)
 	}
 }
 
-bool RendererUtils::isChasmEmissive(ArenaTypes::ChasmType chasmType)
-{
-	switch (chasmType)
-	{
-	case ArenaTypes::ChasmType::Dry:
-	case ArenaTypes::ChasmType::Wet:
-		return false;
-	case ArenaTypes::ChasmType::Lava:
-		return true;
-	default:
-		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(chasmType)));
-	}
-}
-
 double RendererUtils::getYShear(Radians angleRadians, double zoom)
 {
 	return std::tan(angleRadians) * zoom;
@@ -103,119 +89,16 @@ Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
 	return Double3(point.x * wRecip, point.y * wRecip, point.z * wRecip);
 }
 
-Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double yShear, double frameWidth, double frameHeight)
+Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double frameWidth, double frameHeight)
 {
-	const Double3 screenSpacePoint(
+	const Double2 screenSpacePoint(
 		0.50 - (point.x * 0.50),
-		(0.50 + yShear) + (point.y * 0.50),
-		point.z);
+		0.50 + (point.y * 0.50));
 
 	return Double3(
 		screenSpacePoint.x * frameWidth,
 		screenSpacePoint.y * frameHeight,
-		screenSpacePoint.z);
-}
-
-bool RendererUtils::clipLineSegment(Double4 *p1, Double4 *p2, double *outStart, double *outEnd)
-{
-	// Trivial case: both points are behind the camera.
-	if ((p1->w <= 0.0) && (p2->w <= 0.0))
-	{
-		return false;
-	}
-
-	const bool p1XInsideLeft = (p1->w + p1->x) > 0.0; // In the shaded area above "x + w = 0" line.
-	const bool p1YInsideLeft = (p1->w + p1->y) > 0.0; // In the shaded area above "y + w = 0" line.
-	const bool p1ZInsideLeft = (p1->w + p1->z) > 0.0; // In the shaded area above "z + w = 0" line.
-	const bool p1XInsideRight = (p1->w - p1->x) > 0.0; // In the shaded area above "x - w = 0" line.
-	const bool p1YInsideRight = (p1->w - p1->y) > 0.0; // In the shaded area above "y - w = 0" line.
-	const bool p1ZInsideRight = (p1->w - p1->z) > 0.0; // In the shaded area above "z - w = 0" line.
-	const bool p1XInside = p1XInsideLeft && p1XInsideRight;
-	const bool p1YInside = p1YInsideLeft && p1YInsideRight;
-	const bool p1ZInside = p1ZInsideLeft && p1ZInsideRight;
-
-	const bool p2XInsideLeft = (p2->w + p2->x) > 0.0; // In the shaded area above "x + w = 0" line.
-	const bool p2YInsideLeft = (p2->w + p2->y) > 0.0; // In the shaded area above "y + w = 0" line.
-	const bool p2ZInsideLeft = (p2->w + p2->z) > 0.0; // In the shaded area above "z + w = 0" line.
-	const bool p2XInsideRight = (p2->w - p2->x) > 0.0; // In the shaded area above "x - w = 0" line.
-	const bool p2YInsideRight = (p2->w - p2->y) > 0.0; // In the shaded area above "y - w = 0" line.
-	const bool p2ZInsideRight = (p2->w - p2->z) > 0.0; // In the shaded area above "z - w = 0" line.
-	const bool p2XInside = p2XInsideLeft && p2XInsideRight;
-	const bool p2YInside = p2YInsideLeft && p2YInsideRight;
-	const bool p2ZInside = p2ZInsideLeft && p2ZInsideRight;
-
-	// Check both points are off of one side in their {X,Y,Z}W space.
-	/*if ((!p1XInsideLeft && !p2XInsideLeft) ||
-		(!p1YInsideLeft && !p2YInsideLeft) ||
-		(!p1ZInsideLeft && !p2ZInsideLeft) ||
-		(!p1XInsideRight && !p2XInsideRight) ||
-		(!p1YInsideRight && !p2YInsideRight) ||
-		(!p1ZInsideRight && !p2ZInsideRight))
-	{
-		return false;
-	}*/
-
-	// Check line segment intersecting "x + w = 0" line.
-	if (!p1XInsideLeft && p2XInside)
-	{
-		const double t = (p1->w + p1->x) / ((p1->w + p1->x) - (p2->w + p2->x));
-		p1->x = p1->x + ((p2->x - p1->x) * t);
-		p1->w = p1->w + ((p2->w - p1->w) * t);
-		*outStart = t;
-		*outEnd = 1.0;
-	}
-
-	// Check line segment intersecting "x - w = 0" line.
-	if (p1XInside && !p2XInsideRight)
-	{
-		const double t = (p1->w - p1->x) / ((p1->w - p1->x) - (p2->w - p2->x));
-		p2->x = p1->x + ((p2->x - p1->x) * t);
-		p2->w = p1->w + ((p2->w - p1->w) * t);
-		*outStart = 0.0;
-		*outEnd = t;
-	}
-
-	// Check line segment intersecting "y + w = 0" line.
-	if (!p1YInsideLeft && p2YInside)
-	{
-		const double t = (p1->w + p1->y) / ((p1->w + p1->y) - (p2->w + p2->y));
-		p1->y = p1->y + ((p2->y - p1->y) * t);
-		p1->w = p1->w + ((p2->w - p1->w) * t);
-		*outStart = t;
-		*outEnd = 1.0;
-	}
-
-	// Check line segment intersecting "y - w = 0" line.
-	if (p1YInside && !p2YInsideRight)
-	{
-		const double t = (p1->w - p1->y) / ((p1->w - p1->y) - (p2->w - p2->y));
-		p2->y = p1->y + ((p2->y - p1->y) * t);
-		p2->w = p1->w + ((p2->w - p1->w) * t);
-		*outStart = 0.0;
-		*outEnd = t;
-	}
-
-	// Check line segment intersecting "z + w = 0" line.
-	if (!p1ZInsideLeft && p2ZInside)
-	{
-		const double t = (p1->w + p1->z) / ((p1->w + p1->z) - (p2->w + p2->z));
-		p1->z = p1->z + ((p2->z - p1->z) * t);
-		p1->w = p1->w + ((p2->w - p1->w) * t);
-		*outStart = t;
-		*outEnd = 1.0;
-	}
-
-	// Check line segment intersecting "z - w = 0" line.
-	if (p1ZInside && !p2ZInsideRight)
-	{
-		const double t = (p1->w - p1->z) / ((p1->w - p1->z) - (p2->w - p2->z));
-		p2->z = p1->z + ((p2->z - p1->z) * t);
-		p2->w = p1->w + ((p2->w - p1->w) * t);
-		*outStart = 0.0;
-		*outEnd = t;
-	}
-
-	return true;
+		point.z);
 }
 
 int RendererUtils::getLowerBoundedPixel(double projected, int frameDim)

@@ -1123,8 +1123,6 @@ namespace swRender
 		const Matrix4d &viewMatrix = camera.viewMatrix;
 		const Matrix4d &projectionMatrix = camera.projectionMatrix;
 
-		constexpr double yShear = 0.0;
-
 		const int lightCount = lights.getCount();
 		const SoftwareRenderer::Light **lightsPtr = lights.begin();
 
@@ -1163,9 +1161,9 @@ namespace swRender
 			const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clip0);
 			const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clip1);
 			const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clip2);
-			const Double3 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, yShear, frameBufferWidthReal, frameBufferHeightReal);
-			const Double3 screenSpace1 = RendererUtils::ndcToScreenSpace(ndc1, yShear, frameBufferWidthReal, frameBufferHeightReal);
-			const Double3 screenSpace2 = RendererUtils::ndcToScreenSpace(ndc2, yShear, frameBufferWidthReal, frameBufferHeightReal);
+			const Double3 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, frameBufferWidthReal, frameBufferHeightReal);
+			const Double3 screenSpace1 = RendererUtils::ndcToScreenSpace(ndc1, frameBufferWidthReal, frameBufferHeightReal);
+			const Double3 screenSpace2 = RendererUtils::ndcToScreenSpace(ndc2, frameBufferWidthReal, frameBufferHeightReal);
 			const Double2 screenSpace0_2D(screenSpace0.x, screenSpace0.y);
 			const Double2 screenSpace1_2D(screenSpace1.x, screenSpace1.y);
 			const Double2 screenSpace2_2D(screenSpace2.x, screenSpace2.y);

@@ -23,9 +23,6 @@ namespace RendererUtils
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);
 
-	// Returns whether the chasm type is emissive and ignores ambient shading.
-	bool isChasmEmissive(ArenaTypes::ChasmType chasmType);
-
 	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
 	// and the zoom of the camera (dependent on vertical field of view).
 	double getYShear(Radians angleRadians, double zoom);
@@ -49,13 +46,7 @@ namespace RendererUtils
 	// the decimals; the space expected by pixel shading). In other 3D engines this extra step might not be needed
 	// but I think I'm doing something different, can't remember.
 	// - In theory, this would return an Int2+double later on if sub-pixel precision worked with integers instead.
-	Double3 ndcToScreenSpace(const Double3 &point, double yShear, double frameWidth, double frameHeight);
-
-	// Modifies the given clip space line segment so it fits in the frustum. Returns whether the line
-	// segment is visible at all (false means that the line segment was completely clipped away).
-	// The output parameters are the revised p1 and p2 points, and revisions to the 0->1 percent
-	// of the line connecting the original points together.
-	bool clipLineSegment(Double4 *p1, Double4 *p2, double *outStart, double *outEnd);
+	Double3 ndcToScreenSpace(const Double3 &point, double frameWidth, double frameHeight);
 
 	// Gets the pixel coordinate with the nearest available pixel center based on the projected
 	// value and some bounding rule. This is used to keep integer drawing ranges clamped in such
