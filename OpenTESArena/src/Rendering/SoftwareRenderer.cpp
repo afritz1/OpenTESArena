@@ -494,193 +494,170 @@ namespace swGeometry
 		}
 	};
 
-	TriangleClipResult ClipTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2,
-		const Double3 &normal0, const Double3 &normal1, const Double3 &normal2,
-		const Double2 &uv0, const Double2 &uv1, const Double2 &uv2, const Double3 &eye,
-		const Double3 &planePoint, const Double3 &planeNormal)
+	TriangleClipResult ClipTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double3 &normal0,
+		const Double3 &normal1, const Double3 &normal2, const Double2 &uv0, const Double2 &uv1, const Double2 &uv2,
+		const Double3 &eye, const Double3 &planePoint, const Double3 &planeNormal)
 	{
-		std::array<const Double3*, 3> insidePoints, outsidePoints;
-		std::array<const Double3*, 3> insideNormals, outsideNormals;
-		std::array<const Double2*, 3> insideUVs, outsideUVs;
-		int insidePointCount = 0;
-		int outsidePointCount = 0;
+		// @todo: do this in clip space eventually. 6 square roots just to clip a triangle is gross.
+		const bool isV0Inside = MathUtils::isPointInHalfSpace(v0, planePoint, planeNormal);
+		const bool isV1Inside = MathUtils::isPointInHalfSpace(v1, planePoint, planeNormal);
+		const bool isV2Inside = MathUtils::isPointInHalfSpace(v2, planePoint, planeNormal);
 
-		const std::array<const Double3*, 3> vertexPtrs = { &v0, &v1, &v2 };
-		const std::array<const Double3*, 3> normalPtrs = { &normal0, &normal1, &normal2 };
-		const std::array<const Double2*, 3> uvPtrs = { &uv0, &uv1, &uv2 };
-
-		// Determine which vertices are in the positive half-space of the clipping plane.
-		for (int i = 0; i < static_cast<int>(vertexPtrs.size()); i++)
+		// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
+		// making sure to keep the original winding order. Don't interpolate normals because smooth shading isn't needed.
+		if (isV0Inside)
 		{
-			const Double3 *vertexPtr = vertexPtrs[i];
-			const Double3 *normalPtr = normalPtrs[i];
-			const double dist = MathUtils::distanceToPlane(*vertexPtr, planePoint, planeNormal);
-			if (dist >= 0.0)
+			if (isV1Inside)
 			{
-				insidePoints[insidePointCount] = vertexPtr;
-				insideNormals[insidePointCount] = normalPtr;
-				insideUVs[insidePointCount] = uvPtrs[i];
-				insidePointCount++;
-			}
-			else
-			{
-				outsidePoints[outsidePointCount] = vertexPtr;
-				outsideNormals[outsidePointCount] = normalPtr;
-				outsideUVs[outsidePointCount] = uvPtrs[i];
-				outsidePointCount++;
-			}
-		}
-
-		// Clip triangle depending on the inside/outside vertex case.
-		const bool isCompletelyOutside = insidePointCount == 0;
-		const bool isCompletelyInside = insidePointCount == 3;
-		const bool becomesSmallerTriangle = insidePointCount == 1;
-		const bool becomesQuad = insidePointCount == 2;
-		if (isCompletelyOutside)
-		{
-			return TriangleClipResult::zero();
-		}
-		else if (isCompletelyInside)
-		{
-			// Reverse vertex order if back-facing.
-			if ((eye - v0).dot(normal0) >= Constants::Epsilon)
-			{
-				return TriangleClipResult::one(v0, v1, v2, normal0, normal1, normal2, uv0, uv1, uv2);
-			}
-			else
-			{
-				return TriangleClipResult::one(v0, v2, v1, normal0, normal2, normal1, uv0, uv2, uv1);
-			}
-		}
-		else if (becomesSmallerTriangle)
-		{
-			const Double3 &insidePoint = *insidePoints[0];
-			const Double3 &insideNormal = *insideNormals[0];
-			const Double2 &insideUV = *insideUVs[0];
-			const Double3 &outsidePoint0 = *outsidePoints[0];
-			const Double3 &outsidePoint1 = *outsidePoints[1];
-
-			// @todo: replace ray-plane intersection with one that get T value internally
-			Double3 newInsidePoint1, newInsidePoint2;
-			MathUtils::rayPlaneIntersection(insidePoint, (outsidePoint0 - insidePoint).normalized(),
-				planePoint, planeNormal, &newInsidePoint1);
-			MathUtils::rayPlaneIntersection(insidePoint, (outsidePoint1 - insidePoint).normalized(),
-				planePoint, planeNormal, &newInsidePoint2);
-
-			const double t0 = (outsidePoint0 - insidePoint).length();
-			const double t1 = (outsidePoint1 - insidePoint).length();
-			const double newT0 = (newInsidePoint1 - insidePoint).length();
-			const double newT1 = (newInsidePoint2 - insidePoint).length();
-
-			const Double3 outsideNormal0 = *outsideNormals[0];
-			const Double3 outsideNormal1 = *outsideNormals[1];
-			const Double3 newInsideNormal0 = insideNormal.lerp(outsideNormal0, newT0 / t0);
-			const Double3 newInsideNormal1 = insideNormal.lerp(outsideNormal1, newT1 / t1);
-
-			const Double2 outsideUV0 = *outsideUVs[0];
-			const Double2 outsideUV1 = *outsideUVs[1];
-			const Double2 newInsideUV0 = insideUV.lerp(outsideUV0, newT0 / t0);
-			const Double2 newInsideUV1 = insideUV.lerp(outsideUV1, newT1 / t1);
-
-			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
-			const Double3 unormal = (insidePoint - newInsidePoint2).cross(newInsidePoint1 - insidePoint);
-			if ((eye - insidePoint).dot(unormal) >= Constants::Epsilon)
-			{
-				return TriangleClipResult::one(insidePoint, newInsidePoint1, newInsidePoint2, insideNormal,
-					newInsideNormal0, newInsideNormal1, insideUV, newInsideUV0, newInsideUV1);
-			}
-			else
-			{
-				return TriangleClipResult::one(newInsidePoint2, newInsidePoint1, insidePoint, newInsideNormal1,
-					newInsideNormal0, insideNormal, newInsideUV1, newInsideUV0, insideUV);
-			}
-		}
-		else if (becomesQuad)
-		{
-			const Double3 &insidePoint0 = *insidePoints[0];
-			const Double3 &insidePoint1 = *insidePoints[1];
-			const Double3 &outsidePoint0 = *outsidePoints[0];
-			const Double3 &insideNormal0 = *insideNormals[0];
-			const Double3 &insideNormal1 = *insideNormals[1];
-			const Double3 &outsideNormal0 = *outsideNormals[0];
-			const Double2 &insideUV0 = *insideUVs[0];
-			const Double2 &insideUV1 = *insideUVs[1];
-			const Double2 &outsideUV0 = *outsideUVs[0];
-
-			const Double3 &newTriangle0V0 = insidePoint0;
-			const Double3 &newTriangle0V1 = insidePoint1;
-			const Double3 &newTriangle0Normal0 = insideNormal0;
-			const Double3 &newTriangle0Normal1 = insideNormal1;
-			const Double2 &newTriangle0UV0 = insideUV0;
-			const Double2 &newTriangle0UV1 = insideUV1;
-
-			const double t0 = (outsidePoint0 - newTriangle0V0).length();
-
-			// @todo: replace ray-plane intersection with one that gets T value internally
-			Double3 newTriangle0V2;
-			MathUtils::rayPlaneIntersection(newTriangle0V0, (outsidePoint0 - newTriangle0V0).normalized(),
-				planePoint, planeNormal, &newTriangle0V2);
-			const double newTriangle0T = (newTriangle0V2 - newTriangle0V0).length();
-			const Double3 newTriangle0Normal2 = newTriangle0Normal0.lerp(outsideNormal0, newTriangle0T / t0);
-			const Double2 newTriangle0UV2 = newTriangle0UV0.lerp(outsideUV0, newTriangle0T / t0);
-
-			const Double3 &newTriangle1V0 = insidePoint1;
-			const Double3 &newTriangle1V1 = newTriangle0V2;
-			const Double3 &newTriangle1Normal0 = insideNormal1;
-			const Double3 &newTriangle1Normal1 = newTriangle0Normal2;
-			const Double2 &newTriangle1UV0 = insideUV1;
-			const Double2 &newTriangle1UV1 = newTriangle0UV2;
-
-			const double t1 = (outsidePoint0 - newTriangle1V0).length();
-
-			// @todo: replace ray-plane intersection with one that gets T value internally
-			Double3 newTriangle1V2;
-			MathUtils::rayPlaneIntersection(newTriangle1V0, (outsidePoint0 - newTriangle1V0).normalized(),
-				planePoint, planeNormal, &newTriangle1V2);
-			const double newTriangle1T = (newTriangle1V2 - newTriangle1V0).length();
-			const Double3 newTriangle1Normal2 = newTriangle1Normal0.lerp(outsideNormal0, newTriangle1T / t1);
-			const Double2 newTriangle1UV2 = newTriangle1UV0.lerp(outsideUV0, newTriangle1T / t1);
-
-			// Swap vertex winding if needed so we don't generate a back-facing triangle from a front-facing one.
-			const Double3 unormal0 = (newTriangle0V0 - newTriangle0V2).cross(newTriangle0V1 - newTriangle0V0);
-			const Double3 unormal1 = (newTriangle1V0 - newTriangle1V2).cross(newTriangle1V1 - newTriangle1V0);
-			const bool keepOrientation0 = (eye - newTriangle0V0).dot(unormal0) >= Constants::Epsilon;
-			const bool keepOrientation1 = (eye - newTriangle1V0).dot(unormal1) >= Constants::Epsilon;
-			if (keepOrientation0)
-			{
-				if (keepOrientation1)
+				if (isV2Inside)
 				{
-					return TriangleClipResult::two(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0Normal0, newTriangle0Normal1,
-						newTriangle0Normal2, newTriangle0UV0, newTriangle0UV1, newTriangle0UV2, newTriangle1V0, newTriangle1V1, newTriangle1V2,
-						newTriangle1Normal0, newTriangle1Normal1, newTriangle1Normal2, newTriangle1UV0, newTriangle1UV1, newTriangle1UV2);
+					// All vertices visible, no clipping needed.
+					return TriangleClipResult::one(v0, v1, v2, normal0, normal1, normal2, uv0, uv1, uv2);
 				}
 				else
 				{
-					return TriangleClipResult::two(newTriangle0V0, newTriangle0V1, newTriangle0V2, newTriangle0Normal0, newTriangle0Normal1,
-						newTriangle0Normal2, newTriangle0UV0, newTriangle0UV1, newTriangle0UV2, newTriangle1V2, newTriangle1V1, newTriangle1V0,
-						newTriangle1Normal2, newTriangle1Normal1, newTriangle1Normal0, newTriangle1UV2, newTriangle1UV1, newTriangle1UV0);
+					// Becomes quad
+					// Inside: V0, V1
+					// Outside: V2
+					const double v1v2T = (v2 - v1).length();
+					const double v2v0T = (v0 - v2).length();
+
+					Double3 v1v2Point, v2v0Point;
+					MathUtils::rayPlaneIntersection(v1, (v2 - v1).normalized(), planePoint, planeNormal, &v1v2Point);
+					MathUtils::rayPlaneIntersection(v2, (v0 - v2).normalized(), planePoint, planeNormal, &v2v0Point);
+					const double v1v2PointT = (v1v2Point - v1).length();
+					const double v2v0PointT = (v2v0Point - v2).length();
+					const Double3 v1v2PointNormal = normal1;
+					const Double3 v2v0PointNormal = normal2;
+					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
+					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
+
+					return TriangleClipResult::two(v0, v1, v1v2Point, normal0, normal1, v1v2PointNormal, uv0, uv1, v1v2PointUV,
+						v1v2Point, v2v0Point, v0, v1v2PointNormal, v2v0PointNormal, normal0, v1v2PointUV, v2v0PointUV, uv0);
 				}
 			}
 			else
 			{
-				if (keepOrientation1)
+				if (isV2Inside)
 				{
-					return TriangleClipResult::two(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0Normal2, newTriangle0Normal1,
-						newTriangle0Normal0, newTriangle0UV2, newTriangle0UV1, newTriangle0UV0, newTriangle1V0, newTriangle1V1, newTriangle1V2,
-						newTriangle1Normal0, newTriangle1Normal1, newTriangle0Normal2, newTriangle1UV0, newTriangle1UV1, newTriangle1UV2);
+					// Becomes quad
+					// Inside: V0, V2
+					// Outside: V1
+					const double v0v1T = (v1 - v0).length();
+					const double v1v2T = (v2 - v1).length();
+
+					Double3 v0v1Point, v1v2Point;
+					MathUtils::rayPlaneIntersection(v0, (v1 - v0).normalized(), planePoint, planeNormal, &v0v1Point);
+					MathUtils::rayPlaneIntersection(v1, (v2 - v1).normalized(), planePoint, planeNormal, &v1v2Point);
+					const double v0v1PointT = (v0v1Point - v0).length();
+					const double v1v2PointT = (v1v2Point - v1).length();
+					const Double3 v0v1PointNormal = normal0;
+					const Double3 v1v2PointNormal = normal1;
+					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT / v0v1T);
+					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
+
+					return TriangleClipResult::two(v0, v0v1Point, v1v2Point, normal0, v0v1PointNormal, v1v2PointNormal, uv0,
+						v0v1PointUV, v1v2PointUV, v1v2Point, v2, v0, v1v2PointNormal, normal2, normal0, v1v2PointUV, uv2, uv0);
 				}
 				else
 				{
-					return TriangleClipResult::two(newTriangle0V2, newTriangle0V1, newTriangle0V0, newTriangle0Normal2, newTriangle0Normal1,
-						newTriangle0Normal0, newTriangle0UV2, newTriangle0UV1, newTriangle0UV0, newTriangle1V2, newTriangle1V1, newTriangle1V0,
-						newTriangle1Normal2, newTriangle1Normal1, newTriangle1Normal0, newTriangle1UV2, newTriangle1UV1, newTriangle1UV0);
+					// Becomes smaller triangle
+					// Inside: V0
+					// Outside: V1, V2
+					const double v0v1T = (v1 - v0).length();
+					const double v2v0T = (v0 - v2).length();
+
+					Double3 v0v1Point, v2v0Point;
+					MathUtils::rayPlaneIntersection(v0, (v1 - v0).normalized(), planePoint, planeNormal, &v0v1Point);
+					MathUtils::rayPlaneIntersection(v2, (v0 - v2).normalized(), planePoint, planeNormal, &v2v0Point);
+					const double v0v1PointT = (v0v1Point - v0).length();
+					const double v2v0PointT = (v2v0Point - v2).length();
+					const Double3 v0v1PointNormal = normal0;
+					const Double3 v2v0PointNormal = normal2;
+					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT / v0v1T);
+					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
+
+					return TriangleClipResult::one(v0, v0v1Point, v2v0Point, normal0, v0v1PointNormal, v2v0PointNormal,
+						uv0, v0v1PointUV, v2v0PointUV);
 				}
 			}
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(TriangleClipResult, "Unhandled triangle clip case (inside: " +
-				std::to_string(insidePointCount) + ", outside: " + std::to_string(outsidePointCount) + ").");
+			if (isV1Inside)
+			{
+				if (isV2Inside)
+				{
+					// Becomes quad
+					// Inside: V1, V2
+					// Outside: V0
+					const double v0v1T = (v1 - v0).length();
+					const double v2v0T = (v0 - v2).length();
+
+					Double3 v0v1Point, v2v0Point;
+					MathUtils::rayPlaneIntersection(v0, (v1 - v0).normalized(), planePoint, planeNormal, &v0v1Point);
+					MathUtils::rayPlaneIntersection(v2, (v0 - v2).normalized(), planePoint, planeNormal, &v2v0Point);
+					const double v0v1PointT = (v0v1Point - v0).length();
+					const double v2v0PointT = (v2v0Point - v2).length();
+					const Double3 v0v1PointNormal = normal0;
+					const Double3 v2v0PointNormal = normal2;
+					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT / v0v1T);
+					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
+
+					return TriangleClipResult::two(v0v1Point, v1, v2, v0v1PointNormal, normal1, normal2, v0v1PointUV, uv1, uv2,
+						v2, v2v0Point, v0v1Point, normal2, v2v0PointNormal, v0v1PointNormal, uv2, v2v0PointUV, v0v1PointUV);
+				}
+				else
+				{
+					// Becomes smaller triangle
+					// Inside: V1
+					// Outside: V0, V2
+					const double v0v1T = (v1 - v0).length();
+					const double v1v2T = (v2 - v1).length();
+
+					Double3 v0v1Point, v1v2Point;
+					MathUtils::rayPlaneIntersection(v0, (v1 - v0).normalized(), planePoint, planeNormal, &v0v1Point);
+					MathUtils::rayPlaneIntersection(v1, (v2 - v1).normalized(), planePoint, planeNormal, &v1v2Point);
+					const double v0v1PointT = (v0v1Point - v0).length();
+					const double v1v2PointT = (v1v2Point - v1).length();
+					const Double3 v0v1PointNormal = normal0;
+					const Double3 v1v2PointNormal = normal1;
+					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT / v0v1T);
+					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
+
+					return TriangleClipResult::one(v0v1Point, v1, v1v2Point, v0v1PointNormal, normal1, v1v2PointNormal,
+						v0v1PointUV, uv1, v1v2PointUV);
+				}
+			}
+			else
+			{
+				if (isV2Inside)
+				{
+					// Becomes smaller triangle
+					// Inside: V2
+					// Outside: V0, V1
+					const double v1v2T = (v2 - v1).length();
+					const double v2v0T = (v0 - v2).length();
+
+					Double3 v1v2Point, v2v0Point;
+					MathUtils::rayPlaneIntersection(v1, (v2 - v1).normalized(), planePoint, planeNormal, &v1v2Point);
+					MathUtils::rayPlaneIntersection(v2, (v0 - v2).normalized(), planePoint, planeNormal, &v2v0Point);
+					const double v1v2PointT = (v1v2Point - v1).length();
+					const double v2v0PointT = (v2v0Point - v2).length();
+					const Double3 v1v2PointNormal = normal1;
+					const Double3 v2v0PointNormal = normal2;
+					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
+					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
+
+					return TriangleClipResult::one(v1v2Point, v2, v2v0Point, v1v2PointNormal, normal2, v2v0PointNormal,
+						v1v2PointUV, uv2, v2v0PointUV);
+				}
+				else
+				{
+					// All vertices outside frustum.
+					return TriangleClipResult::zero();
+				}
+			}
 		}
 	}
 
