@@ -829,14 +829,6 @@ namespace swGeometry
 				*(texCoordsPtr + (index2 * 2)),
 				*(texCoordsPtr + (index2 * 2) + 1));
 
-			// Discard back-facing.
-			// - @todo: this will probably be moved to the rasterization stage (checking vertex order via isCounterClockwise) once clipping is done in clip space
-			const Double3 v0ToEye = eye - shadedV0XYZ;
-			if (v0ToEye.dot(shadedNormal0XYZ) < Constants::Epsilon)
-			{
-				continue;
-			}
-
 			// Manually update clip list size and index 0 instead of doing costly vector resizing.
 			int clipListSize = 1;
 			int clipListFrontIndex = 0;
@@ -1081,7 +1073,6 @@ namespace swRender
 		swGeometry::g_totalTriangleCount = 0;
 	}
 
-	// The provided triangles are assumed to be back-face culled and clipped.
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
 		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, double ambientPercent,
 		BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType, double pixelShaderParam0,
@@ -1147,6 +1138,17 @@ namespace swRender
 			const Double2 screenSpace01 = screenSpace1_2D - screenSpace0_2D;
 			const Double2 screenSpace12 = screenSpace2_2D - screenSpace1_2D;
 			const Double2 screenSpace20 = screenSpace0_2D - screenSpace2_2D;
+			const double screenSpace01Cross12 = screenSpace12.cross(screenSpace01);
+			const double screenSpace12Cross20 = screenSpace20.cross(screenSpace12);
+			const double screenSpace20Cross01 = screenSpace01.cross(screenSpace20);
+
+			// Discard back-facing.
+			const bool isFrontFacing = (screenSpace01Cross12 + screenSpace12Cross20 + screenSpace20Cross01) > 0.0;
+			if (!isFrontFacing)
+			{
+				continue;
+			}
+
 			const Double2 screenSpace01Perp = screenSpace01.rightPerp();
 			const Double2 screenSpace12Perp = screenSpace12.rightPerp();
 			const Double2 screenSpace20Perp = screenSpace20.rightPerp();
