@@ -135,16 +135,17 @@ Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
+	// Differs slightly from other perspective matrices so Z in NDC space is between 0 and 1.
 	const T halfFovRadians = fovY * static_cast<T>(0.50 * Constants::DegToRad);
 	const T tangent = static_cast<T>(std::tan(halfFovRadians));
-	const T farNearDiff = far - near;
+	const T nearFarDiff = near - far;
 
 	Matrix4<T> m;
 	m.x.x = static_cast<T>(1.0) / (tangent * aspect);
 	m.y.y = static_cast<T>(1.0) / tangent;
-	m.z.z = -(far + near) / farNearDiff;
+	m.z.z = -far / nearFarDiff;
 	m.z.w = static_cast<T>(1.0);
-	m.w.z = ((static_cast<T>(-2.0) * far) * near) / farNearDiff;
+	m.w.z = (near * far) / nearFarDiff;
 	m.w.w = static_cast<T>(0.0);
 	return m;
 }
