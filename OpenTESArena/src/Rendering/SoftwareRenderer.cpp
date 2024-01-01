@@ -398,7 +398,7 @@ namespace swGeometry
 		Double3 normal;
 	};
 
-	using ClippingPlanes = std::array<ClippingPlane, 5>;
+	using ClippingPlanes = std::array<ClippingPlane, 6>;
 
 	// Plane point and normal pairs in world space.
 	ClippingPlanes MakeClippingPlanes(const RenderCamera &camera)
@@ -406,8 +406,10 @@ namespace swGeometry
 		const ClippingPlanes planes =
 		{
 			{
-				// Near plane (far plane is not necessary due to how chunks are managed - it only matters if a view distance slider exists)
+				// Near plane
 				{ camera.worldPoint + (camera.forward * RendererUtils::NEAR_PLANE), camera.forward },
+				// Far plane
+				{ camera.worldPoint + (camera.forward * RendererUtils::FAR_PLANE), -camera.forward },
 				// Left
 				{ camera.worldPoint, camera.leftFrustumNormal },
 				// Right
