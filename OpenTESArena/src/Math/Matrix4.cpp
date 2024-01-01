@@ -135,14 +135,15 @@ Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
-	const T zoom = static_cast<T>(1.0 / std::tan((fovY * 0.50) * Constants::DegToRad));
+	const T halfFovRadians = fovY * static_cast<T>(0.50 * Constants::DegToRad);
+	const T tangent = static_cast<T>(std::tan(halfFovRadians));
 	const T farNearDiff = far - near;
 
-	Matrix4<T> m = Matrix4<T>::identity();
-	m.x.x = zoom / aspect;
-	m.y.y = zoom;
+	Matrix4<T> m;
+	m.x.x = static_cast<T>(1.0) / (tangent * aspect);
+	m.y.y = static_cast<T>(1.0) / tangent;
 	m.z.z = -(far + near) / farNearDiff;
-	m.z.w = static_cast<T>(-1.0);
+	m.z.w = static_cast<T>(1.0);
 	m.w.z = ((static_cast<T>(-2.0) * far) * near) / farNearDiff;
 	m.w.w = static_cast<T>(0.0);
 	return m;
