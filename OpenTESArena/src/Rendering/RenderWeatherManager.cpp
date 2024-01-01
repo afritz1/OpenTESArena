@@ -16,8 +16,7 @@ namespace
 	constexpr int RainTextureHeight = ArenaRenderUtils::RAINDROP_TEXTURE_HEIGHT;
 	constexpr int BytesPerTexel = 1;
 
-	constexpr double ParticleArbitraryZ = 0.005; // Close to camera but in front of near plane. @todo: use shader w/ no depth test
-	static_assert(ParticleArbitraryZ >= RendererUtils::NEAR_PLANE);
+	constexpr double ParticleArbitraryZ = RendererUtils::NEAR_PLANE + Constants::Epsilon; // Close to camera but in front of near plane. @todo: use shader w/ no depth test
 
 	int GetSnowTextureWidth(int index)
 	{
