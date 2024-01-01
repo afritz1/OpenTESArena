@@ -235,6 +235,12 @@ T Vector2f<T>::dot(const Vector2f<T> &v) const
 }
 
 template <typename T>
+T Vector2f<T>::cross(const Vector2f<T> &v) const
+{
+	return (this->x * v.y) - (this->y * v.x);
+}
+
+template <typename T>
 Vector2f<T> Vector2f<T>::lerp(const Vector2f<T> &end, T percent) const
 {
 	return Vector2f<T>(

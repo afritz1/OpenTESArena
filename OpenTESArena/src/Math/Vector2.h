@@ -85,6 +85,7 @@ public:
 	Vector2f<T> normalized() const;
 	bool isNormalized() const;
 	T dot(const Vector2f<T> &v) const;
+	T cross(const Vector2f<T> &v) const;
 	Vector2f<T> lerp(const Vector2f<T> &end, T percent) const;
 	Vector2f<T> slerp(const Vector2f<T> &end, T percent) const;
 	Vector2f<T> leftPerp() const;
