@@ -289,7 +289,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.lightingType = RenderLightingType::PerMesh;
 	this->bgDrawCall.lightPercent = 1.0;
 	this->bgDrawCall.lightIdCount = 0;
-	this->bgDrawCall.vertexShaderType = VertexShaderType::Voxel; // @todo: SkyBackground?
+	this->bgDrawCall.vertexShaderType = VertexShaderType::Basic;
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
 
@@ -725,7 +725,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.lightingType = RenderLightingType::PerMesh;
 		drawCall.lightPercent = meshLightPercent;
 		drawCall.lightIdCount = 0;
-		drawCall.vertexShaderType = VertexShaderType::SlidingDoor; // @todo: make a sky object vertex shader
+		drawCall.vertexShaderType = VertexShaderType::Basic;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = 0.0;
 		this->objectDrawCalls.emplace_back(std::move(drawCall));

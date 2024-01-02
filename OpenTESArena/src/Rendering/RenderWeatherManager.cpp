@@ -588,7 +588,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.lightingType = RenderLightingType::PerMesh;
 		drawCall.lightPercent = 1.0;
 		drawCall.lightIdCount = 0;
-		drawCall.vertexShaderType = VertexShaderType::SlidingDoor; // @todo: actually have a dedicated vertex shader
+		drawCall.vertexShaderType = VertexShaderType::Basic; // @todo: actually have a dedicated vertex shader?
 		drawCall.pixelShaderType = PixelShaderType::AlphaTested;
 		drawCall.pixelShaderParam0 = 0.0;
 	};
@@ -711,7 +711,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.lightingType = RenderLightingType::PerMesh;
 		this->fogDrawCall.lightPercent = 1.0;
 		this->fogDrawCall.lightIdCount = 0;
-		this->fogDrawCall.vertexShaderType = VertexShaderType::Voxel;
+		this->fogDrawCall.vertexShaderType = VertexShaderType::Basic;
 		this->fogDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity; // @todo: don't depth test
 		this->fogDrawCall.pixelShaderParam0 = 0.0;
 	}

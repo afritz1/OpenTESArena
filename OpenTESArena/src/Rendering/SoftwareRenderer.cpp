@@ -77,44 +77,32 @@ namespace swShader
 		int pixelIndex;
 	};
 
-	// @todo: take model + view + projection matrices and change output vertex to clip space
-	void VertexShader_Voxel(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, Double4 &outVertex, Double4 &outNormal)
+	void VertexShader_Basic(const Double3 &vertex, const Double3 &normal, const Matrix4d &modelMatrix, const Matrix4d &viewMatrix,
+		const Matrix4d &projectionMatrix, Double4 &outVertex, Double4 &outNormal)
 	{
-		outVertex = vertex + modelPosition;
-		outNormal = normal;
+		const Matrix4d modelViewMatrix = viewMatrix * modelMatrix;
+		outVertex = projectionMatrix * (modelViewMatrix * Double4(vertex, 1.0));
+		outNormal = modelViewMatrix * Double4(normal, 0.0);
 	}
 
-	void VertexShader_SwingingDoor(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, const Matrix4d &rotation,
-		Double4 &outVertex, Double4 &outNormal)
+	void VertexShader_RaisingDoor(const Double3 &vertex, const Double3 &normal, const Double3 &preScaleTranslation, const Matrix4d &scaleMatrix,
+		const Matrix4d &modelMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix, Double4 &outVertex, Double4 &outNormal)
 	{
-		outVertex = (rotation * vertex) + modelPosition;
-		outNormal = rotation * normal;
+		Double4 transformedVertex = Double4(vertex + preScaleTranslation, 1.0);
+		transformedVertex = scaleMatrix * transformedVertex;
+		transformedVertex = transformedVertex - Double4(preScaleTranslation, 0.0);
+
+		const Matrix4d modelViewMatrix = viewMatrix * modelMatrix;
+		outVertex = projectionMatrix * (modelViewMatrix * transformedVertex);
+		outNormal = modelViewMatrix * Double4(normal, 0.0);
 	}
 
-	void VertexShader_SlidingDoor(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, const Matrix4d &rotation,
-		const Matrix4d &scale, Double4 &outVertex, Double4 &outNormal)
+	void VertexShader_Entity(const Double3 &vertex, const Double3 &normal, const Matrix4d &modelMatrix, const Matrix4d &viewMatrix,
+		const Matrix4d &projectionMatrix, Double4 &outVertex, Double4 &outNormal)
 	{
-		outVertex = (rotation * (scale * vertex)) + modelPosition;
-		outNormal = rotation * normal;
-	}
-
-	void VertexShader_RaisingDoor(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, const Double4 &preScaleTranslation,
-		const Matrix4d &rotation, const Matrix4d &scale, Double4 &outVertex, Double4 &outNormal)
-	{
-		// Push + pop a translation so it scales towards the ceiling.
-		Double4 tempVertex = vertex + preScaleTranslation;
-		tempVertex = scale * tempVertex;
-		tempVertex = tempVertex - preScaleTranslation;
-
-		outVertex = (rotation * tempVertex) + modelPosition;
-		outNormal = rotation * normal;
-	}
-
-	void VertexShader_Entity(const Double4 &vertex, const Double4 &normal, const Double4 &modelPosition, const Matrix4d &rotation,
-		const Matrix4d &scale, Double4 &outVertex, Double4 &outNormal)
-	{
-		outVertex = (rotation * (scale * vertex)) + modelPosition;
-		outNormal = normal; // Already rotated.
+		const Matrix4d modelViewMatrix = viewMatrix * modelMatrix;
+		outVertex = projectionMatrix * (modelViewMatrix * Double4(vertex, 1.0));
+		outNormal = viewMatrix * Double4(normal, 0.0); // Already rotated in world space to face the camera.
 	}
 
 	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -392,58 +380,22 @@ namespace swShader
 // Internal geometry types/functions.
 namespace swGeometry
 {
-	struct ClippingPlane
-	{
-		Double3 point;
-		Double3 normal;
-	};
-
-	using ClippingPlanes = std::array<ClippingPlane, 6>;
-
-	// Plane point and normal pairs in world space.
-	ClippingPlanes MakeClippingPlanes(const RenderCamera &camera)
-	{
-		const ClippingPlanes planes =
-		{
-			{
-				// Near plane
-				{ camera.worldPoint + (camera.forward * RendererUtils::NEAR_PLANE), camera.forward },
-				// Far plane
-				{ camera.worldPoint + (camera.forward * RendererUtils::FAR_PLANE), -camera.forward },
-				// Left
-				{ camera.worldPoint, camera.leftFrustumNormal },
-				// Right
-				{ camera.worldPoint, camera.rightFrustumNormal },
-				// Bottom
-				{ camera.worldPoint, camera.bottomFrustumNormal },
-				// Top
-				{ camera.worldPoint, camera.topFrustumNormal }
-			}
-		};
-
-		return planes;
-	}
-
 	struct TriangleClipResult
 	{
 		static constexpr int MAX_RESULTS = 2;
 
 		int triangleCount = 0;
-		Double3 v0s[MAX_RESULTS], v1s[MAX_RESULTS], v2s[MAX_RESULTS];
-		Double3 v0v1s[MAX_RESULTS], v1v2s[MAX_RESULTS], v2v0s[MAX_RESULTS];
+		Double4 v0s[MAX_RESULTS], v1s[MAX_RESULTS], v2s[MAX_RESULTS]; // In clip space.
 		Double3 normal0s[MAX_RESULTS], normal1s[MAX_RESULTS], normal2s[MAX_RESULTS];
 		Double2 uv0s[MAX_RESULTS], uv1s[MAX_RESULTS], uv2s[MAX_RESULTS];
 	private:
-		void populateIndex(int index, const Double3 &v0, const Double3 &v1, const Double3 &v2,
+		void populateIndex(int index, const Double4 &v0, const Double4 &v1, const Double4 &v2,
 			const Double3 &normal0, const Double3 &normal1, const Double3 &normal2,
 			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
 		{
 			this->v0s[index] = v0;
 			this->v1s[index] = v1;
 			this->v2s[index] = v2;
-			this->v0v1s[index] = v1 - v0;
-			this->v1v2s[index] = v2 - v1;
-			this->v2v0s[index] = v0 - v2;
 			this->normal0s[index] = normal0;
 			this->normal1s[index] = normal1;
 			this->normal2s[index] = normal2;
@@ -459,7 +411,7 @@ namespace swGeometry
 			return result;
 		}
 
-		static TriangleClipResult one(const Double3 &v0, const Double3 &v1, const Double3 &v2,
+		static TriangleClipResult one(const Double4 &v0, const Double4 &v1, const Double4 &v2,
 			const Double3 &normal0, const Double3 &normal1, const Double3 &normal2,
 			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
 		{
@@ -469,10 +421,10 @@ namespace swGeometry
 			return result;
 		}
 
-		static TriangleClipResult two(const Double3 &v0A, const Double3 &v1A, const Double3 &v2A,
+		static TriangleClipResult two(const Double4 &v0A, const Double4 &v1A, const Double4 &v2A,
 			const Double3 &normal0A, const Double3 &normal1A, const Double3 &normal2A,
 			const Double2 &uv0A, const Double2 &uv1A, const Double2 &uv2A,
-			const Double3 &v0B, const Double3 &v1B, const Double3 &v2B,
+			const Double4 &v0B, const Double4 &v1B, const Double4 &v2B,
 			const Double3 &normal0B, const Double3 &normal1B, const Double3 &normal2B,
 			const Double2 &uv0B, const Double2 &uv1B, const Double2 &uv2B)
 		{
@@ -496,14 +448,34 @@ namespace swGeometry
 		}
 	};
 
-	TriangleClipResult ClipTriangle(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double3 &normal0,
+	TriangleClipResult ProcessClipSpaceTriangle(const Double4 &v0, const Double4 &v1, const Double4 &v2, const Double3 &normal0,
 		const Double3 &normal1, const Double3 &normal2, const Double2 &uv0, const Double2 &uv1, const Double2 &uv2,
-		const Double3 &eye, const Double3 &planePoint, const Double3 &planeNormal)
+		int clipPlaneIndex)
 	{
-		// @todo: do this in clip space eventually. 6 square roots just to clip a triangle is gross.
-		const bool isV0Inside = MathUtils::isPointInHalfSpace(v0, planePoint, planeNormal);
-		const bool isV1Inside = MathUtils::isPointInHalfSpace(v1, planePoint, planeNormal);
-		const bool isV2Inside = MathUtils::isPointInHalfSpace(v2, planePoint, planeNormal);
+		auto isClipSpaceVertexInsideClipPlane = [clipPlaneIndex](const Double4 &v)
+		{
+			switch (clipPlaneIndex)
+			{
+			case 0:
+				return v.x >= -v.w;
+			case 1:
+				return v.x <= v.w;
+			case 2:
+				return v.y >= -v.w;
+			case 3:
+				return v.y <= v.w;
+			case 4:
+				return v.z >= -v.w;
+			case 5:
+				return v.z <= v.w;
+			default:
+				return false;
+			}
+		};
+
+		const bool isV0Inside = isClipSpaceVertexInsideClipPlane(v0);
+		const bool isV1Inside = isClipSpaceVertexInsideClipPlane(v1);
+		const bool isV2Inside = isClipSpaceVertexInsideClipPlane(v2);
 
 		// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
 		// making sure to keep the original winding order. Don't interpolate normals because smooth shading isn't needed.
@@ -521,7 +493,8 @@ namespace swGeometry
 					// Becomes quad
 					// Inside: V0, V1
 					// Outside: V2
-					const double v1v2T = (v2 - v1).length();
+					return TriangleClipResult::zero();
+					/*const double v1v2T = (v2 - v1).length();
 					const double v2v0T = (v0 - v2).length();
 
 					Double3 v1v2Point, v2v0Point;
@@ -535,7 +508,7 @@ namespace swGeometry
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
 
 					return TriangleClipResult::two(v0, v1, v1v2Point, normal0, normal1, v1v2PointNormal, uv0, uv1, v1v2PointUV,
-						v1v2Point, v2v0Point, v0, v1v2PointNormal, v2v0PointNormal, normal0, v1v2PointUV, v2v0PointUV, uv0);
+						v1v2Point, v2v0Point, v0, v1v2PointNormal, v2v0PointNormal, normal0, v1v2PointUV, v2v0PointUV, uv0);*/
 				}
 			}
 			else
@@ -545,7 +518,8 @@ namespace swGeometry
 					// Becomes quad
 					// Inside: V0, V2
 					// Outside: V1
-					const double v0v1T = (v1 - v0).length();
+					return TriangleClipResult::zero();
+					/*const double v0v1T = (v1 - v0).length();
 					const double v1v2T = (v2 - v1).length();
 
 					Double3 v0v1Point, v1v2Point;
@@ -559,14 +533,15 @@ namespace swGeometry
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
 
 					return TriangleClipResult::two(v0, v0v1Point, v1v2Point, normal0, v0v1PointNormal, v1v2PointNormal, uv0,
-						v0v1PointUV, v1v2PointUV, v1v2Point, v2, v0, v1v2PointNormal, normal2, normal0, v1v2PointUV, uv2, uv0);
+						v0v1PointUV, v1v2PointUV, v1v2Point, v2, v0, v1v2PointNormal, normal2, normal0, v1v2PointUV, uv2, uv0);*/
 				}
 				else
 				{
 					// Becomes smaller triangle
 					// Inside: V0
 					// Outside: V1, V2
-					const double v0v1T = (v1 - v0).length();
+					return TriangleClipResult::zero();
+					/*const double v0v1T = (v1 - v0).length();
 					const double v2v0T = (v0 - v2).length();
 
 					Double3 v0v1Point, v2v0Point;
@@ -580,7 +555,7 @@ namespace swGeometry
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
 
 					return TriangleClipResult::one(v0, v0v1Point, v2v0Point, normal0, v0v1PointNormal, v2v0PointNormal,
-						uv0, v0v1PointUV, v2v0PointUV);
+						uv0, v0v1PointUV, v2v0PointUV);*/
 				}
 			}
 		}
@@ -593,7 +568,8 @@ namespace swGeometry
 					// Becomes quad
 					// Inside: V1, V2
 					// Outside: V0
-					const double v0v1T = (v1 - v0).length();
+					return TriangleClipResult::zero();
+					/*const double v0v1T = (v1 - v0).length();
 					const double v2v0T = (v0 - v2).length();
 
 					Double3 v0v1Point, v2v0Point;
@@ -607,14 +583,15 @@ namespace swGeometry
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
 
 					return TriangleClipResult::two(v0v1Point, v1, v2, v0v1PointNormal, normal1, normal2, v0v1PointUV, uv1, uv2,
-						v2, v2v0Point, v0v1Point, normal2, v2v0PointNormal, v0v1PointNormal, uv2, v2v0PointUV, v0v1PointUV);
+						v2, v2v0Point, v0v1Point, normal2, v2v0PointNormal, v0v1PointNormal, uv2, v2v0PointUV, v0v1PointUV);*/
 				}
 				else
 				{
 					// Becomes smaller triangle
 					// Inside: V1
 					// Outside: V0, V2
-					const double v0v1T = (v1 - v0).length();
+					return TriangleClipResult::zero();
+					/*const double v0v1T = (v1 - v0).length();
 					const double v1v2T = (v2 - v1).length();
 
 					Double3 v0v1Point, v1v2Point;
@@ -628,7 +605,7 @@ namespace swGeometry
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
 
 					return TriangleClipResult::one(v0v1Point, v1, v1v2Point, v0v1PointNormal, normal1, v1v2PointNormal,
-						v0v1PointUV, uv1, v1v2PointUV);
+						v0v1PointUV, uv1, v1v2PointUV);*/
 				}
 			}
 			else
@@ -638,7 +615,8 @@ namespace swGeometry
 					// Becomes smaller triangle
 					// Inside: V2
 					// Outside: V0, V1
-					const double v1v2T = (v2 - v1).length();
+					return TriangleClipResult::zero();
+					/*const double v1v2T = (v2 - v1).length();
 					const double v2v0T = (v0 - v2).length();
 
 					Double3 v1v2Point, v2v0Point;
@@ -652,7 +630,7 @@ namespace swGeometry
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
 
 					return TriangleClipResult::one(v1v2Point, v2, v2v0Point, v1v2PointNormal, normal2, v2v0PointNormal,
-						v1v2PointUV, uv2, v2v0PointUV);
+						v1v2PointUV, uv2, v2v0PointUV);*/
 				}
 				else
 				{
@@ -665,12 +643,12 @@ namespace swGeometry
 
 	// Caches for visible triangle processing/clipping.
 	// @optimization: make N of these caches to allow for multi-threaded clipping
-	std::vector<Double3> g_visibleTriangleV0s, g_visibleTriangleV1s, g_visibleTriangleV2s;
+	std::vector<Double4> g_visibleTriangleV0s, g_visibleTriangleV1s, g_visibleTriangleV2s;
 	std::vector<Double3> g_visibleTriangleNormal0s, g_visibleTriangleNormal1s, g_visibleTriangleNormal2s;
 	std::vector<Double2> g_visibleTriangleUV0s, g_visibleTriangleUV1s, g_visibleTriangleUV2s;
 	std::vector<ObjectTextureID> g_visibleTriangleTextureID0s, g_visibleTriangleTextureID1s;	
 	constexpr int MAX_CLIP_LIST_SIZE = 64; // Arbitrary worst case for processing one triangle. Increase this if clipping breaks (32 wasn't enough).
-	std::array<Double3, MAX_CLIP_LIST_SIZE> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
+	std::array<Double4, MAX_CLIP_LIST_SIZE> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
 	std::array<Double3, MAX_CLIP_LIST_SIZE> g_visibleClipListNormal0s, g_visibleClipListNormal1s, g_visibleClipListNormal2s;
 	std::array<Double2, MAX_CLIP_LIST_SIZE> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
 	std::array<ObjectTextureID, MAX_CLIP_LIST_SIZE> g_visibleClipListTextureID0s, g_visibleClipListTextureID1s;
@@ -678,20 +656,17 @@ namespace swGeometry
 	int g_totalTriangleCount = 0;
 	int g_totalDrawCallCount = 0;
 
-	// Processes the given world space triangles in the following ways, and returns a view to a geometry cache
-	// that is invalidated the next time this function is called.
-	// 1) Back-face culling
-	// 2) Frustum culling
-	// 3) Clipping
-	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &modelPosition, const Double3 &preScaleTranslation,
-		const Matrix4d &rotation, const Matrix4d &scale, const SoftwareRenderer::VertexBuffer &vertexBuffer,
-		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
-		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
-		VertexShaderType vertexShaderType, const Double3 &eye, const ClippingPlanes &clippingPlanes)
+	// Runs vertex shaders, clips the given world space triangles to the frustum, generates any new triangles
+	// as necessary, and returns a view to a geometry cache that is invalidated the next time this function is called.
+	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Matrix4d &modelMatrix, const Double3 &preScaleTranslation,
+		const Matrix4d &scaleMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix,
+		const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &normalBuffer,
+		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
+		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType)
 	{
-		std::vector<Double3> &outVisibleTriangleV0s = g_visibleTriangleV0s;
-		std::vector<Double3> &outVisibleTriangleV1s = g_visibleTriangleV1s;
-		std::vector<Double3> &outVisibleTriangleV2s = g_visibleTriangleV2s;
+		std::vector<Double4> &outVisibleTriangleV0s = g_visibleTriangleV0s;
+		std::vector<Double4> &outVisibleTriangleV1s = g_visibleTriangleV1s;
+		std::vector<Double4> &outVisibleTriangleV2s = g_visibleTriangleV2s;
 		std::vector<Double3> &outVisibleTriangleNormal0s = g_visibleTriangleNormal0s;
 		std::vector<Double3> &outVisibleTriangleNormal1s = g_visibleTriangleNormal1s;
 		std::vector<Double3> &outVisibleTriangleNormal2s = g_visibleTriangleNormal2s;
@@ -700,9 +675,9 @@ namespace swGeometry
 		std::vector<Double2> &outVisibleTriangleUV2s = g_visibleTriangleUV2s;
 		std::vector<ObjectTextureID> &outVisibleTriangleTextureID0s = g_visibleTriangleTextureID0s;
 		std::vector<ObjectTextureID> &outVisibleTriangleTextureID1s = g_visibleTriangleTextureID1s;
-		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListV0s = g_visibleClipListV0s;
-		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListV1s = g_visibleClipListV1s;
-		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListV2s = g_visibleClipListV2s;
+		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV0s = g_visibleClipListV0s;
+		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV1s = g_visibleClipListV1s;
+		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV2s = g_visibleClipListV2s;
 		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal0s = g_visibleClipListNormal0s;
 		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal1s = g_visibleClipListNormal1s;
 		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal2s = g_visibleClipListNormal2s;
@@ -726,9 +701,6 @@ namespace swGeometry
 		outVisibleTriangleTextureID0s.clear();
 		outVisibleTriangleTextureID1s.clear();
 
-		const Double4 modelPositionXYZW(modelPosition, 0.0);
-		const Double4 preScaleTranslationXYZW(preScaleTranslation, 1.0);
-
 		const double *verticesPtr = vertexBuffer.vertices.begin();
 		const double *normalsPtr = normalBuffer.attributes.begin();
 		const double *texCoordsPtr = texCoordBuffer.attributes.begin();
@@ -747,77 +719,55 @@ namespace swGeometry
 			const int32_t normal1Index = v1Index;
 			const int32_t normal2Index = v2Index;
 
-			const Double4 unshadedV0(
+			const Double3 unshadedV0(
 				*(verticesPtr + v0Index),
 				*(verticesPtr + v0Index + 1),
-				*(verticesPtr + v0Index + 2),
-				1.0);
-			const Double4 unshadedV1(
+				*(verticesPtr + v0Index + 2));
+			const Double3 unshadedV1(
 				*(verticesPtr + v1Index),
 				*(verticesPtr + v1Index + 1),
-				*(verticesPtr + v1Index + 2),
-				1.0);
-			const Double4 unshadedV2(
+				*(verticesPtr + v1Index + 2));
+			const Double3 unshadedV2(
 				*(verticesPtr + v2Index),
 				*(verticesPtr + v2Index + 1),
-				*(verticesPtr + v2Index + 2),
-				1.0);
-			const Double4 unshadedNormal0(
+				*(verticesPtr + v2Index + 2));
+			const Double3 unshadedNormal0(
 				*(normalsPtr + normal0Index),
 				*(normalsPtr + normal0Index + 1),
-				*(normalsPtr + normal0Index + 2),
-				0.0);
-			const Double4 unshadedNormal1(
+				*(normalsPtr + normal0Index + 2));
+			const Double3 unshadedNormal1(
 				*(normalsPtr + normal1Index),
 				*(normalsPtr + normal1Index + 1),
-				*(normalsPtr + normal1Index + 2),
-				0.0);
-			const Double4 unshadedNormal2(
+				*(normalsPtr + normal1Index + 2));
+			const Double3 unshadedNormal2(
 				*(normalsPtr + normal2Index),
 				*(normalsPtr + normal2Index + 1),
-				*(normalsPtr + normal2Index + 2),
-				0.0);
+				*(normalsPtr + normal2Index + 2));
 
 			Double4 shadedV0, shadedV1, shadedV2;
 			Double4 shadedNormal0, shadedNormal1, shadedNormal2;
 			switch (vertexShaderType)
 			{
-			case VertexShaderType::Voxel:
-				swShader::VertexShader_Voxel(unshadedV0, unshadedNormal0, modelPositionXYZW, shadedV0, shadedNormal0);
-				swShader::VertexShader_Voxel(unshadedV1, unshadedNormal1, modelPositionXYZW, shadedV1, shadedNormal1);
-				swShader::VertexShader_Voxel(unshadedV2, unshadedNormal2, modelPositionXYZW, shadedV2, shadedNormal2);
-				break;
-			case VertexShaderType::SwingingDoor:
-				swShader::VertexShader_SwingingDoor(unshadedV0, unshadedNormal0, modelPositionXYZW, rotation, shadedV0, shadedNormal0);
-				swShader::VertexShader_SwingingDoor(unshadedV1, unshadedNormal1, modelPositionXYZW, rotation, shadedV1, shadedNormal1);
-				swShader::VertexShader_SwingingDoor(unshadedV2, unshadedNormal2, modelPositionXYZW, rotation, shadedV2, shadedNormal2);
-				break;
-			case VertexShaderType::SlidingDoor:
-				swShader::VertexShader_SlidingDoor(unshadedV0, unshadedNormal0, modelPositionXYZW, rotation, scale, shadedV0, shadedNormal0);
-				swShader::VertexShader_SlidingDoor(unshadedV1, unshadedNormal1, modelPositionXYZW, rotation, scale, shadedV1, shadedNormal1);
-				swShader::VertexShader_SlidingDoor(unshadedV2, unshadedNormal2, modelPositionXYZW, rotation, scale, shadedV2, shadedNormal2);
+			case VertexShaderType::Basic:
+				swShader::VertexShader_Basic(unshadedV0, unshadedNormal0, modelMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
+				swShader::VertexShader_Basic(unshadedV1, unshadedNormal1, modelMatrix, viewMatrix, projectionMatrix, shadedV1, shadedNormal1);
+				swShader::VertexShader_Basic(unshadedV2, unshadedNormal2, modelMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::RaisingDoor:
-				swShader::VertexShader_RaisingDoor(unshadedV0, unshadedNormal0, modelPositionXYZW, preScaleTranslationXYZW, rotation, scale, shadedV0, shadedNormal0);
-				swShader::VertexShader_RaisingDoor(unshadedV1, unshadedNormal1, modelPositionXYZW, preScaleTranslationXYZW, rotation, scale, shadedV1, shadedNormal1);
-				swShader::VertexShader_RaisingDoor(unshadedV2, unshadedNormal2, modelPositionXYZW, preScaleTranslationXYZW, rotation, scale, shadedV2, shadedNormal2);
-				break;
-			case VertexShaderType::SplittingDoor:
-				DebugNotImplemented();
+				swShader::VertexShader_RaisingDoor(unshadedV0, unshadedNormal0, preScaleTranslation, scaleMatrix, modelMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
+				swShader::VertexShader_RaisingDoor(unshadedV1, unshadedNormal1, preScaleTranslation, scaleMatrix, modelMatrix, viewMatrix, projectionMatrix, shadedV1, shadedNormal1);
+				swShader::VertexShader_RaisingDoor(unshadedV2, unshadedNormal2, preScaleTranslation, scaleMatrix, modelMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::Entity:
-				swShader::VertexShader_Entity(unshadedV0, unshadedNormal0, modelPositionXYZW, rotation, scale, shadedV0, shadedNormal0);
-				swShader::VertexShader_Entity(unshadedV1, unshadedNormal1, modelPositionXYZW, rotation, scale, shadedV1, shadedNormal1);
-				swShader::VertexShader_Entity(unshadedV2, unshadedNormal2, modelPositionXYZW, rotation, scale, shadedV2, shadedNormal2);
+				swShader::VertexShader_Entity(unshadedV0, unshadedNormal0, modelMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
+				swShader::VertexShader_Entity(unshadedV1, unshadedNormal1, modelMatrix, viewMatrix, projectionMatrix, shadedV1, shadedNormal1);
+				swShader::VertexShader_Entity(unshadedV2, unshadedNormal2, modelMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
 				break;
 			default:
 				DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
 				break;
 			}
 
-			const Double3 shadedV0XYZ(shadedV0.x, shadedV0.y, shadedV0.z);
-			const Double3 shadedV1XYZ(shadedV1.x, shadedV1.y, shadedV1.z);
-			const Double3 shadedV2XYZ(shadedV2.x, shadedV2.y, shadedV2.z);
 			const Double3 shadedNormal0XYZ(shadedNormal0.x, shadedNormal0.y, shadedNormal0.z);
 			const Double3 shadedNormal1XYZ(shadedNormal1.x, shadedNormal1.y, shadedNormal1.z);
 			const Double3 shadedNormal2XYZ(shadedNormal2.x, shadedNormal2.y, shadedNormal2.z);
@@ -836,9 +786,9 @@ namespace swGeometry
 			int clipListFrontIndex = 0;
 
 			// Add the first triangle to clip.
-			outClipListV0s[clipListFrontIndex] = shadedV0XYZ;
-			outClipListV1s[clipListFrontIndex] = shadedV1XYZ;
-			outClipListV2s[clipListFrontIndex] = shadedV2XYZ;
+			outClipListV0s[clipListFrontIndex] = shadedV0;
+			outClipListV1s[clipListFrontIndex] = shadedV1;
+			outClipListV2s[clipListFrontIndex] = shadedV2;
 			outClipListNormal0s[clipListFrontIndex] = shadedNormal0XYZ;
 			outClipListNormal1s[clipListFrontIndex] = shadedNormal1XYZ;
 			outClipListNormal2s[clipListFrontIndex] = shadedNormal2XYZ;
@@ -848,14 +798,15 @@ namespace swGeometry
 			outClipListTextureID0s[clipListFrontIndex] = textureID0;
 			outClipListTextureID1s[clipListFrontIndex] = textureID1;
 
-			for (const ClippingPlane &plane : clippingPlanes)
+			constexpr int clipPlaneCount = 6; // Check each dimension against -W and W components.
+			for (int clipPlaneIndex = 0; clipPlaneIndex < clipPlaneCount; clipPlaneIndex++)
 			{
 				const int trianglesToClipCount = clipListSize - clipListFrontIndex;
 				for (int j = trianglesToClipCount; j > 0; j--)
 				{
-					const Double3 &clipListV0 = outClipListV0s[clipListFrontIndex];
-					const Double3 &clipListV1 = outClipListV1s[clipListFrontIndex];
-					const Double3 &clipListV2 = outClipListV2s[clipListFrontIndex];
+					const Double4 &clipListV0 = outClipListV0s[clipListFrontIndex];
+					const Double4 &clipListV1 = outClipListV1s[clipListFrontIndex];
+					const Double4 &clipListV2 = outClipListV2s[clipListFrontIndex];
 					const Double3 &clipListNormal0 = outClipListNormal0s[clipListFrontIndex];
 					const Double3 &clipListNormal1 = outClipListNormal1s[clipListFrontIndex];
 					const Double3 &clipListNormal2 = outClipListNormal2s[clipListFrontIndex];
@@ -864,10 +815,8 @@ namespace swGeometry
 					const Double2 &clipListUV2 = outClipListUV2s[clipListFrontIndex];
 					const ObjectTextureID clipListTextureID0 = outClipListTextureID0s[clipListFrontIndex];
 					const ObjectTextureID clipListTextureID1 = outClipListTextureID1s[clipListFrontIndex];
-
-					const TriangleClipResult clipResult = ClipTriangle(clipListV0, clipListV1, clipListV2,
-						clipListNormal0, clipListNormal1, clipListNormal2, clipListUV0, clipListUV1, clipListUV2,
-						eye, plane.point, plane.normal);
+					const TriangleClipResult clipResult = ProcessClipSpaceTriangle(clipListV0, clipListV1, clipListV2,
+						clipListNormal0, clipListNormal1, clipListNormal2, clipListUV0, clipListUV1, clipListUV2, clipPlaneIndex);
 
 					if (clipResult.triangleCount > 0)
 					{
@@ -1060,9 +1009,9 @@ namespace swRender
 		swGeometry::g_visibleTriangleUV2s.clear();
 		swGeometry::g_visibleTriangleTextureID0s.clear();
 		swGeometry::g_visibleTriangleTextureID1s.clear();
-		swGeometry::g_visibleClipListV0s.fill(Double3::Zero);
-		swGeometry::g_visibleClipListV1s.fill(Double3::Zero);
-		swGeometry::g_visibleClipListV2s.fill(Double3::Zero);
+		swGeometry::g_visibleClipListV0s.fill(Double4::Zero);
+		swGeometry::g_visibleClipListV1s.fill(Double4::Zero);
+		swGeometry::g_visibleClipListV2s.fill(Double4::Zero);
 		swGeometry::g_visibleClipListNormal0s.fill(Double3::Zero);
 		swGeometry::g_visibleClipListNormal1s.fill(Double3::Zero);
 		swGeometry::g_visibleClipListNormal2s.fill(Double3::Zero);
@@ -1119,15 +1068,9 @@ namespace swRender
 		for (int i = 0; i < triangleCount; i++)
 		{
 			const int index = drawListIndices.startIndex + i;
-			const Double3 &v0 = swGeometry::g_visibleTriangleV0s[index];
-			const Double3 &v1 = swGeometry::g_visibleTriangleV1s[index];
-			const Double3 &v2 = swGeometry::g_visibleTriangleV2s[index];
-			const Double4 view0 = RendererUtils::worldSpaceToCameraSpace(Double4(v0, 1.0), viewMatrix);
-			const Double4 view1 = RendererUtils::worldSpaceToCameraSpace(Double4(v1, 1.0), viewMatrix);
-			const Double4 view2 = RendererUtils::worldSpaceToCameraSpace(Double4(v2, 1.0), viewMatrix);
-			const Double4 clip0 = RendererUtils::cameraSpaceToClipSpace(view0, projectionMatrix);
-			const Double4 clip1 = RendererUtils::cameraSpaceToClipSpace(view1, projectionMatrix);
-			const Double4 clip2 = RendererUtils::cameraSpaceToClipSpace(view2, projectionMatrix);
+			const Double4 &clip0 = swGeometry::g_visibleTriangleV0s[index];
+			const Double4 &clip1 = swGeometry::g_visibleTriangleV1s[index];
+			const Double4 &clip2 = swGeometry::g_visibleTriangleV2s[index];			
 			const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clip0);
 			const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clip1);
 			const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clip2);
@@ -1165,16 +1108,18 @@ namespace swRender
 			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, frameBufferHeight);
 			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
 
-			const double z0 = view0.z;
-			const double z1 = view1.z;
-			const double z2 = view2.z;
+			// @todo: these Z values were previously camera space, need to adjust math below so we still get a linear depth buffer instead of NDC depth. Unproject? Multiply by (far - near)? log()?
+			const double z0 = ndc0.z;
+			const double z1 = ndc1.z;
+			const double z2 = ndc2.z;
 			const double z0Recip = 1.0 / z0;
 			const double z1Recip = 1.0 / z1;
 			const double z2Recip = 1.0 / z2;
 
-			const double trueDepth0 = (v0 - camera.worldPoint).length();
-			const double trueDepth1 = (v1 - camera.worldPoint).length();
-			const double trueDepth2 = (v2 - camera.worldPoint).length();
+			// @todo: probably need to unproject screenspace vertices to get world space
+			const double trueDepth0 = z0; //(v0 - camera.worldPoint).length();
+			const double trueDepth1 = z1; //(v1 - camera.worldPoint).length();
+			const double trueDepth2 = z2; //(v2 - camera.worldPoint).length();
 			const double trueDepth0Recip = 1.0 / trueDepth0;
 			const double trueDepth1Recip = 1.0 / trueDepth1;
 			const double trueDepth2Recip = 1.0 / trueDepth2;
@@ -1244,7 +1189,8 @@ namespace swRender
 							shaderPerspective.texelPercent.x = ((u * uv0Perspective.x) + (v * uv1Perspective.x) + (w * uv2Perspective.x)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 							shaderPerspective.texelPercent.y = ((u * uv0Perspective.y) + (v * uv1Perspective.y) + (w * uv2Perspective.y)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
 
-							const Double3 shaderWorldPoint = (v0 * u) + (v1 * v) + (v2 * w);
+							// @todo: this is very wrong, maybe need to unproject interpolated screenspace point to world space?
+							const Double3 shaderWorldPoint = camera.worldPoint + camera.forward * shaderPerspective.trueDepth; //(v0 * u) + (v1 * v) + (v2 * w);
 
 							double lightIntensitySum = 0.0;
 							if (requiresPerPixelLightIntensity)
@@ -1841,8 +1787,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	swRender::ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
 	swRender::ClearTriangleDrawList();
 
-	const swGeometry::ClippingPlanes clippingPlanes = swGeometry::MakeClippingPlanes(camera);
-
 	const int drawCallCount = drawCalls.getCount();
 	swGeometry::g_totalDrawCallCount = drawCallCount;
 
@@ -1851,8 +1795,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const RenderDrawCall &drawCall = drawCalls.get(i);
 		const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
 		const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-		const Double4 &modelPosition = transform.translation.w;
-		const Double3 modelPositionXYZ(modelPosition.x, modelPosition.y, modelPosition.z);
+		const Matrix4d modelMatrix = transform.translation * transform.rotation * transform.scale;
+		const Matrix4d &viewMatrix = camera.viewMatrix;
+		const Matrix4d &projectionMatrix = camera.projectionMatrix;
 		
 		Double3 preScaleTranslation = Double3::Zero;
 		if (drawCall.preScaleTranslationBufferID >= 0)
@@ -1871,8 +1816,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const ObjectTextureID textureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			modelPositionXYZ, preScaleTranslation, transform.rotation, transform.scale, vertexBuffer, normalBuffer,
-			texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType, camera.worldPoint, clippingPlanes);
+			modelMatrix, preScaleTranslation, transform.scale, viewMatrix, projectionMatrix, vertexBuffer, normalBuffer,
+			texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType);
 
 		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingTypes[0];
 		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingTypes[1];

@@ -3,11 +3,8 @@
 
 enum class VertexShaderType
 {
-	Voxel,
-	SwingingDoor,
-	SlidingDoor,
+	Basic,
 	RaisingDoor,
-	SplittingDoor,
 	Entity
 };
 

@@ -992,12 +992,12 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			switch (doorType)
 			{
 			case ArenaTypes::DoorType::Swinging:
-				doorShadingInitInfo.vertexShaderType = VertexShaderType::SwingingDoor;
+				doorShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
 				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTested;
 				doorShadingInitInfo.pixelShaderParam0 = 0.0;
 				break;
 			case ArenaTypes::DoorType::Sliding:
-				doorShadingInitInfo.vertexShaderType = VertexShaderType::SlidingDoor;
+				doorShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
 				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin;
 				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
@@ -1007,7 +1007,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
 			case ArenaTypes::DoorType::Splitting:
-				doorShadingInitInfo.vertexShaderType = VertexShaderType::SplittingDoor;
+				doorShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
 				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin; // @todo: some "half and half" pixel shader
 				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
@@ -1021,12 +1021,12 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		else if (isChasm)
 		{
 			DrawCallShadingInitInfo &chasmFloorShadingInitInfo = shadingInitInfos[0];
-			chasmFloorShadingInitInfo.vertexShaderType = VertexShaderType::Voxel;
+			chasmFloorShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
 			chasmFloorShadingInitInfo.pixelShaderType = PixelShaderType::Opaque;
 			chasmFloorShadingInitInfo.pixelShaderParam0 = 0.0;
 
 			DrawCallShadingInitInfo &chasmWallShadingInitInfo = shadingInitInfos[1];
-			chasmWallShadingInitInfo.vertexShaderType = VertexShaderType::Voxel;
+			chasmWallShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
 			chasmWallShadingInitInfo.pixelShaderType = PixelShaderType::OpaqueWithAlphaTestLayer;
 			chasmWallShadingInitInfo.pixelShaderParam0 = 0.0;
 
@@ -1037,7 +1037,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			for (int i = 0; i < renderMeshInst.opaqueIndexBufferIdCount; i++)
 			{
 				DrawCallShadingInitInfo &opaqueShadingInitInfo = shadingInitInfos[i];
-				opaqueShadingInitInfo.vertexShaderType = VertexShaderType::Voxel;
+				opaqueShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
 				opaqueShadingInitInfo.pixelShaderType = PixelShaderType::Opaque;
 				opaqueShadingInitInfo.pixelShaderParam0 = 0.0;
 			}
@@ -1047,7 +1047,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			if (renderMeshInst.alphaTestedIndexBufferID >= 0)
 			{
 				DrawCallShadingInitInfo &alphaTestedShadingInitInfo = shadingInitInfos[renderMeshInst.opaqueIndexBufferIdCount];
-				alphaTestedShadingInitInfo.vertexShaderType = VertexShaderType::Voxel;
+				alphaTestedShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
 				alphaTestedShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTested;
 				alphaTestedShadingInitInfo.pixelShaderParam0 = 0.0;
 			}
