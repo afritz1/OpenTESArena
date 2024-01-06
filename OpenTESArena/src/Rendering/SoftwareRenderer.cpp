@@ -452,30 +452,61 @@ namespace swGeometry
 		const Double3 &normal1, const Double3 &normal2, const Double2 &uv0, const Double2 &uv1, const Double2 &uv2,
 		int clipPlaneIndex)
 	{
-		auto isClipSpaceVertexInsideClipPlane = [clipPlaneIndex](const Double4 &v)
+		double v0Diff, v1Diff, v2Diff;
+		bool isV0Inside, isV1Inside, isV2Inside;
+		switch (clipPlaneIndex)
 		{
-			switch (clipPlaneIndex)
-			{
-			case 0:
-				return v.x >= -v.w;
-			case 1:
-				return v.x <= v.w;
-			case 2:
-				return v.y >= -v.w;
-			case 3:
-				return v.y <= v.w;
-			case 4:
-				return v.z >= -v.w;
-			case 5:
-				return v.z <= v.w;
-			default:
-				return false;
-			}
-		};
-
-		const bool isV0Inside = isClipSpaceVertexInsideClipPlane(v0);
-		const bool isV1Inside = isClipSpaceVertexInsideClipPlane(v1);
-		const bool isV2Inside = isClipSpaceVertexInsideClipPlane(v2);
+		case 0:
+			v0Diff = v0.x - (-v0.w);
+			v1Diff = v1.x - (-v1.w);
+			v2Diff = v2.x - (-v2.w);
+			isV0Inside = v0Diff >= 0.0;
+			isV1Inside = v1Diff >= 0.0;
+			isV2Inside = v2Diff >= 0.0;
+			break;
+		case 1:
+			v0Diff = v0.x - v0.w;
+			v1Diff = v1.x - v1.w;
+			v2Diff = v2.x - v2.w;
+			isV0Inside = v0Diff <= 0.0;
+			isV1Inside = v1Diff <= 0.0;
+			isV2Inside = v2Diff <= 0.0;
+			break;
+		case 2:
+			v0Diff = v0.y - (-v0.w);
+			v1Diff = v1.y - (-v1.w);
+			v2Diff = v2.y - (-v2.w);
+			isV0Inside = v0Diff >= 0.0;
+			isV1Inside = v1Diff >= 0.0;
+			isV2Inside = v2Diff >= 0.0;
+			break;
+		case 3:
+			v0Diff = v0.y - v0.w;
+			v1Diff = v1.y - v1.w;
+			v2Diff = v2.y - v2.w;
+			isV0Inside = v0Diff <= 0.0;
+			isV1Inside = v1Diff <= 0.0;
+			isV2Inside = v2Diff <= 0.0;
+			break;
+		case 4:
+			v0Diff = v0.z - (-v0.w);
+			v1Diff = v1.z - (-v1.w);
+			v2Diff = v2.z - (-v2.w);
+			isV0Inside = v0Diff >= 0.0;
+			isV1Inside = v1Diff >= 0.0;
+			isV2Inside = v2Diff >= 0.0;
+			break;
+		case 5:
+			v0Diff = v0.z - v0.w;
+			v1Diff = v1.z - v1.w;
+			v2Diff = v2.z - v2.w;
+			isV0Inside = v0Diff <= 0.0;
+			isV1Inside = v1Diff <= 0.0;
+			isV2Inside = v2Diff <= 0.0;
+			break;
+		default:
+			return TriangleClipResult::zero();
+		}
 
 		// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
 		// making sure to keep the original winding order. Don't interpolate normals because smooth shading isn't needed.
@@ -493,22 +524,16 @@ namespace swGeometry
 					// Becomes quad
 					// Inside: V0, V1
 					// Outside: V2
-					return TriangleClipResult::zero();
-					/*const double v1v2T = (v2 - v1).length();
-					const double v2v0T = (v0 - v2).length();
-
-					Double3 v1v2Point, v2v0Point;
-					MathUtils::rayPlaneIntersection(v1, (v2 - v1).normalized(), planePoint, planeNormal, &v1v2Point);
-					MathUtils::rayPlaneIntersection(v2, (v0 - v2).normalized(), planePoint, planeNormal, &v2v0Point);
-					const double v1v2PointT = (v1v2Point - v1).length();
-					const double v2v0PointT = (v2v0Point - v2).length();
+					const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+					const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
+					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
 					const Double3 v1v2PointNormal = normal1;
 					const Double3 v2v0PointNormal = normal2;
-					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
-					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
-
+					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
+					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
 					return TriangleClipResult::two(v0, v1, v1v2Point, normal0, normal1, v1v2PointNormal, uv0, uv1, v1v2PointUV,
-						v1v2Point, v2v0Point, v0, v1v2PointNormal, v2v0PointNormal, normal0, v1v2PointUV, v2v0PointUV, uv0);*/
+						v1v2Point, v2v0Point, v0, v1v2PointNormal, v2v0PointNormal, normal0, v1v2PointUV, v2v0PointUV, uv0);
 				}
 			}
 			else
@@ -518,44 +543,32 @@ namespace swGeometry
 					// Becomes quad
 					// Inside: V0, V2
 					// Outside: V1
-					return TriangleClipResult::zero();
-					/*const double v0v1T = (v1 - v0).length();
-					const double v1v2T = (v2 - v1).length();
-
-					Double3 v0v1Point, v1v2Point;
-					MathUtils::rayPlaneIntersection(v0, (v1 - v0).normalized(), planePoint, planeNormal, &v0v1Point);
-					MathUtils::rayPlaneIntersection(v1, (v2 - v1).normalized(), planePoint, planeNormal, &v1v2Point);
-					const double v0v1PointT = (v0v1Point - v0).length();
-					const double v1v2PointT = (v1v2Point - v1).length();
+					const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+					const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+					const Double4 v0v1Point = v0.lerp(v1, v0v1PointT);
+					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
 					const Double3 v0v1PointNormal = normal0;
 					const Double3 v1v2PointNormal = normal1;
-					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT / v0v1T);
-					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
-
+					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
+					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
 					return TriangleClipResult::two(v0, v0v1Point, v1v2Point, normal0, v0v1PointNormal, v1v2PointNormal, uv0,
-						v0v1PointUV, v1v2PointUV, v1v2Point, v2, v0, v1v2PointNormal, normal2, normal0, v1v2PointUV, uv2, uv0);*/
+						v0v1PointUV, v1v2PointUV, v1v2Point, v2, v0, v1v2PointNormal, normal2, normal0, v1v2PointUV, uv2, uv0);
 				}
 				else
 				{
 					// Becomes smaller triangle
 					// Inside: V0
 					// Outside: V1, V2
-					return TriangleClipResult::zero();
-					/*const double v0v1T = (v1 - v0).length();
-					const double v2v0T = (v0 - v2).length();
-
-					Double3 v0v1Point, v2v0Point;
-					MathUtils::rayPlaneIntersection(v0, (v1 - v0).normalized(), planePoint, planeNormal, &v0v1Point);
-					MathUtils::rayPlaneIntersection(v2, (v0 - v2).normalized(), planePoint, planeNormal, &v2v0Point);
-					const double v0v1PointT = (v0v1Point - v0).length();
-					const double v2v0PointT = (v2v0Point - v2).length();
+					const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+					const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+					const Double4 v0v1Point = v0.lerp(v1, v0v1PointT);
+					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
 					const Double3 v0v1PointNormal = normal0;
 					const Double3 v2v0PointNormal = normal2;
-					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT / v0v1T);
-					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
-
+					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
+					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
 					return TriangleClipResult::one(v0, v0v1Point, v2v0Point, normal0, v0v1PointNormal, v2v0PointNormal,
-						uv0, v0v1PointUV, v2v0PointUV);*/
+						uv0, v0v1PointUV, v2v0PointUV);
 				}
 			}
 		}
@@ -568,44 +581,32 @@ namespace swGeometry
 					// Becomes quad
 					// Inside: V1, V2
 					// Outside: V0
-					return TriangleClipResult::zero();
-					/*const double v0v1T = (v1 - v0).length();
-					const double v2v0T = (v0 - v2).length();
-
-					Double3 v0v1Point, v2v0Point;
-					MathUtils::rayPlaneIntersection(v0, (v1 - v0).normalized(), planePoint, planeNormal, &v0v1Point);
-					MathUtils::rayPlaneIntersection(v2, (v0 - v2).normalized(), planePoint, planeNormal, &v2v0Point);
-					const double v0v1PointT = (v0v1Point - v0).length();
-					const double v2v0PointT = (v2v0Point - v2).length();
+					const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+					const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+					const Double4 v0v1Point = v0.lerp(v1, v0v1PointT);
+					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
 					const Double3 v0v1PointNormal = normal0;
 					const Double3 v2v0PointNormal = normal2;
-					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT / v0v1T);
-					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
-
+					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
+					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
 					return TriangleClipResult::two(v0v1Point, v1, v2, v0v1PointNormal, normal1, normal2, v0v1PointUV, uv1, uv2,
-						v2, v2v0Point, v0v1Point, normal2, v2v0PointNormal, v0v1PointNormal, uv2, v2v0PointUV, v0v1PointUV);*/
+						v2, v2v0Point, v0v1Point, normal2, v2v0PointNormal, v0v1PointNormal, uv2, v2v0PointUV, v0v1PointUV);
 				}
 				else
 				{
 					// Becomes smaller triangle
 					// Inside: V1
 					// Outside: V0, V2
-					return TriangleClipResult::zero();
-					/*const double v0v1T = (v1 - v0).length();
-					const double v1v2T = (v2 - v1).length();
-
-					Double3 v0v1Point, v1v2Point;
-					MathUtils::rayPlaneIntersection(v0, (v1 - v0).normalized(), planePoint, planeNormal, &v0v1Point);
-					MathUtils::rayPlaneIntersection(v1, (v2 - v1).normalized(), planePoint, planeNormal, &v1v2Point);
-					const double v0v1PointT = (v0v1Point - v0).length();
-					const double v1v2PointT = (v1v2Point - v1).length();
+					const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+					const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+					const Double4 v0v1Point = v0.lerp(v1, v0v1PointT);
+					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
 					const Double3 v0v1PointNormal = normal0;
 					const Double3 v1v2PointNormal = normal1;
-					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT / v0v1T);
-					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
-
+					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
+					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
 					return TriangleClipResult::one(v0v1Point, v1, v1v2Point, v0v1PointNormal, normal1, v1v2PointNormal,
-						v0v1PointUV, uv1, v1v2PointUV);*/
+						v0v1PointUV, uv1, v1v2PointUV);
 				}
 			}
 			else
@@ -615,22 +616,16 @@ namespace swGeometry
 					// Becomes smaller triangle
 					// Inside: V2
 					// Outside: V0, V1
-					return TriangleClipResult::zero();
-					/*const double v1v2T = (v2 - v1).length();
-					const double v2v0T = (v0 - v2).length();
-
-					Double3 v1v2Point, v2v0Point;
-					MathUtils::rayPlaneIntersection(v1, (v2 - v1).normalized(), planePoint, planeNormal, &v1v2Point);
-					MathUtils::rayPlaneIntersection(v2, (v0 - v2).normalized(), planePoint, planeNormal, &v2v0Point);
-					const double v1v2PointT = (v1v2Point - v1).length();
-					const double v2v0PointT = (v2v0Point - v2).length();
+					const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+					const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
+					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
 					const Double3 v1v2PointNormal = normal1;
 					const Double3 v2v0PointNormal = normal2;
-					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT / v1v2T);
-					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT / v2v0T);
-
+					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
+					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
 					return TriangleClipResult::one(v1v2Point, v2, v2v0Point, v1v2PointNormal, normal2, v2v0PointNormal,
-						v1v2PointUV, uv2, v2v0PointUV);*/
+						v1v2PointUV, uv2, v2v0PointUV);
 				}
 				else
 				{
