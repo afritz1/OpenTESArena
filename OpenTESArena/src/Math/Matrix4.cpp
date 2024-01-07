@@ -132,6 +132,19 @@ Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 	return invRotationMat * invTranslationMat;
 }
 
+template<typename T>
+Matrix4<T> Matrix4<T>::inverseView(const Vector3f<T> &eye, const Vector3f<T> &forward,
+	const Vector3f<T> &right, const Vector3f<T> &up)
+{
+	Matrix4<T> rotationMat = Matrix4<T>::identity();
+	rotationMat.x = Vector4f<T>(right, static_cast<T>(0.0));
+	rotationMat.y = Vector4f<T>(up, static_cast<T>(0.0));
+	rotationMat.z = Vector4f<T>(forward, static_cast<T>(0.0));
+
+	const Matrix4<T> translationMat = Matrix4<T>::translation(eye.x, eye.y, eye.z);
+	return rotationMat * translationMat;
+}
+
 template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
@@ -146,6 +159,23 @@ Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 	m.z.z = -far / nearFarDiff;
 	m.z.w = static_cast<T>(1.0);
 	m.w.z = (near * far) / nearFarDiff;
+	m.w.w = static_cast<T>(0.0);
+	return m;
+}
+
+template<typename T>
+Matrix4<T> Matrix4<T>::inversePerspective(T fovY, T aspect, T near, T far)
+{
+	const T halfFovRadians = fovY * static_cast<T>(0.50 * Constants::DegToRad);
+	const T tangent = static_cast<T>(std::tan(halfFovRadians));
+	const T nearFarDiff = near - far;
+
+	Matrix4<T> m;
+	m.x.x = tangent * aspect;
+	m.y.y = tangent;
+	m.z.z = -nearFarDiff / far;
+	m.z.w = nearFarDiff / (near * far);
+	m.w.z = static_cast<T>(1.0);
 	m.w.w = static_cast<T>(0.0);
 	return m;
 }

@@ -1036,6 +1036,8 @@ namespace swRender
 
 		const Matrix4d &viewMatrix = camera.viewMatrix;
 		const Matrix4d &projectionMatrix = camera.projectionMatrix;
+		const Matrix4d &invViewMatrix = camera.inverseViewMatrix;
+		const Matrix4d &invProjMatrix = camera.inverseProjectionMatrix;
 
 		const int lightCount = lights.getCount();
 		const SoftwareRenderer::Light **lightsPtr = lights.begin();
@@ -1161,15 +1163,25 @@ namespace swRender
 
 						if (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
 						{
-							// @todo: this isn't true depth. True depth needs (world point - eye).length()
-							shaderPerspective.trueDepth = shaderPerspective.ndcZDepth;
+							const Double4 shaderClipSpacePoint(
+								1.0 / (((clip0.x / clip0.w) * u) + ((clip1.x / clip1.w) * v) + ((clip2.x / clip2.w) * w)),
+								1.0 / (((clip0.y / clip0.w) * u) + ((clip1.y / clip1.w) * v) + ((clip2.y / clip2.w) * w)),
+								1.0 / (((clip0.z / clip0.w) * u) + ((clip1.z / clip1.w) * v) + ((clip2.z / clip2.w) * w)),
+								1.0 / (((1.0 / clip0.w) * u) + ((1.0 / clip1.w) * v) + ((1.0 / clip2.w) * w)));
+							
+							shaderPerspective.texelPercent.x = (((uv0.x / clip0.w) * u) + ((uv1.x / clip1.w) * v) + ((uv2.x / clip2.w) * w)) * shaderClipSpacePoint.w;
+							shaderPerspective.texelPercent.y = (((uv0.y / clip0.w) * u) + ((uv1.y / clip1.w) * v) + ((uv2.y / clip2.w) * w)) * shaderClipSpacePoint.w;
 
-							const double clipW = 1.0 / (((1.0 / clip0.w) * u) + ((1.0 / clip1.w) * v) + ((1.0 / clip2.w) * w));
-							shaderPerspective.texelPercent.x = (((uv0.x / clip0.w) * u) + ((uv1.x / clip1.w) * v) + ((uv2.x / clip2.w) * w)) * clipW;
-							shaderPerspective.texelPercent.y = (((uv0.y / clip0.w) * u) + ((uv1.y / clip1.w) * v) + ((uv2.y / clip2.w) * w)) * clipW;
-
-							// @todo: this is very wrong, maybe need to unproject interpolated screenspace point to world space?
-							const Double3 shaderWorldPoint = camera.worldPoint + camera.forward * shaderPerspective.trueDepth;
+							// @todo: something in here or the inverse perspective or view matrices is wrong
+							const Double4 shaderHomogeneousSpacePoint(
+								shaderClipSpacePoint.x / shaderClipSpacePoint.w,
+								shaderClipSpacePoint.y / shaderClipSpacePoint.w,
+								shaderClipSpacePoint.z / shaderClipSpacePoint.w,
+								1.0);
+							const Double4 shaderCameraSpacePoint = invProjMatrix * shaderHomogeneousSpacePoint;
+							const Double4 shaderWorldSpacePoint = invViewMatrix * shaderCameraSpacePoint;
+							const Double3 shaderWorldSpacePointXYZ(shaderWorldSpacePoint.x, shaderWorldSpacePoint.y, shaderWorldSpacePoint.z);
+							shaderPerspective.trueDepth = (shaderWorldSpacePointXYZ - camera.worldPoint).length();
 
 							double lightIntensitySum = 0.0;
 							if (requiresPerPixelLightIntensity)
@@ -1178,7 +1190,7 @@ namespace swRender
 								for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
 								{
 									const SoftwareRenderer::Light &light = *lightsPtr[lightIndex];
-									const Double3 lightPointDiff = light.worldPoint - shaderWorldPoint;
+									const Double3 lightPointDiff = light.worldPoint - shaderWorldSpacePointXYZ;
 									const double lightDistance = lightPointDiff.length();
 									double lightIntensity;
 									if (lightDistance <= light.startRadius)

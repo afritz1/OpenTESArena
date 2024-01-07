@@ -20,6 +20,8 @@ struct RenderCamera
 
 	Matrix4d viewMatrix;
 	Matrix4d projectionMatrix;
+	Matrix4d inverseViewMatrix;
+	Matrix4d inverseProjectionMatrix;
 
 	// Frustum directions pointing away from the camera eye.
 	Double3 leftFrustumDir, rightFrustumDir, bottomFrustumDir, topFrustumDir;
