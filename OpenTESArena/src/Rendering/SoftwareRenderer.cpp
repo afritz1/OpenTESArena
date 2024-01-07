@@ -1154,16 +1154,19 @@ namespace swRender
 						const double u = 1.0 - v - w;
 
 						swShader::PixelShaderPerspectiveCorrection shaderPerspective;
-						shaderPerspective.ndcZDepth = (u * ndc0.z) + (v * ndc1.z) + (w * ndc2.z); // For depth checks.
+						shaderPerspective.ndcZDepth = (ndc0.z * u) + (ndc1.z * v) + (ndc2.z * w);
 
 						shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
 						g_totalDepthTests++;
 
 						if (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
 						{
-							shaderPerspective.trueDepth = ((1.0 / clip0.w) * u) + ((1.0 / clip1.w) * v) + ((1.0 / clip2.w) * w);
-							shaderPerspective.texelPercent.x = (((uv0.x / clip0.w) * u) + ((uv1.x / clip1.w) * v) + ((uv2.x / clip2.w) * w)) / shaderPerspective.trueDepth;
-							shaderPerspective.texelPercent.y = (((uv0.y / clip0.w) * u) + ((uv1.y / clip1.w) * v) + ((uv2.y / clip2.w) * w)) / shaderPerspective.trueDepth;
+							// @todo: this isn't true depth. True depth needs (world point - eye).length()
+							shaderPerspective.trueDepth = shaderPerspective.ndcZDepth;
+
+							const double clipW = 1.0 / (((1.0 / clip0.w) * u) + ((1.0 / clip1.w) * v) + ((1.0 / clip2.w) * w));
+							shaderPerspective.texelPercent.x = (((uv0.x / clip0.w) * u) + ((uv1.x / clip1.w) * v) + ((uv2.x / clip2.w) * w)) * clipW;
+							shaderPerspective.texelPercent.y = (((uv0.y / clip0.w) * u) + ((uv1.y / clip1.w) * v) + ((uv2.y / clip2.w) * w)) * clipW;
 
 							// @todo: this is very wrong, maybe need to unproject interpolated screenspace point to world space?
 							const Double3 shaderWorldPoint = camera.worldPoint + camera.forward * shaderPerspective.trueDepth;
