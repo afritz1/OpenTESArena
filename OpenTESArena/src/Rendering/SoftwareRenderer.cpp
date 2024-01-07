@@ -1103,28 +1103,9 @@ namespace swRender
 			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, frameBufferHeight);
 			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
 
-			// @todo: these Z values were previously camera space, need to adjust math below so we still get a linear depth buffer instead of NDC depth. Unproject? Multiply by (far - near)? log()?
-			const double z0 = ndc0.z;
-			const double z1 = ndc1.z;
-			const double z2 = ndc2.z;
-			const double z0Recip = 1.0 / z0;
-			const double z1Recip = 1.0 / z1;
-			const double z2Recip = 1.0 / z2;
-
-			// @todo: probably need to unproject screenspace vertices to get world space
-			const double trueDepth0 = z0; //(v0 - camera.worldPoint).length();
-			const double trueDepth1 = z1; //(v1 - camera.worldPoint).length();
-			const double trueDepth2 = z2; //(v2 - camera.worldPoint).length();
-			const double trueDepth0Recip = 1.0 / trueDepth0;
-			const double trueDepth1Recip = 1.0 / trueDepth1;
-			const double trueDepth2Recip = 1.0 / trueDepth2;
-
 			const Double2 &uv0 = swGeometry::g_visibleTriangleUV0s[index];
 			const Double2 &uv1 = swGeometry::g_visibleTriangleUV1s[index];
 			const Double2 &uv2 = swGeometry::g_visibleTriangleUV2s[index];
-			const Double2 uv0Perspective = uv0 * z0Recip;
-			const Double2 uv1Perspective = uv1 * z1Recip;
-			const Double2 uv2Perspective = uv2 * z2Recip;
 
 			const ObjectTextureID textureID0 = swGeometry::g_visibleTriangleTextureID0s[index];
 			const ObjectTextureID textureID1 = swGeometry::g_visibleTriangleTextureID1s[index];
@@ -1173,19 +1154,19 @@ namespace swRender
 						const double u = 1.0 - v - w;
 
 						swShader::PixelShaderPerspectiveCorrection shaderPerspective;
-						shaderPerspective.ndcZDepth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip)); // For depth checks.
+						shaderPerspective.ndcZDepth = (u * ndc0.z) + (v * ndc1.z) + (w * ndc2.z); // For depth checks.
 
 						shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
 						g_totalDepthTests++;
 
 						if (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
 						{
-							shaderPerspective.trueDepth = 1.0 / ((u * trueDepth0Recip) + (v * trueDepth1Recip) + (w * trueDepth2Recip)); // For shading. @todo: this should not be view-dependent but it is wobbly when moving/looking around. Blame u,v,w.
-							shaderPerspective.texelPercent.x = ((u * uv0Perspective.x) + (v * uv1Perspective.x) + (w * uv2Perspective.x)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
-							shaderPerspective.texelPercent.y = ((u * uv0Perspective.y) + (v * uv1Perspective.y) + (w * uv2Perspective.y)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
+							shaderPerspective.trueDepth = ((1.0 / clip0.w) * u) + ((1.0 / clip1.w) * v) + ((1.0 / clip2.w) * w);
+							shaderPerspective.texelPercent.x = (((uv0.x / clip0.w) * u) + ((uv1.x / clip1.w) * v) + ((uv2.x / clip2.w) * w)) / shaderPerspective.trueDepth;
+							shaderPerspective.texelPercent.y = (((uv0.y / clip0.w) * u) + ((uv1.y / clip1.w) * v) + ((uv2.y / clip2.w) * w)) / shaderPerspective.trueDepth;
 
 							// @todo: this is very wrong, maybe need to unproject interpolated screenspace point to world space?
-							const Double3 shaderWorldPoint = camera.worldPoint + camera.forward * shaderPerspective.trueDepth; //(v0 * u) + (v1 * v) + (v2 * w);
+							const Double3 shaderWorldPoint = camera.worldPoint + camera.forward * shaderPerspective.trueDepth;
 
 							double lightIntensitySum = 0.0;
 							if (requiresPerPixelLightIntensity)
