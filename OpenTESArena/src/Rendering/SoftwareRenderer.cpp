@@ -27,7 +27,7 @@ namespace swShader
 {
 	struct PixelShaderPerspectiveCorrection
 	{
-		double cameraZDepth;
+		double ndcZDepth;
 		double trueDepth;
 		Double2 texelPercent;
 	};
@@ -131,7 +131,7 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
@@ -158,7 +158,7 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -178,7 +178,7 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithVariableTexCoordUMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -199,7 +199,7 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -221,7 +221,7 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -243,7 +243,7 @@ namespace swShader
 		const int shadedTexelIndex = replacementTexel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithLightLevelColor(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -264,7 +264,7 @@ namespace swShader
 		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithLightLevelOpacity(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -307,7 +307,7 @@ namespace swShader
 
 		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithPreviousBrightnessLimit(const PixelShaderPerspectiveCorrection &perspective,
@@ -340,7 +340,7 @@ namespace swShader
 		}
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 
 	void PixelShader_AlphaTestedWithHorizonMirror(const PixelShaderPerspectiveCorrection &perspective,
@@ -373,7 +373,7 @@ namespace swShader
 		}
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.cameraZDepth;
+		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 	}
 }
 
@@ -1173,12 +1173,12 @@ namespace swRender
 						const double u = 1.0 - v - w;
 
 						swShader::PixelShaderPerspectiveCorrection shaderPerspective;
-						shaderPerspective.cameraZDepth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip)); // For depth checks.
+						shaderPerspective.ndcZDepth = 1.0 / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip)); // For depth checks.
 
 						shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
 						g_totalDepthTests++;
 
-						if (shaderPerspective.cameraZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
+						if (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
 						{
 							shaderPerspective.trueDepth = 1.0 / ((u * trueDepth0Recip) + (v * trueDepth1Recip) + (w * trueDepth2Recip)); // For shading. @todo: this should not be view-dependent but it is wobbly when moving/looking around. Blame u,v,w.
 							shaderPerspective.texelPercent.x = ((u * uv0Perspective.x) + (v * uv1Perspective.x) + (w * uv2Perspective.x)) / ((u * z0Recip) + (v * z1Recip) + (w * z2Recip));
