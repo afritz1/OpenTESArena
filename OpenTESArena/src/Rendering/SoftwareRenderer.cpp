@@ -1164,20 +1164,19 @@ namespace swRender
 						if (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
 						{
 							const Double4 shaderClipSpacePoint(
-								1.0 / (((clip0.x / clip0.w) * u) + ((clip1.x / clip1.w) * v) + ((clip2.x / clip2.w) * w)),
-								1.0 / (((clip0.y / clip0.w) * u) + ((clip1.y / clip1.w) * v) + ((clip2.y / clip2.w) * w)),
-								1.0 / (((clip0.z / clip0.w) * u) + ((clip1.z / clip1.w) * v) + ((clip2.z / clip2.w) * w)),
-								1.0 / (((1.0 / clip0.w) * u) + ((1.0 / clip1.w) * v) + ((1.0 / clip2.w) * w)));
+								((clip0.x / clip0.w) * u) + ((clip1.x / clip1.w) * v) + ((clip2.x / clip2.w) * w),
+								((clip0.y / clip0.w) * u) + ((clip1.y / clip1.w) * v) + ((clip2.y / clip2.w) * w),
+								((clip0.z / clip0.w) * u) + ((clip1.z / clip1.w) * v) + ((clip2.z / clip2.w) * w),
+								((1.0 / clip0.w) * u) + ((1.0 / clip1.w) * v) + ((1.0 / clip2.w) * w));
 							
-							shaderPerspective.texelPercent.x = (((uv0.x / clip0.w) * u) + ((uv1.x / clip1.w) * v) + ((uv2.x / clip2.w) * w)) * shaderClipSpacePoint.w;
-							shaderPerspective.texelPercent.y = (((uv0.y / clip0.w) * u) + ((uv1.y / clip1.w) * v) + ((uv2.y / clip2.w) * w)) * shaderClipSpacePoint.w;
+							shaderPerspective.texelPercent.x = (((uv0.x / clip0.w) * u) + ((uv1.x / clip1.w) * v) + ((uv2.x / clip2.w) * w)) / shaderClipSpacePoint.w;
+							shaderPerspective.texelPercent.y = (((uv0.y / clip0.w) * u) + ((uv1.y / clip1.w) * v) + ((uv2.y / clip2.w) * w)) / shaderClipSpacePoint.w;
 
-							// @todo: something in here or the inverse perspective or view matrices is wrong
 							const Double4 shaderHomogeneousSpacePoint(
 								shaderClipSpacePoint.x / shaderClipSpacePoint.w,
 								shaderClipSpacePoint.y / shaderClipSpacePoint.w,
 								shaderClipSpacePoint.z / shaderClipSpacePoint.w,
-								1.0);
+								1.0 / shaderClipSpacePoint.w);
 							const Double4 shaderCameraSpacePoint = invProjMatrix * shaderHomogeneousSpacePoint;
 							const Double4 shaderWorldSpacePoint = invViewMatrix * shaderCameraSpacePoint;
 							const Double3 shaderWorldSpacePointXYZ(shaderWorldSpacePoint.x, shaderWorldSpacePoint.y, shaderWorldSpacePoint.z);
