@@ -28,7 +28,6 @@ namespace swShader
 	struct PixelShaderPerspectiveCorrection
 	{
 		double ndcZDepth;
-		double trueDepth;
 		Double2 texelPercent;
 	};
 
@@ -1231,7 +1230,6 @@ namespace swRender
 							const Double4 shaderCameraSpacePoint = invProjMatrix * shaderHomogeneousSpacePoint;
 							const Double4 shaderWorldSpacePoint = invViewMatrix * shaderCameraSpacePoint;
 							const Double3 shaderWorldSpacePointXYZ(shaderWorldSpacePoint.x, shaderWorldSpacePoint.y, shaderWorldSpacePoint.z);
-							shaderPerspective.trueDepth = (shaderWorldSpacePointXYZ - camera.worldPoint).length();
 
 							double lightIntensitySum = 0.0;
 							if (requiresPerPixelLightIntensity)
