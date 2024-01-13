@@ -85,15 +85,21 @@ namespace swShader
 		outNormal = modelViewMatrix * Double4(normal, 0.0);
 	}
 
-	void VertexShader_RaisingDoor(const Double3 &vertex, const Double3 &normal, const Double3 &preScaleTranslation, const Matrix4d &scaleMatrix,
-		const Matrix4d &modelMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix, Double4 &outVertex, Double4 &outNormal)
+	void VertexShader_RaisingDoor(const Double3 &vertex, const Double3 &normal, const Double3 &preScaleTranslation, const Matrix4d &translationMatrix, 
+		const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix,
+		Double4 &outVertex, Double4 &outNormal)
 	{
-		Double4 transformedVertex = Double4(vertex + preScaleTranslation, 1.0);
-		transformedVertex = scaleMatrix * transformedVertex;
-		transformedVertex = transformedVertex - Double4(preScaleTranslation, 0.0);
+		// Translate down so floor vertices go underground and ceiling is at y=0.
+		const Double4 vertexWithPreScaleTranslation = Double4(vertex + preScaleTranslation, 1.0);
 
-		const Matrix4d modelViewMatrix = viewMatrix * modelMatrix;
-		outVertex = projectionMatrix * (modelViewMatrix * transformedVertex);
+		// Shrink towards y=0 depending on anim percent and door min visible amount.
+		const Double4 scaledVertex = scaleMatrix * vertexWithPreScaleTranslation;
+
+		// Translate up to new model space Y position.
+		const Double4 resultVertex = scaledVertex - Double4(preScaleTranslation, 0.0);
+
+		const Matrix4d modelViewMatrix = viewMatrix * (translationMatrix * rotationMatrix);
+		outVertex = projectionMatrix * (modelViewMatrix * resultVertex);
 		outNormal = modelViewMatrix * Double4(normal, 0.0);
 	}
 
@@ -653,11 +659,12 @@ namespace swGeometry
 
 	// Runs vertex shaders, clips the given world space triangles to the frustum, generates any new triangles
 	// as necessary, and returns a view to a geometry cache that is invalidated the next time this function is called.
-	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Matrix4d &modelMatrix, const Double3 &preScaleTranslation,
-		const Matrix4d &scaleMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix,
-		const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &normalBuffer,
-		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
-		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType)
+	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &preScaleTranslation,
+		const Matrix4d &translationMatrix, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
+		const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix, const SoftwareRenderer::VertexBuffer &vertexBuffer,
+		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
+		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
+		VertexShaderType vertexShaderType)
 	{
 		std::vector<Double4> &outVisibleTriangleV0s = g_visibleTriangleV0s;
 		std::vector<Double4> &outVisibleTriangleV1s = g_visibleTriangleV1s;
@@ -695,6 +702,8 @@ namespace swGeometry
 		outVisibleTriangleUV2s.clear();
 		outVisibleTriangleTextureID0s.clear();
 		outVisibleTriangleTextureID1s.clear();
+
+		const Matrix4d modelMatrix = translationMatrix * (rotationMatrix * scaleMatrix);
 
 		const double *verticesPtr = vertexBuffer.vertices.begin();
 		const double *normalsPtr = normalBuffer.attributes.begin();
@@ -749,9 +758,9 @@ namespace swGeometry
 				swShader::VertexShader_Basic(unshadedV2, unshadedNormal2, modelMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::RaisingDoor:
-				swShader::VertexShader_RaisingDoor(unshadedV0, unshadedNormal0, preScaleTranslation, scaleMatrix, modelMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
-				swShader::VertexShader_RaisingDoor(unshadedV1, unshadedNormal1, preScaleTranslation, scaleMatrix, modelMatrix, viewMatrix, projectionMatrix, shadedV1, shadedNormal1);
-				swShader::VertexShader_RaisingDoor(unshadedV2, unshadedNormal2, preScaleTranslation, scaleMatrix, modelMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
+				swShader::VertexShader_RaisingDoor(unshadedV0, unshadedNormal0, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
+				swShader::VertexShader_RaisingDoor(unshadedV1, unshadedNormal1, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV1, shadedNormal1);
+				swShader::VertexShader_RaisingDoor(unshadedV2, unshadedNormal2, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::Entity:
 				swShader::VertexShader_Entity(unshadedV0, unshadedNormal0, modelMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
@@ -1785,7 +1794,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const RenderDrawCall &drawCall = drawCalls.get(i);
 		const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
 		const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-		const Matrix4d modelMatrix = transform.translation * transform.rotation * transform.scale;
 		const Matrix4d &viewMatrix = camera.viewMatrix;
 		const Matrix4d &projectionMatrix = camera.projectionMatrix;
 		
@@ -1806,8 +1814,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const ObjectTextureID textureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			modelMatrix, preScaleTranslation, transform.scale, viewMatrix, projectionMatrix, vertexBuffer, normalBuffer,
-			texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType);
+			preScaleTranslation, transform.translation, transform.rotation, transform.scale, viewMatrix,
+			projectionMatrix, vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType);
 
 		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingTypes[0];
 		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingTypes[1];

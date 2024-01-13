@@ -271,7 +271,7 @@ namespace
 
 	Double3 MakeRaisingDoorPreScaleTranslation(double ceilingScale)
 	{
-		return Double3(1.0, -ceilingScale, 1.0);
+		return Double3(0.0, -ceilingScale, 0.0);
 	}
 }
 
