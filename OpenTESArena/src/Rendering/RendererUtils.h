@@ -15,7 +15,7 @@ struct RenderCamera;
 namespace RendererUtils
 {
 	constexpr double NEAR_PLANE = 0.01;
-	constexpr double FAR_PLANE = 5000.0;
+	constexpr double FAR_PLANE = 1000.0;
 
 	RenderCamera makeCamera(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction,
 		Degrees fovY, double aspectRatio, bool tallPixelCorrection);

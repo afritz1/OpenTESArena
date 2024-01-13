@@ -591,6 +591,8 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.vertexShaderType = VertexShaderType::Basic; // @todo: actually have a dedicated vertex shader?
 		drawCall.pixelShaderType = PixelShaderType::AlphaTested;
 		drawCall.pixelShaderParam0 = 0.0;
+		drawCall.enableDepthRead = false;
+		drawCall.enableDepthWrite = false;
 	};
 
 	auto populateRainDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, int transformIndex)
@@ -714,6 +716,8 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.vertexShaderType = VertexShaderType::Basic;
 		this->fogDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity; // @todo: don't depth test
 		this->fogDrawCall.pixelShaderParam0 = 0.0;
+		this->fogDrawCall.enableDepthRead = false;
+		this->fogDrawCall.enableDepthWrite = false;
 	}
 }
 

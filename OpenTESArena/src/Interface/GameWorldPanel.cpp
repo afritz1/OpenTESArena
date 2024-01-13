@@ -812,6 +812,11 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
 	const SceneManager &sceneManager = game.getSceneManager();
+	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
+	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
+	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
+	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
+
 	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
 	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
 	const BufferView<const RenderDrawCall> voxelDrawCalls = renderVoxelChunkManager.getDrawCalls();
@@ -819,12 +824,16 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
 	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
 
-	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
-	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
-	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
-
 	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
+	const bool isFoggy = gameState.isFogActive();
+	if (activeWeatherInst.hasFog())
+	{
+		if (isFoggy)
+		{
+			drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
+		}
+	}
+
 	if (activeWeatherInst.hasRain())
 	{
 		const BufferView<const RenderDrawCall> rainDrawCalls = renderWeatherManager.getRainDrawCalls();
@@ -835,15 +844,6 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	{
 		const BufferView<const RenderDrawCall> snowDrawCalls = renderWeatherManager.getSnowDrawCalls();
 		drawCalls.insert(drawCalls.end(), snowDrawCalls.begin(), snowDrawCalls.end());
-	}
-
-	const bool isFoggy = gameState.isFogActive();
-	if (activeWeatherInst.hasFog())
-	{
-		if (isFoggy)
-		{
-			drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
-		}
 	}
 
 	const MapType activeMapType = activeMapDef.getMapType();

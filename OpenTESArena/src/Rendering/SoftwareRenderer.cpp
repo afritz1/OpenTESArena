@@ -75,6 +75,7 @@ namespace swShader
 		PixelShaderPalette palette;
 		double xPercent, yPercent;
 		int pixelIndex;
+		bool enableDepthWrite;
 	};
 
 	void VertexShader_Basic(const Double3 &vertex, const Double3 &normal, const Matrix4d &modelMatrix, const Matrix4d &viewMatrix,
@@ -137,7 +138,11 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
@@ -164,7 +169,11 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -184,7 +193,11 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_AlphaTestedWithVariableTexCoordUMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -205,7 +218,11 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -227,7 +244,11 @@ namespace swShader
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -249,7 +270,11 @@ namespace swShader
 		const int shadedTexelIndex = replacementTexel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_AlphaTestedWithLightLevelColor(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -270,7 +295,11 @@ namespace swShader
 		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_AlphaTestedWithLightLevelOpacity(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -313,7 +342,11 @@ namespace swShader
 
 		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_AlphaTestedWithPreviousBrightnessLimit(const PixelShaderPerspectiveCorrection &perspective,
@@ -346,7 +379,11 @@ namespace swShader
 		}
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	void PixelShader_AlphaTestedWithHorizonMirror(const PixelShaderPerspectiveCorrection &perspective,
@@ -379,7 +416,11 @@ namespace swShader
 		}
 
 		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
-		frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+
+		if (frameBuffer.enableDepthWrite)
+		{
+			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 }
 
@@ -1031,10 +1072,10 @@ namespace swRender
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
 		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, double ambientPercent,
 		BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType, double pixelShaderParam0,
-		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
-		const SoftwareRenderer::ObjectTexture &lightTableTexture, int ditheringMode, const RenderCamera &camera,
-		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
-		BufferView2D<uint32_t> colorBuffer)
+		bool enableDepthRead, bool enableDepthWrite, const SoftwareRenderer::ObjectTexturePool &textures,
+		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
+		int ditheringMode, const RenderCamera &camera, BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer,
+		BufferView3D<const bool> ditherBuffer, BufferView2D<uint32_t> colorBuffer)
 	{
 		const int frameBufferWidth = paletteIndexBuffer.getWidth();
 		const int frameBufferHeight = paletteIndexBuffer.getHeight();
@@ -1063,6 +1104,7 @@ namespace swRender
 		shaderFrameBuffer.depth = depthBuffer.begin();
 		shaderFrameBuffer.palette.colors = paletteTexture.texels32Bit;
 		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
+		shaderFrameBuffer.enableDepthWrite = enableDepthWrite;
 
 		const bool requiresTwoTextures =
 			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
@@ -1170,7 +1212,7 @@ namespace swRender
 						shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
 						g_totalDepthTests++;
 
-						if (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex])
+						if (!enableDepthRead || (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex]))
 						{
 							const Double4 shaderClipSpacePoint(
 								((clip0.x / clip0.w) * u) + ((clip1.x / clip1.w) * v) + ((clip2.x / clip2.w) * w),
@@ -1843,10 +1885,13 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const double ambientPercent = settings.ambientPercent;
 		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
 		const double pixelShaderParam0 = drawCall.pixelShaderParam0;
+		const bool enableDepthRead = drawCall.enableDepthRead;
+		const bool enableDepthWrite = drawCall.enableDepthWrite;
 		const int ditheringMode = settings.ditheringMode;
 		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent,
-			ambientPercent, lightsView, pixelShaderType, pixelShaderParam0, this->objectTextures, paletteTexture, lightTableTexture,
-			ditheringMode, camera, paletteIndexBufferView, depthBufferView, ditherBufferView, colorBufferView);
+			ambientPercent, lightsView, pixelShaderType, pixelShaderParam0, enableDepthRead, enableDepthWrite, this->objectTextures,
+			paletteTexture, lightTableTexture, ditheringMode, camera, paletteIndexBufferView, depthBufferView, ditherBufferView,
+			colorBufferView);
 	}
 }
 

@@ -333,6 +333,8 @@ void RenderEntityChunkManager::addDrawCall(UniformBufferID transformBufferID, in
 	drawCall.vertexShaderType = VertexShaderType::Entity;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = 0.0;
+	drawCall.enableDepthRead = true;
+	drawCall.enableDepthWrite = true;
 
 	drawCalls.emplace_back(std::move(drawCall));
 }

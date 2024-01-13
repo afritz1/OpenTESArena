@@ -54,7 +54,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	std::vector<double> bgTexCoords;
 	std::vector<int32_t> bgIndices;
 
-	constexpr double pointDistance = 3000.0; // @todo: hack while the sky is using naive depth testing w/o any occlusion culling, etc.
+	constexpr double pointDistance = 1.0; // Arbitrary distance from camera, depth should not be checked.
 	constexpr Radians angleAboveHorizon = 25.0 * Constants::DegToRad;
 	const double aboveHorizonPointHeight = pointDistance * std::tan(angleAboveHorizon);
 
@@ -292,6 +292,8 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.vertexShaderType = VertexShaderType::Basic;
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
+	this->bgDrawCall.enableDepthRead = false;
+	this->bgDrawCall.enableDepthWrite = false;
 
 	// Initialize sky object mesh buffers shared with all sky objects.
 	// @todo: to be more accurate, land/air vertices could rest on the horizon, while star/planet/sun vertices would sit halfway under the horizon, etc., and these would be separate buffers for the draw calls to pick from.
@@ -677,13 +679,13 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		this->bgDrawCall.textureIDs[0] = this->skyGradientPMTextureRef.get();
 	}
 
-	// @temp fix for Z ordering. Later I think we should just not do depth testing in the sky?
-	constexpr double lightningDistance = 500.0;
-	constexpr double landDistance = lightningDistance + 400.0;
-	constexpr double airDistance = landDistance + 400.0;
-	constexpr double moonDistance = airDistance + 400.0;
-	constexpr double sunDistance = moonDistance + 400.0;
-	constexpr double starDistance = sunDistance + 400.0;
+	// Arbitrary distances from camera, depth should not be checked.
+	constexpr double lightningDistance = 1.0;
+	constexpr double landDistance = 1.0;
+	constexpr double airDistance = 1.0;
+	constexpr double moonDistance = 1.0;
+	constexpr double sunDistance = 1.0;
+	constexpr double starDistance = 1.0;
 
 	constexpr double fullBrightLightPercent = 1.0;
 
@@ -728,6 +730,8 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.vertexShaderType = VertexShaderType::Basic;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = 0.0;
+		drawCall.enableDepthRead = false;
+		drawCall.enableDepthWrite = false;
 		this->objectDrawCalls.emplace_back(std::move(drawCall));
 	};
 
