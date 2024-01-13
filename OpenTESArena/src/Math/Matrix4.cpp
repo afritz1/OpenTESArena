@@ -186,92 +186,28 @@ Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 	Matrix4<T> p;
 
 	// Column X.
-	p.x.x =
-		(this->x.x * m.x.x) +
-		(this->y.x * m.x.y) +
-		(this->z.x * m.x.z) +
-		(this->w.x * m.x.w);
-	p.x.y =
-		(this->x.y * m.x.x) +
-		(this->y.y * m.x.y) +
-		(this->z.y * m.x.z) +
-		(this->w.y * m.x.w);
-	p.x.z =
-		(this->x.z * m.x.x) +
-		(this->y.z * m.x.y) +
-		(this->z.z * m.x.z) +
-		(this->w.z * m.x.w);
-	p.x.w =
-		(this->x.w * m.x.x) +
-		(this->y.w * m.x.y) +
-		(this->z.w * m.x.z) +
-		(this->w.w * m.x.w);
+	p.x.x = (this->x.x * m.x.x) + (this->y.x * m.x.y) + (this->z.x * m.x.z) + (this->w.x * m.x.w);
+	p.x.y = (this->x.y * m.x.x) + (this->y.y * m.x.y) + (this->z.y * m.x.z) + (this->w.y * m.x.w);
+	p.x.z = (this->x.z * m.x.x) + (this->y.z * m.x.y) + (this->z.z * m.x.z) + (this->w.z * m.x.w);
+	p.x.w = (this->x.w * m.x.x) + (this->y.w * m.x.y) + (this->z.w * m.x.z) + (this->w.w * m.x.w);
 
 	// Column Y.
-	p.y.x =
-		(this->x.x * m.y.x) +
-		(this->y.x * m.y.y) +
-		(this->z.x * m.y.z) +
-		(this->w.x * m.y.w);
-	p.y.y =
-		(this->x.y * m.y.x) +
-		(this->y.y * m.y.y) +
-		(this->z.y * m.y.z) +
-		(this->w.y * m.y.w);
-	p.y.z =
-		(this->x.z * m.y.x) +
-		(this->y.z * m.y.y) +
-		(this->z.z * m.y.z) +
-		(this->w.z * m.y.w);
-	p.y.w =
-		(this->x.w * m.y.x) +
-		(this->y.w * m.y.y) +
-		(this->z.w * m.y.z) +
-		(this->w.w * m.y.w);
+	p.y.x = (this->x.x * m.y.x) + (this->y.x * m.y.y) + (this->z.x * m.y.z) + (this->w.x * m.y.w);
+	p.y.y = (this->x.y * m.y.x) + (this->y.y * m.y.y) + (this->z.y * m.y.z) + (this->w.y * m.y.w);
+	p.y.z = (this->x.z * m.y.x) + (this->y.z * m.y.y) + (this->z.z * m.y.z) + (this->w.z * m.y.w);
+	p.y.w = (this->x.w * m.y.x) + (this->y.w * m.y.y) + (this->z.w * m.y.z) + (this->w.w * m.y.w);
 
 	// Column Z.
-	p.z.x =
-		(this->x.x * m.z.x) +
-		(this->y.x * m.z.y) +
-		(this->z.x * m.z.z) +
-		(this->w.x * m.z.w);
-	p.z.y =
-		(this->x.y * m.z.x) +
-		(this->y.y * m.z.y) +
-		(this->z.y * m.z.z) +
-		(this->w.y * m.z.w);
-	p.z.z =
-		(this->x.z * m.z.x) +
-		(this->y.z * m.z.y) +
-		(this->z.z * m.z.z) +
-		(this->w.z * m.z.w);
-	p.z.w =
-		(this->x.w * m.z.x) +
-		(this->y.w * m.z.y) +
-		(this->z.w * m.z.z) +
-		(this->w.w * m.z.w);
+	p.z.x = (this->x.x * m.z.x) + (this->y.x * m.z.y) + (this->z.x * m.z.z) + (this->w.x * m.z.w);
+	p.z.y = (this->x.y * m.z.x) + (this->y.y * m.z.y) + (this->z.y * m.z.z) + (this->w.y * m.z.w);
+	p.z.z = (this->x.z * m.z.x) + (this->y.z * m.z.y) + (this->z.z * m.z.z) + (this->w.z * m.z.w);
+	p.z.w = (this->x.w * m.z.x) + (this->y.w * m.z.y) + (this->z.w * m.z.z) + (this->w.w * m.z.w);
 
 	// Column W.
-	p.w.x =
-		(this->x.x * m.w.x) +
-		(this->y.x * m.w.y) +
-		(this->z.x * m.w.z) +
-		(this->w.x * m.w.w);
-	p.w.y =
-		(this->x.y * m.w.x) +
-		(this->y.y * m.w.y) +
-		(this->z.y * m.w.z) +
-		(this->w.y * m.w.w);
-	p.w.z =
-		(this->x.z * m.w.x) +
-		(this->y.z * m.w.y) +
-		(this->z.z * m.w.z) +
-		(this->w.z * m.w.w);
-	p.w.w =
-		(this->x.w * m.w.x) +
-		(this->y.w * m.w.y) +
-		(this->z.w * m.w.z) +
-		(this->w.w * m.w.w);
+	p.w.x = (this->x.x * m.w.x) + (this->y.x * m.w.y) + (this->z.x * m.w.z) + (this->w.x * m.w.w);
+	p.w.y = (this->x.y * m.w.x) + (this->y.y * m.w.y) + (this->z.y * m.w.z) + (this->w.y * m.w.w);
+	p.w.z = (this->x.z * m.w.x) + (this->y.z * m.w.y) + (this->z.z * m.w.z) + (this->w.z * m.w.w);
+	p.w.w = (this->x.w * m.w.x) + (this->y.w * m.w.y) + (this->z.w * m.w.z) + (this->w.w * m.w.w);
 
 	return p;
 }
