@@ -9,7 +9,8 @@
 class RenderEntityChunk final : public Chunk
 {
 public:
-	std::vector<RenderDrawCall> drawCalls;
+	std::vector<RenderDrawCall> alphaTestedDrawCalls;
+	std::vector<RenderDrawCall> ghostDrawCalls;
 
 	void init(const ChunkInt2 &position, int height);
 	void clear();

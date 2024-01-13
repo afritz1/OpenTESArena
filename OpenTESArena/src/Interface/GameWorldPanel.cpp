@@ -818,11 +818,14 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
 
 	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
-	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
 	const BufferView<const RenderDrawCall> voxelDrawCalls = renderVoxelChunkManager.getDrawCalls();
-	const BufferView<const RenderDrawCall> entityDrawCalls = renderEntityChunkManager.getDrawCalls();
 	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
-	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
+
+	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
+	const BufferView<const RenderDrawCall> alphaTestedEntityDrawCalls = renderEntityChunkManager.getAlphaTestedDrawCalls();
+	const BufferView<const RenderDrawCall> ghostEntityDrawCalls = renderEntityChunkManager.getGhostDrawCalls();
+	drawCalls.insert(drawCalls.end(), alphaTestedEntityDrawCalls.begin(), alphaTestedEntityDrawCalls.end());
+	drawCalls.insert(drawCalls.end(), ghostEntityDrawCalls.begin(), ghostEntityDrawCalls.end());
 
 	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
 	const bool isFoggy = gameState.isFogActive();

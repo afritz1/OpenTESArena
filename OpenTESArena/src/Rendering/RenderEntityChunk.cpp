@@ -8,5 +8,6 @@ void RenderEntityChunk::init(const ChunkInt2 &position, int height)
 void RenderEntityChunk::clear()
 {
 	Chunk::clear();
-	this->drawCalls.clear();
+	this->alphaTestedDrawCalls.clear();
+	this->ghostDrawCalls.clear();
 }

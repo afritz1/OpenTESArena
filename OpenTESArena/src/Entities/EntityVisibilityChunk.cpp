@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "EntityChunk.h"
 #include "EntityChunkManager.h"
 #include "EntityVisibilityChunk.h"
