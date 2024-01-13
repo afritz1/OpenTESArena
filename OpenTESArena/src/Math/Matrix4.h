@@ -34,9 +34,7 @@ public:
 	static Matrix4<T> inverseTranslation(const Matrix4<T> &t);
 	static Matrix4<T> inverseRotation(const Matrix4<T> &r);
 	static Matrix4<T> view(const Vector3f<T> &eye, const Vector3f<T> &forward, const Vector3f<T> &right, const Vector3f<T> &up);
-	static Matrix4<T> inverseView(const Vector3f<T> &eye, const Vector3f<T> &forward, const Vector3f<T> &right, const Vector3f<T> &up);
 	static Matrix4<T> perspective(T fovY, T aspect, T near, T far);
-	static Matrix4<T> inversePerspective(T fovY, T aspect, T near, T far);
 
 	Matrix4<T> operator*(const Matrix4<T> &m) const;
 	Vector4f<T> operator*(const Vector4f<T> &v) const;

@@ -163,14 +163,6 @@ Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 	return invRotationMat * invTranslationMat;
 }
 
-template<typename T>
-Matrix4<T> Matrix4<T>::inverseView(const Vector3f<T> &eye, const Vector3f<T> &forward,
-	const Vector3f<T> &right, const Vector3f<T> &up)
-{
-	const Matrix4<T> m = Matrix4<T>::view(eye, forward, right, up);
-	return Matrix4<T>::inverse(m);
-}
-
 template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
@@ -187,13 +179,6 @@ Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 	m.w.z = (near * far) / nearFarDiff;
 	m.w.w = static_cast<T>(0.0);
 	return m;
-}
-
-template<typename T>
-Matrix4<T> Matrix4<T>::inversePerspective(T fovY, T aspect, T near, T far)
-{
-	const Matrix4<T> m = Matrix4<T>::perspective(fovY, aspect, near, far);
-	return Matrix4<T>::inverse(m);
 }
 
 template <typename T>
