@@ -90,6 +90,37 @@ Matrix4<T> Matrix4<T>::transpose(const Matrix4<T> &m)
 	return newM;
 }
 
+template<typename T>
+Matrix4<T> Matrix4<T>::inverse(const Matrix4<T> &m)
+{
+	const T determinant = m.getDeterminant();
+	const T detRecip = static_cast<T>(1.0) / determinant;
+
+	// Obtain elements of adjugate matrix by calculating determinants of sixteen 3x3 matrices.
+	const T xxDet = (m.y.y * m.z.z * m.w.w) + (m.z.y * m.w.z * m.y.w) + (m.w.y * m.y.z * m.z.w) - (m.w.y * m.z.z * m.y.w) - (m.z.y * m.y.z * m.w.w) - (m.y.y * m.w.z * m.z.w);
+	const T yxDet = -(m.y.x * m.z.z * m.w.w) - (m.z.x * m.w.z * m.y.w) - (m.w.x * m.y.z * m.z.w) + (m.w.x * m.z.z * m.y.w) + (m.z.x * m.y.z * m.w.w) + (m.y.x * m.w.z * m.z.w);
+	const T zxDet = (m.y.x * m.z.y * m.w.w) + (m.z.x * m.w.y * m.y.w) + (m.w.x * m.y.y * m.z.w) - (m.w.x * m.z.y * m.y.w) - (m.z.x * m.y.y * m.w.w) - (m.y.x * m.w.y * m.z.w);
+	const T wxDet = -(m.y.x * m.z.y * m.w.z) - (m.z.x * m.w.y * m.y.z) - (m.w.x * m.y.y * m.z.z) + (m.w.x * m.z.y * m.y.z) + (m.z.x * m.y.y * m.w.z) + (m.y.x * m.w.y * m.z.z);
+	const T xyDet = -(m.x.y * m.z.z * m.w.w) - (m.z.y * m.w.z * m.x.w) - (m.w.y * m.x.z * m.z.w) + (m.w.y * m.z.z * m.x.w) + (m.z.y * m.x.z * m.w.w) + (m.x.y * m.w.z * m.z.w);
+	const T yyDet = (m.x.x * m.z.z * m.w.w) + (m.z.x * m.w.z * m.x.w) + (m.w.x * m.x.z * m.z.w) - (m.w.x * m.z.z * m.x.w) - (m.z.x * m.x.z * m.w.w) - (m.x.x * m.w.z * m.z.w);
+	const T zyDet = -(m.x.x * m.z.y * m.w.w) - (m.z.x * m.w.y * m.x.w) - (m.w.x * m.x.y * m.z.w) + (m.w.x * m.z.y * m.x.w) + (m.z.x * m.x.y * m.w.w) + (m.x.x * m.w.y * m.z.w);
+	const T wyDet = (m.x.x * m.z.y * m.w.z) + (m.z.x * m.w.y * m.x.z) + (m.w.x * m.x.y * m.z.z) - (m.w.x * m.z.y * m.x.z) - (m.z.x * m.x.y * m.w.z) - (m.x.x * m.w.y * m.z.z);
+	const T xzDet = (m.x.y * m.y.z * m.w.w) + (m.y.y * m.w.z * m.x.w) + (m.w.y * m.x.z * m.y.w) - (m.w.y * m.y.z * m.x.w) - (m.y.y * m.x.z * m.w.w) - (m.x.y * m.w.z * m.y.w);
+	const T yzDet = -(m.x.x * m.y.z * m.w.w) - (m.y.x * m.w.z * m.x.w) - (m.w.x * m.x.z * m.y.w) + (m.w.x * m.y.z * m.x.w) + (m.y.x * m.x.z * m.w.w) + (m.x.x * m.w.z * m.y.w);
+	const T zzDet = (m.x.x * m.y.y * m.w.w) + (m.y.x * m.w.y * m.x.w) + (m.w.x * m.w.y * m.y.w) - (m.w.x * m.y.y * m.x.w) - (m.y.x * m.x.y * m.w.w) - (m.x.x * m.w.y * m.y.w);
+	const T wzDet = -(m.x.x * m.y.y * m.w.z) - (m.y.x * m.w.y * m.x.z) - (m.w.x * m.x.y * m.y.z) + (m.w.x * m.y.y * m.x.z) + (m.y.x * m.x.y * m.w.z) + (m.x.x * m.w.y * m.y.z);
+	const T xwDet = -(m.x.y * m.y.z * m.z.w) - (m.y.y * m.z.z * m.x.w) - (m.z.y * m.x.z * m.y.w) + (m.z.y * m.y.z * m.x.w) + (m.y.y * m.x.z * m.z.w) + (m.x.y * m.z.z * m.y.w);
+	const T ywDet = (m.x.x * m.y.z * m.z.w) + (m.y.x * m.z.z * m.x.w) + (m.z.x * m.x.z * m.y.w) - (m.z.x * m.y.z * m.x.w) - (m.y.x * m.x.z * m.z.w) - (m.x.x * m.z.z * m.y.w);
+	const T zwDet = -(m.x.x * m.y.y * m.z.w) - (m.y.x * m.z.y * m.x.w) - (m.z.x * m.x.y * m.y.w) + (m.z.x * m.y.y * m.x.w) + (m.y.x * m.x.y * m.z.w) + (m.x.x * m.z.y * m.y.w);
+	const T wwDet = (m.x.x * m.y.y * m.z.z) + (m.y.x * m.z.y * m.x.z) + (m.z.x * m.x.y * m.y.z) - (m.z.x * m.y.y * m.x.z) - (m.y.x * m.x.y * m.z.z) - (m.x.x * m.z.y * m.y.z);
+
+	return Matrix4<T>(
+		Vector4f<T>(xxDet * detRecip, xyDet * detRecip, xzDet * detRecip, xwDet * detRecip),
+		Vector4f<T>(yxDet * detRecip, yyDet * detRecip, yzDet * detRecip, ywDet * detRecip),
+		Vector4f<T>(zxDet * detRecip, zyDet * detRecip, zzDet * detRecip, zwDet * detRecip),
+		Vector4f<T>(wxDet * detRecip, wyDet * detRecip, wzDet * detRecip, wwDet * detRecip));
+}
+
 template <typename T>
 Matrix4<T> Matrix4<T>::inverseTranslation(const Matrix4<T> &t)
 {
@@ -136,13 +167,8 @@ template<typename T>
 Matrix4<T> Matrix4<T>::inverseView(const Vector3f<T> &eye, const Vector3f<T> &forward,
 	const Vector3f<T> &right, const Vector3f<T> &up)
 {
-	Matrix4<T> rotationMat = Matrix4<T>::identity();
-	rotationMat.x = Vector4f<T>(right, static_cast<T>(0.0));
-	rotationMat.y = Vector4f<T>(up, static_cast<T>(0.0));
-	rotationMat.z = Vector4f<T>(forward, static_cast<T>(0.0));
-
-	const Matrix4<T> translationMat = Matrix4<T>::translation(eye.x, eye.y, eye.z);
-	return rotationMat * translationMat;
+	const Matrix4<T> m = Matrix4<T>::view(eye, forward, right, up);
+	return Matrix4<T>::inverse(m);
 }
 
 template <typename T>
@@ -166,18 +192,8 @@ Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 template<typename T>
 Matrix4<T> Matrix4<T>::inversePerspective(T fovY, T aspect, T near, T far)
 {
-	const T halfFovRadians = fovY * static_cast<T>(0.50 * Constants::DegToRad);
-	const T tangent = static_cast<T>(std::tan(halfFovRadians));
-	const T nearFarDiff = near - far;
-
-	Matrix4<T> m;
-	m.x.x = tangent * aspect;
-	m.y.y = tangent;
-	m.z.z = -nearFarDiff / far;
-	m.z.w = nearFarDiff / (near * far);
-	m.w.z = static_cast<T>(1.0);
-	m.w.w = static_cast<T>(0.0);
-	return m;
+	const Matrix4<T> m = Matrix4<T>::perspective(fovY, aspect, near, far);
+	return Matrix4<T>::inverse(m);
 }
 
 template <typename T>
@@ -220,6 +236,21 @@ Vector4f<T> Matrix4<T>::operator*(const Vector4f<T> &v) const
 	const T newZ = (this->x.z * v.x) + (this->y.z * v.y) + (this->z.z * v.z) + (this->w.z * v.w);
 	const T newW = (this->x.w * v.x) + (this->y.w * v.y) + (this->z.w * v.z) + (this->w.w * v.w);
 	return Vector4f<T>(newX, newY, newZ, newW);
+}
+
+template<typename T>
+T Matrix4<T>::getDeterminant() const
+{
+	// Cofactor expansion along the first column, getting the determinants of 3x3 matrices.
+	const T xxDet = (this->y.y * this->z.z * this->w.w) + (this->z.y * this->w.z * this->y.w) + (this->w.y * this->y.z * this->z.w) - (this->w.y * this->z.z * this->y.w) - (this->z.y * this->y.z * this->w.w) - (this->y.y * this->w.z * this->z.w);
+	const T xyDet = (this->y.x * this->z.z * this->w.w) + (this->z.x * this->w.z * this->y.w) + (this->w.x * this->y.z * this->z.w) - (this->w.x * this->z.z * this->y.w) - (this->z.x * this->y.z * this->w.w) - (this->y.x * this->w.z * this->z.w);
+	const T xzDet = (this->y.x * this->z.y * this->w.w) + (this->z.x * this->w.y * this->y.w) + (this->w.x * this->y.y * this->z.w) - (this->w.x * this->z.y * this->y.w) - (this->z.x * this->y.y * this->w.w) - (this->y.x * this->w.y * this->z.w);
+	const T xwDet = (this->y.x * this->z.y * this->w.z) + (this->z.x * this->w.y * this->y.z) + (this->w.x * this->y.y * this->z.z) - (this->w.x * this->z.y * this->y.z) - (this->z.x * this->y.y * this->w.z) - (this->y.x * this->w.y * this->z.z);
+	const T xxResult = this->x.x * xxDet;
+	const T xyResult = this->x.y * xyDet;
+	const T xzResult = this->x.z * xzDet;
+	const T xwResult = this->x.w * xwDet;
+	return (xxResult - xyResult) + (xzResult - xwResult);
 }
 
 template <typename T>
