@@ -20,6 +20,7 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 	this->entityWorldBBoxCache.reserve(entityChunk.entityIDs.size());
 
 	const CoordDouble2 cameraCoordXZ(camera.chunk, VoxelDouble2(camera.chunkPoint.x, camera.chunkPoint.z));
+	const WorldDouble2 cameraWorldPointXZ = VoxelUtils::coordToWorldPoint(cameraCoordXZ);
 
 	// Have to bootstrap with the first entity's bounding box.
 	bool hasBBoxExpandedAny = false;
@@ -98,6 +99,21 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 			}
 		}
 	}
+
+	// Sort entities far to near.
+	std::sort(this->visibleEntities.begin(), this->visibleEntities.end(),
+		[&entityChunkManager, &cameraWorldPointXZ](const EntityInstanceID idA, const EntityInstanceID idB)
+	{
+		const EntityInstance &entityInstA = entityChunkManager.getEntity(idA);
+		const EntityInstance &entityInstB = entityChunkManager.getEntity(idB);
+		const CoordDouble2 &entityCoordA = entityChunkManager.getEntityPosition(entityInstA.positionID);
+		const CoordDouble2 &entityCoordB = entityChunkManager.getEntityPosition(entityInstB.positionID);
+		const WorldDouble2 entityWorldPosA = VoxelUtils::coordToWorldPoint(entityCoordA);
+		const WorldDouble2 entityWorldPosB = VoxelUtils::coordToWorldPoint(entityCoordB);
+		const double entityDistSqrA = (entityWorldPosA - cameraWorldPointXZ).lengthSquared();
+		const double entityDistSqrB = (entityWorldPosB - cameraWorldPointXZ).lengthSquared();
+		return entityDistSqrA > entityDistSqrB;
+	});
 }
 
 void EntityVisibilityChunk::clear()
