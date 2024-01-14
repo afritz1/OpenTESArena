@@ -77,12 +77,11 @@ namespace swShader
 		bool enableDepthWrite;
 	};
 
-	void VertexShader_Basic(const Double3 &vertex, const Double3 &normal, const Matrix4d &modelMatrix, const Matrix4d &viewMatrix,
-		const Matrix4d &projectionMatrix, Double4 &outVertex, Double4 &outNormal)
+	void VertexShader_Basic(const Double3 &vertex, const Double3 &normal, const Matrix4d &mvMatrix, const Matrix4d &mvpMatrix,
+		Double4 &outVertex, Double4 &outNormal)
 	{
-		const Matrix4d modelViewMatrix = viewMatrix * modelMatrix;
-		outVertex = projectionMatrix * (modelViewMatrix * Double4(vertex, 1.0));
-		outNormal = modelViewMatrix * Double4(normal, 0.0);
+		outVertex = mvpMatrix * Double4(vertex, 1.0);
+		outNormal = mvMatrix * Double4(normal, 0.0);
 	}
 
 	void VertexShader_RaisingDoor(const Double3 &vertex, const Double3 &normal, const Double3 &preScaleTranslation, const Matrix4d &translationMatrix, 
@@ -98,16 +97,14 @@ namespace swShader
 		// Translate up to new model space Y position.
 		const Double4 resultVertex = scaledVertex - Double4(preScaleTranslation, 0.0);
 
-		const Matrix4d modelViewMatrix = viewMatrix * (translationMatrix * rotationMatrix);
-		outVertex = projectionMatrix * (modelViewMatrix * resultVertex);
-		outNormal = modelViewMatrix * Double4(normal, 0.0);
+		outVertex = projectionMatrix * (viewMatrix * (translationMatrix * (rotationMatrix * resultVertex)));
+		outNormal = viewMatrix * (translationMatrix * (rotationMatrix * Double4(normal, 0.0)));
 	}
 
-	void VertexShader_Entity(const Double3 &vertex, const Double3 &normal, const Matrix4d &modelMatrix, const Matrix4d &viewMatrix,
-		const Matrix4d &projectionMatrix, Double4 &outVertex, Double4 &outNormal)
+	void VertexShader_Entity(const Double3 &vertex, const Double3 &normal, const Matrix4d &viewMatrix, const Matrix4d &mvpMatrix,
+		Double4 &outVertex, Double4 &outNormal)
 	{
-		const Matrix4d modelViewMatrix = viewMatrix * modelMatrix;
-		outVertex = projectionMatrix * (modelViewMatrix * Double4(vertex, 1.0));
+		outVertex = mvpMatrix * Double4(vertex, 1.0);
 		outNormal = viewMatrix * Double4(normal, 0.0); // Already rotated in world space to face the camera.
 	}
 
@@ -744,6 +741,8 @@ namespace swGeometry
 		outVisibleTriangleTextureID1s.clear();
 
 		const Matrix4d modelMatrix = translationMatrix * (rotationMatrix * scaleMatrix);
+		const Matrix4d modelViewMatrix = viewMatrix * modelMatrix;
+		const Matrix4d modelViewProjMatrix = projectionMatrix * modelViewMatrix;
 
 		const double *verticesPtr = vertexBuffer.vertices.begin();
 		const double *normalsPtr = normalBuffer.attributes.begin();
@@ -793,9 +792,9 @@ namespace swGeometry
 			switch (vertexShaderType)
 			{
 			case VertexShaderType::Basic:
-				swShader::VertexShader_Basic(unshadedV0, unshadedNormal0, modelMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
-				swShader::VertexShader_Basic(unshadedV1, unshadedNormal1, modelMatrix, viewMatrix, projectionMatrix, shadedV1, shadedNormal1);
-				swShader::VertexShader_Basic(unshadedV2, unshadedNormal2, modelMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
+				swShader::VertexShader_Basic(unshadedV0, unshadedNormal0, modelViewMatrix, modelViewProjMatrix, shadedV0, shadedNormal0);
+				swShader::VertexShader_Basic(unshadedV1, unshadedNormal1, modelViewMatrix, modelViewProjMatrix, shadedV1, shadedNormal1);
+				swShader::VertexShader_Basic(unshadedV2, unshadedNormal2, modelViewMatrix, modelViewProjMatrix, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::RaisingDoor:
 				swShader::VertexShader_RaisingDoor(unshadedV0, unshadedNormal0, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
@@ -803,9 +802,9 @@ namespace swGeometry
 				swShader::VertexShader_RaisingDoor(unshadedV2, unshadedNormal2, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
 				break;
 			case VertexShaderType::Entity:
-				swShader::VertexShader_Entity(unshadedV0, unshadedNormal0, modelMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
-				swShader::VertexShader_Entity(unshadedV1, unshadedNormal1, modelMatrix, viewMatrix, projectionMatrix, shadedV1, shadedNormal1);
-				swShader::VertexShader_Entity(unshadedV2, unshadedNormal2, modelMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
+				swShader::VertexShader_Entity(unshadedV0, unshadedNormal0, viewMatrix, modelViewProjMatrix, shadedV0, shadedNormal0);
+				swShader::VertexShader_Entity(unshadedV1, unshadedNormal1, viewMatrix, modelViewProjMatrix, shadedV1, shadedNormal1);
+				swShader::VertexShader_Entity(unshadedV2, unshadedNormal2, viewMatrix, modelViewProjMatrix, shadedV2, shadedNormal2);
 				break;
 			default:
 				DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
