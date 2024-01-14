@@ -223,9 +223,15 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		}
 	};
 
+	WorldInt3 prevPlayerLightVoxelMin, prevPlayerLightVoxelMax;
 	WorldInt3 newPlayerLightVoxelMin, newPlayerLightVoxelMax;
+	GetLightMinAndMaxVoxels(prevPlayerLightPosition, this->playerLight.endRadius, ceilingScale, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
 	GetLightMinAndMaxVoxels(newPlayerLightPosition, this->playerLight.endRadius, ceilingScale, &newPlayerLightVoxelMin, &newPlayerLightVoxelMax);
-	populateTouchedVoxelLightIdLists(this->playerLight.lightID, newPlayerLightPosition, newPlayerLightVoxelMin, newPlayerLightVoxelMax);
+
+	if (this->playerLight.enabled)
+	{
+		populateTouchedVoxelLightIdLists(this->playerLight.lightID, newPlayerLightPosition, newPlayerLightVoxelMin, newPlayerLightVoxelMax);
+	}
 
 	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
 	// - @todo: this method doesn't implicitly allow sorting by distance because it doesn't check lights per voxel, it checks voxels per light.
@@ -243,9 +249,6 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 			populateTouchedVoxelLightIdLists(lightID, lightPosition, lightVoxelMin, lightVoxelMax);
 		}
 	}
-
-	WorldInt3 prevPlayerLightVoxelMin, prevPlayerLightVoxelMax;
-	GetLightMinAndMaxVoxels(prevPlayerLightPosition, this->playerLight.endRadius, ceilingScale, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
 
 	// See which voxels affected by the player's light are getting their light references updated.
 	// This is for dirty voxel draw calls mainly, not about setting light references (might change later).
