@@ -181,6 +181,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		this->playerLight.endRadius = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
 	}
 
+	const bool playerLightEnabledChanged = this->playerLight.enabled != playerHasLight;
 	this->playerLight.enabled = playerHasLight;
 
 	renderer.setLightPosition(this->playerLight.lightID, newPlayerLightPosition);
@@ -250,10 +251,45 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		}
 	}
 
+	auto tryAddDirtyLightVoxel = [this](const WorldInt3 &worldVoxel)
+	{
+		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(worldVoxel);
+		RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+		if (renderChunkPtr != nullptr)
+		{
+			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
+			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
+			{
+				renderChunkPtr->addDirtyLightPosition(curLightVoxel);
+			}
+		}
+	};
+
 	// See which voxels affected by the player's light are getting their light references updated.
 	// This is for dirty voxel draw calls mainly, not about setting light references (might change later).
 	if ((prevPlayerLightVoxelMin != newPlayerLightVoxelMin) || (prevPlayerLightVoxelMax != newPlayerLightVoxelMax))
 	{
+		// Set voxel draw calls dirty for no-longer-touched voxels.
+		for (WEInt z = prevPlayerLightVoxelMin.z; z <= prevPlayerLightVoxelMax.z; z++)
+		{
+			for (int y = prevPlayerLightVoxelMin.y; y <= prevPlayerLightVoxelMax.y; y++)
+			{
+				for (SNInt x = prevPlayerLightVoxelMin.x; x <= prevPlayerLightVoxelMax.x; x++)
+				{
+					const bool isInNewRange =
+						(x >= newPlayerLightVoxelMin.x) && (x <= newPlayerLightVoxelMax.x) &&
+						(y >= newPlayerLightVoxelMin.y) && (y <= newPlayerLightVoxelMax.y) &&
+						(z >= newPlayerLightVoxelMin.z) && (z <= newPlayerLightVoxelMax.z);
+
+					if (!isInNewRange)
+					{
+						tryAddDirtyLightVoxel(WorldInt3(x, y, z));
+					}
+				}
+			}
+		}
+
+		// Set voxel draw calls dirty for newly-touched voxels.
 		for (WEInt z = newPlayerLightVoxelMin.z; z <= newPlayerLightVoxelMax.z; z++)
 		{
 			for (int y = newPlayerLightVoxelMin.y; y <= newPlayerLightVoxelMax.y; y++)
@@ -267,17 +303,32 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 
 					if (!isInPrevRange)
 					{
-						const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(WorldInt3(x, y, z));
-						RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
-						if (renderChunkPtr != nullptr)
-						{
-							const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
-							if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
-							{
-								renderChunkPtr->addDirtyLightPosition(curLightVoxel);
-							}
-						}
+						tryAddDirtyLightVoxel(WorldInt3(x, y, z));
 					}
+				}
+			}
+		}
+	}
+
+	// Set all player light voxels dirty if the option changed.
+	if (playerLightEnabledChanged)
+	{
+		const WorldInt3 componentMinPlayerLightVoxelMin(
+			std::min(prevPlayerLightVoxelMin.x, newPlayerLightVoxelMin.x),
+			std::min(prevPlayerLightVoxelMin.y, newPlayerLightVoxelMin.y),
+			std::min(prevPlayerLightVoxelMin.z, newPlayerLightVoxelMin.z));
+		const WorldInt3 componentMaxPlayerLightVoxelMax(
+			std::max(prevPlayerLightVoxelMax.x, newPlayerLightVoxelMax.x),
+			std::max(prevPlayerLightVoxelMax.y, newPlayerLightVoxelMax.y),
+			std::max(prevPlayerLightVoxelMax.z, newPlayerLightVoxelMax.z));
+
+		for (WEInt z = componentMinPlayerLightVoxelMin.z; z <= componentMaxPlayerLightVoxelMax.z; z++)
+		{
+			for (int y = componentMinPlayerLightVoxelMin.y; y <= componentMaxPlayerLightVoxelMax.y; y++)
+			{
+				for (SNInt x = componentMinPlayerLightVoxelMin.x; x <= componentMaxPlayerLightVoxelMax.x; x++)
+				{
+					tryAddDirtyLightVoxel(WorldInt3(x, y, z));
 				}
 			}
 		}
