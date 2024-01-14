@@ -1208,7 +1208,10 @@ namespace swRender
 						shaderPerspective.ndcZDepth = (ndc0.z * u) + (ndc1.z * v) + (ndc2.z * w);
 
 						shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
-						g_totalDepthTests++;
+						if (enableDepthRead)
+						{
+							g_totalDepthTests++;
+						}
 
 						if (!enableDepthRead || (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex]))
 						{
