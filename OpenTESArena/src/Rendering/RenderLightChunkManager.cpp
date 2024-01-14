@@ -6,6 +6,17 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	void GetLightMinAndMaxVoxels(const WorldDouble3 &lightPosition, double endRadius, double ceilingScale, WorldInt3 *outMin, WorldInt3 *outMax)
+	{
+		const WorldDouble3 lightPosMin = lightPosition - WorldDouble3(endRadius, endRadius, endRadius);
+		const WorldDouble3 lightPosMax = lightPosition + WorldDouble3(endRadius, endRadius, endRadius);
+		*outMin = VoxelUtils::pointToVoxel(lightPosMin, ceilingScale);
+		*outMax = VoxelUtils::pointToVoxel(lightPosMax, ceilingScale);
+	}
+}
+
 RenderLightChunkManager::Light::Light()
 {
 	this->lightID = -1;
@@ -172,14 +183,6 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		}
 	}
 
-	auto getLightMinAndMaxVoxels = [ceilingScale](const WorldDouble3 &lightPosition, double endRadius, WorldInt3 *outMin, WorldInt3 *outMax)
-	{
-		const WorldDouble3 lightPosMin = lightPosition - WorldDouble3(endRadius, endRadius, endRadius);
-		const WorldDouble3 lightPosMax = lightPosition + WorldDouble3(endRadius, endRadius, endRadius);
-		*outMin = VoxelUtils::pointToVoxel(lightPosMin, ceilingScale);
-		*outMax = VoxelUtils::pointToVoxel(lightPosMax, ceilingScale);
-	};
-
 	auto populateTouchedVoxelLightIdLists = [this, &renderer, ceilingScale](RenderLightID lightID, const WorldDouble3 &lightPosition,
 		const WorldInt3 &lightVoxelMin, const WorldInt3 &lightVoxelMax)
 	{
@@ -207,7 +210,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	};
 
 	WorldInt3 playerLightVoxelMin, playerLightVoxelMax;
-	getLightMinAndMaxVoxels(playerLightPosition, playerLightRadiusEnd, &playerLightVoxelMin, &playerLightVoxelMax);
+	GetLightMinAndMaxVoxels(playerLightPosition, playerLightRadiusEnd, ceilingScale, &playerLightVoxelMin, &playerLightVoxelMax);
 	populateTouchedVoxelLightIdLists(this->playerLightID, playerLightPosition, playerLightVoxelMin, playerLightVoxelMax);
 
 	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
@@ -225,13 +228,13 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 			renderer.getLightRadii(lightID, &dummyLightStartRadius, &lightEndRadius);
 
 			WorldInt3 lightVoxelMin, lightVoxelMax;
-			getLightMinAndMaxVoxels(lightPosition, lightEndRadius, &lightVoxelMin, &lightVoxelMax);
+			GetLightMinAndMaxVoxels(lightPosition, lightEndRadius, ceilingScale, &lightVoxelMin, &lightVoxelMax);
 			populateTouchedVoxelLightIdLists(lightID, lightPosition, lightVoxelMin, lightVoxelMax);
 		}
 	}
 
 	WorldInt3 prevPlayerLightVoxelMin, prevPlayerLightVoxelMax;
-	getLightMinAndMaxVoxels(prevPlayerLightPosition, playerLightRadiusEnd, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
+	GetLightMinAndMaxVoxels(prevPlayerLightPosition, playerLightRadiusEnd, ceilingScale, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
 
 	// See which voxels affected by the player's light are getting their light references updated.
 	// This is for dirty voxel draw calls mainly, not about setting light references (might change later).
