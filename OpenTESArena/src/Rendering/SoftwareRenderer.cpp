@@ -1864,7 +1864,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 
 		const RenderLightingType lightingType = drawCall.lightingType;
 		double meshLightPercent = 0.0;
-		const Light *lightPtrs[RenderDrawCall::MAX_LIGHTS];
+		const Light *lightPtrs[RenderLightIdList::MAX_LIGHTS];
 		BufferView<const Light*> lightsView;
 		if (lightingType == RenderLightingType::PerMesh)
 		{

@@ -13,7 +13,6 @@
 struct RenderDrawCall
 {
 	static constexpr int MAX_TEXTURE_COUNT = 2; // For multi-texturing.
-	static constexpr int MAX_LIGHTS = 8;
 
 	UniformBufferID transformBufferID; // Translation/rotation/scale of this model
 	int transformIndex;
@@ -29,7 +28,7 @@ struct RenderDrawCall
 	
 	RenderLightingType lightingType;
 	double lightPercent; // For per-mesh lighting.
-	RenderLightID lightIDs[MAX_LIGHTS]; // For per-pixel lighting.
+	RenderLightID lightIDs[RenderLightIdList::MAX_LIGHTS]; // For per-pixel lighting.
 	int lightIdCount;
 
 	VertexShaderType vertexShaderType;

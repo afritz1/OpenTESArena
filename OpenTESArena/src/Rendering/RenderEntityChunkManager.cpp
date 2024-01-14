@@ -391,7 +391,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		BufferView<const RenderLightID> lightIdsView; // Limitation of reusing lights per voxel: entity is unlit if they are outside the world.
 		if (renderLightChunk.isValidVoxel(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z))
 		{
-			const RenderVoxelLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z);
+			const RenderLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z);
 			lightIdsView = voxelLightIdList.getLightIDs();
 		}
 

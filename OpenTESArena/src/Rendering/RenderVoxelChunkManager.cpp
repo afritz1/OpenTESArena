@@ -789,7 +789,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			isFading = !fadeAnimInst->isDoneFading();
 		}
 
-		const RenderVoxelLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(voxel.x, voxel.y, voxel.z);
+		const RenderLightIdList &voxelLightIdList = renderLightChunk.voxelLightIdLists.get(voxel.x, voxel.y, voxel.z);
 
 		constexpr int maxTransformsPerVoxel = DoorUtils::FACE_COUNT;
 		constexpr int maxDrawCallsPerVoxel = RenderVoxelMeshInstance::MAX_TEXTURES + 1; // Sum of all index buffers.
@@ -827,7 +827,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		{
 			RenderLightingType type;
 			double percent;
-			RenderLightID ids[RenderDrawCall::MAX_LIGHTS];
+			RenderLightID ids[RenderLightIdList::MAX_LIGHTS];
 			int idCount;
 		};
 

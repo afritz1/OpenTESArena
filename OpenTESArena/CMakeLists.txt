@@ -493,6 +493,7 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderLightChunk.h"
     "${SRC_ROOT}/Rendering/RenderLightChunkManager.cpp"
     "${SRC_ROOT}/Rendering/RenderLightChunkManager.h"
+    "${SRC_ROOT}/Rendering/RenderLightUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderLightUtils.h"
     "${SRC_ROOT}/Rendering/RenderShaderUtils.h"
     "${SRC_ROOT}/Rendering/RenderSkyManager.h"
