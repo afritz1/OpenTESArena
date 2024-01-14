@@ -1738,19 +1738,6 @@ bool SoftwareRenderer::tryCreateLight(RenderLightID *outID)
 	return true;
 }
 
-const Double3 &SoftwareRenderer::getLightPosition(RenderLightID id)
-{
-	const Light &light = this->lights.get(id);
-	return light.worldPoint;
-}
-
-void SoftwareRenderer::getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius)
-{
-	const Light &light = this->lights.get(id);
-	*outStartRadius = light.startRadius;
-	*outEndRadius = light.endRadius;
-}
-
 void SoftwareRenderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
 {
 	Light &light = this->lights.get(id);

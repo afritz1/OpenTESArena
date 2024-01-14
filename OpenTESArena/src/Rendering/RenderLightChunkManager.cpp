@@ -20,30 +20,46 @@ namespace
 RenderLightChunkManager::Light::Light()
 {
 	this->lightID = -1;
+	this->startRadius = 0.0;
+	this->endRadius = 0.0;
 	this->enabled = false;
 }
 
-void RenderLightChunkManager::Light::init(RenderLightID lightID, bool enabled)
+void RenderLightChunkManager::Light::init(RenderLightID lightID, const WorldDouble3 &point, double startRadius, double endRadius, bool enabled)
 {
 	this->lightID = lightID;
+	this->point = point;
+	this->startRadius = startRadius;
+	this->endRadius = endRadius;
 	this->enabled = enabled;
+}
+
+void RenderLightChunkManager::Light::clear()
+{
+	this->lightID = -1;
+	this->point = Double3::Zero;
+	this->startRadius = 0.0;
+	this->endRadius = 0.0;
+	this->enabled = false;
 }
 
 RenderLightChunkManager::RenderLightChunkManager()
 {
-	this->playerLightID = -1;
+	
 }
 
 void RenderLightChunkManager::init(Renderer &renderer)
 {
-	// Populate global lights.
-	if (!renderer.tryCreateLight(&this->playerLightID))
+	// Player light is always allocated.
+	RenderLightID playerLightID;
+	if (!renderer.tryCreateLight(&playerLightID))
 	{
 		DebugLogError("Couldn't create render light ID for player.");
 		return;
 	}
 
-	renderer.setLightRadius(this->playerLightID, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS);
+	this->playerLight.init(playerLightID, Double3::Zero, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS, false);
+	renderer.setLightRadius(this->playerLight.lightID, this->playerLight.startRadius, this->playerLight.endRadius);
 }
 
 void RenderLightChunkManager::shutdown(Renderer &renderer)
@@ -54,10 +70,10 @@ void RenderLightChunkManager::shutdown(Renderer &renderer)
 		this->recycleChunk(i);
 	}
 
-	if (this->playerLightID >= 0)
+	if (this->playerLight.lightID >= 0)
 	{
-		renderer.freeLight(this->playerLightID);
-		this->playerLightID = -1;
+		renderer.freeLight(this->playerLight.lightID);
+		this->playerLight.clear();
 	}
 
 	for (auto &pair : this->entityLights)
@@ -132,45 +148,43 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 
 				const bool isLightEnabled = !EntityUtils::isStreetlight(entityDef) || nightLightsAreActive;
 
-				Light light;
-				light.init(lightID, isLightEnabled);
-				this->entityLights.emplace(entityInstID, std::move(light));
-
 				const CoordDouble3 entityCoord3D = entityChunkManager.getEntityPosition3D(entityInstID, ceilingScale, voxelChunkManager);
 				const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord3D);
 
 				const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
 				const double entityCenterYPosition = entityWorldPos.y + (entityBBox.height * 0.50);
 				const WorldDouble3 entityLightWorldPos(entityWorldPos.x, entityCenterYPosition, entityWorldPos.z);
-				renderer.setLightPosition(lightID, entityLightWorldPos);
-				renderer.setLightRadius(lightID, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius);
+
+				Light light;
+				light.init(lightID, entityLightWorldPos, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius, isLightEnabled);
+
+				renderer.setLightPosition(lightID, light.point);
+				renderer.setLightRadius(lightID, light.startRadius, light.endRadius);
+
+				this->entityLights.emplace(entityInstID, std::move(light));
 			}
 		}
 	}
 
-	const WorldDouble3 prevPlayerLightPosition = renderer.getLightPosition(this->playerLightID);
-	const WorldDouble3 playerLightPosition = VoxelUtils::coordToWorldPoint(cameraCoord);
-	renderer.setLightPosition(this->playerLightID, playerLightPosition);
+	const WorldDouble3 prevPlayerLightPosition = this->playerLight.point;
+	const WorldDouble3 newPlayerLightPosition = VoxelUtils::coordToWorldPoint(cameraCoord);
+	this->playerLight.point = newPlayerLightPosition;
 
-	double playerLightRadiusStart, playerLightRadiusEnd;
 	if (isFogActive)
 	{
-		playerLightRadiusStart = ArenaRenderUtils::PLAYER_FOG_LIGHT_START_RADIUS;
-		playerLightRadiusEnd = ArenaRenderUtils::PLAYER_FOG_LIGHT_END_RADIUS;
+		this->playerLight.startRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_START_RADIUS;
+		this->playerLight.endRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_END_RADIUS;
 	}
 	else
 	{
-		playerLightRadiusStart = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
-		playerLightRadiusEnd = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
+		this->playerLight.startRadius = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
+		this->playerLight.endRadius = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
 	}
 
-	if (!playerHasLight)
-	{
-		playerLightRadiusStart = 0.0;
-		playerLightRadiusEnd = 0.0;
-	}
+	this->playerLight.enabled = playerHasLight;
 
-	renderer.setLightRadius(this->playerLightID, playerLightRadiusStart, playerLightRadiusEnd);
+	renderer.setLightPosition(this->playerLight.lightID, newPlayerLightPosition);
+	renderer.setLightRadius(this->playerLight.lightID, this->playerLight.startRadius, this->playerLight.endRadius);
 
 	// Clear all previous light references in voxels.
 	// @todo: track touched, newly-touched, and no-longer-touched voxels each frame for moving lights so we don't have to iterate all voxels
@@ -209,9 +223,9 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		}
 	};
 
-	WorldInt3 playerLightVoxelMin, playerLightVoxelMax;
-	GetLightMinAndMaxVoxels(playerLightPosition, playerLightRadiusEnd, ceilingScale, &playerLightVoxelMin, &playerLightVoxelMax);
-	populateTouchedVoxelLightIdLists(this->playerLightID, playerLightPosition, playerLightVoxelMin, playerLightVoxelMax);
+	WorldInt3 newPlayerLightVoxelMin, newPlayerLightVoxelMax;
+	GetLightMinAndMaxVoxels(newPlayerLightPosition, this->playerLight.endRadius, ceilingScale, &newPlayerLightVoxelMin, &newPlayerLightVoxelMax);
+	populateTouchedVoxelLightIdLists(this->playerLight.lightID, newPlayerLightPosition, newPlayerLightVoxelMin, newPlayerLightVoxelMax);
 
 	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
 	// - @todo: this method doesn't implicitly allow sorting by distance because it doesn't check lights per voxel, it checks voxels per light.
@@ -222,29 +236,26 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		if (light.enabled)
 		{
 			const RenderLightID lightID = light.lightID;
-			const WorldDouble3 &lightPosition = renderer.getLightPosition(lightID);
-
-			double dummyLightStartRadius, lightEndRadius;
-			renderer.getLightRadii(lightID, &dummyLightStartRadius, &lightEndRadius);
+			const WorldDouble3 &lightPosition = light.point;
 
 			WorldInt3 lightVoxelMin, lightVoxelMax;
-			GetLightMinAndMaxVoxels(lightPosition, lightEndRadius, ceilingScale, &lightVoxelMin, &lightVoxelMax);
+			GetLightMinAndMaxVoxels(lightPosition, light.endRadius, ceilingScale, &lightVoxelMin, &lightVoxelMax);
 			populateTouchedVoxelLightIdLists(lightID, lightPosition, lightVoxelMin, lightVoxelMax);
 		}
 	}
 
 	WorldInt3 prevPlayerLightVoxelMin, prevPlayerLightVoxelMax;
-	GetLightMinAndMaxVoxels(prevPlayerLightPosition, playerLightRadiusEnd, ceilingScale, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
+	GetLightMinAndMaxVoxels(prevPlayerLightPosition, this->playerLight.endRadius, ceilingScale, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
 
 	// See which voxels affected by the player's light are getting their light references updated.
 	// This is for dirty voxel draw calls mainly, not about setting light references (might change later).
-	if ((prevPlayerLightVoxelMin != playerLightVoxelMin) || (prevPlayerLightVoxelMax != playerLightVoxelMax))
+	if ((prevPlayerLightVoxelMin != newPlayerLightVoxelMin) || (prevPlayerLightVoxelMax != newPlayerLightVoxelMax))
 	{
-		for (WEInt z = playerLightVoxelMin.z; z <= playerLightVoxelMax.z; z++)
+		for (WEInt z = newPlayerLightVoxelMin.z; z <= newPlayerLightVoxelMax.z; z++)
 		{
-			for (int y = playerLightVoxelMin.y; y <= playerLightVoxelMax.y; y++)
+			for (int y = newPlayerLightVoxelMin.y; y <= newPlayerLightVoxelMax.y; y++)
 			{
-				for (SNInt x = playerLightVoxelMin.x; x <= playerLightVoxelMax.x; x++)
+				for (SNInt x = newPlayerLightVoxelMin.x; x <= newPlayerLightVoxelMax.x; x++)
 				{
 					const bool isInPrevRange =
 						(x >= prevPlayerLightVoxelMin.x) && (x <= prevPlayerLightVoxelMax.x) &&

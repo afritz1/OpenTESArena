@@ -924,18 +924,6 @@ bool Renderer::tryCreateLight(RenderLightID *outID)
 	return this->renderer3D->tryCreateLight(outID);
 }
 
-const Double3 &Renderer::getLightPosition(RenderLightID id)
-{
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->getLightPosition(id);
-}
-
-void Renderer::getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->getLightRadii(id, outStartRadius, outEndRadius);
-}
-
 void Renderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
 {
 	DebugAssert(this->renderer3D->isInited());

@@ -76,8 +76,6 @@ public:
 	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) = 0;
 	virtual void freeUniformBuffer(UniformBufferID id) = 0;
 	virtual bool tryCreateLight(RenderLightID *outID) = 0;
-	virtual const Double3 &getLightPosition(RenderLightID id) = 0;
-	virtual void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius) = 0;
 	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
 	virtual void setLightRadius(RenderLightID id, double startRadius, double endRadius) = 0;
 	virtual void freeLight(RenderLightID id) = 0;

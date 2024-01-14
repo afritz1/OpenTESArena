@@ -21,14 +21,17 @@ public:
 	struct Light
 	{
 		RenderLightID lightID;
+		WorldDouble3 point;
+		double startRadius, endRadius;
 		bool enabled;
 
 		Light();
 
-		void init(RenderLightID lightID, bool enabled);
+		void init(RenderLightID lightID, const WorldDouble3 &point, double startRadius, double endRadius, bool enabled);
+		void clear();
 	};
 private:
-	RenderLightID playerLightID;
+	Light playerLight;
 	std::unordered_map<EntityInstanceID, Light> entityLights; // All lights have an associated entity.
 public:
 	RenderLightChunkManager();
