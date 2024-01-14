@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "RenderGeometryUtils.h"
+#include "RenderLightUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Math/MathUtils.h"
@@ -11,8 +12,6 @@
 #include "../Utilities/Palette.h"
 
 #include "components/utilities/BufferView.h"
-
-// Abstract base class for 3D renderer.
 
 class Random;
 class TextureBuilder;
@@ -22,6 +21,7 @@ struct RenderDrawCall;
 struct RenderFrameSettings;
 struct RenderInitSettings;
 
+// Abstract base class for 3D renderer.
 class RendererSystem3D
 {
 public:

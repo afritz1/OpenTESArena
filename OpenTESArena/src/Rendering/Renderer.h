@@ -12,6 +12,7 @@
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
+#include "RenderLightUtils.h"
 #include "../Assets/TextureUtils.h"
 #include "../UI/Texture.h"
 

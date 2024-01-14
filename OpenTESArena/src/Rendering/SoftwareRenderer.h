@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "RendererSystem3D.h"
+#include "RenderLightUtils.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"

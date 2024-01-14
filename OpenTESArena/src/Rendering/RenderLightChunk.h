@@ -1,8 +1,10 @@
 #ifndef RENDER_LIGHT_CHUNK_H
 #define RENDER_LIGHT_CHUNK_H
 
+#include <vector>
+
 #include "RenderDrawCall.h"
-#include "RenderShaderUtils.h"
+#include "RenderLightUtils.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../World/Chunk.h"
 

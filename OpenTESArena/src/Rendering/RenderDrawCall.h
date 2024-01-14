@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "RenderGeometryUtils.h"
+#include "RenderLightUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Math/Matrix4.h"
