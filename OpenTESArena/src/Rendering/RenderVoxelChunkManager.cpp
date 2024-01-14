@@ -1314,7 +1314,6 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtPosition(chunkPos);
-		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 		this->loadMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->loadTextures(voxelChunk, textureManager, renderer);
 		this->loadChasmWalls(renderChunk, voxelChunk);
