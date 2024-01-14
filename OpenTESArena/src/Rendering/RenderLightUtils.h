@@ -24,6 +24,8 @@ struct RenderLightIdList
 
 	BufferView<const RenderLightID> getLightIDs() const;
 	void tryAddLight(RenderLightID id);
+	void removeLightAt(int index);
+	void removeLight(RenderLightID id);
 	void clear();
 };
 
