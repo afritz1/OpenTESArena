@@ -666,7 +666,7 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 		this->getAdjacentVoxelMeshDefIDs(doorCoord, &northChunkIndex, &eastChunkIndex, &southChunkIndex, &westChunkIndex,
 			&northVoxelMeshDefID, &eastVoxelMeshDefID, &southVoxelMeshDefID, &westVoxelMeshDefID);
 
-		auto isVoxelAir = [this](const std::optional<int> &chunkIndex, VoxelChunk::VoxelMeshDefID meshDefID)
+		auto isVoxelValidForDoorFace = [this](const std::optional<int> &chunkIndex, VoxelChunk::VoxelMeshDefID meshDefID)
 		{
 			if (!chunkIndex.has_value())
 			{
@@ -675,15 +675,15 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 
 			const VoxelChunk &voxelChunk = this->getChunkAtIndex(*chunkIndex);
 			const VoxelMeshDefinition &meshDef = voxelChunk.getMeshDef(meshDefID);
-			return meshDef.isEmpty();
+			return meshDef.isEmpty() || (meshDef.scaleType == VoxelMeshScaleType::UnscaledFromMin);
 		};
 
-		const bool isNorthAir = isVoxelAir(northChunkIndex, northVoxelMeshDefID);
-		const bool isEastAir = isVoxelAir(eastChunkIndex, eastVoxelMeshDefID);
-		const bool isSouthAir = isVoxelAir(southChunkIndex, southVoxelMeshDefID);
-		const bool isWestAir = isVoxelAir(westChunkIndex, westVoxelMeshDefID);
+		const bool isNorthValid = isVoxelValidForDoorFace(northChunkIndex, northVoxelMeshDefID);
+		const bool isEastValid = isVoxelValidForDoorFace(eastChunkIndex, eastVoxelMeshDefID);
+		const bool isSouthValid = isVoxelValidForDoorFace(southChunkIndex, southVoxelMeshDefID);
+		const bool isWestValid = isVoxelValidForDoorFace(westChunkIndex, westVoxelMeshDefID);
 
-		visInst.update(isCameraNorthInclusive, isCameraEastInclusive, isNorthAir, isEastAir, isSouthAir, isWestAir);
+		visInst.update(isCameraNorthInclusive, isCameraEastInclusive, isNorthValid, isEastValid, isSouthValid, isWestValid);
 		chunk.addDirtyDoorVisInstPosition(doorCoord.voxel);
 	}
 }
