@@ -31,7 +31,7 @@ public:
 		Light();
 
 		void init(RenderLightID lightID, const WorldDouble3 &point, double startRadius, double endRadius, bool enabled);
-		void updatePosition(const WorldDouble3 &point, double ceilingScale, int chunkHeight);
+		void update(const WorldDouble3 &point, double startRadius, double endRadius, double ceilingScale, int chunkHeight);
 		void clear();
 	};
 private:

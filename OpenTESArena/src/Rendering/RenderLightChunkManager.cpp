@@ -36,14 +36,19 @@ void RenderLightChunkManager::Light::init(RenderLightID lightID, const WorldDoub
 	this->enabled = enabled;
 }
 
-void RenderLightChunkManager::Light::updatePosition(const WorldDouble3 &point, double ceilingScale, int chunkHeight)
+void RenderLightChunkManager::Light::update(const WorldDouble3 &point, double startRadius, double endRadius, double ceilingScale, int chunkHeight)
 {
+	const double oldRadius = this->endRadius;
+	const double radius = endRadius;
+	this->startRadius = startRadius;
+	this->endRadius = endRadius;
+
 	const WorldDouble3 oldPoint = this->point;
 	const WorldDouble3 oldMinPoint = this->minPoint;
 	const WorldDouble3 oldMaxPoint = this->maxPoint;
 	this->point = point;
-	this->minPoint = point - WorldDouble3(this->endRadius, this->endRadius, this->endRadius);
-	this->maxPoint = point + WorldDouble3(this->endRadius, this->endRadius, this->endRadius);
+	this->minPoint = point - WorldDouble3(radius, radius, radius);
+	this->maxPoint = point + WorldDouble3(radius, radius, radius);
 
 	const WorldInt3 oldMinVoxel = VoxelUtils::pointToVoxel(oldMinPoint, ceilingScale);
 	const WorldInt3 oldMaxVoxel = VoxelUtils::pointToVoxel(oldMaxPoint, ceilingScale);
@@ -65,55 +70,48 @@ void RenderLightChunkManager::Light::updatePosition(const WorldDouble3 &point, d
 		std::max(clampedOldMaxVoxel.y, clampedMaxVoxel.y),
 		std::max(clampedOldMaxVoxel.z, clampedMaxVoxel.z));
 
-	this->voxels.clear();
+	this->removedVoxels.clear();
 
-	// Add current voxels.
-	for (WEInt z = clampedMinVoxel.z; z <= clampedMaxVoxel.z; z++)
+	// Add no-longer-touched voxels.
+	for (const VoxelInt3 &voxel : this->voxels)
 	{
-		for (int y = clampedMinVoxel.y; y <= clampedMaxVoxel.y; y++)
+		const bool shouldRemoveX = (voxel.x < clampedMinVoxel.x) || (voxel.x > clampedMaxVoxel.x);
+		const bool shouldRemoveY = (voxel.y < clampedMinVoxel.y) || (voxel.y > clampedMaxVoxel.y);
+		const bool shouldRemoveZ = (voxel.z < clampedMinVoxel.z) || (voxel.z > clampedMaxVoxel.z);
+		const bool shouldRemove = shouldRemoveX || shouldRemoveY || shouldRemoveZ;
+		if (shouldRemove)
 		{
-			for (SNInt x = clampedMinVoxel.x; x <= clampedMaxVoxel.x; x++)
-			{
-				this->voxels.emplace_back(VoxelInt3(x, y, z));
-			}
+			this->removedVoxels.emplace_back(voxel);
 		}
 	}
 
+	this->voxels.clear();
 	this->addedVoxels.clear();
-	this->removedVoxels.clear();
 
-	// Determine which voxels are newly-touched and no-longer-touched.
-	for (WEInt z = componentMinVoxel.z; z <= componentMaxVoxel.z; z++)
+	// Add current and newly-touched voxels.
+	for (WEInt z = clampedMinVoxel.z; z <= clampedMaxVoxel.z; z++)
 	{
 		const bool shouldAddZ = (z < clampedOldMinVoxel.z) || (z > clampedOldMaxVoxel.z);
-		const bool shouldRemoveZ = (z < clampedMinVoxel.z) || (z > clampedMaxVoxel.z);
 
-		for (int y = componentMinVoxel.y; y <= componentMaxVoxel.y; y++)
+		for (int y = clampedMinVoxel.y; y <= clampedMaxVoxel.y; y++)
 		{
 			const bool shouldAddY = (y < clampedOldMinVoxel.y) || (y > clampedOldMaxVoxel.y);
-			const bool shouldRemoveY = (y < clampedMinVoxel.y) || (y > clampedMaxVoxel.y);
 
-			for (SNInt x = componentMinVoxel.x; x <= componentMaxVoxel.x; x++)
+			for (SNInt x = clampedMinVoxel.x; x <= clampedMaxVoxel.x; x++)
 			{
 				const bool shouldAddX = (x < clampedOldMinVoxel.x) || (x > clampedOldMaxVoxel.x);
-				const bool shouldRemoveX = (x < clampedMinVoxel.x) || (x > clampedMaxVoxel.x);
-
-				const bool shouldAdd = shouldAddX && shouldAddY && shouldAddZ;
-				const bool shouldRemove = shouldRemoveX && shouldRemoveY && shouldRemoveZ;
-
 				const VoxelInt3 voxel(x, y, z);
+
+				this->voxels.emplace_back(voxel);
+
+				const bool shouldAdd = shouldAddX || shouldAddY || shouldAddZ;
 				if (shouldAdd)
 				{
 					this->addedVoxels.emplace_back(voxel);
 				}
-				else if (shouldRemove)
-				{
-					this->removedVoxels.emplace_back(voxel);
-				}
 			}
 		}
 	}
-
 }
 
 void RenderLightChunkManager::Light::clear()
