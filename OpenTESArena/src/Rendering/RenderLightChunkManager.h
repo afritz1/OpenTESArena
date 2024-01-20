@@ -22,12 +22,16 @@ public:
 	{
 		RenderLightID lightID;
 		WorldDouble3 point;
+		WorldDouble3 minPoint, maxPoint; // Bounding box, updated when the light moves.
+		std::vector<WorldInt3> voxels, addedVoxels, removedVoxels; // Current, newly-touched, and no-longer-touched voxels this frame.
+
 		double startRadius, endRadius;
-		bool enabled;
+		bool enabled; // Enabled lights influence light ID lists and can be used in draw calls.
 
 		Light();
 
 		void init(RenderLightID lightID, const WorldDouble3 &point, double startRadius, double endRadius, bool enabled);
+		void updatePosition(const WorldDouble3 &point, double ceilingScale, int chunkHeight);
 		void clear();
 	};
 private:

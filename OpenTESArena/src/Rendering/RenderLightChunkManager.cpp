@@ -29,15 +29,102 @@ void RenderLightChunkManager::Light::init(RenderLightID lightID, const WorldDoub
 {
 	this->lightID = lightID;
 	this->point = point;
+	this->minPoint = point - WorldDouble3(endRadius, endRadius, endRadius);
+	this->maxPoint = point + WorldDouble3(endRadius, endRadius, endRadius);
 	this->startRadius = startRadius;
 	this->endRadius = endRadius;
 	this->enabled = enabled;
+}
+
+void RenderLightChunkManager::Light::updatePosition(const WorldDouble3 &point, double ceilingScale, int chunkHeight)
+{
+	const WorldDouble3 oldPoint = this->point;
+	const WorldDouble3 oldMinPoint = this->minPoint;
+	const WorldDouble3 oldMaxPoint = this->maxPoint;
+	this->point = point;
+	this->minPoint = point - WorldDouble3(this->endRadius, this->endRadius, this->endRadius);
+	this->maxPoint = point + WorldDouble3(this->endRadius, this->endRadius, this->endRadius);
+
+	const WorldInt3 oldMinVoxel = VoxelUtils::pointToVoxel(oldMinPoint, ceilingScale);
+	const WorldInt3 oldMaxVoxel = VoxelUtils::pointToVoxel(oldMaxPoint, ceilingScale);
+	const WorldInt3 minVoxel = VoxelUtils::pointToVoxel(this->minPoint, ceilingScale);
+	const WorldInt3 maxVoxel = VoxelUtils::pointToVoxel(this->maxPoint, ceilingScale);
+
+	const int voxelYMax = chunkHeight - 1;
+	const WorldInt3 clampedOldMinVoxel(oldMinVoxel.x, std::clamp(oldMinVoxel.y, 0, voxelYMax), oldMinVoxel.z);
+	const WorldInt3 clampedOldMaxVoxel(oldMaxVoxel.x, std::clamp(oldMaxVoxel.y, 0, voxelYMax), oldMaxVoxel.z);
+	const WorldInt3 clampedMinVoxel(minVoxel.x, std::clamp(minVoxel.y, 0, voxelYMax), minVoxel.z);
+	const WorldInt3 clampedMaxVoxel(maxVoxel.x, std::clamp(maxVoxel.y, 0, voxelYMax), maxVoxel.z);
+
+	const WorldInt3 componentMinVoxel(
+		std::min(clampedOldMinVoxel.x, clampedMinVoxel.x),
+		std::min(clampedOldMinVoxel.y, clampedMinVoxel.y),
+		std::min(clampedOldMinVoxel.z, clampedMinVoxel.z));
+	const WorldInt3 componentMaxVoxel(
+		std::max(clampedOldMaxVoxel.x, clampedMaxVoxel.x),
+		std::max(clampedOldMaxVoxel.y, clampedMaxVoxel.y),
+		std::max(clampedOldMaxVoxel.z, clampedMaxVoxel.z));
+
+	this->voxels.clear();
+
+	// Add current voxels.
+	for (WEInt z = clampedMinVoxel.z; z <= clampedMaxVoxel.z; z++)
+	{
+		for (int y = clampedMinVoxel.y; y <= clampedMaxVoxel.y; y++)
+		{
+			for (SNInt x = clampedMinVoxel.x; x <= clampedMaxVoxel.x; x++)
+			{
+				this->voxels.emplace_back(VoxelInt3(x, y, z));
+			}
+		}
+	}
+
+	this->addedVoxels.clear();
+	this->removedVoxels.clear();
+
+	// Determine which voxels are newly-touched and no-longer-touched.
+	for (WEInt z = componentMinVoxel.z; z <= componentMaxVoxel.z; z++)
+	{
+		const bool shouldAddZ = (z < clampedOldMinVoxel.z) || (z > clampedOldMaxVoxel.z);
+		const bool shouldRemoveZ = (z < clampedMinVoxel.z) || (z > clampedMaxVoxel.z);
+
+		for (int y = componentMinVoxel.y; y <= componentMaxVoxel.y; y++)
+		{
+			const bool shouldAddY = (y < clampedOldMinVoxel.y) || (y > clampedOldMaxVoxel.y);
+			const bool shouldRemoveY = (y < clampedMinVoxel.y) || (y > clampedMaxVoxel.y);
+
+			for (SNInt x = componentMinVoxel.x; x <= componentMaxVoxel.x; x++)
+			{
+				const bool shouldAddX = (x < clampedOldMinVoxel.x) || (x > clampedOldMaxVoxel.x);
+				const bool shouldRemoveX = (x < clampedMinVoxel.x) || (x > clampedMaxVoxel.x);
+
+				const bool shouldAdd = shouldAddX && shouldAddY && shouldAddZ;
+				const bool shouldRemove = shouldRemoveX && shouldRemoveY && shouldRemoveZ;
+
+				const VoxelInt3 voxel(x, y, z);
+				if (shouldAdd)
+				{
+					this->addedVoxels.emplace_back(voxel);
+				}
+				else if (shouldRemove)
+				{
+					this->removedVoxels.emplace_back(voxel);
+				}
+			}
+		}
+	}
+
 }
 
 void RenderLightChunkManager::Light::clear()
 {
 	this->lightID = -1;
 	this->point = Double3::Zero;
+	this->minPoint = Double3::Zero;
+	this->maxPoint = Double3::Zero;
+	this->voxels.clear();
+	this->addedVoxels.clear();
+	this->removedVoxels.clear();
 	this->startRadius = 0.0;
 	this->endRadius = 0.0;
 	this->enabled = false;
