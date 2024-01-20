@@ -5,10 +5,10 @@
 void RenderLightChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
-	this->voxelLightIdLists.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
+	this->lightIdLists.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 }
 
-void RenderLightChunk::addDirtyLightPosition(const VoxelInt3 &position)
+void RenderLightChunk::setVoxelDirty(const VoxelInt3 &position)
 {
 	if (!this->isValidVoxel(position.x, position.y, position.z))
 	{
@@ -16,16 +16,16 @@ void RenderLightChunk::addDirtyLightPosition(const VoxelInt3 &position)
 		return;
 	}
 
-	const auto iter = std::find(this->dirtyLightPositions.begin(), this->dirtyLightPositions.end(), position);
-	if (iter == this->dirtyLightPositions.end())
+	const auto iter = std::find(this->dirtyVoxels.begin(), this->dirtyVoxels.end(), position);
+	if (iter == this->dirtyVoxels.end())
 	{
-		this->dirtyLightPositions.emplace_back(position);
+		this->dirtyVoxels.emplace_back(position);
 	}
 }
 
 void RenderLightChunk::clear()
 {
 	Chunk::clear();
-	this->voxelLightIdLists.clear();
-	this->dirtyLightPositions.clear();
+	this->lightIdLists.clear();
+	this->dirtyVoxels.clear();
 }

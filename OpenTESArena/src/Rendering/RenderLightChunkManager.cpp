@@ -192,7 +192,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	for (int i = 0; i < this->getChunkCount(); i++)
 	{
 		RenderLightChunk &renderChunk = this->getChunkAtIndex(i);
-		for (RenderLightIdList &voxelLightIdList : renderChunk.voxelLightIdLists)
+		for (RenderLightIdList &voxelLightIdList : renderChunk.lightIdLists)
 		{
 			voxelLightIdList.clear();
 		}
@@ -215,7 +215,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 						const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
 						if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
 						{
-							RenderLightIdList &voxelLightIdList = renderChunkPtr->voxelLightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
+							RenderLightIdList &voxelLightIdList = renderChunkPtr->lightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
 							voxelLightIdList.tryAddLight(lightID);
 						}
 					}
@@ -260,7 +260,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
 			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
 			{
-				renderChunkPtr->addDirtyLightPosition(curLightVoxel);
+				renderChunkPtr->setVoxelDirty(curLightVoxel);
 			}
 		}
 	};
@@ -362,7 +362,7 @@ void RenderLightChunkManager::cleanUp()
 {
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
-		chunkPtr->dirtyLightPositions.clear();
+		chunkPtr->dirtyVoxels.clear();
 	}
 }
 
