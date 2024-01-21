@@ -148,7 +148,7 @@ void RenderLightChunkManager::Light::clear()
 
 RenderLightChunkManager::RenderLightChunkManager()
 {
-	
+	this->isSceneChanged = false;
 }
 
 void RenderLightChunkManager::init(Renderer &renderer)
@@ -233,6 +233,11 @@ void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, Buff
 			}
 		}
 	}
+}
+
+void RenderLightChunkManager::loadScene()
+{
+	this->isSceneChanged = true;
 }
 
 void RenderLightChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
@@ -369,7 +374,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 
 	// Unassign lights from no-longer-touched light ID lists and current-touched light ID lists if disabled.
 	this->unregisterLightFromVoxels(this->playerLight, this->playerLight.removedVoxels);
-	if (playerLightEnabledChanged && !this->playerLight.enabled)
+	if ((playerLightEnabledChanged && !this->playerLight.enabled) || this->isSceneChanged)
 	{
 		this->unregisterLightFromVoxels(this->playerLight, this->playerLight.voxels);
 	}
@@ -382,15 +387,12 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		{
 			this->unregisterLightFromVoxels(light, light.voxels);
 		}
-
-		// @todo: if light enabled changed, unregister its .voxels
-		// - maybe do this in setNightLightActive()?
 	}
 
 	// Add lights to newly-touched light ID lists if enabled.
 	if (this->playerLight.enabled)
 	{
-		if (playerLightEnabledChanged)
+		if (playerLightEnabledChanged || this->isSceneChanged)
 		{
 			this->registerLightToVoxels(this->playerLight, this->playerLight.voxels, ceilingScale);
 		}
@@ -406,9 +408,6 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		if (light.enabled)
 		{
 			this->registerLightToVoxels(light, light.addedVoxels, ceilingScale);
-
-			// @todo: if light enabled changed, register its .voxels
-			// - maybe do this in setNightLightActive()?
 		}
 	}
 
@@ -464,6 +463,8 @@ void RenderLightChunkManager::cleanUp()
 		light.addedVoxels.clear();
 		light.removedVoxels.clear();
 	}
+
+	this->isSceneChanged = false;
 }
 
 void RenderLightChunkManager::unloadScene(Renderer &renderer)

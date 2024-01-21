@@ -37,6 +37,7 @@ public:
 private:
 	Light playerLight;
 	std::unordered_map<EntityInstanceID, Light> entityLights; // All lights have an associated entity.
+	bool isSceneChanged; // Supports player light position changes between interiors.
 
 	void registerLightToVoxels(const Light &light, BufferView<const WorldInt3> voxels, double ceilingScale);
 	void unregisterLightFromVoxels(const Light &light, BufferView<const WorldInt3> voxels);
@@ -45,6 +46,8 @@ public:
 
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
+
+	void loadScene();
 
 	// Chunk allocating/freeing update function, called before light resources are updated.
 	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
