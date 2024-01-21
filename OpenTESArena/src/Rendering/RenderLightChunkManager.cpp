@@ -445,6 +445,16 @@ void RenderLightChunkManager::cleanUp()
 	{
 		chunkPtr->dirtyVoxels.clear();
 	}
+
+	this->playerLight.addedVoxels.clear();
+	this->playerLight.removedVoxels.clear();
+
+	for (auto &pair : this->entityLights)
+	{
+		Light &light = pair.second;
+		light.addedVoxels.clear();
+		light.removedVoxels.clear();
+	}
 }
 
 void RenderLightChunkManager::unloadScene(Renderer &renderer)
