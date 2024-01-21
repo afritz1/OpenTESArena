@@ -51,8 +51,7 @@ private:
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> paletteIndicesTextureRefs;
 
 	// All accumulated draw calls from entities each frame. This is sent to the renderer.
-	std::vector<RenderDrawCall> alphaTestedDrawCallsCache;
-	std::vector<RenderDrawCall> ghostDrawCallsCache;
+	std::vector<RenderDrawCall> drawCallsCache;
 
 	ObjectTextureID getTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ, const EntityChunkManager &entityChunkManager) const;
 
@@ -72,8 +71,7 @@ public:
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	BufferView<const RenderDrawCall> getAlphaTestedDrawCalls() const;
-	BufferView<const RenderDrawCall> getGhostDrawCalls() const;
+	BufferView<const RenderDrawCall> getDrawCalls() const;
 
 	// Chunk allocating/freeing update function, called before entity resources are updated.
 	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

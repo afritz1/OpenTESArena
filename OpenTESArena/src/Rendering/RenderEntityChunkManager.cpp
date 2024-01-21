@@ -212,8 +212,7 @@ void RenderEntityChunkManager::shutdown(Renderer &renderer)
 	this->anims.clear();
 	this->meshInst.freeBuffers(renderer);
 	this->paletteIndicesTextureRefs.clear();
-	this->alphaTestedDrawCallsCache.clear();
-	this->ghostDrawCallsCache.clear();
+	this->drawCallsCache.clear();
 }
 
 ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ,
@@ -239,14 +238,9 @@ ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityIn
 	return textureRefs.get(linearizedKeyframeIndex).get();
 }
 
-BufferView<const RenderDrawCall> RenderEntityChunkManager::getAlphaTestedDrawCalls() const
+BufferView<const RenderDrawCall> RenderEntityChunkManager::getDrawCalls() const
 {
-	return this->alphaTestedDrawCallsCache;
-}
-
-BufferView<const RenderDrawCall> RenderEntityChunkManager::getGhostDrawCalls() const
-{
-	return this->ghostDrawCallsCache;
+	return this->drawCallsCache;
 }
 
 void RenderEntityChunkManager::loadTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
@@ -349,8 +343,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 	const RenderLightChunk &renderLightChunk, const CoordDouble2 &cameraCoordXZ, double ceilingScale,
 	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager)
 {
-	renderChunk.alphaTestedDrawCalls.clear();
-	renderChunk.ghostDrawCalls.clear();
+	renderChunk.drawCalls.clear();
 
 	for (const EntityInstanceID entityInstID : entityVisChunk.visibleEntities)
 	{
@@ -367,7 +360,6 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		const bool isCitizen = entityInst.isCitizen();
 		const bool isGhost = EntityUtils::isGhost(entityDef);
 		const bool isPuddle = EntityUtils::isPuddle(entityDef);
-		std::vector<RenderDrawCall> *drawCallsPtr = &renderChunk.alphaTestedDrawCalls;
 		if (isCitizen)
 		{
 			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
@@ -379,7 +371,6 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		else if (isGhost)
 		{
 			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
-			drawCallsPtr = &renderChunk.ghostDrawCalls;
 		}
 		else if (isPuddle)
 		{
@@ -399,24 +390,20 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		DebugAssert(transformBufferIter != this->transformBufferIDs.end());
 		const UniformBufferID entityTransformBufferID = transformBufferIter->second;
 		const int entityTransformIndex = 0; // Each entity has their own transform buffer.
-		this->addDrawCall(entityTransformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView, pixelShaderType, *drawCallsPtr);
+		this->addDrawCall(entityTransformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView, pixelShaderType, renderChunk.drawCalls);
 	}
 }
 
 void RenderEntityChunkManager::rebuildDrawCallsList()
 {
-	this->alphaTestedDrawCallsCache.clear();
-	this->ghostDrawCallsCache.clear();
+	this->drawCallsCache.clear();
 
 	// Assumed to be sorted during entity visibility calculations.
 	for (size_t i = 0; i < this->activeChunks.size(); i++)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		BufferView<const RenderDrawCall> alphaTestedDrawCalls = chunkPtr->alphaTestedDrawCalls;
-		this->alphaTestedDrawCallsCache.insert(this->alphaTestedDrawCallsCache.end(), alphaTestedDrawCalls.begin(), alphaTestedDrawCalls.end());
-
-		BufferView<const RenderDrawCall> ghostDrawCalls = chunkPtr->ghostDrawCalls;
-		this->ghostDrawCallsCache.insert(this->ghostDrawCallsCache.end(), ghostDrawCalls.begin(), ghostDrawCalls.end());
+		BufferView<const RenderDrawCall> drawCalls = chunkPtr->drawCalls;
+		this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
 	}
 }
 
@@ -560,6 +547,5 @@ void RenderEntityChunkManager::unloadScene(Renderer &renderer)
 		this->recycleChunk(i);
 	}
 
-	this->alphaTestedDrawCallsCache.clear();
-	this->ghostDrawCallsCache.clear();
+	this->drawCallsCache.clear();
 }
