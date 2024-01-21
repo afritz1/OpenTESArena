@@ -200,17 +200,15 @@ void RenderLightChunkManager::registerLightToVoxels(const Light &light, BufferVi
 		if (renderChunkPtr != nullptr)
 		{
 			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
-			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
-			{
-				// Calculate distance to voxel center for sorting.
-				const WorldDouble3 voxelCenter = VoxelUtils::getVoxelCenter(voxel, ceilingScale);
-				const double distanceSqr = (voxelCenter - light.point).lengthSquared();
 
-				RenderLightIdList &voxelLightIdList = renderChunkPtr->lightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
-				voxelLightIdList.tryAddLight(light.lightID, distanceSqr);
+			// Calculate distance to voxel center for sorting.
+			const WorldDouble3 voxelCenter = VoxelUtils::getVoxelCenter(voxel, ceilingScale);
+			const double distanceSqr = (voxelCenter - light.point).lengthSquared();
 
-				renderChunkPtr->setVoxelDirty(curLightVoxel);
-			}
+			RenderLightIdList &voxelLightIdList = renderChunkPtr->lightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
+			voxelLightIdList.tryAddLight(light.lightID, distanceSqr);
+
+			renderChunkPtr->setVoxelDirty(curLightVoxel);
 		}
 	}
 }
@@ -224,6 +222,8 @@ void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, Buff
 		if (renderChunkPtr != nullptr)
 		{
 			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
+
+			// @todo: this check is currently needed for scene transitions when chunk heights between scenes differ
 			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
 			{
 				RenderLightIdList &voxelLightIdList = renderChunkPtr->lightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
