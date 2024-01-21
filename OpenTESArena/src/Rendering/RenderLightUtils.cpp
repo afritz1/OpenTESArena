@@ -1,8 +1,15 @@
 #include <algorithm>
+#include <limits>
 
 #include "RenderLightUtils.h"
 
 #include "components/debug/Debug.h"
+
+namespace
+{
+	constexpr RenderLightID NO_LIGHT_ID = -1;
+	constexpr double NO_DISTANCE_SQR = std::numeric_limits<double>::infinity();
+}
 
 RenderLightIdList::RenderLightIdList()
 {
@@ -14,8 +21,10 @@ BufferView<const RenderLightID> RenderLightIdList::getLightIDs() const
 	return BufferView<const RenderLightID>(this->lightIDs, this->lightCount);
 }
 
-void RenderLightIdList::tryAddLight(RenderLightID id)
+void RenderLightIdList::tryAddLight(RenderLightID id, double distanceSqr)
 {
+	DebugAssert(distanceSqr >= 0.0);
+
 	if (this->lightCount >= static_cast<int>(std::size(this->lightIDs)))
 	{
 		return;
@@ -30,7 +39,27 @@ void RenderLightIdList::tryAddLight(RenderLightID id)
 		return;
 	}
 
-	this->lightIDs[this->lightCount] = id;
+	// Find insertion index so IDs remain sorted.
+	int insertIndex = 0;
+	for (int i = 0; i < this->lightCount; i++)
+	{
+		const double curDistanceSqr = this->distanceSqrs[i];
+		if (distanceSqr < curDistanceSqr)
+		{
+			insertIndex = i;
+			break;
+		}
+	}
+
+	// Shift elements back.
+	for (int i = this->lightCount; i > insertIndex; i--)
+	{
+		this->lightIDs[i] = this->lightIDs[i - 1];
+		this->distanceSqrs[i] = this->distanceSqrs[i - 1];
+	}
+
+	this->lightIDs[insertIndex] = id;
+	this->distanceSqrs[insertIndex] = distanceSqr;
 	this->lightCount++;
 }
 
@@ -43,14 +72,18 @@ void RenderLightIdList::removeLightAt(int index)
 	for (int i = index + 1; i < this->lightCount; i++)
 	{
 		this->lightIDs[i - 1] = this->lightIDs[i];
+		this->distanceSqrs[i - 1] = this->distanceSqrs[i];
 	}
 
-	this->lightIDs[this->lightCount - 1] = -1;
+	this->lightIDs[this->lightCount - 1] = NO_LIGHT_ID;
+	this->distanceSqrs[this->lightCount - 1] = NO_DISTANCE_SQR;
 	this->lightCount--;
 }
 
 void RenderLightIdList::removeLight(RenderLightID id)
 {
+	DebugAssert(id != NO_LIGHT_ID);
+
 	int index = -1;
 	for (int i = 0; i < this->lightCount; i++)
 	{
@@ -69,6 +102,7 @@ void RenderLightIdList::removeLight(RenderLightID id)
 
 void RenderLightIdList::clear()
 {
-	std::fill(std::begin(this->lightIDs), std::end(this->lightIDs), -1);
+	std::fill(std::begin(this->lightIDs), std::end(this->lightIDs), NO_LIGHT_ID);
+	std::fill(std::begin(this->distanceSqrs), std::end(this->distanceSqrs), NO_DISTANCE_SQR);
 	this->lightCount = 0;
 }

@@ -40,6 +40,9 @@ namespace EntityUtils
 	// Gets the max width and height from the entity animation's frames.
 	void getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight);
 
+	// Gets the world space Y position in the center of the entity
+	double getCenterY(double feetY, double bboxHeight);
+
 	// Returns whether the entity definition has a display name.
 	bool tryGetDisplayName(const EntityDefinition &entityDef,
 		const CharacterClassLibrary &charClassLibrary, std::string *outName);

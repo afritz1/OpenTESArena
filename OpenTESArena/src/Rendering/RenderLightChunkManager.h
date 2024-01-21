@@ -30,13 +30,16 @@ public:
 
 		Light();
 
-		void init(RenderLightID lightID, const WorldDouble3 &point, double startRadius, double endRadius, bool enabled);
+		void init(RenderLightID lightID, const WorldDouble3 &point, double startRadius, double endRadius, bool enabled, double ceilingScale, int chunkHeight);
 		void update(const WorldDouble3 &point, double startRadius, double endRadius, double ceilingScale, int chunkHeight);
 		void clear();
 	};
 private:
 	Light playerLight;
 	std::unordered_map<EntityInstanceID, Light> entityLights; // All lights have an associated entity.
+
+	void registerLightToVoxels(const Light &light, BufferView<const WorldInt3> voxels, double ceilingScale);
+	void unregisterLightFromVoxels(const Light &light, BufferView<const WorldInt3> voxels);
 public:
 	RenderLightChunkManager();
 

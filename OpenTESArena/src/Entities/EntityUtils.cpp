@@ -170,6 +170,11 @@ void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, 
 	*outMaxHeight = maxAnimHeight;
 }
 
+double EntityUtils::getCenterY(double feetY, double bboxHeight)
+{
+	return feetY + (bboxHeight * 0.50);
+}
+
 bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
 	const CharacterClassLibrary &charClassLibrary, std::string *outName)
 {

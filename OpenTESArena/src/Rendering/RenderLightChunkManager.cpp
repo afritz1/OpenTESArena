@@ -8,12 +8,10 @@
 
 namespace
 {
-	void GetLightMinAndMaxVoxels(const WorldDouble3 &lightPosition, double endRadius, double ceilingScale, WorldInt3 *outMin, WorldInt3 *outMax)
+	Double3 GetEntityLightPosition(const WorldDouble3 &entityPos, const BoundingBox3D &entityBBox)
 	{
-		const WorldDouble3 lightPosMin = lightPosition - WorldDouble3(endRadius, endRadius, endRadius);
-		const WorldDouble3 lightPosMax = lightPosition + WorldDouble3(endRadius, endRadius, endRadius);
-		*outMin = VoxelUtils::pointToVoxel(lightPosMin, ceilingScale);
-		*outMax = VoxelUtils::pointToVoxel(lightPosMax, ceilingScale);
+		const double entityCenterYPosition = EntityUtils::getCenterY(entityPos.y, entityBBox.height);
+		return WorldDouble3(entityPos.x, entityCenterYPosition, entityPos.z);
 	}
 }
 
@@ -25,7 +23,7 @@ RenderLightChunkManager::Light::Light()
 	this->enabled = false;
 }
 
-void RenderLightChunkManager::Light::init(RenderLightID lightID, const WorldDouble3 &point, double startRadius, double endRadius, bool enabled)
+void RenderLightChunkManager::Light::init(RenderLightID lightID, const WorldDouble3 &point, double startRadius, double endRadius, bool enabled, double ceilingScale, int chunkHeight)
 {
 	this->lightID = lightID;
 	this->point = point;
@@ -34,6 +32,26 @@ void RenderLightChunkManager::Light::init(RenderLightID lightID, const WorldDoub
 	this->startRadius = startRadius;
 	this->endRadius = endRadius;
 	this->enabled = enabled;
+
+	const int voxelYMax = chunkHeight - 1;
+	const WorldInt3 minVoxel = VoxelUtils::pointToVoxel(this->minPoint, ceilingScale);
+	const WorldInt3 maxVoxel = VoxelUtils::pointToVoxel(this->maxPoint, ceilingScale);
+	const WorldInt3 clampedMinVoxel(minVoxel.x, std::clamp(minVoxel.y, 0, voxelYMax), minVoxel.z);
+	const WorldInt3 clampedMaxVoxel(maxVoxel.x, std::clamp(maxVoxel.y, 0, voxelYMax), maxVoxel.z);
+
+	// Add current and newly-touched voxels.
+	for (WEInt z = clampedMinVoxel.z; z <= clampedMaxVoxel.z; z++)
+	{
+		for (int y = clampedMinVoxel.y; y <= clampedMaxVoxel.y; y++)
+		{
+			for (SNInt x = clampedMinVoxel.x; x <= clampedMaxVoxel.x; x++)
+			{
+				const VoxelInt3 voxel(x, y, z);
+				this->voxels.emplace_back(voxel);
+				this->addedVoxels.emplace_back(voxel);
+			}
+		}
+	}
 }
 
 void RenderLightChunkManager::Light::update(const WorldDouble3 &point, double startRadius, double endRadius, double ceilingScale, int chunkHeight)
@@ -143,8 +161,7 @@ void RenderLightChunkManager::init(Renderer &renderer)
 		return;
 	}
 
-	this->playerLight.init(playerLightID, Double3::Zero, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS, false);
-	renderer.setLightRadius(this->playerLight.lightID, this->playerLight.startRadius, this->playerLight.endRadius);
+	this->playerLight.init(playerLightID, Double3::Zero, 0.0, 0.0, false, 0.0, 1);
 }
 
 void RenderLightChunkManager::shutdown(Renderer &renderer)
@@ -172,6 +189,50 @@ void RenderLightChunkManager::shutdown(Renderer &renderer)
 	}
 
 	this->entityLights.clear();
+}
+
+void RenderLightChunkManager::registerLightToVoxels(const Light &light, BufferView<const WorldInt3> voxels, double ceilingScale)
+{
+	for (const WorldInt3 &voxel : voxels)
+	{
+		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(voxel);
+		RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+		if (renderChunkPtr != nullptr)
+		{
+			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
+			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
+			{
+				// Calculate distance to voxel center for sorting.
+				const WorldDouble3 voxelCenter = VoxelUtils::getVoxelCenter(voxel, ceilingScale);
+				const double distanceSqr = (voxelCenter - light.point).lengthSquared();
+
+				RenderLightIdList &voxelLightIdList = renderChunkPtr->lightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
+				voxelLightIdList.tryAddLight(light.lightID, distanceSqr);
+
+				renderChunkPtr->setVoxelDirty(curLightVoxel);
+			}
+		}
+	}
+}
+
+void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, BufferView<const WorldInt3> voxels)
+{
+	for (const WorldInt3 &voxel : voxels)
+	{
+		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(voxel);
+		RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+		if (renderChunkPtr != nullptr)
+		{
+			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
+			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
+			{
+				RenderLightIdList &voxelLightIdList = renderChunkPtr->lightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
+				voxelLightIdList.removeLight(light.lightID);
+
+				renderChunkPtr->setVoxelDirty(curLightVoxel);
+			}
+		}
+	}
 }
 
 void RenderLightChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
@@ -208,11 +269,15 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		if (iter != this->entityLights.end())
 		{
 			const Light &light = iter->second;
+			this->unregisterLightFromVoxels(light, light.voxels);
+			this->unregisterLightFromVoxels(light, light.removedVoxels);
+
 			renderer.freeLight(light.lightID);
 			this->entityLights.erase(iter);
 		}
 	}
 
+	const int chunkHeight = this->getChunkAtIndex(0).getHeight();
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
 	{
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
@@ -237,11 +302,15 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 				const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord3D);
 
 				const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-				const double entityCenterYPosition = entityWorldPos.y + (entityBBox.height * 0.50);
-				const WorldDouble3 entityLightWorldPos(entityWorldPos.x, entityCenterYPosition, entityWorldPos.z);
+				const WorldDouble3 entityLightWorldPos = GetEntityLightPosition(entityWorldPos, entityBBox);
 
 				Light light;
-				light.init(lightID, entityLightWorldPos, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius, isLightEnabled);
+				light.init(lightID, entityLightWorldPos, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius, isLightEnabled, ceilingScale, chunkHeight);
+
+				if (isLightEnabled)
+				{
+					this->registerLightToVoxels(light, light.addedVoxels, ceilingScale);
+				}
 
 				renderer.setLightPosition(lightID, light.point);
 				renderer.setLightRadius(lightID, light.startRadius, light.endRadius);
@@ -251,173 +320,100 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		}
 	}
 
-	const WorldDouble3 prevPlayerLightPosition = this->playerLight.point;
+	// Update player light position and touched voxels.
 	const WorldDouble3 newPlayerLightPosition = VoxelUtils::coordToWorldPoint(cameraCoord);
-	this->playerLight.point = newPlayerLightPosition;
-
+	double newPlayerLightStartRadius, newPlayerLightEndRadius;
 	if (isFogActive)
 	{
-		this->playerLight.startRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_START_RADIUS;
-		this->playerLight.endRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_END_RADIUS;
+		newPlayerLightStartRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_START_RADIUS;
+		newPlayerLightEndRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_END_RADIUS;
 	}
 	else
 	{
-		this->playerLight.startRadius = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
-		this->playerLight.endRadius = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
+		newPlayerLightStartRadius = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
+		newPlayerLightEndRadius = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
 	}
+
+	this->playerLight.update(newPlayerLightPosition, newPlayerLightStartRadius, newPlayerLightEndRadius, ceilingScale, chunkHeight);
 
 	const bool playerLightEnabledChanged = this->playerLight.enabled != playerHasLight;
-	this->playerLight.enabled = playerHasLight;
-
-	renderer.setLightPosition(this->playerLight.lightID, newPlayerLightPosition);
-	renderer.setLightRadius(this->playerLight.lightID, this->playerLight.startRadius, this->playerLight.endRadius);
-
-	// Clear all previous light references in voxels.
-	// @todo: track touched, newly-touched, and no-longer-touched voxels each frame for moving lights so we don't have to iterate all voxels
-	for (int i = 0; i < this->getChunkCount(); i++)
+	if (playerHasLight)
 	{
-		RenderLightChunk &renderChunk = this->getChunkAtIndex(i);
-		for (RenderLightIdList &voxelLightIdList : renderChunk.lightIdLists)
+		this->playerLight.enabled = true;
+		renderer.setLightPosition(this->playerLight.lightID, newPlayerLightPosition);
+		renderer.setLightRadius(this->playerLight.lightID, this->playerLight.startRadius, this->playerLight.endRadius);
+	}
+	else
+	{
+		this->playerLight.enabled = false;
+	}
+
+	// Update entity light positions and touched voxels.
+	for (auto &pair : this->entityLights)
+	{
+		const EntityInstanceID entityInstID = pair.first;
+		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+		const CoordDouble3 entityCoord = entityChunkManager.getEntityPosition3D(entityInstID, ceilingScale, voxelChunkManager);
+		const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord);
+		const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+		const WorldDouble3 entityLightWorldPos = GetEntityLightPosition(entityWorldPos, entityBBox);
+
+		Light &light = pair.second;
+		light.update(entityLightWorldPos, light.startRadius, light.endRadius, ceilingScale, chunkHeight);
+
+		if (light.enabled)
 		{
-			voxelLightIdList.clear();
+			renderer.setLightPosition(light.lightID, entityLightWorldPos);
 		}
 	}
 
-	auto populateTouchedVoxelLightIdLists = [this, &renderer, ceilingScale](RenderLightID lightID, const WorldDouble3 &lightPosition,
-		const WorldInt3 &lightVoxelMin, const WorldInt3 &lightVoxelMax)
+	// Unassign lights from no-longer-touched light ID lists and current-touched light ID lists if disabled.
+	this->unregisterLightFromVoxels(this->playerLight, this->playerLight.removedVoxels);
+	if (playerLightEnabledChanged && !this->playerLight.enabled)
 	{
-		// Iterate over all voxels the light's bounding box touches.
-		for (WEInt z = lightVoxelMin.z; z <= lightVoxelMax.z; z++)
+		this->unregisterLightFromVoxels(this->playerLight, this->playerLight.voxels);
+	}
+
+	for (const auto &pair : this->entityLights)
+	{
+		const Light &light = pair.second;
+		this->unregisterLightFromVoxels(light, light.removedVoxels);
+		if (!light.enabled)
 		{
-			for (int y = lightVoxelMin.y; y <= lightVoxelMax.y; y++)
-			{
-				for (SNInt x = lightVoxelMin.x; x <= lightVoxelMax.x; x++)
-				{
-					const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(WorldInt3(x, y, z));
-					RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
-					if (renderChunkPtr != nullptr)
-					{
-						const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
-						if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
-						{
-							RenderLightIdList &voxelLightIdList = renderChunkPtr->lightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
-							voxelLightIdList.tryAddLight(lightID);
-						}
-					}
-				}
-			}
+			this->unregisterLightFromVoxels(light, light.voxels);
 		}
-	};
 
-	WorldInt3 prevPlayerLightVoxelMin, prevPlayerLightVoxelMax;
-	WorldInt3 newPlayerLightVoxelMin, newPlayerLightVoxelMax;
-	GetLightMinAndMaxVoxels(prevPlayerLightPosition, this->playerLight.endRadius, ceilingScale, &prevPlayerLightVoxelMin, &prevPlayerLightVoxelMax);
-	GetLightMinAndMaxVoxels(newPlayerLightPosition, this->playerLight.endRadius, ceilingScale, &newPlayerLightVoxelMin, &newPlayerLightVoxelMax);
+		// @todo: if light enabled changed, unregister its .voxels
+		// - maybe do this in setNightLightActive()?
+	}
 
+	// Add lights to newly-touched light ID lists if enabled.
 	if (this->playerLight.enabled)
 	{
-		populateTouchedVoxelLightIdLists(this->playerLight.lightID, newPlayerLightPosition, newPlayerLightVoxelMin, newPlayerLightVoxelMax);
+		if (playerLightEnabledChanged)
+		{
+			this->registerLightToVoxels(this->playerLight, this->playerLight.voxels, ceilingScale);
+		}
+		else
+		{
+			this->registerLightToVoxels(this->playerLight, this->playerLight.addedVoxels, ceilingScale);
+		}
 	}
 
-	// Populate each voxel's light ID list based on which lights touch them, preferring the nearest lights.
-	// - @todo: this method doesn't implicitly allow sorting by distance because it doesn't check lights per voxel, it checks voxels per light.
-	//   If sorting is desired then do it after this loop. It should also sort by intensity at the voxel center, not just distance to the light.
 	for (const auto &pair : this->entityLights)
 	{
 		const Light &light = pair.second;
 		if (light.enabled)
 		{
-			const RenderLightID lightID = light.lightID;
-			const WorldDouble3 &lightPosition = light.point;
+			this->registerLightToVoxels(light, light.addedVoxels, ceilingScale);
 
-			WorldInt3 lightVoxelMin, lightVoxelMax;
-			GetLightMinAndMaxVoxels(lightPosition, light.endRadius, ceilingScale, &lightVoxelMin, &lightVoxelMax);
-			populateTouchedVoxelLightIdLists(lightID, lightPosition, lightVoxelMin, lightVoxelMax);
+			// @todo: if light enabled changed, register its .voxels
+			// - maybe do this in setNightLightActive()?
 		}
 	}
 
-	auto tryAddDirtyLightVoxel = [this](const WorldInt3 &worldVoxel)
-	{
-		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(worldVoxel);
-		RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
-		if (renderChunkPtr != nullptr)
-		{
-			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
-			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
-			{
-				renderChunkPtr->setVoxelDirty(curLightVoxel);
-			}
-		}
-	};
-
-	// See which voxels affected by the player's light are getting their light references updated.
-	// This is for dirty voxel draw calls mainly, not about setting light references (might change later).
-	if ((prevPlayerLightVoxelMin != newPlayerLightVoxelMin) || (prevPlayerLightVoxelMax != newPlayerLightVoxelMax))
-	{
-		// Set voxel draw calls dirty for no-longer-touched voxels.
-		for (WEInt z = prevPlayerLightVoxelMin.z; z <= prevPlayerLightVoxelMax.z; z++)
-		{
-			for (int y = prevPlayerLightVoxelMin.y; y <= prevPlayerLightVoxelMax.y; y++)
-			{
-				for (SNInt x = prevPlayerLightVoxelMin.x; x <= prevPlayerLightVoxelMax.x; x++)
-				{
-					const bool isInNewRange =
-						(x >= newPlayerLightVoxelMin.x) && (x <= newPlayerLightVoxelMax.x) &&
-						(y >= newPlayerLightVoxelMin.y) && (y <= newPlayerLightVoxelMax.y) &&
-						(z >= newPlayerLightVoxelMin.z) && (z <= newPlayerLightVoxelMax.z);
-
-					if (!isInNewRange)
-					{
-						tryAddDirtyLightVoxel(WorldInt3(x, y, z));
-					}
-				}
-			}
-		}
-
-		// Set voxel draw calls dirty for newly-touched voxels.
-		for (WEInt z = newPlayerLightVoxelMin.z; z <= newPlayerLightVoxelMax.z; z++)
-		{
-			for (int y = newPlayerLightVoxelMin.y; y <= newPlayerLightVoxelMax.y; y++)
-			{
-				for (SNInt x = newPlayerLightVoxelMin.x; x <= newPlayerLightVoxelMax.x; x++)
-				{
-					const bool isInPrevRange =
-						(x >= prevPlayerLightVoxelMin.x) && (x <= prevPlayerLightVoxelMax.x) &&
-						(y >= prevPlayerLightVoxelMin.y) && (y <= prevPlayerLightVoxelMax.y) &&
-						(z >= prevPlayerLightVoxelMin.z) && (z <= prevPlayerLightVoxelMax.z);
-
-					if (!isInPrevRange)
-					{
-						tryAddDirtyLightVoxel(WorldInt3(x, y, z));
-					}
-				}
-			}
-		}
-	}
-
-	// Set all player light voxels dirty if the option changed.
-	if (playerLightEnabledChanged)
-	{
-		const WorldInt3 componentMinPlayerLightVoxelMin(
-			std::min(prevPlayerLightVoxelMin.x, newPlayerLightVoxelMin.x),
-			std::min(prevPlayerLightVoxelMin.y, newPlayerLightVoxelMin.y),
-			std::min(prevPlayerLightVoxelMin.z, newPlayerLightVoxelMin.z));
-		const WorldInt3 componentMaxPlayerLightVoxelMax(
-			std::max(prevPlayerLightVoxelMax.x, newPlayerLightVoxelMax.x),
-			std::max(prevPlayerLightVoxelMax.y, newPlayerLightVoxelMax.y),
-			std::max(prevPlayerLightVoxelMax.z, newPlayerLightVoxelMax.z));
-
-		for (WEInt z = componentMinPlayerLightVoxelMin.z; z <= componentMaxPlayerLightVoxelMax.z; z++)
-		{
-			for (int y = componentMinPlayerLightVoxelMin.y; y <= componentMaxPlayerLightVoxelMax.y; y++)
-			{
-				for (SNInt x = componentMinPlayerLightVoxelMin.x; x <= componentMaxPlayerLightVoxelMax.x; x++)
-				{
-					tryAddDirtyLightVoxel(WorldInt3(x, y, z));
-				}
-			}
-		}
-	}
+	// @todo: add unordered_map<EntityInstanceID, RenderLightIdList> so entities don't rely on RenderLightChunk voxel light ID lists
+	// - and then sort each entity's light ID list by distance to entity position
 }
 
 void RenderLightChunkManager::setNightLightsActive(bool enabled, const EntityChunkManager &entityChunkManager)
