@@ -416,7 +416,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	// - and then sort each entity's light ID list by distance to entity position
 }
 
-void RenderLightChunkManager::setNightLightsActive(bool enabled, const EntityChunkManager &entityChunkManager)
+void RenderLightChunkManager::setNightLightsActive(bool enabled, double ceilingScale, const EntityChunkManager &entityChunkManager)
 {
 	// Update streetlight enabled states.
 	for (ChunkPtr &chunkPtr : this->activeChunks)
@@ -433,7 +433,16 @@ void RenderLightChunkManager::setNightLightsActive(bool enabled, const EntityChu
 				DebugAssertMsg(lightIter != this->entityLights.end(), "Couldn't find light for streetlight entity \"" + std::to_string(entityInstID) + "\" in chunk (" + chunkPos.toString() + ").");
 
 				Light &light = lightIter->second;
-				light.enabled = enabled;
+				if (enabled)
+				{
+					light.enabled = true;
+					this->registerLightToVoxels(light, light.voxels, ceilingScale);
+				}
+				else
+				{
+					light.enabled = false;
+					this->unregisterLightFromVoxels(light, light.voxels);
+				}
 			}
 		}
 	}

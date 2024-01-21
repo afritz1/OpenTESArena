@@ -42,9 +42,10 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 			}
 		}
 	}
-	
+
+	const double ceilingScale = game.getGameState().getActiveCeilingScale();	
 	RenderLightChunkManager &renderLightChunkManager = sceneManager.renderLightChunkManager;
-	renderLightChunkManager.setNightLightsActive(active, entityChunkManager);
+	renderLightChunkManager.setNightLightsActive(active, ceilingScale, entityChunkManager);
 }
 
 void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)

@@ -54,7 +54,7 @@ public:
 		const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
 		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, Renderer &renderer);
 
-	void setNightLightsActive(bool enabled, const EntityChunkManager &entityChunkManager);
+	void setNightLightsActive(bool enabled, double ceilingScale, const EntityChunkManager &entityChunkManager);
 
 	// End of frame clean-up.
 	void cleanUp();
