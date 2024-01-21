@@ -426,6 +426,27 @@ namespace ArenaMeshUtils
 		}
 	}
 
+	constexpr bool AllowsAdjacentDoorFaces(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Chasm:
+		case ArenaTypes::VoxelType::Door:
+			return false;
+		case ArenaTypes::VoxelType::None:
+		case ArenaTypes::VoxelType::Raised:
+		case ArenaTypes::VoxelType::Edge:
+			return true;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
 	constexpr bool EnablesNeighborVoxelGeometry(ArenaTypes::VoxelType voxelType)
 	{
 		switch (voxelType)

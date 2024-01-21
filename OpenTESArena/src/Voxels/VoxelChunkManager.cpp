@@ -675,7 +675,7 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 
 			const VoxelChunk &voxelChunk = this->getChunkAtIndex(*chunkIndex);
 			const VoxelMeshDefinition &meshDef = voxelChunk.getMeshDef(meshDefID);
-			return meshDef.isEmpty() || (meshDef.scaleType == VoxelMeshScaleType::UnscaledFromMin);
+			return meshDef.isEmpty() || meshDef.allowsAdjacentDoorFaces;
 		};
 
 		const bool isNorthValid = isVoxelValidForDoorFace(northChunkIndex, northVoxelMeshDefID);

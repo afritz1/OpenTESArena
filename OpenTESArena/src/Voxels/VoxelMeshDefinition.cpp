@@ -17,6 +17,7 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 	this->alphaTestedIndicesListCount = 0;
 	this->scaleType = VoxelMeshScaleType::ScaledFromMin;
 	this->allowsBackFaces = false;
+	this->allowsAdjacentDoorFaces = false;
 	this->enablesNeighborGeometry = false;
 	this->isContextSensitive = false;
 }
@@ -32,6 +33,7 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMesh
 	this->alphaTestedIndicesListCount = ArenaMeshUtils::GetAlphaTestedIndexBufferCount(voxelType);
 	this->scaleType = scaleType;
 	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
+	this->allowsAdjacentDoorFaces = ArenaMeshUtils::AllowsAdjacentDoorFaces(voxelType);
 	this->enablesNeighborGeometry = ArenaMeshUtils::EnablesNeighborVoxelGeometry(voxelType);
 	this->isContextSensitive = ArenaMeshUtils::HasContextSensitiveGeometry(voxelType);
 
