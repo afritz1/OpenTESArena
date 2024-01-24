@@ -13,6 +13,12 @@ SET(COMP_DEBUG
 SET(COMP_DOS
 	"dos/DOSUtils.h")
 
+SET(COMP_STOREFRONT
+	"storefront/SteamKeyValueFile.cpp"
+	"storefront/SteamKeyValueFile.h"
+	"storefront/SteamUtils.cpp"
+	"storefront/SteamUtils.h")
+
 SET(COMP_UTILITIES
 	"utilities/Allocator.h"
 	"utilities/Buffer.h"
@@ -59,6 +65,7 @@ SET(COMP_SOURCES
 	${COMP_ARCHIVES}
 	${COMP_DEBUG}
 	${COMP_DOS}
+	${COMP_STOREFRONT}
 	${COMP_UTILITIES}
 	${COMP_VFS})
 
