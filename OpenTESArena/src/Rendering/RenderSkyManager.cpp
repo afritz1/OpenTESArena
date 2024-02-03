@@ -651,7 +651,10 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		if (rainInst.thunderstorm.has_value())
 		{
 			const WeatherRainInstance::Thunderstorm &thunderstormInst = *rainInst.thunderstorm;
-			thunderstormFlashPercent = thunderstormInst.getFlashPercent();
+			if (thunderstormInst.active)
+			{
+				thunderstormFlashPercent = thunderstormInst.getFlashPercent();
+			}
 		}
 	}
 
