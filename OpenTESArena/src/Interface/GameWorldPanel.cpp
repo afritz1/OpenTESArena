@@ -814,7 +814,8 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const SceneManager &sceneManager = game.getSceneManager();
 	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
-	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
+	const RenderDrawCall &skyBgDrawCall = renderSkyManager.getBgDrawCall();
+	drawCalls.emplace_back(skyBgDrawCall);
 	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
 
 	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
@@ -877,7 +878,9 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		lightTableTextureID = sceneManager.normalLightTableNightTextureRef.get();
 	}
 
-	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID,
+	const ObjectTextureID skyBgTextureID = skyBgDrawCall.textureIDs[0];
+
+	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
 		options.getGraphics_RenderThreadsMode(), options.getGraphics_DitheringMode());
 
 	return true;

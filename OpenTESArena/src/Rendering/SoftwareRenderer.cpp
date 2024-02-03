@@ -1086,8 +1086,9 @@ namespace swRender
 		BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType, double pixelShaderParam0,
 		bool enableDepthRead, bool enableDepthWrite, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		int ditheringMode, const RenderCamera &camera, BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer,
-		BufferView3D<const bool> ditherBuffer, BufferView2D<uint32_t> colorBuffer)
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode, const RenderCamera &camera,
+		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
+		BufferView2D<uint32_t> colorBuffer)
 	{
 		const int frameBufferWidth = paletteIndexBuffer.getWidth();
 		const int frameBufferHeight = paletteIndexBuffer.getHeight();
@@ -1136,8 +1137,8 @@ namespace swRender
 			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
 			shaderHorizonMirror.horizonScreenSpacePoint = horizonScreenSpacePoint;
 
-			// @todo: get sky color, maybe pass RasterizeTriangles() another SoftwareRenderer::ObjectTexture
-			shaderHorizonMirror.fallbackSkyColor = 0;
+			DebugAssert(skyBgTexture.texelCount > 0);
+			shaderHorizonMirror.fallbackSkyColor = skyBgTexture.texels8Bit[0];
 		}
 
 		const int triangleCount = drawListIndices.count;
@@ -1854,6 +1855,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	// Light table for shading/transparency look-ups.
 	const ObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
 
+	// Sky texture for horizon reflection shader.
+	const ObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
+
 	swRender::ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
 	swRender::ClearTriangleDrawList();
 
@@ -1919,8 +1923,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const int ditheringMode = settings.ditheringMode;
 		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent,
 			ambientPercent, lightsView, pixelShaderType, pixelShaderParam0, enableDepthRead, enableDepthWrite, this->objectTextures,
-			paletteTexture, lightTableTexture, ditheringMode, camera, paletteIndexBufferView, depthBufferView, ditherBufferView,
-			colorBufferView);
+			paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBufferView, depthBufferView,
+			ditherBufferView, colorBufferView);
 	}
 }
 
