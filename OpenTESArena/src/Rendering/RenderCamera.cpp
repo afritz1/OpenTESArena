@@ -14,7 +14,8 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->zoom = MathUtils::verticalFovToZoom(fovY);
 	this->forwardScaled = this->forward * this->zoom;
 
-	this->right = this->forward.cross(Double3::UnitY).normalized();
+	const Double3 &globalUp = Double3::UnitY;
+	this->right = this->forward.cross(globalUp).normalized();
 	this->aspectRatio = aspectRatio;
 	this->rightScaled = this->right * this->aspectRatio;
 
@@ -36,6 +37,9 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->rightFrustumNormal = this->up.cross(this->rightFrustumDir).normalized();
 	this->bottomFrustumNormal = this->right.cross(this->bottomFrustumDir).normalized();
 	this->topFrustumNormal = this->topFrustumDir.cross(this->right).normalized();
+
+	this->horizonDir = Double3(this->forward.x, 0.0, this->forward.z).normalized();
+	this->horizonNormal = globalUp;
 
 	this->fovY = fovY;
 	this->fovX = MathUtils::verticalFovToHorizontalFov(fovY, aspectRatio);

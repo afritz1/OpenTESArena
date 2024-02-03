@@ -89,16 +89,15 @@ Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
 	return Double3(point.x * wRecip, point.y * wRecip, point.z * wRecip);
 }
 
-Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double frameWidth, double frameHeight)
+Double2 RendererUtils::ndcToScreenSpace(const Double3 &point, double frameWidth, double frameHeight)
 {
 	const Double2 screenSpacePoint(
 		0.50 + (point.x * 0.50),
 		0.50 - (point.y * 0.50));
 
-	return Double3(
+	return Double2(
 		screenSpacePoint.x * frameWidth,
-		screenSpacePoint.y * frameHeight,
-		point.z);
+		screenSpacePoint.y * frameHeight);
 }
 
 int RendererUtils::getLowerBoundedPixel(double projected, int frameDim)

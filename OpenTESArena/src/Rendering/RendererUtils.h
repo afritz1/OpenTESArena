@@ -43,10 +43,8 @@ namespace RendererUtils
 	Double3 clipSpaceToNDC(const Double4 &point);
 
 	// Converts a point in normalized device coordinates to screen space (pixel coordinates with fractions in
-	// the decimals; the space expected by pixel shading). In other 3D engines this extra step might not be needed
-	// but I think I'm doing something different, can't remember.
-	// - In theory, this would return an Int2+double later on if sub-pixel precision worked with integers instead.
-	Double3 ndcToScreenSpace(const Double3 &point, double frameWidth, double frameHeight);
+	// the decimals; the space expected by pixel shading).
+	Double2 ndcToScreenSpace(const Double3 &point, double frameWidth, double frameHeight);
 
 	// Gets the pixel coordinate with the nearest available pixel center based on the projected
 	// value and some bounding rule. This is used to keep integer drawing ranges clamped in such

@@ -29,6 +29,10 @@ struct RenderCamera
 	// Frustum plane normals pointing towards the inside of the frustum volume.
 	Double3 leftFrustumNormal, rightFrustumNormal, bottomFrustumNormal, topFrustumNormal;
 
+	// Horizon directions for mirroring effects.
+	Double3 horizonDir;
+	Double3 horizonNormal; // Global up.
+
 	Degrees fovX, fovY;
 	double zoom; // Function of vertical FOV (90 degrees = 1 zoom).
 	double aspectRatio;

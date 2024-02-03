@@ -67,6 +67,14 @@ namespace swShader
 		int lightLevel; // The selected row of shades between light and dark.
 	};
 
+	struct PixelShaderHorizonMirror
+	{
+		Double2 horizonScreenSpacePoint; // Based on camera forward direction as XZ vector.
+		int reflectedPixelIndex;
+		bool isReflectedPixelInFrameBuffer;
+		uint8_t fallbackSkyColor;
+	};
+
 	struct PixelShaderFrameBuffer
 	{
 		uint8_t *colors;
@@ -383,7 +391,8 @@ namespace swShader
 	}
 
 	void PixelShader_AlphaTestedWithHorizonMirror(const PixelShaderPerspectiveCorrection &perspective,
-		const PixelShaderTexture &texture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+		const PixelShaderTexture &texture, const PixelShaderHorizonMirror &horizon, const PixelShaderLighting &lighting,
+		PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int texelX = std::clamp(static_cast<int>(perspective.texelPercent.x * texture.widthReal), 0, texture.widthMinusOne);
 		const int texelY = std::clamp(static_cast<int>(perspective.texelPercent.y * texture.heightReal), 0, texture.heightMinusOne);
@@ -400,10 +409,15 @@ namespace swShader
 		const bool isReflective = texel == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW;
 		if (isReflective)
 		{
-			// @todo: horizon mirror logic, read from frame buffer or sky mesh texture
-			// - will probably need helper values like some Y value above/below the horizon via projected values
-			const uint8_t mirroredTexel = 0;
-			resultTexel = mirroredTexel;
+			if (horizon.isReflectedPixelInFrameBuffer)
+			{
+				const uint8_t mirroredTexel = frameBuffer.colors[horizon.reflectedPixelIndex];
+				resultTexel = mirroredTexel;
+			}
+			else
+			{
+				resultTexel = horizon.fallbackSkyColor;
+			}
 		}
 		else
 		{
@@ -1090,6 +1104,13 @@ namespace swRender
 		const int lightCount = lights.getCount();
 		const SoftwareRenderer::Light **lightsPtr = lights.begin();
 
+		const bool requiresTwoTextures =
+			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
+			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
+		const bool requiresHorizonMirror = pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
+		const bool requiresPerPixelLightIntensity = lightingType == RenderLightingType::PerPixel;
+		const bool requiresPerMeshLightIntensity = lightingType == RenderLightingType::PerMesh;
+
 		swShader::PixelShaderLighting shaderLighting;
 		shaderLighting.lightTableTexels = lightTableTexture.texels8Bit;
 		shaderLighting.lightLevelCount = lightTableTexture.height;
@@ -1104,11 +1125,20 @@ namespace swRender
 		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 		shaderFrameBuffer.enableDepthWrite = enableDepthWrite;
 
-		const bool requiresTwoTextures =
-			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
-		const bool requiresPerPixelLightIntensity = lightingType == RenderLightingType::PerPixel;
-		const bool requiresPerMeshLightIntensity = lightingType == RenderLightingType::PerMesh;
+		swShader::PixelShaderHorizonMirror shaderHorizonMirror;
+		if (requiresHorizonMirror)
+		{
+			// @todo: this doesn't support roll. will need something like a vector projection later.
+			const Double3 horizonWorldPoint = camera.worldPoint + camera.horizonDir;
+			const Double4 horizonCameraPoint = RendererUtils::worldSpaceToCameraSpace(Double4(horizonWorldPoint, 1.0), viewMatrix);
+			const Double4 horizonClipPoint = RendererUtils::cameraSpaceToClipSpace(horizonCameraPoint, projectionMatrix);
+			const Double3 horizonNdcPoint = RendererUtils::clipSpaceToNDC(horizonClipPoint);
+			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
+			shaderHorizonMirror.horizonScreenSpacePoint = horizonScreenSpacePoint;
+
+			// @todo: get sky color, maybe pass RasterizeTriangles() another SoftwareRenderer::ObjectTexture
+			shaderHorizonMirror.fallbackSkyColor = 0;
+		}
 
 		const int triangleCount = drawListIndices.count;
 		for (int i = 0; i < triangleCount; i++)
@@ -1120,15 +1150,12 @@ namespace swRender
 			const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clip0);
 			const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clip1);
 			const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clip2);
-			const Double3 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, frameBufferWidthReal, frameBufferHeightReal);
-			const Double3 screenSpace1 = RendererUtils::ndcToScreenSpace(ndc1, frameBufferWidthReal, frameBufferHeightReal);
-			const Double3 screenSpace2 = RendererUtils::ndcToScreenSpace(ndc2, frameBufferWidthReal, frameBufferHeightReal);
-			const Double2 screenSpace0_2D(screenSpace0.x, screenSpace0.y);
-			const Double2 screenSpace1_2D(screenSpace1.x, screenSpace1.y);
-			const Double2 screenSpace2_2D(screenSpace2.x, screenSpace2.y);
-			const Double2 screenSpace01 = screenSpace1_2D - screenSpace0_2D;
-			const Double2 screenSpace12 = screenSpace2_2D - screenSpace1_2D;
-			const Double2 screenSpace20 = screenSpace0_2D - screenSpace2_2D;
+			const Double2 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, frameBufferWidthReal, frameBufferHeightReal);
+			const Double2 screenSpace1 = RendererUtils::ndcToScreenSpace(ndc1, frameBufferWidthReal, frameBufferHeightReal);
+			const Double2 screenSpace2 = RendererUtils::ndcToScreenSpace(ndc2, frameBufferWidthReal, frameBufferHeightReal);
+			const Double2 screenSpace01 = screenSpace1 - screenSpace0;
+			const Double2 screenSpace12 = screenSpace2 - screenSpace1;
+			const Double2 screenSpace20 = screenSpace0 - screenSpace2;
 			const double screenSpace01Cross12 = screenSpace12.cross(screenSpace01);
 			const double screenSpace12Cross20 = screenSpace20.cross(screenSpace12);
 			const double screenSpace20Cross01 = screenSpace01.cross(screenSpace20);
@@ -1184,14 +1211,14 @@ namespace swRender
 						shaderFrameBuffer.yPercent * frameBufferHeightReal);
 
 					// See if pixel center is inside triangle.
-					const bool inHalfSpace0 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace0_2D, screenSpace01Perp);
-					const bool inHalfSpace1 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace1_2D, screenSpace12Perp);
-					const bool inHalfSpace2 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace2_2D, screenSpace20Perp);
+					const bool inHalfSpace0 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace0, screenSpace01Perp);
+					const bool inHalfSpace1 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace1, screenSpace12Perp);
+					const bool inHalfSpace2 = MathUtils::isPointInHalfSpace(pixelCenter, screenSpace2, screenSpace20Perp);
 					if (inHalfSpace0 && inHalfSpace1 && inHalfSpace2)
 					{
 						const Double2 &ss0 = screenSpace01;
-						const Double2 ss1 = screenSpace2_2D - screenSpace0_2D;
-						const Double2 ss2 = pixelCenter - screenSpace0_2D;
+						const Double2 ss1 = screenSpace2 - screenSpace0;
+						const Double2 ss2 = pixelCenter - screenSpace0;
 
 						const double dot00 = ss0.dot(ss0);
 						const double dot01 = ss0.dot(ss1);
@@ -1310,6 +1337,21 @@ namespace swRender
 								}
 							}
 
+							if (requiresHorizonMirror)
+							{
+								// @todo: support camera roll
+								const Double2 reflectedScreenSpacePoint(
+									pixelCenter.x,
+									shaderHorizonMirror.horizonScreenSpacePoint.y + (shaderHorizonMirror.horizonScreenSpacePoint.y - pixelCenter.y));
+
+								const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePoint.x);
+								const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePoint.y);
+								shaderHorizonMirror.isReflectedPixelInFrameBuffer =
+									(reflectedPixelX >= 0) && (reflectedPixelX < frameBufferWidth) &&
+									(reflectedPixelY >= 0) && (reflectedPixelY < frameBufferHeight);
+								shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * frameBufferWidth);
+							}
+
 							switch (pixelShaderType)
 							{
 							case PixelShaderType::Opaque:
@@ -1340,7 +1382,7 @@ namespace swRender
 								swShader::PixelShader_AlphaTestedWithPreviousBrightnessLimit(shaderPerspective, shaderTexture0, shaderFrameBuffer);
 								break;
 							case PixelShaderType::AlphaTestedWithHorizonMirror:
-								swShader::PixelShader_AlphaTestedWithHorizonMirror(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+								swShader::PixelShader_AlphaTestedWithHorizonMirror(shaderPerspective, shaderTexture0, shaderHorizonMirror, shaderLighting, shaderFrameBuffer);
 								break;
 							default:
 								DebugNotImplementedMsg(std::to_string(static_cast<int>(pixelShaderType)));
