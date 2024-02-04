@@ -177,6 +177,8 @@ void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 	this->meshInstIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->meshInstIDs.fill(RenderVoxelChunk::AIR_MESH_INST_ID);
 	this->meshInstMappings.emplace(VoxelChunk::AIR_MESH_DEF_ID, RenderVoxelChunk::AIR_MESH_INST_ID);
+
+	this->transformBufferID = -1;
 	
 	this->drawCallRangeIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->drawCallRangeIDs.fill(-1);
@@ -209,9 +211,10 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		meshInst.freeBuffers(renderer);
 	}
 
-	for (const auto &pair : this->transformBuffers)
+	if (this->transformBufferID >= 0)
 	{
-		renderer.freeUniformBuffer(pair.second);
+		renderer.freeUniformBuffer(this->transformBufferID);
+		this->transformBufferID = -1;
 	}
 
 	for (const auto &pair : this->doorTransformBuffers)
@@ -228,7 +231,7 @@ void RenderVoxelChunk::clear()
 	this->meshInstIDs.clear();
 	this->activeChasmFloorTextureIDs.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
-	this->transformBuffers.clear();
+	this->transformBufferID = -1;
 	this->doorTransformBuffers.clear();
 	this->drawCallHeap.clear();
 	this->drawCallRangeIDs.clear();

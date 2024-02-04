@@ -20,6 +20,11 @@ namespace
 	constexpr int DefaultVoxelTextureInitInfoIndices[] = { 0, 1, 2, 3 };
 	constexpr int RaisedVoxelTextureInitInfoIndices[] = { 1, 2, 0, -1 };
 
+	int GetVoxelRenderTransformIndex(SNInt x, int y, WEInt z, int chunkHeight)
+	{
+		return x + (y * Chunk::WIDTH) + (z * Chunk::WIDTH * chunkHeight);
+	}
+
 	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
 	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef, std::vector<RenderVoxelChunkManager::LoadedTexture> &textures,
 		TextureManager &textureManager, Renderer &renderer)
@@ -652,9 +657,23 @@ void RenderVoxelChunkManager::loadChasmWalls(RenderVoxelChunk &renderChunk, cons
 
 void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
 {
+	const int chunkHeight = voxelChunk.getHeight();
+
+	// Allocate one large uniform buffer that covers all voxels. Air is wasted and doors are double-allocated but this
+	// is much faster than one buffer per voxel.
+	const int chunkTransformsCount = Chunk::WIDTH * chunkHeight * Chunk::DEPTH;
+	UniformBufferID chunkTransformsBufferID;
+	if (!renderer.tryCreateUniformBuffer(chunkTransformsCount, sizeof(RenderTransform), alignof(RenderTransform), &chunkTransformsBufferID))
+	{
+		DebugLogError("Couldn't create uniform buffer for voxel transforms.");
+		return;
+	}
+
+	renderChunk.transformBufferID = chunkTransformsBufferID;
+
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
-		for (int y = 0; y < voxelChunk.getHeight(); y++)
+		for (int y = 0; y < chunkHeight; y++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
@@ -669,11 +688,11 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 					const ArenaTypes::DoorType doorType = doorDef.getType();
 					DebugAssert(renderChunk.doorTransformBuffers.find(voxel) == renderChunk.doorTransformBuffers.end());
 
-					constexpr int faceCount = DoorUtils::FACE_COUNT;
+					constexpr int doorFaceCount = DoorUtils::FACE_COUNT;
 
 					// Each door voxel has a uniform buffer, one render transform per face.
 					UniformBufferID doorTransformBufferID;
-					if (!renderer.tryCreateUniformBuffer(faceCount, sizeof(RenderTransform), alignof(RenderTransform), &doorTransformBufferID))
+					if (!renderer.tryCreateUniformBuffer(doorFaceCount, sizeof(RenderTransform), alignof(RenderTransform), &doorTransformBufferID))
 					{
 						DebugLogError("Couldn't create uniform buffer for door transform.");
 						continue;
@@ -682,7 +701,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 					const double doorAnimPercent = DoorUtils::getAnimPercentOrZero(voxel.x, voxel.y, voxel.z, voxelChunk);
 
 					// Initialize to default appearance. Dirty door animations trigger an update.
-					for (int i = 0; i < faceCount; i++)
+					for (int i = 0; i < doorFaceCount; i++)
 					{
 						const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, doorAnimPercent);
 						renderer.populateUniformAtIndex(doorTransformBufferID, i, faceRenderTransform);
@@ -692,23 +711,13 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 				}
 				else
 				{
-					// Transform uniform buffers for most voxels, excluding doors.
-					DebugAssert(renderChunk.transformBuffers.find(voxel) == renderChunk.transformBuffers.end());
-
-					UniformBufferID transformBufferID;
-					if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &transformBufferID))
-					{
-						DebugLogError("Couldn't create uniform buffer for voxel transform.");
-						continue;
-					}
+					const int chunkTransformsBufferIndex = GetVoxelRenderTransformIndex(x, y, z, chunkHeight);
 
 					RenderTransform renderTransform;
 					renderTransform.translation = Matrix4d::translation(worldPosition.x, worldPosition.y, worldPosition.z);
-					renderTransform.rotation = Matrix4d::identity(); // @todo: this is wasteful since 95% of voxels don't need rotation + scale. Later this will be combined into a model matrix for MVP.
+					renderTransform.rotation = Matrix4d::identity();
 					renderTransform.scale = Matrix4d::identity();
-					renderer.populateUniformBuffer(transformBufferID, renderTransform);
-
-					renderChunk.transformBuffers.emplace(voxel, transformBufferID);
+					renderer.populateUniformAtIndex(chunkTransformsBufferID, chunkTransformsBufferIndex, renderTransform);
 				}
 			}
 		}
@@ -853,12 +862,9 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		}
 		else
 		{
-			const auto transformIter = renderChunk.transformBuffers.find(voxel);
-			DebugAssert(transformIter != renderChunk.transformBuffers.end());
-
 			DrawCallTransformInitInfo &transformInitInfo = transformInitInfos[0];
-			transformInitInfo.id = transformIter->second;
-			transformInitInfo.index = 0;
+			transformInitInfo.id = renderChunk.transformBufferID;
+			transformInitInfo.index = GetVoxelRenderTransformIndex(voxel.x, voxel.y, voxel.z, renderChunk.getHeight());
 			transformInitInfo.preScaleTranslationBufferID = -1;
 			transformInitInfoCount = 1;
 		}
