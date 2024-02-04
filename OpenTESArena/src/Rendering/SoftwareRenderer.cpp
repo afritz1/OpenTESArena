@@ -880,40 +880,6 @@ namespace swRender
 	int g_totalDepthTests = 0;
 	int g_totalColorWrites = 0;
 
-	void DrawDebugRGB(const RenderCamera &camera, BufferView2D<uint32_t> colorBuffer)
-	{
-		const int frameBufferWidth = colorBuffer.getWidth();
-		const int frameBufferHeight = colorBuffer.getHeight();
-		uint32_t *colorBufferPtr = colorBuffer.begin();
-
-		for (int y = 0; y < frameBufferHeight; y++)
-		{
-			const double yPercent = (static_cast<double>(y) + 0.50) / static_cast<double>(frameBufferHeight);
-
-			for (int x = 0; x < frameBufferWidth; x++)
-			{
-				const double xPercent = (static_cast<double>(x) + 0.50) / static_cast<double>(frameBufferWidth);
-
-				const Double3 pixelDir = ((camera.forwardScaled - camera.rightScaled + camera.up) +
-					(camera.rightScaled * (xPercent * 2.0)) - (camera.up * (yPercent * 2.0))).normalized();
-
-				const Double3 pixelDirClamped(
-					std::max(pixelDir.x, 0.0),
-					std::max(pixelDir.y, 0.0),
-					std::max(pixelDir.z, 0.0));
-
-				const Color color(
-					static_cast<uint8_t>(pixelDirClamped.x * 255.0),
-					static_cast<uint8_t>(pixelDirClamped.y * 255.0),
-					static_cast<uint8_t>(pixelDirClamped.z * 255.0));
-
-				const uint32_t outputColor = color.toARGB();
-				const int outputIndex = x + (y * frameBufferWidth);
-				colorBufferPtr[outputIndex] = outputColor;
-			}
-		}
-	}
-
 	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, int ditheringMode)
 	{
 		if (ditheringMode == DITHERING_MODE_CLASSIC)
