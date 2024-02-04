@@ -1,10 +1,5 @@
 #include "RenderTransform.h"
 
-RenderTransform::RenderTransform()
-{
-	this->clear();
-}
-
 void RenderTransform::clear()
 {
 	this->translation = Matrix4d();
