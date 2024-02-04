@@ -827,15 +827,19 @@ namespace swGeometry
 			const Double3 shadedNormal0XYZ(shadedNormal0.x, shadedNormal0.y, shadedNormal0.z);
 			const Double3 shadedNormal1XYZ(shadedNormal1.x, shadedNormal1.y, shadedNormal1.z);
 			const Double3 shadedNormal2XYZ(shadedNormal2.x, shadedNormal2.y, shadedNormal2.z);
+
+			const int32_t uv0Index = index0 * 2;
+			const int32_t uv1Index = index1 * 2;
+			const int32_t uv2Index = index2 * 2;
 			const Double2 uv0(
-				*(texCoordsPtr + (index0 * 2)),
-				*(texCoordsPtr + (index0 * 2) + 1));
+				*(texCoordsPtr + uv0Index),
+				*(texCoordsPtr + uv0Index + 1));
 			const Double2 uv1(
-				*(texCoordsPtr + (index1 * 2)),
-				*(texCoordsPtr + (index1 * 2) + 1));
+				*(texCoordsPtr + uv1Index),
+				*(texCoordsPtr + uv1Index + 1));
 			const Double2 uv2(
-				*(texCoordsPtr + (index2 * 2)),
-				*(texCoordsPtr + (index2 * 2) + 1));
+				*(texCoordsPtr + uv2Index),
+				*(texCoordsPtr + uv2Index + 1));
 
 			// Manually update clip list size and index 0 instead of doing costly vector resizing.
 			int clipListSize = 1;
