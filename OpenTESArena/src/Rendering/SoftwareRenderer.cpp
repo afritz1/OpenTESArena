@@ -84,16 +84,14 @@ namespace swShader
 		bool enableDepthWrite;
 	};
 
-	void VertexShader_Basic(const Double3 &vertex, const Double3 &normal, const Matrix4d &mvMatrix, const Matrix4d &mvpMatrix,
-		Double4 &outVertex, Double4 &outNormal)
+	void VertexShader_Basic(const Double3 &vertex, const Matrix4d &mvpMatrix, Double4 &outVertex)
 	{
 		outVertex = mvpMatrix * Double4(vertex, 1.0);
-		outNormal = mvMatrix * Double4(normal, 0.0);
 	}
 
-	void VertexShader_RaisingDoor(const Double3 &vertex, const Double3 &normal, const Double3 &preScaleTranslation, const Matrix4d &translationMatrix, 
+	void VertexShader_RaisingDoor(const Double3 &vertex, const Double3 &preScaleTranslation, const Matrix4d &translationMatrix, 
 		const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix,
-		Double4 &outVertex, Double4 &outNormal)
+		Double4 &outVertex)
 	{
 		// Translate down so floor vertices go underground and ceiling is at y=0.
 		const Double4 vertexWithPreScaleTranslation = Double4(vertex + preScaleTranslation, 1.0);
@@ -105,14 +103,11 @@ namespace swShader
 		const Double4 resultVertex = scaledVertex - Double4(preScaleTranslation, 0.0);
 
 		outVertex = projectionMatrix * (viewMatrix * (translationMatrix * (rotationMatrix * resultVertex)));
-		outNormal = viewMatrix * (translationMatrix * (rotationMatrix * Double4(normal, 0.0)));
 	}
 
-	void VertexShader_Entity(const Double3 &vertex, const Double3 &normal, const Matrix4d &viewMatrix, const Matrix4d &mvpMatrix,
-		Double4 &outVertex, Double4 &outNormal)
+	void VertexShader_Entity(const Double3 &vertex, const Matrix4d &mvpMatrix, Double4 &outVertex)
 	{
 		outVertex = mvpMatrix * Double4(vertex, 1.0);
-		outNormal = viewMatrix * Double4(normal, 0.0); // Already rotated in world space to face the camera.
 	}
 
 	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -442,19 +437,14 @@ namespace swGeometry
 
 		int triangleCount = 0;
 		Double4 v0s[MAX_RESULTS], v1s[MAX_RESULTS], v2s[MAX_RESULTS]; // In clip space.
-		Double3 normal0s[MAX_RESULTS], normal1s[MAX_RESULTS], normal2s[MAX_RESULTS];
 		Double2 uv0s[MAX_RESULTS], uv1s[MAX_RESULTS], uv2s[MAX_RESULTS];
 	private:
 		void populateIndex(int index, const Double4 &v0, const Double4 &v1, const Double4 &v2,
-			const Double3 &normal0, const Double3 &normal1, const Double3 &normal2,
 			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
 		{
 			this->v0s[index] = v0;
 			this->v1s[index] = v1;
 			this->v2s[index] = v2;
-			this->normal0s[index] = normal0;
-			this->normal1s[index] = normal1;
-			this->normal2s[index] = normal2;
 			this->uv0s[index] = uv0;
 			this->uv1s[index] = uv1;
 			this->uv2s[index] = uv2;
@@ -468,26 +458,23 @@ namespace swGeometry
 		}
 
 		static TriangleClipResult one(const Double4 &v0, const Double4 &v1, const Double4 &v2,
-			const Double3 &normal0, const Double3 &normal1, const Double3 &normal2,
 			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
 		{
 			TriangleClipResult result;
 			result.triangleCount = 1;
-			result.populateIndex(0, v0, v1, v2, normal0, normal1, normal2, uv0, uv1, uv2);
+			result.populateIndex(0, v0, v1, v2, uv0, uv1, uv2);
 			return result;
 		}
 
 		static TriangleClipResult two(const Double4 &v0A, const Double4 &v1A, const Double4 &v2A,
-			const Double3 &normal0A, const Double3 &normal1A, const Double3 &normal2A,
 			const Double2 &uv0A, const Double2 &uv1A, const Double2 &uv2A,
 			const Double4 &v0B, const Double4 &v1B, const Double4 &v2B,
-			const Double3 &normal0B, const Double3 &normal1B, const Double3 &normal2B,
 			const Double2 &uv0B, const Double2 &uv1B, const Double2 &uv2B)
 		{
 			TriangleClipResult result;
 			result.triangleCount = 2;
-			result.populateIndex(0, v0A, v1A, v2A, normal0A, normal1A, normal2A, uv0A, uv1A, uv2A);
-			result.populateIndex(1, v0B, v1B, v2B, normal0B, normal1B, normal2B, uv0B, uv1B, uv2B);
+			result.populateIndex(0, v0A, v1A, v2A, uv0A, uv1A, uv2A);
+			result.populateIndex(1, v0B, v1B, v2B, uv0B, uv1B, uv2B);
 			return result;
 		}
 	};
@@ -504,9 +491,8 @@ namespace swGeometry
 		}
 	};
 
-	TriangleClipResult ProcessClipSpaceTriangle(const Double4 &v0, const Double4 &v1, const Double4 &v2, const Double3 &normal0,
-		const Double3 &normal1, const Double3 &normal2, const Double2 &uv0, const Double2 &uv1, const Double2 &uv2,
-		int clipPlaneIndex)
+	TriangleClipResult ProcessClipSpaceTriangle(const Double4 &v0, const Double4 &v1, const Double4 &v2,
+		const Double2 &uv0, const Double2 &uv1, const Double2 &uv2, int clipPlaneIndex)
 	{
 		double v0Diff, v1Diff, v2Diff;
 		bool isV0Inside, isV1Inside, isV2Inside;
@@ -565,7 +551,7 @@ namespace swGeometry
 		}
 
 		// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
-		// making sure to keep the original winding order. Don't interpolate normals because smooth shading isn't needed.
+		// making sure to keep the original winding order.
 		if (isV0Inside)
 		{
 			if (isV1Inside)
@@ -573,7 +559,7 @@ namespace swGeometry
 				if (isV2Inside)
 				{
 					// All vertices visible, no clipping needed.
-					return TriangleClipResult::one(v0, v1, v2, normal0, normal1, normal2, uv0, uv1, uv2);
+					return TriangleClipResult::one(v0, v1, v2, uv0, uv1, uv2);
 				}
 				else
 				{
@@ -584,12 +570,9 @@ namespace swGeometry
 					const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
 					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
 					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
-					const Double3 v1v2PointNormal = normal1;
-					const Double3 v2v0PointNormal = normal2;
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
-					return TriangleClipResult::two(v0, v1, v1v2Point, normal0, normal1, v1v2PointNormal, uv0, uv1, v1v2PointUV,
-						v1v2Point, v2v0Point, v0, v1v2PointNormal, v2v0PointNormal, normal0, v1v2PointUV, v2v0PointUV, uv0);
+					return TriangleClipResult::two(v0, v1, v1v2Point, uv0, uv1, v1v2PointUV, v1v2Point, v2v0Point, v0, v1v2PointUV, v2v0PointUV, uv0);
 				}
 			}
 			else
@@ -603,12 +586,9 @@ namespace swGeometry
 					const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
 					const Double4 v0v1Point = v0.lerp(v1, v0v1PointT);
 					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
-					const Double3 v0v1PointNormal = normal0;
-					const Double3 v1v2PointNormal = normal1;
 					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
-					return TriangleClipResult::two(v0, v0v1Point, v1v2Point, normal0, v0v1PointNormal, v1v2PointNormal, uv0,
-						v0v1PointUV, v1v2PointUV, v1v2Point, v2, v0, v1v2PointNormal, normal2, normal0, v1v2PointUV, uv2, uv0);
+					return TriangleClipResult::two(v0, v0v1Point, v1v2Point, uv0, v0v1PointUV, v1v2PointUV, v1v2Point, v2, v0, v1v2PointUV, uv2, uv0);
 				}
 				else
 				{
@@ -619,12 +599,9 @@ namespace swGeometry
 					const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
 					const Double4 v0v1Point = v0.lerp(v1, v0v1PointT);
 					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
-					const Double3 v0v1PointNormal = normal0;
-					const Double3 v2v0PointNormal = normal2;
 					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
-					return TriangleClipResult::one(v0, v0v1Point, v2v0Point, normal0, v0v1PointNormal, v2v0PointNormal,
-						uv0, v0v1PointUV, v2v0PointUV);
+					return TriangleClipResult::one(v0, v0v1Point, v2v0Point, uv0, v0v1PointUV, v2v0PointUV);
 				}
 			}
 		}
@@ -641,12 +618,9 @@ namespace swGeometry
 					const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
 					const Double4 v0v1Point = v0.lerp(v1, v0v1PointT);
 					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
-					const Double3 v0v1PointNormal = normal0;
-					const Double3 v2v0PointNormal = normal2;
 					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
-					return TriangleClipResult::two(v0v1Point, v1, v2, v0v1PointNormal, normal1, normal2, v0v1PointUV, uv1, uv2,
-						v2, v2v0Point, v0v1Point, normal2, v2v0PointNormal, v0v1PointNormal, uv2, v2v0PointUV, v0v1PointUV);
+					return TriangleClipResult::two(v0v1Point, v1, v2, v0v1PointUV, uv1, uv2, v2, v2v0Point, v0v1Point, uv2, v2v0PointUV, v0v1PointUV);
 				}
 				else
 				{
@@ -657,12 +631,9 @@ namespace swGeometry
 					const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
 					const Double4 v0v1Point = v0.lerp(v1, v0v1PointT);
 					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
-					const Double3 v0v1PointNormal = normal0;
-					const Double3 v1v2PointNormal = normal1;
 					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
-					return TriangleClipResult::one(v0v1Point, v1, v1v2Point, v0v1PointNormal, normal1, v1v2PointNormal,
-						v0v1PointUV, uv1, v1v2PointUV);
+					return TriangleClipResult::one(v0v1Point, v1, v1v2Point, v0v1PointUV, uv1, v1v2PointUV);
 				}
 			}
 			else
@@ -676,12 +647,9 @@ namespace swGeometry
 					const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
 					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
 					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
-					const Double3 v1v2PointNormal = normal1;
-					const Double3 v2v0PointNormal = normal2;
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
-					return TriangleClipResult::one(v1v2Point, v2, v2v0Point, v1v2PointNormal, normal2, v2v0PointNormal,
-						v1v2PointUV, uv2, v2v0PointUV);
+					return TriangleClipResult::one(v1v2Point, v2, v2v0Point, v1v2PointUV, uv2, v2v0PointUV);
 				}
 				else
 				{
@@ -695,12 +663,10 @@ namespace swGeometry
 	// Caches for visible triangle processing/clipping.
 	// @optimization: make N of these caches to allow for multi-threaded clipping
 	std::vector<Double4> g_visibleTriangleV0s, g_visibleTriangleV1s, g_visibleTriangleV2s;
-	std::vector<Double3> g_visibleTriangleNormal0s, g_visibleTriangleNormal1s, g_visibleTriangleNormal2s;
 	std::vector<Double2> g_visibleTriangleUV0s, g_visibleTriangleUV1s, g_visibleTriangleUV2s;
 	std::vector<ObjectTextureID> g_visibleTriangleTextureID0s, g_visibleTriangleTextureID1s;	
 	constexpr int MAX_CLIP_LIST_SIZE = 64; // Arbitrary worst case for processing one triangle. Increase this if clipping breaks (32 wasn't enough).
 	std::array<Double4, MAX_CLIP_LIST_SIZE> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
-	std::array<Double3, MAX_CLIP_LIST_SIZE> g_visibleClipListNormal0s, g_visibleClipListNormal1s, g_visibleClipListNormal2s;
 	std::array<Double2, MAX_CLIP_LIST_SIZE> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
 	std::array<ObjectTextureID, MAX_CLIP_LIST_SIZE> g_visibleClipListTextureID0s, g_visibleClipListTextureID1s;
 	int g_visibleTriangleCount = 0; // Note this includes new triangles from clipping.
@@ -712,16 +678,12 @@ namespace swGeometry
 	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &preScaleTranslation,
 		const Matrix4d &translationMatrix, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
 		const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix, const SoftwareRenderer::VertexBuffer &vertexBuffer,
-		const SoftwareRenderer::AttributeBuffer &normalBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
-		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
-		VertexShaderType vertexShaderType)
+		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
+		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType)
 	{
 		std::vector<Double4> &outVisibleTriangleV0s = g_visibleTriangleV0s;
 		std::vector<Double4> &outVisibleTriangleV1s = g_visibleTriangleV1s;
 		std::vector<Double4> &outVisibleTriangleV2s = g_visibleTriangleV2s;
-		std::vector<Double3> &outVisibleTriangleNormal0s = g_visibleTriangleNormal0s;
-		std::vector<Double3> &outVisibleTriangleNormal1s = g_visibleTriangleNormal1s;
-		std::vector<Double3> &outVisibleTriangleNormal2s = g_visibleTriangleNormal2s;
 		std::vector<Double2> &outVisibleTriangleUV0s = g_visibleTriangleUV0s;
 		std::vector<Double2> &outVisibleTriangleUV1s = g_visibleTriangleUV1s;
 		std::vector<Double2> &outVisibleTriangleUV2s = g_visibleTriangleUV2s;
@@ -730,9 +692,6 @@ namespace swGeometry
 		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV0s = g_visibleClipListV0s;
 		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV1s = g_visibleClipListV1s;
 		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV2s = g_visibleClipListV2s;
-		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal0s = g_visibleClipListNormal0s;
-		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal1s = g_visibleClipListNormal1s;
-		std::array<Double3, MAX_CLIP_LIST_SIZE> &outClipListNormal2s = g_visibleClipListNormal2s;
 		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV0s = g_visibleClipListUV0s;
 		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV1s = g_visibleClipListUV1s;
 		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV2s = g_visibleClipListUV2s;
@@ -744,9 +703,6 @@ namespace swGeometry
 		outVisibleTriangleV0s.clear();
 		outVisibleTriangleV1s.clear();
 		outVisibleTriangleV2s.clear();
-		outVisibleTriangleNormal0s.clear();
-		outVisibleTriangleNormal1s.clear();
-		outVisibleTriangleNormal2s.clear();
 		outVisibleTriangleUV0s.clear();
 		outVisibleTriangleUV1s.clear();
 		outVisibleTriangleUV2s.clear();
@@ -754,11 +710,9 @@ namespace swGeometry
 		outVisibleTriangleTextureID1s.clear();
 
 		const Matrix4d modelMatrix = translationMatrix * (rotationMatrix * scaleMatrix);
-		const Matrix4d modelViewMatrix = viewMatrix * modelMatrix;
-		const Matrix4d modelViewProjMatrix = projectionMatrix * modelViewMatrix;
+		const Matrix4d modelViewProjMatrix = projectionMatrix * (viewMatrix * modelMatrix);
 
 		const double *verticesPtr = vertexBuffer.vertices.begin();
-		const double *normalsPtr = normalBuffer.attributes.begin();
 		const double *texCoordsPtr = texCoordBuffer.attributes.begin();
 		const int32_t *indicesPtr = indexBuffer.indices.begin();
 		const int triangleCount = indexBuffer.indices.getCount() / 3;
@@ -771,9 +725,6 @@ namespace swGeometry
 			const int32_t v0Index = index0 * 3;
 			const int32_t v1Index = index1 * 3;
 			const int32_t v2Index = index2 * 3;
-			const int32_t normal0Index = v0Index;
-			const int32_t normal1Index = v1Index;
-			const int32_t normal2Index = v2Index;
 
 			const Double3 unshadedV0(
 				*(verticesPtr + v0Index),
@@ -787,46 +738,29 @@ namespace swGeometry
 				*(verticesPtr + v2Index),
 				*(verticesPtr + v2Index + 1),
 				*(verticesPtr + v2Index + 2));
-			const Double3 unshadedNormal0(
-				*(normalsPtr + normal0Index),
-				*(normalsPtr + normal0Index + 1),
-				*(normalsPtr + normal0Index + 2));
-			const Double3 unshadedNormal1(
-				*(normalsPtr + normal1Index),
-				*(normalsPtr + normal1Index + 1),
-				*(normalsPtr + normal1Index + 2));
-			const Double3 unshadedNormal2(
-				*(normalsPtr + normal2Index),
-				*(normalsPtr + normal2Index + 1),
-				*(normalsPtr + normal2Index + 2));
 
 			Double4 shadedV0, shadedV1, shadedV2;
-			Double4 shadedNormal0, shadedNormal1, shadedNormal2;
 			switch (vertexShaderType)
 			{
 			case VertexShaderType::Basic:
-				swShader::VertexShader_Basic(unshadedV0, unshadedNormal0, modelViewMatrix, modelViewProjMatrix, shadedV0, shadedNormal0);
-				swShader::VertexShader_Basic(unshadedV1, unshadedNormal1, modelViewMatrix, modelViewProjMatrix, shadedV1, shadedNormal1);
-				swShader::VertexShader_Basic(unshadedV2, unshadedNormal2, modelViewMatrix, modelViewProjMatrix, shadedV2, shadedNormal2);
+				swShader::VertexShader_Basic(unshadedV0, modelViewProjMatrix, shadedV0);
+				swShader::VertexShader_Basic(unshadedV1, modelViewProjMatrix, shadedV1);
+				swShader::VertexShader_Basic(unshadedV2, modelViewProjMatrix, shadedV2);
 				break;
 			case VertexShaderType::RaisingDoor:
-				swShader::VertexShader_RaisingDoor(unshadedV0, unshadedNormal0, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV0, shadedNormal0);
-				swShader::VertexShader_RaisingDoor(unshadedV1, unshadedNormal1, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV1, shadedNormal1);
-				swShader::VertexShader_RaisingDoor(unshadedV2, unshadedNormal2, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV2, shadedNormal2);
+				swShader::VertexShader_RaisingDoor(unshadedV0, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV0);
+				swShader::VertexShader_RaisingDoor(unshadedV1, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV1);
+				swShader::VertexShader_RaisingDoor(unshadedV2, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV2);
 				break;
 			case VertexShaderType::Entity:
-				swShader::VertexShader_Entity(unshadedV0, unshadedNormal0, viewMatrix, modelViewProjMatrix, shadedV0, shadedNormal0);
-				swShader::VertexShader_Entity(unshadedV1, unshadedNormal1, viewMatrix, modelViewProjMatrix, shadedV1, shadedNormal1);
-				swShader::VertexShader_Entity(unshadedV2, unshadedNormal2, viewMatrix, modelViewProjMatrix, shadedV2, shadedNormal2);
+				swShader::VertexShader_Entity(unshadedV0, modelViewProjMatrix, shadedV0);
+				swShader::VertexShader_Entity(unshadedV1, modelViewProjMatrix, shadedV1);
+				swShader::VertexShader_Entity(unshadedV2, modelViewProjMatrix, shadedV2);
 				break;
 			default:
 				DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
 				break;
 			}
-
-			const Double3 shadedNormal0XYZ(shadedNormal0.x, shadedNormal0.y, shadedNormal0.z);
-			const Double3 shadedNormal1XYZ(shadedNormal1.x, shadedNormal1.y, shadedNormal1.z);
-			const Double3 shadedNormal2XYZ(shadedNormal2.x, shadedNormal2.y, shadedNormal2.z);
 
 			const int32_t uv0Index = index0 * 2;
 			const int32_t uv1Index = index1 * 2;
@@ -849,9 +783,6 @@ namespace swGeometry
 			outClipListV0s[clipListFrontIndex] = shadedV0;
 			outClipListV1s[clipListFrontIndex] = shadedV1;
 			outClipListV2s[clipListFrontIndex] = shadedV2;
-			outClipListNormal0s[clipListFrontIndex] = shadedNormal0XYZ;
-			outClipListNormal1s[clipListFrontIndex] = shadedNormal1XYZ;
-			outClipListNormal2s[clipListFrontIndex] = shadedNormal2XYZ;
 			outClipListUV0s[clipListFrontIndex] = uv0;
 			outClipListUV1s[clipListFrontIndex] = uv1;
 			outClipListUV2s[clipListFrontIndex] = uv2;
@@ -867,16 +798,12 @@ namespace swGeometry
 					const Double4 &clipListV0 = outClipListV0s[clipListFrontIndex];
 					const Double4 &clipListV1 = outClipListV1s[clipListFrontIndex];
 					const Double4 &clipListV2 = outClipListV2s[clipListFrontIndex];
-					const Double3 &clipListNormal0 = outClipListNormal0s[clipListFrontIndex];
-					const Double3 &clipListNormal1 = outClipListNormal1s[clipListFrontIndex];
-					const Double3 &clipListNormal2 = outClipListNormal2s[clipListFrontIndex];
 					const Double2 &clipListUV0 = outClipListUV0s[clipListFrontIndex];
 					const Double2 &clipListUV1 = outClipListUV1s[clipListFrontIndex];
 					const Double2 &clipListUV2 = outClipListUV2s[clipListFrontIndex];
 					const ObjectTextureID clipListTextureID0 = outClipListTextureID0s[clipListFrontIndex];
 					const ObjectTextureID clipListTextureID1 = outClipListTextureID1s[clipListFrontIndex];
-					const TriangleClipResult clipResult = ProcessClipSpaceTriangle(clipListV0, clipListV1, clipListV2,
-						clipListNormal0, clipListNormal1, clipListNormal2, clipListUV0, clipListUV1, clipListUV2, clipPlaneIndex);
+					const TriangleClipResult clipResult = ProcessClipSpaceTriangle(clipListV0, clipListV1, clipListV2, clipListUV0, clipListUV1, clipListUV2, clipPlaneIndex);
 
 					if (clipResult.triangleCount > 0)
 					{
@@ -888,9 +815,6 @@ namespace swGeometry
 						std::memcpy(&outClipListV0s[dstIndex], clipResult.v0s, clipResult.triangleCount * sizeof(clipResult.v0s[0]));
 						std::memcpy(&outClipListV1s[dstIndex], clipResult.v1s, clipResult.triangleCount * sizeof(clipResult.v1s[0]));
 						std::memcpy(&outClipListV2s[dstIndex], clipResult.v2s, clipResult.triangleCount * sizeof(clipResult.v2s[0]));
-						std::memcpy(&outClipListNormal0s[dstIndex], clipResult.normal0s, clipResult.triangleCount * sizeof(clipResult.normal0s[0]));
-						std::memcpy(&outClipListNormal1s[dstIndex], clipResult.normal1s, clipResult.triangleCount * sizeof(clipResult.normal1s[0]));
-						std::memcpy(&outClipListNormal2s[dstIndex], clipResult.normal2s, clipResult.triangleCount * sizeof(clipResult.normal2s[0]));
 						std::memcpy(&outClipListUV0s[dstIndex], clipResult.uv0s, clipResult.triangleCount * sizeof(clipResult.uv0s[0]));
 						std::memcpy(&outClipListUV1s[dstIndex], clipResult.uv1s, clipResult.triangleCount * sizeof(clipResult.uv1s[0]));
 						std::memcpy(&outClipListUV2s[dstIndex], clipResult.uv2s, clipResult.triangleCount * sizeof(clipResult.uv2s[0]));
@@ -919,9 +843,6 @@ namespace swGeometry
 				outVisibleTriangleV0s.resize(totalTrianglesCount);
 				outVisibleTriangleV1s.resize(totalTrianglesCount);
 				outVisibleTriangleV2s.resize(totalTrianglesCount);
-				outVisibleTriangleNormal0s.resize(totalTrianglesCount);
-				outVisibleTriangleNormal1s.resize(totalTrianglesCount);
-				outVisibleTriangleNormal2s.resize(totalTrianglesCount);
 				outVisibleTriangleUV0s.resize(totalTrianglesCount);
 				outVisibleTriangleUV1s.resize(totalTrianglesCount);
 				outVisibleTriangleUV2s.resize(totalTrianglesCount);
@@ -931,9 +852,6 @@ namespace swGeometry
 				std::memcpy(&outVisibleTriangleV0s[oldVisibleTrianglesCount], &outClipListV0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV0s[0]));
 				std::memcpy(&outVisibleTriangleV1s[oldVisibleTrianglesCount], &outClipListV1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV1s[0]));
 				std::memcpy(&outVisibleTriangleV2s[oldVisibleTrianglesCount], &outClipListV2s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV2s[0]));
-				std::memcpy(&outVisibleTriangleNormal0s[oldVisibleTrianglesCount], &outClipListNormal0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListNormal0s[0]));
-				std::memcpy(&outVisibleTriangleNormal1s[oldVisibleTrianglesCount], &outClipListNormal1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListNormal1s[0]));
-				std::memcpy(&outVisibleTriangleNormal2s[oldVisibleTrianglesCount], &outClipListNormal2s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListNormal2s[0]));
 				std::memcpy(&outVisibleTriangleUV0s[oldVisibleTrianglesCount], &outClipListUV0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV0s[0]));
 				std::memcpy(&outVisibleTriangleUV1s[oldVisibleTrianglesCount], &outClipListUV1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV1s[0]));
 				std::memcpy(&outVisibleTriangleUV2s[oldVisibleTrianglesCount], &outClipListUV2s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV2s[0]));
@@ -1061,9 +979,6 @@ namespace swRender
 		swGeometry::g_visibleTriangleV0s.clear();
 		swGeometry::g_visibleTriangleV1s.clear();
 		swGeometry::g_visibleTriangleV2s.clear();
-		swGeometry::g_visibleTriangleNormal0s.clear();
-		swGeometry::g_visibleTriangleNormal1s.clear();
-		swGeometry::g_visibleTriangleNormal2s.clear();
 		swGeometry::g_visibleTriangleUV0s.clear();
 		swGeometry::g_visibleTriangleUV1s.clear();
 		swGeometry::g_visibleTriangleUV2s.clear();
@@ -1072,9 +987,6 @@ namespace swRender
 		swGeometry::g_visibleClipListV0s.fill(Double4::Zero);
 		swGeometry::g_visibleClipListV1s.fill(Double4::Zero);
 		swGeometry::g_visibleClipListV2s.fill(Double4::Zero);
-		swGeometry::g_visibleClipListNormal0s.fill(Double3::Zero);
-		swGeometry::g_visibleClipListNormal1s.fill(Double3::Zero);
-		swGeometry::g_visibleClipListNormal2s.fill(Double3::Zero);
 		swGeometry::g_visibleClipListUV0s.fill(Double2::Zero);
 		swGeometry::g_visibleClipListUV1s.fill(Double2::Zero);
 		swGeometry::g_visibleClipListUV2s.fill(Double2::Zero);
@@ -1883,7 +1795,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		}
 		
 		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
-		const AttributeBuffer &normalBuffer = this->attributeBuffers.get(drawCall.normalBufferID);
 		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
 		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
 		const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
@@ -1893,7 +1804,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
 		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
 			preScaleTranslation, transform.translation, transform.rotation, transform.scale, viewMatrix,
-			projectionMatrix, vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType);
+			projectionMatrix, vertexBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType);
 
 		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingTypes[0];
 		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingTypes[1];
