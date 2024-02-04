@@ -5,7 +5,6 @@
 #include <limits>
 
 #include "ArenaRenderUtils.h"
-#include "LegacyRendererUtils.h"
 #include "RenderCamera.h"
 #include "RenderDrawCall.h"
 #include "RendererUtils.h"

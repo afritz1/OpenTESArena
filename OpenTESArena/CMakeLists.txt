@@ -463,8 +463,6 @@ SET(TES_MATH
 SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.cpp"
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.h"
-    "${SRC_ROOT}/Rendering/LegacyRendererUtils.cpp"
-    "${SRC_ROOT}/Rendering/LegacyRendererUtils.h"
     "${SRC_ROOT}/Rendering/RenderCamera.cpp"
     "${SRC_ROOT}/Rendering/RenderCamera.h"
     "${SRC_ROOT}/Rendering/RenderDrawCall.cpp"
