@@ -431,18 +431,6 @@ namespace swShader
 // Internal geometry types/functions.
 namespace swGeometry
 {
-	struct TriangleDrawListIndices
-	{
-		int startIndex;
-		int count;
-
-		TriangleDrawListIndices(int startIndex, int count)
-		{
-			this->startIndex = startIndex;
-			this->count = count;
-		}
-	};
-
 	constexpr int MAX_TRIANGLE_CLIP_RESULTS = 2; // The most triangles generated when clipping a triangle against a clip plane.
 
 	// Caches for triangle clip results.
@@ -722,12 +710,12 @@ namespace swGeometry
 	}
 
 	// Forms a world space mesh from the given vertex buffer and index buffer, runs vertex shaders, clips triangles to the frustum,
-	// then returns clip space triangle indices for the rasterizer to iterate.
-	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &preScaleTranslation,
-		const Matrix4d &translationMatrix, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
-		const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix, const SoftwareRenderer::VertexBuffer &vertexBuffer,
-		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
-		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType)
+	// then writes out clip space triangle indices for the rasterizer to iterate.
+	void ProcessMeshForRasterization(const Double3 &preScaleTranslation, const Matrix4d &translationMatrix,
+		const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix,
+		const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
+		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
+		VertexShaderType vertexShaderType)
 	{
 		// Reset results cache. Skip zeroing the mesh arrays for performance.
 		g_clipSpaceMeshTriangleCount = 0;
@@ -864,7 +852,6 @@ namespace swGeometry
 		
 		g_totalDrawCallTriangleCount += triangleCount;
 		g_totalClipSpaceTriangleCount += g_clipSpaceMeshTriangleCount;
-		return swGeometry::TriangleDrawListIndices(0, g_clipSpaceMeshTriangleCount);
 	}
 }
 
@@ -943,10 +930,9 @@ namespace swRender
 		swRender::g_totalColorWrites = 0;
 	}
 
-	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
-		TextureSamplingType textureSamplingType1, RenderLightingType lightingType, double meshLightPercent, double ambientPercent,
-		BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType, double pixelShaderParam0,
-		bool enableDepthRead, bool enableDepthWrite, const SoftwareRenderer::ObjectTexturePool &textures,
+	void RasterizeMesh(TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType,
+		double meshLightPercent, double ambientPercent, BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType,
+		double pixelShaderParam0, bool enableDepthRead, bool enableDepthWrite, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
 		const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode, const RenderCamera &camera,
 		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
@@ -1003,13 +989,12 @@ namespace swRender
 			shaderHorizonMirror.fallbackSkyColor = skyBgTexture.texels8Bit[0];
 		}
 
-		const int triangleCount = drawListIndices.count;
-		for (int i = 0; i < triangleCount; i++)
+		const int triangleCount = swGeometry::g_clipSpaceMeshTriangleCount;
+		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 		{
-			const int index = drawListIndices.startIndex + i;
-			const Double4 &clip0 = swGeometry::g_clipSpaceMeshV0s[index];
-			const Double4 &clip1 = swGeometry::g_clipSpaceMeshV1s[index];
-			const Double4 &clip2 = swGeometry::g_clipSpaceMeshV2s[index];
+			const Double4 &clip0 = swGeometry::g_clipSpaceMeshV0s[triangleIndex];
+			const Double4 &clip1 = swGeometry::g_clipSpaceMeshV1s[triangleIndex];
+			const Double4 &clip2 = swGeometry::g_clipSpaceMeshV2s[triangleIndex];
 			const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clip0);
 			const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clip1);
 			const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clip2);
@@ -1044,9 +1029,9 @@ namespace swRender
 			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, frameBufferHeight);
 			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
 
-			const Double2 &uv0 = swGeometry::g_clipSpaceMeshUV0s[index];
-			const Double2 &uv1 = swGeometry::g_clipSpaceMeshUV1s[index];
-			const Double2 &uv2 = swGeometry::g_clipSpaceMeshUV2s[index];
+			const Double2 &uv0 = swGeometry::g_clipSpaceMeshUV0s[triangleIndex];
+			const Double2 &uv1 = swGeometry::g_clipSpaceMeshUV1s[triangleIndex];
+			const Double2 &uv2 = swGeometry::g_clipSpaceMeshUV2s[triangleIndex];
 
 			const ObjectTextureID textureID0 = swGeometry::g_clipSpaceMeshTextureID0;
 			const ObjectTextureID textureID1 = swGeometry::g_clipSpaceMeshTextureID1;
@@ -1749,9 +1734,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const ObjectTextureID textureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
 		const ObjectTextureID textureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
 		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
-		const swGeometry::TriangleDrawListIndices drawListIndices = swGeometry::ProcessMeshForRasterization(
-			preScaleTranslation, transform.translation, transform.rotation, transform.scale, viewMatrix,
-			projectionMatrix, vertexBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType);
+		swGeometry::ProcessMeshForRasterization(preScaleTranslation, transform.translation, transform.rotation, transform.scale,
+			viewMatrix, projectionMatrix, vertexBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType);
 
 		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingTypes[0];
 		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingTypes[1];
@@ -1782,8 +1766,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		const bool enableDepthRead = drawCall.enableDepthRead;
 		const bool enableDepthWrite = drawCall.enableDepthWrite;
 		const int ditheringMode = settings.ditheringMode;
-		swRender::RasterizeTriangles(drawListIndices, textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent,
-			ambientPercent, lightsView, pixelShaderType, pixelShaderParam0, enableDepthRead, enableDepthWrite, this->objectTextures,
+		swRender::RasterizeMesh(textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent, ambientPercent,
+			lightsView, pixelShaderType, pixelShaderParam0, enableDepthRead, enableDepthWrite, this->objectTextures,
 			paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBufferView, depthBufferView,
 			ditherBufferView, colorBufferView);
 	}
