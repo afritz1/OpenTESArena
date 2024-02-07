@@ -431,54 +431,6 @@ namespace swShader
 // Internal geometry types/functions.
 namespace swGeometry
 {
-	struct TriangleClipResult
-	{
-		static constexpr int MAX_RESULTS = 2;
-
-		int triangleCount = 0;
-		Double4 v0s[MAX_RESULTS], v1s[MAX_RESULTS], v2s[MAX_RESULTS]; // In clip space.
-		Double2 uv0s[MAX_RESULTS], uv1s[MAX_RESULTS], uv2s[MAX_RESULTS];
-	private:
-		void populateIndex(int index, const Double4 &v0, const Double4 &v1, const Double4 &v2,
-			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
-		{
-			this->v0s[index] = v0;
-			this->v1s[index] = v1;
-			this->v2s[index] = v2;
-			this->uv0s[index] = uv0;
-			this->uv1s[index] = uv1;
-			this->uv2s[index] = uv2;
-		}
-	public:
-		static TriangleClipResult zero()
-		{
-			TriangleClipResult result;
-			result.triangleCount = 0;
-			return result;
-		}
-
-		static TriangleClipResult one(const Double4 &v0, const Double4 &v1, const Double4 &v2,
-			const Double2 &uv0, const Double2 &uv1, const Double2 &uv2)
-		{
-			TriangleClipResult result;
-			result.triangleCount = 1;
-			result.populateIndex(0, v0, v1, v2, uv0, uv1, uv2);
-			return result;
-		}
-
-		static TriangleClipResult two(const Double4 &v0A, const Double4 &v1A, const Double4 &v2A,
-			const Double2 &uv0A, const Double2 &uv1A, const Double2 &uv2A,
-			const Double4 &v0B, const Double4 &v1B, const Double4 &v2B,
-			const Double2 &uv0B, const Double2 &uv1B, const Double2 &uv2B)
-		{
-			TriangleClipResult result;
-			result.triangleCount = 2;
-			result.populateIndex(0, v0A, v1A, v2A, uv0A, uv1A, uv2A);
-			result.populateIndex(1, v0B, v1B, v2B, uv0B, uv1B, uv2B);
-			return result;
-		}
-	};
-
 	struct TriangleDrawListIndices
 	{
 		int startIndex;
@@ -491,7 +443,19 @@ namespace swGeometry
 		}
 	};
 
-	TriangleClipResult ProcessClipSpaceTriangle(const Double4 &v0, const Double4 &v1, const Double4 &v2,
+	constexpr int MAX_TRIANGLE_CLIP_RESULTS = 2; // The most triangles generated when clipping a triangle against a clip plane.
+
+	// Caches for triangle clip results.
+	// @optimization: make N of these to allow for clipping a different triangle per thread
+	Double4 g_clipResultV0s[MAX_TRIANGLE_CLIP_RESULTS];
+	Double4 g_clipResultV1s[MAX_TRIANGLE_CLIP_RESULTS];
+	Double4 g_clipResultV2s[MAX_TRIANGLE_CLIP_RESULTS];
+	Double2 g_clipResultUV0s[MAX_TRIANGLE_CLIP_RESULTS];
+	Double2 g_clipResultUV1s[MAX_TRIANGLE_CLIP_RESULTS];
+	Double2 g_clipResultUV2s[MAX_TRIANGLE_CLIP_RESULTS];
+
+	// Returns number of triangles the input triangle turned into by being clipped against this clip plane.
+	int ProcessClipSpaceTriangle(const Double4 &v0, const Double4 &v1, const Double4 &v2,
 		const Double2 &uv0, const Double2 &uv1, const Double2 &uv2, int clipPlaneIndex)
 	{
 		double v0Diff, v1Diff, v2Diff;
@@ -547,7 +511,8 @@ namespace swGeometry
 			isV2Inside = v2Diff <= 0.0;
 			break;
 		default:
-			return TriangleClipResult::zero();
+			// Invalid clip plane case, don't clip anything.
+			return 0;
 		}
 
 		// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
@@ -559,7 +524,13 @@ namespace swGeometry
 				if (isV2Inside)
 				{
 					// All vertices visible, no clipping needed.
-					return TriangleClipResult::one(v0, v1, v2, uv0, uv1, uv2);
+					g_clipResultV0s[0] = v0;
+					g_clipResultV1s[0] = v1;
+					g_clipResultV2s[0] = v2;
+					g_clipResultUV0s[0] = uv0;
+					g_clipResultUV1s[0] = uv1;
+					g_clipResultUV2s[0] = uv2;
+					return 1;
 				}
 				else
 				{
@@ -572,7 +543,19 @@ namespace swGeometry
 					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
-					return TriangleClipResult::two(v0, v1, v1v2Point, uv0, uv1, v1v2PointUV, v1v2Point, v2v0Point, v0, v1v2PointUV, v2v0PointUV, uv0);
+					g_clipResultV0s[0] = v0;
+					g_clipResultV1s[0] = v1;
+					g_clipResultV2s[0] = v1v2Point;
+					g_clipResultV0s[1] = v1v2Point;
+					g_clipResultV1s[1] = v2v0Point;
+					g_clipResultV2s[1] = v0;
+					g_clipResultUV0s[0] = uv0;
+					g_clipResultUV1s[0] = uv1;
+					g_clipResultUV2s[0] = v1v2PointUV;
+					g_clipResultUV0s[1] = v1v2PointUV;
+					g_clipResultUV1s[1] = v2v0PointUV;
+					g_clipResultUV2s[1] = uv0;
+					return 2;
 				}
 			}
 			else
@@ -588,7 +571,19 @@ namespace swGeometry
 					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
 					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
-					return TriangleClipResult::two(v0, v0v1Point, v1v2Point, uv0, v0v1PointUV, v1v2PointUV, v1v2Point, v2, v0, v1v2PointUV, uv2, uv0);
+					g_clipResultV0s[0] = v0;
+					g_clipResultV1s[0] = v0v1Point;
+					g_clipResultV2s[0] = v1v2Point;
+					g_clipResultV0s[1] = v1v2Point;
+					g_clipResultV1s[1] = v2;
+					g_clipResultV2s[1] = v0;
+					g_clipResultUV0s[0] = uv0;
+					g_clipResultUV1s[0] = v0v1PointUV;
+					g_clipResultUV2s[0] = v1v2PointUV;
+					g_clipResultUV0s[1] = v1v2PointUV;
+					g_clipResultUV1s[1] = uv2;
+					g_clipResultUV2s[1] = uv0;
+					return 2;
 				}
 				else
 				{
@@ -601,7 +596,13 @@ namespace swGeometry
 					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
 					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
-					return TriangleClipResult::one(v0, v0v1Point, v2v0Point, uv0, v0v1PointUV, v2v0PointUV);
+					g_clipResultV0s[0] = v0;
+					g_clipResultV1s[0] = v0v1Point;
+					g_clipResultV2s[0] = v2v0Point;
+					g_clipResultUV0s[0] = uv0;
+					g_clipResultUV1s[0] = v0v1PointUV;
+					g_clipResultUV2s[0] = v2v0PointUV;
+					return 1;
 				}
 			}
 		}
@@ -620,7 +621,19 @@ namespace swGeometry
 					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
 					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
-					return TriangleClipResult::two(v0v1Point, v1, v2, v0v1PointUV, uv1, uv2, v2, v2v0Point, v0v1Point, uv2, v2v0PointUV, v0v1PointUV);
+					g_clipResultV0s[0] = v0v1Point;
+					g_clipResultV1s[0] = v1;
+					g_clipResultV2s[0] = v2;
+					g_clipResultV0s[1] = v2;
+					g_clipResultV1s[1] = v2v0Point;
+					g_clipResultV2s[1] = v0v1Point;
+					g_clipResultUV0s[0] = v0v1PointUV;
+					g_clipResultUV1s[0] = uv1;
+					g_clipResultUV2s[0] = uv2;
+					g_clipResultUV0s[1] = uv2;
+					g_clipResultUV1s[1] = v2v0PointUV;
+					g_clipResultUV2s[1] = v0v1PointUV;
+					return 2;
 				}
 				else
 				{
@@ -633,7 +646,13 @@ namespace swGeometry
 					const Double4 v1v2Point = v1.lerp(v2, v1v2PointT);
 					const Double2 v0v1PointUV = uv0.lerp(uv1, v0v1PointT);
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
-					return TriangleClipResult::one(v0v1Point, v1, v1v2Point, v0v1PointUV, uv1, v1v2PointUV);
+					g_clipResultV0s[0] = v0v1Point;
+					g_clipResultV1s[0] = v1;
+					g_clipResultV2s[0] = v1v2Point;
+					g_clipResultUV0s[0] = v0v1PointUV;
+					g_clipResultUV1s[0] = uv1;
+					g_clipResultUV2s[0] = v1v2PointUV;
+					return 1;
 				}
 			}
 			else
@@ -649,65 +668,73 @@ namespace swGeometry
 					const Double4 v2v0Point = v2.lerp(v0, v2v0PointT);
 					const Double2 v1v2PointUV = uv1.lerp(uv2, v1v2PointT);
 					const Double2 v2v0PointUV = uv2.lerp(uv0, v2v0PointT);
-					return TriangleClipResult::one(v1v2Point, v2, v2v0Point, v1v2PointUV, uv2, v2v0PointUV);
+					g_clipResultV0s[0] = v1v2Point;
+					g_clipResultV1s[0] = v2;
+					g_clipResultV2s[0] = v2v0Point;
+					g_clipResultUV0s[0] = v1v2PointUV;
+					g_clipResultUV1s[0] = uv2;
+					g_clipResultUV2s[0] = v2v0PointUV;
+					return 1;
 				}
 				else
 				{
 					// All vertices outside frustum.
-					return TriangleClipResult::zero();
+					return 0;
 				}
 			}
 		}
 	}
 
-	// Caches for visible triangle processing/clipping.
-	// @optimization: make N of these caches to allow for multi-threaded clipping
-	std::vector<Double4> g_visibleTriangleV0s, g_visibleTriangleV1s, g_visibleTriangleV2s;
-	std::vector<Double2> g_visibleTriangleUV0s, g_visibleTriangleUV1s, g_visibleTriangleUV2s;
-	std::vector<ObjectTextureID> g_visibleTriangleTextureID0s, g_visibleTriangleTextureID1s;	
-	constexpr int MAX_CLIP_LIST_SIZE = 64; // Arbitrary worst case for processing one triangle. Increase this if clipping breaks (32 wasn't enough).
-	std::array<Double4, MAX_CLIP_LIST_SIZE> g_visibleClipListV0s, g_visibleClipListV1s, g_visibleClipListV2s;
-	std::array<Double2, MAX_CLIP_LIST_SIZE> g_visibleClipListUV0s, g_visibleClipListUV1s, g_visibleClipListUV2s;
-	std::array<ObjectTextureID, MAX_CLIP_LIST_SIZE> g_visibleClipListTextureID0s, g_visibleClipListTextureID1s;
-	int g_visibleTriangleCount = 0; // Note this includes new triangles from clipping.
-	int g_totalTriangleCount = 0;
-	int g_totalDrawCallCount = 0;
+	constexpr int MAX_CLIPPED_MESH_TRIANGLES = 4096; // The most triangles a processed clip space mesh can have when passed to the rasterizer.
+	constexpr int MAX_CLIPPED_TRIANGLE_TRIANGLES = 64; // The most triangles a triangle can generate after being clipped by all clip planes.
 
-	// Runs vertex shaders, clips the given world space triangles to the frustum, generates any new triangles
-	// as necessary, and returns a view to a geometry cache that is invalidated the next time this function is called.
+	// Triangles generated by clipping the current mesh. These are sent to the rasterizer.
+	// @optimization: make N of these to allow for clipping a different mesh per thread
+	Double4 g_clipSpaceMeshV0s[MAX_CLIPPED_MESH_TRIANGLES];
+	Double4 g_clipSpaceMeshV1s[MAX_CLIPPED_MESH_TRIANGLES];
+	Double4 g_clipSpaceMeshV2s[MAX_CLIPPED_MESH_TRIANGLES];
+	Double2 g_clipSpaceMeshUV0s[MAX_CLIPPED_MESH_TRIANGLES];
+	Double2 g_clipSpaceMeshUV1s[MAX_CLIPPED_MESH_TRIANGLES];
+	Double2 g_clipSpaceMeshUV2s[MAX_CLIPPED_MESH_TRIANGLES];
+	ObjectTextureID g_clipSpaceMeshTextureID0 = -1;
+	ObjectTextureID g_clipSpaceMeshTextureID1 = -1;
+
+	// Triangles generated by clipping the current triangle against clipping planes.
+	Double4 g_clipSpaceTriangleV0s[MAX_CLIPPED_TRIANGLE_TRIANGLES];
+	Double4 g_clipSpaceTriangleV1s[MAX_CLIPPED_TRIANGLE_TRIANGLES];
+	Double4 g_clipSpaceTriangleV2s[MAX_CLIPPED_TRIANGLE_TRIANGLES];
+	Double2 g_clipSpaceTriangleUV0s[MAX_CLIPPED_TRIANGLE_TRIANGLES];
+	Double2 g_clipSpaceTriangleUV1s[MAX_CLIPPED_TRIANGLE_TRIANGLES];
+	Double2 g_clipSpaceTriangleUV2s[MAX_CLIPPED_TRIANGLE_TRIANGLES];
+
+	int g_clipSpaceMeshTriangleCount = 0; // Triangles in the current clip space mesh to be rasterized.
+	int g_totalClipSpaceTriangleCount = 0; // All processed triangles in the frustum, including new ones generated by clipping.
+	int g_totalDrawCallTriangleCount = 0; // World space triangles generated by iterating index buffers. Doesn't include ones generated by clipping.
+
+	void ClearProcessedTriangles()
+	{
+		// Skip zeroing mesh arrays for performance.
+		g_clipSpaceMeshTextureID0 = -1;
+		g_clipSpaceMeshTextureID1 = -1;
+		g_clipSpaceMeshTriangleCount = 0;
+		g_totalClipSpaceTriangleCount = 0;
+		g_totalDrawCallTriangleCount = 0;
+	}
+
+	// Forms a world space mesh from the given vertex buffer and index buffer, runs vertex shaders, clips triangles to the frustum,
+	// then returns clip space triangle indices for the rasterizer to iterate.
 	swGeometry::TriangleDrawListIndices ProcessMeshForRasterization(const Double3 &preScaleTranslation,
 		const Matrix4d &translationMatrix, const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix,
 		const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix, const SoftwareRenderer::VertexBuffer &vertexBuffer,
 		const SoftwareRenderer::AttributeBuffer &texCoordBuffer, const SoftwareRenderer::IndexBuffer &indexBuffer,
 		ObjectTextureID textureID0, ObjectTextureID textureID1, VertexShaderType vertexShaderType)
 	{
-		std::vector<Double4> &outVisibleTriangleV0s = g_visibleTriangleV0s;
-		std::vector<Double4> &outVisibleTriangleV1s = g_visibleTriangleV1s;
-		std::vector<Double4> &outVisibleTriangleV2s = g_visibleTriangleV2s;
-		std::vector<Double2> &outVisibleTriangleUV0s = g_visibleTriangleUV0s;
-		std::vector<Double2> &outVisibleTriangleUV1s = g_visibleTriangleUV1s;
-		std::vector<Double2> &outVisibleTriangleUV2s = g_visibleTriangleUV2s;
-		std::vector<ObjectTextureID> &outVisibleTriangleTextureID0s = g_visibleTriangleTextureID0s;
-		std::vector<ObjectTextureID> &outVisibleTriangleTextureID1s = g_visibleTriangleTextureID1s;
-		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV0s = g_visibleClipListV0s;
-		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV1s = g_visibleClipListV1s;
-		std::array<Double4, MAX_CLIP_LIST_SIZE> &outClipListV2s = g_visibleClipListV2s;
-		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV0s = g_visibleClipListUV0s;
-		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV1s = g_visibleClipListUV1s;
-		std::array<Double2, MAX_CLIP_LIST_SIZE> &outClipListUV2s = g_visibleClipListUV2s;
-		std::array<ObjectTextureID, MAX_CLIP_LIST_SIZE> &outClipListTextureID0s = g_visibleClipListTextureID0s;
-		std::array<ObjectTextureID, MAX_CLIP_LIST_SIZE> &outClipListTextureID1s = g_visibleClipListTextureID1s;
-		int *outVisibleTriangleCount = &g_visibleTriangleCount;
-		int *outTotalTriangleCount = &g_totalTriangleCount;
+		// Reset results cache. Skip zeroing the mesh arrays for performance.
+		g_clipSpaceMeshTriangleCount = 0;
 
-		outVisibleTriangleV0s.clear();
-		outVisibleTriangleV1s.clear();
-		outVisibleTriangleV2s.clear();
-		outVisibleTriangleUV0s.clear();
-		outVisibleTriangleUV1s.clear();
-		outVisibleTriangleUV2s.clear();
-		outVisibleTriangleTextureID0s.clear();
-		outVisibleTriangleTextureID1s.clear();
+		// Set rasterizer textures.
+		g_clipSpaceMeshTextureID0 = textureID0;
+		g_clipSpaceMeshTextureID1 = textureID1;
 
 		const Matrix4d modelMatrix = translationMatrix * (rotationMatrix * scaleMatrix);
 		const Matrix4d modelViewProjMatrix = projectionMatrix * (viewMatrix * modelMatrix);
@@ -716,16 +743,16 @@ namespace swGeometry
 		const double *texCoordsPtr = texCoordBuffer.attributes.begin();
 		const int32_t *indicesPtr = indexBuffer.indices.begin();
 		const int triangleCount = indexBuffer.indices.getCount() / 3;
-		for (int i = 0; i < triangleCount; i++)
+		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 		{
-			const int indexBufferBase = i * 3;
+			const int indexBufferBase = triangleIndex * 3;
 			const int32_t index0 = indicesPtr[indexBufferBase];
 			const int32_t index1 = indicesPtr[indexBufferBase + 1];
 			const int32_t index2 = indicesPtr[indexBufferBase + 2];
+			
 			const int32_t v0Index = index0 * 3;
 			const int32_t v1Index = index1 * 3;
 			const int32_t v2Index = index2 * 3;
-
 			const Double3 unshadedV0(
 				*(verticesPtr + v0Index),
 				*(verticesPtr + v0Index + 1),
@@ -775,95 +802,69 @@ namespace swGeometry
 				*(texCoordsPtr + uv2Index),
 				*(texCoordsPtr + uv2Index + 1));
 
-			// Manually update clip list size and index 0 instead of doing costly vector resizing.
-			int clipListSize = 1;
-			int clipListFrontIndex = 0;
+			// Initialize clipping loop with the vertex-shaded triangle.
+			g_clipSpaceTriangleV0s[0] = shadedV0;
+			g_clipSpaceTriangleV1s[0] = shadedV1;
+			g_clipSpaceTriangleV2s[0] = shadedV2;
+			g_clipSpaceTriangleUV0s[0] = uv0;
+			g_clipSpaceTriangleUV1s[0] = uv1;
+			g_clipSpaceTriangleUV2s[0] = uv2;
 
-			// Add the first triangle to clip.
-			outClipListV0s[clipListFrontIndex] = shadedV0;
-			outClipListV1s[clipListFrontIndex] = shadedV1;
-			outClipListV2s[clipListFrontIndex] = shadedV2;
-			outClipListUV0s[clipListFrontIndex] = uv0;
-			outClipListUV1s[clipListFrontIndex] = uv1;
-			outClipListUV2s[clipListFrontIndex] = uv2;
-			outClipListTextureID0s[clipListFrontIndex] = textureID0;
-			outClipListTextureID1s[clipListFrontIndex] = textureID1;
+			int clipListSize = 1; // Triangles to process based on this vertex-shaded triangle.
+			int clipListFrontIndex = 0;
 
 			constexpr int clipPlaneCount = 6; // Check each dimension against -W and W components.
 			for (int clipPlaneIndex = 0; clipPlaneIndex < clipPlaneCount; clipPlaneIndex++)
 			{
 				const int trianglesToClipCount = clipListSize - clipListFrontIndex;
-				for (int j = trianglesToClipCount; j > 0; j--)
+				for (int triangleToClip = trianglesToClipCount; triangleToClip > 0; triangleToClip--)
 				{
-					const Double4 &clipListV0 = outClipListV0s[clipListFrontIndex];
-					const Double4 &clipListV1 = outClipListV1s[clipListFrontIndex];
-					const Double4 &clipListV2 = outClipListV2s[clipListFrontIndex];
-					const Double2 &clipListUV0 = outClipListUV0s[clipListFrontIndex];
-					const Double2 &clipListUV1 = outClipListUV1s[clipListFrontIndex];
-					const Double2 &clipListUV2 = outClipListUV2s[clipListFrontIndex];
-					const ObjectTextureID clipListTextureID0 = outClipListTextureID0s[clipListFrontIndex];
-					const ObjectTextureID clipListTextureID1 = outClipListTextureID1s[clipListFrontIndex];
-					const TriangleClipResult clipResult = ProcessClipSpaceTriangle(clipListV0, clipListV1, clipListV2, clipListUV0, clipListUV1, clipListUV2, clipPlaneIndex);
+					DebugAssert(clipListFrontIndex < MAX_CLIPPED_TRIANGLE_TRIANGLES);
+					const Double4 &currentV0 = g_clipSpaceTriangleV0s[clipListFrontIndex];
+					const Double4 &currentV1 = g_clipSpaceTriangleV1s[clipListFrontIndex];
+					const Double4 &currentV2 = g_clipSpaceTriangleV2s[clipListFrontIndex];
+					const Double2 &currentUV0 = g_clipSpaceTriangleUV0s[clipListFrontIndex];
+					const Double2 &currentUV1 = g_clipSpaceTriangleUV1s[clipListFrontIndex];
+					const Double2 &currentUV2 = g_clipSpaceTriangleUV2s[clipListFrontIndex];
+					const int clipResultCount = ProcessClipSpaceTriangle(currentV0, currentV1, currentV2, currentUV0, currentUV1, currentUV2, clipPlaneIndex);
 
-					if (clipResult.triangleCount > 0)
+					for (int clipResultIndex = 0; clipResultIndex < clipResultCount; clipResultIndex++)
 					{
-						const int oldClipListSize = clipListSize;
-						const int newClipListSize = oldClipListSize + clipResult.triangleCount;
-						DebugAssert(newClipListSize < swGeometry::MAX_CLIP_LIST_SIZE);
-
-						const int dstIndex = newClipListSize - clipResult.triangleCount;
-						std::memcpy(&outClipListV0s[dstIndex], clipResult.v0s, clipResult.triangleCount * sizeof(clipResult.v0s[0]));
-						std::memcpy(&outClipListV1s[dstIndex], clipResult.v1s, clipResult.triangleCount * sizeof(clipResult.v1s[0]));
-						std::memcpy(&outClipListV2s[dstIndex], clipResult.v2s, clipResult.triangleCount * sizeof(clipResult.v2s[0]));
-						std::memcpy(&outClipListUV0s[dstIndex], clipResult.uv0s, clipResult.triangleCount * sizeof(clipResult.uv0s[0]));
-						std::memcpy(&outClipListUV1s[dstIndex], clipResult.uv1s, clipResult.triangleCount * sizeof(clipResult.uv1s[0]));
-						std::memcpy(&outClipListUV2s[dstIndex], clipResult.uv2s, clipResult.triangleCount * sizeof(clipResult.uv2s[0]));
-						
-						for (int clipResultIndex = 0; clipResultIndex < clipResult.triangleCount; clipResultIndex++)
-						{
-							const int writeIndex = dstIndex + clipResultIndex;
-							outClipListTextureID0s[writeIndex] = textureID0;
-							outClipListTextureID1s[writeIndex] = textureID1;
-						}
-
-						clipListSize = newClipListSize;
+						const int clipResultWriteIndex = clipListSize + clipResultIndex;
+						DebugAssert(clipResultWriteIndex < MAX_CLIPPED_TRIANGLE_TRIANGLES);
+						g_clipSpaceTriangleV0s[clipResultWriteIndex] = g_clipResultV0s[clipResultIndex];
+						g_clipSpaceTriangleV1s[clipResultWriteIndex] = g_clipResultV1s[clipResultIndex];
+						g_clipSpaceTriangleV2s[clipResultWriteIndex] = g_clipResultV2s[clipResultIndex];
+						g_clipSpaceTriangleUV0s[clipResultWriteIndex] = g_clipResultUV0s[clipResultIndex];
+						g_clipSpaceTriangleUV1s[clipResultWriteIndex] = g_clipResultUV1s[clipResultIndex];
+						g_clipSpaceTriangleUV2s[clipResultWriteIndex] = g_clipResultUV2s[clipResultIndex];
 					}
 
+					clipListSize += clipResultCount;
 					clipListFrontIndex++;
 				}
 			}
 
-			// Append newly clipped triangles to visible triangles (faster than vector::insert or std::copy in debug build).
-			const int oldVisibleTrianglesCount = static_cast<int>(outVisibleTriangleV0s.size());
-			const int newlyClippedTrianglesCount = static_cast<int>(std::distance(outClipListV0s.begin() + clipListFrontIndex, outClipListV0s.begin() + clipListSize));
-			const int totalTrianglesCount = oldVisibleTrianglesCount + newlyClippedTrianglesCount;
-
-			if (totalTrianglesCount > oldVisibleTrianglesCount)
+			// Add the clip results to the mesh, skipping the incomplete triangles the front index advanced beyond.
+			const int resultTriangleCount = clipListSize - clipListFrontIndex;
+			for (int resultTriangleIndex = 0; resultTriangleIndex < resultTriangleCount; resultTriangleIndex++)
 			{
-				outVisibleTriangleV0s.resize(totalTrianglesCount);
-				outVisibleTriangleV1s.resize(totalTrianglesCount);
-				outVisibleTriangleV2s.resize(totalTrianglesCount);
-				outVisibleTriangleUV0s.resize(totalTrianglesCount);
-				outVisibleTriangleUV1s.resize(totalTrianglesCount);
-				outVisibleTriangleUV2s.resize(totalTrianglesCount);
-				outVisibleTriangleTextureID0s.resize(totalTrianglesCount);
-				outVisibleTriangleTextureID1s.resize(totalTrianglesCount);
-
-				std::memcpy(&outVisibleTriangleV0s[oldVisibleTrianglesCount], &outClipListV0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV0s[0]));
-				std::memcpy(&outVisibleTriangleV1s[oldVisibleTrianglesCount], &outClipListV1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV1s[0]));
-				std::memcpy(&outVisibleTriangleV2s[oldVisibleTrianglesCount], &outClipListV2s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListV2s[0]));
-				std::memcpy(&outVisibleTriangleUV0s[oldVisibleTrianglesCount], &outClipListUV0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV0s[0]));
-				std::memcpy(&outVisibleTriangleUV1s[oldVisibleTrianglesCount], &outClipListUV1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV1s[0]));
-				std::memcpy(&outVisibleTriangleUV2s[oldVisibleTrianglesCount], &outClipListUV2s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListUV2s[0]));
-				std::memcpy(&outVisibleTriangleTextureID0s[oldVisibleTrianglesCount], &outClipListTextureID0s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListTextureID0s[0]));
-				std::memcpy(&outVisibleTriangleTextureID1s[oldVisibleTrianglesCount], &outClipListTextureID1s[clipListFrontIndex], newlyClippedTrianglesCount * sizeof(outClipListTextureID1s[0]));
+				const int srcIndex = clipListFrontIndex + resultTriangleIndex;
+				const int dstIndex = g_clipSpaceMeshTriangleCount + resultTriangleIndex;
+				g_clipSpaceMeshV0s[dstIndex] = g_clipSpaceTriangleV0s[srcIndex];
+				g_clipSpaceMeshV1s[dstIndex] = g_clipSpaceTriangleV1s[srcIndex];
+				g_clipSpaceMeshV2s[dstIndex] = g_clipSpaceTriangleV2s[srcIndex];
+				g_clipSpaceMeshUV0s[dstIndex] = g_clipSpaceTriangleUV0s[srcIndex];
+				g_clipSpaceMeshUV1s[dstIndex] = g_clipSpaceTriangleUV1s[srcIndex];
+				g_clipSpaceMeshUV2s[dstIndex] = g_clipSpaceTriangleUV2s[srcIndex];
 			}
+
+			g_clipSpaceMeshTriangleCount += resultTriangleCount;
 		}
 		
-		const int visibleTriangleCount = static_cast<int>(outVisibleTriangleV0s.size());
-		*outVisibleTriangleCount += visibleTriangleCount;
-		*outTotalTriangleCount += triangleCount;
-		return swGeometry::TriangleDrawListIndices(0, visibleTriangleCount); // All visible triangles.
+		g_totalDrawCallTriangleCount += triangleCount;
+		g_totalClipSpaceTriangleCount += g_clipSpaceMeshTriangleCount;
+		return swGeometry::TriangleDrawListIndices(0, g_clipSpaceMeshTriangleCount);
 	}
 }
 
@@ -875,6 +876,8 @@ namespace swRender
 	constexpr int DITHERING_MODE_MODERN = 2;
 
 	constexpr int DITHERING_MODE_MODERN_MASK_COUNT = 4;
+
+	int g_totalDrawCallCount = 0;
 
 	// For measuring overdraw.
 	int g_totalDepthTests = 0;
@@ -938,28 +941,6 @@ namespace swRender
 		colorBuffer.fill(0);
 		swRender::g_totalDepthTests = 0;
 		swRender::g_totalColorWrites = 0;
-	}
-
-	void ClearTriangleDrawList()
-	{
-		swGeometry::g_visibleTriangleV0s.clear();
-		swGeometry::g_visibleTriangleV1s.clear();
-		swGeometry::g_visibleTriangleV2s.clear();
-		swGeometry::g_visibleTriangleUV0s.clear();
-		swGeometry::g_visibleTriangleUV1s.clear();
-		swGeometry::g_visibleTriangleUV2s.clear();
-		swGeometry::g_visibleTriangleTextureID0s.clear();
-		swGeometry::g_visibleTriangleTextureID1s.clear();
-		swGeometry::g_visibleClipListV0s.fill(Double4::Zero);
-		swGeometry::g_visibleClipListV1s.fill(Double4::Zero);
-		swGeometry::g_visibleClipListV2s.fill(Double4::Zero);
-		swGeometry::g_visibleClipListUV0s.fill(Double2::Zero);
-		swGeometry::g_visibleClipListUV1s.fill(Double2::Zero);
-		swGeometry::g_visibleClipListUV2s.fill(Double2::Zero);
-		swGeometry::g_visibleClipListTextureID0s.fill(-1);
-		swGeometry::g_visibleClipListTextureID1s.fill(-1);
-		swGeometry::g_visibleTriangleCount = 0;
-		swGeometry::g_totalTriangleCount = 0;
 	}
 
 	void RasterizeTriangles(const swGeometry::TriangleDrawListIndices &drawListIndices, TextureSamplingType textureSamplingType0,
@@ -1026,9 +1007,9 @@ namespace swRender
 		for (int i = 0; i < triangleCount; i++)
 		{
 			const int index = drawListIndices.startIndex + i;
-			const Double4 &clip0 = swGeometry::g_visibleTriangleV0s[index];
-			const Double4 &clip1 = swGeometry::g_visibleTriangleV1s[index];
-			const Double4 &clip2 = swGeometry::g_visibleTriangleV2s[index];			
+			const Double4 &clip0 = swGeometry::g_clipSpaceMeshV0s[index];
+			const Double4 &clip1 = swGeometry::g_clipSpaceMeshV1s[index];
+			const Double4 &clip2 = swGeometry::g_clipSpaceMeshV2s[index];
 			const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clip0);
 			const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clip1);
 			const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clip2);
@@ -1063,12 +1044,12 @@ namespace swRender
 			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, frameBufferHeight);
 			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
 
-			const Double2 &uv0 = swGeometry::g_visibleTriangleUV0s[index];
-			const Double2 &uv1 = swGeometry::g_visibleTriangleUV1s[index];
-			const Double2 &uv2 = swGeometry::g_visibleTriangleUV2s[index];
+			const Double2 &uv0 = swGeometry::g_clipSpaceMeshUV0s[index];
+			const Double2 &uv1 = swGeometry::g_clipSpaceMeshUV1s[index];
+			const Double2 &uv2 = swGeometry::g_clipSpaceMeshUV2s[index];
 
-			const ObjectTextureID textureID0 = swGeometry::g_visibleTriangleTextureID0s[index];
-			const ObjectTextureID textureID1 = swGeometry::g_visibleTriangleTextureID1s[index];
+			const ObjectTextureID textureID0 = swGeometry::g_clipSpaceMeshTextureID0;
+			const ObjectTextureID textureID1 = swGeometry::g_clipSpaceMeshTextureID1;
 			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID0);
 
 			swShader::PixelShaderTexture shaderTexture0;
@@ -1689,9 +1670,9 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 
 	const int threadCount = 1;
 
-	const int drawCallCount = swGeometry::g_totalDrawCallCount;
-	const int sceneTriangleCount = swGeometry::g_totalTriangleCount;
-	const int visTriangleCount = swGeometry::g_visibleTriangleCount;
+	const int drawCallCount = swRender::g_totalDrawCallCount;
+	const int sceneTriangleCount = swGeometry::g_totalDrawCallTriangleCount;
+	const int visTriangleCount = swGeometry::g_totalClipSpaceTriangleCount;
 
 	const int textureCount = this->objectTextures.getUsedCount();
 	int textureByteCount = 0;
@@ -1740,10 +1721,10 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	const ObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
 	swRender::ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
-	swRender::ClearTriangleDrawList();
+	swGeometry::ClearProcessedTriangles();
 
 	const int drawCallCount = drawCalls.getCount();
-	swGeometry::g_totalDrawCallCount = drawCallCount;
+	swRender::g_totalDrawCallCount = drawCallCount;
 
 	for (int i = 0; i < drawCallCount; i++)
 	{
