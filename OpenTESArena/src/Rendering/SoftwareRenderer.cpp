@@ -919,6 +919,8 @@ namespace swRender
 		const int frameBufferHeight = paletteIndexBuffer.getHeight();
 		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
+		const double frameBufferWidthRealRecip = 1.0 / frameBufferWidthReal;
+		const double frameBufferHeightRealRecip = 1.0 / frameBufferHeightReal;
 		const bool *ditherBufferPtr = ditherBuffer.begin();
 		uint32_t *colorBufferPtr = colorBuffer.begin();
 
@@ -992,6 +994,9 @@ namespace swRender
 				continue;
 			}
 
+			const Double4 clipRecip0(1.0 / clip0.x, 1.0 / clip0.y, 1.0 / clip0.z, 1.0 / clip0.w);
+			const Double4 clipRecip1(1.0 / clip1.x, 1.0 / clip1.y, 1.0 / clip1.z, 1.0 / clip1.w);
+			const Double4 clipRecip2(1.0 / clip2.x, 1.0 / clip2.y, 1.0 / clip2.z, 1.0 / clip2.w);
 			const Double2 screenSpace01Perp = screenSpace01.rightPerp();
 			const Double2 screenSpace12Perp = screenSpace12.rightPerp();
 			const Double2 screenSpace20Perp = screenSpace20.rightPerp();
@@ -1026,11 +1031,11 @@ namespace swRender
 
 			for (int y = yStart; y < yEnd; y++)
 			{
-				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) / frameBufferHeightReal;
+				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) * frameBufferHeightRealRecip;
 
 				for (int x = xStart; x < xEnd; x++)
 				{
-					shaderFrameBuffer.xPercent = (static_cast<double>(x) + 0.50) / frameBufferWidthReal;
+					shaderFrameBuffer.xPercent = (static_cast<double>(x) + 0.50) * frameBufferWidthRealRecip;
 					const Double2 pixelCenter(
 						shaderFrameBuffer.xPercent * frameBufferWidthReal,
 						shaderFrameBuffer.yPercent * frameBufferHeightReal);
@@ -1044,14 +1049,12 @@ namespace swRender
 						const Double2 &ss0 = screenSpace01;
 						const Double2 ss1 = screenSpace2 - screenSpace0;
 						const Double2 ss2 = pixelCenter - screenSpace0;
-
 						const double dot00 = ss0.dot(ss0);
 						const double dot01 = ss0.dot(ss1);
 						const double dot11 = ss1.dot(ss1);
 						const double dot20 = ss2.dot(ss0);
 						const double dot21 = ss2.dot(ss1);
 						const double denominator = (dot00 * dot11) - (dot01 * dot01);
-
 						const double v = ((dot11 * dot20) - (dot01 * dot21)) / denominator;
 						const double w = ((dot00 * dot21) - (dot01 * dot20)) / denominator;
 						const double u = 1.0 - v - w;
@@ -1068,19 +1071,20 @@ namespace swRender
 						if (!enableDepthRead || (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex]))
 						{
 							const Double4 shaderClipSpacePoint(
-								((clip0.x / clip0.w) * u) + ((clip1.x / clip1.w) * v) + ((clip2.x / clip2.w) * w),
-								((clip0.y / clip0.w) * u) + ((clip1.y / clip1.w) * v) + ((clip2.y / clip2.w) * w),
-								((clip0.z / clip0.w) * u) + ((clip1.z / clip1.w) * v) + ((clip2.z / clip2.w) * w),
-								((1.0 / clip0.w) * u) + ((1.0 / clip1.w) * v) + ((1.0 / clip2.w) * w));
+								((clip0.x * clipRecip0.w) * u) + ((clip1.x * clipRecip1.w) * v) + ((clip2.x * clipRecip2.w) * w),
+								((clip0.y * clipRecip0.w) * u) + ((clip1.y * clipRecip1.w) * v) + ((clip2.y * clipRecip2.w) * w),
+								((clip0.z * clipRecip0.w) * u) + ((clip1.z * clipRecip1.w) * v) + ((clip2.z * clipRecip2.w) * w),
+								(clipRecip0.w * u) + (clipRecip1.w * v) + (clipRecip2.w * w));
+							const double shaderClipSpaceWRecip = 1.0 / shaderClipSpacePoint.w;
 							
-							shaderPerspective.texelPercent.x = (((uv0.x / clip0.w) * u) + ((uv1.x / clip1.w) * v) + ((uv2.x / clip2.w) * w)) / shaderClipSpacePoint.w;
-							shaderPerspective.texelPercent.y = (((uv0.y / clip0.w) * u) + ((uv1.y / clip1.w) * v) + ((uv2.y / clip2.w) * w)) / shaderClipSpacePoint.w;
+							shaderPerspective.texelPercent.x = (((uv0.x * clipRecip0.w) * u) + ((uv1.x * clipRecip1.w) * v) + ((uv2.x * clipRecip2.w) * w)) * shaderClipSpaceWRecip;
+							shaderPerspective.texelPercent.y = (((uv0.y * clipRecip0.w) * u) + ((uv1.y * clipRecip1.w) * v) + ((uv2.y * clipRecip2.w) * w)) * shaderClipSpaceWRecip;
 
 							const Double4 shaderHomogeneousSpacePoint(
-								shaderClipSpacePoint.x / shaderClipSpacePoint.w,
-								shaderClipSpacePoint.y / shaderClipSpacePoint.w,
-								shaderClipSpacePoint.z / shaderClipSpacePoint.w,
-								1.0 / shaderClipSpacePoint.w);
+								shaderClipSpacePoint.x * shaderClipSpaceWRecip,
+								shaderClipSpacePoint.y * shaderClipSpaceWRecip,
+								shaderClipSpacePoint.z * shaderClipSpaceWRecip,
+								shaderClipSpaceWRecip);
 							const Double4 shaderCameraSpacePoint = invProjMatrix * shaderHomogeneousSpacePoint;
 							const Double4 shaderWorldSpacePoint = invViewMatrix * shaderCameraSpacePoint;
 							const Double3 shaderWorldSpacePointXYZ(shaderWorldSpacePoint.x, shaderWorldSpacePoint.y, shaderWorldSpacePoint.z);
