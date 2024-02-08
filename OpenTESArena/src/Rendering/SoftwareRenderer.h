@@ -173,6 +173,7 @@ public:
 	{
 		Double3 worldPoint;
 		double startRadius, endRadius;
+		double startEndRadiusDiff, startEndRadiusDiffRecip;
 
 		Light();
 

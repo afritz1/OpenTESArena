@@ -1124,7 +1124,8 @@ namespace swRender
 									}
 									else
 									{
-										lightIntensity = std::clamp(1.0 - ((lightDistance - light.startRadius) / (light.endRadius - light.startRadius)), 0.0, 1.0);
+										const double lightDistancePercent = (lightDistance - light.startRadius) * light.startEndRadiusDiffRecip;
+										lightIntensity = std::clamp(1.0 - lightDistancePercent, 0.0, 1.0);
 									}
 
 									lightIntensitySum += lightIntensity;
@@ -1313,6 +1314,8 @@ SoftwareRenderer::Light::Light()
 {
 	this->startRadius = 0.0;
 	this->endRadius = 0.0;
+	this->startEndRadiusDiff = 0.0;
+	this->startEndRadiusDiffRecip = 0.0;
 }
 
 void SoftwareRenderer::Light::init(const Double3 &worldPoint, double startRadius, double endRadius)
@@ -1320,6 +1323,8 @@ void SoftwareRenderer::Light::init(const Double3 &worldPoint, double startRadius
 	this->worldPoint = worldPoint;
 	this->startRadius = startRadius;
 	this->endRadius = endRadius;
+	this->startEndRadiusDiff = endRadius - startRadius;
+	this->startEndRadiusDiffRecip = 1.0 / this->startEndRadiusDiff;
 }
 
 SoftwareRenderer::SoftwareRenderer()
@@ -1637,6 +1642,8 @@ void SoftwareRenderer::setLightRadius(RenderLightID id, double startRadius, doub
 	Light &light = this->lights.get(id);
 	light.startRadius = startRadius;
 	light.endRadius = endRadius;
+	light.startEndRadiusDiff = endRadius - startRadius;
+	light.startEndRadiusDiffRecip = 1.0 / light.startEndRadiusDiff;
 }
 
 void SoftwareRenderer::freeLight(RenderLightID id)
