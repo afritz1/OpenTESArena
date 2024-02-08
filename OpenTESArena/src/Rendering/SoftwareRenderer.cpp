@@ -997,6 +997,15 @@ namespace swRender
 			const Double4 clipRecip0(1.0 / clip0.x, 1.0 / clip0.y, 1.0 / clip0.z, 1.0 / clip0.w);
 			const Double4 clipRecip1(1.0 / clip1.x, 1.0 / clip1.y, 1.0 / clip1.z, 1.0 / clip1.w);
 			const Double4 clipRecip2(1.0 / clip2.x, 1.0 / clip2.y, 1.0 / clip2.z, 1.0 / clip2.w);
+			const double clip0XDivW = clip0.x * clipRecip0.w;
+			const double clip0YDivW = clip0.y * clipRecip0.w;
+			const double clip0ZDivW = clip0.z * clipRecip0.w;
+			const double clip1XDivW = clip1.x * clipRecip1.w;
+			const double clip1YDivW = clip1.y * clipRecip1.w;
+			const double clip1ZDivW = clip1.z * clipRecip1.w;
+			const double clip2XDivW = clip2.x * clipRecip2.w;
+			const double clip2YDivW = clip2.y * clipRecip2.w;
+			const double clip2ZDivW = clip2.z * clipRecip2.w;
 			const Double2 screenSpace01Perp = screenSpace01.rightPerp();
 			const Double2 screenSpace12Perp = screenSpace12.rightPerp();
 			const Double2 screenSpace20Perp = screenSpace20.rightPerp();
@@ -1014,6 +1023,12 @@ namespace swRender
 			const Double2 &uv0 = swGeometry::g_clipSpaceMeshUV0s[triangleIndex];
 			const Double2 &uv1 = swGeometry::g_clipSpaceMeshUV1s[triangleIndex];
 			const Double2 &uv2 = swGeometry::g_clipSpaceMeshUV2s[triangleIndex];
+			const double uv0XDivW = uv0.x * clipRecip0.w;
+			const double uv0YDivW = uv0.y * clipRecip0.w;
+			const double uv1XDivW = uv1.x * clipRecip1.w;
+			const double uv1YDivW = uv1.y * clipRecip1.w;
+			const double uv2XDivW = uv2.x * clipRecip2.w;
+			const double uv2YDivW = uv2.y * clipRecip2.w;
 
 			const ObjectTextureID textureID0 = swGeometry::g_clipSpaceMeshTextureID0;
 			const ObjectTextureID textureID1 = swGeometry::g_clipSpaceMeshTextureID1;
@@ -1071,14 +1086,14 @@ namespace swRender
 						if (!enableDepthRead || (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex]))
 						{
 							const Double4 shaderClipSpacePoint(
-								((clip0.x * clipRecip0.w) * u) + ((clip1.x * clipRecip1.w) * v) + ((clip2.x * clipRecip2.w) * w),
-								((clip0.y * clipRecip0.w) * u) + ((clip1.y * clipRecip1.w) * v) + ((clip2.y * clipRecip2.w) * w),
-								((clip0.z * clipRecip0.w) * u) + ((clip1.z * clipRecip1.w) * v) + ((clip2.z * clipRecip2.w) * w),
+								(clip0XDivW * u) + (clip1XDivW * v) + (clip2XDivW * w),
+								(clip0YDivW * u) + (clip1YDivW * v) + (clip2YDivW * w),
+								(clip0ZDivW * u) + (clip1ZDivW * v) + (clip2ZDivW * w),
 								(clipRecip0.w * u) + (clipRecip1.w * v) + (clipRecip2.w * w));
 							const double shaderClipSpaceWRecip = 1.0 / shaderClipSpacePoint.w;
 							
-							shaderPerspective.texelPercent.x = (((uv0.x * clipRecip0.w) * u) + ((uv1.x * clipRecip1.w) * v) + ((uv2.x * clipRecip2.w) * w)) * shaderClipSpaceWRecip;
-							shaderPerspective.texelPercent.y = (((uv0.y * clipRecip0.w) * u) + ((uv1.y * clipRecip1.w) * v) + ((uv2.y * clipRecip2.w) * w)) * shaderClipSpaceWRecip;
+							shaderPerspective.texelPercent.x = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpaceWRecip;
+							shaderPerspective.texelPercent.y = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpaceWRecip;
 
 							const Double4 shaderHomogeneousSpacePoint(
 								shaderClipSpacePoint.x * shaderClipSpaceWRecip,
