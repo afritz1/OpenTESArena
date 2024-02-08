@@ -62,6 +62,7 @@ namespace swShader
 		const uint8_t *lightTableTexels;
 		int lightLevelCount; // # of shades from light to dark.
 		double lightLevelCountReal;
+		int lastLightLevel;
 		int texelsPerLightLevel; // Should be 256 for 8-bit colors.
 		int lightLevel; // The selected row of shades between light and dark.
 	};
@@ -943,6 +944,7 @@ namespace swRender
 		shaderLighting.lightTableTexels = lightTableTexture.texels8Bit;
 		shaderLighting.lightLevelCount = lightTableTexture.height;
 		shaderLighting.lightLevelCountReal = static_cast<double>(shaderLighting.lightLevelCount);
+		shaderLighting.lastLightLevel = shaderLighting.lightLevelCount - 1;
 		shaderLighting.texelsPerLightLevel = lightTableTexture.width;
 		shaderLighting.lightLevel = 0;
 
@@ -1143,7 +1145,7 @@ namespace swRender
 							}
 
 							const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
-							shaderLighting.lightLevel = (shaderLighting.lightLevelCount - 1) - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lightLevelCount - 1);
+							shaderLighting.lightLevel = shaderLighting.lastLightLevel - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lastLightLevel);
 
 							if (requiresPerPixelLightIntensity)
 							{
@@ -1178,7 +1180,7 @@ namespace swRender
 
 								if (shouldDither)
 								{
-									shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lightLevelCount - 1);
+									shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lastLightLevel);
 								}
 							}
 
