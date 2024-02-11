@@ -918,6 +918,7 @@ namespace swRender
 	{
 		const int frameBufferWidth = paletteIndexBuffer.getWidth();
 		const int frameBufferHeight = paletteIndexBuffer.getHeight();
+		const int frameBufferPixelCount = frameBufferWidth * frameBufferHeight;
 		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 		const double frameBufferWidthRealRecip = 1.0 / frameBufferWidthReal;
@@ -1157,7 +1158,7 @@ namespace swRender
 									shouldDither = false;
 									break;
 								case DITHERING_MODE_CLASSIC:
-									shouldDither = ditherBufferPtr[x + (y * frameBufferWidth)];
+									shouldDither = ditherBufferPtr[shaderFrameBuffer.pixelIndex];
 									break;
 								case DITHERING_MODE_MODERN:
 									if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
@@ -1165,7 +1166,7 @@ namespace swRender
 										constexpr int maskCount = DITHERING_MODE_MODERN_MASK_COUNT;
 										const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
 										const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(maskCount) * lightLevelFraction), 0, maskCount - 1);
-										const int ditherBufferIndex = x + (y * frameBufferWidth) + (maskIndex * frameBufferWidth * frameBufferHeight);
+										const int ditherBufferIndex = shaderFrameBuffer.pixelIndex + (maskIndex * frameBufferPixelCount);
 										shouldDither = ditherBufferPtr[ditherBufferIndex];
 									}
 									else
