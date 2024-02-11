@@ -6,14 +6,27 @@ namespace
 {
 	// Child node indices for each internal node (root owns 4 indices, etc.) using breadth-first traversal.
 	int CHILD_INDICES[VoxelVisibilityChunk::TOTAL_CHILD_COUNT];
-	bool s_isChildIndicesInited = false;
+
+	// XY point for each tree level node index.
+	Int2 Z_ORDER_CURVE_POINTS[VoxelVisibilityChunk::LEAF_NODE_COUNT];
+
+	bool s_areGlobalVariablesInited = false;
 
 	void InitChildIndexArray()
 	{
-		DebugAssert(!s_isChildIndicesInited);
+		DebugAssert(!s_areGlobalVariablesInited);
 		for (int i = 0; i < static_cast<int>(std::size(CHILD_INDICES)); i++)
 		{
 			CHILD_INDICES[i] = i + 1;
+		}
+	}
+
+	void InitZOrderCurvePointsArray()
+	{
+		DebugAssert(!s_areGlobalVariablesInited);
+		for (int i = 0; i < static_cast<int>(std::size(Z_ORDER_CURVE_POINTS)); i++)
+		{
+			Z_ORDER_CURVE_POINTS[i] = MathUtils::getZOrderCurvePoint(i);
 		}
 	}
 
@@ -42,12 +55,11 @@ namespace
 	// four adjacent nodes in memory arranged in a 2x2 pattern in space.
 	int GetZOrderCurveNodeIndex(int treeLevelIndex, int treeLevelNodeIndex)
 	{
-		DebugAssert(treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT);
-		DebugAssert(treeLevelNodeIndex < VoxelVisibilityChunk::LEAF_NODE_COUNT);
-
 		DebugAssertIndex(VoxelVisibilityChunk::NODES_PER_SIDE, treeLevelIndex);
 		const int nodesPerSide = VoxelVisibilityChunk::NODES_PER_SIDE[treeLevelIndex];
-		const Int2 point = MathUtils::getZOrderCurvePoint(treeLevelNodeIndex);
+
+		DebugAssertIndex(Z_ORDER_CURVE_POINTS, treeLevelNodeIndex);
+		const Int2 point = Z_ORDER_CURVE_POINTS[treeLevelNodeIndex];
 		return point.x + (point.y * nodesPerSide);
 	}
 
@@ -117,10 +129,11 @@ namespace
 
 VoxelVisibilityChunk::VoxelVisibilityChunk()
 {
-	if (!s_isChildIndicesInited)
+	if (!s_areGlobalVariablesInited)
 	{
 		InitChildIndexArray();
-		s_isChildIndicesInited = true;
+		InitZOrderCurvePointsArray();
+		s_areGlobalVariablesInited = true;
 	}
 
 	std::fill(std::begin(this->internalNodeVisibilityTypes), std::end(this->internalNodeVisibilityTypes), VisibilityType::Outside);
