@@ -14,16 +14,29 @@ class Vector4i
 public:
 	static_assert(std::is_integral<T>::value);
 
+	T x, y, z, w;
+
+	constexpr Vector4i(T x, T y, T z, T w)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+		this->w = w;
+	}
+
+	constexpr Vector4i()
+	{
+		this->x = static_cast<T>(0);
+		this->y = static_cast<T>(0);
+		this->z = static_cast<T>(0);
+		this->w = static_cast<T>(0);
+	}
+
 	static const Vector4i<T> Zero;
 	static const Vector4i<T> UnitX;
 	static const Vector4i<T> UnitY;
 	static const Vector4i<T> UnitZ;
 	static const Vector4i<T> UnitW;
-
-	T x, y, z, w;
-
-	Vector4i(T x, T y, T z, T w);
-	Vector4i();
 
 	T &operator[](size_t index);
 	const T &operator[](size_t index) const;
@@ -52,18 +65,38 @@ class Vector4f
 {
 public:
 	static_assert(std::is_floating_point<T>::value);
-	
+
+	T x, y, z, w;
+
+	constexpr Vector4f(T x, T y, T z, T w)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+		this->w = w;
+	}
+
+	constexpr Vector4f(const Vector3f<T> &xyz, T w)
+	{
+		this->x = xyz.x;
+		this->y = xyz.y;
+		this->z = xyz.z;
+		this->w = w;
+	}
+
+	constexpr Vector4f()
+	{
+		this->x = static_cast<T>(0.0);
+		this->y = static_cast<T>(0.0);
+		this->z = static_cast<T>(0.0);
+		this->w = static_cast<T>(0.0);
+	}
+
 	static const Vector4f<T> Zero;
 	static const Vector4f<T> UnitX;
 	static const Vector4f<T> UnitY;
 	static const Vector4f<T> UnitZ;
 	static const Vector4f<T> UnitW;
-
-	T x, y, z, w;
-
-	Vector4f(T x, T y, T z, T w);
-	Vector4f(const Vector3f<T> &xyz, T w);
-	Vector4f();
 
 	static Vector4f<T> fromARGB(uint32_t argb);
 	static Vector4f<T> fromRGBA(uint32_t rgba);

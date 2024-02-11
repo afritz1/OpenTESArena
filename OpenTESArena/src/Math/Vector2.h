@@ -16,14 +16,23 @@ class Vector2i
 public:
 	static_assert(std::is_integral<T>::value);
 
+	T x, y;
+
+	constexpr Vector2i(T x, T y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+
+	constexpr Vector2i()
+	{
+		this->x = static_cast<T>(0);
+		this->y = static_cast<T>(0);
+	}
+
 	static const Vector2i<T> Zero;
 	static const Vector2i<T> UnitX;
 	static const Vector2i<T> UnitY;
-
-	T x, y;
-
-	Vector2i(T x, T y);
-	Vector2i();
 
 	T &operator[](size_t index);
 	const T &operator[](size_t index) const;
@@ -53,14 +62,23 @@ class Vector2f
 public:
 	static_assert(std::is_floating_point<T>::value);
 
+	T x, y;
+
+	constexpr Vector2f(T x, T y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+
+	constexpr Vector2f()
+	{
+		this->x = static_cast<T>(0.0);
+		this->y = static_cast<T>(0.0);
+	}
+
 	static const Vector2f<T> Zero;
 	static const Vector2f<T> UnitX;
 	static const Vector2f<T> UnitY;
-
-	T x, y;
-
-	Vector2f(T x, T y);
-	Vector2f();
 
 	static Vector2f<T> randomDirection(Random &random);
 	static Vector2f<T> randomPointInCircle(const Vector2f<T> &center, T radius, Random &random);
