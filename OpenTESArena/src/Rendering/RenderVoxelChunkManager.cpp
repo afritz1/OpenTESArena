@@ -1246,8 +1246,14 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkMan
 {
 	this->drawCallsCache.clear();
 
-	auto addValidDrawCalls = [this](const RenderVoxelChunk &renderChunk, const VoxelVisibilityChunk &voxelVisChunk, BufferView3D<const RenderVoxelDrawCallRangeID> rangeIDs)
+	// @todo: eventually this should sort by distance from a CoordDouble2
+	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
 	{
+		const ChunkPtr &chunkPtr = this->activeChunks[i];
+		const RenderVoxelChunk &renderChunk = *chunkPtr;
+		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtIndex(i);
+
+		BufferView3D<const RenderVoxelDrawCallRangeID> rangeIDs = renderChunk.drawCallRangeIDs;
 		for (WEInt z = 0; z < rangeIDs.getDepth(); z++)
 		{
 			for (SNInt x = 0; x < rangeIDs.getWidth(); x++)
@@ -1269,15 +1275,6 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkMan
 				}
 			}
 		}
-	};
-
-	// @todo: eventually this should sort by distance from a CoordDouble2
-	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
-	{
-		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		const RenderVoxelChunk &renderChunk = *chunkPtr;
-		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtIndex(i);
-		addValidDrawCalls(renderChunk, voxelVisChunk, renderChunk.drawCallRangeIDs);
 	}
 }
 
