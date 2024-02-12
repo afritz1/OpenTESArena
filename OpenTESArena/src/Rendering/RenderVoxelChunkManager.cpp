@@ -1385,7 +1385,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		BufferView<const VoxelInt3> dirtyMeshDefVoxels = voxelChunk.getDirtyMeshDefPositions();
 		BufferView<const VoxelInt3> dirtyDoorVisInstVoxels = voxelChunk.getDirtyDoorVisInstPositions();
 		BufferView<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
-		BufferView<const VoxelInt3> dirtyLightVoxels = renderLightChunk.dirtyVoxels;
+		BufferView<const VoxelInt3> dirtyLightVoxels = renderLightChunk.dirtyVoxelPositions;
 		this->updateChunkDrawCalls(renderChunk, dirtyMeshDefVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
 		this->updateChunkDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
 		this->updateChunkDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);

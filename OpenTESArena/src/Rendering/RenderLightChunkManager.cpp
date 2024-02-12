@@ -451,7 +451,7 @@ void RenderLightChunkManager::cleanUp()
 {
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
-		chunkPtr->dirtyVoxels.clear();
+		chunkPtr->clearDirtyVoxels();
 	}
 
 	this->playerLight.addedVoxels.clear();

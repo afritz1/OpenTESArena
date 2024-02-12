@@ -6,6 +6,7 @@ void RenderLightChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
 	this->lightIdLists.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
+	this->dirtyVoxels.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 }
 
 void RenderLightChunk::setVoxelDirty(const VoxelInt3 &position)
@@ -16,16 +17,24 @@ void RenderLightChunk::setVoxelDirty(const VoxelInt3 &position)
 		return;
 	}
 
-	const auto iter = std::find(this->dirtyVoxels.begin(), this->dirtyVoxels.end(), position);
-	if (iter == this->dirtyVoxels.end())
+	const bool isAlreadyDirty = this->dirtyVoxels.get(position.x, position.y, position.z);
+	if (!isAlreadyDirty)
 	{
-		this->dirtyVoxels.emplace_back(position);
+		this->dirtyVoxelPositions.emplace_back(position);
+		this->dirtyVoxels.set(position.x, position.y, position.z, true);
 	}
+}
+
+void RenderLightChunk::clearDirtyVoxels()
+{
+	this->dirtyVoxelPositions.clear();
+	this->dirtyVoxels.fill(false);
 }
 
 void RenderLightChunk::clear()
 {
 	Chunk::clear();
 	this->lightIdLists.clear();
+	this->dirtyVoxelPositions.clear();
 	this->dirtyVoxels.clear();
 }
