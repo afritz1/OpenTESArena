@@ -1748,91 +1748,59 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	int drawCallIndex = 0;
 	while (drawCallIndex < drawCallCount)
 	{
-		// One draw call to bootstrap the sequence.
-		const RenderDrawCall &drawCall = drawCallsPtr[drawCallIndex];
-		swGeometry::CachedDrawCall &cachedDrawCall = swGeometry::g_cachedDrawCalls[0];
-
-		const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
-		cachedDrawCall.transform = &transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-		cachedDrawCall.preScaleTranslation = Double3::Zero;
-		if (drawCall.preScaleTranslationBufferID >= 0)
-		{
-			const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
-			cachedDrawCall.preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
-		}
-
-		cachedDrawCall.vertexBuffer = &this->vertexBuffers.get(drawCall.vertexBufferID);
-		cachedDrawCall.texCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
-		cachedDrawCall.indexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
-		
-		const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
-		const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
-		cachedDrawCall.textureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
-		cachedDrawCall.textureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
-		cachedDrawCall.textureSamplingType0 = drawCall.textureSamplingTypes[0];
-		cachedDrawCall.textureSamplingType1 = drawCall.textureSamplingTypes[1];
-		cachedDrawCall.lightingType = drawCall.lightingType;
-		cachedDrawCall.meshLightPercent = drawCall.lightPercent;
-
-		for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
-		{
-			const RenderLightID lightID = drawCall.lightIDs[lightIndex];
-			cachedDrawCall.lightPtrs[lightIndex] = &this->lights.get(lightID);
-		}
-		
-		cachedDrawCall.lightCount = drawCall.lightIdCount;
-		cachedDrawCall.pixelShaderType = drawCall.pixelShaderType;
-		cachedDrawCall.pixelShaderParam0 = drawCall.pixelShaderParam0;
-		cachedDrawCall.enableDepthRead = drawCall.enableDepthRead;
-		cachedDrawCall.enableDepthWrite = drawCall.enableDepthWrite;
-
-		// See how many more draw calls can be processed with this same vertex shader.
-		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
-		int drawCallSequenceCount = 1;
+		// See how many draw calls in a row can be processed with the same vertex shader.
+		VertexShaderType vertexShaderType = static_cast<VertexShaderType>(-1);
 		const int maxDrawCallSequenceCount = std::min(swGeometry::MAX_CACHED_DRAW_CALLS, drawCallCount - drawCallIndex);
-		for (int sequenceIndex = 1; sequenceIndex < maxDrawCallSequenceCount; sequenceIndex++)
+		int drawCallSequenceCount = 0;
+		for (int sequenceIndex = 0; sequenceIndex < maxDrawCallSequenceCount; sequenceIndex++)
 		{
 			const int sequenceDrawCallIndex = drawCallIndex + sequenceIndex;
-			const RenderDrawCall &sequenceDrawCall = drawCallsPtr[sequenceDrawCallIndex];
-			if (sequenceDrawCall.vertexShaderType != vertexShaderType)
+			const RenderDrawCall &drawCall = drawCallsPtr[sequenceDrawCallIndex];
+
+			const bool isBootstrap = sequenceIndex == 0;
+			if (isBootstrap)
+			{
+				vertexShaderType = drawCall.vertexShaderType;
+			}
+			else if (drawCall.vertexShaderType != vertexShaderType)
 			{
 				break;
 			}
 			
-			swGeometry::CachedDrawCall &sequenceCachedDrawCall = swGeometry::g_cachedDrawCalls[sequenceIndex];
-			const UniformBuffer &sequenceTransformBuffer = this->uniformBuffers.get(sequenceDrawCall.transformBufferID);
-			sequenceCachedDrawCall.transform = &sequenceTransformBuffer.get<RenderTransform>(sequenceDrawCall.transformIndex);
-			sequenceCachedDrawCall.preScaleTranslation = Double3::Zero;
-			if (sequenceDrawCall.preScaleTranslationBufferID >= 0)
+			swGeometry::CachedDrawCall &cachedDrawCall = swGeometry::g_cachedDrawCalls[sequenceIndex];
+			const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
+			cachedDrawCall.transform = &transformBuffer.get<RenderTransform>(drawCall.transformIndex);
+			cachedDrawCall.preScaleTranslation = Double3::Zero;
+			if (drawCall.preScaleTranslationBufferID >= 0)
 			{
-				const UniformBuffer &sequencePreScaleTranslationBuffer = this->uniformBuffers.get(sequenceDrawCall.preScaleTranslationBufferID);
-				cachedDrawCall.preScaleTranslation = sequencePreScaleTranslationBuffer.get<Double3>(0);
+				const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
+				cachedDrawCall.preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
 			}
 
-			sequenceCachedDrawCall.vertexBuffer = &this->vertexBuffers.get(sequenceDrawCall.vertexBufferID);
-			sequenceCachedDrawCall.texCoordBuffer = &this->attributeBuffers.get(sequenceDrawCall.texCoordBufferID);
-			sequenceCachedDrawCall.indexBuffer = &this->indexBuffers.get(sequenceDrawCall.indexBufferID);
+			cachedDrawCall.vertexBuffer = &this->vertexBuffers.get(drawCall.vertexBufferID);
+			cachedDrawCall.texCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
+			cachedDrawCall.indexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
 
-			const ObjectTextureID *sequenceVaryingTexture0 = sequenceDrawCall.varyingTextures[0];
-			const ObjectTextureID *sequenceVaryingTexture1 = sequenceDrawCall.varyingTextures[1];
-			sequenceCachedDrawCall.textureID0 = (sequenceVaryingTexture0 != nullptr) ? *sequenceVaryingTexture0 : sequenceDrawCall.textureIDs[0];
-			sequenceCachedDrawCall.textureID1 = (sequenceVaryingTexture1 != nullptr) ? *sequenceVaryingTexture1 : sequenceDrawCall.textureIDs[1];
-			sequenceCachedDrawCall.textureSamplingType0 = sequenceDrawCall.textureSamplingTypes[0];
-			sequenceCachedDrawCall.textureSamplingType1 = sequenceDrawCall.textureSamplingTypes[1];
-			sequenceCachedDrawCall.lightingType = sequenceDrawCall.lightingType;
-			sequenceCachedDrawCall.meshLightPercent = sequenceDrawCall.lightPercent;
+			const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
+			const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
+			cachedDrawCall.textureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
+			cachedDrawCall.textureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
+			cachedDrawCall.textureSamplingType0 = drawCall.textureSamplingTypes[0];
+			cachedDrawCall.textureSamplingType1 = drawCall.textureSamplingTypes[1];
+			cachedDrawCall.lightingType = drawCall.lightingType;
+			cachedDrawCall.meshLightPercent = drawCall.lightPercent;
 
-			for (int lightIndex = 0; lightIndex < sequenceDrawCall.lightIdCount; lightIndex++)
+			for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
 			{
-				const RenderLightID lightID = sequenceDrawCall.lightIDs[lightIndex];
-				sequenceCachedDrawCall.lightPtrs[lightIndex] = &this->lights.get(lightID);
+				const RenderLightID lightID = drawCall.lightIDs[lightIndex];
+				cachedDrawCall.lightPtrs[lightIndex] = &this->lights.get(lightID);
 			}
 
-			sequenceCachedDrawCall.lightCount = sequenceDrawCall.lightIdCount;
-			sequenceCachedDrawCall.pixelShaderType = sequenceDrawCall.pixelShaderType;
-			sequenceCachedDrawCall.pixelShaderParam0 = sequenceDrawCall.pixelShaderParam0;
-			sequenceCachedDrawCall.enableDepthRead = sequenceDrawCall.enableDepthRead;
-			sequenceCachedDrawCall.enableDepthWrite = sequenceDrawCall.enableDepthWrite;
+			cachedDrawCall.lightCount = drawCall.lightIdCount;
+			cachedDrawCall.pixelShaderType = drawCall.pixelShaderType;
+			cachedDrawCall.pixelShaderParam0 = drawCall.pixelShaderParam0;
+			cachedDrawCall.enableDepthRead = drawCall.enableDepthRead;
+			cachedDrawCall.enableDepthWrite = drawCall.enableDepthWrite;
 
 			drawCallSequenceCount++;
 		}
