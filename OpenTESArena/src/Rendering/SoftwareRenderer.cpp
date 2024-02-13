@@ -432,6 +432,32 @@ namespace swShader
 // Internal geometry types/functions.
 namespace swGeometry
 {
+	// Draw call to be processed in bulk and prepared for rasterization by the mesh clipping function.
+	// Its vertex shader type is shared with other cached draw calls in a sequence.
+	struct CachedDrawCall
+	{
+		const RenderTransform *transform;
+		Double3 preScaleTranslation;
+		const SoftwareRenderer::VertexBuffer *vertexBuffer;
+		const SoftwareRenderer::AttributeBuffer *texCoordBuffer;
+		const SoftwareRenderer::IndexBuffer *indexBuffer;
+		ObjectTextureID textureID0;
+		ObjectTextureID textureID1;
+		TextureSamplingType textureSamplingType0;
+		TextureSamplingType textureSamplingType1;
+		RenderLightingType lightingType;
+		double meshLightPercent;
+		const SoftwareRenderer::Light *lightPtrs[RenderLightIdList::MAX_LIGHTS];
+		int lightCount;
+		PixelShaderType pixelShaderType;
+		double pixelShaderParam0;
+		bool enableDepthRead;
+		bool enableDepthWrite;
+	};
+
+	constexpr int MAX_CACHED_DRAW_CALLS = 8;
+	CachedDrawCall g_cachedDrawCalls[MAX_CACHED_DRAW_CALLS]; // Uses the same vertex shader during mesh processing and clipping.
+
 	constexpr int MAX_CLIPPED_MESH_TRIANGLES = 4096; // The most triangles a processed clip space mesh can have when passed to the rasterizer.
 	constexpr int MAX_CLIPPED_TRIANGLE_TRIANGLES = 64; // The most triangles a triangle can generate after being clipped by all clip planes.
 
@@ -909,7 +935,7 @@ namespace swRender
 	}
 
 	void RasterizeMesh(TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1, RenderLightingType lightingType,
-		double meshLightPercent, double ambientPercent, BufferView<const SoftwareRenderer::Light*> lights, PixelShaderType pixelShaderType,
+		double meshLightPercent, double ambientPercent, const SoftwareRenderer::Light* const *lights, int lightCount, PixelShaderType pixelShaderType,
 		double pixelShaderParam0, bool enableDepthRead, bool enableDepthWrite, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
 		const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode, const RenderCamera &camera,
@@ -930,9 +956,6 @@ namespace swRender
 		const Matrix4d &projectionMatrix = camera.projectionMatrix;
 		const Matrix4d &invViewMatrix = camera.inverseViewMatrix;
 		const Matrix4d &invProjMatrix = camera.inverseProjectionMatrix;
-
-		const int lightCount = lights.getCount();
-		const SoftwareRenderer::Light **lightsPtr = lights.begin();
 
 		const bool requiresTwoTextures =
 			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
@@ -1113,7 +1136,7 @@ namespace swRender
 								lightIntensitySum = ambientPercent;
 								for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
 								{
-									const SoftwareRenderer::Light &light = *lightsPtr[lightIndex];
+									const SoftwareRenderer::Light &light = *lights[lightIndex];
 									const Double3 lightPointDiff = light.worldPoint - shaderWorldSpacePointXYZ;
 									const double lightDistance = lightPointDiff.length();
 									double lightIntensity;
@@ -1691,6 +1714,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();
 	const int frameBufferHeight = this->paletteIndexBuffer.getHeight();
 
+	const double ambientPercent = settings.ambientPercent;
 	if (this->ditheringMode != settings.ditheringMode)
 	{
 		this->ditheringMode = settings.ditheringMode;
@@ -1711,71 +1735,126 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	// Sky texture for horizon reflection shader.
 	const ObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
+	const Matrix4d &viewMatrix = camera.viewMatrix;
+	const Matrix4d &projectionMatrix = camera.projectionMatrix;
+
 	swRender::ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
 	swGeometry::ClearProcessedTriangles();
 
+	const RenderDrawCall *drawCallsPtr = drawCalls.begin();
 	const int drawCallCount = drawCalls.getCount();
 	swRender::g_totalDrawCallCount = drawCallCount;
 
-	for (int i = 0; i < drawCallCount; i++)
+	int drawCallIndex = 0;
+	while (drawCallIndex < drawCallCount)
 	{
-		const RenderDrawCall &drawCall = drawCalls.get(i);
+		// One draw call to bootstrap the sequence.
+		const RenderDrawCall &drawCall = drawCallsPtr[drawCallIndex];
+		swGeometry::CachedDrawCall &cachedDrawCall = swGeometry::g_cachedDrawCalls[0];
+
 		const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
-		const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-		const Matrix4d &viewMatrix = camera.viewMatrix;
-		const Matrix4d &projectionMatrix = camera.projectionMatrix;
-		
-		Double3 preScaleTranslation = Double3::Zero;
+		cachedDrawCall.transform = &transformBuffer.get<RenderTransform>(drawCall.transformIndex);
+		cachedDrawCall.preScaleTranslation = Double3::Zero;
 		if (drawCall.preScaleTranslationBufferID >= 0)
 		{
 			const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
-			preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
+			cachedDrawCall.preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
 		}
+
+		cachedDrawCall.vertexBuffer = &this->vertexBuffers.get(drawCall.vertexBufferID);
+		cachedDrawCall.texCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
+		cachedDrawCall.indexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
 		
-		const VertexBuffer &vertexBuffer = this->vertexBuffers.get(drawCall.vertexBufferID);
-		const AttributeBuffer &texCoordBuffer = this->attributeBuffers.get(drawCall.texCoordBufferID);
-		const IndexBuffer &indexBuffer = this->indexBuffers.get(drawCall.indexBufferID);
 		const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
 		const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
-		const ObjectTextureID textureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
-		const ObjectTextureID textureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
-		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
-		swGeometry::ProcessMeshForRasterization(preScaleTranslation, transform.translation, transform.rotation, transform.scale,
-			viewMatrix, projectionMatrix, vertexBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1, vertexShaderType);
+		cachedDrawCall.textureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
+		cachedDrawCall.textureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
+		cachedDrawCall.textureSamplingType0 = drawCall.textureSamplingTypes[0];
+		cachedDrawCall.textureSamplingType1 = drawCall.textureSamplingTypes[1];
+		cachedDrawCall.lightingType = drawCall.lightingType;
+		cachedDrawCall.meshLightPercent = drawCall.lightPercent;
 
-		const TextureSamplingType textureSamplingType0 = drawCall.textureSamplingTypes[0];
-		const TextureSamplingType textureSamplingType1 = drawCall.textureSamplingTypes[1];
-
-		const RenderLightingType lightingType = drawCall.lightingType;
-		double meshLightPercent = 0.0;
-		const Light *lightPtrs[RenderLightIdList::MAX_LIGHTS];
-		BufferView<const Light*> lightsView;
-		if (lightingType == RenderLightingType::PerMesh)
+		for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
 		{
-			meshLightPercent = drawCall.lightPercent;
+			const RenderLightID lightID = drawCall.lightIDs[lightIndex];
+			cachedDrawCall.lightPtrs[lightIndex] = &this->lights.get(lightID);
 		}
-		else if (lightingType == RenderLightingType::PerPixel)
+		
+		cachedDrawCall.lightCount = drawCall.lightIdCount;
+		cachedDrawCall.pixelShaderType = drawCall.pixelShaderType;
+		cachedDrawCall.pixelShaderParam0 = drawCall.pixelShaderParam0;
+		cachedDrawCall.enableDepthRead = drawCall.enableDepthRead;
+		cachedDrawCall.enableDepthWrite = drawCall.enableDepthWrite;
+
+		// See how many more draw calls can be processed with this same vertex shader.
+		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
+		int drawCallSequenceCount = 1;
+		const int maxDrawCallSequenceCount = std::min(swGeometry::MAX_CACHED_DRAW_CALLS, drawCallCount - drawCallIndex);
+		for (int sequenceIndex = 1; sequenceIndex < maxDrawCallSequenceCount; sequenceIndex++)
 		{
-			for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
+			const int sequenceDrawCallIndex = drawCallIndex + sequenceIndex;
+			const RenderDrawCall &sequenceDrawCall = drawCallsPtr[sequenceDrawCallIndex];
+			if (sequenceDrawCall.vertexShaderType != vertexShaderType)
 			{
-				DebugAssertIndex(drawCall.lightIDs, lightIndex);
-				const RenderLightID lightID = drawCall.lightIDs[lightIndex];
-				lightPtrs[lightIndex] = &this->lights.get(lightID);
+				break;
+			}
+			
+			swGeometry::CachedDrawCall &sequenceCachedDrawCall = swGeometry::g_cachedDrawCalls[sequenceIndex];
+			const UniformBuffer &sequenceTransformBuffer = this->uniformBuffers.get(sequenceDrawCall.transformBufferID);
+			sequenceCachedDrawCall.transform = &sequenceTransformBuffer.get<RenderTransform>(sequenceDrawCall.transformIndex);
+			sequenceCachedDrawCall.preScaleTranslation = Double3::Zero;
+			if (sequenceDrawCall.preScaleTranslationBufferID >= 0)
+			{
+				const UniformBuffer &sequencePreScaleTranslationBuffer = this->uniformBuffers.get(sequenceDrawCall.preScaleTranslationBufferID);
+				cachedDrawCall.preScaleTranslation = sequencePreScaleTranslationBuffer.get<Double3>(0);
 			}
 
-			lightsView.init(lightPtrs, drawCall.lightIdCount);
+			sequenceCachedDrawCall.vertexBuffer = &this->vertexBuffers.get(sequenceDrawCall.vertexBufferID);
+			sequenceCachedDrawCall.texCoordBuffer = &this->attributeBuffers.get(sequenceDrawCall.texCoordBufferID);
+			sequenceCachedDrawCall.indexBuffer = &this->indexBuffers.get(sequenceDrawCall.indexBufferID);
+
+			const ObjectTextureID *sequenceVaryingTexture0 = sequenceDrawCall.varyingTextures[0];
+			const ObjectTextureID *sequenceVaryingTexture1 = sequenceDrawCall.varyingTextures[1];
+			sequenceCachedDrawCall.textureID0 = (sequenceVaryingTexture0 != nullptr) ? *sequenceVaryingTexture0 : sequenceDrawCall.textureIDs[0];
+			sequenceCachedDrawCall.textureID1 = (sequenceVaryingTexture1 != nullptr) ? *sequenceVaryingTexture1 : sequenceDrawCall.textureIDs[1];
+			sequenceCachedDrawCall.textureSamplingType0 = sequenceDrawCall.textureSamplingTypes[0];
+			sequenceCachedDrawCall.textureSamplingType1 = sequenceDrawCall.textureSamplingTypes[1];
+			sequenceCachedDrawCall.lightingType = sequenceDrawCall.lightingType;
+			sequenceCachedDrawCall.meshLightPercent = sequenceDrawCall.lightPercent;
+
+			for (int lightIndex = 0; lightIndex < sequenceDrawCall.lightIdCount; lightIndex++)
+			{
+				const RenderLightID lightID = sequenceDrawCall.lightIDs[lightIndex];
+				sequenceCachedDrawCall.lightPtrs[lightIndex] = &this->lights.get(lightID);
+			}
+
+			sequenceCachedDrawCall.lightCount = sequenceDrawCall.lightIdCount;
+			sequenceCachedDrawCall.pixelShaderType = sequenceDrawCall.pixelShaderType;
+			sequenceCachedDrawCall.pixelShaderParam0 = sequenceDrawCall.pixelShaderParam0;
+			sequenceCachedDrawCall.enableDepthRead = sequenceDrawCall.enableDepthRead;
+			sequenceCachedDrawCall.enableDepthWrite = sequenceDrawCall.enableDepthWrite;
+
+			drawCallSequenceCount++;
 		}
 
-		const double ambientPercent = settings.ambientPercent;
-		const PixelShaderType pixelShaderType = drawCall.pixelShaderType;
-		const double pixelShaderParam0 = drawCall.pixelShaderParam0;
-		const bool enableDepthRead = drawCall.enableDepthRead;
-		const bool enableDepthWrite = drawCall.enableDepthWrite;
-		const int ditheringMode = settings.ditheringMode;
-		swRender::RasterizeMesh(textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent, ambientPercent,
-			lightsView, pixelShaderType, pixelShaderParam0, enableDepthRead, enableDepthWrite, this->objectTextures,
-			paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBufferView, depthBufferView,
-			ditherBufferView, colorBufferView);
+		for (int cachedDrawCallIndex = 0; cachedDrawCallIndex < drawCallSequenceCount; cachedDrawCallIndex++)
+		{
+			const swGeometry::CachedDrawCall &cachedDrawCall = swGeometry::g_cachedDrawCalls[cachedDrawCallIndex];
+
+			// @todo: change this to one ProcessMeshesForRasterization() call and one RasterizeMeshes() call?
+			swGeometry::ProcessMeshForRasterization(cachedDrawCall.preScaleTranslation, cachedDrawCall.transform->translation,
+				cachedDrawCall.transform->rotation, cachedDrawCall.transform->scale, viewMatrix, projectionMatrix,
+				*cachedDrawCall.vertexBuffer, *cachedDrawCall.texCoordBuffer, *cachedDrawCall.indexBuffer,
+				cachedDrawCall.textureID0, cachedDrawCall.textureID1, vertexShaderType);
+
+			swRender::RasterizeMesh(cachedDrawCall.textureSamplingType0, cachedDrawCall.textureSamplingType1, 
+				cachedDrawCall.lightingType, cachedDrawCall.meshLightPercent, ambientPercent, cachedDrawCall.lightPtrs,
+				cachedDrawCall.lightCount, cachedDrawCall.pixelShaderType, cachedDrawCall.pixelShaderParam0, cachedDrawCall.enableDepthRead,
+				cachedDrawCall.enableDepthWrite, this->objectTextures, paletteTexture, lightTableTexture, skyBgTexture,
+				this->ditheringMode, camera, paletteIndexBufferView, depthBufferView, ditherBufferView, colorBufferView);
+		}
+
+		drawCallIndex += drawCallSequenceCount;
 	}
 }
 
