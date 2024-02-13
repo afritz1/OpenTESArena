@@ -494,13 +494,11 @@ namespace swGeometry
 		g_totalDrawCallTriangleCount = 0;
 	}
 
-	// Forms a world space mesh from the given vertex buffer and index buffer, runs vertex shaders, clips triangles to the frustum,
-	// then writes out clip space triangle indices for the rasterizer to iterate.
-	void ProcessMeshForRasterization(const Double3 &preScaleTranslation, const Matrix4d &translationMatrix,
+	template<VertexShaderType vertexShaderType>
+	void ProcessMeshForRasterizationInternal(const Double3 &preScaleTranslation, const Matrix4d &translationMatrix,
 		const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix,
 		const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
-		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
-		VertexShaderType vertexShaderType)
+		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1)
 	{
 		// Reset results cache. Skip zeroing the mesh arrays for performance.
 		g_clipSpaceMeshTriangleCount = 0;
@@ -522,7 +520,7 @@ namespace swGeometry
 			const int32_t index0 = indicesPtr[indexBufferBase];
 			const int32_t index1 = indicesPtr[indexBufferBase + 1];
 			const int32_t index2 = indicesPtr[indexBufferBase + 2];
-			
+
 			const int32_t v0Index = index0 * 3;
 			const int32_t v1Index = index1 * 3;
 			const int32_t v2Index = index2 * 3;
@@ -540,26 +538,23 @@ namespace swGeometry
 				*(verticesPtr + v2Index + 2));
 
 			Double4 shadedV0, shadedV1, shadedV2;
-			switch (vertexShaderType)
+			if constexpr (vertexShaderType == VertexShaderType::Basic)
 			{
-			case VertexShaderType::Basic:
 				swShader::VertexShader_Basic(unshadedV0, modelViewProjMatrix, shadedV0);
 				swShader::VertexShader_Basic(unshadedV1, modelViewProjMatrix, shadedV1);
 				swShader::VertexShader_Basic(unshadedV2, modelViewProjMatrix, shadedV2);
-				break;
-			case VertexShaderType::RaisingDoor:
+			}
+			else if (vertexShaderType == VertexShaderType::RaisingDoor)
+			{
 				swShader::VertexShader_RaisingDoor(unshadedV0, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV0);
 				swShader::VertexShader_RaisingDoor(unshadedV1, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV1);
 				swShader::VertexShader_RaisingDoor(unshadedV2, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV2);
-				break;
-			case VertexShaderType::Entity:
+			}
+			else if (vertexShaderType == VertexShaderType::Entity)
+			{
 				swShader::VertexShader_Entity(unshadedV0, modelViewProjMatrix, shadedV0);
 				swShader::VertexShader_Entity(unshadedV1, modelViewProjMatrix, shadedV1);
 				swShader::VertexShader_Entity(unshadedV2, modelViewProjMatrix, shadedV2);
-				break;
-			default:
-				DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
-				break;
 			}
 
 			const int32_t uv0Index = index0 * 2;
@@ -599,7 +594,7 @@ namespace swGeometry
 					const Double2 &currentUV0 = g_clipSpaceTriangleUV0s[clipListFrontIndex];
 					const Double2 &currentUV1 = g_clipSpaceTriangleUV1s[clipListFrontIndex];
 					const Double2 &currentUV2 = g_clipSpaceTriangleUV2s[clipListFrontIndex];
-					
+
 					// Clip against the clipping plane, generating 0 to 2 triangles.
 					double v0Diff, v1Diff, v2Diff;
 					bool isV0Inside, isV1Inside, isV2Inside;
@@ -853,9 +848,38 @@ namespace swGeometry
 
 			g_clipSpaceMeshTriangleCount += resultTriangleCount;
 		}
-		
+
 		g_totalDrawCallTriangleCount += triangleCount;
 		g_totalClipSpaceTriangleCount += g_clipSpaceMeshTriangleCount;
+	}
+
+	// Forms a world space mesh from the given vertex buffer and index buffer, runs vertex shaders, clips triangles to the frustum,
+	// then writes out clip space triangle indices for the rasterizer to iterate.
+	void ProcessMeshForRasterization(const Double3 &preScaleTranslation, const Matrix4d &translationMatrix,
+		const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix,
+		const SoftwareRenderer::VertexBuffer &vertexBuffer, const SoftwareRenderer::AttributeBuffer &texCoordBuffer,
+		const SoftwareRenderer::IndexBuffer &indexBuffer, ObjectTextureID textureID0, ObjectTextureID textureID1,
+		VertexShaderType vertexShaderType)
+	{
+		// Dispatch based on vertex shader.
+		switch (vertexShaderType)
+		{
+		case VertexShaderType::Basic:
+			ProcessMeshForRasterizationInternal<VertexShaderType::Basic>(preScaleTranslation, translationMatrix, rotationMatrix,
+				scaleMatrix, viewMatrix, projectionMatrix, vertexBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1);
+			break;
+		case VertexShaderType::RaisingDoor:
+			ProcessMeshForRasterizationInternal<VertexShaderType::RaisingDoor>(preScaleTranslation, translationMatrix, rotationMatrix,
+				scaleMatrix, viewMatrix, projectionMatrix, vertexBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1);
+			break;
+		case VertexShaderType::Entity:
+			ProcessMeshForRasterizationInternal<VertexShaderType::Entity>(preScaleTranslation, translationMatrix, rotationMatrix,
+				scaleMatrix, viewMatrix, projectionMatrix, vertexBuffer, texCoordBuffer, indexBuffer, textureID0, textureID1);
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
+			break;
+		}
 	}
 }
 
