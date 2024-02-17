@@ -660,171 +660,161 @@ namespace swGeometry
 					// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
 					// making sure to keep the original winding order.
 					int clipResultCount;
-					if (isV0Inside)
+					const int insideMaskIndex = (isV2Inside ? 0 : 1) | (isV1Inside ? 0 : 2) | (isV0Inside ? 0 : 4);
+					switch (insideMaskIndex)
 					{
-						if (isV1Inside)
-						{
-							if (isV2Inside)
-							{
-								// All vertices visible, no clipping needed.
-								g_clipSpaceTriangleV0s[resultWriteIndex0] = currentV0;
-								g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV1;
-								g_clipSpaceTriangleV2s[resultWriteIndex0] = currentV2;
-								g_clipSpaceTriangleUV0s[resultWriteIndex0] = currentUV0;
-								g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV1;
-								g_clipSpaceTriangleUV2s[resultWriteIndex0] = currentUV2;
-								clipResultCount = 1;
-							}
-							else
-							{
-								// Becomes quad
-								// Inside: V0, V1
-								// Outside: V2
-								const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-								const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-								const Double4 v1v2Point = currentV1.lerp(currentV2, v1v2PointT);
-								const Double4 v2v0Point = currentV2.lerp(currentV0, v2v0PointT);
-								const Double2 v1v2PointUV = currentUV1.lerp(currentUV2, v1v2PointT);
-								const Double2 v2v0PointUV = currentUV2.lerp(currentUV0, v2v0PointT);
-								g_clipSpaceTriangleV0s[resultWriteIndex0] = currentV0;
-								g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV1;
-								g_clipSpaceTriangleV2s[resultWriteIndex0] = v1v2Point;
-								g_clipSpaceTriangleV0s[resultWriteIndex1] = v1v2Point;
-								g_clipSpaceTriangleV1s[resultWriteIndex1] = v2v0Point;
-								g_clipSpaceTriangleV2s[resultWriteIndex1] = currentV0;
-								g_clipSpaceTriangleUV0s[resultWriteIndex0] = currentUV0;
-								g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV1;
-								g_clipSpaceTriangleUV2s[resultWriteIndex0] = v1v2PointUV;
-								g_clipSpaceTriangleUV0s[resultWriteIndex1] = v1v2PointUV;
-								g_clipSpaceTriangleUV1s[resultWriteIndex1] = v2v0PointUV;
-								g_clipSpaceTriangleUV2s[resultWriteIndex1] = currentUV0;
-								clipResultCount = 2;
-							}
-						}
-						else
-						{
-							if (isV2Inside)
-							{
-								// Becomes quad
-								// Inside: V0, V2
-								// Outside: V1
-								const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-								const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-								const Double4 v0v1Point = currentV0.lerp(currentV1, v0v1PointT);
-								const Double4 v1v2Point = currentV1.lerp(currentV2, v1v2PointT);
-								const Double2 v0v1PointUV = currentUV0.lerp(currentUV1, v0v1PointT);
-								const Double2 v1v2PointUV = currentUV1.lerp(currentUV2, v1v2PointT);
-								g_clipSpaceTriangleV0s[resultWriteIndex0] = currentV0;
-								g_clipSpaceTriangleV1s[resultWriteIndex0] = v0v1Point;
-								g_clipSpaceTriangleV2s[resultWriteIndex0] = v1v2Point;
-								g_clipSpaceTriangleV0s[resultWriteIndex1] = v1v2Point;
-								g_clipSpaceTriangleV1s[resultWriteIndex1] = currentV2;
-								g_clipSpaceTriangleV2s[resultWriteIndex1] = currentV0;
-								g_clipSpaceTriangleUV0s[resultWriteIndex0] = currentUV0;
-								g_clipSpaceTriangleUV1s[resultWriteIndex0] = v0v1PointUV;
-								g_clipSpaceTriangleUV2s[resultWriteIndex0] = v1v2PointUV;
-								g_clipSpaceTriangleUV0s[resultWriteIndex1] = v1v2PointUV;
-								g_clipSpaceTriangleUV1s[resultWriteIndex1] = currentUV2;
-								g_clipSpaceTriangleUV2s[resultWriteIndex1] = currentUV0;
-								clipResultCount = 2;
-							}
-							else
-							{
-								// Becomes smaller triangle
-								// Inside: V0
-								// Outside: V1, V2
-								const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-								const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-								const Double4 v0v1Point = currentV0.lerp(currentV1, v0v1PointT);
-								const Double4 v2v0Point = currentV2.lerp(currentV0, v2v0PointT);
-								const Double2 v0v1PointUV = currentUV0.lerp(currentUV1, v0v1PointT);
-								const Double2 v2v0PointUV = currentUV2.lerp(currentUV0, v2v0PointT);
-								g_clipSpaceTriangleV0s[resultWriteIndex0] = currentV0;
-								g_clipSpaceTriangleV1s[resultWriteIndex0] = v0v1Point;
-								g_clipSpaceTriangleV2s[resultWriteIndex0] = v2v0Point;
-								g_clipSpaceTriangleUV0s[resultWriteIndex0] = currentUV0;
-								g_clipSpaceTriangleUV1s[resultWriteIndex0] = v0v1PointUV;
-								g_clipSpaceTriangleUV2s[resultWriteIndex0] = v2v0PointUV;
-								clipResultCount = 1;
-							}
-						}
+					case 0:
+						// All vertices visible, no clipping needed.
+						g_clipSpaceTriangleV0s[resultWriteIndex0] = currentV0;
+						g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV1;
+						g_clipSpaceTriangleV2s[resultWriteIndex0] = currentV2;
+						g_clipSpaceTriangleUV0s[resultWriteIndex0] = currentUV0;
+						g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV1;
+						g_clipSpaceTriangleUV2s[resultWriteIndex0] = currentUV2;
+						clipResultCount = 1;
+						break;
+					case 1:
+					{
+						// Becomes quad
+						// Inside: V0, V1
+						// Outside: V2
+						const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+						const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+						const Double4 v1v2Point = currentV1.lerp(currentV2, v1v2PointT);
+						const Double4 v2v0Point = currentV2.lerp(currentV0, v2v0PointT);
+						const Double2 v1v2PointUV = currentUV1.lerp(currentUV2, v1v2PointT);
+						const Double2 v2v0PointUV = currentUV2.lerp(currentUV0, v2v0PointT);
+						g_clipSpaceTriangleV0s[resultWriteIndex0] = currentV0;
+						g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV1;
+						g_clipSpaceTriangleV2s[resultWriteIndex0] = v1v2Point;
+						g_clipSpaceTriangleV0s[resultWriteIndex1] = v1v2Point;
+						g_clipSpaceTriangleV1s[resultWriteIndex1] = v2v0Point;
+						g_clipSpaceTriangleV2s[resultWriteIndex1] = currentV0;
+						g_clipSpaceTriangleUV0s[resultWriteIndex0] = currentUV0;
+						g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV1;
+						g_clipSpaceTriangleUV2s[resultWriteIndex0] = v1v2PointUV;
+						g_clipSpaceTriangleUV0s[resultWriteIndex1] = v1v2PointUV;
+						g_clipSpaceTriangleUV1s[resultWriteIndex1] = v2v0PointUV;
+						g_clipSpaceTriangleUV2s[resultWriteIndex1] = currentUV0;
+						clipResultCount = 2;
+						break;
 					}
-					else
+					case 2:
 					{
-						if (isV1Inside)
-						{
-							if (isV2Inside)
-							{
-								// Becomes quad
-								// Inside: V1, V2
-								// Outside: V0
-								const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-								const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-								const Double4 v0v1Point = currentV0.lerp(currentV1, v0v1PointT);
-								const Double4 v2v0Point = currentV2.lerp(currentV0, v2v0PointT);
-								const Double2 v0v1PointUV = currentUV0.lerp(currentUV1, v0v1PointT);
-								const Double2 v2v0PointUV = currentUV2.lerp(currentUV0, v2v0PointT);
-								g_clipSpaceTriangleV0s[resultWriteIndex0] = v0v1Point;
-								g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV1;
-								g_clipSpaceTriangleV2s[resultWriteIndex0] = currentV2;
-								g_clipSpaceTriangleV0s[resultWriteIndex1] = currentV2;
-								g_clipSpaceTriangleV1s[resultWriteIndex1] = v2v0Point;
-								g_clipSpaceTriangleV2s[resultWriteIndex1] = v0v1Point;
-								g_clipSpaceTriangleUV0s[resultWriteIndex0] = v0v1PointUV;
-								g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV1;
-								g_clipSpaceTriangleUV2s[resultWriteIndex0] = currentUV2;
-								g_clipSpaceTriangleUV0s[resultWriteIndex1] = currentUV2;
-								g_clipSpaceTriangleUV1s[resultWriteIndex1] = v2v0PointUV;
-								g_clipSpaceTriangleUV2s[resultWriteIndex1] = v0v1PointUV;
-								clipResultCount = 2;
-							}
-							else
-							{
-								// Becomes smaller triangle
-								// Inside: V1
-								// Outside: V0, V2
-								const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-								const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-								const Double4 v0v1Point = currentV0.lerp(currentV1, v0v1PointT);
-								const Double4 v1v2Point = currentV1.lerp(currentV2, v1v2PointT);
-								const Double2 v0v1PointUV = currentUV0.lerp(currentUV1, v0v1PointT);
-								const Double2 v1v2PointUV = currentUV1.lerp(currentUV2, v1v2PointT);
-								g_clipSpaceTriangleV0s[resultWriteIndex0] = v0v1Point;
-								g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV1;
-								g_clipSpaceTriangleV2s[resultWriteIndex0] = v1v2Point;
-								g_clipSpaceTriangleUV0s[resultWriteIndex0] = v0v1PointUV;
-								g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV1;
-								g_clipSpaceTriangleUV2s[resultWriteIndex0] = v1v2PointUV;
-								clipResultCount = 1;
-							}
-						}
-						else
-						{
-							if (isV2Inside)
-							{
-								// Becomes smaller triangle
-								// Inside: V2
-								// Outside: V0, V1
-								const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-								const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-								const Double4 v1v2Point = currentV1.lerp(currentV2, v1v2PointT);
-								const Double4 v2v0Point = currentV2.lerp(currentV0, v2v0PointT);
-								const Double2 v1v2PointUV = currentUV1.lerp(currentUV2, v1v2PointT);
-								const Double2 v2v0PointUV = currentUV2.lerp(currentUV0, v2v0PointT);
-								g_clipSpaceTriangleV0s[resultWriteIndex0] = v1v2Point;
-								g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV2;
-								g_clipSpaceTriangleV2s[resultWriteIndex0] = v2v0Point;
-								g_clipSpaceTriangleUV0s[resultWriteIndex0] = v1v2PointUV;
-								g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV2;
-								g_clipSpaceTriangleUV2s[resultWriteIndex0] = v2v0PointUV;
-								clipResultCount = 1;
-							}
-							else
-							{
-								// All vertices outside frustum.
-								clipResultCount = 0;
-							}
-						}
+						// Becomes quad
+						// Inside: V0, V2
+						// Outside: V1
+						const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+						const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+						const Double4 v0v1Point = currentV0.lerp(currentV1, v0v1PointT);
+						const Double4 v1v2Point = currentV1.lerp(currentV2, v1v2PointT);
+						const Double2 v0v1PointUV = currentUV0.lerp(currentUV1, v0v1PointT);
+						const Double2 v1v2PointUV = currentUV1.lerp(currentUV2, v1v2PointT);
+						g_clipSpaceTriangleV0s[resultWriteIndex0] = currentV0;
+						g_clipSpaceTriangleV1s[resultWriteIndex0] = v0v1Point;
+						g_clipSpaceTriangleV2s[resultWriteIndex0] = v1v2Point;
+						g_clipSpaceTriangleV0s[resultWriteIndex1] = v1v2Point;
+						g_clipSpaceTriangleV1s[resultWriteIndex1] = currentV2;
+						g_clipSpaceTriangleV2s[resultWriteIndex1] = currentV0;
+						g_clipSpaceTriangleUV0s[resultWriteIndex0] = currentUV0;
+						g_clipSpaceTriangleUV1s[resultWriteIndex0] = v0v1PointUV;
+						g_clipSpaceTriangleUV2s[resultWriteIndex0] = v1v2PointUV;
+						g_clipSpaceTriangleUV0s[resultWriteIndex1] = v1v2PointUV;
+						g_clipSpaceTriangleUV1s[resultWriteIndex1] = currentUV2;
+						g_clipSpaceTriangleUV2s[resultWriteIndex1] = currentUV0;
+						clipResultCount = 2;
+						break;
+					}
+					case 3:
+					{
+						// Becomes smaller triangle
+						// Inside: V0
+						// Outside: V1, V2
+						const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+						const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+						const Double4 v0v1Point = currentV0.lerp(currentV1, v0v1PointT);
+						const Double4 v2v0Point = currentV2.lerp(currentV0, v2v0PointT);
+						const Double2 v0v1PointUV = currentUV0.lerp(currentUV1, v0v1PointT);
+						const Double2 v2v0PointUV = currentUV2.lerp(currentUV0, v2v0PointT);
+						g_clipSpaceTriangleV0s[resultWriteIndex0] = currentV0;
+						g_clipSpaceTriangleV1s[resultWriteIndex0] = v0v1Point;
+						g_clipSpaceTriangleV2s[resultWriteIndex0] = v2v0Point;
+						g_clipSpaceTriangleUV0s[resultWriteIndex0] = currentUV0;
+						g_clipSpaceTriangleUV1s[resultWriteIndex0] = v0v1PointUV;
+						g_clipSpaceTriangleUV2s[resultWriteIndex0] = v2v0PointUV;
+						clipResultCount = 1;
+						break;
+					}
+					case 4:
+					{
+						// Becomes quad
+						// Inside: V1, V2
+						// Outside: V0
+						const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+						const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+						const Double4 v0v1Point = currentV0.lerp(currentV1, v0v1PointT);
+						const Double4 v2v0Point = currentV2.lerp(currentV0, v2v0PointT);
+						const Double2 v0v1PointUV = currentUV0.lerp(currentUV1, v0v1PointT);
+						const Double2 v2v0PointUV = currentUV2.lerp(currentUV0, v2v0PointT);
+						g_clipSpaceTriangleV0s[resultWriteIndex0] = v0v1Point;
+						g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV1;
+						g_clipSpaceTriangleV2s[resultWriteIndex0] = currentV2;
+						g_clipSpaceTriangleV0s[resultWriteIndex1] = currentV2;
+						g_clipSpaceTriangleV1s[resultWriteIndex1] = v2v0Point;
+						g_clipSpaceTriangleV2s[resultWriteIndex1] = v0v1Point;
+						g_clipSpaceTriangleUV0s[resultWriteIndex0] = v0v1PointUV;
+						g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV1;
+						g_clipSpaceTriangleUV2s[resultWriteIndex0] = currentUV2;
+						g_clipSpaceTriangleUV0s[resultWriteIndex1] = currentUV2;
+						g_clipSpaceTriangleUV1s[resultWriteIndex1] = v2v0PointUV;
+						g_clipSpaceTriangleUV2s[resultWriteIndex1] = v0v1PointUV;
+						clipResultCount = 2;
+						break;
+					}
+					case 5:
+					{
+						// Becomes smaller triangle
+						// Inside: V1
+						// Outside: V0, V2
+						const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+						const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+						const Double4 v0v1Point = currentV0.lerp(currentV1, v0v1PointT);
+						const Double4 v1v2Point = currentV1.lerp(currentV2, v1v2PointT);
+						const Double2 v0v1PointUV = currentUV0.lerp(currentUV1, v0v1PointT);
+						const Double2 v1v2PointUV = currentUV1.lerp(currentUV2, v1v2PointT);
+						g_clipSpaceTriangleV0s[resultWriteIndex0] = v0v1Point;
+						g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV1;
+						g_clipSpaceTriangleV2s[resultWriteIndex0] = v1v2Point;
+						g_clipSpaceTriangleUV0s[resultWriteIndex0] = v0v1PointUV;
+						g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV1;
+						g_clipSpaceTriangleUV2s[resultWriteIndex0] = v1v2PointUV;
+						clipResultCount = 1;
+						break;
+					}
+					case 6:
+					{
+						// Becomes smaller triangle
+						// Inside: V2
+						// Outside: V0, V1
+						const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+						const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+						const Double4 v1v2Point = currentV1.lerp(currentV2, v1v2PointT);
+						const Double4 v2v0Point = currentV2.lerp(currentV0, v2v0PointT);
+						const Double2 v1v2PointUV = currentUV1.lerp(currentUV2, v1v2PointT);
+						const Double2 v2v0PointUV = currentUV2.lerp(currentUV0, v2v0PointT);
+						g_clipSpaceTriangleV0s[resultWriteIndex0] = v1v2Point;
+						g_clipSpaceTriangleV1s[resultWriteIndex0] = currentV2;
+						g_clipSpaceTriangleV2s[resultWriteIndex0] = v2v0Point;
+						g_clipSpaceTriangleUV0s[resultWriteIndex0] = v1v2PointUV;
+						g_clipSpaceTriangleUV1s[resultWriteIndex0] = currentUV2;
+						g_clipSpaceTriangleUV2s[resultWriteIndex0] = v2v0PointUV;
+						clipResultCount = 1;
+						break;
+					}
+					case 7:
+						// All vertices outside frustum.
+						clipResultCount = 0;
+						break;
 					}
 
 					clipListSize += clipResultCount;
