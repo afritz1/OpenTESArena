@@ -590,9 +590,6 @@ namespace swGeometry
 					const Double4 &currentV0 = g_clipSpaceTriangleV0s[clipListFrontIndex];
 					const Double4 &currentV1 = g_clipSpaceTriangleV1s[clipListFrontIndex];
 					const Double4 &currentV2 = g_clipSpaceTriangleV2s[clipListFrontIndex];
-					const Double2 &currentUV0 = g_clipSpaceTriangleUV0s[clipListFrontIndex];
-					const Double2 &currentUV1 = g_clipSpaceTriangleUV1s[clipListFrontIndex];
-					const Double2 &currentUV2 = g_clipSpaceTriangleUV2s[clipListFrontIndex];
 
 					// Clip against the clipping plane, generating 0 to 2 triangles.
 					double v0Diff, v1Diff, v2Diff;
@@ -652,6 +649,9 @@ namespace swGeometry
 						break;
 					}
 
+					const Double2 &currentUV0 = g_clipSpaceTriangleUV0s[clipListFrontIndex];
+					const Double2 &currentUV1 = g_clipSpaceTriangleUV1s[clipListFrontIndex];
+					const Double2 &currentUV2 = g_clipSpaceTriangleUV2s[clipListFrontIndex];
 					const int resultWriteIndex0 = clipListSize;
 					const int resultWriteIndex1 = clipListSize + 1;
 
