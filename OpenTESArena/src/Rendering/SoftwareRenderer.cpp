@@ -587,7 +587,6 @@ namespace swGeometry
 				const int trianglesToClipCount = clipListSize - clipListFrontIndex;
 				for (int triangleToClip = trianglesToClipCount; triangleToClip > 0; triangleToClip--)
 				{
-					DebugAssert(clipListFrontIndex < MAX_CLIPPED_TRIANGLE_TRIANGLES);
 					const Double4 &currentV0 = g_clipSpaceTriangleV0s[clipListFrontIndex];
 					const Double4 &currentV1 = g_clipSpaceTriangleV1s[clipListFrontIndex];
 					const Double4 &currentV2 = g_clipSpaceTriangleV2s[clipListFrontIndex];
@@ -655,7 +654,6 @@ namespace swGeometry
 
 					const int resultWriteIndex0 = clipListSize;
 					const int resultWriteIndex1 = clipListSize + 1;
-					DebugAssert(resultWriteIndex1 < MAX_CLIPPED_TRIANGLE_TRIANGLES);
 
 					// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
 					// making sure to keep the original winding order.
