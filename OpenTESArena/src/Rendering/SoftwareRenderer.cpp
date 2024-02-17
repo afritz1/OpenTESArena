@@ -22,6 +22,201 @@
 
 #include "components/debug/Debug.h"
 
+// Optimized versions of general-purpose Vector and Matrix classes.
+namespace swMath
+{
+	void Double4_Zero4(double *outXs, double *outYs, double *outZs, double *outWs)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outXs[i] = 0.0;
+			outYs[i] = 0.0;
+			outZs[i] = 0.0;
+			outWs[i] = 0.0;
+		}
+	}
+
+	void Double4_Load4(const Double4 &v0, const Double4 &v1, const Double4 &v2, const Double4 &v3,
+		double *outXs, double *outYs, double *outZs, double *outWs)
+	{
+		const Double4 *vs[] = { &v0, &v1, &v2, &v3 };
+
+		for (int i = 0; i < 4; i++)
+		{
+			const Double4 &v = *vs[i];
+			outXs[i] = v.x;
+			outYs[i] = v.y;
+			outZs[i] = v.z;
+			outWs[i] = v.w;
+		}
+	}
+
+	void Double4_Add4(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
+		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outXs[i] = x0s[i] + x1s[i];
+			outYs[i] = y0s[i] + y1s[i];
+			outZs[i] = z0s[i] + z1s[i];
+			outWs[i] = w0s[i] + w1s[i];
+		}
+	}
+
+	void Double4_Negate4(const double *xs, const double *ys, const double *zs, const double *ws, double *outXs, double *outYs, double *outZs, double *outWs)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outXs[i] = -xs[i];
+			outYs[i] = -ys[i];
+			outZs[i] = -zs[i];
+			outWs[i] = -ws[i];
+		}
+	}
+
+	void Double4_Subtract4(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
+		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outXs[i] = x0s[i] - x1s[i];
+			outYs[i] = y0s[i] - y1s[i];
+			outZs[i] = z0s[i] - z1s[i];
+			outWs[i] = w0s[i] - w1s[i];
+		}
+	}
+
+	void Double4_Multiply4(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
+		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outXs[i] = x0s[i] * x1s[i];
+			outYs[i] = y0s[i] * y1s[i];
+			outZs[i] = z0s[i] * z1s[i];
+			outWs[i] = w0s[i] * w1s[i];
+		}
+	}
+
+	void Double4_Divide4(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
+		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outXs[i] = x0s[i] / x1s[i];
+			outYs[i] = y0s[i] / y1s[i];
+			outZs[i] = z0s[i] / z1s[i];
+			outWs[i] = w0s[i] / w1s[i];
+		}
+	}
+
+	void Matrix4_Zero4(double *outMxxs, double *outMxys, double *outMxzs, double *outMxws,
+		double *outMyxs, double *outMyys, double *outMyzs, double *outMyws,
+		double *outMzxs, double *outMzys, double *outMzzs, double *outMzws,
+		double *outMwxs, double *outMwys, double *outMwzs, double *outMwws)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outMxxs[i] = 0.0;
+			outMxys[i] = 0.0;
+			outMxzs[i] = 0.0;
+			outMxws[i] = 0.0;
+			outMyxs[i] = 0.0;
+			outMyys[i] = 0.0;
+			outMyzs[i] = 0.0;
+			outMyws[i] = 0.0;
+			outMzxs[i] = 0.0;
+			outMzys[i] = 0.0;
+			outMzzs[i] = 0.0;
+			outMzws[i] = 0.0;
+			outMwxs[i] = 0.0;
+			outMwys[i] = 0.0;
+			outMwzs[i] = 0.0;
+			outMwws[i] = 0.0;
+		}
+	}
+
+	void Matrix4_Load4(const Matrix4d &m0, const Matrix4d &m1, const Matrix4d &m2, const Matrix4d &m3,
+		double *outMxxs, double *outMxys, double *outMxzs, double *outMxws,
+		double *outMyxs, double *outMyys, double *outMyzs, double *outMyws,
+		double *outMzxs, double *outMzys, double *outMzzs, double *outMzws,
+		double *outMwxs, double *outMwys, double *outMwzs, double *outMwws)
+	{
+		const Matrix4d *ms[] = { &m0, &m1, &m2, &m3 };
+
+		for (int i = 0; i < 4; i++)
+		{
+			const Matrix4d &m = *ms[i];
+			outMxxs[i] = m.x.x;
+			outMxys[i] = m.x.y;
+			outMxzs[i] = m.x.z;
+			outMxws[i] = m.x.w;
+			outMyxs[i] = m.y.x;
+			outMyys[i] = m.y.y;
+			outMyzs[i] = m.y.z;
+			outMyws[i] = m.y.w;
+			outMzxs[i] = m.z.x;
+			outMzys[i] = m.z.y;
+			outMzzs[i] = m.z.z;
+			outMzws[i] = m.z.w;
+			outMwxs[i] = m.w.x;
+			outMwys[i] = m.w.y;
+			outMwzs[i] = m.w.z;
+			outMwws[i] = m.w.w;
+		}
+	}
+
+	void Matrix4_MultiplyVector4(const double *mxxs, const double *mxys, const double *mxzs, const double *mxws,
+		const double *myxs, const double *myys, const double *myzs, const double *myws,
+		const double *mzxs, const double *mzys, const double *mzzs, const double *mzws,
+		const double *mwxs, const double *mwys, const double *mwzs, const double *mwws,
+		const double *xs, const double *ys, const double *zs, const double *ws,
+		double *outXs, double *outYs, double *outZs, double *outWs)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outXs[i] += (mxxs[i] * xs[i]) + (myxs[i] * ys[i]) + (mzxs[i] * zs[i]) + (mwxs[i] * ws[i]);
+			outYs[i] += (mxys[i] * xs[i]) + (myys[i] * ys[i]) + (mzys[i] * zs[i]) + (mwys[i] * ws[i]);
+			outZs[i] += (mxzs[i] * xs[i]) + (myzs[i] * ys[i]) + (mzzs[i] * zs[i]) + (mwzs[i] * ws[i]);
+			outWs[i] += (mxws[i] * xs[i]) + (myws[i] * ys[i]) + (mzws[i] * zs[i]) + (mwws[i] * ws[i]);
+		}
+	}
+
+	void Matrix4_MultiplyMatrix4(const double *m0xxs, const double *m0xys, const double *m0xzs, const double *m0xws,
+		const double *m0yxs, const double *m0yys, const double *m0yzs, const double *m0yws,
+		const double *m0zxs, const double *m0zys, const double *m0zzs, const double *m0zws,
+		const double *m0wxs, const double *m0wys, const double *m0wzs, const double *m0wws, 
+		const double *m1xxs, const double *m1xys, const double *m1xzs, const double *m1xws,
+		const double *m1yxs, const double *m1yys, const double *m1yzs, const double *m1yws,
+		const double *m1zxs, const double *m1zys, const double *m1zzs, const double *m1zws,
+		const double *m1wxs, const double *m1wys, const double *m1wzs, const double *m1wws,
+		double *outMxxs, double *outMxys, double *outMxzs, double *outMxws,
+		double *outMyxs, double *outMyys, double *outMyzs, double *outMyws,
+		double *outMzxs, double *outMzys, double *outMzzs, double *outMzws,
+		double *outMwxs, double *outMwys, double *outMwzs, double *outMwws)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			outMxxs[i] = (m0xxs[i] * m1xxs[i]) + (m0yxs[i] * m1xys[i]) + (m0zxs[i] * m1xzs[i]) + (m0wxs[i] * m1xws[i]);
+			outMxys[i] = (m0xys[i] * m1xxs[i]) + (m0yys[i] * m1xys[i]) + (m0zys[i] * m1xzs[i]) + (m0wys[i] * m1xws[i]);
+			outMxzs[i] = (m0xzs[i] * m1xxs[i]) + (m0yzs[i] * m1xys[i]) + (m0zzs[i] * m1xzs[i]) + (m0wzs[i] * m1xws[i]);
+			outMxws[i] = (m0xws[i] * m1xxs[i]) + (m0yws[i] * m1xys[i]) + (m0zws[i] * m1xzs[i]) + (m0wws[i] * m1xws[i]);
+			outMyxs[i] = (m0xxs[i] * m1yxs[i]) + (m0yxs[i] * m1yys[i]) + (m0zxs[i] * m1yzs[i]) + (m0wxs[i] * m1yws[i]);
+			outMyys[i] = (m0xys[i] * m1yxs[i]) + (m0yys[i] * m1yys[i]) + (m0zys[i] * m1yzs[i]) + (m0wys[i] * m1yws[i]);
+			outMyzs[i] = (m0xzs[i] * m1yxs[i]) + (m0yzs[i] * m1yys[i]) + (m0zzs[i] * m1yzs[i]) + (m0wzs[i] * m1yws[i]);
+			outMyws[i] = (m0xws[i] * m1yxs[i]) + (m0yws[i] * m1yys[i]) + (m0zws[i] * m1yzs[i]) + (m0wws[i] * m1yws[i]);
+			outMzxs[i] = (m0xxs[i] * m1zxs[i]) + (m0yxs[i] * m1zys[i]) + (m0zxs[i] * m1zzs[i]) + (m0wxs[i] * m1zws[i]);
+			outMzys[i] = (m0xys[i] * m1zxs[i]) + (m0yys[i] * m1zys[i]) + (m0zys[i] * m1zzs[i]) + (m0wys[i] * m1zws[i]);
+			outMzzs[i] = (m0xzs[i] * m1zxs[i]) + (m0yzs[i] * m1zys[i]) + (m0zzs[i] * m1zzs[i]) + (m0wzs[i] * m1zws[i]);
+			outMzws[i] = (m0xws[i] * m1zxs[i]) + (m0yws[i] * m1zys[i]) + (m0zws[i] * m1zzs[i]) + (m0wws[i] * m1zws[i]);
+			outMwxs[i] = (m0xxs[i] * m1wxs[i]) + (m0yxs[i] * m1wys[i]) + (m0zxs[i] * m1wzs[i]) + (m0wxs[i] * m1wws[i]);
+			outMwys[i] = (m0xys[i] * m1wxs[i]) + (m0yys[i] * m1wys[i]) + (m0zys[i] * m1wzs[i]) + (m0wys[i] * m1wws[i]);
+			outMwzs[i] = (m0xzs[i] * m1wxs[i]) + (m0yzs[i] * m1wys[i]) + (m0zzs[i] * m1wzs[i]) + (m0wzs[i] * m1wws[i]);
+			outMwws[i] = (m0xws[i] * m1wxs[i]) + (m0yws[i] * m1wys[i]) + (m0zws[i] * m1wzs[i]) + (m0wws[i] * m1wws[i]);
+		}
+	}
+}
+
 namespace swShader
 {
 	struct PixelShaderPerspectiveCorrection
