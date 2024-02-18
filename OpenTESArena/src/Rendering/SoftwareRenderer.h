@@ -61,6 +61,7 @@ public:
 	struct IndexBuffer
 	{
 		Buffer<int32_t> indices;
+		int triangleCount;
 
 		void init(int indexCount);
 	};

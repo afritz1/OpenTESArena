@@ -714,7 +714,7 @@ namespace swGeometry
 			const double *verticesPtr = meshProcessCache.vertexBuffer->vertices.begin();
 			const double *texCoordsPtr = meshProcessCache.texCoordBuffer->attributes.begin();
 			const int32_t *indicesPtr = meshProcessCache.indexBuffer->indices.begin();
-			const int triangleCount = meshProcessCache.indexBuffer->indices.getCount() / 3;
+			const int triangleCount = meshProcessCache.indexBuffer->triangleCount;
 			DebugAssert(triangleCount <= MAX_DRAW_CALL_MESH_TRIANGLES);
 
 			// Run vertex shaders on each triangle and store the results for clipping.
@@ -1562,7 +1562,9 @@ void SoftwareRenderer::AttributeBuffer::init(int vertexCount, int componentsPerV
 
 void SoftwareRenderer::IndexBuffer::init(int indexCount)
 {
+	DebugAssertMsg((indexCount % 3) == 0, "Expected index buffer to have multiple of 3 indices (has " + std::to_string(indexCount) + ").");
 	this->indices.init(indexCount);
+	this->triangleCount = indexCount / 3;
 }
 
 SoftwareRenderer::Light::Light()
