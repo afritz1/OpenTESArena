@@ -853,9 +853,9 @@ namespace swGeometry
 						switch (clipPlaneIndex)
 						{
 						case 0:
-							v0Diff = currentV0.x - (-currentV0.w);
-							v1Diff = currentV1.x - (-currentV1.w);
-							v2Diff = currentV2.x - (-currentV2.w);
+							v0Diff = currentV0.x + currentV0.w;
+							v1Diff = currentV1.x + currentV1.w;
+							v2Diff = currentV2.x + currentV2.w;
 							isV0Inside = v0Diff >= 0.0;
 							isV1Inside = v1Diff >= 0.0;
 							isV2Inside = v2Diff >= 0.0;
@@ -869,9 +869,9 @@ namespace swGeometry
 							isV2Inside = v2Diff <= 0.0;
 							break;
 						case 2:
-							v0Diff = currentV0.y - (-currentV0.w);
-							v1Diff = currentV1.y - (-currentV1.w);
-							v2Diff = currentV2.y - (-currentV2.w);
+							v0Diff = currentV0.y + currentV0.w;
+							v1Diff = currentV1.y + currentV1.w;
+							v2Diff = currentV2.y + currentV2.w;
 							isV0Inside = v0Diff >= 0.0;
 							isV1Inside = v1Diff >= 0.0;
 							isV2Inside = v2Diff >= 0.0;
@@ -885,9 +885,9 @@ namespace swGeometry
 							isV2Inside = v2Diff <= 0.0;
 							break;
 						case 4:
-							v0Diff = currentV0.z - (-currentV0.w);
-							v1Diff = currentV1.z - (-currentV1.w);
-							v2Diff = currentV2.z - (-currentV2.w);
+							v0Diff = currentV0.z + currentV0.w;
+							v1Diff = currentV1.z + currentV1.w;
+							v2Diff = currentV2.z + currentV2.w;
 							isV0Inside = v0Diff >= 0.0;
 							isV1Inside = v1Diff >= 0.0;
 							isV2Inside = v2Diff >= 0.0;
