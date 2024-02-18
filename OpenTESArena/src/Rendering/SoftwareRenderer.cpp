@@ -843,67 +843,54 @@ namespace swGeometry
 					const int trianglesToClipCount = clipListSize - clipListFrontIndex;
 					for (int triangleToClip = trianglesToClipCount; triangleToClip > 0; triangleToClip--)
 					{
+						// Clip against the clipping plane, generating 0 to 2 triangles.
 						const Double4 currentV0 = meshProcessCache.clipSpaceTriangleV0s[clipListFrontIndex];
 						const Double4 currentV1 = meshProcessCache.clipSpaceTriangleV1s[clipListFrontIndex];
 						const Double4 currentV2 = meshProcessCache.clipSpaceTriangleV2s[clipListFrontIndex];
 
-						// Clip against the clipping plane, generating 0 to 2 triangles.
-						double v0Diff, v1Diff, v2Diff;
-						bool isV0Inside, isV1Inside, isV2Inside;
-						switch (clipPlaneIndex)
+						double v0Component, v1Component, v2Component;
+						if ((clipPlaneIndex == 0) || (clipPlaneIndex == 1))
 						{
-						case 0:
-							v0Diff = currentV0.x + currentV0.w;
-							v1Diff = currentV1.x + currentV1.w;
-							v2Diff = currentV2.x + currentV2.w;
-							isV0Inside = v0Diff >= 0.0;
-							isV1Inside = v1Diff >= 0.0;
-							isV2Inside = v2Diff >= 0.0;
-							break;
-						case 1:
-							v0Diff = currentV0.x - currentV0.w;
-							v1Diff = currentV1.x - currentV1.w;
-							v2Diff = currentV2.x - currentV2.w;
-							isV0Inside = v0Diff <= 0.0;
-							isV1Inside = v1Diff <= 0.0;
-							isV2Inside = v2Diff <= 0.0;
-							break;
-						case 2:
-							v0Diff = currentV0.y + currentV0.w;
-							v1Diff = currentV1.y + currentV1.w;
-							v2Diff = currentV2.y + currentV2.w;
-							isV0Inside = v0Diff >= 0.0;
-							isV1Inside = v1Diff >= 0.0;
-							isV2Inside = v2Diff >= 0.0;
-							break;
-						case 3:
-							v0Diff = currentV0.y - currentV0.w;
-							v1Diff = currentV1.y - currentV1.w;
-							v2Diff = currentV2.y - currentV2.w;
-							isV0Inside = v0Diff <= 0.0;
-							isV1Inside = v1Diff <= 0.0;
-							isV2Inside = v2Diff <= 0.0;
-							break;
-						case 4:
-							v0Diff = currentV0.z + currentV0.w;
-							v1Diff = currentV1.z + currentV1.w;
-							v2Diff = currentV2.z + currentV2.w;
-							isV0Inside = v0Diff >= 0.0;
-							isV1Inside = v1Diff >= 0.0;
-							isV2Inside = v2Diff >= 0.0;
-							break;
-						case 5:
-							v0Diff = currentV0.z - currentV0.w;
-							v1Diff = currentV1.z - currentV1.w;
-							v2Diff = currentV2.z - currentV2.w;
-							isV0Inside = v0Diff <= 0.0;
-							isV1Inside = v1Diff <= 0.0;
-							isV2Inside = v2Diff <= 0.0;
-							break;
-						default:
-							// Invalid clip plane case.
-							break;
+							v0Component = currentV0.x;
+							v1Component = currentV1.x;
+							v2Component = currentV2.x;
 						}
+						else if ((clipPlaneIndex == 2) || (clipPlaneIndex == 3))
+						{
+							v0Component = currentV0.y;
+							v1Component = currentV1.y;
+							v2Component = currentV2.y;
+						}
+						else
+						{
+							v0Component = currentV0.z;
+							v1Component = currentV1.z;
+							v2Component = currentV2.z;
+						}
+
+						double v0w, v1w, v2w;
+						double comparisonSign;
+						if ((clipPlaneIndex & 1) == 0)
+						{
+							v0w = currentV0.w;
+							v1w = currentV1.w;
+							v2w = currentV2.w;
+							comparisonSign = 1.0;
+						}
+						else
+						{
+							v0w = -currentV0.w;
+							v1w = -currentV1.w;
+							v2w = -currentV2.w;
+							comparisonSign = -1.0;
+						}
+
+						const double v0Diff = v0Component + v0w;
+						const double v1Diff = v1Component + v1w;
+						const double v2Diff = v2Component + v2w;
+						const bool isV0Inside = (v0Diff * comparisonSign) >= 0.0;
+						const bool isV1Inside = (v1Diff * comparisonSign) >= 0.0;
+						const bool isV2Inside = (v2Diff * comparisonSign) >= 0.0;
 
 						const Double2 currentUV0 = meshProcessCache.clipSpaceTriangleUV0s[clipListFrontIndex];
 						const Double2 currentUV1 = meshProcessCache.clipSpaceTriangleUV1s[clipListFrontIndex];
