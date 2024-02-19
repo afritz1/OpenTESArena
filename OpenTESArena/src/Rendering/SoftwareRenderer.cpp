@@ -717,7 +717,6 @@ namespace swGeometry
 		Double2 uv1s[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
 		Double2 uv2s[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
 		int meshProcessCacheIndices[MAX_VERTEX_SHADING_CACHE_TRIANGLES]; // Each triangle's mesh process cache it belongs to.
-		int meshProcessCacheTriangleWriteCounts[MAX_MESH_PROCESS_CACHES]; // Number of triangles written to each mesh process cache. This should match their draw call triangle count.
 		int triangleCount;
 	};
 
