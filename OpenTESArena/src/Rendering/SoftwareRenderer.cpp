@@ -630,8 +630,6 @@ namespace swShader
 namespace swGeometry
 {
 	constexpr int MAX_DRAW_CALL_MESH_TRIANGLES = 1024; // The most triangles a draw call mesh can have. Used with vertex shading.
-	constexpr int MAX_DRAW_CALL_MESH_VERTICES = MAX_DRAW_CALL_MESH_TRIANGLES * 3;
-	constexpr int MAX_DRAW_CALL_MESH_INDICES = MAX_DRAW_CALL_MESH_VERTICES;
 	constexpr int MAX_MESH_PROCESS_CACHES = 8; // The most draw call meshes that can be processed each loop.
 	constexpr int MAX_VERTEX_SHADING_CACHE_TRIANGLES = MAX_DRAW_CALL_MESH_TRIANGLES * 2; // The most unshaded triangles that can be cached for the vertex shader loop.
 	constexpr int MAX_CLIPPED_MESH_TRIANGLES = 4096; // The most triangles a processed clip space mesh can have when passed to the rasterizer.
@@ -729,7 +727,7 @@ namespace swGeometry
 		// so this makes the total triangle loop longer for ease of number crunching.
 		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
 		{
-			const swGeometry::MeshProcessCache &meshProcessCache = swGeometry::g_meshProcessCaches[meshIndex];
+			const MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshIndex];
 			const double *verticesPtr = meshProcessCache.vertexBuffer->vertices.begin();
 			const double *texCoordsPtr = meshProcessCache.texCoordBuffer->attributes.begin();
 			const SoftwareRenderer::IndexBuffer &indexBuffer = *meshProcessCache.indexBuffer;
@@ -791,7 +789,7 @@ namespace swGeometry
 		// Reset mesh process cache triangle write counts and prepare matrices for vertex shaders.
 		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
 		{
-			swGeometry::MeshProcessCache &meshProcessCache = swGeometry::g_meshProcessCaches[meshIndex];
+			MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshIndex];
 			meshProcessCache.triangleWriteCount = 0;
 
 			const Matrix4d modelMatrix = meshProcessCache.translationMatrix * (meshProcessCache.rotationMatrix * meshProcessCache.scaleMatrix);
@@ -802,7 +800,7 @@ namespace swGeometry
 		for (int triangleIndex = 0; triangleIndex < g_vertexShadingCache.triangleCount; triangleIndex++)
 		{
 			const int meshProcessCacheIndex = g_vertexShadingCache.meshProcessCacheIndices[triangleIndex];
-			swGeometry::MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshProcessCacheIndex];
+			MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshProcessCacheIndex];
 
 			const Double4 unshadedV0 = g_vertexShadingCache.unshadedV0s[triangleIndex];
 			const Double4 unshadedV1 = g_vertexShadingCache.unshadedV1s[triangleIndex];
@@ -875,7 +873,7 @@ namespace swGeometry
 	{
 		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
 		{
-			swGeometry::MeshProcessCache &meshProcessCache = swGeometry::g_meshProcessCaches[meshIndex];
+			MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshIndex];
 
 			// Reset clip space cache. Skip zeroing the mesh arrays for performance.
 			meshProcessCache.clipSpaceMeshTriangleCount = 0;
@@ -1214,8 +1212,8 @@ namespace swRender
 		paletteIndexBuffer.fill(0);
 		depthBuffer.fill(std::numeric_limits<double>::infinity());
 		colorBuffer.fill(0);
-		swRender::g_totalDepthTests = 0;
-		swRender::g_totalColorWrites = 0;
+		g_totalDepthTests = 0;
+		g_totalColorWrites = 0;
 	}
 
 	void RasterizeMesh(int meshProcessCacheIndex, TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1,
