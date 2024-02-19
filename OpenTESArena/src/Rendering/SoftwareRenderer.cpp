@@ -806,11 +806,30 @@ namespace swGeometry
 
 	void CalculateVertexShaderTransforms(int meshCount)
 	{
-		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
+		int meshIndex = 0;
+		while (meshIndex < (meshCount - 3))
+		{
+			MeshProcessCache &meshProcessCache0 = g_meshProcessCaches[meshIndex];
+			MeshProcessCache &meshProcessCache1 = g_meshProcessCaches[meshIndex + 1];
+			MeshProcessCache &meshProcessCache2 = g_meshProcessCaches[meshIndex + 2];
+			MeshProcessCache &meshProcessCache3 = g_meshProcessCaches[meshIndex + 3];
+			const Matrix4d modelMatrix0 = meshProcessCache0.translationMatrix * (meshProcessCache0.rotationMatrix * meshProcessCache0.scaleMatrix);
+			const Matrix4d modelMatrix1 = meshProcessCache1.translationMatrix * (meshProcessCache1.rotationMatrix * meshProcessCache1.scaleMatrix);
+			const Matrix4d modelMatrix2 = meshProcessCache2.translationMatrix * (meshProcessCache2.rotationMatrix * meshProcessCache2.scaleMatrix);
+			const Matrix4d modelMatrix3 = meshProcessCache3.translationMatrix * (meshProcessCache3.rotationMatrix * meshProcessCache3.scaleMatrix);
+			meshProcessCache0.modelViewProjMatrix = swCamera::g_viewProjMatrix * modelMatrix0;
+			meshProcessCache1.modelViewProjMatrix = swCamera::g_viewProjMatrix * modelMatrix1;
+			meshProcessCache2.modelViewProjMatrix = swCamera::g_viewProjMatrix * modelMatrix2;
+			meshProcessCache3.modelViewProjMatrix = swCamera::g_viewProjMatrix * modelMatrix3;
+			meshIndex += 4;
+		}
+
+		while (meshIndex < meshCount)
 		{
 			MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshIndex];
 			const Matrix4d modelMatrix = meshProcessCache.translationMatrix * (meshProcessCache.rotationMatrix * meshProcessCache.scaleMatrix);
 			meshProcessCache.modelViewProjMatrix = swCamera::g_viewProjMatrix * modelMatrix;
+			meshIndex++;
 		}
 	}
 
