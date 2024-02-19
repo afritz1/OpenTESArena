@@ -718,8 +718,8 @@ namespace swGeometry
 		g_totalDrawCallTriangleCount = 0;
 	}
 
-	template<VertexShaderType vertexShaderType>
-	void ProcessVertexShadersInternal(int meshCount, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix)
+	// Handles the vertex/attribute/index buffer lookups for more efficient processing later.
+	void ProcessMeshBufferLookups(int meshCount)
 	{
 		g_vertexShadingCache.triangleCount = 0;
 
@@ -785,15 +785,26 @@ namespace swGeometry
 
 			g_vertexShadingCache.triangleCount += triangleCount;
 		}
+	}
 
-		// Reset mesh process cache triangle write counts and prepare matrices for vertex shaders.
+	void CalculateVertexShaderTransforms(int meshCount, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix)
+	{
+		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
+		{
+			MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshIndex];
+			const Matrix4d modelMatrix = meshProcessCache.translationMatrix * (meshProcessCache.rotationMatrix * meshProcessCache.scaleMatrix);
+			meshProcessCache.modelViewProjMatrix = projectionMatrix * (viewMatrix * modelMatrix);
+		}
+	}
+
+	// Converts several meshes' world space vertices to clip space.
+	template<VertexShaderType vertexShaderType>
+	void ProcessVertexShadersInternal(int meshCount, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix)
+	{
 		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
 		{
 			MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshIndex];
 			meshProcessCache.triangleWriteCount = 0;
-
-			const Matrix4d modelMatrix = meshProcessCache.translationMatrix * (meshProcessCache.rotationMatrix * meshProcessCache.scaleMatrix);
-			meshProcessCache.modelViewProjMatrix = projectionMatrix * (viewMatrix * modelMatrix);
 		}
 
 		// Run vertex shaders on each triangle and store the results for clipping.
@@ -2095,6 +2106,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 			drawCallSequenceCount++;
 		}
 
+		swGeometry::ProcessMeshBufferLookups(drawCallSequenceCount);
+		swGeometry::CalculateVertexShaderTransforms(drawCallSequenceCount, viewMatrix, projectionMatrix);
 		swGeometry::ProcessVertexShaders(drawCallSequenceCount, viewMatrix, projectionMatrix, vertexShaderType);
 		swGeometry::ProcessClipping(drawCallSequenceCount);
 
