@@ -217,6 +217,24 @@ namespace swMath
 	}
 }
 
+namespace swCamera
+{
+	Matrix4d g_viewMatrix;
+	Matrix4d g_projMatrix;
+	Matrix4d g_viewProjMatrix;
+	Matrix4d g_invViewMatrix;
+	Matrix4d g_invProjMatrix;
+
+	void PopulateCameraGlobals(const RenderCamera &camera)
+	{
+		g_viewMatrix = camera.viewMatrix;
+		g_projMatrix = camera.projectionMatrix;
+		g_viewProjMatrix = camera.projectionMatrix * camera.viewMatrix;
+		g_invViewMatrix = camera.inverseViewMatrix;
+		g_invProjMatrix = camera.inverseProjectionMatrix;
+	}
+}
+
 namespace swShader
 {
 	struct PixelShaderPerspectiveCorrection
@@ -286,8 +304,7 @@ namespace swShader
 	}
 
 	void VertexShader_RaisingDoor(const Double4 &vertex, const Double3 &preScaleTranslation, const Matrix4d &translationMatrix,
-		const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix,
-		Double4 &outVertex)
+		const Matrix4d &rotationMatrix, const Matrix4d &scaleMatrix, Double4 &outVertex)
 	{
 		const Double4 preScaleTranslationXYZW(preScaleTranslation, 0.0);
 
@@ -300,7 +317,7 @@ namespace swShader
 		// Translate up to new model space Y position.
 		const Double4 resultVertex = scaledVertex - preScaleTranslationXYZW;
 
-		outVertex = projectionMatrix * (viewMatrix * (translationMatrix * (rotationMatrix * resultVertex)));
+		outVertex = swCamera::g_viewProjMatrix * (translationMatrix * (rotationMatrix * resultVertex));
 	}
 
 	void VertexShader_Entity(const Double4 &vertex, const Matrix4d &mvpMatrix, Double4 &outVertex)
@@ -787,19 +804,19 @@ namespace swGeometry
 		}
 	}
 
-	void CalculateVertexShaderTransforms(int meshCount, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix)
+	void CalculateVertexShaderTransforms(int meshCount)
 	{
 		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
 		{
 			MeshProcessCache &meshProcessCache = g_meshProcessCaches[meshIndex];
 			const Matrix4d modelMatrix = meshProcessCache.translationMatrix * (meshProcessCache.rotationMatrix * meshProcessCache.scaleMatrix);
-			meshProcessCache.modelViewProjMatrix = projectionMatrix * (viewMatrix * modelMatrix);
+			meshProcessCache.modelViewProjMatrix = swCamera::g_viewProjMatrix * modelMatrix;
 		}
 	}
 
 	// Converts several meshes' world space vertices to clip space.
 	template<VertexShaderType vertexShaderType>
-	void ProcessVertexShadersInternal(int meshCount, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix)
+	void ProcessVertexShadersInternal(int meshCount)
 	{
 		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
 		{
@@ -831,9 +848,9 @@ namespace swGeometry
 				const Matrix4d translationMatrix = meshProcessCache.translationMatrix;
 				const Matrix4d rotationMatrix = meshProcessCache.rotationMatrix;
 				const Matrix4d scaleMatrix = meshProcessCache.scaleMatrix;
-				swShader::VertexShader_RaisingDoor(unshadedV0, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV0);
-				swShader::VertexShader_RaisingDoor(unshadedV1, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV1);
-				swShader::VertexShader_RaisingDoor(unshadedV2, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, viewMatrix, projectionMatrix, shadedV2);
+				swShader::VertexShader_RaisingDoor(unshadedV0, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, shadedV0);
+				swShader::VertexShader_RaisingDoor(unshadedV1, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, shadedV1);
+				swShader::VertexShader_RaisingDoor(unshadedV2, preScaleTranslation, translationMatrix, rotationMatrix, scaleMatrix, shadedV2);
 			}
 			else if (vertexShaderType == VertexShaderType::Entity)
 			{
@@ -859,19 +876,19 @@ namespace swGeometry
 
 	// Operates on the current sequence of draw call meshes with the chosen vertex shader then writes results
 	// to a cache for mesh clipping.
-	void ProcessVertexShaders(int meshCount, const Matrix4d &viewMatrix, const Matrix4d &projectionMatrix, VertexShaderType vertexShaderType)
+	void ProcessVertexShaders(int meshCount, VertexShaderType vertexShaderType)
 	{
 		// Dispatch based on vertex shader.
 		switch (vertexShaderType)
 		{
 		case VertexShaderType::Basic:
-			ProcessVertexShadersInternal<VertexShaderType::Basic>(meshCount, viewMatrix, projectionMatrix);
+			ProcessVertexShadersInternal<VertexShaderType::Basic>(meshCount);
 			break;
 		case VertexShaderType::RaisingDoor:
-			ProcessVertexShadersInternal<VertexShaderType::RaisingDoor>(meshCount, viewMatrix, projectionMatrix);
+			ProcessVertexShadersInternal<VertexShaderType::RaisingDoor>(meshCount);
 			break;
 		case VertexShaderType::Entity:
-			ProcessVertexShadersInternal<VertexShaderType::Entity>(meshCount, viewMatrix, projectionMatrix);
+			ProcessVertexShadersInternal<VertexShaderType::Entity>(meshCount);
 			break;
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
@@ -1245,11 +1262,6 @@ namespace swRender
 		const bool *ditherBufferPtr = ditherBuffer.begin();
 		uint32_t *colorBufferPtr = colorBuffer.begin();
 
-		const Matrix4d &viewMatrix = camera.viewMatrix;
-		const Matrix4d &projectionMatrix = camera.projectionMatrix;
-		const Matrix4d &invViewMatrix = camera.inverseViewMatrix;
-		const Matrix4d &invProjMatrix = camera.inverseProjectionMatrix;
-
 		const bool requiresTwoTextures =
 			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
@@ -1277,8 +1289,8 @@ namespace swRender
 		{
 			// @todo: this doesn't support roll. will need something like a vector projection later.
 			const Double3 horizonWorldPoint = camera.worldPoint + camera.horizonDir;
-			const Double4 horizonCameraPoint = RendererUtils::worldSpaceToCameraSpace(Double4(horizonWorldPoint, 1.0), viewMatrix);
-			const Double4 horizonClipPoint = RendererUtils::cameraSpaceToClipSpace(horizonCameraPoint, projectionMatrix);
+			const Double4 horizonCameraPoint = RendererUtils::worldSpaceToCameraSpace(Double4(horizonWorldPoint, 1.0), swCamera::g_viewMatrix);
+			const Double4 horizonClipPoint = RendererUtils::cameraSpaceToClipSpace(horizonCameraPoint, swCamera::g_projMatrix);
 			const Double3 horizonNdcPoint = RendererUtils::clipSpaceToNDC(horizonClipPoint);
 			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
 			shaderHorizonMirror.horizonScreenSpacePoint = horizonScreenSpacePoint;
@@ -1420,8 +1432,8 @@ namespace swRender
 								shaderClipSpacePoint.y * shaderClipSpaceWRecip,
 								shaderClipSpacePoint.z * shaderClipSpaceWRecip,
 								shaderClipSpaceWRecip);
-							const Double4 shaderCameraSpacePoint = invProjMatrix * shaderHomogeneousSpacePoint;
-							const Double4 shaderWorldSpacePoint = invViewMatrix * shaderCameraSpacePoint;
+							const Double4 shaderCameraSpacePoint = swCamera::g_invProjMatrix * shaderHomogeneousSpacePoint;
+							const Double4 shaderWorldSpacePoint = swCamera::g_invViewMatrix * shaderCameraSpacePoint;
 							const Double3 shaderWorldSpacePointXYZ(shaderWorldSpacePoint.x, shaderWorldSpacePoint.y, shaderWorldSpacePoint.z);
 
 							double lightIntensitySum = 0.0;
@@ -2031,11 +2043,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	// Sky texture for horizon reflection shader.
 	const ObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
-	const Matrix4d &viewMatrix = camera.viewMatrix;
-	const Matrix4d &projectionMatrix = camera.projectionMatrix;
-
 	swRender::ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
 	swGeometry::ClearTriangleTotalCounts();
+	swCamera::PopulateCameraGlobals(camera);
 
 	const RenderDrawCall *drawCallsPtr = drawCalls.begin();
 	const int drawCallCount = drawCalls.getCount();
@@ -2107,8 +2117,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		}
 
 		swGeometry::ProcessMeshBufferLookups(drawCallSequenceCount);
-		swGeometry::CalculateVertexShaderTransforms(drawCallSequenceCount, viewMatrix, projectionMatrix);
-		swGeometry::ProcessVertexShaders(drawCallSequenceCount, viewMatrix, projectionMatrix, vertexShaderType);
+		swGeometry::CalculateVertexShaderTransforms(drawCallSequenceCount);
+		swGeometry::ProcessVertexShaders(drawCallSequenceCount, vertexShaderType);
 		swGeometry::ProcessClipping(drawCallSequenceCount);
 
 		for (int meshProcessCacheIndex = 0; meshProcessCacheIndex < drawCallSequenceCount; meshProcessCacheIndex++)
