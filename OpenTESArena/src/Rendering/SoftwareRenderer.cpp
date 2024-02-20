@@ -803,34 +803,23 @@ namespace swGeometry
 
 	void CalculateVertexShaderTransforms(int meshCount)
 	{
+		constexpr int stepCount = 4;
+		const int meshCountStepAdjusted = meshCount - (stepCount - 1);
+
 		int meshIndex = 0;
-		while (meshIndex < (meshCount - 3))
+		while (meshIndex < meshCountStepAdjusted)
 		{
-			const int meshIndex0 = meshIndex;
-			const int meshIndex1 = meshIndex + 1;
-			const int meshIndex2 = meshIndex + 2;
-			const int meshIndex3 = meshIndex + 3;
-			const Matrix4d translationMatrix0 = g_meshProcessCaches.translationMatrices[meshIndex0];
-			const Matrix4d translationMatrix1 = g_meshProcessCaches.translationMatrices[meshIndex1];
-			const Matrix4d translationMatrix2 = g_meshProcessCaches.translationMatrices[meshIndex2];
-			const Matrix4d translationMatrix3 = g_meshProcessCaches.translationMatrices[meshIndex3];
-			const Matrix4d rotationMatrix0 = g_meshProcessCaches.rotationMatrices[meshIndex0];
-			const Matrix4d rotationMatrix1 = g_meshProcessCaches.rotationMatrices[meshIndex1];
-			const Matrix4d rotationMatrix2 = g_meshProcessCaches.rotationMatrices[meshIndex2];
-			const Matrix4d rotationMatrix3 = g_meshProcessCaches.rotationMatrices[meshIndex3];
-			const Matrix4d scaleMatrix0 = g_meshProcessCaches.scaleMatrices[meshIndex0];
-			const Matrix4d scaleMatrix1 = g_meshProcessCaches.scaleMatrices[meshIndex1];
-			const Matrix4d scaleMatrix2 = g_meshProcessCaches.scaleMatrices[meshIndex2];
-			const Matrix4d scaleMatrix3 = g_meshProcessCaches.scaleMatrices[meshIndex3];
-			const Matrix4d modelMatrix0 = translationMatrix0 * (rotationMatrix0 * scaleMatrix0);
-			const Matrix4d modelMatrix1 = translationMatrix1 * (rotationMatrix1 * scaleMatrix1);
-			const Matrix4d modelMatrix2 = translationMatrix2 * (rotationMatrix2 * scaleMatrix2);
-			const Matrix4d modelMatrix3 = translationMatrix3 * (rotationMatrix3 * scaleMatrix3);
-			g_meshProcessCaches.modelViewProjMatrices[meshIndex0] = swCamera::g_viewProjMatrix * modelMatrix0;
-			g_meshProcessCaches.modelViewProjMatrices[meshIndex1] = swCamera::g_viewProjMatrix * modelMatrix1;
-			g_meshProcessCaches.modelViewProjMatrices[meshIndex2] = swCamera::g_viewProjMatrix * modelMatrix2;
-			g_meshProcessCaches.modelViewProjMatrices[meshIndex3] = swCamera::g_viewProjMatrix * modelMatrix3;
-			meshIndex += 4;
+			for (int i = 0; i < stepCount; i++)
+			{
+				const int index = meshIndex + i;
+				const Matrix4d translationMatrix = g_meshProcessCaches.translationMatrices[index];
+				const Matrix4d rotationMatrix = g_meshProcessCaches.rotationMatrices[index];
+				const Matrix4d scaleMatrix = g_meshProcessCaches.scaleMatrices[index];
+				const Matrix4d modelMatrix = translationMatrix * (rotationMatrix * scaleMatrix);
+				g_meshProcessCaches.modelViewProjMatrices[index] = swCamera::g_viewProjMatrix * modelMatrix;
+			}
+
+			meshIndex += stepCount;
 		}
 
 		while (meshIndex < meshCount)
