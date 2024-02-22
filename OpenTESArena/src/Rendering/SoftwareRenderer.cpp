@@ -1359,6 +1359,431 @@ namespace
 		}
 	}
 
+	template<int clipPlaneIndex>
+	void ProcessClippingWithPlane(int meshIndex, int &clipListSize, int &clipListFrontIndex)
+	{
+		auto &clipSpaceTriangleV0Xs = g_meshProcessCaches.clipSpaceTriangleV0XArrays[meshIndex];
+		auto &clipSpaceTriangleV0Ys = g_meshProcessCaches.clipSpaceTriangleV0YArrays[meshIndex];
+		auto &clipSpaceTriangleV0Zs = g_meshProcessCaches.clipSpaceTriangleV0ZArrays[meshIndex];
+		auto &clipSpaceTriangleV0Ws = g_meshProcessCaches.clipSpaceTriangleV0WArrays[meshIndex];
+		auto &clipSpaceTriangleV1Xs = g_meshProcessCaches.clipSpaceTriangleV1XArrays[meshIndex];
+		auto &clipSpaceTriangleV1Ys = g_meshProcessCaches.clipSpaceTriangleV1YArrays[meshIndex];
+		auto &clipSpaceTriangleV1Zs = g_meshProcessCaches.clipSpaceTriangleV1ZArrays[meshIndex];
+		auto &clipSpaceTriangleV1Ws = g_meshProcessCaches.clipSpaceTriangleV1WArrays[meshIndex];
+		auto &clipSpaceTriangleV2Xs = g_meshProcessCaches.clipSpaceTriangleV2XArrays[meshIndex];
+		auto &clipSpaceTriangleV2Ys = g_meshProcessCaches.clipSpaceTriangleV2YArrays[meshIndex];
+		auto &clipSpaceTriangleV2Zs = g_meshProcessCaches.clipSpaceTriangleV2ZArrays[meshIndex];
+		auto &clipSpaceTriangleV2Ws = g_meshProcessCaches.clipSpaceTriangleV2WArrays[meshIndex];
+		auto &clipSpaceTriangleUV0Xs = g_meshProcessCaches.clipSpaceTriangleUV0XArrays[meshIndex];
+		auto &clipSpaceTriangleUV0Ys = g_meshProcessCaches.clipSpaceTriangleUV0YArrays[meshIndex];
+		auto &clipSpaceTriangleUV1Xs = g_meshProcessCaches.clipSpaceTriangleUV1XArrays[meshIndex];
+		auto &clipSpaceTriangleUV1Ys = g_meshProcessCaches.clipSpaceTriangleUV1YArrays[meshIndex];
+		auto &clipSpaceTriangleUV2Xs = g_meshProcessCaches.clipSpaceTriangleUV2XArrays[meshIndex];
+		auto &clipSpaceTriangleUV2Ys = g_meshProcessCaches.clipSpaceTriangleUV2YArrays[meshIndex];
+
+		const int trianglesToClipCount = clipListSize - clipListFrontIndex;
+		for (int triangleToClip = trianglesToClipCount; triangleToClip > 0; triangleToClip--)
+		{
+			// Clip against the clipping plane, generating 0 to 2 triangles.
+			const double currentV0X = clipSpaceTriangleV0Xs[clipListFrontIndex];
+			const double currentV0Y = clipSpaceTriangleV0Ys[clipListFrontIndex];
+			const double currentV0Z = clipSpaceTriangleV0Zs[clipListFrontIndex];
+			const double currentV0W = clipSpaceTriangleV0Ws[clipListFrontIndex];
+			const double currentV1X = clipSpaceTriangleV1Xs[clipListFrontIndex];
+			const double currentV1Y = clipSpaceTriangleV1Ys[clipListFrontIndex];
+			const double currentV1Z = clipSpaceTriangleV1Zs[clipListFrontIndex];
+			const double currentV1W = clipSpaceTriangleV1Ws[clipListFrontIndex];
+			const double currentV2X = clipSpaceTriangleV2Xs[clipListFrontIndex];
+			const double currentV2Y = clipSpaceTriangleV2Ys[clipListFrontIndex];
+			const double currentV2Z = clipSpaceTriangleV2Zs[clipListFrontIndex];
+			const double currentV2W = clipSpaceTriangleV2Ws[clipListFrontIndex];
+
+			double v0Component, v1Component, v2Component;
+			if constexpr ((clipPlaneIndex == 0) || (clipPlaneIndex == 1))
+			{
+				v0Component = currentV0X;
+				v1Component = currentV1X;
+				v2Component = currentV2X;
+			}
+			else if ((clipPlaneIndex == 2) || (clipPlaneIndex == 3))
+			{
+				v0Component = currentV0Y;
+				v1Component = currentV1Y;
+				v2Component = currentV2Y;
+			}
+			else
+			{
+				v0Component = currentV0Z;
+				v1Component = currentV1Z;
+				v2Component = currentV2Z;
+			}
+
+			double v0w, v1w, v2w;
+			double comparisonSign;
+			if constexpr ((clipPlaneIndex & 1) == 0)
+			{
+				v0w = currentV0W;
+				v1w = currentV1W;
+				v2w = currentV2W;
+				comparisonSign = 1.0;
+			}
+			else
+			{
+				v0w = -currentV0W;
+				v1w = -currentV1W;
+				v2w = -currentV2W;
+				comparisonSign = -1.0;
+			}
+
+			const double v0Diff = v0Component + v0w;
+			const double v1Diff = v1Component + v1w;
+			const double v2Diff = v2Component + v2w;
+			const bool isV0Inside = (v0Diff * comparisonSign) >= 0.0;
+			const bool isV1Inside = (v1Diff * comparisonSign) >= 0.0;
+			const bool isV2Inside = (v2Diff * comparisonSign) >= 0.0;
+
+			const double currentUV0X = clipSpaceTriangleUV0Xs[clipListFrontIndex];
+			const double currentUV0Y = clipSpaceTriangleUV0Ys[clipListFrontIndex];
+			const double currentUV1X = clipSpaceTriangleUV1Xs[clipListFrontIndex];
+			const double currentUV1Y = clipSpaceTriangleUV1Ys[clipListFrontIndex];
+			const double currentUV2X = clipSpaceTriangleUV2Xs[clipListFrontIndex];
+			const double currentUV2Y = clipSpaceTriangleUV2Ys[clipListFrontIndex];
+			const int resultWriteIndex0 = clipListSize;
+			const int resultWriteIndex1 = clipListSize + 1;
+
+			// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
+			// making sure to keep the original winding order.
+			int clipResultCount;
+			const int insideMaskIndex = (isV2Inside ? 0 : 1) | (isV1Inside ? 0 : 2) | (isV0Inside ? 0 : 4);
+			switch (insideMaskIndex)
+			{
+			case 0:
+				// All vertices visible, no clipping needed.
+				clipSpaceTriangleV0Xs[resultWriteIndex0] = currentV0X;
+				clipSpaceTriangleV0Ys[resultWriteIndex0] = currentV0Y;
+				clipSpaceTriangleV0Zs[resultWriteIndex0] = currentV0Z;
+				clipSpaceTriangleV0Ws[resultWriteIndex0] = currentV0W;
+				clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV1X;
+				clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV1Y;
+				clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV1Z;
+				clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV1W;
+				clipSpaceTriangleV2Xs[resultWriteIndex0] = currentV2X;
+				clipSpaceTriangleV2Ys[resultWriteIndex0] = currentV2Y;
+				clipSpaceTriangleV2Zs[resultWriteIndex0] = currentV2Z;
+				clipSpaceTriangleV2Ws[resultWriteIndex0] = currentV2W;
+				clipSpaceTriangleUV0Xs[resultWriteIndex0] = currentUV0X;
+				clipSpaceTriangleUV0Ys[resultWriteIndex0] = currentUV0Y;
+				clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV1X;
+				clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV1Y;
+				clipSpaceTriangleUV2Xs[resultWriteIndex0] = currentUV2X;
+				clipSpaceTriangleUV2Ys[resultWriteIndex0] = currentUV2Y;
+				clipResultCount = 1;
+				break;
+			case 1:
+			{
+				// Becomes quad
+				// Inside: V0, V1
+				// Outside: V2
+				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+				const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
+				const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
+				const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
+				const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
+				const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
+				const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
+				const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
+				const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
+				const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
+				const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
+				const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
+				const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
+				clipSpaceTriangleV0Xs[resultWriteIndex0] = currentV0X;
+				clipSpaceTriangleV0Ys[resultWriteIndex0] = currentV0Y;
+				clipSpaceTriangleV0Zs[resultWriteIndex0] = currentV0Z;
+				clipSpaceTriangleV0Ws[resultWriteIndex0] = currentV0W;
+				clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV1X;
+				clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV1Y;
+				clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV1Z;
+				clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV1W;
+				clipSpaceTriangleV2Xs[resultWriteIndex0] = v1v2PointX;
+				clipSpaceTriangleV2Ys[resultWriteIndex0] = v1v2PointY;
+				clipSpaceTriangleV2Zs[resultWriteIndex0] = v1v2PointZ;
+				clipSpaceTriangleV2Ws[resultWriteIndex0] = v1v2PointW;
+				clipSpaceTriangleV0Xs[resultWriteIndex1] = v1v2PointX;
+				clipSpaceTriangleV0Ys[resultWriteIndex1] = v1v2PointY;
+				clipSpaceTriangleV0Zs[resultWriteIndex1] = v1v2PointZ;
+				clipSpaceTriangleV0Ws[resultWriteIndex1] = v1v2PointW;
+				clipSpaceTriangleV1Xs[resultWriteIndex1] = v2v0PointX;
+				clipSpaceTriangleV1Ys[resultWriteIndex1] = v2v0PointY;
+				clipSpaceTriangleV1Zs[resultWriteIndex1] = v2v0PointZ;
+				clipSpaceTriangleV1Ws[resultWriteIndex1] = v2v0PointW;
+				clipSpaceTriangleV2Xs[resultWriteIndex1] = currentV0X;
+				clipSpaceTriangleV2Ys[resultWriteIndex1] = currentV0Y;
+				clipSpaceTriangleV2Zs[resultWriteIndex1] = currentV0Z;
+				clipSpaceTriangleV2Ws[resultWriteIndex1] = currentV0W;
+				clipSpaceTriangleUV0Xs[resultWriteIndex0] = currentUV0X;
+				clipSpaceTriangleUV0Ys[resultWriteIndex0] = currentUV0Y;
+				clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV1X;
+				clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV1Y;
+				clipSpaceTriangleUV2Xs[resultWriteIndex0] = v1v2PointUVX;
+				clipSpaceTriangleUV2Ys[resultWriteIndex0] = v1v2PointUVY;
+				clipSpaceTriangleUV0Xs[resultWriteIndex1] = v1v2PointUVX;
+				clipSpaceTriangleUV0Ys[resultWriteIndex1] = v1v2PointUVY;
+				clipSpaceTriangleUV1Xs[resultWriteIndex1] = v2v0PointUVX;
+				clipSpaceTriangleUV1Ys[resultWriteIndex1] = v2v0PointUVY;
+				clipSpaceTriangleUV2Xs[resultWriteIndex1] = currentUV0X;
+				clipSpaceTriangleUV2Ys[resultWriteIndex1] = currentUV0Y;
+				clipResultCount = 2;
+				break;
+			}
+			case 2:
+			{
+				// Becomes quad
+				// Inside: V0, V2
+				// Outside: V1
+				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+				const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
+				const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
+				const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
+				const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
+				const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
+				const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
+				const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
+				const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
+				const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
+				const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
+				const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
+				const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
+				clipSpaceTriangleV0Xs[resultWriteIndex0] = currentV0X;
+				clipSpaceTriangleV0Ys[resultWriteIndex0] = currentV0Y;
+				clipSpaceTriangleV0Zs[resultWriteIndex0] = currentV0Z;
+				clipSpaceTriangleV0Ws[resultWriteIndex0] = currentV0W;
+				clipSpaceTriangleV1Xs[resultWriteIndex0] = v0v1PointX;
+				clipSpaceTriangleV1Ys[resultWriteIndex0] = v0v1PointY;
+				clipSpaceTriangleV1Zs[resultWriteIndex0] = v0v1PointZ;
+				clipSpaceTriangleV1Ws[resultWriteIndex0] = v0v1PointW;
+				clipSpaceTriangleV2Xs[resultWriteIndex0] = v1v2PointX;
+				clipSpaceTriangleV2Ys[resultWriteIndex0] = v1v2PointY;
+				clipSpaceTriangleV2Zs[resultWriteIndex0] = v1v2PointZ;
+				clipSpaceTriangleV2Ws[resultWriteIndex0] = v1v2PointW;
+				clipSpaceTriangleV0Xs[resultWriteIndex1] = v1v2PointX;
+				clipSpaceTriangleV0Ys[resultWriteIndex1] = v1v2PointY;
+				clipSpaceTriangleV0Zs[resultWriteIndex1] = v1v2PointZ;
+				clipSpaceTriangleV0Ws[resultWriteIndex1] = v1v2PointW;
+				clipSpaceTriangleV1Xs[resultWriteIndex1] = currentV2X;
+				clipSpaceTriangleV1Ys[resultWriteIndex1] = currentV2Y;
+				clipSpaceTriangleV1Zs[resultWriteIndex1] = currentV2Z;
+				clipSpaceTriangleV1Ws[resultWriteIndex1] = currentV2W;
+				clipSpaceTriangleV2Xs[resultWriteIndex1] = currentV0X;
+				clipSpaceTriangleV2Ys[resultWriteIndex1] = currentV0Y;
+				clipSpaceTriangleV2Zs[resultWriteIndex1] = currentV0Z;
+				clipSpaceTriangleV2Ws[resultWriteIndex1] = currentV0W;
+				clipSpaceTriangleUV0Xs[resultWriteIndex0] = currentUV0X;
+				clipSpaceTriangleUV0Ys[resultWriteIndex0] = currentUV0Y;
+				clipSpaceTriangleUV1Xs[resultWriteIndex0] = v0v1PointUVX;
+				clipSpaceTriangleUV1Ys[resultWriteIndex0] = v0v1PointUVY;
+				clipSpaceTriangleUV2Xs[resultWriteIndex0] = v1v2PointUVX;
+				clipSpaceTriangleUV2Ys[resultWriteIndex0] = v1v2PointUVY;
+				clipSpaceTriangleUV0Xs[resultWriteIndex1] = v1v2PointUVX;
+				clipSpaceTriangleUV0Ys[resultWriteIndex1] = v1v2PointUVY;
+				clipSpaceTriangleUV1Xs[resultWriteIndex1] = currentUV2X;
+				clipSpaceTriangleUV1Ys[resultWriteIndex1] = currentUV2Y;
+				clipSpaceTriangleUV2Xs[resultWriteIndex1] = currentUV0X;
+				clipSpaceTriangleUV2Ys[resultWriteIndex1] = currentUV0Y;
+				clipResultCount = 2;
+				break;
+			}
+			case 3:
+			{
+				// Becomes smaller triangle
+				// Inside: V0
+				// Outside: V1, V2
+				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+				const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
+				const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
+				const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
+				const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
+				const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
+				const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
+				const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
+				const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
+				const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
+				const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
+				const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
+				const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
+				clipSpaceTriangleV0Xs[resultWriteIndex0] = currentV0X;
+				clipSpaceTriangleV0Ys[resultWriteIndex0] = currentV0Y;
+				clipSpaceTriangleV0Zs[resultWriteIndex0] = currentV0Z;
+				clipSpaceTriangleV0Ws[resultWriteIndex0] = currentV0W;
+				clipSpaceTriangleV1Xs[resultWriteIndex0] = v0v1PointX;
+				clipSpaceTriangleV1Ys[resultWriteIndex0] = v0v1PointY;
+				clipSpaceTriangleV1Zs[resultWriteIndex0] = v0v1PointZ;
+				clipSpaceTriangleV1Ws[resultWriteIndex0] = v0v1PointW;
+				clipSpaceTriangleV2Xs[resultWriteIndex0] = v2v0PointX;
+				clipSpaceTriangleV2Ys[resultWriteIndex0] = v2v0PointY;
+				clipSpaceTriangleV2Zs[resultWriteIndex0] = v2v0PointZ;
+				clipSpaceTriangleV2Ws[resultWriteIndex0] = v2v0PointW;
+				clipSpaceTriangleUV0Xs[resultWriteIndex0] = currentUV0X;
+				clipSpaceTriangleUV0Ys[resultWriteIndex0] = currentUV0Y;
+				clipSpaceTriangleUV1Xs[resultWriteIndex0] = v0v1PointUVX;
+				clipSpaceTriangleUV1Ys[resultWriteIndex0] = v0v1PointUVY;
+				clipSpaceTriangleUV2Xs[resultWriteIndex0] = v2v0PointUVX;
+				clipSpaceTriangleUV2Ys[resultWriteIndex0] = v2v0PointUVY;
+				clipResultCount = 1;
+				break;
+			}
+			case 4:
+			{
+				// Becomes quad
+				// Inside: V1, V2
+				// Outside: V0
+				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+				const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
+				const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
+				const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
+				const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
+				const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
+				const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
+				const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
+				const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
+				const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
+				const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
+				const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
+				const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
+				clipSpaceTriangleV0Xs[resultWriteIndex0] = v0v1PointX;
+				clipSpaceTriangleV0Ys[resultWriteIndex0] = v0v1PointY;
+				clipSpaceTriangleV0Zs[resultWriteIndex0] = v0v1PointZ;
+				clipSpaceTriangleV0Ws[resultWriteIndex0] = v0v1PointW;
+				clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV1X;
+				clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV1Y;
+				clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV1Z;
+				clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV1W;
+				clipSpaceTriangleV2Xs[resultWriteIndex0] = currentV2X;
+				clipSpaceTriangleV2Ys[resultWriteIndex0] = currentV2Y;
+				clipSpaceTriangleV2Zs[resultWriteIndex0] = currentV2Z;
+				clipSpaceTriangleV2Ws[resultWriteIndex0] = currentV2W;
+				clipSpaceTriangleV0Xs[resultWriteIndex1] = currentV2X;
+				clipSpaceTriangleV0Ys[resultWriteIndex1] = currentV2Y;
+				clipSpaceTriangleV0Zs[resultWriteIndex1] = currentV2Z;
+				clipSpaceTriangleV0Ws[resultWriteIndex1] = currentV2W;
+				clipSpaceTriangleV1Xs[resultWriteIndex1] = v2v0PointX;
+				clipSpaceTriangleV1Ys[resultWriteIndex1] = v2v0PointY;
+				clipSpaceTriangleV1Zs[resultWriteIndex1] = v2v0PointZ;
+				clipSpaceTriangleV1Ws[resultWriteIndex1] = v2v0PointW;
+				clipSpaceTriangleV2Xs[resultWriteIndex1] = v0v1PointX;
+				clipSpaceTriangleV2Ys[resultWriteIndex1] = v0v1PointY;
+				clipSpaceTriangleV2Zs[resultWriteIndex1] = v0v1PointZ;
+				clipSpaceTriangleV2Ws[resultWriteIndex1] = v0v1PointW;
+				clipSpaceTriangleUV0Xs[resultWriteIndex0] = v0v1PointUVX;
+				clipSpaceTriangleUV0Ys[resultWriteIndex0] = v0v1PointUVY;
+				clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV1X;
+				clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV1Y;
+				clipSpaceTriangleUV2Xs[resultWriteIndex0] = currentUV2X;
+				clipSpaceTriangleUV2Ys[resultWriteIndex0] = currentUV2Y;
+				clipSpaceTriangleUV0Xs[resultWriteIndex1] = currentUV2X;
+				clipSpaceTriangleUV0Ys[resultWriteIndex1] = currentUV2Y;
+				clipSpaceTriangleUV1Xs[resultWriteIndex1] = v2v0PointUVX;
+				clipSpaceTriangleUV1Ys[resultWriteIndex1] = v2v0PointUVY;
+				clipSpaceTriangleUV2Xs[resultWriteIndex1] = v0v1PointUVX;
+				clipSpaceTriangleUV2Ys[resultWriteIndex1] = v0v1PointUVY;
+				clipResultCount = 2;
+				break;
+			}
+			case 5:
+			{
+				// Becomes smaller triangle
+				// Inside: V1
+				// Outside: V0, V2
+				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
+				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+				const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
+				const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
+				const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
+				const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
+				const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
+				const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
+				const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
+				const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
+				const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
+				const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
+				const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
+				const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
+				clipSpaceTriangleV0Xs[resultWriteIndex0] = v0v1PointX;
+				clipSpaceTriangleV0Ys[resultWriteIndex0] = v0v1PointY;
+				clipSpaceTriangleV0Zs[resultWriteIndex0] = v0v1PointZ;
+				clipSpaceTriangleV0Ws[resultWriteIndex0] = v0v1PointW;
+				clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV1X;
+				clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV1Y;
+				clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV1Z;
+				clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV1W;
+				clipSpaceTriangleV2Xs[resultWriteIndex0] = v1v2PointX;
+				clipSpaceTriangleV2Ys[resultWriteIndex0] = v1v2PointY;
+				clipSpaceTriangleV2Zs[resultWriteIndex0] = v1v2PointZ;
+				clipSpaceTriangleV2Ws[resultWriteIndex0] = v1v2PointW;
+				clipSpaceTriangleUV0Xs[resultWriteIndex0] = v0v1PointUVX;
+				clipSpaceTriangleUV0Ys[resultWriteIndex0] = v0v1PointUVY;
+				clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV1X;
+				clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV1Y;
+				clipSpaceTriangleUV2Xs[resultWriteIndex0] = v1v2PointUVX;
+				clipSpaceTriangleUV2Ys[resultWriteIndex0] = v1v2PointUVY;
+				clipResultCount = 1;
+				break;
+			}
+			case 6:
+			{
+				// Becomes smaller triangle
+				// Inside: V2
+				// Outside: V0, V1
+				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
+				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+				const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
+				const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
+				const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
+				const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
+				const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
+				const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
+				const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
+				const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
+				const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
+				const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
+				const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
+				const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
+				clipSpaceTriangleV0Xs[resultWriteIndex0] = v1v2PointX;
+				clipSpaceTriangleV0Ys[resultWriteIndex0] = v1v2PointY;
+				clipSpaceTriangleV0Zs[resultWriteIndex0] = v1v2PointZ;
+				clipSpaceTriangleV0Ws[resultWriteIndex0] = v1v2PointW;
+				clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV2X;
+				clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV2Y;
+				clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV2Z;
+				clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV2W;
+				clipSpaceTriangleV2Xs[resultWriteIndex0] = v2v0PointX;
+				clipSpaceTriangleV2Ys[resultWriteIndex0] = v2v0PointY;
+				clipSpaceTriangleV2Zs[resultWriteIndex0] = v2v0PointZ;
+				clipSpaceTriangleV2Ws[resultWriteIndex0] = v2v0PointW;
+				clipSpaceTriangleUV0Xs[resultWriteIndex0] = v1v2PointUVX;
+				clipSpaceTriangleUV0Ys[resultWriteIndex0] = v1v2PointUVY;
+				clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV2X;
+				clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV2Y;
+				clipSpaceTriangleUV2Xs[resultWriteIndex0] = v2v0PointUVX;
+				clipSpaceTriangleUV2Ys[resultWriteIndex0] = v2v0PointUVY;
+				clipResultCount = 1;
+				break;
+			}
+			case 7:
+				// All vertices outside frustum.
+				clipResultCount = 0;
+				break;
+			}
+
+			clipListSize += clipResultCount;
+			clipListFrontIndex++;
+		}
+	}
+
 	// Clips triangles to the frustum then writes out clip space triangle indices for the rasterizer to iterate.
 	void ProcessClipping(int meshCount)
 	{
@@ -1450,411 +1875,13 @@ namespace
 				int clipListSize = 1; // Triangles to process based on this vertex-shaded triangle.
 				int clipListFrontIndex = 0;
 
-				constexpr int clipPlaneCount = 6; // Check each dimension against -W and W components.
-				for (int clipPlaneIndex = 0; clipPlaneIndex < clipPlaneCount; clipPlaneIndex++)
-				{
-					const int trianglesToClipCount = clipListSize - clipListFrontIndex;
-					for (int triangleToClip = trianglesToClipCount; triangleToClip > 0; triangleToClip--)
-					{
-						// Clip against the clipping plane, generating 0 to 2 triangles.
-						const double currentV0X = clipSpaceTriangleV0Xs[clipListFrontIndex];
-						const double currentV0Y = clipSpaceTriangleV0Ys[clipListFrontIndex];
-						const double currentV0Z = clipSpaceTriangleV0Zs[clipListFrontIndex];
-						const double currentV0W = clipSpaceTriangleV0Ws[clipListFrontIndex];
-						const double currentV1X = clipSpaceTriangleV1Xs[clipListFrontIndex];
-						const double currentV1Y = clipSpaceTriangleV1Ys[clipListFrontIndex];
-						const double currentV1Z = clipSpaceTriangleV1Zs[clipListFrontIndex];
-						const double currentV1W = clipSpaceTriangleV1Ws[clipListFrontIndex];
-						const double currentV2X = clipSpaceTriangleV2Xs[clipListFrontIndex];
-						const double currentV2Y = clipSpaceTriangleV2Ys[clipListFrontIndex];
-						const double currentV2Z = clipSpaceTriangleV2Zs[clipListFrontIndex];
-						const double currentV2W = clipSpaceTriangleV2Ws[clipListFrontIndex];
-
-						double v0Component, v1Component, v2Component;
-						if ((clipPlaneIndex == 0) || (clipPlaneIndex == 1))
-						{
-							v0Component = currentV0X;
-							v1Component = currentV1X;
-							v2Component = currentV2X;
-						}
-						else if ((clipPlaneIndex == 2) || (clipPlaneIndex == 3))
-						{
-							v0Component = currentV0Y;
-							v1Component = currentV1Y;
-							v2Component = currentV2Y;
-						}
-						else
-						{
-							v0Component = currentV0Z;
-							v1Component = currentV1Z;
-							v2Component = currentV2Z;
-						}
-
-						double v0w, v1w, v2w;
-						double comparisonSign;
-						if ((clipPlaneIndex & 1) == 0)
-						{
-							v0w = currentV0W;
-							v1w = currentV1W;
-							v2w = currentV2W;
-							comparisonSign = 1.0;
-						}
-						else
-						{
-							v0w = -currentV0W;
-							v1w = -currentV1W;
-							v2w = -currentV2W;
-							comparisonSign = -1.0;
-						}
-
-						const double v0Diff = v0Component + v0w;
-						const double v1Diff = v1Component + v1w;
-						const double v2Diff = v2Component + v2w;
-						const bool isV0Inside = (v0Diff * comparisonSign) >= 0.0;
-						const bool isV1Inside = (v1Diff * comparisonSign) >= 0.0;
-						const bool isV2Inside = (v2Diff * comparisonSign) >= 0.0;
-
-						const double currentUV0X = clipSpaceTriangleUV0Xs[clipListFrontIndex];
-						const double currentUV0Y = clipSpaceTriangleUV0Ys[clipListFrontIndex];
-						const double currentUV1X = clipSpaceTriangleUV1Xs[clipListFrontIndex];
-						const double currentUV1Y = clipSpaceTriangleUV1Ys[clipListFrontIndex];
-						const double currentUV2X = clipSpaceTriangleUV2Xs[clipListFrontIndex];
-						const double currentUV2Y = clipSpaceTriangleUV2Ys[clipListFrontIndex];
-						const int resultWriteIndex0 = clipListSize;
-						const int resultWriteIndex1 = clipListSize + 1;
-
-						// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
-						// making sure to keep the original winding order.
-						int clipResultCount;
-						const int insideMaskIndex = (isV2Inside ? 0 : 1) | (isV1Inside ? 0 : 2) | (isV0Inside ? 0 : 4);
-						switch (insideMaskIndex)
-						{
-						case 0:
-							// All vertices visible, no clipping needed.
-							clipSpaceTriangleV0Xs[resultWriteIndex0] = currentV0X;
-							clipSpaceTriangleV0Ys[resultWriteIndex0] = currentV0Y;
-							clipSpaceTriangleV0Zs[resultWriteIndex0] = currentV0Z;
-							clipSpaceTriangleV0Ws[resultWriteIndex0] = currentV0W;
-							clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV1X;
-							clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV1Y;
-							clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV1Z;
-							clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV1W;
-							clipSpaceTriangleV2Xs[resultWriteIndex0] = currentV2X;
-							clipSpaceTriangleV2Ys[resultWriteIndex0] = currentV2Y;
-							clipSpaceTriangleV2Zs[resultWriteIndex0] = currentV2Z;
-							clipSpaceTriangleV2Ws[resultWriteIndex0] = currentV2W;
-							clipSpaceTriangleUV0Xs[resultWriteIndex0] = currentUV0X;
-							clipSpaceTriangleUV0Ys[resultWriteIndex0] = currentUV0Y;
-							clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV1X;
-							clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV1Y;
-							clipSpaceTriangleUV2Xs[resultWriteIndex0] = currentUV2X;
-							clipSpaceTriangleUV2Ys[resultWriteIndex0] = currentUV2Y;
-							clipResultCount = 1;
-							break;
-						case 1:
-						{
-							// Becomes quad
-							// Inside: V0, V1
-							// Outside: V2
-							const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-							const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-							const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
-							const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
-							const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
-							const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
-							const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
-							const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
-							const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
-							const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
-							const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
-							const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
-							const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
-							const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
-							clipSpaceTriangleV0Xs[resultWriteIndex0] = currentV0X;
-							clipSpaceTriangleV0Ys[resultWriteIndex0] = currentV0Y;
-							clipSpaceTriangleV0Zs[resultWriteIndex0] = currentV0Z;
-							clipSpaceTriangleV0Ws[resultWriteIndex0] = currentV0W;
-							clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV1X;
-							clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV1Y;
-							clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV1Z;
-							clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV1W;
-							clipSpaceTriangleV2Xs[resultWriteIndex0] = v1v2PointX;
-							clipSpaceTriangleV2Ys[resultWriteIndex0] = v1v2PointY;
-							clipSpaceTriangleV2Zs[resultWriteIndex0] = v1v2PointZ;
-							clipSpaceTriangleV2Ws[resultWriteIndex0] = v1v2PointW;
-							clipSpaceTriangleV0Xs[resultWriteIndex1] = v1v2PointX;
-							clipSpaceTriangleV0Ys[resultWriteIndex1] = v1v2PointY;
-							clipSpaceTriangleV0Zs[resultWriteIndex1] = v1v2PointZ;
-							clipSpaceTriangleV0Ws[resultWriteIndex1] = v1v2PointW;
-							clipSpaceTriangleV1Xs[resultWriteIndex1] = v2v0PointX;
-							clipSpaceTriangleV1Ys[resultWriteIndex1] = v2v0PointY;
-							clipSpaceTriangleV1Zs[resultWriteIndex1] = v2v0PointZ;
-							clipSpaceTriangleV1Ws[resultWriteIndex1] = v2v0PointW;
-							clipSpaceTriangleV2Xs[resultWriteIndex1] = currentV0X;
-							clipSpaceTriangleV2Ys[resultWriteIndex1] = currentV0Y;
-							clipSpaceTriangleV2Zs[resultWriteIndex1] = currentV0Z;
-							clipSpaceTriangleV2Ws[resultWriteIndex1] = currentV0W;
-							clipSpaceTriangleUV0Xs[resultWriteIndex0] = currentUV0X;
-							clipSpaceTriangleUV0Ys[resultWriteIndex0] = currentUV0Y;
-							clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV1X;
-							clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV1Y;
-							clipSpaceTriangleUV2Xs[resultWriteIndex0] = v1v2PointUVX;
-							clipSpaceTriangleUV2Ys[resultWriteIndex0] = v1v2PointUVY;
-							clipSpaceTriangleUV0Xs[resultWriteIndex1] = v1v2PointUVX;
-							clipSpaceTriangleUV0Ys[resultWriteIndex1] = v1v2PointUVY;
-							clipSpaceTriangleUV1Xs[resultWriteIndex1] = v2v0PointUVX;
-							clipSpaceTriangleUV1Ys[resultWriteIndex1] = v2v0PointUVY;
-							clipSpaceTriangleUV2Xs[resultWriteIndex1] = currentUV0X;
-							clipSpaceTriangleUV2Ys[resultWriteIndex1] = currentUV0Y;
-							clipResultCount = 2;
-							break;
-						}
-						case 2:
-						{
-							// Becomes quad
-							// Inside: V0, V2
-							// Outside: V1
-							const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-							const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-							const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
-							const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
-							const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
-							const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
-							const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
-							const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
-							const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
-							const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
-							const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
-							const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
-							const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
-							const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
-							clipSpaceTriangleV0Xs[resultWriteIndex0] = currentV0X;
-							clipSpaceTriangleV0Ys[resultWriteIndex0] = currentV0Y;
-							clipSpaceTriangleV0Zs[resultWriteIndex0] = currentV0Z;
-							clipSpaceTriangleV0Ws[resultWriteIndex0] = currentV0W;
-							clipSpaceTriangleV1Xs[resultWriteIndex0] = v0v1PointX;
-							clipSpaceTriangleV1Ys[resultWriteIndex0] = v0v1PointY;
-							clipSpaceTriangleV1Zs[resultWriteIndex0] = v0v1PointZ;
-							clipSpaceTriangleV1Ws[resultWriteIndex0] = v0v1PointW;
-							clipSpaceTriangleV2Xs[resultWriteIndex0] = v1v2PointX;
-							clipSpaceTriangleV2Ys[resultWriteIndex0] = v1v2PointY;
-							clipSpaceTriangleV2Zs[resultWriteIndex0] = v1v2PointZ;
-							clipSpaceTriangleV2Ws[resultWriteIndex0] = v1v2PointW;
-							clipSpaceTriangleV0Xs[resultWriteIndex1] = v1v2PointX;
-							clipSpaceTriangleV0Ys[resultWriteIndex1] = v1v2PointY;
-							clipSpaceTriangleV0Zs[resultWriteIndex1] = v1v2PointZ;
-							clipSpaceTriangleV0Ws[resultWriteIndex1] = v1v2PointW;
-							clipSpaceTriangleV1Xs[resultWriteIndex1] = currentV2X;
-							clipSpaceTriangleV1Ys[resultWriteIndex1] = currentV2Y;
-							clipSpaceTriangleV1Zs[resultWriteIndex1] = currentV2Z;
-							clipSpaceTriangleV1Ws[resultWriteIndex1] = currentV2W;
-							clipSpaceTriangleV2Xs[resultWriteIndex1] = currentV0X;
-							clipSpaceTriangleV2Ys[resultWriteIndex1] = currentV0Y;
-							clipSpaceTriangleV2Zs[resultWriteIndex1] = currentV0Z;
-							clipSpaceTriangleV2Ws[resultWriteIndex1] = currentV0W;
-							clipSpaceTriangleUV0Xs[resultWriteIndex0] = currentUV0X;
-							clipSpaceTriangleUV0Ys[resultWriteIndex0] = currentUV0Y;
-							clipSpaceTriangleUV1Xs[resultWriteIndex0] = v0v1PointUVX;
-							clipSpaceTriangleUV1Ys[resultWriteIndex0] = v0v1PointUVY;
-							clipSpaceTriangleUV2Xs[resultWriteIndex0] = v1v2PointUVX;
-							clipSpaceTriangleUV2Ys[resultWriteIndex0] = v1v2PointUVY;
-							clipSpaceTriangleUV0Xs[resultWriteIndex1] = v1v2PointUVX;
-							clipSpaceTriangleUV0Ys[resultWriteIndex1] = v1v2PointUVY;
-							clipSpaceTriangleUV1Xs[resultWriteIndex1] = currentUV2X;
-							clipSpaceTriangleUV1Ys[resultWriteIndex1] = currentUV2Y;
-							clipSpaceTriangleUV2Xs[resultWriteIndex1] = currentUV0X;
-							clipSpaceTriangleUV2Ys[resultWriteIndex1] = currentUV0Y;
-							clipResultCount = 2;
-							break;
-						}
-						case 3:
-						{
-							// Becomes smaller triangle
-							// Inside: V0
-							// Outside: V1, V2
-							const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-							const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-							const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
-							const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
-							const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
-							const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
-							const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
-							const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
-							const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
-							const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
-							const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
-							const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
-							const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
-							const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
-							clipSpaceTriangleV0Xs[resultWriteIndex0] = currentV0X;
-							clipSpaceTriangleV0Ys[resultWriteIndex0] = currentV0Y;
-							clipSpaceTriangleV0Zs[resultWriteIndex0] = currentV0Z;
-							clipSpaceTriangleV0Ws[resultWriteIndex0] = currentV0W;
-							clipSpaceTriangleV1Xs[resultWriteIndex0] = v0v1PointX;
-							clipSpaceTriangleV1Ys[resultWriteIndex0] = v0v1PointY;
-							clipSpaceTriangleV1Zs[resultWriteIndex0] = v0v1PointZ;
-							clipSpaceTriangleV1Ws[resultWriteIndex0] = v0v1PointW;
-							clipSpaceTriangleV2Xs[resultWriteIndex0] = v2v0PointX;
-							clipSpaceTriangleV2Ys[resultWriteIndex0] = v2v0PointY;
-							clipSpaceTriangleV2Zs[resultWriteIndex0] = v2v0PointZ;
-							clipSpaceTriangleV2Ws[resultWriteIndex0] = v2v0PointW;
-							clipSpaceTriangleUV0Xs[resultWriteIndex0] = currentUV0X;
-							clipSpaceTriangleUV0Ys[resultWriteIndex0] = currentUV0Y;
-							clipSpaceTriangleUV1Xs[resultWriteIndex0] = v0v1PointUVX;
-							clipSpaceTriangleUV1Ys[resultWriteIndex0] = v0v1PointUVY;
-							clipSpaceTriangleUV2Xs[resultWriteIndex0] = v2v0PointUVX;
-							clipSpaceTriangleUV2Ys[resultWriteIndex0] = v2v0PointUVY;
-							clipResultCount = 1;
-							break;
-						}
-						case 4:
-						{
-							// Becomes quad
-							// Inside: V1, V2
-							// Outside: V0
-							const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-							const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-							const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
-							const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
-							const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
-							const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
-							const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
-							const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
-							const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
-							const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
-							const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
-							const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
-							const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
-							const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
-							clipSpaceTriangleV0Xs[resultWriteIndex0] = v0v1PointX;
-							clipSpaceTriangleV0Ys[resultWriteIndex0] = v0v1PointY;
-							clipSpaceTriangleV0Zs[resultWriteIndex0] = v0v1PointZ;
-							clipSpaceTriangleV0Ws[resultWriteIndex0] = v0v1PointW;
-							clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV1X;
-							clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV1Y;
-							clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV1Z;
-							clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV1W;
-							clipSpaceTriangleV2Xs[resultWriteIndex0] = currentV2X;
-							clipSpaceTriangleV2Ys[resultWriteIndex0] = currentV2Y;
-							clipSpaceTriangleV2Zs[resultWriteIndex0] = currentV2Z;
-							clipSpaceTriangleV2Ws[resultWriteIndex0] = currentV2W;
-							clipSpaceTriangleV0Xs[resultWriteIndex1] = currentV2X;
-							clipSpaceTriangleV0Ys[resultWriteIndex1] = currentV2Y;
-							clipSpaceTriangleV0Zs[resultWriteIndex1] = currentV2Z;
-							clipSpaceTriangleV0Ws[resultWriteIndex1] = currentV2W;
-							clipSpaceTriangleV1Xs[resultWriteIndex1] = v2v0PointX;
-							clipSpaceTriangleV1Ys[resultWriteIndex1] = v2v0PointY;
-							clipSpaceTriangleV1Zs[resultWriteIndex1] = v2v0PointZ;
-							clipSpaceTriangleV1Ws[resultWriteIndex1] = v2v0PointW;
-							clipSpaceTriangleV2Xs[resultWriteIndex1] = v0v1PointX;
-							clipSpaceTriangleV2Ys[resultWriteIndex1] = v0v1PointY;
-							clipSpaceTriangleV2Zs[resultWriteIndex1] = v0v1PointZ;
-							clipSpaceTriangleV2Ws[resultWriteIndex1] = v0v1PointW;
-							clipSpaceTriangleUV0Xs[resultWriteIndex0] = v0v1PointUVX;
-							clipSpaceTriangleUV0Ys[resultWriteIndex0] = v0v1PointUVY;
-							clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV1X;
-							clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV1Y;
-							clipSpaceTriangleUV2Xs[resultWriteIndex0] = currentUV2X;
-							clipSpaceTriangleUV2Ys[resultWriteIndex0] = currentUV2Y;
-							clipSpaceTriangleUV0Xs[resultWriteIndex1] = currentUV2X;
-							clipSpaceTriangleUV0Ys[resultWriteIndex1] = currentUV2Y;
-							clipSpaceTriangleUV1Xs[resultWriteIndex1] = v2v0PointUVX;
-							clipSpaceTriangleUV1Ys[resultWriteIndex1] = v2v0PointUVY;
-							clipSpaceTriangleUV2Xs[resultWriteIndex1] = v0v1PointUVX;
-							clipSpaceTriangleUV2Ys[resultWriteIndex1] = v0v1PointUVY;
-							clipResultCount = 2;
-							break;
-						}
-						case 5:
-						{
-							// Becomes smaller triangle
-							// Inside: V1
-							// Outside: V0, V2
-							const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-							const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-							const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
-							const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
-							const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
-							const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
-							const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
-							const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
-							const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
-							const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
-							const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
-							const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
-							const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
-							const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
-							clipSpaceTriangleV0Xs[resultWriteIndex0] = v0v1PointX;
-							clipSpaceTriangleV0Ys[resultWriteIndex0] = v0v1PointY;
-							clipSpaceTriangleV0Zs[resultWriteIndex0] = v0v1PointZ;
-							clipSpaceTriangleV0Ws[resultWriteIndex0] = v0v1PointW;
-							clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV1X;
-							clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV1Y;
-							clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV1Z;
-							clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV1W;
-							clipSpaceTriangleV2Xs[resultWriteIndex0] = v1v2PointX;
-							clipSpaceTriangleV2Ys[resultWriteIndex0] = v1v2PointY;
-							clipSpaceTriangleV2Zs[resultWriteIndex0] = v1v2PointZ;
-							clipSpaceTriangleV2Ws[resultWriteIndex0] = v1v2PointW;
-							clipSpaceTriangleUV0Xs[resultWriteIndex0] = v0v1PointUVX;
-							clipSpaceTriangleUV0Ys[resultWriteIndex0] = v0v1PointUVY;
-							clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV1X;
-							clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV1Y;
-							clipSpaceTriangleUV2Xs[resultWriteIndex0] = v1v2PointUVX;
-							clipSpaceTriangleUV2Ys[resultWriteIndex0] = v1v2PointUVY;
-							clipResultCount = 1;
-							break;
-						}
-						case 6:
-						{
-							// Becomes smaller triangle
-							// Inside: V2
-							// Outside: V0, V1
-							const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-							const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-							const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
-							const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
-							const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
-							const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
-							const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
-							const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
-							const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
-							const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
-							const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
-							const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
-							const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
-							const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
-							clipSpaceTriangleV0Xs[resultWriteIndex0] = v1v2PointX;
-							clipSpaceTriangleV0Ys[resultWriteIndex0] = v1v2PointY;
-							clipSpaceTriangleV0Zs[resultWriteIndex0] = v1v2PointZ;
-							clipSpaceTriangleV0Ws[resultWriteIndex0] = v1v2PointW;
-							clipSpaceTriangleV1Xs[resultWriteIndex0] = currentV2X;
-							clipSpaceTriangleV1Ys[resultWriteIndex0] = currentV2Y;
-							clipSpaceTriangleV1Zs[resultWriteIndex0] = currentV2Z;
-							clipSpaceTriangleV1Ws[resultWriteIndex0] = currentV2W;
-							clipSpaceTriangleV2Xs[resultWriteIndex0] = v2v0PointX;
-							clipSpaceTriangleV2Ys[resultWriteIndex0] = v2v0PointY;
-							clipSpaceTriangleV2Zs[resultWriteIndex0] = v2v0PointZ;
-							clipSpaceTriangleV2Ws[resultWriteIndex0] = v2v0PointW;
-							clipSpaceTriangleUV0Xs[resultWriteIndex0] = v1v2PointUVX;
-							clipSpaceTriangleUV0Ys[resultWriteIndex0] = v1v2PointUVY;
-							clipSpaceTriangleUV1Xs[resultWriteIndex0] = currentUV2X;
-							clipSpaceTriangleUV1Ys[resultWriteIndex0] = currentUV2Y;
-							clipSpaceTriangleUV2Xs[resultWriteIndex0] = v2v0PointUVX;
-							clipSpaceTriangleUV2Ys[resultWriteIndex0] = v2v0PointUVY;
-							clipResultCount = 1;
-							break;
-						}
-						case 7:
-							// All vertices outside frustum.
-							clipResultCount = 0;
-							break;
-						}
-
-						clipListSize += clipResultCount;
-						clipListFrontIndex++;
-					}
-				}
+				// Check each dimension against -W and W components.
+				ProcessClippingWithPlane<0>(meshIndex, clipListSize, clipListFrontIndex);
+				ProcessClippingWithPlane<1>(meshIndex, clipListSize, clipListFrontIndex);
+				ProcessClippingWithPlane<2>(meshIndex, clipListSize, clipListFrontIndex);
+				ProcessClippingWithPlane<3>(meshIndex, clipListSize, clipListFrontIndex);
+				ProcessClippingWithPlane<4>(meshIndex, clipListSize, clipListFrontIndex);
+				ProcessClippingWithPlane<5>(meshIndex, clipListSize, clipListFrontIndex);
 
 				// Add the clip results to the mesh, skipping the incomplete triangles the front index advanced beyond.
 				const int resultTriangleCount = clipListSize - clipListFrontIndex;
