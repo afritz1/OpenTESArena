@@ -407,6 +407,59 @@ namespace
 
 	MeshProcessCaches g_meshProcessCaches;
 
+	void PopulateMeshTransform(int meshIndex, const RenderTransform &transform)
+	{
+		g_meshProcessCaches.translationMatrixXXs[meshIndex] = transform.translation.x.x;
+		g_meshProcessCaches.translationMatrixXYs[meshIndex] = transform.translation.x.y;
+		g_meshProcessCaches.translationMatrixXZs[meshIndex] = transform.translation.x.z;
+		g_meshProcessCaches.translationMatrixXWs[meshIndex] = transform.translation.x.w;
+		g_meshProcessCaches.translationMatrixYXs[meshIndex] = transform.translation.y.x;
+		g_meshProcessCaches.translationMatrixYYs[meshIndex] = transform.translation.y.y;
+		g_meshProcessCaches.translationMatrixYZs[meshIndex] = transform.translation.y.z;
+		g_meshProcessCaches.translationMatrixYWs[meshIndex] = transform.translation.y.w;
+		g_meshProcessCaches.translationMatrixZXs[meshIndex] = transform.translation.z.x;
+		g_meshProcessCaches.translationMatrixZYs[meshIndex] = transform.translation.z.y;
+		g_meshProcessCaches.translationMatrixZZs[meshIndex] = transform.translation.z.z;
+		g_meshProcessCaches.translationMatrixZWs[meshIndex] = transform.translation.z.w;
+		g_meshProcessCaches.translationMatrixWXs[meshIndex] = transform.translation.w.x;
+		g_meshProcessCaches.translationMatrixWYs[meshIndex] = transform.translation.w.y;
+		g_meshProcessCaches.translationMatrixWZs[meshIndex] = transform.translation.w.z;
+		g_meshProcessCaches.translationMatrixWWs[meshIndex] = transform.translation.w.w;
+		g_meshProcessCaches.rotationMatrixXXs[meshIndex] = transform.rotation.x.x;
+		g_meshProcessCaches.rotationMatrixXYs[meshIndex] = transform.rotation.x.y;
+		g_meshProcessCaches.rotationMatrixXZs[meshIndex] = transform.rotation.x.z;
+		g_meshProcessCaches.rotationMatrixXWs[meshIndex] = transform.rotation.x.w;
+		g_meshProcessCaches.rotationMatrixYXs[meshIndex] = transform.rotation.y.x;
+		g_meshProcessCaches.rotationMatrixYYs[meshIndex] = transform.rotation.y.y;
+		g_meshProcessCaches.rotationMatrixYZs[meshIndex] = transform.rotation.y.z;
+		g_meshProcessCaches.rotationMatrixYWs[meshIndex] = transform.rotation.y.w;
+		g_meshProcessCaches.rotationMatrixZXs[meshIndex] = transform.rotation.z.x;
+		g_meshProcessCaches.rotationMatrixZYs[meshIndex] = transform.rotation.z.y;
+		g_meshProcessCaches.rotationMatrixZZs[meshIndex] = transform.rotation.z.z;
+		g_meshProcessCaches.rotationMatrixZWs[meshIndex] = transform.rotation.z.w;
+		g_meshProcessCaches.rotationMatrixWXs[meshIndex] = transform.rotation.w.x;
+		g_meshProcessCaches.rotationMatrixWYs[meshIndex] = transform.rotation.w.y;
+		g_meshProcessCaches.rotationMatrixWZs[meshIndex] = transform.rotation.w.z;
+		g_meshProcessCaches.rotationMatrixWWs[meshIndex] = transform.rotation.w.w;
+		g_meshProcessCaches.scaleMatrixXXs[meshIndex] = transform.scale.x.x;
+		g_meshProcessCaches.scaleMatrixXYs[meshIndex] = transform.scale.x.y;
+		g_meshProcessCaches.scaleMatrixXZs[meshIndex] = transform.scale.x.z;
+		g_meshProcessCaches.scaleMatrixXWs[meshIndex] = transform.scale.x.w;
+		g_meshProcessCaches.scaleMatrixYXs[meshIndex] = transform.scale.y.x;
+		g_meshProcessCaches.scaleMatrixYYs[meshIndex] = transform.scale.y.y;
+		g_meshProcessCaches.scaleMatrixYZs[meshIndex] = transform.scale.y.z;
+		g_meshProcessCaches.scaleMatrixYWs[meshIndex] = transform.scale.y.w;
+		g_meshProcessCaches.scaleMatrixZXs[meshIndex] = transform.scale.z.x;
+		g_meshProcessCaches.scaleMatrixZYs[meshIndex] = transform.scale.z.y;
+		g_meshProcessCaches.scaleMatrixZZs[meshIndex] = transform.scale.z.z;
+		g_meshProcessCaches.scaleMatrixZWs[meshIndex] = transform.scale.z.w;
+		g_meshProcessCaches.scaleMatrixWXs[meshIndex] = transform.scale.w.x;
+		g_meshProcessCaches.scaleMatrixWYs[meshIndex] = transform.scale.w.y;
+		g_meshProcessCaches.scaleMatrixWZs[meshIndex] = transform.scale.w.z;
+		g_meshProcessCaches.scaleMatrixWWs[meshIndex] = transform.scale.w.w;
+		// Do model-view-projection matrix in the bulk processing loop.
+	}
+
 	// Pixel and vertex shading definitions.
 	struct PixelShaderPerspectiveCorrection
 	{
@@ -2414,54 +2467,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	const int drawCallCount = drawCalls.getCount();
 	g_totalDrawCallCount = drawCallCount;
 
-	auto &meshProcessCacheTranslationMatrixXXs = g_meshProcessCaches.translationMatrixXXs;
-	auto &meshProcessCacheTranslationMatrixXYs = g_meshProcessCaches.translationMatrixXYs;
-	auto &meshProcessCacheTranslationMatrixXZs = g_meshProcessCaches.translationMatrixXZs;
-	auto &meshProcessCacheTranslationMatrixXWs = g_meshProcessCaches.translationMatrixXWs;
-	auto &meshProcessCacheTranslationMatrixYXs = g_meshProcessCaches.translationMatrixYXs;
-	auto &meshProcessCacheTranslationMatrixYYs = g_meshProcessCaches.translationMatrixYYs;
-	auto &meshProcessCacheTranslationMatrixYZs = g_meshProcessCaches.translationMatrixYZs;
-	auto &meshProcessCacheTranslationMatrixYWs = g_meshProcessCaches.translationMatrixYWs;
-	auto &meshProcessCacheTranslationMatrixZXs = g_meshProcessCaches.translationMatrixZXs;
-	auto &meshProcessCacheTranslationMatrixZYs = g_meshProcessCaches.translationMatrixZYs;
-	auto &meshProcessCacheTranslationMatrixZZs = g_meshProcessCaches.translationMatrixZZs;
-	auto &meshProcessCacheTranslationMatrixZWs = g_meshProcessCaches.translationMatrixZWs;
-	auto &meshProcessCacheTranslationMatrixWXs = g_meshProcessCaches.translationMatrixWXs;
-	auto &meshProcessCacheTranslationMatrixWYs = g_meshProcessCaches.translationMatrixWYs;
-	auto &meshProcessCacheTranslationMatrixWZs = g_meshProcessCaches.translationMatrixWZs;
-	auto &meshProcessCacheTranslationMatrixWWs = g_meshProcessCaches.translationMatrixWWs;
-	auto &meshProcessCacheRotationMatrixXXs = g_meshProcessCaches.rotationMatrixXXs;
-	auto &meshProcessCacheRotationMatrixXYs = g_meshProcessCaches.rotationMatrixXYs;
-	auto &meshProcessCacheRotationMatrixXZs = g_meshProcessCaches.rotationMatrixXZs;
-	auto &meshProcessCacheRotationMatrixXWs = g_meshProcessCaches.rotationMatrixXWs;
-	auto &meshProcessCacheRotationMatrixYXs = g_meshProcessCaches.rotationMatrixYXs;
-	auto &meshProcessCacheRotationMatrixYYs = g_meshProcessCaches.rotationMatrixYYs;
-	auto &meshProcessCacheRotationMatrixYZs = g_meshProcessCaches.rotationMatrixYZs;
-	auto &meshProcessCacheRotationMatrixYWs = g_meshProcessCaches.rotationMatrixYWs;
-	auto &meshProcessCacheRotationMatrixZXs = g_meshProcessCaches.rotationMatrixZXs;
-	auto &meshProcessCacheRotationMatrixZYs = g_meshProcessCaches.rotationMatrixZYs;
-	auto &meshProcessCacheRotationMatrixZZs = g_meshProcessCaches.rotationMatrixZZs;
-	auto &meshProcessCacheRotationMatrixZWs = g_meshProcessCaches.rotationMatrixZWs;
-	auto &meshProcessCacheRotationMatrixWXs = g_meshProcessCaches.rotationMatrixWXs;
-	auto &meshProcessCacheRotationMatrixWYs = g_meshProcessCaches.rotationMatrixWYs;
-	auto &meshProcessCacheRotationMatrixWZs = g_meshProcessCaches.rotationMatrixWZs;
-	auto &meshProcessCacheRotationMatrixWWs = g_meshProcessCaches.rotationMatrixWWs;
-	auto &meshProcessCacheScaleMatrixXXs = g_meshProcessCaches.scaleMatrixXXs;
-	auto &meshProcessCacheScaleMatrixXYs = g_meshProcessCaches.scaleMatrixXYs;
-	auto &meshProcessCacheScaleMatrixXZs = g_meshProcessCaches.scaleMatrixXZs;
-	auto &meshProcessCacheScaleMatrixXWs = g_meshProcessCaches.scaleMatrixXWs;
-	auto &meshProcessCacheScaleMatrixYXs = g_meshProcessCaches.scaleMatrixYXs;
-	auto &meshProcessCacheScaleMatrixYYs = g_meshProcessCaches.scaleMatrixYYs;
-	auto &meshProcessCacheScaleMatrixYZs = g_meshProcessCaches.scaleMatrixYZs;
-	auto &meshProcessCacheScaleMatrixYWs = g_meshProcessCaches.scaleMatrixYWs;
-	auto &meshProcessCacheScaleMatrixZXs = g_meshProcessCaches.scaleMatrixZXs;
-	auto &meshProcessCacheScaleMatrixZYs = g_meshProcessCaches.scaleMatrixZYs;
-	auto &meshProcessCacheScaleMatrixZZs = g_meshProcessCaches.scaleMatrixZZs;
-	auto &meshProcessCacheScaleMatrixZWs = g_meshProcessCaches.scaleMatrixZWs;
-	auto &meshProcessCacheScaleMatrixWXs = g_meshProcessCaches.scaleMatrixWXs;
-	auto &meshProcessCacheScaleMatrixWYs = g_meshProcessCaches.scaleMatrixWYs;
-	auto &meshProcessCacheScaleMatrixWZs = g_meshProcessCaches.scaleMatrixWZs;
-	auto &meshProcessCacheScaleMatrixWWs = g_meshProcessCaches.scaleMatrixWWs;
 	auto &meshProcessCachePreScaleTranslationXs = g_meshProcessCaches.preScaleTranslationXs;
 	auto &meshProcessCachePreScaleTranslationYs = g_meshProcessCaches.preScaleTranslationYs;
 	auto &meshProcessCachePreScaleTranslationZs = g_meshProcessCaches.preScaleTranslationZs;
@@ -2505,55 +2510,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 
 			const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
 			const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-			meshProcessCacheTranslationMatrixXXs[sequenceIndex] = transform.translation.x.x;
-			meshProcessCacheTranslationMatrixXYs[sequenceIndex] = transform.translation.x.y;
-			meshProcessCacheTranslationMatrixXZs[sequenceIndex] = transform.translation.x.z;
-			meshProcessCacheTranslationMatrixXWs[sequenceIndex] = transform.translation.x.w;
-			meshProcessCacheTranslationMatrixYXs[sequenceIndex] = transform.translation.y.x;
-			meshProcessCacheTranslationMatrixYYs[sequenceIndex] = transform.translation.y.y;
-			meshProcessCacheTranslationMatrixYZs[sequenceIndex] = transform.translation.y.z;
-			meshProcessCacheTranslationMatrixYWs[sequenceIndex] = transform.translation.y.w;
-			meshProcessCacheTranslationMatrixZXs[sequenceIndex] = transform.translation.z.x;
-			meshProcessCacheTranslationMatrixZYs[sequenceIndex] = transform.translation.z.y;
-			meshProcessCacheTranslationMatrixZZs[sequenceIndex] = transform.translation.z.z;
-			meshProcessCacheTranslationMatrixZWs[sequenceIndex] = transform.translation.z.w;
-			meshProcessCacheTranslationMatrixWXs[sequenceIndex] = transform.translation.w.x;
-			meshProcessCacheTranslationMatrixWYs[sequenceIndex] = transform.translation.w.y;
-			meshProcessCacheTranslationMatrixWZs[sequenceIndex] = transform.translation.w.z;
-			meshProcessCacheTranslationMatrixWWs[sequenceIndex] = transform.translation.w.w;
-			meshProcessCacheRotationMatrixXXs[sequenceIndex] = transform.rotation.x.x;
-			meshProcessCacheRotationMatrixXYs[sequenceIndex] = transform.rotation.x.y;
-			meshProcessCacheRotationMatrixXZs[sequenceIndex] = transform.rotation.x.z;
-			meshProcessCacheRotationMatrixXWs[sequenceIndex] = transform.rotation.x.w;
-			meshProcessCacheRotationMatrixYXs[sequenceIndex] = transform.rotation.y.x;
-			meshProcessCacheRotationMatrixYYs[sequenceIndex] = transform.rotation.y.y;
-			meshProcessCacheRotationMatrixYZs[sequenceIndex] = transform.rotation.y.z;
-			meshProcessCacheRotationMatrixYWs[sequenceIndex] = transform.rotation.y.w;
-			meshProcessCacheRotationMatrixZXs[sequenceIndex] = transform.rotation.z.x;
-			meshProcessCacheRotationMatrixZYs[sequenceIndex] = transform.rotation.z.y;
-			meshProcessCacheRotationMatrixZZs[sequenceIndex] = transform.rotation.z.z;
-			meshProcessCacheRotationMatrixZWs[sequenceIndex] = transform.rotation.z.w;
-			meshProcessCacheRotationMatrixWXs[sequenceIndex] = transform.rotation.w.x;
-			meshProcessCacheRotationMatrixWYs[sequenceIndex] = transform.rotation.w.y;
-			meshProcessCacheRotationMatrixWZs[sequenceIndex] = transform.rotation.w.z;
-			meshProcessCacheRotationMatrixWWs[sequenceIndex] = transform.rotation.w.w;
-			meshProcessCacheScaleMatrixXXs[sequenceIndex] = transform.scale.x.x;
-			meshProcessCacheScaleMatrixXYs[sequenceIndex] = transform.scale.x.y;
-			meshProcessCacheScaleMatrixXZs[sequenceIndex] = transform.scale.x.z;
-			meshProcessCacheScaleMatrixXWs[sequenceIndex] = transform.scale.x.w;
-			meshProcessCacheScaleMatrixYXs[sequenceIndex] = transform.scale.y.x;
-			meshProcessCacheScaleMatrixYYs[sequenceIndex] = transform.scale.y.y;
-			meshProcessCacheScaleMatrixYZs[sequenceIndex] = transform.scale.y.z;
-			meshProcessCacheScaleMatrixYWs[sequenceIndex] = transform.scale.y.w;
-			meshProcessCacheScaleMatrixZXs[sequenceIndex] = transform.scale.z.x;
-			meshProcessCacheScaleMatrixZYs[sequenceIndex] = transform.scale.z.y;
-			meshProcessCacheScaleMatrixZZs[sequenceIndex] = transform.scale.z.z;
-			meshProcessCacheScaleMatrixZWs[sequenceIndex] = transform.scale.z.w;
-			meshProcessCacheScaleMatrixWXs[sequenceIndex] = transform.scale.w.x;
-			meshProcessCacheScaleMatrixWYs[sequenceIndex] = transform.scale.w.y;
-			meshProcessCacheScaleMatrixWZs[sequenceIndex] = transform.scale.w.z;
-			meshProcessCacheScaleMatrixWWs[sequenceIndex] = transform.scale.w.w;
-			// Do model-view-projection matrix in the bulk processing loop.
+			PopulateMeshTransform(sequenceIndex, transform);			
 
 			meshProcessCachePreScaleTranslationXs[sequenceIndex] = 0.0;
 			meshProcessCachePreScaleTranslationYs[sequenceIndex] = 0.0;
