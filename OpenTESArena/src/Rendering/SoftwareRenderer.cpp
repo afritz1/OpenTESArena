@@ -945,12 +945,24 @@ namespace
 	// keeping the triangle count much higher than the average 2 per draw call.
 	struct VertexShadingCache
 	{
-		Double4 unshadedV0s[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
-		Double4 unshadedV1s[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
-		Double4 unshadedV2s[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
-		Double2 uv0s[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
-		Double2 uv1s[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
-		Double2 uv2s[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV0Xs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV0Ys[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV0Zs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV0Ws[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV1Xs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV1Ys[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV1Zs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV1Ws[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV2Xs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV2Ys[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV2Zs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double unshadedV2Ws[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double uv0Xs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double uv0Ys[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double uv1Xs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double uv1Ys[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double uv2Xs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
+		double uv2Ys[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
 		int meshProcessCacheIndices[MAX_VERTEX_SHADING_CACHE_TRIANGLES]; // Each triangle's mesh process cache it belongs to.
 		int triangleCount;
 	};
@@ -1000,12 +1012,24 @@ namespace
 				const int32_t uv0Index = index0 * texCoordComponentsPerVertex;
 				const int32_t uv1Index = index1 * texCoordComponentsPerVertex;
 				const int32_t uv2Index = index2 * texCoordComponentsPerVertex;
-				g_vertexShadingCache.unshadedV0s[writeIndex] = Double4(*(verticesPtr + v0Index), *(verticesPtr + v0Index + 1), *(verticesPtr + v0Index + 2), 1.0);
-				g_vertexShadingCache.unshadedV1s[writeIndex] = Double4(*(verticesPtr + v1Index), *(verticesPtr + v1Index + 1), *(verticesPtr + v1Index + 2), 1.0);
-				g_vertexShadingCache.unshadedV2s[writeIndex] = Double4(*(verticesPtr + v2Index), *(verticesPtr + v2Index + 1), *(verticesPtr + v2Index + 2), 1.0);
-				g_vertexShadingCache.uv0s[writeIndex] = Double2(*(texCoordsPtr + uv0Index), *(texCoordsPtr + uv0Index + 1));
-				g_vertexShadingCache.uv1s[writeIndex] = Double2(*(texCoordsPtr + uv1Index), *(texCoordsPtr + uv1Index + 1));
-				g_vertexShadingCache.uv2s[writeIndex] = Double2(*(texCoordsPtr + uv2Index), *(texCoordsPtr + uv2Index + 1));
+				g_vertexShadingCache.unshadedV0Xs[writeIndex] = verticesPtr[v0Index];
+				g_vertexShadingCache.unshadedV0Ys[writeIndex] = verticesPtr[v0Index + 1];
+				g_vertexShadingCache.unshadedV0Zs[writeIndex] = verticesPtr[v0Index + 2];
+				g_vertexShadingCache.unshadedV0Ws[writeIndex] = 1.0;
+				g_vertexShadingCache.unshadedV1Xs[writeIndex] = verticesPtr[v1Index];
+				g_vertexShadingCache.unshadedV1Ys[writeIndex] = verticesPtr[v1Index + 1];
+				g_vertexShadingCache.unshadedV1Zs[writeIndex] = verticesPtr[v1Index + 2];
+				g_vertexShadingCache.unshadedV1Ws[writeIndex] = 1.0;
+				g_vertexShadingCache.unshadedV2Xs[writeIndex] = verticesPtr[v2Index];
+				g_vertexShadingCache.unshadedV2Ys[writeIndex] = verticesPtr[v2Index + 1];
+				g_vertexShadingCache.unshadedV2Zs[writeIndex] = verticesPtr[v2Index + 2];
+				g_vertexShadingCache.unshadedV2Ws[writeIndex] = 1.0;
+				g_vertexShadingCache.uv0Xs[writeIndex] = texCoordsPtr[uv0Index];
+				g_vertexShadingCache.uv0Ys[writeIndex] = texCoordsPtr[uv0Index + 1];
+				g_vertexShadingCache.uv1Xs[writeIndex] = texCoordsPtr[uv1Index];
+				g_vertexShadingCache.uv1Ys[writeIndex] = texCoordsPtr[uv1Index + 1];
+				g_vertexShadingCache.uv2Xs[writeIndex] = texCoordsPtr[uv2Index];
+				g_vertexShadingCache.uv2Ys[writeIndex] = texCoordsPtr[uv2Index + 1];
 				g_vertexShadingCache.meshProcessCacheIndices[writeIndex] = meshIndex;
 				writeIndex++;
 			}
@@ -1168,23 +1192,20 @@ namespace
 		for (int triangleIndex = 0; triangleIndex < g_vertexShadingCache.triangleCount; triangleIndex++)
 		{
 			const int meshIndex = g_vertexShadingCache.meshProcessCacheIndices[triangleIndex];
-			const Double4 unshadedV0 = g_vertexShadingCache.unshadedV0s[triangleIndex];
-			const Double4 unshadedV1 = g_vertexShadingCache.unshadedV1s[triangleIndex];
-			const Double4 unshadedV2 = g_vertexShadingCache.unshadedV2s[triangleIndex];
 
-			// @todo: use plain doubles arrays for all unshaded components etc. instead of this conversion step
-			double unshadedV0Xs[1] = { unshadedV0.x };
-			double unshadedV0Ys[1] = { unshadedV0.y };
-			double unshadedV0Zs[1] = { unshadedV0.z };
-			double unshadedV0Ws[1] = { unshadedV0.w };
-			double unshadedV1Xs[1] = { unshadedV1.x };
-			double unshadedV1Ys[1] = { unshadedV1.y };
-			double unshadedV1Zs[1] = { unshadedV1.z };
-			double unshadedV1Ws[1] = { unshadedV1.w };
-			double unshadedV2Xs[1] = { unshadedV2.x };
-			double unshadedV2Ys[1] = { unshadedV2.y };
-			double unshadedV2Zs[1] = { unshadedV2.z };
-			double unshadedV2Ws[1] = { unshadedV2.w };
+			// @todo: make the triangleIndex step by 4 for this loop and 1 for the edge case loop
+			double unshadedV0Xs[1] = { g_vertexShadingCache.unshadedV0Xs[triangleIndex] };
+			double unshadedV0Ys[1] = { g_vertexShadingCache.unshadedV0Ys[triangleIndex] };
+			double unshadedV0Zs[1] = { g_vertexShadingCache.unshadedV0Zs[triangleIndex] };
+			double unshadedV0Ws[1] = { g_vertexShadingCache.unshadedV0Ws[triangleIndex] };
+			double unshadedV1Xs[1] = { g_vertexShadingCache.unshadedV1Xs[triangleIndex] };
+			double unshadedV1Ys[1] = { g_vertexShadingCache.unshadedV1Ys[triangleIndex] };
+			double unshadedV1Zs[1] = { g_vertexShadingCache.unshadedV1Zs[triangleIndex] };
+			double unshadedV1Ws[1] = { g_vertexShadingCache.unshadedV1Ws[triangleIndex] };
+			double unshadedV2Xs[1] = { g_vertexShadingCache.unshadedV2Xs[triangleIndex] };
+			double unshadedV2Ys[1] = { g_vertexShadingCache.unshadedV2Ys[triangleIndex] };
+			double unshadedV2Zs[1] = { g_vertexShadingCache.unshadedV2Zs[triangleIndex] };
+			double unshadedV2Ws[1] = { g_vertexShadingCache.unshadedV2Ws[triangleIndex] };
 
 			constexpr int stepCount = 1; // @todo: TYPICAL_STEP_COUNT
 			double shadedV0Xs[stepCount] = { 0.0 };
@@ -1239,9 +1260,12 @@ namespace
 			shadedV2s[writeIndex].y = shadedV2Ys[0];
 			shadedV2s[writeIndex].z = shadedV2Zs[0];
 			shadedV2s[writeIndex].w = shadedV2Ws[0];
-			uv0s[writeIndex] = g_vertexShadingCache.uv0s[triangleIndex];
-			uv1s[writeIndex] = g_vertexShadingCache.uv1s[triangleIndex];
-			uv2s[writeIndex] = g_vertexShadingCache.uv2s[triangleIndex];
+			uv0s[writeIndex].x = g_vertexShadingCache.uv0Xs[triangleIndex];
+			uv0s[writeIndex].y = g_vertexShadingCache.uv0Ys[triangleIndex];
+			uv1s[writeIndex].x = g_vertexShadingCache.uv1Xs[triangleIndex];
+			uv1s[writeIndex].y = g_vertexShadingCache.uv1Ys[triangleIndex];
+			uv2s[writeIndex].x = g_vertexShadingCache.uv2Xs[triangleIndex];
+			uv2s[writeIndex].y = g_vertexShadingCache.uv2Ys[triangleIndex];
 			writeIndex++;
 		}
 
@@ -2489,7 +2513,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 
 			const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
 			const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-			PopulateMeshTransform(sequenceIndex, transform);			
+			PopulateMeshTransform(sequenceIndex, transform);
 
 			meshProcessCachePreScaleTranslationXs[sequenceIndex] = 0.0;
 			meshProcessCachePreScaleTranslationYs[sequenceIndex] = 0.0;
