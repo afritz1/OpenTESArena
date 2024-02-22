@@ -2088,18 +2088,6 @@ namespace
 				continue;
 			}
 
-			const Double4 clipRecip0(1.0 / clip0X, 1.0 / clip0Y, 1.0 / clip0Z, clip0WRecip);
-			const Double4 clipRecip1(1.0 / clip1X, 1.0 / clip1Y, 1.0 / clip1Z, clip1WRecip);
-			const Double4 clipRecip2(1.0 / clip2X, 1.0 / clip2Y, 1.0 / clip2Z, clip2WRecip);
-			const double clip0XDivW = ndc0X; // @todo: get rid of these redundant variables
-			const double clip0YDivW = ndc0Y;
-			const double clip0ZDivW = ndc0Z;
-			const double clip1XDivW = ndc1X;
-			const double clip1YDivW = ndc1Y;
-			const double clip1ZDivW = ndc1Z;
-			const double clip2XDivW = ndc2X;
-			const double clip2YDivW = ndc2Y;
-			const double clip2ZDivW = ndc2Z;
 			double screenSpace01PerpX, screenSpace01PerpY;
 			double screenSpace12PerpX, screenSpace12PerpY;
 			double screenSpace20PerpX, screenSpace20PerpY;
@@ -2123,12 +2111,12 @@ namespace
 			const double uv1Y = clipSpaceMeshUV1Ys[triangleIndex];
 			const double uv2X = clipSpaceMeshUV2Xs[triangleIndex];
 			const double uv2Y = clipSpaceMeshUV2Ys[triangleIndex];
-			const double uv0XDivW = uv0X * clipRecip0.w;
-			const double uv0YDivW = uv0Y * clipRecip0.w;
-			const double uv1XDivW = uv1X * clipRecip1.w;
-			const double uv1YDivW = uv1Y * clipRecip1.w;
-			const double uv2XDivW = uv2X * clipRecip2.w;
-			const double uv2YDivW = uv2Y * clipRecip2.w;
+			const double uv0XDivW = uv0X * clip0WRecip;
+			const double uv0YDivW = uv0Y * clip0WRecip;
+			const double uv1XDivW = uv1X * clip1WRecip;
+			const double uv1YDivW = uv1Y * clip1WRecip;
+			const double uv2XDivW = uv2X * clip2WRecip;
+			const double uv2YDivW = uv2Y * clip2WRecip;
 
 			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID0);
 
@@ -2186,10 +2174,10 @@ namespace
 						if (!enableDepthRead || (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex]))
 						{
 							const Double4 shaderClipSpacePoint(
-								(clip0XDivW * u) + (clip1XDivW * v) + (clip2XDivW * w),
-								(clip0YDivW * u) + (clip1YDivW * v) + (clip2YDivW * w),
-								(clip0ZDivW * u) + (clip1ZDivW * v) + (clip2ZDivW * w),
-								(clipRecip0.w * u) + (clipRecip1.w * v) + (clipRecip2.w * w));
+								(ndc0X * u) + (ndc1X * v) + (ndc2X * w),
+								(ndc0Y * u) + (ndc1Y * v) + (ndc2Y * w),
+								(ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w),
+								(clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w));
 							const double shaderClipSpaceWRecip = 1.0 / shaderClipSpacePoint.w;
 
 							shaderPerspective.texelPercent.x = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpaceWRecip;
