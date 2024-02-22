@@ -980,58 +980,37 @@ namespace
 			const double *texCoordsPtr = g_meshProcessCaches.texCoordBuffers[meshIndex]->attributes.begin();
 			const SoftwareRenderer::IndexBuffer &indexBuffer = *g_meshProcessCaches.indexBuffers[meshIndex];
 			const int32_t *indicesPtr = indexBuffer.indices.begin();
-			const int triangleCount = indexBuffer.triangleCount;
-			DebugAssert(triangleCount <= MAX_DRAW_CALL_MESH_TRIANGLES);
+			const int meshTriangleCount = indexBuffer.triangleCount;
+			DebugAssert(meshTriangleCount <= MAX_DRAW_CALL_MESH_TRIANGLES);
 
 			int writeIndex = g_vertexShadingCache.triangleCount;
-			for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+			DebugAssert((writeIndex + meshTriangleCount) <= MAX_VERTEX_SHADING_CACHE_TRIANGLES);
+			for (int triangleIndex = 0; triangleIndex < meshTriangleCount; triangleIndex++)
 			{
-				const int indexBufferBase = triangleIndex * 3;
+				constexpr int indicesPerTriangle = 3;
+				constexpr int positionComponentsPerVertex = 3;
+				constexpr int texCoordComponentsPerVertex = 2;
+				const int indexBufferBase = triangleIndex * indicesPerTriangle;
 				const int32_t index0 = indicesPtr[indexBufferBase];
 				const int32_t index1 = indicesPtr[indexBufferBase + 1];
 				const int32_t index2 = indicesPtr[indexBufferBase + 2];
-
-				const int32_t v0Index = index0 * 3;
-				const int32_t v1Index = index1 * 3;
-				const int32_t v2Index = index2 * 3;
-				const Double3 unshadedV0(
-					*(verticesPtr + v0Index),
-					*(verticesPtr + v0Index + 1),
-					*(verticesPtr + v0Index + 2));
-				const Double3 unshadedV1(
-					*(verticesPtr + v1Index),
-					*(verticesPtr + v1Index + 1),
-					*(verticesPtr + v1Index + 2));
-				const Double3 unshadedV2(
-					*(verticesPtr + v2Index),
-					*(verticesPtr + v2Index + 1),
-					*(verticesPtr + v2Index + 2));
-
-				const int32_t uv0Index = index0 * 2;
-				const int32_t uv1Index = index1 * 2;
-				const int32_t uv2Index = index2 * 2;
-				const Double2 uv0(
-					*(texCoordsPtr + uv0Index),
-					*(texCoordsPtr + uv0Index + 1));
-				const Double2 uv1(
-					*(texCoordsPtr + uv1Index),
-					*(texCoordsPtr + uv1Index + 1));
-				const Double2 uv2(
-					*(texCoordsPtr + uv2Index),
-					*(texCoordsPtr + uv2Index + 1));
-
-				DebugAssert(writeIndex < MAX_VERTEX_SHADING_CACHE_TRIANGLES);
-				g_vertexShadingCache.unshadedV0s[writeIndex] = Double4(unshadedV0, 1.0);
-				g_vertexShadingCache.unshadedV1s[writeIndex] = Double4(unshadedV1, 1.0);
-				g_vertexShadingCache.unshadedV2s[writeIndex] = Double4(unshadedV2, 1.0);
-				g_vertexShadingCache.uv0s[writeIndex] = uv0;
-				g_vertexShadingCache.uv1s[writeIndex] = uv1;
-				g_vertexShadingCache.uv2s[writeIndex] = uv2;
+				const int32_t v0Index = index0 * positionComponentsPerVertex;
+				const int32_t v1Index = index1 * positionComponentsPerVertex;
+				const int32_t v2Index = index2 * positionComponentsPerVertex;
+				const int32_t uv0Index = index0 * texCoordComponentsPerVertex;
+				const int32_t uv1Index = index1 * texCoordComponentsPerVertex;
+				const int32_t uv2Index = index2 * texCoordComponentsPerVertex;
+				g_vertexShadingCache.unshadedV0s[writeIndex] = Double4(*(verticesPtr + v0Index), *(verticesPtr + v0Index + 1), *(verticesPtr + v0Index + 2), 1.0);
+				g_vertexShadingCache.unshadedV1s[writeIndex] = Double4(*(verticesPtr + v1Index), *(verticesPtr + v1Index + 1), *(verticesPtr + v1Index + 2), 1.0);
+				g_vertexShadingCache.unshadedV2s[writeIndex] = Double4(*(verticesPtr + v2Index), *(verticesPtr + v2Index + 1), *(verticesPtr + v2Index + 2), 1.0);
+				g_vertexShadingCache.uv0s[writeIndex] = Double2(*(texCoordsPtr + uv0Index), *(texCoordsPtr + uv0Index + 1));
+				g_vertexShadingCache.uv1s[writeIndex] = Double2(*(texCoordsPtr + uv1Index), *(texCoordsPtr + uv1Index + 1));
+				g_vertexShadingCache.uv2s[writeIndex] = Double2(*(texCoordsPtr + uv2Index), *(texCoordsPtr + uv2Index + 1));
 				g_vertexShadingCache.meshProcessCacheIndices[writeIndex] = meshIndex;
 				writeIndex++;
 			}
 
-			g_vertexShadingCache.triangleCount += triangleCount;
+			g_vertexShadingCache.triangleCount += meshTriangleCount;
 		}
 	}
 
