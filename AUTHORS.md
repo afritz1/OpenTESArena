@@ -8,6 +8,7 @@ I started this project in 2016. Over time, several individuals have contributed 
     Alucowie
     Chris Robinson (kcat)
     enderdrag64
+    Gabriel Carvalho (i-am-the-gabe)
     gazorpo
     Malcolm Mallardi (mdmallardi)
     MinganMuon
