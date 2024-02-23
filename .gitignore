@@ -58,9 +58,13 @@ CMakeCache.txt
 CMakeFiles/
 Makefile
 cmake_install.cmake
+CMakeUserPresets.json
+cmake-build-*/
 
 # Files Intellij CLion
 .idea/
 
 # VS Code Workspace Settings folder
 .vscode/
+
+_build/
