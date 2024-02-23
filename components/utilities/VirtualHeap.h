@@ -1,6 +1,7 @@
 #ifndef VIRTUAL_HEAP_H
 #define VIRTUAL_HEAP_H
 
+#include <cstdint>
 #include <deque>
 #include <type_traits>
 #include <unordered_map>
