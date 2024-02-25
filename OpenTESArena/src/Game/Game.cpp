@@ -693,7 +693,7 @@ void Game::renderDebugInfo()
 				"Present: " + presentTime + "ms" + '\n' +
 				"Textures: " + std::to_string(profilerData.objectTextureCount) + " (" + objectTextureMbCount + "MB)" + '\n' +
 				"Draw calls: " + renderDrawCallCount + '\n' +
-				"Triangles: " + std::to_string(profilerData.visTriangleCount) + " / " + std::to_string(profilerData.sceneTriangleCount) + '\n' +
+				"Rendered Tris: " + std::to_string(profilerData.presentedTriangleCount) + '\n' +
 				"Lights: " + std::to_string(profilerData.totalLightCount) + '\n' +
 				"Depth tests: " + renderDepthTestRatio + "x" + '\n' +
 				"Overdraw: " + renderColorOverdrawRatio + "x");

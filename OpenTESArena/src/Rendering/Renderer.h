@@ -60,7 +60,7 @@ public:
 		int drawCallCount;
 
 		// Geometry.
-		int sceneTriangleCount, visTriangleCount;
+		int presentedTriangleCount; // After clipping, only screen-space triangles with onscreen area.
 
 		// Textures.
 		int objectTextureCount;
@@ -78,9 +78,8 @@ public:
 
 		ProfilerData();
 
-		void init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount, int visTriangleCount,
-			int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites,
-			double renderTime, double presentTime);
+		void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
+			int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites, double renderTime, double presentTime);
 	};
 
 	using ResolutionScaleFunc = std::function<double()>;

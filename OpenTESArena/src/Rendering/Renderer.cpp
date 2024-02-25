@@ -181,8 +181,7 @@ Renderer::ProfilerData::ProfilerData()
 	this->pixelCount = -1;
 	this->threadCount = -1;
 	this->drawCallCount = -1;
-	this->sceneTriangleCount = -1;
-	this->visTriangleCount = -1;
+	this->presentedTriangleCount = -1;
 	this->objectTextureCount = -1;
 	this->objectTextureByteCount = -1;
 	this->totalLightCount = -1;
@@ -192,17 +191,16 @@ Renderer::ProfilerData::ProfilerData()
 	this->presentTime = 0.0;
 }
 
-void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
-	int visTriangleCount, int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests,
-	int totalColorWrites, double renderTime, double presentTime)
+void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
+	int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites,
+	double renderTime, double presentTime)
 {
 	this->width = width;
 	this->height = height;
 	this->pixelCount = width * height;
 	this->threadCount = threadCount;
 	this->drawCallCount = drawCallCount;
-	this->sceneTriangleCount = sceneTriangleCount;
-	this->visTriangleCount = visTriangleCount;
+	this->presentedTriangleCount = presentedTriangleCount;
 	this->objectTextureCount = objectTextureCount;
 	this->objectTextureByteCount = objectTextureByteCount;
 	this->totalLightCount = totalLightCount;
@@ -1059,9 +1057,9 @@ void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDr
 	// Update profiler stats.
 	const RendererSystem3D::ProfilerData swProfilerData = this->renderer3D->getProfilerData();
 	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
-		swProfilerData.drawCallCount, swProfilerData.sceneTriangleCount, swProfilerData.visTriangleCount,
-		swProfilerData.textureCount, swProfilerData.textureByteCount, swProfilerData.totalLightCount,
-		swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
+		swProfilerData.drawCallCount, swProfilerData.presentedTriangleCount, swProfilerData.textureCount,
+		swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalDepthTests,
+		swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)
