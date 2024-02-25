@@ -24,7 +24,7 @@
 
 namespace
 {
-	constexpr int TYPICAL_STEP_COUNT = 4; // Elements processed per unrolled loop, possibly also for SIMD lanes.
+	constexpr int TYPICAL_LOOP_UNROLL = 4; // Elements processed per unrolled loop, possibly also for SIMD lanes.
 
 	// Optimized math functions.
 	double Double_Lerp(double start, double end, double percent)
@@ -266,22 +266,22 @@ namespace
 	Matrix4d g_projMatrix;
 
 	Matrix4d g_viewProjMatrix;
-	double g_viewProjMatrixXX[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixXY[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixXZ[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixXW[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixYX[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixYY[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixYZ[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixYW[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixZX[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixZY[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixZZ[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixZW[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixWX[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixWY[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixWZ[TYPICAL_STEP_COUNT];
-	double g_viewProjMatrixWW[TYPICAL_STEP_COUNT];
+	double g_viewProjMatrixXX[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixXY[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixXZ[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixXW[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixYX[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixYY[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixYZ[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixYW[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixZX[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixZY[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixZZ[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixZW[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixWX[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixWY[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixWZ[TYPICAL_LOOP_UNROLL];
+	double g_viewProjMatrixWW[TYPICAL_LOOP_UNROLL];
 
 	Matrix4d g_invViewMatrix;
 	Matrix4d g_invProjMatrix;
@@ -292,7 +292,7 @@ namespace
 		g_projMatrix = camera.projectionMatrix;
 
 		g_viewProjMatrix = camera.projectionMatrix * camera.viewMatrix;
-		for (int i = 0; i < TYPICAL_STEP_COUNT; i++)
+		for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 		{
 			g_viewProjMatrixXX[i] = g_viewProjMatrix.x.x;
 			g_viewProjMatrixXY[i] = g_viewProjMatrix.x.y;
@@ -1110,7 +1110,7 @@ namespace
 
 	void CalculateVertexShaderTransforms(int meshCount)
 	{
-		constexpr int stepCount = TYPICAL_STEP_COUNT;
+		constexpr int stepCount = TYPICAL_LOOP_UNROLL;
 		static_assert(stepCount <= MAX_MESH_PROCESS_CACHES);
 
 		double rotationScaleMatrixXXs[MAX_MESH_PROCESS_CACHES];
@@ -1277,7 +1277,7 @@ namespace
 			double unshadedV2Zs[1] = { g_vertexShadingCache.unshadedV2Zs[triangleIndex] };
 			double unshadedV2Ws[1] = { g_vertexShadingCache.unshadedV2Ws[triangleIndex] };
 
-			constexpr int stepCount = 1; // @todo: TYPICAL_STEP_COUNT
+			constexpr int stepCount = 1; // @todo: TYPICAL_LOOP_UNROLL
 			double shadedV0Xs[stepCount] = { 0.0 };
 			double shadedV0Ys[stepCount] = { 0.0 };
 			double shadedV0Zs[stepCount] = { 0.0 };
