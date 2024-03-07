@@ -579,19 +579,19 @@ namespace
 		const double preScaleTranslationWs[stepCount] = { 0.0 };
 
 		// Translate down so floor vertices go underground and ceiling is at y=0.
-		double vertexWithPreScaleTranslationXs[stepCount];
-		double vertexWithPreScaleTranslationYs[stepCount];
-		double vertexWithPreScaleTranslationZs[stepCount];
-		double vertexWithPreScaleTranslationWs[stepCount];
+		double vertexWithPreScaleTranslationXs[stepCount] = { 0.0 };
+		double vertexWithPreScaleTranslationYs[stepCount] = { 0.0 };
+		double vertexWithPreScaleTranslationZs[stepCount] = { 0.0 };
+		double vertexWithPreScaleTranslationWs[stepCount] = { 0.0 };
 		Double4_AddN<stepCount>(vertexXs, vertexYs, vertexZs, vertexWs,
 			g_meshProcessCaches.preScaleTranslationXs + meshIndex, g_meshProcessCaches.preScaleTranslationYs + meshIndex, g_meshProcessCaches.preScaleTranslationZs + meshIndex, preScaleTranslationWs,
 			vertexWithPreScaleTranslationXs, vertexWithPreScaleTranslationYs, vertexWithPreScaleTranslationZs, vertexWithPreScaleTranslationWs);
 
 		// Shrink towards y=0 depending on anim percent and door min visible amount.
-		double scaledVertexXs[stepCount];
-		double scaledVertexYs[stepCount];
-		double scaledVertexZs[stepCount];
-		double scaledVertexWs[stepCount];
+		double scaledVertexXs[stepCount] = { 0.0 };
+		double scaledVertexYs[stepCount] = { 0.0 };
+		double scaledVertexZs[stepCount] = { 0.0 };
+		double scaledVertexWs[stepCount] = { 0.0 };
 		Matrix4_MultiplyVectorN<stepCount>(
 			g_meshProcessCaches.scaleMatrixXXs + meshIndex, g_meshProcessCaches.scaleMatrixXYs + meshIndex, g_meshProcessCaches.scaleMatrixXZs + meshIndex, g_meshProcessCaches.scaleMatrixXWs + meshIndex,
 			g_meshProcessCaches.scaleMatrixYXs + meshIndex, g_meshProcessCaches.scaleMatrixYYs + meshIndex, g_meshProcessCaches.scaleMatrixYZs + meshIndex, g_meshProcessCaches.scaleMatrixYWs + meshIndex,
@@ -601,19 +601,19 @@ namespace
 			scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs);
 
 		// Translate up to new model space Y position.
-		double resultVertexXs[stepCount];
-		double resultVertexYs[stepCount];
-		double resultVertexZs[stepCount];
-		double resultVertexWs[stepCount];
+		double resultVertexXs[stepCount] = { 0.0 };
+		double resultVertexYs[stepCount] = { 0.0 };
+		double resultVertexZs[stepCount] = { 0.0 };
+		double resultVertexWs[stepCount] = { 0.0 };
 		Double4_SubtractN<stepCount>(scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs,
 			g_meshProcessCaches.preScaleTranslationXs + meshIndex, g_meshProcessCaches.preScaleTranslationYs + meshIndex, g_meshProcessCaches.preScaleTranslationZs + meshIndex, preScaleTranslationWs,
 			resultVertexXs, resultVertexYs, resultVertexZs, resultVertexWs);
 
 		// Apply rotation matrix.
-		double rotatedResultVertexXs[stepCount];
-		double rotatedResultVertexYs[stepCount];
-		double rotatedResultVertexZs[stepCount];
-		double rotatedResultVertexWs[stepCount];
+		double rotatedResultVertexXs[stepCount] = { 0.0 };
+		double rotatedResultVertexYs[stepCount] = { 0.0 };
+		double rotatedResultVertexZs[stepCount] = { 0.0 };
+		double rotatedResultVertexWs[stepCount] = { 0.0 };
 		Matrix4_MultiplyVectorN<stepCount>(
 			g_meshProcessCaches.rotationMatrixXXs + meshIndex, g_meshProcessCaches.rotationMatrixXYs + meshIndex, g_meshProcessCaches.rotationMatrixXZs + meshIndex, g_meshProcessCaches.rotationMatrixXWs + meshIndex,
 			g_meshProcessCaches.rotationMatrixYXs + meshIndex, g_meshProcessCaches.rotationMatrixYYs + meshIndex, g_meshProcessCaches.rotationMatrixYZs + meshIndex, g_meshProcessCaches.rotationMatrixYWs + meshIndex,
@@ -623,10 +623,10 @@ namespace
 			rotatedResultVertexXs, rotatedResultVertexYs, rotatedResultVertexZs, rotatedResultVertexWs);
 
 		// Apply translation matrix.
-		double translatedResultVertexXs[stepCount];
-		double translatedResultVertexYs[stepCount];
-		double translatedResultVertexZs[stepCount];
-		double translatedResultVertexWs[stepCount];
+		double translatedResultVertexXs[stepCount] = { 0.0 };
+		double translatedResultVertexYs[stepCount] = { 0.0 };
+		double translatedResultVertexZs[stepCount] = { 0.0 };
+		double translatedResultVertexWs[stepCount] = { 0.0 };
 		Matrix4_MultiplyVectorN<stepCount>(
 			g_meshProcessCaches.translationMatrixXXs + meshIndex, g_meshProcessCaches.translationMatrixXYs + meshIndex, g_meshProcessCaches.translationMatrixXZs + meshIndex, g_meshProcessCaches.translationMatrixXWs + meshIndex,
 			g_meshProcessCaches.translationMatrixYXs + meshIndex, g_meshProcessCaches.translationMatrixYYs + meshIndex, g_meshProcessCaches.translationMatrixYZs + meshIndex, g_meshProcessCaches.translationMatrixYWs + meshIndex,
