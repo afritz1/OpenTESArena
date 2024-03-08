@@ -284,14 +284,49 @@ namespace
 	double g_viewProjMatrixWW[TYPICAL_LOOP_UNROLL];
 
 	Matrix4d g_invViewMatrix;
+	double g_invViewMatrixXX[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixXY[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixXZ[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixXW[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixYX[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixYY[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixYZ[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixYW[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixZX[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixZY[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixZZ[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixZW[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixWX[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixWY[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixWZ[TYPICAL_LOOP_UNROLL];
+	double g_invViewMatrixWW[TYPICAL_LOOP_UNROLL];
+
 	Matrix4d g_invProjMatrix;
+	double g_invProjMatrixXX[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixXY[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixXZ[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixXW[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixYX[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixYY[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixYZ[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixYW[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixZX[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixZY[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixZZ[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixZW[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixWX[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixWY[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixWZ[TYPICAL_LOOP_UNROLL];
+	double g_invProjMatrixWW[TYPICAL_LOOP_UNROLL];
 
 	void PopulateCameraGlobals(const RenderCamera &camera)
 	{
 		g_viewMatrix = camera.viewMatrix;
 		g_projMatrix = camera.projectionMatrix;
-
 		g_viewProjMatrix = camera.projectionMatrix * camera.viewMatrix;
+		g_invViewMatrix = camera.inverseViewMatrix;
+		g_invProjMatrix = camera.inverseProjectionMatrix;
+
 		for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 		{
 			g_viewProjMatrixXX[i] = g_viewProjMatrix.x.x;
@@ -310,10 +345,41 @@ namespace
 			g_viewProjMatrixWY[i] = g_viewProjMatrix.w.y;
 			g_viewProjMatrixWZ[i] = g_viewProjMatrix.w.z;
 			g_viewProjMatrixWW[i] = g_viewProjMatrix.w.w;
-		}
 
-		g_invViewMatrix = camera.inverseViewMatrix;
-		g_invProjMatrix = camera.inverseProjectionMatrix;
+			g_invViewMatrixXX[i] = g_invViewMatrix.x.x;
+			g_invViewMatrixXY[i] = g_invViewMatrix.x.y;
+			g_invViewMatrixXZ[i] = g_invViewMatrix.x.z;
+			g_invViewMatrixXW[i] = g_invViewMatrix.x.w;
+			g_invViewMatrixYX[i] = g_invViewMatrix.y.x;
+			g_invViewMatrixYY[i] = g_invViewMatrix.y.y;
+			g_invViewMatrixYZ[i] = g_invViewMatrix.y.z;
+			g_invViewMatrixYW[i] = g_invViewMatrix.y.w;
+			g_invViewMatrixZX[i] = g_invViewMatrix.z.x;
+			g_invViewMatrixZY[i] = g_invViewMatrix.z.y;
+			g_invViewMatrixZZ[i] = g_invViewMatrix.z.z;
+			g_invViewMatrixZW[i] = g_invViewMatrix.z.w;
+			g_invViewMatrixWX[i] = g_invViewMatrix.w.x;
+			g_invViewMatrixWY[i] = g_invViewMatrix.w.y;
+			g_invViewMatrixWZ[i] = g_invViewMatrix.w.z;
+			g_invViewMatrixWW[i] = g_invViewMatrix.w.w;
+
+			g_invProjMatrixXX[i] = g_invProjMatrix.x.x;
+			g_invProjMatrixXY[i] = g_invProjMatrix.x.y;
+			g_invProjMatrixXZ[i] = g_invProjMatrix.x.z;
+			g_invProjMatrixXW[i] = g_invProjMatrix.x.w;
+			g_invProjMatrixYX[i] = g_invProjMatrix.y.x;
+			g_invProjMatrixYY[i] = g_invProjMatrix.y.y;
+			g_invProjMatrixYZ[i] = g_invProjMatrix.y.z;
+			g_invProjMatrixYW[i] = g_invProjMatrix.y.w;
+			g_invProjMatrixZX[i] = g_invProjMatrix.z.x;
+			g_invProjMatrixZY[i] = g_invProjMatrix.z.y;
+			g_invProjMatrixZZ[i] = g_invProjMatrix.z.z;
+			g_invProjMatrixZW[i] = g_invProjMatrix.z.w;
+			g_invProjMatrixWX[i] = g_invProjMatrix.w.x;
+			g_invProjMatrixWY[i] = g_invProjMatrix.w.y;
+			g_invProjMatrixWZ[i] = g_invProjMatrix.w.z;
+			g_invProjMatrixWW[i] = g_invProjMatrix.w.w;
+		}
 	}
 
 	// Internal mesh processing globals.
@@ -543,7 +609,10 @@ namespace
 
 	struct PixelShaderHorizonMirror
 	{
-		Double2 horizonScreenSpacePoint; // Based on camera forward direction as XZ vector.
+		// Based on camera forward direction as XZ vector.
+		double horizonScreenSpacePointX;
+		double horizonScreenSpacePointY;
+
 		int reflectedPixelIndex;
 		bool isReflectedPixelInFrameBuffer;
 		uint8_t fallbackSkyColor;
@@ -1997,7 +2066,9 @@ namespace
 		PixelShaderHorizonMirror shaderHorizonMirror;
 		if (requiresHorizonMirror)
 		{
-			shaderHorizonMirror.horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(camera.horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
+			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(camera.horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
+			shaderHorizonMirror.horizonScreenSpacePointX = horizonScreenSpacePoint.x;
+			shaderHorizonMirror.horizonScreenSpacePointY = horizonScreenSpacePoint.y;
 
 			DebugAssert(skyBgTexture.texelCount > 0);
 			shaderHorizonMirror.fallbackSkyColor = skyBgTexture.texels8Bit[0];
@@ -2159,24 +2230,44 @@ namespace
 
 						if (!enableDepthRead || (shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex]))
 						{
-							const Double4 shaderClipSpacePoint(
-								(ndc0X * u) + (ndc1X * v) + (ndc2X * w),
-								(ndc0Y * u) + (ndc1Y * v) + (ndc2Y * w),
-								(ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w),
-								(clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w));
-							const double shaderClipSpaceWRecip = 1.0 / shaderClipSpacePoint.w;
+							const double shaderClipSpacePointX = (ndc0X * u) + (ndc1X * v) + (ndc2X * w);
+							const double shaderClipSpacePointY = (ndc0Y * u) + (ndc1Y * v) + (ndc2Y * w);
+							const double shaderClipSpacePointZ = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
+							const double shaderClipSpacePointW = (clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w);
+							const double shaderClipSpacePointWRecip = 1.0 / shaderClipSpacePointW;
+							const double shaderHomogeneousSpacePointX = shaderClipSpacePointX * shaderClipSpacePointWRecip;
+							const double shaderHomogeneousSpacePointY = shaderClipSpacePointY * shaderClipSpacePointWRecip;
+							const double shaderHomogeneousSpacePointZ = shaderClipSpacePointZ * shaderClipSpacePointWRecip;
+							const double shaderHomogeneousSpacePointW = shaderClipSpacePointWRecip;
 
-							shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpaceWRecip;
-							shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpaceWRecip;
+							// Apply homogeneous-to-camera space transform.
+							double shaderCameraSpacePointX = 0.0;
+							double shaderCameraSpacePointY = 0.0;
+							double shaderCameraSpacePointZ = 0.0;
+							double shaderCameraSpacePointW = 0.0;
+							Matrix4_MultiplyVectorN<1>(
+								g_invProjMatrixXX, g_invProjMatrixXY, g_invProjMatrixXZ, g_invProjMatrixXW,
+								g_invProjMatrixYX, g_invProjMatrixYY, g_invProjMatrixYZ, g_invProjMatrixYW,
+								g_invProjMatrixZX, g_invProjMatrixZY, g_invProjMatrixZZ, g_invProjMatrixZW,
+								g_invProjMatrixWX, g_invProjMatrixWY, g_invProjMatrixWZ, g_invProjMatrixWW,
+								&shaderHomogeneousSpacePointX, &shaderHomogeneousSpacePointY, &shaderHomogeneousSpacePointZ, &shaderHomogeneousSpacePointW,
+								&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW);
 
-							const Double4 shaderHomogeneousSpacePoint(
-								shaderClipSpacePoint.x * shaderClipSpaceWRecip,
-								shaderClipSpacePoint.y * shaderClipSpaceWRecip,
-								shaderClipSpacePoint.z * shaderClipSpaceWRecip,
-								shaderClipSpaceWRecip);
-							const Double4 shaderCameraSpacePoint = g_invProjMatrix * shaderHomogeneousSpacePoint;
-							const Double4 shaderWorldSpacePoint = g_invViewMatrix * shaderCameraSpacePoint;
-							const Double3 shaderWorldSpacePointXYZ(shaderWorldSpacePoint.x, shaderWorldSpacePoint.y, shaderWorldSpacePoint.z);
+							// Apply camera-to-world transform.
+							double shaderWorldSpacePointX = 0.0;
+							double shaderWorldSpacePointY = 0.0;
+							double shaderWorldSpacePointZ = 0.0;
+							double shaderWorldSpacePointW = 0.0;
+							Matrix4_MultiplyVectorN<1>(
+								g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ, g_invViewMatrixXW,
+								g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ, g_invViewMatrixYW,
+								g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ, g_invViewMatrixZW,
+								g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ, g_invViewMatrixWW,
+								&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW,
+								&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ, &shaderWorldSpacePointW);
+
+							shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
+							shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
 
 							double lightIntensitySum = 0.0;
 							if (requiresPerPixelLightIntensity)
@@ -2185,8 +2276,11 @@ namespace
 								for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
 								{
 									const SoftwareRenderer::Light &light = *lights[lightIndex];
-									const Double3 lightPointDiff = light.worldPoint - shaderWorldSpacePointXYZ;
-									const double lightDistance = lightPointDiff.length();
+									const double lightPointDiffX = light.worldPointX - shaderWorldSpacePointX;
+									const double lightPointDiffY = light.worldPointY - shaderWorldSpacePointY;
+									const double lightPointDiffZ = light.worldPointZ - shaderWorldSpacePointZ;
+									const double lightDistanceSqr = (lightPointDiffX * lightPointDiffX) + (lightPointDiffY * lightPointDiffY) + (lightPointDiffZ * lightPointDiffZ);
+									const double lightDistance = std::sqrt(lightDistanceSqr);
 									double lightIntensity;
 									if (lightDistance <= light.startRadius)
 									{
@@ -2259,12 +2353,11 @@ namespace
 							if (requiresHorizonMirror)
 							{
 								// @todo: support camera roll
-								const Double2 reflectedScreenSpacePoint(
-									pixelCenterX,
-									shaderHorizonMirror.horizonScreenSpacePoint.y + (shaderHorizonMirror.horizonScreenSpacePoint.y - pixelCenterY));
+								const double reflectedScreenSpacePointX = pixelCenterX;
+								const double reflectedScreenSpacePointY = shaderHorizonMirror.horizonScreenSpacePointY + (shaderHorizonMirror.horizonScreenSpacePointY - pixelCenterY);
 
-								const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePoint.x);
-								const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePoint.y);
+								const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePointX);
+								const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePointY);
 								shaderHorizonMirror.isReflectedPixelInFrameBuffer =
 									(reflectedPixelX >= 0) && (reflectedPixelX < frameBufferWidth) &&
 									(reflectedPixelY >= 0) && (reflectedPixelY < frameBufferHeight);
@@ -2396,7 +2489,9 @@ SoftwareRenderer::Light::Light()
 
 void SoftwareRenderer::Light::init(const Double3 &worldPoint, double startRadius, double endRadius)
 {
-	this->worldPoint = worldPoint;
+	this->worldPointX = worldPoint.x;
+	this->worldPointY = worldPoint.y;
+	this->worldPointZ = worldPoint.z;
 	this->startRadius = startRadius;
 	this->endRadius = endRadius;
 	this->startEndRadiusDiff = endRadius - startRadius;
@@ -2708,7 +2803,9 @@ bool SoftwareRenderer::tryCreateLight(RenderLightID *outID)
 void SoftwareRenderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
 {
 	Light &light = this->lights.get(id);
-	light.worldPoint = worldPoint;
+	light.worldPointX = worldPoint.x;
+	light.worldPointY = worldPoint.y;
+	light.worldPointZ = worldPoint.z;
 }
 
 void SoftwareRenderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)

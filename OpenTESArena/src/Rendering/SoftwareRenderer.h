@@ -172,7 +172,9 @@ public:
 
 	struct Light
 	{
-		Double3 worldPoint;
+		double worldPointX;
+		double worldPointY;
+		double worldPointZ;
 		double startRadius, endRadius;
 		double startEndRadiusDiff, startEndRadiusDiffRecip;
 
