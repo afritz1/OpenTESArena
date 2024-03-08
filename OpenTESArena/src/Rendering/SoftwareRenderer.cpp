@@ -48,13 +48,26 @@ namespace
 		*outY = -x;
 	}
 
-	void Double4_Zero4(double *outXs, double *outYs, double *outZs, double *outWs)
+	template<int N>
+	void Double4_ZeroN(double *outXs, double *outYs, double *outZs, double *outWs)
 	{
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < N; i++)
 		{
 			outXs[i] = 0.0;
+		}
+		
+		for (int i = 0; i < N; i++)
+		{
 			outYs[i] = 0.0;
+		}
+		
+		for (int i = 0; i < N; i++)
+		{
 			outZs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outWs[i] = 0.0;
 		}
 	}
@@ -62,16 +75,22 @@ namespace
 	void Double4_Load4(const Double4 &v0, const Double4 &v1, const Double4 &v2, const Double4 &v3,
 		double *outXs, double *outYs, double *outZs, double *outWs)
 	{
-		const Double4 *vs[] = { &v0, &v1, &v2, &v3 };
-
-		for (int i = 0; i < 4; i++)
-		{
-			const Double4 &v = *vs[i];
-			outXs[i] = v.x;
-			outYs[i] = v.y;
-			outZs[i] = v.z;
-			outWs[i] = v.w;
-		}
+		outXs[0] = v0.x;
+		outYs[0] = v0.y;
+		outZs[0] = v0.z;
+		outWs[0] = v0.w;
+		outXs[1] = v1.x;
+		outYs[1] = v1.y;
+		outZs[1] = v1.z;
+		outWs[1] = v1.w;
+		outXs[2] = v2.x;
+		outYs[2] = v2.y;
+		outZs[2] = v2.z;
+		outWs[2] = v2.w;
+		outXs[3] = v3.x;
+		outYs[3] = v3.y;
+		outZs[3] = v3.z;
+		outWs[3] = v3.w;
 	}
 
 	template<int N>
@@ -81,19 +100,44 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			outXs[i] = x0s[i] + x1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outYs[i] = y0s[i] + y1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outZs[i] = z0s[i] + z1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outWs[i] = w0s[i] + w1s[i];
 		}
 	}
 
-	void Double4_Negate4(const double *xs, const double *ys, const double *zs, const double *ws, double *outXs, double *outYs, double *outZs, double *outWs)
+	template<int N>
+	void Double4_NegateN(const double *xs, const double *ys, const double *zs, const double *ws, double *outXs, double *outYs, double *outZs, double *outWs)
 	{
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < N; i++)
 		{
 			outXs[i] = -xs[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outYs[i] = -ys[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outZs[i] = -zs[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outWs[i] = -ws[i];
 		}
 	}
@@ -105,58 +149,157 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			outXs[i] = x0s[i] - x1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outYs[i] = y0s[i] - y1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outZs[i] = z0s[i] - z1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outWs[i] = w0s[i] - w1s[i];
 		}
 	}
 
-	void Double4_Multiply4(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
+	template<int N>
+	void Double4_MultiplyN(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
 		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
 	{
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < N; i++)
 		{
 			outXs[i] = x0s[i] * x1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outYs[i] = y0s[i] * y1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outZs[i] = z0s[i] * z1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outWs[i] = w0s[i] * w1s[i];
 		}
 	}
 
-	void Double4_Divide4(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
+	template<int N>
+	void Double4_DivideN(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
 		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
 	{
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < N; i++)
 		{
 			outXs[i] = x0s[i] / x1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outYs[i] = y0s[i] / y1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outZs[i] = z0s[i] / z1s[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outWs[i] = w0s[i] / w1s[i];
 		}
 	}
 
-	void Matrix4_Zero4(double *outMxxs, double *outMxys, double *outMxzs, double *outMxws,
+	template<int N>
+	void Matrix4_ZeroN(double *outMxxs, double *outMxys, double *outMxzs, double *outMxws,
 		double *outMyxs, double *outMyys, double *outMyzs, double *outMyws,
 		double *outMzxs, double *outMzys, double *outMzzs, double *outMzws,
 		double *outMwxs, double *outMwys, double *outMwzs, double *outMwws)
 	{
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < N; i++)
 		{
 			outMxxs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMxys[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMxzs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMxws[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMyxs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMyys[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMyzs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMyws[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMzxs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMzys[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMzzs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMzws[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMwxs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMwys[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMwzs[i] = 0.0;
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMwws[i] = 0.0;
 		}
 	}
@@ -167,28 +310,70 @@ namespace
 		double *outMzxs, double *outMzys, double *outMzzs, double *outMzws,
 		double *outMwxs, double *outMwys, double *outMwzs, double *outMwws)
 	{
-		const Matrix4d *ms[] = { &m0, &m1, &m2, &m3 };
-
-		for (int i = 0; i < 4; i++)
-		{
-			const Matrix4d &m = *ms[i];
-			outMxxs[i] = m.x.x;
-			outMxys[i] = m.x.y;
-			outMxzs[i] = m.x.z;
-			outMxws[i] = m.x.w;
-			outMyxs[i] = m.y.x;
-			outMyys[i] = m.y.y;
-			outMyzs[i] = m.y.z;
-			outMyws[i] = m.y.w;
-			outMzxs[i] = m.z.x;
-			outMzys[i] = m.z.y;
-			outMzzs[i] = m.z.z;
-			outMzws[i] = m.z.w;
-			outMwxs[i] = m.w.x;
-			outMwys[i] = m.w.y;
-			outMwzs[i] = m.w.z;
-			outMwws[i] = m.w.w;
-		}
+		outMxxs[0] = m0.x.x;
+		outMxys[0] = m0.x.y;
+		outMxzs[0] = m0.x.z;
+		outMxws[0] = m0.x.w;
+		outMyxs[0] = m0.y.x;
+		outMyys[0] = m0.y.y;
+		outMyzs[0] = m0.y.z;
+		outMyws[0] = m0.y.w;
+		outMzxs[0] = m0.z.x;
+		outMzys[0] = m0.z.y;
+		outMzzs[0] = m0.z.z;
+		outMzws[0] = m0.z.w;
+		outMwxs[0] = m0.w.x;
+		outMwys[0] = m0.w.y;
+		outMwzs[0] = m0.w.z;
+		outMwws[0] = m0.w.w;
+		outMxxs[1] = m1.x.x;
+		outMxys[1] = m1.x.y;
+		outMxzs[1] = m1.x.z;
+		outMxws[1] = m1.x.w;
+		outMyxs[1] = m1.y.x;
+		outMyys[1] = m1.y.y;
+		outMyzs[1] = m1.y.z;
+		outMyws[1] = m1.y.w;
+		outMzxs[1] = m1.z.x;
+		outMzys[1] = m1.z.y;
+		outMzzs[1] = m1.z.z;
+		outMzws[1] = m1.z.w;
+		outMwxs[1] = m1.w.x;
+		outMwys[1] = m1.w.y;
+		outMwzs[1] = m1.w.z;
+		outMwws[1] = m1.w.w;
+		outMxxs[2] = m2.x.x;
+		outMxys[2] = m2.x.y;
+		outMxzs[2] = m2.x.z;
+		outMxws[2] = m2.x.w;
+		outMyxs[2] = m2.y.x;
+		outMyys[2] = m2.y.y;
+		outMyzs[2] = m2.y.z;
+		outMyws[2] = m2.y.w;
+		outMzxs[2] = m2.z.x;
+		outMzys[2] = m2.z.y;
+		outMzzs[2] = m2.z.z;
+		outMzws[2] = m2.z.w;
+		outMwxs[2] = m2.w.x;
+		outMwys[2] = m2.w.y;
+		outMwzs[2] = m2.w.z;
+		outMwws[2] = m2.w.w;
+		outMxxs[3] = m3.x.x;
+		outMxys[3] = m3.x.y;
+		outMxzs[3] = m3.x.z;
+		outMxws[3] = m3.x.w;
+		outMyxs[3] = m3.y.x;
+		outMyys[3] = m3.y.y;
+		outMyzs[3] = m3.y.z;
+		outMyws[3] = m3.y.w;
+		outMzxs[3] = m3.z.x;
+		outMzys[3] = m3.z.y;
+		outMzzs[3] = m3.z.z;
+		outMzws[3] = m3.z.w;
+		outMwxs[3] = m3.w.x;
+		outMwys[3] = m3.w.y;
+		outMwzs[3] = m3.w.z;
+		outMwws[3] = m3.w.w;
 	}
 
 	template<int N>
@@ -202,8 +387,20 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			outXs[i] += (mxxs[i] * xs[i]) + (myxs[i] * ys[i]) + (mzxs[i] * zs[i]) + (mwxs[i] * ws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outYs[i] += (mxys[i] * xs[i]) + (myys[i] * ys[i]) + (mzys[i] * zs[i]) + (mwys[i] * ws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outZs[i] += (mxzs[i] * xs[i]) + (myzs[i] * ys[i]) + (mzzs[i] * zs[i]) + (mwzs[i] * ws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outWs[i] += (mxws[i] * xs[i]) + (myws[i] * ys[i]) + (mzws[i] * zs[i]) + (mwws[i] * ws[i]);
 		}
 	}
@@ -225,20 +422,80 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			outMxxs[i] = (m0xxs[i] * m1xxs[i]) + (m0yxs[i] * m1xys[i]) + (m0zxs[i] * m1xzs[i]) + (m0wxs[i] * m1xws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMxys[i] = (m0xys[i] * m1xxs[i]) + (m0yys[i] * m1xys[i]) + (m0zys[i] * m1xzs[i]) + (m0wys[i] * m1xws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMxzs[i] = (m0xzs[i] * m1xxs[i]) + (m0yzs[i] * m1xys[i]) + (m0zzs[i] * m1xzs[i]) + (m0wzs[i] * m1xws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMxws[i] = (m0xws[i] * m1xxs[i]) + (m0yws[i] * m1xys[i]) + (m0zws[i] * m1xzs[i]) + (m0wws[i] * m1xws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMyxs[i] = (m0xxs[i] * m1yxs[i]) + (m0yxs[i] * m1yys[i]) + (m0zxs[i] * m1yzs[i]) + (m0wxs[i] * m1yws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMyys[i] = (m0xys[i] * m1yxs[i]) + (m0yys[i] * m1yys[i]) + (m0zys[i] * m1yzs[i]) + (m0wys[i] * m1yws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMyzs[i] = (m0xzs[i] * m1yxs[i]) + (m0yzs[i] * m1yys[i]) + (m0zzs[i] * m1yzs[i]) + (m0wzs[i] * m1yws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMyws[i] = (m0xws[i] * m1yxs[i]) + (m0yws[i] * m1yys[i]) + (m0zws[i] * m1yzs[i]) + (m0wws[i] * m1yws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMzxs[i] = (m0xxs[i] * m1zxs[i]) + (m0yxs[i] * m1zys[i]) + (m0zxs[i] * m1zzs[i]) + (m0wxs[i] * m1zws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMzys[i] = (m0xys[i] * m1zxs[i]) + (m0yys[i] * m1zys[i]) + (m0zys[i] * m1zzs[i]) + (m0wys[i] * m1zws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMzzs[i] = (m0xzs[i] * m1zxs[i]) + (m0yzs[i] * m1zys[i]) + (m0zzs[i] * m1zzs[i]) + (m0wzs[i] * m1zws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMzws[i] = (m0xws[i] * m1zxs[i]) + (m0yws[i] * m1zys[i]) + (m0zws[i] * m1zzs[i]) + (m0wws[i] * m1zws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMwxs[i] = (m0xxs[i] * m1wxs[i]) + (m0yxs[i] * m1wys[i]) + (m0zxs[i] * m1wzs[i]) + (m0wxs[i] * m1wws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMwys[i] = (m0xys[i] * m1wxs[i]) + (m0yys[i] * m1wys[i]) + (m0zys[i] * m1wzs[i]) + (m0wys[i] * m1wws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMwzs[i] = (m0xzs[i] * m1wxs[i]) + (m0yzs[i] * m1wys[i]) + (m0zzs[i] * m1wzs[i]) + (m0wzs[i] * m1wws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
 			outMwws[i] = (m0xws[i] * m1wxs[i]) + (m0yws[i] * m1wys[i]) + (m0zws[i] * m1wzs[i]) + (m0wws[i] * m1wws[i]);
 		}
 	}
