@@ -41,6 +41,12 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->horizonDir = Double3(this->forward.x, 0.0, this->forward.z).normalized();
 	this->horizonNormal = globalUp;
 
+	// @todo: this doesn't support roll. will need something like a vector projection later.
+	this->horizonWorldPoint = this->worldPoint + this->horizonDir;
+	this->horizonCameraPoint = RendererUtils::worldSpaceToCameraSpace(Double4(this->horizonWorldPoint, 1.0), this->viewMatrix);
+	this->horizonClipPoint = RendererUtils::cameraSpaceToClipSpace(this->horizonCameraPoint, this->projectionMatrix);
+	this->horizonNdcPoint = RendererUtils::clipSpaceToNDC(this->horizonClipPoint);
+
 	this->fovY = fovY;
 	this->fovX = MathUtils::verticalFovToHorizontalFov(fovY, aspectRatio);
 }

@@ -1997,13 +1997,7 @@ namespace
 		PixelShaderHorizonMirror shaderHorizonMirror;
 		if (requiresHorizonMirror)
 		{
-			// @todo: this doesn't support roll. will need something like a vector projection later.
-			const Double3 horizonWorldPoint = camera.worldPoint + camera.horizonDir;
-			const Double4 horizonCameraPoint = RendererUtils::worldSpaceToCameraSpace(Double4(horizonWorldPoint, 1.0), g_viewMatrix);
-			const Double4 horizonClipPoint = RendererUtils::cameraSpaceToClipSpace(horizonCameraPoint, g_projMatrix);
-			const Double3 horizonNdcPoint = RendererUtils::clipSpaceToNDC(horizonClipPoint);
-			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
-			shaderHorizonMirror.horizonScreenSpacePoint = horizonScreenSpacePoint;
+			shaderHorizonMirror.horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(camera.horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
 
 			DebugAssert(skyBgTexture.texelCount > 0);
 			shaderHorizonMirror.fallbackSkyColor = skyBgTexture.texels8Bit[0];
