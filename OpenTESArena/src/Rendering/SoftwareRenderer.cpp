@@ -253,7 +253,7 @@ namespace
 		return (0.50 - (ndcY * 0.50)) * frameHeight;
 	}
 
-	bool IsScreenSpacePointInTriangle(double pointX, double pointY, double planePointX, double planePointY, double planeNormalX, double planeNormalY)
+	bool IsScreenSpacePointInHalfSpace(double pointX, double pointY, double planePointX, double planePointY, double planeNormalX, double planeNormalY)
 	{
 		const double pointXDiff = pointX - planePointX;
 		const double pointYDiff = pointY - planePointY;
@@ -2132,9 +2132,9 @@ namespace
 					const double pixelCenterY = shaderFrameBuffer.yPercent * frameBufferHeightReal;
 
 					// See if pixel center is inside triangle.
-					const bool inHalfSpace0 = IsScreenSpacePointInTriangle(pixelCenterX, pixelCenterY, screenSpace0X, screenSpace0Y, screenSpace01PerpX, screenSpace01PerpY);
-					const bool inHalfSpace1 = IsScreenSpacePointInTriangle(pixelCenterX, pixelCenterY, screenSpace1X, screenSpace1Y, screenSpace12PerpX, screenSpace12PerpY);
-					const bool inHalfSpace2 = IsScreenSpacePointInTriangle(pixelCenterX, pixelCenterY, screenSpace2X, screenSpace2Y, screenSpace20PerpX, screenSpace20PerpY);
+					const bool inHalfSpace0 = IsScreenSpacePointInHalfSpace(pixelCenterX, pixelCenterY, screenSpace0X, screenSpace0Y, screenSpace01PerpX, screenSpace01PerpY);
+					const bool inHalfSpace1 = IsScreenSpacePointInHalfSpace(pixelCenterX, pixelCenterY, screenSpace1X, screenSpace1Y, screenSpace12PerpX, screenSpace12PerpY);
+					const bool inHalfSpace2 = IsScreenSpacePointInHalfSpace(pixelCenterX, pixelCenterY, screenSpace2X, screenSpace2Y, screenSpace20PerpX, screenSpace20PerpY);
 					if (inHalfSpace0 && inHalfSpace1 && inHalfSpace2)
 					{
 						const double ss0X = screenSpace01X;
