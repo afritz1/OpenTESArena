@@ -26,6 +26,11 @@ namespace
 {
 	constexpr int TYPICAL_LOOP_UNROLL = 4; // Elements processed per unrolled loop, possibly also for SIMD lanes.
 
+	int GetUnrollAdjustedLoopCount(int loopCount, int unrollCount)
+	{
+		return loopCount - (unrollCount - 1);
+	}
+
 	// Optimized math functions.
 	double Double_Lerp(double start, double end, double percent)
 	{
@@ -885,85 +890,230 @@ namespace
 		bool enableDepthWrite;
 	};
 
-	template<int loopUnrollCount>
-	void VertexShader_Basic(int meshIndex, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
+	template<int N>
+	void VertexShader_BasicN(const int *meshIndices, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
 		double *outVertexXs, double *outVertexYs, double *outVertexZs, double *outVertexWs)
 	{
+		// Read in each mesh's transforms.
+		double modelViewProjMatrixXXs[N];
+		double modelViewProjMatrixXYs[N];
+		double modelViewProjMatrixXZs[N];
+		double modelViewProjMatrixXWs[N];
+		double modelViewProjMatrixYXs[N];
+		double modelViewProjMatrixYYs[N];
+		double modelViewProjMatrixYZs[N];
+		double modelViewProjMatrixYWs[N];
+		double modelViewProjMatrixZXs[N];
+		double modelViewProjMatrixZYs[N];
+		double modelViewProjMatrixZZs[N];
+		double modelViewProjMatrixZWs[N];
+		double modelViewProjMatrixWXs[N];
+		double modelViewProjMatrixWYs[N];
+		double modelViewProjMatrixWZs[N];
+		double modelViewProjMatrixWWs[N];
+		for (int i = 0; i < N; i++)
+		{
+			const int meshIndex = meshIndices[i];
+			modelViewProjMatrixXXs[i] = g_meshProcessCaches.modelViewProjMatrixXXs[meshIndex];
+			modelViewProjMatrixXYs[i] = g_meshProcessCaches.modelViewProjMatrixXYs[meshIndex];
+			modelViewProjMatrixXZs[i] = g_meshProcessCaches.modelViewProjMatrixXZs[meshIndex];
+			modelViewProjMatrixXWs[i] = g_meshProcessCaches.modelViewProjMatrixXWs[meshIndex];
+			modelViewProjMatrixYXs[i] = g_meshProcessCaches.modelViewProjMatrixYXs[meshIndex];
+			modelViewProjMatrixYYs[i] = g_meshProcessCaches.modelViewProjMatrixYYs[meshIndex];
+			modelViewProjMatrixYZs[i] = g_meshProcessCaches.modelViewProjMatrixYZs[meshIndex];
+			modelViewProjMatrixYWs[i] = g_meshProcessCaches.modelViewProjMatrixYWs[meshIndex];
+			modelViewProjMatrixZXs[i] = g_meshProcessCaches.modelViewProjMatrixZXs[meshIndex];
+			modelViewProjMatrixZYs[i] = g_meshProcessCaches.modelViewProjMatrixZYs[meshIndex];
+			modelViewProjMatrixZZs[i] = g_meshProcessCaches.modelViewProjMatrixZZs[meshIndex];
+			modelViewProjMatrixZWs[i] = g_meshProcessCaches.modelViewProjMatrixZWs[meshIndex];
+			modelViewProjMatrixWXs[i] = g_meshProcessCaches.modelViewProjMatrixWXs[meshIndex];
+			modelViewProjMatrixWYs[i] = g_meshProcessCaches.modelViewProjMatrixWYs[meshIndex];
+			modelViewProjMatrixWZs[i] = g_meshProcessCaches.modelViewProjMatrixWZs[meshIndex];
+			modelViewProjMatrixWWs[i] = g_meshProcessCaches.modelViewProjMatrixWWs[meshIndex];
+		}
+
 		// Apply model-view-projection matrix.
-		Matrix4_MultiplyVectorN<loopUnrollCount>(
-			g_meshProcessCaches.modelViewProjMatrixXXs + meshIndex, g_meshProcessCaches.modelViewProjMatrixXYs + meshIndex, g_meshProcessCaches.modelViewProjMatrixXZs + meshIndex, g_meshProcessCaches.modelViewProjMatrixXWs + meshIndex,
-			g_meshProcessCaches.modelViewProjMatrixYXs + meshIndex, g_meshProcessCaches.modelViewProjMatrixYYs + meshIndex, g_meshProcessCaches.modelViewProjMatrixYZs + meshIndex, g_meshProcessCaches.modelViewProjMatrixYWs + meshIndex,
-			g_meshProcessCaches.modelViewProjMatrixZXs + meshIndex, g_meshProcessCaches.modelViewProjMatrixZYs + meshIndex, g_meshProcessCaches.modelViewProjMatrixZZs + meshIndex, g_meshProcessCaches.modelViewProjMatrixZWs + meshIndex,
-			g_meshProcessCaches.modelViewProjMatrixWXs + meshIndex, g_meshProcessCaches.modelViewProjMatrixWYs + meshIndex, g_meshProcessCaches.modelViewProjMatrixWZs + meshIndex, g_meshProcessCaches.modelViewProjMatrixWWs + meshIndex,
+		Matrix4_MultiplyVectorN<N>(
+			modelViewProjMatrixXXs, modelViewProjMatrixXYs, modelViewProjMatrixXZs, modelViewProjMatrixXWs,
+			modelViewProjMatrixYXs, modelViewProjMatrixYYs, modelViewProjMatrixYZs, modelViewProjMatrixYWs,
+			modelViewProjMatrixZXs, modelViewProjMatrixZYs, modelViewProjMatrixZZs, modelViewProjMatrixZWs,
+			modelViewProjMatrixWXs, modelViewProjMatrixWYs, modelViewProjMatrixWZs, modelViewProjMatrixWWs,
 			vertexXs, vertexYs, vertexZs, vertexWs,
 			outVertexXs, outVertexYs, outVertexZs, outVertexWs);
 	}
 
-	template<int loopUnrollCount>
-	void VertexShader_RaisingDoor(int meshIndex, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
+	template<int N>
+	void VertexShader_RaisingDoorN(const int *meshIndices, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
 		double *outVertexXs, double *outVertexYs, double *outVertexZs, double *outVertexWs)
 	{
-		const double preScaleTranslationWs[loopUnrollCount] = { 0.0 };
+		// Read in each mesh's transforms.
+		double preScaleTranslationXs[N];
+		double preScaleTranslationYs[N];
+		double preScaleTranslationZs[N];
+		double translationMatrixXXs[N];
+		double translationMatrixXYs[N];
+		double translationMatrixXZs[N];
+		double translationMatrixXWs[N];
+		double translationMatrixYXs[N];
+		double translationMatrixYYs[N];
+		double translationMatrixYZs[N];
+		double translationMatrixYWs[N];
+		double translationMatrixZXs[N];
+		double translationMatrixZYs[N];
+		double translationMatrixZZs[N];
+		double translationMatrixZWs[N];
+		double translationMatrixWXs[N];
+		double translationMatrixWYs[N];
+		double translationMatrixWZs[N];
+		double translationMatrixWWs[N];
+		double rotationMatrixXXs[N];
+		double rotationMatrixXYs[N];
+		double rotationMatrixXZs[N];
+		double rotationMatrixXWs[N];
+		double rotationMatrixYXs[N];
+		double rotationMatrixYYs[N];
+		double rotationMatrixYZs[N];
+		double rotationMatrixYWs[N];
+		double rotationMatrixZXs[N];
+		double rotationMatrixZYs[N];
+		double rotationMatrixZZs[N];
+		double rotationMatrixZWs[N];
+		double rotationMatrixWXs[N];
+		double rotationMatrixWYs[N];
+		double rotationMatrixWZs[N];
+		double rotationMatrixWWs[N];
+		double scaleMatrixXXs[N];
+		double scaleMatrixXYs[N];
+		double scaleMatrixXZs[N];
+		double scaleMatrixXWs[N];
+		double scaleMatrixYXs[N];
+		double scaleMatrixYYs[N];
+		double scaleMatrixYZs[N];
+		double scaleMatrixYWs[N];
+		double scaleMatrixZXs[N];
+		double scaleMatrixZYs[N];
+		double scaleMatrixZZs[N];
+		double scaleMatrixZWs[N];
+		double scaleMatrixWXs[N];
+		double scaleMatrixWYs[N];
+		double scaleMatrixWZs[N];
+		double scaleMatrixWWs[N];
+		for (int i = 0; i < N; i++)
+		{
+			const int meshIndex = meshIndices[i];
+			preScaleTranslationXs[i] = g_meshProcessCaches.preScaleTranslationXs[meshIndex];
+			preScaleTranslationYs[i] = g_meshProcessCaches.preScaleTranslationYs[meshIndex];
+			preScaleTranslationZs[i] = g_meshProcessCaches.preScaleTranslationZs[meshIndex];
+			translationMatrixXXs[i] = g_meshProcessCaches.translationMatrixXXs[meshIndex];
+			translationMatrixXYs[i] = g_meshProcessCaches.translationMatrixXYs[meshIndex];
+			translationMatrixXZs[i] = g_meshProcessCaches.translationMatrixXZs[meshIndex];
+			translationMatrixXWs[i] = g_meshProcessCaches.translationMatrixXWs[meshIndex];
+			translationMatrixYXs[i] = g_meshProcessCaches.translationMatrixYXs[meshIndex];
+			translationMatrixYYs[i] = g_meshProcessCaches.translationMatrixYYs[meshIndex];
+			translationMatrixYZs[i] = g_meshProcessCaches.translationMatrixYZs[meshIndex];
+			translationMatrixYWs[i] = g_meshProcessCaches.translationMatrixYWs[meshIndex];
+			translationMatrixZXs[i] = g_meshProcessCaches.translationMatrixZXs[meshIndex];
+			translationMatrixZYs[i] = g_meshProcessCaches.translationMatrixZYs[meshIndex];
+			translationMatrixZZs[i] = g_meshProcessCaches.translationMatrixZZs[meshIndex];
+			translationMatrixZWs[i] = g_meshProcessCaches.translationMatrixZWs[meshIndex];
+			translationMatrixWXs[i] = g_meshProcessCaches.translationMatrixWXs[meshIndex];
+			translationMatrixWYs[i] = g_meshProcessCaches.translationMatrixWYs[meshIndex];
+			translationMatrixWZs[i] = g_meshProcessCaches.translationMatrixWZs[meshIndex];
+			translationMatrixWWs[i] = g_meshProcessCaches.translationMatrixWWs[meshIndex];
+			rotationMatrixXXs[i] = g_meshProcessCaches.rotationMatrixXXs[meshIndex];
+			rotationMatrixXYs[i] = g_meshProcessCaches.rotationMatrixXYs[meshIndex];
+			rotationMatrixXZs[i] = g_meshProcessCaches.rotationMatrixXZs[meshIndex];
+			rotationMatrixXWs[i] = g_meshProcessCaches.rotationMatrixXWs[meshIndex];
+			rotationMatrixYXs[i] = g_meshProcessCaches.rotationMatrixYXs[meshIndex];
+			rotationMatrixYYs[i] = g_meshProcessCaches.rotationMatrixYYs[meshIndex];
+			rotationMatrixYZs[i] = g_meshProcessCaches.rotationMatrixYZs[meshIndex];
+			rotationMatrixYWs[i] = g_meshProcessCaches.rotationMatrixYWs[meshIndex];
+			rotationMatrixZXs[i] = g_meshProcessCaches.rotationMatrixZXs[meshIndex];
+			rotationMatrixZYs[i] = g_meshProcessCaches.rotationMatrixZYs[meshIndex];
+			rotationMatrixZZs[i] = g_meshProcessCaches.rotationMatrixZZs[meshIndex];
+			rotationMatrixZWs[i] = g_meshProcessCaches.rotationMatrixZWs[meshIndex];
+			rotationMatrixWXs[i] = g_meshProcessCaches.rotationMatrixWXs[meshIndex];
+			rotationMatrixWYs[i] = g_meshProcessCaches.rotationMatrixWYs[meshIndex];
+			rotationMatrixWZs[i] = g_meshProcessCaches.rotationMatrixWZs[meshIndex];
+			rotationMatrixWWs[i] = g_meshProcessCaches.rotationMatrixWWs[meshIndex];
+			scaleMatrixXXs[i] = g_meshProcessCaches.scaleMatrixXXs[meshIndex];
+			scaleMatrixXYs[i] = g_meshProcessCaches.scaleMatrixXYs[meshIndex];
+			scaleMatrixXZs[i] = g_meshProcessCaches.scaleMatrixXZs[meshIndex];
+			scaleMatrixXWs[i] = g_meshProcessCaches.scaleMatrixXWs[meshIndex];
+			scaleMatrixYXs[i] = g_meshProcessCaches.scaleMatrixYXs[meshIndex];
+			scaleMatrixYYs[i] = g_meshProcessCaches.scaleMatrixYYs[meshIndex];
+			scaleMatrixYZs[i] = g_meshProcessCaches.scaleMatrixYZs[meshIndex];
+			scaleMatrixYWs[i] = g_meshProcessCaches.scaleMatrixYWs[meshIndex];
+			scaleMatrixZXs[i] = g_meshProcessCaches.scaleMatrixZXs[meshIndex];
+			scaleMatrixZYs[i] = g_meshProcessCaches.scaleMatrixZYs[meshIndex];
+			scaleMatrixZZs[i] = g_meshProcessCaches.scaleMatrixZZs[meshIndex];
+			scaleMatrixZWs[i] = g_meshProcessCaches.scaleMatrixZWs[meshIndex];
+			scaleMatrixWXs[i] = g_meshProcessCaches.scaleMatrixWXs[meshIndex];
+			scaleMatrixWYs[i] = g_meshProcessCaches.scaleMatrixWYs[meshIndex];
+			scaleMatrixWZs[i] = g_meshProcessCaches.scaleMatrixWZs[meshIndex];
+			scaleMatrixWWs[i] = g_meshProcessCaches.scaleMatrixWWs[meshIndex];
+		}
 
 		// Translate down so floor vertices go underground and ceiling is at y=0.
-		double vertexWithPreScaleTranslationXs[loopUnrollCount] = { 0.0 };
-		double vertexWithPreScaleTranslationYs[loopUnrollCount] = { 0.0 };
-		double vertexWithPreScaleTranslationZs[loopUnrollCount] = { 0.0 };
-		double vertexWithPreScaleTranslationWs[loopUnrollCount] = { 0.0 };
-		Double4_AddN<loopUnrollCount>(vertexXs, vertexYs, vertexZs, vertexWs,
-			g_meshProcessCaches.preScaleTranslationXs + meshIndex, g_meshProcessCaches.preScaleTranslationYs + meshIndex, g_meshProcessCaches.preScaleTranslationZs + meshIndex, preScaleTranslationWs,
+		const double preScaleTranslationWs[N] = { 0.0 };
+		double vertexWithPreScaleTranslationXs[N];
+		double vertexWithPreScaleTranslationYs[N];
+		double vertexWithPreScaleTranslationZs[N];
+		double vertexWithPreScaleTranslationWs[N];
+		Double4_AddN<N>(vertexXs, vertexYs, vertexZs, vertexWs,
+			preScaleTranslationXs, preScaleTranslationYs, preScaleTranslationZs, preScaleTranslationWs,
 			vertexWithPreScaleTranslationXs, vertexWithPreScaleTranslationYs, vertexWithPreScaleTranslationZs, vertexWithPreScaleTranslationWs);
 
 		// Shrink towards y=0 depending on anim percent and door min visible amount.
-		double scaledVertexXs[loopUnrollCount] = { 0.0 };
-		double scaledVertexYs[loopUnrollCount] = { 0.0 };
-		double scaledVertexZs[loopUnrollCount] = { 0.0 };
-		double scaledVertexWs[loopUnrollCount] = { 0.0 };
-		Matrix4_MultiplyVectorN<loopUnrollCount>(
-			g_meshProcessCaches.scaleMatrixXXs + meshIndex, g_meshProcessCaches.scaleMatrixXYs + meshIndex, g_meshProcessCaches.scaleMatrixXZs + meshIndex, g_meshProcessCaches.scaleMatrixXWs + meshIndex,
-			g_meshProcessCaches.scaleMatrixYXs + meshIndex, g_meshProcessCaches.scaleMatrixYYs + meshIndex, g_meshProcessCaches.scaleMatrixYZs + meshIndex, g_meshProcessCaches.scaleMatrixYWs + meshIndex,
-			g_meshProcessCaches.scaleMatrixZXs + meshIndex, g_meshProcessCaches.scaleMatrixZYs + meshIndex, g_meshProcessCaches.scaleMatrixZZs + meshIndex, g_meshProcessCaches.scaleMatrixZWs + meshIndex,
-			g_meshProcessCaches.scaleMatrixWXs + meshIndex, g_meshProcessCaches.scaleMatrixWYs + meshIndex, g_meshProcessCaches.scaleMatrixWZs + meshIndex, g_meshProcessCaches.scaleMatrixWWs + meshIndex,
+		double scaledVertexXs[N] = { 0.0 };
+		double scaledVertexYs[N] = { 0.0 };
+		double scaledVertexZs[N] = { 0.0 };
+		double scaledVertexWs[N] = { 0.0 };
+		Matrix4_MultiplyVectorN<N>(
+			scaleMatrixXXs, scaleMatrixXYs, scaleMatrixXZs, scaleMatrixXWs,
+			scaleMatrixYXs, scaleMatrixYYs, scaleMatrixYZs, scaleMatrixYWs,
+			scaleMatrixZXs, scaleMatrixZYs, scaleMatrixZZs, scaleMatrixZWs,
+			scaleMatrixWXs, scaleMatrixWYs, scaleMatrixWZs, scaleMatrixWWs,
 			vertexWithPreScaleTranslationXs, vertexWithPreScaleTranslationYs, vertexWithPreScaleTranslationZs, vertexWithPreScaleTranslationWs,
 			scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs);
 
 		// Translate up to new model space Y position.
-		double resultVertexXs[loopUnrollCount] = { 0.0 };
-		double resultVertexYs[loopUnrollCount] = { 0.0 };
-		double resultVertexZs[loopUnrollCount] = { 0.0 };
-		double resultVertexWs[loopUnrollCount] = { 0.0 };
-		Double4_SubtractN<loopUnrollCount>(scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs,
-			g_meshProcessCaches.preScaleTranslationXs + meshIndex, g_meshProcessCaches.preScaleTranslationYs + meshIndex, g_meshProcessCaches.preScaleTranslationZs + meshIndex, preScaleTranslationWs,
+		double resultVertexXs[N];
+		double resultVertexYs[N];
+		double resultVertexZs[N];
+		double resultVertexWs[N];
+		Double4_SubtractN<N>(scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs,
+			preScaleTranslationXs, preScaleTranslationYs, preScaleTranslationZs, preScaleTranslationWs,
 			resultVertexXs, resultVertexYs, resultVertexZs, resultVertexWs);
 
 		// Apply rotation matrix.
-		double rotatedResultVertexXs[loopUnrollCount] = { 0.0 };
-		double rotatedResultVertexYs[loopUnrollCount] = { 0.0 };
-		double rotatedResultVertexZs[loopUnrollCount] = { 0.0 };
-		double rotatedResultVertexWs[loopUnrollCount] = { 0.0 };
-		Matrix4_MultiplyVectorN<loopUnrollCount>(
-			g_meshProcessCaches.rotationMatrixXXs + meshIndex, g_meshProcessCaches.rotationMatrixXYs + meshIndex, g_meshProcessCaches.rotationMatrixXZs + meshIndex, g_meshProcessCaches.rotationMatrixXWs + meshIndex,
-			g_meshProcessCaches.rotationMatrixYXs + meshIndex, g_meshProcessCaches.rotationMatrixYYs + meshIndex, g_meshProcessCaches.rotationMatrixYZs + meshIndex, g_meshProcessCaches.rotationMatrixYWs + meshIndex,
-			g_meshProcessCaches.rotationMatrixZXs + meshIndex, g_meshProcessCaches.rotationMatrixZYs + meshIndex, g_meshProcessCaches.rotationMatrixZZs + meshIndex, g_meshProcessCaches.rotationMatrixZWs + meshIndex,
-			g_meshProcessCaches.rotationMatrixWXs + meshIndex, g_meshProcessCaches.rotationMatrixWYs + meshIndex, g_meshProcessCaches.rotationMatrixWZs + meshIndex, g_meshProcessCaches.rotationMatrixWWs + meshIndex,
+		double rotatedResultVertexXs[N] = { 0.0 };
+		double rotatedResultVertexYs[N] = { 0.0 };
+		double rotatedResultVertexZs[N] = { 0.0 };
+		double rotatedResultVertexWs[N] = { 0.0 };
+		Matrix4_MultiplyVectorN<N>(
+			rotationMatrixXXs, rotationMatrixXYs, rotationMatrixXZs, rotationMatrixXWs,
+			rotationMatrixYXs, rotationMatrixYYs, rotationMatrixYZs, rotationMatrixYWs,
+			rotationMatrixZXs, rotationMatrixZYs, rotationMatrixZZs, rotationMatrixZWs,
+			rotationMatrixWXs, rotationMatrixWYs, rotationMatrixWZs, rotationMatrixWWs,
 			resultVertexXs, resultVertexYs, resultVertexZs, resultVertexWs,
 			rotatedResultVertexXs, rotatedResultVertexYs, rotatedResultVertexZs, rotatedResultVertexWs);
 
 		// Apply translation matrix.
-		double translatedResultVertexXs[loopUnrollCount] = { 0.0 };
-		double translatedResultVertexYs[loopUnrollCount] = { 0.0 };
-		double translatedResultVertexZs[loopUnrollCount] = { 0.0 };
-		double translatedResultVertexWs[loopUnrollCount] = { 0.0 };
-		Matrix4_MultiplyVectorN<loopUnrollCount>(
-			g_meshProcessCaches.translationMatrixXXs + meshIndex, g_meshProcessCaches.translationMatrixXYs + meshIndex, g_meshProcessCaches.translationMatrixXZs + meshIndex, g_meshProcessCaches.translationMatrixXWs + meshIndex,
-			g_meshProcessCaches.translationMatrixYXs + meshIndex, g_meshProcessCaches.translationMatrixYYs + meshIndex, g_meshProcessCaches.translationMatrixYZs + meshIndex, g_meshProcessCaches.translationMatrixYWs + meshIndex,
-			g_meshProcessCaches.translationMatrixZXs + meshIndex, g_meshProcessCaches.translationMatrixZYs + meshIndex, g_meshProcessCaches.translationMatrixZZs + meshIndex, g_meshProcessCaches.translationMatrixZWs + meshIndex,
-			g_meshProcessCaches.translationMatrixWXs + meshIndex, g_meshProcessCaches.translationMatrixWYs + meshIndex, g_meshProcessCaches.translationMatrixWZs + meshIndex, g_meshProcessCaches.translationMatrixWWs + meshIndex,
+		double translatedResultVertexXs[N] = { 0.0 };
+		double translatedResultVertexYs[N] = { 0.0 };
+		double translatedResultVertexZs[N] = { 0.0 };
+		double translatedResultVertexWs[N] = { 0.0 };
+		Matrix4_MultiplyVectorN<N>(
+			translationMatrixXXs, translationMatrixXYs, translationMatrixXZs, translationMatrixXWs,
+			translationMatrixYXs, translationMatrixYYs, translationMatrixYZs, translationMatrixYWs,
+			translationMatrixZXs, translationMatrixZYs, translationMatrixZZs, translationMatrixZWs,
+			translationMatrixWXs, translationMatrixWYs, translationMatrixWZs, translationMatrixWWs,
 			rotatedResultVertexXs, rotatedResultVertexYs, rotatedResultVertexZs, rotatedResultVertexWs,
 			translatedResultVertexXs, translatedResultVertexYs, translatedResultVertexZs, translatedResultVertexWs);
 
 		// Apply view-projection matrix.
-		Matrix4_MultiplyVectorN<loopUnrollCount>(
+		Matrix4_MultiplyVectorN<N>(
 			g_viewProjMatrixXX, g_viewProjMatrixXY, g_viewProjMatrixXZ, g_viewProjMatrixXW,
 			g_viewProjMatrixYX, g_viewProjMatrixYY, g_viewProjMatrixYZ, g_viewProjMatrixYW,
 			g_viewProjMatrixZX, g_viewProjMatrixZY, g_viewProjMatrixZZ, g_viewProjMatrixZW,
@@ -972,16 +1122,53 @@ namespace
 			outVertexXs, outVertexYs, outVertexZs, outVertexWs);
 	}
 
-	template<int loopUnrollCount>
-	void VertexShader_Entity(int meshIndex, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
+	template<int N>
+	void VertexShader_EntityN(const int *meshIndices, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
 		double *outVertexXs, double *outVertexYs, double *outVertexZs, double *outVertexWs)
 	{
+		double modelViewProjMatrixXXs[N];
+		double modelViewProjMatrixXYs[N];
+		double modelViewProjMatrixXZs[N];
+		double modelViewProjMatrixXWs[N];
+		double modelViewProjMatrixYXs[N];
+		double modelViewProjMatrixYYs[N];
+		double modelViewProjMatrixYZs[N];
+		double modelViewProjMatrixYWs[N];
+		double modelViewProjMatrixZXs[N];
+		double modelViewProjMatrixZYs[N];
+		double modelViewProjMatrixZZs[N];
+		double modelViewProjMatrixZWs[N];
+		double modelViewProjMatrixWXs[N];
+		double modelViewProjMatrixWYs[N];
+		double modelViewProjMatrixWZs[N];
+		double modelViewProjMatrixWWs[N];
+		for (int i = 0; i < N; i++)
+		{
+			const int meshIndex = meshIndices[i];
+			modelViewProjMatrixXXs[i] = g_meshProcessCaches.modelViewProjMatrixXXs[meshIndex];
+			modelViewProjMatrixXYs[i] = g_meshProcessCaches.modelViewProjMatrixXYs[meshIndex];
+			modelViewProjMatrixXZs[i] = g_meshProcessCaches.modelViewProjMatrixXZs[meshIndex];
+			modelViewProjMatrixXWs[i] = g_meshProcessCaches.modelViewProjMatrixXWs[meshIndex];
+			modelViewProjMatrixYXs[i] = g_meshProcessCaches.modelViewProjMatrixYXs[meshIndex];
+			modelViewProjMatrixYYs[i] = g_meshProcessCaches.modelViewProjMatrixYYs[meshIndex];
+			modelViewProjMatrixYZs[i] = g_meshProcessCaches.modelViewProjMatrixYZs[meshIndex];
+			modelViewProjMatrixYWs[i] = g_meshProcessCaches.modelViewProjMatrixYWs[meshIndex];
+			modelViewProjMatrixZXs[i] = g_meshProcessCaches.modelViewProjMatrixZXs[meshIndex];
+			modelViewProjMatrixZYs[i] = g_meshProcessCaches.modelViewProjMatrixZYs[meshIndex];
+			modelViewProjMatrixZZs[i] = g_meshProcessCaches.modelViewProjMatrixZZs[meshIndex];
+			modelViewProjMatrixZWs[i] = g_meshProcessCaches.modelViewProjMatrixZWs[meshIndex];
+			modelViewProjMatrixWXs[i] = g_meshProcessCaches.modelViewProjMatrixWXs[meshIndex];
+			modelViewProjMatrixWYs[i] = g_meshProcessCaches.modelViewProjMatrixWYs[meshIndex];
+			modelViewProjMatrixWZs[i] = g_meshProcessCaches.modelViewProjMatrixWZs[meshIndex];
+			modelViewProjMatrixWWs[i] = g_meshProcessCaches.modelViewProjMatrixWWs[meshIndex];
+		}
+
 		// Apply model-view-projection matrix.
-		Matrix4_MultiplyVectorN<loopUnrollCount>(
-			g_meshProcessCaches.modelViewProjMatrixXXs + meshIndex, g_meshProcessCaches.modelViewProjMatrixXYs + meshIndex, g_meshProcessCaches.modelViewProjMatrixXZs + meshIndex, g_meshProcessCaches.modelViewProjMatrixXWs + meshIndex,
-			g_meshProcessCaches.modelViewProjMatrixYXs + meshIndex, g_meshProcessCaches.modelViewProjMatrixYYs + meshIndex, g_meshProcessCaches.modelViewProjMatrixYZs + meshIndex, g_meshProcessCaches.modelViewProjMatrixYWs + meshIndex,
-			g_meshProcessCaches.modelViewProjMatrixZXs + meshIndex, g_meshProcessCaches.modelViewProjMatrixZYs + meshIndex, g_meshProcessCaches.modelViewProjMatrixZZs + meshIndex, g_meshProcessCaches.modelViewProjMatrixZWs + meshIndex,
-			g_meshProcessCaches.modelViewProjMatrixWXs + meshIndex, g_meshProcessCaches.modelViewProjMatrixWYs + meshIndex, g_meshProcessCaches.modelViewProjMatrixWZs + meshIndex, g_meshProcessCaches.modelViewProjMatrixWWs + meshIndex,
+		Matrix4_MultiplyVectorN<N>(
+			modelViewProjMatrixXXs, modelViewProjMatrixXYs, modelViewProjMatrixXZs, modelViewProjMatrixXWs,
+			modelViewProjMatrixYXs, modelViewProjMatrixYYs, modelViewProjMatrixYZs, modelViewProjMatrixYWs,
+			modelViewProjMatrixZXs, modelViewProjMatrixZYs, modelViewProjMatrixZZs, modelViewProjMatrixZWs,
+			modelViewProjMatrixWXs, modelViewProjMatrixWYs, modelViewProjMatrixWZs, modelViewProjMatrixWWs,
 			vertexXs, vertexYs, vertexZs, vertexWs,
 			outVertexXs, outVertexYs, outVertexZs, outVertexWs);
 	}
@@ -1437,9 +1624,9 @@ namespace
 		double modelMatrixWZs[MAX_MESH_PROCESS_CACHES];
 		double modelMatrixWWs[MAX_MESH_PROCESS_CACHES];
 
-		const int meshCountStepAdjusted = meshCount - (loopUnrollCount - 1);
+		const int meshCountUnrollAdjusted = GetUnrollAdjustedLoopCount(meshCount, loopUnrollCount);
 		int meshIndex = 0;
-		while (meshIndex < meshCountStepAdjusted)
+		while (meshIndex < meshCountUnrollAdjusted)
 		{
 			// Rotation-scale matrix
 			Matrix4_MultiplyMatrixN<loopUnrollCount>(
@@ -1549,26 +1736,28 @@ namespace
 			g_meshProcessCaches.triangleWriteCounts[meshIndex] = 0;
 		}
 
+		constexpr int loopUnrollCount = TYPICAL_LOOP_UNROLL;
+		static_assert(loopUnrollCount <= MAX_MESH_PROCESS_CACHES);
+
 		// Run vertex shaders on each triangle and store the results for clipping.
-		for (int triangleIndex = 0; triangleIndex < g_vertexShadingCache.triangleCount; triangleIndex++)
+		const int triangleCount = g_vertexShadingCache.triangleCount;
+		const int triangleCountUnrollAdjusted = GetUnrollAdjustedLoopCount(triangleCount, loopUnrollCount);
+		int triangleIndex = 0;
+		while (triangleIndex < triangleCountUnrollAdjusted)
 		{
-			const int meshIndex = g_vertexShadingCache.meshProcessCacheIndices[triangleIndex];
-
-			// @todo: make the triangleIndex step by 4 for this loop and 1 for the edge case loop
-			double unshadedV0Xs[1] = { g_vertexShadingCache.unshadedV0Xs[triangleIndex] };
-			double unshadedV0Ys[1] = { g_vertexShadingCache.unshadedV0Ys[triangleIndex] };
-			double unshadedV0Zs[1] = { g_vertexShadingCache.unshadedV0Zs[triangleIndex] };
-			double unshadedV0Ws[1] = { g_vertexShadingCache.unshadedV0Ws[triangleIndex] };
-			double unshadedV1Xs[1] = { g_vertexShadingCache.unshadedV1Xs[triangleIndex] };
-			double unshadedV1Ys[1] = { g_vertexShadingCache.unshadedV1Ys[triangleIndex] };
-			double unshadedV1Zs[1] = { g_vertexShadingCache.unshadedV1Zs[triangleIndex] };
-			double unshadedV1Ws[1] = { g_vertexShadingCache.unshadedV1Ws[triangleIndex] };
-			double unshadedV2Xs[1] = { g_vertexShadingCache.unshadedV2Xs[triangleIndex] };
-			double unshadedV2Ys[1] = { g_vertexShadingCache.unshadedV2Ys[triangleIndex] };
-			double unshadedV2Zs[1] = { g_vertexShadingCache.unshadedV2Zs[triangleIndex] };
-			double unshadedV2Ws[1] = { g_vertexShadingCache.unshadedV2Ws[triangleIndex] };
-
-			constexpr int loopUnrollCount = 1; // @todo: TYPICAL_LOOP_UNROLL
+			const int *meshIndices = g_vertexShadingCache.meshProcessCacheIndices + triangleIndex;
+			const double *unshadedV0Xs = g_vertexShadingCache.unshadedV0Xs + triangleIndex;
+			const double *unshadedV0Ys = g_vertexShadingCache.unshadedV0Ys + triangleIndex;
+			const double *unshadedV0Zs = g_vertexShadingCache.unshadedV0Zs + triangleIndex;
+			const double *unshadedV0Ws = g_vertexShadingCache.unshadedV0Ws + triangleIndex;
+			const double *unshadedV1Xs = g_vertexShadingCache.unshadedV1Xs + triangleIndex;
+			const double *unshadedV1Ys = g_vertexShadingCache.unshadedV1Ys + triangleIndex;
+			const double *unshadedV1Zs = g_vertexShadingCache.unshadedV1Zs + triangleIndex;
+			const double *unshadedV1Ws = g_vertexShadingCache.unshadedV1Ws + triangleIndex;
+			const double *unshadedV2Xs = g_vertexShadingCache.unshadedV2Xs + triangleIndex;
+			const double *unshadedV2Ys = g_vertexShadingCache.unshadedV2Ys + triangleIndex;
+			const double *unshadedV2Zs = g_vertexShadingCache.unshadedV2Zs + triangleIndex;
+			const double *unshadedV2Ws = g_vertexShadingCache.unshadedV2Ws + triangleIndex;
 			double shadedV0Xs[loopUnrollCount] = { 0.0 };
 			double shadedV0Ys[loopUnrollCount] = { 0.0 };
 			double shadedV0Zs[loopUnrollCount] = { 0.0 };
@@ -1581,23 +1770,109 @@ namespace
 			double shadedV2Ys[loopUnrollCount] = { 0.0 };
 			double shadedV2Zs[loopUnrollCount] = { 0.0 };
 			double shadedV2Ws[loopUnrollCount] = { 0.0 };
+
 			if constexpr (vertexShaderType == VertexShaderType::Basic)
 			{
-				VertexShader_Basic<loopUnrollCount>(meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_Basic<loopUnrollCount>(meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_Basic<loopUnrollCount>(meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_BasicN<loopUnrollCount>(meshIndices, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_BasicN<loopUnrollCount>(meshIndices, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_BasicN<loopUnrollCount>(meshIndices, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 			else if (vertexShaderType == VertexShaderType::RaisingDoor)
 			{
-				VertexShader_RaisingDoor<loopUnrollCount>(meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_RaisingDoor<loopUnrollCount>(meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_RaisingDoor<loopUnrollCount>(meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_RaisingDoorN<loopUnrollCount>(meshIndices, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_RaisingDoorN<loopUnrollCount>(meshIndices, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_RaisingDoorN<loopUnrollCount>(meshIndices, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 			else if (vertexShaderType == VertexShaderType::Entity)
 			{
-				VertexShader_Entity<loopUnrollCount>(meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_Entity<loopUnrollCount>(meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_Entity<loopUnrollCount>(meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_EntityN<loopUnrollCount>(meshIndices, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_EntityN<loopUnrollCount>(meshIndices, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_EntityN<loopUnrollCount>(meshIndices, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+			}
+
+			for (int i = 0; i < loopUnrollCount; i++)
+			{
+				const int unrollMeshIndex = meshIndices[i];
+				int &writeIndex = g_meshProcessCaches.triangleWriteCounts[unrollMeshIndex];
+				DebugAssert(writeIndex < MAX_DRAW_CALL_MESH_TRIANGLES);
+
+				auto &resultV0XYZW = g_meshProcessCaches.shadedV0XYZWArrays[unrollMeshIndex][writeIndex];
+				auto &resultV1XYZW = g_meshProcessCaches.shadedV1XYZWArrays[unrollMeshIndex][writeIndex];
+				auto &resultV2XYZW = g_meshProcessCaches.shadedV2XYZWArrays[unrollMeshIndex][writeIndex];
+				auto &resultUV0XY = g_meshProcessCaches.uv0XYArrays[unrollMeshIndex][writeIndex];
+				auto &resultUV1XY = g_meshProcessCaches.uv1XYArrays[unrollMeshIndex][writeIndex];
+				auto &resultUV2XY = g_meshProcessCaches.uv2XYArrays[unrollMeshIndex][writeIndex];
+				resultV0XYZW[0] = shadedV0Xs[i];
+				resultV0XYZW[1] = shadedV0Ys[i];
+				resultV0XYZW[2] = shadedV0Zs[i];
+				resultV0XYZW[3] = shadedV0Ws[i];
+				resultV1XYZW[0] = shadedV1Xs[i];
+				resultV1XYZW[1] = shadedV1Ys[i];
+				resultV1XYZW[2] = shadedV1Zs[i];
+				resultV1XYZW[3] = shadedV1Ws[i];
+				resultV2XYZW[0] = shadedV2Xs[i];
+				resultV2XYZW[1] = shadedV2Ys[i];
+				resultV2XYZW[2] = shadedV2Zs[i];
+				resultV2XYZW[3] = shadedV2Ws[i];
+
+				const int unrollTriangleIndex = triangleIndex + i;
+				resultUV0XY[0] = g_vertexShadingCache.uv0Xs[unrollTriangleIndex];
+				resultUV0XY[1] = g_vertexShadingCache.uv0Ys[unrollTriangleIndex];
+				resultUV1XY[0] = g_vertexShadingCache.uv1Xs[unrollTriangleIndex];
+				resultUV1XY[1] = g_vertexShadingCache.uv1Ys[unrollTriangleIndex];
+				resultUV2XY[0] = g_vertexShadingCache.uv2Xs[unrollTriangleIndex];
+				resultUV2XY[1] = g_vertexShadingCache.uv2Ys[unrollTriangleIndex];
+				writeIndex++;
+			}
+			
+			triangleIndex += loopUnrollCount;
+		}
+
+		while (triangleIndex < triangleCount)
+		{
+			const int meshIndex = g_vertexShadingCache.meshProcessCacheIndices[triangleIndex];
+			const double unshadedV0Xs[1] = { g_vertexShadingCache.unshadedV0Xs[triangleIndex] };
+			const double unshadedV0Ys[1] = { g_vertexShadingCache.unshadedV0Ys[triangleIndex] };
+			const double unshadedV0Zs[1] = { g_vertexShadingCache.unshadedV0Zs[triangleIndex] };
+			const double unshadedV0Ws[1] = { g_vertexShadingCache.unshadedV0Ws[triangleIndex] };
+			const double unshadedV1Xs[1] = { g_vertexShadingCache.unshadedV1Xs[triangleIndex] };
+			const double unshadedV1Ys[1] = { g_vertexShadingCache.unshadedV1Ys[triangleIndex] };
+			const double unshadedV1Zs[1] = { g_vertexShadingCache.unshadedV1Zs[triangleIndex] };
+			const double unshadedV1Ws[1] = { g_vertexShadingCache.unshadedV1Ws[triangleIndex] };
+			const double unshadedV2Xs[1] = { g_vertexShadingCache.unshadedV2Xs[triangleIndex] };
+			const double unshadedV2Ys[1] = { g_vertexShadingCache.unshadedV2Ys[triangleIndex] };
+			const double unshadedV2Zs[1] = { g_vertexShadingCache.unshadedV2Zs[triangleIndex] };
+			const double unshadedV2Ws[1] = { g_vertexShadingCache.unshadedV2Ws[triangleIndex] };
+			double shadedV0Xs[1] = { 0.0 };
+			double shadedV0Ys[1] = { 0.0 };
+			double shadedV0Zs[1] = { 0.0 };
+			double shadedV0Ws[1] = { 0.0 };
+			double shadedV1Xs[1] = { 0.0 };
+			double shadedV1Ys[1] = { 0.0 };
+			double shadedV1Zs[1] = { 0.0 };
+			double shadedV1Ws[1] = { 0.0 };
+			double shadedV2Xs[1] = { 0.0 };
+			double shadedV2Ys[1] = { 0.0 };
+			double shadedV2Zs[1] = { 0.0 };
+			double shadedV2Ws[1] = { 0.0 };
+
+			if constexpr (vertexShaderType == VertexShaderType::Basic)
+			{
+				VertexShader_BasicN<1>(&meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_BasicN<1>(&meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_BasicN<1>(&meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+			}
+			else if (vertexShaderType == VertexShaderType::RaisingDoor)
+			{
+				VertexShader_RaisingDoorN<1>(&meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_RaisingDoorN<1>(&meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_RaisingDoorN<1>(&meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+			}
+			else if (vertexShaderType == VertexShaderType::Entity)
+			{
+				VertexShader_EntityN<1>(&meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_EntityN<1>(&meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_EntityN<1>(&meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 
 			int &writeIndex = g_meshProcessCaches.triangleWriteCounts[meshIndex];
@@ -1628,6 +1903,7 @@ namespace
 			resultUV2XY[0] = g_vertexShadingCache.uv2Xs[triangleIndex];
 			resultUV2XY[1] = g_vertexShadingCache.uv2Ys[triangleIndex];
 			writeIndex++;
+			triangleIndex++;
 		}
 	}
 
