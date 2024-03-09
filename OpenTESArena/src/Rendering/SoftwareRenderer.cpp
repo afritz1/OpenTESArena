@@ -25,6 +25,11 @@
 namespace
 {
 	constexpr int TYPICAL_LOOP_UNROLL = 4; // Elements processed per unrolled loop, possibly also for SIMD lanes.
+	constexpr int WEAK_LOOP_UNROLL = TYPICAL_LOOP_UNROLL / 2;
+	constexpr int AGGRESSIVE_LOOP_UNROLL = TYPICAL_LOOP_UNROLL * 2;
+	static_assert(MathUtils::isPowerOf2(TYPICAL_LOOP_UNROLL));
+	static_assert(MathUtils::isPowerOf2(WEAK_LOOP_UNROLL));
+	static_assert(MathUtils::isPowerOf2(AGGRESSIVE_LOOP_UNROLL));
 
 	int GetUnrollAdjustedLoopCount(int loopCount, int unrollCount)
 	{
@@ -32,25 +37,51 @@ namespace
 	}
 
 	// Optimized math functions.
-	double Double_Lerp(double start, double end, double percent)
+	template<int N>
+	void Double_LerpN(const double *__restrict starts, const double *__restrict ends, const double *__restrict percents,
+		double *__restrict outs)
 	{
-		return start + ((end - start) * percent);
+		for (int i = 0; i < N; i++)
+		{
+			const double start = starts[i];
+			const double end = ends[i];
+			const double percent = percents[i];
+			outs[i] = start + ((end - start) * percent);
+		}
 	}
 
-	double Double2_Dot(double x0, double y0, double x1, double y1)
+	template<int N>
+	void Double2_DotN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
+		double *__restrict outs)
 	{
-		return (x0 * x1) + (y0 * y1);
+		for (int i = 0; i < N; i++)
+		{
+			outs[i] = (x0s[i] * x1s[i]) + (y0s[i] * y1s[i]);
+		}
 	}
 
-	double Double2_Cross(double x0, double y0, double x1, double y1)
+	template<int N>
+	void Double2_CrossN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
+		double *__restrict outs)
 	{
-		return (x0 * y1) - (y0 * x1);
+		for (int i = 0; i < N; i++)
+		{
+			outs[i] = (x0s[i] * y1s[i]) - (y0s[i] * x1s[i]);
+		}
 	}
 
-	void Double2_RightPerp(double x, double y, double *__restrict outX, double *__restrict outY)
+	template<int N>
+	void Double2_RightPerpN(const double *__restrict xs, const double *__restrict ys, double *__restrict outXs, double *__restrict outYs)
 	{
-		*outX = y;
-		*outY = -x;
+		for (int i = 0; i < N; i++)
+		{
+			outXs[i] = ys[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outYs[i] = -xs[i];
+		}
 	}
 
 	template<int N>
@@ -2073,18 +2104,25 @@ namespace
 				// Outside: V2
 				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
 				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-				const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
-				const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
-				const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
-				const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
-				const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
-				const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
-				const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
-				const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
-				const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
-				const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
-				const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
-				const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
+
+				double v1v2PointX, v1v2PointY, v1v2PointZ, v1v2PointW;
+				double v2v0PointX, v2v0PointY, v2v0PointZ, v2v0PointW;
+				Double_LerpN<1>(&currentV1X, &currentV2X, &v1v2PointT, &v1v2PointX);
+				Double_LerpN<1>(&currentV1Y, &currentV2Y, &v1v2PointT, &v1v2PointY);
+				Double_LerpN<1>(&currentV1Z, &currentV2Z, &v1v2PointT, &v1v2PointZ);
+				Double_LerpN<1>(&currentV1W, &currentV2W, &v1v2PointT, &v1v2PointW);
+				Double_LerpN<1>(&currentV2X, &currentV0X, &v2v0PointT, &v2v0PointX);
+				Double_LerpN<1>(&currentV2Y, &currentV0Y, &v2v0PointT, &v2v0PointY);
+				Double_LerpN<1>(&currentV2Z, &currentV0Z, &v2v0PointT, &v2v0PointZ);
+				Double_LerpN<1>(&currentV2W, &currentV0W, &v2v0PointT, &v2v0PointW);
+
+				double v1v2PointUVX, v1v2PointUVY;
+				double v2v0PointUVX, v2v0PointUVY;
+				Double_LerpN<1>(&currentUV1X, &currentUV2X, &v1v2PointT, &v1v2PointUVX);
+				Double_LerpN<1>(&currentUV1Y, &currentUV2Y, &v1v2PointT, &v1v2PointUVY);
+				Double_LerpN<1>(&currentUV2X, &currentUV0X, &v2v0PointT, &v2v0PointUVX);
+				Double_LerpN<1>(&currentUV2Y, &currentUV0Y, &v2v0PointT, &v2v0PointUVY);
+
 				result0V0XYZW[0] = currentV0X;
 				result0V0XYZW[1] = currentV0Y;
 				result0V0XYZW[2] = currentV0Z;
@@ -2131,18 +2169,25 @@ namespace
 				// Outside: V1
 				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
 				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-				const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
-				const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
-				const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
-				const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
-				const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
-				const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
-				const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
-				const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
-				const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
-				const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
-				const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
-				const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
+				
+				double v0v1PointX, v0v1PointY, v0v1PointZ, v0v1PointW;
+				double v1v2PointX, v1v2PointY, v1v2PointZ, v1v2PointW;
+				Double_LerpN<1>(&currentV0X, &currentV1X, &v0v1PointT, &v0v1PointX);
+				Double_LerpN<1>(&currentV0Y, &currentV1Y, &v0v1PointT, &v0v1PointY);
+				Double_LerpN<1>(&currentV0Z, &currentV1Z, &v0v1PointT, &v0v1PointZ);
+				Double_LerpN<1>(&currentV0W, &currentV1W, &v0v1PointT, &v0v1PointW);
+				Double_LerpN<1>(&currentV1X, &currentV2X, &v1v2PointT, &v1v2PointX);
+				Double_LerpN<1>(&currentV1Y, &currentV2Y, &v1v2PointT, &v1v2PointY);
+				Double_LerpN<1>(&currentV1Z, &currentV2Z, &v1v2PointT, &v1v2PointZ);
+				Double_LerpN<1>(&currentV1W, &currentV2W, &v1v2PointT, &v1v2PointW);
+
+				double v0v1PointUVX, v0v1PointUVY;
+				double v1v2PointUVX, v1v2PointUVY;
+				Double_LerpN<1>(&currentUV0X, &currentUV1X, &v0v1PointT, &v0v1PointUVX);
+				Double_LerpN<1>(&currentUV0Y, &currentUV1Y, &v0v1PointT, &v0v1PointUVY);
+				Double_LerpN<1>(&currentUV1X, &currentUV2X, &v1v2PointT, &v1v2PointUVX);
+				Double_LerpN<1>(&currentUV1Y, &currentUV2Y, &v1v2PointT, &v1v2PointUVY);
+
 				result0V0XYZW[0] = currentV0X;
 				result0V0XYZW[1] = currentV0Y;
 				result0V0XYZW[2] = currentV0Z;
@@ -2189,18 +2234,25 @@ namespace
 				// Outside: V1, V2
 				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
 				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-				const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
-				const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
-				const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
-				const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
-				const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
-				const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
-				const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
-				const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
-				const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
-				const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
-				const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
-				const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
+
+				double v0v1PointX, v0v1PointY, v0v1PointZ, v0v1PointW;
+				double v2v0PointX, v2v0PointY, v2v0PointZ, v2v0PointW;
+				Double_LerpN<1>(&currentV0X, &currentV1X, &v0v1PointT, &v0v1PointX);
+				Double_LerpN<1>(&currentV0Y, &currentV1Y, &v0v1PointT, &v0v1PointY);
+				Double_LerpN<1>(&currentV0Z, &currentV1Z, &v0v1PointT, &v0v1PointZ);
+				Double_LerpN<1>(&currentV0W, &currentV1W, &v0v1PointT, &v0v1PointW);
+				Double_LerpN<1>(&currentV2X, &currentV0X, &v2v0PointT, &v2v0PointX);
+				Double_LerpN<1>(&currentV2Y, &currentV0Y, &v2v0PointT, &v2v0PointY);
+				Double_LerpN<1>(&currentV2Z, &currentV0Z, &v2v0PointT, &v2v0PointZ);
+				Double_LerpN<1>(&currentV2W, &currentV0W, &v2v0PointT, &v2v0PointW);
+
+				double v0v1PointUVX, v0v1PointUVY;
+				double v2v0PointUVX, v2v0PointUVY;
+				Double_LerpN<1>(&currentUV0X, &currentUV1X, &v0v1PointT, &v0v1PointUVX);
+				Double_LerpN<1>(&currentUV0Y, &currentUV1Y, &v0v1PointT, &v0v1PointUVY);
+				Double_LerpN<1>(&currentUV2X, &currentUV0X, &v2v0PointT, &v2v0PointUVX);
+				Double_LerpN<1>(&currentUV2Y, &currentUV0Y, &v2v0PointT, &v2v0PointUVY);
+
 				result0V0XYZW[0] = currentV0X;
 				result0V0XYZW[1] = currentV0Y;
 				result0V0XYZW[2] = currentV0Z;
@@ -2229,18 +2281,25 @@ namespace
 				// Outside: V0
 				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
 				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-				const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
-				const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
-				const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
-				const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
-				const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
-				const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
-				const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
-				const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
-				const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
-				const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
-				const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
-				const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
+				
+				double v0v1PointX, v0v1PointY, v0v1PointZ, v0v1PointW;
+				double v2v0PointX, v2v0PointY, v2v0PointZ, v2v0PointW;
+				Double_LerpN<1>(&currentV0X, &currentV1X, &v0v1PointT, &v0v1PointX);
+				Double_LerpN<1>(&currentV0Y, &currentV1Y, &v0v1PointT, &v0v1PointY);
+				Double_LerpN<1>(&currentV0Z, &currentV1Z, &v0v1PointT, &v0v1PointZ);
+				Double_LerpN<1>(&currentV0W, &currentV1W, &v0v1PointT, &v0v1PointW);
+				Double_LerpN<1>(&currentV2X, &currentV0X, &v2v0PointT, &v2v0PointX);
+				Double_LerpN<1>(&currentV2Y, &currentV0Y, &v2v0PointT, &v2v0PointY);
+				Double_LerpN<1>(&currentV2Z, &currentV0Z, &v2v0PointT, &v2v0PointZ);
+				Double_LerpN<1>(&currentV2W, &currentV0W, &v2v0PointT, &v2v0PointW);
+
+				double v0v1PointUVX, v0v1PointUVY;
+				double v2v0PointUVX, v2v0PointUVY;
+				Double_LerpN<1>(&currentUV0X, &currentUV1X, &v0v1PointT, &v0v1PointUVX);
+				Double_LerpN<1>(&currentUV0Y, &currentUV1Y, &v0v1PointT, &v0v1PointUVY);
+				Double_LerpN<1>(&currentUV2X, &currentUV0X, &v2v0PointT, &v2v0PointUVX);
+				Double_LerpN<1>(&currentUV2Y, &currentUV0Y, &v2v0PointT, &v2v0PointUVY);
+
 				result0V0XYZW[0] = v0v1PointX;
 				result0V0XYZW[1] = v0v1PointY;
 				result0V0XYZW[2] = v0v1PointZ;
@@ -2287,18 +2346,25 @@ namespace
 				// Outside: V0, V2
 				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
 				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-				const double v0v1PointX = Double_Lerp(currentV0X, currentV1X, v0v1PointT);
-				const double v0v1PointY = Double_Lerp(currentV0Y, currentV1Y, v0v1PointT);
-				const double v0v1PointZ = Double_Lerp(currentV0Z, currentV1Z, v0v1PointT);
-				const double v0v1PointW = Double_Lerp(currentV0W, currentV1W, v0v1PointT);
-				const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
-				const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
-				const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
-				const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
-				const double v0v1PointUVX = Double_Lerp(currentUV0X, currentUV1X, v0v1PointT);
-				const double v0v1PointUVY = Double_Lerp(currentUV0Y, currentUV1Y, v0v1PointT);
-				const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
-				const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
+				
+				double v0v1PointX, v0v1PointY, v0v1PointZ, v0v1PointW;
+				double v1v2PointX, v1v2PointY, v1v2PointZ, v1v2PointW;
+				Double_LerpN<1>(&currentV0X, &currentV1X, &v0v1PointT, &v0v1PointX);
+				Double_LerpN<1>(&currentV0Y, &currentV1Y, &v0v1PointT, &v0v1PointY);
+				Double_LerpN<1>(&currentV0Z, &currentV1Z, &v0v1PointT, &v0v1PointZ);
+				Double_LerpN<1>(&currentV0W, &currentV1W, &v0v1PointT, &v0v1PointW);
+				Double_LerpN<1>(&currentV1X, &currentV2X, &v1v2PointT, &v1v2PointX);
+				Double_LerpN<1>(&currentV1Y, &currentV2Y, &v1v2PointT, &v1v2PointY);
+				Double_LerpN<1>(&currentV1Z, &currentV2Z, &v1v2PointT, &v1v2PointZ);
+				Double_LerpN<1>(&currentV1W, &currentV2W, &v1v2PointT, &v1v2PointW);
+
+				double v0v1PointUVX, v0v1PointUVY;
+				double v1v2PointUVX, v1v2PointUVY;
+				Double_LerpN<1>(&currentUV0X, &currentUV1X, &v0v1PointT, &v0v1PointUVX);
+				Double_LerpN<1>(&currentUV0Y, &currentUV1Y, &v0v1PointT, &v0v1PointUVY);
+				Double_LerpN<1>(&currentUV1X, &currentUV2X, &v1v2PointT, &v1v2PointUVX);
+				Double_LerpN<1>(&currentUV1Y, &currentUV2Y, &v1v2PointT, &v1v2PointUVY);
+
 				result0V0XYZW[0] = v0v1PointX;
 				result0V0XYZW[1] = v0v1PointY;
 				result0V0XYZW[2] = v0v1PointZ;
@@ -2327,18 +2393,25 @@ namespace
 				// Outside: V0, V1
 				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
 				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-				const double v1v2PointX = Double_Lerp(currentV1X, currentV2X, v1v2PointT);
-				const double v1v2PointY = Double_Lerp(currentV1Y, currentV2Y, v1v2PointT);
-				const double v1v2PointZ = Double_Lerp(currentV1Z, currentV2Z, v1v2PointT);
-				const double v1v2PointW = Double_Lerp(currentV1W, currentV2W, v1v2PointT);
-				const double v2v0PointX = Double_Lerp(currentV2X, currentV0X, v2v0PointT);
-				const double v2v0PointY = Double_Lerp(currentV2Y, currentV0Y, v2v0PointT);
-				const double v2v0PointZ = Double_Lerp(currentV2Z, currentV0Z, v2v0PointT);
-				const double v2v0PointW = Double_Lerp(currentV2W, currentV0W, v2v0PointT);
-				const double v1v2PointUVX = Double_Lerp(currentUV1X, currentUV2X, v1v2PointT);
-				const double v1v2PointUVY = Double_Lerp(currentUV1Y, currentUV2Y, v1v2PointT);
-				const double v2v0PointUVX = Double_Lerp(currentUV2X, currentUV0X, v2v0PointT);
-				const double v2v0PointUVY = Double_Lerp(currentUV2Y, currentUV0Y, v2v0PointT);
+				
+				double v1v2PointX, v1v2PointY, v1v2PointZ, v1v2PointW;
+				double v2v0PointX, v2v0PointY, v2v0PointZ, v2v0PointW;
+				Double_LerpN<1>(&currentV1X, &currentV2X, &v1v2PointT, &v1v2PointX);
+				Double_LerpN<1>(&currentV1Y, &currentV2Y, &v1v2PointT, &v1v2PointY);
+				Double_LerpN<1>(&currentV1Z, &currentV2Z, &v1v2PointT, &v1v2PointZ);
+				Double_LerpN<1>(&currentV1W, &currentV2W, &v1v2PointT, &v1v2PointW);
+				Double_LerpN<1>(&currentV2X, &currentV0X, &v2v0PointT, &v2v0PointX);
+				Double_LerpN<1>(&currentV2Y, &currentV0Y, &v2v0PointT, &v2v0PointY);
+				Double_LerpN<1>(&currentV2Z, &currentV0Z, &v2v0PointT, &v2v0PointZ);
+				Double_LerpN<1>(&currentV2W, &currentV0W, &v2v0PointT, &v2v0PointW);
+
+				double v1v2PointUVX, v1v2PointUVY;
+				double v2v0PointUVX, v2v0PointUVY;
+				Double_LerpN<1>(&currentUV1X, &currentUV2X, &v1v2PointT, &v1v2PointUVX);
+				Double_LerpN<1>(&currentUV1Y, &currentUV2Y, &v1v2PointT, &v1v2PointUVY);
+				Double_LerpN<1>(&currentUV2X, &currentUV0X, &v2v0PointT, &v2v0PointUVX);
+				Double_LerpN<1>(&currentUV2Y, &currentUV0Y, &v2v0PointT, &v2v0PointUVY);
+
 				result0V0XYZW[0] = v1v2PointX;
 				result0V0XYZW[1] = v1v2PointY;
 				result0V0XYZW[2] = v1v2PointZ;
@@ -2667,9 +2740,11 @@ namespace
 			const double screenSpace12Y = screenSpace2Y - screenSpace1Y;
 			const double screenSpace20X = screenSpace0X - screenSpace2X;
 			const double screenSpace20Y = screenSpace0Y - screenSpace2Y;
-			const double screenSpace01Cross12 = Double2_Cross(screenSpace12X, screenSpace12Y, screenSpace01X, screenSpace01Y);
-			const double screenSpace12Cross20 = Double2_Cross(screenSpace20X, screenSpace20Y, screenSpace12X, screenSpace12Y);
-			const double screenSpace20Cross01 = Double2_Cross(screenSpace01X, screenSpace01Y, screenSpace20X, screenSpace20Y);
+
+			double screenSpace01Cross12, screenSpace12Cross20, screenSpace20Cross01;
+			Double2_CrossN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace01X, &screenSpace01Y, &screenSpace01Cross12);
+			Double2_CrossN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace12X, &screenSpace12Y, &screenSpace12Cross20);
+			Double2_CrossN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace20X, &screenSpace20Y, &screenSpace20Cross01);
 
 			// Discard back-facing.
 			const bool isFrontFacing = (screenSpace01Cross12 + screenSpace12Cross20 + screenSpace20Cross01) > 0.0;
@@ -2677,13 +2752,6 @@ namespace
 			{
 				continue;
 			}
-
-			double screenSpace01PerpX, screenSpace01PerpY;
-			double screenSpace12PerpX, screenSpace12PerpY;
-			double screenSpace20PerpX, screenSpace20PerpY;
-			Double2_RightPerp(screenSpace01X, screenSpace01Y, &screenSpace01PerpX, &screenSpace01PerpY);
-			Double2_RightPerp(screenSpace12X, screenSpace12Y, &screenSpace12PerpX, &screenSpace12PerpY);
-			Double2_RightPerp(screenSpace20X, screenSpace20Y, &screenSpace20PerpX, &screenSpace20PerpY);
 
 			// Naive screen-space bounding box around triangle.
 			const double xMin = std::min(screenSpace0X, std::min(screenSpace1X, screenSpace2X));
@@ -2696,10 +2764,19 @@ namespace
 			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
 
 			const bool hasPositiveScreenArea = (xEnd > xStart) && (yEnd > yStart);
-			if (hasPositiveScreenArea)
+			if (!hasPositiveScreenArea)
 			{
-				g_totalPresentedTriangleCount++;
+				continue;
 			}
+			
+			g_totalPresentedTriangleCount++;
+
+			double screenSpace01PerpX, screenSpace01PerpY;
+			double screenSpace12PerpX, screenSpace12PerpY;
+			double screenSpace20PerpX, screenSpace20PerpY;
+			Double2_RightPerpN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01PerpX, &screenSpace01PerpY);
+			Double2_RightPerpN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace12PerpX, &screenSpace12PerpY);
+			Double2_RightPerpN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace20PerpX, &screenSpace20PerpY);
 
 			const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[triangleIndex];
 			const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[triangleIndex];
@@ -2751,14 +2828,20 @@ namespace
 						const double ss1Y = screenSpace2Y - screenSpace0Y;
 						const double ss2X = pixelCenterX - screenSpace0X;
 						const double ss2Y = pixelCenterY - screenSpace0Y;
-						const double dot00 = Double2_Dot(ss0X, ss0Y, ss0X, ss0Y);
-						const double dot01 = Double2_Dot(ss0X, ss0Y, ss1X, ss1Y);
-						const double dot11 = Double2_Dot(ss1X, ss1Y, ss1X, ss1Y);
-						const double dot20 = Double2_Dot(ss2X, ss2Y, ss0X, ss0Y);
-						const double dot21 = Double2_Dot(ss2X, ss2Y, ss1X, ss1Y);
+
+						double dot00, dot01, dot11, dot20, dot21;
+						Double2_DotN<1>(&ss0X, &ss0Y, &ss0X, &ss0Y, &dot00);
+						Double2_DotN<1>(&ss0X, &ss0Y, &ss1X, &ss1Y, &dot01);
+						Double2_DotN<1>(&ss1X, &ss1Y, &ss1X, &ss1Y, &dot11);
+						Double2_DotN<1>(&ss2X, &ss2Y, &ss0X, &ss0Y, &dot20);
+						Double2_DotN<1>(&ss2X, &ss2Y, &ss1X, &ss1Y, &dot21);
+
 						const double denominator = (dot00 * dot11) - (dot01 * dot01);
-						const double v = ((dot11 * dot20) - (dot01 * dot21)) / denominator;
-						const double w = ((dot00 * dot21) - (dot01 * dot20)) / denominator;
+						const double denominatorRecip = 1.0 / denominator;
+						const double vNumerator = (dot11 * dot20) - (dot01 * dot21);
+						const double wNumerator = (dot00 * dot21) - (dot01 * dot20);
+						const double v = vNumerator * denominatorRecip;
+						const double w = wNumerator * denominatorRecip;
 						const double u = 1.0 - v - w;
 
 						PixelShaderPerspectiveCorrection shaderPerspective;
@@ -2795,7 +2878,7 @@ namespace
 								&shaderHomogeneousSpacePointX, &shaderHomogeneousSpacePointY, &shaderHomogeneousSpacePointZ, &shaderHomogeneousSpacePointW,
 								&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW);
 
-							// Apply camera-to-world transform.
+							// Apply camera-to-world space transform.
 							double shaderWorldSpacePointX = 0.0;
 							double shaderWorldSpacePointY = 0.0;
 							double shaderWorldSpacePointZ = 0.0;
