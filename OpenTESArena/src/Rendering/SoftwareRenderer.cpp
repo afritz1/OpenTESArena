@@ -47,14 +47,14 @@ namespace
 		return (x0 * y1) - (y0 * x1);
 	}
 
-	void Double2_RightPerp(double x, double y, double *outX, double *outY)
+	void Double2_RightPerp(double x, double y, double *__restrict outX, double *__restrict outY)
 	{
 		*outX = y;
 		*outY = -x;
 	}
 
 	template<int N>
-	void Double4_ZeroN(double *outXs, double *outYs, double *outZs, double *outWs)
+	void Double4_ZeroN(double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -78,7 +78,7 @@ namespace
 	}
 
 	void Double4_Load4(const Double4 &v0, const Double4 &v1, const Double4 &v2, const Double4 &v3,
-		double *outXs, double *outYs, double *outZs, double *outWs)
+		double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		outXs[0] = v0.x;
 		outYs[0] = v0.y;
@@ -99,8 +99,9 @@ namespace
 	}
 
 	template<int N>
-	void Double4_AddN(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
-		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
+	void Double4_AddN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict z0s, const double *__restrict w0s,
+		const double *__restrict x1s, const double *__restrict y1s, const double *__restrict z1s, const double *__restrict w1s,
+		double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -124,7 +125,8 @@ namespace
 	}
 
 	template<int N>
-	void Double4_NegateN(const double *xs, const double *ys, const double *zs, const double *ws, double *outXs, double *outYs, double *outZs, double *outWs)
+	void Double4_NegateN(const double *__restrict xs, const double *__restrict ys, const double *__restrict zs, const double *__restrict ws,
+		double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -148,8 +150,9 @@ namespace
 	}
 
 	template<int N>
-	void Double4_SubtractN(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
-		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
+	void Double4_SubtractN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict z0s, const double *__restrict w0s,
+		const double *__restrict x1s, const double *__restrict y1s, const double *__restrict z1s, const double *__restrict w1s,
+		double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -173,8 +176,9 @@ namespace
 	}
 
 	template<int N>
-	void Double4_MultiplyN(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
-		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
+	void Double4_MultiplyN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict z0s, const double *__restrict w0s,
+		const double *__restrict x1s, const double *__restrict y1s, const double *__restrict z1s, const double *__restrict w1s,
+		double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -198,8 +202,9 @@ namespace
 	}
 
 	template<int N>
-	void Double4_DivideN(const double *x0s, const double *y0s, const double *z0s, const double *w0s, const double *x1s, const double *y1s,
-		const double *z1s, const double *w1s, double *outXs, double *outYs, double *outZs, double *outWs)
+	void Double4_DivideN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict z0s, const double *__restrict w0s,
+		const double *__restrict x1s, const double *__restrict y1s, const double *__restrict z1s, const double *__restrict w1s,
+		double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -223,10 +228,10 @@ namespace
 	}
 
 	template<int N>
-	void Matrix4_ZeroN(double *outMxxs, double *outMxys, double *outMxzs, double *outMxws,
-		double *outMyxs, double *outMyys, double *outMyzs, double *outMyws,
-		double *outMzxs, double *outMzys, double *outMzzs, double *outMzws,
-		double *outMwxs, double *outMwys, double *outMwzs, double *outMwws)
+	void Matrix4_ZeroN(double *__restrict outMxxs, double *__restrict outMxys, double *__restrict outMxzs, double *__restrict outMxws,
+		double *__restrict outMyxs, double *__restrict outMyys, double *__restrict outMyzs, double *__restrict outMyws,
+		double *__restrict outMzxs, double *__restrict outMzys, double *__restrict outMzzs, double *__restrict outMzws,
+		double *__restrict outMwxs, double *__restrict outMwys, double *__restrict outMwzs, double *__restrict outMwws)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -310,10 +315,10 @@ namespace
 	}
 
 	void Matrix4_Load4(const Matrix4d &m0, const Matrix4d &m1, const Matrix4d &m2, const Matrix4d &m3,
-		double *outMxxs, double *outMxys, double *outMxzs, double *outMxws,
-		double *outMyxs, double *outMyys, double *outMyzs, double *outMyws,
-		double *outMzxs, double *outMzys, double *outMzzs, double *outMzws,
-		double *outMwxs, double *outMwys, double *outMwzs, double *outMwws)
+		double *__restrict outMxxs, double *__restrict outMxys, double *__restrict outMxzs, double *__restrict outMxws,
+		double *__restrict outMyxs, double *__restrict outMyys, double *__restrict outMyzs, double *__restrict outMyws,
+		double *__restrict outMzxs, double *__restrict outMzys, double *__restrict outMzzs, double *__restrict outMzws,
+		double *__restrict outMwxs, double *__restrict outMwys, double *__restrict outMwzs, double *__restrict outMwws)
 	{
 		outMxxs[0] = m0.x.x;
 		outMxys[0] = m0.x.y;
@@ -382,12 +387,13 @@ namespace
 	}
 
 	template<int N>
-	void Matrix4_MultiplyVectorN(const double *mxxs, const double *mxys, const double *mxzs, const double *mxws,
-		const double *myxs, const double *myys, const double *myzs, const double *myws,
-		const double *mzxs, const double *mzys, const double *mzzs, const double *mzws,
-		const double *mwxs, const double *mwys, const double *mwzs, const double *mwws,
-		const double *xs, const double *ys, const double *zs, const double *ws,
-		double *outXs, double *outYs, double *outZs, double *outWs)
+	void Matrix4_MultiplyVectorN(
+		const double *__restrict mxxs, const double *__restrict mxys, const double *__restrict mxzs, const double *__restrict mxws,
+		const double *__restrict myxs, const double *__restrict myys, const double *__restrict myzs, const double *__restrict myws,
+		const double *__restrict mzxs, const double *__restrict mzys, const double *__restrict mzzs, const double *__restrict mzws,
+		const double *__restrict mwxs, const double *__restrict mwys, const double *__restrict mwzs, const double *__restrict mwws,
+		const double *__restrict xs, const double *__restrict ys, const double *__restrict zs, const double *__restrict ws,
+		double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -411,18 +417,18 @@ namespace
 	}
 
 	template<int N>
-	void Matrix4_MultiplyMatrixN(const double *m0xxs, const double *m0xys, const double *m0xzs, const double *m0xws,
-		const double *m0yxs, const double *m0yys, const double *m0yzs, const double *m0yws,
-		const double *m0zxs, const double *m0zys, const double *m0zzs, const double *m0zws,
-		const double *m0wxs, const double *m0wys, const double *m0wzs, const double *m0wws,
-		const double *m1xxs, const double *m1xys, const double *m1xzs, const double *m1xws,
-		const double *m1yxs, const double *m1yys, const double *m1yzs, const double *m1yws,
-		const double *m1zxs, const double *m1zys, const double *m1zzs, const double *m1zws,
-		const double *m1wxs, const double *m1wys, const double *m1wzs, const double *m1wws,
-		double *outMxxs, double *outMxys, double *outMxzs, double *outMxws,
-		double *outMyxs, double *outMyys, double *outMyzs, double *outMyws,
-		double *outMzxs, double *outMzys, double *outMzzs, double *outMzws,
-		double *outMwxs, double *outMwys, double *outMwzs, double *outMwws)
+	void Matrix4_MultiplyMatrixN(const double *__restrict m0xxs, const double *__restrict m0xys, const double *__restrict m0xzs, const double *__restrict m0xws,
+		const double *__restrict m0yxs, const double *__restrict m0yys, const double *__restrict m0yzs, const double *__restrict m0yws,
+		const double *__restrict m0zxs, const double *__restrict m0zys, const double *__restrict m0zzs, const double *__restrict m0zws,
+		const double *__restrict m0wxs, const double *__restrict m0wys, const double *__restrict m0wzs, const double *__restrict m0wws,
+		const double *__restrict m1xxs, const double *__restrict m1xys, const double *__restrict m1xzs, const double *__restrict m1xws,
+		const double *__restrict m1yxs, const double *__restrict m1yys, const double *__restrict m1yzs, const double *__restrict m1yws,
+		const double *__restrict m1zxs, const double *__restrict m1zys, const double *__restrict m1zzs, const double *__restrict m1zws,
+		const double *__restrict m1wxs, const double *__restrict m1wys, const double *__restrict m1wzs, const double *__restrict m1wws,
+		double *__restrict outMxxs, double *__restrict outMxys, double *__restrict outMxzs, double *__restrict outMxws,
+		double *__restrict outMyxs, double *__restrict outMyys, double *__restrict outMyzs, double *__restrict outMyws,
+		double *__restrict outMzxs, double *__restrict outMzys, double *__restrict outMzzs, double *__restrict outMzws,
+		double *__restrict outMwxs, double *__restrict outMwys, double *__restrict outMwzs, double *__restrict outMwws)
 	{
 		for (int i = 0; i < N; i++)
 		{
@@ -891,8 +897,9 @@ namespace
 	};
 
 	template<int N>
-	void VertexShader_BasicN(const int *meshIndices, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
-		double *outVertexXs, double *outVertexYs, double *outVertexZs, double *outVertexWs)
+	void VertexShader_BasicN(const int *__restrict meshIndices, const double *__restrict vertexXs, const double *__restrict vertexYs,
+		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
+		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
 		// Read in each mesh's transforms.
 		double modelViewProjMatrixXXs[N];
@@ -943,8 +950,9 @@ namespace
 	}
 
 	template<int N>
-	void VertexShader_RaisingDoorN(const int *meshIndices, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
-		double *outVertexXs, double *outVertexYs, double *outVertexZs, double *outVertexWs)
+	void VertexShader_RaisingDoorN(const int *__restrict meshIndices, const double *__restrict vertexXs, const double *__restrict vertexYs,
+		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
+		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
 		// Read in each mesh's transforms.
 		double preScaleTranslationXs[N];
@@ -1123,8 +1131,9 @@ namespace
 	}
 
 	template<int N>
-	void VertexShader_EntityN(const int *meshIndices, const double *vertexXs, const double *vertexYs, const double *vertexZs, const double *vertexWs,
-		double *outVertexXs, double *outVertexYs, double *outVertexZs, double *outVertexWs)
+	void VertexShader_EntityN(const int *__restrict meshIndices, const double *__restrict vertexXs, const double *__restrict vertexYs,
+		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
+		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
 		double modelViewProjMatrixXXs[N];
 		double modelViewProjMatrixXYs[N];
