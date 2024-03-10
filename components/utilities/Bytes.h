@@ -49,6 +49,33 @@ namespace Bytes
 		return -1;
 	}
 
+	// Gets the exact number of bits the integer takes up.
+	template<typename T>
+	constexpr int getRequiredBitCount(T value)
+	{
+		static_assert(std::is_integral_v<T>);
+
+		if (value == 0)
+		{
+			// 0 still needs one bit.
+			return 1;
+		}
+		else if (value < 0)
+		{
+			// Assume that negative numbers need all the 1's (due to how right shifting works).
+			return CHAR_BIT * sizeof(value);
+		}
+
+		int requiredBitCount = 0;
+		while (value != 0)
+		{
+			value >>= 1;
+			requiredBitCount++;
+		}
+
+		return requiredBitCount;
+	}
+
 	// Circular rotation of an integer to the right.
 	template<typename T>
 	T ror(T value, unsigned int count)
