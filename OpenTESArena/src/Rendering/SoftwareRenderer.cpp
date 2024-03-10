@@ -1836,6 +1836,8 @@ namespace
 				int &writeIndex = g_meshProcessCaches.triangleWriteCounts[unrollMeshIndex];
 				DebugAssert(writeIndex < MAX_DRAW_CALL_MESH_TRIANGLES);
 
+				// Change from SoA back to AoS due to how clipping currently reads vertices.
+				// - @todo: understand how to make clipping use SoA so the shadedV0/1/2 array can just go straight to these instead
 				auto &resultV0XYZW = g_meshProcessCaches.shadedV0XYZWArrays[unrollMeshIndex][writeIndex];
 				auto &resultV1XYZW = g_meshProcessCaches.shadedV1XYZWArrays[unrollMeshIndex][writeIndex];
 				auto &resultV2XYZW = g_meshProcessCaches.shadedV2XYZWArrays[unrollMeshIndex][writeIndex];
@@ -1989,70 +1991,59 @@ namespace
 			const auto &clipSpaceTriangleUV1XY = clipSpaceTriangleUV1XYs[clipListFrontIndex];
 			const auto &clipSpaceTriangleUV2XY = clipSpaceTriangleUV2XYs[clipListFrontIndex];
 
-			// Clip against the clipping plane, generating 0 to 2 triangles.
-			const double currentV0X = clipSpaceTriangleV0XYZW[0];
-			const double currentV0Y = clipSpaceTriangleV0XYZW[1];
-			const double currentV0Z = clipSpaceTriangleV0XYZW[2];
-			const double currentV0W = clipSpaceTriangleV0XYZW[3];
-			const double currentV1X = clipSpaceTriangleV1XYZW[0];
-			const double currentV1Y = clipSpaceTriangleV1XYZW[1];
-			const double currentV1Z = clipSpaceTriangleV1XYZW[2];
-			const double currentV1W = clipSpaceTriangleV1XYZW[3];
-			const double currentV2X = clipSpaceTriangleV2XYZW[0];
-			const double currentV2Y = clipSpaceTriangleV2XYZW[1];
-			const double currentV2Z = clipSpaceTriangleV2XYZW[2];
-			const double currentV2W = clipSpaceTriangleV2XYZW[3];
+			// Active vertices for clipping. The last two are populated below if clipping is needed.
+			double currentVXs[] = { clipSpaceTriangleV0XYZW[0], clipSpaceTriangleV1XYZW[0], clipSpaceTriangleV2XYZW[0], 0.0, 0.0 };
+			double currentVYs[] = { clipSpaceTriangleV0XYZW[1], clipSpaceTriangleV1XYZW[1], clipSpaceTriangleV2XYZW[1], 0.0, 0.0 };
+			double currentVZs[] = { clipSpaceTriangleV0XYZW[2], clipSpaceTriangleV1XYZW[2], clipSpaceTriangleV2XYZW[2], 0.0, 0.0 };
+			double currentVWs[] = { clipSpaceTriangleV0XYZW[3], clipSpaceTriangleV1XYZW[3], clipSpaceTriangleV2XYZW[3], 0.0, 0.0 };
+			constexpr int GENERATED_RESULT_INDEX0 = 3;
+			constexpr int GENERATED_RESULT_INDEX1 = 4;
 
 			double v0Component, v1Component, v2Component;
 			if constexpr ((clipPlaneIndex == 0) || (clipPlaneIndex == 1))
 			{
-				v0Component = currentV0X;
-				v1Component = currentV1X;
-				v2Component = currentV2X;
+				v0Component = currentVXs[0];
+				v1Component = currentVXs[1];
+				v2Component = currentVXs[2];
 			}
 			else if ((clipPlaneIndex == 2) || (clipPlaneIndex == 3))
 			{
-				v0Component = currentV0Y;
-				v1Component = currentV1Y;
-				v2Component = currentV2Y;
+				v0Component = currentVYs[0];
+				v1Component = currentVYs[1];
+				v2Component = currentVYs[2];
 			}
 			else
 			{
-				v0Component = currentV0Z;
-				v1Component = currentV1Z;
-				v2Component = currentV2Z;
+				v0Component = currentVZs[0];
+				v1Component = currentVZs[1];
+				v2Component = currentVZs[2];
 			}
 
 			double v0w, v1w, v2w;
 			double comparisonSign;
 			if constexpr ((clipPlaneIndex & 1) == 0)
 			{
-				v0w = currentV0W;
-				v1w = currentV1W;
-				v2w = currentV2W;
+				v0w = currentVWs[0];
+				v1w = currentVWs[1];
+				v2w = currentVWs[2];
 				comparisonSign = 1.0;
 			}
 			else
 			{
-				v0w = -currentV0W;
-				v1w = -currentV1W;
-				v2w = -currentV2W;
+				v0w = -currentVWs[0];
+				v1w = -currentVWs[1];
+				v2w = -currentVWs[2];
 				comparisonSign = -1.0;
 			}
 
-			const double v0Diff = v0Component + v0w;
-			const double v1Diff = v1Component + v1w;
-			const double v2Diff = v2Component + v2w;
-			const bool isV0Inside = (v0Diff * comparisonSign) >= 0.0;
-			const bool isV1Inside = (v1Diff * comparisonSign) >= 0.0;
-			const bool isV2Inside = (v2Diff * comparisonSign) >= 0.0;
+			const double vDiffs[] = { v0Component + v0w, v1Component + v1w, v2Component + v2w };
+			const bool isV0Inside = (vDiffs[0] * comparisonSign) >= 0.0;
+			const bool isV1Inside = (vDiffs[1] * comparisonSign) >= 0.0;
+			const bool isV2Inside = (vDiffs[2] * comparisonSign) >= 0.0;
 
-			const double currentUV0X = clipSpaceTriangleUV0XY[0];
-			const double currentUV0Y = clipSpaceTriangleUV0XY[1];
-			const double currentUV1X = clipSpaceTriangleUV1XY[0];
-			const double currentUV1Y = clipSpaceTriangleUV1XY[1];
-			const double currentUV2X = clipSpaceTriangleUV2XY[0];
-			const double currentUV2Y = clipSpaceTriangleUV2XY[1];
+			// Active texture coordinates for clipping, same rule as vertices above.
+			double currentUVXs[] = { clipSpaceTriangleUV0XY[0], clipSpaceTriangleUV1XY[0], clipSpaceTriangleUV2XY[0], 0.0, 0.0 };
+			double currentUVYs[] = { clipSpaceTriangleUV0XY[1], clipSpaceTriangleUV1XY[1], clipSpaceTriangleUV2XY[1], 0.0, 0.0 };
 
 			const int resultWriteIndex0 = clipListSize;
 			const int resultWriteIndex1 = clipListSize + 1;
@@ -2069,374 +2060,183 @@ namespace
 			auto &result1UV1XY = clipSpaceTriangleUV1XYs[resultWriteIndex1];
 			auto &result1UV2XY = clipSpaceTriangleUV2XYs[resultWriteIndex1];
 
-			// Determine which two line segments are intersecting the clipping plane and generate two new vertices,
-			// making sure to keep the original winding order.
-			int clipResultCount;
-			const int insideMaskIndex = (isV2Inside ? 0 : 1) | (isV1Inside ? 0 : 2) | (isV0Inside ? 0 : 4);
-			switch (insideMaskIndex)
+			const int insideMaskIndex = (isV2Inside ? 0 : 1) | (isV1Inside ? 0 : 2) | (isV0Inside ? 0 : 4);			
+			constexpr int clipCaseResultTriangleCounts[] =
 			{
-			case 0:
+				1, // All three input vertices visible
+				2, // Becomes quad (Inside: V0, V1. Outside: V2)
+				2, // Becomes quad (Inside: V0, V2. Outside: V1)
+				1, // Becomes smaller triangle (Inside: V0. Outside: V1, V2)
+				2, // Becomes quad (Inside: V1, V2. Outside: V0)
+				1, // Becomes smaller triangle (Inside: V1. Outside: V0, V2)
+				1, // Becomes smaller triangle (Inside: V2. Outside: V0, V1)
+				0 // No input vertices visible
+			};
+
+			const int clipResultCount = clipCaseResultTriangleCounts[insideMaskIndex];
+			const bool becomesQuad = clipResultCount == 2;
+
+			if (insideMaskIndex == 0)
+			{
 				// All vertices visible, no clipping needed.
-				result0V0XYZW[0] = currentV0X;
-				result0V0XYZW[1] = currentV0Y;
-				result0V0XYZW[2] = currentV0Z;
-				result0V0XYZW[3] = currentV0W;
-				result0V1XYZW[0] = currentV1X;
-				result0V1XYZW[1] = currentV1Y;
-				result0V1XYZW[2] = currentV1Z;
-				result0V1XYZW[3] = currentV1W;
-				result0V2XYZW[0] = currentV2X;
-				result0V2XYZW[1] = currentV2Y;
-				result0V2XYZW[2] = currentV2Z;
-				result0V2XYZW[3] = currentV2W;
-				result0UV0XY[0] = currentUV0X;
-				result0UV0XY[1] = currentUV0Y;
-				result0UV1XY[0] = currentUV1X;
-				result0UV1XY[1] = currentUV1Y;
-				result0UV2XY[0] = currentUV2X;
-				result0UV2XY[1] = currentUV2Y;
-				clipResultCount = 1;
-				break;
-			case 1:
-			{
-				// Becomes quad
-				// Inside: V0, V1
-				// Outside: V2
-				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-
-				double v1v2PointX, v1v2PointY, v1v2PointZ, v1v2PointW;
-				double v2v0PointX, v2v0PointY, v2v0PointZ, v2v0PointW;
-				Double_LerpN<1>(&currentV1X, &currentV2X, &v1v2PointT, &v1v2PointX);
-				Double_LerpN<1>(&currentV1Y, &currentV2Y, &v1v2PointT, &v1v2PointY);
-				Double_LerpN<1>(&currentV1Z, &currentV2Z, &v1v2PointT, &v1v2PointZ);
-				Double_LerpN<1>(&currentV1W, &currentV2W, &v1v2PointT, &v1v2PointW);
-				Double_LerpN<1>(&currentV2X, &currentV0X, &v2v0PointT, &v2v0PointX);
-				Double_LerpN<1>(&currentV2Y, &currentV0Y, &v2v0PointT, &v2v0PointY);
-				Double_LerpN<1>(&currentV2Z, &currentV0Z, &v2v0PointT, &v2v0PointZ);
-				Double_LerpN<1>(&currentV2W, &currentV0W, &v2v0PointT, &v2v0PointW);
-
-				double v1v2PointUVX, v1v2PointUVY;
-				double v2v0PointUVX, v2v0PointUVY;
-				Double_LerpN<1>(&currentUV1X, &currentUV2X, &v1v2PointT, &v1v2PointUVX);
-				Double_LerpN<1>(&currentUV1Y, &currentUV2Y, &v1v2PointT, &v1v2PointUVY);
-				Double_LerpN<1>(&currentUV2X, &currentUV0X, &v2v0PointT, &v2v0PointUVX);
-				Double_LerpN<1>(&currentUV2Y, &currentUV0Y, &v2v0PointT, &v2v0PointUVY);
-
-				result0V0XYZW[0] = currentV0X;
-				result0V0XYZW[1] = currentV0Y;
-				result0V0XYZW[2] = currentV0Z;
-				result0V0XYZW[3] = currentV0W;
-				result0V1XYZW[0] = currentV1X;
-				result0V1XYZW[1] = currentV1Y;
-				result0V1XYZW[2] = currentV1Z;
-				result0V1XYZW[3] = currentV1W;
-				result0V2XYZW[0] = v1v2PointX;
-				result0V2XYZW[1] = v1v2PointY;
-				result0V2XYZW[2] = v1v2PointZ;
-				result0V2XYZW[3] = v1v2PointW;
-				result1V0XYZW[0] = v1v2PointX;
-				result1V0XYZW[1] = v1v2PointY;
-				result1V0XYZW[2] = v1v2PointZ;
-				result1V0XYZW[3] = v1v2PointW;
-				result1V1XYZW[0] = v2v0PointX;
-				result1V1XYZW[1] = v2v0PointY;
-				result1V1XYZW[2] = v2v0PointZ;
-				result1V1XYZW[3] = v2v0PointW;
-				result1V2XYZW[0] = currentV0X;
-				result1V2XYZW[1] = currentV0Y;
-				result1V2XYZW[2] = currentV0Z;
-				result1V2XYZW[3] = currentV0W;
-				result0UV0XY[0] = currentUV0X;
-				result0UV0XY[1] = currentUV0Y;
-				result0UV1XY[0] = currentUV1X;
-				result0UV1XY[1] = currentUV1Y;
-				result0UV2XY[0] = v1v2PointUVX;
-				result0UV2XY[1] = v1v2PointUVY;
-				result1UV0XY[0] = v1v2PointUVX;
-				result1UV0XY[1] = v1v2PointUVY;
-				result1UV1XY[0] = v2v0PointUVX;
-				result1UV1XY[1] = v2v0PointUVY;
-				result1UV2XY[0] = currentUV0X;
-				result1UV2XY[1] = currentUV0Y;
-				clipResultCount = 2;
-				break;
+				result0V0XYZW[0] = currentVXs[0];
+				result0V0XYZW[1] = currentVYs[0];
+				result0V0XYZW[2] = currentVZs[0];
+				result0V0XYZW[3] = currentVWs[0];
+				result0V1XYZW[0] = currentVXs[1];
+				result0V1XYZW[1] = currentVYs[1];
+				result0V1XYZW[2] = currentVZs[1];
+				result0V1XYZW[3] = currentVWs[1];
+				result0V2XYZW[0] = currentVXs[2];
+				result0V2XYZW[1] = currentVYs[2];
+				result0V2XYZW[2] = currentVZs[2];
+				result0V2XYZW[3] = currentVWs[2];
+				result0UV0XY[0] = currentUVXs[0];
+				result0UV0XY[1] = currentUVYs[0];
+				result0UV1XY[0] = currentUVXs[1];
+				result0UV1XY[1] = currentUVYs[1];
+				result0UV2XY[0] = currentUVXs[2];
+				result0UV2XY[1] = currentUVYs[2];
 			}
-			case 2:
+			else if (insideMaskIndex == 7)
 			{
-				// Becomes quad
-				// Inside: V0, V2
-				// Outside: V1
-				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-				
-				double v0v1PointX, v0v1PointY, v0v1PointZ, v0v1PointW;
-				double v1v2PointX, v1v2PointY, v1v2PointZ, v1v2PointW;
-				Double_LerpN<1>(&currentV0X, &currentV1X, &v0v1PointT, &v0v1PointX);
-				Double_LerpN<1>(&currentV0Y, &currentV1Y, &v0v1PointT, &v0v1PointY);
-				Double_LerpN<1>(&currentV0Z, &currentV1Z, &v0v1PointT, &v0v1PointZ);
-				Double_LerpN<1>(&currentV0W, &currentV1W, &v0v1PointT, &v0v1PointW);
-				Double_LerpN<1>(&currentV1X, &currentV2X, &v1v2PointT, &v1v2PointX);
-				Double_LerpN<1>(&currentV1Y, &currentV2Y, &v1v2PointT, &v1v2PointY);
-				Double_LerpN<1>(&currentV1Z, &currentV2Z, &v1v2PointT, &v1v2PointZ);
-				Double_LerpN<1>(&currentV1W, &currentV2W, &v1v2PointT, &v1v2PointW);
-
-				double v0v1PointUVX, v0v1PointUVY;
-				double v1v2PointUVX, v1v2PointUVY;
-				Double_LerpN<1>(&currentUV0X, &currentUV1X, &v0v1PointT, &v0v1PointUVX);
-				Double_LerpN<1>(&currentUV0Y, &currentUV1Y, &v0v1PointT, &v0v1PointUVY);
-				Double_LerpN<1>(&currentUV1X, &currentUV2X, &v1v2PointT, &v1v2PointUVX);
-				Double_LerpN<1>(&currentUV1Y, &currentUV2Y, &v1v2PointT, &v1v2PointUVY);
-
-				result0V0XYZW[0] = currentV0X;
-				result0V0XYZW[1] = currentV0Y;
-				result0V0XYZW[2] = currentV0Z;
-				result0V0XYZW[3] = currentV0W;
-				result0V1XYZW[0] = v0v1PointX;
-				result0V1XYZW[1] = v0v1PointY;
-				result0V1XYZW[2] = v0v1PointZ;
-				result0V1XYZW[3] = v0v1PointW;
-				result0V2XYZW[0] = v1v2PointX;
-				result0V2XYZW[1] = v1v2PointY;
-				result0V2XYZW[2] = v1v2PointZ;
-				result0V2XYZW[3] = v1v2PointW;
-				result1V0XYZW[0] = v1v2PointX;
-				result1V0XYZW[1] = v1v2PointY;
-				result1V0XYZW[2] = v1v2PointZ;
-				result1V0XYZW[3] = v1v2PointW;
-				result1V1XYZW[0] = currentV2X;
-				result1V1XYZW[1] = currentV2Y;
-				result1V1XYZW[2] = currentV2Z;
-				result1V1XYZW[3] = currentV2W;
-				result1V2XYZW[0] = currentV0X;
-				result1V2XYZW[1] = currentV0Y;
-				result1V2XYZW[2] = currentV0Z;
-				result1V2XYZW[3] = currentV0W;
-				result0UV0XY[0] = currentUV0X;
-				result0UV0XY[1] = currentUV0Y;
-				result0UV1XY[0] = v0v1PointUVX;
-				result0UV1XY[1] = v0v1PointUVY;
-				result0UV2XY[0] = v1v2PointUVX;
-				result0UV2XY[1] = v1v2PointUVY;
-				result1UV0XY[0] = v1v2PointUVX;
-				result1UV0XY[1] = v1v2PointUVY;
-				result1UV1XY[0] = currentUV2X;
-				result1UV1XY[1] = currentUV2Y;
-				result1UV2XY[0] = currentUV0X;
-				result1UV2XY[1] = currentUV0Y;
-				clipResultCount = 2;
-				break;
+				// All three vertices outside frustum, write nothing.
 			}
-			case 3:
+			else
 			{
-				// Becomes smaller triangle
-				// Inside: V0
-				// Outside: V1, V2
-				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
+				// Determine which two line segments are intersecting the clipping plane. The input and result
+				// vertex orders depend on the clip case.
+				int inputIndex0, inputIndex1, inputIndex2, inputIndex3;
+				int resultIndex0, resultIndex1, resultIndex2, resultIndex3, resultIndex4, resultIndex5;
+				switch (insideMaskIndex)
+				{
+				case 1:
+					inputIndex0 = 1;
+					inputIndex1 = 2;
+					inputIndex2 = 2;
+					inputIndex3 = 0;
+					resultIndex0 = 0;
+					resultIndex1 = 1;
+					resultIndex2 = 3;
+					resultIndex3 = 3;
+					resultIndex4 = 4;
+					resultIndex5 = 0;
+					break;
+				case 2:
+					inputIndex0 = 0;
+					inputIndex1 = 1;
+					inputIndex2 = 1;
+					inputIndex3 = 2;
+					resultIndex0 = 0;
+					resultIndex1 = 3;
+					resultIndex2 = 4;
+					resultIndex3 = 4;
+					resultIndex4 = 2;
+					resultIndex5 = 0;
+					break;
+				case 3:
+					inputIndex0 = 0;
+					inputIndex1 = 1;
+					inputIndex2 = 2;
+					inputIndex3 = 0;
+					resultIndex0 = 0;
+					resultIndex1 = 3;
+					resultIndex2 = 4;
+					break;
+				case 4:
+					inputIndex0 = 0;
+					inputIndex1 = 1;
+					inputIndex2 = 2;
+					inputIndex3 = 0;
+					resultIndex0 = 3;
+					resultIndex1 = 1;
+					resultIndex2 = 2;
+					resultIndex3 = 2;
+					resultIndex4 = 4;
+					resultIndex5 = 3;
+					break;
+				case 5:
+					inputIndex0 = 0;
+					inputIndex1 = 1;
+					inputIndex2 = 1;
+					inputIndex3 = 2;
+					resultIndex0 = 3;
+					resultIndex1 = 1;
+					resultIndex2 = 4;
+					break;
+				case 6:
+					inputIndex0 = 1;
+					inputIndex1 = 2;
+					inputIndex2 = 2;
+					inputIndex3 = 0;
+					resultIndex0 = 3;
+					resultIndex1 = 2;
+					resultIndex2 = 4;
+					break;
+				}
 
-				double v0v1PointX, v0v1PointY, v0v1PointZ, v0v1PointW;
-				double v2v0PointX, v2v0PointY, v2v0PointZ, v2v0PointW;
-				Double_LerpN<1>(&currentV0X, &currentV1X, &v0v1PointT, &v0v1PointX);
-				Double_LerpN<1>(&currentV0Y, &currentV1Y, &v0v1PointT, &v0v1PointY);
-				Double_LerpN<1>(&currentV0Z, &currentV1Z, &v0v1PointT, &v0v1PointZ);
-				Double_LerpN<1>(&currentV0W, &currentV1W, &v0v1PointT, &v0v1PointW);
-				Double_LerpN<1>(&currentV2X, &currentV0X, &v2v0PointT, &v2v0PointX);
-				Double_LerpN<1>(&currentV2Y, &currentV0Y, &v2v0PointT, &v2v0PointY);
-				Double_LerpN<1>(&currentV2Z, &currentV0Z, &v2v0PointT, &v2v0PointZ);
-				Double_LerpN<1>(&currentV2W, &currentV0W, &v2v0PointT, &v2v0PointW);
+				// Calculate distances to clip the two line segments at.
+				const double segment0V0Diff = vDiffs[inputIndex0];
+				const double segment0V1Diff = vDiffs[inputIndex1];
+				const double segment1V0Diff = vDiffs[inputIndex2];
+				const double segment1V1Diff = vDiffs[inputIndex3];
+				const double segment0PointT = segment0V0Diff / (segment0V0Diff - segment0V1Diff);
+				const double segment1PointT = segment1V0Diff / (segment1V0Diff - segment1V1Diff);
 
-				double v0v1PointUVX, v0v1PointUVY;
-				double v2v0PointUVX, v2v0PointUVY;
-				Double_LerpN<1>(&currentUV0X, &currentUV1X, &v0v1PointT, &v0v1PointUVX);
-				Double_LerpN<1>(&currentUV0Y, &currentUV1Y, &v0v1PointT, &v0v1PointUVY);
-				Double_LerpN<1>(&currentUV2X, &currentUV0X, &v2v0PointT, &v2v0PointUVX);
-				Double_LerpN<1>(&currentUV2Y, &currentUV0Y, &v2v0PointT, &v2v0PointUVY);
+				// Generate two vertices and texture coordinates, making sure to keep the original winding order.
+				Double_LerpN<1>(currentVXs + inputIndex0, currentVXs + inputIndex1, &segment0PointT, currentVXs + GENERATED_RESULT_INDEX0);
+				Double_LerpN<1>(currentVYs + inputIndex0, currentVYs + inputIndex1, &segment0PointT, currentVYs + GENERATED_RESULT_INDEX0);
+				Double_LerpN<1>(currentVZs + inputIndex0, currentVZs + inputIndex1, &segment0PointT, currentVZs + GENERATED_RESULT_INDEX0);
+				Double_LerpN<1>(currentVWs + inputIndex0, currentVWs + inputIndex1, &segment0PointT, currentVWs + GENERATED_RESULT_INDEX0);
+				Double_LerpN<1>(currentVXs + inputIndex2, currentVXs + inputIndex3, &segment1PointT, currentVXs + GENERATED_RESULT_INDEX1);
+				Double_LerpN<1>(currentVYs + inputIndex2, currentVYs + inputIndex3, &segment1PointT, currentVYs + GENERATED_RESULT_INDEX1);
+				Double_LerpN<1>(currentVZs + inputIndex2, currentVZs + inputIndex3, &segment1PointT, currentVZs + GENERATED_RESULT_INDEX1);
+				Double_LerpN<1>(currentVWs + inputIndex2, currentVWs + inputIndex3, &segment1PointT, currentVWs + GENERATED_RESULT_INDEX1);
+				Double_LerpN<1>(currentUVXs + inputIndex0, currentUVXs + inputIndex1, &segment0PointT, currentUVXs + GENERATED_RESULT_INDEX0);
+				Double_LerpN<1>(currentUVYs + inputIndex0, currentUVYs + inputIndex1, &segment0PointT, currentUVYs + GENERATED_RESULT_INDEX0);
+				Double_LerpN<1>(currentUVXs + inputIndex2, currentUVXs + inputIndex3, &segment1PointT, currentUVXs + GENERATED_RESULT_INDEX1);
+				Double_LerpN<1>(currentUVYs + inputIndex2, currentUVYs + inputIndex3, &segment1PointT, currentUVYs + GENERATED_RESULT_INDEX1);
 
-				result0V0XYZW[0] = currentV0X;
-				result0V0XYZW[1] = currentV0Y;
-				result0V0XYZW[2] = currentV0Z;
-				result0V0XYZW[3] = currentV0W;
-				result0V1XYZW[0] = v0v1PointX;
-				result0V1XYZW[1] = v0v1PointY;
-				result0V1XYZW[2] = v0v1PointZ;
-				result0V1XYZW[3] = v0v1PointW;
-				result0V2XYZW[0] = v2v0PointX;
-				result0V2XYZW[1] = v2v0PointY;
-				result0V2XYZW[2] = v2v0PointZ;
-				result0V2XYZW[3] = v2v0PointW;
-				result0UV0XY[0] = currentUV0X;
-				result0UV0XY[1] = currentUV0Y;
-				result0UV1XY[0] = v0v1PointUVX;
-				result0UV1XY[1] = v0v1PointUVY;
-				result0UV2XY[0] = v2v0PointUVX;
-				result0UV2XY[1] = v2v0PointUVY;
-				clipResultCount = 1;
-				break;
-			}
-			case 4:
-			{
-				// Becomes quad
-				// Inside: V1, V2
-				// Outside: V0
-				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-				
-				double v0v1PointX, v0v1PointY, v0v1PointZ, v0v1PointW;
-				double v2v0PointX, v2v0PointY, v2v0PointZ, v2v0PointW;
-				Double_LerpN<1>(&currentV0X, &currentV1X, &v0v1PointT, &v0v1PointX);
-				Double_LerpN<1>(&currentV0Y, &currentV1Y, &v0v1PointT, &v0v1PointY);
-				Double_LerpN<1>(&currentV0Z, &currentV1Z, &v0v1PointT, &v0v1PointZ);
-				Double_LerpN<1>(&currentV0W, &currentV1W, &v0v1PointT, &v0v1PointW);
-				Double_LerpN<1>(&currentV2X, &currentV0X, &v2v0PointT, &v2v0PointX);
-				Double_LerpN<1>(&currentV2Y, &currentV0Y, &v2v0PointT, &v2v0PointY);
-				Double_LerpN<1>(&currentV2Z, &currentV0Z, &v2v0PointT, &v2v0PointZ);
-				Double_LerpN<1>(&currentV2W, &currentV0W, &v2v0PointT, &v2v0PointW);
+				result0V0XYZW[0] = currentVXs[resultIndex0];
+				result0V0XYZW[1] = currentVYs[resultIndex0];
+				result0V0XYZW[2] = currentVZs[resultIndex0];
+				result0V0XYZW[3] = currentVWs[resultIndex0];
+				result0V1XYZW[0] = currentVXs[resultIndex1];
+				result0V1XYZW[1] = currentVYs[resultIndex1];
+				result0V1XYZW[2] = currentVZs[resultIndex1];
+				result0V1XYZW[3] = currentVWs[resultIndex1];
+				result0V2XYZW[0] = currentVXs[resultIndex2];
+				result0V2XYZW[1] = currentVYs[resultIndex2];
+				result0V2XYZW[2] = currentVZs[resultIndex2];
+				result0V2XYZW[3] = currentVWs[resultIndex2];
+				result0UV0XY[0] = currentUVXs[resultIndex0];
+				result0UV0XY[1] = currentUVYs[resultIndex0];
+				result0UV1XY[0] = currentUVXs[resultIndex1];
+				result0UV1XY[1] = currentUVYs[resultIndex1];
+				result0UV2XY[0] = currentUVXs[resultIndex2];
+				result0UV2XY[1] = currentUVYs[resultIndex2];
 
-				double v0v1PointUVX, v0v1PointUVY;
-				double v2v0PointUVX, v2v0PointUVY;
-				Double_LerpN<1>(&currentUV0X, &currentUV1X, &v0v1PointT, &v0v1PointUVX);
-				Double_LerpN<1>(&currentUV0Y, &currentUV1Y, &v0v1PointT, &v0v1PointUVY);
-				Double_LerpN<1>(&currentUV2X, &currentUV0X, &v2v0PointT, &v2v0PointUVX);
-				Double_LerpN<1>(&currentUV2Y, &currentUV0Y, &v2v0PointT, &v2v0PointUVY);
-
-				result0V0XYZW[0] = v0v1PointX;
-				result0V0XYZW[1] = v0v1PointY;
-				result0V0XYZW[2] = v0v1PointZ;
-				result0V0XYZW[3] = v0v1PointW;
-				result0V1XYZW[0] = currentV1X;
-				result0V1XYZW[1] = currentV1Y;
-				result0V1XYZW[2] = currentV1Z;
-				result0V1XYZW[3] = currentV1W;
-				result0V2XYZW[0] = currentV2X;
-				result0V2XYZW[1] = currentV2Y;
-				result0V2XYZW[2] = currentV2Z;
-				result0V2XYZW[3] = currentV2W;
-				result1V0XYZW[0] = currentV2X;
-				result1V0XYZW[1] = currentV2Y;
-				result1V0XYZW[2] = currentV2Z;
-				result1V0XYZW[3] = currentV2W;
-				result1V1XYZW[0] = v2v0PointX;
-				result1V1XYZW[1] = v2v0PointY;
-				result1V1XYZW[2] = v2v0PointZ;
-				result1V1XYZW[3] = v2v0PointW;
-				result1V2XYZW[0] = v0v1PointX;
-				result1V2XYZW[1] = v0v1PointY;
-				result1V2XYZW[2] = v0v1PointZ;
-				result1V2XYZW[3] = v0v1PointW;
-				result0UV0XY[0] = v0v1PointUVX;
-				result0UV0XY[1] = v0v1PointUVY;
-				result0UV1XY[0] = currentUV1X;
-				result0UV1XY[1] = currentUV1Y;
-				result0UV2XY[0] = currentUV2X;
-				result0UV2XY[1] = currentUV2Y;
-				result1UV0XY[0] = currentUV2X;
-				result1UV0XY[1] = currentUV2Y;
-				result1UV1XY[0] = v2v0PointUVX;
-				result1UV1XY[1] = v2v0PointUVY;
-				result1UV2XY[0] = v0v1PointUVX;
-				result1UV2XY[1] = v0v1PointUVY;
-				clipResultCount = 2;
-				break;
-			}
-			case 5:
-			{
-				// Becomes smaller triangle
-				// Inside: V1
-				// Outside: V0, V2
-				const double v0v1PointT = v0Diff / (v0Diff - v1Diff);
-				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-				
-				double v0v1PointX, v0v1PointY, v0v1PointZ, v0v1PointW;
-				double v1v2PointX, v1v2PointY, v1v2PointZ, v1v2PointW;
-				Double_LerpN<1>(&currentV0X, &currentV1X, &v0v1PointT, &v0v1PointX);
-				Double_LerpN<1>(&currentV0Y, &currentV1Y, &v0v1PointT, &v0v1PointY);
-				Double_LerpN<1>(&currentV0Z, &currentV1Z, &v0v1PointT, &v0v1PointZ);
-				Double_LerpN<1>(&currentV0W, &currentV1W, &v0v1PointT, &v0v1PointW);
-				Double_LerpN<1>(&currentV1X, &currentV2X, &v1v2PointT, &v1v2PointX);
-				Double_LerpN<1>(&currentV1Y, &currentV2Y, &v1v2PointT, &v1v2PointY);
-				Double_LerpN<1>(&currentV1Z, &currentV2Z, &v1v2PointT, &v1v2PointZ);
-				Double_LerpN<1>(&currentV1W, &currentV2W, &v1v2PointT, &v1v2PointW);
-
-				double v0v1PointUVX, v0v1PointUVY;
-				double v1v2PointUVX, v1v2PointUVY;
-				Double_LerpN<1>(&currentUV0X, &currentUV1X, &v0v1PointT, &v0v1PointUVX);
-				Double_LerpN<1>(&currentUV0Y, &currentUV1Y, &v0v1PointT, &v0v1PointUVY);
-				Double_LerpN<1>(&currentUV1X, &currentUV2X, &v1v2PointT, &v1v2PointUVX);
-				Double_LerpN<1>(&currentUV1Y, &currentUV2Y, &v1v2PointT, &v1v2PointUVY);
-
-				result0V0XYZW[0] = v0v1PointX;
-				result0V0XYZW[1] = v0v1PointY;
-				result0V0XYZW[2] = v0v1PointZ;
-				result0V0XYZW[3] = v0v1PointW;
-				result0V1XYZW[0] = currentV1X;
-				result0V1XYZW[1] = currentV1Y;
-				result0V1XYZW[2] = currentV1Z;
-				result0V1XYZW[3] = currentV1W;
-				result0V2XYZW[0] = v1v2PointX;
-				result0V2XYZW[1] = v1v2PointY;
-				result0V2XYZW[2] = v1v2PointZ;
-				result0V2XYZW[3] = v1v2PointW;
-				result0UV0XY[0] = v0v1PointUVX;
-				result0UV0XY[1] = v0v1PointUVY;
-				result0UV1XY[0] = currentUV1X;
-				result0UV1XY[1] = currentUV1Y;
-				result0UV2XY[0] = v1v2PointUVX;
-				result0UV2XY[1] = v1v2PointUVY;
-				clipResultCount = 1;
-				break;
-			}
-			case 6:
-			{
-				// Becomes smaller triangle
-				// Inside: V2
-				// Outside: V0, V1
-				const double v1v2PointT = v1Diff / (v1Diff - v2Diff);
-				const double v2v0PointT = v2Diff / (v2Diff - v0Diff);
-				
-				double v1v2PointX, v1v2PointY, v1v2PointZ, v1v2PointW;
-				double v2v0PointX, v2v0PointY, v2v0PointZ, v2v0PointW;
-				Double_LerpN<1>(&currentV1X, &currentV2X, &v1v2PointT, &v1v2PointX);
-				Double_LerpN<1>(&currentV1Y, &currentV2Y, &v1v2PointT, &v1v2PointY);
-				Double_LerpN<1>(&currentV1Z, &currentV2Z, &v1v2PointT, &v1v2PointZ);
-				Double_LerpN<1>(&currentV1W, &currentV2W, &v1v2PointT, &v1v2PointW);
-				Double_LerpN<1>(&currentV2X, &currentV0X, &v2v0PointT, &v2v0PointX);
-				Double_LerpN<1>(&currentV2Y, &currentV0Y, &v2v0PointT, &v2v0PointY);
-				Double_LerpN<1>(&currentV2Z, &currentV0Z, &v2v0PointT, &v2v0PointZ);
-				Double_LerpN<1>(&currentV2W, &currentV0W, &v2v0PointT, &v2v0PointW);
-
-				double v1v2PointUVX, v1v2PointUVY;
-				double v2v0PointUVX, v2v0PointUVY;
-				Double_LerpN<1>(&currentUV1X, &currentUV2X, &v1v2PointT, &v1v2PointUVX);
-				Double_LerpN<1>(&currentUV1Y, &currentUV2Y, &v1v2PointT, &v1v2PointUVY);
-				Double_LerpN<1>(&currentUV2X, &currentUV0X, &v2v0PointT, &v2v0PointUVX);
-				Double_LerpN<1>(&currentUV2Y, &currentUV0Y, &v2v0PointT, &v2v0PointUVY);
-
-				result0V0XYZW[0] = v1v2PointX;
-				result0V0XYZW[1] = v1v2PointY;
-				result0V0XYZW[2] = v1v2PointZ;
-				result0V0XYZW[3] = v1v2PointW;
-				result0V1XYZW[0] = currentV2X;
-				result0V1XYZW[1] = currentV2Y;
-				result0V1XYZW[2] = currentV2Z;
-				result0V1XYZW[3] = currentV2W;
-				result0V2XYZW[0] = v2v0PointX;
-				result0V2XYZW[1] = v2v0PointY;
-				result0V2XYZW[2] = v2v0PointZ;
-				result0V2XYZW[3] = v2v0PointW;
-				result0UV0XY[0] = v1v2PointUVX;
-				result0UV0XY[1] = v1v2PointUVY;
-				result0UV1XY[0] = currentUV2X;
-				result0UV1XY[1] = currentUV2Y;
-				result0UV2XY[0] = v2v0PointUVX;
-				result0UV2XY[1] = v2v0PointUVY;
-				clipResultCount = 1;
-				break;
-			}
-			case 7:
-				// All vertices outside frustum.
-				clipResultCount = 0;
-				break;
+				if (becomesQuad)
+				{
+					result1V0XYZW[0] = currentVXs[resultIndex3];
+					result1V0XYZW[1] = currentVYs[resultIndex3];
+					result1V0XYZW[2] = currentVZs[resultIndex3];
+					result1V0XYZW[3] = currentVWs[resultIndex3];
+					result1V1XYZW[0] = currentVXs[resultIndex4];
+					result1V1XYZW[1] = currentVYs[resultIndex4];
+					result1V1XYZW[2] = currentVZs[resultIndex4];
+					result1V1XYZW[3] = currentVWs[resultIndex4];
+					result1V2XYZW[0] = currentVXs[resultIndex5];
+					result1V2XYZW[1] = currentVYs[resultIndex5];
+					result1V2XYZW[2] = currentVZs[resultIndex5];
+					result1V2XYZW[3] = currentVWs[resultIndex5];
+					result1UV0XY[0] = currentUVXs[resultIndex3];
+					result1UV0XY[1] = currentUVYs[resultIndex3];
+					result1UV1XY[0] = currentUVXs[resultIndex4];
+					result1UV1XY[1] = currentUVYs[resultIndex4];
+					result1UV2XY[0] = currentUVXs[resultIndex5];
+					result1UV2XY[1] = currentUVYs[resultIndex5];
+				}
 			}
 
 			clipListSize += clipResultCount;
