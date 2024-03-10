@@ -2437,14 +2437,26 @@ namespace
 		g_totalColorWrites = 0;
 	}
 
-	void RasterizeMesh(int meshIndex, TextureSamplingType textureSamplingType0, TextureSamplingType textureSamplingType1,
-		RenderLightingType lightingType, double meshLightPercent, double ambientPercent, const SoftwareRenderer::Light* const *lights,
-		int lightCount, PixelShaderType pixelShaderType, double pixelShaderParam0, bool enableDepthRead, bool enableDepthWrite,
-		const SoftwareRenderer::ObjectTexturePool &textures, const SoftwareRenderer::ObjectTexture &paletteTexture,
-		const SoftwareRenderer::ObjectTexture &lightTableTexture, const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode,
-		const RenderCamera &camera, BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
+	constexpr int RASTERIZE_LOOP_UNROLL_X = WEAK_LOOP_UNROLL;
+	constexpr int RASTERIZE_LOOP_UNROLL_Y = WEAK_LOOP_UNROLL;
+
+	void RasterizeMesh(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
+		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode, const RenderCamera &camera,
+		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
 		BufferView2D<uint32_t> colorBuffer)
 	{
+		const TextureSamplingType textureSamplingType0 = g_meshProcessCaches.textureSamplingType0s[meshIndex];
+		const TextureSamplingType textureSamplingType1 = g_meshProcessCaches.textureSamplingType1s[meshIndex];
+		const RenderLightingType lightingType = g_meshProcessCaches.lightingTypes[meshIndex];
+		const double meshLightPercent = g_meshProcessCaches.meshLightPercents[meshIndex];
+		const auto &lights = g_meshProcessCaches.lightPtrArrays[meshIndex];
+		const int lightCount = g_meshProcessCaches.lightCounts[meshIndex];
+		const PixelShaderType pixelShaderType = g_meshProcessCaches.pixelShaderTypes[meshIndex];
+		const double pixelShaderParam0 = g_meshProcessCaches.pixelShaderParam0s[meshIndex];
+		const bool enableDepthRead = g_meshProcessCaches.enableDepthReads[meshIndex];
+		const bool enableDepthWrite = g_meshProcessCaches.enableDepthWrites[meshIndex];
+
 		const int frameBufferWidth = paletteIndexBuffer.getWidth();
 		const int frameBufferHeight = paletteIndexBuffer.getHeight();
 		const int frameBufferPixelCount = frameBufferWidth * frameBufferHeight;
@@ -3406,20 +3418,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 
 		for (int meshIndex = 0; meshIndex < drawCallSequenceCount; meshIndex++)
 		{
-			const TextureSamplingType textureSamplingType0 = meshProcessCacheTextureSamplingType0s[meshIndex];
-			const TextureSamplingType textureSamplingType1 = meshProcessCacheTextureSamplingType1s[meshIndex];
-			const RenderLightingType lightingType = meshProcessCacheLightingTypes[meshIndex];
-			const double meshLightPercent = meshProcessCacheMeshLightPercents[meshIndex];
-			const auto &lightPtrs = meshProcessCacheLightPtrArrays[meshIndex];
-			const int lightCount = meshProcessCacheLightCounts[meshIndex];
-			const PixelShaderType pixelShaderType = meshProcessCachePixelShaderTypes[meshIndex];
-			const double pixelShaderParam0 = meshProcessCachePixelShaderParam0s[meshIndex];
-			const bool enableDepthRead = meshProcessCacheEnableDepthReads[meshIndex];
-			const bool enableDepthWrite = meshProcessCacheEnableDepthWrites[meshIndex];
-			RasterizeMesh(meshIndex, textureSamplingType0, textureSamplingType1, lightingType, meshLightPercent,
-				ambientPercent, lightPtrs, lightCount, pixelShaderType, pixelShaderParam0, enableDepthRead, enableDepthWrite,
-				this->objectTextures, paletteTexture, lightTableTexture, skyBgTexture, this->ditheringMode, camera,
-				paletteIndexBufferView, depthBufferView, ditherBufferView, colorBufferView);
+			RasterizeMesh(meshIndex, ambientPercent, this->objectTextures, paletteTexture, lightTableTexture, skyBgTexture,
+				this->ditheringMode, camera, paletteIndexBufferView, depthBufferView, ditherBufferView, colorBufferView);
 		}
 
 		drawCallIndex += drawCallSequenceCount;
