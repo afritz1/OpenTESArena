@@ -2369,8 +2369,7 @@ namespace
 	constexpr int DITHERING_MODE_NONE = 0;
 	constexpr int DITHERING_MODE_CLASSIC = 1;
 	constexpr int DITHERING_MODE_MODERN = 2;
-
-	constexpr int DITHERING_MODE_MODERN_MASK_COUNT = 4;
+	constexpr int DITHERING_MODERN_MASK_COUNT = 4;
 
 	int g_totalDrawCallCount = 0;
 
@@ -2399,8 +2398,8 @@ namespace
 		else if (ditheringMode == DITHERING_MODE_MODERN)
 		{
 			// Modern 2x2, four levels of dither depending on percent between two light levels.
-			ditherBuffer.init(width, height, DITHERING_MODE_MODERN_MASK_COUNT);
-			static_assert(DITHERING_MODE_MODERN_MASK_COUNT == 4);
+			ditherBuffer.init(width, height, DITHERING_MODERN_MASK_COUNT);
+			static_assert(DITHERING_MODERN_MASK_COUNT == 4);
 
 			bool *ditherPixels = ditherBuffer.begin();
 			for (int y = 0; y < height; y++)
@@ -2753,7 +2752,7 @@ namespace
 								case DITHERING_MODE_MODERN:
 									if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
 									{
-										constexpr int maskCount = DITHERING_MODE_MODERN_MASK_COUNT;
+										constexpr int maskCount = DITHERING_MODERN_MASK_COUNT;
 										const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
 										const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(maskCount) * lightLevelFraction), 0, maskCount - 1);
 										const int ditherBufferIndex = shaderFrameBuffer.pixelIndex + (maskIndex * frameBufferPixelCount);
