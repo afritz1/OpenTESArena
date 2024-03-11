@@ -2492,7 +2492,7 @@ namespace
 		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 
 		PixelShaderHorizonMirror shaderHorizonMirror;
-		if (requiresHorizonMirror)
+		if constexpr (requiresHorizonMirror)
 		{
 			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(camera.horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
 			shaderHorizonMirror.horizonScreenSpacePointX = horizonScreenSpacePoint.x;
@@ -2510,6 +2510,17 @@ namespace
 		const auto &clipSpaceMeshUV2XYs = g_meshProcessCaches.clipSpaceMeshUV2XYArrays[meshIndex];
 		const ObjectTextureID textureID0 = g_meshProcessCaches.textureID0s[meshIndex];
 		const ObjectTextureID textureID1 = g_meshProcessCaches.textureID1s[meshIndex];
+
+		const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID0);
+		PixelShaderTexture shaderTexture0;
+		shaderTexture0.init(texture0.texels8Bit, texture0.width, texture0.height, textureSamplingType0);
+
+		PixelShaderTexture shaderTexture1;
+		if constexpr (requiresTwoTextures)
+		{
+			const SoftwareRenderer::ObjectTexture &texture1 = textures.get(textureID1);
+			shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height, textureSamplingType1);
+		}
 
 		const int triangleCount = g_meshProcessCaches.clipSpaceMeshTriangleCounts[meshIndex];
 		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
@@ -2606,18 +2617,6 @@ namespace
 			const double uv1YDivW = uv1Y * clip1WRecip;
 			const double uv2XDivW = uv2X * clip2WRecip;
 			const double uv2YDivW = uv2Y * clip2WRecip;
-
-			const SoftwareRenderer::ObjectTexture &texture0 = textures.get(textureID0);
-
-			PixelShaderTexture shaderTexture0;
-			shaderTexture0.init(texture0.texels8Bit, texture0.width, texture0.height, textureSamplingType0);
-
-			PixelShaderTexture shaderTexture1;
-			if (requiresTwoTextures)
-			{
-				const SoftwareRenderer::ObjectTexture &texture1 = textures.get(textureID1);
-				shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height, textureSamplingType1);
-			}
 
 			for (int y = yStart; y < yEnd; y++)
 			{
