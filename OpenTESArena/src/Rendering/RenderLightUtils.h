@@ -12,6 +12,9 @@ enum class RenderLightingType
 	PerPixel // Mesh is shaded by lights in the scene.
 };
 
+static constexpr RenderLightingType RENDER_LIGHTING_TYPE_MAX = RenderLightingType::PerPixel;
+static constexpr int RENDER_LIGHTING_TYPE_COUNT = static_cast<int>(RENDER_LIGHTING_TYPE_MAX) + 1;
+
 // Lights affecting a specific portion of the scene, like a voxel or entity. Sorted by distance.
 struct RenderLightIdList
 {

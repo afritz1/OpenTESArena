@@ -22,11 +22,17 @@ enum class PixelShaderType
 	AlphaTestedWithHorizonMirror // Puddles.
 };
 
+static constexpr PixelShaderType PIXEL_SHADER_TYPE_MAX = PixelShaderType::AlphaTestedWithHorizonMirror;
+static constexpr int PIXEL_SHADER_TYPE_COUNT = static_cast<int>(PIXEL_SHADER_TYPE_MAX) + 1;
+
 enum class TextureSamplingType
 {
 	Default,
 	ScreenSpaceRepeatY // Chasms.
 };
+
+static constexpr TextureSamplingType TEXTURE_SAMPLING_TYPE_MAX = TextureSamplingType::ScreenSpaceRepeatY;
+static constexpr int TEXTURE_SAMPLING_TYPE_COUNT = static_cast<int>(TEXTURE_SAMPLING_TYPE_MAX) + 1;
 
 using UniformBufferID = int;
 
