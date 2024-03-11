@@ -154,7 +154,7 @@ public:
 
 	bool init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
 		const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
-		RendererSystemType3D systemType3D, int renderThreadsMode, int ditheringMode);
+		RendererSystemType3D systemType3D, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
@@ -258,7 +258,7 @@ public:
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
 		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		ObjectTextureID skyBgTextureID, int renderThreadsMode, int ditheringMode);
+		ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

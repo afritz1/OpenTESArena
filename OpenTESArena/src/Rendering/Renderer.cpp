@@ -486,7 +486,7 @@ Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
 
 bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
 	const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
-	int renderThreadsMode, int ditheringMode)
+	int renderThreadsMode, DitheringMode ditheringMode)
 {
 	DebugLog("Initializing.");
 	const int result = SDL_Init(SDL_INIT_VIDEO); // Required for SDL_GetDesktopDisplayMode() to work for exclusive fullscreen.
@@ -1020,7 +1020,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls, double ambientPercent,
 	ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode,
-	int ditheringMode)
+	DitheringMode ditheringMode)
 {
 	DebugAssert(this->renderer3D->isInited());
 

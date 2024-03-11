@@ -879,9 +879,10 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	}
 
 	const ObjectTextureID skyBgTextureID = skyBgDrawCall.textureIDs[0];
+	const DitheringMode ditheringMode = static_cast<DitheringMode>(options.getGraphics_DitheringMode());
 
 	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
-		options.getGraphics_RenderThreadsMode(), options.getGraphics_DitheringMode());
+		options.getGraphics_RenderThreadsMode(), ditheringMode);
 
 	return true;
 }

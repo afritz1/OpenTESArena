@@ -2375,20 +2375,15 @@ namespace
 	}
 
 	// Rendering functions, per-pixel work.
-	constexpr int DITHERING_MODE_NONE = 0;
-	constexpr int DITHERING_MODE_CLASSIC = 1;
-	constexpr int DITHERING_MODE_MODERN = 2;
-	constexpr int DITHERING_MODERN_MASK_COUNT = 4;
-
 	int g_totalDrawCallCount = 0;
 
 	// For measuring overdraw.
 	int g_totalDepthTests = 0;
 	int g_totalColorWrites = 0;
 
-	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, int ditheringMode)
+	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode)
 	{
-		if (ditheringMode == DITHERING_MODE_CLASSIC)
+		if (ditheringMode == DitheringMode::Classic)
 		{
 			// Original game: 2x2, top left + bottom right are darkened.
 			ditherBuffer.init(width, height, 1);
@@ -2404,7 +2399,7 @@ namespace
 				}
 			}
 		}
-		else if (ditheringMode == DITHERING_MODE_MODERN)
+		else if (ditheringMode == DitheringMode::Modern)
 		{
 			// Modern 2x2, four levels of dither depending on percent between two light levels.
 			ditherBuffer.init(width, height, DITHERING_MODERN_MASK_COUNT);
@@ -2449,7 +2444,7 @@ namespace
 	constexpr int RASTERIZE_LOOP_UNROLL_X = WEAK_LOOP_UNROLL;
 	constexpr int RASTERIZE_LOOP_UNROLL_Y = WEAK_LOOP_UNROLL;
 
-	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, int ditheringMode>
+	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
 	void RasterizeMeshInternal(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
 		const SoftwareRenderer::ObjectTexture &skyBgTexture, const RenderCamera &camera, BufferView2D<uint8_t> paletteIndexBuffer,
@@ -2756,15 +2751,15 @@ namespace
 							{
 								// Dither the light level in screen space.
 								bool shouldDither;
-								if constexpr (ditheringMode == DITHERING_MODE_NONE)
+								if constexpr (ditheringMode == DitheringMode::None)
 								{
 									shouldDither = false;
 								}
-								else if (ditheringMode == DITHERING_MODE_CLASSIC)
+								else if (ditheringMode == DitheringMode::Classic)
 								{
 									shouldDither = ditherBufferPtr[shaderFrameBuffer.pixelIndex];
 								}
-								else if (ditheringMode == DITHERING_MODE_MODERN)
+								else if (ditheringMode == DitheringMode::Modern)
 								{
 									if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
 									{
@@ -2859,24 +2854,24 @@ namespace
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
 	void RasterizeMeshDispatchDitheringMode(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode, const RenderCamera &camera,
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera,
 		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
 		BufferView2D<uint32_t> colorBuffer)
 	{
 		switch (ditheringMode)
 		{
-		case DITHERING_MODE_NONE:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DITHERING_MODE_NONE>(
+		case DitheringMode::None:
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(
 				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera, paletteIndexBuffer, depthBuffer,
 				ditherBuffer, colorBuffer);
 			break;
-		case DITHERING_MODE_CLASSIC:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DITHERING_MODE_CLASSIC>(
+		case DitheringMode::Classic:
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(
 				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera, paletteIndexBuffer, depthBuffer,
 				ditherBuffer, colorBuffer);
 			break;
-		case DITHERING_MODE_MODERN:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DITHERING_MODE_MODERN>(
+		case DitheringMode::Modern:
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(
 				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera, paletteIndexBuffer, depthBuffer,
 				ditherBuffer, colorBuffer);
 			break;
@@ -2886,7 +2881,7 @@ namespace
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType>
 	void RasterizeMeshDispatchDepthToggles(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode, const RenderCamera &camera,
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera,
 		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
 		BufferView2D<uint32_t> colorBuffer)
 	{
@@ -2928,7 +2923,7 @@ namespace
 	template<RenderLightingType lightingType>
 	void RasterizeMeshDispatchPixelShaderType(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode, const RenderCamera &camera,
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera,
 		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
 		BufferView2D<uint32_t> colorBuffer)
 	{
@@ -2993,7 +2988,7 @@ namespace
 	// Decides which optimized rasterizer variant to use based on the parameters.
 	void RasterizeMesh(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, int ditheringMode, const RenderCamera &camera,
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera,
 		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
 		BufferView2D<uint32_t> colorBuffer)
 	{
@@ -3100,7 +3095,7 @@ void SoftwareRenderer::Light::init(const Double3 &worldPoint, double startRadius
 
 SoftwareRenderer::SoftwareRenderer()
 {
-	this->ditheringMode = -1;
+	this->ditheringMode = static_cast<DitheringMode>(-1);
 }
 
 SoftwareRenderer::~SoftwareRenderer()
@@ -3113,7 +3108,8 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 	this->paletteIndexBuffer.init(settings.width, settings.height);
 	this->depthBuffer.init(settings.width, settings.height);
 
-	CreateDitherBuffer(this->ditherBuffer, settings.width, settings.height, settings.ditheringMode);
+	const DitheringMode ditheringMode = static_cast<DitheringMode>(settings.ditheringMode);
+	CreateDitherBuffer(this->ditherBuffer, settings.width, settings.height, ditheringMode);
 	this->ditheringMode = settings.ditheringMode;
 }
 
@@ -3122,7 +3118,7 @@ void SoftwareRenderer::shutdown()
 	this->paletteIndexBuffer.clear();
 	this->depthBuffer.clear();
 	this->ditherBuffer.clear();
-	this->ditheringMode = -1;
+	this->ditheringMode = static_cast<DitheringMode>(-1);
 	this->vertexBuffers.clear();
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();

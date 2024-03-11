@@ -34,6 +34,15 @@ enum class TextureSamplingType
 static constexpr TextureSamplingType TEXTURE_SAMPLING_TYPE_MAX = TextureSamplingType::ScreenSpaceRepeatY;
 static constexpr int TEXTURE_SAMPLING_TYPE_COUNT = static_cast<int>(TEXTURE_SAMPLING_TYPE_MAX) + 1;
 
+enum class DitheringMode
+{
+	None,
+	Classic,
+	Modern
+};
+
+static constexpr int DITHERING_MODERN_MASK_COUNT = 4;
+
 using UniformBufferID = int;
 
 #endif

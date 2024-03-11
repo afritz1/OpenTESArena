@@ -220,11 +220,11 @@ bool Game::init()
 
 	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
 	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
+	const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
 	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
-		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()),
-		this->options.getGraphics_LetterboxMode(), this->options.getGraphics_ModernInterface(),
-		resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D, this->options.getGraphics_RenderThreadsMode(),
-		this->options.getGraphics_DitheringMode()))
+		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
+		this->options.getGraphics_ModernInterface(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D,
+		this->options.getGraphics_RenderThreadsMode(), ditheringMode))
 	{
 		DebugLogError("Couldn't init renderer (2D: " + std::to_string(static_cast<int>(rendererSystemType2D)) +
 			", 3D: " + std::to_string(static_cast<int>(rendererSystemType3D)) + ").");
