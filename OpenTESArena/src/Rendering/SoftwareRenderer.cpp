@@ -2381,6 +2381,45 @@ namespace
 	int g_totalDepthTests = 0;
 	int g_totalColorWrites = 0;
 
+	int g_frameBufferWidth;
+	int g_frameBufferHeight;
+	int g_frameBufferPixelCount;
+	double g_frameBufferWidthReal;
+	double g_frameBufferHeightReal;
+	double g_frameBufferWidthRealRecip;
+	double g_frameBufferHeightRealRecip;
+	int g_ditherBufferDepth;
+	uint8_t *g_paletteIndexBuffer;
+	double *g_depthBuffer;
+	const bool *g_ditherBuffer;
+	uint32_t *g_colorBuffer;
+
+	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
+		const bool *ditherBuffer, int ditherBufferDepth, uint32_t *colorBuffer)
+	{
+		g_frameBufferWidth = frameBufferWidth;
+		g_frameBufferHeight = frameBufferHeight;
+		g_frameBufferPixelCount = frameBufferWidth * frameBufferHeight;
+		g_frameBufferWidthReal = static_cast<double>(frameBufferWidth);
+		g_frameBufferHeightReal = static_cast<double>(frameBufferHeight);
+		g_frameBufferWidthRealRecip = 1.0 / g_frameBufferWidthReal;
+		g_frameBufferHeightRealRecip = 1.0 / g_frameBufferHeightReal;
+		g_ditherBufferDepth = ditherBufferDepth;
+		g_paletteIndexBuffer = paletteIndexBuffer;
+		g_depthBuffer = depthBuffer;
+		g_ditherBuffer = ditherBuffer;
+		g_colorBuffer = colorBuffer;
+	}
+
+	void ClearFrameBuffers()
+	{
+		std::fill(g_paletteIndexBuffer, g_paletteIndexBuffer + g_frameBufferPixelCount, 0);
+		std::fill(g_depthBuffer, g_depthBuffer + g_frameBufferPixelCount, std::numeric_limits<double>::infinity());
+		std::fill(g_colorBuffer, g_colorBuffer + g_frameBufferPixelCount, 0);
+		g_totalDepthTests = 0;
+		g_totalColorWrites = 0;
+	}
+
 	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode)
 	{
 		if (ditheringMode == DitheringMode::Classic)
@@ -2431,24 +2470,10 @@ namespace
 		}
 	}
 
-	void ClearFrameBuffers(BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer,
-		BufferView2D<uint32_t> colorBuffer)
-	{
-		paletteIndexBuffer.fill(0);
-		depthBuffer.fill(std::numeric_limits<double>::infinity());
-		colorBuffer.fill(0);
-		g_totalDepthTests = 0;
-		g_totalColorWrites = 0;
-	}
-
-	constexpr int RASTERIZE_LOOP_UNROLL_X = WEAK_LOOP_UNROLL;
-	constexpr int RASTERIZE_LOOP_UNROLL_Y = WEAK_LOOP_UNROLL;
-
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
 	void RasterizeMeshInternal(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, const RenderCamera &camera, BufferView2D<uint8_t> paletteIndexBuffer,
-		BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer, BufferView2D<uint32_t> colorBuffer)
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, const RenderCamera &camera)
 	{
 		const TextureSamplingType textureSamplingType0 = g_meshProcessCaches.textureSamplingType0s[meshIndex];
 		const TextureSamplingType textureSamplingType1 = g_meshProcessCaches.textureSamplingType1s[meshIndex];
@@ -2457,15 +2482,8 @@ namespace
 		const int lightCount = g_meshProcessCaches.lightCounts[meshIndex];
 		const double pixelShaderParam0 = g_meshProcessCaches.pixelShaderParam0s[meshIndex];
 
-		const int frameBufferWidth = paletteIndexBuffer.getWidth();
-		const int frameBufferHeight = paletteIndexBuffer.getHeight();
-		const int frameBufferPixelCount = frameBufferWidth * frameBufferHeight;
-		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
-		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
-		const double frameBufferWidthRealRecip = 1.0 / frameBufferWidthReal;
-		const double frameBufferHeightRealRecip = 1.0 / frameBufferHeightReal;
-		const bool *ditherBufferPtr = ditherBuffer.begin();
-		uint32_t *colorBufferPtr = colorBuffer.begin();
+		constexpr int RASTERIZE_LOOP_UNROLL_X = WEAK_LOOP_UNROLL;
+		constexpr int RASTERIZE_LOOP_UNROLL_Y = WEAK_LOOP_UNROLL;
 
 		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
 		constexpr bool requiresHorizonMirror = pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
@@ -2481,15 +2499,15 @@ namespace
 		shaderLighting.lightLevel = 0;
 
 		PixelShaderFrameBuffer shaderFrameBuffer;
-		shaderFrameBuffer.colors = paletteIndexBuffer.begin();
-		shaderFrameBuffer.depth = depthBuffer.begin();
+		shaderFrameBuffer.colors = g_paletteIndexBuffer;
+		shaderFrameBuffer.depth = g_depthBuffer;
 		shaderFrameBuffer.palette.colors = paletteTexture.texels32Bit;
 		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 
 		PixelShaderHorizonMirror shaderHorizonMirror;
 		if constexpr (requiresHorizonMirror)
 		{
-			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(camera.horizonNdcPoint, frameBufferWidthReal, frameBufferHeightReal);
+			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(camera.horizonNdcPoint, g_frameBufferWidthReal, g_frameBufferHeightReal);
 			shaderHorizonMirror.horizonScreenSpacePointX = horizonScreenSpacePoint.x;
 			shaderHorizonMirror.horizonScreenSpacePointY = horizonScreenSpacePoint.y;
 
@@ -2547,12 +2565,12 @@ namespace
 			const double ndc2X = clip2X * clip2WRecip;
 			const double ndc2Y = clip2Y * clip2WRecip;
 			const double ndc2Z = clip2Z * clip2WRecip;
-			const double screenSpace0X = NdcXToScreenSpace(ndc0X, frameBufferWidthReal);
-			const double screenSpace0Y = NdcYToScreenSpace(ndc0Y, frameBufferHeightReal);
-			const double screenSpace1X = NdcXToScreenSpace(ndc1X, frameBufferWidthReal);
-			const double screenSpace1Y = NdcYToScreenSpace(ndc1Y, frameBufferHeightReal);
-			const double screenSpace2X = NdcXToScreenSpace(ndc2X, frameBufferWidthReal);
-			const double screenSpace2Y = NdcYToScreenSpace(ndc2Y, frameBufferHeightReal);
+			const double screenSpace0X = NdcXToScreenSpace(ndc0X, g_frameBufferWidthReal);
+			const double screenSpace0Y = NdcYToScreenSpace(ndc0Y, g_frameBufferHeightReal);
+			const double screenSpace1X = NdcXToScreenSpace(ndc1X, g_frameBufferWidthReal);
+			const double screenSpace1Y = NdcYToScreenSpace(ndc1Y, g_frameBufferHeightReal);
+			const double screenSpace2X = NdcXToScreenSpace(ndc2X, g_frameBufferWidthReal);
+			const double screenSpace2Y = NdcYToScreenSpace(ndc2Y, g_frameBufferHeightReal);
 			const double screenSpace01X = screenSpace1X - screenSpace0X;
 			const double screenSpace01Y = screenSpace1Y - screenSpace0Y;
 			const double screenSpace12X = screenSpace2X - screenSpace1X;
@@ -2577,10 +2595,10 @@ namespace
 			const double xMax = std::max(screenSpace0X, std::max(screenSpace1X, screenSpace2X));
 			const double yMin = std::min(screenSpace0Y, std::min(screenSpace1Y, screenSpace2Y));
 			const double yMax = std::max(screenSpace0Y, std::max(screenSpace1Y, screenSpace2Y));
-			const int xStart = RendererUtils::getLowerBoundedPixel(xMin, frameBufferWidth);
-			const int xEnd = RendererUtils::getUpperBoundedPixel(xMax, frameBufferWidth);
-			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, frameBufferHeight);
-			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, frameBufferHeight);
+			const int xStart = RendererUtils::getLowerBoundedPixel(xMin, g_frameBufferWidth);
+			const int xEnd = RendererUtils::getUpperBoundedPixel(xMax, g_frameBufferWidth);
+			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, g_frameBufferHeight);
+			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, g_frameBufferHeight);
 
 			const bool hasPositiveScreenArea = (xEnd > xStart) && (yEnd > yStart);
 			if (!hasPositiveScreenArea)
@@ -2615,14 +2633,14 @@ namespace
 
 			for (int y = yStart; y < yEnd; y++)
 			{
-				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) * frameBufferHeightRealRecip;
+				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) * g_frameBufferHeightRealRecip;
 
 				for (int x = xStart; x < xEnd; x++)
 				{
-					shaderFrameBuffer.xPercent = (static_cast<double>(x) + 0.50) * frameBufferWidthRealRecip;
-					shaderFrameBuffer.pixelIndex = x + (y * frameBufferWidth);
-					const double pixelCenterX = shaderFrameBuffer.xPercent * frameBufferWidthReal;
-					const double pixelCenterY = shaderFrameBuffer.yPercent * frameBufferHeightReal;
+					shaderFrameBuffer.xPercent = (static_cast<double>(x) + 0.50) * g_frameBufferWidthRealRecip;
+					shaderFrameBuffer.pixelIndex = x + (y * g_frameBufferWidth);
+					const double pixelCenterX = shaderFrameBuffer.xPercent * g_frameBufferWidthReal;
+					const double pixelCenterY = shaderFrameBuffer.yPercent * g_frameBufferHeightReal;
 
 					// See if pixel center is inside triangle.
 					const bool inHalfSpace0 = IsScreenSpacePointInHalfSpace(pixelCenterX, pixelCenterY, screenSpace0X, screenSpace0Y, screenSpace01PerpX, screenSpace01PerpY);
@@ -2757,7 +2775,7 @@ namespace
 								}
 								else if (ditheringMode == DitheringMode::Classic)
 								{
-									shouldDither = ditherBufferPtr[shaderFrameBuffer.pixelIndex];
+									shouldDither = g_ditherBuffer[shaderFrameBuffer.pixelIndex];
 								}
 								else if (ditheringMode == DitheringMode::Modern)
 								{
@@ -2766,8 +2784,8 @@ namespace
 										constexpr int maskCount = DITHERING_MODERN_MASK_COUNT;
 										const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
 										const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(maskCount) * lightLevelFraction), 0, maskCount - 1);
-										const int ditherBufferIndex = shaderFrameBuffer.pixelIndex + (maskIndex * frameBufferPixelCount);
-										shouldDither = ditherBufferPtr[ditherBufferIndex];
+										const int ditherBufferIndex = shaderFrameBuffer.pixelIndex + (maskIndex * g_frameBufferPixelCount);
+										shouldDither = g_ditherBuffer[ditherBufferIndex];
 									}
 									else
 									{
@@ -2794,9 +2812,9 @@ namespace
 								const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePointX);
 								const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePointY);
 								shaderHorizonMirror.isReflectedPixelInFrameBuffer =
-									(reflectedPixelX >= 0) && (reflectedPixelX < frameBufferWidth) &&
-									(reflectedPixelY >= 0) && (reflectedPixelY < frameBufferHeight);
-								shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * frameBufferWidth);
+									(reflectedPixelX >= 0) && (reflectedPixelX < g_frameBufferWidth) &&
+									(reflectedPixelY >= 0) && (reflectedPixelY < g_frameBufferHeight);
+								shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * g_frameBufferWidth);
 							}
 
 							if constexpr (pixelShaderType == PixelShaderType::Opaque)
@@ -2842,7 +2860,7 @@ namespace
 
 							// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
 							const uint8_t writtenPaletteIndex = shaderFrameBuffer.colors[shaderFrameBuffer.pixelIndex];
-							colorBufferPtr[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
+							g_colorBuffer[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
 							g_totalColorWrites++;
 						}
 					}
@@ -2854,26 +2872,21 @@ namespace
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
 	void RasterizeMeshDispatchDitheringMode(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera,
-		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
-		BufferView2D<uint32_t> colorBuffer)
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera)
 	{
 		switch (ditheringMode)
 		{
 		case DitheringMode::None:
 			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(
-				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera, paletteIndexBuffer, depthBuffer,
-				ditherBuffer, colorBuffer);
+				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera);
 			break;
 		case DitheringMode::Classic:
 			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(
-				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera, paletteIndexBuffer, depthBuffer,
-				ditherBuffer, colorBuffer);
+				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera);
 			break;
 		case DitheringMode::Modern:
 			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(
-				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera, paletteIndexBuffer, depthBuffer,
-				ditherBuffer, colorBuffer);
+				meshIndex, ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, camera);
 			break;
 		}
 	}
@@ -2881,9 +2894,7 @@ namespace
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType>
 	void RasterizeMeshDispatchDepthToggles(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera,
-		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
-		BufferView2D<uint32_t> colorBuffer)
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera)
 	{
 		const bool enableDepthRead = g_meshProcessCaches.enableDepthReads[meshIndex];
 		const bool enableDepthWrite = g_meshProcessCaches.enableDepthWrites[meshIndex];
@@ -2893,14 +2904,12 @@ namespace
 			if (enableDepthWrite)
 			{
 				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(meshIndex, ambientPercent,
-					textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer, depthBuffer,
-					ditherBuffer, colorBuffer);
+					textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			}
 			else
 			{
 				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(meshIndex, ambientPercent,
-					textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer, depthBuffer,
-					ditherBuffer, colorBuffer);
+					textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			}
 		}
 		else
@@ -2908,14 +2917,12 @@ namespace
 			if (enableDepthWrite)
 			{
 				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(meshIndex, ambientPercent,
-					textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer, depthBuffer,
-					ditherBuffer, colorBuffer);
+					textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			}
 			else
 			{
 				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(meshIndex, ambientPercent,
-					textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer, depthBuffer,
-					ditherBuffer, colorBuffer);
+					textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			}
 		}
 	}
@@ -2923,9 +2930,7 @@ namespace
 	template<RenderLightingType lightingType>
 	void RasterizeMeshDispatchPixelShaderType(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera,
-		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
-		BufferView2D<uint32_t> colorBuffer)
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera)
 	{
 		static_assert(PixelShaderType::AlphaTestedWithHorizonMirror == PIXEL_SHADER_TYPE_MAX);
 		const PixelShaderType pixelShaderType = g_meshProcessCaches.pixelShaderTypes[meshIndex];
@@ -2934,53 +2939,43 @@ namespace
 		{
 		case PixelShaderType::Opaque:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(meshIndex, ambientPercent,
-				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer, depthBuffer,
-				ditherBuffer, colorBuffer);
+				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::OpaqueWithAlphaTestLayer:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(meshIndex,
-				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer,
-				depthBuffer, ditherBuffer, colorBuffer);
+				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::AlphaTested:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(meshIndex, ambientPercent,
-				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer, depthBuffer,
-				ditherBuffer, colorBuffer);
+				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(meshIndex,
-				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer,
-				depthBuffer, ditherBuffer, colorBuffer);
+				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(meshIndex,
-				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer,
-				depthBuffer, ditherBuffer, colorBuffer);
+				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(meshIndex,
-				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer,
-				depthBuffer, ditherBuffer, colorBuffer);
+				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelColor:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(meshIndex,
-				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer,
-				depthBuffer, ditherBuffer, colorBuffer);
+				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelOpacity:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(meshIndex,
-				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer,
-				depthBuffer, ditherBuffer, colorBuffer);
+				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(meshIndex,
-				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer,
-				depthBuffer, ditherBuffer, colorBuffer);
+				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		case PixelShaderType::AlphaTestedWithHorizonMirror:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(meshIndex,
-				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer,
-				depthBuffer, ditherBuffer, colorBuffer);
+				ambientPercent, textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode, camera);
 			break;
 		}
 	}
@@ -2988,9 +2983,7 @@ namespace
 	// Decides which optimized rasterizer variant to use based on the parameters.
 	void RasterizeMesh(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera,
-		BufferView2D<uint8_t> paletteIndexBuffer, BufferView2D<double> depthBuffer, BufferView3D<const bool> ditherBuffer,
-		BufferView2D<uint32_t> colorBuffer)
+		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode, const RenderCamera &camera)
 	{
 		static_assert(RenderLightingType::PerPixel == RENDER_LIGHTING_TYPE_MAX);
 		const RenderLightingType lightingType = g_meshProcessCaches.lightingTypes[meshIndex];
@@ -2998,12 +2991,12 @@ namespace
 		if (lightingType == RenderLightingType::PerMesh)
 		{
 			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(meshIndex, ambientPercent, textures, paletteTexture,
-				lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer, depthBuffer, ditherBuffer, colorBuffer);
+				lightTableTexture, skyBgTexture, ditheringMode, camera);
 		}
 		else if (lightingType == RenderLightingType::PerPixel)
 		{
 			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(meshIndex, ambientPercent, textures, paletteTexture,
-				lightTableTexture, skyBgTexture, ditheringMode, camera, paletteIndexBuffer, depthBuffer, ditherBuffer, colorBuffer);
+				lightTableTexture, skyBgTexture, ditheringMode, camera);
 		}
 	}
 }
@@ -3463,11 +3456,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
 	}
 
-	BufferView2D<uint8_t> paletteIndexBufferView(this->paletteIndexBuffer.begin(), frameBufferWidth, frameBufferHeight);
-	BufferView2D<double> depthBufferView(this->depthBuffer.begin(), frameBufferWidth, frameBufferHeight);
-	BufferView3D<const bool> ditherBufferView(this->ditherBuffer.begin(), frameBufferWidth, frameBufferHeight, this->ditherBuffer.getDepth());
-	BufferView2D<uint32_t> colorBufferView(outputBuffer, frameBufferWidth, frameBufferHeight);
-
 	// Palette for 8-bit -> 32-bit color conversion.
 	const ObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
 
@@ -3477,9 +3465,12 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	// Sky texture for horizon reflection shader.
 	const ObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
-	ClearFrameBuffers(paletteIndexBufferView, depthBufferView, colorBufferView);
-	ClearTriangleTotalCounts();
 	PopulateCameraGlobals(camera);
+	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(),
+		this->depthBuffer.begin(), this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), outputBuffer);
+
+	ClearTriangleTotalCounts();
+	ClearFrameBuffers();
 
 	const RenderDrawCall *drawCallsPtr = drawCalls.begin();
 	const int drawCallCount = drawCalls.getCount();
@@ -3579,7 +3570,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		for (int meshIndex = 0; meshIndex < drawCallSequenceCount; meshIndex++)
 		{
 			RasterizeMesh(meshIndex, ambientPercent, this->objectTextures, paletteTexture, lightTableTexture, skyBgTexture,
-				this->ditheringMode, camera, paletteIndexBufferView, depthBufferView, ditherBufferView, colorBufferView);
+				this->ditheringMode, camera);
 		}
 
 		drawCallIndex += drawCallSequenceCount;
