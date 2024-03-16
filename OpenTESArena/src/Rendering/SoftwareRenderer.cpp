@@ -42,6 +42,62 @@ namespace
 namespace
 {
 	template<int N>
+	void Double_LerpN(const double *__restrict starts, const double *__restrict ends, const double *__restrict percents,
+		double *__restrict outs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			const double start = starts[i];
+			const double end = ends[i];
+			const double percent = percents[i];
+			outs[i] = start + ((end - start) * percent);
+		}
+	}
+
+	template<int Index0, int Index1, int Index2, int Index3>
+	void Double_Shuffle4(const double *__restrict values, double *__restrict outValues)
+	{
+		outValues[Index0] = values[0];
+		outValues[Index1] = values[1];
+		outValues[Index2] = values[2];
+		outValues[Index3] = values[3];
+	}
+
+	template<int N>
+	void Double2_DotN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
+		double *__restrict outs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			outs[i] = (x0s[i] * x1s[i]) + (y0s[i] * y1s[i]);
+		}
+	}
+
+	template<int N>
+	void Double2_CrossN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
+		double *__restrict outs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			outs[i] = (x0s[i] * y1s[i]) - (y0s[i] * x1s[i]);
+		}
+	}
+
+	template<int N>
+	void Double2_RightPerpN(const double *__restrict xs, const double *__restrict ys, double *__restrict outXs, double *__restrict outYs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			outXs[i] = ys[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outYs[i] = -xs[i];
+		}
+	}
+
+	template<int N>
 	void Double4_ZeroN(double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
 		for (int i = 0; i < N; i++)
@@ -84,6 +140,27 @@ namespace
 		outYs[3] = v3.y;
 		outZs[3] = v3.z;
 		outWs[3] = v3.w;
+	}
+
+	void Double4_Store4(const double *__restrict xs, const double *__restrict ys, const double *__restrict zs, const double *__restrict ws,
+		double *__restrict outV0, double *__restrict outV1, double *__restrict outV2, double *__restrict outV3)
+	{
+		outV0[0] = xs[0];
+		outV0[1] = ys[0];
+		outV0[2] = zs[0];
+		outV0[3] = ws[0];
+		outV1[0] = xs[1];
+		outV1[1] = ys[1];
+		outV1[2] = zs[1];
+		outV1[3] = ws[1];
+		outV2[0] = xs[2];
+		outV2[1] = ys[2];
+		outV2[2] = zs[2];
+		outV2[3] = ws[2];
+		outV3[0] = xs[3];
+		outV3[1] = ys[3];
+		outV3[2] = zs[3];
+		outV3[3] = ws[3];
 	}
 
 	template<int N>
@@ -212,53 +289,6 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			outWs[i] = w0s[i] / w1s[i];
-		}
-	}
-
-	template<int N>
-	void Double_LerpN(const double *__restrict starts, const double *__restrict ends, const double *__restrict percents,
-		double *__restrict outs)
-	{
-		for (int i = 0; i < N; i++)
-		{
-			const double start = starts[i];
-			const double end = ends[i];
-			const double percent = percents[i];
-			outs[i] = start + ((end - start) * percent);
-		}
-	}
-
-	template<int N>
-	void Double2_DotN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
-		double *__restrict outs)
-	{
-		for (int i = 0; i < N; i++)
-		{
-			outs[i] = (x0s[i] * x1s[i]) + (y0s[i] * y1s[i]);
-		}
-	}
-
-	template<int N>
-	void Double2_CrossN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
-		double *__restrict outs)
-	{
-		for (int i = 0; i < N; i++)
-		{
-			outs[i] = (x0s[i] * y1s[i]) - (y0s[i] * x1s[i]);
-		}
-	}
-
-	template<int N>
-	void Double2_RightPerpN(const double *__restrict xs, const double *__restrict ys, double *__restrict outXs, double *__restrict outYs)
-	{
-		for (int i = 0; i < N; i++)
-		{
-			outXs[i] = ys[i];
-		}
-
-		for (int i = 0; i < N; i++)
-		{
-			outYs[i] = -xs[i];
 		}
 	}
 
