@@ -1353,8 +1353,6 @@ namespace
 
 	struct PixelShaderFrameBuffer
 	{
-		uint8_t *colors;
-		double *depth;
 		PixelShaderPalette palette;
 		double xPercent, yPercent;
 		int pixelIndex;
@@ -1364,8 +1362,8 @@ namespace
 	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		int texelX;
-		int texelY;
+		int texelX = -1;
+		int texelY = -1;
 		if (texture.samplingType == TextureSamplingType::Default)
 		{
 			texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
@@ -1386,11 +1384,11 @@ namespace
 
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1418,11 +1416,11 @@ namespace
 
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1443,11 +1441,11 @@ namespace
 
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1469,11 +1467,11 @@ namespace
 
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1496,11 +1494,11 @@ namespace
 
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1523,11 +1521,11 @@ namespace
 
 		const int shadedTexelIndex = replacementTexel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = shadedTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1549,11 +1547,11 @@ namespace
 		const int lightTableTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
 
-		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = resultTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1576,7 +1574,7 @@ namespace
 		if (ArenaRenderUtils::isLightLevelTexel(texel))
 		{
 			const int lightLevel = static_cast<int>(texel) - ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
-			const uint8_t prevFrameBufferPixel = frameBuffer.colors[frameBuffer.pixelIndex];
+			const uint8_t prevFrameBufferPixel = g_paletteIndexBuffer[frameBuffer.pixelIndex];
 			lightTableTexelIndex = prevFrameBufferPixel + (lightLevel * lighting.texelsPerLightLevel);
 		}
 		else
@@ -1597,11 +1595,11 @@ namespace
 		}
 
 		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
-		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = resultTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1616,7 +1614,7 @@ namespace
 		constexpr uint32_t brightnessMaskB = brightnessMask;
 		constexpr uint32_t brightnessMaskRGB = brightnessMaskR | brightnessMaskG | brightnessMaskB;
 
-		const uint8_t prevFrameBufferPixel = frameBuffer.colors[frameBuffer.pixelIndex];
+		const uint8_t prevFrameBufferPixel = g_paletteIndexBuffer[frameBuffer.pixelIndex];
 		const uint32_t prevFrameBufferColor = frameBuffer.palette.colors[prevFrameBufferPixel];
 		const bool isDarkEnough = (prevFrameBufferColor & brightnessMaskRGB) == 0;
 		if (!isDarkEnough)
@@ -1635,11 +1633,11 @@ namespace
 			return;
 		}
 
-		frameBuffer.colors[frameBuffer.pixelIndex] = texel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = texel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 
@@ -1665,7 +1663,7 @@ namespace
 		{
 			if (horizon.isReflectedPixelInFrameBuffer)
 			{
-				const uint8_t mirroredTexel = frameBuffer.colors[horizon.reflectedPixelIndex];
+				const uint8_t mirroredTexel = g_paletteIndexBuffer[horizon.reflectedPixelIndex];
 				resultTexel = mirroredTexel;
 			}
 			else
@@ -1679,11 +1677,11 @@ namespace
 			resultTexel = lighting.lightTableTexels[shadedTexelIndex];
 		}
 
-		frameBuffer.colors[frameBuffer.pixelIndex] = resultTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = resultTexel;
 
 		if constexpr (enableDepthWrite)
 		{
-			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
 }
@@ -2559,8 +2557,6 @@ namespace
 		shaderLighting.lightLevel = 0;
 
 		PixelShaderFrameBuffer shaderFrameBuffer;
-		shaderFrameBuffer.colors = g_paletteIndexBuffer;
-		shaderFrameBuffer.depth = g_depthBuffer;
 		shaderFrameBuffer.palette.colors = paletteTexture.texels32Bit;
 		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
 
@@ -2736,7 +2732,7 @@ namespace
 						bool passesDepthTest = true;
 						if constexpr (enableDepthRead)
 						{
-							passesDepthTest = shaderPerspective.ndcZDepth < shaderFrameBuffer.depth[shaderFrameBuffer.pixelIndex];
+							passesDepthTest = shaderPerspective.ndcZDepth < g_depthBuffer[shaderFrameBuffer.pixelIndex];
 							g_totalDepthTests++;
 						}
 
@@ -2919,7 +2915,7 @@ namespace
 							}
 
 							// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
-							const uint8_t writtenPaletteIndex = shaderFrameBuffer.colors[shaderFrameBuffer.pixelIndex];
+							const uint8_t writtenPaletteIndex = g_paletteIndexBuffer[shaderFrameBuffer.pixelIndex];
 							g_colorBuffer[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
 							g_totalColorWrites++;
 						}
