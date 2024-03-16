@@ -22,6 +22,7 @@
 
 #include "components/debug/Debug.h"
 
+// Loop unroll utils.
 namespace
 {
 	constexpr int TYPICAL_LOOP_UNROLL = 4; // Elements processed per unrolled loop, possibly also for SIMD lanes.
@@ -35,55 +36,11 @@ namespace
 	{
 		return loopCount - (unrollCount - 1);
 	}
+}
 
-	// Optimized math functions.
-	template<int N>
-	void Double_LerpN(const double *__restrict starts, const double *__restrict ends, const double *__restrict percents,
-		double *__restrict outs)
-	{
-		for (int i = 0; i < N; i++)
-		{
-			const double start = starts[i];
-			const double end = ends[i];
-			const double percent = percents[i];
-			outs[i] = start + ((end - start) * percent);
-		}
-	}
-
-	template<int N>
-	void Double2_DotN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
-		double *__restrict outs)
-	{
-		for (int i = 0; i < N; i++)
-		{
-			outs[i] = (x0s[i] * x1s[i]) + (y0s[i] * y1s[i]);
-		}
-	}
-
-	template<int N>
-	void Double2_CrossN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
-		double *__restrict outs)
-	{
-		for (int i = 0; i < N; i++)
-		{
-			outs[i] = (x0s[i] * y1s[i]) - (y0s[i] * x1s[i]);
-		}
-	}
-
-	template<int N>
-	void Double2_RightPerpN(const double *__restrict xs, const double *__restrict ys, double *__restrict outXs, double *__restrict outYs)
-	{
-		for (int i = 0; i < N; i++)
-		{
-			outXs[i] = ys[i];
-		}
-
-		for (int i = 0; i < N; i++)
-		{
-			outYs[i] = -xs[i];
-		}
-	}
-
+// Optimized math functions.
+namespace
+{
 	template<int N>
 	void Double4_ZeroN(double *__restrict outXs, double *__restrict outYs, double *__restrict outZs, double *__restrict outWs)
 	{
@@ -255,6 +212,53 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			outWs[i] = w0s[i] / w1s[i];
+		}
+	}
+
+	template<int N>
+	void Double_LerpN(const double *__restrict starts, const double *__restrict ends, const double *__restrict percents,
+		double *__restrict outs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			const double start = starts[i];
+			const double end = ends[i];
+			const double percent = percents[i];
+			outs[i] = start + ((end - start) * percent);
+		}
+	}
+
+	template<int N>
+	void Double2_DotN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
+		double *__restrict outs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			outs[i] = (x0s[i] * x1s[i]) + (y0s[i] * y1s[i]);
+		}
+	}
+
+	template<int N>
+	void Double2_CrossN(const double *__restrict x0s, const double *__restrict y0s, const double *__restrict x1s, const double *__restrict y1s,
+		double *__restrict outs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			outs[i] = (x0s[i] * y1s[i]) - (y0s[i] * x1s[i]);
+		}
+	}
+
+	template<int N>
+	void Double2_RightPerpN(const double *__restrict xs, const double *__restrict ys, double *__restrict outXs, double *__restrict outYs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			outXs[i] = ys[i];
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outYs[i] = -xs[i];
 		}
 	}
 
@@ -541,7 +545,11 @@ namespace
 			outMwws[i] = (m0xws[i] * m1wxs[i]) + (m0yws[i] * m1wys[i]) + (m0zws[i] * m1wzs[i]) + (m0wws[i] * m1wws[i]);
 		}
 	}
+}
 
+// Rasterization utils.
+namespace
+{
 	double NdcXToScreenSpace(double ndcX, double frameWidth)
 	{
 		return (0.50 + (ndcX * 0.50)) * frameWidth;
@@ -559,8 +567,11 @@ namespace
 		const double dotProduct = (pointXDiff * planeNormalX) + (pointYDiff * planeNormalY);
 		return dotProduct >= 0.0;
 	}
+}
 
-	// Internal camera globals.
+// Camera globals.
+namespace
+{
 	Matrix4d g_viewMatrix;
 	Matrix4d g_projMatrix;
 
@@ -680,8 +691,11 @@ namespace
 			g_invProjMatrixWW[i] = g_invProjMatrix.w.w;
 		}
 	}
+}
 
-	// Internal mesh processing globals.
+// Mesh processing globals.
+namespace
+{
 	constexpr int MAX_DRAW_CALL_MESH_TRIANGLES = 1024; // The most triangles a draw call mesh can have. Used with vertex shading.
 	constexpr int MAX_MESH_PROCESS_CACHES = 8; // The most draw call meshes that can be cached and processed each loop.
 	constexpr int MAX_VERTEX_SHADING_CACHE_TRIANGLES = MAX_DRAW_CALL_MESH_TRIANGLES * 2; // The most unshaded triangles that can be cached for the vertex shader loop.
@@ -860,72 +874,108 @@ namespace
 		g_meshProcessCaches.scaleMatrixWWs[meshIndex] = transform.scale.w.w;
 		// Do model-view-projection matrix in the bulk processing loop.
 	}
+}
 
-	// Pixel and vertex shading definitions.
-	struct PixelShaderPerspectiveCorrection
+// Frame buffer globals.
+namespace
+{
+	int g_frameBufferWidth;
+	int g_frameBufferHeight;
+	int g_frameBufferPixelCount;
+	double g_frameBufferWidthReal;
+	double g_frameBufferHeightReal;
+	double g_frameBufferWidthRealRecip;
+	double g_frameBufferHeightRealRecip;
+	int g_ditherBufferDepth;
+	uint8_t *g_paletteIndexBuffer;
+	double *g_depthBuffer;
+	const bool *g_ditherBuffer;
+	uint32_t *g_colorBuffer;
+
+	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
+		const bool *ditherBuffer, int ditherBufferDepth, uint32_t *colorBuffer)
 	{
-		double ndcZDepth;
-		double texelPercentX;
-		double texelPercentY;
-	};
+		g_frameBufferWidth = frameBufferWidth;
+		g_frameBufferHeight = frameBufferHeight;
+		g_frameBufferPixelCount = frameBufferWidth * frameBufferHeight;
+		g_frameBufferWidthReal = static_cast<double>(frameBufferWidth);
+		g_frameBufferHeightReal = static_cast<double>(frameBufferHeight);
+		g_frameBufferWidthRealRecip = 1.0 / g_frameBufferWidthReal;
+		g_frameBufferHeightRealRecip = 1.0 / g_frameBufferHeightReal;
+		g_ditherBufferDepth = ditherBufferDepth;
+		g_paletteIndexBuffer = paletteIndexBuffer;
+		g_depthBuffer = depthBuffer;
+		g_ditherBuffer = ditherBuffer;
+		g_colorBuffer = colorBuffer;
+	}
 
-	struct PixelShaderTexture
+	// For measuring overdraw.
+	int g_totalDepthTests = 0;
+	int g_totalColorWrites = 0;
+
+	void ClearFrameBuffers()
 	{
-		const uint8_t *texels;
-		int width, height;
-		int widthMinusOne, heightMinusOne;
-		double widthReal, heightReal;
-		TextureSamplingType samplingType;
+		std::fill(g_paletteIndexBuffer, g_paletteIndexBuffer + g_frameBufferPixelCount, 0);
+		std::fill(g_depthBuffer, g_depthBuffer + g_frameBufferPixelCount, std::numeric_limits<double>::infinity());
+		std::fill(g_colorBuffer, g_colorBuffer + g_frameBufferPixelCount, 0);
+		g_totalDepthTests = 0;
+		g_totalColorWrites = 0;
+	}
 
-		void init(const uint8_t *texels, int width, int height, TextureSamplingType samplingType)
+	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode)
+	{
+		if (ditheringMode == DitheringMode::Classic)
 		{
-			this->texels = texels;
-			this->width = width;
-			this->height = height;
-			this->widthMinusOne = width - 1;
-			this->heightMinusOne = height - 1;
-			this->widthReal = static_cast<double>(width);
-			this->heightReal = static_cast<double>(height);
-			this->samplingType = samplingType;
+			// Original game: 2x2, top left + bottom right are darkened.
+			ditherBuffer.init(width, height, 1);
+
+			bool *ditherPixels = ditherBuffer.begin();
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					const bool shouldDither = ((x + y) & 0x1) == 0;
+					const int index = x + (y * width);
+					ditherPixels[index] = shouldDither;
+				}
+			}
 		}
-	};
+		else if (ditheringMode == DitheringMode::Modern)
+		{
+			// Modern 2x2, four levels of dither depending on percent between two light levels.
+			ditherBuffer.init(width, height, DITHERING_MODERN_MASK_COUNT);
+			static_assert(DITHERING_MODERN_MASK_COUNT == 4);
 
-	struct PixelShaderPalette
-	{
-		const uint32_t *colors;
-		int count;
-	};
+			bool *ditherPixels = ditherBuffer.begin();
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					const bool shouldDither0 = (((x + y) & 0x1) == 0) || (((x % 2) == 1) && ((y % 2) == 0)); // Top left, bottom right, top right
+					const bool shouldDither1 = ((x + y) & 0x1) == 0; // Top left + bottom right
+					const bool shouldDither2 = ((x % 2) == 0) && ((y % 2) == 0); // Top left
+					const bool shouldDither3 = false;
+					const int index0 = x + (y * width);
+					const int index1 = x + (y * width) + (1 * width * height);
+					const int index2 = x + (y * width) + (2 * width * height);
+					const int index3 = x + (y * width) + (3 * width * height);
+					ditherPixels[index0] = shouldDither0;
+					ditherPixels[index1] = shouldDither1;
+					ditherPixels[index2] = shouldDither2;
+					ditherPixels[index3] = shouldDither3;
+				}
+			}
+		}
+		else
+		{
+			ditherBuffer.clear();
+		}
+	}
+}
 
-	struct PixelShaderLighting
-	{
-		const uint8_t *lightTableTexels;
-		int lightLevelCount; // # of shades from light to dark.
-		double lightLevelCountReal;
-		int lastLightLevel;
-		int texelsPerLightLevel; // Should be 256 for 8-bit colors.
-		int lightLevel; // The selected row of shades between light and dark.
-	};
-
-	struct PixelShaderHorizonMirror
-	{
-		// Based on camera forward direction as XZ vector.
-		double horizonScreenSpacePointX;
-		double horizonScreenSpacePointY;
-
-		int reflectedPixelIndex;
-		bool isReflectedPixelInFrameBuffer;
-		uint8_t fallbackSkyColor;
-	};
-
-	struct PixelShaderFrameBuffer
-	{
-		uint8_t *colors;
-		double *depth;
-		PixelShaderPalette palette;
-		double xPercent, yPercent;
-		int pixelIndex;
-	};
-
+// Vertex shaders.
+namespace
+{
 	template<int N>
 	void VertexShader_BasicN(const int *__restrict meshIndices, const double *__restrict vertexXs, const double *__restrict vertexYs,
 		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
@@ -1211,6 +1261,74 @@ namespace
 			vertexXs, vertexYs, vertexZs, vertexWs,
 			outVertexXs, outVertexYs, outVertexZs, outVertexWs);
 	}
+}
+
+// Pixel shaders.
+namespace
+{
+	struct PixelShaderPerspectiveCorrection
+	{
+		double ndcZDepth;
+		double texelPercentX;
+		double texelPercentY;
+	};
+
+	struct PixelShaderTexture
+	{
+		const uint8_t *texels;
+		int width, height;
+		int widthMinusOne, heightMinusOne;
+		double widthReal, heightReal;
+		TextureSamplingType samplingType;
+
+		void init(const uint8_t *texels, int width, int height, TextureSamplingType samplingType)
+		{
+			this->texels = texels;
+			this->width = width;
+			this->height = height;
+			this->widthMinusOne = width - 1;
+			this->heightMinusOne = height - 1;
+			this->widthReal = static_cast<double>(width);
+			this->heightReal = static_cast<double>(height);
+			this->samplingType = samplingType;
+		}
+	};
+
+	struct PixelShaderPalette
+	{
+		const uint32_t *colors;
+		int count;
+	};
+
+	struct PixelShaderLighting
+	{
+		const uint8_t *lightTableTexels;
+		int lightLevelCount; // # of shades from light to dark.
+		double lightLevelCountReal;
+		int lastLightLevel;
+		int texelsPerLightLevel; // Should be 256 for 8-bit colors.
+		int lightLevel; // The selected row of shades between light and dark.
+	};
+
+	struct PixelShaderHorizonMirror
+	{
+		// Based on camera forward direction as XZ vector.
+		double horizonScreenSpacePointX;
+		double horizonScreenSpacePointY;
+
+		int reflectedPixelIndex;
+		bool isReflectedPixelInFrameBuffer;
+		uint8_t fallbackSkyColor;
+	};
+
+	struct PixelShaderFrameBuffer
+	{
+		uint8_t *colors;
+		double *depth;
+		PixelShaderPalette palette;
+		double xPercent, yPercent;
+		int pixelIndex;
+	};
 
 	template<bool enableDepthWrite>
 	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
@@ -1538,8 +1656,11 @@ namespace
 			frameBuffer.depth[frameBuffer.pixelIndex] = perspective.ndcZDepth;
 		}
 	}
+}
 
-	// Internal geometry processing functions.
+// Mesh processing, vertex shader execution.
+namespace
+{
 	// One per group of mesh process caches, for improving number crunching efficiency with vertex shading by
 	// keeping the triangle count much higher than the average 2 per draw call.
 	struct VertexShadingCache
@@ -1568,6 +1689,7 @@ namespace
 
 	VertexShadingCache g_vertexShadingCache;
 
+	int g_totalDrawCallCount = 0;
 	int g_totalPresentedTriangleCount = 0; // Triangles the rasterizer spends any time attempting to shade pixels for.
 
 	void ClearTriangleTotalCounts()
@@ -2373,103 +2495,11 @@ namespace
 			}
 		}
 	}
+}
 
-	// Rendering functions, per-pixel work.
-	int g_totalDrawCallCount = 0;
-
-	// For measuring overdraw.
-	int g_totalDepthTests = 0;
-	int g_totalColorWrites = 0;
-
-	int g_frameBufferWidth;
-	int g_frameBufferHeight;
-	int g_frameBufferPixelCount;
-	double g_frameBufferWidthReal;
-	double g_frameBufferHeightReal;
-	double g_frameBufferWidthRealRecip;
-	double g_frameBufferHeightRealRecip;
-	int g_ditherBufferDepth;
-	uint8_t *g_paletteIndexBuffer;
-	double *g_depthBuffer;
-	const bool *g_ditherBuffer;
-	uint32_t *g_colorBuffer;
-
-	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
-		const bool *ditherBuffer, int ditherBufferDepth, uint32_t *colorBuffer)
-	{
-		g_frameBufferWidth = frameBufferWidth;
-		g_frameBufferHeight = frameBufferHeight;
-		g_frameBufferPixelCount = frameBufferWidth * frameBufferHeight;
-		g_frameBufferWidthReal = static_cast<double>(frameBufferWidth);
-		g_frameBufferHeightReal = static_cast<double>(frameBufferHeight);
-		g_frameBufferWidthRealRecip = 1.0 / g_frameBufferWidthReal;
-		g_frameBufferHeightRealRecip = 1.0 / g_frameBufferHeightReal;
-		g_ditherBufferDepth = ditherBufferDepth;
-		g_paletteIndexBuffer = paletteIndexBuffer;
-		g_depthBuffer = depthBuffer;
-		g_ditherBuffer = ditherBuffer;
-		g_colorBuffer = colorBuffer;
-	}
-
-	void ClearFrameBuffers()
-	{
-		std::fill(g_paletteIndexBuffer, g_paletteIndexBuffer + g_frameBufferPixelCount, 0);
-		std::fill(g_depthBuffer, g_depthBuffer + g_frameBufferPixelCount, std::numeric_limits<double>::infinity());
-		std::fill(g_colorBuffer, g_colorBuffer + g_frameBufferPixelCount, 0);
-		g_totalDepthTests = 0;
-		g_totalColorWrites = 0;
-	}
-
-	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode)
-	{
-		if (ditheringMode == DitheringMode::Classic)
-		{
-			// Original game: 2x2, top left + bottom right are darkened.
-			ditherBuffer.init(width, height, 1);
-
-			bool *ditherPixels = ditherBuffer.begin();
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					const bool shouldDither = ((x + y) & 0x1) == 0;
-					const int index = x + (y * width);
-					ditherPixels[index] = shouldDither;
-				}
-			}
-		}
-		else if (ditheringMode == DitheringMode::Modern)
-		{
-			// Modern 2x2, four levels of dither depending on percent between two light levels.
-			ditherBuffer.init(width, height, DITHERING_MODERN_MASK_COUNT);
-			static_assert(DITHERING_MODERN_MASK_COUNT == 4);
-
-			bool *ditherPixels = ditherBuffer.begin();
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					const bool shouldDither0 = (((x + y) & 0x1) == 0) || (((x % 2) == 1) && ((y % 2) == 0)); // Top left, bottom right, top right
-					const bool shouldDither1 = ((x + y) & 0x1) == 0; // Top left + bottom right
-					const bool shouldDither2 = ((x % 2) == 0) && ((y % 2) == 0); // Top left
-					const bool shouldDither3 = false;
-					const int index0 = x + (y * width);
-					const int index1 = x + (y * width) + (1 * width * height);
-					const int index2 = x + (y * width) + (2 * width * height);
-					const int index3 = x + (y * width) + (3 * width * height);
-					ditherPixels[index0] = shouldDither0;
-					ditherPixels[index1] = shouldDither1;
-					ditherPixels[index2] = shouldDither2;
-					ditherPixels[index3] = shouldDither3;
-				}
-			}
-		}
-		else
-		{
-			ditherBuffer.clear();
-		}
-	}
-
+// Rasterizer, pixel shader execution.
+namespace
+{
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
 	void RasterizeMeshInternal(int meshIndex, double ambientPercent, const SoftwareRenderer::ObjectTexturePool &textures,
 		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
