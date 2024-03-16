@@ -920,13 +920,14 @@ namespace
 	double g_frameBufferWidthRealRecip;
 	double g_frameBufferHeightRealRecip;
 	int g_ditherBufferDepth;
+	DitheringMode g_ditheringMode;
 	uint8_t *g_paletteIndexBuffer;
 	double *g_depthBuffer;
 	const bool *g_ditherBuffer;
 	uint32_t *g_colorBuffer;
 
 	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
-		const bool *ditherBuffer, int ditherBufferDepth, uint32_t *colorBuffer)
+		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, uint32_t *colorBuffer)
 	{
 		g_frameBufferWidth = frameBufferWidth;
 		g_frameBufferHeight = frameBufferHeight;
@@ -936,6 +937,7 @@ namespace
 		g_frameBufferWidthRealRecip = 1.0 / g_frameBufferWidthReal;
 		g_frameBufferHeightRealRecip = 1.0 / g_frameBufferHeightReal;
 		g_ditherBufferDepth = ditherBufferDepth;
+		g_ditheringMode = ditheringMode;
 		g_paletteIndexBuffer = paletteIndexBuffer;
 		g_depthBuffer = depthBuffer;
 		g_ditherBuffer = ditherBuffer;
@@ -1362,10 +1364,17 @@ namespace
 	};
 
 	double g_ambientPercent;
+	const SoftwareRenderer::ObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
+	const SoftwareRenderer::ObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
+	const SoftwareRenderer::ObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
-	void PopulatePixelShaderGlobals(double ambientPercent)
+	void PopulatePixelShaderGlobals(double ambientPercent, const SoftwareRenderer::ObjectTexture &paletteTexture,
+		const SoftwareRenderer::ObjectTexture &lightTableTexture, const SoftwareRenderer::ObjectTexture &skyBgTexture)
 	{
 		g_ambientPercent = ambientPercent;
+		g_paletteTexture = &paletteTexture;
+		g_lightTableTexture = &lightTableTexture;
+		g_skyBgTexture = &skyBgTexture;
 	}
 
 	template<bool enableDepthWrite>
@@ -2539,9 +2548,7 @@ namespace
 namespace
 {
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
-	void RasterizeMeshInternal(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture)
+	void RasterizeMeshInternal(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures)
 	{
 		const TextureSamplingType textureSamplingType0 = g_meshProcessCaches.textureSamplingType0s[meshIndex];
 		const TextureSamplingType textureSamplingType1 = g_meshProcessCaches.textureSamplingType1s[meshIndex];
@@ -2559,16 +2566,16 @@ namespace
 		constexpr bool requiresPerMeshLightIntensity = lightingType == RenderLightingType::PerMesh;
 
 		PixelShaderLighting shaderLighting;
-		shaderLighting.lightTableTexels = lightTableTexture.texels8Bit;
-		shaderLighting.lightLevelCount = lightTableTexture.height;
+		shaderLighting.lightTableTexels = g_lightTableTexture->texels8Bit;
+		shaderLighting.lightLevelCount = g_lightTableTexture->height;
 		shaderLighting.lightLevelCountReal = static_cast<double>(shaderLighting.lightLevelCount);
 		shaderLighting.lastLightLevel = shaderLighting.lightLevelCount - 1;
-		shaderLighting.texelsPerLightLevel = lightTableTexture.width;
+		shaderLighting.texelsPerLightLevel = g_lightTableTexture->width;
 		shaderLighting.lightLevel = 0;
 
 		PixelShaderFrameBuffer shaderFrameBuffer;
-		shaderFrameBuffer.palette.colors = paletteTexture.texels32Bit;
-		shaderFrameBuffer.palette.count = paletteTexture.texelCount;
+		shaderFrameBuffer.palette.colors = g_paletteTexture->texels32Bit;
+		shaderFrameBuffer.palette.count = g_paletteTexture->texelCount;
 
 		PixelShaderHorizonMirror shaderHorizonMirror;
 		if constexpr (requiresHorizonMirror)
@@ -2577,8 +2584,8 @@ namespace
 			shaderHorizonMirror.horizonScreenSpacePointX = horizonScreenSpacePoint.x;
 			shaderHorizonMirror.horizonScreenSpacePointY = horizonScreenSpacePoint.y;
 
-			DebugAssert(skyBgTexture.texelCount > 0);
-			shaderHorizonMirror.fallbackSkyColor = skyBgTexture.texels8Bit[0];
+			DebugAssert(g_skyBgTexture->texelCount > 0);
+			shaderHorizonMirror.fallbackSkyColor = g_skyBgTexture->texels8Bit[0];
 		}
 
 		const auto &clipSpaceMeshV0XYZWs = g_meshProcessCaches.clipSpaceMeshV0XYZWArrays[meshIndex];
@@ -2936,31 +2943,24 @@ namespace
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
-	void RasterizeMeshDispatchDitheringMode(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode)
+	void RasterizeMeshDispatchDitheringMode(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures)
 	{
-		switch (ditheringMode)
+		switch (g_ditheringMode)
 		{
 		case DitheringMode::None:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(
-				meshIndex, textures, paletteTexture, lightTableTexture, skyBgTexture);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(meshIndex, textures);
 			break;
 		case DitheringMode::Classic:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(
-				meshIndex, textures, paletteTexture, lightTableTexture, skyBgTexture);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(meshIndex, textures);
 			break;
 		case DitheringMode::Modern:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(
-				meshIndex, textures, paletteTexture, lightTableTexture, skyBgTexture);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(meshIndex, textures);
 			break;
 		}
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType>
-	void RasterizeMeshDispatchDepthToggles(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode)
+	void RasterizeMeshDispatchDepthToggles(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures)
 	{
 		const bool enableDepthRead = g_meshProcessCaches.enableDepthReads[meshIndex];
 		const bool enableDepthWrite = g_meshProcessCaches.enableDepthWrites[meshIndex];
@@ -2969,34 +2969,28 @@ namespace
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(meshIndex, textures,
-					paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(meshIndex, textures);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(meshIndex, textures,
-					paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(meshIndex, textures);
 			}
 		}
 		else
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(meshIndex, textures,
-					paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(meshIndex, textures);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(meshIndex, textures,
-					paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(meshIndex, textures);
 			}
 		}
 	}
 
 	template<RenderLightingType lightingType>
-	void RasterizeMeshDispatchPixelShaderType(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode)
+	void RasterizeMeshDispatchPixelShaderType(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures)
 	{
 		static_assert(PixelShaderType::AlphaTestedWithHorizonMirror == PIXEL_SHADER_TYPE_MAX);
 		const PixelShaderType pixelShaderType = g_meshProcessCaches.pixelShaderTypes[meshIndex];
@@ -3004,65 +2998,51 @@ namespace
 		switch (pixelShaderType)
 		{
 		case PixelShaderType::Opaque:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(meshIndex, textures, paletteTexture,
-				lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(meshIndex, textures);
 			break;
 		case PixelShaderType::OpaqueWithAlphaTestLayer:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(meshIndex, textures,
-				paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(meshIndex, textures);
 			break;
 		case PixelShaderType::AlphaTested:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(meshIndex, textures, paletteTexture,
-				lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(meshIndex, textures);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(meshIndex,
-				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(meshIndex, textures);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(meshIndex,
-				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(meshIndex, textures);
 			break;
 		case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(meshIndex,
-				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(meshIndex, textures);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelColor:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(meshIndex,
-				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(meshIndex, textures);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelOpacity:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(meshIndex,
-				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(meshIndex, textures);
 			break;
 		case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(meshIndex,
-				textures, paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(meshIndex, textures);
 			break;
 		case PixelShaderType::AlphaTestedWithHorizonMirror:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(meshIndex, textures,
-				paletteTexture, lightTableTexture, skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(meshIndex, textures);
 			break;
 		}
 	}
 
 	// Decides which optimized rasterizer variant to use based on the parameters.
-	void RasterizeMesh(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures,
-		const SoftwareRenderer::ObjectTexture &paletteTexture, const SoftwareRenderer::ObjectTexture &lightTableTexture,
-		const SoftwareRenderer::ObjectTexture &skyBgTexture, DitheringMode ditheringMode)
+	void RasterizeMesh(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures)
 	{
 		static_assert(RenderLightingType::PerPixel == RENDER_LIGHTING_TYPE_MAX);
 		const RenderLightingType lightingType = g_meshProcessCaches.lightingTypes[meshIndex];
 
 		if (lightingType == RenderLightingType::PerMesh)
 		{
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(meshIndex, textures, paletteTexture, lightTableTexture,
-				skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(meshIndex, textures);
 		}
 		else if (lightingType == RenderLightingType::PerPixel)
 		{
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(meshIndex, textures, paletteTexture, lightTableTexture,
-				skyBgTexture, ditheringMode);
+			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(meshIndex, textures);
 		}
 	}
 }
@@ -3521,19 +3501,14 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
 	}
 
-	// Palette for 8-bit -> 32-bit color conversion.
 	const ObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
-
-	// Light table for shading/transparency look-ups.
 	const ObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
-
-	// Sky texture for horizon reflection shader.
 	const ObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
 	PopulateCameraGlobals(camera);
-	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(),
-		this->depthBuffer.begin(), this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), outputBuffer);
-	PopulatePixelShaderGlobals(settings.ambientPercent);
+	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
+		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer);
+	PopulatePixelShaderGlobals(settings.ambientPercent, paletteTexture, lightTableTexture, skyBgTexture);
 
 	ClearTriangleTotalCounts();
 	ClearFrameBuffers();
@@ -3635,7 +3610,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 
 		for (int meshIndex = 0; meshIndex < drawCallSequenceCount; meshIndex++)
 		{
-			RasterizeMesh(meshIndex, this->objectTextures, paletteTexture, lightTableTexture, skyBgTexture, this->ditheringMode);
+			RasterizeMesh(meshIndex, this->objectTextures);
 		}
 
 		drawCallIndex += drawCallSequenceCount;
