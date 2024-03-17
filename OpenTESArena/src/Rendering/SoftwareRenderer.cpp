@@ -2898,7 +2898,8 @@ namespace
 					const bool inHalfSpace0 = IsScreenSpacePointInHalfSpace(pixelCenterX, pixelCenterY, screenSpace0X, screenSpace0Y, screenSpace01PerpX, screenSpace01PerpY);
 					const bool inHalfSpace1 = IsScreenSpacePointInHalfSpace(pixelCenterX, pixelCenterY, screenSpace1X, screenSpace1Y, screenSpace12PerpX, screenSpace12PerpY);
 					const bool inHalfSpace2 = IsScreenSpacePointInHalfSpace(pixelCenterX, pixelCenterY, screenSpace2X, screenSpace2Y, screenSpace20PerpX, screenSpace20PerpY);
-					if (inHalfSpace0 && inHalfSpace1 && inHalfSpace2)
+					const bool pixelCenterHasCoverage = inHalfSpace0 && inHalfSpace1 && inHalfSpace2;
+					if (pixelCenterHasCoverage)
 					{
 						const double ss0X = screenSpace01X;
 						const double ss0Y = screenSpace01Y;
