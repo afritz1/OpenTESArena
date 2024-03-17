@@ -2547,6 +2547,223 @@ namespace
 // Rasterizer, pixel shader execution.
 namespace
 {
+	struct RasterizerTriangle
+	{
+		// The rasterizer prefers vertices in AoS layout.
+		double clip0X, clip0Y, clip0Z, clip0W;
+		double clip1X, clip1Y, clip1Z, clip1W;
+		double clip2X, clip2Y, clip2Z, clip2W;
+		double clip0WRecip;
+		double clip1WRecip;
+		double clip2WRecip;
+		double ndc0X, ndc0Y, ndc0Z;
+		double ndc1X, ndc1Y, ndc1Z;
+		double ndc2X, ndc2Y, ndc2Z;
+		double screenSpace0X, screenSpace0Y;
+		double screenSpace1X, screenSpace1Y;
+		double screenSpace2X, screenSpace2Y;
+		double screenSpace01X, screenSpace01Y;
+		double screenSpace12X, screenSpace12Y;
+		double screenSpace20X, screenSpace20Y;
+		double screenSpace01PerpX, screenSpace01PerpY;
+		double screenSpace12PerpX, screenSpace12PerpY;
+		double screenSpace20PerpX, screenSpace20PerpY;
+		double uv0X, uv0Y;
+		double uv1X, uv1Y;
+		double uv2X, uv2Y;
+		double uv0XDivW, uv0YDivW;
+		double uv1XDivW, uv1YDivW;
+		double uv2XDivW, uv2YDivW;
+
+		// Naive bounding box.
+		int xStart, xEnd;
+		int yStart, yEnd;
+	};
+
+	struct RasterizerCache
+	{
+		RasterizerTriangle visibleTriangleLists[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES];
+		int triangleCounts[MAX_MESH_PROCESS_CACHES];
+	};
+
+	RasterizerCache g_rasterizerCache;
+
+	void ProcessClipSpaceTrianglesForFrontFacing(int meshCount)
+	{
+		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
+		{
+			const auto &clipSpaceMeshV0XYZWs = g_meshProcessCaches.clipSpaceMeshV0XYZWArrays[meshIndex];
+			const auto &clipSpaceMeshV1XYZWs = g_meshProcessCaches.clipSpaceMeshV1XYZWArrays[meshIndex];
+			const auto &clipSpaceMeshV2XYZWs = g_meshProcessCaches.clipSpaceMeshV2XYZWArrays[meshIndex];
+			const auto &clipSpaceMeshUV0XYs = g_meshProcessCaches.clipSpaceMeshUV0XYArrays[meshIndex];
+			const auto &clipSpaceMeshUV1XYs = g_meshProcessCaches.clipSpaceMeshUV1XYArrays[meshIndex];
+			const auto &clipSpaceMeshUV2XYs = g_meshProcessCaches.clipSpaceMeshUV2XYArrays[meshIndex];
+			auto &rasterizerTriangles = g_rasterizerCache.visibleTriangleLists[meshIndex];
+
+			int writeIndex = 0;
+			const int triangleCount = g_meshProcessCaches.clipSpaceMeshTriangleCounts[meshIndex];
+			for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+			{
+				const auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[triangleIndex];
+				const auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[triangleIndex];
+				const auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[triangleIndex];
+				const double clip0X = clipSpaceMeshV0XYZW[0];
+				const double clip0Y = clipSpaceMeshV0XYZW[1];
+				const double clip0Z = clipSpaceMeshV0XYZW[2];
+				const double clip0W = clipSpaceMeshV0XYZW[3];
+				const double clip1X = clipSpaceMeshV1XYZW[0];
+				const double clip1Y = clipSpaceMeshV1XYZW[1];
+				const double clip1Z = clipSpaceMeshV1XYZW[2];
+				const double clip1W = clipSpaceMeshV1XYZW[3];
+				const double clip2X = clipSpaceMeshV2XYZW[0];
+				const double clip2Y = clipSpaceMeshV2XYZW[1];
+				const double clip2Z = clipSpaceMeshV2XYZW[2];
+				const double clip2W = clipSpaceMeshV2XYZW[3];
+				const double clip0WRecip = 1.0 / clip0W;
+				const double clip1WRecip = 1.0 / clip1W;
+				const double clip2WRecip = 1.0 / clip2W;
+				const double ndc0X = clip0X * clip0WRecip;
+				const double ndc0Y = clip0Y * clip0WRecip;
+				const double ndc0Z = clip0Z * clip0WRecip;
+				const double ndc1X = clip1X * clip1WRecip;
+				const double ndc1Y = clip1Y * clip1WRecip;
+				const double ndc1Z = clip1Z * clip1WRecip;
+				const double ndc2X = clip2X * clip2WRecip;
+				const double ndc2Y = clip2Y * clip2WRecip;
+				const double ndc2Z = clip2Z * clip2WRecip;
+				const double screenSpace0X = NdcXToScreenSpace(ndc0X, g_frameBufferWidthReal);
+				const double screenSpace0Y = NdcYToScreenSpace(ndc0Y, g_frameBufferHeightReal);
+				const double screenSpace1X = NdcXToScreenSpace(ndc1X, g_frameBufferWidthReal);
+				const double screenSpace1Y = NdcYToScreenSpace(ndc1Y, g_frameBufferHeightReal);
+				const double screenSpace2X = NdcXToScreenSpace(ndc2X, g_frameBufferWidthReal);
+				const double screenSpace2Y = NdcYToScreenSpace(ndc2Y, g_frameBufferHeightReal);
+				const double screenSpace01X = screenSpace1X - screenSpace0X;
+				const double screenSpace01Y = screenSpace1Y - screenSpace0Y;
+				const double screenSpace12X = screenSpace2X - screenSpace1X;
+				const double screenSpace12Y = screenSpace2Y - screenSpace1Y;
+				const double screenSpace20X = screenSpace0X - screenSpace2X;
+				const double screenSpace20Y = screenSpace0Y - screenSpace2Y;
+
+				double screenSpace01Cross12, screenSpace12Cross20, screenSpace20Cross01;
+				Double2_CrossN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace01X, &screenSpace01Y, &screenSpace01Cross12);
+				Double2_CrossN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace12X, &screenSpace12Y, &screenSpace12Cross20);
+				Double2_CrossN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace20X, &screenSpace20Y, &screenSpace20Cross01);
+
+				// Discard back-facing.
+				const bool isFrontFacing = (screenSpace01Cross12 + screenSpace12Cross20 + screenSpace20Cross01) > 0.0;
+				if (!isFrontFacing)
+				{
+					continue;
+				}
+
+				// Naive screen-space bounding box around triangle.
+				const double xMin = std::min(screenSpace0X, std::min(screenSpace1X, screenSpace2X));
+				const double xMax = std::max(screenSpace0X, std::max(screenSpace1X, screenSpace2X));
+				const double yMin = std::min(screenSpace0Y, std::min(screenSpace1Y, screenSpace2Y));
+				const double yMax = std::max(screenSpace0Y, std::max(screenSpace1Y, screenSpace2Y));
+				const int xStart = RendererUtils::getLowerBoundedPixel(xMin, g_frameBufferWidth);
+				const int xEnd = RendererUtils::getUpperBoundedPixel(xMax, g_frameBufferWidth);
+				const int yStart = RendererUtils::getLowerBoundedPixel(yMin, g_frameBufferHeight);
+				const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, g_frameBufferHeight);
+
+				const bool hasPositiveScreenArea = (xEnd > xStart) && (yEnd > yStart);
+				if (!hasPositiveScreenArea)
+				{
+					continue;
+				}
+
+				g_totalPresentedTriangleCount++;
+
+				double screenSpace01PerpX, screenSpace01PerpY;
+				double screenSpace12PerpX, screenSpace12PerpY;
+				double screenSpace20PerpX, screenSpace20PerpY;
+				Double2_RightPerpN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01PerpX, &screenSpace01PerpY);
+				Double2_RightPerpN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace12PerpX, &screenSpace12PerpY);
+				Double2_RightPerpN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace20PerpX, &screenSpace20PerpY);
+
+				const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[triangleIndex];
+				const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[triangleIndex];
+				const auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[triangleIndex];
+				const double uv0X = clipSpaceMeshUV0XY[0];
+				const double uv0Y = clipSpaceMeshUV0XY[1];
+				const double uv1X = clipSpaceMeshUV1XY[0];
+				const double uv1Y = clipSpaceMeshUV1XY[1];
+				const double uv2X = clipSpaceMeshUV2XY[0];
+				const double uv2Y = clipSpaceMeshUV2XY[1];
+				const double uv0XDivW = uv0X * clip0WRecip;
+				const double uv0YDivW = uv0Y * clip0WRecip;
+				const double uv1XDivW = uv1X * clip1WRecip;
+				const double uv1YDivW = uv1Y * clip1WRecip;
+				const double uv2XDivW = uv2X * clip2WRecip;
+				const double uv2YDivW = uv2Y * clip2WRecip;
+
+				RasterizerTriangle &triangle = rasterizerTriangles[writeIndex];
+				triangle.clip0X = clip0X;
+				triangle.clip0Y = clip0Y;
+				triangle.clip0Z = clip0Z;
+				triangle.clip0W = clip0W;
+				triangle.clip1X = clip1X;
+				triangle.clip1Y = clip1Y;
+				triangle.clip1Z = clip1Z;
+				triangle.clip1W = clip1W;
+				triangle.clip2X = clip2X;
+				triangle.clip2Y = clip2Y;
+				triangle.clip2Z = clip2Z;
+				triangle.clip2W = clip2W;
+				triangle.clip0WRecip = clip0WRecip;
+				triangle.clip1WRecip = clip1WRecip;
+				triangle.clip2WRecip = clip2WRecip;
+				triangle.ndc0X = ndc0X;
+				triangle.ndc0Y = ndc0Y;
+				triangle.ndc0Z = ndc0Z;
+				triangle.ndc1X = ndc1X;
+				triangle.ndc1Y = ndc1Y;
+				triangle.ndc1Z = ndc1Z;
+				triangle.ndc2X = ndc2X;
+				triangle.ndc2Y = ndc2Y;
+				triangle.ndc2Z = ndc2Z;
+				triangle.screenSpace0X = screenSpace0X;
+				triangle.screenSpace0Y = screenSpace0Y;
+				triangle.screenSpace1X = screenSpace1X;
+				triangle.screenSpace1Y = screenSpace1Y;
+				triangle.screenSpace2X = screenSpace2X;
+				triangle.screenSpace2Y = screenSpace2Y;
+				triangle.screenSpace01X = screenSpace01X;
+				triangle.screenSpace01Y = screenSpace01Y;
+				triangle.screenSpace12X = screenSpace12X;
+				triangle.screenSpace12Y = screenSpace12Y;
+				triangle.screenSpace20X = screenSpace20X;
+				triangle.screenSpace20Y = screenSpace20Y;
+				triangle.screenSpace01PerpX = screenSpace01PerpX;
+				triangle.screenSpace01PerpY = screenSpace01PerpY;
+				triangle.screenSpace12PerpX = screenSpace12PerpX;
+				triangle.screenSpace12PerpY = screenSpace12PerpY;
+				triangle.screenSpace20PerpX = screenSpace20PerpX;
+				triangle.screenSpace20PerpY = screenSpace20PerpY;
+				triangle.uv0X = uv0X;
+				triangle.uv0Y = uv0Y;
+				triangle.uv1X = uv1X;
+				triangle.uv1Y = uv1Y;
+				triangle.uv2X = uv2X;
+				triangle.uv2Y = uv2Y;
+				triangle.uv0XDivW = uv0XDivW;
+				triangle.uv0YDivW = uv0YDivW;
+				triangle.uv1XDivW = uv1XDivW;
+				triangle.uv1YDivW = uv1YDivW;
+				triangle.uv2XDivW = uv2XDivW;
+				triangle.uv2YDivW = uv2YDivW;
+				triangle.xStart = xStart;
+				triangle.xEnd = xEnd;
+				triangle.yStart = yStart;
+				triangle.yEnd = yEnd;
+
+				writeIndex++;
+			}
+
+			g_rasterizerCache.triangleCounts[meshIndex] = writeIndex;
+		}
+	}
+
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
 	void RasterizeMeshInternal(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures)
 	{
@@ -2588,12 +2805,6 @@ namespace
 			shaderHorizonMirror.fallbackSkyColor = g_skyBgTexture->texels8Bit[0];
 		}
 
-		const auto &clipSpaceMeshV0XYZWs = g_meshProcessCaches.clipSpaceMeshV0XYZWArrays[meshIndex];
-		const auto &clipSpaceMeshV1XYZWs = g_meshProcessCaches.clipSpaceMeshV1XYZWArrays[meshIndex];
-		const auto &clipSpaceMeshV2XYZWs = g_meshProcessCaches.clipSpaceMeshV2XYZWArrays[meshIndex];
-		const auto &clipSpaceMeshUV0XYs = g_meshProcessCaches.clipSpaceMeshUV0XYArrays[meshIndex];
-		const auto &clipSpaceMeshUV1XYs = g_meshProcessCaches.clipSpaceMeshUV1XYArrays[meshIndex];
-		const auto &clipSpaceMeshUV2XYs = g_meshProcessCaches.clipSpaceMeshUV2XYArrays[meshIndex];
 		const ObjectTextureID textureID0 = g_meshProcessCaches.textureID0s[meshIndex];
 		const ObjectTextureID textureID1 = g_meshProcessCaches.textureID1s[meshIndex];
 
@@ -2608,101 +2819,69 @@ namespace
 			shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height, textureSamplingType1);
 		}
 
-		const int triangleCount = g_meshProcessCaches.clipSpaceMeshTriangleCounts[meshIndex];
+		const auto &triangles = g_rasterizerCache.visibleTriangleLists[meshIndex];
+		const int triangleCount = g_rasterizerCache.triangleCounts[meshIndex];
 		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 		{
-			const auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[triangleIndex];
-			const auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[triangleIndex];
-			const auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[triangleIndex];
-			const double clip0X = clipSpaceMeshV0XYZW[0];
-			const double clip0Y = clipSpaceMeshV0XYZW[1];
-			const double clip0Z = clipSpaceMeshV0XYZW[2];
-			const double clip0W = clipSpaceMeshV0XYZW[3];
-			const double clip1X = clipSpaceMeshV1XYZW[0];
-			const double clip1Y = clipSpaceMeshV1XYZW[1];
-			const double clip1Z = clipSpaceMeshV1XYZW[2];
-			const double clip1W = clipSpaceMeshV1XYZW[3];
-			const double clip2X = clipSpaceMeshV2XYZW[0];
-			const double clip2Y = clipSpaceMeshV2XYZW[1];
-			const double clip2Z = clipSpaceMeshV2XYZW[2];
-			const double clip2W = clipSpaceMeshV2XYZW[3];
-			const double clip0WRecip = 1.0 / clip0W;
-			const double clip1WRecip = 1.0 / clip1W;
-			const double clip2WRecip = 1.0 / clip2W;
-			const double ndc0X = clip0X * clip0WRecip;
-			const double ndc0Y = clip0Y * clip0WRecip;
-			const double ndc0Z = clip0Z * clip0WRecip;
-			const double ndc1X = clip1X * clip1WRecip;
-			const double ndc1Y = clip1Y * clip1WRecip;
-			const double ndc1Z = clip1Z * clip1WRecip;
-			const double ndc2X = clip2X * clip2WRecip;
-			const double ndc2Y = clip2Y * clip2WRecip;
-			const double ndc2Z = clip2Z * clip2WRecip;
-			const double screenSpace0X = NdcXToScreenSpace(ndc0X, g_frameBufferWidthReal);
-			const double screenSpace0Y = NdcYToScreenSpace(ndc0Y, g_frameBufferHeightReal);
-			const double screenSpace1X = NdcXToScreenSpace(ndc1X, g_frameBufferWidthReal);
-			const double screenSpace1Y = NdcYToScreenSpace(ndc1Y, g_frameBufferHeightReal);
-			const double screenSpace2X = NdcXToScreenSpace(ndc2X, g_frameBufferWidthReal);
-			const double screenSpace2Y = NdcYToScreenSpace(ndc2Y, g_frameBufferHeightReal);
-			const double screenSpace01X = screenSpace1X - screenSpace0X;
-			const double screenSpace01Y = screenSpace1Y - screenSpace0Y;
-			const double screenSpace12X = screenSpace2X - screenSpace1X;
-			const double screenSpace12Y = screenSpace2Y - screenSpace1Y;
-			const double screenSpace20X = screenSpace0X - screenSpace2X;
-			const double screenSpace20Y = screenSpace0Y - screenSpace2Y;
-
-			double screenSpace01Cross12, screenSpace12Cross20, screenSpace20Cross01;
-			Double2_CrossN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace01X, &screenSpace01Y, &screenSpace01Cross12);
-			Double2_CrossN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace12X, &screenSpace12Y, &screenSpace12Cross20);
-			Double2_CrossN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace20X, &screenSpace20Y, &screenSpace20Cross01);
-
-			// Discard back-facing.
-			const bool isFrontFacing = (screenSpace01Cross12 + screenSpace12Cross20 + screenSpace20Cross01) > 0.0;
-			if (!isFrontFacing)
-			{
-				continue;
-			}
-
-			// Naive screen-space bounding box around triangle.
-			const double xMin = std::min(screenSpace0X, std::min(screenSpace1X, screenSpace2X));
-			const double xMax = std::max(screenSpace0X, std::max(screenSpace1X, screenSpace2X));
-			const double yMin = std::min(screenSpace0Y, std::min(screenSpace1Y, screenSpace2Y));
-			const double yMax = std::max(screenSpace0Y, std::max(screenSpace1Y, screenSpace2Y));
-			const int xStart = RendererUtils::getLowerBoundedPixel(xMin, g_frameBufferWidth);
-			const int xEnd = RendererUtils::getUpperBoundedPixel(xMax, g_frameBufferWidth);
-			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, g_frameBufferHeight);
-			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, g_frameBufferHeight);
-
-			const bool hasPositiveScreenArea = (xEnd > xStart) && (yEnd > yStart);
-			if (!hasPositiveScreenArea)
-			{
-				continue;
-			}
-
-			g_totalPresentedTriangleCount++;
-
-			double screenSpace01PerpX, screenSpace01PerpY;
-			double screenSpace12PerpX, screenSpace12PerpY;
-			double screenSpace20PerpX, screenSpace20PerpY;
-			Double2_RightPerpN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01PerpX, &screenSpace01PerpY);
-			Double2_RightPerpN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace12PerpX, &screenSpace12PerpY);
-			Double2_RightPerpN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace20PerpX, &screenSpace20PerpY);
-
-			const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[triangleIndex];
-			const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[triangleIndex];
-			const auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[triangleIndex];
-			const double uv0X = clipSpaceMeshUV0XY[0];
-			const double uv0Y = clipSpaceMeshUV0XY[1];
-			const double uv1X = clipSpaceMeshUV1XY[0];
-			const double uv1Y = clipSpaceMeshUV1XY[1];
-			const double uv2X = clipSpaceMeshUV2XY[0];
-			const double uv2Y = clipSpaceMeshUV2XY[1];
-			const double uv0XDivW = uv0X * clip0WRecip;
-			const double uv0YDivW = uv0Y * clip0WRecip;
-			const double uv1XDivW = uv1X * clip1WRecip;
-			const double uv1YDivW = uv1Y * clip1WRecip;
-			const double uv2XDivW = uv2X * clip2WRecip;
-			const double uv2YDivW = uv2Y * clip2WRecip;
+			const RasterizerTriangle &triangle = triangles[triangleIndex];
+			const double clip0X = triangle.clip0X;
+			const double clip0Y = triangle.clip0Y;
+			const double clip0Z = triangle.clip0Z;
+			const double clip0W = triangle.clip0W;
+			const double clip1X = triangle.clip1X;
+			const double clip1Y = triangle.clip1Y;
+			const double clip1Z = triangle.clip1Z;
+			const double clip1W = triangle.clip1W;
+			const double clip2X = triangle.clip2X;
+			const double clip2Y = triangle.clip2Y;
+			const double clip2Z = triangle.clip2Z;
+			const double clip2W = triangle.clip2W;
+			const double clip0WRecip = triangle.clip0WRecip;
+			const double clip1WRecip = triangle.clip1WRecip;
+			const double clip2WRecip = triangle.clip2WRecip;
+			const double ndc0X = triangle.ndc0X;
+			const double ndc0Y = triangle.ndc0Y;
+			const double ndc0Z = triangle.ndc0Z;
+			const double ndc1X = triangle.ndc1X;
+			const double ndc1Y = triangle.ndc1Y;
+			const double ndc1Z = triangle.ndc1Z;
+			const double ndc2X = triangle.ndc2X;
+			const double ndc2Y = triangle.ndc2Y;
+			const double ndc2Z = triangle.ndc2Z;
+			const double screenSpace0X = triangle.screenSpace0X;
+			const double screenSpace0Y = triangle.screenSpace0Y;
+			const double screenSpace1X = triangle.screenSpace1X;
+			const double screenSpace1Y = triangle.screenSpace1Y;
+			const double screenSpace2X = triangle.screenSpace2X;
+			const double screenSpace2Y = triangle.screenSpace2Y;
+			const double screenSpace01X = triangle.screenSpace01X;
+			const double screenSpace01Y = triangle.screenSpace01Y;
+			const double screenSpace12X = triangle.screenSpace12X;
+			const double screenSpace12Y = triangle.screenSpace12Y;
+			const double screenSpace20X = triangle.screenSpace20X;
+			const double screenSpace20Y = triangle.screenSpace20Y;
+			const double screenSpace01PerpX = triangle.screenSpace01PerpX;
+			const double screenSpace01PerpY = triangle.screenSpace01PerpY;
+			const double screenSpace12PerpX = triangle.screenSpace12PerpX;
+			const double screenSpace12PerpY = triangle.screenSpace12PerpY;
+			const double screenSpace20PerpX = triangle.screenSpace20PerpX;
+			const double screenSpace20PerpY = triangle.screenSpace20PerpY;
+			const double uv0X = triangle.uv0X;
+			const double uv0Y = triangle.uv0Y;
+			const double uv1X = triangle.uv1X;
+			const double uv1Y = triangle.uv1Y;
+			const double uv2X = triangle.uv2X;
+			const double uv2Y = triangle.uv2Y;
+			const double uv0XDivW = triangle.uv0XDivW;
+			const double uv0YDivW = triangle.uv0YDivW;
+			const double uv1XDivW = triangle.uv1XDivW;
+			const double uv1YDivW = triangle.uv1YDivW;
+			const double uv2XDivW = triangle.uv2XDivW;
+			const double uv2YDivW = triangle.uv2YDivW;
+			const int xStart = triangle.xStart;
+			const int xEnd = triangle.xEnd;
+			const int yStart = triangle.yStart;
+			const int yEnd = triangle.yEnd;
 
 			for (int y = yStart; y < yEnd; y++)
 			{
@@ -3607,6 +3786,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		CalculateVertexShaderTransforms(drawCallSequenceCount);
 		ProcessVertexShaders(drawCallSequenceCount, vertexShaderType);
 		ProcessClipping(drawCallSequenceCount);
+		ProcessClipSpaceTrianglesForFrontFacing(drawCallSequenceCount);
 
 		for (int meshIndex = 0; meshIndex < drawCallSequenceCount; meshIndex++)
 		{
