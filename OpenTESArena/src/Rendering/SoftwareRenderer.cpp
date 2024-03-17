@@ -2939,6 +2939,13 @@ namespace
 			const int yStart = triangle.yStart;
 			const int yEnd = triangle.yEnd;
 
+			const double screenSpace02X = -triangle.screenSpace20X;
+			const double screenSpace02Y = -triangle.screenSpace20Y;
+			double dot00, dot01, dot11;
+			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01X, &screenSpace01Y, &dot00);
+			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace02X, &screenSpace02Y, &dot01);
+			Double2_DotN<1>(&screenSpace02X, &screenSpace02Y, &screenSpace02X, &screenSpace02Y, &dot11);
+
 			for (int y = yStart; y < yEnd; y++)
 			{
 				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) * g_frameBufferHeightRealRecip;
@@ -2957,19 +2964,12 @@ namespace
 					const bool pixelCenterHasCoverage = inHalfSpace0 && inHalfSpace1 && inHalfSpace2;
 					if (pixelCenterHasCoverage)
 					{
-						const double ss0X = screenSpace01X;
-						const double ss0Y = screenSpace01Y;
-						const double ss1X = screenSpace2X - screenSpace0X;
-						const double ss1Y = screenSpace2Y - screenSpace0Y;
-						const double ss2X = pixelCenterX - screenSpace0X;
-						const double ss2Y = pixelCenterY - screenSpace0Y;
+						const double screenSpace0CurrentX = pixelCenterX - screenSpace0X;
+						const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
 
-						double dot00, dot01, dot11, dot20, dot21;
-						Double2_DotN<1>(&ss0X, &ss0Y, &ss0X, &ss0Y, &dot00);
-						Double2_DotN<1>(&ss0X, &ss0Y, &ss1X, &ss1Y, &dot01);
-						Double2_DotN<1>(&ss1X, &ss1Y, &ss1X, &ss1Y, &dot11);
-						Double2_DotN<1>(&ss2X, &ss2Y, &ss0X, &ss0Y, &dot20);
-						Double2_DotN<1>(&ss2X, &ss2Y, &ss1X, &ss1Y, &dot21);
+						double dot20, dot21;
+						Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace01X, &screenSpace01Y, &dot20);
+						Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace02X, &screenSpace02Y, &dot21);
 
 						const double denominator = (dot00 * dot11) - (dot01 * dot01);
 						const double denominatorRecip = 1.0 / denominator;
