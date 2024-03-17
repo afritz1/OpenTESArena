@@ -2946,6 +2946,9 @@ namespace
 			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace02X, &screenSpace02Y, &dot01);
 			Double2_DotN<1>(&screenSpace02X, &screenSpace02Y, &screenSpace02X, &screenSpace02Y, &dot11);
 
+			const double barycentricDenominator = (dot00 * dot11) - (dot01 * dot01);
+			const double barycentricDenominatorRecip = 1.0 / barycentricDenominator;
+
 			for (int y = yStart; y < yEnd; y++)
 			{
 				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) * g_frameBufferHeightRealRecip;
@@ -2971,12 +2974,10 @@ namespace
 						Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace01X, &screenSpace01Y, &dot20);
 						Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace02X, &screenSpace02Y, &dot21);
 
-						const double denominator = (dot00 * dot11) - (dot01 * dot01);
-						const double denominatorRecip = 1.0 / denominator;
 						const double vNumerator = (dot11 * dot20) - (dot01 * dot21);
 						const double wNumerator = (dot00 * dot21) - (dot01 * dot20);
-						const double v = vNumerator * denominatorRecip;
-						const double w = wNumerator * denominatorRecip;
+						const double v = vNumerator * barycentricDenominatorRecip;
+						const double w = wNumerator * barycentricDenominatorRecip;
 						const double u = 1.0 - v - w;
 
 						PixelShaderPerspectiveCorrection shaderPerspective;
