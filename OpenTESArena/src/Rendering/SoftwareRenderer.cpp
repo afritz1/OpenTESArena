@@ -2771,17 +2771,17 @@ namespace
 		const double lightPointDiffY = light.worldPointY - pointY;
 		const double lightPointDiffZ = light.worldPointZ - pointZ;
 		const double lightDistanceSqr = (lightPointDiffX * lightPointDiffX) + (lightPointDiffY * lightPointDiffY) + (lightPointDiffZ * lightPointDiffZ);
-		const double lightDistance = std::sqrt(lightDistanceSqr);
-		if (lightDistance <= light.startRadius)
+		if (lightDistanceSqr <= light.startRadiusSqr)
 		{
 			*outLightIntensity = 1.0;
 		}
-		else if (lightDistance >= light.endRadius)
+		else if (lightDistanceSqr >= light.endRadiusSqr)
 		{
 			*outLightIntensity = 0.0;
 		}
 		else
 		{
+			const double lightDistance = std::sqrt(lightDistanceSqr);
 			const double lightDistancePercent = (lightDistance - light.startRadius) * light.startEndRadiusDiffRecip;
 			*outLightIntensity = std::clamp(1.0 - lightDistancePercent, 0.0, 1.0);
 		}
@@ -3307,7 +3307,9 @@ void SoftwareRenderer::IndexBuffer::init(int indexCount)
 SoftwareRenderer::Light::Light()
 {
 	this->startRadius = 0.0;
+	this->startRadiusSqr = 0.0;
 	this->endRadius = 0.0;
+	this->endRadiusSqr = 0.0;
 	this->startEndRadiusDiff = 0.0;
 	this->startEndRadiusDiffRecip = 0.0;
 }
@@ -3318,7 +3320,9 @@ void SoftwareRenderer::Light::init(const Double3 &worldPoint, double startRadius
 	this->worldPointY = worldPoint.y;
 	this->worldPointZ = worldPoint.z;
 	this->startRadius = startRadius;
+	this->startRadiusSqr = startRadius * startRadius;
 	this->endRadius = endRadius;
+	this->endRadiusSqr = endRadius * endRadius;
 	this->startEndRadiusDiff = endRadius - startRadius;
 	this->startEndRadiusDiffRecip = 1.0 / this->startEndRadiusDiff;
 }
@@ -3640,7 +3644,9 @@ void SoftwareRenderer::setLightRadius(RenderLightID id, double startRadius, doub
 	DebugAssert(endRadius >= startRadius);
 	Light &light = this->lights.get(id);
 	light.startRadius = startRadius;
+	light.startRadiusSqr = startRadius * startRadius;
 	light.endRadius = endRadius;
+	light.endRadiusSqr = endRadius * endRadius;
 	light.startEndRadiusDiff = endRadius - startRadius;
 	light.startEndRadiusDiffRecip = 1.0 / light.startEndRadiusDiff;
 }

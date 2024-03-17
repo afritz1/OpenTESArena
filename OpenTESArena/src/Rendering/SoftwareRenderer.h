@@ -175,7 +175,8 @@ public:
 		double worldPointX;
 		double worldPointY;
 		double worldPointZ;
-		double startRadius, endRadius;
+		double startRadius, startRadiusSqr;
+		double endRadius, endRadiusSqr;
 		double startEndRadiusDiff, startEndRadiusDiffRecip;
 
 		Light();
