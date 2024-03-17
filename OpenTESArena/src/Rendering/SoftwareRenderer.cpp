@@ -2765,7 +2765,7 @@ namespace
 	}
 
 	template<DitheringMode ditheringMode>
-	void GetScreenSpaceDitherValue(double lightLevelReal, double lightIntensitySum, int pixelIndex, bool *outShouldDither)
+	void GetScreenSpaceDitherValue(double lightLevelReal, double lightIntensitySum, int pixelIndex, bool *__restrict outShouldDither)
 	{
 		// Dither the light level in screen space.
 		if constexpr (ditheringMode == DitheringMode::None)
