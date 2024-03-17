@@ -2764,6 +2764,39 @@ namespace
 		}
 	}
 
+	template<DitheringMode ditheringMode>
+	void GetScreenSpaceDitherValue(double lightLevelReal, double lightIntensitySum, int pixelIndex, bool *outShouldDither)
+	{
+		// Dither the light level in screen space.
+		if constexpr (ditheringMode == DitheringMode::None)
+		{
+			*outShouldDither = false;
+		}
+		else if (ditheringMode == DitheringMode::Classic)
+		{
+			*outShouldDither = g_ditherBuffer[pixelIndex];
+		}
+		else if (ditheringMode == DitheringMode::Modern)
+		{
+			if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
+			{
+				constexpr int maskCount = DITHERING_MODERN_MASK_COUNT;
+				const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
+				const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(maskCount) * lightLevelFraction), 0, maskCount - 1);
+				const int ditherBufferIndex = pixelIndex + (maskIndex * g_frameBufferPixelCount);
+				*outShouldDither = g_ditherBuffer[ditherBufferIndex];
+			}
+			else
+			{
+				*outShouldDither = false;
+			}
+		}
+		else
+		{
+			*outShouldDither = false;
+		}
+	}
+
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
 	void RasterizeMeshInternal(int meshIndex, const SoftwareRenderer::ObjectTexturePool &textures)
 	{
@@ -3020,35 +3053,8 @@ namespace
 
 							if constexpr (requiresPerPixelLightIntensity)
 							{
-								// Dither the light level in screen space.
 								bool shouldDither;
-								if constexpr (ditheringMode == DitheringMode::None)
-								{
-									shouldDither = false;
-								}
-								else if (ditheringMode == DitheringMode::Classic)
-								{
-									shouldDither = g_ditherBuffer[shaderFrameBuffer.pixelIndex];
-								}
-								else if (ditheringMode == DitheringMode::Modern)
-								{
-									if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
-									{
-										constexpr int maskCount = DITHERING_MODERN_MASK_COUNT;
-										const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
-										const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(maskCount) * lightLevelFraction), 0, maskCount - 1);
-										const int ditherBufferIndex = shaderFrameBuffer.pixelIndex + (maskIndex * g_frameBufferPixelCount);
-										shouldDither = g_ditherBuffer[ditherBufferIndex];
-									}
-									else
-									{
-										shouldDither = false;
-									}
-								}
-								else
-								{
-									shouldDither = false;
-								}
+								GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal, lightIntensitySum, shaderFrameBuffer.pixelIndex, &shouldDither);
 
 								if (shouldDither)
 								{
