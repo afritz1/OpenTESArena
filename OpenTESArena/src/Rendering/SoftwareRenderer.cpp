@@ -482,6 +482,31 @@ namespace
 	}
 
 	template<int N>
+	void Matrix4_MultiplyVectorIgnoreW_N(
+		const double *__restrict mxxs, const double *__restrict mxys, const double *__restrict mxzs,
+		const double *__restrict myxs, const double *__restrict myys, const double *__restrict myzs,
+		const double *__restrict mzxs, const double *__restrict mzys, const double *__restrict mzzs,
+		const double *__restrict mwxs, const double *__restrict mwys, const double *__restrict mwzs,
+		const double *__restrict xs, const double *__restrict ys, const double *__restrict zs, const double *__restrict ws,
+		double *__restrict outXs, double *__restrict outYs, double *__restrict outZs)
+	{
+		for (int i = 0; i < N; i++)
+		{
+			outXs[i] += (mxxs[i] * xs[i]) + (myxs[i] * ys[i]) + (mzxs[i] * zs[i]) + (mwxs[i] * ws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outYs[i] += (mxys[i] * xs[i]) + (myys[i] * ys[i]) + (mzys[i] * zs[i]) + (mwys[i] * ws[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outZs[i] += (mxzs[i] * xs[i]) + (myzs[i] * ys[i]) + (mzzs[i] * zs[i]) + (mwzs[i] * ws[i]);
+		}
+	}
+
+	template<int N>
 	void Matrix4_MultiplyMatrixN(const double *__restrict m0xxs, const double *__restrict m0xys, const double *__restrict m0xzs, const double *__restrict m0xws,
 		const double *__restrict m0yxs, const double *__restrict m0yys, const double *__restrict m0yzs, const double *__restrict m0yws,
 		const double *__restrict m0zxs, const double *__restrict m0zys, const double *__restrict m0zzs, const double *__restrict m0zws,
@@ -3026,14 +3051,13 @@ namespace
 							double shaderWorldSpacePointX = 0.0;
 							double shaderWorldSpacePointY = 0.0;
 							double shaderWorldSpacePointZ = 0.0;
-							double shaderWorldSpacePointW = 0.0;
-							Matrix4_MultiplyVectorN<1>(
-								g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ, g_invViewMatrixXW,
-								g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ, g_invViewMatrixYW,
-								g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ, g_invViewMatrixZW,
-								g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ, g_invViewMatrixWW,
+							Matrix4_MultiplyVectorIgnoreW_N<1>(
+								g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ,
+								g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ,
+								g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ,
+								g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ,
 								&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW,
-								&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ, &shaderWorldSpacePointW);
+								&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ);
 
 							shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
 							shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
