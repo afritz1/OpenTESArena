@@ -2764,6 +2764,29 @@ namespace
 		}
 	}
 
+	void GetWorldSpaceLightIntensityValue(double pointX, double pointY, double pointZ, const SoftwareRenderer::Light &__restrict light,
+		double *__restrict outLightIntensity)
+	{
+		const double lightPointDiffX = light.worldPointX - pointX;
+		const double lightPointDiffY = light.worldPointY - pointY;
+		const double lightPointDiffZ = light.worldPointZ - pointZ;
+		const double lightDistanceSqr = (lightPointDiffX * lightPointDiffX) + (lightPointDiffY * lightPointDiffY) + (lightPointDiffZ * lightPointDiffZ);
+		const double lightDistance = std::sqrt(lightDistanceSqr);
+		if (lightDistance <= light.startRadius)
+		{
+			*outLightIntensity = 1.0;
+		}
+		else if (lightDistance >= light.endRadius)
+		{
+			*outLightIntensity = 0.0;
+		}
+		else
+		{
+			const double lightDistancePercent = (lightDistance - light.startRadius) * light.startEndRadiusDiffRecip;
+			*outLightIntensity = std::clamp(1.0 - lightDistancePercent, 0.0, 1.0);
+		}
+	}
+
 	template<DitheringMode ditheringMode>
 	void GetScreenSpaceDitherValue(double lightLevelReal, double lightIntensitySum, int pixelIndex, bool *__restrict outShouldDither)
 	{
@@ -3014,26 +3037,8 @@ namespace
 								for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
 								{
 									const SoftwareRenderer::Light &light = *lights[lightIndex];
-									const double lightPointDiffX = light.worldPointX - shaderWorldSpacePointX;
-									const double lightPointDiffY = light.worldPointY - shaderWorldSpacePointY;
-									const double lightPointDiffZ = light.worldPointZ - shaderWorldSpacePointZ;
-									const double lightDistanceSqr = (lightPointDiffX * lightPointDiffX) + (lightPointDiffY * lightPointDiffY) + (lightPointDiffZ * lightPointDiffZ);
-									const double lightDistance = std::sqrt(lightDistanceSqr);
 									double lightIntensity;
-									if (lightDistance <= light.startRadius)
-									{
-										lightIntensity = 1.0;
-									}
-									else if (lightDistance >= light.endRadius)
-									{
-										lightIntensity = 0.0;
-									}
-									else
-									{
-										const double lightDistancePercent = (lightDistance - light.startRadius) * light.startEndRadiusDiffRecip;
-										lightIntensity = std::clamp(1.0 - lightDistancePercent, 0.0, 1.0);
-									}
-
+									GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
 									lightIntensitySum += lightIntensity;
 
 									if (lightIntensitySum >= 1.0)
