@@ -2997,169 +2997,173 @@ namespace
 					const bool pixelCenterHasCoverage = IsScreenSpacePointInTriangle(pixelCenterX, pixelCenterY, screenSpace0X, screenSpace0Y,
 						screenSpace01PerpX, screenSpace01PerpY, screenSpace1X, screenSpace1Y, screenSpace12PerpX, screenSpace12PerpY, screenSpace2X,
 						screenSpace2Y, screenSpace20PerpX, screenSpace20PerpY);
-					if (pixelCenterHasCoverage)
+					if (!pixelCenterHasCoverage)
 					{
-						const double screenSpace0CurrentX = pixelCenterX - screenSpace0X;
-						const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
+						continue;
+					}
 
-						double dot20, dot21;
-						Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace01X, &screenSpace01Y, &dot20);
-						Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace02X, &screenSpace02Y, &dot21);
+					const double screenSpace0CurrentX = pixelCenterX - screenSpace0X;
+					const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
 
-						const double vNumerator = (dot11 * dot20) - (dot01 * dot21);
-						const double wNumerator = (dot00 * dot21) - (dot01 * dot20);
-						const double v = vNumerator * barycentricDenominatorRecip;
-						const double w = wNumerator * barycentricDenominatorRecip;
-						const double u = 1.0 - v - w;
+					double dot20, dot21;
+					Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace01X, &screenSpace01Y, &dot20);
+					Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace02X, &screenSpace02Y, &dot21);
 
-						PixelShaderPerspectiveCorrection shaderPerspective;
-						shaderPerspective.ndcZDepth = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
+					const double vNumerator = (dot11 * dot20) - (dot01 * dot21);
+					const double wNumerator = (dot00 * dot21) - (dot01 * dot20);
+					const double v = vNumerator * barycentricDenominatorRecip;
+					const double w = wNumerator * barycentricDenominatorRecip;
+					const double u = 1.0 - v - w;
 
-						bool passesDepthTest = true;
-						if constexpr (enableDepthRead)
+					PixelShaderPerspectiveCorrection shaderPerspective;
+					shaderPerspective.ndcZDepth = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
+
+					bool passesDepthTest = true;
+					if constexpr (enableDepthRead)
+					{
+						passesDepthTest = shaderPerspective.ndcZDepth < g_depthBuffer[shaderFrameBuffer.pixelIndex];
+						g_totalDepthTests++;
+					}
+
+					if (!passesDepthTest)
+					{
+						continue;
+					}
+
+					const double shaderClipSpacePointX = (ndc0X * u) + (ndc1X * v) + (ndc2X * w);
+					const double shaderClipSpacePointY = (ndc0Y * u) + (ndc1Y * v) + (ndc2Y * w);
+					const double shaderClipSpacePointZ = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
+					const double shaderClipSpacePointW = (clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w);
+					const double shaderClipSpacePointWRecip = 1.0 / shaderClipSpacePointW;
+					const double shaderHomogeneousSpacePointX = shaderClipSpacePointX * shaderClipSpacePointWRecip;
+					const double shaderHomogeneousSpacePointY = shaderClipSpacePointY * shaderClipSpacePointWRecip;
+					const double shaderHomogeneousSpacePointZ = shaderClipSpacePointZ * shaderClipSpacePointWRecip;
+					const double shaderHomogeneousSpacePointW = shaderClipSpacePointWRecip;
+
+					// Apply homogeneous-to-camera space transform.
+					double shaderCameraSpacePointX = 0.0;
+					double shaderCameraSpacePointY = 0.0;
+					double shaderCameraSpacePointZ = 0.0;
+					double shaderCameraSpacePointW = 0.0;
+					Matrix4_MultiplyVectorN<1>(
+						g_invProjMatrixXX, g_invProjMatrixXY, g_invProjMatrixXZ, g_invProjMatrixXW,
+						g_invProjMatrixYX, g_invProjMatrixYY, g_invProjMatrixYZ, g_invProjMatrixYW,
+						g_invProjMatrixZX, g_invProjMatrixZY, g_invProjMatrixZZ, g_invProjMatrixZW,
+						g_invProjMatrixWX, g_invProjMatrixWY, g_invProjMatrixWZ, g_invProjMatrixWW,
+						&shaderHomogeneousSpacePointX, &shaderHomogeneousSpacePointY, &shaderHomogeneousSpacePointZ, &shaderHomogeneousSpacePointW,
+						&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW);
+
+					// Apply camera-to-world space transform.
+					double shaderWorldSpacePointX = 0.0;
+					double shaderWorldSpacePointY = 0.0;
+					double shaderWorldSpacePointZ = 0.0;
+					Matrix4_MultiplyVectorIgnoreW_N<1>(
+						g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ,
+						g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ,
+						g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ,
+						g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ,
+						&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW,
+						&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ);
+
+					shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
+					shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
+
+					double lightIntensitySum = 0.0;
+					if constexpr (requiresPerPixelLightIntensity)
+					{
+						lightIntensitySum = g_ambientPercent;
+						for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
 						{
-							passesDepthTest = shaderPerspective.ndcZDepth < g_depthBuffer[shaderFrameBuffer.pixelIndex];
-							g_totalDepthTests++;
-						}
+							const SoftwareRenderer::Light &light = *lights[lightIndex];
+							double lightIntensity;
+							GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
+							lightIntensitySum += lightIntensity;
 
-						if (passesDepthTest)
-						{
-							const double shaderClipSpacePointX = (ndc0X * u) + (ndc1X * v) + (ndc2X * w);
-							const double shaderClipSpacePointY = (ndc0Y * u) + (ndc1Y * v) + (ndc2Y * w);
-							const double shaderClipSpacePointZ = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
-							const double shaderClipSpacePointW = (clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w);
-							const double shaderClipSpacePointWRecip = 1.0 / shaderClipSpacePointW;
-							const double shaderHomogeneousSpacePointX = shaderClipSpacePointX * shaderClipSpacePointWRecip;
-							const double shaderHomogeneousSpacePointY = shaderClipSpacePointY * shaderClipSpacePointWRecip;
-							const double shaderHomogeneousSpacePointZ = shaderClipSpacePointZ * shaderClipSpacePointWRecip;
-							const double shaderHomogeneousSpacePointW = shaderClipSpacePointWRecip;
-
-							// Apply homogeneous-to-camera space transform.
-							double shaderCameraSpacePointX = 0.0;
-							double shaderCameraSpacePointY = 0.0;
-							double shaderCameraSpacePointZ = 0.0;
-							double shaderCameraSpacePointW = 0.0;
-							Matrix4_MultiplyVectorN<1>(
-								g_invProjMatrixXX, g_invProjMatrixXY, g_invProjMatrixXZ, g_invProjMatrixXW,
-								g_invProjMatrixYX, g_invProjMatrixYY, g_invProjMatrixYZ, g_invProjMatrixYW,
-								g_invProjMatrixZX, g_invProjMatrixZY, g_invProjMatrixZZ, g_invProjMatrixZW,
-								g_invProjMatrixWX, g_invProjMatrixWY, g_invProjMatrixWZ, g_invProjMatrixWW,
-								&shaderHomogeneousSpacePointX, &shaderHomogeneousSpacePointY, &shaderHomogeneousSpacePointZ, &shaderHomogeneousSpacePointW,
-								&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW);
-
-							// Apply camera-to-world space transform.
-							double shaderWorldSpacePointX = 0.0;
-							double shaderWorldSpacePointY = 0.0;
-							double shaderWorldSpacePointZ = 0.0;
-							Matrix4_MultiplyVectorIgnoreW_N<1>(
-								g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ,
-								g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ,
-								g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ,
-								g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ,
-								&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW,
-								&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ);
-
-							shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
-							shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
-
-							double lightIntensitySum = 0.0;
-							if constexpr (requiresPerPixelLightIntensity)
+							if (lightIntensitySum >= 1.0)
 							{
-								lightIntensitySum = g_ambientPercent;
-								for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
-								{
-									const SoftwareRenderer::Light &light = *lights[lightIndex];
-									double lightIntensity;
-									GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
-									lightIntensitySum += lightIntensity;
-
-									if (lightIntensitySum >= 1.0)
-									{
-										lightIntensitySum = 1.0;
-										break;
-									}
-								}
+								lightIntensitySum = 1.0;
+								break;
 							}
-							else if (requiresPerMeshLightIntensity)
-							{
-								lightIntensitySum = meshLightPercent;
-							}
-
-							const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
-							shaderLighting.lightLevel = shaderLighting.lastLightLevel - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lastLightLevel);
-
-							if constexpr (requiresPerPixelLightIntensity)
-							{
-								bool shouldDither;
-								GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal, lightIntensitySum, shaderFrameBuffer.pixelIndex, &shouldDither);
-
-								if (shouldDither)
-								{
-									shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lastLightLevel);
-								}
-							}
-
-							if constexpr (requiresHorizonMirror)
-							{
-								// @todo: support camera roll
-								const double reflectedScreenSpacePointX = pixelCenterX;
-								const double reflectedScreenSpacePointY = shaderHorizonMirror.horizonScreenSpacePointY + (shaderHorizonMirror.horizonScreenSpacePointY - pixelCenterY);
-
-								const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePointX);
-								const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePointY);
-								shaderHorizonMirror.isReflectedPixelInFrameBuffer =
-									(reflectedPixelX >= 0) && (reflectedPixelX < g_frameBufferWidth) &&
-									(reflectedPixelY >= 0) && (reflectedPixelY < g_frameBufferHeight);
-								shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * g_frameBufferWidth);
-							}
-
-							if constexpr (pixelShaderType == PixelShaderType::Opaque)
-							{
-								PixelShader_Opaque<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer)
-							{
-								PixelShader_OpaqueWithAlphaTestLayer<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::AlphaTested)
-							{
-								PixelShader_AlphaTested<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin)
-							{
-								PixelShader_AlphaTestedWithVariableTexCoordUMin<enableDepthWrite>(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin)
-							{
-								PixelShader_AlphaTestedWithVariableTexCoordVMin<enableDepthWrite>(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup)
-							{
-								PixelShader_AlphaTestedWithPaletteIndexLookup<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelColor)
-							{
-								PixelShader_AlphaTestedWithLightLevelColor<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
-							{
-								PixelShader_AlphaTestedWithLightLevelOpacity<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit)
-							{
-								PixelShader_AlphaTestedWithPreviousBrightnessLimit<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderFrameBuffer);
-							}
-							else if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror)
-							{
-								PixelShader_AlphaTestedWithHorizonMirror<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderHorizonMirror, shaderLighting, shaderFrameBuffer);
-							}
-
-							// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
-							const uint8_t writtenPaletteIndex = g_paletteIndexBuffer[shaderFrameBuffer.pixelIndex];
-							g_colorBuffer[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
-							g_totalColorWrites++;
 						}
 					}
+					else if (requiresPerMeshLightIntensity)
+					{
+						lightIntensitySum = meshLightPercent;
+					}
+
+					const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
+					shaderLighting.lightLevel = shaderLighting.lastLightLevel - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lastLightLevel);
+
+					if constexpr (requiresPerPixelLightIntensity)
+					{
+						bool shouldDither;
+						GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal, lightIntensitySum, shaderFrameBuffer.pixelIndex, &shouldDither);
+
+						if (shouldDither)
+						{
+							shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lastLightLevel);
+						}
+					}
+
+					if constexpr (requiresHorizonMirror)
+					{
+						// @todo: support camera roll
+						const double reflectedScreenSpacePointX = pixelCenterX;
+						const double reflectedScreenSpacePointY = shaderHorizonMirror.horizonScreenSpacePointY + (shaderHorizonMirror.horizonScreenSpacePointY - pixelCenterY);
+
+						const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePointX);
+						const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePointY);
+						shaderHorizonMirror.isReflectedPixelInFrameBuffer =
+							(reflectedPixelX >= 0) && (reflectedPixelX < g_frameBufferWidth) &&
+							(reflectedPixelY >= 0) && (reflectedPixelY < g_frameBufferHeight);
+						shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * g_frameBufferWidth);
+					}
+
+					if constexpr (pixelShaderType == PixelShaderType::Opaque)
+					{
+						PixelShader_Opaque<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer)
+					{
+						PixelShader_OpaqueWithAlphaTestLayer<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::AlphaTested)
+					{
+						PixelShader_AlphaTested<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin)
+					{
+						PixelShader_AlphaTestedWithVariableTexCoordUMin<enableDepthWrite>(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin)
+					{
+						PixelShader_AlphaTestedWithVariableTexCoordVMin<enableDepthWrite>(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup)
+					{
+						PixelShader_AlphaTestedWithPaletteIndexLookup<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelColor)
+					{
+						PixelShader_AlphaTestedWithLightLevelColor<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
+					{
+						PixelShader_AlphaTestedWithLightLevelOpacity<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit)
+					{
+						PixelShader_AlphaTestedWithPreviousBrightnessLimit<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror)
+					{
+						PixelShader_AlphaTestedWithHorizonMirror<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderHorizonMirror, shaderLighting, shaderFrameBuffer);
+					}
+
+					// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
+					const uint8_t writtenPaletteIndex = g_paletteIndexBuffer[shaderFrameBuffer.pixelIndex];
+					g_colorBuffer[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
+					g_totalColorWrites++;
 				}
 			}
 		}
