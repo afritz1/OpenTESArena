@@ -615,21 +615,18 @@ namespace
 		return (0.50 - (ndcY * 0.50)) * frameHeight;
 	}
 
-	bool IsScreenSpacePointInTriangle(double pointX, double pointY,
-		double plane0PointX, double plane0PointY, double plane0NormalX, double plane0NormalY,
-		double plane1PointX, double plane1PointY, double plane1NormalX, double plane1NormalY,
-		double plane2PointX, double plane2PointY, double plane2NormalX, double plane2NormalY)
+	// Helper function for the dot product X's or Y's used to see if a screen space point is inside the triangle.
+	void GetScreenSpacePointHalfSpaceComponents(double pointComponent, double plane0PointComponent,
+		double plane1PointComponent, double plane2PointComponent, double plane0NormalComponent,
+		double plane1NormalComponent, double plane2NormalComponent, double *__restrict outDot0Component,
+		double *__restrict outDot1Component, double *__restrict outDot2Component)
 	{
-		const double point0XDiff = pointX - plane0PointX;
-		const double point1XDiff = pointX - plane1PointX;
-		const double point2XDiff = pointX - plane2PointX;
-		const double point0YDiff = pointY - plane0PointY;
-		const double point1YDiff = pointY - plane1PointY;
-		const double point2YDiff = pointY - plane2PointY;
-		const double dot0 = (point0XDiff * plane0NormalX) + (point0YDiff * plane0NormalY);
-		const double dot1 = (point1XDiff * plane1NormalX) + (point1YDiff * plane1NormalY);
-		const double dot2 = (point2XDiff * plane2NormalX) + (point2YDiff * plane2NormalY);
-		return (dot0 >= 0.0) && (dot1 >= 0.0) && (dot2 >= 0.0);
+		const double point0Diff = pointComponent - plane0PointComponent;
+		const double point1Diff = pointComponent - plane1PointComponent;
+		const double point2Diff = pointComponent - plane2PointComponent;
+		*outDot0Component = point0Diff * plane0NormalComponent;
+		*outDot1Component = point1Diff * plane1NormalComponent;
+		*outDot2Component = point2Diff * plane2NormalComponent;
 	}
 }
 
@@ -2986,24 +2983,36 @@ namespace
 			for (int y = yStart; y < yEnd; y++)
 			{
 				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) * g_frameBufferHeightRealRecip;
+				const double pixelCenterY = shaderFrameBuffer.yPercent * g_frameBufferHeightReal;
+				const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
+
+				double pixelCoverageDot0Y, pixelCoverageDot1Y, pixelCoverageDot2Y;
+				GetScreenSpacePointHalfSpaceComponents(pixelCenterY, screenSpace0Y, screenSpace1Y, screenSpace2Y, screenSpace01PerpY,
+					screenSpace12PerpY, screenSpace20PerpY, &pixelCoverageDot0Y, &pixelCoverageDot1Y, &pixelCoverageDot2Y);
 
 				for (int x = xStart; x < xEnd; x++)
 				{
-					shaderFrameBuffer.xPercent = (static_cast<double>(x) + 0.50) * g_frameBufferWidthRealRecip;
 					shaderFrameBuffer.pixelIndex = x + (y * g_frameBufferWidth);
+					shaderFrameBuffer.xPercent = (static_cast<double>(x) + 0.50) * g_frameBufferWidthRealRecip;
 					const double pixelCenterX = shaderFrameBuffer.xPercent * g_frameBufferWidthReal;
-					const double pixelCenterY = shaderFrameBuffer.yPercent * g_frameBufferHeightReal;
 
-					const bool pixelCenterHasCoverage = IsScreenSpacePointInTriangle(pixelCenterX, pixelCenterY, screenSpace0X, screenSpace0Y,
-						screenSpace01PerpX, screenSpace01PerpY, screenSpace1X, screenSpace1Y, screenSpace12PerpX, screenSpace12PerpY, screenSpace2X,
-						screenSpace2Y, screenSpace20PerpX, screenSpace20PerpY);
+					double pixelCoverageDot0X, pixelCoverageDot1X, pixelCoverageDot2X;
+					GetScreenSpacePointHalfSpaceComponents(pixelCenterX, screenSpace0X, screenSpace1X, screenSpace2X, screenSpace01PerpX,
+						screenSpace12PerpX, screenSpace20PerpX, &pixelCoverageDot0X, &pixelCoverageDot1X, &pixelCoverageDot2X);
+
+					const double pixelCenterDot0 = pixelCoverageDot0X + pixelCoverageDot0Y;
+					const double pixelCenterDot1 = pixelCoverageDot1X + pixelCoverageDot1Y;
+					const double pixelCenterDot2 = pixelCoverageDot2X + pixelCoverageDot2Y;
+					const bool isPixelCenterIn0 = pixelCenterDot0 >= 0.0;
+					const bool isPixelCenterIn1 = pixelCenterDot1 >= 0.0;
+					const bool isPixelCenterIn2 = pixelCenterDot2 >= 0.0;
+					const bool pixelCenterHasCoverage = isPixelCenterIn0 && isPixelCenterIn1 && isPixelCenterIn2;
 					if (!pixelCenterHasCoverage)
 					{
 						continue;
 					}
 
 					const double screenSpace0CurrentX = pixelCenterX - screenSpace0X;
-					const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
 
 					double dot20, dot21;
 					Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace01X, &screenSpace01Y, &dot20);
