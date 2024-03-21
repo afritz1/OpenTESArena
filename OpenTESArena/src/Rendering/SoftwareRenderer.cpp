@@ -2972,12 +2972,12 @@ namespace
 
 			const double screenSpace02X = -triangle.screenSpace20X;
 			const double screenSpace02Y = -triangle.screenSpace20Y;
-			double dot00, dot01, dot11;
-			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01X, &screenSpace01Y, &dot00);
-			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace02X, &screenSpace02Y, &dot01);
-			Double2_DotN<1>(&screenSpace02X, &screenSpace02Y, &screenSpace02X, &screenSpace02Y, &dot11);
+			double barycentricDot00, barycentricDot01, barycentricDot11;
+			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01X, &screenSpace01Y, &barycentricDot00);
+			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace02X, &screenSpace02Y, &barycentricDot01);
+			Double2_DotN<1>(&screenSpace02X, &screenSpace02Y, &screenSpace02X, &screenSpace02Y, &barycentricDot11);
 
-			const double barycentricDenominator = (dot00 * dot11) - (dot01 * dot01);
+			const double barycentricDenominator = (barycentricDot00 * barycentricDot11) - (barycentricDot01 * barycentricDot01);
 			const double barycentricDenominatorRecip = 1.0 / barycentricDenominator;
 
 			for (int y = yStart; y < yEnd; y++)
@@ -2985,6 +2985,8 @@ namespace
 				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) * g_frameBufferHeightRealRecip;
 				const double pixelCenterY = shaderFrameBuffer.yPercent * g_frameBufferHeightReal;
 				const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
+				const double barycentricDot20Y = screenSpace0CurrentY * screenSpace01Y;
+				const double barycentricDot21Y = screenSpace0CurrentY * screenSpace02Y;
 
 				double pixelCoverageDot0Y, pixelCoverageDot1Y, pixelCoverageDot2Y;
 				GetScreenSpacePointHalfSpaceComponents(pixelCenterY, screenSpace0Y, screenSpace1Y, screenSpace2Y, screenSpace01PerpY,
@@ -3013,13 +3015,12 @@ namespace
 					}
 
 					const double screenSpace0CurrentX = pixelCenterX - screenSpace0X;
-
-					double dot20, dot21;
-					Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace01X, &screenSpace01Y, &dot20);
-					Double2_DotN<1>(&screenSpace0CurrentX, &screenSpace0CurrentY, &screenSpace02X, &screenSpace02Y, &dot21);
-
-					const double vNumerator = (dot11 * dot20) - (dot01 * dot21);
-					const double wNumerator = (dot00 * dot21) - (dot01 * dot20);
+					const double barycentricDot20X = screenSpace0CurrentX * screenSpace01X;
+					const double barycentricDot21X = screenSpace0CurrentX * screenSpace02X;
+					const double barycentricDot20 = barycentricDot20X + barycentricDot20Y;
+					const double barycentricDot21 = barycentricDot21X + barycentricDot21Y;
+					const double vNumerator = (barycentricDot11 * barycentricDot20) - (barycentricDot01 * barycentricDot21);
+					const double wNumerator = (barycentricDot00 * barycentricDot21) - (barycentricDot01 * barycentricDot20);
 					const double v = vNumerator * barycentricDenominatorRecip;
 					const double w = wNumerator * barycentricDenominatorRecip;
 					const double u = 1.0 - v - w;
