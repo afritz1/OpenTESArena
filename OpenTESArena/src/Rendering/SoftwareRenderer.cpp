@@ -981,9 +981,10 @@ namespace
 
 	void ClearFrameBuffers()
 	{
-		std::fill(g_paletteIndexBuffer, g_paletteIndexBuffer + g_frameBufferPixelCount, 0);
+		// Don't need to clear color buffers as long as there's always a sky mesh.
+		//std::fill(g_paletteIndexBuffer, g_paletteIndexBuffer + g_frameBufferPixelCount, 0);
 		std::fill(g_depthBuffer, g_depthBuffer + g_frameBufferPixelCount, std::numeric_limits<double>::infinity());
-		std::fill(g_colorBuffer, g_colorBuffer + g_frameBufferPixelCount, 0);
+		//std::fill(g_colorBuffer, g_colorBuffer + g_frameBufferPixelCount, 0);
 		g_totalDepthTests = 0;
 		g_totalColorWrites = 0;
 	}
