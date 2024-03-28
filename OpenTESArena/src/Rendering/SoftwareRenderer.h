@@ -24,6 +24,8 @@
 #include "components/utilities/BufferView3D.h"
 #include "components/utilities/RecyclablePool.h"
 
+struct RasterizerBin; // For triangle binning.
+
 class SoftwareRenderer : public RendererSystem3D
 {
 public:
@@ -194,6 +196,7 @@ private:
 	Buffer2D<double> depthBuffer;
 	Buffer3D<bool> ditherBuffer; // Stores N layers of pre-computed patterns depending on the option.
 	DitheringMode ditheringMode;
+	Buffer2D<RasterizerBin> rasterizerBins;
 
 	VertexBufferPool vertexBuffers;
 	AttributeBufferPool attributeBuffers;

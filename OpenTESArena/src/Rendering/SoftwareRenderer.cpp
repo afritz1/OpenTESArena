@@ -602,34 +602,6 @@ namespace
 	}
 }
 
-// Rasterization utils.
-namespace
-{
-	double NdcXToScreenSpace(double ndcX, double frameWidth)
-	{
-		return (0.50 + (ndcX * 0.50)) * frameWidth;
-	}
-
-	double NdcYToScreenSpace(double ndcY, double frameHeight)
-	{
-		return (0.50 - (ndcY * 0.50)) * frameHeight;
-	}
-
-	// Helper function for the dot product X's or Y's used to see if a screen space point is inside the triangle.
-	void GetScreenSpacePointHalfSpaceComponents(double pointComponent, double plane0PointComponent,
-		double plane1PointComponent, double plane2PointComponent, double plane0NormalComponent,
-		double plane1NormalComponent, double plane2NormalComponent, double *__restrict outDot0Component,
-		double *__restrict outDot1Component, double *__restrict outDot2Component)
-	{
-		const double point0Diff = pointComponent - plane0PointComponent;
-		const double point1Diff = pointComponent - plane1PointComponent;
-		const double point2Diff = pointComponent - plane2PointComponent;
-		*outDot0Component = point0Diff * plane0NormalComponent;
-		*outDot1Component = point1Diff * plane1NormalComponent;
-		*outDot2Component = point2Diff * plane2NormalComponent;
-	}
-}
-
 // Camera globals.
 namespace
 {
@@ -940,6 +912,122 @@ namespace
 	}
 }
 
+// Rasterization utils.
+namespace
+{
+	struct RasterizerTriangle
+	{
+		// The rasterizer prefers vertices in AoS layout.
+		double clip0X, clip0Y, clip0Z, clip0W;
+		double clip1X, clip1Y, clip1Z, clip1W;
+		double clip2X, clip2Y, clip2Z, clip2W;
+		double clip0WRecip;
+		double clip1WRecip;
+		double clip2WRecip;
+		double ndc0X, ndc0Y, ndc0Z;
+		double ndc1X, ndc1Y, ndc1Z;
+		double ndc2X, ndc2Y, ndc2Z;
+		double screenSpace0X, screenSpace0Y;
+		double screenSpace1X, screenSpace1Y;
+		double screenSpace2X, screenSpace2Y;
+		double screenSpace01X, screenSpace01Y;
+		double screenSpace12X, screenSpace12Y;
+		double screenSpace20X, screenSpace20Y;
+		double screenSpace01PerpX, screenSpace01PerpY;
+		double screenSpace12PerpX, screenSpace12PerpY;
+		double screenSpace20PerpX, screenSpace20PerpY;
+		double uv0X, uv0Y;
+		double uv1X, uv1Y;
+		double uv2X, uv2Y;
+		double uv0XDivW, uv0YDivW;
+		double uv1XDivW, uv1YDivW;
+		double uv2XDivW, uv2YDivW;
+
+		// Naive bounding box clamped to its rasterizer bin.
+		int binPixelXStart, binPixelXEnd;
+		int binPixelYStart, binPixelYEnd;
+	};
+
+	double NdcXToScreenSpace(double ndcX, double frameWidth)
+	{
+		return (0.50 + (ndcX * 0.50)) * frameWidth;
+	}
+
+	double NdcYToScreenSpace(double ndcY, double frameHeight)
+	{
+		return (0.50 - (ndcY * 0.50)) * frameHeight;
+	}
+
+	// Helper function for the dot product X's or Y's used to see if a screen space point is inside the triangle.
+	void GetScreenSpacePointHalfSpaceComponents(double pointComponent, double plane0PointComponent,
+		double plane1PointComponent, double plane2PointComponent, double plane0NormalComponent,
+		double plane1NormalComponent, double plane2NormalComponent, double *__restrict outDot0Component,
+		double *__restrict outDot1Component, double *__restrict outDot2Component)
+	{
+		const double point0Diff = pointComponent - plane0PointComponent;
+		const double point1Diff = pointComponent - plane1PointComponent;
+		const double point2Diff = pointComponent - plane2PointComponent;
+		*outDot0Component = point0Diff * plane0NormalComponent;
+		*outDot1Component = point1Diff * plane1NormalComponent;
+		*outDot2Component = point2Diff * plane2NormalComponent;
+	}
+
+	constexpr int RASTERIZER_BIN_WIDTH = 256;
+	constexpr int RASTERIZER_BIN_HEIGHT = 128;
+
+	int GetRasterizerBinCountX(int frameBufferWidth)
+	{
+		return 1 + (frameBufferWidth / RASTERIZER_BIN_WIDTH);
+	}
+
+	int GetRasterizerBinCountY(int frameBufferHeight)
+	{
+		return 1 + (frameBufferHeight / RASTERIZER_BIN_HEIGHT);
+	}
+
+	int GetRasterizerBinX(int frameBufferPixelX)
+	{
+		return frameBufferPixelX / RASTERIZER_BIN_WIDTH;
+	}
+
+	int GetRasterizerBinY(int frameBufferPixelY)
+	{
+		return frameBufferPixelY / RASTERIZER_BIN_HEIGHT;
+	}
+
+	int GetRasterizerBinPixelXInclusive(int frameBufferPixelX)
+	{
+		return frameBufferPixelX % RASTERIZER_BIN_WIDTH;
+	}
+
+	int GetRasterizerBinPixelXExclusive(int frameBufferPixelX)
+	{
+		const int modulo = frameBufferPixelX % RASTERIZER_BIN_WIDTH;
+		return (modulo != 0) ? modulo : RASTERIZER_BIN_WIDTH;
+	}
+
+	int GetRasterizerBinPixelYInclusive(int frameBufferPixelY)
+	{
+		return frameBufferPixelY % RASTERIZER_BIN_HEIGHT;
+	}
+
+	int GetRasterizerBinPixelYExclusive(int frameBufferPixelY)
+	{
+		const int modulo = frameBufferPixelY % RASTERIZER_BIN_HEIGHT;
+		return (modulo != 0) ? modulo : RASTERIZER_BIN_HEIGHT;
+	}
+
+	int GetFrameBufferPixelX(int binX, int binPixelX)
+	{
+		return (binX * RASTERIZER_BIN_WIDTH) + binPixelX;
+	}
+
+	int GetFrameBufferPixelY(int binY, int binPixelY)
+	{
+		return (binY * RASTERIZER_BIN_HEIGHT) + binPixelY;
+	}
+}
+
 // Frame buffer globals.
 namespace
 {
@@ -955,10 +1043,13 @@ namespace
 	uint8_t *g_paletteIndexBuffer;
 	double *g_depthBuffer;
 	const bool *g_ditherBuffer;
+	RasterizerBin *g_rasterizerBins;
+	int g_rasterizerBinCountX, g_rasterizerBinCountY, g_rasterizerBinCount;
 	uint32_t *g_colorBuffer;
 
 	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
-		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, uint32_t *colorBuffer)
+		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, BufferView2D<RasterizerBin> rasterizerBins,
+		uint32_t *colorBuffer)
 	{
 		g_frameBufferWidth = frameBufferWidth;
 		g_frameBufferHeight = frameBufferHeight;
@@ -972,6 +1063,10 @@ namespace
 		g_paletteIndexBuffer = paletteIndexBuffer;
 		g_depthBuffer = depthBuffer;
 		g_ditherBuffer = ditherBuffer;
+		g_rasterizerBins = rasterizerBins.begin();
+		g_rasterizerBinCountX = rasterizerBins.getWidth();
+		g_rasterizerBinCountY = rasterizerBins.getHeight();
+		g_rasterizerBinCount = rasterizerBins.getWidth() * rasterizerBins.getHeight();
 		g_colorBuffer = colorBuffer;
 	}
 
@@ -1037,6 +1132,13 @@ namespace
 		{
 			ditherBuffer.clear();
 		}
+	}
+
+	void CreateRasterizerBins(Buffer2D<RasterizerBin> &rasterizerBins, int frameBufferWidth, int frameBufferHeight)
+	{
+		const int binCountX = GetRasterizerBinCountX(frameBufferWidth);
+		const int binCountY = GetRasterizerBinCountY(frameBufferHeight);
+		rasterizerBins.init(binCountX, binCountY);
 	}
 }
 
@@ -2576,52 +2678,25 @@ namespace
 	}
 }
 
+// Each bin contains front-facing triangles that at least partially touch a screen-space tile
+// (has to be outside a namespace due to being in SoftwareRenderer).
+struct RasterizerBin
+{
+	RasterizerTriangle visibleTriangleLists[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES];
+	int triangleCounts[MAX_MESH_PROCESS_CACHES];
+};
+
 // Rasterizer, pixel shader execution.
 namespace
 {
-	struct RasterizerTriangle
+	void ProcessClipSpaceTrianglesForBinning(int meshCount)
 	{
-		// The rasterizer prefers vertices in AoS layout.
-		double clip0X, clip0Y, clip0Z, clip0W;
-		double clip1X, clip1Y, clip1Z, clip1W;
-		double clip2X, clip2Y, clip2Z, clip2W;
-		double clip0WRecip;
-		double clip1WRecip;
-		double clip2WRecip;
-		double ndc0X, ndc0Y, ndc0Z;
-		double ndc1X, ndc1Y, ndc1Z;
-		double ndc2X, ndc2Y, ndc2Z;
-		double screenSpace0X, screenSpace0Y;
-		double screenSpace1X, screenSpace1Y;
-		double screenSpace2X, screenSpace2Y;
-		double screenSpace01X, screenSpace01Y;
-		double screenSpace12X, screenSpace12Y;
-		double screenSpace20X, screenSpace20Y;
-		double screenSpace01PerpX, screenSpace01PerpY;
-		double screenSpace12PerpX, screenSpace12PerpY;
-		double screenSpace20PerpX, screenSpace20PerpY;
-		double uv0X, uv0Y;
-		double uv1X, uv1Y;
-		double uv2X, uv2Y;
-		double uv0XDivW, uv0YDivW;
-		double uv1XDivW, uv1YDivW;
-		double uv2XDivW, uv2YDivW;
+		for (int binIndex = 0; binIndex < g_rasterizerBinCount; binIndex++)
+		{
+			RasterizerBin &bin = g_rasterizerBins[binIndex];
+			std::fill(std::begin(bin.triangleCounts), std::end(bin.triangleCounts), 0);
+		}
 
-		// Naive bounding box.
-		int xStart, xEnd;
-		int yStart, yEnd;
-	};
-
-	struct RasterizerCache
-	{
-		RasterizerTriangle visibleTriangleLists[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES];
-		int triangleCounts[MAX_MESH_PROCESS_CACHES];
-	};
-
-	RasterizerCache g_rasterizerCache;
-
-	void ProcessClipSpaceTrianglesForFrontFacing(int meshCount)
-	{
 		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
 		{
 			const auto &clipSpaceMeshV0XYZWs = g_meshProcessCaches.clipSpaceMeshV0XYZWArrays[meshIndex];
@@ -2630,9 +2705,7 @@ namespace
 			const auto &clipSpaceMeshUV0XYs = g_meshProcessCaches.clipSpaceMeshUV0XYArrays[meshIndex];
 			const auto &clipSpaceMeshUV1XYs = g_meshProcessCaches.clipSpaceMeshUV1XYArrays[meshIndex];
 			const auto &clipSpaceMeshUV2XYs = g_meshProcessCaches.clipSpaceMeshUV2XYArrays[meshIndex];
-			auto &rasterizerTriangles = g_rasterizerCache.visibleTriangleLists[meshIndex];
 
-			int writeIndex = 0;
 			const int triangleCount = g_meshProcessCaches.clipSpaceMeshTriangleCounts[meshIndex];
 			for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 			{
@@ -2729,70 +2802,95 @@ namespace
 				const double uv2XDivW = uv2X * clip2WRecip;
 				const double uv2YDivW = uv2Y * clip2WRecip;
 
-				RasterizerTriangle &triangle = rasterizerTriangles[writeIndex];
-				triangle.clip0X = clip0X;
-				triangle.clip0Y = clip0Y;
-				triangle.clip0Z = clip0Z;
-				triangle.clip0W = clip0W;
-				triangle.clip1X = clip1X;
-				triangle.clip1Y = clip1Y;
-				triangle.clip1Z = clip1Z;
-				triangle.clip1W = clip1W;
-				triangle.clip2X = clip2X;
-				triangle.clip2Y = clip2Y;
-				triangle.clip2Z = clip2Z;
-				triangle.clip2W = clip2W;
-				triangle.clip0WRecip = clip0WRecip;
-				triangle.clip1WRecip = clip1WRecip;
-				triangle.clip2WRecip = clip2WRecip;
-				triangle.ndc0X = ndc0X;
-				triangle.ndc0Y = ndc0Y;
-				triangle.ndc0Z = ndc0Z;
-				triangle.ndc1X = ndc1X;
-				triangle.ndc1Y = ndc1Y;
-				triangle.ndc1Z = ndc1Z;
-				triangle.ndc2X = ndc2X;
-				triangle.ndc2Y = ndc2Y;
-				triangle.ndc2Z = ndc2Z;
-				triangle.screenSpace0X = screenSpace0X;
-				triangle.screenSpace0Y = screenSpace0Y;
-				triangle.screenSpace1X = screenSpace1X;
-				triangle.screenSpace1Y = screenSpace1Y;
-				triangle.screenSpace2X = screenSpace2X;
-				triangle.screenSpace2Y = screenSpace2Y;
-				triangle.screenSpace01X = screenSpace01X;
-				triangle.screenSpace01Y = screenSpace01Y;
-				triangle.screenSpace12X = screenSpace12X;
-				triangle.screenSpace12Y = screenSpace12Y;
-				triangle.screenSpace20X = screenSpace20X;
-				triangle.screenSpace20Y = screenSpace20Y;
-				triangle.screenSpace01PerpX = screenSpace01PerpX;
-				triangle.screenSpace01PerpY = screenSpace01PerpY;
-				triangle.screenSpace12PerpX = screenSpace12PerpX;
-				triangle.screenSpace12PerpY = screenSpace12PerpY;
-				triangle.screenSpace20PerpX = screenSpace20PerpX;
-				triangle.screenSpace20PerpY = screenSpace20PerpY;
-				triangle.uv0X = uv0X;
-				triangle.uv0Y = uv0Y;
-				triangle.uv1X = uv1X;
-				triangle.uv1Y = uv1Y;
-				triangle.uv2X = uv2X;
-				triangle.uv2Y = uv2Y;
-				triangle.uv0XDivW = uv0XDivW;
-				triangle.uv0YDivW = uv0YDivW;
-				triangle.uv1XDivW = uv1XDivW;
-				triangle.uv1YDivW = uv1YDivW;
-				triangle.uv2XDivW = uv2XDivW;
-				triangle.uv2YDivW = uv2YDivW;
-				triangle.xStart = xStart;
-				triangle.xEnd = xEnd;
-				triangle.yStart = yStart;
-				triangle.yEnd = yEnd;
+				// Write the triangle to all affected rasterizer bins.
+				const int startBinX = GetRasterizerBinX(xStart);
+				const int endBinX = GetRasterizerBinX(xEnd);
+				const int startBinY = GetRasterizerBinY(yStart);
+				const int endBinY = GetRasterizerBinY(yEnd);
+				for (int binY = startBinY; binY <= endBinY; binY++)
+				{
+					const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0);
+					const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, RASTERIZER_BIN_HEIGHT);
+					const int clampedYStart = std::max(yStart, binStartFrameBufferPixelY);
+					const int clampedYEnd = std::min(yEnd, binEndFrameBufferPixelY);
 
-				writeIndex++;
+					for (int binX = startBinX; binX <= endBinX; binX++)
+					{
+						const int binIndex = binX + (binY * g_rasterizerBinCountX);
+						RasterizerBin &bin = g_rasterizerBins[binIndex];
+						auto &binMeshTriangles = bin.visibleTriangleLists[meshIndex];
+						int &binMeshTriangleCount = bin.triangleCounts[meshIndex];
+						DebugAssert(binMeshTriangleCount < std::size(binMeshTriangles));
+
+						const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0);
+						const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, RASTERIZER_BIN_WIDTH);
+						const int clampedXStart = std::max(xStart, binStartFrameBufferPixelX);
+						const int clampedXEnd = std::min(xEnd, binEndFrameBufferPixelX);
+
+						RasterizerTriangle &triangle = binMeshTriangles[binMeshTriangleCount];
+						triangle.clip0X = clip0X;
+						triangle.clip0Y = clip0Y;
+						triangle.clip0Z = clip0Z;
+						triangle.clip0W = clip0W;
+						triangle.clip1X = clip1X;
+						triangle.clip1Y = clip1Y;
+						triangle.clip1Z = clip1Z;
+						triangle.clip1W = clip1W;
+						triangle.clip2X = clip2X;
+						triangle.clip2Y = clip2Y;
+						triangle.clip2Z = clip2Z;
+						triangle.clip2W = clip2W;
+						triangle.clip0WRecip = clip0WRecip;
+						triangle.clip1WRecip = clip1WRecip;
+						triangle.clip2WRecip = clip2WRecip;
+						triangle.ndc0X = ndc0X;
+						triangle.ndc0Y = ndc0Y;
+						triangle.ndc0Z = ndc0Z;
+						triangle.ndc1X = ndc1X;
+						triangle.ndc1Y = ndc1Y;
+						triangle.ndc1Z = ndc1Z;
+						triangle.ndc2X = ndc2X;
+						triangle.ndc2Y = ndc2Y;
+						triangle.ndc2Z = ndc2Z;
+						triangle.screenSpace0X = screenSpace0X;
+						triangle.screenSpace0Y = screenSpace0Y;
+						triangle.screenSpace1X = screenSpace1X;
+						triangle.screenSpace1Y = screenSpace1Y;
+						triangle.screenSpace2X = screenSpace2X;
+						triangle.screenSpace2Y = screenSpace2Y;
+						triangle.screenSpace01X = screenSpace01X;
+						triangle.screenSpace01Y = screenSpace01Y;
+						triangle.screenSpace12X = screenSpace12X;
+						triangle.screenSpace12Y = screenSpace12Y;
+						triangle.screenSpace20X = screenSpace20X;
+						triangle.screenSpace20Y = screenSpace20Y;
+						triangle.screenSpace01PerpX = screenSpace01PerpX;
+						triangle.screenSpace01PerpY = screenSpace01PerpY;
+						triangle.screenSpace12PerpX = screenSpace12PerpX;
+						triangle.screenSpace12PerpY = screenSpace12PerpY;
+						triangle.screenSpace20PerpX = screenSpace20PerpX;
+						triangle.screenSpace20PerpY = screenSpace20PerpY;
+						triangle.uv0X = uv0X;
+						triangle.uv0Y = uv0Y;
+						triangle.uv1X = uv1X;
+						triangle.uv1Y = uv1Y;
+						triangle.uv2X = uv2X;
+						triangle.uv2Y = uv2Y;
+						triangle.uv0XDivW = uv0XDivW;
+						triangle.uv0YDivW = uv0YDivW;
+						triangle.uv1XDivW = uv1XDivW;
+						triangle.uv1YDivW = uv1YDivW;
+						triangle.uv2XDivW = uv2XDivW;
+						triangle.uv2YDivW = uv2YDivW;
+						triangle.binPixelXStart = GetRasterizerBinPixelXInclusive(clampedXStart);
+						triangle.binPixelXEnd = GetRasterizerBinPixelXExclusive(clampedXEnd);
+						triangle.binPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart);
+						triangle.binPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd);
+
+						binMeshTriangleCount++;
+					}
+				}
 			}
-
-			g_rasterizerCache.triangleCounts[meshIndex] = writeIndex;
 		}
 	}
 
@@ -2907,277 +3005,289 @@ namespace
 			shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height, textureSamplingType1);
 		}
 
-		const auto &triangles = g_rasterizerCache.visibleTriangleLists[meshIndex];
-		const int triangleCount = g_rasterizerCache.triangleCounts[meshIndex];
-		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+		for (int binY = 0; binY < g_rasterizerBinCountY; binY++)
 		{
-			const RasterizerTriangle &triangle = triangles[triangleIndex];
-			const double clip0X = triangle.clip0X;
-			const double clip0Y = triangle.clip0Y;
-			const double clip0Z = triangle.clip0Z;
-			const double clip0W = triangle.clip0W;
-			const double clip1X = triangle.clip1X;
-			const double clip1Y = triangle.clip1Y;
-			const double clip1Z = triangle.clip1Z;
-			const double clip1W = triangle.clip1W;
-			const double clip2X = triangle.clip2X;
-			const double clip2Y = triangle.clip2Y;
-			const double clip2Z = triangle.clip2Z;
-			const double clip2W = triangle.clip2W;
-			const double clip0WRecip = triangle.clip0WRecip;
-			const double clip1WRecip = triangle.clip1WRecip;
-			const double clip2WRecip = triangle.clip2WRecip;
-			const double ndc0X = triangle.ndc0X;
-			const double ndc0Y = triangle.ndc0Y;
-			const double ndc0Z = triangle.ndc0Z;
-			const double ndc1X = triangle.ndc1X;
-			const double ndc1Y = triangle.ndc1Y;
-			const double ndc1Z = triangle.ndc1Z;
-			const double ndc2X = triangle.ndc2X;
-			const double ndc2Y = triangle.ndc2Y;
-			const double ndc2Z = triangle.ndc2Z;
-			const double screenSpace0X = triangle.screenSpace0X;
-			const double screenSpace0Y = triangle.screenSpace0Y;
-			const double screenSpace1X = triangle.screenSpace1X;
-			const double screenSpace1Y = triangle.screenSpace1Y;
-			const double screenSpace2X = triangle.screenSpace2X;
-			const double screenSpace2Y = triangle.screenSpace2Y;
-			const double screenSpace01X = triangle.screenSpace01X;
-			const double screenSpace01Y = triangle.screenSpace01Y;
-			const double screenSpace12X = triangle.screenSpace12X;
-			const double screenSpace12Y = triangle.screenSpace12Y;
-			const double screenSpace20X = triangle.screenSpace20X;
-			const double screenSpace20Y = triangle.screenSpace20Y;
-			const double screenSpace01PerpX = triangle.screenSpace01PerpX;
-			const double screenSpace01PerpY = triangle.screenSpace01PerpY;
-			const double screenSpace12PerpX = triangle.screenSpace12PerpX;
-			const double screenSpace12PerpY = triangle.screenSpace12PerpY;
-			const double screenSpace20PerpX = triangle.screenSpace20PerpX;
-			const double screenSpace20PerpY = triangle.screenSpace20PerpY;
-			const double uv0X = triangle.uv0X;
-			const double uv0Y = triangle.uv0Y;
-			const double uv1X = triangle.uv1X;
-			const double uv1Y = triangle.uv1Y;
-			const double uv2X = triangle.uv2X;
-			const double uv2Y = triangle.uv2Y;
-			const double uv0XDivW = triangle.uv0XDivW;
-			const double uv0YDivW = triangle.uv0YDivW;
-			const double uv1XDivW = triangle.uv1XDivW;
-			const double uv1YDivW = triangle.uv1YDivW;
-			const double uv2XDivW = triangle.uv2XDivW;
-			const double uv2YDivW = triangle.uv2YDivW;
-			const int xStart = triangle.xStart;
-			const int xEnd = triangle.xEnd;
-			const int yStart = triangle.yStart;
-			const int yEnd = triangle.yEnd;
-
-			const double screenSpace02X = -triangle.screenSpace20X;
-			const double screenSpace02Y = -triangle.screenSpace20Y;
-			double barycentricDot00, barycentricDot01, barycentricDot11;
-			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01X, &screenSpace01Y, &barycentricDot00);
-			Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace02X, &screenSpace02Y, &barycentricDot01);
-			Double2_DotN<1>(&screenSpace02X, &screenSpace02Y, &screenSpace02X, &screenSpace02Y, &barycentricDot11);
-
-			const double barycentricDenominator = (barycentricDot00 * barycentricDot11) - (barycentricDot01 * barycentricDot01);
-			const double barycentricDenominatorRecip = 1.0 / barycentricDenominator;
-
-			for (int y = yStart; y < yEnd; y++)
+			for (int binX = 0; binX < g_rasterizerBinCountX; binX++)
 			{
-				shaderFrameBuffer.yPercent = (static_cast<double>(y) + 0.50) * g_frameBufferHeightRealRecip;
-				const double pixelCenterY = shaderFrameBuffer.yPercent * g_frameBufferHeightReal;
-				const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
-				const double barycentricDot20Y = screenSpace0CurrentY * screenSpace01Y;
-				const double barycentricDot21Y = screenSpace0CurrentY * screenSpace02Y;
+				const int binIndex = binX + (binY * g_rasterizerBinCountX);
+				const RasterizerBin &bin = g_rasterizerBins[binIndex];
+				const auto &triangles = bin.visibleTriangleLists[meshIndex];
+				const int triangleCount = bin.triangleCounts[meshIndex];
 
-				double pixelCoverageDot0Y, pixelCoverageDot1Y, pixelCoverageDot2Y;
-				GetScreenSpacePointHalfSpaceComponents(pixelCenterY, screenSpace0Y, screenSpace1Y, screenSpace2Y, screenSpace01PerpY,
-					screenSpace12PerpY, screenSpace20PerpY, &pixelCoverageDot0Y, &pixelCoverageDot1Y, &pixelCoverageDot2Y);
-
-				for (int x = xStart; x < xEnd; x++)
+				for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 				{
-					shaderFrameBuffer.pixelIndex = x + (y * g_frameBufferWidth);
-					shaderFrameBuffer.xPercent = (static_cast<double>(x) + 0.50) * g_frameBufferWidthRealRecip;
-					const double pixelCenterX = shaderFrameBuffer.xPercent * g_frameBufferWidthReal;
+					const RasterizerTriangle &triangle = triangles[triangleIndex];
+					const double clip0X = triangle.clip0X;
+					const double clip0Y = triangle.clip0Y;
+					const double clip0Z = triangle.clip0Z;
+					const double clip0W = triangle.clip0W;
+					const double clip1X = triangle.clip1X;
+					const double clip1Y = triangle.clip1Y;
+					const double clip1Z = triangle.clip1Z;
+					const double clip1W = triangle.clip1W;
+					const double clip2X = triangle.clip2X;
+					const double clip2Y = triangle.clip2Y;
+					const double clip2Z = triangle.clip2Z;
+					const double clip2W = triangle.clip2W;
+					const double clip0WRecip = triangle.clip0WRecip;
+					const double clip1WRecip = triangle.clip1WRecip;
+					const double clip2WRecip = triangle.clip2WRecip;
+					const double ndc0X = triangle.ndc0X;
+					const double ndc0Y = triangle.ndc0Y;
+					const double ndc0Z = triangle.ndc0Z;
+					const double ndc1X = triangle.ndc1X;
+					const double ndc1Y = triangle.ndc1Y;
+					const double ndc1Z = triangle.ndc1Z;
+					const double ndc2X = triangle.ndc2X;
+					const double ndc2Y = triangle.ndc2Y;
+					const double ndc2Z = triangle.ndc2Z;
+					const double screenSpace0X = triangle.screenSpace0X;
+					const double screenSpace0Y = triangle.screenSpace0Y;
+					const double screenSpace1X = triangle.screenSpace1X;
+					const double screenSpace1Y = triangle.screenSpace1Y;
+					const double screenSpace2X = triangle.screenSpace2X;
+					const double screenSpace2Y = triangle.screenSpace2Y;
+					const double screenSpace01X = triangle.screenSpace01X;
+					const double screenSpace01Y = triangle.screenSpace01Y;
+					const double screenSpace12X = triangle.screenSpace12X;
+					const double screenSpace12Y = triangle.screenSpace12Y;
+					const double screenSpace20X = triangle.screenSpace20X;
+					const double screenSpace20Y = triangle.screenSpace20Y;
+					const double screenSpace01PerpX = triangle.screenSpace01PerpX;
+					const double screenSpace01PerpY = triangle.screenSpace01PerpY;
+					const double screenSpace12PerpX = triangle.screenSpace12PerpX;
+					const double screenSpace12PerpY = triangle.screenSpace12PerpY;
+					const double screenSpace20PerpX = triangle.screenSpace20PerpX;
+					const double screenSpace20PerpY = triangle.screenSpace20PerpY;
+					const double uv0X = triangle.uv0X;
+					const double uv0Y = triangle.uv0Y;
+					const double uv1X = triangle.uv1X;
+					const double uv1Y = triangle.uv1Y;
+					const double uv2X = triangle.uv2X;
+					const double uv2Y = triangle.uv2Y;
+					const double uv0XDivW = triangle.uv0XDivW;
+					const double uv0YDivW = triangle.uv0YDivW;
+					const double uv1XDivW = triangle.uv1XDivW;
+					const double uv1YDivW = triangle.uv1YDivW;
+					const double uv2XDivW = triangle.uv2XDivW;
+					const double uv2YDivW = triangle.uv2YDivW;
+					const int binPixelXStart = triangle.binPixelXStart;
+					const int binPixelXEnd = triangle.binPixelXEnd;
+					const int binPixelYStart = triangle.binPixelYStart;
+					const int binPixelYEnd = triangle.binPixelYEnd;
 
-					double pixelCoverageDot0X, pixelCoverageDot1X, pixelCoverageDot2X;
-					GetScreenSpacePointHalfSpaceComponents(pixelCenterX, screenSpace0X, screenSpace1X, screenSpace2X, screenSpace01PerpX,
-						screenSpace12PerpX, screenSpace20PerpX, &pixelCoverageDot0X, &pixelCoverageDot1X, &pixelCoverageDot2X);
+					const double screenSpace02X = -triangle.screenSpace20X;
+					const double screenSpace02Y = -triangle.screenSpace20Y;
+					double barycentricDot00, barycentricDot01, barycentricDot11;
+					Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01X, &screenSpace01Y, &barycentricDot00);
+					Double2_DotN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace02X, &screenSpace02Y, &barycentricDot01);
+					Double2_DotN<1>(&screenSpace02X, &screenSpace02Y, &screenSpace02X, &screenSpace02Y, &barycentricDot11);
 
-					const double pixelCenterDot0 = pixelCoverageDot0X + pixelCoverageDot0Y;
-					const double pixelCenterDot1 = pixelCoverageDot1X + pixelCoverageDot1Y;
-					const double pixelCenterDot2 = pixelCoverageDot2X + pixelCoverageDot2Y;
-					const bool isPixelCenterIn0 = pixelCenterDot0 >= 0.0;
-					const bool isPixelCenterIn1 = pixelCenterDot1 >= 0.0;
-					const bool isPixelCenterIn2 = pixelCenterDot2 >= 0.0;
-					const bool pixelCenterHasCoverage = isPixelCenterIn0 && isPixelCenterIn1 && isPixelCenterIn2;
-					if (!pixelCenterHasCoverage)
+					const double barycentricDenominator = (barycentricDot00 * barycentricDot11) - (barycentricDot01 * barycentricDot01);
+					const double barycentricDenominatorRecip = 1.0 / barycentricDenominator;
+
+					for (int binPixelY = binPixelYStart; binPixelY < binPixelYEnd; binPixelY++)
 					{
-						continue;
-					}
+						const int frameBufferPixelY = GetFrameBufferPixelY(binY, binPixelY);
+						shaderFrameBuffer.yPercent = (static_cast<double>(frameBufferPixelY) + 0.50) * g_frameBufferHeightRealRecip;
+						const double pixelCenterY = shaderFrameBuffer.yPercent * g_frameBufferHeightReal;
+						const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
+						const double barycentricDot20Y = screenSpace0CurrentY * screenSpace01Y;
+						const double barycentricDot21Y = screenSpace0CurrentY * screenSpace02Y;
 
-					const double screenSpace0CurrentX = pixelCenterX - screenSpace0X;
-					const double barycentricDot20X = screenSpace0CurrentX * screenSpace01X;
-					const double barycentricDot21X = screenSpace0CurrentX * screenSpace02X;
-					const double barycentricDot20 = barycentricDot20X + barycentricDot20Y;
-					const double barycentricDot21 = barycentricDot21X + barycentricDot21Y;
-					const double vNumerator = (barycentricDot11 * barycentricDot20) - (barycentricDot01 * barycentricDot21);
-					const double wNumerator = (barycentricDot00 * barycentricDot21) - (barycentricDot01 * barycentricDot20);
-					const double v = vNumerator * barycentricDenominatorRecip;
-					const double w = wNumerator * barycentricDenominatorRecip;
-					const double u = 1.0 - v - w;
+						double pixelCoverageDot0Y, pixelCoverageDot1Y, pixelCoverageDot2Y;
+						GetScreenSpacePointHalfSpaceComponents(pixelCenterY, screenSpace0Y, screenSpace1Y, screenSpace2Y, screenSpace01PerpY,
+							screenSpace12PerpY, screenSpace20PerpY, &pixelCoverageDot0Y, &pixelCoverageDot1Y, &pixelCoverageDot2Y);
 
-					PixelShaderPerspectiveCorrection shaderPerspective;
-					shaderPerspective.ndcZDepth = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
-
-					bool passesDepthTest = true;
-					if constexpr (enableDepthRead)
-					{
-						passesDepthTest = shaderPerspective.ndcZDepth < g_depthBuffer[shaderFrameBuffer.pixelIndex];
-						g_totalDepthTests++;
-					}
-
-					if (!passesDepthTest)
-					{
-						continue;
-					}
-
-					const double shaderClipSpacePointX = (ndc0X * u) + (ndc1X * v) + (ndc2X * w);
-					const double shaderClipSpacePointY = (ndc0Y * u) + (ndc1Y * v) + (ndc2Y * w);
-					const double shaderClipSpacePointZ = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
-					const double shaderClipSpacePointW = (clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w);
-					const double shaderClipSpacePointWRecip = 1.0 / shaderClipSpacePointW;
-					const double shaderHomogeneousSpacePointX = shaderClipSpacePointX * shaderClipSpacePointWRecip;
-					const double shaderHomogeneousSpacePointY = shaderClipSpacePointY * shaderClipSpacePointWRecip;
-					const double shaderHomogeneousSpacePointZ = shaderClipSpacePointZ * shaderClipSpacePointWRecip;
-					const double shaderHomogeneousSpacePointW = shaderClipSpacePointWRecip;
-
-					// Apply homogeneous-to-camera space transform.
-					double shaderCameraSpacePointX = 0.0;
-					double shaderCameraSpacePointY = 0.0;
-					double shaderCameraSpacePointZ = 0.0;
-					double shaderCameraSpacePointW = 0.0;
-					Matrix4_MultiplyVectorN<1>(
-						g_invProjMatrixXX, g_invProjMatrixXY, g_invProjMatrixXZ, g_invProjMatrixXW,
-						g_invProjMatrixYX, g_invProjMatrixYY, g_invProjMatrixYZ, g_invProjMatrixYW,
-						g_invProjMatrixZX, g_invProjMatrixZY, g_invProjMatrixZZ, g_invProjMatrixZW,
-						g_invProjMatrixWX, g_invProjMatrixWY, g_invProjMatrixWZ, g_invProjMatrixWW,
-						&shaderHomogeneousSpacePointX, &shaderHomogeneousSpacePointY, &shaderHomogeneousSpacePointZ, &shaderHomogeneousSpacePointW,
-						&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW);
-
-					// Apply camera-to-world space transform.
-					double shaderWorldSpacePointX = 0.0;
-					double shaderWorldSpacePointY = 0.0;
-					double shaderWorldSpacePointZ = 0.0;
-					Matrix4_MultiplyVectorIgnoreW_N<1>(
-						g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ,
-						g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ,
-						g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ,
-						g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ,
-						&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW,
-						&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ);
-
-					shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
-					shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
-
-					double lightIntensitySum = 0.0;
-					if constexpr (requiresPerPixelLightIntensity)
-					{
-						lightIntensitySum = g_ambientPercent;
-						for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
+						for (int binPixelX = binPixelXStart; binPixelX < binPixelXEnd; binPixelX++)
 						{
-							const SoftwareRenderer::Light &light = *lights[lightIndex];
-							double lightIntensity;
-							GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
-							lightIntensitySum += lightIntensity;
+							const int frameBufferPixelX = GetFrameBufferPixelX(binX, binPixelX);
+							shaderFrameBuffer.pixelIndex = frameBufferPixelX + (frameBufferPixelY * g_frameBufferWidth);
+							shaderFrameBuffer.xPercent = (static_cast<double>(frameBufferPixelX) + 0.50) * g_frameBufferWidthRealRecip;
+							const double pixelCenterX = shaderFrameBuffer.xPercent * g_frameBufferWidthReal;
 
-							if (lightIntensitySum >= 1.0)
+							double pixelCoverageDot0X, pixelCoverageDot1X, pixelCoverageDot2X;
+							GetScreenSpacePointHalfSpaceComponents(pixelCenterX, screenSpace0X, screenSpace1X, screenSpace2X, screenSpace01PerpX,
+								screenSpace12PerpX, screenSpace20PerpX, &pixelCoverageDot0X, &pixelCoverageDot1X, &pixelCoverageDot2X);
+
+							const double pixelCenterDot0 = pixelCoverageDot0X + pixelCoverageDot0Y;
+							const double pixelCenterDot1 = pixelCoverageDot1X + pixelCoverageDot1Y;
+							const double pixelCenterDot2 = pixelCoverageDot2X + pixelCoverageDot2Y;
+							const bool isPixelCenterIn0 = pixelCenterDot0 >= 0.0;
+							const bool isPixelCenterIn1 = pixelCenterDot1 >= 0.0;
+							const bool isPixelCenterIn2 = pixelCenterDot2 >= 0.0;
+							const bool pixelCenterHasCoverage = isPixelCenterIn0 && isPixelCenterIn1 && isPixelCenterIn2;
+							if (!pixelCenterHasCoverage)
 							{
-								lightIntensitySum = 1.0;
-								break;
+								continue;
 							}
+
+							const double screenSpace0CurrentX = pixelCenterX - screenSpace0X;
+							const double barycentricDot20X = screenSpace0CurrentX * screenSpace01X;
+							const double barycentricDot21X = screenSpace0CurrentX * screenSpace02X;
+							const double barycentricDot20 = barycentricDot20X + barycentricDot20Y;
+							const double barycentricDot21 = barycentricDot21X + barycentricDot21Y;
+							const double vNumerator = (barycentricDot11 * barycentricDot20) - (barycentricDot01 * barycentricDot21);
+							const double wNumerator = (barycentricDot00 * barycentricDot21) - (barycentricDot01 * barycentricDot20);
+							const double v = vNumerator * barycentricDenominatorRecip;
+							const double w = wNumerator * barycentricDenominatorRecip;
+							const double u = 1.0 - v - w;
+
+							PixelShaderPerspectiveCorrection shaderPerspective;
+							shaderPerspective.ndcZDepth = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
+
+							bool passesDepthTest = true;
+							if constexpr (enableDepthRead)
+							{
+								passesDepthTest = shaderPerspective.ndcZDepth < g_depthBuffer[shaderFrameBuffer.pixelIndex];
+								g_totalDepthTests++;
+							}
+
+							if (!passesDepthTest)
+							{
+								continue;
+							}
+
+							const double shaderClipSpacePointX = (ndc0X * u) + (ndc1X * v) + (ndc2X * w);
+							const double shaderClipSpacePointY = (ndc0Y * u) + (ndc1Y * v) + (ndc2Y * w);
+							const double shaderClipSpacePointZ = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
+							const double shaderClipSpacePointW = (clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w);
+							const double shaderClipSpacePointWRecip = 1.0 / shaderClipSpacePointW;
+							const double shaderHomogeneousSpacePointX = shaderClipSpacePointX * shaderClipSpacePointWRecip;
+							const double shaderHomogeneousSpacePointY = shaderClipSpacePointY * shaderClipSpacePointWRecip;
+							const double shaderHomogeneousSpacePointZ = shaderClipSpacePointZ * shaderClipSpacePointWRecip;
+							const double shaderHomogeneousSpacePointW = shaderClipSpacePointWRecip;
+
+							// Apply homogeneous-to-camera space transform.
+							double shaderCameraSpacePointX = 0.0;
+							double shaderCameraSpacePointY = 0.0;
+							double shaderCameraSpacePointZ = 0.0;
+							double shaderCameraSpacePointW = 0.0;
+							Matrix4_MultiplyVectorN<1>(
+								g_invProjMatrixXX, g_invProjMatrixXY, g_invProjMatrixXZ, g_invProjMatrixXW,
+								g_invProjMatrixYX, g_invProjMatrixYY, g_invProjMatrixYZ, g_invProjMatrixYW,
+								g_invProjMatrixZX, g_invProjMatrixZY, g_invProjMatrixZZ, g_invProjMatrixZW,
+								g_invProjMatrixWX, g_invProjMatrixWY, g_invProjMatrixWZ, g_invProjMatrixWW,
+								&shaderHomogeneousSpacePointX, &shaderHomogeneousSpacePointY, &shaderHomogeneousSpacePointZ, &shaderHomogeneousSpacePointW,
+								&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW);
+
+							// Apply camera-to-world space transform.
+							double shaderWorldSpacePointX = 0.0;
+							double shaderWorldSpacePointY = 0.0;
+							double shaderWorldSpacePointZ = 0.0;
+							Matrix4_MultiplyVectorIgnoreW_N<1>(
+								g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ,
+								g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ,
+								g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ,
+								g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ,
+								&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW,
+								&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ);
+
+							shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
+							shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
+
+							double lightIntensitySum = 0.0;
+							if constexpr (requiresPerPixelLightIntensity)
+							{
+								lightIntensitySum = g_ambientPercent;
+								for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
+								{
+									const SoftwareRenderer::Light &light = *lights[lightIndex];
+									double lightIntensity;
+									GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
+									lightIntensitySum += lightIntensity;
+
+									if (lightIntensitySum >= 1.0)
+									{
+										lightIntensitySum = 1.0;
+										break;
+									}
+								}
+							}
+							else if (requiresPerMeshLightIntensity)
+							{
+								lightIntensitySum = meshLightPercent;
+							}
+
+							const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
+							shaderLighting.lightLevel = shaderLighting.lastLightLevel - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lastLightLevel);
+
+							if constexpr (requiresPerPixelLightIntensity)
+							{
+								bool shouldDither;
+								GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal, lightIntensitySum, shaderFrameBuffer.pixelIndex, &shouldDither);
+
+								if (shouldDither)
+								{
+									shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lastLightLevel);
+								}
+							}
+
+							if constexpr (requiresHorizonMirror)
+							{
+								// @todo: support camera roll
+								const double reflectedScreenSpacePointX = pixelCenterX;
+								const double reflectedScreenSpacePointY = shaderHorizonMirror.horizonScreenSpacePointY + (shaderHorizonMirror.horizonScreenSpacePointY - pixelCenterY);
+
+								const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePointX);
+								const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePointY);
+								shaderHorizonMirror.isReflectedPixelInFrameBuffer =
+									(reflectedPixelX >= 0) && (reflectedPixelX < g_frameBufferWidth) &&
+									(reflectedPixelY >= 0) && (reflectedPixelY < g_frameBufferHeight);
+								shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * g_frameBufferWidth);
+							}
+
+							if constexpr (pixelShaderType == PixelShaderType::Opaque)
+							{
+								PixelShader_Opaque<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer)
+							{
+								PixelShader_OpaqueWithAlphaTestLayer<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::AlphaTested)
+							{
+								PixelShader_AlphaTested<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin)
+							{
+								PixelShader_AlphaTestedWithVariableTexCoordUMin<enableDepthWrite>(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin)
+							{
+								PixelShader_AlphaTestedWithVariableTexCoordVMin<enableDepthWrite>(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup)
+							{
+								PixelShader_AlphaTestedWithPaletteIndexLookup<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelColor)
+							{
+								PixelShader_AlphaTestedWithLightLevelColor<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
+							{
+								PixelShader_AlphaTestedWithLightLevelOpacity<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit)
+							{
+								PixelShader_AlphaTestedWithPreviousBrightnessLimit<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderFrameBuffer);
+							}
+							else if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror)
+							{
+								PixelShader_AlphaTestedWithHorizonMirror<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderHorizonMirror, shaderLighting, shaderFrameBuffer);
+							}
+
+							// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
+							const uint8_t writtenPaletteIndex = g_paletteIndexBuffer[shaderFrameBuffer.pixelIndex];
+							g_colorBuffer[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
+							g_totalColorWrites++;
 						}
 					}
-					else if (requiresPerMeshLightIntensity)
-					{
-						lightIntensitySum = meshLightPercent;
-					}
-
-					const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
-					shaderLighting.lightLevel = shaderLighting.lastLightLevel - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lastLightLevel);
-
-					if constexpr (requiresPerPixelLightIntensity)
-					{
-						bool shouldDither;
-						GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal, lightIntensitySum, shaderFrameBuffer.pixelIndex, &shouldDither);
-
-						if (shouldDither)
-						{
-							shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lastLightLevel);
-						}
-					}
-
-					if constexpr (requiresHorizonMirror)
-					{
-						// @todo: support camera roll
-						const double reflectedScreenSpacePointX = pixelCenterX;
-						const double reflectedScreenSpacePointY = shaderHorizonMirror.horizonScreenSpacePointY + (shaderHorizonMirror.horizonScreenSpacePointY - pixelCenterY);
-
-						const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePointX);
-						const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePointY);
-						shaderHorizonMirror.isReflectedPixelInFrameBuffer =
-							(reflectedPixelX >= 0) && (reflectedPixelX < g_frameBufferWidth) &&
-							(reflectedPixelY >= 0) && (reflectedPixelY < g_frameBufferHeight);
-						shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * g_frameBufferWidth);
-					}
-
-					if constexpr (pixelShaderType == PixelShaderType::Opaque)
-					{
-						PixelShader_Opaque<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer)
-					{
-						PixelShader_OpaqueWithAlphaTestLayer<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::AlphaTested)
-					{
-						PixelShader_AlphaTested<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin)
-					{
-						PixelShader_AlphaTestedWithVariableTexCoordUMin<enableDepthWrite>(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin)
-					{
-						PixelShader_AlphaTestedWithVariableTexCoordVMin<enableDepthWrite>(shaderPerspective, shaderTexture0, pixelShaderParam0, shaderLighting, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup)
-					{
-						PixelShader_AlphaTestedWithPaletteIndexLookup<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelColor)
-					{
-						PixelShader_AlphaTestedWithLightLevelColor<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
-					{
-						PixelShader_AlphaTestedWithLightLevelOpacity<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit)
-					{
-						PixelShader_AlphaTestedWithPreviousBrightnessLimit<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderFrameBuffer);
-					}
-					else if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror)
-					{
-						PixelShader_AlphaTestedWithHorizonMirror<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderHorizonMirror, shaderLighting, shaderFrameBuffer);
-					}
-
-					// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
-					const uint8_t writtenPaletteIndex = g_paletteIndexBuffer[shaderFrameBuffer.pixelIndex];
-					g_colorBuffer[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
-					g_totalColorWrites++;
 				}
 			}
 		}
+		
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
@@ -3386,12 +3496,15 @@ SoftwareRenderer::~SoftwareRenderer()
 
 void SoftwareRenderer::init(const RenderInitSettings &settings)
 {
-	this->paletteIndexBuffer.init(settings.width, settings.height);
-	this->depthBuffer.init(settings.width, settings.height);
+	const int frameBufferWidth = settings.width;
+	const int frameBufferHeight = settings.height;
+	this->paletteIndexBuffer.init(frameBufferWidth, frameBufferHeight);
+	this->depthBuffer.init(frameBufferWidth, frameBufferHeight);
 
-	const DitheringMode ditheringMode = static_cast<DitheringMode>(settings.ditheringMode);
-	CreateDitherBuffer(this->ditherBuffer, settings.width, settings.height, ditheringMode);
+	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
 	this->ditheringMode = settings.ditheringMode;
+
+	CreateRasterizerBins(this->rasterizerBins, frameBufferWidth, frameBufferHeight);
 }
 
 void SoftwareRenderer::shutdown()
@@ -3400,6 +3513,7 @@ void SoftwareRenderer::shutdown()
 	this->depthBuffer.clear();
 	this->ditherBuffer.clear();
 	this->ditheringMode = static_cast<DitheringMode>(-1);
+	this->rasterizerBins.clear();
 	this->vertexBuffers.clear();
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();
@@ -3422,6 +3536,7 @@ void SoftwareRenderer::resize(int width, int height)
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
 
 	CreateDitherBuffer(this->ditherBuffer, width, height, this->ditheringMode);
+	CreateRasterizerBins(this->rasterizerBins, width, height);
 }
 
 bool SoftwareRenderer::tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID)
@@ -3751,7 +3866,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 
 	PopulateCameraGlobals(camera);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
-		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer);
+		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, this->rasterizerBins, outputBuffer);
 	PopulatePixelShaderGlobals(settings.ambientPercent, paletteTexture, lightTableTexture, skyBgTexture);
 
 	ClearTriangleTotalCounts();
@@ -3851,7 +3966,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		CalculateVertexShaderTransforms(drawCallSequenceCount);
 		ProcessVertexShaders(drawCallSequenceCount, vertexShaderType);
 		ProcessClipping(drawCallSequenceCount);
-		ProcessClipSpaceTrianglesForFrontFacing(drawCallSequenceCount);
+		ProcessClipSpaceTrianglesForBinning(drawCallSequenceCount);
 
 		for (int meshIndex = 0; meshIndex < drawCallSequenceCount; meshIndex++)
 		{
