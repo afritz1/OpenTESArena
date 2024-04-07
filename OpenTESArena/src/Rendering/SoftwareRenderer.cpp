@@ -1076,8 +1076,8 @@ namespace
 	}
 
 	// For measuring overdraw.
-	int g_totalDepthTests = 0;
-	int g_totalColorWrites = 0;
+	std::atomic<int> g_totalDepthTests = 0;
+	std::atomic<int> g_totalColorWrites = 0;
 
 	void ClearFrameBuffers()
 	{
@@ -3007,6 +3007,10 @@ namespace
 			shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height, textureSamplingType1);
 		}
 
+		// Local variables added to a global afterwards to avoid fighting with threads.
+		int totalDepthTests = 0;
+		int totalColorWrites = 0;
+
 		const RasterizerBin &bin = g_rasterizerBins[binIndex];
 		const auto &triangles = bin.visibleTriangleLists[meshIndex];
 		const int triangleCount = bin.triangleCounts[meshIndex];
@@ -3136,7 +3140,7 @@ namespace
 					if constexpr (enableDepthRead)
 					{
 						passesDepthTest = shaderPerspective.ndcZDepth < g_depthBuffer[shaderFrameBuffer.pixelIndex];
-						g_totalDepthTests++;
+						totalDepthTests++;
 					}
 
 					if (!passesDepthTest)
@@ -3277,10 +3281,13 @@ namespace
 					// Write pixel shader result to final output buffer. This only results in overdraw for ghosts.
 					const uint8_t writtenPaletteIndex = g_paletteIndexBuffer[shaderFrameBuffer.pixelIndex];
 					g_colorBuffer[shaderFrameBuffer.pixelIndex] = shaderFrameBuffer.palette.colors[writtenPaletteIndex];
-					g_totalColorWrites++;
+					totalColorWrites++;
 				}
 			}
 		}
+
+		g_totalDepthTests += totalDepthTests;
+		g_totalColorWrites += totalColorWrites;
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
