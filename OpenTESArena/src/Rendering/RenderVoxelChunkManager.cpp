@@ -425,8 +425,11 @@ void RenderVoxelChunkManager::shutdown(Renderer &renderer)
 
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
 	{
-		renderer.freeIndexBuffer(indexBufferID);
-		indexBufferID = -1;
+		if (indexBufferID >= 0)
+		{
+			renderer.freeIndexBuffer(indexBufferID);
+			indexBufferID = -1;
+		}
 	}
 
 	this->textures.clear();

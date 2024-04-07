@@ -65,7 +65,10 @@ RenderWeatherManager::RenderWeatherManager()
 	this->particleTexCoordBufferID = -1;
 	this->particleIndexBufferID = -1;
 
+	this->rainTransformBufferID = -1;
 	this->rainTextureID = -1;
+
+	this->snowTransformBufferID = -1;
 	for (ObjectTextureID &textureID : this->snowTextureIDs)
 	{
 		textureID = -1;
@@ -75,6 +78,7 @@ RenderWeatherManager::RenderWeatherManager()
 	this->fogNormalBufferID = -1;
 	this->fogTexCoordBufferID = -1;
 	this->fogIndexBufferID = -1;
+	this->fogTransformBufferID = -1;
 	this->fogTextureID = -1;
 }
 
