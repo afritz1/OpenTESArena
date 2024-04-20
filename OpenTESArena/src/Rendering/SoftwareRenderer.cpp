@@ -3662,6 +3662,9 @@ void SoftwareRenderer::IndexBuffer::init(int indexCount)
 
 SoftwareRenderer::Light::Light()
 {
+	this->worldPointX = 0.0;
+	this->worldPointY = 0.0;
+	this->worldPointZ = 0.0;
 	this->startRadius = 0.0;
 	this->startRadiusSqr = 0.0;
 	this->endRadius = 0.0;
