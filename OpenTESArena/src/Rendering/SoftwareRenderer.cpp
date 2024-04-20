@@ -978,6 +978,32 @@ namespace
 	constexpr int RASTERIZER_BIN_WIDTH = 256;
 	constexpr int RASTERIZER_BIN_HEIGHT = 128;
 
+	// Bin dimensions vary with frame buffer resolution for better thread balancing.
+	constexpr int RASTERIZER_BIN_MIN_WIDTH = 64; // For low resolutions (<720p).
+	constexpr int RASTERIZER_BIN_MAX_WIDTH = 512; // For high resolutions (>2160p).
+	constexpr int RASTERIZER_BIN_MIN_HEIGHT = RASTERIZER_BIN_MIN_WIDTH;
+	constexpr int RASTERIZER_BIN_MAX_HEIGHT = RASTERIZER_BIN_MAX_WIDTH;
+	constexpr int RASTERIZER_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH = 16;
+	constexpr int RASTERIZER_TYPICAL_BINS_PER_FRAME_BUFFER_HEIGHT = 9;
+	static_assert(MathUtils::isPowerOf2(RASTERIZER_BIN_MIN_WIDTH));
+	static_assert(MathUtils::isPowerOf2(RASTERIZER_BIN_MAX_WIDTH));
+	static_assert(MathUtils::isPowerOf2(RASTERIZER_BIN_MIN_HEIGHT));
+	static_assert(MathUtils::isPowerOf2(RASTERIZER_BIN_MAX_HEIGHT));
+
+	int GetRasterizerBinWidth(int frameBufferWidth)
+	{
+		const int estimatedBinWidth = frameBufferWidth / RASTERIZER_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH;
+		const int powerOfTwoBinWidth = MathUtils::roundToGreaterPowerOf2(estimatedBinWidth);
+		return std::clamp(powerOfTwoBinWidth, RASTERIZER_BIN_MIN_WIDTH, RASTERIZER_BIN_MAX_WIDTH);
+	}
+
+	int GetRasterizerBinHeight(int frameBufferHeight)
+	{
+		const int estimatedBinHeight = frameBufferHeight / RASTERIZER_TYPICAL_BINS_PER_FRAME_BUFFER_HEIGHT;
+		const int powerOfTwoBinHeight = MathUtils::roundToGreaterPowerOf2(estimatedBinHeight);
+		return std::clamp(powerOfTwoBinHeight, RASTERIZER_BIN_MIN_HEIGHT, RASTERIZER_BIN_MAX_HEIGHT);
+	}
+
 	int GetRasterizerBinCountX(int frameBufferWidth)
 	{
 		return 1 + (frameBufferWidth / RASTERIZER_BIN_WIDTH);
