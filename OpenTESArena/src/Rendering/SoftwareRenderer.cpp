@@ -975,9 +975,6 @@ namespace
 		*outDot2Component = point2Diff * plane2NormalComponent;
 	}
 
-	constexpr int RASTERIZER_BIN_WIDTH = 256;
-	constexpr int RASTERIZER_BIN_HEIGHT = 128;
-
 	// Bin dimensions vary with frame buffer resolution for better thread balancing.
 	constexpr int RASTERIZER_BIN_MIN_WIDTH = 64; // For low resolutions (<720p).
 	constexpr int RASTERIZER_BIN_MAX_WIDTH = 512; // For high resolutions (>2160p).
@@ -1004,56 +1001,56 @@ namespace
 		return std::clamp(powerOfTwoBinHeight, RASTERIZER_BIN_MIN_HEIGHT, RASTERIZER_BIN_MAX_HEIGHT);
 	}
 
-	int GetRasterizerBinCountX(int frameBufferWidth)
+	int GetRasterizerBinCountX(int frameBufferWidth, int binWidth)
 	{
-		return 1 + (frameBufferWidth / RASTERIZER_BIN_WIDTH);
+		return 1 + (frameBufferWidth / binWidth);
 	}
 
-	int GetRasterizerBinCountY(int frameBufferHeight)
+	int GetRasterizerBinCountY(int frameBufferHeight, int binHeight)
 	{
-		return 1 + (frameBufferHeight / RASTERIZER_BIN_HEIGHT);
+		return 1 + (frameBufferHeight / binHeight);
 	}
 
-	int GetRasterizerBinX(int frameBufferPixelX)
+	int GetRasterizerBinX(int frameBufferPixelX, int binWidth)
 	{
-		return frameBufferPixelX / RASTERIZER_BIN_WIDTH;
+		return frameBufferPixelX / binWidth;
 	}
 
-	int GetRasterizerBinY(int frameBufferPixelY)
+	int GetRasterizerBinY(int frameBufferPixelY, int binHeight)
 	{
-		return frameBufferPixelY / RASTERIZER_BIN_HEIGHT;
+		return frameBufferPixelY / binHeight;
 	}
 
-	int GetRasterizerBinPixelXInclusive(int frameBufferPixelX)
+	int GetRasterizerBinPixelXInclusive(int frameBufferPixelX, int binWidth)
 	{
-		return frameBufferPixelX % RASTERIZER_BIN_WIDTH;
+		return frameBufferPixelX % binWidth;
 	}
 
-	int GetRasterizerBinPixelXExclusive(int frameBufferPixelX)
+	int GetRasterizerBinPixelXExclusive(int frameBufferPixelX, int binWidth)
 	{
-		const int modulo = frameBufferPixelX % RASTERIZER_BIN_WIDTH;
-		return (modulo != 0) ? modulo : RASTERIZER_BIN_WIDTH;
+		const int modulo = frameBufferPixelX % binWidth;
+		return (modulo != 0) ? modulo : binWidth;
 	}
 
-	int GetRasterizerBinPixelYInclusive(int frameBufferPixelY)
+	int GetRasterizerBinPixelYInclusive(int frameBufferPixelY, int binHeight)
 	{
-		return frameBufferPixelY % RASTERIZER_BIN_HEIGHT;
+		return frameBufferPixelY % binHeight;
 	}
 
-	int GetRasterizerBinPixelYExclusive(int frameBufferPixelY)
+	int GetRasterizerBinPixelYExclusive(int frameBufferPixelY, int binHeight)
 	{
-		const int modulo = frameBufferPixelY % RASTERIZER_BIN_HEIGHT;
-		return (modulo != 0) ? modulo : RASTERIZER_BIN_HEIGHT;
+		const int modulo = frameBufferPixelY % binHeight;
+		return (modulo != 0) ? modulo : binHeight;
 	}
 
-	int GetFrameBufferPixelX(int binX, int binPixelX)
+	int GetFrameBufferPixelX(int binX, int binPixelX, int binWidth)
 	{
-		return (binX * RASTERIZER_BIN_WIDTH) + binPixelX;
+		return (binX * binWidth) + binPixelX;
 	}
 
-	int GetFrameBufferPixelY(int binY, int binPixelY)
+	int GetFrameBufferPixelY(int binY, int binPixelY, int binHeight)
 	{
-		return (binY * RASTERIZER_BIN_HEIGHT) + binPixelY;
+		return (binY * binHeight) + binPixelY;
 	}
 }
 
@@ -1073,6 +1070,7 @@ namespace
 	double *g_depthBuffer;
 	const bool *g_ditherBuffer;
 	RasterizerBin *g_rasterizerBins;
+	int g_rasterizerBinWidth, g_rasterizerBinHeight;
 	int g_rasterizerBinCountX, g_rasterizerBinCountY, g_rasterizerBinCount;
 	uint32_t *g_colorBuffer;
 	SoftwareRenderer::ObjectTexturePool *g_objectTextures;
@@ -1094,6 +1092,8 @@ namespace
 		g_depthBuffer = depthBuffer;
 		g_ditherBuffer = ditherBuffer;
 		g_rasterizerBins = rasterizerBins.begin();
+		g_rasterizerBinWidth = GetRasterizerBinWidth(frameBufferWidth);
+		g_rasterizerBinHeight = GetRasterizerBinHeight(frameBufferHeight);
 		g_rasterizerBinCountX = rasterizerBins.getWidth();
 		g_rasterizerBinCountY = rasterizerBins.getHeight();
 		g_rasterizerBinCount = rasterizerBins.getWidth() * rasterizerBins.getHeight();
@@ -1167,8 +1167,10 @@ namespace
 
 	void CreateRasterizerBins(Buffer2D<RasterizerBin> &rasterizerBins, int frameBufferWidth, int frameBufferHeight)
 	{
-		const int binCountX = GetRasterizerBinCountX(frameBufferWidth);
-		const int binCountY = GetRasterizerBinCountY(frameBufferHeight);
+		const int binWidth = GetRasterizerBinWidth(frameBufferWidth);
+		const int binHeight = GetRasterizerBinHeight(frameBufferHeight);
+		const int binCountX = GetRasterizerBinCountX(frameBufferWidth, binWidth);
+		const int binCountY = GetRasterizerBinCountY(frameBufferHeight, binHeight);
 		rasterizerBins.init(binCountX, binCountY);
 	}
 }
@@ -2834,14 +2836,14 @@ namespace
 				const double uv2YDivW = uv2Y * clip2WRecip;
 
 				// Write the triangle to all affected rasterizer bins.
-				const int startBinX = GetRasterizerBinX(xStart);
-				const int endBinX = GetRasterizerBinX(xEnd);
-				const int startBinY = GetRasterizerBinY(yStart);
-				const int endBinY = GetRasterizerBinY(yEnd);
+				const int startBinX = GetRasterizerBinX(xStart, g_rasterizerBinWidth);
+				const int endBinX = GetRasterizerBinX(xEnd, g_rasterizerBinWidth);
+				const int startBinY = GetRasterizerBinY(yStart, g_rasterizerBinHeight);
+				const int endBinY = GetRasterizerBinY(yEnd, g_rasterizerBinHeight);
 				for (int binY = startBinY; binY <= endBinY; binY++)
 				{
-					const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0);
-					const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, RASTERIZER_BIN_HEIGHT);
+					const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0, g_rasterizerBinHeight);
+					const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, g_rasterizerBinHeight, g_rasterizerBinHeight);
 					const int clampedYStart = std::max(yStart, binStartFrameBufferPixelY);
 					const int clampedYEnd = std::min(yEnd, binEndFrameBufferPixelY);
 
@@ -2853,8 +2855,8 @@ namespace
 						int &binMeshTriangleCount = bin.triangleCounts[meshIndex];
 						DebugAssert(binMeshTriangleCount < std::size(binMeshTriangles));
 
-						const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0);
-						const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, RASTERIZER_BIN_WIDTH);
+						const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0, g_rasterizerBinWidth);
+						const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, g_rasterizerBinWidth, g_rasterizerBinWidth);
 						const int clampedXStart = std::max(xStart, binStartFrameBufferPixelX);
 						const int clampedXEnd = std::min(xEnd, binEndFrameBufferPixelX);
 
@@ -2913,10 +2915,10 @@ namespace
 						triangle.uv1YDivW = uv1YDivW;
 						triangle.uv2XDivW = uv2XDivW;
 						triangle.uv2YDivW = uv2YDivW;
-						triangle.binPixelXStart = GetRasterizerBinPixelXInclusive(clampedXStart);
-						triangle.binPixelXEnd = GetRasterizerBinPixelXExclusive(clampedXEnd);
-						triangle.binPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart);
-						triangle.binPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd);
+						triangle.binPixelXStart = GetRasterizerBinPixelXInclusive(clampedXStart, g_rasterizerBinWidth);
+						triangle.binPixelXEnd = GetRasterizerBinPixelXExclusive(clampedXEnd, g_rasterizerBinWidth);
+						triangle.binPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart, g_rasterizerBinHeight);
+						triangle.binPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd, g_rasterizerBinHeight);
 
 						binMeshTriangleCount++;
 					}
@@ -3114,7 +3116,7 @@ namespace
 
 			for (int binPixelY = binPixelYStart; binPixelY < binPixelYEnd; binPixelY++)
 			{
-				const int frameBufferPixelY = GetFrameBufferPixelY(binY, binPixelY);
+				const int frameBufferPixelY = GetFrameBufferPixelY(binY, binPixelY, g_rasterizerBinHeight);
 				shaderFrameBuffer.yPercent = (static_cast<double>(frameBufferPixelY) + 0.50) * g_frameBufferHeightRealRecip;
 				const double pixelCenterY = shaderFrameBuffer.yPercent * g_frameBufferHeightReal;
 				const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
@@ -3127,7 +3129,7 @@ namespace
 
 				for (int binPixelX = binPixelXStart; binPixelX < binPixelXEnd; binPixelX++)
 				{
-					const int frameBufferPixelX = GetFrameBufferPixelX(binX, binPixelX);
+					const int frameBufferPixelX = GetFrameBufferPixelX(binX, binPixelX, g_rasterizerBinWidth);
 					shaderFrameBuffer.pixelIndex = frameBufferPixelX + (frameBufferPixelY * g_frameBufferWidth);
 					shaderFrameBuffer.xPercent = (static_cast<double>(frameBufferPixelX) + 0.50) * g_frameBufferWidthRealRecip;
 					const double pixelCenterX = shaderFrameBuffer.xPercent * g_frameBufferWidthReal;
