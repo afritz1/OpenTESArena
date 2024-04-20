@@ -1,6 +1,7 @@
 #ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
+#include <bit>
 #include <cmath>
 #include <type_traits>
 #include <vector>
@@ -23,7 +24,7 @@ namespace MathUtils
 	double almostEqual(double a, double b);
 
 	// Returns whether the given value represents a number on the number line, including infinity.
-	template <typename T>
+	template<typename T>
 	bool isValidFloatingPoint(T value)
 	{
 		static_assert(std::is_floating_point_v<T>);
@@ -31,11 +32,27 @@ namespace MathUtils
 	}
 
 	// Returns whether the given integer is a power of 2.
-	template <typename T>
+	template<typename T>
 	constexpr bool isPowerOf2(T value)
 	{
 		static_assert(std::is_integral_v<T>);
 		return Bytes::getSetBitCount(value) == 1;
+	}
+
+	template<typename T>
+	constexpr T roundUpToPowerOf2(T value)
+	{
+		static_assert(std::is_integral_v<T>);
+		static_assert(std::is_unsigned_v<T>);
+		return std::bit_ceil(value);
+	}
+
+	template<typename T>
+	constexpr T roundDownToPowerOf2(T value)
+	{
+		static_assert(std::is_integral_v<T>);
+		static_assert(std::is_unsigned_v<T>);
+		return std::bit_floor(value);
 	}
 
 	// Gets a real (not integer) index in an array from the given percent.
