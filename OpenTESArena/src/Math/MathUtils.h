@@ -31,28 +31,66 @@ namespace MathUtils
 		return !std::isnan(value);
 	}
 
-	// Returns whether the given integer is a power of 2.
 	template<typename T>
 	constexpr bool isPowerOf2(T value)
 	{
-		static_assert(std::is_integral_v<T>);
-		return Bytes::getSetBitCount(value) == 1;
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::has_single_bit(value);
+		}
+		else
+		{
+			if (value < 0)
+			{
+				value = -value;
+			}
+
+			return std::has_single_bit<std::make_unsigned_t<T>>(value);
+		}
 	}
 
+	// Rounds towards +inf for positive and -inf for negative.
 	template<typename T>
-	constexpr T roundUpToPowerOf2(T value)
+	constexpr T roundToGreaterPowerOf2(T value)
 	{
-		static_assert(std::is_integral_v<T>);
-		static_assert(std::is_unsigned_v<T>);
-		return std::bit_ceil(value);
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::bit_ceil(value);
+		}
+		else
+		{
+			if (value >= 0)
+			{
+				return std::bit_ceil<std::make_unsigned_t<T>>(value);
+			}
+			else
+			{
+				const decltype(std::make_unsigned_t<T>) negatedValue = static_cast<std::make_unsigned_t<T>>(-value);
+				return -static_cast<T>(std::bit_ceil(negatedValue));
+			}
+		}
 	}
 
+	// Rounds towards zero for positive and negative.
 	template<typename T>
-	constexpr T roundDownToPowerOf2(T value)
+	constexpr T roundToLesserPowerOf2(T value)
 	{
-		static_assert(std::is_integral_v<T>);
-		static_assert(std::is_unsigned_v<T>);
-		return std::bit_floor(value);
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::bit_floor(value);
+		}
+		else
+		{
+			if (value >= 0)
+			{
+				return std::bit_floor<std::make_unsigned_t<T>>(value);
+			}
+			else
+			{
+				const decltype(std::make_unsigned_t<T>) negatedValue = static_cast<std::make_unsigned_t<T>>(-value);
+				return -static_cast<T>(std::bit_floor(negatedValue));
+			}
+		}
 	}
 
 	// Gets a real (not integer) index in an array from the given percent.
