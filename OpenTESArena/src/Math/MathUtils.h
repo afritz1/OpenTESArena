@@ -65,8 +65,7 @@ namespace MathUtils
 			}
 			else
 			{
-				const decltype(std::make_unsigned_t<T>) negatedValue = static_cast<std::make_unsigned_t<T>>(-value);
-				return -static_cast<T>(std::bit_ceil(negatedValue));
+				return -static_cast<T>(std::bit_ceil<std::make_unsigned_t<T>>(-value));
 			}
 		}
 	}
@@ -87,8 +86,7 @@ namespace MathUtils
 			}
 			else
 			{
-				const decltype(std::make_unsigned_t<T>) negatedValue = static_cast<std::make_unsigned_t<T>>(-value);
-				return -static_cast<T>(std::bit_floor(negatedValue));
+				return -static_cast<T>(std::bit_floor<std::make_unsigned_t<T>>(-value));
 			}
 		}
 	}
