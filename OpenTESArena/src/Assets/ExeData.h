@@ -268,9 +268,9 @@ public:
 		std::array<uint8_t, 9> spellcastingItemDefensiveSpellSpells;
 		std::array<uint8_t, 9> spellcastingItemDefensiveSpellPricesPerCharge;
 		std::array<std::string, 8> spellcastingItemMiscSpellNames;
-		std::array<uint8_t, 9> spellcastingItemMiscSpellQualities;
-		std::array<uint8_t, 9> spellcastingItemMiscSpellSpells;
-		std::array<uint8_t, 9> spellcastingItemMiscSpellPricesPerCharge;
+		std::array<uint8_t, 8> spellcastingItemMiscSpellQualities;
+		std::array<uint8_t, 8> spellcastingItemMiscSpellSpells;
+		std::array<uint8_t, 8> spellcastingItemMiscSpellPricesPerCharge;
 		std::array<std::string, 4> enhancementItemNames;
 		std::array<uint8_t, 4> enhancementItemCumulativeChances;
 		std::array<uint8_t, 4> enhancementItemBasePrices;
