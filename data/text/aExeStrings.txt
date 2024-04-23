@@ -133,7 +133,7 @@ SpellcastingItemChargeRanges=0x3D4F7
 SpellcastingItemAttackSpellNames=0x3D4FF
 SpellcastingItemAttackSpellQualities=0x3D5D9
 SpellcastingItemAttackSpellSpells=0x3D5CA
-SpellcastingItemAttackSpellPricesPerCharge=0x3D5E2
+SpellcastingItemAttackSpellPricesPerCharge=0x3D5E8
 SpellcastingItemDefensiveSpellNames=0x3D606
 SpellcastingItemDefensiveSpellQualities=0x3D680
 SpellcastingItemDefensiveSpellSpells=0x3D677
@@ -141,7 +141,7 @@ SpellcastingItemDefensiveSpellPricesPerCharge=0x3D689
 SpellcastingItemMiscSpellNames=0x3D69B
 SpellcastingItemMiscSpellQualities=0x3D70C
 SpellcastingItemMiscSpellSpells=0x3D704
-SpellcastingItemMiscSpellPricesPerCharge=0x3D71C
+SpellcastingItemMiscSpellPricesPerCharge=0x3D714
 EnhancementItemNames=0x3D724
 EnhancementItemCumulativeChances=0x3D73E
 EnhancementItemBasePrices=0x3D746
@@ -150,7 +150,7 @@ WeaponAnimationFilenames=0x41DAC
 
 [Light]
 WindowTwilightColors=0x3F42A
-WaterTwilightLightLevels=0x3F40B
+WaterTwilightLightLevels=0x3F40A
 
 [Locations]
 ProvinceNames=0x392F8

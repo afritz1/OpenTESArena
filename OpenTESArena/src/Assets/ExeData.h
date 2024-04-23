@@ -237,7 +237,7 @@ public:
 		std::array<std::string, 14> armorEnchantmentNames;
 		std::array<uint8_t, 14> armorEnchantmentQualities;
 		std::array<uint8_t, 14> armorEnchantmentSpells; // 255 means attribute bonus instead of spell.
-		std::array<uint8_t, 14> armorEnchantmentBonusPrices;
+		std::array<uint16_t, 14> armorEnchantmentBonusPrices;
 
 		// Weapon values.
 		std::array<std::string, 18> weaponNames; // Staff, ..., long bow.
@@ -251,29 +251,29 @@ public:
 		std::array<std::string, 14> weaponEnchantmentNames;
 		std::array<uint8_t, 14> weaponEnchantmentQualities;
 		std::array<uint8_t, 14> weaponEnchantmentSpells; // See armor enchantment note.
-		std::array<uint8_t, 14> weaponEnchantmentBonusPrices;
+		std::array<uint16_t, 14> weaponEnchantmentBonusPrices;
 
 		// Three categories of trinkets: spellcasting items, attribute enhancement items,
 		// and armor class items. Spellcasting items are split into offense/defense/misc.
 		std::array<std::string, 4> spellcastingItemNames;
 		std::array<uint8_t, 4> spellcastingItemCumulativeChances;
-		std::array<uint8_t, 4> spellcastingItemBasePrices;
+		std::array<uint16_t, 4> spellcastingItemBasePrices;
 		std::array<std::pair<uint8_t, uint8_t>, 4> spellcastingItemChargeRanges; // Min/max + 1...
 		std::array<std::string, 15> spellcastingItemAttackSpellNames;
 		std::array<uint8_t, 15> spellcastingItemAttackSpellQualities;
 		std::array<uint8_t, 15> spellcastingItemAttackSpellSpells;
-		std::array<uint8_t, 15> spellcastingItemAttackSpellPricesPerCharge;
+		std::array<uint16_t, 15> spellcastingItemAttackSpellPricesPerCharge;
 		std::array<std::string, 9> spellcastingItemDefensiveSpellNames;
 		std::array<uint8_t, 9> spellcastingItemDefensiveSpellQualities;
 		std::array<uint8_t, 9> spellcastingItemDefensiveSpellSpells;
-		std::array<uint8_t, 9> spellcastingItemDefensiveSpellPricesPerCharge;
+		std::array<uint16_t, 9> spellcastingItemDefensiveSpellPricesPerCharge;
 		std::array<std::string, 8> spellcastingItemMiscSpellNames;
-		std::array<uint8_t, 9> spellcastingItemMiscSpellQualities;
-		std::array<uint8_t, 9> spellcastingItemMiscSpellSpells;
-		std::array<uint8_t, 9> spellcastingItemMiscSpellPricesPerCharge;
+		std::array<uint8_t, 8> spellcastingItemMiscSpellQualities;
+		std::array<uint8_t, 8> spellcastingItemMiscSpellSpells;
+		std::array<uint16_t, 8> spellcastingItemMiscSpellPricesPerCharge;
 		std::array<std::string, 4> enhancementItemNames;
 		std::array<uint8_t, 4> enhancementItemCumulativeChances;
-		std::array<uint8_t, 4> enhancementItemBasePrices;
+		std::array<uint16_t, 4> enhancementItemBasePrices;
 
 		// @todo: artifacts.
 
@@ -286,7 +286,7 @@ public:
 	struct Light
 	{
 		std::array<uint8_t, 48> windowTwilightColors; // VGA (6-bit, 63 = 255) RGB triplets for window color transition.
-		std::array<uint16_t, 14> waterTwilightLightLevels;
+		std::array<uint16_t, 16> waterTwilightLightLevels;
 
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
