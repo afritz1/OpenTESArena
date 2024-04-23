@@ -150,7 +150,7 @@ WeaponAnimationFilenames=0x4214E
 
 [Light]
 WindowTwilightColors=0x3F766
-WaterTwilightLightLevels=0x3F747
+WaterTwilightLightLevels=0x3F746
 
 [Locations]
 ProvinceNames=0x394F8

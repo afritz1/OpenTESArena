@@ -286,7 +286,7 @@ public:
 	struct Light
 	{
 		std::array<uint8_t, 48> windowTwilightColors; // VGA (6-bit, 63 = 255) RGB triplets for window color transition.
-		std::array<uint16_t, 14> waterTwilightLightLevels;
+		std::array<uint16_t, 16> waterTwilightLightLevels;
 
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
