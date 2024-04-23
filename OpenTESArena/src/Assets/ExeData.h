@@ -262,15 +262,15 @@ public:
 		std::array<std::string, 15> spellcastingItemAttackSpellNames;
 		std::array<uint8_t, 15> spellcastingItemAttackSpellQualities;
 		std::array<uint8_t, 15> spellcastingItemAttackSpellSpells;
-		std::array<uint8_t, 15> spellcastingItemAttackSpellPricesPerCharge;
+		std::array<uint16_t, 15> spellcastingItemAttackSpellPricesPerCharge;
 		std::array<std::string, 9> spellcastingItemDefensiveSpellNames;
 		std::array<uint8_t, 9> spellcastingItemDefensiveSpellQualities;
 		std::array<uint8_t, 9> spellcastingItemDefensiveSpellSpells;
-		std::array<uint8_t, 9> spellcastingItemDefensiveSpellPricesPerCharge;
+		std::array<uint16_t, 9> spellcastingItemDefensiveSpellPricesPerCharge;
 		std::array<std::string, 8> spellcastingItemMiscSpellNames;
 		std::array<uint8_t, 8> spellcastingItemMiscSpellQualities;
 		std::array<uint8_t, 8> spellcastingItemMiscSpellSpells;
-		std::array<uint8_t, 8> spellcastingItemMiscSpellPricesPerCharge;
+		std::array<uint16_t, 8> spellcastingItemMiscSpellPricesPerCharge;
 		std::array<std::string, 4> enhancementItemNames;
 		std::array<uint8_t, 4> enhancementItemCumulativeChances;
 		std::array<uint8_t, 4> enhancementItemBasePrices;
