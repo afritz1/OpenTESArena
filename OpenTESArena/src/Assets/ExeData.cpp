@@ -506,7 +506,7 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	initStringArray(this->armorEnchantmentNames, data + armorEnchantmentNamesOffset);
 	initInt8Array(this->armorEnchantmentQualities, data + armorEnchantmentQualitiesOffset);
 	initInt8Array(this->armorEnchantmentSpells, data + armorEnchantmentSpellsOffset);
-	initInt8Array(this->armorEnchantmentBonusPrices, data + armorEnchantmentBonusPricesOffset);
+	initInt16Array(this->armorEnchantmentBonusPrices, data + armorEnchantmentBonusPricesOffset);
 	initStringArray(this->weaponNames, data + weaponNamesOffset);
 	initInt8Array(this->weaponQualities, data + weaponQualitiesOffset);
 	initInt8Array(this->weaponBasePrices, data + weaponBasePricesOffset);
@@ -516,10 +516,10 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	initStringArray(this->weaponEnchantmentNames, data + weaponEnchantmentNamesOffset);
 	initInt8Array(this->weaponEnchantmentQualities, data + weaponEnchantmentQualitiesOffset);
 	initInt8Array(this->weaponEnchantmentSpells, data + weaponEnchantmentSpellsOffset);
-	initInt8Array(this->weaponEnchantmentBonusPrices, data + weaponEnchantmentBonusPricesOffset);
+	initInt16Array(this->weaponEnchantmentBonusPrices, data + weaponEnchantmentBonusPricesOffset);
 	initStringArray(this->spellcastingItemNames, data + spellcastingItemNamesOffset);
 	initInt8Array(this->spellcastingItemCumulativeChances, data + spellcastingItemCumulativeChancesOffset);
-	initInt8Array(this->spellcastingItemBasePrices, data + spellcastingItemBasePricesOffset);
+	initInt16Array(this->spellcastingItemBasePrices, data + spellcastingItemBasePricesOffset);
 	initInt8PairArray(this->spellcastingItemChargeRanges, data + spellcastingItemChargeRangesOffset);
 	initStringArray(this->spellcastingItemAttackSpellNames, data + spellcastingItemAttackSpellNamesOffset);
 	initInt8Array(this->spellcastingItemAttackSpellQualities, data + spellcastingItemAttackSpellQualitiesOffset);
@@ -535,7 +535,7 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	initInt16Array(this->spellcastingItemMiscSpellPricesPerCharge, data + spellcastingItemMiscSpellPricesPerChargeOffset);
 	initStringArray(this->enhancementItemNames, data + enhancementItemNamesOffset);
 	initInt8Array(this->enhancementItemCumulativeChances, data + enhancementItemCumulativeChancesOffset);
-	initInt8Array(this->enhancementItemBasePrices, data + enhancementItemBasePricesOffset);
+	initInt16Array(this->enhancementItemBasePrices, data + enhancementItemBasePricesOffset);
 	initStringArray(this->bodyPartNames, data + bodyPartNamesOffset);
 	initStringArray(this->weaponAnimationFilenames, data + weaponAnimFilenamesOffset);
 
