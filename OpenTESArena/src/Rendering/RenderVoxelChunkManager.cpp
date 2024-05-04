@@ -1067,11 +1067,13 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		{
 			lightingInitInfo.type = RenderLightingType::PerMesh;
 			lightingInitInfo.percent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
+			lightingInitInfo.idCount = 0;
 		}
 		else if (isEmissiveChasm)
 		{
 			lightingInitInfo.type = RenderLightingType::PerMesh;
 			lightingInitInfo.percent = 1.0;
+			lightingInitInfo.idCount = 0;
 		}
 		else
 		{

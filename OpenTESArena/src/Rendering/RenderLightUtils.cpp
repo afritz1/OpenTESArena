@@ -23,6 +23,7 @@ BufferView<const RenderLightID> RenderLightIdList::getLightIDs() const
 
 void RenderLightIdList::tryAddLight(RenderLightID id, double distanceSqr)
 {
+	DebugAssert(id >= 0);
 	DebugAssert(distanceSqr >= 0.0);
 
 	const auto beginIter = std::begin(this->lightIDs);
