@@ -735,153 +735,151 @@ namespace
 // Draw call globals.
 namespace
 {
-	constexpr int MAX_MESH_PROCESS_CACHES = 8; // The most draw call meshes that can be cached and processed each loop.
-
 	// Bulk draw call processing caches sharing a vertex shader to calculate clipped meshes for rasterizing.
-	struct DrawCallCaches
+	struct DrawCallCache
 	{
-		const SoftwareRenderer::VertexBuffer *vertexBuffers[MAX_MESH_PROCESS_CACHES];
-		const SoftwareRenderer::AttributeBuffer *texCoordBuffers[MAX_MESH_PROCESS_CACHES];
-		const SoftwareRenderer::IndexBuffer *indexBuffers[MAX_MESH_PROCESS_CACHES];
-		ObjectTextureID textureID0s[MAX_MESH_PROCESS_CACHES];
-		ObjectTextureID textureID1s[MAX_MESH_PROCESS_CACHES];
-		TextureSamplingType textureSamplingType0s[MAX_MESH_PROCESS_CACHES];
-		TextureSamplingType textureSamplingType1s[MAX_MESH_PROCESS_CACHES];
-		RenderLightingType lightingTypes[MAX_MESH_PROCESS_CACHES];
-		double meshLightPercents[MAX_MESH_PROCESS_CACHES];
-		const SoftwareRenderer::Light *lightPtrArrays[MAX_MESH_PROCESS_CACHES][RenderLightIdList::MAX_LIGHTS];
-		int lightCounts[MAX_MESH_PROCESS_CACHES];
-		PixelShaderType pixelShaderTypes[MAX_MESH_PROCESS_CACHES];
-		double pixelShaderParam0s[MAX_MESH_PROCESS_CACHES];
-		bool enableDepthReads[MAX_MESH_PROCESS_CACHES];
-		bool enableDepthWrites[MAX_MESH_PROCESS_CACHES];
+		const SoftwareRenderer::VertexBuffer *vertexBuffer;
+		const SoftwareRenderer::AttributeBuffer *texCoordBuffer;
+		const SoftwareRenderer::IndexBuffer *indexBuffer;
+		ObjectTextureID textureID0;
+		ObjectTextureID textureID1;
+		TextureSamplingType textureSamplingType0;
+		TextureSamplingType textureSamplingType1;
+		RenderLightingType lightingType;
+		double meshLightPercent;
+		const SoftwareRenderer::Light *lightPtrArray[RenderLightIdList::MAX_LIGHTS];
+		int lightCount;
+		PixelShaderType pixelShaderType;
+		double pixelShaderParam0;
+		bool enableDepthRead;
+		bool enableDepthWrite;
 	};
 
-	// Transforms for each mesh to be processed with.
-	struct TransformCaches
+	// Transform for the mesh to be processed with.
+	struct TransformCache
 	{
-		double translationMatrixXXs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixXYs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixXZs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixXWs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixYXs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixYYs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixYZs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixYWs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixZXs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixZYs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixZZs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixZWs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixWXs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixWYs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixWZs[MAX_MESH_PROCESS_CACHES];
-		double translationMatrixWWs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixXXs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixXYs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixXZs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixXWs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixYXs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixYYs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixYZs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixYWs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixZXs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixZYs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixZZs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixZWs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixWXs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixWYs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixWZs[MAX_MESH_PROCESS_CACHES];
-		double rotationMatrixWWs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixXXs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixXYs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixXZs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixXWs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixYXs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixYYs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixYZs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixYWs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixZXs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixZYs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixZZs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixZWs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixWXs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixWYs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixWZs[MAX_MESH_PROCESS_CACHES];
-		double scaleMatrixWWs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixXXs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixXYs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixXZs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixXWs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixYXs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixYYs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixYZs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixYWs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixZXs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixZYs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixZZs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixZWs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixWXs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixWYs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixWZs[MAX_MESH_PROCESS_CACHES];
-		double modelViewProjMatrixWWs[MAX_MESH_PROCESS_CACHES];
-		double preScaleTranslationXs[MAX_MESH_PROCESS_CACHES];
-		double preScaleTranslationYs[MAX_MESH_PROCESS_CACHES];
-		double preScaleTranslationZs[MAX_MESH_PROCESS_CACHES];
+		double translationMatrixXX;
+		double translationMatrixXY;
+		double translationMatrixXZ;
+		double translationMatrixXW;
+		double translationMatrixYX;
+		double translationMatrixYY;
+		double translationMatrixYZ;
+		double translationMatrixYW;
+		double translationMatrixZX;
+		double translationMatrixZY;
+		double translationMatrixZZ;
+		double translationMatrixZW;
+		double translationMatrixWX;
+		double translationMatrixWY;
+		double translationMatrixWZ;
+		double translationMatrixWW;
+		double rotationMatrixXX;
+		double rotationMatrixXY;
+		double rotationMatrixXZ;
+		double rotationMatrixXW;
+		double rotationMatrixYX;
+		double rotationMatrixYY;
+		double rotationMatrixYZ;
+		double rotationMatrixYW;
+		double rotationMatrixZX;
+		double rotationMatrixZY;
+		double rotationMatrixZZ;
+		double rotationMatrixZW;
+		double rotationMatrixWX;
+		double rotationMatrixWY;
+		double rotationMatrixWZ;
+		double rotationMatrixWW;
+		double scaleMatrixXX;
+		double scaleMatrixXY;
+		double scaleMatrixXZ;
+		double scaleMatrixXW;
+		double scaleMatrixYX;
+		double scaleMatrixYY;
+		double scaleMatrixYZ;
+		double scaleMatrixYW;
+		double scaleMatrixZX;
+		double scaleMatrixZY;
+		double scaleMatrixZZ;
+		double scaleMatrixZW;
+		double scaleMatrixWX;
+		double scaleMatrixWY;
+		double scaleMatrixWZ;
+		double scaleMatrixWW;
+		double modelViewProjMatrixXX;
+		double modelViewProjMatrixXY;
+		double modelViewProjMatrixXZ;
+		double modelViewProjMatrixXW;
+		double modelViewProjMatrixYX;
+		double modelViewProjMatrixYY;
+		double modelViewProjMatrixYZ;
+		double modelViewProjMatrixYW;
+		double modelViewProjMatrixZX;
+		double modelViewProjMatrixZY;
+		double modelViewProjMatrixZZ;
+		double modelViewProjMatrixZW;
+		double modelViewProjMatrixWX;
+		double modelViewProjMatrixWY;
+		double modelViewProjMatrixWZ;
+		double modelViewProjMatrixWW;
+		double preScaleTranslationX;
+		double preScaleTranslationY;
+		double preScaleTranslationZ;
 	};
 
-	DrawCallCaches g_drawCallCaches;
-	TransformCaches g_transformCaches;
+	DrawCallCache g_drawCallCache;
+	TransformCache g_transformCache;
 
-	void PopulateMeshTransform(int meshIndex, const RenderTransform &transform)
+	void PopulateMeshTransform(const RenderTransform &transform)
 	{
-		g_transformCaches.translationMatrixXXs[meshIndex] = transform.translation.x.x;
-		g_transformCaches.translationMatrixXYs[meshIndex] = transform.translation.x.y;
-		g_transformCaches.translationMatrixXZs[meshIndex] = transform.translation.x.z;
-		g_transformCaches.translationMatrixXWs[meshIndex] = transform.translation.x.w;
-		g_transformCaches.translationMatrixYXs[meshIndex] = transform.translation.y.x;
-		g_transformCaches.translationMatrixYYs[meshIndex] = transform.translation.y.y;
-		g_transformCaches.translationMatrixYZs[meshIndex] = transform.translation.y.z;
-		g_transformCaches.translationMatrixYWs[meshIndex] = transform.translation.y.w;
-		g_transformCaches.translationMatrixZXs[meshIndex] = transform.translation.z.x;
-		g_transformCaches.translationMatrixZYs[meshIndex] = transform.translation.z.y;
-		g_transformCaches.translationMatrixZZs[meshIndex] = transform.translation.z.z;
-		g_transformCaches.translationMatrixZWs[meshIndex] = transform.translation.z.w;
-		g_transformCaches.translationMatrixWXs[meshIndex] = transform.translation.w.x;
-		g_transformCaches.translationMatrixWYs[meshIndex] = transform.translation.w.y;
-		g_transformCaches.translationMatrixWZs[meshIndex] = transform.translation.w.z;
-		g_transformCaches.translationMatrixWWs[meshIndex] = transform.translation.w.w;
-		g_transformCaches.rotationMatrixXXs[meshIndex] = transform.rotation.x.x;
-		g_transformCaches.rotationMatrixXYs[meshIndex] = transform.rotation.x.y;
-		g_transformCaches.rotationMatrixXZs[meshIndex] = transform.rotation.x.z;
-		g_transformCaches.rotationMatrixXWs[meshIndex] = transform.rotation.x.w;
-		g_transformCaches.rotationMatrixYXs[meshIndex] = transform.rotation.y.x;
-		g_transformCaches.rotationMatrixYYs[meshIndex] = transform.rotation.y.y;
-		g_transformCaches.rotationMatrixYZs[meshIndex] = transform.rotation.y.z;
-		g_transformCaches.rotationMatrixYWs[meshIndex] = transform.rotation.y.w;
-		g_transformCaches.rotationMatrixZXs[meshIndex] = transform.rotation.z.x;
-		g_transformCaches.rotationMatrixZYs[meshIndex] = transform.rotation.z.y;
-		g_transformCaches.rotationMatrixZZs[meshIndex] = transform.rotation.z.z;
-		g_transformCaches.rotationMatrixZWs[meshIndex] = transform.rotation.z.w;
-		g_transformCaches.rotationMatrixWXs[meshIndex] = transform.rotation.w.x;
-		g_transformCaches.rotationMatrixWYs[meshIndex] = transform.rotation.w.y;
-		g_transformCaches.rotationMatrixWZs[meshIndex] = transform.rotation.w.z;
-		g_transformCaches.rotationMatrixWWs[meshIndex] = transform.rotation.w.w;
-		g_transformCaches.scaleMatrixXXs[meshIndex] = transform.scale.x.x;
-		g_transformCaches.scaleMatrixXYs[meshIndex] = transform.scale.x.y;
-		g_transformCaches.scaleMatrixXZs[meshIndex] = transform.scale.x.z;
-		g_transformCaches.scaleMatrixXWs[meshIndex] = transform.scale.x.w;
-		g_transformCaches.scaleMatrixYXs[meshIndex] = transform.scale.y.x;
-		g_transformCaches.scaleMatrixYYs[meshIndex] = transform.scale.y.y;
-		g_transformCaches.scaleMatrixYZs[meshIndex] = transform.scale.y.z;
-		g_transformCaches.scaleMatrixYWs[meshIndex] = transform.scale.y.w;
-		g_transformCaches.scaleMatrixZXs[meshIndex] = transform.scale.z.x;
-		g_transformCaches.scaleMatrixZYs[meshIndex] = transform.scale.z.y;
-		g_transformCaches.scaleMatrixZZs[meshIndex] = transform.scale.z.z;
-		g_transformCaches.scaleMatrixZWs[meshIndex] = transform.scale.z.w;
-		g_transformCaches.scaleMatrixWXs[meshIndex] = transform.scale.w.x;
-		g_transformCaches.scaleMatrixWYs[meshIndex] = transform.scale.w.y;
-		g_transformCaches.scaleMatrixWZs[meshIndex] = transform.scale.w.z;
-		g_transformCaches.scaleMatrixWWs[meshIndex] = transform.scale.w.w;
+		g_transformCache.translationMatrixXX = transform.translation.x.x;
+		g_transformCache.translationMatrixXY = transform.translation.x.y;
+		g_transformCache.translationMatrixXZ = transform.translation.x.z;
+		g_transformCache.translationMatrixXW = transform.translation.x.w;
+		g_transformCache.translationMatrixYX = transform.translation.y.x;
+		g_transformCache.translationMatrixYY = transform.translation.y.y;
+		g_transformCache.translationMatrixYZ = transform.translation.y.z;
+		g_transformCache.translationMatrixYW = transform.translation.y.w;
+		g_transformCache.translationMatrixZX = transform.translation.z.x;
+		g_transformCache.translationMatrixZY = transform.translation.z.y;
+		g_transformCache.translationMatrixZZ = transform.translation.z.z;
+		g_transformCache.translationMatrixZW = transform.translation.z.w;
+		g_transformCache.translationMatrixWX = transform.translation.w.x;
+		g_transformCache.translationMatrixWY = transform.translation.w.y;
+		g_transformCache.translationMatrixWZ = transform.translation.w.z;
+		g_transformCache.translationMatrixWW = transform.translation.w.w;
+		g_transformCache.rotationMatrixXX = transform.rotation.x.x;
+		g_transformCache.rotationMatrixXY = transform.rotation.x.y;
+		g_transformCache.rotationMatrixXZ = transform.rotation.x.z;
+		g_transformCache.rotationMatrixXW = transform.rotation.x.w;
+		g_transformCache.rotationMatrixYX = transform.rotation.y.x;
+		g_transformCache.rotationMatrixYY = transform.rotation.y.y;
+		g_transformCache.rotationMatrixYZ = transform.rotation.y.z;
+		g_transformCache.rotationMatrixYW = transform.rotation.y.w;
+		g_transformCache.rotationMatrixZX = transform.rotation.z.x;
+		g_transformCache.rotationMatrixZY = transform.rotation.z.y;
+		g_transformCache.rotationMatrixZZ = transform.rotation.z.z;
+		g_transformCache.rotationMatrixZW = transform.rotation.z.w;
+		g_transformCache.rotationMatrixWX = transform.rotation.w.x;
+		g_transformCache.rotationMatrixWY = transform.rotation.w.y;
+		g_transformCache.rotationMatrixWZ = transform.rotation.w.z;
+		g_transformCache.rotationMatrixWW = transform.rotation.w.w;
+		g_transformCache.scaleMatrixXX = transform.scale.x.x;
+		g_transformCache.scaleMatrixXY = transform.scale.x.y;
+		g_transformCache.scaleMatrixXZ = transform.scale.x.z;
+		g_transformCache.scaleMatrixXW = transform.scale.x.w;
+		g_transformCache.scaleMatrixYX = transform.scale.y.x;
+		g_transformCache.scaleMatrixYY = transform.scale.y.y;
+		g_transformCache.scaleMatrixYZ = transform.scale.y.z;
+		g_transformCache.scaleMatrixYW = transform.scale.y.w;
+		g_transformCache.scaleMatrixZX = transform.scale.z.x;
+		g_transformCache.scaleMatrixZY = transform.scale.z.y;
+		g_transformCache.scaleMatrixZZ = transform.scale.z.z;
+		g_transformCache.scaleMatrixZW = transform.scale.z.w;
+		g_transformCache.scaleMatrixWX = transform.scale.w.x;
+		g_transformCache.scaleMatrixWY = transform.scale.w.y;
+		g_transformCache.scaleMatrixWZ = transform.scale.w.z;
+		g_transformCache.scaleMatrixWW = transform.scale.w.w;
 		// Do model-view-projection matrix in the bulk processing loop.
 	}
 }
@@ -920,6 +918,8 @@ namespace
 		// Naive bounding box clamped to its rasterizer bin.
 		int binPixelXStart, binPixelXEnd;
 		int binPixelYStart, binPixelYEnd;
+
+		//int drawCallIndex; // @todo, and delete those 4 ^
 	};
 
 	double NdcXToScreenSpace(double ndcX, double frameWidth)
@@ -1135,22 +1135,13 @@ namespace
 			ditherBuffer.clear();
 		}
 	}
-
-	void CreateRasterizerBins(Buffer2D<RasterizerBin> &rasterizerBins, int frameBufferWidth, int frameBufferHeight)
-	{
-		const int binWidth = GetRasterizerBinWidth(frameBufferWidth);
-		const int binHeight = GetRasterizerBinHeight(frameBufferHeight);
-		const int binCountX = GetRasterizerBinCountX(frameBufferWidth, binWidth);
-		const int binCountY = GetRasterizerBinCountY(frameBufferHeight, binHeight);
-		rasterizerBins.init(binCountX, binCountY);
-	}
 }
 
 // Vertex shaders.
 namespace
 {
 	template<int N>
-	void VertexShader_BasicN(const int *__restrict meshIndices, const double *__restrict vertexXs, const double *__restrict vertexYs,
+	void VertexShader_BasicN(const double *__restrict vertexXs, const double *__restrict vertexYs,
 		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
 		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
@@ -1173,23 +1164,23 @@ namespace
 		double modelViewProjMatrixWWs[N];
 		for (int i = 0; i < N; i++)
 		{
-			const int meshIndex = meshIndices[i];
-			modelViewProjMatrixXXs[i] = g_transformCaches.modelViewProjMatrixXXs[meshIndex];
-			modelViewProjMatrixXYs[i] = g_transformCaches.modelViewProjMatrixXYs[meshIndex];
-			modelViewProjMatrixXZs[i] = g_transformCaches.modelViewProjMatrixXZs[meshIndex];
-			modelViewProjMatrixXWs[i] = g_transformCaches.modelViewProjMatrixXWs[meshIndex];
-			modelViewProjMatrixYXs[i] = g_transformCaches.modelViewProjMatrixYXs[meshIndex];
-			modelViewProjMatrixYYs[i] = g_transformCaches.modelViewProjMatrixYYs[meshIndex];
-			modelViewProjMatrixYZs[i] = g_transformCaches.modelViewProjMatrixYZs[meshIndex];
-			modelViewProjMatrixYWs[i] = g_transformCaches.modelViewProjMatrixYWs[meshIndex];
-			modelViewProjMatrixZXs[i] = g_transformCaches.modelViewProjMatrixZXs[meshIndex];
-			modelViewProjMatrixZYs[i] = g_transformCaches.modelViewProjMatrixZYs[meshIndex];
-			modelViewProjMatrixZZs[i] = g_transformCaches.modelViewProjMatrixZZs[meshIndex];
-			modelViewProjMatrixZWs[i] = g_transformCaches.modelViewProjMatrixZWs[meshIndex];
-			modelViewProjMatrixWXs[i] = g_transformCaches.modelViewProjMatrixWXs[meshIndex];
-			modelViewProjMatrixWYs[i] = g_transformCaches.modelViewProjMatrixWYs[meshIndex];
-			modelViewProjMatrixWZs[i] = g_transformCaches.modelViewProjMatrixWZs[meshIndex];
-			modelViewProjMatrixWWs[i] = g_transformCaches.modelViewProjMatrixWWs[meshIndex];
+			// @todo: this isn't taking meshIndex anymore
+			modelViewProjMatrixXXs[i] = g_transformCache.modelViewProjMatrixXX;
+			modelViewProjMatrixXYs[i] = g_transformCache.modelViewProjMatrixXY;
+			modelViewProjMatrixXZs[i] = g_transformCache.modelViewProjMatrixXZ;
+			modelViewProjMatrixXWs[i] = g_transformCache.modelViewProjMatrixXW;
+			modelViewProjMatrixYXs[i] = g_transformCache.modelViewProjMatrixYX;
+			modelViewProjMatrixYYs[i] = g_transformCache.modelViewProjMatrixYY;
+			modelViewProjMatrixYZs[i] = g_transformCache.modelViewProjMatrixYZ;
+			modelViewProjMatrixYWs[i] = g_transformCache.modelViewProjMatrixYW;
+			modelViewProjMatrixZXs[i] = g_transformCache.modelViewProjMatrixZX;
+			modelViewProjMatrixZYs[i] = g_transformCache.modelViewProjMatrixZY;
+			modelViewProjMatrixZZs[i] = g_transformCache.modelViewProjMatrixZZ;
+			modelViewProjMatrixZWs[i] = g_transformCache.modelViewProjMatrixZW;
+			modelViewProjMatrixWXs[i] = g_transformCache.modelViewProjMatrixWX;
+			modelViewProjMatrixWYs[i] = g_transformCache.modelViewProjMatrixWY;
+			modelViewProjMatrixWZs[i] = g_transformCache.modelViewProjMatrixWZ;
+			modelViewProjMatrixWWs[i] = g_transformCache.modelViewProjMatrixWW;
 		}
 
 		// Apply model-view-projection matrix.
@@ -1203,7 +1194,7 @@ namespace
 	}
 
 	template<int N>
-	void VertexShader_RaisingDoorN(const int *__restrict meshIndices, const double *__restrict vertexXs, const double *__restrict vertexYs,
+	void VertexShader_RaisingDoorN(const double *__restrict vertexXs, const double *__restrict vertexYs,
 		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
 		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
@@ -1261,58 +1252,58 @@ namespace
 		double scaleMatrixWWs[N];
 		for (int i = 0; i < N; i++)
 		{
-			const int meshIndex = meshIndices[i];
-			preScaleTranslationXs[i] = g_transformCaches.preScaleTranslationXs[meshIndex];
-			preScaleTranslationYs[i] = g_transformCaches.preScaleTranslationYs[meshIndex];
-			preScaleTranslationZs[i] = g_transformCaches.preScaleTranslationZs[meshIndex];
-			translationMatrixXXs[i] = g_transformCaches.translationMatrixXXs[meshIndex];
-			translationMatrixXYs[i] = g_transformCaches.translationMatrixXYs[meshIndex];
-			translationMatrixXZs[i] = g_transformCaches.translationMatrixXZs[meshIndex];
-			translationMatrixXWs[i] = g_transformCaches.translationMatrixXWs[meshIndex];
-			translationMatrixYXs[i] = g_transformCaches.translationMatrixYXs[meshIndex];
-			translationMatrixYYs[i] = g_transformCaches.translationMatrixYYs[meshIndex];
-			translationMatrixYZs[i] = g_transformCaches.translationMatrixYZs[meshIndex];
-			translationMatrixYWs[i] = g_transformCaches.translationMatrixYWs[meshIndex];
-			translationMatrixZXs[i] = g_transformCaches.translationMatrixZXs[meshIndex];
-			translationMatrixZYs[i] = g_transformCaches.translationMatrixZYs[meshIndex];
-			translationMatrixZZs[i] = g_transformCaches.translationMatrixZZs[meshIndex];
-			translationMatrixZWs[i] = g_transformCaches.translationMatrixZWs[meshIndex];
-			translationMatrixWXs[i] = g_transformCaches.translationMatrixWXs[meshIndex];
-			translationMatrixWYs[i] = g_transformCaches.translationMatrixWYs[meshIndex];
-			translationMatrixWZs[i] = g_transformCaches.translationMatrixWZs[meshIndex];
-			translationMatrixWWs[i] = g_transformCaches.translationMatrixWWs[meshIndex];
-			rotationMatrixXXs[i] = g_transformCaches.rotationMatrixXXs[meshIndex];
-			rotationMatrixXYs[i] = g_transformCaches.rotationMatrixXYs[meshIndex];
-			rotationMatrixXZs[i] = g_transformCaches.rotationMatrixXZs[meshIndex];
-			rotationMatrixXWs[i] = g_transformCaches.rotationMatrixXWs[meshIndex];
-			rotationMatrixYXs[i] = g_transformCaches.rotationMatrixYXs[meshIndex];
-			rotationMatrixYYs[i] = g_transformCaches.rotationMatrixYYs[meshIndex];
-			rotationMatrixYZs[i] = g_transformCaches.rotationMatrixYZs[meshIndex];
-			rotationMatrixYWs[i] = g_transformCaches.rotationMatrixYWs[meshIndex];
-			rotationMatrixZXs[i] = g_transformCaches.rotationMatrixZXs[meshIndex];
-			rotationMatrixZYs[i] = g_transformCaches.rotationMatrixZYs[meshIndex];
-			rotationMatrixZZs[i] = g_transformCaches.rotationMatrixZZs[meshIndex];
-			rotationMatrixZWs[i] = g_transformCaches.rotationMatrixZWs[meshIndex];
-			rotationMatrixWXs[i] = g_transformCaches.rotationMatrixWXs[meshIndex];
-			rotationMatrixWYs[i] = g_transformCaches.rotationMatrixWYs[meshIndex];
-			rotationMatrixWZs[i] = g_transformCaches.rotationMatrixWZs[meshIndex];
-			rotationMatrixWWs[i] = g_transformCaches.rotationMatrixWWs[meshIndex];
-			scaleMatrixXXs[i] = g_transformCaches.scaleMatrixXXs[meshIndex];
-			scaleMatrixXYs[i] = g_transformCaches.scaleMatrixXYs[meshIndex];
-			scaleMatrixXZs[i] = g_transformCaches.scaleMatrixXZs[meshIndex];
-			scaleMatrixXWs[i] = g_transformCaches.scaleMatrixXWs[meshIndex];
-			scaleMatrixYXs[i] = g_transformCaches.scaleMatrixYXs[meshIndex];
-			scaleMatrixYYs[i] = g_transformCaches.scaleMatrixYYs[meshIndex];
-			scaleMatrixYZs[i] = g_transformCaches.scaleMatrixYZs[meshIndex];
-			scaleMatrixYWs[i] = g_transformCaches.scaleMatrixYWs[meshIndex];
-			scaleMatrixZXs[i] = g_transformCaches.scaleMatrixZXs[meshIndex];
-			scaleMatrixZYs[i] = g_transformCaches.scaleMatrixZYs[meshIndex];
-			scaleMatrixZZs[i] = g_transformCaches.scaleMatrixZZs[meshIndex];
-			scaleMatrixZWs[i] = g_transformCaches.scaleMatrixZWs[meshIndex];
-			scaleMatrixWXs[i] = g_transformCaches.scaleMatrixWXs[meshIndex];
-			scaleMatrixWYs[i] = g_transformCaches.scaleMatrixWYs[meshIndex];
-			scaleMatrixWZs[i] = g_transformCaches.scaleMatrixWZs[meshIndex];
-			scaleMatrixWWs[i] = g_transformCaches.scaleMatrixWWs[meshIndex];
+			// @todo: this isn't taking meshIndex anymore
+			preScaleTranslationXs[i] = g_transformCache.preScaleTranslationX;
+			preScaleTranslationYs[i] = g_transformCache.preScaleTranslationY;
+			preScaleTranslationZs[i] = g_transformCache.preScaleTranslationZ;
+			translationMatrixXXs[i] = g_transformCache.translationMatrixXX;
+			translationMatrixXYs[i] = g_transformCache.translationMatrixXY;
+			translationMatrixXZs[i] = g_transformCache.translationMatrixXZ;
+			translationMatrixXWs[i] = g_transformCache.translationMatrixXW;
+			translationMatrixYXs[i] = g_transformCache.translationMatrixYX;
+			translationMatrixYYs[i] = g_transformCache.translationMatrixYY;
+			translationMatrixYZs[i] = g_transformCache.translationMatrixYZ;
+			translationMatrixYWs[i] = g_transformCache.translationMatrixYW;
+			translationMatrixZXs[i] = g_transformCache.translationMatrixZX;
+			translationMatrixZYs[i] = g_transformCache.translationMatrixZY;
+			translationMatrixZZs[i] = g_transformCache.translationMatrixZZ;
+			translationMatrixZWs[i] = g_transformCache.translationMatrixZW;
+			translationMatrixWXs[i] = g_transformCache.translationMatrixWX;
+			translationMatrixWYs[i] = g_transformCache.translationMatrixWY;
+			translationMatrixWZs[i] = g_transformCache.translationMatrixWZ;
+			translationMatrixWWs[i] = g_transformCache.translationMatrixWW;
+			rotationMatrixXXs[i] = g_transformCache.rotationMatrixXX;
+			rotationMatrixXYs[i] = g_transformCache.rotationMatrixXY;
+			rotationMatrixXZs[i] = g_transformCache.rotationMatrixXZ;
+			rotationMatrixXWs[i] = g_transformCache.rotationMatrixXW;
+			rotationMatrixYXs[i] = g_transformCache.rotationMatrixYX;
+			rotationMatrixYYs[i] = g_transformCache.rotationMatrixYY;
+			rotationMatrixYZs[i] = g_transformCache.rotationMatrixYZ;
+			rotationMatrixYWs[i] = g_transformCache.rotationMatrixYW;
+			rotationMatrixZXs[i] = g_transformCache.rotationMatrixZX;
+			rotationMatrixZYs[i] = g_transformCache.rotationMatrixZY;
+			rotationMatrixZZs[i] = g_transformCache.rotationMatrixZZ;
+			rotationMatrixZWs[i] = g_transformCache.rotationMatrixZW;
+			rotationMatrixWXs[i] = g_transformCache.rotationMatrixWX;
+			rotationMatrixWYs[i] = g_transformCache.rotationMatrixWY;
+			rotationMatrixWZs[i] = g_transformCache.rotationMatrixWZ;
+			rotationMatrixWWs[i] = g_transformCache.rotationMatrixWW;
+			scaleMatrixXXs[i] = g_transformCache.scaleMatrixXX;
+			scaleMatrixXYs[i] = g_transformCache.scaleMatrixXY;
+			scaleMatrixXZs[i] = g_transformCache.scaleMatrixXZ;
+			scaleMatrixXWs[i] = g_transformCache.scaleMatrixXW;
+			scaleMatrixYXs[i] = g_transformCache.scaleMatrixYX;
+			scaleMatrixYYs[i] = g_transformCache.scaleMatrixYY;
+			scaleMatrixYZs[i] = g_transformCache.scaleMatrixYZ;
+			scaleMatrixYWs[i] = g_transformCache.scaleMatrixYW;
+			scaleMatrixZXs[i] = g_transformCache.scaleMatrixZX;
+			scaleMatrixZYs[i] = g_transformCache.scaleMatrixZY;
+			scaleMatrixZZs[i] = g_transformCache.scaleMatrixZZ;
+			scaleMatrixZWs[i] = g_transformCache.scaleMatrixZW;
+			scaleMatrixWXs[i] = g_transformCache.scaleMatrixWX;
+			scaleMatrixWYs[i] = g_transformCache.scaleMatrixWY;
+			scaleMatrixWZs[i] = g_transformCache.scaleMatrixWZ;
+			scaleMatrixWWs[i] = g_transformCache.scaleMatrixWW;
 		}
 
 		// Translate down so floor vertices go underground and ceiling is at y=0.
@@ -1384,7 +1375,7 @@ namespace
 	}
 
 	template<int N>
-	void VertexShader_EntityN(const int *__restrict meshIndices, const double *__restrict vertexXs, const double *__restrict vertexYs,
+	void VertexShader_EntityN(const double *__restrict vertexXs, const double *__restrict vertexYs,
 		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
 		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
@@ -1406,23 +1397,23 @@ namespace
 		double modelViewProjMatrixWWs[N];
 		for (int i = 0; i < N; i++)
 		{
-			const int meshIndex = meshIndices[i];
-			modelViewProjMatrixXXs[i] = g_transformCaches.modelViewProjMatrixXXs[meshIndex];
-			modelViewProjMatrixXYs[i] = g_transformCaches.modelViewProjMatrixXYs[meshIndex];
-			modelViewProjMatrixXZs[i] = g_transformCaches.modelViewProjMatrixXZs[meshIndex];
-			modelViewProjMatrixXWs[i] = g_transformCaches.modelViewProjMatrixXWs[meshIndex];
-			modelViewProjMatrixYXs[i] = g_transformCaches.modelViewProjMatrixYXs[meshIndex];
-			modelViewProjMatrixYYs[i] = g_transformCaches.modelViewProjMatrixYYs[meshIndex];
-			modelViewProjMatrixYZs[i] = g_transformCaches.modelViewProjMatrixYZs[meshIndex];
-			modelViewProjMatrixYWs[i] = g_transformCaches.modelViewProjMatrixYWs[meshIndex];
-			modelViewProjMatrixZXs[i] = g_transformCaches.modelViewProjMatrixZXs[meshIndex];
-			modelViewProjMatrixZYs[i] = g_transformCaches.modelViewProjMatrixZYs[meshIndex];
-			modelViewProjMatrixZZs[i] = g_transformCaches.modelViewProjMatrixZZs[meshIndex];
-			modelViewProjMatrixZWs[i] = g_transformCaches.modelViewProjMatrixZWs[meshIndex];
-			modelViewProjMatrixWXs[i] = g_transformCaches.modelViewProjMatrixWXs[meshIndex];
-			modelViewProjMatrixWYs[i] = g_transformCaches.modelViewProjMatrixWYs[meshIndex];
-			modelViewProjMatrixWZs[i] = g_transformCaches.modelViewProjMatrixWZs[meshIndex];
-			modelViewProjMatrixWWs[i] = g_transformCaches.modelViewProjMatrixWWs[meshIndex];
+			// @todo: this isn't taking meshIndex anymore
+			modelViewProjMatrixXXs[i] = g_transformCache.modelViewProjMatrixXX;
+			modelViewProjMatrixXYs[i] = g_transformCache.modelViewProjMatrixXY;
+			modelViewProjMatrixXZs[i] = g_transformCache.modelViewProjMatrixXZ;
+			modelViewProjMatrixXWs[i] = g_transformCache.modelViewProjMatrixXW;
+			modelViewProjMatrixYXs[i] = g_transformCache.modelViewProjMatrixYX;
+			modelViewProjMatrixYYs[i] = g_transformCache.modelViewProjMatrixYY;
+			modelViewProjMatrixYZs[i] = g_transformCache.modelViewProjMatrixYZ;
+			modelViewProjMatrixYWs[i] = g_transformCache.modelViewProjMatrixYW;
+			modelViewProjMatrixZXs[i] = g_transformCache.modelViewProjMatrixZX;
+			modelViewProjMatrixZYs[i] = g_transformCache.modelViewProjMatrixZY;
+			modelViewProjMatrixZZs[i] = g_transformCache.modelViewProjMatrixZZ;
+			modelViewProjMatrixZWs[i] = g_transformCache.modelViewProjMatrixZW;
+			modelViewProjMatrixWXs[i] = g_transformCache.modelViewProjMatrixWX;
+			modelViewProjMatrixWYs[i] = g_transformCache.modelViewProjMatrixWY;
+			modelViewProjMatrixWZs[i] = g_transformCache.modelViewProjMatrixWZ;
+			modelViewProjMatrixWWs[i] = g_transformCache.modelViewProjMatrixWW;
 		}
 
 		// Apply model-view-projection matrix.
@@ -1873,45 +1864,45 @@ namespace
 		double uv1Ys[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
 		double uv2Xs[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
 		double uv2Ys[MAX_VERTEX_SHADING_CACHE_TRIANGLES];
-		int meshProcessCacheIndices[MAX_VERTEX_SHADING_CACHE_TRIANGLES]; // Each triangle's mesh process cache it belongs to.
 		int triangleCount;
 	};
 
 	// Vertex shader results to be iterated over during clipping.
-	struct VertexShaderOutputCaches
+	struct VertexShaderOutputCache
 	{
-		double shadedV0XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_DRAW_CALL_MESH_TRIANGLES][4];
-		double shadedV1XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_DRAW_CALL_MESH_TRIANGLES][4];
-		double shadedV2XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_DRAW_CALL_MESH_TRIANGLES][4];
-		double uv0XYArrays[MAX_MESH_PROCESS_CACHES][MAX_DRAW_CALL_MESH_TRIANGLES][2];
-		double uv1XYArrays[MAX_MESH_PROCESS_CACHES][MAX_DRAW_CALL_MESH_TRIANGLES][2];
-		double uv2XYArrays[MAX_MESH_PROCESS_CACHES][MAX_DRAW_CALL_MESH_TRIANGLES][2];
-		int triangleWriteCounts[MAX_MESH_PROCESS_CACHES]; // This should match the draw call triangle count.
+		double shadedV0XYZWArray[MAX_DRAW_CALL_MESH_TRIANGLES][4];
+		double shadedV1XYZWArray[MAX_DRAW_CALL_MESH_TRIANGLES][4];
+		double shadedV2XYZWArray[MAX_DRAW_CALL_MESH_TRIANGLES][4];
+		double uv0XYArray[MAX_DRAW_CALL_MESH_TRIANGLES][2];
+		double uv1XYArray[MAX_DRAW_CALL_MESH_TRIANGLES][2];
+		double uv2XYArray[MAX_DRAW_CALL_MESH_TRIANGLES][2];
+		int triangleWriteCount; // This should match the draw call triangle count.
 	};
 
-	struct ClippingOutputCaches
+	struct ClippingOutputCache
 	{
 		// Triangles generated by clipping the current mesh. These are sent to the rasterizer.
-		double clipSpaceMeshV0XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES][4];
-		double clipSpaceMeshV1XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES][4];
-		double clipSpaceMeshV2XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES][4];
-		double clipSpaceMeshUV0XYArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES][2];
-		double clipSpaceMeshUV1XYArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES][2];
-		double clipSpaceMeshUV2XYArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES][2];
-		int clipSpaceMeshTriangleCounts[MAX_MESH_PROCESS_CACHES]; // Number of triangles in these clip space meshes to be rasterized.
+		double clipSpaceMeshV0XYZWArray[MAX_CLIPPED_MESH_TRIANGLES][4];
+		double clipSpaceMeshV1XYZWArray[MAX_CLIPPED_MESH_TRIANGLES][4];
+		double clipSpaceMeshV2XYZWArray[MAX_CLIPPED_MESH_TRIANGLES][4];
+		double clipSpaceMeshUV0XYArray[MAX_CLIPPED_MESH_TRIANGLES][2];
+		double clipSpaceMeshUV1XYArray[MAX_CLIPPED_MESH_TRIANGLES][2];
+		double clipSpaceMeshUV2XYArray[MAX_CLIPPED_MESH_TRIANGLES][2];
+		int clipSpaceMeshTriangleCount; // Number of triangles in these clip space meshes to be rasterized.
+		int clipSpaceMeshDrawCallIndex; // @todo
 
 		// Triangles generated by clipping the current triangle against clipping planes.
-		double clipSpaceTriangleV0XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_TRIANGLE_TRIANGLES][4];
-		double clipSpaceTriangleV1XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_TRIANGLE_TRIANGLES][4];
-		double clipSpaceTriangleV2XYZWArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_TRIANGLE_TRIANGLES][4];
-		double clipSpaceTriangleUV0XYArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_TRIANGLE_TRIANGLES][2];
-		double clipSpaceTriangleUV1XYArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_TRIANGLE_TRIANGLES][2];
-		double clipSpaceTriangleUV2XYArrays[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_TRIANGLE_TRIANGLES][2];
+		double clipSpaceTriangleV0XYZWArray[MAX_CLIPPED_TRIANGLE_TRIANGLES][4];
+		double clipSpaceTriangleV1XYZWArray[MAX_CLIPPED_TRIANGLE_TRIANGLES][4];
+		double clipSpaceTriangleV2XYZWArray[MAX_CLIPPED_TRIANGLE_TRIANGLES][4];
+		double clipSpaceTriangleUV0XYArray[MAX_CLIPPED_TRIANGLE_TRIANGLES][2];
+		double clipSpaceTriangleUV1XYArray[MAX_CLIPPED_TRIANGLE_TRIANGLES][2];
+		double clipSpaceTriangleUV2XYArray[MAX_CLIPPED_TRIANGLE_TRIANGLES][2];
 	};
 
 	VertexShaderInputCache g_vertexShaderInputCache;
-	VertexShaderOutputCaches g_vertexShaderOutputCaches;
-	ClippingOutputCaches g_clippingOutputCaches;
+	VertexShaderOutputCache g_vertexShaderOutputCache;
+	ClippingOutputCache g_clippingOutputCache;
 
 	int g_totalDrawCallCount = 0;
 	int g_totalPresentedTriangleCount = 0; // Triangles the rasterizer spends any time attempting to shade pixels for.
@@ -1923,311 +1914,128 @@ namespace
 	}
 
 	// Handles the vertex/attribute/index buffer lookups for more efficient processing later.
-	void ProcessMeshBufferLookups(int meshCount)
+	void ProcessMeshBufferLookups()
 	{
 		g_vertexShaderInputCache.triangleCount = 0;
 
 		// Append vertices and texture coordinates into big arrays. The incoming meshes are likely tiny like 2 triangles each,
 		// so this makes the total triangle loop longer for ease of number crunching.
-		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
+		const double *verticesPtr = g_drawCallCache.vertexBuffer->vertices.begin();
+		const double *texCoordsPtr = g_drawCallCache.texCoordBuffer->attributes.begin();
+		const SoftwareRenderer::IndexBuffer &indexBuffer = *g_drawCallCache.indexBuffer;
+		const int32_t *indicesPtr = indexBuffer.indices.begin();
+		const int meshTriangleCount = indexBuffer.triangleCount;
+		DebugAssert(meshTriangleCount <= MAX_DRAW_CALL_MESH_TRIANGLES);
+
+		int writeIndex = 0;
+		DebugAssert((writeIndex + meshTriangleCount) <= MAX_VERTEX_SHADING_CACHE_TRIANGLES);
+		for (int triangleIndex = 0; triangleIndex < meshTriangleCount; triangleIndex++)
 		{
-			const double *verticesPtr = g_drawCallCaches.vertexBuffers[meshIndex]->vertices.begin();
-			const double *texCoordsPtr = g_drawCallCaches.texCoordBuffers[meshIndex]->attributes.begin();
-			const SoftwareRenderer::IndexBuffer &indexBuffer = *g_drawCallCaches.indexBuffers[meshIndex];
-			const int32_t *indicesPtr = indexBuffer.indices.begin();
-			const int meshTriangleCount = indexBuffer.triangleCount;
-			DebugAssert(meshTriangleCount <= MAX_DRAW_CALL_MESH_TRIANGLES);
-
-			int writeIndex = g_vertexShaderInputCache.triangleCount;
-			DebugAssert((writeIndex + meshTriangleCount) <= MAX_VERTEX_SHADING_CACHE_TRIANGLES);
-			for (int triangleIndex = 0; triangleIndex < meshTriangleCount; triangleIndex++)
-			{
-				constexpr int indicesPerTriangle = 3;
-				constexpr int positionComponentsPerVertex = 3;
-				constexpr int texCoordComponentsPerVertex = 2;
-				const int indexBufferBase = triangleIndex * indicesPerTriangle;
-				const int32_t index0 = indicesPtr[indexBufferBase];
-				const int32_t index1 = indicesPtr[indexBufferBase + 1];
-				const int32_t index2 = indicesPtr[indexBufferBase + 2];
-				const int32_t v0Index = index0 * positionComponentsPerVertex;
-				const int32_t v1Index = index1 * positionComponentsPerVertex;
-				const int32_t v2Index = index2 * positionComponentsPerVertex;
-				const int32_t uv0Index = index0 * texCoordComponentsPerVertex;
-				const int32_t uv1Index = index1 * texCoordComponentsPerVertex;
-				const int32_t uv2Index = index2 * texCoordComponentsPerVertex;
-				g_vertexShaderInputCache.unshadedV0Xs[writeIndex] = verticesPtr[v0Index];
-				g_vertexShaderInputCache.unshadedV0Ys[writeIndex] = verticesPtr[v0Index + 1];
-				g_vertexShaderInputCache.unshadedV0Zs[writeIndex] = verticesPtr[v0Index + 2];
-				g_vertexShaderInputCache.unshadedV0Ws[writeIndex] = 1.0;
-				g_vertexShaderInputCache.unshadedV1Xs[writeIndex] = verticesPtr[v1Index];
-				g_vertexShaderInputCache.unshadedV1Ys[writeIndex] = verticesPtr[v1Index + 1];
-				g_vertexShaderInputCache.unshadedV1Zs[writeIndex] = verticesPtr[v1Index + 2];
-				g_vertexShaderInputCache.unshadedV1Ws[writeIndex] = 1.0;
-				g_vertexShaderInputCache.unshadedV2Xs[writeIndex] = verticesPtr[v2Index];
-				g_vertexShaderInputCache.unshadedV2Ys[writeIndex] = verticesPtr[v2Index + 1];
-				g_vertexShaderInputCache.unshadedV2Zs[writeIndex] = verticesPtr[v2Index + 2];
-				g_vertexShaderInputCache.unshadedV2Ws[writeIndex] = 1.0;
-				g_vertexShaderInputCache.uv0Xs[writeIndex] = texCoordsPtr[uv0Index];
-				g_vertexShaderInputCache.uv0Ys[writeIndex] = texCoordsPtr[uv0Index + 1];
-				g_vertexShaderInputCache.uv1Xs[writeIndex] = texCoordsPtr[uv1Index];
-				g_vertexShaderInputCache.uv1Ys[writeIndex] = texCoordsPtr[uv1Index + 1];
-				g_vertexShaderInputCache.uv2Xs[writeIndex] = texCoordsPtr[uv2Index];
-				g_vertexShaderInputCache.uv2Ys[writeIndex] = texCoordsPtr[uv2Index + 1];
-				g_vertexShaderInputCache.meshProcessCacheIndices[writeIndex] = meshIndex;
-				writeIndex++;
-			}
-
-			g_vertexShaderInputCache.triangleCount += meshTriangleCount;
+			constexpr int indicesPerTriangle = 3;
+			constexpr int positionComponentsPerVertex = 3;
+			constexpr int texCoordComponentsPerVertex = 2;
+			const int indexBufferBase = triangleIndex * indicesPerTriangle;
+			const int32_t index0 = indicesPtr[indexBufferBase];
+			const int32_t index1 = indicesPtr[indexBufferBase + 1];
+			const int32_t index2 = indicesPtr[indexBufferBase + 2];
+			const int32_t v0Index = index0 * positionComponentsPerVertex;
+			const int32_t v1Index = index1 * positionComponentsPerVertex;
+			const int32_t v2Index = index2 * positionComponentsPerVertex;
+			const int32_t uv0Index = index0 * texCoordComponentsPerVertex;
+			const int32_t uv1Index = index1 * texCoordComponentsPerVertex;
+			const int32_t uv2Index = index2 * texCoordComponentsPerVertex;
+			g_vertexShaderInputCache.unshadedV0Xs[writeIndex] = verticesPtr[v0Index];
+			g_vertexShaderInputCache.unshadedV0Ys[writeIndex] = verticesPtr[v0Index + 1];
+			g_vertexShaderInputCache.unshadedV0Zs[writeIndex] = verticesPtr[v0Index + 2];
+			g_vertexShaderInputCache.unshadedV0Ws[writeIndex] = 1.0;
+			g_vertexShaderInputCache.unshadedV1Xs[writeIndex] = verticesPtr[v1Index];
+			g_vertexShaderInputCache.unshadedV1Ys[writeIndex] = verticesPtr[v1Index + 1];
+			g_vertexShaderInputCache.unshadedV1Zs[writeIndex] = verticesPtr[v1Index + 2];
+			g_vertexShaderInputCache.unshadedV1Ws[writeIndex] = 1.0;
+			g_vertexShaderInputCache.unshadedV2Xs[writeIndex] = verticesPtr[v2Index];
+			g_vertexShaderInputCache.unshadedV2Ys[writeIndex] = verticesPtr[v2Index + 1];
+			g_vertexShaderInputCache.unshadedV2Zs[writeIndex] = verticesPtr[v2Index + 2];
+			g_vertexShaderInputCache.unshadedV2Ws[writeIndex] = 1.0;
+			g_vertexShaderInputCache.uv0Xs[writeIndex] = texCoordsPtr[uv0Index];
+			g_vertexShaderInputCache.uv0Ys[writeIndex] = texCoordsPtr[uv0Index + 1];
+			g_vertexShaderInputCache.uv1Xs[writeIndex] = texCoordsPtr[uv1Index];
+			g_vertexShaderInputCache.uv1Ys[writeIndex] = texCoordsPtr[uv1Index + 1];
+			g_vertexShaderInputCache.uv2Xs[writeIndex] = texCoordsPtr[uv2Index];
+			g_vertexShaderInputCache.uv2Ys[writeIndex] = texCoordsPtr[uv2Index + 1];
+			writeIndex++;
 		}
+
+		g_vertexShaderInputCache.triangleCount = meshTriangleCount;
 	}
 
-	void CalculateVertexShaderTransforms(int meshCount)
+	void CalculateVertexShaderTransforms()
 	{
-		constexpr int loopUnrollCount = TYPICAL_LOOP_UNROLL;
-		static_assert(loopUnrollCount <= MAX_MESH_PROCESS_CACHES);
+		double rotationScaleMatrixXX, rotationScaleMatrixXY, rotationScaleMatrixXZ, rotationScaleMatrixXW;
+		double rotationScaleMatrixYX, rotationScaleMatrixYY, rotationScaleMatrixYZ, rotationScaleMatrixYW;
+		double rotationScaleMatrixZX, rotationScaleMatrixZY, rotationScaleMatrixZZ, rotationScaleMatrixZW;
+		double rotationScaleMatrixWX, rotationScaleMatrixWY, rotationScaleMatrixWZ, rotationScaleMatrixWW;
+		double modelMatrixXX, modelMatrixXY, modelMatrixXZ, modelMatrixXW;
+		double modelMatrixYX, modelMatrixYY, modelMatrixYZ, modelMatrixYW;
+		double modelMatrixZX, modelMatrixZY, modelMatrixZZ, modelMatrixZW;
+		double modelMatrixWX, modelMatrixWY, modelMatrixWZ, modelMatrixWW;
 
-		double rotationScaleMatrixXXs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixXYs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixXZs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixXWs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixYXs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixYYs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixYZs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixYWs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixZXs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixZYs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixZZs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixZWs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixWXs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixWYs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixWZs[MAX_MESH_PROCESS_CACHES];
-		double rotationScaleMatrixWWs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixXXs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixXYs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixXZs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixXWs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixYXs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixYYs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixYZs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixYWs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixZXs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixZYs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixZZs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixZWs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixWXs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixWYs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixWZs[MAX_MESH_PROCESS_CACHES];
-		double modelMatrixWWs[MAX_MESH_PROCESS_CACHES];
+		// Rotation-scale matrix
+		Matrix4_MultiplyMatrixN<1>(
+			&g_transformCache.rotationMatrixXX, &g_transformCache.rotationMatrixXY, &g_transformCache.rotationMatrixXZ, &g_transformCache.rotationMatrixXW,
+			&g_transformCache.rotationMatrixYX, &g_transformCache.rotationMatrixYY, &g_transformCache.rotationMatrixYZ, &g_transformCache.rotationMatrixYW,
+			&g_transformCache.rotationMatrixZX, &g_transformCache.rotationMatrixZY, &g_transformCache.rotationMatrixZZ, &g_transformCache.rotationMatrixZW,
+			&g_transformCache.rotationMatrixWX, &g_transformCache.rotationMatrixWY, &g_transformCache.rotationMatrixWZ, &g_transformCache.rotationMatrixWW,
+			&g_transformCache.scaleMatrixXX, &g_transformCache.scaleMatrixXY, &g_transformCache.scaleMatrixXZ, &g_transformCache.scaleMatrixXW,
+			&g_transformCache.scaleMatrixYX, &g_transformCache.scaleMatrixYY, &g_transformCache.scaleMatrixYZ, &g_transformCache.scaleMatrixYW,
+			&g_transformCache.scaleMatrixZX, &g_transformCache.scaleMatrixZY, &g_transformCache.scaleMatrixZZ, &g_transformCache.scaleMatrixZW,
+			&g_transformCache.scaleMatrixWX, &g_transformCache.scaleMatrixWY, &g_transformCache.scaleMatrixWZ, &g_transformCache.scaleMatrixWW,
+			&rotationScaleMatrixXX, &rotationScaleMatrixXY, &rotationScaleMatrixXZ, &rotationScaleMatrixXW,
+			&rotationScaleMatrixYX, &rotationScaleMatrixYY, &rotationScaleMatrixYZ, &rotationScaleMatrixYW,
+			&rotationScaleMatrixZX, &rotationScaleMatrixZY, &rotationScaleMatrixZZ, &rotationScaleMatrixZW,
+			&rotationScaleMatrixWX, &rotationScaleMatrixWY, &rotationScaleMatrixWZ, &rotationScaleMatrixWW);
 
-		const int meshCountUnrollAdjusted = GetUnrollAdjustedLoopCount(meshCount, loopUnrollCount);
-		int meshIndex = 0;
-		while (meshIndex < meshCountUnrollAdjusted)
-		{
-			// Rotation-scale matrix
-			Matrix4_MultiplyMatrixN<loopUnrollCount>(
-				g_transformCaches.rotationMatrixXXs + meshIndex, g_transformCaches.rotationMatrixXYs + meshIndex, g_transformCaches.rotationMatrixXZs + meshIndex, g_transformCaches.rotationMatrixXWs + meshIndex,
-				g_transformCaches.rotationMatrixYXs + meshIndex, g_transformCaches.rotationMatrixYYs + meshIndex, g_transformCaches.rotationMatrixYZs + meshIndex, g_transformCaches.rotationMatrixYWs + meshIndex,
-				g_transformCaches.rotationMatrixZXs + meshIndex, g_transformCaches.rotationMatrixZYs + meshIndex, g_transformCaches.rotationMatrixZZs + meshIndex, g_transformCaches.rotationMatrixZWs + meshIndex,
-				g_transformCaches.rotationMatrixWXs + meshIndex, g_transformCaches.rotationMatrixWYs + meshIndex, g_transformCaches.rotationMatrixWZs + meshIndex, g_transformCaches.rotationMatrixWWs + meshIndex,
-				g_transformCaches.scaleMatrixXXs + meshIndex, g_transformCaches.scaleMatrixXYs + meshIndex, g_transformCaches.scaleMatrixXZs + meshIndex, g_transformCaches.scaleMatrixXWs + meshIndex,
-				g_transformCaches.scaleMatrixYXs + meshIndex, g_transformCaches.scaleMatrixYYs + meshIndex, g_transformCaches.scaleMatrixYZs + meshIndex, g_transformCaches.scaleMatrixYWs + meshIndex,
-				g_transformCaches.scaleMatrixZXs + meshIndex, g_transformCaches.scaleMatrixZYs + meshIndex, g_transformCaches.scaleMatrixZZs + meshIndex, g_transformCaches.scaleMatrixZWs + meshIndex,
-				g_transformCaches.scaleMatrixWXs + meshIndex, g_transformCaches.scaleMatrixWYs + meshIndex, g_transformCaches.scaleMatrixWZs + meshIndex, g_transformCaches.scaleMatrixWWs + meshIndex,
-				rotationScaleMatrixXXs + meshIndex, rotationScaleMatrixXYs + meshIndex, rotationScaleMatrixXZs + meshIndex, rotationScaleMatrixXWs + meshIndex,
-				rotationScaleMatrixYXs + meshIndex, rotationScaleMatrixYYs + meshIndex, rotationScaleMatrixYZs + meshIndex, rotationScaleMatrixYWs + meshIndex,
-				rotationScaleMatrixZXs + meshIndex, rotationScaleMatrixZYs + meshIndex, rotationScaleMatrixZZs + meshIndex, rotationScaleMatrixZWs + meshIndex,
-				rotationScaleMatrixWXs + meshIndex, rotationScaleMatrixWYs + meshIndex, rotationScaleMatrixWZs + meshIndex, rotationScaleMatrixWWs + meshIndex);
+		// Model matrix
+		Matrix4_MultiplyMatrixN<1>(
+			&g_transformCache.translationMatrixXX, &g_transformCache.translationMatrixXY, &g_transformCache.translationMatrixXZ, &g_transformCache.translationMatrixXW,
+			&g_transformCache.translationMatrixYX, &g_transformCache.translationMatrixYY, &g_transformCache.translationMatrixYZ, &g_transformCache.translationMatrixYW,
+			&g_transformCache.translationMatrixZX, &g_transformCache.translationMatrixZY, &g_transformCache.translationMatrixZZ, &g_transformCache.translationMatrixZW,
+			&g_transformCache.translationMatrixWX, &g_transformCache.translationMatrixWY, &g_transformCache.translationMatrixWZ, &g_transformCache.translationMatrixWW,
+			&rotationScaleMatrixXX, &rotationScaleMatrixXY, &rotationScaleMatrixXZ, &rotationScaleMatrixXW,
+			&rotationScaleMatrixYX, &rotationScaleMatrixYY, &rotationScaleMatrixYZ, &rotationScaleMatrixYW,
+			&rotationScaleMatrixZX, &rotationScaleMatrixZY, &rotationScaleMatrixZZ, &rotationScaleMatrixZW,
+			&rotationScaleMatrixWX, &rotationScaleMatrixWY, &rotationScaleMatrixWZ, &rotationScaleMatrixWW,
+			&modelMatrixXX, &modelMatrixXY, &modelMatrixXZ, &modelMatrixXW,
+			&modelMatrixYX, &modelMatrixYY, &modelMatrixYZ, &modelMatrixYW,
+			&modelMatrixZX, &modelMatrixZY, &modelMatrixZZ, &modelMatrixZW,
+			&modelMatrixWX, &modelMatrixWY, &modelMatrixWZ, &modelMatrixWW);
 
-			// Model matrix
-			Matrix4_MultiplyMatrixN<loopUnrollCount>(
-				g_transformCaches.translationMatrixXXs + meshIndex, g_transformCaches.translationMatrixXYs + meshIndex, g_transformCaches.translationMatrixXZs + meshIndex, g_transformCaches.translationMatrixXWs + meshIndex,
-				g_transformCaches.translationMatrixYXs + meshIndex, g_transformCaches.translationMatrixYYs + meshIndex, g_transformCaches.translationMatrixYZs + meshIndex, g_transformCaches.translationMatrixYWs + meshIndex,
-				g_transformCaches.translationMatrixZXs + meshIndex, g_transformCaches.translationMatrixZYs + meshIndex, g_transformCaches.translationMatrixZZs + meshIndex, g_transformCaches.translationMatrixZWs + meshIndex,
-				g_transformCaches.translationMatrixWXs + meshIndex, g_transformCaches.translationMatrixWYs + meshIndex, g_transformCaches.translationMatrixWZs + meshIndex, g_transformCaches.translationMatrixWWs + meshIndex,
-				rotationScaleMatrixXXs + meshIndex, rotationScaleMatrixXYs + meshIndex, rotationScaleMatrixXZs + meshIndex, rotationScaleMatrixXWs + meshIndex,
-				rotationScaleMatrixYXs + meshIndex, rotationScaleMatrixYYs + meshIndex, rotationScaleMatrixYZs + meshIndex, rotationScaleMatrixYWs + meshIndex,
-				rotationScaleMatrixZXs + meshIndex, rotationScaleMatrixZYs + meshIndex, rotationScaleMatrixZZs + meshIndex, rotationScaleMatrixZWs + meshIndex,
-				rotationScaleMatrixWXs + meshIndex, rotationScaleMatrixWYs + meshIndex, rotationScaleMatrixWZs + meshIndex, rotationScaleMatrixWWs + meshIndex,
-				modelMatrixXXs + meshIndex, modelMatrixXYs + meshIndex, modelMatrixXZs + meshIndex, modelMatrixXWs + meshIndex,
-				modelMatrixYXs + meshIndex, modelMatrixYYs + meshIndex, modelMatrixYZs + meshIndex, modelMatrixYWs + meshIndex,
-				modelMatrixZXs + meshIndex, modelMatrixZYs + meshIndex, modelMatrixZZs + meshIndex, modelMatrixZWs + meshIndex,
-				modelMatrixWXs + meshIndex, modelMatrixWYs + meshIndex, modelMatrixWZs + meshIndex, modelMatrixWWs + meshIndex);
-
-			// Model-view-projection matrix
-			Matrix4_MultiplyMatrixN<loopUnrollCount>(
-				g_viewProjMatrixXX, g_viewProjMatrixXY, g_viewProjMatrixXZ, g_viewProjMatrixXW,
-				g_viewProjMatrixYX, g_viewProjMatrixYY, g_viewProjMatrixYZ, g_viewProjMatrixYW,
-				g_viewProjMatrixZX, g_viewProjMatrixZY, g_viewProjMatrixZZ, g_viewProjMatrixZW,
-				g_viewProjMatrixWX, g_viewProjMatrixWY, g_viewProjMatrixWZ, g_viewProjMatrixWW,
-				modelMatrixXXs + meshIndex, modelMatrixXYs + meshIndex, modelMatrixXZs + meshIndex, modelMatrixXWs + meshIndex,
-				modelMatrixYXs + meshIndex, modelMatrixYYs + meshIndex, modelMatrixYZs + meshIndex, modelMatrixYWs + meshIndex,
-				modelMatrixZXs + meshIndex, modelMatrixZYs + meshIndex, modelMatrixZZs + meshIndex, modelMatrixZWs + meshIndex,
-				modelMatrixWXs + meshIndex, modelMatrixWYs + meshIndex, modelMatrixWZs + meshIndex, modelMatrixWWs + meshIndex,
-				g_transformCaches.modelViewProjMatrixXXs + meshIndex, g_transformCaches.modelViewProjMatrixXYs + meshIndex, g_transformCaches.modelViewProjMatrixXZs + meshIndex, g_transformCaches.modelViewProjMatrixXWs + meshIndex,
-				g_transformCaches.modelViewProjMatrixYXs + meshIndex, g_transformCaches.modelViewProjMatrixYYs + meshIndex, g_transformCaches.modelViewProjMatrixYZs + meshIndex, g_transformCaches.modelViewProjMatrixYWs + meshIndex,
-				g_transformCaches.modelViewProjMatrixZXs + meshIndex, g_transformCaches.modelViewProjMatrixZYs + meshIndex, g_transformCaches.modelViewProjMatrixZZs + meshIndex, g_transformCaches.modelViewProjMatrixZWs + meshIndex,
-				g_transformCaches.modelViewProjMatrixWXs + meshIndex, g_transformCaches.modelViewProjMatrixWYs + meshIndex, g_transformCaches.modelViewProjMatrixWZs + meshIndex, g_transformCaches.modelViewProjMatrixWWs + meshIndex);
-
-			meshIndex += loopUnrollCount;
-		}
-
-		while (meshIndex < meshCount)
-		{
-			// Rotation-scale matrix
-			Matrix4_MultiplyMatrixN<1>(
-				g_transformCaches.rotationMatrixXXs + meshIndex, g_transformCaches.rotationMatrixXYs + meshIndex, g_transformCaches.rotationMatrixXZs + meshIndex, g_transformCaches.rotationMatrixXWs + meshIndex,
-				g_transformCaches.rotationMatrixYXs + meshIndex, g_transformCaches.rotationMatrixYYs + meshIndex, g_transformCaches.rotationMatrixYZs + meshIndex, g_transformCaches.rotationMatrixYWs + meshIndex,
-				g_transformCaches.rotationMatrixZXs + meshIndex, g_transformCaches.rotationMatrixZYs + meshIndex, g_transformCaches.rotationMatrixZZs + meshIndex, g_transformCaches.rotationMatrixZWs + meshIndex,
-				g_transformCaches.rotationMatrixWXs + meshIndex, g_transformCaches.rotationMatrixWYs + meshIndex, g_transformCaches.rotationMatrixWZs + meshIndex, g_transformCaches.rotationMatrixWWs + meshIndex,
-				g_transformCaches.scaleMatrixXXs + meshIndex, g_transformCaches.scaleMatrixXYs + meshIndex, g_transformCaches.scaleMatrixXZs + meshIndex, g_transformCaches.scaleMatrixXWs + meshIndex,
-				g_transformCaches.scaleMatrixYXs + meshIndex, g_transformCaches.scaleMatrixYYs + meshIndex, g_transformCaches.scaleMatrixYZs + meshIndex, g_transformCaches.scaleMatrixYWs + meshIndex,
-				g_transformCaches.scaleMatrixZXs + meshIndex, g_transformCaches.scaleMatrixZYs + meshIndex, g_transformCaches.scaleMatrixZZs + meshIndex, g_transformCaches.scaleMatrixZWs + meshIndex,
-				g_transformCaches.scaleMatrixWXs + meshIndex, g_transformCaches.scaleMatrixWYs + meshIndex, g_transformCaches.scaleMatrixWZs + meshIndex, g_transformCaches.scaleMatrixWWs + meshIndex,
-				rotationScaleMatrixXXs + meshIndex, rotationScaleMatrixXYs + meshIndex, rotationScaleMatrixXZs + meshIndex, rotationScaleMatrixXWs + meshIndex,
-				rotationScaleMatrixYXs + meshIndex, rotationScaleMatrixYYs + meshIndex, rotationScaleMatrixYZs + meshIndex, rotationScaleMatrixYWs + meshIndex,
-				rotationScaleMatrixZXs + meshIndex, rotationScaleMatrixZYs + meshIndex, rotationScaleMatrixZZs + meshIndex, rotationScaleMatrixZWs + meshIndex,
-				rotationScaleMatrixWXs + meshIndex, rotationScaleMatrixWYs + meshIndex, rotationScaleMatrixWZs + meshIndex, rotationScaleMatrixWWs + meshIndex);
-
-			// Model matrix
-			Matrix4_MultiplyMatrixN<1>(
-				g_transformCaches.translationMatrixXXs + meshIndex, g_transformCaches.translationMatrixXYs + meshIndex, g_transformCaches.translationMatrixXZs + meshIndex, g_transformCaches.translationMatrixXWs + meshIndex,
-				g_transformCaches.translationMatrixYXs + meshIndex, g_transformCaches.translationMatrixYYs + meshIndex, g_transformCaches.translationMatrixYZs + meshIndex, g_transformCaches.translationMatrixYWs + meshIndex,
-				g_transformCaches.translationMatrixZXs + meshIndex, g_transformCaches.translationMatrixZYs + meshIndex, g_transformCaches.translationMatrixZZs + meshIndex, g_transformCaches.translationMatrixZWs + meshIndex,
-				g_transformCaches.translationMatrixWXs + meshIndex, g_transformCaches.translationMatrixWYs + meshIndex, g_transformCaches.translationMatrixWZs + meshIndex, g_transformCaches.translationMatrixWWs + meshIndex,
-				rotationScaleMatrixXXs + meshIndex, rotationScaleMatrixXYs + meshIndex, rotationScaleMatrixXZs + meshIndex, rotationScaleMatrixXWs + meshIndex,
-				rotationScaleMatrixYXs + meshIndex, rotationScaleMatrixYYs + meshIndex, rotationScaleMatrixYZs + meshIndex, rotationScaleMatrixYWs + meshIndex,
-				rotationScaleMatrixZXs + meshIndex, rotationScaleMatrixZYs + meshIndex, rotationScaleMatrixZZs + meshIndex, rotationScaleMatrixZWs + meshIndex,
-				rotationScaleMatrixWXs + meshIndex, rotationScaleMatrixWYs + meshIndex, rotationScaleMatrixWZs + meshIndex, rotationScaleMatrixWWs + meshIndex,
-				modelMatrixXXs + meshIndex, modelMatrixXYs + meshIndex, modelMatrixXZs + meshIndex, modelMatrixXWs + meshIndex,
-				modelMatrixYXs + meshIndex, modelMatrixYYs + meshIndex, modelMatrixYZs + meshIndex, modelMatrixYWs + meshIndex,
-				modelMatrixZXs + meshIndex, modelMatrixZYs + meshIndex, modelMatrixZZs + meshIndex, modelMatrixZWs + meshIndex,
-				modelMatrixWXs + meshIndex, modelMatrixWYs + meshIndex, modelMatrixWZs + meshIndex, modelMatrixWWs + meshIndex);
-
-			// Model-view-projection matrix
-			Matrix4_MultiplyMatrixN<1>(
-				g_viewProjMatrixXX, g_viewProjMatrixXY, g_viewProjMatrixXZ, g_viewProjMatrixXW,
-				g_viewProjMatrixYX, g_viewProjMatrixYY, g_viewProjMatrixYZ, g_viewProjMatrixYW,
-				g_viewProjMatrixZX, g_viewProjMatrixZY, g_viewProjMatrixZZ, g_viewProjMatrixZW,
-				g_viewProjMatrixWX, g_viewProjMatrixWY, g_viewProjMatrixWZ, g_viewProjMatrixWW,
-				modelMatrixXXs + meshIndex, modelMatrixXYs + meshIndex, modelMatrixXZs + meshIndex, modelMatrixXWs + meshIndex,
-				modelMatrixYXs + meshIndex, modelMatrixYYs + meshIndex, modelMatrixYZs + meshIndex, modelMatrixYWs + meshIndex,
-				modelMatrixZXs + meshIndex, modelMatrixZYs + meshIndex, modelMatrixZZs + meshIndex, modelMatrixZWs + meshIndex,
-				modelMatrixWXs + meshIndex, modelMatrixWYs + meshIndex, modelMatrixWZs + meshIndex, modelMatrixWWs + meshIndex,
-				g_transformCaches.modelViewProjMatrixXXs + meshIndex, g_transformCaches.modelViewProjMatrixXYs + meshIndex, g_transformCaches.modelViewProjMatrixXZs + meshIndex, g_transformCaches.modelViewProjMatrixXWs + meshIndex,
-				g_transformCaches.modelViewProjMatrixYXs + meshIndex, g_transformCaches.modelViewProjMatrixYYs + meshIndex, g_transformCaches.modelViewProjMatrixYZs + meshIndex, g_transformCaches.modelViewProjMatrixYWs + meshIndex,
-				g_transformCaches.modelViewProjMatrixZXs + meshIndex, g_transformCaches.modelViewProjMatrixZYs + meshIndex, g_transformCaches.modelViewProjMatrixZZs + meshIndex, g_transformCaches.modelViewProjMatrixZWs + meshIndex,
-				g_transformCaches.modelViewProjMatrixWXs + meshIndex, g_transformCaches.modelViewProjMatrixWYs + meshIndex, g_transformCaches.modelViewProjMatrixWZs + meshIndex, g_transformCaches.modelViewProjMatrixWWs + meshIndex);
-
-			meshIndex++;
-		}
+		// Model-view-projection matrix
+		Matrix4_MultiplyMatrixN<1>(
+			g_viewProjMatrixXX, g_viewProjMatrixXY, g_viewProjMatrixXZ, g_viewProjMatrixXW,
+			g_viewProjMatrixYX, g_viewProjMatrixYY, g_viewProjMatrixYZ, g_viewProjMatrixYW,
+			g_viewProjMatrixZX, g_viewProjMatrixZY, g_viewProjMatrixZZ, g_viewProjMatrixZW,
+			g_viewProjMatrixWX, g_viewProjMatrixWY, g_viewProjMatrixWZ, g_viewProjMatrixWW,
+			&modelMatrixXX, &modelMatrixXY, &modelMatrixXZ, &modelMatrixXW,
+			&modelMatrixYX, &modelMatrixYY, &modelMatrixYZ, &modelMatrixYW,
+			&modelMatrixZX, &modelMatrixZY, &modelMatrixZZ, &modelMatrixZW,
+			&modelMatrixWX, &modelMatrixWY, &modelMatrixWZ, &modelMatrixWW,
+			&g_transformCache.modelViewProjMatrixXX, &g_transformCache.modelViewProjMatrixXY, &g_transformCache.modelViewProjMatrixXZ, &g_transformCache.modelViewProjMatrixXW,
+			&g_transformCache.modelViewProjMatrixYX, &g_transformCache.modelViewProjMatrixYY, &g_transformCache.modelViewProjMatrixYZ, &g_transformCache.modelViewProjMatrixYW,
+			&g_transformCache.modelViewProjMatrixZX, &g_transformCache.modelViewProjMatrixZY, &g_transformCache.modelViewProjMatrixZZ, &g_transformCache.modelViewProjMatrixZW,
+			&g_transformCache.modelViewProjMatrixWX, &g_transformCache.modelViewProjMatrixWY, &g_transformCache.modelViewProjMatrixWZ, &g_transformCache.modelViewProjMatrixWW);
 	}
 
-	// Converts several meshes' world space vertices to clip space.
+	// Converts the mesh's world space vertices to clip space.
 	template<VertexShaderType vertexShaderType>
-	void ProcessVertexShadersInternal(int meshCount)
+	void ProcessVertexShadersInternal()
 	{
-		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
-		{
-			g_vertexShaderOutputCaches.triangleWriteCounts[meshIndex] = 0;
-		}
-
-		constexpr int loopUnrollCount = TYPICAL_LOOP_UNROLL;
-		static_assert(loopUnrollCount <= MAX_MESH_PROCESS_CACHES);
+		g_vertexShaderOutputCache.triangleWriteCount = 0;
 
 		// Run vertex shaders on each triangle and store the results for clipping.
 		const int triangleCount = g_vertexShaderInputCache.triangleCount;
-		const int triangleCountUnrollAdjusted = GetUnrollAdjustedLoopCount(triangleCount, loopUnrollCount);
 		int triangleIndex = 0;
-		while (triangleIndex < triangleCountUnrollAdjusted)
-		{
-			const int *meshIndices = g_vertexShaderInputCache.meshProcessCacheIndices + triangleIndex;
-			const double *unshadedV0Xs = g_vertexShaderInputCache.unshadedV0Xs + triangleIndex;
-			const double *unshadedV0Ys = g_vertexShaderInputCache.unshadedV0Ys + triangleIndex;
-			const double *unshadedV0Zs = g_vertexShaderInputCache.unshadedV0Zs + triangleIndex;
-			const double *unshadedV0Ws = g_vertexShaderInputCache.unshadedV0Ws + triangleIndex;
-			const double *unshadedV1Xs = g_vertexShaderInputCache.unshadedV1Xs + triangleIndex;
-			const double *unshadedV1Ys = g_vertexShaderInputCache.unshadedV1Ys + triangleIndex;
-			const double *unshadedV1Zs = g_vertexShaderInputCache.unshadedV1Zs + triangleIndex;
-			const double *unshadedV1Ws = g_vertexShaderInputCache.unshadedV1Ws + triangleIndex;
-			const double *unshadedV2Xs = g_vertexShaderInputCache.unshadedV2Xs + triangleIndex;
-			const double *unshadedV2Ys = g_vertexShaderInputCache.unshadedV2Ys + triangleIndex;
-			const double *unshadedV2Zs = g_vertexShaderInputCache.unshadedV2Zs + triangleIndex;
-			const double *unshadedV2Ws = g_vertexShaderInputCache.unshadedV2Ws + triangleIndex;
-			double shadedV0Xs[loopUnrollCount] = { 0.0 };
-			double shadedV0Ys[loopUnrollCount] = { 0.0 };
-			double shadedV0Zs[loopUnrollCount] = { 0.0 };
-			double shadedV0Ws[loopUnrollCount] = { 0.0 };
-			double shadedV1Xs[loopUnrollCount] = { 0.0 };
-			double shadedV1Ys[loopUnrollCount] = { 0.0 };
-			double shadedV1Zs[loopUnrollCount] = { 0.0 };
-			double shadedV1Ws[loopUnrollCount] = { 0.0 };
-			double shadedV2Xs[loopUnrollCount] = { 0.0 };
-			double shadedV2Ys[loopUnrollCount] = { 0.0 };
-			double shadedV2Zs[loopUnrollCount] = { 0.0 };
-			double shadedV2Ws[loopUnrollCount] = { 0.0 };
-
-			if constexpr (vertexShaderType == VertexShaderType::Basic)
-			{
-				VertexShader_BasicN<loopUnrollCount>(meshIndices, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_BasicN<loopUnrollCount>(meshIndices, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_BasicN<loopUnrollCount>(meshIndices, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
-			}
-			else if (vertexShaderType == VertexShaderType::RaisingDoor)
-			{
-				VertexShader_RaisingDoorN<loopUnrollCount>(meshIndices, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_RaisingDoorN<loopUnrollCount>(meshIndices, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_RaisingDoorN<loopUnrollCount>(meshIndices, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
-			}
-			else if (vertexShaderType == VertexShaderType::Entity)
-			{
-				VertexShader_EntityN<loopUnrollCount>(meshIndices, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_EntityN<loopUnrollCount>(meshIndices, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_EntityN<loopUnrollCount>(meshIndices, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
-			}
-
-			for (int i = 0; i < loopUnrollCount; i++)
-			{
-				const int unrollMeshIndex = meshIndices[i];
-				int &writeIndex = g_vertexShaderOutputCaches.triangleWriteCounts[unrollMeshIndex];
-				DebugAssert(writeIndex < MAX_DRAW_CALL_MESH_TRIANGLES);
-
-				// Change from SoA back to AoS due to how clipping currently reads vertices.
-				// - @todo: understand how to make clipping use SoA so the shadedV0/1/2 array can just go straight to these instead
-				auto &resultV0XYZW = g_vertexShaderOutputCaches.shadedV0XYZWArrays[unrollMeshIndex][writeIndex];
-				auto &resultV1XYZW = g_vertexShaderOutputCaches.shadedV1XYZWArrays[unrollMeshIndex][writeIndex];
-				auto &resultV2XYZW = g_vertexShaderOutputCaches.shadedV2XYZWArrays[unrollMeshIndex][writeIndex];
-				auto &resultUV0XY = g_vertexShaderOutputCaches.uv0XYArrays[unrollMeshIndex][writeIndex];
-				auto &resultUV1XY = g_vertexShaderOutputCaches.uv1XYArrays[unrollMeshIndex][writeIndex];
-				auto &resultUV2XY = g_vertexShaderOutputCaches.uv2XYArrays[unrollMeshIndex][writeIndex];
-				resultV0XYZW[0] = shadedV0Xs[i];
-				resultV0XYZW[1] = shadedV0Ys[i];
-				resultV0XYZW[2] = shadedV0Zs[i];
-				resultV0XYZW[3] = shadedV0Ws[i];
-				resultV1XYZW[0] = shadedV1Xs[i];
-				resultV1XYZW[1] = shadedV1Ys[i];
-				resultV1XYZW[2] = shadedV1Zs[i];
-				resultV1XYZW[3] = shadedV1Ws[i];
-				resultV2XYZW[0] = shadedV2Xs[i];
-				resultV2XYZW[1] = shadedV2Ys[i];
-				resultV2XYZW[2] = shadedV2Zs[i];
-				resultV2XYZW[3] = shadedV2Ws[i];
-
-				const int unrollTriangleIndex = triangleIndex + i;
-				resultUV0XY[0] = g_vertexShaderInputCache.uv0Xs[unrollTriangleIndex];
-				resultUV0XY[1] = g_vertexShaderInputCache.uv0Ys[unrollTriangleIndex];
-				resultUV1XY[0] = g_vertexShaderInputCache.uv1Xs[unrollTriangleIndex];
-				resultUV1XY[1] = g_vertexShaderInputCache.uv1Ys[unrollTriangleIndex];
-				resultUV2XY[0] = g_vertexShaderInputCache.uv2Xs[unrollTriangleIndex];
-				resultUV2XY[1] = g_vertexShaderInputCache.uv2Ys[unrollTriangleIndex];
-				writeIndex++;
-			}
-
-			triangleIndex += loopUnrollCount;
-		}
-
 		while (triangleIndex < triangleCount)
 		{
-			const int meshIndex = g_vertexShaderInputCache.meshProcessCacheIndices[triangleIndex];
 			const double unshadedV0Xs[1] = { g_vertexShaderInputCache.unshadedV0Xs[triangleIndex] };
 			const double unshadedV0Ys[1] = { g_vertexShaderInputCache.unshadedV0Ys[triangleIndex] };
 			const double unshadedV0Zs[1] = { g_vertexShaderInputCache.unshadedV0Zs[triangleIndex] };
@@ -2255,32 +2063,32 @@ namespace
 
 			if constexpr (vertexShaderType == VertexShaderType::Basic)
 			{
-				VertexShader_BasicN<1>(&meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_BasicN<1>(&meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_BasicN<1>(&meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_BasicN<1>(unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_BasicN<1>(unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_BasicN<1>(unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 			else if (vertexShaderType == VertexShaderType::RaisingDoor)
 			{
-				VertexShader_RaisingDoorN<1>(&meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_RaisingDoorN<1>(&meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_RaisingDoorN<1>(&meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_RaisingDoorN<1>(unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_RaisingDoorN<1>(unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_RaisingDoorN<1>(unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 			else if (vertexShaderType == VertexShaderType::Entity)
 			{
-				VertexShader_EntityN<1>(&meshIndex, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_EntityN<1>(&meshIndex, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_EntityN<1>(&meshIndex, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_EntityN<1>(unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_EntityN<1>(unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_EntityN<1>(unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 
-			int &writeIndex = g_vertexShaderOutputCaches.triangleWriteCounts[meshIndex];
+			int &writeIndex = g_vertexShaderOutputCache.triangleWriteCount;
 			DebugAssert(writeIndex < MAX_DRAW_CALL_MESH_TRIANGLES);
 
-			auto &resultV0XYZW = g_vertexShaderOutputCaches.shadedV0XYZWArrays[meshIndex][writeIndex];
-			auto &resultV1XYZW = g_vertexShaderOutputCaches.shadedV1XYZWArrays[meshIndex][writeIndex];
-			auto &resultV2XYZW = g_vertexShaderOutputCaches.shadedV2XYZWArrays[meshIndex][writeIndex];
-			auto &resultUV0XY = g_vertexShaderOutputCaches.uv0XYArrays[meshIndex][writeIndex];
-			auto &resultUV1XY = g_vertexShaderOutputCaches.uv1XYArrays[meshIndex][writeIndex];
-			auto &resultUV2XY = g_vertexShaderOutputCaches.uv2XYArrays[meshIndex][writeIndex];
+			auto &resultV0XYZW = g_vertexShaderOutputCache.shadedV0XYZWArray[writeIndex];
+			auto &resultV1XYZW = g_vertexShaderOutputCache.shadedV1XYZWArray[writeIndex];
+			auto &resultV2XYZW = g_vertexShaderOutputCache.shadedV2XYZWArray[writeIndex];
+			auto &resultUV0XY = g_vertexShaderOutputCache.uv0XYArray[writeIndex];
+			auto &resultUV1XY = g_vertexShaderOutputCache.uv1XYArray[writeIndex];
+			auto &resultUV2XY = g_vertexShaderOutputCache.uv2XYArray[writeIndex];
 			resultV0XYZW[0] = shadedV0Xs[0];
 			resultV0XYZW[1] = shadedV0Ys[0];
 			resultV0XYZW[2] = shadedV0Zs[0];
@@ -2306,19 +2114,19 @@ namespace
 
 	// Operates on the current sequence of draw call meshes with the chosen vertex shader then writes results
 	// to a cache for mesh clipping.
-	void ProcessVertexShaders(int meshCount, VertexShaderType vertexShaderType)
+	void ProcessVertexShaders(VertexShaderType vertexShaderType)
 	{
 		// Dispatch based on vertex shader.
 		switch (vertexShaderType)
 		{
 		case VertexShaderType::Basic:
-			ProcessVertexShadersInternal<VertexShaderType::Basic>(meshCount);
+			ProcessVertexShadersInternal<VertexShaderType::Basic>();
 			break;
 		case VertexShaderType::RaisingDoor:
-			ProcessVertexShadersInternal<VertexShaderType::RaisingDoor>(meshCount);
+			ProcessVertexShadersInternal<VertexShaderType::RaisingDoor>();
 			break;
 		case VertexShaderType::Entity:
-			ProcessVertexShadersInternal<VertexShaderType::Entity>(meshCount);
+			ProcessVertexShadersInternal<VertexShaderType::Entity>();
 			break;
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
@@ -2327,14 +2135,14 @@ namespace
 	}
 
 	template<int clipPlaneIndex>
-	void ProcessClippingWithPlane(int meshIndex, int &clipListSize, int &clipListFrontIndex)
+	void ProcessClippingWithPlane(int &clipListSize, int &clipListFrontIndex)
 	{
-		auto &clipSpaceTriangleV0XYZWs = g_clippingOutputCaches.clipSpaceTriangleV0XYZWArrays[meshIndex];
-		auto &clipSpaceTriangleV1XYZWs = g_clippingOutputCaches.clipSpaceTriangleV1XYZWArrays[meshIndex];
-		auto &clipSpaceTriangleV2XYZWs = g_clippingOutputCaches.clipSpaceTriangleV2XYZWArrays[meshIndex];
-		auto &clipSpaceTriangleUV0XYs = g_clippingOutputCaches.clipSpaceTriangleUV0XYArrays[meshIndex];
-		auto &clipSpaceTriangleUV1XYs = g_clippingOutputCaches.clipSpaceTriangleUV1XYArrays[meshIndex];
-		auto &clipSpaceTriangleUV2XYs = g_clippingOutputCaches.clipSpaceTriangleUV2XYArrays[meshIndex];
+		auto &clipSpaceTriangleV0XYZWs = g_clippingOutputCache.clipSpaceTriangleV0XYZWArray;
+		auto &clipSpaceTriangleV1XYZWs = g_clippingOutputCache.clipSpaceTriangleV1XYZWArray;
+		auto &clipSpaceTriangleV2XYZWs = g_clippingOutputCache.clipSpaceTriangleV2XYZWArray;
+		auto &clipSpaceTriangleUV0XYs = g_clippingOutputCache.clipSpaceTriangleUV0XYArray;
+		auto &clipSpaceTriangleUV1XYs = g_clippingOutputCache.clipSpaceTriangleUV1XYArray;
+		auto &clipSpaceTriangleUV2XYs = g_clippingOutputCache.clipSpaceTriangleUV2XYArray;
 
 		const int trianglesToClipCount = clipListSize - clipListFrontIndex;
 		for (int triangleToClip = trianglesToClipCount; triangleToClip > 0; triangleToClip--)
@@ -2600,123 +2408,120 @@ namespace
 	}
 
 	// Clips triangles to the frustum then writes out clip space triangle indices for the rasterizer to iterate.
-	void ProcessClipping(int meshCount)
+	void ProcessClipping()
 	{
-		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
+		const auto &shadedV0XYZWs = g_vertexShaderOutputCache.shadedV0XYZWArray;
+		const auto &shadedV1XYZWs = g_vertexShaderOutputCache.shadedV1XYZWArray;
+		const auto &shadedV2XYZWs = g_vertexShaderOutputCache.shadedV2XYZWArray;
+		const auto &uv0XYs = g_vertexShaderOutputCache.uv0XYArray;
+		const auto &uv1XYs = g_vertexShaderOutputCache.uv1XYArray;
+		const auto &uv2XYs = g_vertexShaderOutputCache.uv2XYArray;
+		auto &clipSpaceTriangleV0XYZWs = g_clippingOutputCache.clipSpaceTriangleV0XYZWArray;
+		auto &clipSpaceTriangleV1XYZWs = g_clippingOutputCache.clipSpaceTriangleV1XYZWArray;
+		auto &clipSpaceTriangleV2XYZWs = g_clippingOutputCache.clipSpaceTriangleV2XYZWArray;
+		auto &clipSpaceTriangleUV0XYs = g_clippingOutputCache.clipSpaceTriangleUV0XYArray;
+		auto &clipSpaceTriangleUV1XYs = g_clippingOutputCache.clipSpaceTriangleUV1XYArray;
+		auto &clipSpaceTriangleUV2XYs = g_clippingOutputCache.clipSpaceTriangleUV2XYArray;
+		auto &clipSpaceMeshV0XYZWs = g_clippingOutputCache.clipSpaceMeshV0XYZWArray;
+		auto &clipSpaceMeshV1XYZWs = g_clippingOutputCache.clipSpaceMeshV1XYZWArray;
+		auto &clipSpaceMeshV2XYZWs = g_clippingOutputCache.clipSpaceMeshV2XYZWArray;
+		auto &clipSpaceMeshUV0XYs = g_clippingOutputCache.clipSpaceMeshUV0XYArray;
+		auto &clipSpaceMeshUV1XYs = g_clippingOutputCache.clipSpaceMeshUV1XYArray;
+		auto &clipSpaceMeshUV2XYs = g_clippingOutputCache.clipSpaceMeshUV2XYArray;
+		int &clipSpaceMeshTriangleCount = g_clippingOutputCache.clipSpaceMeshTriangleCount;
+
+		// Reset clip space cache. Skip zeroing the mesh arrays for performance.
+		clipSpaceMeshTriangleCount = 0;
+
+		// Clip each vertex-shaded triangle and save them in a cache for rasterization.
+		const int triangleCount = g_drawCallCache.indexBuffer->triangleCount;
+		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 		{
-			const auto &shadedV0XYZWs = g_vertexShaderOutputCaches.shadedV0XYZWArrays[meshIndex];
-			const auto &shadedV1XYZWs = g_vertexShaderOutputCaches.shadedV1XYZWArrays[meshIndex];
-			const auto &shadedV2XYZWs = g_vertexShaderOutputCaches.shadedV2XYZWArrays[meshIndex];
-			const auto &uv0XYs = g_vertexShaderOutputCaches.uv0XYArrays[meshIndex];
-			const auto &uv1XYs = g_vertexShaderOutputCaches.uv1XYArrays[meshIndex];
-			const auto &uv2XYs = g_vertexShaderOutputCaches.uv2XYArrays[meshIndex];
-			auto &clipSpaceTriangleV0XYZWs = g_clippingOutputCaches.clipSpaceTriangleV0XYZWArrays[meshIndex];
-			auto &clipSpaceTriangleV1XYZWs = g_clippingOutputCaches.clipSpaceTriangleV1XYZWArrays[meshIndex];
-			auto &clipSpaceTriangleV2XYZWs = g_clippingOutputCaches.clipSpaceTriangleV2XYZWArrays[meshIndex];
-			auto &clipSpaceTriangleUV0XYs = g_clippingOutputCaches.clipSpaceTriangleUV0XYArrays[meshIndex];
-			auto &clipSpaceTriangleUV1XYs = g_clippingOutputCaches.clipSpaceTriangleUV1XYArrays[meshIndex];
-			auto &clipSpaceTriangleUV2XYs = g_clippingOutputCaches.clipSpaceTriangleUV2XYArrays[meshIndex];
-			auto &clipSpaceMeshV0XYZWs = g_clippingOutputCaches.clipSpaceMeshV0XYZWArrays[meshIndex];
-			auto &clipSpaceMeshV1XYZWs = g_clippingOutputCaches.clipSpaceMeshV1XYZWArrays[meshIndex];
-			auto &clipSpaceMeshV2XYZWs = g_clippingOutputCaches.clipSpaceMeshV2XYZWArrays[meshIndex];
-			auto &clipSpaceMeshUV0XYs = g_clippingOutputCaches.clipSpaceMeshUV0XYArrays[meshIndex];
-			auto &clipSpaceMeshUV1XYs = g_clippingOutputCaches.clipSpaceMeshUV1XYArrays[meshIndex];
-			auto &clipSpaceMeshUV2XYs = g_clippingOutputCaches.clipSpaceMeshUV2XYArrays[meshIndex];
-			int &clipSpaceMeshTriangleCount = g_clippingOutputCaches.clipSpaceMeshTriangleCounts[meshIndex];
+			const auto &shadedV0XYZW = shadedV0XYZWs[triangleIndex];
+			const auto &shadedV1XYZW = shadedV1XYZWs[triangleIndex];
+			const auto &shadedV2XYZW = shadedV2XYZWs[triangleIndex];
+			const auto &uv0XY = uv0XYs[triangleIndex];
+			const auto &uv1XY = uv1XYs[triangleIndex];
+			const auto &uv2XY = uv2XYs[triangleIndex];
+			auto &firstClipSpaceTriangleV0XYZW = clipSpaceTriangleV0XYZWs[0];
+			auto &firstClipSpaceTriangleV1XYZW = clipSpaceTriangleV1XYZWs[0];
+			auto &firstClipSpaceTriangleV2XYZW = clipSpaceTriangleV2XYZWs[0];
+			auto &firstClipSpaceTriangleUV0XY = clipSpaceTriangleUV0XYs[0];
+			auto &firstClipSpaceTriangleUV1XY = clipSpaceTriangleUV1XYs[0];
+			auto &firstClipSpaceTriangleUV2XY = clipSpaceTriangleUV2XYs[0];
 
-			// Reset clip space cache. Skip zeroing the mesh arrays for performance.
-			clipSpaceMeshTriangleCount = 0;
+			// Initialize clipping loop with the vertex-shaded triangle.
+			firstClipSpaceTriangleV0XYZW[0] = shadedV0XYZW[0];
+			firstClipSpaceTriangleV0XYZW[1] = shadedV0XYZW[1];
+			firstClipSpaceTriangleV0XYZW[2] = shadedV0XYZW[2];
+			firstClipSpaceTriangleV0XYZW[3] = shadedV0XYZW[3];
+			firstClipSpaceTriangleV1XYZW[0] = shadedV1XYZW[0];
+			firstClipSpaceTriangleV1XYZW[1] = shadedV1XYZW[1];
+			firstClipSpaceTriangleV1XYZW[2] = shadedV1XYZW[2];
+			firstClipSpaceTriangleV1XYZW[3] = shadedV1XYZW[3];
+			firstClipSpaceTriangleV2XYZW[0] = shadedV2XYZW[0];
+			firstClipSpaceTriangleV2XYZW[1] = shadedV2XYZW[1];
+			firstClipSpaceTriangleV2XYZW[2] = shadedV2XYZW[2];
+			firstClipSpaceTriangleV2XYZW[3] = shadedV2XYZW[3];
+			firstClipSpaceTriangleUV0XY[0] = uv0XY[0];
+			firstClipSpaceTriangleUV0XY[1] = uv0XY[1];
+			firstClipSpaceTriangleUV1XY[0] = uv1XY[0];
+			firstClipSpaceTriangleUV1XY[1] = uv1XY[1];
+			firstClipSpaceTriangleUV2XY[0] = uv2XY[0];
+			firstClipSpaceTriangleUV2XY[1] = uv2XY[1];
 
-			// Clip each vertex-shaded triangle and save them in a cache for rasterization.
-			const int triangleCount = g_drawCallCaches.indexBuffers[meshIndex]->triangleCount;
-			for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+			int clipListSize = 1; // Triangles to process based on this vertex-shaded triangle.
+			int clipListFrontIndex = 0;
+
+			// Check each dimension against -W and W components.
+			ProcessClippingWithPlane<0>(clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<1>(clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<2>(clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<3>(clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<4>(clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<5>(clipListSize, clipListFrontIndex);
+
+			// Add the clip results to the mesh, skipping the incomplete triangles the front index advanced beyond.
+			const int resultTriangleCount = clipListSize - clipListFrontIndex;
+			for (int resultTriangleIndex = 0; resultTriangleIndex < resultTriangleCount; resultTriangleIndex++)
 			{
-				const auto &shadedV0XYZW = shadedV0XYZWs[triangleIndex];
-				const auto &shadedV1XYZW = shadedV1XYZWs[triangleIndex];
-				const auto &shadedV2XYZW = shadedV2XYZWs[triangleIndex];
-				const auto &uv0XY = uv0XYs[triangleIndex];
-				const auto &uv1XY = uv1XYs[triangleIndex];
-				const auto &uv2XY = uv2XYs[triangleIndex];
-				auto &firstClipSpaceTriangleV0XYZW = clipSpaceTriangleV0XYZWs[0];
-				auto &firstClipSpaceTriangleV1XYZW = clipSpaceTriangleV1XYZWs[0];
-				auto &firstClipSpaceTriangleV2XYZW = clipSpaceTriangleV2XYZWs[0];
-				auto &firstClipSpaceTriangleUV0XY = clipSpaceTriangleUV0XYs[0];
-				auto &firstClipSpaceTriangleUV1XY = clipSpaceTriangleUV1XYs[0];
-				auto &firstClipSpaceTriangleUV2XY = clipSpaceTriangleUV2XYs[0];
+				const int srcIndex = clipListFrontIndex + resultTriangleIndex;
+				const auto &clipSpaceTriangleV0XYZW = clipSpaceTriangleV0XYZWs[srcIndex];
+				const auto &clipSpaceTriangleV1XYZW = clipSpaceTriangleV1XYZWs[srcIndex];
+				const auto &clipSpaceTriangleV2XYZW = clipSpaceTriangleV2XYZWs[srcIndex];
+				const auto &clipSpaceTriangleUV0XY = clipSpaceTriangleUV0XYs[srcIndex];
+				const auto &clipSpaceTriangleUV1XY = clipSpaceTriangleUV1XYs[srcIndex];
+				const auto &clipSpaceTriangleUV2XY = clipSpaceTriangleUV2XYs[srcIndex];
 
-				// Initialize clipping loop with the vertex-shaded triangle.
-				firstClipSpaceTriangleV0XYZW[0] = shadedV0XYZW[0];
-				firstClipSpaceTriangleV0XYZW[1] = shadedV0XYZW[1];
-				firstClipSpaceTriangleV0XYZW[2] = shadedV0XYZW[2];
-				firstClipSpaceTriangleV0XYZW[3] = shadedV0XYZW[3];
-				firstClipSpaceTriangleV1XYZW[0] = shadedV1XYZW[0];
-				firstClipSpaceTriangleV1XYZW[1] = shadedV1XYZW[1];
-				firstClipSpaceTriangleV1XYZW[2] = shadedV1XYZW[2];
-				firstClipSpaceTriangleV1XYZW[3] = shadedV1XYZW[3];
-				firstClipSpaceTriangleV2XYZW[0] = shadedV2XYZW[0];
-				firstClipSpaceTriangleV2XYZW[1] = shadedV2XYZW[1];
-				firstClipSpaceTriangleV2XYZW[2] = shadedV2XYZW[2];
-				firstClipSpaceTriangleV2XYZW[3] = shadedV2XYZW[3];
-				firstClipSpaceTriangleUV0XY[0] = uv0XY[0];
-				firstClipSpaceTriangleUV0XY[1] = uv0XY[1];
-				firstClipSpaceTriangleUV1XY[0] = uv1XY[0];
-				firstClipSpaceTriangleUV1XY[1] = uv1XY[1];
-				firstClipSpaceTriangleUV2XY[0] = uv2XY[0];
-				firstClipSpaceTriangleUV2XY[1] = uv2XY[1];
+				const int dstIndex = clipSpaceMeshTriangleCount + resultTriangleIndex;
+				auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[dstIndex];
+				auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[dstIndex];
+				auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[dstIndex];
+				auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[dstIndex];
+				auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[dstIndex];
+				auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[dstIndex];
 
-				int clipListSize = 1; // Triangles to process based on this vertex-shaded triangle.
-				int clipListFrontIndex = 0;
-
-				// Check each dimension against -W and W components.
-				ProcessClippingWithPlane<0>(meshIndex, clipListSize, clipListFrontIndex);
-				ProcessClippingWithPlane<1>(meshIndex, clipListSize, clipListFrontIndex);
-				ProcessClippingWithPlane<2>(meshIndex, clipListSize, clipListFrontIndex);
-				ProcessClippingWithPlane<3>(meshIndex, clipListSize, clipListFrontIndex);
-				ProcessClippingWithPlane<4>(meshIndex, clipListSize, clipListFrontIndex);
-				ProcessClippingWithPlane<5>(meshIndex, clipListSize, clipListFrontIndex);
-
-				// Add the clip results to the mesh, skipping the incomplete triangles the front index advanced beyond.
-				const int resultTriangleCount = clipListSize - clipListFrontIndex;
-				for (int resultTriangleIndex = 0; resultTriangleIndex < resultTriangleCount; resultTriangleIndex++)
-				{
-					const int srcIndex = clipListFrontIndex + resultTriangleIndex;
-					const auto &clipSpaceTriangleV0XYZW = clipSpaceTriangleV0XYZWs[srcIndex];
-					const auto &clipSpaceTriangleV1XYZW = clipSpaceTriangleV1XYZWs[srcIndex];
-					const auto &clipSpaceTriangleV2XYZW = clipSpaceTriangleV2XYZWs[srcIndex];
-					const auto &clipSpaceTriangleUV0XY = clipSpaceTriangleUV0XYs[srcIndex];
-					const auto &clipSpaceTriangleUV1XY = clipSpaceTriangleUV1XYs[srcIndex];
-					const auto &clipSpaceTriangleUV2XY = clipSpaceTriangleUV2XYs[srcIndex];
-
-					const int dstIndex = clipSpaceMeshTriangleCount + resultTriangleIndex;
-					auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[dstIndex];
-					auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[dstIndex];
-					auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[dstIndex];
-					auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[dstIndex];
-					auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[dstIndex];
-					auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[dstIndex];
-
-					clipSpaceMeshV0XYZW[0] = clipSpaceTriangleV0XYZW[0];
-					clipSpaceMeshV0XYZW[1] = clipSpaceTriangleV0XYZW[1];
-					clipSpaceMeshV0XYZW[2] = clipSpaceTriangleV0XYZW[2];
-					clipSpaceMeshV0XYZW[3] = clipSpaceTriangleV0XYZW[3];
-					clipSpaceMeshV1XYZW[0] = clipSpaceTriangleV1XYZW[0];
-					clipSpaceMeshV1XYZW[1] = clipSpaceTriangleV1XYZW[1];
-					clipSpaceMeshV1XYZW[2] = clipSpaceTriangleV1XYZW[2];
-					clipSpaceMeshV1XYZW[3] = clipSpaceTriangleV1XYZW[3];
-					clipSpaceMeshV2XYZW[0] = clipSpaceTriangleV2XYZW[0];
-					clipSpaceMeshV2XYZW[1] = clipSpaceTriangleV2XYZW[1];
-					clipSpaceMeshV2XYZW[2] = clipSpaceTriangleV2XYZW[2];
-					clipSpaceMeshV2XYZW[3] = clipSpaceTriangleV2XYZW[3];
-					clipSpaceMeshUV0XY[0] = clipSpaceTriangleUV0XY[0];
-					clipSpaceMeshUV0XY[1] = clipSpaceTriangleUV0XY[1];
-					clipSpaceMeshUV1XY[0] = clipSpaceTriangleUV1XY[0];
-					clipSpaceMeshUV1XY[1] = clipSpaceTriangleUV1XY[1];
-					clipSpaceMeshUV2XY[0] = clipSpaceTriangleUV2XY[0];
-					clipSpaceMeshUV2XY[1] = clipSpaceTriangleUV2XY[1];
-				}
-
-				clipSpaceMeshTriangleCount += resultTriangleCount;
+				clipSpaceMeshV0XYZW[0] = clipSpaceTriangleV0XYZW[0];
+				clipSpaceMeshV0XYZW[1] = clipSpaceTriangleV0XYZW[1];
+				clipSpaceMeshV0XYZW[2] = clipSpaceTriangleV0XYZW[2];
+				clipSpaceMeshV0XYZW[3] = clipSpaceTriangleV0XYZW[3];
+				clipSpaceMeshV1XYZW[0] = clipSpaceTriangleV1XYZW[0];
+				clipSpaceMeshV1XYZW[1] = clipSpaceTriangleV1XYZW[1];
+				clipSpaceMeshV1XYZW[2] = clipSpaceTriangleV1XYZW[2];
+				clipSpaceMeshV1XYZW[3] = clipSpaceTriangleV1XYZW[3];
+				clipSpaceMeshV2XYZW[0] = clipSpaceTriangleV2XYZW[0];
+				clipSpaceMeshV2XYZW[1] = clipSpaceTriangleV2XYZW[1];
+				clipSpaceMeshV2XYZW[2] = clipSpaceTriangleV2XYZW[2];
+				clipSpaceMeshV2XYZW[3] = clipSpaceTriangleV2XYZW[3];
+				clipSpaceMeshUV0XY[0] = clipSpaceTriangleUV0XY[0];
+				clipSpaceMeshUV0XY[1] = clipSpaceTriangleUV0XY[1];
+				clipSpaceMeshUV1XY[0] = clipSpaceTriangleUV1XY[0];
+				clipSpaceMeshUV1XY[1] = clipSpaceTriangleUV1XY[1];
+				clipSpaceMeshUV2XY[0] = clipSpaceTriangleUV2XY[0];
+				clipSpaceMeshUV2XY[1] = clipSpaceTriangleUV2XY[1];
 			}
+
+			clipSpaceMeshTriangleCount += resultTriangleCount;
 		}
 	}
 }
@@ -2725,213 +2530,234 @@ namespace
 // (has to be outside a namespace due to being in SoftwareRenderer).
 struct RasterizerBin
 {
-	RasterizerTriangle visibleTriangleLists[MAX_MESH_PROCESS_CACHES][MAX_CLIPPED_MESH_TRIANGLES];
-	int triangleCounts[MAX_MESH_PROCESS_CACHES];
+	// @todo: delete these two
+	RasterizerTriangle visibleTriangleList[MAX_CLIPPED_MESH_TRIANGLES];
+	int triangleCount;
+
+	//static constexpr int MAX_TRIANGLES = 16384; // Triangles allowed per thread sync
+
+	//int triangleIndices[MAX_TRIANGLES]; // Points into RasterizerTriangle array
+	//int triangleCount;
+
+	void clear()
+	{
+		this->triangleCount = 0;
+	}
 };
 
 // Rasterizer, pixel shader execution.
 namespace
 {
-	void ProcessClipSpaceTrianglesForBinning(int meshCount)
+	//RasterizerTriangle g_binnedTriangles[MAX_CLIPPED_MESH_TRIANGLES];
+
+	void CreateRasterizerBins(Buffer2D<RasterizerBin> &rasterizerBins, int frameBufferWidth, int frameBufferHeight)
 	{
-		for (int binIndex = 0; binIndex < g_rasterizerBinCount; binIndex++)
+		const int binWidth = GetRasterizerBinWidth(frameBufferWidth);
+		const int binHeight = GetRasterizerBinHeight(frameBufferHeight);
+		const int binCountX = GetRasterizerBinCountX(frameBufferWidth, binWidth);
+		const int binCountY = GetRasterizerBinCountY(frameBufferHeight, binHeight);
+		rasterizerBins.init(binCountX, binCountY);
+	}
+
+	void EmptyRasterizerBins()
+	{
+		for (int i = 0; i < g_rasterizerBinCount; i++)
 		{
-			RasterizerBin &bin = g_rasterizerBins[binIndex];
-			std::fill(std::begin(bin.triangleCounts), std::end(bin.triangleCounts), 0);
+			g_rasterizerBins[i].clear();
 		}
+	}
 
-		for (int meshIndex = 0; meshIndex < meshCount; meshIndex++)
+	void ProcessClipSpaceTrianglesForBinning()
+	{
+		const auto &clipSpaceMeshV0XYZWs = g_clippingOutputCache.clipSpaceMeshV0XYZWArray;
+		const auto &clipSpaceMeshV1XYZWs = g_clippingOutputCache.clipSpaceMeshV1XYZWArray;
+		const auto &clipSpaceMeshV2XYZWs = g_clippingOutputCache.clipSpaceMeshV2XYZWArray;
+		const auto &clipSpaceMeshUV0XYs = g_clippingOutputCache.clipSpaceMeshUV0XYArray;
+		const auto &clipSpaceMeshUV1XYs = g_clippingOutputCache.clipSpaceMeshUV1XYArray;
+		const auto &clipSpaceMeshUV2XYs = g_clippingOutputCache.clipSpaceMeshUV2XYArray;
+
+		const int triangleCount = g_clippingOutputCache.clipSpaceMeshTriangleCount;
+		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 		{
-			const auto &clipSpaceMeshV0XYZWs = g_clippingOutputCaches.clipSpaceMeshV0XYZWArrays[meshIndex];
-			const auto &clipSpaceMeshV1XYZWs = g_clippingOutputCaches.clipSpaceMeshV1XYZWArrays[meshIndex];
-			const auto &clipSpaceMeshV2XYZWs = g_clippingOutputCaches.clipSpaceMeshV2XYZWArrays[meshIndex];
-			const auto &clipSpaceMeshUV0XYs = g_clippingOutputCaches.clipSpaceMeshUV0XYArrays[meshIndex];
-			const auto &clipSpaceMeshUV1XYs = g_clippingOutputCaches.clipSpaceMeshUV1XYArrays[meshIndex];
-			const auto &clipSpaceMeshUV2XYs = g_clippingOutputCaches.clipSpaceMeshUV2XYArrays[meshIndex];
+			const auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[triangleIndex];
+			const auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[triangleIndex];
+			const auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[triangleIndex];
+			const double clip0X = clipSpaceMeshV0XYZW[0];
+			const double clip0Y = clipSpaceMeshV0XYZW[1];
+			const double clip0Z = clipSpaceMeshV0XYZW[2];
+			const double clip0W = clipSpaceMeshV0XYZW[3];
+			const double clip1X = clipSpaceMeshV1XYZW[0];
+			const double clip1Y = clipSpaceMeshV1XYZW[1];
+			const double clip1Z = clipSpaceMeshV1XYZW[2];
+			const double clip1W = clipSpaceMeshV1XYZW[3];
+			const double clip2X = clipSpaceMeshV2XYZW[0];
+			const double clip2Y = clipSpaceMeshV2XYZW[1];
+			const double clip2Z = clipSpaceMeshV2XYZW[2];
+			const double clip2W = clipSpaceMeshV2XYZW[3];
+			const double clip0WRecip = 1.0 / clip0W;
+			const double clip1WRecip = 1.0 / clip1W;
+			const double clip2WRecip = 1.0 / clip2W;
+			const double ndc0X = clip0X * clip0WRecip;
+			const double ndc0Y = clip0Y * clip0WRecip;
+			const double ndc0Z = clip0Z * clip0WRecip;
+			const double ndc1X = clip1X * clip1WRecip;
+			const double ndc1Y = clip1Y * clip1WRecip;
+			const double ndc1Z = clip1Z * clip1WRecip;
+			const double ndc2X = clip2X * clip2WRecip;
+			const double ndc2Y = clip2Y * clip2WRecip;
+			const double ndc2Z = clip2Z * clip2WRecip;
+			const double screenSpace0X = NdcXToScreenSpace(ndc0X, g_frameBufferWidthReal);
+			const double screenSpace0Y = NdcYToScreenSpace(ndc0Y, g_frameBufferHeightReal);
+			const double screenSpace1X = NdcXToScreenSpace(ndc1X, g_frameBufferWidthReal);
+			const double screenSpace1Y = NdcYToScreenSpace(ndc1Y, g_frameBufferHeightReal);
+			const double screenSpace2X = NdcXToScreenSpace(ndc2X, g_frameBufferWidthReal);
+			const double screenSpace2Y = NdcYToScreenSpace(ndc2Y, g_frameBufferHeightReal);
+			const double screenSpace01X = screenSpace1X - screenSpace0X;
+			const double screenSpace01Y = screenSpace1Y - screenSpace0Y;
+			const double screenSpace12X = screenSpace2X - screenSpace1X;
+			const double screenSpace12Y = screenSpace2Y - screenSpace1Y;
+			const double screenSpace20X = screenSpace0X - screenSpace2X;
+			const double screenSpace20Y = screenSpace0Y - screenSpace2Y;
 
-			const int triangleCount = g_clippingOutputCaches.clipSpaceMeshTriangleCounts[meshIndex];
-			for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+			double screenSpace01Cross12, screenSpace12Cross20, screenSpace20Cross01;
+			Double2_CrossN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace01X, &screenSpace01Y, &screenSpace01Cross12);
+			Double2_CrossN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace12X, &screenSpace12Y, &screenSpace12Cross20);
+			Double2_CrossN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace20X, &screenSpace20Y, &screenSpace20Cross01);
+
+			// Discard back-facing.
+			const bool isFrontFacing = (screenSpace01Cross12 + screenSpace12Cross20 + screenSpace20Cross01) > 0.0;
+			if (!isFrontFacing)
 			{
-				const auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[triangleIndex];
-				const auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[triangleIndex];
-				const auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[triangleIndex];
-				const double clip0X = clipSpaceMeshV0XYZW[0];
-				const double clip0Y = clipSpaceMeshV0XYZW[1];
-				const double clip0Z = clipSpaceMeshV0XYZW[2];
-				const double clip0W = clipSpaceMeshV0XYZW[3];
-				const double clip1X = clipSpaceMeshV1XYZW[0];
-				const double clip1Y = clipSpaceMeshV1XYZW[1];
-				const double clip1Z = clipSpaceMeshV1XYZW[2];
-				const double clip1W = clipSpaceMeshV1XYZW[3];
-				const double clip2X = clipSpaceMeshV2XYZW[0];
-				const double clip2Y = clipSpaceMeshV2XYZW[1];
-				const double clip2Z = clipSpaceMeshV2XYZW[2];
-				const double clip2W = clipSpaceMeshV2XYZW[3];
-				const double clip0WRecip = 1.0 / clip0W;
-				const double clip1WRecip = 1.0 / clip1W;
-				const double clip2WRecip = 1.0 / clip2W;
-				const double ndc0X = clip0X * clip0WRecip;
-				const double ndc0Y = clip0Y * clip0WRecip;
-				const double ndc0Z = clip0Z * clip0WRecip;
-				const double ndc1X = clip1X * clip1WRecip;
-				const double ndc1Y = clip1Y * clip1WRecip;
-				const double ndc1Z = clip1Z * clip1WRecip;
-				const double ndc2X = clip2X * clip2WRecip;
-				const double ndc2Y = clip2Y * clip2WRecip;
-				const double ndc2Z = clip2Z * clip2WRecip;
-				const double screenSpace0X = NdcXToScreenSpace(ndc0X, g_frameBufferWidthReal);
-				const double screenSpace0Y = NdcYToScreenSpace(ndc0Y, g_frameBufferHeightReal);
-				const double screenSpace1X = NdcXToScreenSpace(ndc1X, g_frameBufferWidthReal);
-				const double screenSpace1Y = NdcYToScreenSpace(ndc1Y, g_frameBufferHeightReal);
-				const double screenSpace2X = NdcXToScreenSpace(ndc2X, g_frameBufferWidthReal);
-				const double screenSpace2Y = NdcYToScreenSpace(ndc2Y, g_frameBufferHeightReal);
-				const double screenSpace01X = screenSpace1X - screenSpace0X;
-				const double screenSpace01Y = screenSpace1Y - screenSpace0Y;
-				const double screenSpace12X = screenSpace2X - screenSpace1X;
-				const double screenSpace12Y = screenSpace2Y - screenSpace1Y;
-				const double screenSpace20X = screenSpace0X - screenSpace2X;
-				const double screenSpace20Y = screenSpace0Y - screenSpace2Y;
+				continue;
+			}
 
-				double screenSpace01Cross12, screenSpace12Cross20, screenSpace20Cross01;
-				Double2_CrossN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace01X, &screenSpace01Y, &screenSpace01Cross12);
-				Double2_CrossN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace12X, &screenSpace12Y, &screenSpace12Cross20);
-				Double2_CrossN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace20X, &screenSpace20Y, &screenSpace20Cross01);
+			// Naive screen-space bounding box around triangle.
+			const double xMin = std::min(screenSpace0X, std::min(screenSpace1X, screenSpace2X));
+			const double xMax = std::max(screenSpace0X, std::max(screenSpace1X, screenSpace2X));
+			const double yMin = std::min(screenSpace0Y, std::min(screenSpace1Y, screenSpace2Y));
+			const double yMax = std::max(screenSpace0Y, std::max(screenSpace1Y, screenSpace2Y));
+			const int xStart = RendererUtils::getLowerBoundedPixel(xMin, g_frameBufferWidth);
+			const int xEnd = RendererUtils::getUpperBoundedPixel(xMax, g_frameBufferWidth);
+			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, g_frameBufferHeight);
+			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, g_frameBufferHeight);
 
-				// Discard back-facing.
-				const bool isFrontFacing = (screenSpace01Cross12 + screenSpace12Cross20 + screenSpace20Cross01) > 0.0;
-				if (!isFrontFacing)
+			const bool hasPositiveScreenArea = (xEnd > xStart) && (yEnd > yStart);
+			if (!hasPositiveScreenArea)
+			{
+				continue;
+			}
+
+			g_totalPresentedTriangleCount++;
+
+			double screenSpace01PerpX, screenSpace01PerpY;
+			double screenSpace12PerpX, screenSpace12PerpY;
+			double screenSpace20PerpX, screenSpace20PerpY;
+			Double2_RightPerpN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01PerpX, &screenSpace01PerpY);
+			Double2_RightPerpN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace12PerpX, &screenSpace12PerpY);
+			Double2_RightPerpN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace20PerpX, &screenSpace20PerpY);
+
+			const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[triangleIndex];
+			const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[triangleIndex];
+			const auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[triangleIndex];
+			const double uv0X = clipSpaceMeshUV0XY[0];
+			const double uv0Y = clipSpaceMeshUV0XY[1];
+			const double uv1X = clipSpaceMeshUV1XY[0];
+			const double uv1Y = clipSpaceMeshUV1XY[1];
+			const double uv2X = clipSpaceMeshUV2XY[0];
+			const double uv2Y = clipSpaceMeshUV2XY[1];
+			const double uv0XDivW = uv0X * clip0WRecip;
+			const double uv0YDivW = uv0Y * clip0WRecip;
+			const double uv1XDivW = uv1X * clip1WRecip;
+			const double uv1YDivW = uv1Y * clip1WRecip;
+			const double uv2XDivW = uv2X * clip2WRecip;
+			const double uv2YDivW = uv2Y * clip2WRecip;
+
+			// Write the triangle to all affected rasterizer bins.
+			const int startBinX = GetRasterizerBinX(xStart, g_rasterizerBinWidth);
+			const int endBinX = GetRasterizerBinX(xEnd, g_rasterizerBinWidth);
+			const int startBinY = GetRasterizerBinY(yStart, g_rasterizerBinHeight);
+			const int endBinY = GetRasterizerBinY(yEnd, g_rasterizerBinHeight);
+			for (int binY = startBinY; binY <= endBinY; binY++)
+			{
+				const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0, g_rasterizerBinHeight);
+				const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, g_rasterizerBinHeight, g_rasterizerBinHeight);
+				const int clampedYStart = std::max(yStart, binStartFrameBufferPixelY);
+				const int clampedYEnd = std::min(yEnd, binEndFrameBufferPixelY);
+
+				for (int binX = startBinX; binX <= endBinX; binX++)
 				{
-					continue;
-				}
+					const int binIndex = binX + (binY * g_rasterizerBinCountX);
+					RasterizerBin &bin = g_rasterizerBins[binIndex];
+					auto &binMeshTriangles = bin.visibleTriangleList;
+					int &binMeshTriangleCount = bin.triangleCount;
+					DebugAssert(binMeshTriangleCount < std::size(binMeshTriangles));
 
-				// Naive screen-space bounding box around triangle.
-				const double xMin = std::min(screenSpace0X, std::min(screenSpace1X, screenSpace2X));
-				const double xMax = std::max(screenSpace0X, std::max(screenSpace1X, screenSpace2X));
-				const double yMin = std::min(screenSpace0Y, std::min(screenSpace1Y, screenSpace2Y));
-				const double yMax = std::max(screenSpace0Y, std::max(screenSpace1Y, screenSpace2Y));
-				const int xStart = RendererUtils::getLowerBoundedPixel(xMin, g_frameBufferWidth);
-				const int xEnd = RendererUtils::getUpperBoundedPixel(xMax, g_frameBufferWidth);
-				const int yStart = RendererUtils::getLowerBoundedPixel(yMin, g_frameBufferHeight);
-				const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, g_frameBufferHeight);
+					const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0, g_rasterizerBinWidth);
+					const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, g_rasterizerBinWidth, g_rasterizerBinWidth);
+					const int clampedXStart = std::max(xStart, binStartFrameBufferPixelX);
+					const int clampedXEnd = std::min(xEnd, binEndFrameBufferPixelX);
 
-				const bool hasPositiveScreenArea = (xEnd > xStart) && (yEnd > yStart);
-				if (!hasPositiveScreenArea)
-				{
-					continue;
-				}
+					RasterizerTriangle &triangle = binMeshTriangles[binMeshTriangleCount];
+					triangle.clip0X = clip0X;
+					triangle.clip0Y = clip0Y;
+					triangle.clip0Z = clip0Z;
+					triangle.clip0W = clip0W;
+					triangle.clip1X = clip1X;
+					triangle.clip1Y = clip1Y;
+					triangle.clip1Z = clip1Z;
+					triangle.clip1W = clip1W;
+					triangle.clip2X = clip2X;
+					triangle.clip2Y = clip2Y;
+					triangle.clip2Z = clip2Z;
+					triangle.clip2W = clip2W;
+					triangle.clip0WRecip = clip0WRecip;
+					triangle.clip1WRecip = clip1WRecip;
+					triangle.clip2WRecip = clip2WRecip;
+					triangle.ndc0X = ndc0X;
+					triangle.ndc0Y = ndc0Y;
+					triangle.ndc0Z = ndc0Z;
+					triangle.ndc1X = ndc1X;
+					triangle.ndc1Y = ndc1Y;
+					triangle.ndc1Z = ndc1Z;
+					triangle.ndc2X = ndc2X;
+					triangle.ndc2Y = ndc2Y;
+					triangle.ndc2Z = ndc2Z;
+					triangle.screenSpace0X = screenSpace0X;
+					triangle.screenSpace0Y = screenSpace0Y;
+					triangle.screenSpace1X = screenSpace1X;
+					triangle.screenSpace1Y = screenSpace1Y;
+					triangle.screenSpace2X = screenSpace2X;
+					triangle.screenSpace2Y = screenSpace2Y;
+					triangle.screenSpace01X = screenSpace01X;
+					triangle.screenSpace01Y = screenSpace01Y;
+					triangle.screenSpace12X = screenSpace12X;
+					triangle.screenSpace12Y = screenSpace12Y;
+					triangle.screenSpace20X = screenSpace20X;
+					triangle.screenSpace20Y = screenSpace20Y;
+					triangle.screenSpace01PerpX = screenSpace01PerpX;
+					triangle.screenSpace01PerpY = screenSpace01PerpY;
+					triangle.screenSpace12PerpX = screenSpace12PerpX;
+					triangle.screenSpace12PerpY = screenSpace12PerpY;
+					triangle.screenSpace20PerpX = screenSpace20PerpX;
+					triangle.screenSpace20PerpY = screenSpace20PerpY;
+					triangle.uv0X = uv0X;
+					triangle.uv0Y = uv0Y;
+					triangle.uv1X = uv1X;
+					triangle.uv1Y = uv1Y;
+					triangle.uv2X = uv2X;
+					triangle.uv2Y = uv2Y;
+					triangle.uv0XDivW = uv0XDivW;
+					triangle.uv0YDivW = uv0YDivW;
+					triangle.uv1XDivW = uv1XDivW;
+					triangle.uv1YDivW = uv1YDivW;
+					triangle.uv2XDivW = uv2XDivW;
+					triangle.uv2YDivW = uv2YDivW;
+					triangle.binPixelXStart = GetRasterizerBinPixelXInclusive(clampedXStart, g_rasterizerBinWidth);
+					triangle.binPixelXEnd = GetRasterizerBinPixelXExclusive(clampedXEnd, g_rasterizerBinWidth);
+					triangle.binPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart, g_rasterizerBinHeight);
+					triangle.binPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd, g_rasterizerBinHeight);
 
-				g_totalPresentedTriangleCount++;
-
-				double screenSpace01PerpX, screenSpace01PerpY;
-				double screenSpace12PerpX, screenSpace12PerpY;
-				double screenSpace20PerpX, screenSpace20PerpY;
-				Double2_RightPerpN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01PerpX, &screenSpace01PerpY);
-				Double2_RightPerpN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace12PerpX, &screenSpace12PerpY);
-				Double2_RightPerpN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace20PerpX, &screenSpace20PerpY);
-
-				const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[triangleIndex];
-				const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[triangleIndex];
-				const auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[triangleIndex];
-				const double uv0X = clipSpaceMeshUV0XY[0];
-				const double uv0Y = clipSpaceMeshUV0XY[1];
-				const double uv1X = clipSpaceMeshUV1XY[0];
-				const double uv1Y = clipSpaceMeshUV1XY[1];
-				const double uv2X = clipSpaceMeshUV2XY[0];
-				const double uv2Y = clipSpaceMeshUV2XY[1];
-				const double uv0XDivW = uv0X * clip0WRecip;
-				const double uv0YDivW = uv0Y * clip0WRecip;
-				const double uv1XDivW = uv1X * clip1WRecip;
-				const double uv1YDivW = uv1Y * clip1WRecip;
-				const double uv2XDivW = uv2X * clip2WRecip;
-				const double uv2YDivW = uv2Y * clip2WRecip;
-
-				// Write the triangle to all affected rasterizer bins.
-				const int startBinX = GetRasterizerBinX(xStart, g_rasterizerBinWidth);
-				const int endBinX = GetRasterizerBinX(xEnd, g_rasterizerBinWidth);
-				const int startBinY = GetRasterizerBinY(yStart, g_rasterizerBinHeight);
-				const int endBinY = GetRasterizerBinY(yEnd, g_rasterizerBinHeight);
-				for (int binY = startBinY; binY <= endBinY; binY++)
-				{
-					const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0, g_rasterizerBinHeight);
-					const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, g_rasterizerBinHeight, g_rasterizerBinHeight);
-					const int clampedYStart = std::max(yStart, binStartFrameBufferPixelY);
-					const int clampedYEnd = std::min(yEnd, binEndFrameBufferPixelY);
-
-					for (int binX = startBinX; binX <= endBinX; binX++)
-					{
-						const int binIndex = binX + (binY * g_rasterizerBinCountX);
-						RasterizerBin &bin = g_rasterizerBins[binIndex];
-						auto &binMeshTriangles = bin.visibleTriangleLists[meshIndex];
-						int &binMeshTriangleCount = bin.triangleCounts[meshIndex];
-						DebugAssert(binMeshTriangleCount < std::size(binMeshTriangles));
-
-						const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0, g_rasterizerBinWidth);
-						const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, g_rasterizerBinWidth, g_rasterizerBinWidth);
-						const int clampedXStart = std::max(xStart, binStartFrameBufferPixelX);
-						const int clampedXEnd = std::min(xEnd, binEndFrameBufferPixelX);
-
-						RasterizerTriangle &triangle = binMeshTriangles[binMeshTriangleCount];
-						triangle.clip0X = clip0X;
-						triangle.clip0Y = clip0Y;
-						triangle.clip0Z = clip0Z;
-						triangle.clip0W = clip0W;
-						triangle.clip1X = clip1X;
-						triangle.clip1Y = clip1Y;
-						triangle.clip1Z = clip1Z;
-						triangle.clip1W = clip1W;
-						triangle.clip2X = clip2X;
-						triangle.clip2Y = clip2Y;
-						triangle.clip2Z = clip2Z;
-						triangle.clip2W = clip2W;
-						triangle.clip0WRecip = clip0WRecip;
-						triangle.clip1WRecip = clip1WRecip;
-						triangle.clip2WRecip = clip2WRecip;
-						triangle.ndc0X = ndc0X;
-						triangle.ndc0Y = ndc0Y;
-						triangle.ndc0Z = ndc0Z;
-						triangle.ndc1X = ndc1X;
-						triangle.ndc1Y = ndc1Y;
-						triangle.ndc1Z = ndc1Z;
-						triangle.ndc2X = ndc2X;
-						triangle.ndc2Y = ndc2Y;
-						triangle.ndc2Z = ndc2Z;
-						triangle.screenSpace0X = screenSpace0X;
-						triangle.screenSpace0Y = screenSpace0Y;
-						triangle.screenSpace1X = screenSpace1X;
-						triangle.screenSpace1Y = screenSpace1Y;
-						triangle.screenSpace2X = screenSpace2X;
-						triangle.screenSpace2Y = screenSpace2Y;
-						triangle.screenSpace01X = screenSpace01X;
-						triangle.screenSpace01Y = screenSpace01Y;
-						triangle.screenSpace12X = screenSpace12X;
-						triangle.screenSpace12Y = screenSpace12Y;
-						triangle.screenSpace20X = screenSpace20X;
-						triangle.screenSpace20Y = screenSpace20Y;
-						triangle.screenSpace01PerpX = screenSpace01PerpX;
-						triangle.screenSpace01PerpY = screenSpace01PerpY;
-						triangle.screenSpace12PerpX = screenSpace12PerpX;
-						triangle.screenSpace12PerpY = screenSpace12PerpY;
-						triangle.screenSpace20PerpX = screenSpace20PerpX;
-						triangle.screenSpace20PerpY = screenSpace20PerpY;
-						triangle.uv0X = uv0X;
-						triangle.uv0Y = uv0Y;
-						triangle.uv1X = uv1X;
-						triangle.uv1Y = uv1Y;
-						triangle.uv2X = uv2X;
-						triangle.uv2Y = uv2Y;
-						triangle.uv0XDivW = uv0XDivW;
-						triangle.uv0YDivW = uv0YDivW;
-						triangle.uv1XDivW = uv1XDivW;
-						triangle.uv1YDivW = uv1YDivW;
-						triangle.uv2XDivW = uv2XDivW;
-						triangle.uv2YDivW = uv2YDivW;
-						triangle.binPixelXStart = GetRasterizerBinPixelXInclusive(clampedXStart, g_rasterizerBinWidth);
-						triangle.binPixelXEnd = GetRasterizerBinPixelXExclusive(clampedXEnd, g_rasterizerBinWidth);
-						triangle.binPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart, g_rasterizerBinHeight);
-						triangle.binPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd, g_rasterizerBinHeight);
-
-						binMeshTriangleCount++;
-					}
+					binMeshTriangleCount++;
 				}
 			}
 		}
@@ -2994,14 +2820,14 @@ namespace
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
-	void RasterizeMeshInternal(int binX, int binY, int binIndex, int meshIndex)
+	void RasterizeMeshInternal(int binX, int binY, int binIndex)
 	{
-		const TextureSamplingType textureSamplingType0 = g_drawCallCaches.textureSamplingType0s[meshIndex];
-		const TextureSamplingType textureSamplingType1 = g_drawCallCaches.textureSamplingType1s[meshIndex];
-		const double meshLightPercent = g_drawCallCaches.meshLightPercents[meshIndex];
-		const auto &lights = g_drawCallCaches.lightPtrArrays[meshIndex];
-		const int lightCount = g_drawCallCaches.lightCounts[meshIndex];
-		const double pixelShaderParam0 = g_drawCallCaches.pixelShaderParam0s[meshIndex];
+		const TextureSamplingType textureSamplingType0 = g_drawCallCache.textureSamplingType0;
+		const TextureSamplingType textureSamplingType1 = g_drawCallCache.textureSamplingType1;
+		const double meshLightPercent = g_drawCallCache.meshLightPercent;
+		const auto &lights = g_drawCallCache.lightPtrArray;
+		const int lightCount = g_drawCallCache.lightCount;
+		const double pixelShaderParam0 = g_drawCallCache.pixelShaderParam0;
 
 		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
 		constexpr bool requiresHorizonMirror = pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
@@ -3031,8 +2857,8 @@ namespace
 			shaderHorizonMirror.fallbackSkyColor = g_skyBgTexture->texels8Bit[0];
 		}
 
-		const ObjectTextureID textureID0 = g_drawCallCaches.textureID0s[meshIndex];
-		const ObjectTextureID textureID1 = g_drawCallCaches.textureID1s[meshIndex];
+		const ObjectTextureID textureID0 = g_drawCallCache.textureID0;
+		const ObjectTextureID textureID1 = g_drawCallCache.textureID1;
 
 		const SoftwareRenderer::ObjectTexture &texture0 = g_objectTextures->get(textureID0);
 		PixelShaderTexture shaderTexture0;
@@ -3050,8 +2876,8 @@ namespace
 		int totalColorWrites = 0;
 
 		const RasterizerBin &bin = g_rasterizerBins[binIndex];
-		const auto &triangles = bin.visibleTriangleLists[meshIndex];
-		const int triangleCount = bin.triangleCounts[meshIndex];
+		const auto &triangles = bin.visibleTriangleList;
+		const int triangleCount = bin.triangleCount;
 		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 		{
 			const RasterizerTriangle &triangle = triangles[triangleIndex];
@@ -3329,106 +3155,106 @@ namespace
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
-	void RasterizeMeshDispatchDitheringMode(int binX, int binY, int binIndex, int meshIndex)
+	void RasterizeMeshDispatchDitheringMode(int binX, int binY, int binIndex)
 	{
 		switch (g_ditheringMode)
 		{
 		case DitheringMode::None:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(binX, binY, binIndex);
 			break;
 		case DitheringMode::Classic:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(binX, binY, binIndex);
 			break;
 		case DitheringMode::Modern:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(binX, binY, binIndex);
 			break;
 		}
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType>
-	void RasterizeMeshDispatchDepthToggles(int binX, int binY, int binIndex, int meshIndex)
+	void RasterizeMeshDispatchDepthToggles(int binX, int binY, int binIndex)
 	{
-		const bool enableDepthRead = g_drawCallCaches.enableDepthReads[meshIndex];
-		const bool enableDepthWrite = g_drawCallCaches.enableDepthWrites[meshIndex];
+		const bool enableDepthRead = g_drawCallCache.enableDepthRead;
+		const bool enableDepthWrite = g_drawCallCache.enableDepthWrite;
 
 		if (enableDepthRead)
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(binX, binY, binIndex, meshIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(binX, binY, binIndex);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(binX, binY, binIndex, meshIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(binX, binY, binIndex);
 			}
 		}
 		else
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(binX, binY, binIndex, meshIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(binX, binY, binIndex);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(binX, binY, binIndex, meshIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(binX, binY, binIndex);
 			}
 		}
 	}
 
 	template<RenderLightingType lightingType>
-	void RasterizeMeshDispatchPixelShaderType(int binX, int binY, int binIndex, int meshIndex)
+	void RasterizeMeshDispatchPixelShaderType(int binX, int binY, int binIndex)
 	{
 		static_assert(PixelShaderType::AlphaTestedWithHorizonMirror == PIXEL_SHADER_TYPE_MAX);
-		const PixelShaderType pixelShaderType = g_drawCallCaches.pixelShaderTypes[meshIndex];
+		const PixelShaderType pixelShaderType = g_drawCallCache.pixelShaderType;
 
 		switch (pixelShaderType)
 		{
 		case PixelShaderType::Opaque:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::OpaqueWithAlphaTestLayer:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTested:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelColor:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelOpacity:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithHorizonMirror:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(binX, binY, binIndex);
 			break;
 		}
 	}
 
 	// Decides which optimized rasterizer variant to use based on the parameters.
-	void RasterizeMesh(int binX, int binY, int binIndex, int meshIndex)
+	void RasterizeMesh(int binX, int binY, int binIndex)
 	{
 		static_assert(RenderLightingType::PerPixel == RENDER_LIGHTING_TYPE_MAX);
-		const RenderLightingType lightingType = g_drawCallCaches.lightingTypes[meshIndex];
+		const RenderLightingType lightingType = g_drawCallCache.lightingType;
 
 		if (lightingType == RenderLightingType::PerMesh)
 		{
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(binX, binY, binIndex);
 		}
 		else if (lightingType == RenderLightingType::PerPixel)
 		{
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(binX, binY, binIndex, meshIndex);
+			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(binX, binY, binIndex);
 		}
 	}
 }
@@ -3438,7 +3264,7 @@ namespace
 {
 	struct RasterizerWorkItem
 	{
-		int binX, binY, binIndex, drawCallSequenceCount;
+		int binX, binY, binIndex;
 	};
 
 	struct RasterizerWorker
@@ -3483,16 +3309,11 @@ namespace
 				const int binX = workItem.binX;
 				const int binY = workItem.binY;
 				const int binIndex = workItem.binIndex;
-				const int drawCallSequenceCount = workItem.drawCallSequenceCount;
 
 				const RasterizerBin &bin = g_rasterizerBins[binIndex];
-				for (int meshIndex = 0; meshIndex < drawCallSequenceCount; meshIndex++)
+				if (bin.triangleCount > 0)
 				{
-					const int meshTriangleCount = bin.triangleCounts[meshIndex];
-					if (meshTriangleCount > 0)
-					{
-						RasterizeMesh(binX, binY, binIndex, meshIndex);
-					}
+					RasterizeMesh(binX, binY, binIndex);
 				}
 			}
 
@@ -3543,7 +3364,7 @@ namespace
 		g_rasterizerWorkers.clear();
 	}
 
-	void ProcessRasterizationWorkers(int drawCallSequenceCount)
+	void ProcessRasterizationWorkers()
 	{
 		std::unique_lock<std::mutex> lock(g_rasterizerMutex);
 		g_rasterizerDirectorCondVar.wait(lock, []()
@@ -3569,7 +3390,7 @@ namespace
 			{
 				const int binIndex = binX + (binY * g_rasterizerBinCountX);
 				RasterizerWorker &worker = g_rasterizerWorkers[curWorkerIndex];
-				worker.workItems.emplace_back(binX, binY, binIndex, drawCallSequenceCount);
+				worker.workItems.emplace_back(binX, binY, binIndex);
 				curWorkerIndex = (curWorkerIndex + 1) % totalWorkerCount;
 			}
 		}
@@ -4086,105 +3907,124 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 
 	ClearTriangleTotalCounts();
 	ClearFrameBuffers();
+	EmptyRasterizerBins();
 
 	const RenderDrawCall *drawCallsPtr = drawCalls.begin();
 	const int drawCallCount = drawCalls.getCount();
 	g_totalDrawCallCount = drawCallCount;
 
-	auto &transformCachePreScaleTranslationXs = g_transformCaches.preScaleTranslationXs;
-	auto &transformCachePreScaleTranslationYs = g_transformCaches.preScaleTranslationYs;
-	auto &transformCachePreScaleTranslationZs = g_transformCaches.preScaleTranslationZs;
-	auto &drawCallCacheVertexBuffers = g_drawCallCaches.vertexBuffers;
-	auto &drawCallCacheTexCoordBuffers = g_drawCallCaches.texCoordBuffers;
-	auto &drawCallCacheIndexBuffers = g_drawCallCaches.indexBuffers;
-	auto &drawCallCacheTextureID0s = g_drawCallCaches.textureID0s;
-	auto &drawCallCacheTextureID1s = g_drawCallCaches.textureID1s;
-	auto &drawCallCacheTextureSamplingType0s = g_drawCallCaches.textureSamplingType0s;
-	auto &drawCallCacheTextureSamplingType1s = g_drawCallCaches.textureSamplingType1s;
-	auto &drawCallCacheLightingTypes = g_drawCallCaches.lightingTypes;
-	auto &drawCallCacheMeshLightPercents = g_drawCallCaches.meshLightPercents;
-	auto &drawCallCacheLightPtrArrays = g_drawCallCaches.lightPtrArrays;
-	auto &drawCallCacheLightCounts = g_drawCallCaches.lightCounts;
-	auto &drawCallCachePixelShaderTypes = g_drawCallCaches.pixelShaderTypes;
-	auto &drawCallCachePixelShaderParam0s = g_drawCallCaches.pixelShaderParam0s;
-	auto &drawCallCacheEnableDepthReads = g_drawCallCaches.enableDepthReads;
-	auto &drawCallCacheEnableDepthWrites = g_drawCallCaches.enableDepthWrites;
+	auto &transformCachePreScaleTranslationX = g_transformCache.preScaleTranslationX;
+	auto &transformCachePreScaleTranslationY = g_transformCache.preScaleTranslationY;
+	auto &transformCachePreScaleTranslationZ = g_transformCache.preScaleTranslationZ;
+	auto &drawCallCacheVertexBuffer = g_drawCallCache.vertexBuffer;
+	auto &drawCallCacheTexCoordBuffer = g_drawCallCache.texCoordBuffer;
+	auto &drawCallCacheIndexBuffer = g_drawCallCache.indexBuffer;
+	auto &drawCallCacheTextureID0 = g_drawCallCache.textureID0;
+	auto &drawCallCacheTextureID1 = g_drawCallCache.textureID1;
+	auto &drawCallCacheTextureSamplingType0 = g_drawCallCache.textureSamplingType0;
+	auto &drawCallCacheTextureSamplingType1 = g_drawCallCache.textureSamplingType1;
+	auto &drawCallCacheLightingType = g_drawCallCache.lightingType;
+	auto &drawCallCacheMeshLightPercent = g_drawCallCache.meshLightPercent;
+	auto &drawCallCacheLightPtrArray = g_drawCallCache.lightPtrArray;
+	auto &drawCallCacheLightCount = g_drawCallCache.lightCount;
+	auto &drawCallCachePixelShaderType = g_drawCallCache.pixelShaderType;
+	auto &drawCallCachePixelShaderParam0 = g_drawCallCache.pixelShaderParam0;
+	auto &drawCallCacheEnableDepthRead = g_drawCallCache.enableDepthRead;
+	auto &drawCallCacheEnableDepthWrite = g_drawCallCache.enableDepthWrite;
 
 	int drawCallIndex = 0;
 	while (drawCallIndex < drawCallCount)
 	{
-		// See how many draw calls in a row can be processed with the same vertex shader.
-		VertexShaderType vertexShaderType = static_cast<VertexShaderType>(-1);
-		const int maxDrawCallSequenceCount = std::min(MAX_MESH_PROCESS_CACHES, drawCallCount - drawCallIndex);
-		int drawCallSequenceCount = 0;
-		for (int sequenceIndex = 0; sequenceIndex < maxDrawCallSequenceCount; sequenceIndex++)
+		const RenderDrawCall &drawCall = drawCallsPtr[drawCallIndex];
+		const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
+
+		const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
+		const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
+		PopulateMeshTransform(transform);
+
+		transformCachePreScaleTranslationX = 0.0;
+		transformCachePreScaleTranslationY = 0.0;
+		transformCachePreScaleTranslationZ = 0.0;
+		if (drawCall.preScaleTranslationBufferID >= 0)
 		{
-			const int sequenceDrawCallIndex = drawCallIndex + sequenceIndex;
-			const RenderDrawCall &drawCall = drawCallsPtr[sequenceDrawCallIndex];
-
-			const bool isBootstrap = sequenceIndex == 0;
-			if (isBootstrap)
-			{
-				vertexShaderType = drawCall.vertexShaderType;
-			}
-			else if (drawCall.vertexShaderType != vertexShaderType)
-			{
-				break;
-			}
-
-			const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
-			const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-			PopulateMeshTransform(sequenceIndex, transform);
-
-			transformCachePreScaleTranslationXs[sequenceIndex] = 0.0;
-			transformCachePreScaleTranslationYs[sequenceIndex] = 0.0;
-			transformCachePreScaleTranslationZs[sequenceIndex] = 0.0;
-			if (drawCall.preScaleTranslationBufferID >= 0)
-			{
-				const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
-				const Double3 &preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
-				transformCachePreScaleTranslationXs[sequenceIndex] = preScaleTranslation.x;
-				transformCachePreScaleTranslationYs[sequenceIndex] = preScaleTranslation.y;
-				transformCachePreScaleTranslationZs[sequenceIndex] = preScaleTranslation.z;
-			}
-
-			drawCallCacheVertexBuffers[sequenceIndex] = &this->vertexBuffers.get(drawCall.vertexBufferID);
-			drawCallCacheTexCoordBuffers[sequenceIndex] = &this->attributeBuffers.get(drawCall.texCoordBufferID);
-			drawCallCacheIndexBuffers[sequenceIndex] = &this->indexBuffers.get(drawCall.indexBufferID);
-
-			const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
-			const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
-			drawCallCacheTextureID0s[sequenceIndex] = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
-			drawCallCacheTextureID1s[sequenceIndex] = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
-			drawCallCacheTextureSamplingType0s[sequenceIndex] = drawCall.textureSamplingTypes[0];
-			drawCallCacheTextureSamplingType1s[sequenceIndex] = drawCall.textureSamplingTypes[1];
-			drawCallCacheLightingTypes[sequenceIndex] = drawCall.lightingType;
-			drawCallCacheMeshLightPercents[sequenceIndex] = drawCall.lightPercent;
-
-			auto &drawCallCacheLightPtrs = drawCallCacheLightPtrArrays[sequenceIndex];
-			for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
-			{
-				const RenderLightID lightID = drawCall.lightIDs[lightIndex];
-				drawCallCacheLightPtrs[lightIndex] = &this->lights.get(lightID);
-			}
-
-			drawCallCacheLightCounts[sequenceIndex] = drawCall.lightIdCount;
-			drawCallCachePixelShaderTypes[sequenceIndex] = drawCall.pixelShaderType;
-			drawCallCachePixelShaderParam0s[sequenceIndex] = drawCall.pixelShaderParam0;
-			drawCallCacheEnableDepthReads[sequenceIndex] = drawCall.enableDepthRead;
-			drawCallCacheEnableDepthWrites[sequenceIndex] = drawCall.enableDepthWrite;
-
-			drawCallSequenceCount++;
+			const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
+			const Double3 &preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
+			transformCachePreScaleTranslationX = preScaleTranslation.x;
+			transformCachePreScaleTranslationY = preScaleTranslation.y;
+			transformCachePreScaleTranslationZ = preScaleTranslation.z;
 		}
 
-		ProcessMeshBufferLookups(drawCallSequenceCount);
-		CalculateVertexShaderTransforms(drawCallSequenceCount);
-		ProcessVertexShaders(drawCallSequenceCount, vertexShaderType);
-		ProcessClipping(drawCallSequenceCount);
-		ProcessClipSpaceTrianglesForBinning(drawCallSequenceCount);
-		ProcessRasterizationWorkers(drawCallSequenceCount);
+		drawCallCacheVertexBuffer = &this->vertexBuffers.get(drawCall.vertexBufferID);
+		drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
+		drawCallCacheIndexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
 
-		drawCallIndex += drawCallSequenceCount;
+		const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
+		const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
+		drawCallCacheTextureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
+		drawCallCacheTextureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
+		drawCallCacheTextureSamplingType0 = drawCall.textureSamplingTypes[0];
+		drawCallCacheTextureSamplingType1 = drawCall.textureSamplingTypes[1];
+		drawCallCacheLightingType = drawCall.lightingType;
+		drawCallCacheMeshLightPercent = drawCall.lightPercent;
+
+		auto &drawCallCacheLightPtrs = drawCallCacheLightPtrArray;
+		for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
+		{
+			const RenderLightID lightID = drawCall.lightIDs[lightIndex];
+			drawCallCacheLightPtrs[lightIndex] = &this->lights.get(lightID);
+		}
+
+		drawCallCacheLightCount = drawCall.lightIdCount;
+		drawCallCachePixelShaderType = drawCall.pixelShaderType;
+		drawCallCachePixelShaderParam0 = drawCall.pixelShaderParam0;
+		drawCallCacheEnableDepthRead = drawCall.enableDepthRead;
+		drawCallCacheEnableDepthWrite = drawCall.enableDepthWrite;
+
+		ProcessMeshBufferLookups();
+		CalculateVertexShaderTransforms();
+		ProcessVertexShaders(vertexShaderType);
+		ProcessClipping();
+		ProcessClipSpaceTrianglesForBinning();
+		//ProcessRasterizationWorkers();
+
+		for (int binY = 0; binY < g_rasterizerBinCountY; binY++)
+		{
+			for (int binX = 0; binX < g_rasterizerBinCountX; binX++)
+			{
+				const int binIndex = binX + (binY * g_rasterizerBinCountX);
+				const RasterizerBin &bin = g_rasterizerBins[binIndex];
+				if (bin.triangleCount > 0)
+				{
+					RasterizeMesh(binX, binY, binIndex);
+				}
+			}
+		}
+
+		EmptyRasterizerBins(); // @todo: not sure this should be here in final code
+
+		drawCallIndex++;
+
+		// @todo:
+		/*bool areBinsReadyForRasterization = drawCallIndex == drawCallCount;
+		if (!areBinsReadyForRasterization)
+		{
+			for (int binIndex = 0; binIndex < g_rasterizerBinCount; binIndex++)
+			{
+				RasterizerBin &bin = g_rasterizerBins[binIndex];
+				if (bin.isFull)
+				{
+					areBinsReadyForRasterization = true;
+					break;
+				}
+			}
+		}
+
+		if (areBinsReadyForRasterization)
+		{
+			// @todo: don't pass drawCallSequenceCount, it should just look at its bins
+			ProcessRasterizationWorkers(drawCallSequenceCount);
+			EmptyRasterizerBins();
+		}*/
 	}
 }
 
