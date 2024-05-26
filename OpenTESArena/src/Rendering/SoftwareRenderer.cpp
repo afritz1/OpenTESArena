@@ -914,12 +914,6 @@ namespace
 		double uv0XDivW, uv0YDivW;
 		double uv1XDivW, uv1YDivW;
 		double uv2XDivW, uv2YDivW;
-
-		// Naive bounding box clamped to its rasterizer bin.
-		int binPixelXStart, binPixelXEnd;
-		int binPixelYStart, binPixelYEnd;
-
-		//int drawCallIndex; // @todo, and delete those 4 ^
 	};
 
 	double NdcXToScreenSpace(double ndcX, double frameWidth)
@@ -2526,29 +2520,30 @@ namespace
 	}
 }
 
-// Each bin contains front-facing triangles that at least partially touch a screen-space tile
+// Each bin points to front-facing triangles that at least partially touch a screen-space tile
 // (has to be outside a namespace due to being in SoftwareRenderer).
 struct RasterizerBin
 {
-	// @todo: delete these two
-	RasterizerTriangle visibleTriangleList[MAX_CLIPPED_MESH_TRIANGLES];
-	int triangleCount;
+	static constexpr int MAX_FRUSTUM_TRIANGLES = 16384;
 
-	//static constexpr int MAX_TRIANGLES = 16384; // Triangles allowed per thread sync
-
-	//int triangleIndices[MAX_TRIANGLES]; // Points into RasterizerTriangle array
-	//int triangleCount;
-
-	void clear()
-	{
-		this->triangleCount = 0;
-	}
+	int triangleIndicesToRasterize[MAX_FRUSTUM_TRIANGLES]; // Points into triangles to rasterize.
+	int triangleBinPixelXStarts[MAX_FRUSTUM_TRIANGLES];
+	int triangleBinPixelXEnds[MAX_FRUSTUM_TRIANGLES];
+	int triangleBinPixelYStarts[MAX_FRUSTUM_TRIANGLES];
+	int triangleBinPixelYEnds[MAX_FRUSTUM_TRIANGLES];
+	int triangleCount; // Triangles at least partially covering this bin.
 };
 
 // Rasterizer, pixel shader execution.
 namespace
 {
-	//RasterizerTriangle g_binnedTriangles[MAX_CLIPPED_MESH_TRIANGLES];
+	RasterizerTriangle g_trianglesToRasterize[RasterizerBin::MAX_FRUSTUM_TRIANGLES];
+	int g_trianglesToRasterizeCount;
+
+	void ClearRasterizerTriangles()
+	{
+		g_trianglesToRasterizeCount = 0;
+	}
 
 	void CreateRasterizerBins(Buffer2D<RasterizerBin> &rasterizerBins, int frameBufferWidth, int frameBufferHeight)
 	{
@@ -2563,7 +2558,7 @@ namespace
 	{
 		for (int i = 0; i < g_rasterizerBinCount; i++)
 		{
-			g_rasterizerBins[i].clear();
+			g_rasterizerBins[i].triangleCount = 0;
 		}
 	}
 
@@ -2576,12 +2571,12 @@ namespace
 		const auto &clipSpaceMeshUV1XYs = g_clippingOutputCache.clipSpaceMeshUV1XYArray;
 		const auto &clipSpaceMeshUV2XYs = g_clippingOutputCache.clipSpaceMeshUV2XYArray;
 
-		const int triangleCount = g_clippingOutputCache.clipSpaceMeshTriangleCount;
-		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+		const int meshTriangleCount = g_clippingOutputCache.clipSpaceMeshTriangleCount;
+		for (int meshTriangleIndex = 0; meshTriangleIndex < meshTriangleCount; meshTriangleIndex++)
 		{
-			const auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[triangleIndex];
-			const auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[triangleIndex];
-			const auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[triangleIndex];
+			const auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[meshTriangleIndex];
+			const auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[meshTriangleIndex];
+			const auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[meshTriangleIndex];
 			const double clip0X = clipSpaceMeshV0XYZW[0];
 			const double clip0Y = clipSpaceMeshV0XYZW[1];
 			const double clip0Z = clipSpaceMeshV0XYZW[2];
@@ -2656,9 +2651,9 @@ namespace
 			Double2_RightPerpN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace12PerpX, &screenSpace12PerpY);
 			Double2_RightPerpN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace20PerpX, &screenSpace20PerpY);
 
-			const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[triangleIndex];
-			const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[triangleIndex];
-			const auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[triangleIndex];
+			const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[meshTriangleIndex];
+			const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[meshTriangleIndex];
+			const auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[meshTriangleIndex];
 			const double uv0X = clipSpaceMeshUV0XY[0];
 			const double uv0Y = clipSpaceMeshUV0XY[1];
 			const double uv1X = clipSpaceMeshUV1XY[0];
@@ -2672,7 +2667,65 @@ namespace
 			const double uv2XDivW = uv2X * clip2WRecip;
 			const double uv2YDivW = uv2Y * clip2WRecip;
 
-			// Write the triangle to all affected rasterizer bins.
+			// Write triangle to the global list.
+			const int stagedTriangleIndex = g_trianglesToRasterizeCount;
+			RasterizerTriangle &stagedTriangle = g_trianglesToRasterize[stagedTriangleIndex];
+			stagedTriangle.clip0X = clip0X;
+			stagedTriangle.clip0Y = clip0Y;
+			stagedTriangle.clip0Z = clip0Z;
+			stagedTriangle.clip0W = clip0W;
+			stagedTriangle.clip1X = clip1X;
+			stagedTriangle.clip1Y = clip1Y;
+			stagedTriangle.clip1Z = clip1Z;
+			stagedTriangle.clip1W = clip1W;
+			stagedTriangle.clip2X = clip2X;
+			stagedTriangle.clip2Y = clip2Y;
+			stagedTriangle.clip2Z = clip2Z;
+			stagedTriangle.clip2W = clip2W;
+			stagedTriangle.clip0WRecip = clip0WRecip;
+			stagedTriangle.clip1WRecip = clip1WRecip;
+			stagedTriangle.clip2WRecip = clip2WRecip;
+			stagedTriangle.ndc0X = ndc0X;
+			stagedTriangle.ndc0Y = ndc0Y;
+			stagedTriangle.ndc0Z = ndc0Z;
+			stagedTriangle.ndc1X = ndc1X;
+			stagedTriangle.ndc1Y = ndc1Y;
+			stagedTriangle.ndc1Z = ndc1Z;
+			stagedTriangle.ndc2X = ndc2X;
+			stagedTriangle.ndc2Y = ndc2Y;
+			stagedTriangle.ndc2Z = ndc2Z;
+			stagedTriangle.screenSpace0X = screenSpace0X;
+			stagedTriangle.screenSpace0Y = screenSpace0Y;
+			stagedTriangle.screenSpace1X = screenSpace1X;
+			stagedTriangle.screenSpace1Y = screenSpace1Y;
+			stagedTriangle.screenSpace2X = screenSpace2X;
+			stagedTriangle.screenSpace2Y = screenSpace2Y;
+			stagedTriangle.screenSpace01X = screenSpace01X;
+			stagedTriangle.screenSpace01Y = screenSpace01Y;
+			stagedTriangle.screenSpace12X = screenSpace12X;
+			stagedTriangle.screenSpace12Y = screenSpace12Y;
+			stagedTriangle.screenSpace20X = screenSpace20X;
+			stagedTriangle.screenSpace20Y = screenSpace20Y;
+			stagedTriangle.screenSpace01PerpX = screenSpace01PerpX;
+			stagedTriangle.screenSpace01PerpY = screenSpace01PerpY;
+			stagedTriangle.screenSpace12PerpX = screenSpace12PerpX;
+			stagedTriangle.screenSpace12PerpY = screenSpace12PerpY;
+			stagedTriangle.screenSpace20PerpX = screenSpace20PerpX;
+			stagedTriangle.screenSpace20PerpY = screenSpace20PerpY;
+			stagedTriangle.uv0X = uv0X;
+			stagedTriangle.uv0Y = uv0Y;
+			stagedTriangle.uv1X = uv1X;
+			stagedTriangle.uv1Y = uv1Y;
+			stagedTriangle.uv2X = uv2X;
+			stagedTriangle.uv2Y = uv2Y;
+			stagedTriangle.uv0XDivW = uv0XDivW;
+			stagedTriangle.uv0YDivW = uv0YDivW;
+			stagedTriangle.uv1XDivW = uv1XDivW;
+			stagedTriangle.uv1YDivW = uv1YDivW;
+			stagedTriangle.uv2XDivW = uv2XDivW;
+			stagedTriangle.uv2YDivW = uv2YDivW;
+
+			// Write this triangle's global index to all affected rasterizer bins.
 			const int startBinX = GetRasterizerBinX(xStart, g_rasterizerBinWidth);
 			const int endBinX = GetRasterizerBinX(xEnd, g_rasterizerBinWidth);
 			const int startBinY = GetRasterizerBinY(yStart, g_rasterizerBinHeight);
@@ -2683,83 +2736,33 @@ namespace
 				const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, g_rasterizerBinHeight, g_rasterizerBinHeight);
 				const int clampedYStart = std::max(yStart, binStartFrameBufferPixelY);
 				const int clampedYEnd = std::min(yEnd, binEndFrameBufferPixelY);
+				const int triangleBinPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart, g_rasterizerBinHeight);
+				const int triangleBinPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd, g_rasterizerBinHeight);
 
 				for (int binX = startBinX; binX <= endBinX; binX++)
 				{
 					const int binIndex = binX + (binY * g_rasterizerBinCountX);
+					DebugAssert(binIndex < g_rasterizerBinCount);
 					RasterizerBin &bin = g_rasterizerBins[binIndex];
-					auto &binMeshTriangles = bin.visibleTriangleList;
-					int &binMeshTriangleCount = bin.triangleCount;
-					DebugAssert(binMeshTriangleCount < std::size(binMeshTriangles));
+
+					const int binTriangleIndex = bin.triangleCount;
+					DebugAssert(binTriangleIndex < RasterizerBin::MAX_FRUSTUM_TRIANGLES);
+					bin.triangleIndicesToRasterize[binTriangleIndex] = stagedTriangleIndex;
 
 					const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0, g_rasterizerBinWidth);
 					const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, g_rasterizerBinWidth, g_rasterizerBinWidth);
 					const int clampedXStart = std::max(xStart, binStartFrameBufferPixelX);
 					const int clampedXEnd = std::min(xEnd, binEndFrameBufferPixelX);
+					bin.triangleBinPixelXStarts[binTriangleIndex] = GetRasterizerBinPixelXInclusive(clampedXStart, g_rasterizerBinWidth);
+					bin.triangleBinPixelXEnds[binTriangleIndex] = GetRasterizerBinPixelXExclusive(clampedXEnd, g_rasterizerBinWidth);
+					bin.triangleBinPixelYStarts[binTriangleIndex] = triangleBinPixelYStart;
+					bin.triangleBinPixelYEnds[binTriangleIndex] = triangleBinPixelYEnd;
 
-					RasterizerTriangle &triangle = binMeshTriangles[binMeshTriangleCount];
-					triangle.clip0X = clip0X;
-					triangle.clip0Y = clip0Y;
-					triangle.clip0Z = clip0Z;
-					triangle.clip0W = clip0W;
-					triangle.clip1X = clip1X;
-					triangle.clip1Y = clip1Y;
-					triangle.clip1Z = clip1Z;
-					triangle.clip1W = clip1W;
-					triangle.clip2X = clip2X;
-					triangle.clip2Y = clip2Y;
-					triangle.clip2Z = clip2Z;
-					triangle.clip2W = clip2W;
-					triangle.clip0WRecip = clip0WRecip;
-					triangle.clip1WRecip = clip1WRecip;
-					triangle.clip2WRecip = clip2WRecip;
-					triangle.ndc0X = ndc0X;
-					triangle.ndc0Y = ndc0Y;
-					triangle.ndc0Z = ndc0Z;
-					triangle.ndc1X = ndc1X;
-					triangle.ndc1Y = ndc1Y;
-					triangle.ndc1Z = ndc1Z;
-					triangle.ndc2X = ndc2X;
-					triangle.ndc2Y = ndc2Y;
-					triangle.ndc2Z = ndc2Z;
-					triangle.screenSpace0X = screenSpace0X;
-					triangle.screenSpace0Y = screenSpace0Y;
-					triangle.screenSpace1X = screenSpace1X;
-					triangle.screenSpace1Y = screenSpace1Y;
-					triangle.screenSpace2X = screenSpace2X;
-					triangle.screenSpace2Y = screenSpace2Y;
-					triangle.screenSpace01X = screenSpace01X;
-					triangle.screenSpace01Y = screenSpace01Y;
-					triangle.screenSpace12X = screenSpace12X;
-					triangle.screenSpace12Y = screenSpace12Y;
-					triangle.screenSpace20X = screenSpace20X;
-					triangle.screenSpace20Y = screenSpace20Y;
-					triangle.screenSpace01PerpX = screenSpace01PerpX;
-					triangle.screenSpace01PerpY = screenSpace01PerpY;
-					triangle.screenSpace12PerpX = screenSpace12PerpX;
-					triangle.screenSpace12PerpY = screenSpace12PerpY;
-					triangle.screenSpace20PerpX = screenSpace20PerpX;
-					triangle.screenSpace20PerpY = screenSpace20PerpY;
-					triangle.uv0X = uv0X;
-					triangle.uv0Y = uv0Y;
-					triangle.uv1X = uv1X;
-					triangle.uv1Y = uv1Y;
-					triangle.uv2X = uv2X;
-					triangle.uv2Y = uv2Y;
-					triangle.uv0XDivW = uv0XDivW;
-					triangle.uv0YDivW = uv0YDivW;
-					triangle.uv1XDivW = uv1XDivW;
-					triangle.uv1YDivW = uv1YDivW;
-					triangle.uv2XDivW = uv2XDivW;
-					triangle.uv2YDivW = uv2YDivW;
-					triangle.binPixelXStart = GetRasterizerBinPixelXInclusive(clampedXStart, g_rasterizerBinWidth);
-					triangle.binPixelXEnd = GetRasterizerBinPixelXExclusive(clampedXEnd, g_rasterizerBinWidth);
-					triangle.binPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart, g_rasterizerBinHeight);
-					triangle.binPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd, g_rasterizerBinHeight);
-
-					binMeshTriangleCount++;
+					bin.triangleCount++;
 				}
 			}
+
+			g_trianglesToRasterizeCount++;
 		}
 	}
 
@@ -2876,11 +2879,16 @@ namespace
 		int totalColorWrites = 0;
 
 		const RasterizerBin &bin = g_rasterizerBins[binIndex];
-		const auto &triangles = bin.visibleTriangleList;
+		const auto &triangleIndices = bin.triangleIndicesToRasterize;
+		const auto &triangleBinPixelXStarts = bin.triangleBinPixelXStarts;
+		const auto &triangleBinPixelXEnds = bin.triangleBinPixelXEnds;
+		const auto &triangleBinPixelYStarts = bin.triangleBinPixelYStarts;
+		const auto &triangleBinPixelYEnds = bin.triangleBinPixelYEnds;
 		const int triangleCount = bin.triangleCount;
-		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+		for (int triangleIndicesIndex = 0; triangleIndicesIndex < triangleCount; triangleIndicesIndex++)
 		{
-			const RasterizerTriangle &triangle = triangles[triangleIndex];
+			const int triangleIndex = bin.triangleIndicesToRasterize[triangleIndicesIndex];
+			const RasterizerTriangle &triangle = g_trianglesToRasterize[triangleIndex];
 			const double clip0X = triangle.clip0X;
 			const double clip0Y = triangle.clip0Y;
 			const double clip0Z = triangle.clip0Z;
@@ -2935,10 +2943,6 @@ namespace
 			const double uv1YDivW = triangle.uv1YDivW;
 			const double uv2XDivW = triangle.uv2XDivW;
 			const double uv2YDivW = triangle.uv2YDivW;
-			const int binPixelXStart = triangle.binPixelXStart;
-			const int binPixelXEnd = triangle.binPixelXEnd;
-			const int binPixelYStart = triangle.binPixelYStart;
-			const int binPixelYEnd = triangle.binPixelYEnd;
 
 			const double screenSpace02X = -triangle.screenSpace20X;
 			const double screenSpace02Y = -triangle.screenSpace20Y;
@@ -2949,6 +2953,11 @@ namespace
 
 			const double barycentricDenominator = (barycentricDot00 * barycentricDot11) - (barycentricDot01 * barycentricDot01);
 			const double barycentricDenominatorRecip = 1.0 / barycentricDenominator;
+
+			const int binPixelXStart = bin.triangleBinPixelXStarts[triangleIndicesIndex];
+			const int binPixelXEnd = bin.triangleBinPixelXEnds[triangleIndicesIndex];
+			const int binPixelYStart = bin.triangleBinPixelYStarts[triangleIndicesIndex];
+			const int binPixelYEnd = bin.triangleBinPixelYEnds[triangleIndicesIndex];
 
 			for (int binPixelY = binPixelYStart; binPixelY < binPixelYEnd; binPixelY++)
 			{
@@ -3906,8 +3915,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	PopulateRasterizerWorkers(settings.renderThreadsMode);
 
 	ClearTriangleTotalCounts();
-	ClearFrameBuffers();
+	ClearRasterizerTriangles();
 	EmptyRasterizerBins();
+	ClearFrameBuffers();
 
 	const RenderDrawCall *drawCallsPtr = drawCalls.begin();
 	const int drawCallCount = drawCalls.getCount();
@@ -4000,6 +4010,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 			}
 		}
 
+		ClearRasterizerTriangles();
 		EmptyRasterizerBins(); // @todo: not sure this should be here in final code
 
 		drawCallIndex++;
