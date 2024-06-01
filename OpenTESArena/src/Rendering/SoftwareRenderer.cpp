@@ -3277,27 +3277,27 @@ namespace
 		int binX, binY, binIndex;
 	};
 
-	struct RasterizerWorker
+	struct Worker
 	{
 		std::thread thread;
 		std::vector<RasterizerWorkItem> workItems;
 		bool isReadyToStart, shouldWork, shouldExit, isFinishedWorking;
 	};
 
-	Buffer<RasterizerWorker> g_rasterizerWorkers;
-	std::mutex g_rasterizerMutex;
-	std::condition_variable g_rasterizerWorkerCondVar, g_rasterizerDirectorCondVar;
+	Buffer<Worker> g_workers;
+	std::mutex g_mutex;
+	std::condition_variable g_workerCondVar, g_directorCondVar;
 
-	void RasterizerWorkerFunc(int workerIndex)
+	void WorkerFunc(int workerIndex)
 	{
-		RasterizerWorker &worker = g_rasterizerWorkers.get(workerIndex);
+		Worker &worker = g_workers.get(workerIndex);
 
 		while (true)
 		{
-			std::unique_lock<std::mutex> workerLock(g_rasterizerMutex);
+			std::unique_lock<std::mutex> workerLock(g_mutex);
 			worker.isReadyToStart = true;
-			g_rasterizerDirectorCondVar.notify_one();
-			g_rasterizerWorkerCondVar.wait(workerLock, [&worker]()
+			g_directorCondVar.notify_one();
+			g_workerCondVar.wait(workerLock, [&worker]()
 			{
 				return worker.shouldExit || worker.shouldWork;
 			});
@@ -3328,61 +3328,61 @@ namespace
 			}
 
 			worker.isFinishedWorking = true;
-			g_rasterizerDirectorCondVar.notify_one();
+			g_directorCondVar.notify_one();
 		}
 	}
 
-	void SignalRasterizerWorkersToExitAndJoin()
+	void SignalWorkersToExitAndJoin()
 	{
-		for (RasterizerWorker &worker : g_rasterizerWorkers)
+		for (Worker &worker : g_workers)
 		{
 			worker.shouldExit = true;
 		}
 
-		g_rasterizerWorkerCondVar.notify_all();
+		g_workerCondVar.notify_all();
 
-		for (RasterizerWorker &worker : g_rasterizerWorkers)
+		for (Worker &worker : g_workers)
 		{
 			worker.thread.join();
 		}
 	}
 
-	void PopulateRasterizerWorkers(int renderThreadsMode)
+	void PopulateWorkers(int renderThreadsMode)
 	{
 		const int workerCount = RendererUtils::getRenderThreadsFromMode(renderThreadsMode);
 
-		if (g_rasterizerWorkers.getCount() != workerCount)
+		if (g_workers.getCount() != workerCount)
 		{
-			SignalRasterizerWorkersToExitAndJoin();
+			SignalWorkersToExitAndJoin();
 
-			g_rasterizerWorkers.init(workerCount);
+			g_workers.init(workerCount);
 			for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
 			{
-				RasterizerWorker &worker = g_rasterizerWorkers[workerIndex];
+				Worker &worker = g_workers[workerIndex];
 				worker.isReadyToStart = false;
 				worker.shouldWork = false;
 				worker.shouldExit = false;
 				worker.isFinishedWorking = false;
-				worker.thread = std::thread(RasterizerWorkerFunc, workerIndex);
+				worker.thread = std::thread(WorkerFunc, workerIndex);
 			}
 		}
 	}
 
-	void ShutdownRasterizerWorkers()
+	void ShutdownWorkers()
 	{
-		SignalRasterizerWorkersToExitAndJoin();
-		g_rasterizerWorkers.clear();
+		SignalWorkersToExitAndJoin();
+		g_workers.clear();
 	}
 
 	void ProcessRasterizationWorkers()
 	{
-		std::unique_lock<std::mutex> lock(g_rasterizerMutex);
-		g_rasterizerDirectorCondVar.wait(lock, []()
+		std::unique_lock<std::mutex> lock(g_mutex);
+		g_directorCondVar.wait(lock, []()
 		{
-			return std::all_of(g_rasterizerWorkers.begin(), g_rasterizerWorkers.end(), [](const RasterizerWorker &worker) { return worker.isReadyToStart; });
+			return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStart; });
 		});
 
-		for (RasterizerWorker &worker : g_rasterizerWorkers)
+		for (Worker &worker : g_workers)
 		{
 			DebugAssert(worker.isReadyToStart);
 			DebugAssert(!worker.shouldWork);
@@ -3392,47 +3392,47 @@ namespace
 		}
 
 		// Split up bins across workers.
-		const int totalWorkerCount = g_rasterizerWorkers.getCount();
+		const int totalWorkerCount = g_workers.getCount();
 		int curWorkerIndex = 0;
 		for (int binY = 0; binY < g_rasterizerBinCountY; binY++)
 		{
 			for (int binX = 0; binX < g_rasterizerBinCountX; binX++)
 			{
 				const int binIndex = binX + (binY * g_rasterizerBinCountX);
-				RasterizerWorker &worker = g_rasterizerWorkers[curWorkerIndex];
+				Worker &worker = g_workers[curWorkerIndex];
 				worker.workItems.emplace_back(binX, binY, binIndex);
 				curWorkerIndex = (curWorkerIndex + 1) % totalWorkerCount;
 			}
 		}
 
-		const int preparedWorkerCount = static_cast<int>(std::count_if(g_rasterizerWorkers.begin(), g_rasterizerWorkers.end(),
-			[](const RasterizerWorker &worker)
+		const int preparedWorkerCount = static_cast<int>(std::count_if(g_workers.begin(), g_workers.end(),
+			[](const Worker &worker)
 		{
 			return !worker.workItems.empty();
 		}));
 
+		BufferView<Worker> preparedWorkers(g_workers.begin(), preparedWorkerCount);
+
 		// Tell prepared workers they can start.
-		for (int workerIndex = 0; workerIndex < preparedWorkerCount; workerIndex++)
+		for (Worker &preparedWorker : preparedWorkers)
 		{
-			RasterizerWorker &worker = g_rasterizerWorkers[workerIndex];
-			worker.shouldWork = true;
+			preparedWorker.shouldWork = true;
 		}
 
 		lock.unlock();
-		g_rasterizerWorkerCondVar.notify_all();
+		g_workerCondVar.notify_all();
 
 		// Wait for workers to finish.
 		lock.lock();
-		g_rasterizerDirectorCondVar.wait(lock, [preparedWorkerCount]()
+		g_directorCondVar.wait(lock, [preparedWorkers]()
 		{
-			return std::all_of(g_rasterizerWorkers.begin(), g_rasterizerWorkers.begin() + preparedWorkerCount, [](const RasterizerWorker &worker) { return worker.isFinishedWorking; });
+			return std::all_of(preparedWorkers.begin(), preparedWorkers.end(), [](const Worker &worker) { return worker.isFinishedWorking; });
 		});
 
 		// Reset workers for next frame.
-		for (int workerIndex = 0; workerIndex < preparedWorkerCount; workerIndex++)
+		for (Worker &preparedWorker : preparedWorkers)
 		{
-			RasterizerWorker &worker = g_rasterizerWorkers[workerIndex];
-			worker.isFinishedWorking = false;
+			preparedWorker.isFinishedWorking = false;
 		}
 	}
 }
@@ -3550,7 +3550,7 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 	this->ditheringMode = settings.ditheringMode;
 
 	CreateRasterizerBins(this->rasterizerBins, frameBufferWidth, frameBufferHeight);
-	PopulateRasterizerWorkers(settings.renderThreadsMode);
+	PopulateWorkers(settings.renderThreadsMode);
 }
 
 void SoftwareRenderer::shutdown()
@@ -3566,7 +3566,7 @@ void SoftwareRenderer::shutdown()
 	this->uniformBuffers.clear();
 	this->objectTextures.clear();
 	this->lights.clear();
-	ShutdownRasterizerWorkers();
+	ShutdownWorkers();
 }
 
 bool SoftwareRenderer::isInited() const
@@ -3869,7 +3869,7 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 {
 	const int renderWidth = this->paletteIndexBuffer.getWidth();
 	const int renderHeight = this->paletteIndexBuffer.getHeight();
-	const int threadCount = g_rasterizerWorkers.getCount();
+	const int threadCount = g_workers.getCount();
 	const int drawCallCount = g_totalDrawCallCount;
 	const int presentedTriangleCount = g_totalPresentedTriangleCount;
 
@@ -3913,7 +3913,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, this->rasterizerBins, outputBuffer, &this->objectTextures);
 	PopulatePixelShaderGlobals(settings.ambientPercent, paletteTexture, lightTableTexture, skyBgTexture);
-	PopulateRasterizerWorkers(settings.renderThreadsMode);
+	PopulateWorkers(settings.renderThreadsMode);
 
 	ClearTriangleTotalCounts();
 	ClearRasterizerTriangles();
