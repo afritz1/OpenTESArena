@@ -2669,6 +2669,7 @@ namespace
 
 			// Write triangle to the global list.
 			const int stagedTriangleIndex = g_trianglesToRasterizeCount;
+			DebugAssertIndex(g_trianglesToRasterize, stagedTriangleIndex);
 			RasterizerTriangle &stagedTriangle = g_trianglesToRasterize[stagedTriangleIndex];
 			stagedTriangle.clip0X = clip0X;
 			stagedTriangle.clip0Y = clip0Y;
@@ -3995,21 +3996,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		ProcessVertexShaders(vertexShaderType);
 		ProcessClipping();
 		ProcessClipSpaceTrianglesForBinning();
-		//ProcessRasterizationWorkers();
-
-		for (int binY = 0; binY < g_rasterizerBinCountY; binY++)
-		{
-			for (int binX = 0; binX < g_rasterizerBinCountX; binX++)
-			{
-				const int binIndex = binX + (binY * g_rasterizerBinCountX);
-				const RasterizerBin &bin = g_rasterizerBins[binIndex];
-				if (bin.triangleCount > 0)
-				{
-					RasterizeMesh(binX, binY, binIndex);
-				}
-			}
-		}
-
+		ProcessRasterizationWorkers();
 		ClearRasterizerTriangles();
 		EmptyRasterizerBins(); // @todo: not sure this should be here in final code
 
