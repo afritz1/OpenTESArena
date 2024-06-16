@@ -827,59 +827,65 @@ namespace
 		double preScaleTranslationZ;
 	};
 
-	DrawCallCache g_drawCallCache;
-	TransformCache g_transformCache;
+	const RenderDrawCall *g_drawCalls = nullptr;
+	int g_drawCallCount = 0;
 
-	void PopulateMeshTransform(const RenderTransform &transform)
+	void PopulateDrawCallGlobals(BufferView<const RenderDrawCall> drawCalls)
 	{
-		g_transformCache.translationMatrixXX = transform.translation.x.x;
-		g_transformCache.translationMatrixXY = transform.translation.x.y;
-		g_transformCache.translationMatrixXZ = transform.translation.x.z;
-		g_transformCache.translationMatrixXW = transform.translation.x.w;
-		g_transformCache.translationMatrixYX = transform.translation.y.x;
-		g_transformCache.translationMatrixYY = transform.translation.y.y;
-		g_transformCache.translationMatrixYZ = transform.translation.y.z;
-		g_transformCache.translationMatrixYW = transform.translation.y.w;
-		g_transformCache.translationMatrixZX = transform.translation.z.x;
-		g_transformCache.translationMatrixZY = transform.translation.z.y;
-		g_transformCache.translationMatrixZZ = transform.translation.z.z;
-		g_transformCache.translationMatrixZW = transform.translation.z.w;
-		g_transformCache.translationMatrixWX = transform.translation.w.x;
-		g_transformCache.translationMatrixWY = transform.translation.w.y;
-		g_transformCache.translationMatrixWZ = transform.translation.w.z;
-		g_transformCache.translationMatrixWW = transform.translation.w.w;
-		g_transformCache.rotationMatrixXX = transform.rotation.x.x;
-		g_transformCache.rotationMatrixXY = transform.rotation.x.y;
-		g_transformCache.rotationMatrixXZ = transform.rotation.x.z;
-		g_transformCache.rotationMatrixXW = transform.rotation.x.w;
-		g_transformCache.rotationMatrixYX = transform.rotation.y.x;
-		g_transformCache.rotationMatrixYY = transform.rotation.y.y;
-		g_transformCache.rotationMatrixYZ = transform.rotation.y.z;
-		g_transformCache.rotationMatrixYW = transform.rotation.y.w;
-		g_transformCache.rotationMatrixZX = transform.rotation.z.x;
-		g_transformCache.rotationMatrixZY = transform.rotation.z.y;
-		g_transformCache.rotationMatrixZZ = transform.rotation.z.z;
-		g_transformCache.rotationMatrixZW = transform.rotation.z.w;
-		g_transformCache.rotationMatrixWX = transform.rotation.w.x;
-		g_transformCache.rotationMatrixWY = transform.rotation.w.y;
-		g_transformCache.rotationMatrixWZ = transform.rotation.w.z;
-		g_transformCache.rotationMatrixWW = transform.rotation.w.w;
-		g_transformCache.scaleMatrixXX = transform.scale.x.x;
-		g_transformCache.scaleMatrixXY = transform.scale.x.y;
-		g_transformCache.scaleMatrixXZ = transform.scale.x.z;
-		g_transformCache.scaleMatrixXW = transform.scale.x.w;
-		g_transformCache.scaleMatrixYX = transform.scale.y.x;
-		g_transformCache.scaleMatrixYY = transform.scale.y.y;
-		g_transformCache.scaleMatrixYZ = transform.scale.y.z;
-		g_transformCache.scaleMatrixYW = transform.scale.y.w;
-		g_transformCache.scaleMatrixZX = transform.scale.z.x;
-		g_transformCache.scaleMatrixZY = transform.scale.z.y;
-		g_transformCache.scaleMatrixZZ = transform.scale.z.z;
-		g_transformCache.scaleMatrixZW = transform.scale.z.w;
-		g_transformCache.scaleMatrixWX = transform.scale.w.x;
-		g_transformCache.scaleMatrixWY = transform.scale.w.y;
-		g_transformCache.scaleMatrixWZ = transform.scale.w.z;
-		g_transformCache.scaleMatrixWW = transform.scale.w.w;
+		g_drawCalls = drawCalls.begin();
+		g_drawCallCount = drawCalls.getCount();
+	}
+
+	void PopulateMeshTransform(TransformCache &cache, const RenderTransform &transform)
+	{
+		cache.translationMatrixXX = transform.translation.x.x;
+		cache.translationMatrixXY = transform.translation.x.y;
+		cache.translationMatrixXZ = transform.translation.x.z;
+		cache.translationMatrixXW = transform.translation.x.w;
+		cache.translationMatrixYX = transform.translation.y.x;
+		cache.translationMatrixYY = transform.translation.y.y;
+		cache.translationMatrixYZ = transform.translation.y.z;
+		cache.translationMatrixYW = transform.translation.y.w;
+		cache.translationMatrixZX = transform.translation.z.x;
+		cache.translationMatrixZY = transform.translation.z.y;
+		cache.translationMatrixZZ = transform.translation.z.z;
+		cache.translationMatrixZW = transform.translation.z.w;
+		cache.translationMatrixWX = transform.translation.w.x;
+		cache.translationMatrixWY = transform.translation.w.y;
+		cache.translationMatrixWZ = transform.translation.w.z;
+		cache.translationMatrixWW = transform.translation.w.w;
+		cache.rotationMatrixXX = transform.rotation.x.x;
+		cache.rotationMatrixXY = transform.rotation.x.y;
+		cache.rotationMatrixXZ = transform.rotation.x.z;
+		cache.rotationMatrixXW = transform.rotation.x.w;
+		cache.rotationMatrixYX = transform.rotation.y.x;
+		cache.rotationMatrixYY = transform.rotation.y.y;
+		cache.rotationMatrixYZ = transform.rotation.y.z;
+		cache.rotationMatrixYW = transform.rotation.y.w;
+		cache.rotationMatrixZX = transform.rotation.z.x;
+		cache.rotationMatrixZY = transform.rotation.z.y;
+		cache.rotationMatrixZZ = transform.rotation.z.z;
+		cache.rotationMatrixZW = transform.rotation.z.w;
+		cache.rotationMatrixWX = transform.rotation.w.x;
+		cache.rotationMatrixWY = transform.rotation.w.y;
+		cache.rotationMatrixWZ = transform.rotation.w.z;
+		cache.rotationMatrixWW = transform.rotation.w.w;
+		cache.scaleMatrixXX = transform.scale.x.x;
+		cache.scaleMatrixXY = transform.scale.x.y;
+		cache.scaleMatrixXZ = transform.scale.x.z;
+		cache.scaleMatrixXW = transform.scale.x.w;
+		cache.scaleMatrixYX = transform.scale.y.x;
+		cache.scaleMatrixYY = transform.scale.y.y;
+		cache.scaleMatrixYZ = transform.scale.y.z;
+		cache.scaleMatrixYW = transform.scale.y.w;
+		cache.scaleMatrixZX = transform.scale.z.x;
+		cache.scaleMatrixZY = transform.scale.z.y;
+		cache.scaleMatrixZZ = transform.scale.z.z;
+		cache.scaleMatrixZW = transform.scale.z.w;
+		cache.scaleMatrixWX = transform.scale.w.x;
+		cache.scaleMatrixWY = transform.scale.w.y;
+		cache.scaleMatrixWZ = transform.scale.w.z;
+		cache.scaleMatrixWW = transform.scale.w.w;
 		// Do model-view-projection matrix in the bulk processing loop.
 	}
 }
@@ -1135,7 +1141,7 @@ namespace
 namespace
 {
 	template<int N>
-	void VertexShader_BasicN(const double *__restrict vertexXs, const double *__restrict vertexYs,
+	void VertexShader_BasicN(const TransformCache &__restrict transformCache, const double *__restrict vertexXs, const double *__restrict vertexYs,
 		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
 		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
@@ -1159,22 +1165,22 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			// @todo: this isn't taking meshIndex anymore
-			modelViewProjMatrixXXs[i] = g_transformCache.modelViewProjMatrixXX;
-			modelViewProjMatrixXYs[i] = g_transformCache.modelViewProjMatrixXY;
-			modelViewProjMatrixXZs[i] = g_transformCache.modelViewProjMatrixXZ;
-			modelViewProjMatrixXWs[i] = g_transformCache.modelViewProjMatrixXW;
-			modelViewProjMatrixYXs[i] = g_transformCache.modelViewProjMatrixYX;
-			modelViewProjMatrixYYs[i] = g_transformCache.modelViewProjMatrixYY;
-			modelViewProjMatrixYZs[i] = g_transformCache.modelViewProjMatrixYZ;
-			modelViewProjMatrixYWs[i] = g_transformCache.modelViewProjMatrixYW;
-			modelViewProjMatrixZXs[i] = g_transformCache.modelViewProjMatrixZX;
-			modelViewProjMatrixZYs[i] = g_transformCache.modelViewProjMatrixZY;
-			modelViewProjMatrixZZs[i] = g_transformCache.modelViewProjMatrixZZ;
-			modelViewProjMatrixZWs[i] = g_transformCache.modelViewProjMatrixZW;
-			modelViewProjMatrixWXs[i] = g_transformCache.modelViewProjMatrixWX;
-			modelViewProjMatrixWYs[i] = g_transformCache.modelViewProjMatrixWY;
-			modelViewProjMatrixWZs[i] = g_transformCache.modelViewProjMatrixWZ;
-			modelViewProjMatrixWWs[i] = g_transformCache.modelViewProjMatrixWW;
+			modelViewProjMatrixXXs[i] = transformCache.modelViewProjMatrixXX;
+			modelViewProjMatrixXYs[i] = transformCache.modelViewProjMatrixXY;
+			modelViewProjMatrixXZs[i] = transformCache.modelViewProjMatrixXZ;
+			modelViewProjMatrixXWs[i] = transformCache.modelViewProjMatrixXW;
+			modelViewProjMatrixYXs[i] = transformCache.modelViewProjMatrixYX;
+			modelViewProjMatrixYYs[i] = transformCache.modelViewProjMatrixYY;
+			modelViewProjMatrixYZs[i] = transformCache.modelViewProjMatrixYZ;
+			modelViewProjMatrixYWs[i] = transformCache.modelViewProjMatrixYW;
+			modelViewProjMatrixZXs[i] = transformCache.modelViewProjMatrixZX;
+			modelViewProjMatrixZYs[i] = transformCache.modelViewProjMatrixZY;
+			modelViewProjMatrixZZs[i] = transformCache.modelViewProjMatrixZZ;
+			modelViewProjMatrixZWs[i] = transformCache.modelViewProjMatrixZW;
+			modelViewProjMatrixWXs[i] = transformCache.modelViewProjMatrixWX;
+			modelViewProjMatrixWYs[i] = transformCache.modelViewProjMatrixWY;
+			modelViewProjMatrixWZs[i] = transformCache.modelViewProjMatrixWZ;
+			modelViewProjMatrixWWs[i] = transformCache.modelViewProjMatrixWW;
 		}
 
 		// Apply model-view-projection matrix.
@@ -1188,7 +1194,7 @@ namespace
 	}
 
 	template<int N>
-	void VertexShader_RaisingDoorN(const double *__restrict vertexXs, const double *__restrict vertexYs,
+	void VertexShader_RaisingDoorN(const TransformCache &__restrict transformCache, const double *__restrict vertexXs, const double *__restrict vertexYs,
 		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
 		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
@@ -1247,57 +1253,57 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			// @todo: this isn't taking meshIndex anymore
-			preScaleTranslationXs[i] = g_transformCache.preScaleTranslationX;
-			preScaleTranslationYs[i] = g_transformCache.preScaleTranslationY;
-			preScaleTranslationZs[i] = g_transformCache.preScaleTranslationZ;
-			translationMatrixXXs[i] = g_transformCache.translationMatrixXX;
-			translationMatrixXYs[i] = g_transformCache.translationMatrixXY;
-			translationMatrixXZs[i] = g_transformCache.translationMatrixXZ;
-			translationMatrixXWs[i] = g_transformCache.translationMatrixXW;
-			translationMatrixYXs[i] = g_transformCache.translationMatrixYX;
-			translationMatrixYYs[i] = g_transformCache.translationMatrixYY;
-			translationMatrixYZs[i] = g_transformCache.translationMatrixYZ;
-			translationMatrixYWs[i] = g_transformCache.translationMatrixYW;
-			translationMatrixZXs[i] = g_transformCache.translationMatrixZX;
-			translationMatrixZYs[i] = g_transformCache.translationMatrixZY;
-			translationMatrixZZs[i] = g_transformCache.translationMatrixZZ;
-			translationMatrixZWs[i] = g_transformCache.translationMatrixZW;
-			translationMatrixWXs[i] = g_transformCache.translationMatrixWX;
-			translationMatrixWYs[i] = g_transformCache.translationMatrixWY;
-			translationMatrixWZs[i] = g_transformCache.translationMatrixWZ;
-			translationMatrixWWs[i] = g_transformCache.translationMatrixWW;
-			rotationMatrixXXs[i] = g_transformCache.rotationMatrixXX;
-			rotationMatrixXYs[i] = g_transformCache.rotationMatrixXY;
-			rotationMatrixXZs[i] = g_transformCache.rotationMatrixXZ;
-			rotationMatrixXWs[i] = g_transformCache.rotationMatrixXW;
-			rotationMatrixYXs[i] = g_transformCache.rotationMatrixYX;
-			rotationMatrixYYs[i] = g_transformCache.rotationMatrixYY;
-			rotationMatrixYZs[i] = g_transformCache.rotationMatrixYZ;
-			rotationMatrixYWs[i] = g_transformCache.rotationMatrixYW;
-			rotationMatrixZXs[i] = g_transformCache.rotationMatrixZX;
-			rotationMatrixZYs[i] = g_transformCache.rotationMatrixZY;
-			rotationMatrixZZs[i] = g_transformCache.rotationMatrixZZ;
-			rotationMatrixZWs[i] = g_transformCache.rotationMatrixZW;
-			rotationMatrixWXs[i] = g_transformCache.rotationMatrixWX;
-			rotationMatrixWYs[i] = g_transformCache.rotationMatrixWY;
-			rotationMatrixWZs[i] = g_transformCache.rotationMatrixWZ;
-			rotationMatrixWWs[i] = g_transformCache.rotationMatrixWW;
-			scaleMatrixXXs[i] = g_transformCache.scaleMatrixXX;
-			scaleMatrixXYs[i] = g_transformCache.scaleMatrixXY;
-			scaleMatrixXZs[i] = g_transformCache.scaleMatrixXZ;
-			scaleMatrixXWs[i] = g_transformCache.scaleMatrixXW;
-			scaleMatrixYXs[i] = g_transformCache.scaleMatrixYX;
-			scaleMatrixYYs[i] = g_transformCache.scaleMatrixYY;
-			scaleMatrixYZs[i] = g_transformCache.scaleMatrixYZ;
-			scaleMatrixYWs[i] = g_transformCache.scaleMatrixYW;
-			scaleMatrixZXs[i] = g_transformCache.scaleMatrixZX;
-			scaleMatrixZYs[i] = g_transformCache.scaleMatrixZY;
-			scaleMatrixZZs[i] = g_transformCache.scaleMatrixZZ;
-			scaleMatrixZWs[i] = g_transformCache.scaleMatrixZW;
-			scaleMatrixWXs[i] = g_transformCache.scaleMatrixWX;
-			scaleMatrixWYs[i] = g_transformCache.scaleMatrixWY;
-			scaleMatrixWZs[i] = g_transformCache.scaleMatrixWZ;
-			scaleMatrixWWs[i] = g_transformCache.scaleMatrixWW;
+			preScaleTranslationXs[i] = transformCache.preScaleTranslationX;
+			preScaleTranslationYs[i] = transformCache.preScaleTranslationY;
+			preScaleTranslationZs[i] = transformCache.preScaleTranslationZ;
+			translationMatrixXXs[i] = transformCache.translationMatrixXX;
+			translationMatrixXYs[i] = transformCache.translationMatrixXY;
+			translationMatrixXZs[i] = transformCache.translationMatrixXZ;
+			translationMatrixXWs[i] = transformCache.translationMatrixXW;
+			translationMatrixYXs[i] = transformCache.translationMatrixYX;
+			translationMatrixYYs[i] = transformCache.translationMatrixYY;
+			translationMatrixYZs[i] = transformCache.translationMatrixYZ;
+			translationMatrixYWs[i] = transformCache.translationMatrixYW;
+			translationMatrixZXs[i] = transformCache.translationMatrixZX;
+			translationMatrixZYs[i] = transformCache.translationMatrixZY;
+			translationMatrixZZs[i] = transformCache.translationMatrixZZ;
+			translationMatrixZWs[i] = transformCache.translationMatrixZW;
+			translationMatrixWXs[i] = transformCache.translationMatrixWX;
+			translationMatrixWYs[i] = transformCache.translationMatrixWY;
+			translationMatrixWZs[i] = transformCache.translationMatrixWZ;
+			translationMatrixWWs[i] = transformCache.translationMatrixWW;
+			rotationMatrixXXs[i] = transformCache.rotationMatrixXX;
+			rotationMatrixXYs[i] = transformCache.rotationMatrixXY;
+			rotationMatrixXZs[i] = transformCache.rotationMatrixXZ;
+			rotationMatrixXWs[i] = transformCache.rotationMatrixXW;
+			rotationMatrixYXs[i] = transformCache.rotationMatrixYX;
+			rotationMatrixYYs[i] = transformCache.rotationMatrixYY;
+			rotationMatrixYZs[i] = transformCache.rotationMatrixYZ;
+			rotationMatrixYWs[i] = transformCache.rotationMatrixYW;
+			rotationMatrixZXs[i] = transformCache.rotationMatrixZX;
+			rotationMatrixZYs[i] = transformCache.rotationMatrixZY;
+			rotationMatrixZZs[i] = transformCache.rotationMatrixZZ;
+			rotationMatrixZWs[i] = transformCache.rotationMatrixZW;
+			rotationMatrixWXs[i] = transformCache.rotationMatrixWX;
+			rotationMatrixWYs[i] = transformCache.rotationMatrixWY;
+			rotationMatrixWZs[i] = transformCache.rotationMatrixWZ;
+			rotationMatrixWWs[i] = transformCache.rotationMatrixWW;
+			scaleMatrixXXs[i] = transformCache.scaleMatrixXX;
+			scaleMatrixXYs[i] = transformCache.scaleMatrixXY;
+			scaleMatrixXZs[i] = transformCache.scaleMatrixXZ;
+			scaleMatrixXWs[i] = transformCache.scaleMatrixXW;
+			scaleMatrixYXs[i] = transformCache.scaleMatrixYX;
+			scaleMatrixYYs[i] = transformCache.scaleMatrixYY;
+			scaleMatrixYZs[i] = transformCache.scaleMatrixYZ;
+			scaleMatrixYWs[i] = transformCache.scaleMatrixYW;
+			scaleMatrixZXs[i] = transformCache.scaleMatrixZX;
+			scaleMatrixZYs[i] = transformCache.scaleMatrixZY;
+			scaleMatrixZZs[i] = transformCache.scaleMatrixZZ;
+			scaleMatrixZWs[i] = transformCache.scaleMatrixZW;
+			scaleMatrixWXs[i] = transformCache.scaleMatrixWX;
+			scaleMatrixWYs[i] = transformCache.scaleMatrixWY;
+			scaleMatrixWZs[i] = transformCache.scaleMatrixWZ;
+			scaleMatrixWWs[i] = transformCache.scaleMatrixWW;
 		}
 
 		// Translate down so floor vertices go underground and ceiling is at y=0.
@@ -1369,7 +1375,7 @@ namespace
 	}
 
 	template<int N>
-	void VertexShader_EntityN(const double *__restrict vertexXs, const double *__restrict vertexYs,
+	void VertexShader_EntityN(const TransformCache &__restrict transformCache, const double *__restrict vertexXs, const double *__restrict vertexYs,
 		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
 		double *__restrict outVertexZs, double *__restrict outVertexWs)
 	{
@@ -1392,22 +1398,22 @@ namespace
 		for (int i = 0; i < N; i++)
 		{
 			// @todo: this isn't taking meshIndex anymore
-			modelViewProjMatrixXXs[i] = g_transformCache.modelViewProjMatrixXX;
-			modelViewProjMatrixXYs[i] = g_transformCache.modelViewProjMatrixXY;
-			modelViewProjMatrixXZs[i] = g_transformCache.modelViewProjMatrixXZ;
-			modelViewProjMatrixXWs[i] = g_transformCache.modelViewProjMatrixXW;
-			modelViewProjMatrixYXs[i] = g_transformCache.modelViewProjMatrixYX;
-			modelViewProjMatrixYYs[i] = g_transformCache.modelViewProjMatrixYY;
-			modelViewProjMatrixYZs[i] = g_transformCache.modelViewProjMatrixYZ;
-			modelViewProjMatrixYWs[i] = g_transformCache.modelViewProjMatrixYW;
-			modelViewProjMatrixZXs[i] = g_transformCache.modelViewProjMatrixZX;
-			modelViewProjMatrixZYs[i] = g_transformCache.modelViewProjMatrixZY;
-			modelViewProjMatrixZZs[i] = g_transformCache.modelViewProjMatrixZZ;
-			modelViewProjMatrixZWs[i] = g_transformCache.modelViewProjMatrixZW;
-			modelViewProjMatrixWXs[i] = g_transformCache.modelViewProjMatrixWX;
-			modelViewProjMatrixWYs[i] = g_transformCache.modelViewProjMatrixWY;
-			modelViewProjMatrixWZs[i] = g_transformCache.modelViewProjMatrixWZ;
-			modelViewProjMatrixWWs[i] = g_transformCache.modelViewProjMatrixWW;
+			modelViewProjMatrixXXs[i] = transformCache.modelViewProjMatrixXX;
+			modelViewProjMatrixXYs[i] = transformCache.modelViewProjMatrixXY;
+			modelViewProjMatrixXZs[i] = transformCache.modelViewProjMatrixXZ;
+			modelViewProjMatrixXWs[i] = transformCache.modelViewProjMatrixXW;
+			modelViewProjMatrixYXs[i] = transformCache.modelViewProjMatrixYX;
+			modelViewProjMatrixYYs[i] = transformCache.modelViewProjMatrixYY;
+			modelViewProjMatrixYZs[i] = transformCache.modelViewProjMatrixYZ;
+			modelViewProjMatrixYWs[i] = transformCache.modelViewProjMatrixYW;
+			modelViewProjMatrixZXs[i] = transformCache.modelViewProjMatrixZX;
+			modelViewProjMatrixZYs[i] = transformCache.modelViewProjMatrixZY;
+			modelViewProjMatrixZZs[i] = transformCache.modelViewProjMatrixZZ;
+			modelViewProjMatrixZWs[i] = transformCache.modelViewProjMatrixZW;
+			modelViewProjMatrixWXs[i] = transformCache.modelViewProjMatrixWX;
+			modelViewProjMatrixWYs[i] = transformCache.modelViewProjMatrixWY;
+			modelViewProjMatrixWZs[i] = transformCache.modelViewProjMatrixWZ;
+			modelViewProjMatrixWWs[i] = transformCache.modelViewProjMatrixWW;
 		}
 
 		// Apply model-view-projection matrix.
@@ -1894,11 +1900,6 @@ namespace
 		double clipSpaceTriangleUV2XYArray[MAX_CLIPPED_TRIANGLE_TRIANGLES][2];
 	};
 
-	VertexShaderInputCache g_vertexShaderInputCache;
-	VertexShaderOutputCache g_vertexShaderOutputCache;
-	ClippingOutputCache g_clippingOutputCache;
-
-	int g_totalDrawCallCount = 0;
 	int g_totalPresentedTriangleCount = 0; // Triangles the rasterizer spends any time attempting to shade pixels for.
 
 	void ClearTriangleTotalCounts()
@@ -1908,15 +1909,15 @@ namespace
 	}
 
 	// Handles the vertex/attribute/index buffer lookups for more efficient processing later.
-	void ProcessMeshBufferLookups()
+	void ProcessMeshBufferLookups(const DrawCallCache &drawCallCache, VertexShaderInputCache &vertexShaderInputCache)
 	{
-		g_vertexShaderInputCache.triangleCount = 0;
+		vertexShaderInputCache.triangleCount = 0;
 
 		// Append vertices and texture coordinates into big arrays. The incoming meshes are likely tiny like 2 triangles each,
 		// so this makes the total triangle loop longer for ease of number crunching.
-		const double *verticesPtr = g_drawCallCache.vertexBuffer->vertices.begin();
-		const double *texCoordsPtr = g_drawCallCache.texCoordBuffer->attributes.begin();
-		const SoftwareRenderer::IndexBuffer &indexBuffer = *g_drawCallCache.indexBuffer;
+		const double *verticesPtr = drawCallCache.vertexBuffer->vertices.begin();
+		const double *texCoordsPtr = drawCallCache.texCoordBuffer->attributes.begin();
+		const SoftwareRenderer::IndexBuffer &indexBuffer = *drawCallCache.indexBuffer;
 		const int32_t *indicesPtr = indexBuffer.indices.begin();
 		const int meshTriangleCount = indexBuffer.triangleCount;
 		DebugAssert(meshTriangleCount <= MAX_DRAW_CALL_MESH_TRIANGLES);
@@ -1938,31 +1939,31 @@ namespace
 			const int32_t uv0Index = index0 * texCoordComponentsPerVertex;
 			const int32_t uv1Index = index1 * texCoordComponentsPerVertex;
 			const int32_t uv2Index = index2 * texCoordComponentsPerVertex;
-			g_vertexShaderInputCache.unshadedV0Xs[writeIndex] = verticesPtr[v0Index];
-			g_vertexShaderInputCache.unshadedV0Ys[writeIndex] = verticesPtr[v0Index + 1];
-			g_vertexShaderInputCache.unshadedV0Zs[writeIndex] = verticesPtr[v0Index + 2];
-			g_vertexShaderInputCache.unshadedV0Ws[writeIndex] = 1.0;
-			g_vertexShaderInputCache.unshadedV1Xs[writeIndex] = verticesPtr[v1Index];
-			g_vertexShaderInputCache.unshadedV1Ys[writeIndex] = verticesPtr[v1Index + 1];
-			g_vertexShaderInputCache.unshadedV1Zs[writeIndex] = verticesPtr[v1Index + 2];
-			g_vertexShaderInputCache.unshadedV1Ws[writeIndex] = 1.0;
-			g_vertexShaderInputCache.unshadedV2Xs[writeIndex] = verticesPtr[v2Index];
-			g_vertexShaderInputCache.unshadedV2Ys[writeIndex] = verticesPtr[v2Index + 1];
-			g_vertexShaderInputCache.unshadedV2Zs[writeIndex] = verticesPtr[v2Index + 2];
-			g_vertexShaderInputCache.unshadedV2Ws[writeIndex] = 1.0;
-			g_vertexShaderInputCache.uv0Xs[writeIndex] = texCoordsPtr[uv0Index];
-			g_vertexShaderInputCache.uv0Ys[writeIndex] = texCoordsPtr[uv0Index + 1];
-			g_vertexShaderInputCache.uv1Xs[writeIndex] = texCoordsPtr[uv1Index];
-			g_vertexShaderInputCache.uv1Ys[writeIndex] = texCoordsPtr[uv1Index + 1];
-			g_vertexShaderInputCache.uv2Xs[writeIndex] = texCoordsPtr[uv2Index];
-			g_vertexShaderInputCache.uv2Ys[writeIndex] = texCoordsPtr[uv2Index + 1];
+			vertexShaderInputCache.unshadedV0Xs[writeIndex] = verticesPtr[v0Index];
+			vertexShaderInputCache.unshadedV0Ys[writeIndex] = verticesPtr[v0Index + 1];
+			vertexShaderInputCache.unshadedV0Zs[writeIndex] = verticesPtr[v0Index + 2];
+			vertexShaderInputCache.unshadedV0Ws[writeIndex] = 1.0;
+			vertexShaderInputCache.unshadedV1Xs[writeIndex] = verticesPtr[v1Index];
+			vertexShaderInputCache.unshadedV1Ys[writeIndex] = verticesPtr[v1Index + 1];
+			vertexShaderInputCache.unshadedV1Zs[writeIndex] = verticesPtr[v1Index + 2];
+			vertexShaderInputCache.unshadedV1Ws[writeIndex] = 1.0;
+			vertexShaderInputCache.unshadedV2Xs[writeIndex] = verticesPtr[v2Index];
+			vertexShaderInputCache.unshadedV2Ys[writeIndex] = verticesPtr[v2Index + 1];
+			vertexShaderInputCache.unshadedV2Zs[writeIndex] = verticesPtr[v2Index + 2];
+			vertexShaderInputCache.unshadedV2Ws[writeIndex] = 1.0;
+			vertexShaderInputCache.uv0Xs[writeIndex] = texCoordsPtr[uv0Index];
+			vertexShaderInputCache.uv0Ys[writeIndex] = texCoordsPtr[uv0Index + 1];
+			vertexShaderInputCache.uv1Xs[writeIndex] = texCoordsPtr[uv1Index];
+			vertexShaderInputCache.uv1Ys[writeIndex] = texCoordsPtr[uv1Index + 1];
+			vertexShaderInputCache.uv2Xs[writeIndex] = texCoordsPtr[uv2Index];
+			vertexShaderInputCache.uv2Ys[writeIndex] = texCoordsPtr[uv2Index + 1];
 			writeIndex++;
 		}
 
-		g_vertexShaderInputCache.triangleCount = meshTriangleCount;
+		vertexShaderInputCache.triangleCount = meshTriangleCount;
 	}
 
-	void CalculateVertexShaderTransforms()
+	void CalculateVertexShaderTransforms(TransformCache &transformCache)
 	{
 		double rotationScaleMatrixXX, rotationScaleMatrixXY, rotationScaleMatrixXZ, rotationScaleMatrixXW;
 		double rotationScaleMatrixYX, rotationScaleMatrixYY, rotationScaleMatrixYZ, rotationScaleMatrixYW;
@@ -1975,14 +1976,14 @@ namespace
 
 		// Rotation-scale matrix
 		Matrix4_MultiplyMatrixN<1>(
-			&g_transformCache.rotationMatrixXX, &g_transformCache.rotationMatrixXY, &g_transformCache.rotationMatrixXZ, &g_transformCache.rotationMatrixXW,
-			&g_transformCache.rotationMatrixYX, &g_transformCache.rotationMatrixYY, &g_transformCache.rotationMatrixYZ, &g_transformCache.rotationMatrixYW,
-			&g_transformCache.rotationMatrixZX, &g_transformCache.rotationMatrixZY, &g_transformCache.rotationMatrixZZ, &g_transformCache.rotationMatrixZW,
-			&g_transformCache.rotationMatrixWX, &g_transformCache.rotationMatrixWY, &g_transformCache.rotationMatrixWZ, &g_transformCache.rotationMatrixWW,
-			&g_transformCache.scaleMatrixXX, &g_transformCache.scaleMatrixXY, &g_transformCache.scaleMatrixXZ, &g_transformCache.scaleMatrixXW,
-			&g_transformCache.scaleMatrixYX, &g_transformCache.scaleMatrixYY, &g_transformCache.scaleMatrixYZ, &g_transformCache.scaleMatrixYW,
-			&g_transformCache.scaleMatrixZX, &g_transformCache.scaleMatrixZY, &g_transformCache.scaleMatrixZZ, &g_transformCache.scaleMatrixZW,
-			&g_transformCache.scaleMatrixWX, &g_transformCache.scaleMatrixWY, &g_transformCache.scaleMatrixWZ, &g_transformCache.scaleMatrixWW,
+			&transformCache.rotationMatrixXX, &transformCache.rotationMatrixXY, &transformCache.rotationMatrixXZ, &transformCache.rotationMatrixXW,
+			&transformCache.rotationMatrixYX, &transformCache.rotationMatrixYY, &transformCache.rotationMatrixYZ, &transformCache.rotationMatrixYW,
+			&transformCache.rotationMatrixZX, &transformCache.rotationMatrixZY, &transformCache.rotationMatrixZZ, &transformCache.rotationMatrixZW,
+			&transformCache.rotationMatrixWX, &transformCache.rotationMatrixWY, &transformCache.rotationMatrixWZ, &transformCache.rotationMatrixWW,
+			&transformCache.scaleMatrixXX, &transformCache.scaleMatrixXY, &transformCache.scaleMatrixXZ, &transformCache.scaleMatrixXW,
+			&transformCache.scaleMatrixYX, &transformCache.scaleMatrixYY, &transformCache.scaleMatrixYZ, &transformCache.scaleMatrixYW,
+			&transformCache.scaleMatrixZX, &transformCache.scaleMatrixZY, &transformCache.scaleMatrixZZ, &transformCache.scaleMatrixZW,
+			&transformCache.scaleMatrixWX, &transformCache.scaleMatrixWY, &transformCache.scaleMatrixWZ, &transformCache.scaleMatrixWW,
 			&rotationScaleMatrixXX, &rotationScaleMatrixXY, &rotationScaleMatrixXZ, &rotationScaleMatrixXW,
 			&rotationScaleMatrixYX, &rotationScaleMatrixYY, &rotationScaleMatrixYZ, &rotationScaleMatrixYW,
 			&rotationScaleMatrixZX, &rotationScaleMatrixZY, &rotationScaleMatrixZZ, &rotationScaleMatrixZW,
@@ -1990,10 +1991,10 @@ namespace
 
 		// Model matrix
 		Matrix4_MultiplyMatrixN<1>(
-			&g_transformCache.translationMatrixXX, &g_transformCache.translationMatrixXY, &g_transformCache.translationMatrixXZ, &g_transformCache.translationMatrixXW,
-			&g_transformCache.translationMatrixYX, &g_transformCache.translationMatrixYY, &g_transformCache.translationMatrixYZ, &g_transformCache.translationMatrixYW,
-			&g_transformCache.translationMatrixZX, &g_transformCache.translationMatrixZY, &g_transformCache.translationMatrixZZ, &g_transformCache.translationMatrixZW,
-			&g_transformCache.translationMatrixWX, &g_transformCache.translationMatrixWY, &g_transformCache.translationMatrixWZ, &g_transformCache.translationMatrixWW,
+			&transformCache.translationMatrixXX, &transformCache.translationMatrixXY, &transformCache.translationMatrixXZ, &transformCache.translationMatrixXW,
+			&transformCache.translationMatrixYX, &transformCache.translationMatrixYY, &transformCache.translationMatrixYZ, &transformCache.translationMatrixYW,
+			&transformCache.translationMatrixZX, &transformCache.translationMatrixZY, &transformCache.translationMatrixZZ, &transformCache.translationMatrixZW,
+			&transformCache.translationMatrixWX, &transformCache.translationMatrixWY, &transformCache.translationMatrixWZ, &transformCache.translationMatrixWW,
 			&rotationScaleMatrixXX, &rotationScaleMatrixXY, &rotationScaleMatrixXZ, &rotationScaleMatrixXW,
 			&rotationScaleMatrixYX, &rotationScaleMatrixYY, &rotationScaleMatrixYZ, &rotationScaleMatrixYW,
 			&rotationScaleMatrixZX, &rotationScaleMatrixZY, &rotationScaleMatrixZZ, &rotationScaleMatrixZW,
@@ -2013,35 +2014,36 @@ namespace
 			&modelMatrixYX, &modelMatrixYY, &modelMatrixYZ, &modelMatrixYW,
 			&modelMatrixZX, &modelMatrixZY, &modelMatrixZZ, &modelMatrixZW,
 			&modelMatrixWX, &modelMatrixWY, &modelMatrixWZ, &modelMatrixWW,
-			&g_transformCache.modelViewProjMatrixXX, &g_transformCache.modelViewProjMatrixXY, &g_transformCache.modelViewProjMatrixXZ, &g_transformCache.modelViewProjMatrixXW,
-			&g_transformCache.modelViewProjMatrixYX, &g_transformCache.modelViewProjMatrixYY, &g_transformCache.modelViewProjMatrixYZ, &g_transformCache.modelViewProjMatrixYW,
-			&g_transformCache.modelViewProjMatrixZX, &g_transformCache.modelViewProjMatrixZY, &g_transformCache.modelViewProjMatrixZZ, &g_transformCache.modelViewProjMatrixZW,
-			&g_transformCache.modelViewProjMatrixWX, &g_transformCache.modelViewProjMatrixWY, &g_transformCache.modelViewProjMatrixWZ, &g_transformCache.modelViewProjMatrixWW);
+			&transformCache.modelViewProjMatrixXX, &transformCache.modelViewProjMatrixXY, &transformCache.modelViewProjMatrixXZ, &transformCache.modelViewProjMatrixXW,
+			&transformCache.modelViewProjMatrixYX, &transformCache.modelViewProjMatrixYY, &transformCache.modelViewProjMatrixYZ, &transformCache.modelViewProjMatrixYW,
+			&transformCache.modelViewProjMatrixZX, &transformCache.modelViewProjMatrixZY, &transformCache.modelViewProjMatrixZZ, &transformCache.modelViewProjMatrixZW,
+			&transformCache.modelViewProjMatrixWX, &transformCache.modelViewProjMatrixWY, &transformCache.modelViewProjMatrixWZ, &transformCache.modelViewProjMatrixWW);
 	}
 
 	// Converts the mesh's world space vertices to clip space.
 	template<VertexShaderType vertexShaderType>
-	void ProcessVertexShadersInternal()
+	void ProcessVertexShadersInternal(const TransformCache &transformCache, const VertexShaderInputCache &vertexShaderInputCache,
+		VertexShaderOutputCache &vertexShaderOutputCache)
 	{
-		g_vertexShaderOutputCache.triangleWriteCount = 0;
+		vertexShaderOutputCache.triangleWriteCount = 0;
 
 		// Run vertex shaders on each triangle and store the results for clipping.
-		const int triangleCount = g_vertexShaderInputCache.triangleCount;
+		const int triangleCount = vertexShaderInputCache.triangleCount;
 		int triangleIndex = 0;
 		while (triangleIndex < triangleCount)
 		{
-			const double unshadedV0Xs[1] = { g_vertexShaderInputCache.unshadedV0Xs[triangleIndex] };
-			const double unshadedV0Ys[1] = { g_vertexShaderInputCache.unshadedV0Ys[triangleIndex] };
-			const double unshadedV0Zs[1] = { g_vertexShaderInputCache.unshadedV0Zs[triangleIndex] };
-			const double unshadedV0Ws[1] = { g_vertexShaderInputCache.unshadedV0Ws[triangleIndex] };
-			const double unshadedV1Xs[1] = { g_vertexShaderInputCache.unshadedV1Xs[triangleIndex] };
-			const double unshadedV1Ys[1] = { g_vertexShaderInputCache.unshadedV1Ys[triangleIndex] };
-			const double unshadedV1Zs[1] = { g_vertexShaderInputCache.unshadedV1Zs[triangleIndex] };
-			const double unshadedV1Ws[1] = { g_vertexShaderInputCache.unshadedV1Ws[triangleIndex] };
-			const double unshadedV2Xs[1] = { g_vertexShaderInputCache.unshadedV2Xs[triangleIndex] };
-			const double unshadedV2Ys[1] = { g_vertexShaderInputCache.unshadedV2Ys[triangleIndex] };
-			const double unshadedV2Zs[1] = { g_vertexShaderInputCache.unshadedV2Zs[triangleIndex] };
-			const double unshadedV2Ws[1] = { g_vertexShaderInputCache.unshadedV2Ws[triangleIndex] };
+			const double unshadedV0Xs[1] = { vertexShaderInputCache.unshadedV0Xs[triangleIndex] };
+			const double unshadedV0Ys[1] = { vertexShaderInputCache.unshadedV0Ys[triangleIndex] };
+			const double unshadedV0Zs[1] = { vertexShaderInputCache.unshadedV0Zs[triangleIndex] };
+			const double unshadedV0Ws[1] = { vertexShaderInputCache.unshadedV0Ws[triangleIndex] };
+			const double unshadedV1Xs[1] = { vertexShaderInputCache.unshadedV1Xs[triangleIndex] };
+			const double unshadedV1Ys[1] = { vertexShaderInputCache.unshadedV1Ys[triangleIndex] };
+			const double unshadedV1Zs[1] = { vertexShaderInputCache.unshadedV1Zs[triangleIndex] };
+			const double unshadedV1Ws[1] = { vertexShaderInputCache.unshadedV1Ws[triangleIndex] };
+			const double unshadedV2Xs[1] = { vertexShaderInputCache.unshadedV2Xs[triangleIndex] };
+			const double unshadedV2Ys[1] = { vertexShaderInputCache.unshadedV2Ys[triangleIndex] };
+			const double unshadedV2Zs[1] = { vertexShaderInputCache.unshadedV2Zs[triangleIndex] };
+			const double unshadedV2Ws[1] = { vertexShaderInputCache.unshadedV2Ws[triangleIndex] };
 			double shadedV0Xs[1] = { 0.0 };
 			double shadedV0Ys[1] = { 0.0 };
 			double shadedV0Zs[1] = { 0.0 };
@@ -2057,32 +2059,32 @@ namespace
 
 			if constexpr (vertexShaderType == VertexShaderType::Basic)
 			{
-				VertexShader_BasicN<1>(unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_BasicN<1>(unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_BasicN<1>(unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_BasicN<1>(transformCache, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_BasicN<1>(transformCache, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_BasicN<1>(transformCache, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 			else if (vertexShaderType == VertexShaderType::RaisingDoor)
 			{
-				VertexShader_RaisingDoorN<1>(unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_RaisingDoorN<1>(unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_RaisingDoorN<1>(unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_RaisingDoorN<1>(transformCache, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_RaisingDoorN<1>(transformCache, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_RaisingDoorN<1>(transformCache, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 			else if (vertexShaderType == VertexShaderType::Entity)
 			{
-				VertexShader_EntityN<1>(unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_EntityN<1>(unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_EntityN<1>(unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
+				VertexShader_EntityN<1>(transformCache, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
+				VertexShader_EntityN<1>(transformCache, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
+				VertexShader_EntityN<1>(transformCache, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 
-			int &writeIndex = g_vertexShaderOutputCache.triangleWriteCount;
+			int &writeIndex = vertexShaderOutputCache.triangleWriteCount;
 			DebugAssert(writeIndex < MAX_DRAW_CALL_MESH_TRIANGLES);
 
-			auto &resultV0XYZW = g_vertexShaderOutputCache.shadedV0XYZWArray[writeIndex];
-			auto &resultV1XYZW = g_vertexShaderOutputCache.shadedV1XYZWArray[writeIndex];
-			auto &resultV2XYZW = g_vertexShaderOutputCache.shadedV2XYZWArray[writeIndex];
-			auto &resultUV0XY = g_vertexShaderOutputCache.uv0XYArray[writeIndex];
-			auto &resultUV1XY = g_vertexShaderOutputCache.uv1XYArray[writeIndex];
-			auto &resultUV2XY = g_vertexShaderOutputCache.uv2XYArray[writeIndex];
+			auto &resultV0XYZW = vertexShaderOutputCache.shadedV0XYZWArray[writeIndex];
+			auto &resultV1XYZW = vertexShaderOutputCache.shadedV1XYZWArray[writeIndex];
+			auto &resultV2XYZW = vertexShaderOutputCache.shadedV2XYZWArray[writeIndex];
+			auto &resultUV0XY = vertexShaderOutputCache.uv0XYArray[writeIndex];
+			auto &resultUV1XY = vertexShaderOutputCache.uv1XYArray[writeIndex];
+			auto &resultUV2XY = vertexShaderOutputCache.uv2XYArray[writeIndex];
 			resultV0XYZW[0] = shadedV0Xs[0];
 			resultV0XYZW[1] = shadedV0Ys[0];
 			resultV0XYZW[2] = shadedV0Zs[0];
@@ -2095,12 +2097,12 @@ namespace
 			resultV2XYZW[1] = shadedV2Ys[0];
 			resultV2XYZW[2] = shadedV2Zs[0];
 			resultV2XYZW[3] = shadedV2Ws[0];
-			resultUV0XY[0] = g_vertexShaderInputCache.uv0Xs[triangleIndex];
-			resultUV0XY[1] = g_vertexShaderInputCache.uv0Ys[triangleIndex];
-			resultUV1XY[0] = g_vertexShaderInputCache.uv1Xs[triangleIndex];
-			resultUV1XY[1] = g_vertexShaderInputCache.uv1Ys[triangleIndex];
-			resultUV2XY[0] = g_vertexShaderInputCache.uv2Xs[triangleIndex];
-			resultUV2XY[1] = g_vertexShaderInputCache.uv2Ys[triangleIndex];
+			resultUV0XY[0] = vertexShaderInputCache.uv0Xs[triangleIndex];
+			resultUV0XY[1] = vertexShaderInputCache.uv0Ys[triangleIndex];
+			resultUV1XY[0] = vertexShaderInputCache.uv1Xs[triangleIndex];
+			resultUV1XY[1] = vertexShaderInputCache.uv1Ys[triangleIndex];
+			resultUV2XY[0] = vertexShaderInputCache.uv2Xs[triangleIndex];
+			resultUV2XY[1] = vertexShaderInputCache.uv2Ys[triangleIndex];
 			writeIndex++;
 			triangleIndex++;
 		}
@@ -2108,19 +2110,20 @@ namespace
 
 	// Operates on the current sequence of draw call meshes with the chosen vertex shader then writes results
 	// to a cache for mesh clipping.
-	void ProcessVertexShaders(VertexShaderType vertexShaderType)
+	void ProcessVertexShaders(VertexShaderType vertexShaderType, const TransformCache &transformCache, const VertexShaderInputCache &vertexShaderInputCache,
+		VertexShaderOutputCache &vertexShaderOutputCache)
 	{
 		// Dispatch based on vertex shader.
 		switch (vertexShaderType)
 		{
 		case VertexShaderType::Basic:
-			ProcessVertexShadersInternal<VertexShaderType::Basic>();
+			ProcessVertexShadersInternal<VertexShaderType::Basic>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
 			break;
 		case VertexShaderType::RaisingDoor:
-			ProcessVertexShadersInternal<VertexShaderType::RaisingDoor>();
+			ProcessVertexShadersInternal<VertexShaderType::RaisingDoor>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
 			break;
 		case VertexShaderType::Entity:
-			ProcessVertexShadersInternal<VertexShaderType::Entity>();
+			ProcessVertexShadersInternal<VertexShaderType::Entity>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
 			break;
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(vertexShaderType)));
@@ -2129,14 +2132,14 @@ namespace
 	}
 
 	template<int clipPlaneIndex>
-	void ProcessClippingWithPlane(int &clipListSize, int &clipListFrontIndex)
+	void ProcessClippingWithPlane(ClippingOutputCache &clippingOutputCache, int &clipListSize, int &clipListFrontIndex)
 	{
-		auto &clipSpaceTriangleV0XYZWs = g_clippingOutputCache.clipSpaceTriangleV0XYZWArray;
-		auto &clipSpaceTriangleV1XYZWs = g_clippingOutputCache.clipSpaceTriangleV1XYZWArray;
-		auto &clipSpaceTriangleV2XYZWs = g_clippingOutputCache.clipSpaceTriangleV2XYZWArray;
-		auto &clipSpaceTriangleUV0XYs = g_clippingOutputCache.clipSpaceTriangleUV0XYArray;
-		auto &clipSpaceTriangleUV1XYs = g_clippingOutputCache.clipSpaceTriangleUV1XYArray;
-		auto &clipSpaceTriangleUV2XYs = g_clippingOutputCache.clipSpaceTriangleUV2XYArray;
+		auto &clipSpaceTriangleV0XYZWs = clippingOutputCache.clipSpaceTriangleV0XYZWArray;
+		auto &clipSpaceTriangleV1XYZWs = clippingOutputCache.clipSpaceTriangleV1XYZWArray;
+		auto &clipSpaceTriangleV2XYZWs = clippingOutputCache.clipSpaceTriangleV2XYZWArray;
+		auto &clipSpaceTriangleUV0XYs = clippingOutputCache.clipSpaceTriangleUV0XYArray;
+		auto &clipSpaceTriangleUV1XYs = clippingOutputCache.clipSpaceTriangleUV1XYArray;
+		auto &clipSpaceTriangleUV2XYs = clippingOutputCache.clipSpaceTriangleUV2XYArray;
 
 		const int trianglesToClipCount = clipListSize - clipListFrontIndex;
 		for (int triangleToClip = trianglesToClipCount; triangleToClip > 0; triangleToClip--)
@@ -2402,33 +2405,33 @@ namespace
 	}
 
 	// Clips triangles to the frustum then writes out clip space triangle indices for the rasterizer to iterate.
-	void ProcessClipping()
+	void ProcessClipping(const DrawCallCache &drawCallCache, const VertexShaderOutputCache &vertexShaderOutputCache, ClippingOutputCache &clippingOutputCache)
 	{
-		const auto &shadedV0XYZWs = g_vertexShaderOutputCache.shadedV0XYZWArray;
-		const auto &shadedV1XYZWs = g_vertexShaderOutputCache.shadedV1XYZWArray;
-		const auto &shadedV2XYZWs = g_vertexShaderOutputCache.shadedV2XYZWArray;
-		const auto &uv0XYs = g_vertexShaderOutputCache.uv0XYArray;
-		const auto &uv1XYs = g_vertexShaderOutputCache.uv1XYArray;
-		const auto &uv2XYs = g_vertexShaderOutputCache.uv2XYArray;
-		auto &clipSpaceTriangleV0XYZWs = g_clippingOutputCache.clipSpaceTriangleV0XYZWArray;
-		auto &clipSpaceTriangleV1XYZWs = g_clippingOutputCache.clipSpaceTriangleV1XYZWArray;
-		auto &clipSpaceTriangleV2XYZWs = g_clippingOutputCache.clipSpaceTriangleV2XYZWArray;
-		auto &clipSpaceTriangleUV0XYs = g_clippingOutputCache.clipSpaceTriangleUV0XYArray;
-		auto &clipSpaceTriangleUV1XYs = g_clippingOutputCache.clipSpaceTriangleUV1XYArray;
-		auto &clipSpaceTriangleUV2XYs = g_clippingOutputCache.clipSpaceTriangleUV2XYArray;
-		auto &clipSpaceMeshV0XYZWs = g_clippingOutputCache.clipSpaceMeshV0XYZWArray;
-		auto &clipSpaceMeshV1XYZWs = g_clippingOutputCache.clipSpaceMeshV1XYZWArray;
-		auto &clipSpaceMeshV2XYZWs = g_clippingOutputCache.clipSpaceMeshV2XYZWArray;
-		auto &clipSpaceMeshUV0XYs = g_clippingOutputCache.clipSpaceMeshUV0XYArray;
-		auto &clipSpaceMeshUV1XYs = g_clippingOutputCache.clipSpaceMeshUV1XYArray;
-		auto &clipSpaceMeshUV2XYs = g_clippingOutputCache.clipSpaceMeshUV2XYArray;
-		int &clipSpaceMeshTriangleCount = g_clippingOutputCache.clipSpaceMeshTriangleCount;
+		const auto &shadedV0XYZWs = vertexShaderOutputCache.shadedV0XYZWArray;
+		const auto &shadedV1XYZWs = vertexShaderOutputCache.shadedV1XYZWArray;
+		const auto &shadedV2XYZWs = vertexShaderOutputCache.shadedV2XYZWArray;
+		const auto &uv0XYs = vertexShaderOutputCache.uv0XYArray;
+		const auto &uv1XYs = vertexShaderOutputCache.uv1XYArray;
+		const auto &uv2XYs = vertexShaderOutputCache.uv2XYArray;
+		auto &clipSpaceTriangleV0XYZWs = clippingOutputCache.clipSpaceTriangleV0XYZWArray;
+		auto &clipSpaceTriangleV1XYZWs = clippingOutputCache.clipSpaceTriangleV1XYZWArray;
+		auto &clipSpaceTriangleV2XYZWs = clippingOutputCache.clipSpaceTriangleV2XYZWArray;
+		auto &clipSpaceTriangleUV0XYs = clippingOutputCache.clipSpaceTriangleUV0XYArray;
+		auto &clipSpaceTriangleUV1XYs = clippingOutputCache.clipSpaceTriangleUV1XYArray;
+		auto &clipSpaceTriangleUV2XYs = clippingOutputCache.clipSpaceTriangleUV2XYArray;
+		auto &clipSpaceMeshV0XYZWs = clippingOutputCache.clipSpaceMeshV0XYZWArray;
+		auto &clipSpaceMeshV1XYZWs = clippingOutputCache.clipSpaceMeshV1XYZWArray;
+		auto &clipSpaceMeshV2XYZWs = clippingOutputCache.clipSpaceMeshV2XYZWArray;
+		auto &clipSpaceMeshUV0XYs = clippingOutputCache.clipSpaceMeshUV0XYArray;
+		auto &clipSpaceMeshUV1XYs = clippingOutputCache.clipSpaceMeshUV1XYArray;
+		auto &clipSpaceMeshUV2XYs = clippingOutputCache.clipSpaceMeshUV2XYArray;
+		int &clipSpaceMeshTriangleCount = clippingOutputCache.clipSpaceMeshTriangleCount;
 
 		// Reset clip space cache. Skip zeroing the mesh arrays for performance.
 		clipSpaceMeshTriangleCount = 0;
 
 		// Clip each vertex-shaded triangle and save them in a cache for rasterization.
-		const int triangleCount = g_drawCallCache.indexBuffer->triangleCount;
+		const int triangleCount = drawCallCache.indexBuffer->triangleCount;
 		for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
 		{
 			const auto &shadedV0XYZW = shadedV0XYZWs[triangleIndex];
@@ -2468,12 +2471,12 @@ namespace
 			int clipListFrontIndex = 0;
 
 			// Check each dimension against -W and W components.
-			ProcessClippingWithPlane<0>(clipListSize, clipListFrontIndex);
-			ProcessClippingWithPlane<1>(clipListSize, clipListFrontIndex);
-			ProcessClippingWithPlane<2>(clipListSize, clipListFrontIndex);
-			ProcessClippingWithPlane<3>(clipListSize, clipListFrontIndex);
-			ProcessClippingWithPlane<4>(clipListSize, clipListFrontIndex);
-			ProcessClippingWithPlane<5>(clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<0>(clippingOutputCache, clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<1>(clippingOutputCache, clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<2>(clippingOutputCache, clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<3>(clippingOutputCache, clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<4>(clippingOutputCache, clipListSize, clipListFrontIndex);
+			ProcessClippingWithPlane<5>(clippingOutputCache, clipListSize, clipListFrontIndex);
 
 			// Add the clip results to the mesh, skipping the incomplete triangles the front index advanced beyond.
 			const int resultTriangleCount = clipListSize - clipListFrontIndex;
@@ -2562,16 +2565,16 @@ namespace
 		}
 	}
 
-	void ProcessClipSpaceTrianglesForBinning()
+	void ProcessClipSpaceTrianglesForBinning(const ClippingOutputCache &clippingOutputCache)
 	{
-		const auto &clipSpaceMeshV0XYZWs = g_clippingOutputCache.clipSpaceMeshV0XYZWArray;
-		const auto &clipSpaceMeshV1XYZWs = g_clippingOutputCache.clipSpaceMeshV1XYZWArray;
-		const auto &clipSpaceMeshV2XYZWs = g_clippingOutputCache.clipSpaceMeshV2XYZWArray;
-		const auto &clipSpaceMeshUV0XYs = g_clippingOutputCache.clipSpaceMeshUV0XYArray;
-		const auto &clipSpaceMeshUV1XYs = g_clippingOutputCache.clipSpaceMeshUV1XYArray;
-		const auto &clipSpaceMeshUV2XYs = g_clippingOutputCache.clipSpaceMeshUV2XYArray;
+		const auto &clipSpaceMeshV0XYZWs = clippingOutputCache.clipSpaceMeshV0XYZWArray;
+		const auto &clipSpaceMeshV1XYZWs = clippingOutputCache.clipSpaceMeshV1XYZWArray;
+		const auto &clipSpaceMeshV2XYZWs = clippingOutputCache.clipSpaceMeshV2XYZWArray;
+		const auto &clipSpaceMeshUV0XYs = clippingOutputCache.clipSpaceMeshUV0XYArray;
+		const auto &clipSpaceMeshUV1XYs = clippingOutputCache.clipSpaceMeshUV1XYArray;
+		const auto &clipSpaceMeshUV2XYs = clippingOutputCache.clipSpaceMeshUV2XYArray;
 
-		const int meshTriangleCount = g_clippingOutputCache.clipSpaceMeshTriangleCount;
+		const int meshTriangleCount = clippingOutputCache.clipSpaceMeshTriangleCount;
 		for (int meshTriangleIndex = 0; meshTriangleIndex < meshTriangleCount; meshTriangleIndex++)
 		{
 			const auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[meshTriangleIndex];
@@ -2824,14 +2827,14 @@ namespace
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
-	void RasterizeMeshInternal(int binX, int binY, int binIndex)
+	void RasterizeMeshInternal(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
 	{
-		const TextureSamplingType textureSamplingType0 = g_drawCallCache.textureSamplingType0;
-		const TextureSamplingType textureSamplingType1 = g_drawCallCache.textureSamplingType1;
-		const double meshLightPercent = g_drawCallCache.meshLightPercent;
-		const auto &lights = g_drawCallCache.lightPtrArray;
-		const int lightCount = g_drawCallCache.lightCount;
-		const double pixelShaderParam0 = g_drawCallCache.pixelShaderParam0;
+		const TextureSamplingType textureSamplingType0 = drawCallCache.textureSamplingType0;
+		const TextureSamplingType textureSamplingType1 = drawCallCache.textureSamplingType1;
+		const double meshLightPercent = drawCallCache.meshLightPercent;
+		const auto &lights = drawCallCache.lightPtrArray;
+		const int lightCount = drawCallCache.lightCount;
+		const double pixelShaderParam0 = drawCallCache.pixelShaderParam0;
 
 		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
 		constexpr bool requiresHorizonMirror = pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
@@ -2861,8 +2864,8 @@ namespace
 			shaderHorizonMirror.fallbackSkyColor = g_skyBgTexture->texels8Bit[0];
 		}
 
-		const ObjectTextureID textureID0 = g_drawCallCache.textureID0;
-		const ObjectTextureID textureID1 = g_drawCallCache.textureID1;
+		const ObjectTextureID textureID0 = drawCallCache.textureID0;
+		const ObjectTextureID textureID1 = drawCallCache.textureID1;
 
 		const SoftwareRenderer::ObjectTexture &texture0 = g_objectTextures->get(textureID0);
 		PixelShaderTexture shaderTexture0;
@@ -3165,106 +3168,106 @@ namespace
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
-	void RasterizeMeshDispatchDitheringMode(int binX, int binY, int binIndex)
+	void RasterizeMeshDispatchDitheringMode(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
 	{
 		switch (g_ditheringMode)
 		{
 		case DitheringMode::None:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(drawCallCache, binX, binY, binIndex);
 			break;
 		case DitheringMode::Classic:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(drawCallCache, binX, binY, binIndex);
 			break;
 		case DitheringMode::Modern:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(drawCallCache, binX, binY, binIndex);
 			break;
 		}
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType>
-	void RasterizeMeshDispatchDepthToggles(int binX, int binY, int binIndex)
+	void RasterizeMeshDispatchDepthToggles(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
 	{
-		const bool enableDepthRead = g_drawCallCache.enableDepthRead;
-		const bool enableDepthWrite = g_drawCallCache.enableDepthWrite;
+		const bool enableDepthRead = drawCallCache.enableDepthRead;
+		const bool enableDepthWrite = drawCallCache.enableDepthWrite;
 
 		if (enableDepthRead)
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(drawCallCache, binX, binY, binIndex);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(drawCallCache, binX, binY, binIndex);
 			}
 		}
 		else
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(drawCallCache, binX, binY, binIndex);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(drawCallCache, binX, binY, binIndex);
 			}
 		}
 	}
 
 	template<RenderLightingType lightingType>
-	void RasterizeMeshDispatchPixelShaderType(int binX, int binY, int binIndex)
+	void RasterizeMeshDispatchPixelShaderType(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
 	{
 		static_assert(PixelShaderType::AlphaTestedWithHorizonMirror == PIXEL_SHADER_TYPE_MAX);
-		const PixelShaderType pixelShaderType = g_drawCallCache.pixelShaderType;
+		const PixelShaderType pixelShaderType = drawCallCache.pixelShaderType;
 
 		switch (pixelShaderType)
 		{
 		case PixelShaderType::Opaque:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::OpaqueWithAlphaTestLayer:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTested:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelColor:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelOpacity:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(drawCallCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithHorizonMirror:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(drawCallCache, binX, binY, binIndex);
 			break;
 		}
 	}
 
 	// Decides which optimized rasterizer variant to use based on the parameters.
-	void RasterizeMesh(int binX, int binY, int binIndex)
+	void RasterizeMesh(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
 	{
 		static_assert(RenderLightingType::PerPixel == RENDER_LIGHTING_TYPE_MAX);
-		const RenderLightingType lightingType = g_drawCallCache.lightingType;
+		const RenderLightingType lightingType = drawCallCache.lightingType;
 
 		if (lightingType == RenderLightingType::PerMesh)
 		{
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(binX, binY, binIndex);
+			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(drawCallCache, binX, binY, binIndex);
 		}
 		else if (lightingType == RenderLightingType::PerPixel)
 		{
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(binX, binY, binIndex);
+			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(drawCallCache, binX, binY, binIndex);
 		}
 	}
 }
@@ -3280,6 +3283,14 @@ namespace
 	struct Worker
 	{
 		std::thread thread;
+		
+		DrawCallCache drawCallCache; // @todo: make this hold like 8k max
+		TransformCache transformCache;
+		int drawCallStartIndex, drawCallCount;
+
+		VertexShaderInputCache g_vertexShaderInputCache;
+		VertexShaderOutputCache g_vertexShaderOutputCache;
+		ClippingOutputCache g_clippingOutputCache;
 		std::vector<RasterizerWorkItem> workItems;
 		bool isReadyToStart, shouldWork, shouldExit, isFinishedWorking;
 	};
@@ -3311,19 +3322,15 @@ namespace
 				break;
 			}
 
-			const BufferView<const RasterizerWorkItem> workItems = worker.workItems;
-			const int workItemCount = workItems.getCount();
-			for (int workItemIndex = 0; workItemIndex < workItemCount; workItemIndex++)
+			for (const RasterizerWorkItem &workItem : worker.workItems)
 			{
-				const RasterizerWorkItem &workItem = workItems[workItemIndex];
-				const int binX = workItem.binX;
-				const int binY = workItem.binY;
 				const int binIndex = workItem.binIndex;
-
 				const RasterizerBin &bin = g_rasterizerBins[binIndex];
 				if (bin.triangleCount > 0)
 				{
-					RasterizeMesh(binX, binY, binIndex);
+					const int binX = workItem.binX;
+					const int binY = workItem.binY;
+					RasterizeMesh(worker.drawCallCache, binX, binY, binIndex);
 				}
 			}
 
@@ -3347,10 +3354,8 @@ namespace
 		}
 	}
 
-	void PopulateWorkers(int renderThreadsMode)
+	void InitializeWorkers(int workerCount)
 	{
-		const int workerCount = RendererUtils::getRenderThreadsFromMode(renderThreadsMode);
-
 		if (g_workers.getCount() != workerCount)
 		{
 			SignalWorkersToExitAndJoin();
@@ -3363,77 +3368,40 @@ namespace
 				worker.shouldWork = false;
 				worker.shouldExit = false;
 				worker.isFinishedWorking = false;
+				worker.drawCallStartIndex = 0;
+				worker.drawCallCount = 0;
 				worker.thread = std::thread(WorkerFunc, workerIndex);
 			}
 		}
+	}
+
+	void PopulateWorkerDrawCallWorkloads(int workerCount, int startDrawCallIndex, int drawCallCount)
+	{
+		const int baseDrawCallsPerWorker = g_drawCallCount / workerCount;
+		const int workersWithExtraDrawCall = g_drawCallCount % workerCount;
+
+		int workerStartDrawCallIndex = 0;
+		for (int i = 0; i < workerCount; i++)
+		{
+			Worker &worker = g_workers[i];
+			worker.drawCallStartIndex = workerStartDrawCallIndex;
+			worker.drawCallCount = baseDrawCallsPerWorker;
+
+			if (i < workersWithExtraDrawCall)
+			{
+				worker.drawCallCount++;
+			}
+
+			workerStartDrawCallIndex += worker.drawCallCount;
+		}
+
+		DebugAssert(workerStartDrawCallIndex == g_drawCallCount);
 	}
 
 	void ShutdownWorkers()
 	{
 		SignalWorkersToExitAndJoin();
 		g_workers.clear();
-	}
-
-	void ProcessRasterizationWorkers()
-	{
-		std::unique_lock<std::mutex> lock(g_mutex);
-		g_directorCondVar.wait(lock, []()
-		{
-			return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStart; });
-		});
-
-		for (Worker &worker : g_workers)
-		{
-			DebugAssert(worker.isReadyToStart);
-			DebugAssert(!worker.shouldWork);
-			DebugAssert(!worker.shouldExit);
-			DebugAssert(!worker.isFinishedWorking);
-			worker.workItems.clear();
-		}
-
-		// Split up bins across workers.
-		const int totalWorkerCount = g_workers.getCount();
-		int curWorkerIndex = 0;
-		for (int binY = 0; binY < g_rasterizerBinCountY; binY++)
-		{
-			for (int binX = 0; binX < g_rasterizerBinCountX; binX++)
-			{
-				const int binIndex = binX + (binY * g_rasterizerBinCountX);
-				Worker &worker = g_workers[curWorkerIndex];
-				worker.workItems.emplace_back(binX, binY, binIndex);
-				curWorkerIndex = (curWorkerIndex + 1) % totalWorkerCount;
-			}
-		}
-
-		const int preparedWorkerCount = static_cast<int>(std::count_if(g_workers.begin(), g_workers.end(),
-			[](const Worker &worker)
-		{
-			return !worker.workItems.empty();
-		}));
-
-		BufferView<Worker> preparedWorkers(g_workers.begin(), preparedWorkerCount);
-
-		// Tell prepared workers they can start.
-		for (Worker &preparedWorker : preparedWorkers)
-		{
-			preparedWorker.shouldWork = true;
-		}
-
-		lock.unlock();
-		g_workerCondVar.notify_all();
-
-		// Wait for workers to finish.
-		lock.lock();
-		g_directorCondVar.wait(lock, [preparedWorkers]()
-		{
-			return std::all_of(preparedWorkers.begin(), preparedWorkers.end(), [](const Worker &worker) { return worker.isFinishedWorking; });
-		});
-
-		// Reset workers for next frame.
-		for (Worker &preparedWorker : preparedWorkers)
-		{
-			preparedWorker.isFinishedWorking = false;
-		}
 	}
 }
 
@@ -3550,7 +3518,9 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 	this->ditheringMode = settings.ditheringMode;
 
 	CreateRasterizerBins(this->rasterizerBins, frameBufferWidth, frameBufferHeight);
-	PopulateWorkers(settings.renderThreadsMode);
+
+	const int workerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
+	InitializeWorkers(workerCount);
 }
 
 void SoftwareRenderer::shutdown()
@@ -3870,7 +3840,7 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	const int renderWidth = this->paletteIndexBuffer.getWidth();
 	const int renderHeight = this->paletteIndexBuffer.getHeight();
 	const int threadCount = g_workers.getCount();
-	const int drawCallCount = g_totalDrawCallCount;
+	const int drawCallCount = g_drawCallCount;
 	const int presentedTriangleCount = g_totalPresentedTriangleCount;
 
 	const int textureCount = this->objectTextures.getUsedCount();
@@ -3912,36 +3882,60 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	PopulateCameraGlobals(camera);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, this->rasterizerBins, outputBuffer, &this->objectTextures);
+	PopulateDrawCallGlobals(drawCalls);
 	PopulatePixelShaderGlobals(settings.ambientPercent, paletteTexture, lightTableTexture, skyBgTexture);
-	PopulateWorkers(settings.renderThreadsMode);
+
+	const int workerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
+	InitializeWorkers(workerCount);
 
 	ClearTriangleTotalCounts();
 	ClearRasterizerTriangles();
 	EmptyRasterizerBins();
 	ClearFrameBuffers();
 
-	const RenderDrawCall *drawCallsPtr = drawCalls.begin();
-	const int drawCallCount = drawCalls.getCount();
-	g_totalDrawCallCount = drawCallCount;
+	int startDrawCallIndex = 0;
+	int remainingDrawCallCount = g_drawCallCount;
+	constexpr int maxDrawCallsPerLoop = 4096;
+	while (remainingDrawCallCount > 0)
+	{
+		const int drawCallsToConsume = std::min(maxDrawCallsPerLoop, remainingDrawCallCount);
+		PopulateWorkerDrawCallWorkloads(workerCount, startDrawCallIndex, drawCallsToConsume);
 
-	auto &transformCachePreScaleTranslationX = g_transformCache.preScaleTranslationX;
-	auto &transformCachePreScaleTranslationY = g_transformCache.preScaleTranslationY;
-	auto &transformCachePreScaleTranslationZ = g_transformCache.preScaleTranslationZ;
-	auto &drawCallCacheVertexBuffer = g_drawCallCache.vertexBuffer;
-	auto &drawCallCacheTexCoordBuffer = g_drawCallCache.texCoordBuffer;
-	auto &drawCallCacheIndexBuffer = g_drawCallCache.indexBuffer;
-	auto &drawCallCacheTextureID0 = g_drawCallCache.textureID0;
-	auto &drawCallCacheTextureID1 = g_drawCallCache.textureID1;
-	auto &drawCallCacheTextureSamplingType0 = g_drawCallCache.textureSamplingType0;
-	auto &drawCallCacheTextureSamplingType1 = g_drawCallCache.textureSamplingType1;
-	auto &drawCallCacheLightingType = g_drawCallCache.lightingType;
-	auto &drawCallCacheMeshLightPercent = g_drawCallCache.meshLightPercent;
-	auto &drawCallCacheLightPtrArray = g_drawCallCache.lightPtrArray;
-	auto &drawCallCacheLightCount = g_drawCallCache.lightCount;
-	auto &drawCallCachePixelShaderType = g_drawCallCache.pixelShaderType;
-	auto &drawCallCachePixelShaderParam0 = g_drawCallCache.pixelShaderParam0;
-	auto &drawCallCacheEnableDepthRead = g_drawCallCache.enableDepthRead;
-	auto &drawCallCacheEnableDepthWrite = g_drawCallCache.enableDepthWrite;
+		// @todo: start draw call workers (lock some director cond var here?)
+		// @todo: sync for finished draw call workers
+		// @todo: start rasterization workers
+		// @todo: sync for finished rasterization workers
+
+		// @todo: Worker::drawCallCache probably needs to be a big array
+
+		startDrawCallIndex += drawCallsToConsume;
+		remainingDrawCallCount -= drawCallsToConsume;
+	}
+
+
+
+	/*auto &transformCachePreScaleTranslationX = transformCache.preScaleTranslationX;
+	auto &transformCachePreScaleTranslationY = transformCache.preScaleTranslationY;
+	auto &transformCachePreScaleTranslationZ = transformCache.preScaleTranslationZ;
+	auto &drawCallCacheVertexBuffer = drawCallCache.vertexBuffer;
+	auto &drawCallCacheTexCoordBuffer = drawCallCache.texCoordBuffer;
+	auto &drawCallCacheIndexBuffer = drawCallCache.indexBuffer;
+	auto &drawCallCacheTextureID0 = drawCallCache.textureID0;
+	auto &drawCallCacheTextureID1 = drawCallCache.textureID1;
+	auto &drawCallCacheTextureSamplingType0 = drawCallCache.textureSamplingType0;
+	auto &drawCallCacheTextureSamplingType1 = drawCallCache.textureSamplingType1;
+	auto &drawCallCacheLightingType = drawCallCache.lightingType;
+	auto &drawCallCacheMeshLightPercent = drawCallCache.meshLightPercent;
+	auto &drawCallCacheLightPtrArray = drawCallCache.lightPtrArray;
+	auto &drawCallCacheLightCount = drawCallCache.lightCount;
+	auto &drawCallCachePixelShaderType = drawCallCache.pixelShaderType;
+	auto &drawCallCachePixelShaderParam0 = drawCallCache.pixelShaderParam0;
+	auto &drawCallCacheEnableDepthRead = drawCallCache.enableDepthRead;
+	auto &drawCallCacheEnableDepthWrite = drawCallCache.enableDepthWrite;
+
+	// @todo: maybe make one g_trianglesToRasterize per thread? and each bin will have a thread ID? less thread synching?
+
+	// @todo: divide out which threads get which draw calls
 
 	int drawCallIndex = 0;
 	while (drawCallIndex < drawCallCount)
@@ -3996,34 +3990,73 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		ProcessVertexShaders(vertexShaderType);
 		ProcessClipping();
 		ProcessClipSpaceTrianglesForBinning();
-		ProcessRasterizationWorkers();
+
+		// @todo: rasterize
+
 		ClearRasterizerTriangles();
 		EmptyRasterizerBins(); // @todo: not sure this should be here in final code
 
 		drawCallIndex++;
-
-		// @todo:
-		/*bool areBinsReadyForRasterization = drawCallIndex == drawCallCount;
-		if (!areBinsReadyForRasterization)
-		{
-			for (int binIndex = 0; binIndex < g_rasterizerBinCount; binIndex++)
-			{
-				RasterizerBin &bin = g_rasterizerBins[binIndex];
-				if (bin.isFull)
-				{
-					areBinsReadyForRasterization = true;
-					break;
-				}
-			}
-		}
-
-		if (areBinsReadyForRasterization)
-		{
-			// @todo: don't pass drawCallSequenceCount, it should just look at its bins
-			ProcessRasterizationWorkers(drawCallSequenceCount);
-			EmptyRasterizerBins();
-		}*/
 	}
+
+	std::unique_lock<std::mutex> lock(g_mutex);
+	g_directorCondVar.wait(lock, []()
+	{
+		return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStart; });
+	});
+
+	for (Worker &worker : g_workers)
+	{
+		DebugAssert(worker.isReadyToStart);
+		DebugAssert(!worker.shouldWork);
+		DebugAssert(!worker.shouldExit);
+		DebugAssert(!worker.isFinishedWorking);
+		worker.workItems.clear();
+	}
+
+	// Split up bins across workers.
+	const int totalWorkerCount = g_workers.getCount();
+	int curWorkerIndex = 0;
+	for (int binY = 0; binY < g_rasterizerBinCountY; binY++)
+	{
+		for (int binX = 0; binX < g_rasterizerBinCountX; binX++)
+		{
+			const int binIndex = binX + (binY * g_rasterizerBinCountX);
+			Worker &worker = g_workers[curWorkerIndex];
+			worker.workItems.emplace_back(binX, binY, binIndex);
+			curWorkerIndex = (curWorkerIndex + 1) % totalWorkerCount;
+		}
+	}
+
+	const int preparedWorkerCount = static_cast<int>(std::count_if(g_workers.begin(), g_workers.end(),
+		[](const Worker &worker)
+	{
+		return !worker.workItems.empty();
+	}));
+
+	BufferView<Worker> preparedWorkers(g_workers.begin(), preparedWorkerCount);
+
+	// Tell prepared workers they can start.
+	for (Worker &preparedWorker : preparedWorkers)
+	{
+		preparedWorker.shouldWork = true;
+	}
+
+	lock.unlock();
+	g_workerCondVar.notify_all();
+
+	// Wait for workers to finish.
+	lock.lock();
+	g_directorCondVar.wait(lock, [preparedWorkers]()
+	{
+		return std::all_of(preparedWorkers.begin(), preparedWorkers.end(), [](const Worker &worker) { return worker.isFinishedWorking; });
+	});
+
+	// Reset workers for next frame.
+	for (Worker &preparedWorker : preparedWorkers)
+	{
+		preparedWorker.isFinishedWorking = false;
+	}*/
 }
 
 void SoftwareRenderer::present()
