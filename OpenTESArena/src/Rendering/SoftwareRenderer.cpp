@@ -1039,15 +1039,12 @@ namespace
 	uint8_t *g_paletteIndexBuffer;
 	double *g_depthBuffer;
 	const bool *g_ditherBuffer;
-	RasterizerBin *g_rasterizerBins;
-	int g_rasterizerBinWidth, g_rasterizerBinHeight;
-	int g_rasterizerBinCountX, g_rasterizerBinCountY, g_rasterizerBinCount;
 	uint32_t *g_colorBuffer;
 	SoftwareRenderer::ObjectTexturePool *g_objectTextures;
 
 	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
-		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, BufferView2D<RasterizerBin> rasterizerBins,
-		uint32_t *colorBuffer, SoftwareRenderer::ObjectTexturePool *objectTextures)
+		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, uint32_t *colorBuffer,
+		SoftwareRenderer::ObjectTexturePool *objectTextures)
 	{
 		g_frameBufferWidth = frameBufferWidth;
 		g_frameBufferHeight = frameBufferHeight;
@@ -1061,12 +1058,6 @@ namespace
 		g_paletteIndexBuffer = paletteIndexBuffer;
 		g_depthBuffer = depthBuffer;
 		g_ditherBuffer = ditherBuffer;
-		g_rasterizerBins = rasterizerBins.begin();
-		g_rasterizerBinWidth = GetRasterizerBinWidth(frameBufferWidth);
-		g_rasterizerBinHeight = GetRasterizerBinHeight(frameBufferHeight);
-		g_rasterizerBinCountX = rasterizerBins.getWidth();
-		g_rasterizerBinCountY = rasterizerBins.getHeight();
-		g_rasterizerBinCount = rasterizerBins.getWidth() * rasterizerBins.getHeight();
 		g_colorBuffer = colorBuffer;
 		g_objectTextures = objectTextures;
 	}
@@ -1899,11 +1890,10 @@ namespace
 		double clipSpaceTriangleUV2XYArray[MAX_CLIPPED_TRIANGLE_TRIANGLES][2];
 	};
 
-	int g_totalPresentedTriangleCount = 0; // Triangles the rasterizer spends any time attempting to shade pixels for.
+	std::atomic<int> g_totalPresentedTriangleCount = 0; // Triangles the rasterizer spends any time attempting to shade pixels for.
 
 	void ClearTriangleTotalCounts()
 	{
-		// Skip zeroing mesh process caches for performance.
 		g_totalPresentedTriangleCount = 0;
 	}
 
@@ -2539,35 +2529,49 @@ struct RasterizerBin
 // Rasterizer, pixel shader execution.
 namespace
 {
-	RasterizerTriangle g_trianglesToRasterize[RasterizerBin::MAX_FRUSTUM_TRIANGLES];
-	int g_trianglesToRasterizeCount;
-
-	void ClearRasterizerTriangles()
+	struct RasterizerInputCache
 	{
-		g_trianglesToRasterizeCount = 0;
-	}
+		RasterizerTriangle triangles[RasterizerBin::MAX_FRUSTUM_TRIANGLES]; // @todo: ideally this triangles array would still be global for all threads; lots of memory waste currently
+		int triangleCount;
 
-	void CreateRasterizerBins(Buffer2D<RasterizerBin> &rasterizerBins, int frameBufferWidth, int frameBufferHeight)
-	{
-		const int binWidth = GetRasterizerBinWidth(frameBufferWidth);
-		const int binHeight = GetRasterizerBinHeight(frameBufferHeight);
-		const int binCountX = GetRasterizerBinCountX(frameBufferWidth, binWidth);
-		const int binCountY = GetRasterizerBinCountY(frameBufferHeight, binHeight);
-		rasterizerBins.init(binCountX, binCountY);
-	}
+		Buffer2D<RasterizerBin> bins;
+		int binWidth, binHeight;
+		int binCountX, binCountY;
 
-	void EmptyRasterizerBins()
-	{
-		for (int i = 0; i < g_rasterizerBinCount; i++)
+		RasterizerInputCache()
 		{
-			g_rasterizerBins[i].triangleCount = 0;
+			this->triangleCount = 0;
+			this->binWidth = 0;
+			this->binHeight = 0;
+			this->binCountX = 0;
+			this->binCountY = 0;
 		}
-	}
 
-	void ProcessClipSpaceTrianglesForBinning(const ClippingOutputCache &clippingOutputCache)
+		void clearTriangles()
+		{
+			this->triangleCount = 0;
+		}
+
+		void createBins(int frameBufferWidth, int frameBufferHeight)
+		{
+			this->binWidth = GetRasterizerBinWidth(frameBufferWidth);
+			this->binHeight = GetRasterizerBinHeight(frameBufferHeight);
+			this->binCountX = GetRasterizerBinCountX(frameBufferWidth, this->binWidth);
+			this->binCountY = GetRasterizerBinCountY(frameBufferHeight, this->binHeight);
+			this->bins.init(this->binCountX, this->binCountY);
+		}
+
+		void emptyBins()
+		{
+			for (RasterizerBin &bin : this->bins)
+			{
+				bin.triangleCount = 0;
+			}
+		}
+	};
+
+	void ProcessClipSpaceTrianglesForBinning(const ClippingOutputCache &clippingOutputCache, RasterizerInputCache &rasterizerInputCache)
 	{
-		DebugNotImplementedMsg("Need to make bin populating work with multiple threads");
-
 		const auto &clipSpaceMeshV0XYZWs = clippingOutputCache.clipSpaceMeshV0XYZWArray;
 		const auto &clipSpaceMeshV1XYZWs = clippingOutputCache.clipSpaceMeshV1XYZWArray;
 		const auto &clipSpaceMeshV2XYZWs = clippingOutputCache.clipSpaceMeshV2XYZWArray;
@@ -2646,8 +2650,6 @@ namespace
 				continue;
 			}
 
-			g_totalPresentedTriangleCount++;
-
 			double screenSpace01PerpX, screenSpace01PerpY;
 			double screenSpace12PerpX, screenSpace12PerpY;
 			double screenSpace20PerpX, screenSpace20PerpY;
@@ -2672,9 +2674,10 @@ namespace
 			const double uv2YDivW = uv2Y * clip2WRecip;
 
 			// Write triangle to the global list.
-			const int stagedTriangleIndex = g_trianglesToRasterizeCount;
-			DebugAssertIndex(g_trianglesToRasterize, stagedTriangleIndex);
-			RasterizerTriangle &stagedTriangle = g_trianglesToRasterize[stagedTriangleIndex];
+			auto &outputTriangles = rasterizerInputCache.triangles;
+			const int stagedTriangleIndex = rasterizerInputCache.triangleCount;
+			DebugAssertIndex(outputTriangles, stagedTriangleIndex);
+			RasterizerTriangle &stagedTriangle = outputTriangles[stagedTriangleIndex];
 			stagedTriangle.clip0X = clip0X;
 			stagedTriangle.clip0Y = clip0Y;
 			stagedTriangle.clip0Z = clip0Z;
@@ -2730,36 +2733,35 @@ namespace
 			stagedTriangle.uv2XDivW = uv2XDivW;
 			stagedTriangle.uv2YDivW = uv2YDivW;
 
-			// Write this triangle's global index to all affected rasterizer bins.
-			const int startBinX = GetRasterizerBinX(xStart, g_rasterizerBinWidth);
-			const int endBinX = GetRasterizerBinX(xEnd, g_rasterizerBinWidth);
-			const int startBinY = GetRasterizerBinY(yStart, g_rasterizerBinHeight);
-			const int endBinY = GetRasterizerBinY(yEnd, g_rasterizerBinHeight);
+			// Write this triangle's index to all affected rasterizer bins.
+			const int binPixelWidth = rasterizerInputCache.binWidth;
+			const int binPixelHeight = rasterizerInputCache.binHeight;
+			const int startBinX = GetRasterizerBinX(xStart, binPixelWidth);
+			const int endBinX = GetRasterizerBinX(xEnd, binPixelWidth);
+			const int startBinY = GetRasterizerBinY(yStart, binPixelHeight);
+			const int endBinY = GetRasterizerBinY(yEnd, binPixelHeight);
 			for (int binY = startBinY; binY <= endBinY; binY++)
 			{
-				const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0, g_rasterizerBinHeight);
-				const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, g_rasterizerBinHeight, g_rasterizerBinHeight);
+				const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0, binPixelHeight);
+				const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, binPixelHeight, binPixelHeight);
 				const int clampedYStart = std::max(yStart, binStartFrameBufferPixelY);
 				const int clampedYEnd = std::min(yEnd, binEndFrameBufferPixelY);
-				const int triangleBinPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart, g_rasterizerBinHeight);
-				const int triangleBinPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd, g_rasterizerBinHeight);
+				const int triangleBinPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart, binPixelHeight);
+				const int triangleBinPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd, binPixelHeight);
 
 				for (int binX = startBinX; binX <= endBinX; binX++)
 				{
-					const int binIndex = binX + (binY * g_rasterizerBinCountX);
-					DebugAssert(binIndex < g_rasterizerBinCount);
-					RasterizerBin &bin = g_rasterizerBins[binIndex];
-
+					RasterizerBin &bin = rasterizerInputCache.bins.get(binX, binY);
 					const int binTriangleIndex = bin.triangleCount;
 					DebugAssert(binTriangleIndex < RasterizerBin::MAX_FRUSTUM_TRIANGLES);
 					bin.triangleIndicesToRasterize[binTriangleIndex] = stagedTriangleIndex;
 
-					const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0, g_rasterizerBinWidth);
-					const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, g_rasterizerBinWidth, g_rasterizerBinWidth);
+					const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0, binPixelWidth);
+					const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, binPixelWidth, binPixelWidth);
 					const int clampedXStart = std::max(xStart, binStartFrameBufferPixelX);
 					const int clampedXEnd = std::min(xEnd, binEndFrameBufferPixelX);
-					bin.triangleBinPixelXStarts[binTriangleIndex] = GetRasterizerBinPixelXInclusive(clampedXStart, g_rasterizerBinWidth);
-					bin.triangleBinPixelXEnds[binTriangleIndex] = GetRasterizerBinPixelXExclusive(clampedXEnd, g_rasterizerBinWidth);
+					bin.triangleBinPixelXStarts[binTriangleIndex] = GetRasterizerBinPixelXInclusive(clampedXStart, binPixelWidth);
+					bin.triangleBinPixelXEnds[binTriangleIndex] = GetRasterizerBinPixelXExclusive(clampedXEnd, binPixelWidth);
 					bin.triangleBinPixelYStarts[binTriangleIndex] = triangleBinPixelYStart;
 					bin.triangleBinPixelYEnds[binTriangleIndex] = triangleBinPixelYEnd;
 
@@ -2767,7 +2769,7 @@ namespace
 				}
 			}
 
-			g_trianglesToRasterizeCount++;
+			rasterizerInputCache.triangleCount++;
 		}
 	}
 
@@ -2828,7 +2830,7 @@ namespace
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
-	void RasterizeMeshInternal(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
+	void RasterizeMeshInternal(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, int binX, int binY, int binIndex)
 	{
 		const TextureSamplingType textureSamplingType0 = drawCallCache.textureSamplingType0;
 		const TextureSamplingType textureSamplingType1 = drawCallCache.textureSamplingType1;
@@ -2883,7 +2885,7 @@ namespace
 		int totalDepthTests = 0;
 		int totalColorWrites = 0;
 
-		const RasterizerBin &bin = g_rasterizerBins[binIndex];
+		const RasterizerBin &bin = rasterizerInputCache.bins.get(binX, binY);
 		const auto &triangleIndices = bin.triangleIndicesToRasterize;
 		const auto &triangleBinPixelXStarts = bin.triangleBinPixelXStarts;
 		const auto &triangleBinPixelXEnds = bin.triangleBinPixelXEnds;
@@ -2893,7 +2895,7 @@ namespace
 		for (int triangleIndicesIndex = 0; triangleIndicesIndex < triangleCount; triangleIndicesIndex++)
 		{
 			const int triangleIndex = bin.triangleIndicesToRasterize[triangleIndicesIndex];
-			const RasterizerTriangle &triangle = g_trianglesToRasterize[triangleIndex];
+			const RasterizerTriangle &triangle = rasterizerInputCache.triangles[triangleIndex];
 			const double clip0X = triangle.clip0X;
 			const double clip0Y = triangle.clip0Y;
 			const double clip0Z = triangle.clip0Z;
@@ -2966,7 +2968,7 @@ namespace
 
 			for (int binPixelY = binPixelYStart; binPixelY < binPixelYEnd; binPixelY++)
 			{
-				const int frameBufferPixelY = GetFrameBufferPixelY(binY, binPixelY, g_rasterizerBinHeight);
+				const int frameBufferPixelY = GetFrameBufferPixelY(binY, binPixelY, rasterizerInputCache.binHeight);
 				shaderFrameBuffer.yPercent = (static_cast<double>(frameBufferPixelY) + 0.50) * g_frameBufferHeightRealRecip;
 				const double pixelCenterY = shaderFrameBuffer.yPercent * g_frameBufferHeightReal;
 				const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
@@ -2979,7 +2981,7 @@ namespace
 
 				for (int binPixelX = binPixelXStart; binPixelX < binPixelXEnd; binPixelX++)
 				{
-					const int frameBufferPixelX = GetFrameBufferPixelX(binX, binPixelX, g_rasterizerBinWidth);
+					const int frameBufferPixelX = GetFrameBufferPixelX(binX, binPixelX, rasterizerInputCache.binWidth);
 					shaderFrameBuffer.pixelIndex = frameBufferPixelX + (frameBufferPixelY * g_frameBufferWidth);
 					shaderFrameBuffer.xPercent = (static_cast<double>(frameBufferPixelX) + 0.50) * g_frameBufferWidthRealRecip;
 					const double pixelCenterX = shaderFrameBuffer.xPercent * g_frameBufferWidthReal;
@@ -3169,24 +3171,24 @@ namespace
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
-	void RasterizeMeshDispatchDitheringMode(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
+	void RasterizeMeshDispatchDitheringMode(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, int binX, int binY, int binIndex)
 	{
 		switch (g_ditheringMode)
 		{
 		case DitheringMode::None:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case DitheringMode::Classic:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case DitheringMode::Modern:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		}
 	}
 
 	template<RenderLightingType lightingType, PixelShaderType pixelShaderType>
-	void RasterizeMeshDispatchDepthToggles(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
+	void RasterizeMeshDispatchDepthToggles(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, int binX, int binY, int binIndex)
 	{
 		const bool enableDepthRead = drawCallCache.enableDepthRead;
 		const bool enableDepthWrite = drawCallCache.enableDepthWrite;
@@ -3195,28 +3197,28 @@ namespace
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(drawCallCache, binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(drawCallCache, binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			}
 		}
 		else
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(drawCallCache, binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(drawCallCache, binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			}
 		}
 	}
 
 	template<RenderLightingType lightingType>
-	void RasterizeMeshDispatchPixelShaderType(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
+	void RasterizeMeshDispatchPixelShaderType(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, int binX, int binY, int binIndex)
 	{
 		static_assert(PixelShaderType::AlphaTestedWithHorizonMirror == PIXEL_SHADER_TYPE_MAX);
 		const PixelShaderType pixelShaderType = drawCallCache.pixelShaderType;
@@ -3224,51 +3226,51 @@ namespace
 		switch (pixelShaderType)
 		{
 		case PixelShaderType::Opaque:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::OpaqueWithAlphaTestLayer:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTested:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelColor:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelOpacity:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithHorizonMirror:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 			break;
 		}
 	}
 
 	// Decides which optimized rasterizer variant to use based on the parameters.
-	void RasterizeMesh(const DrawCallCache &drawCallCache, int binX, int binY, int binIndex)
+	void RasterizeMesh(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, int binX, int binY, int binIndex)
 	{
 		static_assert(RenderLightingType::PerPixel == RENDER_LIGHTING_TYPE_MAX);
 		const RenderLightingType lightingType = drawCallCache.lightingType;
 
 		if (lightingType == RenderLightingType::PerMesh)
 		{
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 		}
 		else if (lightingType == RenderLightingType::PerPixel)
 		{
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(drawCallCache, binX, binY, binIndex);
+			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 		}
 	}
 }
@@ -3294,6 +3296,7 @@ namespace
 		VertexShaderInputCache vertexShaderInputCache;
 		VertexShaderOutputCache vertexShaderOutputCache;
 		ClippingOutputCache clippingOutputCache;
+		RasterizerInputCache rasterizerInputCache;
 		std::vector<RasterizerWorkItem> rasterizerWorkItems;
 		bool isReadyToStart, shouldWork, shouldExit, isFinishedWorking;
 	};
@@ -3311,10 +3314,7 @@ namespace
 			std::unique_lock<std::mutex> workerLock(g_mutex);
 			worker.isReadyToStart = true;
 			g_directorCondVar.notify_one();
-			g_workerCondVar.wait(workerLock, [&worker]()
-			{
-				return worker.shouldExit || worker.shouldWork;
-			});
+			g_workerCondVar.wait(workerLock, [&worker]() { return worker.shouldExit || worker.shouldWork; });
 
 			worker.isReadyToStart = false;
 			worker.shouldWork = false;
@@ -3333,24 +3333,21 @@ namespace
 				VertexShaderInputCache &vertexShaderInputCache = worker.vertexShaderInputCache;
 				VertexShaderOutputCache &vertexShaderOutputCache = worker.vertexShaderOutputCache;
 				ClippingOutputCache &clippingOutputCache = worker.clippingOutputCache;
+				RasterizerInputCache &rasterizerInputCache = worker.rasterizerInputCache;
 
 				ProcessMeshBufferLookups(drawCallCache, vertexShaderInputCache);
 				CalculateVertexShaderTransforms(transformCache);
 				ProcessVertexShaders(drawCallCache.vertexShaderType, transformCache, vertexShaderInputCache, vertexShaderOutputCache);
 				ProcessClipping(drawCallCache, vertexShaderOutputCache, clippingOutputCache);
-				ProcessClipSpaceTrianglesForBinning(clippingOutputCache);
+				ProcessClipSpaceTrianglesForBinning(clippingOutputCache, rasterizerInputCache);
 			}
 
 			worker.isFinishedWorking = true;
-			g_directorCondVar.notify_one();
-
 			worker.isReadyToStart = true;
 			g_directorCondVar.notify_one();
-			DebugNotImplementedMsg("should remove shouldExit here");
-			g_workerCondVar.wait(workerLock, [&worker]() // @todo: this wait might be wrong; we shouldn't let the thread exit here
-			{
-				return worker.shouldExit || worker.shouldWork;
-			});
+
+			workerLock.lock();
+			g_workerCondVar.wait(workerLock, [&worker]() { return worker.shouldWork; });
 
 			worker.isReadyToStart = false;
 			worker.shouldWork = false;
@@ -3358,17 +3355,18 @@ namespace
 
 			for (const RasterizerWorkItem &workItem : worker.rasterizerWorkItems)
 			{
-				const int binIndex = workItem.binIndex;
-				const RasterizerBin &bin = g_rasterizerBins[binIndex];
-				if (bin.triangleCount > 0)
+				const int binX = workItem.binX;
+				const int binY = workItem.binY;
+				const RasterizerBin &bin = worker.rasterizerInputCache.bins.get(workItem.binX, workItem.binY);
+				if (bin.triangleCount > 0) // @todo: instead of iterating over triangles, maybe iterate over entries of <draw call index, triangle indices>
 				{
-					DebugNotImplementedMsg("does bin.triangleCount make sense with this draw call cache array design?");
-					const int workerDrawCallIndex = -1; // @todo
+					const int workerDrawCallIndex = -1; // @todo: clippingOutput.clipSpaceMeshDrawCallIndex? the thing here is that we're not iterating through draw calls, but ranges of triangles mapped to a draw call index
+					DebugNotImplemented();
 					DebugAssertIndex(worker.drawCallCaches, workerDrawCallIndex);
 					const DrawCallCache &drawCallCache = worker.drawCallCaches[workerDrawCallIndex];
-					const int binX = workItem.binX;
-					const int binY = workItem.binY;
-					RasterizeMesh(drawCallCache, binX, binY, binIndex);
+					const int binIndex = workItem.binIndex;
+					const RasterizerInputCache &rasterizerInputCache = worker.rasterizerInputCache;
+					RasterizeMesh(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
 				}
 			}
 
@@ -3392,7 +3390,7 @@ namespace
 		}
 	}
 
-	void InitializeWorkers(int workerCount)
+	void InitializeWorkers(int workerCount, int frameBufferWidth, int frameBufferHeight)
 	{
 		if (g_workers.getCount() != workerCount)
 		{
@@ -3408,6 +3406,7 @@ namespace
 				worker.isFinishedWorking = false;
 				worker.drawCallStartIndex = 0;
 				worker.drawCallCount = 0;
+				worker.rasterizerInputCache.createBins(frameBufferWidth, frameBufferHeight);
 				worker.thread = std::thread(WorkerFunc, workerIndex);
 			}
 		}
@@ -3555,10 +3554,8 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
 	this->ditheringMode = settings.ditheringMode;
 
-	CreateRasterizerBins(this->rasterizerBins, frameBufferWidth, frameBufferHeight);
-
 	const int workerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
-	InitializeWorkers(workerCount);
+	InitializeWorkers(workerCount, frameBufferWidth, frameBufferHeight);
 }
 
 void SoftwareRenderer::shutdown()
@@ -3567,7 +3564,6 @@ void SoftwareRenderer::shutdown()
 	this->depthBuffer.clear();
 	this->ditherBuffer.clear();
 	this->ditheringMode = static_cast<DitheringMode>(-1);
-	this->rasterizerBins.clear();
 	this->vertexBuffers.clear();
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();
@@ -3591,7 +3587,11 @@ void SoftwareRenderer::resize(int width, int height)
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
 
 	CreateDitherBuffer(this->ditherBuffer, width, height, this->ditheringMode);
-	CreateRasterizerBins(this->rasterizerBins, width, height);
+
+	for (Worker &worker : g_workers)
+	{
+		worker.rasterizerInputCache.createBins(width, height);
+	}
 }
 
 bool SoftwareRenderer::tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID)
@@ -3920,19 +3920,21 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	PopulateCameraGlobals(camera);
 	PopulateDrawCallGlobals(drawCalls.getCount());
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
-		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, this->rasterizerBins, outputBuffer, &this->objectTextures);
+		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
 	PopulatePixelShaderGlobals(settings.ambientPercent, paletteTexture, lightTableTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
-	InitializeWorkers(totalWorkerCount);
+	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);
+	const int binCountX = g_workers.get(0).rasterizerInputCache.binCountX;
+	const int binCountY = g_workers.get(0).rasterizerInputCache.binCountY;
 
 	// Split up rasterizer bins across workers.
 	int curWorkerIndex = 0;
-	for (int binY = 0; binY < g_rasterizerBinCountY; binY++)
+	for (int binY = 0; binY < binCountY; binY++)
 	{
-		for (int binX = 0; binX < g_rasterizerBinCountX; binX++)
+		for (int binX = 0; binX < binCountX; binX++)
 		{
-			const int binIndex = binX + (binY * g_rasterizerBinCountX);
+			const int binIndex = binX + (binY * binCountX);
 			Worker &worker = g_workers[curWorkerIndex];
 			worker.rasterizerWorkItems.emplace_back(binX, binY, binIndex);
 			curWorkerIndex = (curWorkerIndex + 1) % totalWorkerCount;
@@ -3940,8 +3942,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	}
 
 	ClearTriangleTotalCounts();
-	ClearRasterizerTriangles();
-	EmptyRasterizerBins();
 	ClearFrameBuffers();
 
 	int startDrawCallIndex = 0;
@@ -3962,6 +3962,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 			DebugAssert(!worker.shouldWork);
 			DebugAssert(!worker.shouldExit);
 			DebugAssert(!worker.isFinishedWorking);
+			worker.rasterizerInputCache.clearTriangles();
+			worker.rasterizerInputCache.emptyBins();
 		}
 
 		// Determine which workers get which draw calls this loop.
@@ -3976,9 +3978,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 				const int globalDrawCallIndex = worker.drawCallStartIndex + workerDrawCallIndex;
 				const RenderDrawCall &drawCall = drawCalls[globalDrawCallIndex];
 
-				DebugAssertIndex(worker.drawCallCaches, globalDrawCallIndex);
-				DrawCallCache &workerDrawCallCache = worker.drawCallCaches[globalDrawCallIndex];
-				TransformCache &workerTransformCache = worker.transformCaches[globalDrawCallIndex];
+				DebugAssertIndex(worker.drawCallCaches, workerDrawCallIndex);
+				DrawCallCache &workerDrawCallCache = worker.drawCallCaches[workerDrawCallIndex];
+				TransformCache &workerTransformCache = worker.transformCaches[workerDrawCallIndex];
 				auto &transformCachePreScaleTranslationX = workerTransformCache.preScaleTranslationX;
 				auto &transformCachePreScaleTranslationY = workerTransformCache.preScaleTranslationY;
 				auto &transformCachePreScaleTranslationZ = workerTransformCache.preScaleTranslationZ;
@@ -4069,6 +4071,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		for (Worker &preparedWorker : preparedDrawCallWorkers)
 		{
 			preparedWorker.isFinishedWorking = false;
+			g_totalPresentedTriangleCount += preparedWorker.rasterizerInputCache.triangleCount;
 		}
 
 		g_directorCondVar.wait(lock, [preparedDrawCallWorkers]()
