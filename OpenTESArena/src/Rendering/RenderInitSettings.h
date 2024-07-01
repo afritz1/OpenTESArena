@@ -1,6 +1,8 @@
 #ifndef RENDER_INIT_SETTINGS_H
 #define RENDER_INIT_SETTINGS_H
 
+#include "RenderShaderUtils.h"
+
 struct RenderInitSettings
 {
 	// @todo: rarely modified values
@@ -12,8 +14,9 @@ struct RenderInitSettings
 
 	int width, height;
 	int renderThreadsMode;
+	DitheringMode ditheringMode;
 
-	void init(int width, int height, int renderThreadsMode);
+	void init(int width, int height, int renderThreadsMode, DitheringMode ditheringMode);
 };
 
 #endif

@@ -64,7 +64,7 @@ bool EntityAnimationDefinitionKeyframeList::operator==(const EntityAnimationDefi
 		return false;
 	}
 
-	if (this->isFlipped != other.isFlipped)
+	if (this->isMirrored != other.isMirrored)
 	{
 		return false;
 	}
@@ -274,7 +274,7 @@ int EntityAnimationDefinition::addState(const char *name, double seconds, bool i
 	return stateIndex;
 }
 
-int EntityAnimationDefinition::addKeyframeList(int stateIndex, bool isFlipped)
+int EntityAnimationDefinition::addKeyframeList(int stateIndex, bool isMirrored)
 {
 	if ((stateIndex < 0) || (stateIndex >= this->stateCount))
 	{
@@ -294,7 +294,7 @@ int EntityAnimationDefinition::addKeyframeList(int stateIndex, bool isFlipped)
 	EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[this->keyframeListCount];
 	keyframeList.keyframesIndex = this->keyframeCount;
 	keyframeList.keyframeCount = 0;
-	keyframeList.isFlipped = isFlipped;
+	keyframeList.isMirrored = isMirrored;
 
 	const int keyframeListIndex = this->keyframeListCount;
 	this->keyframeListCount++;

@@ -9,4 +9,7 @@ using ApplicationExitCallback = std::function<void()>;
 // When the application window has received a resize event from the operating system.
 using WindowResizedCallback = std::function<void(int width, int height)>;
 
+// When the application switches between desktop and exclusive fullscreen in some APIs like Direct3D.
+using RenderTargetsResetCallback = std::function<void()>;
+
 #endif

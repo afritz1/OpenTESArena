@@ -6,7 +6,7 @@
 
 const Rect OptionsUiView::getTabRect(int index)
 {
-	const Int2 tabsOrigin(3, 38);
+	const Int2 tabsOrigin(3, 6);
 	const Int2 tabsDimensions(54, 16);
 	return Rect(
 		tabsOrigin.x,
@@ -35,22 +35,6 @@ const Rect OptionsUiView::getListRect()
 const Int2 OptionsUiView::getDescriptionXY()
 {
 	return Int2(5, 122);
-}
-
-Color OptionsUiView::getTitleTextColor()
-{
-	return Color::White;
-}
-
-TextBox::InitInfo OptionsUiView::getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithCenter(
-		text,
-		OptionsUiView::TitleTextBoxCenterPoint,
-		OptionsUiView::TitleFontName,
-		OptionsUiView::getTitleTextColor(),
-		OptionsUiView::TitleTextAlignment,
-		fontLibrary);
 }
 
 Color OptionsUiView::getBackButtonTextColor()

@@ -377,9 +377,25 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsMode
 		[&game](int value)
 	{
 		auto &options = game.getOptions();
-		auto &renderer = game.getRenderer();
 		options.setGraphics_RenderThreadsMode(value);
-		renderer.setRenderThreadsMode(value);
+	});
+}
+
+std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeDitheringOption(Game &game)
+{
+	const auto &options = game.getOptions();
+	return std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::DITHERING_NAME,
+		"Selects the dither pattern for gradients. This makes a bigger\ndifference at low resolutions.\n\nNone\nClassic\nModern",
+		options.getGraphics_DitheringMode(),
+		1,
+		Options::MIN_DITHERING_MODE,
+		Options::MAX_DITHERING_MODE,
+		std::vector<std::string> { "None", "Classic", "Modern" },
+		[&game](int value)
+	{
+		auto &options = game.getOptions();
+		options.setGraphics_DitheringMode(value);
 	});
 }
 
@@ -395,6 +411,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 	group.emplace_back(OptionsUiModel::makeModernInterfaceOption(game));
 	group.emplace_back(OptionsUiModel::makeTallPixelCorrectionOption(game));
 	group.emplace_back(OptionsUiModel::makeRenderThreadsModeOption(game));
+	group.emplace_back(OptionsUiModel::makeDitheringOption(game));
 	return group;
 }
 
@@ -423,8 +440,8 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeSoundResamplingOp
 		"Affects quality of sounds. Results may vary depending on OpenAL\nversion.",
 		options.getAudio_SoundResampling(),
 		1,
-		0,
-		Options::RESAMPLING_OPTION_COUNT - 1,
+		Options::MIN_RESAMPLING_MODE,
+		Options::MAX_RESAMPLING_MODE,
 		std::vector<std::string> { "Default", "Fastest", "Medium", "Best" },
 		[&game](int value)
 	{

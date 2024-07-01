@@ -30,14 +30,15 @@ public:
 	static Matrix4<T> yRotation(T radians);
 	static Matrix4<T> zRotation(T radians);
 	static Matrix4<T> transpose(const Matrix4<T> &m);
+	static Matrix4<T> inverse(const Matrix4<T> &m);
 	static Matrix4<T> inverseTranslation(const Matrix4<T> &t);
 	static Matrix4<T> inverseRotation(const Matrix4<T> &r);
-	static Matrix4<T> view(const Vector3f<T> &eye, const Vector3f<T> &forward,
-		const Vector3f<T> &right, const Vector3f<T> &up);
+	static Matrix4<T> view(const Vector3f<T> &eye, const Vector3f<T> &forward, const Vector3f<T> &right, const Vector3f<T> &up);
 	static Matrix4<T> perspective(T fovY, T aspect, T near, T far);
 
 	Matrix4<T> operator*(const Matrix4<T> &m) const;
 	Vector4f<T> operator*(const Vector4f<T> &v) const;
+	T getDeterminant() const;
 
 	std::string toString() const;
 };

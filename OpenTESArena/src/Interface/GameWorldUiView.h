@@ -179,6 +179,7 @@ namespace GameWorldUiView
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);
+	void DEBUG_DrawVoxelVisibilityQuadtree(Game &game);
 }
 
 #endif

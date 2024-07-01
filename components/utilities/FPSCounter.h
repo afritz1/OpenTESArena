@@ -1,12 +1,10 @@
 #ifndef FPS_COUNTER_H
 #define FPS_COUNTER_H
 
-#include <array>
-
 class FPSCounter
 {
 private:
-	std::array<double, 60> frameTimes;
+	double frameTimes[30];
 
 	// Gets the average frame time in seconds based on recent data.
 	double getAverageFrameTime() const;

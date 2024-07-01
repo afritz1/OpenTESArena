@@ -22,7 +22,7 @@ struct EntityAnimationDefinitionKeyframeList
 {
 	int keyframesIndex;
 	int keyframeCount;
-	bool isFlipped;
+	bool isMirrored;
 
 	bool operator==(const EntityAnimationDefinitionKeyframeList &other) const;
 	bool operator!=(const EntityAnimationDefinitionKeyframeList &other) const;
@@ -61,7 +61,7 @@ struct EntityAnimationDefinition
 	int getLinearizedKeyframeIndex(int stateIndex, int keyframeListIndex, int keyframeIndex) const;
 
 	int addState(const char *name, double seconds, bool isLooping);
-	int addKeyframeList(int stateIndex, bool isFlipped);
+	int addKeyframeList(int stateIndex, bool isMirrored);
 	int addKeyframe(int keyframeListIndex, TextureAsset &&textureAsset, double width, double height);
 };
 

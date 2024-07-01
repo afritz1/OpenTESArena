@@ -1,6 +1,7 @@
 #ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
+#include <bit>
 #include <cmath>
 #include <type_traits>
 #include <vector>
@@ -23,19 +24,71 @@ namespace MathUtils
 	double almostEqual(double a, double b);
 
 	// Returns whether the given value represents a number on the number line, including infinity.
-	template <typename T>
+	template<typename T>
 	bool isValidFloatingPoint(T value)
 	{
 		static_assert(std::is_floating_point_v<T>);
 		return !std::isnan(value);
 	}
 
-	// Returns whether the given integer is a power of 2.
-	template <typename T>
+	template<typename T>
 	constexpr bool isPowerOf2(T value)
 	{
-		static_assert(std::is_integral_v<T>);
-		return Bytes::getSetBitCount(value) == 1;
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::has_single_bit(value);
+		}
+		else
+		{
+			if (value < 0)
+			{
+				value = -value;
+			}
+
+			return std::has_single_bit<std::make_unsigned_t<T>>(value);
+		}
+	}
+
+	// Rounds towards +inf for positive and -inf for negative.
+	template<typename T>
+	constexpr T roundToGreaterPowerOf2(T value)
+	{
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::bit_ceil(value);
+		}
+		else
+		{
+			if (value >= 0)
+			{
+				return std::bit_ceil<std::make_unsigned_t<T>>(value);
+			}
+			else
+			{
+				return -static_cast<T>(std::bit_ceil<std::make_unsigned_t<T>>(-value));
+			}
+		}
+	}
+
+	// Rounds towards zero for positive and negative.
+	template<typename T>
+	constexpr T roundToLesserPowerOf2(T value)
+	{
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::bit_floor(value);
+		}
+		else
+		{
+			if (value >= 0)
+			{
+				return std::bit_floor<std::make_unsigned_t<T>>(value);
+			}
+			else
+			{
+				return -static_cast<T>(std::bit_floor<std::make_unsigned_t<T>>(-value));
+			}
+		}
 	}
 
 	// Gets a real (not integer) index in an array from the given percent.
@@ -56,7 +109,8 @@ namespace MathUtils
 	Degrees verticalFovToHorizontalFov(Degrees fovY, double aspectRatio);
 
 	// Returns whether the given point lies in the half space divided at the given divider point.
-	bool isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint, const Double2 &normal);
+	bool isPointInHalfSpace(const Double2 &point, const Double2 &planePoint, const Double2 &planeNormal);
+	bool isPointInHalfSpace(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal);
 
 	// Returns whether the two line segments intersect.
 	bool lineSegmentIntersection(const Double2 &a0, const Double2 &a1, const Double2 &b0, const Double2 &b1);
@@ -97,6 +151,9 @@ namespace MathUtils
 	// Generates a list of points along a Bresenham line. Only signed integers can be
 	// used in a Bresenham's line due to the error calculation.
 	std::vector<Int2> bresenhamLine(const Int2 &p1, const Int2 &p2);
+
+	// Gets the X and Y coordinates from a Z value in a Z-order curve. Used with quadtree node look-up.
+	Int2 getZOrderCurvePoint(int index);
 }
 
 #endif

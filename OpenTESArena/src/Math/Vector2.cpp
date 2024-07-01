@@ -7,20 +7,6 @@
 // -- Vector2i --
 
 template <typename T>
-Vector2i<T>::Vector2i(T x, T y)
-{
-	this->x = x;
-	this->y = y;
-}
-
-template <typename T>
-Vector2i<T>::Vector2i()
-{
-	this->x = static_cast<T>(0);
-	this->y = static_cast<T>(0);
-}
-
-template <typename T>
 T &Vector2i<T>::operator[](size_t index)
 {
 	return reinterpret_cast<T*>(&this->x)[index];
@@ -89,20 +75,6 @@ std::string Vector2i<T>::toString() const
 }
 
 // -- Vector2f --
-
-template <typename T>
-Vector2f<T>::Vector2f(T x, T y)
-{
-	this->x = x;
-	this->y = y;
-}
-
-template <typename T>
-Vector2f<T>::Vector2f()
-{
-	this->x = static_cast<T>(0.0);
-	this->y = static_cast<T>(0.0);
-}
 
 template <typename T>
 Vector2f<T> Vector2f<T>::randomDirection(Random &random)
@@ -232,6 +204,12 @@ template <typename T>
 T Vector2f<T>::dot(const Vector2f<T> &v) const
 {
 	return (this->x * v.x) + (this->y * v.y);
+}
+
+template <typename T>
+T Vector2f<T>::cross(const Vector2f<T> &v) const
+{
+	return (this->x * v.y) - (this->y * v.x);
 }
 
 template <typename T>

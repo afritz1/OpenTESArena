@@ -15,14 +15,12 @@
 #include "../Audio/AudioManager.h"
 #include "../Input/InputManager.h"
 #include "../Interface/Panel.h"
-#include "../Rendering/RenderChunkManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/TextBox.h"
 #include "../World/ChunkManager.h"
 #include "../World/SceneManager.h"
 
 #include "components/utilities/FPSCounter.h"
-#include "components/utilities/Profiler.h"
 
 // This class holds the current game state, manages the primary game loop, and 
 // updates the game state each frame.
@@ -46,7 +44,7 @@ private:
 	// Listener IDs are optional in case of failed Game construction.
 	InputManager inputManager;
 	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
-		takeScreenshotListenerID, debugProfilerListenerID;
+		renderTargetsResetListenerID, takeScreenshotListenerID, debugProfilerListenerID;
 
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	GameWorldRenderCallback gameWorldRenderCallback;
@@ -73,7 +71,6 @@ private:
 	Random random;
 	ArenaRandom arenaRandom;
 
-	Profiler profiler;
 	FPSCounter fpsCounter;
 
 	SceneManager sceneManager;
@@ -159,9 +156,6 @@ public:
 	Random &getRandom();
 
 	ArenaRandom &getArenaRandom();
-
-	// Gets the profiler instance for measuring precise time spans.
-	Profiler &getProfiler();
 
 	// Gets the frames-per-second counter. This is updated in the game loop.
 	const FPSCounter &getFPSCounter() const;

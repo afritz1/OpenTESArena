@@ -20,7 +20,7 @@ enum class PlayerInterface;
 class OptionsPanel : public Panel
 {
 private:
-	TextBox titleTextBox, descriptionTextBox, backButtonTextBox;
+	TextBox descriptionTextBox, backButtonTextBox;
 	std::vector<TextBox> tabTextBoxes;
 	std::vector<TextBox> optionTextBoxes;
 	Button<Game&> backButton;

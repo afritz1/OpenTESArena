@@ -1,6 +1,6 @@
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
-#include "EntityVisibilityState.h"
+#include "EntityObservedResult.h"
 #include "Player.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -703,7 +703,7 @@ BufferView<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs
 	return this->destroyedEntityIDs;
 }
 
-void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const CoordDouble2 &eye2D, EntityVisibilityState2D &outVisState) const
+void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const CoordDouble2 &eye2D, EntityObservedResult &result) const
 {
 	const EntityInstance &entityInst = this->entities.get(id);
 	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
@@ -713,13 +713,12 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 	const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
 	const bool isDynamic = entityInst.isDynamic();
 
-	// Get active animation state.
 	const int stateIndex = animInst.currentStateIndex;
 	DebugAssert(stateIndex >= 0);
 	DebugAssert(stateIndex < animDef.stateCount);
 	const EntityAnimationDefinitionState &animDefState = animDef.states[stateIndex];
 
-	// Get animation angle based on entity direction relative to some camera/eye.
+	// Get animation angle based on entity direction relative to camera.
 	const int angleCount = animDefState.keyframeListCount;
 	const Radians animAngle = [this, &eye2D, &entityInst, &entityCoord, isDynamic, angleCount]()
 	{
@@ -728,24 +727,22 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 			// Static entities always face the camera.
 			return 0.0;
 		}
-		else
-		{
-			const VoxelDouble2 &entityDir = this->getEntityDirection(entityInst.directionID);
+		
+		const VoxelDouble2 &entityDir = this->getEntityDirection(entityInst.directionID);
 
-			// Dynamic entities are angle-dependent.
-			const VoxelDouble2 diffDir = (eye2D - entityCoord).normalized();
+		// Dynamic entities are angle-dependent.
+		const VoxelDouble2 diffDir = (eye2D - entityCoord).normalized();
 
-			const Radians entityAngle = MathUtils::fullAtan2(entityDir);
-			const Radians diffAngle = MathUtils::fullAtan2(diffDir);
+		const Radians entityAngle = MathUtils::fullAtan2(entityDir);
+		const Radians diffAngle = MathUtils::fullAtan2(diffDir);
 
-			// Use the difference of the two angles to get the relative angle.
-			const Radians resultAngle = Constants::TwoPi + (entityAngle - diffAngle);
+		// Use the difference of the two angles to get the relative angle.
+		const Radians resultAngle = Constants::TwoPi + (entityAngle - diffAngle);
 
-			// Angle bias so the final direction is centered within its angle range.
-			const Radians angleBias = (Constants::TwoPi / static_cast<double>(angleCount)) * 0.50;
+		// Angle bias so the final direction is centered within its angle range.
+		const Radians angleBias = (Constants::TwoPi / static_cast<double>(angleCount)) * 0.50;
 
-			return std::fmod(resultAngle + angleBias, Constants::TwoPi);
-		}
+		return std::fmod(resultAngle + angleBias, Constants::TwoPi);
 	}();
 
 	// Index into animation keyframe lists for the state.
@@ -773,65 +770,51 @@ void EntityChunkManager::getEntityVisibilityState2D(EntityInstanceID id, const C
 		return std::clamp(keyframeIndex, 0, keyframeCount - 1);
 	}();
 
-	const CoordDouble2 flatPosition(
-		entityCoord.chunk,
-		VoxelDouble2(entityCoord.point.x, entityCoord.point.y));
-
-	outVisState.init(id, flatPosition, stateIndex, angleIndex, keyframeIndex);
+	const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(stateIndex, angleIndex, keyframeIndex);
+	result.init(id, stateIndex, angleIndex, keyframeIndex, linearizedKeyframeIndex);
 }
 
-void EntityChunkManager::getEntityVisibilityState3D(EntityInstanceID id, const CoordDouble2 &eye2D,
-	double ceilingScale, const VoxelChunkManager &voxelChunkManager, EntityVisibilityState3D &outVisState) const
+double EntityChunkManager::getEntityCorrectedY(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const
 {
-	EntityVisibilityState2D visState2D;
-	this->getEntityVisibilityState2D(id, eye2D, visState2D);
-
 	const EntityInstance &entityInst = this->entities.get(id);
-	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-	const int baseYOffset = EntityUtils::getYOffset(entityDef);
-	const double flatYOffset = static_cast<double>(-baseYOffset) / MIFUtils::ARENA_UNITS;
+	const CoordDouble2 &entityCoord = this->getEntityPosition(entityInst.positionID);
+	const CoordInt2 entityVoxelCoord(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point));
+	const double baseYPosition = ceilingScale;
 
-	// If the entity is in a raised platform voxel, they are set on top of it.
-	const double raisedPlatformYOffset = [ceilingScale, &voxelChunkManager, &visState2D]()
+	const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(entityVoxelCoord.chunk);
+	if (chunk == nullptr)
 	{
-		const CoordInt2 entityVoxelCoord(
-			visState2D.flatPosition.chunk,
-			VoxelUtils::pointToVoxel(visState2D.flatPosition.point));
-		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(entityVoxelCoord.chunk);
-		if (chunk == nullptr)
-		{
-			// Not sure this is ever reachable, but handle just in case.
-			return 0.0;
-		}
+		// Not sure this is ever reachable, but handle just in case.
+		return baseYPosition;
+	}
 
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
-		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
+	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+	const int entityDefArenaYOffset = EntityUtils::getYOffset(entityDef);
+	const double entityDefYOffset = static_cast<double>(-entityDefArenaYOffset) / MIFUtils::ARENA_UNITS;
+	constexpr int entityVoxelY = 1; // All entities are at Y=1 in the grid.
 
-		if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
-		{
-			const VoxelTraitsDefinition::Raised &raised = voxelTraitsDef.raised;
-			const double meshYPos = raised.yOffset + raised.ySize;
+	// If they are in a raised platform voxel, they are set on top of it.
+	double raisedPlatformYOffset = 0.0;
+	const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
+	const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
+	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
+	{
+		const VoxelTraitsDefinition::Raised &raised = voxelTraitsDef.raised;
+		const double meshYPos = raised.yOffset + raised.ySize;
+		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk->getMeshDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
+		const VoxelMeshDefinition &voxelMeshDef = chunk->getMeshDef(voxelMeshDefID);
+		raisedPlatformYOffset = MeshUtils::getScaledVertexY(meshYPos, voxelMeshDef.scaleType, ceilingScale);
+	}
 
-			const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk->getMeshDefID(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
-			const VoxelMeshDefinition &voxelMeshDef = chunk->getMeshDef(voxelMeshDefID);
+	return baseYPosition + entityDefYOffset + raisedPlatformYOffset;
+}
 
-			return MeshUtils::getScaledVertexY(meshYPos, voxelMeshDef.scaleType, ceilingScale);
-		}
-		else
-		{
-			// No raised platform offset.
-			return 0.0;
-		}
-	}();
-
-	// Bottom center of flat.
-	const VoxelDouble3 flatPoint(
-		visState2D.flatPosition.point.x,
-		ceilingScale + flatYOffset + raisedPlatformYOffset,
-		visState2D.flatPosition.point.y);
-	const CoordDouble3 flatPosition(visState2D.flatPosition.chunk, flatPoint);
-
-	outVisState.init(id, flatPosition, visState2D.stateIndex, visState2D.angleIndex, visState2D.keyframeIndex);
+CoordDouble3 EntityChunkManager::getEntityPosition3D(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const
+{
+	const EntityInstance &entityInst = this->entities.get(id);
+	const CoordDouble2 &entityCoord = this->getEntityPosition(entityInst.positionID);
+	const double y = this->getEntityCorrectedY(id, ceilingScale, voxelChunkManager);
+	return CoordDouble3(entityCoord.chunk, VoxelDouble3(entityCoord.point.x, y, entityCoord.point.y));
 }
 
 void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,

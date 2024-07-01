@@ -70,10 +70,14 @@ Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 	return (2.0 * std::atan(halfDim)) * Constants::RadToDeg;
 }
 
-bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint,
-	const Double2 &normal)
+bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &planePoint, const Double2 &planeNormal)
 {
-	return (point - dividerPoint).dot(normal) >= 0.0;
+	return (point - planePoint).dot(planeNormal) >= 0.0;
+}
+
+bool MathUtils::isPointInHalfSpace(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal)
+{
+	return (point - planePoint).dot(planeNormal) >= 0.0;
 }
 
 bool MathUtils::lineSegmentIntersection(const Double2 &a0, const Double2 &a1, const Double2 &b0, const Double2 &b1)
@@ -430,4 +434,28 @@ std::vector<Int2> MathUtils::bresenhamLine(const Int2 &p1, const Int2 &p2)
 	}
 
 	return points;
+}
+
+Int2 MathUtils::getZOrderCurvePoint(int index)
+{
+	DebugAssert(index >= 0);
+	const int relevantBitCount = Bytes::findHighestSetBitIndex(index) + 1;
+	int x = 0;
+	int y = 0;
+	for (int i = 0; i < relevantBitCount; i++)
+	{
+		const int dstBitIndex = i / 2;
+		const bool bit = ((index >> i) & 1) != 0;
+		const int bitValue = bit ? (1 << dstBitIndex) : 0;
+		if ((i & 1) == 0)
+		{
+			x |= bitValue;
+		}
+		else
+		{
+			y |= bitValue;
+		}
+	}
+
+	return Int2(x, y);
 }

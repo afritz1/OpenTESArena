@@ -84,6 +84,17 @@ bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 	return enemyDef.getCreature().ghost;
 }
 
+bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
+{
+	if (entityDef.getType() != EntityDefinition::Type::Doodad)
+	{
+		return false;
+	}
+
+	const EntityDefinition::DoodadDefinition &doodad = entityDef.getDoodad();
+	return doodad.puddle;
+}
+
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 {
 	const EntityDefinition::Type type = entityDef.getType();
@@ -157,6 +168,11 @@ void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, 
 
 	*outMaxWidth = maxAnimWidth;
 	*outMaxHeight = maxAnimHeight;
+}
+
+double EntityUtils::getCenterY(double feetY, double bboxHeight)
+{
+	return feetY + (bboxHeight * 0.50);
 }
 
 bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,

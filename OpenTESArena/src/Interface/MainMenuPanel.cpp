@@ -226,9 +226,11 @@ bool MainMenuPanel::init()
 	this->cursorTextureRef.init(cursorTextureID, renderer);
 	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
 
+	// Unload in case we are returning from a game session.
 	SceneManager &sceneManager = game.getSceneManager();
-	RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	renderChunkManager.unloadScene(renderer); // In case we are returning from a game session.
+	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
+	sceneManager.renderEntityChunkManager.unloadScene(renderer);
+	sceneManager.renderLightChunkManager.unloadScene(renderer);
 
 	return true;
 }

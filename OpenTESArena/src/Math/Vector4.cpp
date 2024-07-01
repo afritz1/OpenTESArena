@@ -5,24 +5,6 @@
 // -- Vector4i --
 
 template <typename T>
-Vector4i<T>::Vector4i(T x, T y, T z, T w)
-{
-	this->x = x;
-	this->y = y;
-	this->z = z;
-	this->w = w;
-}
-
-template <typename T>
-Vector4i<T>::Vector4i()
-{
-	this->x = static_cast<T>(0);
-	this->y = static_cast<T>(0);
-	this->z = static_cast<T>(0);
-	this->w = static_cast<T>(0);
-}
-
-template <typename T>
 T &Vector4i<T>::operator[](size_t index)
 {
 	return reinterpret_cast<T*>(&this->x)[index];
@@ -98,33 +80,6 @@ std::string Vector4i<T>::toString() const
 }
 
 // -- Vector4f --
-
-template <typename T>
-Vector4f<T>::Vector4f(T x, T y, T z, T w)
-{
-	this->x = x;
-	this->y = y;
-	this->z = z;
-	this->w = w;
-}
-
-template <typename T>
-Vector4f<T>::Vector4f(const Vector3f<T> &xyz, T w)
-{
-	this->x = xyz.x;
-	this->y = xyz.y;
-	this->z = xyz.z;
-	this->w = w;
-}
-
-template <typename T>
-Vector4f<T>::Vector4f()
-{
-	this->x = static_cast<T>(0.0);
-	this->y = static_cast<T>(0.0);
-	this->z = static_cast<T>(0.0);
-	this->w = static_cast<T>(0.0);
-}
 
 template <typename T>
 Vector4f<T> Vector4f<T>::fromARGB(uint32_t argb)

@@ -101,7 +101,7 @@ CoordDouble3 VoxelUtils::worldPointToCoord(const WorldDouble3 &point)
 		((point.z >= 0.0) ? static_cast<WEInt>(point.z) : (static_cast<WEInt>(std::floor(point.z)) - (chunkDim - 1))) / chunkDim);
 	const VoxelDouble3 newPoint(
 		(point.x >= 0) ? std::fmod(point.x, chunkDimReal) : (chunkDimReal - std::fmod(-point.x, chunkDimReal)),
-		(point.y >= 0) ? std::fmod(point.y, chunkDimReal) : (chunkDimReal - std::fmod(-point.y, chunkDimReal)),
+		point.y,
 		(point.z >= 0) ? std::fmod(point.z, chunkDimReal) : (chunkDimReal - std::fmod(-point.z, chunkDimReal)));
 	return CoordDouble3(chunk, newPoint);
 }
@@ -127,7 +127,7 @@ CoordInt3 VoxelUtils::worldVoxelToCoord(const WorldInt3 &voxel)
 		((voxel.z >= 0) ? voxel.z : (voxel.z - (chunkDim - 1))) / chunkDim);
 	const VoxelInt3 newVoxel(
 		(voxel.x >= 0) ? (voxel.x % chunkDim) : (chunkDim - (-voxel.x % chunkDim)),
-		(voxel.y >= 0) ? (voxel.y % chunkDim) : (chunkDim - (-voxel.y % chunkDim)),
+		voxel.y,
 		(voxel.z >= 0) ? (voxel.z % chunkDim) : (chunkDim - (-voxel.z % chunkDim)));
 	return CoordInt3(chunk, newVoxel);
 }

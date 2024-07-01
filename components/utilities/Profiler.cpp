@@ -1,127 +1,149 @@
+#include <algorithm>
+#include <chrono>
 #include <cstring>
+#include <optional>
+#include <string_view>
 
 #include "Profiler.h"
+#include "String.h"
+#include "StringView.h"
 #include "../debug/Debug.h"
 
-void ProfilerSampler::init(std::string &&name)
+namespace
 {
-	this->name = std::move(name);
-	this->startTime = std::chrono::high_resolution_clock::now();
-	this->endTime = this->startTime;
-}
-
-Profiler::Profiler()
-{
-	this->samplerCount = 0;
-}
-
-std::optional<int> Profiler::tryGetSamplerIndex(const std::string &name) const
-{
-	for (int i = 0; i < this->samplerCount; i++)
+	struct ProfilerSample
 	{
-		if (this->samplers[i].name == name)
+		char name[128];
+		std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
+		double totalSeconds;
+
+		ProfilerSample()
 		{
-			return i;
-		}
-	}
-
-	return std::nullopt;
-}
-
-std::string Profiler::durationToString(double time) const
-{
-	char buffer[32];
-	std::snprintf(buffer, std::size(buffer), "%.2f", time);
-	return std::string(buffer);
-}
-
-int Profiler::getSamplerCount() const
-{
-	return this->samplerCount;
-}
-
-const std::string &Profiler::getSamplerName(int index) const
-{
-	DebugAssert(index >= 0);
-	DebugAssert(index < this->samplerCount);
-	return this->samplers[index].name;
-}
-
-double Profiler::getSeconds(const std::string &name) const
-{
-	const std::optional<int> index = this->tryGetSamplerIndex(name);
-	if (!index.has_value())
-	{
-		return 0.0;
-	}
-
-	const ProfilerSampler &sampler = this->samplers[*index];
-	DebugAssertMsg(sampler.endTime >= sampler.startTime, "Invalid start/end times for \"" + name + "\".");
-	const std::chrono::nanoseconds diff = sampler.endTime - sampler.startTime;
-	return static_cast<double>(diff.count()) / static_cast<double>(std::nano::den);
-}
-
-std::string Profiler::getSecondsString(const std::string &name) const
-{
-	const double seconds = this->getSeconds(name);
-	return this->durationToString(seconds);
-}
-
-double Profiler::getMilliseconds(const std::string &name) const
-{
-	return this->getSeconds(name) * 1000.0;
-}
-
-std::string Profiler::getMillisecondsString(const std::string &name) const
-{
-	const double milliseconds = this->getMilliseconds(name);
-	return this->durationToString(milliseconds);
-}
-
-void Profiler::setStart(const std::string &name)
-{
-	ProfilerSampler *sampler = nullptr;
-	std::optional<int> index = this->tryGetSamplerIndex(name);
-	if (index.has_value())
-	{
-		sampler = &this->samplers[*index];
-	}
-	else
-	{
-		if (this->samplerCount == MAX_SAMPLERS)
-		{
-			DebugLogError("Too many samplers, can't add \"" + name + "\".");
-			return;
+			std::fill(std::begin(this->name), std::end(this->name), '\0');
+			this->totalSeconds = 0.0;
 		}
 
-		index = this->samplerCount;
-		sampler = &this->samplers[*index];
-		sampler->init(std::string(name));
+		void init(const char *name)
+		{
+			std::snprintf(this->name, std::size(this->name), "%s", name);
+			this->startTime = std::chrono::time_point<std::chrono::high_resolution_clock>();
+			this->totalSeconds = 0.0;
+		}
+	};
 
-		this->samplerCount++;
+	ProfilerSample g_samples[64];
+	int g_sampleCount = 0;
+
+	ProfilerSample *GetSample(const char *sampleName)
+	{
+		if (String::isNullOrEmpty(sampleName))
+		{
+			return nullptr;
+		}
+
+		for (int i = 0; i < g_sampleCount; i++)
+		{
+			ProfilerSample &sample = g_samples[i];
+			if (StringView::equals(sampleName, sample.name))
+			{
+				return &sample;
+			}
+		}
+
+		return nullptr;
 	}
 
-	sampler->startTime = std::chrono::high_resolution_clock::now();
+	ProfilerSample *GetOrAddSample(const char *sampleName)
+	{
+		ProfilerSample *sample = GetSample(sampleName);
+		if (sample != nullptr)
+		{
+			return sample;
+		}
+
+		constexpr int maxSampleCount = static_cast<int>(std::size(g_samples));
+		if (g_sampleCount == maxSampleCount)
+		{
+			return nullptr;
+		}
+
+		ProfilerSample &newSample = g_samples[g_sampleCount];
+		newSample.init(sampleName);
+		g_sampleCount++;
+		return &newSample;
+	}
+
+	double SecondsToMilliseconds(double seconds)
+	{
+		return seconds * 1000.0;
+	}
+
+	std::string DurationToString(double time)
+	{
+		char buffer[32];
+		std::snprintf(buffer, std::size(buffer), "%.2f", time);
+		return std::string(buffer);
+	}
 }
 
-void Profiler::setStop(const std::string &name)
+void Profiler::startFrame()
 {
-	ProfilerSampler *sampler = nullptr;
-	std::optional<int> index = this->tryGetSamplerIndex(name);
-	if (index.has_value())
+	g_sampleCount = 0;
+}
+
+void Profiler::setStart(const char *sampleName)
+{
+	ProfilerSample *sample = GetOrAddSample(sampleName);
+	if (sample == nullptr)
 	{
-		sampler = &this->samplers[*index];
-	}
-	else
-	{
-		DebugLogError("Couldn't find sampler for \"" + name + "\", need to start it first.");
+		DebugLogError("Couldn't start sample \"" + std::string(sampleName) + "\".");
 		return;
 	}
 
-	sampler->endTime = std::chrono::high_resolution_clock::now();
+	sample->startTime = std::chrono::high_resolution_clock::now();
 }
 
-void Profiler::clear()
+void Profiler::setStop(const char *sampleName, bool accumulate)
 {
-	this->samplerCount = 0;
+	const auto endTime = std::chrono::high_resolution_clock::now();
+	ProfilerSample *sample = GetSample(sampleName);
+	if (sample == nullptr)
+	{
+		DebugLogError("Couldn't stop sample \"" + std::string(sampleName) + "\".");
+		return;
+	}
+
+	const std::chrono::nanoseconds diff = endTime - sample->startTime;
+	const double seconds = static_cast<double>(diff.count()) / static_cast<double>(std::nano::den);
+	if (accumulate)
+	{
+		sample->totalSeconds += seconds;
+	}
+	else
+	{
+		sample->totalSeconds = seconds;
+	}
+}
+
+std::string Profiler::getResultsString()
+{
+	// @todo: implement a nicer hierarchy printing, probably need at least a struct and some kind of namespace trimming by '.'
+
+	std::string resultsStr;
+	for (int i = 0; i < g_sampleCount; i++)
+	{
+		const ProfilerSample &sample = g_samples[i];
+
+		if (!resultsStr.empty())
+		{
+			resultsStr += '\n';
+		}
+
+		resultsStr += sample.name;
+		resultsStr += ": ";
+		resultsStr += DurationToString(SecondsToMilliseconds(sample.totalSeconds));
+		resultsStr += "ms";
+	}
+
+	return resultsStr;
 }

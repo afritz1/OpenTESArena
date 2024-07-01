@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "RenderGeometryUtils.h"
+#include "RenderLightUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Math/MathUtils.h"
@@ -11,8 +12,6 @@
 #include "../Utilities/Palette.h"
 
 #include "components/utilities/BufferView.h"
-
-// Abstract base class for 3D renderer.
 
 class Random;
 class TextureBuilder;
@@ -22,6 +21,7 @@ struct RenderDrawCall;
 struct RenderFrameSettings;
 struct RenderInitSettings;
 
+// Abstract base class for 3D renderer.
 class RendererSystem3D
 {
 public:
@@ -31,13 +31,15 @@ public:
 		int width, height;
 		int threadCount;
 		int drawCallCount;
-		int sceneTriangleCount, visTriangleCount;
+		int presentedTriangleCount;
 		int textureCount;
 		int64_t textureByteCount;
 		int totalLightCount;
+		int totalDepthTests;
+		int totalColorWrites;
 
-		ProfilerData(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
-			int visTriangleCount, int textureCount, int64_t textureByteCount, int totalLightCount);
+		ProfilerData(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
+			int textureCount, int64_t textureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites);
 	};
 
 	virtual ~RendererSystem3D();
@@ -68,9 +70,11 @@ public:
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
 
 	// Shading management functions.
+	virtual bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID) = 0;
+	virtual void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) = 0;
+	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) = 0;
+	virtual void freeUniformBuffer(UniformBufferID id) = 0;
 	virtual bool tryCreateLight(RenderLightID *outID) = 0;
-	virtual const Double3 &getLightPosition(RenderLightID id) = 0;
-	virtual void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius) = 0;
 	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
 	virtual void setLightRadius(RenderLightID id, double startRadius, double endRadius) = 0;
 	virtual void freeLight(RenderLightID id) = 0;

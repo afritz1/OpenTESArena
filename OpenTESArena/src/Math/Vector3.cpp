@@ -7,22 +7,6 @@
 // -- Vector3i --
 
 template <typename T>
-Vector3i<T>::Vector3i(T x, T y, T z)
-{
-	this->x = x;
-	this->y = y;
-	this->z = z;
-}
-
-template <typename T>
-Vector3i<T>::Vector3i()
-{
-	this->x = static_cast<T>(0);
-	this->y = static_cast<T>(0);
-	this->z = static_cast<T>(0);
-}
-
-template <typename T>
 T &Vector3i<T>::operator[](size_t index)
 {
 	return reinterpret_cast<T*>(&this->x)[index];
@@ -92,22 +76,6 @@ std::string Vector3i<T>::toString() const
 }
 
 // -- Vector3f --
-
-template <typename T>
-Vector3f<T>::Vector3f(T x, T y, T z)
-{
-	this->x = x;
-	this->y = y;
-	this->z = z;
-}
-
-template <typename T>
-Vector3f<T>::Vector3f()
-{
-	this->x = static_cast<T>(0.0);
-	this->y = static_cast<T>(0.0);
-	this->z = static_cast<T>(0.0);
-}
 
 template <typename T>
 Vector3f<T> Vector3f<T>::randomDirection(Random &random)

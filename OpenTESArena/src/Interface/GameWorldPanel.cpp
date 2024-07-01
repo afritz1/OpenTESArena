@@ -812,18 +812,30 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
 	const SceneManager &sceneManager = game.getSceneManager();
-	const RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	const BufferView<const RenderDrawCall> voxelDrawCalls = renderChunkManager.getVoxelDrawCalls();
-	const BufferView<const RenderDrawCall> entityDrawCalls = renderChunkManager.getEntityDrawCalls();
-	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
-	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
-
 	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
-	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
+	const RenderDrawCall &skyBgDrawCall = renderSkyManager.getBgDrawCall();
+	drawCalls.emplace_back(skyBgDrawCall);
 	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
 
+	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
+	const BufferView<const RenderDrawCall> voxelDrawCalls = renderVoxelChunkManager.getDrawCalls();
+	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
+
+	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
+	const BufferView<const RenderDrawCall> entityDrawCalls = renderEntityChunkManager.getDrawCalls();
+	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
+
 	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
+	const bool isFoggy = gameState.isFogActive();
+	if (activeWeatherInst.hasFog())
+	{
+		if (isFoggy)
+		{
+			drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
+		}
+	}
+
 	if (activeWeatherInst.hasRain())
 	{
 		const BufferView<const RenderDrawCall> rainDrawCalls = renderWeatherManager.getRainDrawCalls();
@@ -836,13 +848,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		drawCalls.insert(drawCalls.end(), snowDrawCalls.begin(), snowDrawCalls.end());
 	}
 
-	if (activeWeatherInst.hasFog())
-	{
-		drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
-	}
-
 	const MapType activeMapType = activeMapDef.getMapType();
-	const bool isFoggy = gameState.isFogActive();
 	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType, isFoggy);
 	const double latitude = [&gameState]()
 	{
@@ -872,7 +878,11 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		lightTableTextureID = sceneManager.normalLightTableNightTextureRef.get();
 	}
 
-	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, options.getGraphics_RenderThreadsMode());
+	const ObjectTextureID skyBgTextureID = skyBgDrawCall.textureIDs[0];
+	const DitheringMode ditheringMode = static_cast<DitheringMode>(options.getGraphics_DitheringMode());
+
+	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
+		options.getGraphics_RenderThreadsMode(), ditheringMode);
 
 	return true;
 }

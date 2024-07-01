@@ -20,8 +20,8 @@ struct VoxelDoorVisibilityInstance
 	void init(SNInt x, int y, WEInt z);
 	void clearVisibleFaces();
 	void clear();
-	void update(bool isCameraNorthInclusive, bool isCameraEastInclusive, bool isNorthAir, bool isEastAir,
-		bool isSouthAir, bool isWestAir);
+	void update(bool isCameraNorthInclusive, bool isCameraEastInclusive, bool isNorthValid, bool isEastValid,
+		bool isSouthValid, bool isWestValid);
 };
 
 #endif

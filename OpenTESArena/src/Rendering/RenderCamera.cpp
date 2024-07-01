@@ -14,7 +14,8 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->zoom = MathUtils::verticalFovToZoom(fovY);
 	this->forwardScaled = this->forward * this->zoom;
 
-	this->right = this->forward.cross(Double3::UnitY).normalized();
+	const Double3 &globalUp = Double3::UnitY;
+	this->right = this->forward.cross(globalUp).normalized();
 	this->aspectRatio = aspectRatio;
 	this->rightScaled = this->right * this->aspectRatio;
 
@@ -23,7 +24,9 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->upScaledRecip = this->up / tallPixelRatio;
 
 	this->viewMatrix = Matrix4d::view(this->worldPoint, this->forward, this->right, this->upScaled); // Adjust for tall pixels.
-	this->perspectiveMatrix = Matrix4d::perspective(fovY, aspectRatio, RendererUtils::NEAR_PLANE, RendererUtils::FAR_PLANE);
+	this->projectionMatrix = Matrix4d::perspective(fovY, aspectRatio, RendererUtils::NEAR_PLANE, RendererUtils::FAR_PLANE);
+	this->inverseViewMatrix = Matrix4d::inverse(this->viewMatrix);
+	this->inverseProjectionMatrix = Matrix4d::inverse(this->projectionMatrix);
 
 	this->leftFrustumDir = (this->forwardScaled - this->rightScaled).normalized();
 	this->rightFrustumDir = (this->forwardScaled + this->rightScaled).normalized();
@@ -34,6 +37,15 @@ void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Doub
 	this->rightFrustumNormal = this->up.cross(this->rightFrustumDir).normalized();
 	this->bottomFrustumNormal = this->right.cross(this->bottomFrustumDir).normalized();
 	this->topFrustumNormal = this->topFrustumDir.cross(this->right).normalized();
+
+	this->horizonDir = Double3(this->forward.x, 0.0, this->forward.z).normalized();
+	this->horizonNormal = globalUp;
+
+	// @todo: this doesn't support roll. will need something like a vector projection later.
+	this->horizonWorldPoint = this->worldPoint + this->horizonDir;
+	this->horizonCameraPoint = RendererUtils::worldSpaceToCameraSpace(Double4(this->horizonWorldPoint, 1.0), this->viewMatrix);
+	this->horizonClipPoint = RendererUtils::cameraSpaceToClipSpace(this->horizonCameraPoint, this->projectionMatrix);
+	this->horizonNdcPoint = RendererUtils::clipSpaceToNDC(this->horizonClipPoint);
 
 	this->fovY = fovY;
 	this->fovX = MathUtils::verticalFovToHorizontalFov(fovY, aspectRatio);
