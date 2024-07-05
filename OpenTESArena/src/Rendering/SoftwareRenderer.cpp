@@ -735,7 +735,6 @@ namespace
 // Draw call globals.
 namespace
 {
-	// Bulk draw call processing caches sharing a vertex shader to calculate clipped meshes for rasterizing.
 	struct DrawCallCache
 	{
 		const SoftwareRenderer::VertexBuffer *vertexBuffer;
@@ -2518,7 +2517,7 @@ struct RasterizerBin
 {
 	static constexpr int MAX_FRUSTUM_TRIANGLES = 16384;
 
-	int triangleIndicesToRasterize[MAX_FRUSTUM_TRIANGLES]; // Points into triangles to rasterize.
+	int triangleIndicesToRasterize[MAX_FRUSTUM_TRIANGLES]; // Points into this worker's triangles to rasterize.
 	int triangleBinPixelXStarts[MAX_FRUSTUM_TRIANGLES];
 	int triangleBinPixelXEnds[MAX_FRUSTUM_TRIANGLES];
 	int triangleBinPixelYStarts[MAX_FRUSTUM_TRIANGLES];
@@ -3353,20 +3352,30 @@ namespace
 			worker.shouldWork = false;
 			workerLock.unlock();
 
+			// Use the geometry processing results of all workers to rasterize this worker's bins. The order of workers is assumed to be
+			// the same that draw calls were originally processed, otherwise triangles in each bin would be rasterized in the wrong order.
 			for (const RasterizerWorkItem &workItem : worker.rasterizerWorkItems)
 			{
 				const int binX = workItem.binX;
 				const int binY = workItem.binY;
-				const RasterizerBin &bin = worker.rasterizerInputCache.bins.get(workItem.binX, workItem.binY);
-				if (bin.triangleCount > 0) // @todo: instead of iterating over triangles, maybe iterate over entries of <draw call index, triangle indices>
+				for (const Worker &geometryWorker : g_workers)
 				{
-					const int workerDrawCallIndex = -1; // @todo: clippingOutput.clipSpaceMeshDrawCallIndex? the thing here is that we're not iterating through draw calls, but ranges of triangles mapped to a draw call index
-					DebugNotImplemented();
-					DebugAssertIndex(worker.drawCallCaches, workerDrawCallIndex);
-					const DrawCallCache &drawCallCache = worker.drawCallCaches[workerDrawCallIndex];
-					const int binIndex = workItem.binIndex;
-					const RasterizerInputCache &rasterizerInputCache = worker.rasterizerInputCache;
-					RasterizeMesh(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
+					if (geometryWorker.drawCallCount > 0)
+					{
+						const RasterizerBin &geometryWorkerBin = geometryWorker.rasterizerInputCache.bins.get(binX, binY);
+						if (geometryWorkerBin.triangleCount > 0)
+						{
+							// @todo: should there be a geometryWorker.rasterizerInputCache.triangleDrawCallIndices[]?
+							// - this should have another loop over all the relevant draw call indices in the rasterizer input
+
+							const int workerDrawCallIndex = -1;
+							DebugAssertIndex(geometryWorker.drawCallCaches, workerDrawCallIndex);
+							const DrawCallCache &drawCallCache = geometryWorker.drawCallCaches[workerDrawCallIndex];
+							const int binIndex = workItem.binIndex;
+							const RasterizerInputCache &rasterizerInputCache = geometryWorker.rasterizerInputCache;
+							RasterizeMesh(drawCallCache, rasterizerInputCache, binX, binY, binIndex);
+						}
+					}
 				}
 			}
 
