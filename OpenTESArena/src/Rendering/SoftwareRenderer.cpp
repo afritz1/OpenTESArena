@@ -2570,18 +2570,7 @@ struct RasterizerBin
 
 	void clear()
 	{
-		for (RasterizerBinEntry &entry : this->entries)
-		{
-			entry.clear();
-		}
-
 		this->entryCount = 0;
-
-		std::fill(std::begin(this->triangleIndicesToRasterize), std::end(this->triangleIndicesToRasterize), -1);
-		std::fill(std::begin(this->triangleBinPixelXStarts), std::end(this->triangleBinPixelXStarts), -1);
-		std::fill(std::begin(this->triangleBinPixelXEnds), std::end(this->triangleBinPixelXEnds), -1);
-		std::fill(std::begin(this->triangleBinPixelYStarts), std::end(this->triangleBinPixelYStarts), -1);
-		std::fill(std::begin(this->triangleBinPixelYEnds), std::end(this->triangleBinPixelYEnds), -1);
 		this->triangleCount = 0;
 	}
 
@@ -3391,7 +3380,7 @@ namespace
 		ClippingOutputCache clippingOutputCache;
 		RasterizerInputCache rasterizerInputCache;
 		std::vector<RasterizerWorkItem> rasterizerWorkItems;
-		bool isReadyToStart, shouldWork, shouldExit, isFinishedWorking;
+		bool isReadyToStart, shouldWork, shouldExit, isFinishedWorking; // @todo: should probably double these for 1) geometry processing and 2) rasterizing
 	};
 
 	Buffer<Worker> g_workers;
