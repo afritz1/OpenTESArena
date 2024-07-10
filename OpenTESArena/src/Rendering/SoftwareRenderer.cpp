@@ -3380,7 +3380,7 @@ namespace
 		ClippingOutputCache clippingOutputCache;
 		RasterizerInputCache rasterizerInputCache;
 		std::vector<RasterizerWorkItem> rasterizerWorkItems;
-		bool isReadyToStart, shouldWork, shouldExit, isFinishedWorking; // @todo: should probably double these for 1) geometry processing and 2) rasterizing
+		bool isReadyToStartFrame, shouldExit, shouldWorkOnDrawCalls, isFinishedWithDrawCalls, shouldWorkOnRasterizing, isFinishedRasterizing;
 	};
 
 	Buffer<Worker> g_workers;
@@ -3390,16 +3390,13 @@ namespace
 	void WorkerFunc(int workerIndex)
 	{
 		Worker &worker = g_workers.get(workerIndex);
+		std::unique_lock<std::mutex> workerLock(g_mutex);
 
 		while (true)
 		{
-			std::unique_lock<std::mutex> workerLock(g_mutex);
-			worker.isReadyToStart = true;
+			worker.isReadyToStartFrame = true;
 			g_directorCondVar.notify_one();
-			g_workerCondVar.wait(workerLock, [&worker]() { return worker.shouldExit || worker.shouldWork; });
-
-			worker.isReadyToStart = false;
-			worker.shouldWork = false;
+			g_workerCondVar.wait(workerLock, [&worker]() { return worker.shouldExit || worker.shouldWorkOnDrawCalls; });
 			workerLock.unlock();
 
 			if (worker.shouldExit)
@@ -3424,15 +3421,10 @@ namespace
 				ProcessClipSpaceTrianglesForBinning(drawCallIndex, clippingOutputCache, rasterizerInputCache);
 			}
 
-			worker.isFinishedWorking = true;
-			worker.isReadyToStart = true;
-			g_directorCondVar.notify_one();
-
 			workerLock.lock();
-			g_workerCondVar.wait(workerLock, [&worker]() { return worker.shouldWork; });
-
-			worker.isReadyToStart = false;
-			worker.shouldWork = false;
+			worker.isFinishedWithDrawCalls = true;
+			g_directorCondVar.notify_one();
+			g_workerCondVar.wait(workerLock, [&worker]() { return worker.shouldWorkOnRasterizing; });
 			workerLock.unlock();
 
 			// Use the geometry processing results of all workers to rasterize this worker's bins. The order of workers is assumed to be
@@ -3459,19 +3451,21 @@ namespace
 				}
 			}
 
-			worker.isFinishedWorking = true;
-			g_directorCondVar.notify_one();
+			workerLock.lock();
+			worker.isFinishedRasterizing = true;
 		}
 	}
 
 	void SignalWorkersToExitAndJoin()
 	{
+		std::unique_lock<std::mutex> lock(g_mutex);
 		for (Worker &worker : g_workers)
 		{
 			worker.shouldExit = true;
 		}
 
 		g_workerCondVar.notify_all();
+		lock.unlock();
 
 		for (Worker &worker : g_workers)
 		{
@@ -3489,13 +3483,15 @@ namespace
 			for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
 			{
 				Worker &worker = g_workers[workerIndex];
-				worker.isReadyToStart = false;
-				worker.shouldWork = false;
-				worker.shouldExit = false;
-				worker.isFinishedWorking = false;
-				worker.drawCallStartIndex = 0;
+				worker.drawCallStartIndex = -1;
 				worker.drawCallCount = 0;
 				worker.rasterizerInputCache.createBins(frameBufferWidth, frameBufferHeight);
+				worker.isReadyToStartFrame = false;
+				worker.shouldExit = false;
+				worker.shouldWorkOnDrawCalls = false;
+				worker.isFinishedWithDrawCalls = false;
+				worker.shouldWorkOnRasterizing = false;
+				worker.isFinishedRasterizing = false;
 				worker.thread = std::thread(WorkerFunc, workerIndex);
 			}
 		}
@@ -4041,21 +4037,24 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	int startDrawCallIndex = 0;
 	int remainingDrawCallCount = drawCalls.getCount();
 	constexpr int maxDrawCallsPerLoop = 4096;
+	std::unique_lock<std::mutex> lock(g_mutex);
+	
 	while (remainingDrawCallCount > 0)
 	{
 		// Wait for all workers to be ready to process draw calls.
-		std::unique_lock<std::mutex> lock(g_mutex);
 		g_directorCondVar.wait(lock, []()
 		{
-			return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStart; });
+			return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStartFrame; });
 		});
 
 		for (Worker &worker : g_workers)
 		{
-			DebugAssert(worker.isReadyToStart);
-			DebugAssert(!worker.shouldWork);
 			DebugAssert(!worker.shouldExit);
-			DebugAssert(!worker.isFinishedWorking);
+			DebugAssert(!worker.shouldWorkOnDrawCalls);
+			DebugAssert(!worker.isFinishedWithDrawCalls);
+			DebugAssert(!worker.shouldWorkOnRasterizing);
+			DebugAssert(!worker.isFinishedRasterizing);
+			worker.isReadyToStartFrame = false;
 			worker.rasterizerInputCache.clearTriangles();
 			worker.rasterizerInputCache.emptyBins();
 		}
@@ -4149,36 +4148,23 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		BufferView<Worker> preparedDrawCallWorkers(g_workers.begin(), preparedDrawCallWorkerCount);
 		for (Worker &preparedWorker : preparedDrawCallWorkers)
 		{
-			preparedWorker.shouldWork = true;
+			DebugAssert(!preparedWorker.shouldWorkOnDrawCalls);
+			preparedWorker.shouldWorkOnDrawCalls = true;
 		}
 
-		lock.unlock();
 		g_workerCondVar.notify_all();
-
-		// Wait for draw call workers to finish.
-		lock.lock();
 		g_directorCondVar.wait(lock, [preparedDrawCallWorkers]()
 		{
-			return std::all_of(preparedDrawCallWorkers.begin(), preparedDrawCallWorkers.end(), [](const Worker &worker) { return worker.isFinishedWorking; });
+			return std::all_of(preparedDrawCallWorkers.begin(), preparedDrawCallWorkers.end(), [](const Worker &worker) { return worker.isFinishedWithDrawCalls; });
 		});
 
 		for (Worker &preparedWorker : preparedDrawCallWorkers)
 		{
-			preparedWorker.isFinishedWorking = false;
+			DebugAssert(preparedWorker.shouldWorkOnDrawCalls);
+			DebugAssert(!preparedWorker.shouldWorkOnRasterizing);
+			DebugAssert(!preparedWorker.isFinishedRasterizing);
+			preparedWorker.shouldWorkOnDrawCalls = false;
 			g_totalPresentedTriangleCount += preparedWorker.rasterizerInputCache.triangleCount;
-		}
-
-		g_directorCondVar.wait(lock, [preparedDrawCallWorkers]()
-		{
-			return std::all_of(preparedDrawCallWorkers.begin(), preparedDrawCallWorkers.end(), [](const Worker &worker) { return worker.isReadyToStart; });
-		});
-
-		for (Worker &worker : g_workers)
-		{
-			DebugAssert(worker.isReadyToStart);
-			DebugAssert(!worker.shouldWork);
-			DebugAssert(!worker.shouldExit);
-			DebugAssert(!worker.isFinishedWorking);
 		}
 
 		const int preparedRasterizerWorkerCount = static_cast<int>(std::count_if(g_workers.begin(), g_workers.end(),
@@ -4190,23 +4176,26 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 		BufferView<Worker> preparedRasterizerWorkers(g_workers.begin(), preparedRasterizerWorkerCount);
 		for (Worker &preparedWorker : preparedRasterizerWorkers)
 		{
-			preparedWorker.shouldWork = true;
+			DebugAssert(!preparedWorker.shouldWorkOnRasterizing);
+			DebugAssert(!preparedWorker.isFinishedRasterizing);
+			preparedWorker.shouldWorkOnRasterizing = true;
 		}
 
-		lock.unlock();
-		g_workerCondVar.notify_all();
+		// @todo: deadlocking here when not all g_workers have drawCallCount > 0. The workers that DO have > 0 are readyToStartFrame and the ones that DON'T aren't.
+		// - need to fix which workers wait on these waits() and stuff. the workers with 0 draw calls can't rasterize anything and probably zoom through their loop too fast.
 
-		// Wait for rasterizer workers to finish.
-		lock.lock();
+		g_workerCondVar.notify_all();
 		g_directorCondVar.wait(lock, [preparedRasterizerWorkers]()
 		{
-			return std::all_of(preparedRasterizerWorkers.begin(), preparedRasterizerWorkers.end(), [](const Worker &worker) { return worker.isFinishedWorking; });
+			return std::all_of(preparedRasterizerWorkers.begin(), preparedRasterizerWorkers.end(), [](const Worker &worker) { return worker.isFinishedRasterizing; });
 		});
 
 		// Reset workers for next frame.
-		for (Worker &preparedWorker : preparedRasterizerWorkers)
+		for (Worker &worker : g_workers)
 		{
-			preparedWorker.isFinishedWorking = false;
+			worker.isFinishedWithDrawCalls = false;
+			worker.shouldWorkOnRasterizing = false;
+			worker.isFinishedRasterizing = false;
 		}
 
 		startDrawCallIndex += drawCallsToConsume;
