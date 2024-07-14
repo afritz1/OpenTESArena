@@ -30,6 +30,7 @@ namespace EntityUtils
 	bool isStreetlight(const EntityDefinition &entityDef);
 
 	bool isGhost(const EntityDefinition &entityDef);
+	bool isPuddle(const EntityDefinition &entityDef);
 
 	int getYOffset(const EntityDefinition &entityDef);
 
@@ -38,6 +39,9 @@ namespace EntityUtils
 
 	// Gets the max width and height from the entity animation's frames.
 	void getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight);
+
+	// Gets the world space Y position in the center of the entity
+	double getCenterY(double feetY, double bboxHeight);
 
 	// Returns whether the entity definition has a display name.
 	bool tryGetDisplayName(const EntityDefinition &entityDef,

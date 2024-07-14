@@ -65,11 +65,6 @@ namespace TextureUtils
 		}
 	};
 
-	// 32-bit texture creation convenience functions.
-	Surface makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette);
-	Texture makeTextureFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette,
-		Renderer &renderer);
-
 	// Generates a new texture from a pattern.
 	Surface generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
 		Renderer &renderer);

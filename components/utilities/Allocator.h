@@ -6,6 +6,7 @@
 
 #include "Buffer.h"
 #include "BufferView.h"
+#include "Bytes.h"
 
 // Simple scratch allocator for POD types. Very fast destruction, intended for clearing
 // frequently without worrying about heap fragmentation.
@@ -16,24 +17,21 @@ private:
 	Buffer<std::byte> data;
 	int index;
 
-	template <typename T>
+	template<typename T>
 	static int getByteCount(int count)
 	{
 		return static_cast<int>(count * sizeof(T));
 	}
 
 	// Gets the number of bytes needed to push an allocation to the next valid alignment for T.
-	template <typename T>
+	template<typename T>
 	int getAlignmentByteCount() const
 	{
 		DebugAssert(this->data.isValid());
-		constexpr size_t alignment = alignof(T);
-		const size_t curAddress = reinterpret_cast<uintptr_t>(this->data.get()) + this->index;
-		const size_t modulo = curAddress % alignment;
-		return (modulo != 0) ? static_cast<int>(alignment - modulo) : 0;
+		return Bytes::getBytesToNextAlignment<T>(reinterpret_cast<uintptr_t>(this->data.get() + this->index));
 	}
 
-	template <typename T>
+	template<typename T>
 	int getCombinedByteCount(int count) const
 	{
 		const int byteCount = ScratchAllocator::getByteCount<T>(count);
@@ -67,7 +65,7 @@ public:
 		return this->data.getCount();
 	}
 
-	template <typename T>
+	template<typename T>
 	bool canAlloc(int count) const
 	{
 		if (!this->isInited() || !this->data.isValid())
@@ -79,7 +77,7 @@ public:
 		return (index + byteCount) <= this->data.getCount();
 	}
 
-	template <typename T>
+	template<typename T>
 	BufferView<T> alloc(int count, const T &defaultValue)
 	{
 		static_assert(std::is_trivial_v<T>);
@@ -97,13 +95,13 @@ public:
 		return BufferView<T>(ptr, count);
 	}
 
-	template <typename T>
+	template<typename T>
 	BufferView<T> alloc(int count)
 	{
 		return this->alloc(count, T());
 	}
 
-	template <typename T>
+	template<typename T>
 	T *alloc()
 	{
 		BufferView<T> bufferView = this->alloc(1, T());

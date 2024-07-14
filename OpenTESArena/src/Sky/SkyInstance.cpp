@@ -422,10 +422,10 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 
 			this->lightningAnimIndices.set(i, static_cast<int>(this->animInsts.size()) - 1);
 		}
-
-		this->lightningStart = this->starEnd;
-		this->lightningEnd = this->lightningStart + lightningBoltDefCount;
 	}
+
+	this->lightningStart = this->starEnd;
+	this->lightningEnd = this->lightningStart + lightningBoltDefCount;
 }
 
 const SkyObjectInstance &SkyInstance::getSkyObjectInst(int index) const

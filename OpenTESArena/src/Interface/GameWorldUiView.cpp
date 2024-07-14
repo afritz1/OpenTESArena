@@ -12,6 +12,7 @@
 #include "../Math/Constants.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 
 #include "components/utilities/String.h"
@@ -675,4 +676,89 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;
 	DebugNotImplemented(); // Disabled for now until I need it again
 	//renderer.drawOriginal(textBox.getTextureID(), originalX, originalY);
+}
+
+void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
+{
+	Renderer &renderer = game.getRenderer();
+	constexpr int quadtreeTextureDim = ChunkUtils::CHUNK_DIM;
+	UiTextureID quadtreeTextureID;
+	if (!renderer.tryCreateUiTexture(quadtreeTextureDim, quadtreeTextureDim, &quadtreeTextureID))
+	{
+		DebugLogError("Couldn't allocate voxel visibility quadtree debug texture.");
+		return;
+	}
+
+	ScopedUiTextureRef quadtreeTextureRef(quadtreeTextureID, renderer);
+	const Int2 quadtreeTextureDims(quadtreeTextureRef.getWidth(), quadtreeTextureRef.getHeight());
+
+	const SceneManager &sceneManager = game.getSceneManager();
+	const Player &player = game.getPlayer();
+	const CoordDouble3 &playerPos = player.getPosition();
+	const CoordInt3 playerVoxelCoord(playerPos.chunk, VoxelUtils::pointToVoxel(playerPos.point));
+	const VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
+	const VoxelVisibilityChunk *playerVoxelVisChunk = voxelVisChunkManager.tryGetChunkAtPosition(playerPos.chunk);
+	if (playerVoxelVisChunk != nullptr)
+	{
+		const uint32_t visibleColor = Color::Green.toARGB();
+		const uint32_t partialColor = Color::Yellow.toARGB();
+		const uint32_t invisibleColor = Color::Red.toARGB();
+		const uint32_t playerColor = Color::Magenta.toARGB();
+
+		uint32_t *quadtreeTexels = quadtreeTextureRef.lockTexels();
+
+		for (int y = 0; y < quadtreeTextureDims.y; y++)
+		{
+			for (int x = 0; x < quadtreeTextureDims.x; x++)
+			{
+				const int treeLevelSideLength = VoxelVisibilityChunk::NODES_PER_SIDE[VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF];
+				const SNInt internalX = (y * treeLevelSideLength) / ChunkUtils::CHUNK_DIM;
+				const WEInt internalZ = (x * treeLevelSideLength) / ChunkUtils::CHUNK_DIM;
+				const int internalIndex = internalX + (internalZ * treeLevelSideLength);
+				DebugAssertIndex(playerVoxelVisChunk->leafNodeFrustumTests, internalIndex);
+				VisibilityType visibilityType = playerVoxelVisChunk->leafNodeFrustumTests[internalIndex] ? VisibilityType::Inside : VisibilityType::Outside;
+
+				const int dstIndex = ((quadtreeTextureDims.x - 1) - x) + (y * quadtreeTextureDims.x);
+				uint32_t color = 0;
+
+				const bool inPlayerVoxel = (y == playerVoxelCoord.voxel.x) && (x == playerVoxelCoord.voxel.z);
+				if (inPlayerVoxel)
+				{
+					color = playerColor;
+				}
+				else
+				{
+					switch (visibilityType)
+					{
+					case VisibilityType::Outside:
+						color = invisibleColor;
+						break;
+					case VisibilityType::Partial:
+						color = partialColor;
+						break;
+					case VisibilityType::Inside:
+						color = visibleColor;
+						break;
+					}
+				}
+
+				quadtreeTexels[dstIndex] = color;
+			}
+		}
+
+		quadtreeTextureRef.unlockTexels();
+	}
+
+	const Int2 position(ArenaRenderUtils::SCREEN_WIDTH, 0);
+	const Int2 size = quadtreeTextureDims;
+	const Int2 windowDims = renderer.getWindowDimensions();
+	constexpr PivotType pivotType = PivotType::TopRight;
+	constexpr RenderSpace renderSpace = RenderSpace::Classic;
+
+	double xPercent, yPercent, wPercent, hPercent;
+	GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+		renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
+
+	const RendererSystem2D::RenderElement renderElement(quadtreeTextureID, xPercent, yPercent, wPercent, hPercent);
+	renderer.draw(&renderElement, 1, renderSpace);
 }

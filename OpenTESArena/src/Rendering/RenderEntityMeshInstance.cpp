@@ -1,7 +1,7 @@
-#include "RenderEntityMeshDefinition.h"
+#include "RenderEntityMeshInstance.h"
 #include "Renderer.h"
 
-RenderEntityMeshDefinition::RenderEntityMeshDefinition()
+RenderEntityMeshInstance::RenderEntityMeshInstance()
 {
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
@@ -9,7 +9,7 @@ RenderEntityMeshDefinition::RenderEntityMeshDefinition()
 	this->indexBufferID = -1;
 }
 
-void RenderEntityMeshDefinition::freeBuffers(Renderer &renderer)
+void RenderEntityMeshInstance::freeBuffers(Renderer &renderer)
 {
 	if (this->vertexBufferID >= 0)
 	{

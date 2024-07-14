@@ -155,7 +155,12 @@ uint32_t *SdlUiRenderer::lockUiTexture(UiTextureID textureID)
 
 	SDL_Texture *texture = iter->second;
 	int width, height;
-	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+	if (SDL_QueryTexture(texture, nullptr, nullptr, &width, &height) != 0)
+	{
+		DebugLogError("Couldn't query SDL_Texture dimensions for ID " + std::to_string(textureID) +
+			" (" + std::string(SDL_GetError()) + ").");
+		return nullptr;
+	}
 
 	uint32_t *dstTexels;
 	int pitch;

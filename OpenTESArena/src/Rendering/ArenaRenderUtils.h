@@ -37,6 +37,7 @@ namespace ArenaRenderUtils
 	constexpr double DOOR_MIN_VISIBLE = 0.10;
 
 	// Hardcoded palette indices with special behavior in the original game's renderer.
+	constexpr uint8_t PALETTE_INDEX_TRANSPARENT = 0;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DIVISOR = 14;

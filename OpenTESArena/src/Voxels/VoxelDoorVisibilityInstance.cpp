@@ -35,14 +35,14 @@ void VoxelDoorVisibilityInstance::clear()
 	this->clearVisibleFaces();
 }
 
-void VoxelDoorVisibilityInstance::update(bool isCameraNorthInclusive, bool isCameraEastInclusive, bool isNorthAir, bool isEastAir,
-	bool isSouthAir, bool isWestAir)
+void VoxelDoorVisibilityInstance::update(bool isCameraNorthInclusive, bool isCameraEastInclusive, bool isNorthValid, bool isEastValid,
+	bool isSouthValid, bool isWestValid)
 {
 	this->clearVisibleFaces();
 
-	auto tryAddVisibleFace = [this](VoxelFacing2D facing, bool isAdjacentVoxelAir)
+	auto tryAddVisibleFace = [this](VoxelFacing2D facing, bool isAdjacentVoxelValid)
 	{
-		if (isAdjacentVoxelAir)
+		if (isAdjacentVoxelValid)
 		{
 			DebugAssertIndex(this->visibleFaces, this->visibleFaceCount);
 			this->visibleFaces[this->visibleFaceCount] = facing;
@@ -52,19 +52,19 @@ void VoxelDoorVisibilityInstance::update(bool isCameraNorthInclusive, bool isCam
 
 	if (isCameraNorthInclusive)
 	{
-		tryAddVisibleFace(VoxelFacing2D::NegativeX, isNorthAir);
+		tryAddVisibleFace(VoxelFacing2D::NegativeX, isNorthValid);
 	}
 	else
 	{
-		tryAddVisibleFace(VoxelFacing2D::PositiveX, isSouthAir);
+		tryAddVisibleFace(VoxelFacing2D::PositiveX, isSouthValid);
 	}
 
 	if (isCameraEastInclusive)
 	{
-		tryAddVisibleFace(VoxelFacing2D::NegativeZ, isEastAir);
+		tryAddVisibleFace(VoxelFacing2D::NegativeZ, isEastValid);
 	}
 	else
 	{
-		tryAddVisibleFace(VoxelFacing2D::PositiveZ, isWestAir);
+		tryAddVisibleFace(VoxelFacing2D::PositiveZ, isWestValid);
 	}
 }

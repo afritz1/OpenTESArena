@@ -12,6 +12,7 @@
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
+#include "RenderLightUtils.h"
 #include "../Assets/TextureUtils.h"
 #include "../UI/Texture.h"
 
@@ -53,33 +54,39 @@ public:
 	{
 		// Internal renderer resolution.
 		int width, height;
+		int pixelCount;
 
 		int threadCount;
 		int drawCallCount;
 
 		// Geometry.
-		int sceneTriangleCount, visTriangleCount;
+		int presentedTriangleCount; // After clipping, only screen-space triangles with onscreen area.
 
 		// Textures.
 		int objectTextureCount;
 		int64_t objectTextureByteCount;
-		
+
 		// Lights.
 		int totalLightCount;
 
-		double frameTime;
+		// Pixel writes/overdraw.
+		int totalDepthTests;
+		int totalColorWrites;
+
+		double renderTime;
+		double presentTime;
 
 		ProfilerData();
 
-		void init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount, int visTriangleCount,
-			int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, double frameTime);
+		void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
+			int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites, double renderTime, double presentTime);
 	};
 
 	using ResolutionScaleFunc = std::function<double()>;
 private:
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	std::vector<DisplayMode> displayModes;	
+	std::vector<DisplayMode> displayModes;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
@@ -87,12 +94,6 @@ private:
 	ResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
-
-	// Helper method for making a renderer context.
-	static SDL_Renderer *createRenderer(SDL_Window *window);
-
-	// Generates a renderer dimension while avoiding pitfalls of numeric imprecision.
-	static int makeRendererDimension(int value, double resolutionScale);
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();
@@ -153,10 +154,13 @@ public:
 
 	bool init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
 		const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
-		RendererSystemType3D systemType3D, int renderThreadsMode);
+		RendererSystemType3D systemType3D, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
+
+	// Handles resetting render target textures when switching in and out of exclusive fullscreen.
+	void handleRenderTargetsReset();
 
 	// Sets the letterbox mode.
 	void setLetterboxMode(int letterboxMode);
@@ -176,9 +180,6 @@ public:
 	// Sets the clip rectangle of the renderer so that pixels outside the specified area
 	// will not be rendered. If rect is null, then clipping is disabled.
 	void setClipRect(const SDL_Rect *rect);
-
-	// Sets which mode to use for software render threads (low, medium, high, etc.).
-	void setRenderThreadsMode(int mode);
 
 	// Geometry management functions.
 	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID);
@@ -214,9 +215,27 @@ public:
 	void freeUiTexture(UiTextureID id);
 
 	// Shading management functions.
+	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID);
+	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data);
+
+	template<typename T>
+	void populateUniformBuffer(UniformBufferID id, const T &value)
+	{
+		BufferView<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
+		this->populateUniformBuffer(id, valueAsBytes);
+	}
+
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData);
+
+	template<typename T>
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, const T &value)
+	{
+		BufferView<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
+		this->populateUniformAtIndex(id, uniformIndex, valueAsBytes);
+	}
+
+	void freeUniformBuffer(UniformBufferID id);
 	bool tryCreateLight(RenderLightID *outID);
-	const Double3 &getLightPosition(RenderLightID id);
-	void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius);
 	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
 	void freeLight(RenderLightID id);
@@ -239,7 +258,7 @@ public:
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
 		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		int renderThreadsMode);
+		ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

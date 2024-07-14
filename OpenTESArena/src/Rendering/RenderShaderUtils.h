@@ -3,11 +3,8 @@
 
 enum class VertexShaderType
 {
-	Voxel,
-	SwingingDoor,
-	SlidingDoor,
+	Basic,
 	RaisingDoor,
-	SplittingDoor,
 	Entity
 };
 
@@ -21,8 +18,12 @@ enum class PixelShaderType
 	AlphaTestedWithPaletteIndexLookup, // Citizens.
 	AlphaTestedWithLightLevelColor, // Clouds, distant moons.
 	AlphaTestedWithLightLevelOpacity, // Ghosts, screen-space fog.
-	AlphaTestedWithPreviousBrightnessLimit // Stars.
+	AlphaTestedWithPreviousBrightnessLimit, // Stars.
+	AlphaTestedWithHorizonMirror // Puddles.
 };
+
+static constexpr PixelShaderType PIXEL_SHADER_TYPE_MAX = PixelShaderType::AlphaTestedWithHorizonMirror;
+static constexpr int PIXEL_SHADER_TYPE_COUNT = static_cast<int>(PIXEL_SHADER_TYPE_MAX) + 1;
 
 enum class TextureSamplingType
 {
@@ -30,13 +31,18 @@ enum class TextureSamplingType
 	ScreenSpaceRepeatY // Chasms.
 };
 
-// Unique ID for a light allocated in the renderer's internal format.
-using RenderLightID = int;
+static constexpr TextureSamplingType TEXTURE_SAMPLING_TYPE_MAX = TextureSamplingType::ScreenSpaceRepeatY;
+static constexpr int TEXTURE_SAMPLING_TYPE_COUNT = static_cast<int>(TEXTURE_SAMPLING_TYPE_MAX) + 1;
 
-enum class RenderLightingType
+enum class DitheringMode
 {
-	PerMesh, // Mesh is uniformly shaded by a single draw call value.
-	PerPixel // Mesh is shaded by lights in the scene.
+	None,
+	Classic,
+	Modern
 };
+
+static constexpr int DITHERING_MODERN_MASK_COUNT = 4;
+
+using UniformBufferID = int;
 
 #endif

@@ -19,13 +19,23 @@ struct RenderCamera
 	Double3 upScaledRecip; // Scaled by 1.0 / tall pixel ratio.
 
 	Matrix4d viewMatrix;
-	Matrix4d perspectiveMatrix;
+	Matrix4d projectionMatrix;
+	Matrix4d inverseViewMatrix;
+	Matrix4d inverseProjectionMatrix;
 
 	// Frustum directions pointing away from the camera eye.
 	Double3 leftFrustumDir, rightFrustumDir, bottomFrustumDir, topFrustumDir;
 
 	// Frustum plane normals pointing towards the inside of the frustum volume.
 	Double3 leftFrustumNormal, rightFrustumNormal, bottomFrustumNormal, topFrustumNormal;
+
+	// Horizon values for mirroring effects.
+	Double3 horizonDir;
+	Double3 horizonNormal; // Global up.
+	Double3 horizonWorldPoint;
+	Double4 horizonCameraPoint;
+	Double4 horizonClipPoint;
+	Double3 horizonNdcPoint;
 
 	Degrees fovX, fovY;
 	double zoom; // Function of vertical FOV (90 degrees = 1 zoom).

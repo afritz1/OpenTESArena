@@ -15,15 +15,26 @@ class Vector3i
 public:
 	static_assert(std::is_integral<T>::value);
 
+	T x, y, z;
+	
+	constexpr Vector3i(T x, T y, T z)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
+
+	constexpr Vector3i()
+	{
+		this->x = static_cast<T>(0);
+		this->y = static_cast<T>(0);
+		this->z = static_cast<T>(0);
+	}
+
 	static const Vector3i<T> Zero;
 	static const Vector3i<T> UnitX;
 	static const Vector3i<T> UnitY;
 	static const Vector3i<T> UnitZ;
-
-	T x, y, z;
-
-	Vector3i(T x, T y, T z);
-	Vector3i();
 
 	T &operator[](size_t index);
 	const T &operator[](size_t index) const;
@@ -53,15 +64,26 @@ class Vector3f
 public:
 	static_assert(std::is_floating_point<T>::value);
 
+	T x, y, z;
+
+	constexpr Vector3f(T x, T y, T z)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
+
+	constexpr Vector3f()
+	{
+		this->x = static_cast<T>(0.0);
+		this->y = static_cast<T>(0.0);
+		this->z = static_cast<T>(0.0);
+	}
+
 	static const Vector3f<T> Zero;
 	static const Vector3f<T> UnitX;
 	static const Vector3f<T> UnitY;
 	static const Vector3f<T> UnitZ;
-
-	T x, y, z;
-
-	Vector3f(T x, T y, T z);
-	Vector3f();
 
 	static Vector3f<T> randomDirection(Random &random);
 	static Vector3f<T> randomPointInSphere(const Vector3f<T> &center, T radius, Random &random);

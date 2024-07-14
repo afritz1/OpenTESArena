@@ -1,18 +1,18 @@
-#ifndef RENDER_ENTITY_MESH_DEFINITION_H
-#define RENDER_ENTITY_MESH_DEFINITION_H
+#ifndef RENDER_ENTITY_MESH_INSTANCE_H
+#define RENDER_ENTITY_MESH_INSTANCE_H
 
 #include "RenderGeometryUtils.h"
 
 class Renderer;
 
 // All the resources needed to define an entity's renderer-allocated mesh.
-struct RenderEntityMeshDefinition
+struct RenderEntityMeshInstance
 {
 	VertexBufferID vertexBufferID;
 	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
 
-	RenderEntityMeshDefinition();
+	RenderEntityMeshInstance();
 
 	void freeBuffers(Renderer &renderer);
 };

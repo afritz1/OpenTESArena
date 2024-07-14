@@ -42,6 +42,10 @@ TallPixelCorrection=true
 # 0: very low, 1: low, 2: medium, 3: high, 4: very high, 5: max
 RenderThreadsMode=4
 
+# Dithering uses a pattern to make gradients look more visually pleasing.
+# 0: none, 1: classic, 2: modern
+DitheringMode=1
+
 [Audio]
 MusicVolume=1.0
 SoundVolume=1.0

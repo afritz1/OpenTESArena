@@ -15,9 +15,8 @@ namespace OptionsUiModel
 	enum class Tab { Graphics, Audio, Input, Misc, Dev };
 
 	constexpr int TAB_COUNT = 5;
-	constexpr int OPTION_COUNT = 9; // @todo: support list box somehow
+	constexpr int OPTION_COUNT = 10; // @todo: support list box somehow
 
-	const std::string TitleText = "Options";
 	const std::string BackButtonText = "Return";
 
 	const std::array<std::string, TAB_COUNT> TAB_NAMES =
@@ -35,6 +34,7 @@ namespace OptionsUiModel
 	const std::string RESOLUTION_SCALE_NAME = "Resolution Scale";
 	const std::string TALL_PIXEL_CORRECTION_NAME = "Tall Pixel Correction";
 	const std::string VERTICAL_FOV_NAME = "Vertical FOV";
+	const std::string DITHERING_NAME = "Dithering";
 
 	// Audio.
 	const std::string SOUND_CHANNELS_NAME = "Sound Channels";
@@ -187,6 +187,7 @@ namespace OptionsUiModel
 	std::unique_ptr<OptionsUiModel::BoolOption> makeModernInterfaceOption(Game &game);
 	std::unique_ptr<OptionsUiModel::BoolOption> makeTallPixelCorrectionOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeRenderThreadsModeOption(Game &game);
+	std::unique_ptr<OptionsUiModel::IntOption> makeDitheringOption(Game &game);
 	OptionGroup makeGraphicsOptionGroup(Game &game);
 
 	// Audio options.

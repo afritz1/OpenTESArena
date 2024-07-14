@@ -554,11 +554,12 @@ void VoxelChunk::addChasmDefPosition(ChasmDefID id, const VoxelInt3 &voxel)
 
 void VoxelChunk::addDirtyChasmWallInstPosition(const VoxelInt3 &voxel)
 {
-	const auto iter = std::find(this->dirtyChasmWallInstPositions.begin(), this->dirtyChasmWallInstPositions.end(), voxel);
-	if (iter == this->dirtyChasmWallInstPositions.end())
-	{
-		this->dirtyChasmWallInstPositions.emplace_back(voxel);
-	}
+	this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
+}
+
+void VoxelChunk::addDirtyDoorVisInstPosition(const VoxelInt3 &voxel)
+{
+	this->setDoorVisInstDirty(voxel.x, voxel.y, voxel.z);
 }
 
 void VoxelChunk::addDoorAnimInst(VoxelDoorAnimationInstance &&animInst)
@@ -641,50 +642,6 @@ void VoxelChunk::setChasmWallInstDirty(SNInt x, int y, WEInt z)
 	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyChasmWallInstPositions, VoxelDirtyType::ChasmWall);
 }
 
-void VoxelChunk::clear()
-{
-	Chunk::clear();
-	this->meshDefs.clear();
-	this->textureDefs.clear();
-	this->traitsDefs.clear();
-	this->transitionDefs.clear();
-	this->triggerDefs.clear();
-	this->lockDefs.clear();
-	this->buildingNames.clear();
-	this->doorDefs.clear();
-	this->chasmDefs.clear();
-	this->meshDefIDs.clear();
-	this->textureDefIDs.clear();
-	this->traitsDefIDs.clear();
-	this->dirtyVoxelTypes.clear();
-	this->dirtyMeshDefPositions.clear();
-	this->dirtyDoorAnimInstPositions.clear();
-	this->dirtyDoorVisInstPositions.clear();
-	this->dirtyFadeAnimInstPositions.clear();
-	this->dirtyChasmWallInstPositions.clear();
-	this->transitionDefIndices.clear();
-	this->triggerDefIndices.clear();
-	this->lockDefIndices.clear();
-	this->buildingNameIndices.clear();
-	this->doorDefIndices.clear();
-	this->chasmDefIndices.clear();
-	this->doorAnimInsts.clear();
-	this->fadeAnimInsts.clear();
-	this->chasmWallInsts.clear();
-	this->doorVisInsts.clear();
-	this->triggerInsts.clear();
-}
-
-void VoxelChunk::clearDirtyVoxels()
-{
-	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
-	this->dirtyMeshDefPositions.clear();
-	this->dirtyDoorAnimInstPositions.clear();
-	this->dirtyDoorVisInstPositions.clear();
-	this->dirtyFadeAnimInstPositions.clear();
-	this->dirtyChasmWallInstPositions.clear();
-}
-
 void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
 {
 	const ChunkInt2 &chunkPos = this->getPosition();
@@ -747,7 +704,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
 			}
 
-			this->doorAnimInsts.erase(this->doorAnimInsts.begin() + i);
+			this->destroyedDoorAnimInsts.emplace_back(voxel);
 		}
 
 		this->setDoorAnimInstDirty(voxel.x, voxel.y, voxel.z);
@@ -798,11 +755,85 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				tryEraseVoxelMapEntry(this->chasmDefIndices);
 			}
 
-			this->fadeAnimInsts.erase(this->fadeAnimInsts.begin() + i);
+			this->destroyedFadeAnimInsts.emplace_back(voxel);
 		}
 		else
 		{
 			this->setFadeAnimInstDirty(voxel.x, voxel.y, voxel.z);
 		}
 	}
+}
+
+void VoxelChunk::cleanUp()
+{
+	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
+	this->dirtyMeshDefPositions.clear();
+	this->dirtyDoorAnimInstPositions.clear();
+	this->dirtyDoorVisInstPositions.clear();
+	this->dirtyFadeAnimInstPositions.clear();
+	this->dirtyChasmWallInstPositions.clear();
+
+	for (const VoxelInt3 &position : this->destroyedDoorAnimInsts)
+	{
+		const auto iter = std::find_if(this->doorAnimInsts.begin(), this->doorAnimInsts.end(),
+			[&position](const VoxelDoorAnimationInstance &animInst)
+		{
+			return (animInst.x == position.x) && (animInst.y == position.y) && (animInst.z == position.z);
+		});
+
+		DebugAssert(iter != this->doorAnimInsts.end());
+		this->doorAnimInsts.erase(iter);
+	}
+
+	this->destroyedDoorAnimInsts.clear();
+
+	for (const VoxelInt3 &position : this->destroyedFadeAnimInsts)
+	{
+		const auto iter = std::find_if(this->fadeAnimInsts.begin(), this->fadeAnimInsts.end(),
+			[&position](const VoxelFadeAnimationInstance &animInst)
+		{
+			return (animInst.x == position.x) && (animInst.y == position.y) && (animInst.z == position.z);
+		});
+
+		DebugAssert(iter != this->fadeAnimInsts.end());
+		this->fadeAnimInsts.erase(iter);
+	}
+
+	this->destroyedFadeAnimInsts.clear();
+}
+
+void VoxelChunk::clear()
+{
+	Chunk::clear();
+	this->meshDefs.clear();
+	this->textureDefs.clear();
+	this->traitsDefs.clear();
+	this->transitionDefs.clear();
+	this->triggerDefs.clear();
+	this->lockDefs.clear();
+	this->buildingNames.clear();
+	this->doorDefs.clear();
+	this->chasmDefs.clear();
+	this->meshDefIDs.clear();
+	this->textureDefIDs.clear();
+	this->traitsDefIDs.clear();
+	this->dirtyVoxelTypes.clear();
+	this->dirtyMeshDefPositions.clear();
+	this->dirtyDoorAnimInstPositions.clear();
+	this->dirtyDoorVisInstPositions.clear();
+	this->dirtyFadeAnimInstPositions.clear();
+	this->dirtyChasmWallInstPositions.clear();
+	this->transitionDefIndices.clear();
+	this->triggerDefIndices.clear();
+	this->lockDefIndices.clear();
+	this->buildingNameIndices.clear();
+	this->doorDefIndices.clear();
+	this->chasmDefIndices.clear();
+	this->doorAnimInsts.clear();
+	this->fadeAnimInsts.clear();
+	this->chasmWallInsts.clear();
+	this->doorVisInsts.clear();
+	this->triggerInsts.clear();
+	this->destroyedDoorAnimInsts.clear();
+	this->destroyedFadeAnimInsts.clear();
 }

@@ -1,9 +1,9 @@
 #include <algorithm>
 
-#include "RenderVoxelMeshDefinition.h"
+#include "RenderVoxelMeshInstance.h"
 #include "Renderer.h"
 
-RenderVoxelMeshDefinition::RenderVoxelMeshDefinition()
+RenderVoxelMeshInstance::RenderVoxelMeshInstance()
 {
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
@@ -13,7 +13,18 @@ RenderVoxelMeshDefinition::RenderVoxelMeshDefinition()
 	this->alphaTestedIndexBufferID = -1;
 }
 
-void RenderVoxelMeshDefinition::freeBuffers(Renderer &renderer)
+int RenderVoxelMeshInstance::getUniqueDrawCallCount() const
+{
+	int count = this->opaqueIndexBufferIdCount;
+	if (this->alphaTestedIndexBufferID >= 0)
+	{
+		count++;
+	}
+
+	return count;
+}
+
+void RenderVoxelMeshInstance::freeBuffers(Renderer &renderer)
 {
 	if (this->vertexBufferID >= 0)
 	{
