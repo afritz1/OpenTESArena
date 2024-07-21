@@ -662,16 +662,17 @@ void Renderer::handleRenderTargetsReset()
 		return;
 	}
 
-	const Int2 viewDims = this->getViewDimensions();
-	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, viewDims.x, viewDims.y);
+	const Int2 windowDims = this->getWindowDimensions();
+	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDims.x, windowDims.y);
 	if (this->nativeTexture.get() == nullptr)
 	{
-		DebugLogError("Couldn't recreate native frame buffer for render targets reset to " + std::to_string(viewDims.x) + "x" +
-			std::to_string(viewDims.y) + " (" + std::string(SDL_GetError()) + ").");
+		DebugLogError("Couldn't recreate native frame buffer for render targets reset to " + std::to_string(windowDims.x) + "x" +
+			std::to_string(windowDims.y) + " (" + std::string(SDL_GetError()) + ").");
 	}
 
 	if (this->renderer3D->isInited())
 	{
+		const Int2 viewDims = this->getViewDimensions();
 		const double resolutionScale = this->resolutionScaleFunc();
 		const Int2 renderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
