@@ -9,6 +9,9 @@
 
 enum class PlayerInterface;
 
+// Supported value types by the parser.
+enum class OptionType { Bool, Int, Double, String };
+
 class Options
 {
 private:
@@ -90,6 +93,8 @@ public:
 	static constexpr int MAX_PROFILER_LEVEL = 3;
 
 #define OPTION_BOOL(section, name) \
+static constexpr const char Key_##section##_##name[] = #name; \
+static constexpr OptionType OptionType_##section##_##name = OptionType::Bool; \
 bool get##section##_##name() const \
 { \
 	return this->getBool(#section, #name); \
@@ -100,6 +105,8 @@ void set##section##_##name(bool value) \
 }
 
 #define OPTION_INT(section, name) \
+static constexpr const char Key_##section##_##name[] = #name; \
+static constexpr OptionType OptionType_##section##_##name = OptionType::Int; \
 int clamp##section##_##name(int value) const; \
 int get##section##_##name() const \
 { \
@@ -113,6 +120,8 @@ void set##section##_##name(int value) \
 }
 
 #define OPTION_DOUBLE(section, name) \
+static constexpr const char Key_##section##_##name[] = #name; \
+static constexpr OptionType OptionType_##section##_##name = OptionType::Double; \
 double clamp##section##_##name(double value) const; \
 double get##section##_##name() const \
 { \
@@ -126,6 +135,8 @@ void set##section##_##name(double value) \
 }
 
 #define OPTION_STRING(section, name) \
+static constexpr const char Key_##section##_##name[] = #name; \
+static constexpr OptionType OptionType_##section##_##name = OptionType::String; \
 const std::string &get##section##_##name() const \
 { \
 	return this->getString(#section, #name); \
