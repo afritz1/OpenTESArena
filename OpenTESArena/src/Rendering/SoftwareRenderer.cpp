@@ -2518,6 +2518,20 @@ namespace
 	struct RasterizerWorkItem
 	{
 		int binX, binY, binIndex;
+
+		RasterizerWorkItem()
+		{
+			this->binX = -1;
+			this->binY = -1;
+			this->binIndex = -1;
+		}
+
+		RasterizerWorkItem(int binX, int binY, int binIndex)
+		{
+			this->binX = binX;
+			this->binY = binY;
+			this->binIndex = binIndex;
+		}
 	};
 
 	// A selection of triangle indices in a mesh tied to one of the worker's draw calls.
