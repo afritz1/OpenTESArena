@@ -6,7 +6,7 @@
 [![Discord](https://img.shields.io/discord/395739926831824908.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/DgHe2jG)
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCJpmkgtHRIxR7aOpi909GKw)](https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw)
 
-This is an in-progress modern open-source engine for the 1994 DOS game [*The Elder Scrolls: Arena*](https://en.wikipedia.org/wiki/The_Elder_Scrolls:_Arena) by Bethesda Softworks. The goal is to eventually replicate all aspects of the original game with a clean-room approach while quality-of-life changes are made along the way. Details on Arena's inner-workings can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). No game assets are distributed.
+This is an in-progress modern open-source engine for the 1994 DOS game [*The Elder Scrolls: Arena*](https://en.wikipedia.org/wiki/The_Elder_Scrolls:_Arena) by Bethesda Softworks. The goal is to replicate all aspects of the original game with a clean-room approach while making quality-of-life changes along the way. Details on Arena's inner-workings can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). No game assets are distributed.
 
 <br/>
 
@@ -37,16 +37,17 @@ Controls:
 <summary>Windows</summary>
 
 #### Download [*The Elder Scrolls: Arena* on Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/)
+- Alternate downloads: [GOG](https://www.gog.com/en/game/the_elder_scrolls_arena), [Bethesda website](https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip)
 
 #### Download OpenTESArena
 1. [Get latest Windows build](https://github.com/afritz1/OpenTESArena/releases)
 1. Extract the `.zip`
 
-#### Copy game assets path
-1. In your Steam library, right click *The Elder Scrolls: Arena* then select Manage -> Browse local files
-1. Open `ARENA` folder then highlight and copy the current directory path with Ctrl+C
-1. In the OpenTESArena folder, open `options/options-default.txt` and paste the game directory after `ArenaPath=`
-   - Example: `ArenaPath=C:\Program Files (x86)\Steam\steamapps\common\The Elder Scrolls Arena\ARENA`
+#### Copy game assets path (skip if Steam library is default `C:\Program Files (x86)\Steam\steamapps\common\`)
+1. In your Steam library, right-click *The Elder Scrolls: Arena* then select Manage -> Browse local files
+1. Open `ARENA` folder then highlight the current directory path and copy with Ctrl+C
+1. Back in the OpenTESArena release folder, open `options/options-default.txt` and paste the game directory after `ArenaPaths=`
+   - Example: `ArenaPaths=C:\Program Files (x86)\Steam\steamapps\common\The Elder Scrolls Arena\ARENA`
   
 #### Run `OpenTESArena.exe`
 
@@ -72,7 +73,7 @@ Controls:
 sudo apt-get install wget unzip rar
 ```
 
-#### Download *The Elder Scrolls: Arena*
+#### Download *The Elder Scrolls: Arena* from Bethesda website
 ```bash
 wget https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip
 ```
@@ -162,7 +163,7 @@ sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libwildmidi-dev
 
 ### Running OpenTESArena
 - Verify that the `data` and `options` folders are in the same folder as the executable. If not, then copy them from the project's root folder (this should be fixed in the future with a post-build command)
-- Make sure that `MidiConfig` and `ArenaPath` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively)
+- Make sure that `MidiConfig` and `ArenaPaths` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively)
 
 Other guides:
 - [Building with Visual Studio (Windows)](docs/setup_windows.md)  
