@@ -94,25 +94,65 @@ namespace
 		}
 	};
 
-	bool TryMakeValidArenaExePath(const std::string &vfsFolderPath, std::string *outExePath, bool *outIsFloppyDiskVersion)
+	bool TryGetArenaAssetsDirectory(BufferView<const std::string> arenaPaths, const std::string &basePath, std::string *outDirectory, bool *outIsFloppyDiskVersion)
 	{
-		// Check for CD version first.
-		const std::string &cdExeName = ExeData::CD_VERSION_EXE_FILENAME;
-		std::string cdExePath = vfsFolderPath + cdExeName;
-		if (File::exists(cdExePath.c_str()))
+		std::vector<std::string> validArenaPaths;
+		for (std::string path : arenaPaths)
 		{
-			DebugLog("CD executable \"" + cdExeName + "\" found in \"" + vfsFolderPath + "\".");
-			*outExePath = std::move(cdExePath);
+			if (path.empty())
+			{
+				continue;
+			}
+
+			if (Path::isRelative(path.c_str()))
+			{
+				path = basePath + path;
+			}
+
+			validArenaPaths.emplace_back(std::move(path));
+		}
+
+		// Check for CD version first.
+		for (const std::string &path : validArenaPaths)
+		{
+			const std::filesystem::path fsPath(path);
+			std::error_code dummy;
+			if (!std::filesystem::exists(fsPath, dummy) || !std::filesystem::is_directory(fsPath, dummy))
+			{
+				continue;
+			}
+
+			const std::string &cdExeName = ExeData::CD_VERSION_EXE_FILENAME;
+			const std::filesystem::path cdExePath = fsPath / cdExeName;
+			if (!std::filesystem::exists(cdExePath, dummy) || !std::filesystem::is_regular_file(cdExePath, dummy))
+			{
+				continue;
+			}
+
+			DebugLog("CD version assets found in \"" + path + "\".");
+			*outDirectory = path;
 			*outIsFloppyDiskVersion = false;
 			return true;
 		}
 
-		const std::string &floppyDiskExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
-		std::string floppyDiskExePath = vfsFolderPath + floppyDiskExeName;
-		if (File::exists(floppyDiskExePath.c_str()))
+		for (const std::string &path : validArenaPaths)
 		{
-			DebugLog("Floppy disk executable \"" + floppyDiskExeName + "\" found in \"" + vfsFolderPath + "\".");
-			*outExePath = std::move(floppyDiskExePath);
+			const std::filesystem::path fsPath(path);
+			std::error_code dummy;
+			if (!std::filesystem::exists(fsPath, dummy) || !std::filesystem::is_directory(fsPath, dummy))
+			{
+				continue;
+			}
+
+			const std::string &floppyDiskExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
+			const std::filesystem::path floppyDiskExePath = fsPath / floppyDiskExeName;
+			if (!std::filesystem::exists(floppyDiskExePath, dummy) || !std::filesystem::is_regular_file(floppyDiskExePath, dummy))
+			{
+				continue;
+			}
+
+			DebugLog("Floppy disk version assets found in \"" + path + "\".");
+			*outDirectory = path;
 			*outIsFloppyDiskVersion = true;
 			return true;
 		}
@@ -180,28 +220,18 @@ bool Game::init()
 	const std::string optionsPath = Platform::getOptionsPath();
 	this->initOptions(basePath, optionsPath);
 
-	const std::string &arenaPath = this->options.getMisc_ArenaPath();
-	DebugLog("Using ArenaPath \"" + arenaPath + "\".");
-
-	// Initialize virtual file system using the Arena path in the options file.
-	const bool arenaPathIsRelative = Path::isRelative(arenaPath.c_str());
-	const std::string vfsFolderPath = String::addTrailingSlashIfMissing((arenaPathIsRelative ? basePath : "") + arenaPath);
-	if (!Directory::exists(vfsFolderPath.c_str()))
-	{
-		DebugLogError("Data files directory \"" + vfsFolderPath + "\" not found. Is your ArenaPath correct?");
-		return false;
-	}
-
-	VFS::Manager::get().initialize(std::string(vfsFolderPath));
-
-	// Determine which game version the data path is pointing to.
-	std::string arenaExePath;
+	// Search ArenaPaths directories for a valid Arena install.
+	const std::string &arenaPathsString = this->options.getMisc_ArenaPaths();
+	const Buffer<std::string> arenaPaths = String::split(arenaPathsString, ',');
+	std::string arenaPath;
 	bool isFloppyDiskVersion;
-	if (!TryMakeValidArenaExePath(vfsFolderPath, &arenaExePath, &isFloppyDiskVersion))
+	if (!TryGetArenaAssetsDirectory(arenaPaths, basePath, &arenaPath, &isFloppyDiskVersion))
 	{
-		DebugLogError("\"" + vfsFolderPath + "\" does not contain an Arena executable.");
+		DebugLogError("Couldn't find Arena executable in these directories: " + arenaPathsString);
 		return false;
 	}
+
+	VFS::Manager::get().initialize(std::string(arenaPath));
 
 	// Initialize audio manager.
 	const bool midiPathIsRelative = Path::isRelative(this->options.getAudio_MidiConfig().c_str());

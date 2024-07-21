@@ -52,7 +52,7 @@ namespace
 
 	const std::vector<std::pair<std::string, OptionType>> MiscMappings =
 	{
-		{ "ArenaPath", OptionType::String },
+		{ "ArenaPaths", OptionType::String },
 		{ "ArenaSavesPath", OptionType::String },
 		{ "GhostMode", OptionType::Bool },
 		{ "ProfilerLevel", OptionType::Int },

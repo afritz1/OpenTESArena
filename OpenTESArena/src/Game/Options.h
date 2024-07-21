@@ -160,7 +160,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_DOUBLE(Input, VerticalSensitivity)
 	OPTION_DOUBLE(Input, CameraPitchLimit)
 
-	OPTION_STRING(Misc, ArenaPath)
+	OPTION_STRING(Misc, ArenaPaths)
 	OPTION_STRING(Misc, ArenaSavesPath)
 	OPTION_BOOL(Misc, GhostMode)
 	OPTION_INT(Misc, ProfilerLevel)

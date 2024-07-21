@@ -73,12 +73,12 @@ VerticalSensitivity=5.0
 CameraPitchLimit=85.0
 
 [Misc]
-# Change "ArenaPath" to your desired path. In the future, this should be
-# set by a wizard instead.
-ArenaPath=data/ARENA/
+# Comma-separated paths the engine will use to search your computer for ACD.EXE
+# and A.EXE, preferring the CD version.
+ArenaPaths=data/ARENACD,data/ARENA,C:/Program Files (x86)/Steam/steamapps/common/The Elder Scrolls Arena/ARENA,D:/SteamLibrary/steamapps/common/The Elder Scrolls Arena/ARENA
 
 # Change "ArenaSavesPath" to your classic saves folder (if any).
-ArenaSavesPath=data/ArenaSaves/
+ArenaSavesPath=data/ArenaSaves
 
 # Determines whether the player ignores collision and can fly around.
 GhostMode=false
