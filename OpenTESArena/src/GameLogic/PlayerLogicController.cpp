@@ -595,7 +595,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
 		includeEntities, voxelChunkManager, entityChunkManager, collisionChunkManager,
-		EntityDefinitionLibrary::getInstance(), game.getRenderer(), hit);
+		EntityDefinitionLibrary::getInstance(), hit);
 
 	// See if the ray hit anything.
 	if (success)

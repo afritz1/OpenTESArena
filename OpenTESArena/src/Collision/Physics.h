@@ -9,7 +9,6 @@
 #include "../Entities/EntityInstance.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
-#include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelUtils.h"
 
 class CollisionChunkManager;
@@ -67,11 +66,11 @@ namespace Physics
 	bool rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, double ceilingScale,
 		const VoxelDouble3 &cameraForward, bool includeEntities, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, const CollisionChunkManager &collisionChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit);
+		const EntityDefinitionLibrary &entityDefLibrary, Physics::Hit &hit);
 	bool rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, const VoxelDouble3 &cameraForward,
 		bool includeEntities, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 		const CollisionChunkManager &collisionChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-		const Renderer &renderer, Physics::Hit &hit);
+		Physics::Hit &hit);
 };
 
 #endif

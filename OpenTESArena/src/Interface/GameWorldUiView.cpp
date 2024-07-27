@@ -539,7 +539,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 			Physics::Hit hit;
 			const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
 				includeEntities, voxelChunkManager, entityChunkManager, collisionChunkManager,
-				EntityDefinitionLibrary::getInstance(), renderer, hit);
+				EntityDefinitionLibrary::getInstance(), hit);
 
 			if (success)
 			{
@@ -602,7 +602,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	constexpr bool includeEntities = true;
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection, includeEntities,
-		voxelChunkManager, entityChunkManager, collisionChunkManager, entityDefLibrary, renderer, hit);
+		voxelChunkManager, entityChunkManager, collisionChunkManager, entityDefLibrary, hit);
 
 	std::string text;
 	if (success)
