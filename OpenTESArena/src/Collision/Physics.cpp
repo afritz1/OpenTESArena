@@ -340,14 +340,14 @@ namespace Physics
 		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager,
 		Physics::Hit &hit)
 	{
-		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(voxelCoord.chunk);
 		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
 
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(voxelCoord.chunk);
 		DebugAssert(collisionChunk != nullptr);
 
 		const VoxelInt3 &voxel = voxelCoord.voxel;
@@ -380,6 +380,8 @@ namespace Physics
 			static_cast<SNDouble>(voxel.x),
 			static_cast<double>(voxel.y) * ceilingScale,
 			static_cast<WEDouble>(voxel.z));
+		const WorldDouble3 rayStartWorldPoint = VoxelUtils::coordToWorldPoint(rayCoord);
+
 		bool success = false;
 		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
 		{
@@ -406,28 +408,28 @@ namespace Physics
 			//const double normal0Y = normalsView.get(normalIndex0 + 1);
 			//const double normal0Z = normalsView.get(normalIndex0 + 2);
 
-			const Double3 v0(vertex0X, vertex0Y, vertex0Z);
-			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
-			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
-
 			const Double3 v0Actual(
-				v0.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v0.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v0.z + voxelReal.z);
+				vertex0X + voxelReal.x,
+				MeshUtils::getScaledVertexY(vertex0Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				vertex0Z + voxelReal.z);
 			const Double3 v1Actual(
-				v1.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v1.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v1.z + voxelReal.z);
+				vertex1X + voxelReal.x,
+				MeshUtils::getScaledVertexY(vertex1Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				vertex1Z + voxelReal.z);
 			const Double3 v2Actual(
-				v2.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v2.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v2.z + voxelReal.z);
+				vertex2X + voxelReal.x,
+				MeshUtils::getScaledVertexY(vertex2Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				vertex2Z + voxelReal.z);
+
+			const WorldDouble3 v0World = VoxelUtils::chunkPointToWorldPoint(voxelCoord.chunk, v0Actual);
+			const WorldDouble3 v1World = VoxelUtils::chunkPointToWorldPoint(voxelCoord.chunk, v1Actual);
+			const WorldDouble3 v2World = VoxelUtils::chunkPointToWorldPoint(voxelCoord.chunk, v2Actual);
 
 			double t;
-			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
+			success = MathUtils::rayTriangleIntersection(rayStartWorldPoint, rayDirection, v0World, v1World, v2World, &t);
 			if (success)
 			{
-				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
+				const CoordDouble3 hitCoord = ChunkUtils::recalculateCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
 				const VoxelFacing3D facing = nearFacing; // @todo: probably needs to take hit normal into account
 				hit.initVoxel(t, hitCoord, voxel, &facing);
 				break;
