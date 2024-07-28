@@ -616,15 +616,25 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 			// The instance is still needed. Update its chasm walls.
 			BufferView<VoxelChasmWallInstance> chasmWallInsts = chunk.getChasmWallInsts();
 			VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmInstIndex];
+
+			const bool shouldDirtyChasmWallInst = (chasmWallInst.north != hasNorthFace) || (chasmWallInst.east != hasEastFace) ||
+				(chasmWallInst.south != hasSouthFace) || (chasmWallInst.west != hasWestFace);
+
 			chasmWallInst.north = hasNorthFace;
 			chasmWallInst.east = hasEastFace;
 			chasmWallInst.south = hasSouthFace;
 			chasmWallInst.west = hasWestFace;
+
+			if (shouldDirtyChasmWallInst)
+			{
+				chunk.addDirtyChasmWallInstPosition(voxel);
+			}
 		}
 		else
 		{
 			// The chasm wall instance no longer has any interesting data.
 			chunk.removeChasmWallInst(voxel);
+			chunk.addDirtyChasmWallInstPosition(voxel);
 		}
 	}
 	else
@@ -642,6 +652,7 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 				VoxelChasmWallInstance chasmWallInst;
 				chasmWallInst.init(x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
 				chunk.addChasmWallInst(std::move(chasmWallInst));
+				chunk.addDirtyChasmWallInstPosition(voxel);
 			}
 		}
 	}
