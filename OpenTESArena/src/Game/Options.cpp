@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <unordered_set>
 
 #include "Options.h"
 #include "../Utilities/Platform.h"
@@ -59,6 +60,13 @@ namespace
 		{ Options::Key_Misc_StarDensity, Options::OptionType_Misc_StarDensity },
 		{ Options::Key_Misc_PlayerHasLight, Options::OptionType_Misc_PlayerHasLight }
 	};
+
+	std::unordered_set<std::string> s_loggedMissingOptions; // Reduces log spam.
+
+	std::string MakeLoggingKey(const std::string &section, const std::string &key)
+	{
+		return section + "_" + key;
+	}
 }
 
 // The "default" options file is shipped with releases, and it resides in the options 
@@ -228,7 +236,13 @@ bool Options::getBool(const std::string &section, const std::string &key) const
 		}
 		else
 		{
-			DebugLogWarning("Boolean \"" + key + "\" (section \"" + section + "\") not in options, defaulting to false.");
+			std::string loggingKey = MakeLoggingKey(section, key);
+			if (!s_loggedMissingOptions.contains(loggingKey))
+			{
+				s_loggedMissingOptions.emplace(loggingKey);
+				DebugLogWarning("Expected \"" + key + "\" boolean under [" + section + "] in defaults or changes, defaulting to false and silencing warning.");
+			}
+			
 			return false;
 		}
 	}
@@ -269,7 +283,13 @@ int Options::getInt(const std::string &section, const std::string &key) const
 		}
 		else
 		{
-			DebugLogWarning("Integer \"" + key + "\" (section \"" + section + "\") not in options, defaulting to 0.");
+			std::string loggingKey = MakeLoggingKey(section, key);
+			if (!s_loggedMissingOptions.contains(loggingKey))
+			{
+				s_loggedMissingOptions.emplace(loggingKey);
+				DebugLogWarning("Expected \"" + key + "\" integer under [" + section + "] in defaults or changes, defaulting to 0 and silencing warning.");
+			}
+
 			return 0;
 		}
 	}
@@ -310,7 +330,13 @@ double Options::getDouble(const std::string &section, const std::string &key) co
 		}
 		else
 		{
-			DebugLogWarning("Double \"" + key + "\" (section \"" + section + "\") not in options, defaulting to 0.");
+			std::string loggingKey = MakeLoggingKey(section, key);
+			if (!s_loggedMissingOptions.contains(loggingKey))
+			{
+				s_loggedMissingOptions.emplace(loggingKey);
+				DebugLogWarning("Expected \"" + key + "\" decimal value under [" + section + "] in defaults or changes, defaulting to 0 and silencing warning.");
+			}
+
 			return 0.0;
 		}
 	}
@@ -351,7 +377,13 @@ const std::string &Options::getString(const std::string &section, const std::str
 		}
 		else
 		{
-			DebugLogWarning("String \"" + key + "\" (section \"" + section + "\") not in options, defaulting to \"\".");
+			std::string loggingKey = MakeLoggingKey(section, key);
+			if (!s_loggedMissingOptions.contains(loggingKey))
+			{
+				s_loggedMissingOptions.emplace(loggingKey);
+				DebugLogWarning("Expected \"" + key + "\" string under [" + section + "] in defaults or changes, defaulting to \"\" and silencing warning.");
+			}
+
 			static const std::string fallbackString;
 			return fallbackString;
 		}
