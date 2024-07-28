@@ -763,9 +763,9 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		const DoorDefinition *doorDef = isDoor ? &voxelChunk.getDoorDef(doorDefID) : nullptr;
 
 		double doorAnimPercent = 0.0;
-		int doorAnimInstIndex;
 		if (isDoor)
 		{
+			int doorAnimInstIndex;
 			if (voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex))
 			{
 				BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
@@ -776,13 +776,18 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 
 		VoxelChunk::ChasmDefID chasmDefID;
 		const bool isChasm = voxelChunk.tryGetChasmDefID(voxel.x, voxel.y, voxel.z, &chasmDefID);
-		const ChasmDefinition *chasmDef = isChasm ? &voxelChunk.getChasmDef(chasmDefID) : nullptr;
-		const bool isAnimatingChasm = isChasm && chasmDef->animType == ChasmDefinition::AnimationType::Animated;
-		const bool isEmissiveChasm = isChasm && chasmDef->isEmissive;
+
+		const ChasmDefinition *chasmDef = nullptr;
+		bool isAnimatingChasm = false;
+		bool isEmissiveChasm = false;
 		bool hasChasmWall = false;
 		IndexBufferID chasmWallIndexBufferID = -1;
 		if (isChasm)
 		{
+			chasmDef = &voxelChunk.getChasmDef(chasmDefID);
+			isAnimatingChasm = chasmDef->animType == ChasmDefinition::AnimationType::Animated;
+			isEmissiveChasm = chasmDef->isEmissive;
+
 			const auto chasmWallIndexBufferIdIter = renderChunk.chasmWallIndexBufferIDsMap.find(voxel);
 			if (chasmWallIndexBufferIdIter != renderChunk.chasmWallIndexBufferIDsMap.end())
 			{
