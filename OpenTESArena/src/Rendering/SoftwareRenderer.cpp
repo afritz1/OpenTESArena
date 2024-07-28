@@ -1434,6 +1434,18 @@ namespace
 		double widthReal, heightReal;
 		TextureSamplingType samplingType;
 
+		PixelShaderTexture()
+		{
+			this->texels = nullptr;
+			this->width = 0;
+			this->height = 0;
+			this->widthMinusOne = 0;
+			this->heightMinusOne = 0;
+			this->widthReal = 0.0;
+			this->heightReal = 0.0;
+			this->samplingType = static_cast<TextureSamplingType>(-1);
+		}
+
 		void init(const uint8_t *texels, int width, int height, TextureSamplingType samplingType)
 		{
 			this->texels = texels;
@@ -1451,6 +1463,12 @@ namespace
 	{
 		const uint32_t *colors;
 		int count;
+
+		PixelShaderPalette()
+		{
+			this->colors = nullptr;
+			this->count = 0;
+		}
 	};
 
 	struct PixelShaderLighting
@@ -1461,6 +1479,16 @@ namespace
 		int lastLightLevel;
 		int texelsPerLightLevel; // Should be 256 for 8-bit colors.
 		int lightLevel; // The selected row of shades between light and dark.
+
+		PixelShaderLighting()
+		{
+			this->lightTableTexels = nullptr;
+			this->lightLevelCount = 0;
+			this->lightLevelCountReal = 0.0;
+			this->lastLightLevel = -1;
+			this->texelsPerLightLevel = 0;
+			this->lightLevel = -1;
+		}
 	};
 
 	struct PixelShaderHorizonMirror
@@ -1472,6 +1500,15 @@ namespace
 		int reflectedPixelIndex;
 		bool isReflectedPixelInFrameBuffer;
 		uint8_t fallbackSkyColor;
+
+		PixelShaderHorizonMirror()
+		{
+			this->horizonScreenSpacePointX = 0.0;
+			this->horizonScreenSpacePointY = 0.0;
+			this->reflectedPixelIndex = -1;
+			this->isReflectedPixelInFrameBuffer = false;
+			this->fallbackSkyColor = 0;
+		}
 	};
 
 	struct PixelShaderFrameBuffer
@@ -1479,6 +1516,13 @@ namespace
 		PixelShaderPalette palette;
 		double xPercent, yPercent;
 		int pixelIndex;
+
+		PixelShaderFrameBuffer()
+		{
+			this->xPercent = 0.0;
+			this->yPercent = 0.0;
+			this->pixelIndex = -1;
+		}
 	};
 
 	double g_ambientPercent;
