@@ -505,6 +505,7 @@ UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureMan
 
 // @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
 // levels where ceilingScale < 1.0, and same with ceiling blue dots).
+// @todo: As of SDL 2.0.10 which introduced batching, this now behaves like the color is per frame, not per call, which isn't correct, and flushing doesn't help.
 void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 {
 	auto &renderer = game.getRenderer();
@@ -514,14 +515,18 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	constexpr int xOffset = 16;
 	constexpr int yOffset = 16;
 
+	const auto &gameState = game.getGameState();
+	if (!gameState.isActiveMapValid())
+	{
+		return;
+	}
+
 	const auto &player = game.getPlayer();
 	const CoordDouble3 &rayStart = player.getPosition();
 	const VoxelDouble3 &cameraDirection = player.getDirection();
 	const double viewAspectRatio = renderer.getViewAspect();
 
-	const auto &gameState = game.getGameState();
 	const double ceilingScale = gameState.getActiveCeilingScale();
-
 	const SceneManager &sceneManager = game.getSceneManager();
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
@@ -533,8 +538,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 		{
 			const Double3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, Int2(x, y));
 
-			// Not registering entities with ray cast hits for efficiency since this debug visualization
-			// is for voxels.
+			// Not registering entities with ray cast hits for efficiency since this debug visualization is for voxels.
 			constexpr bool includeEntities = false;
 			Physics::Hit hit;
 			const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
@@ -548,13 +552,10 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 				{
 				case Physics::HitType::Voxel:
 				{
-					const std::array<Color, 5> colors =
-					{
-						Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow
-					};
-
+					const Color colors[] = { Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow };
 					const VoxelInt3 &voxel = hit.getVoxelHit().voxel;
-					const int colorsIndex = std::min(voxel.y, 4);
+					const int colorsIndex = std::clamp<int>(voxel.y, 0, std::size(colors) - 1);
+					DebugAssertIndex(colors, colorsIndex);
 					color = colors[colorsIndex];
 					break;
 				}
