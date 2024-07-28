@@ -229,7 +229,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 					}
 					else
 					{
-						DebugUnhandledReturnMsg(VoxelInt3, std::to_string(static_cast<int>(facing)));
+						DebugLogError("Invalid EnterInterior returnCoord facing " + std::to_string(static_cast<int>(facing)) + ".");
+						return VoxelInt3::Zero;
 					}
 				}();
 
@@ -316,7 +317,8 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 					}
 					else
 					{
-						DebugUnhandledReturnMsg(VoxelInt2, std::to_string(static_cast<int>(facing)));
+						DebugLogError("Invalid CityGate transitionDir facing " + std::to_string(static_cast<int>(facing)) + ".");
+						return VoxelUtils::North;
 					}
 				}();
 
