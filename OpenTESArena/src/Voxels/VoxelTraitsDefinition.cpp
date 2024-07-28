@@ -45,3 +45,16 @@ void VoxelTraitsDefinition::initChasm(ArenaTypes::ChasmType chasmType)
 	this->initGeneral(ArenaTypes::VoxelType::Chasm);
 	this->chasm.type = chasmType;
 }
+
+bool VoxelTraitsDefinition::hasCollision() const
+{
+	switch (this->type)
+	{
+	case ArenaTypes::VoxelType::TransparentWall:
+		return this->transparentWall.collider;
+	case ArenaTypes::VoxelType::Edge:
+		return this->edge.collider;
+	default:
+		return true;
+	}
+}

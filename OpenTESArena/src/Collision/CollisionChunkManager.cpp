@@ -13,11 +13,14 @@ void CollisionChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, 
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				// Colliders are dependent on the voxel mesh definition.
+				// Colliders are dependent on the mesh and any special traits.
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(x, y, z);
 				const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
 				collisionChunk.meshDefIDs.set(x, y, z, collisionMeshDefID);
-				collisionChunk.enabledColliders.set(x, y, z, true);
+
+				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
+				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+				collisionChunk.enabledColliders.set(x, y, z, voxelTraitsDef.hasCollision());
 			}
 		}
 	}
@@ -32,7 +35,10 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, const V
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(voxelPos.x, voxelPos.y, voxelPos.z);
 		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
 		collisionChunk.meshDefIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, collisionMeshDefID);
-		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, true);
+
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxelPos.x, voxelPos.y, voxelPos.z);
+		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, voxelTraitsDef.hasCollision());
 	}
 
 	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyDoorAnimInstPositions())

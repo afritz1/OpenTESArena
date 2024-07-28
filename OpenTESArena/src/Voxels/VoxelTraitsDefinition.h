@@ -63,6 +63,8 @@ struct VoxelTraitsDefinition
 	void initTransparentWall(bool collider);
 	void initEdge(VoxelFacing2D facing, bool collider);
 	void initChasm(ArenaTypes::ChasmType chasmType);
+
+	bool hasCollision() const;
 };
 
 #endif
