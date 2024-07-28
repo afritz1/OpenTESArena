@@ -3367,13 +3367,14 @@ namespace
 		static_assert(RenderLightingType::PerPixel == RENDER_LIGHTING_TYPE_MAX);
 		const RenderLightingType lightingType = drawCallCache.lightingType;
 
-		if (lightingType == RenderLightingType::PerMesh)
+		switch (lightingType)
 		{
+		case RenderLightingType::PerMesh:
 			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
-		}
-		else if (lightingType == RenderLightingType::PerPixel)
-		{
+			break;
+		case RenderLightingType::PerPixel:
 			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			break;
 		}
 	}
 }
