@@ -538,28 +538,27 @@ namespace MapGeneration
 					}
 				}();
 
-				const auto &wallHeightTables = exeData.wallHeightTables;
+				const auto &raisedPlatforms = exeData.raisedPlatforms;
 				const int heightIndex = mostSigByte & 0x07;
 				const int thicknessIndex = (mostSigByte & 0x78) >> 3;
 
 				int baseOffset, baseSize;
 				if (mapType == MapType::Interior)
 				{
-					baseOffset = wallHeightTables.box1a.at(heightIndex);
+					baseOffset = raisedPlatforms.heightsInterior.get(heightIndex);
 
-					const int boxSize = wallHeightTables.box2a.at(thicknessIndex);
+					const int boxSize = raisedPlatforms.thicknessesInterior.get(thicknessIndex);
 					const auto &boxScale = inf.getCeiling().boxScale;
-					baseSize = boxScale.has_value() ?
-						((boxSize * (*boxScale)) / 256) : boxSize;
+					baseSize = boxScale.has_value() ? ((boxSize * (*boxScale)) / 256) : boxSize;
 				}
 				else if (mapType == MapType::City)
 				{
-					baseOffset = wallHeightTables.box1b.at(heightIndex);
-					baseSize = wallHeightTables.box2b.at(thicknessIndex);
+					baseOffset = raisedPlatforms.heightsCity.get(heightIndex);
+					baseSize = raisedPlatforms.thicknessesCity.get(thicknessIndex);
 				}
 				else if (mapType == MapType::Wilderness)
 				{
-					baseOffset = wallHeightTables.box1c.at(heightIndex);
+					baseOffset = raisedPlatforms.heightsWild.get(heightIndex);
 
 					constexpr int boxSize = 32;
 					const auto &boxScale = inf.getCeiling().boxScale;

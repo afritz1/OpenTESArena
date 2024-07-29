@@ -8,6 +8,7 @@
 
 #include "ExeTypes.h"
 
+#include "components/utilities/BufferView.h"
 #include "components/utilities/KeyValueFile.h"
 
 // This class stores data from the Arena executable. In other words, it represents a
@@ -17,6 +18,8 @@
 // members that differ between the two executables, with an _a/_acd suffix.
 
 class KeyValueFile;
+
+enum class MapType;
 
 class ExeData
 {
@@ -397,6 +400,45 @@ public:
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
+	struct RaisedPlatforms
+	{
+		// Heights, sizes, and texture mapping for interior and exterior raised platforms.
+
+		// If ceiling2 is given, the box value is scaled with (x * ceiling2) / 256. Otherwise,
+		// if it is wilderness, the scale value is 192.
+
+		// In the voxel data, the most significant byte of raised platforms contains the thickness
+		// and height indices, organized as 0x0tttthhh.
+
+		// 'a': interiors/dungeons
+		// 'b': cities
+		// 'c': wilderness
+
+		// Raised platform Y heights (Box1A/Box1B/Box1C) and thicknesses (Box2A/Box2B).
+		std::array<uint16_t, 56> boxArrays;
+
+		// Unscaled copy of previous array to restore global variables with in the original game.
+		std::array<uint16_t, 56> boxArraysCopy;
+
+		// Raised platform texture mapping values. Box4 is incorrectly accessed in the original game as if it were a Box3C.
+		std::array<uint16_t, 8> box3a, box3b;
+
+		// Number of texels tall a 64x64 texture is rendered as, also used with calculation for starting row in texture.
+		std::array<uint8_t, 16> box4;
+
+		BufferView<uint16_t> heightsInterior, heightsCity, heightsWild;
+		BufferView<uint16_t> thicknessesInterior, thicknessesCity, thicknessesWild;
+		BufferView<uint16_t> texMappingInterior, texMappingCity, texMappingWild;
+
+		bool init(const char *data, const KeyValueFile &keyValueFile);
+
+		// Unknown
+		int getTextureMappingValueA(MapType mapType, int heightIndex) const;
+
+		// Determines the starting row in a texture?
+		int getTextureMappingValueB(int thicknessIndex, int textureMappingValueA) const;
+	};
+
 	struct Status
 	{
 		// Status pop-up text (with %s/%d tokens).
@@ -493,32 +535,6 @@ public:
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
-	struct WallHeightTables
-	{
-		// Values for interior and exterior wall heights and texture mapping.
-
-		// If ceiling2 is given, the box value is scaled with (x * ceiling2) / 256. Otherwise,
-		// if it is wilderness, the scale value is 192.
-
-		// In the voxel data, the most significant byte of raised platforms contains the thickness
-		// and height indices, organized as 0x0tttthhh.
-
-		// Box1: raised platform heights
-		// Box2: raised platform thicknesses
-		// Box3 and Box4: texture coordinates? Possible bug that Box4 is used instead of Box3c.
-		// 'a': interiors/dungeons
-		// 'b': cities
-		// 'c': wilderness
-
-		std::array<uint16_t, 8> box1a, box1b, box1c;
-		std::array<uint16_t, 16> box2a, box2b;
-		// Ignore "source" array, a copy of previous 56 words.
-		std::array<uint16_t, 8> box3a, box3b;
-		std::array<uint16_t, 16> box4;
-
-		bool init(const char *data, const KeyValueFile &keyValueFile);
-	};
-
 	struct Weather
 	{
 		std::array<uint8_t, 3> thunderstormFlashColors;
@@ -576,7 +592,7 @@ public:
 	Status status;
 	Travel travel;
 	UI ui;
-	WallHeightTables wallHeightTables;
+	RaisedPlatforms raisedPlatforms;
 	Weather weather;
 	Wilderness wild;
 

@@ -4,6 +4,7 @@
 #include "ExeData.h"
 #include "ExeUnpacker.h"
 #include "../Utilities/Platform.h"
+#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
@@ -699,6 +700,65 @@ bool ExeData::Races::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
+bool ExeData::RaisedPlatforms::init(const char *data, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "RaisedPlatforms";
+	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		return false;
+	}
+
+	const int boxArraysOffset = ExeData::get(*section, "BoxArrays");
+	const int boxArraysCopyOffset = ExeData::get(*section, "BoxArraysCopy");
+	const int box3aOffset = ExeData::get(*section, "Box3A");
+	const int box3bOffset = ExeData::get(*section, "Box3B");
+	const int box4Offset = ExeData::get(*section, "Box4");
+
+	initInt16Array(this->boxArrays, data + boxArraysOffset);
+	initInt16Array(this->boxArraysCopy, data + boxArraysCopyOffset);
+	initInt16Array(this->box3a, data + box3aOffset);
+	initInt16Array(this->box3b, data + box3bOffset);
+	initInt8Array(this->box4, data + box4Offset);
+
+	this->heightsInterior.init(this->boxArrays.data(), 8);
+	this->heightsCity.init(this->boxArrays.data() + 8, 8);
+	this->heightsWild.init(this->boxArrays.data() + 16, 8);
+	this->thicknessesInterior.init(this->boxArrays.data() + 24, 16);
+	this->thicknessesCity.init(this->boxArrays.data() + 40, 16); // Box2B is for city and wilderness.
+	this->thicknessesWild = this->thicknessesCity;
+	this->texMappingInterior.init(this->box3a);
+	this->texMappingCity.init(this->box3b);
+	this->texMappingWild.init(reinterpret_cast<uint16_t*>(this->box4.data()), 8); // Treat Box4 as a Box3C.
+
+	return true;
+}
+
+int ExeData::RaisedPlatforms::getTextureMappingValueA(MapType mapType, int heightIndex) const
+{
+	constexpr int maxTextureHeight = 64;
+
+	switch (mapType)
+	{
+	case MapType::Interior:
+		return this->texMappingInterior.get(heightIndex) % maxTextureHeight;
+	case MapType::City:
+		return this->texMappingCity.get(heightIndex) % maxTextureHeight;
+	case MapType::Wilderness:
+		return this->texMappingWild.get(heightIndex) % maxTextureHeight;
+	default:
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(mapType)));
+	}
+}
+
+int ExeData::RaisedPlatforms::getTextureMappingValueB(int thicknessIndex, int textureMappingValueA) const
+{
+	constexpr int maxTextureHeight = 64;
+	DebugAssertIndex(this->box4, thicknessIndex);
+	return maxTextureHeight - this->box4[thicknessIndex] - textureMappingValueA;
+}
+
 bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Status";
@@ -820,37 +880,6 @@ bool ExeData::UI::init(const char *data, const KeyValueFile &keyValueFile)
 	initInt8Array(this->race4HelmetPaletteValues, data + race4HelmetPaletteValuesOffset);
 	this->currentWorldPosition = ExeData::readString(data + currentWorldPositionOffset);
 	this->inspectedEntityName = ExeData::readString(data + inspectedEntityNameOffset);
-
-	return true;
-}
-
-bool ExeData::WallHeightTables::init(const char *data, const KeyValueFile &keyValueFile)
-{
-	const std::string sectionName = "WallHeightTables";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
-	if (section == nullptr)
-	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
-		return false;
-	}
-
-	const int box1aOffset = ExeData::get(*section, "Box1A");
-	const int box1bOffset = ExeData::get(*section, "Box1B");
-	const int box1cOffset = ExeData::get(*section, "Box1C");
-	const int box2aOffset = ExeData::get(*section, "Box2A");
-	const int box2bOffset = ExeData::get(*section, "Box2B");
-	const int box3aOffset = ExeData::get(*section, "Box3A");
-	const int box3bOffset = ExeData::get(*section, "Box3B");
-	const int box4Offset = ExeData::get(*section, "Box4");
-
-	initInt16Array(this->box1a, data + box1aOffset);
-	initInt16Array(this->box1b, data + box1bOffset);
-	initInt16Array(this->box1c, data + box1cOffset);
-	initInt16Array(this->box2a, data + box2aOffset);
-	initInt16Array(this->box2b, data + box2bOffset);
-	initInt16Array(this->box3a, data + box3aOffset);
-	initInt16Array(this->box3b, data + box3bOffset);
-	initInt16Array(this->box4, data + box4Offset);
 
 	return true;
 }
@@ -1036,7 +1065,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->status.init(dataPtr, keyValueFile);
 	success &= this->travel.init(dataPtr, keyValueFile);
 	success &= this->ui.init(dataPtr, keyValueFile);
-	success &= this->wallHeightTables.init(dataPtr, keyValueFile);
+	success &= this->raisedPlatforms.init(dataPtr, keyValueFile);
 	success &= this->weather.init(dataPtr, keyValueFile);
 	success &= this->wild.init(dataPtr, keyValueFile);
 

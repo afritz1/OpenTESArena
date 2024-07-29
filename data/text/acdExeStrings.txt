@@ -192,6 +192,13 @@ DoorUnlockedWithKey=0x406BC
 SingularNames=0x3E594
 PluralNames=0x3E549
 
+[RaisedPlatforms]
+BoxArrays=0x48594
+BoxArraysCopy=0x48604
+Box3A=0x48654
+Box3B=0x48664
+Box4=0x48674
+
 [Status]
 PopUp=0x4157B
 Date=0x40838
@@ -237,16 +244,6 @@ Race3HelmetPaletteValues=0x37EFC
 Race4HelmetPaletteValues=0x37F1A
 CurrentWorldPosition=0x44103
 InspectedEntityName=0x43ED4
-
-[WallHeightTables]
-Box1A=0x48594
-Box1B=0x485A4
-Box1C=0x485B4
-Box2A=0x485C4
-Box2B=0x485E4
-Box3A=0x48654
-Box3B=0x48664
-Box4=0x48674
 
 [Weather]
 ThunderstormFlashColors=0x3FC0C
