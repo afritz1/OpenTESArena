@@ -540,11 +540,20 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 {
 	// Resize the window, and the 3D renderer if initialized.
 	const bool fullGameWindow = this->options.getGraphics_ModernInterface();
-	this->renderer.resize(windowWidth, windowHeight,
-		this->options.getGraphics_ResolutionScale(), fullGameWindow);
+	this->renderer.resize(windowWidth, windowHeight, this->options.getGraphics_ResolutionScale(), fullGameWindow);
 
 	// Update where the mouse can click for player movement in the classic interface.
 	this->updateNativeCursorRegions(windowWidth, windowHeight);
+
+	if (this->gameState.isActiveMapValid())
+	{
+		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
+		const CoordDouble3 &playerCoord = this->player.getPosition();
+		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.getDirection(),
+			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
+		this->gameState.tickVisibility(renderCamera, *this);
+		this->gameState.tickRendering(renderCamera, *this);
+	}
 }
 
 void Game::saveScreenshot(const Surface &surface)
@@ -865,8 +874,8 @@ void Game::loop()
 				this->gameState.tickCollision(clampedDeltaTime, *this);
 
 				const CoordDouble3 newPlayerCoord = this->player.getPosition();
-				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, player.getDirection(),
-					options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, this->player.getDirection(),
+					this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(renderCamera, *this);
