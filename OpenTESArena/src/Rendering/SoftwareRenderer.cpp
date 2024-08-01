@@ -9,6 +9,7 @@
 
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
+#include "RenderCommandBuffer.h"
 #include "RenderDrawCall.h"
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
@@ -4067,9 +4068,10 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 		textureByteCount, totalLightCount, totalDepthTests, totalColorWrites);
 }
 
-void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> drawCalls,
-	const RenderFrameSettings &settings, uint32_t *outputBuffer)
+void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
+	const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer)
 {
+	const int totalDrawCallCount = commandBuffer.getTotalDrawCallCount();
 	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();
 	const int frameBufferHeight = this->paletteIndexBuffer.getHeight();
 
@@ -4084,7 +4086,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	const ObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
 	PopulateCameraGlobals(camera);
-	PopulateDrawCallGlobals(drawCalls.getCount());
+	PopulateDrawCallGlobals(totalDrawCallCount);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
 	PopulatePixelShaderGlobals(settings.ambientPercent, paletteTexture, lightTableTexture, skyBgTexture);
@@ -4095,149 +4097,159 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, BufferView<const 
 	ClearTriangleTotalCounts();
 	ClearFrameBuffers();
 
-	int startDrawCallIndex = 0;
-	int remainingDrawCallCount = drawCalls.getCount();
-	constexpr int maxDrawCallsPerLoop = 4096;
 	std::unique_lock<std::mutex> lock(g_mutex);
-	
-	while (remainingDrawCallCount > 0)
+
+	for (int commandIndex = 0; commandIndex < commandBuffer.entryCount; commandIndex++)
 	{
-		// Wait for all workers to be ready to process draw calls.
+		const BufferView<const RenderDrawCall> drawCalls = commandBuffer.entries[commandIndex];
+		int startDrawCallIndex = 0;
+		int remainingDrawCallCount = drawCalls.getCount();
+		constexpr int maxDrawCallsPerLoop = 4096;
+
+		// Wait for all workers to be ready to process draw calls (only an extra sync point for every set of draw calls).
 		g_directorCondVar.wait(lock, []()
 		{
 			return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStartFrame; });
 		});
 
-		for (Worker &worker : g_workers)
+		while (remainingDrawCallCount > 0)
 		{
-			DebugAssert(!worker.shouldExit);
-			DebugAssert(!worker.shouldWorkOnDrawCalls);
-			DebugAssert(!worker.isFinishedWithDrawCalls);
-			DebugAssert(!worker.shouldWorkOnRasterizing);
-			DebugAssert(!worker.isFinishedRasterizing);
-			worker.isReadyToStartFrame = false;
-			worker.rasterizerInputCache.clearTriangles();
-			worker.rasterizerInputCache.emptyBins();
-		}
-
-		// Determine which workers get which draw calls this loop.
-		const int drawCallsToConsume = std::min(maxDrawCallsPerLoop, remainingDrawCallCount);
-		PopulateWorkerDrawCallWorkloads(totalWorkerCount, startDrawCallIndex, drawCallsToConsume);
-
-		// Populate worker draw call caches so they have data to work with.
-		for (Worker &worker : g_workers)
-		{
-			for (int workerDrawCallIndex = 0; workerDrawCallIndex < worker.drawCallCount; workerDrawCallIndex++)
+			g_directorCondVar.wait(lock, []()
 			{
-				const int globalDrawCallIndex = worker.drawCallStartIndex + workerDrawCallIndex;
-				const RenderDrawCall &drawCall = drawCalls[globalDrawCallIndex];
+				return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStartFrame; });
+			});
 
-				DebugAssertIndex(worker.drawCallCaches, workerDrawCallIndex);
-				DrawCallCache &workerDrawCallCache = worker.drawCallCaches[workerDrawCallIndex];
-				TransformCache &workerTransformCache = worker.transformCaches[workerDrawCallIndex];
-				auto &transformCachePreScaleTranslationX = workerTransformCache.preScaleTranslationX;
-				auto &transformCachePreScaleTranslationY = workerTransformCache.preScaleTranslationY;
-				auto &transformCachePreScaleTranslationZ = workerTransformCache.preScaleTranslationZ;
-				auto &drawCallCacheVertexBuffer = workerDrawCallCache.vertexBuffer;
-				auto &drawCallCacheTexCoordBuffer = workerDrawCallCache.texCoordBuffer;
-				auto &drawCallCacheIndexBuffer = workerDrawCallCache.indexBuffer;
-				auto &drawCallCacheTextureID0 = workerDrawCallCache.textureID0;
-				auto &drawCallCacheTextureID1 = workerDrawCallCache.textureID1;
-				auto &drawCallCacheTextureSamplingType0 = workerDrawCallCache.textureSamplingType0;
-				auto &drawCallCacheTextureSamplingType1 = workerDrawCallCache.textureSamplingType1;
-				auto &drawCallCacheLightingType = workerDrawCallCache.lightingType;
-				auto &drawCallCacheMeshLightPercent = workerDrawCallCache.meshLightPercent;
-				auto &drawCallCacheLightPtrArray = workerDrawCallCache.lightPtrArray;
-				auto &drawCallCacheLightCount = workerDrawCallCache.lightCount;
-				auto &drawCallCacheVertexShaderType = workerDrawCallCache.vertexShaderType;
-				auto &drawCallCachePixelShaderType = workerDrawCallCache.pixelShaderType;
-				auto &drawCallCachePixelShaderParam0 = workerDrawCallCache.pixelShaderParam0;
-				auto &drawCallCacheEnableDepthRead = workerDrawCallCache.enableDepthRead;
-				auto &drawCallCacheEnableDepthWrite = workerDrawCallCache.enableDepthWrite;
-
-				const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
-				const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-				PopulateMeshTransform(workerTransformCache, transform);
-
-				transformCachePreScaleTranslationX = 0.0;
-				transformCachePreScaleTranslationY = 0.0;
-				transformCachePreScaleTranslationZ = 0.0;
-				if (drawCall.preScaleTranslationBufferID >= 0)
-				{
-					const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
-					const Double3 &preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
-					transformCachePreScaleTranslationX = preScaleTranslation.x;
-					transformCachePreScaleTranslationY = preScaleTranslation.y;
-					transformCachePreScaleTranslationZ = preScaleTranslation.z;
-				}
-
-				drawCallCacheVertexBuffer = &this->vertexBuffers.get(drawCall.vertexBufferID);
-				drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
-				drawCallCacheIndexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
-
-				const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
-				const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
-				drawCallCacheTextureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
-				drawCallCacheTextureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
-				drawCallCacheTextureSamplingType0 = drawCall.textureSamplingTypes[0];
-				drawCallCacheTextureSamplingType1 = drawCall.textureSamplingTypes[1];
-				drawCallCacheLightingType = drawCall.lightingType;
-				drawCallCacheMeshLightPercent = drawCall.lightPercent;
-
-				auto &drawCallCacheLightPtrs = drawCallCacheLightPtrArray;
-				for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
-				{
-					const RenderLightID lightID = drawCall.lightIDs[lightIndex];
-					drawCallCacheLightPtrs[lightIndex] = &this->lights.get(lightID);
-				}
-
-				drawCallCacheLightCount = drawCall.lightIdCount;
-				drawCallCacheVertexShaderType = drawCall.vertexShaderType;
-				drawCallCachePixelShaderType = drawCall.pixelShaderType;
-				drawCallCachePixelShaderParam0 = drawCall.pixelShaderParam0;
-				drawCallCacheEnableDepthRead = drawCall.enableDepthRead;
-				drawCallCacheEnableDepthWrite = drawCall.enableDepthWrite;
+			for (Worker &worker : g_workers)
+			{
+				DebugAssert(!worker.shouldExit);
+				DebugAssert(!worker.shouldWorkOnDrawCalls);
+				DebugAssert(!worker.isFinishedWithDrawCalls);
+				DebugAssert(!worker.shouldWorkOnRasterizing);
+				DebugAssert(!worker.isFinishedRasterizing);
+				worker.isReadyToStartFrame = false;
+				worker.rasterizerInputCache.clearTriangles();
+				worker.rasterizerInputCache.emptyBins();
 			}
+
+			// Determine which workers get which draw calls this loop.
+			const int drawCallsToConsume = std::min(maxDrawCallsPerLoop, remainingDrawCallCount);
+			PopulateWorkerDrawCallWorkloads(totalWorkerCount, startDrawCallIndex, drawCallsToConsume);
+
+			// Populate worker draw call caches so they have data to work with.
+			for (Worker &worker : g_workers)
+			{
+				for (int workerDrawCallIndex = 0; workerDrawCallIndex < worker.drawCallCount; workerDrawCallIndex++)
+				{
+					const int globalDrawCallIndex = worker.drawCallStartIndex + workerDrawCallIndex;
+					const RenderDrawCall &drawCall = drawCalls[globalDrawCallIndex];
+
+					DebugAssertIndex(worker.drawCallCaches, workerDrawCallIndex);
+					DrawCallCache &workerDrawCallCache = worker.drawCallCaches[workerDrawCallIndex];
+					TransformCache &workerTransformCache = worker.transformCaches[workerDrawCallIndex];
+					auto &transformCachePreScaleTranslationX = workerTransformCache.preScaleTranslationX;
+					auto &transformCachePreScaleTranslationY = workerTransformCache.preScaleTranslationY;
+					auto &transformCachePreScaleTranslationZ = workerTransformCache.preScaleTranslationZ;
+					auto &drawCallCacheVertexBuffer = workerDrawCallCache.vertexBuffer;
+					auto &drawCallCacheTexCoordBuffer = workerDrawCallCache.texCoordBuffer;
+					auto &drawCallCacheIndexBuffer = workerDrawCallCache.indexBuffer;
+					auto &drawCallCacheTextureID0 = workerDrawCallCache.textureID0;
+					auto &drawCallCacheTextureID1 = workerDrawCallCache.textureID1;
+					auto &drawCallCacheTextureSamplingType0 = workerDrawCallCache.textureSamplingType0;
+					auto &drawCallCacheTextureSamplingType1 = workerDrawCallCache.textureSamplingType1;
+					auto &drawCallCacheLightingType = workerDrawCallCache.lightingType;
+					auto &drawCallCacheMeshLightPercent = workerDrawCallCache.meshLightPercent;
+					auto &drawCallCacheLightPtrArray = workerDrawCallCache.lightPtrArray;
+					auto &drawCallCacheLightCount = workerDrawCallCache.lightCount;
+					auto &drawCallCacheVertexShaderType = workerDrawCallCache.vertexShaderType;
+					auto &drawCallCachePixelShaderType = workerDrawCallCache.pixelShaderType;
+					auto &drawCallCachePixelShaderParam0 = workerDrawCallCache.pixelShaderParam0;
+					auto &drawCallCacheEnableDepthRead = workerDrawCallCache.enableDepthRead;
+					auto &drawCallCacheEnableDepthWrite = workerDrawCallCache.enableDepthWrite;
+
+					const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
+					const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
+					PopulateMeshTransform(workerTransformCache, transform);
+
+					transformCachePreScaleTranslationX = 0.0;
+					transformCachePreScaleTranslationY = 0.0;
+					transformCachePreScaleTranslationZ = 0.0;
+					if (drawCall.preScaleTranslationBufferID >= 0)
+					{
+						const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
+						const Double3 &preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
+						transformCachePreScaleTranslationX = preScaleTranslation.x;
+						transformCachePreScaleTranslationY = preScaleTranslation.y;
+						transformCachePreScaleTranslationZ = preScaleTranslation.z;
+					}
+
+					drawCallCacheVertexBuffer = &this->vertexBuffers.get(drawCall.vertexBufferID);
+					drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
+					drawCallCacheIndexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
+
+					const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
+					const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
+					drawCallCacheTextureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
+					drawCallCacheTextureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
+					drawCallCacheTextureSamplingType0 = drawCall.textureSamplingTypes[0];
+					drawCallCacheTextureSamplingType1 = drawCall.textureSamplingTypes[1];
+					drawCallCacheLightingType = drawCall.lightingType;
+					drawCallCacheMeshLightPercent = drawCall.lightPercent;
+
+					auto &drawCallCacheLightPtrs = drawCallCacheLightPtrArray;
+					for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
+					{
+						const RenderLightID lightID = drawCall.lightIDs[lightIndex];
+						drawCallCacheLightPtrs[lightIndex] = &this->lights.get(lightID);
+					}
+
+					drawCallCacheLightCount = drawCall.lightIdCount;
+					drawCallCacheVertexShaderType = drawCall.vertexShaderType;
+					drawCallCachePixelShaderType = drawCall.pixelShaderType;
+					drawCallCachePixelShaderParam0 = drawCall.pixelShaderParam0;
+					drawCallCacheEnableDepthRead = drawCall.enableDepthRead;
+					drawCallCacheEnableDepthWrite = drawCall.enableDepthWrite;
+				}
+			}
+
+			for (Worker &worker : g_workers)
+			{
+				DebugAssert(!worker.shouldWorkOnDrawCalls);
+				worker.shouldWorkOnDrawCalls = true;
+			}
+
+			g_workerCondVar.notify_all();
+			g_directorCondVar.wait(lock, []()
+			{
+				return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isFinishedWithDrawCalls; });
+			});
+
+			for (Worker &worker : g_workers)
+			{
+				DebugAssert(worker.shouldWorkOnDrawCalls);
+				DebugAssert(!worker.shouldWorkOnRasterizing);
+				DebugAssert(!worker.isFinishedRasterizing);
+				worker.shouldWorkOnDrawCalls = false;
+				worker.shouldWorkOnRasterizing = true;
+				g_totalPresentedTriangleCount += worker.rasterizerInputCache.triangleCount;
+			}
+
+			g_workerCondVar.notify_all();
+			g_directorCondVar.wait(lock, []()
+			{
+				return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isFinishedRasterizing; });
+			});
+
+			// Reset workers for next frame.
+			for (Worker &worker : g_workers)
+			{
+				worker.isFinishedWithDrawCalls = false;
+				worker.shouldWorkOnRasterizing = false;
+				worker.isFinishedRasterizing = false;
+			}
+
+			startDrawCallIndex += drawCallsToConsume;
+			remainingDrawCallCount -= drawCallsToConsume;
 		}
-
-		for (Worker &worker : g_workers)
-		{
-			DebugAssert(!worker.shouldWorkOnDrawCalls);
-			worker.shouldWorkOnDrawCalls = true;
-		}
-
-		g_workerCondVar.notify_all();
-		g_directorCondVar.wait(lock, []()
-		{
-			return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isFinishedWithDrawCalls; });
-		});
-
-		for (Worker &worker : g_workers)
-		{
-			DebugAssert(worker.shouldWorkOnDrawCalls);
-			DebugAssert(!worker.shouldWorkOnRasterizing);
-			DebugAssert(!worker.isFinishedRasterizing);
-			worker.shouldWorkOnDrawCalls = false;
-			worker.shouldWorkOnRasterizing = true;
-			g_totalPresentedTriangleCount += worker.rasterizerInputCache.triangleCount;
-		}
-
-		g_workerCondVar.notify_all();
-		g_directorCondVar.wait(lock, []()
-		{
-			return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isFinishedRasterizing; });
-		});
-
-		// Reset workers for next frame.
-		for (Worker &worker : g_workers)
-		{
-			worker.isFinishedWithDrawCalls = false;
-			worker.shouldWorkOnRasterizing = false;
-			worker.isFinishedRasterizing = false;
-		}
-
-		startDrawCallIndex += drawCallsToConsume;
-		remainingDrawCallCount -= drawCallsToConsume;
 	}
 }
 

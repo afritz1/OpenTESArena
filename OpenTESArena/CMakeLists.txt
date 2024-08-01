@@ -465,6 +465,8 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.h"
     "${SRC_ROOT}/Rendering/RenderCamera.cpp"
     "${SRC_ROOT}/Rendering/RenderCamera.h"
+    "${SRC_ROOT}/Rendering/RenderCommandBuffer.cpp"
+    "${SRC_ROOT}/Rendering/RenderCommandBuffer.h"
     "${SRC_ROOT}/Rendering/RenderDrawCall.cpp"
     "${SRC_ROOT}/Rendering/RenderDrawCall.h"
     "${SRC_ROOT}/Rendering/RenderEntityChunk.cpp"

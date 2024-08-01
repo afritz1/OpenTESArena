@@ -17,6 +17,7 @@ class Random;
 class TextureBuilder;
 
 struct RenderCamera;
+struct RenderCommandBuffer;
 struct RenderDrawCall;
 struct RenderFrameSettings;
 struct RenderInitSettings;
@@ -87,8 +88,8 @@ public:
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.
-	virtual void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> drawCalls,
-		const RenderFrameSettings &settings, uint32_t *outputBuffer) = 0;
+	virtual void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
+		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) = 0;
 
 	// Presents the finished frame to the screen. This may just be a copy to the screen frame buffer that
 	// is then taken care of by the top-level rendering manager, since UI must be drawn afterwards.

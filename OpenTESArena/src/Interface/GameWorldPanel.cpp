@@ -19,6 +19,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Rendering/RenderCamera.h"
+#include "../Rendering/RenderCommandBuffer.h"
 #include "../Rendering/RendererUtils.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
@@ -798,8 +799,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 {
-	static std::vector<RenderDrawCall> drawCalls; // Preserved between frames for less fragmentation.
-	drawCalls.clear();
+	RenderCommandBuffer commandBuffer;
 
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
@@ -815,16 +815,16 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
 	const RenderDrawCall &skyBgDrawCall = renderSkyManager.getBgDrawCall();
-	drawCalls.emplace_back(skyBgDrawCall);
-	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
+	commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(&skyBgDrawCall, 1));
+	commandBuffer.addDrawCalls(skyObjectDrawCalls);
 
 	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
 	const BufferView<const RenderDrawCall> voxelDrawCalls = renderVoxelChunkManager.getDrawCalls();
-	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
+	commandBuffer.addDrawCalls(voxelDrawCalls);
 
 	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
 	const BufferView<const RenderDrawCall> entityDrawCalls = renderEntityChunkManager.getDrawCalls();
-	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
+	commandBuffer.addDrawCalls(entityDrawCalls);
 
 	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
 	const bool isFoggy = gameState.isFogActive();
@@ -832,20 +832,21 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	{
 		if (isFoggy)
 		{
-			drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
+			const RenderDrawCall &fogDrawCall = renderWeatherManager.getFogDrawCall();
+			commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(&fogDrawCall, 1));
 		}
 	}
 
 	if (activeWeatherInst.hasRain())
 	{
 		const BufferView<const RenderDrawCall> rainDrawCalls = renderWeatherManager.getRainDrawCalls();
-		drawCalls.insert(drawCalls.end(), rainDrawCalls.begin(), rainDrawCalls.end());
+		commandBuffer.addDrawCalls(rainDrawCalls);
 	}
 
 	if (activeWeatherInst.hasSnow())
 	{
 		const BufferView<const RenderDrawCall> snowDrawCalls = renderWeatherManager.getSnowDrawCalls();
-		drawCalls.insert(drawCalls.end(), snowDrawCalls.begin(), snowDrawCalls.end());
+		commandBuffer.addDrawCalls(snowDrawCalls);
 	}
 
 	const MapType activeMapType = activeMapDef.getMapType();
@@ -881,7 +882,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	const ObjectTextureID skyBgTextureID = skyBgDrawCall.textureIDs[0];
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(options.getGraphics_DitheringMode());
 
-	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
+	renderer.submitFrame(renderCamera, commandBuffer, ambientPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
 		options.getGraphics_RenderThreadsMode(), ditheringMode);
 
 	return true;

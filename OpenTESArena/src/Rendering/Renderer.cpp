@@ -1019,7 +1019,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rectSdl);
 }
 
-void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls, double ambientPercent,
+void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
 	ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode,
 	DitheringMode ditheringMode)
 {
@@ -1042,7 +1042,7 @@ void Renderer::submitFrame(const RenderCamera &camera, BufferView<const RenderDr
 
 	// Render the game world (no UI).
 	const auto renderStartTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(camera, voxelDrawCalls, renderFrameSettings, outputBuffer);
+	this->renderer3D->submitFrame(camera, renderFrameSettings, commandBuffer, outputBuffer);
 	const auto renderEndTime = std::chrono::high_resolution_clock::now();
 	const double renderTotalTime = static_cast<double>((renderEndTime - renderStartTime).count()) / static_cast<double>(std::nano::den);
 

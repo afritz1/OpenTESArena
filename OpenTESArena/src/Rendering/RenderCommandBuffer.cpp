@@ -1,0 +1,36 @@
+#include "RenderCommandBuffer.h"
+
+#include "components/debug/Debug.h"
+
+RenderCommandBuffer::RenderCommandBuffer()
+{
+	this->clear();
+}
+
+int RenderCommandBuffer::getTotalDrawCallCount() const
+{
+	int count = 0;
+	for (int i = 0; i < this->entryCount; i++)
+	{
+		count += this->entries[i].getCount();
+	}
+
+	return count;
+}
+
+void RenderCommandBuffer::addDrawCalls(BufferView<const RenderDrawCall> drawCalls)
+{
+	if (this->entryCount >= static_cast<int>(std::size(this->entries)))
+	{
+		DebugLogError("Too many entries in command buffer.");
+		return;
+	}
+
+	this->entries[this->entryCount] = drawCalls;
+	this->entryCount++;
+}
+
+void RenderCommandBuffer::clear()
+{
+	this->entryCount = 0;
+}

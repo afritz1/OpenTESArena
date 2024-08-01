@@ -241,8 +241,8 @@ public:
 
 	ProfilerData getProfilerData() const override;
 
-	void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> drawCalls,
-		const RenderFrameSettings &settings, uint32_t *outputBuffer) override;
+	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
+		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) override;
 	void present() override;
 };
 

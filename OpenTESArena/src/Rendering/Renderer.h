@@ -256,7 +256,7 @@ public:
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
+	void submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer,
 		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
 		ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 
