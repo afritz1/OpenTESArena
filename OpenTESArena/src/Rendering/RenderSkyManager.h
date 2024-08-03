@@ -16,6 +16,8 @@ class WeatherInstance;
 
 enum class WeatherType;
 
+struct RenderCommandBuffer;
+
 class RenderSkyManager
 {
 private:
@@ -71,8 +73,8 @@ public:
 	void init(const ExeData &exeData, TextureManager &textureManager, Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	const RenderDrawCall &getBgDrawCall() const;
-	BufferView<const RenderDrawCall> getObjectDrawCalls() const;
+	ObjectTextureID getBgTextureID() const;
+	void populateCommandBuffer(RenderCommandBuffer &commandBuffer) const;
 
 	void loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
 	void update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,

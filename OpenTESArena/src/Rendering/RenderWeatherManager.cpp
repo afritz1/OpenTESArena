@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "RenderCamera.h"
+#include "RenderCommandBuffer.h"
 #include "RenderTransform.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
@@ -462,19 +463,22 @@ void RenderWeatherManager::shutdown(Renderer &renderer)
 	this->fogDrawCall.clear();
 }
 
-BufferView<const RenderDrawCall> RenderWeatherManager::getRainDrawCalls() const
+void RenderWeatherManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer, const WeatherInstance &weatherInst, bool isFoggy) const
 {
-	return this->rainDrawCalls;
-}
+	if (weatherInst.hasFog() && isFoggy)
+	{
+		commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(&this->fogDrawCall, 1));
+	}
 
-BufferView<const RenderDrawCall> RenderWeatherManager::getSnowDrawCalls() const
-{
-	return this->snowDrawCalls;
-}
+	if (weatherInst.hasRain())
+	{
+		commandBuffer.addDrawCalls(this->rainDrawCalls);
+	}
 
-const RenderDrawCall &RenderWeatherManager::getFogDrawCall() const
-{
-	return this->fogDrawCall;
+	if (weatherInst.hasSnow())
+	{
+		commandBuffer.addDrawCalls(this->snowDrawCalls);
+	}
 }
 
 void RenderWeatherManager::freeParticleBuffers(Renderer &renderer)

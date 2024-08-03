@@ -9,11 +9,11 @@
 
 struct RenderCommandBuffer
 {
-	static constexpr int MAX_ENTRIES = 8;
+	static constexpr int MAX_ENTRIES = 4096; // Allowing a lot more than usual for large view distance involving puddles.
 
-	// One per category of draw calls (voxels, entities, weather, sky, etc). Each draw call range starts execution
-	// once the previous set is complete, ensuring correctness in the final image. Meant for proper rendering of
-	// more involved effects like screen-space reflections that impact the renderer's ability to multi-task.
+	// One per range of draw calls (voxels, entities, weather, sky, etc). Each range starts execution once the previous one
+	// is complete, ensuring correctness in the final image. Meant for proper rendering of more involved effects like
+	// screen-space reflections that impact the renderer's ability to multi-task.
 	BufferView<const RenderDrawCall> entries[MAX_ENTRIES];
 	int entryCount;
 

@@ -3,6 +3,7 @@
 #include <numeric>
 #include <optional>
 
+#include "RenderCommandBuffer.h"
 #include "RenderLightChunkManager.h"
 #include "RenderVoxelChunkManager.h"
 #include "Renderer.h"
@@ -488,11 +489,6 @@ ObjectTextureID RenderVoxelChunkManager::getChasmWallTextureID(const ChunkInt2 &
 	const LoadedTexture &voxelTexture = this->textures[wallIndex];
 	const ScopedObjectTextureRef &objectTextureRef = voxelTexture.objectTextureRef;
 	return objectTextureRef.get();
-}
-
-BufferView<const RenderDrawCall> RenderVoxelChunkManager::getDrawCalls() const
-{
-	return BufferView<const RenderDrawCall>(this->drawCallsCache);
 }
 
 void RenderVoxelChunkManager::loadTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer)
@@ -1286,6 +1282,11 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkMan
 			}
 		}
 	}
+}
+
+void RenderVoxelChunkManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
+{
+	commandBuffer.addDrawCalls(this->drawCallsCache);
 }
 
 void RenderVoxelChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

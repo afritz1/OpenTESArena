@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 
+#include "RenderCommandBuffer.h"
 #include "RenderEntityChunkManager.h"
 #include "Renderer.h"
 #include "RenderLightChunkManager.h"
@@ -238,11 +239,6 @@ ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityIn
 	return textureRefs.get(linearizedKeyframeIndex).get();
 }
 
-BufferView<const RenderDrawCall> RenderEntityChunkManager::getDrawCalls() const
-{
-	return this->drawCallsCache;
-}
-
 void RenderEntityChunkManager::loadTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
 	TextureManager &textureManager, Renderer &renderer)
 {
@@ -404,6 +400,40 @@ void RenderEntityChunkManager::rebuildDrawCallsList()
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
 		BufferView<const RenderDrawCall> drawCalls = chunkPtr->drawCalls;
 		this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
+	}
+}
+
+void RenderEntityChunkManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
+{
+	// Need to have barriers around puddle draw calls to avoid artifacts with reflected entities.
+	int currentStartIndex = 0;
+	int currentCount = 0;
+
+	const int drawCallCount = static_cast<int>(this->drawCallsCache.size());
+	for (int i = 0; i < drawCallCount; i++)
+	{
+		const RenderDrawCall &drawCall = this->drawCallsCache[i];
+		const bool isPuddle = drawCall.pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
+		if (isPuddle)
+		{
+			if (currentCount > 0)
+			{
+				commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
+				currentCount = 0;
+			}
+
+			commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(this->drawCallsCache.data() + i, 1));
+			currentStartIndex = i + 1;
+			continue;
+		}
+
+		currentCount++;
+	}
+
+	if (currentCount > 0)
+	{
+		// Add one last draw call range.
+		commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
 	}
 }
 

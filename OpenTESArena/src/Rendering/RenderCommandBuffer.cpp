@@ -22,7 +22,7 @@ void RenderCommandBuffer::addDrawCalls(BufferView<const RenderDrawCall> drawCall
 {
 	if (this->entryCount >= static_cast<int>(std::size(this->entries)))
 	{
-		DebugLogError("Too many entries in command buffer.");
+		DebugLogError("Too many entries in command buffer, can't add range of " + std::to_string(drawCalls.getCount()) + " draw call(s).");
 		return;
 	}
 

@@ -799,7 +799,8 @@ void GameWorldPanel::initUiDrawCalls()
 
 bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 {
-	RenderCommandBuffer commandBuffer;
+	static RenderCommandBuffer commandBuffer;
+	commandBuffer.clear();
 
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
@@ -813,41 +814,17 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	const SceneManager &sceneManager = game.getSceneManager();
 	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
-	const RenderDrawCall &skyBgDrawCall = renderSkyManager.getBgDrawCall();
-	commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(&skyBgDrawCall, 1));
-	commandBuffer.addDrawCalls(skyObjectDrawCalls);
+	renderSkyManager.populateCommandBuffer(commandBuffer);
 
 	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
-	const BufferView<const RenderDrawCall> voxelDrawCalls = renderVoxelChunkManager.getDrawCalls();
-	commandBuffer.addDrawCalls(voxelDrawCalls);
+	renderVoxelChunkManager.populateCommandBuffer(commandBuffer);
 
 	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
-	const BufferView<const RenderDrawCall> entityDrawCalls = renderEntityChunkManager.getDrawCalls();
-	commandBuffer.addDrawCalls(entityDrawCalls);
+	renderEntityChunkManager.populateCommandBuffer(commandBuffer);
 
 	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
 	const bool isFoggy = gameState.isFogActive();
-	if (activeWeatherInst.hasFog())
-	{
-		if (isFoggy)
-		{
-			const RenderDrawCall &fogDrawCall = renderWeatherManager.getFogDrawCall();
-			commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(&fogDrawCall, 1));
-		}
-	}
-
-	if (activeWeatherInst.hasRain())
-	{
-		const BufferView<const RenderDrawCall> rainDrawCalls = renderWeatherManager.getRainDrawCalls();
-		commandBuffer.addDrawCalls(rainDrawCalls);
-	}
-
-	if (activeWeatherInst.hasSnow())
-	{
-		const BufferView<const RenderDrawCall> snowDrawCalls = renderWeatherManager.getSnowDrawCalls();
-		commandBuffer.addDrawCalls(snowDrawCalls);
-	}
+	renderWeatherManager.populateCommandBuffer(commandBuffer, activeWeatherInst, isFoggy);
 
 	const MapType activeMapType = activeMapDef.getMapType();
 	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType, isFoggy);
@@ -879,10 +856,8 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		lightTableTextureID = sceneManager.normalLightTableNightTextureRef.get();
 	}
 
-	const ObjectTextureID skyBgTextureID = skyBgDrawCall.textureIDs[0];
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(options.getGraphics_DitheringMode());
-
-	renderer.submitFrame(renderCamera, commandBuffer, ambientPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
+	renderer.submitFrame(renderCamera, commandBuffer, ambientPercent, paletteTextureID, lightTableTextureID, renderSkyManager.getBgTextureID(),
 		options.getGraphics_RenderThreadsMode(), ditheringMode);
 
 	return true;

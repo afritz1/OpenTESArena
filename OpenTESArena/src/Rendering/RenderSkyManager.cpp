@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "ArenaRenderUtils.h"
+#include "RenderCommandBuffer.h"
 #include "Renderer.h"
 #include "RenderSkyManager.h"
 #include "RenderTransform.h"
@@ -474,16 +475,6 @@ void RenderSkyManager::freeObjectBuffers(Renderer &renderer)
 	this->smallStarTextures.clear();
 }
 
-const RenderDrawCall &RenderSkyManager::getBgDrawCall() const
-{
-	return this->bgDrawCall;
-}
-
-BufferView<const RenderDrawCall> RenderSkyManager::getObjectDrawCalls() const
-{
-	return this->objectDrawCalls;
-}
-
 void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer)
 {
 	auto tryLoadTextureAsset = [this, &textureManager, &renderer](const TextureAsset &textureAsset)
@@ -628,6 +619,17 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 		DebugLogError("Couldn't create uniform buffer for sky objects.");
 		return;
 	}
+}
+
+ObjectTextureID RenderSkyManager::getBgTextureID() const
+{
+	return this->bgDrawCall.textureIDs[0];
+}
+
+void RenderSkyManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
+{
+	commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(&this->bgDrawCall, 1));
+	commandBuffer.addDrawCalls(this->objectDrawCalls);
 }
 
 void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,

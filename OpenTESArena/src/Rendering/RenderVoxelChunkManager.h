@@ -22,6 +22,7 @@ class VoxelChunkManager;
 class VoxelVisibilityChunkManager;
 
 struct RenderCamera;
+struct RenderCommandBuffer;
 struct VoxelVisibilityChunk;
 
 class RenderVoxelChunkManager final : public SpecializedChunkManager<RenderVoxelChunk>
@@ -98,7 +99,7 @@ public:
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	BufferView<const RenderDrawCall> getDrawCalls() const;
+	void populateCommandBuffer(RenderCommandBuffer &commandBuffer) const;
 
 	// Chunk allocating/freeing update function, called before voxel resources are updated.
 	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

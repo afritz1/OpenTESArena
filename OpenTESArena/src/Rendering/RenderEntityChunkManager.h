@@ -30,6 +30,7 @@ class VoxelChunkManager;
 struct EntityAnimationInstance;
 struct EntityVisibilityChunk;
 struct RenderCamera;
+struct RenderCommandBuffer;
 
 class RenderEntityChunkManager final : public SpecializedChunkManager<RenderEntityChunk>
 {
@@ -71,7 +72,7 @@ public:
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	BufferView<const RenderDrawCall> getDrawCalls() const;
+	void populateCommandBuffer(RenderCommandBuffer &commandBuffer) const;
 
 	// Chunk allocating/freeing update function, called before entity resources are updated.
 	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
