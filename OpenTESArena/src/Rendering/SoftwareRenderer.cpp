@@ -4106,14 +4106,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 		int remainingDrawCallCount = drawCalls.getCount();
 		constexpr int maxDrawCallsPerLoop = 4096;
 
-		// Wait for all workers to be ready to process draw calls (only an extra sync point for every set of draw calls).
-		g_directorCondVar.wait(lock, []()
-		{
-			return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStartFrame; });
-		});
-
 		while (remainingDrawCallCount > 0)
 		{
+			// Wait for all workers to be ready to process this set of draw calls.
 			g_directorCondVar.wait(lock, []()
 			{
 				return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStartFrame; });
