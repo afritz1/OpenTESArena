@@ -4104,7 +4104,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 		const BufferView<const RenderDrawCall> drawCalls = commandBuffer.entries[commandIndex];
 		int startDrawCallIndex = 0;
 		int remainingDrawCallCount = drawCalls.getCount();
-		constexpr int maxDrawCallsPerLoop = 4096;
+		constexpr int maxDrawCallsPerLoop = 8192;
+		static_assert(maxDrawCallsPerLoop <= MAX_WORKER_DRAW_CALLS_PER_LOOP);
 
 		while (remainingDrawCallCount > 0)
 		{

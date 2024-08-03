@@ -394,6 +394,9 @@ void RenderEntityChunkManager::rebuildDrawCallsList()
 {
 	this->drawCallsCache.clear();
 
+	// @todo: puddles don't show reflections of entities in later chunks, maybe need to sort chunks far->near by distance sqr,
+	// not just entities per-chunk in EntityVisibilityChunk.
+
 	// Assumed to be sorted during entity visibility calculations.
 	for (size_t i = 0; i < this->activeChunks.size(); i++)
 	{
