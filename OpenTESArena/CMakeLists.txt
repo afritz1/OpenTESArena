@@ -762,6 +762,7 @@ ELSE (APPLE)
     FILE(COPY ${TES_OPTIONS_FOLDER} DESTINATION ../otesa.app/Contents/Resources)
 
     # Add the rest
+    SET(CMAKE_BUILD_RPATH "@executable_path/../Frameworks/")
     ADD_EXECUTABLE(otesa MACOSX_BUNDLE ${TES_SOURCES} ${TES_MAC_ICON})
 ENDIF()
 
