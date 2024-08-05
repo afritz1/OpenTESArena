@@ -49,7 +49,7 @@ Controls:
 1. Back in the OpenTESArena release folder, open `options/options-default.txt` and paste the game directory after `ArenaPaths=`
    - Example: `ArenaPaths=C:\Program Files (x86)\Steam\steamapps\common\The Elder Scrolls Arena\ARENA`
   
-#### Run `OpenTESArena.exe`
+#### Run `otesa.exe`
 
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip)
@@ -116,12 +116,12 @@ cd ..
 
 #### Install OpenTESArena
 1. Download the latest [macOS build](https://github.com/afritz1/OpenTESArena/releases)
-1. Open the `.dmg` and copy OpenTESArena to the `Applications` folder or another location
-1. Right-click on the app and choose "Show Package Contents"
+1. Open the `.dmg` and copy `otesa.app` to the `Applications` folder or another location you prefer
+1. Right-click on the .app and choose "Show Package Contents"
 1. Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier
 
 #### Run OpenTESArena
-1. Return to the `Applications` folder or wherever you have the app installed and open `OpenTESArena`. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
+1. Return to the `Applications` folder or wherever you have the app installed and open `otesa.app`. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
    1. Right-click on the app and choose "Open"
    1. In the warning that appears saying that it is from an unidentified developer, choose "Open"
    1. The app will start. In the future, you can just double-click on the app without having to go through these steps
@@ -162,7 +162,7 @@ sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libwildmidi-dev
 - Other parameters for CMake may be necessary depending on the IDE you are using
 
 ### Running OpenTESArena
-- Verify that the `data` and `options` folders are in the same folder as the executable. If not, then copy them from the project's root folder (this should be fixed in the future with a post-build command)
+- Copy the `data` and `options` folders from the project's root folder to the same directory as the game executable (this should be fixed in the future with a post-build command)
 - Make sure that `MidiConfig` and `ArenaPaths` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively)
 
 Other guides:
