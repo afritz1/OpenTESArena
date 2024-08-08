@@ -3,6 +3,7 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
+#include "../Collision/RayCastTypes.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/ArenaClockUtils.h"
@@ -107,14 +108,14 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	}
 }
 
-void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit, const TransitionDefinition &transitionDef)
+void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, const TransitionDefinition &transitionDef)
 {
 	const TransitionType transitionType = transitionDef.getType();
 	DebugAssert(transitionType != TransitionType::LevelChange);
 
-	DebugAssert(hit.getType() == Physics::HitType::Voxel);
-	const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-	const CoordInt3 hitCoord(hit.getCoord().chunk, voxelHit.voxel);
+	DebugAssert(hit.type == RayCastHitType::Voxel);
+	const RayCastVoxelHit &voxelHit = hit.voxelHit;
+	const CoordInt3 hitCoord(hit.coord.chunk, voxelHit.voxel);
 
 	auto &gameState = game.getGameState();
 	auto &textureManager = game.getTextureManager();
@@ -208,8 +209,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				const VoxelInt3 delta = [&voxelHit, &hitCoord]()
 				{
 					// Assuming this is a wall voxel.
-					DebugAssert(voxelHit.facing.has_value());
-					const VoxelFacing3D facing = *voxelHit.facing;
+					const VoxelFacing3D facing = voxelHit.facing;
 
 					if (facing == VoxelFacing3D::PositiveX)
 					{
@@ -296,8 +296,7 @@ void MapLogicController::handleMapTransition(Game &game, const Physics::Hit &hit
 				const VoxelInt2 transitionDir = [&voxelHit]()
 				{
 					// Assuming this is a wall voxel.
-					DebugAssert(voxelHit.facing.has_value());
-					const VoxelFacing3D facing = *voxelHit.facing;
+					const VoxelFacing3D facing = voxelHit.facing;
 
 					if (facing == VoxelFacing3D::PositiveX)
 					{

@@ -3,7 +3,9 @@
 
 namespace SelectionUtils
 {
-	constexpr double MAX_DISTANCE = 1.75;
+	// Max distance the player can click on regular objects.
+	// @todo: this should be a function of something constexpr in ArenaSelectionUtils
+	constexpr double MAX_PRIMARY_INTERACTION_DISTANCE = 1.75;
 }
 
 #endif

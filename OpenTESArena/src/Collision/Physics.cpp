@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "Physics.h"
+#include "RayCastTypes.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
 #include "../Collision/CollisionChunkManager.h"
@@ -236,7 +237,7 @@ namespace Physics
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelInt3 &voxel,
 		VoxelFacing3D farFacing, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
+		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
 		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
 		if (voxelChunk == nullptr)
@@ -325,7 +326,7 @@ namespace Physics
 			if (success)
 			{
 				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
-				hit.initVoxel(t, hitCoord, voxel, &farFacing);
+				hit.initVoxel(t, hitCoord, voxel, farFacing);
 				break;
 			}
 		}
@@ -338,7 +339,7 @@ namespace Physics
 	bool testVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const CoordInt3 &voxelCoord,
 		VoxelFacing3D nearFacing, const CoordDouble3 &nearCoord, const CoordDouble3 &farCoord,
 		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager,
-		Physics::Hit &hit)
+		RayCastHit &hit)
 	{
 		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(voxelCoord.chunk);
 		if (voxelChunk == nullptr)
@@ -431,7 +432,7 @@ namespace Physics
 			{
 				const CoordDouble3 hitCoord = ChunkUtils::recalculateCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
 				const VoxelFacing3D facing = nearFacing; // @todo: probably needs to take hit normal into account
-				hit.initVoxel(t, hitCoord, voxel, &facing);
+				hit.initVoxel(t, hitCoord, voxel, facing);
 				break;
 			}
 		}
@@ -443,11 +444,11 @@ namespace Physics
 	bool testEntitiesInVoxel(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection,
 		const VoxelDouble3 &flatForward, const VoxelDouble3 &flatRight, const VoxelDouble3 &flatUp,
 		const VoxelInt3 &voxel, const ChunkEntityMap &chunkEntityMap, const EntityChunkManager &entityChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary, Physics::Hit &hit)
+		const EntityDefinitionLibrary &entityDefLibrary, RayCastHit &hit)
 	{
 		// Use a separate hit variable so we can determine whether an entity was closer.
-		Physics::Hit entityHit;
-		entityHit.setT(Hit::MAX_T);
+		RayCastHit entityHit;
+		entityHit.t = RayCastHit::NO_HIT_DISTANCE;
 
 		const auto &entityMappings = chunkEntityMap.mappings;
 		const auto iter = entityMappings.find(voxel);
@@ -474,7 +475,7 @@ namespace Physics
 					flatWidth, flatHeight, rayCoord, rayDirection, &hitCoord))
 				{
 					const double distance = (hitCoord - rayCoord).length();
-					if (distance < entityHit.getT())
+					if (distance < entityHit.t)
 					{
 						entityHit.initEntity(distance, hitCoord, entityInstID);
 					}
@@ -482,7 +483,7 @@ namespace Physics
 			}
 		}
 
-		const bool entityIsCloser = entityHit.getT() < hit.getT();
+		const bool entityIsCloser = entityHit.t < hit.t;
 		if (entityIsCloser)
 		{
 			hit = entityHit;
@@ -500,7 +501,7 @@ namespace Physics
 	void rayCastInternal(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelDouble3 &cameraForward,
 		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 		const CollisionChunkManager &collisionChunkManager, bool includeEntities, const EntityDefinitionLibrary &entityDefLibrary,
-		std::vector<ChunkEntityMap> &chunkEntityMaps, Physics::Hit &hit)
+		std::vector<ChunkEntityMap> &chunkEntityMaps, RayCastHit &hit)
 	{
 		// Each flat shares the same axes. Their forward direction always faces opposite to the camera direction.
 		const VoxelDouble3 flatForward = VoxelDouble3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
@@ -770,76 +771,14 @@ namespace Physics
 	}
 }
 
-void Physics::Hit::initVoxel(double t, const CoordDouble3 &coord, const VoxelInt3 &voxel, const VoxelFacing3D *facing)
-{
-	this->t = t;
-	this->coord = coord;
-	this->type = HitType::Voxel;
-	this->voxelHit.voxel = voxel;
-
-	if (facing != nullptr)
-	{
-		this->voxelHit.facing = *facing;
-	}
-	else
-	{
-		this->voxelHit.facing = std::nullopt;
-	}
-}
-
-void Physics::Hit::initEntity(double t, const CoordDouble3 &coord, EntityInstanceID id)
-{
-	this->t = t;
-	this->coord = coord;
-	this->type = HitType::Entity;
-	this->entityHit.id = id;
-}
-
-double Physics::Hit::getT() const
-{
-	return this->t;
-}
-
-double Physics::Hit::getTSqr() const
-{
-	return this->t * this->t;
-}
-
-const CoordDouble3 &Physics::Hit::getCoord() const
-{
-	return this->coord;
-}
-
-Physics::HitType Physics::Hit::getType() const
-{
-	return this->type;
-}
-
-const Physics::Hit::VoxelHit &Physics::Hit::getVoxelHit() const
-{
-	DebugAssert(this->getType() == HitType::Voxel);
-	return this->voxelHit;
-}
-
-const Physics::Hit::EntityHit &Physics::Hit::getEntityHit() const
-{
-	DebugAssert(this->getType() == HitType::Entity);
-	return this->entityHit;
-}
-
-void Physics::Hit::setT(double t)
-{
-	this->t = t;
-}
-
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, double ceilingScale,
 	const VoxelDouble3 &cameraForward, bool includeEntities, const VoxelChunkManager &voxelChunkManager,
 	const EntityChunkManager &entityChunkManager, const CollisionChunkManager &collisionChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary, Physics::Hit &hit)
+	const EntityDefinitionLibrary &entityDefLibrary, RayCastHit &hit)
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
 	// entity, the distance can still be used.
-	hit.setT(Hit::MAX_T);
+	hit.t = RayCastHit::NO_HIT_DISTANCE;
 
 	// Voxel->entity mappings for each chunk touched by the ray casting loop.
 	std::vector<ChunkEntityMap> chunkEntityMaps;
@@ -918,13 +857,13 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 	}
 
 	// Return whether the ray hit something.
-	return hit.getT() < Hit::MAX_T;
+	return hit.t < RayCastHit::NO_HIT_DISTANCE;
 }
 
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection,
 	const VoxelDouble3 &cameraForward, bool includeEntities, const VoxelChunkManager &voxelChunkManager,
 	const EntityChunkManager &entityChunkManager, const CollisionChunkManager &collisionChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary, Physics::Hit &hit)
+	const EntityDefinitionLibrary &entityDefLibrary, RayCastHit &hit)
 {
 	constexpr double ceilingScale = 1.0;
 	return Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraForward, includeEntities, voxelChunkManager,

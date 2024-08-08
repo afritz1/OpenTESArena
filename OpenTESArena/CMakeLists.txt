@@ -119,6 +119,8 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/CollisionMeshDefinition.h"
     "${SRC_ROOT}/Collision/Physics.cpp"
     "${SRC_ROOT}/Collision/Physics.h"
+    "${SRC_ROOT}/Collision/RayCastTypes.cpp"
+    "${SRC_ROOT}/Collision/RayCastTypes.h"
     "${SRC_ROOT}/Collision/SelectionUtils.h")
 
 SET(TES_ENTITIES

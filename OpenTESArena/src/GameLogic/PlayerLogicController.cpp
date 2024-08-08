@@ -4,6 +4,7 @@
 #include "../Assets/ArenaSoundName.h"
 #include "../Collision/ArenaSelectionUtils.h"
 #include "../Collision/Physics.h"
+#include "../Collision/RayCastTypes.h"
 #include "../Collision/SelectionUtils.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
@@ -592,7 +593,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 
-	Physics::Hit hit;
+	RayCastHit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
 		includeEntities, voxelChunkManager, entityChunkManager, collisionChunkManager,
 		EntityDefinitionLibrary::getInstance(), hit);
@@ -600,11 +601,11 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	// See if the ray hit anything.
 	if (success)
 	{
-		if (hit.getType() == Physics::HitType::Voxel)
+		if (hit.type == RayCastHitType::Voxel)
 		{
-			const ChunkInt2 chunkPos = hit.getCoord().chunk;
+			const ChunkInt2 chunkPos = hit.coord.chunk;
 			VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+			const RayCastVoxelHit &voxelHit = hit.voxelHit;
 			const VoxelInt3 &voxel = voxelHit.voxel;
 			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
@@ -616,7 +617,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			{
 				// Arbitrary max distance for selection.
 				// @todo: move to some ArenaPlayerUtils maybe
-				if (hit.getT() <= SelectionUtils::MAX_DISTANCE)
+				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
 				{
 					if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
 					{
@@ -701,9 +702,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				}
 			}
 		}
-		else if (hit.getType() == Physics::HitType::Entity)
+		else if (hit.type == RayCastHitType::Entity)
 		{
-			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
+			const RayCastEntityHit &entityHit = hit.entityHit;
 			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 			if (primaryInteraction)
@@ -746,7 +747,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 		}
 		else
 		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(hit.getType())));
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(hit.type)));
 		}
 	}
 }

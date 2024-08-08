@@ -1,12 +1,13 @@
 #ifndef MAP_LOGIC_CONTROLLER_H
 #define MAP_LOGIC_CONTROLLER_H
 
-#include "../Collision/Physics.h"
 #include "../World/Coord.h"
 
 class Game;
 class TextBox;
 class TransitionDefinition;
+
+struct RayCastHit;
 
 namespace MapLogicController
 {
@@ -18,7 +19,7 @@ namespace MapLogicController
 
 	// Handles the behavior for when the player activates a map transition block and transitions from one map
 	// to another (i.e., from an interior to an exterior). This does not handle level transitions.
-	void handleMapTransition(Game &game, const Physics::Hit &hit, const TransitionDefinition &transitionDef);
+	void handleMapTransition(Game &game, const RayCastHit &hit, const TransitionDefinition &transitionDef);
 
 	// Checks the given transition voxel to see if it's a level transition (i.e., level up/down), and changes
 	// the current level if it is.

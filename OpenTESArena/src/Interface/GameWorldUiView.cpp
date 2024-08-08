@@ -6,6 +6,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Collision/RayCastTypes.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
@@ -540,7 +541,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 
 			// Not registering entities with ray cast hits for efficiency since this debug visualization is for voxels.
 			constexpr bool includeEntities = false;
-			Physics::Hit hit;
+			RayCastHit hit;
 			const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
 				includeEntities, voxelChunkManager, entityChunkManager, collisionChunkManager,
 				EntityDefinitionLibrary::getInstance(), hit);
@@ -548,18 +549,18 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 			if (success)
 			{
 				Color color;
-				switch (hit.getType())
+				switch (hit.type)
 				{
-				case Physics::HitType::Voxel:
+				case RayCastHitType::Voxel:
 				{
 					const Color colors[] = { Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow };
-					const VoxelInt3 &voxel = hit.getVoxelHit().voxel;
+					const VoxelInt3 &voxel = hit.voxelHit.voxel;
 					const int colorsIndex = std::clamp<int>(voxel.y, 0, std::size(colors) - 1);
 					DebugAssertIndex(colors, colorsIndex);
 					color = colors[colorsIndex];
 					break;
 				}
-				case Physics::HitType::Entity:
+				case RayCastHitType::Entity:
 				{
 					color = Color::Yellow;
 					break;
@@ -601,32 +602,31 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
 	constexpr bool includeEntities = true;
-	Physics::Hit hit;
+	RayCastHit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection, includeEntities,
 		voxelChunkManager, entityChunkManager, collisionChunkManager, entityDefLibrary, hit);
 
 	std::string text;
 	if (success)
 	{
-		switch (hit.getType())
+		switch (hit.type)
 		{
-		case Physics::HitType::Voxel:
+		case RayCastHitType::Voxel:
 		{
-			const ChunkInt2 chunkPos = hit.getCoord().chunk;
+			const ChunkInt2 chunkPos = hit.coord.chunk;
 			const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
-			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+			const RayCastVoxelHit &voxelHit = hit.voxelHit;
 			const VoxelInt3 &voxel = voxelHit.voxel;
 			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
 
-			text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelTraitsDef.type)) +
-				' ' + std::to_string(hit.getT());
+			text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelTraitsDef.type)) + ' ' + std::to_string(hit.t);
 			break;
 		}
-		case Physics::HitType::Entity:
+		case RayCastHitType::Entity:
 		{
-			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
+			const RayCastEntityHit &entityHit = hit.entityHit;
 			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
@@ -645,7 +645,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 				text = "Entity " + std::to_string(entityHit.id);
 			}
 
-			text.append(' ' + std::to_string(hit.getT()));
+			text.append(' ' + std::to_string(hit.t));
 			break;
 		}
 		default:
