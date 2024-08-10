@@ -136,20 +136,38 @@ cd ..
 
 ## Building OpenTESArena from source
 
-### Dependencies
+#### Install third-party tools and libraries
 - [CMake](https://cmake.org/download/)
 - [OpenAL Soft 1.19.1](https://openal-soft.org/#download)
 - [SDL 2.0.10](https://github.com/libsdl-org/SDL/releases)
 - [WildMIDI 0.4.4](https://github.com/Mindwerks/wildmidi/releases) (required for music)
-
-Example Unix terminal commands on a fresh machine:
 ```bash
 sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libwildmidi-dev
 ```
 
-### Building OpenTESArena
+#### Download source code
+```bash
+git clone https://github.com/afritz1/OpenTESArena
+cd OpenTESArena
+```
+
+#### Download Jolt Physics submodule source code
+```bash
+git submodule init
+git submodule update
+```
+
+#### Build Jolt Physics
+_todo: detect which .bat/.sh file to run based on CMake project type (MSVC, etc.)_
+- Navigate to `external/JoltPhysics/Build/`
+- Run the script for your platform to generate the project file (Visual Studio .sln, Makefile, etc.).
+  - Windows: `cmake_vs2022_cl.bat`
+  - Linux/macOS: `./cmake_linux_clang_gcc.sh Release g++ -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF`
+- Open or run the project file in Release config and build the static library
+
+#### Build OpenTESArena
 - Navigate to the root of the repository
-- Use CMake to generate your project file (Visual Studio .sln, Unix Makefile, etc.). In a Unix terminal, the commands might look like:
+- Use CMake to generate your project file. In a Unix terminal, the commands might look like:
     ```bash
     mkdir build
     cd build
