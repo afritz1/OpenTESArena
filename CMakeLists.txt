@@ -1,10 +1,12 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.16.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.18.0 FATAL_ERROR)
 
 IF (COMMAND cmake_policy)
-    cmake_policy(SET CMP0003 NEW)
+    cmake_policy(SET CMP0003 NEW) # Relative linker paths for more portability
 ENDIF (COMMAND cmake_policy)
 
 PROJECT(OpenTESArena)
+
+include(FetchContent)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -62,6 +64,14 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
 ENDIF ()
+
+# Include Jolt
+FetchContent_Declare(
+    JoltPhysics
+    GIT_REPOSITORY "https://github.com/jrouwe/JoltPhysics"
+    GIT_TAG cede24d2733a4a473c6d486650ca9b6d0481681a # 5.1.0
+    SOURCE_SUBDIR "Build")
+FetchContent_MakeAvailable(JoltPhysics)
 
 ADD_SUBDIRECTORY(components)
 ADD_SUBDIRECTORY(OpenTESArena)
