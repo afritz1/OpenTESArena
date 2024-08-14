@@ -152,20 +152,6 @@ git clone https://github.com/afritz1/OpenTESArena
 cd OpenTESArena
 ```
 
-#### Download Jolt Physics submodule source code
-```bash
-git submodule init
-git submodule update
-```
-
-#### Build Jolt Physics
-_todo: detect which .bat/.sh file to run based on CMake project type (MSVC, etc.)_
-- Navigate to `external/JoltPhysics/Build/`
-- Run the script for your platform to generate the project file (Visual Studio .sln, Makefile, etc.).
-  - Windows: `cmake_vs2022_cl.bat`
-  - Linux/macOS: `./cmake_linux_clang_gcc.sh Release g++ -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF`
-- Open or run the project file in Release config and build the static library
-
 #### Build OpenTESArena
 - Navigate to the root of the repository
 - Use CMake to generate your project file. In a Unix terminal, the commands might look like:
@@ -178,7 +164,7 @@ _todo: detect which .bat/.sh file to run based on CMake project type (MSVC, etc.
     where `CMAKE_BUILD_TYPE` is one of `Debug`|`ReleaseGenericNoLTO`|`ReleaseGeneric`|`ReleaseNative`
   - For maximum compatibility, use `ReleaseGeneric`
   - For maximum speed only compatible with your specific CPU, use `ReleaseNative`
-- Other parameters for CMake may be necessary depending on the IDE you are using
+- **Note**: by default, Jolt Physics enables vector instructions (SSE, AVX, etc.) which will cause runtime errors if your CPU doesn't support them. You can set these to `OFF` in CMake ([more information](https://github.com/jrouwe/JoltPhysics/blob/20eedf47c4bf064e740c9de2f638a8c1d57ce2ed/Build/README.md#illegal-instruction-error)).
 
 ### Running OpenTESArena
 - Copy the `data` and `options` folders from the project's root folder to the same directory as the game executable (this should be fixed in the future with a post-build command)
