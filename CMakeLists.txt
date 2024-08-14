@@ -29,6 +29,9 @@ SET(CMAKE_EXE_LINKER_FLAGS_RELEASENATIVE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 
 # Compiler settings (optimizations, debugging, etc.)
 IF (MSVC)
+    # Statically link runtime lib via /MT or /MTd.
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
     # Multi-processor compilation.
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
