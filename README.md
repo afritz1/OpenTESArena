@@ -137,6 +137,7 @@ cd ..
 ## Building OpenTESArena from source
 
 #### Install third-party tools and libraries
+- [Git](https://git-scm.com/downloads)
 - [CMake](https://cmake.org/download/)
 - [OpenAL Soft 1.19.1](https://openal-soft.org/#download)
 - [SDL 2.0.10](https://github.com/libsdl-org/SDL/releases)
