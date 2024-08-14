@@ -48,14 +48,14 @@ Controls:
 1. Open `ARENA` folder then highlight the current directory path and copy with Ctrl+C
 1. Back in the OpenTESArena release folder, open `options/options-default.txt` and paste the game directory after `ArenaPaths=`
    - Example: `ArenaPaths=C:\Program Files (x86)\Steam\steamapps\common\The Elder Scrolls Arena\ARENA`
-  
-#### Run `otesa.exe`
 
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip)
 1. Extract the `.zip`
 1. Move the extracted `eawpats` folder inside the OpenTESArena `data` folder
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
+  
+#### Run `otesa.exe`
 
 #### Common issues
 - Missing MSVCP141.dll error
@@ -92,17 +92,17 @@ unzip ../../Arena106Setup.zip
 rar x Arena106.exe
 ```
 
-#### Run OpenTESArena
-```bash
-cd ..
-./run.sh
-```
-
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
 1. Extract the `.tar.gz`
 1. Move the extracted `eawpats` folder inside the OpenTESArena `data` folder
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
+
+#### Run OpenTESArena
+```bash
+cd ..
+./run.sh
+```
 
 </details>
 
