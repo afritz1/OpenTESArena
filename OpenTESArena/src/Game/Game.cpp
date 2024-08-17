@@ -7,6 +7,12 @@
 #include <string>
 #include <thread>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Core/Factory.h"
+#include "Jolt/Core/JobSystemThreadPool.h"
+#include "Jolt/Core/TempAllocator.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+#include "Jolt/RegisterTypes.h"
 #include "SDL.h"
 
 #include "Game.h"
@@ -18,6 +24,10 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Collision/Physics.h"
+#include "../Collision/PhysicsBodyActivationListener.h"
+#include "../Collision/PhysicsContactListener.h"
+#include "../Collision/PhysicsLayer.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../GameLogic/PlayerLogicController.h"
@@ -204,6 +214,13 @@ Game::~Game()
 	this->sceneManager.renderLightChunkManager.shutdown(this->renderer);
 	this->sceneManager.renderSkyManager.shutdown(this->renderer);
 	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
+
+	JPH::UnregisterTypes();
+	if (JPH::Factory::sInstance != nullptr)
+	{
+		delete JPH::Factory::sInstance;
+		JPH::Factory::sInstance = nullptr;
+	}
 }
 
 bool Game::init()
@@ -347,6 +364,11 @@ bool Game::init()
 		DebugLogError("Couldn't init render weather manager.");
 		return false;
 	}
+
+	// Jolt Physics init.
+	JPH::RegisterDefaultAllocator();
+	JPH::Factory::sInstance = new JPH::Factory();
+	JPH::RegisterTypes();
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";
@@ -783,6 +805,21 @@ void Game::renderDebugInfo()
 
 void Game::loop()
 {
+	// Set up physics system values.
+	JPH::TempAllocatorImpl physicsAllocator(Physics::TempAllocatorByteCount);
+	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
+	PhysicsBroadPhaseLayerInterface physicsBroadPhaseLayerInterface;
+	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
+	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
+	
+	JPH::PhysicsSystem physicsSystem;
+	physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
+
+	PhysicsBodyActivationListener physicsBodyActivationListener;
+	PhysicsContactListener physicsContactListener;
+	physicsSystem.SetBodyActivationListener(&physicsBodyActivationListener);
+	physicsSystem.SetContactListener(&physicsContactListener);
+
 	// Initialize panel and music to default (bootstrapping the first game frame).
 	this->panel = IntroUiModel::makeStartupPanel(*this);
 
@@ -857,6 +894,8 @@ void Game::loop()
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
 				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
+
+				JPH::BodyInterface &physicsBodyInterface = physicsSystem.GetBodyInterface(); // @todo: use non-locking version
 
 				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
 				// It shouldn't be abstracted into a game state.
@@ -986,6 +1025,8 @@ void Game::loop()
 			DebugCrash("Clean-up exception: " + std::string(e.what()));
 		}
 	}
+
+	// @todo: free/destroy PhysicsSystem bodies?
 
 	// At this point, the engine has received an exit signal and is now quitting peacefully.
 	this->options.saveChanges();

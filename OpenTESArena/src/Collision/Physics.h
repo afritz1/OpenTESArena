@@ -14,6 +14,14 @@ struct RayCastHit;
 
 namespace Physics
 {
+	// Jolt init values.
+	constexpr int TempAllocatorByteCount = 10 * 1024 * 1024; // 10MB
+	constexpr int ThreadCount = 1;
+	constexpr int MaxBodies = 65536;
+	constexpr int BodyMutexCount = 0; // Use default settings.
+	constexpr int MaxBodyPairs = 65536;
+	constexpr int MaxContactConstraints = 16384;
+
 	// @todo: bit mask elements for each voxel type.
 
 	// Casts a ray through the world and writes any intersection data into the output parameter. Returns true

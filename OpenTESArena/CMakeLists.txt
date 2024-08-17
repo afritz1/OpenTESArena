@@ -119,6 +119,12 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/CollisionMeshDefinition.h"
     "${SRC_ROOT}/Collision/Physics.cpp"
     "${SRC_ROOT}/Collision/Physics.h"
+    "${SRC_ROOT}/Collision/PhysicsBodyActivationListener.cpp"
+    "${SRC_ROOT}/Collision/PhysicsBodyActivationListener.h"
+    "${SRC_ROOT}/Collision/PhysicsContactListener.cpp"
+    "${SRC_ROOT}/Collision/PhysicsContactListener.h"
+    "${SRC_ROOT}/Collision/PhysicsLayer.cpp"
+    "${SRC_ROOT}/Collision/PhysicsLayer.h"
     "${SRC_ROOT}/Collision/RayCastTypes.cpp"
     "${SRC_ROOT}/Collision/RayCastTypes.h"
     "${SRC_ROOT}/Collision/SelectionUtils.h")
