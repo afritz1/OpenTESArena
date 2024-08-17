@@ -21,6 +21,7 @@ namespace Physics
 	constexpr int BodyMutexCount = 0; // Use default settings.
 	constexpr int MaxBodyPairs = 65536;
 	constexpr int MaxContactConstraints = 16384;
+	constexpr double DeltaTime = 1.0 / 60.0; // Determines # of steps to run inside PhysicsSystem::update().
 
 	// @todo: bit mask elements for each voxel type.
 

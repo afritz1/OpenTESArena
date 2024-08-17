@@ -68,6 +68,17 @@ namespace
 		std::chrono::nanoseconds sleepBias; // Thread sleeping takes longer than it should on some platforms.
 		double deltaTime; // Difference between frame times in seconds.
 		double clampedDeltaTime; // For game logic calculations that become imprecise or break at low FPS.
+		int physicsSteps; // 1 unless the engine has to do more steps this frame to keep numeric accuracy.
+
+		FrameTimer()
+		{
+			this->maximumTime = std::chrono::nanoseconds(0);
+			this->minimumTime = std::chrono::nanoseconds(0);
+			this->sleepBias = std::chrono::nanoseconds(0);
+			this->deltaTime = 0.0;
+			this->clampedDeltaTime = 0.0;
+			this->physicsSteps = 0;
+		}
 
 		void init()
 		{
@@ -101,6 +112,7 @@ namespace
 			constexpr double timeUnitsReal = static_cast<double>(std::nano::den);
 			this->deltaTime = static_cast<double>(previousFrameDuration.count()) / timeUnitsReal;
 			this->clampedDeltaTime = std::fmin(previousFrameDuration.count(), this->maximumTime.count()) / timeUnitsReal;
+			this->physicsSteps = static_cast<int>(std::ceil(this->clampedDeltaTime / Physics::DeltaTime));
 		}
 	};
 
@@ -895,8 +907,6 @@ void Game::loop()
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
 				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
 
-				JPH::BodyInterface &physicsBodyInterface = physicsSystem.GetBodyInterface(); // @todo: use non-locking version
-
 				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
 				// It shouldn't be abstracted into a game state.
 				// - it should be like "do we need to clear the scene? yes/no. update the scene immediately? yes/no"
@@ -910,7 +920,9 @@ void Game::loop()
 				this->gameState.tickPlayer(clampedDeltaTime, *this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickEntities(clampedDeltaTime, *this);
+
 				this->gameState.tickCollision(clampedDeltaTime, *this);
+				physicsSystem.Update(clampedDeltaTime, frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
 
 				const CoordDouble3 newPlayerCoord = this->player.getPosition();
 				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, this->player.getDirection(),
