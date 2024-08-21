@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+
 #include "Clock.h"
 #include "Date.h"
 #include "../Assets/ArenaTypes.h"
@@ -195,7 +198,7 @@ public:
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
-	void applyPendingSceneChange(Game &game, double dt);
+	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);
 
 	// Ticks the game clock (for the current time of day and date).
 	void tickGameClock(double dt, Game &game);
@@ -206,7 +209,7 @@ public:
 	void tickPlayer(double dt, Game &game);
 	void tickVoxels(double dt, Game &game);
 	void tickEntities(double dt, Game &game);
-	void tickCollision(double dt, Game &game);
+	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(const RenderCamera &renderCamera, Game &game);
 };

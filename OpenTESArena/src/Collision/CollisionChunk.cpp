@@ -2,6 +2,11 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	static const JPH::BodyID INVALID_PHYSICS_BODY_ID;
+}
+
 void CollisionChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
@@ -15,6 +20,37 @@ void CollisionChunk::init(const ChunkInt2 &position, int height)
 
 	this->enabledColliders.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->enabledColliders.fill(false);
+
+	this->physicsBodyIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->physicsBodyIDs.fill(INVALID_PHYSICS_BODY_ID);
+}
+
+void CollisionChunk::freePhysicsBodyID(SNInt x, int y, WEInt z, JPH::BodyInterface &bodyInterface)
+{
+	JPH::BodyID &bodyID = this->physicsBodyIDs.get(x, y, z);
+	if (bodyID.IsInvalid())
+	{
+		DebugLogWarning("Can't free invalid physics body ID at (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + this->getPosition().toString() + ").");
+		return;
+	}
+
+	bodyInterface.RemoveBody(bodyID);
+	bodyInterface.DestroyBody(bodyID);
+	bodyID = INVALID_PHYSICS_BODY_ID;
+}
+
+void CollisionChunk::freePhysicsBodyIDs(JPH::BodyInterface &bodyInterface)
+{
+	for (WEInt z = 0; z < this->physicsBodyIDs.getDepth(); z++)
+	{
+		for (int y = 0; y < this->physicsBodyIDs.getHeight(); y++)
+		{
+			for (SNInt x = 0; x < this->physicsBodyIDs.getWidth(); x++)
+			{
+				this->freePhysicsBodyID(x, y, z, bodyInterface);
+			}
+		}
+	}
 }
 
 void CollisionChunk::clear()
@@ -24,6 +60,7 @@ void CollisionChunk::clear()
 	this->meshMappings.clear();
 	this->meshDefIDs.clear();
 	this->enabledColliders.clear();
+	this->physicsBodyIDs.clear();
 }
 
 int CollisionChunk::getCollisionMeshDefCount() const

@@ -519,7 +519,7 @@ void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 	}
 }
 
-void GameState::applyPendingSceneChange(Game &game, double dt)
+void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt)
 {
 	Player &player = game.getPlayer();
 
@@ -664,7 +664,7 @@ void GameState::applyPendingSceneChange(Game &game, double dt)
 
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
-	this->tickCollision(0.0, game);
+	this->tickCollision(0.0, physicsSystem, game);
 	this->tickSky(0.0, game);
 	this->tickVisibility(renderCamera, game);
 	this->tickRendering(renderCamera, game);
@@ -907,15 +907,16 @@ void GameState::tickEntities(double dt, Game &game)
 		game.getTextureManager(), game.getRenderer());
 }
 
-void GameState::tickCollision(double dt, Game &game)
+void GameState::tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game)
 {
 	SceneManager &sceneManager = game.getSceneManager();
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const double ceilingScale = this->getActiveCeilingScale();
 
 	CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 	collisionChunkManager.update(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
-		chunkManager.getFreedChunkPositions(), voxelChunkManager);
+		chunkManager.getFreedChunkPositions(), ceilingScale, voxelChunkManager, physicsSystem);
 }
 
 void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)

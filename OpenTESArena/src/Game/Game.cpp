@@ -921,7 +921,7 @@ void Game::loop()
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickEntities(clampedDeltaTime, *this);
 
-				this->gameState.tickCollision(clampedDeltaTime, *this);
+				this->gameState.tickCollision(clampedDeltaTime, physicsSystem, *this);
 				physicsSystem.Update(clampedDeltaTime, frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
 
 				const CoordDouble3 newPlayerCoord = this->player.getPosition();
@@ -951,7 +951,7 @@ void Game::loop()
 		{
 			if (this->gameState.hasPendingSceneChange())
 			{
-				this->gameState.applyPendingSceneChange(*this, clampedDeltaTime);
+				this->gameState.applyPendingSceneChange(*this, physicsSystem, clampedDeltaTime);
 			}
 		}
 		catch (const std::exception &e)
