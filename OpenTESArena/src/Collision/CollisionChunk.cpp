@@ -28,15 +28,12 @@ void CollisionChunk::init(const ChunkInt2 &position, int height)
 void CollisionChunk::freePhysicsBodyID(SNInt x, int y, WEInt z, JPH::BodyInterface &bodyInterface)
 {
 	JPH::BodyID &bodyID = this->physicsBodyIDs.get(x, y, z);
-	if (bodyID.IsInvalid())
+	if (!bodyID.IsInvalid())
 	{
-		DebugLogWarning("Can't free invalid physics body ID at (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + this->getPosition().toString() + ").");
-		return;
+		bodyInterface.RemoveBody(bodyID);
+		bodyInterface.DestroyBody(bodyID);
+		bodyID = INVALID_PHYSICS_BODY_ID;
 	}
-
-	bodyInterface.RemoveBody(bodyID);
-	bodyInterface.DestroyBody(bodyID);
-	bodyID = INVALID_PHYSICS_BODY_ID;
 }
 
 void CollisionChunk::freePhysicsBodyIDs(JPH::BodyInterface &bodyInterface)

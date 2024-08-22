@@ -6,16 +6,54 @@
 #include "PhysicsLayer.h"
 #include "../Voxels/VoxelChunkManager.h"
 
+namespace
+{
+	bool TryCreatePhysicsCollider(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, double ceilingScale, JPH::BodyInterface &bodyInterface, JPH::BodyID *outBodyID)
+	{
+		// @todo: modify the body based on voxelTraitsDef.type (raised platform, diagonals, edges, etc.)
+
+		const double halfCeilingScale = ceilingScale / 2.0;
+		JPH::BoxShapeSettings boxShapeSettings(JPH::Vec3(0.50f, static_cast<float>(halfCeilingScale), 0.50f));
+		boxShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
+		// @todo: make sure this ^ isn't leaking when we remove/destroy the body
+
+		JPH::ShapeSettings::ShapeResult boxShapeResult = boxShapeSettings.Create();
+		if (boxShapeResult.HasError())
+		{
+			DebugLogError("Couldn't create Jolt box collider settings: " + std::string(boxShapeResult.GetError().c_str()));
+			return false;
+		}
+
+		JPH::ShapeRefC boxShape = boxShapeResult.Get();
+		const WorldInt3 boxWorldVoxelPos = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt3(x, y, z));
+		const JPH::RVec3 boxJoltPos(
+			static_cast<float>(boxWorldVoxelPos.x),
+			static_cast<float>(static_cast<double>(boxWorldVoxelPos.y) * ceilingScale),
+			static_cast<float>(boxWorldVoxelPos.z));
+		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, JPH::Quat::sIdentity(), JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
+		const JPH::Body *box = bodyInterface.CreateBody(boxSettings);
+		if (box == nullptr)
+		{
+			DebugLogError("Couldn't create Jolt body at (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + chunkPos.toString() + ").");
+			return false;
+		}
+
+		const JPH::BodyID &boxBodyID = box->GetID();
+		bodyInterface.AddBody(boxBodyID, JPH::EActivation::Activate);
+		*outBodyID = boxBodyID;
+		return true;
+	}
+}
+
 void CollisionChunkManager::populateChunk(int index, double ceilingScale, const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem)
 {
 	const int chunkHeight = voxelChunk.getHeight();
 	CollisionChunk &collisionChunk = this->getChunkAtIndex(index);
 	collisionChunk.init(chunkPos, chunkHeight);
 
-	const double halfCeilingScale = ceilingScale / 2.0;
-
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
+	// @todo: Jolt recommends AddBodiesPrepare and AddBodiesFinalize for bulk situations like this
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunkHeight; y++)
@@ -34,44 +72,22 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 				
 				if (voxelHasCollision)
 				{
-					// Generate box collider
-					// @todo: modify the body based on voxelTraitsDef.type (raised platform, diagonals, edges, etc.)
-
-					JPH::BoxShapeSettings boxShapeSettings(JPH::Vec3(0.50f, static_cast<float>(halfCeilingScale), 0.50f));
-					boxShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
-					// @todo: make sure this ^ isn't leaking when we remove/destroy the body
-
-					JPH::ShapeSettings::ShapeResult boxShapeResult = boxShapeSettings.Create();
-					if (boxShapeResult.HasError())
+					// Generate box collider and add to the simulation.
+					JPH::BodyID bodyID;
+					if (TryCreatePhysicsCollider(x, y, z, chunkPos, ceilingScale, bodyInterface, &bodyID))
 					{
-						DebugLogError("Couldn't create box collider settings: " + std::string(boxShapeResult.GetError().c_str()));
-						continue;
+						collisionChunk.physicsBodyIDs.set(x, y, z, bodyID);
 					}
-
-					JPH::ShapeRefC boxShape = boxShapeResult.Get();
-					const WorldInt3 boxWorldVoxelPos = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt3(x, y, z));
-					const JPH::RVec3 boxJoltPos(
-						static_cast<float>(boxWorldVoxelPos.x),
-						static_cast<float>(static_cast<double>(boxWorldVoxelPos.y) * ceilingScale),
-						static_cast<float>(boxWorldVoxelPos.z));
-					JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, JPH::Quat::sIdentity(), JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
-					JPH::Body *box = bodyInterface.CreateBody(boxSettings);
-					if (box == nullptr)
-					{
-						DebugLogError("Couldn't create box collider, no more Jolt memory? At (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + chunkPos.toString() + ").");
-						continue;
-					}
-
-					bodyInterface.AddBody(box->GetID(), JPH::EActivation::DontActivate);
 				}
 			}
 		}
 	}
 }
 
-void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem)
+void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double ceilingScale, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem)
 {
 	CollisionChunk &collisionChunk = this->getChunkAtPosition(chunkPos);
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
 	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyMeshDefPositions())
 	{
@@ -81,10 +97,24 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, const V
 
 		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxelPos.x, voxelPos.y, voxelPos.z);
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, voxelTraitsDef.hasCollision());
+		const bool voxelHasCollision = voxelTraitsDef.hasCollision();
+		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, voxelHasCollision);
 
-		// @todo: create/destroy Jolt bodies as needed
-		DebugNotImplemented();
+		JPH::BodyID existingBodyID = collisionChunk.physicsBodyIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
+		if (!existingBodyID.IsInvalid())
+		{
+			collisionChunk.freePhysicsBodyID(voxelPos.x, voxelPos.y, voxelPos.z, bodyInterface);
+		}
+
+		if (voxelHasCollision)
+		{
+			// Generate box collider and add to the simulation.
+			JPH::BodyID bodyID;
+			if (TryCreatePhysicsCollider(voxelPos.x, voxelPos.y, voxelPos.z, chunkPos, ceilingScale, bodyInterface, &bodyID))
+			{
+				collisionChunk.physicsBodyIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, bodyID);
+			}
+		}
 	}
 
 	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyDoorAnimInstPositions())
@@ -98,8 +128,17 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, const V
 		const bool shouldEnableDoorCollider = doorAnimInst.stateType == VoxelDoorAnimationInstance::StateType::Closed;
 		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, shouldEnableDoorCollider);
 
-		// @todo: don't have to create/destroy door colliders, just add/remove from simulation
-		DebugNotImplemented();
+		const JPH::BodyID &bodyID = collisionChunk.physicsBodyIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
+		DebugAssertMsg(!bodyID.IsInvalid(), "Expected valid Jolt body for door voxel at (" + voxelPos.toString() + ") in chunk (" + chunkPos.toString() + ").");
+
+		if (shouldEnableDoorCollider)
+		{
+			bodyInterface.ActivateBody(bodyID);
+		}
+		else
+		{
+			bodyInterface.DeactivateBody(bodyID);
+		}
 	}
 }
 
@@ -127,7 +166,7 @@ void CollisionChunkManager::update(double dt, BufferView<const ChunkInt2> active
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		this->updateDirtyVoxels(chunkPos, voxelChunk, physicsSystem);
+		this->updateDirtyVoxels(chunkPos, ceilingScale, voxelChunk, physicsSystem);
 	}
 
 	this->chunkPool.clear();
