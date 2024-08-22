@@ -50,6 +50,8 @@ bool VoxelTraitsDefinition::hasCollision() const
 {
 	switch (this->type)
 	{
+	case ArenaTypes::VoxelType::None:
+		return false;
 	case ArenaTypes::VoxelType::TransparentWall:
 		return this->transparentWall.collider;
 	case ArenaTypes::VoxelType::Edge:
