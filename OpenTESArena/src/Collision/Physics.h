@@ -15,9 +15,9 @@ struct RayCastHit;
 namespace Physics
 {
 	// Jolt init values.
-	constexpr int TempAllocatorByteCount = 10 * 1024 * 1024; // 10MB
+	constexpr int TempAllocatorByteCount = 20 * 1024 * 1024; // 20MB
 	constexpr int ThreadCount = 1;
-	constexpr int MaxBodies = 65536;
+	constexpr int MaxBodies = 250000;
 	constexpr int BodyMutexCount = 0; // Use default settings.
 	constexpr int MaxBodyPairs = 65536;
 	constexpr int MaxContactConstraints = 16384;
