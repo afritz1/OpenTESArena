@@ -1,6 +1,9 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/Body/BodyID.h"
+
 #include "../Entities/EntityInstance.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
@@ -22,6 +25,8 @@ namespace Physics
 	constexpr int MaxBodyPairs = 65536;
 	constexpr int MaxContactConstraints = 16384;
 	constexpr double DeltaTime = 1.0 / 60.0; // Determines # of steps to run inside PhysicsSystem::update().
+
+	const JPH::BodyID INVALID_BODY_ID;
 
 	// @todo: bit mask elements for each voxel type.
 

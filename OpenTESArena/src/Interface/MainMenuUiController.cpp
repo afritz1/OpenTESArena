@@ -128,7 +128,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	gameState.init(game.getArenaRandom());
 
 	Player &player = game.getPlayer();
-	player.initRandom(CharacterClassLibrary::getInstance(), binaryAssetLibrary.getExeData(), game.getRandom());
+	player.initRandom(CharacterClassLibrary::getInstance(), binaryAssetLibrary.getExeData(), game.getPhysicsSystem(), game.getRandom());
 
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();

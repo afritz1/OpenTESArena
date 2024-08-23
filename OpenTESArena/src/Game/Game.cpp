@@ -480,6 +480,11 @@ TextureManager &Game::getTextureManager()
 	return this->textureManager;
 }
 
+JPH::PhysicsSystem &Game::getPhysicsSystem()
+{
+	return this->physicsSystem;
+}
+
 Random &Game::getRandom()
 {
 	return this->random;
@@ -824,13 +829,12 @@ void Game::loop()
 	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
 	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
 	
-	JPH::PhysicsSystem physicsSystem;
-	physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
+	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
 
 	PhysicsBodyActivationListener physicsBodyActivationListener;
 	PhysicsContactListener physicsContactListener;
-	physicsSystem.SetBodyActivationListener(&physicsBodyActivationListener);
-	physicsSystem.SetContactListener(&physicsContactListener);
+	this->physicsSystem.SetBodyActivationListener(&physicsBodyActivationListener);
+	this->physicsSystem.SetContactListener(&physicsContactListener);
 
 	// Initialize panel and music to default (bootstrapping the first game frame).
 	this->panel = IntroUiModel::makeStartupPanel(*this);
@@ -921,8 +925,8 @@ void Game::loop()
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickEntities(clampedDeltaTime, *this);
 
-				this->gameState.tickCollision(clampedDeltaTime, physicsSystem, *this);
-				physicsSystem.Update(clampedDeltaTime, frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
+				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);
+				this->physicsSystem.Update(clampedDeltaTime, frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
 
 				const CoordDouble3 newPlayerCoord = this->player.getPosition();
 				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, this->player.getDirection(),
@@ -951,7 +955,7 @@ void Game::loop()
 		{
 			if (this->gameState.hasPendingSceneChange())
 			{
-				this->gameState.applyPendingSceneChange(*this, physicsSystem, clampedDeltaTime);
+				this->gameState.applyPendingSceneChange(*this, this->physicsSystem, clampedDeltaTime);
 			}
 		}
 		catch (const std::exception &e)
@@ -1037,8 +1041,6 @@ void Game::loop()
 			DebugCrash("Clean-up exception: " + std::string(e.what()));
 		}
 	}
-
-	// @todo: free/destroy PhysicsSystem bodies?
 
 	// At this point, the engine has received an exit signal and is now quitting peacefully.
 	this->options.saveChanges();

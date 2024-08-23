@@ -1,6 +1,10 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/Body/BodyID.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+
 #include "Camera3D.h"
 #include "PrimaryAttributeSet.h"
 #include "WeaponAnimation.h"
@@ -31,6 +35,7 @@ private:
 	WeaponAnimation weaponAnimation;
 	PrimaryAttributeSet attributes;
 	// Other stats...
+	JPH::BodyID physicsBodyID;
 
 	// Gets the Y position of the player's feet.
 	double getFeetY() const;
@@ -46,15 +51,15 @@ public:
 	// Make player with rolled attributes based on race & gender.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
-		double maxWalkSpeed, int weaponID, const ExeData &exeData, Random &random);
+		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
 
 	// Make player with given attributes.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
-		double maxWalkSpeed, int weaponID, const ExeData &exeData);
+		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
 	// Initializes a random player for testing.
-	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, Random &random);
+	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
 
 	// Distance from player's feet to head.
 	static constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
@@ -89,6 +94,8 @@ public:
 	// Gets the player's weapon animation for displaying on-screen.
 	WeaponAnimation &getWeaponAnimation();
 	const WeaponAnimation &getWeaponAnimation() const;
+
+	JPH::BodyID getPhysicsBodyID() const;
 
 	// Returns whether the player is standing on ground and with no Y velocity.
 	bool onGround(const CollisionChunkManager &collisionChunkManager) const;

@@ -1,11 +1,7 @@
 #include "CollisionChunk.h"
+#include "Physics.h"
 
 #include "components/debug/Debug.h"
-
-namespace
-{
-	static const JPH::BodyID INVALID_PHYSICS_BODY_ID;
-}
 
 void CollisionChunk::init(const ChunkInt2 &position, int height)
 {
@@ -22,7 +18,7 @@ void CollisionChunk::init(const ChunkInt2 &position, int height)
 	this->enabledColliders.fill(false);
 
 	this->physicsBodyIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->physicsBodyIDs.fill(INVALID_PHYSICS_BODY_ID);
+	this->physicsBodyIDs.fill(Physics::INVALID_BODY_ID);
 }
 
 void CollisionChunk::freePhysicsBodyID(SNInt x, int y, WEInt z, JPH::BodyInterface &bodyInterface)
@@ -32,7 +28,7 @@ void CollisionChunk::freePhysicsBodyID(SNInt x, int y, WEInt z, JPH::BodyInterfa
 	{
 		bodyInterface.RemoveBody(bodyID);
 		bodyInterface.DestroyBody(bodyID);
-		bodyID = INVALID_PHYSICS_BODY_ID;
+		bodyID = Physics::INVALID_BODY_ID;
 	}
 }
 

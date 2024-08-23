@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+
 #include "CharacterCreationState.h"
 #include "GameState.h"
 #include "Options.h"
@@ -51,6 +54,7 @@ private:
 	Options options;
 	Renderer renderer;
 	TextureManager textureManager;
+	JPH::PhysicsSystem physicsSystem;
 
 	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
 	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).
@@ -151,6 +155,9 @@ public:
 
 	// Gets the texture manager object for loading images from file.
 	TextureManager &getTextureManager();
+
+	// Gets the Jolt physics system for the scene.
+	JPH::PhysicsSystem &getPhysicsSystem();
 
 	// Gets the global RNG initialized at program start.
 	Random &getRandom();

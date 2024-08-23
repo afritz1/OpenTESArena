@@ -8,6 +8,7 @@
 #include "PrimaryAttributeName.h"
 #include "../Collision/CollisionChunk.h"
 #include "../Collision/CollisionChunkManager.h"
+#include "../Collision/Physics.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
@@ -30,9 +31,12 @@ namespace // @todo: could be in a PlayerUtils instead
 
 	// Friction for slowing the player down on ground.
 	constexpr double FRICTION = 3.0;
+
+	// @todo: TryCreatePhysicsBody()... capsule, disabled by default?
 }
 
 Player::Player()
+	: physicsBodyID(Physics::INVALID_BODY_ID)
 {
 	this->male = false;
 	this->raceID = -1;
@@ -45,7 +49,7 @@ Player::Player()
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
-	double maxWalkSpeed, int weaponID, const ExeData &exeData, Random &random)
+	double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
 {
 	this->displayName = displayName;
 	this->male = male;
@@ -58,11 +62,12 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->friction = FRICTION;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
+	// @todo: create body
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 	PrimaryAttributeSet &&attributes, int portraitID, const CoordDouble3 &position, const Double3 &direction,
-	const Double3 &velocity, double maxWalkSpeed, int weaponID, const ExeData &exeData)
+	const Double3 &velocity, double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->male = male;
@@ -75,9 +80,10 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->friction = FRICTION;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
+	// @todo: create body
 }
 
-void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, Random &random)
+void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
 {
 	this->displayName = "Player";
 	this->male = random.next(2) == 0;
@@ -112,6 +118,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(this->raceID, this->male, random);
+	// @todo: create body
 }
 
 const CoordDouble3 &Player::getPosition() const
@@ -189,6 +196,11 @@ WeaponAnimation &Player::getWeaponAnimation()
 const WeaponAnimation &Player::getWeaponAnimation() const
 {
 	return this->weaponAnimation;
+}
+
+JPH::BodyID Player::getPhysicsBodyID() const
+{
+	return this->physicsBodyID;
 }
 
 double Player::getFeetY() const
