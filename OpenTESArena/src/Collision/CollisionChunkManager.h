@@ -23,6 +23,8 @@ public:
 	void update(double dt, BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		BufferView<const ChunkInt2> freedChunkPositions, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		JPH::PhysicsSystem &physicsSystem);
+
+	void clear(JPH::PhysicsSystem &physicsSystem);
 };
 
 #endif

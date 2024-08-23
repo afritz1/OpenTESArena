@@ -469,11 +469,6 @@ void RenderLightChunkManager::cleanUp()
 
 void RenderLightChunkManager::unloadScene(Renderer &renderer)
 {
-	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
-	{
-		this->recycleChunk(i);
-	}
-
 	for (auto &pair : this->entityLights)
 	{
 		Light &light = pair.second;
@@ -485,4 +480,5 @@ void RenderLightChunkManager::unloadScene(Renderer &renderer)
 	}
 
 	this->entityLights.clear();
+	this->recycleAllChunks();
 }
