@@ -2,6 +2,11 @@
 #include <cmath>
 #include <vector>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/Body/Body.h"
+#include "Jolt/Physics/Body/BodyCreationSettings.h"
+#include "Jolt/Physics/Collision/Shape/CapsuleShape.h" // @todo: probably will use CharacterVirtual eventually
+
 #include "CharacterClassDefinition.h"
 #include "CharacterClassLibrary.h"
 #include "Player.h"
@@ -9,6 +14,7 @@
 #include "../Collision/CollisionChunk.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Collision/Physics.h"
+#include "../Collision/PhysicsLayer.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
@@ -23,16 +29,57 @@
 
 namespace // @todo: could be in a PlayerUtils instead
 {
+	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
 	constexpr double STEPPING_HEIGHT = 0.25; // Allowed change in height for stepping on stairs.
 	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
-
-	// Magnitude of -Y acceleration in the air.
-	constexpr double GRAVITY = 9.81;
 
 	// Friction for slowing the player down on ground.
 	constexpr double FRICTION = 3.0;
 
-	// @todo: TryCreatePhysicsBody()... capsule, disabled by default?
+	bool TryCreatePhysicsCollider(JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	{
+		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+		if (!outBodyID->IsInvalid())
+		{
+			bodyInterface.RemoveBody(*outBodyID);
+			bodyInterface.DestroyBody(*outBodyID);
+			*outBodyID = Physics::INVALID_BODY_ID;
+		}
+
+		constexpr double capsuleRadius = COLLIDER_RADIUS;
+		constexpr double cylinderHalfHeight = (Player::HEIGHT / 2.0) - capsuleRadius;
+		static_assert(cylinderHalfHeight >= 0.0);
+		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0) + (cylinderHalfHeight * 2.0), Player::HEIGHT));
+
+		JPH::CapsuleShapeSettings capsuleShapeSettings(cylinderHalfHeight, capsuleRadius);
+		capsuleShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
+		// @todo: make sure this ^ isn't leaking when we remove/destroy the body
+
+		JPH::ShapeSettings::ShapeResult capsuleShapeResult = capsuleShapeSettings.Create();
+		if (capsuleShapeResult.HasError())
+		{
+			DebugLogError("Couldn't create Jolt capsule collider settings: " + std::string(capsuleShapeResult.GetError().c_str()));
+			return false;
+		}
+
+		// Initialize at origin, will be moved by code later.
+		JPH::ShapeRefC capsuleShape = capsuleShapeResult.Get();
+		const JPH::RVec3 capsulePos = JPH::RVec3::sZero();
+		const JPH::Quat capsuleRotation = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), 0.0f);
+		const JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsulePos, capsuleRotation, JPH::EMotionType::Kinematic, PhysicsLayers::MOVING);
+		const JPH::Body *capsuleBody = bodyInterface.CreateBody(capsuleSettings);
+		if (capsuleBody == nullptr)
+		{
+			const uint32_t totalBodyCount = physicsSystem.GetNumBodies();
+			DebugLogError("Couldn't create player Jolt body (total: " + std::to_string(totalBodyCount) + ").");
+			return false;
+		}
+
+		const JPH::BodyID &capsuleBodyID = capsuleBody->GetID();
+		bodyInterface.AddBody(capsuleBodyID, JPH::EActivation::Activate);
+		*outBodyID = capsuleBodyID;
+		return true;
+	}
 }
 
 Player::Player()
@@ -45,6 +92,14 @@ Player::Player()
 	this->camera.init(CoordDouble3(), -Double3::UnitX); // To avoid audio listener normalization issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
 	this->friction = 0.0;
+}
+
+Player::~Player()
+{
+	if (!this->physicsBodyID.IsInvalid())
+	{
+		DebugLogError("Didn't free player physics body correctly (ID: " + std::to_string(this->physicsBodyID.GetIndex()) + ").");
+	}
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -62,7 +117,11 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->friction = FRICTION;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
-	// @todo: create body
+	
+	if (!TryCreatePhysicsCollider(physicsSystem, &this->physicsBodyID))
+	{
+		DebugCrash("Couldn't create player physics collider.");
+	}
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -80,7 +139,11 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->friction = FRICTION;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
-	// @todo: create body
+	
+	if (!TryCreatePhysicsCollider(physicsSystem, &this->physicsBodyID))
+	{
+		DebugCrash("Couldn't create player physics collider.");
+	}
 }
 
 void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
@@ -118,7 +181,22 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(this->raceID, this->male, random);
-	// @todo: create body
+	
+	if (!TryCreatePhysicsCollider(physicsSystem, &this->physicsBodyID))
+	{
+		DebugCrash("Couldn't create player physics collider.");
+	}
+}
+
+void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
+{
+	if (!this->physicsBodyID.IsInvalid())
+	{
+		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+		bodyInterface.RemoveBody(this->physicsBodyID);
+		bodyInterface.DestroyBody(this->physicsBodyID);
+		this->physicsBodyID = Physics::INVALID_BODY_ID;
+	}
 }
 
 const CoordDouble3 &Player::getPosition() const
@@ -468,7 +546,7 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 void Player::updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale)
 {
 	// Acceleration from gravity (always).
-	this->accelerate(-Double3::UnitY, GRAVITY, dt);
+	this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 
 	// Change the player's velocity based on collision.
 	this->handleCollision(dt, voxelChunkManager, collisionChunkManager, ceilingScale);
@@ -476,6 +554,8 @@ void Player::updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager
 	// Temp: get floor Y until Y collision is implemented.
 	const double floorY = ceilingScale;
 	this->camera.position.point.y = floorY + Player::HEIGHT; // Temp: keep camera Y fixed until Y collision is implemented.
+
+	// @todo: for now just set the physics body to this position ^
 
 	// Simple Euler integration for updating the player's position.
 	const VoxelDouble3 newPoint = this->camera.position.point + (this->velocity * dt);

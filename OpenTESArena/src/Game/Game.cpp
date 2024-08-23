@@ -1043,5 +1043,8 @@ void Game::loop()
 	}
 
 	// At this point, the engine has received an exit signal and is now quitting peacefully.
+	this->player.freePhysicsBody(this->physicsSystem);
+	this->sceneManager.collisionChunkManager.clear(this->physicsSystem);
+
 	this->options.saveChanges();
 }

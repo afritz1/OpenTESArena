@@ -46,7 +46,14 @@ private:
 	// Updates the player's position and velocity based on interactions with the world.
 	void updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale);
 public:
+	// Distance from player's feet to head.
+	static constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
+
+	// Arbitrary values for movement speed.
+	static constexpr double DEFAULT_WALK_SPEED = 2.0;
+
 	Player();
+	~Player();
 
 	// Make player with rolled attributes based on race & gender.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -61,11 +68,7 @@ public:
 	// Initializes a random player for testing.
 	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
 
-	// Distance from player's feet to head.
-	static constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
-
-	// Arbitrary values for movement speed.
-	static constexpr double DEFAULT_WALK_SPEED = 2.0;
+	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 
 	const CoordDouble3 &getPosition() const;
 	const std::string &getDisplayName() const;
