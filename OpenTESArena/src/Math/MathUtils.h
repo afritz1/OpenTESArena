@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "Constants.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Voxels/VoxelUtils.h"
@@ -18,10 +19,16 @@ using Degrees = double;
 namespace MathUtils
 {
 	// Returns whether the given value is within epsilon of zero.
-	double almostZero(double value);
+	constexpr double almostZero(double value)
+	{
+		return value <= Constants::Epsilon && value >= -Constants::Epsilon;
+	}
 
 	// Returns whether the two values are within epsilon of each other.
-	double almostEqual(double a, double b);
+	constexpr double almostEqual(double a, double b)
+	{
+		return MathUtils::almostZero(a - b);
+	}
 
 	// Returns whether the given value represents a number on the number line, including infinity.
 	template<typename T>

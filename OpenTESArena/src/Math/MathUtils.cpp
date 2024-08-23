@@ -1,20 +1,8 @@
 #include <algorithm>
-#include <cmath>
 
-#include "Constants.h"
 #include "MathUtils.h"
 
 #include "components/debug/Debug.h"
-
-double MathUtils::almostZero(double value)
-{
-	return std::abs(value) < Constants::Epsilon;
-}
-
-double MathUtils::almostEqual(double a, double b)
-{
-	return MathUtils::almostZero(a - b);
-}
 
 double MathUtils::getRealIndex(int bufferSize, double percent)
 {
