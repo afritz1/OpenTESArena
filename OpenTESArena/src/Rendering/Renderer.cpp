@@ -6,6 +6,7 @@
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
 #include "Renderer.h"
+#include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
 #include "SdlUiRenderer.h"
@@ -25,6 +26,8 @@
 
 namespace
 {
+	RenderCamera g_physicsDebugCamera; // Cached every frame for Jolt Physics debug renderer.
+
 	int GetSdlWindowPosition(Renderer::WindowMode windowMode)
 	{
 		switch (windowMode)
@@ -1019,11 +1022,49 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rectSdl);
 }
 
+void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color)
+{
+	const RenderCamera &camera = g_physicsDebugCamera;
+	const Double3 worldPoint0(static_cast<double>(src.GetX()), static_cast<double>(src.GetY()), static_cast<double>(src.GetZ()));
+	const Double3 worldPoint1(static_cast<double>(dst.GetX()), static_cast<double>(dst.GetY()), static_cast<double>(dst.GetZ()));
+
+	const double distSqr0 = (camera.worldPoint - worldPoint0).lengthSquared();
+	const double distSqr1 = (camera.worldPoint - worldPoint1).lengthSquared();
+	constexpr double maxDistance = 30.0;
+	if ((distSqr0 >= maxDistance) || (distSqr1 >= maxDistance))
+	{
+		return;
+	}
+
+	const Int2 viewDims = this->getViewDimensions();
+	const Double4 clipPoint0 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint0, 1.0), camera.viewProjMatrix);
+	const Double4 clipPoint1 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint1, 1.0), camera.viewProjMatrix);
+	if ((clipPoint0.w < 0.0) || (clipPoint1.w < 0.0))
+	{
+		return;
+	}
+
+	const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clipPoint0);
+	const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clipPoint1);
+	const Double2 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, viewDims.x, viewDims.y);
+	const Double2 screenSpace1 = RendererUtils::ndcToScreenSpace(ndc1, viewDims.x, viewDims.y);
+	const Int2 pixelSpace0(static_cast<int>(screenSpace0.x), static_cast<int>(screenSpace0.y));
+	const Int2 pixelSpace1(static_cast<int>(screenSpace1.x), static_cast<int>(screenSpace1.y));
+	this->drawLine(Color::fromARGB(color.GetUInt32()), pixelSpace0.x, pixelSpace0.y, pixelSpace1.x, pixelSpace1.y);
+}
+
+void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height)
+{
+	// Do nothing.
+}
+
 void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
 	ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode,
 	DitheringMode ditheringMode)
 {
 	DebugAssert(this->renderer3D->isInited());
+
+	g_physicsDebugCamera = camera;
 
 	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
 

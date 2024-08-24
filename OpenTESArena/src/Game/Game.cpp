@@ -786,6 +786,13 @@ void Game::renderDebugInfo()
 			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
 
+		// Set Jolt Physics camera position for LOD.
+		const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerPosition);
+		this->renderer.SetCameraPos(JPH::RVec3Arg(static_cast<float>(playerWorldPos.x), static_cast<float>(playerWorldPos.y), static_cast<float>(playerWorldPos.z)));
+
+		JPH::BodyManager::DrawSettings drawSettings;
+		this->physicsSystem.DrawBodies(drawSettings, &this->renderer);
+
 		GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(*this);
 	}
 
