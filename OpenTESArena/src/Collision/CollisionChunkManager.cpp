@@ -29,9 +29,9 @@ namespace
 		JPH::ShapeRefC boxShape = boxShapeResult.Get();
 		const WorldInt3 boxWorldVoxelPos = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt3(x, y, z));
 		const JPH::RVec3 boxJoltPos(
-			static_cast<float>(boxWorldVoxelPos.x),
-			static_cast<float>(static_cast<double>(boxWorldVoxelPos.y) * ceilingScale),
-			static_cast<float>(boxWorldVoxelPos.z));
+			static_cast<float>(boxWorldVoxelPos.x) + 0.5f,
+			static_cast<float>((static_cast<double>(boxWorldVoxelPos.y) * ceilingScale) + halfCeilingScale),
+			static_cast<float>(boxWorldVoxelPos.z) + 0.5f);
 		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, JPH::Quat::sIdentity(), JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
 		const JPH::Body *box = bodyInterface.CreateBody(boxSettings);
 		if (box == nullptr)
