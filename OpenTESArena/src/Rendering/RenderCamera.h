@@ -20,6 +20,7 @@ struct RenderCamera
 
 	Matrix4d viewMatrix;
 	Matrix4d projectionMatrix;
+	Matrix4d viewProjMatrix;
 	Matrix4d inverseViewMatrix;
 	Matrix4d inverseProjectionMatrix;
 
