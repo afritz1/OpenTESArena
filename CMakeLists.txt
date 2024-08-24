@@ -69,6 +69,7 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
 ENDIF ()
 
 ADD_COMPILE_DEFINITIONS(JPH_NO_FORCE_INLINE) # Fix __forceinline compile error in LTO builds.
+ADD_COMPILE_DEFINITIONS(JPH_DEBUG_RENDERER) # Enable Jolt Physics debug rendering in all builds.
 
 # Include Jolt
 FetchContent_Declare(
