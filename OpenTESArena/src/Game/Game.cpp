@@ -8,11 +8,9 @@
 #include <thread>
 
 #include "Jolt/Jolt.h"
-#include "Jolt/Core/Factory.h"
 #include "Jolt/Core/JobSystemThreadPool.h"
 #include "Jolt/Core/TempAllocator.h"
 #include "Jolt/Physics/PhysicsSystem.h"
-#include "Jolt/RegisterTypes.h"
 #include "SDL.h"
 
 #include "Game.h"
@@ -226,13 +224,6 @@ Game::~Game()
 	this->sceneManager.renderLightChunkManager.shutdown(this->renderer);
 	this->sceneManager.renderSkyManager.shutdown(this->renderer);
 	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
-
-	JPH::UnregisterTypes();
-	if (JPH::Factory::sInstance != nullptr)
-	{
-		delete JPH::Factory::sInstance;
-		JPH::Factory::sInstance = nullptr;
-	}
 }
 
 bool Game::init()
@@ -376,11 +367,6 @@ bool Game::init()
 		DebugLogError("Couldn't init render weather manager.");
 		return false;
 	}
-
-	// Jolt Physics init.
-	JPH::RegisterDefaultAllocator();
-	JPH::Factory::sInstance = new JPH::Factory();
-	JPH::RegisterTypes();
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";
