@@ -1027,11 +1027,11 @@ void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg colo
 	const RenderCamera &camera = g_physicsDebugCamera;
 	const Double3 worldPoint0(static_cast<double>(src.GetX()), static_cast<double>(src.GetY()), static_cast<double>(src.GetZ()));
 	const Double3 worldPoint1(static_cast<double>(dst.GetX()), static_cast<double>(dst.GetY()), static_cast<double>(dst.GetZ()));
-
 	const double distSqr0 = (camera.worldPoint - worldPoint0).lengthSquared();
 	const double distSqr1 = (camera.worldPoint - worldPoint1).lengthSquared();
-	constexpr double maxDistance = 30.0;
-	if ((distSqr0 >= maxDistance) || (distSqr1 >= maxDistance))
+	constexpr double maxDistance = 6.0;
+	constexpr double maxDistanceSqr = maxDistance * maxDistance;
+	if ((distSqr0 >= maxDistanceSqr) || (distSqr1 >= maxDistanceSqr))
 	{
 		return;
 	}
@@ -1039,7 +1039,7 @@ void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg colo
 	const Int2 viewDims = this->getViewDimensions();
 	const Double4 clipPoint0 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint0, 1.0), camera.viewProjMatrix);
 	const Double4 clipPoint1 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint1, 1.0), camera.viewProjMatrix);
-	if ((clipPoint0.w < 0.0) || (clipPoint1.w < 0.0))
+	if ((clipPoint0.w <= 0.0) || (clipPoint1.w <= 0.0))
 	{
 		return;
 	}
@@ -1050,7 +1050,13 @@ void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg colo
 	const Double2 screenSpace1 = RendererUtils::ndcToScreenSpace(ndc1, viewDims.x, viewDims.y);
 	const Int2 pixelSpace0(static_cast<int>(screenSpace0.x), static_cast<int>(screenSpace0.y));
 	const Int2 pixelSpace1(static_cast<int>(screenSpace1.x), static_cast<int>(screenSpace1.y));
-	this->drawLine(Color::fromARGB(color.GetUInt32()), pixelSpace0.x, pixelSpace0.y, pixelSpace1.x, pixelSpace1.y);
+
+	const double distanceRatio = std::max(distSqr0, distSqr1) / maxDistanceSqr;
+	const double intensityPercent = std::clamp(1.0 - (distanceRatio * distanceRatio), 0.0, 1.0);
+	Double4 colorComponents = Double4::fromARGB(color.GetUInt32());
+	colorComponents = colorComponents * intensityPercent;
+	const Color presentedColor = Color::fromARGB(colorComponents.toARGB());
+	this->drawLine(presentedColor, pixelSpace0.x, pixelSpace0.y, pixelSpace1.x, pixelSpace1.y);
 }
 
 void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height)
