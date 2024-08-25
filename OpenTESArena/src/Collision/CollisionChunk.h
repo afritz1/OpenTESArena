@@ -18,7 +18,7 @@ class CollisionChunk final : public Chunk
 public:
 	using CollisionMeshDefID = int;
 
-	// @todo: decide if all this collision mesh stuff can go
+	// @todo: delete all this collision mesh def stuff once Physics::rayCast() can use Jolt entirely
 	std::vector<CollisionMeshDefinition> meshDefs;
 	std::unordered_map<VoxelChunk::VoxelMeshDefID, CollisionChunk::CollisionMeshDefID> meshMappings;
 	Buffer3D<CollisionMeshDefID> meshDefIDs;

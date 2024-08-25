@@ -15,8 +15,6 @@ class VoxelChunkManager;
 class CollisionChunkManager final : public SpecializedChunkManager<CollisionChunk>
 {
 private:
-	// @todo: dynamic collision meshes for entities (stored globally here, not per-chunk)
-
 	void populateChunk(int index, double ceilingScale, const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem);
 	void updateDirtyVoxels(const ChunkInt2 &chunkPos, double ceilingScale, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem);
 public:
