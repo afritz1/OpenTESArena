@@ -117,6 +117,8 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/CollisionChunkManager.h"
     "${SRC_ROOT}/Collision/CollisionMeshDefinition.cpp"
     "${SRC_ROOT}/Collision/CollisionMeshDefinition.h"
+    "${SRC_ROOT}/Collision/CollisionShapeDefinition.cpp"
+    "${SRC_ROOT}/Collision/CollisionShapeDefinition.h"
     "${SRC_ROOT}/Collision/Physics.cpp"
     "${SRC_ROOT}/Collision/Physics.h"
     "${SRC_ROOT}/Collision/PhysicsBodyActivationListener.cpp"
