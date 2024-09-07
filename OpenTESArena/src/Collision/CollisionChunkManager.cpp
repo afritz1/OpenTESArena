@@ -17,14 +17,13 @@ namespace
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
+		const double voxelYBottom = static_cast<double>(y) * ceilingScale;
+
 		DebugAssert(shapeDef.type == CollisionShapeType::Box);
 		const CollisionBoxShapeDefinition &boxShapeDef = shapeDef.box;
-		const double baseYBottom = static_cast<double>(y) + boxShapeDef.yOffset;
-		const double baseYTop = baseYBottom + boxShapeDef.height;
-
 		const VoxelMeshScaleType scaleType = voxelMeshDef.scaleType;
-		const double scaledYBottom = MeshUtils::getScaledVertexY(baseYBottom, scaleType, ceilingScale);
-		const double scaledYTop = MeshUtils::getScaledVertexY(baseYTop, scaleType, ceilingScale);
+		const double scaledYBottom = voxelYBottom + MeshUtils::getScaledVertexY(boxShapeDef.yOffset, scaleType, ceilingScale);
+		const double scaledYTop = voxelYBottom + MeshUtils::getScaledVertexY(boxShapeDef.yOffset + boxShapeDef.height, scaleType, ceilingScale);
 		const double scaledHeight = scaledYTop - scaledYBottom;
 		const double scaledHalfHeight = scaledHeight * 0.50;
 
@@ -49,7 +48,7 @@ namespace
 		const WorldInt3 boxWorldVoxelPos = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt3(x, y, z));
 		const JPH::RVec3 boxJoltPos(
 			static_cast<float>(boxWorldVoxelPos.x + 0.50),
-			static_cast<float>((static_cast<double>(boxWorldVoxelPos.y) * ceilingScale) + scaledHalfHeight),
+			static_cast<float>(scaledYBottom + scaledHalfHeight),
 			static_cast<float>(boxWorldVoxelPos.z + 0.50));
 		const JPH::Quat boxJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), boxShapeDef.yRotation);
 		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, boxJoltQuat, JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
