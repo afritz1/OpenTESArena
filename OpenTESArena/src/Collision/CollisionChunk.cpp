@@ -1,3 +1,6 @@
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSettings.h"
+
 #include "CollisionChunk.h"
 #include "Physics.h"
 #include "../Voxels/ArenaChasmUtils.h"
@@ -165,11 +168,17 @@ CollisionChunk::CollisionShapeDefID CollisionChunk::getOrAddShapeDefIdMapping(co
 			boxHeight = (voxelTraitsDef.chasm.type != ArenaTypes::ChasmType::Dry) ? ArenaChasmUtils::DEFAULT_HEIGHT : 1.0;
 			break;
 		case ArenaTypes::VoxelType::Diagonal:
-			boxWidth = 0.1;
+		{
+			constexpr Radians diagonalRotationAmount = Constants::Pi / 4.0;
+			constexpr double diagonalThickness = 0.050; // Arbitrary thin wall thickness
+			static_assert(diagonalThickness > (Physics::BoxConvexRadius * 2.0));
+
+			boxWidth = Constants::Sqrt2 - diagonalThickness; // Fit the edges of the voxel exactly
 			boxHeight = 1.0;
-			boxDepth = 0.1;
-			boxYRotation = Constants::Pi / 4.0; // @todo: I guess I removed voxelTraitsDef.diagonal.type1? need it in some form here again
+			boxDepth = diagonalThickness;
+			boxYRotation = diagonalRotationAmount; // @todo: need the diag type1 bool here again to determine +/- rotation
 			break;
+		}
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
 			break;

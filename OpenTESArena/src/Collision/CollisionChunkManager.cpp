@@ -4,6 +4,7 @@
 
 #include "CollisionChunkManager.h"
 #include "CollisionShapeDefinition.h"
+#include "Physics.h"
 #include "PhysicsLayer.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/MeshUtils.h"
@@ -27,9 +28,13 @@ namespace
 		const double scaledHeight = scaledYTop - scaledYBottom;
 		const double scaledHalfHeight = scaledHeight * 0.50;
 
-		// @todo: ArenaMeshUtils::CollisionMeshInitCache needs to have info for how to construct a simple box collider, not a whole arbitrary mesh thing
+		const JPH::Vec3 boxShapeHalfThicknesses(
+			static_cast<float>(boxShapeDef.width * 0.50),
+			static_cast<float>(scaledHalfHeight),
+			static_cast<float>(boxShapeDef.depth * 0.50));
+		constexpr float boxShapeConvexRadius = static_cast<float>(Physics::BoxConvexRadius);
 
-		JPH::BoxShapeSettings boxShapeSettings(JPH::Vec3(0.50f, static_cast<float>(scaledHalfHeight), 0.50f));
+		JPH::BoxShapeSettings boxShapeSettings(boxShapeHalfThicknesses, boxShapeConvexRadius);
 		boxShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
 		// @todo: make sure this ^ isn't leaking when we remove/destroy the body
 
@@ -43,11 +48,11 @@ namespace
 		JPH::ShapeRefC boxShape = boxShapeResult.Get();
 		const WorldInt3 boxWorldVoxelPos = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt3(x, y, z));
 		const JPH::RVec3 boxJoltPos(
-			static_cast<float>(boxWorldVoxelPos.x) + 0.5f,
+			static_cast<float>(boxWorldVoxelPos.x + 0.50),
 			static_cast<float>((static_cast<double>(boxWorldVoxelPos.y) * ceilingScale) + scaledHalfHeight),
-			static_cast<float>(boxWorldVoxelPos.z) + 0.5f);
-		// @todo: change the quat for diagonals
-		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, JPH::Quat::sIdentity(), JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
+			static_cast<float>(boxWorldVoxelPos.z + 0.50));
+		const JPH::Quat boxJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), boxShapeDef.yRotation);
+		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, boxJoltQuat, JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
 		const JPH::Body *box = bodyInterface.CreateBody(boxSettings);
 		if (box == nullptr)
 		{

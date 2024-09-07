@@ -26,6 +26,9 @@ namespace Physics
 	constexpr int MaxContactConstraints = 16384;
 	constexpr double DeltaTime = 1.0 / 60.0; // Determines # of steps to run inside PhysicsSystem::update().
 
+	// Shape creation tweaks.
+	constexpr double BoxConvexRadius = 0.020;
+
 	// Magnitude of -Y acceleration in the air.
 	constexpr double GRAVITY = 9.81;
 
