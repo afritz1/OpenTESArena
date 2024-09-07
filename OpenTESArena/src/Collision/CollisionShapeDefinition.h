@@ -5,6 +5,7 @@
 
 enum class CollisionShapeType
 {
+	None, // Air
 	Box, // Voxels
 	Capsule // Entities inc. projectiles
 };
@@ -38,6 +39,7 @@ struct CollisionShapeDefinition
 
 	CollisionShapeDefinition();
 
+	void initNone();
 	void initBox(double width, double height, double depth, double yOffset, Radians yRotation);
 	void initCapsule(double radius, double middleHeight);
 	void initCapsuleAsSphere(double radius);

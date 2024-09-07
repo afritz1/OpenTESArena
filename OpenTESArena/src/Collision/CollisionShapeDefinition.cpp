@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "CollisionShapeDefinition.h"
 
 #include "components/debug/Debug.h"
@@ -25,7 +27,13 @@ void CollisionCapsuleShapeDefinition::init(double radius, double middleHeight)
 
 CollisionShapeDefinition::CollisionShapeDefinition()
 {
-	this->type = static_cast<CollisionShapeType>(-1);
+	std::memset(this, 0, sizeof(*this));
+	this->type = CollisionShapeType::None;
+}
+
+void CollisionShapeDefinition::initNone()
+{
+	this->type = CollisionShapeType::None;
 }
 
 void CollisionShapeDefinition::initBox(double width, double height, double depth, double yOffset, Radians yRotation)

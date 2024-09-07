@@ -3,19 +3,33 @@
 #include "Jolt/Physics/Collision/Shape/BoxShape.h"
 
 #include "CollisionChunkManager.h"
+#include "CollisionShapeDefinition.h"
 #include "PhysicsLayer.h"
 #include "../Voxels/VoxelChunkManager.h"
+#include "../World/MeshUtils.h"
 
 namespace
 {
-	bool TryCreatePhysicsCollider(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, double ceilingScale, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, const VoxelMeshDefinition &voxelMeshDef,
+		const VoxelTraitsDefinition &voxelTraitsDef, const CollisionShapeDefinition &shapeDef, double ceilingScale, JPH::PhysicsSystem &physicsSystem,
+		JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-		// @todo: modify the body based on voxelTraitsDef.type (raised platform, diagonals, edges, etc.)
+		DebugAssert(shapeDef.type == CollisionShapeType::Box);
+		const CollisionBoxShapeDefinition &boxShapeDef = shapeDef.box;
+		const double baseYBottom = static_cast<double>(y) + boxShapeDef.yOffset;
+		const double baseYTop = baseYBottom + boxShapeDef.height;
 
-		const double halfCeilingScale = ceilingScale / 2.0;
-		JPH::BoxShapeSettings boxShapeSettings(JPH::Vec3(0.50f, static_cast<float>(halfCeilingScale), 0.50f));
+		const VoxelMeshScaleType scaleType = voxelMeshDef.scaleType;
+		const double scaledYBottom = MeshUtils::getScaledVertexY(baseYBottom, scaleType, ceilingScale);
+		const double scaledYTop = MeshUtils::getScaledVertexY(baseYTop, scaleType, ceilingScale);
+		const double scaledHeight = scaledYTop - scaledYBottom;
+		const double scaledHalfHeight = scaledHeight * 0.50;
+
+		// @todo: ArenaMeshUtils::CollisionMeshInitCache needs to have info for how to construct a simple box collider, not a whole arbitrary mesh thing
+
+		JPH::BoxShapeSettings boxShapeSettings(JPH::Vec3(0.50f, static_cast<float>(scaledHalfHeight), 0.50f));
 		boxShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
 		// @todo: make sure this ^ isn't leaking when we remove/destroy the body
 
@@ -30,8 +44,9 @@ namespace
 		const WorldInt3 boxWorldVoxelPos = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt3(x, y, z));
 		const JPH::RVec3 boxJoltPos(
 			static_cast<float>(boxWorldVoxelPos.x) + 0.5f,
-			static_cast<float>((static_cast<double>(boxWorldVoxelPos.y) * ceilingScale) + halfCeilingScale),
+			static_cast<float>((static_cast<double>(boxWorldVoxelPos.y) * ceilingScale) + scaledHalfHeight),
 			static_cast<float>(boxWorldVoxelPos.z) + 0.5f);
+		// @todo: change the quat for diagonals
 		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, JPH::Quat::sIdentity(), JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
 		const JPH::Body *box = bodyInterface.CreateBody(boxSettings);
 		if (box == nullptr)
@@ -63,19 +78,24 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 			{
 				// Colliders are dependent on the mesh and any special traits.
 				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(x, y, z);
-				const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
-				collisionChunk.meshDefIDs.set(x, y, z, collisionMeshDefID);
-
 				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
+				const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
+				const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelTraitsDefID);
+				collisionChunk.meshDefIDs.set(x, y, z, collisionMeshDefID);
+				collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
+
 				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 				const bool voxelHasCollision = voxelTraitsDef.hasCollision(); // @todo: lore/sound triggers aren't included in this
 				collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
 				
 				if (voxelHasCollision)
 				{
+					const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
+					const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
+
 					// Generate box collider and add to the simulation.
 					JPH::BodyID bodyID;
-					if (TryCreatePhysicsCollider(x, y, z, chunkPos, ceilingScale, physicsSystem, &bodyID))
+					if (TryCreatePhysicsCollider(x, y, z, chunkPos, voxelMeshDef, voxelTraitsDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
 					{
 						collisionChunk.physicsBodyIDs.set(x, y, z, bodyID);
 					}
@@ -93,10 +113,12 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyMeshDefPositions())
 	{
 		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(voxelPos.x, voxelPos.y, voxelPos.z);
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
-		collisionChunk.meshDefIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, collisionMeshDefID);
-
 		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxelPos.x, voxelPos.y, voxelPos.z);
+		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
+		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelTraitsDefID);
+		collisionChunk.meshDefIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, collisionMeshDefID);
+		collisionChunk.shapeDefIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, collisionShapeDefID);
+
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 		const bool voxelHasCollision = voxelTraitsDef.hasCollision();
 		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, voxelHasCollision);
@@ -109,9 +131,12 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 
 		if (voxelHasCollision)
 		{
+			const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
+			const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
+
 			// Generate box collider and add to the simulation.
 			JPH::BodyID bodyID;
-			if (TryCreatePhysicsCollider(voxelPos.x, voxelPos.y, voxelPos.z, chunkPos, ceilingScale, physicsSystem, &bodyID))
+			if (TryCreatePhysicsCollider(voxelPos.x, voxelPos.y, voxelPos.z, chunkPos, voxelMeshDef, voxelTraitsDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
 			{
 				collisionChunk.physicsBodyIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, bodyID);
 			}
