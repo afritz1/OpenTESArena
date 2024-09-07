@@ -27,7 +27,7 @@
 namespace
 {
 	RenderCamera g_physicsDebugCamera; // Cached every frame for Jolt Physics debug renderer.
-	constexpr double PHYSICS_DEBUG_MAX_DISTANCE = 5.0;
+	constexpr double PHYSICS_DEBUG_MAX_DISTANCE = 3.0;
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE_SQR = PHYSICS_DEBUG_MAX_DISTANCE * PHYSICS_DEBUG_MAX_DISTANCE;
 
 	int GetSdlWindowPosition(Renderer::WindowMode windowMode)
