@@ -424,9 +424,9 @@ void Player::handleCollision(double dt, const VoxelChunkManager &voxelChunkManag
 			const CollisionChunk &collisionChunk = collisionChunkManager.getChunkAtPosition(chunkPos);
 
 			// General voxel collision.
-			const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.meshDefIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
-			const CollisionMeshDefinition &collisionMeshDef = collisionChunk.getCollisionMeshDef(collisionMeshDefID);
-			const bool isEmpty = collisionMeshDef.vertices.getCount() == 0;
+			const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.shapeDefIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
+			const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
+			const bool isEmpty = collisionShapeDef.type == CollisionShapeType::None;
 
 			// @todo: don't check that it's a door, just check the collision chunk directly for everything (it should be data-driven, not type-driven).
 			const bool isOpenDoor = [voxelType, &voxelPos, &collisionChunk]()

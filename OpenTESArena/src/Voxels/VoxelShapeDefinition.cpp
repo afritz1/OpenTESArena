@@ -1,71 +1,61 @@
-#include <array>
+#include <cstring>
 
 #include "ArenaChasmUtils.h"
-#include "VoxelMeshDefinition.h"
-#include "VoxelFacing2D.h"
-#include "../World/MeshUtils.h"
+#include "VoxelShapeDefinition.h"
+#include "../Collision/Physics.h"
 
 #include "components/debug/Debug.h"
+
+void VoxelBoxShapeDefinition::init(double width, double height, double depth, double yOffset, Radians yRotation)
+{
+	DebugAssert(width > 0.0);
+	DebugAssert(height > 0.0);
+	DebugAssert(depth > 0.0);
+	this->width = width;
+	this->height = height;
+	this->depth = depth;
+	this->yOffset = yOffset;
+	this->yRotation = yRotation;
+}
 
 VoxelMeshDefinition::VoxelMeshDefinition()
 {
 	// Default to air voxel.
 	this->uniqueVertexCount = 0;
 	this->rendererVertexCount = 0;
-	this->collisionVertexCount = 0;
 	this->opaqueIndicesListCount = 0;
 	this->alphaTestedIndicesListCount = 0;
-	this->scaleType = VoxelMeshScaleType::ScaledFromMin;
-	this->allowsBackFaces = false;
-	this->allowsAdjacentDoorFaces = false;
-	this->enablesNeighborGeometry = false;
-	this->isContextSensitive = false;
 }
 
-void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMeshScaleType scaleType,
-	const ArenaMeshUtils::RenderMeshInitCache &renderMeshInitCache,
-	const ArenaMeshUtils::CollisionMeshInitCache &collisionMeshInitCache)
+void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelShapeScaleType scaleType,
+	const ArenaMeshUtils::ShapeInitCache &shapeInitCache)
 {
 	this->uniqueVertexCount = ArenaMeshUtils::GetUniqueVertexCount(voxelType);
 	this->rendererVertexCount = ArenaMeshUtils::GetRendererVertexCount(voxelType);
-	this->collisionVertexCount = this->uniqueVertexCount;
 	this->opaqueIndicesListCount = ArenaMeshUtils::GetOpaqueIndexBufferCount(voxelType);
 	this->alphaTestedIndicesListCount = ArenaMeshUtils::GetAlphaTestedIndexBufferCount(voxelType);
-	this->scaleType = scaleType;
-	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
-	this->allowsAdjacentDoorFaces = ArenaMeshUtils::AllowsAdjacentDoorFaces(voxelType);
-	this->enablesNeighborGeometry = ArenaMeshUtils::EnablesNeighborVoxelGeometry(voxelType);
-	this->isContextSensitive = ArenaMeshUtils::HasContextSensitiveGeometry(voxelType);
 
 	if (voxelType != ArenaTypes::VoxelType::None)
 	{
 		const int rendererVertexPositionComponentCount = ArenaMeshUtils::GetRendererVertexPositionComponentCount(voxelType);
 		this->rendererVertices.resize(rendererVertexPositionComponentCount);
-		std::copy(renderMeshInitCache.vertices.begin(), renderMeshInitCache.vertices.begin() + rendererVertexPositionComponentCount, this->rendererVertices.data());
+		std::copy(shapeInitCache.vertices.begin(), shapeInitCache.vertices.begin() + rendererVertexPositionComponentCount, this->rendererVertices.data());
 
 		const int rendererVertexNormalComponentCount = ArenaMeshUtils::GetRendererVertexNormalComponentCount(voxelType);
 		this->rendererNormals.resize(rendererVertexNormalComponentCount);
-		std::copy(renderMeshInitCache.normals.begin(), renderMeshInitCache.normals.begin() + rendererVertexNormalComponentCount, this->rendererNormals.data());
+		std::copy(shapeInitCache.normals.begin(), shapeInitCache.normals.begin() + rendererVertexNormalComponentCount, this->rendererNormals.data());
 
 		const int rendererVertexTexCoordComponentCount = ArenaMeshUtils::GetRendererVertexTexCoordComponentCount(voxelType);
 		this->rendererTexCoords.resize(rendererVertexTexCoordComponentCount);
-		std::copy(renderMeshInitCache.texCoords.begin(), renderMeshInitCache.texCoords.begin() + rendererVertexTexCoordComponentCount, this->rendererTexCoords.data());
+		std::copy(shapeInitCache.texCoords.begin(), shapeInitCache.texCoords.begin() + rendererVertexTexCoordComponentCount, this->rendererTexCoords.data());
 
-		const int collisionVertexPositionComponentCount = ArenaMeshUtils::GetCollisionVertexPositionComponentCount(voxelType);
-		this->collisionVertices.resize(collisionVertexPositionComponentCount);
-		std::copy(collisionMeshInitCache.vertices.begin(), collisionMeshInitCache.vertices.begin() + collisionVertexPositionComponentCount, this->collisionVertices.data());
-
-		const int collisionFaceNormalComponentCount = ArenaMeshUtils::GetCollisionFaceNormalComponentCount(voxelType);
-		this->collisionNormals.resize(collisionFaceNormalComponentCount);
-		std::copy(collisionMeshInitCache.normals.begin(), collisionMeshInitCache.normals.begin() + collisionFaceNormalComponentCount, this->collisionNormals.data());
-		
 		for (int i = 0; i < this->opaqueIndicesListCount; i++)
 		{
 			std::vector<int32_t> &dstBuffer = this->getOpaqueIndicesList(i);
 			const int opaqueIndexCount = ArenaMeshUtils::GetOpaqueIndexCount(voxelType, i);
 			dstBuffer.resize(opaqueIndexCount);
-			const BufferView<int32_t> &srcBuffer = (i == 0) ? renderMeshInitCache.opaqueIndices0View :
-				((i == 1) ? renderMeshInitCache.opaqueIndices1View : renderMeshInitCache.opaqueIndices2View);
+			const BufferView<int32_t> &srcBuffer = (i == 0) ? shapeInitCache.opaqueIndices0View :
+				((i == 1) ? shapeInitCache.opaqueIndices1View : shapeInitCache.opaqueIndices2View);
 			std::copy(srcBuffer.begin(), srcBuffer.begin() + opaqueIndexCount, dstBuffer.data());
 		}
 
@@ -73,12 +63,8 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelMesh
 		{
 			const int alphaTestedIndexCount = ArenaMeshUtils::GetAlphaTestedIndexCount(voxelType, 0);
 			this->alphaTestedIndices.resize(alphaTestedIndexCount);
-			std::copy(renderMeshInitCache.alphaTestedIndices0.begin(), renderMeshInitCache.alphaTestedIndices0.begin() + alphaTestedIndexCount, this->alphaTestedIndices.data());
+			std::copy(shapeInitCache.alphaTestedIndices0.begin(), shapeInitCache.alphaTestedIndices0.begin() + alphaTestedIndexCount, this->alphaTestedIndices.data());
 		}
-
-		const int collisionIndexCount = ArenaMeshUtils::GetCollisionIndexCount(voxelType);
-		this->collisionIndices.resize(collisionIndexCount);
-		std::copy(collisionMeshInitCache.indices.begin(), collisionMeshInitCache.indices.begin() + collisionIndexCount, this->collisionIndices.data());
 	}
 }
 
@@ -101,7 +87,7 @@ BufferView<const int32_t> VoxelMeshDefinition::getOpaqueIndicesList(int index) c
 	return *ptrs[index];
 }
 
-void VoxelMeshDefinition::writeRendererGeometryBuffers(double ceilingScale, BufferView<double> outVertices,
+void VoxelMeshDefinition::writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outVertices,
 	BufferView<double> outNormals, BufferView<double> outTexCoords) const
 {
 	static_assert(MeshUtils::POSITION_COMPONENTS_PER_VERTEX == 3);
@@ -118,7 +104,7 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(double ceilingScale, Buff
 		const double srcY = this->rendererVertices[index + 1];
 		const double srcZ = this->rendererVertices[index + 2];
 		const double dstX = srcX;
-		const double dstY = MeshUtils::getScaledVertexY(srcY, this->scaleType, ceilingScale);
+		const double dstY = MeshUtils::getScaledVertexY(srcY, scaleType, ceilingScale);
 		const double dstZ = srcZ;
 		outVertices.set(index, dstX);
 		outVertices.set(index + 1, dstY);
@@ -152,4 +138,38 @@ void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outOpaqu
 	{
 		std::copy(this->alphaTestedIndices.begin(), this->alphaTestedIndices.end(), outAlphaTestedIndices.begin());
 	}
+}
+
+VoxelShapeDefinition::VoxelShapeDefinition()
+{
+	// Air by default.
+	this->initNone();
+}
+
+void VoxelShapeDefinition::initNone()
+{
+	this->type = VoxelShapeType::None;
+	std::memset(&this->box, 0, sizeof(this->box));
+
+	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::None;
+	constexpr VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
+	ArenaMeshUtils::ShapeInitCache shapeInitCache;
+	this->mesh.initClassic(voxelType, scaleType, shapeInitCache);
+	this->scaleType = scaleType;
+	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
+	this->allowsAdjacentDoorFaces = ArenaMeshUtils::AllowsAdjacentDoorFaces(voxelType);
+	this->enablesNeighborGeometry = ArenaMeshUtils::EnablesNeighborVoxelGeometry(voxelType);
+	this->isContextSensitive = ArenaMeshUtils::HasContextSensitiveGeometry(voxelType);
+}
+
+void VoxelShapeDefinition::initBoxFromClassic(ArenaTypes::VoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache)
+{
+	this->type = VoxelShapeType::Box;
+	this->box.init(shapeInitCache.boxWidth, shapeInitCache.boxHeight, shapeInitCache.boxDepth, shapeInitCache.boxYOffset, shapeInitCache.boxYRotation);
+	this->mesh.initClassic(voxelType, scaleType, shapeInitCache);
+	this->scaleType = scaleType;
+	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
+	this->allowsAdjacentDoorFaces = ArenaMeshUtils::AllowsAdjacentDoorFaces(voxelType);
+	this->enablesNeighborGeometry = ArenaMeshUtils::EnablesNeighborVoxelGeometry(voxelType);
+	this->isContextSensitive = ArenaMeshUtils::HasContextSensitiveGeometry(voxelType);
 }

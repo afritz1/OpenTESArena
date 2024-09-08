@@ -17,10 +17,10 @@ struct MapSubDefinition;
 class VoxelChunkManager final : public SpecializedChunkManager<VoxelChunk>
 {
 private:
-	void getAdjacentVoxelMeshDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
+	void getAdjacentVoxelShapeDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-		VoxelChunk::VoxelMeshDefID *outNorthID, VoxelChunk::VoxelMeshDefID *outEastID, VoxelChunk::VoxelMeshDefID *outSouthID,
-		VoxelChunk::VoxelMeshDefID *outWestID);
+		VoxelChunk::VoxelShapeDefID *outNorthID, VoxelChunk::VoxelShapeDefID *outEastID, VoxelChunk::VoxelShapeDefID *outSouthID,
+		VoxelChunk::VoxelShapeDefID *outWestID);
 	void getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
 		VoxelChunk::VoxelTextureDefID *outNorthID, VoxelChunk::VoxelTextureDefID *outEastID, VoxelChunk::VoxelTextureDefID *outSouthID,

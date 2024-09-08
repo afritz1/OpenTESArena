@@ -261,25 +261,25 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
-		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
+		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
-		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
-		const BufferView<const double> verticesView(collisionMeshDef.vertices);
-		const BufferView<const double> normalsView(collisionMeshDef.normals);
-		const BufferView<const int> indicesView(collisionMeshDef.indices);
-
-		// Each collision triangle is formed by 6 indices.
-		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
+		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const CollisionShapeDefinition &collisionShapeDef = collisionChunk->getCollisionShapeDef(collisionShapeDefID);
 
 		const VoxelDouble3 voxelReal(
 			static_cast<SNDouble>(voxel.x),
 			static_cast<double>(voxel.y) * ceilingScale,
 			static_cast<WEDouble>(voxel.z));
 		bool success = false;
-		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
+
+		// @todo: reimplement using ray-box intersection
+		// - this new way will still be limited to shapes that are entirely inside the voxel, though having Jolt do it would be better
+		//   as it won't have that limitation.
+		DebugLogWarning("testInitialVoxelRay() ray-box intersection not implemented.");
+
+		/*for (int i = 0; i < collisionMeshDef.triangleCount; i++)
 		{
 			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
 			const int vertexIndex0 = indicesView.get(indicesIndex) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -310,15 +310,15 @@ namespace Physics
 
 			const Double3 v0Actual(
 				v0.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v0.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				MeshUtils::getScaledVertexY(v0.y, scaleType, ceilingScale) + voxelReal.y,
 				v0.z + voxelReal.z);
 			const Double3 v1Actual(
 				v1.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v1.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				MeshUtils::getScaledVertexY(v1.y, scaleType, ceilingScale) + voxelReal.y,
 				v1.z + voxelReal.z);
 			const Double3 v2Actual(
 				v2.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v2.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				MeshUtils::getScaledVertexY(v2.y, scaleType, ceilingScale) + voxelReal.y,
 				v2.z + voxelReal.z);
 
 			double t;
@@ -329,7 +329,7 @@ namespace Physics
 				hit.initVoxel(t, hitCoord, voxel, farFacing);
 				break;
 			}
-		}
+		}*/
 
 		return success;
 	}
@@ -364,27 +364,26 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
-		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
+		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
-		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
-		const BufferView<const double> verticesView(collisionMeshDef.vertices);
-		const BufferView<const double> normalsView(collisionMeshDef.normals);
-		const BufferView<const int> indicesView(collisionMeshDef.indices);
-
-		// Each collision triangle is formed by 6 indices.
-		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
+		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const CollisionShapeDefinition &collisionShapeDef = collisionChunk->getCollisionShapeDef(collisionShapeDefID);
 
 		const VoxelDouble3 voxelReal(
 			static_cast<SNDouble>(voxel.x),
 			static_cast<double>(voxel.y) * ceilingScale,
 			static_cast<WEDouble>(voxel.z));
 		const WorldDouble3 rayStartWorldPoint = VoxelUtils::coordToWorldPoint(rayCoord);
-
 		bool success = false;
-		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
+
+		// @todo: reimplement using ray-box intersection
+		// - this new way will still be limited to shapes that are entirely inside the voxel, though having Jolt do it would be better
+		//   as it won't have that limitation.
+		DebugLogWarning("testVoxelRay() ray-box intersection not implemented.");
+
+		/*for (int i = 0; i < collisionMeshDef.triangleCount; i++)
 		{
 			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
 			const int vertexIndex0 = indicesView.get(indicesIndex) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -411,15 +410,15 @@ namespace Physics
 
 			const Double3 v0Actual(
 				vertex0X + voxelReal.x,
-				MeshUtils::getScaledVertexY(vertex0Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				MeshUtils::getScaledVertexY(vertex0Y, scaleType, ceilingScale) + voxelReal.y,
 				vertex0Z + voxelReal.z);
 			const Double3 v1Actual(
 				vertex1X + voxelReal.x,
-				MeshUtils::getScaledVertexY(vertex1Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				MeshUtils::getScaledVertexY(vertex1Y, scaleType, ceilingScale) + voxelReal.y,
 				vertex1Z + voxelReal.z);
 			const Double3 v2Actual(
 				vertex2X + voxelReal.x,
-				MeshUtils::getScaledVertexY(vertex2Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
+				MeshUtils::getScaledVertexY(vertex2Y, scaleType, ceilingScale) + voxelReal.y,
 				vertex2Z + voxelReal.z);
 
 			const WorldDouble3 v0World = VoxelUtils::chunkPointToWorldPoint(voxelCoord.chunk, v0Actual);
@@ -435,7 +434,7 @@ namespace Physics
 				hit.initVoxel(t, hitCoord, voxel, facing);
 				break;
 			}
-		}
+		}*/
 
 		return success;
 	}

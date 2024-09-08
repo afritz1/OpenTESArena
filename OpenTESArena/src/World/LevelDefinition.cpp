@@ -48,7 +48,7 @@ LevelDefinition::ChasmPlacementDef::ChasmPlacementDef(ChasmDefID id, std::vector
 
 LevelDefinition::LevelDefinition()
 {
-	this->floorReplacementMeshDefID = -1;
+	this->floorReplacementShapeDefID = -1;
 	this->floorReplacementTextureDefID = -1;
 	this->floorReplacementTraitsDefID = -1;
 	this->floorReplacementChasmDefID = -1;
@@ -56,8 +56,8 @@ LevelDefinition::LevelDefinition()
 
 void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
-	this->voxelMeshIDs.init(width, height, depth);
-	this->voxelMeshIDs.fill(0);
+	this->voxelShapeIDs.init(width, height, depth);
+	this->voxelShapeIDs.fill(0);
 
 	this->voxelTextureIDs.init(width, height, depth);
 	this->voxelTextureIDs.fill(0);
@@ -68,22 +68,22 @@ void LevelDefinition::init(SNInt width, int height, WEInt depth)
 
 SNInt LevelDefinition::getWidth() const
 {
-	return this->voxelMeshIDs.getWidth();
+	return this->voxelShapeIDs.getWidth();
 }
 
 int LevelDefinition::getHeight() const
 {
-	return this->voxelMeshIDs.getHeight();
+	return this->voxelShapeIDs.getHeight();
 }
 
 WEInt LevelDefinition::getDepth() const
 {
-	return this->voxelMeshIDs.getDepth();
+	return this->voxelShapeIDs.getDepth();
 }
 
-LevelDefinition::VoxelMeshDefID LevelDefinition::getVoxelMeshID(SNInt x, int y, WEInt z) const
+LevelDefinition::VoxelShapeDefID LevelDefinition::getVoxelShapeID(SNInt x, int y, WEInt z) const
 {
-	return this->voxelMeshIDs.get(x, y, z);
+	return this->voxelShapeIDs.get(x, y, z);
 }
 
 LevelDefinition::VoxelTextureDefID LevelDefinition::getVoxelTextureID(SNInt x, int y, WEInt z) const
@@ -96,9 +96,9 @@ LevelDefinition::VoxelTraitsDefID LevelDefinition::getVoxelTraitsID(SNInt x, int
 	return this->voxelTraitsIDs.get(x, y, z);
 }
 
-void LevelDefinition::setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
+void LevelDefinition::setVoxelShapeID(SNInt x, int y, WEInt z, VoxelShapeDefID id)
 {
-	this->voxelMeshIDs.set(x, y, z, id);
+	this->voxelShapeIDs.set(x, y, z, id);
 }
 
 void LevelDefinition::setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
@@ -111,9 +111,9 @@ void LevelDefinition::setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID
 	this->voxelTraitsIDs.set(x, y, z, id);
 }
 
-LevelDefinition::VoxelMeshDefID LevelDefinition::getFloorReplacementMeshDefID() const
+LevelDefinition::VoxelShapeDefID LevelDefinition::getFloorReplacementShapeDefID() const
 {
-	return this->floorReplacementMeshDefID;
+	return this->floorReplacementShapeDefID;
 }
 
 LevelDefinition::VoxelTextureDefID LevelDefinition::getFloorReplacementTextureDefID() const
@@ -131,9 +131,9 @@ LevelDefinition::ChasmDefID LevelDefinition::getFloorReplacementChasmDefID() con
 	return this->floorReplacementChasmDefID;
 }
 
-void LevelDefinition::setFloorReplacementMeshDefID(VoxelMeshDefID id)
+void LevelDefinition::setFloorReplacementShapeDefID(VoxelShapeDefID id)
 {
-	this->floorReplacementMeshDefID = id;
+	this->floorReplacementShapeDefID = id;
 }
 
 void LevelDefinition::setFloorReplacementTextureDefID(VoxelTextureDefID id)

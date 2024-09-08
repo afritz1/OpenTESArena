@@ -17,7 +17,7 @@ class LevelDefinition
 {
 public:
 	// Points to various definitions in a level info definition.
-	using VoxelMeshDefID = int;
+	using VoxelShapeDefID = int;
 	using VoxelTextureDefID = int;
 	using VoxelTraitsDefID = int;
 	using EntityDefID = int;
@@ -84,10 +84,10 @@ public:
 		ChasmPlacementDef(ChasmDefID id, std::vector<WorldInt3> &&positions);
 	};
 private:
-	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
+	Buffer3D<VoxelShapeDefID> voxelShapeIDs;
 	Buffer3D<VoxelTextureDefID> voxelTextureIDs;
 	Buffer3D<VoxelTraitsDefID> voxelTraitsIDs;
-	VoxelMeshDefID floorReplacementMeshDefID;
+	VoxelShapeDefID floorReplacementShapeDefID;
 	VoxelTextureDefID floorReplacementTextureDefID;
 	VoxelTraitsDefID floorReplacementTraitsDefID;
 	ChasmDefID floorReplacementChasmDefID;
@@ -107,18 +107,18 @@ public:
 	int getHeight() const;
 	WEInt getDepth() const;
 
-	VoxelMeshDefID getVoxelMeshID(SNInt x, int y, WEInt z) const;
+	VoxelShapeDefID getVoxelShapeID(SNInt x, int y, WEInt z) const;
 	VoxelTextureDefID getVoxelTextureID(SNInt x, int y, WEInt z) const;
 	VoxelTraitsDefID getVoxelTraitsID(SNInt x, int y, WEInt z) const;
-	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
+	void setVoxelShapeID(SNInt x, int y, WEInt z, VoxelShapeDefID id);
 	void setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
 	void setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
 
-	VoxelMeshDefID getFloorReplacementMeshDefID() const;
+	VoxelShapeDefID getFloorReplacementShapeDefID() const;
 	VoxelTextureDefID getFloorReplacementTextureDefID() const;
 	VoxelTraitsDefID getFloorReplacementTraitsDefID() const;
 	ChasmDefID getFloorReplacementChasmDefID() const;
-	void setFloorReplacementMeshDefID(VoxelMeshDefID id);
+	void setFloorReplacementShapeDefID(VoxelShapeDefID id);
 	void setFloorReplacementTextureDefID(VoxelTextureDefID id);
 	void setFloorReplacementTraitsDefID(VoxelTraitsDefID id);
 	void setFloorReplacementChasmDefID(ChasmDefID id);

@@ -11,17 +11,17 @@
 
 namespace
 {
-	bool TryCreatePhysicsCollider(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, const VoxelMeshDefinition &voxelMeshDef,
-		const VoxelTraitsDefinition &voxelTraitsDef, const CollisionShapeDefinition &shapeDef, double ceilingScale, JPH::PhysicsSystem &physicsSystem,
+	bool TryCreatePhysicsCollider(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, const VoxelShapeDefinition &voxelShapeDef,
+		const CollisionShapeDefinition &collisionShapeDef, double ceilingScale, JPH::PhysicsSystem &physicsSystem,
 		JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
 		const double voxelYBottom = static_cast<double>(y) * ceilingScale;
 
-		DebugAssert(shapeDef.type == CollisionShapeType::Box);
-		const CollisionBoxShapeDefinition &boxShapeDef = shapeDef.box;
-		const VoxelMeshScaleType scaleType = voxelMeshDef.scaleType;
+		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
+		const CollisionBoxShapeDefinition &boxShapeDef = collisionShapeDef.box;
+		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 		const double scaledYBottom = voxelYBottom + MeshUtils::getScaledVertexY(boxShapeDef.yOffset, scaleType, ceilingScale);
 		const double scaledYTop = voxelYBottom + MeshUtils::getScaledVertexY(boxShapeDef.yOffset + boxShapeDef.height, scaleType, ceilingScale);
 		const double scaledHeight = scaledYTop - scaledYBottom;
@@ -80,26 +80,23 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				// Colliders are dependent on the mesh and any special traits.
-				const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(x, y, z);
-				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
-				const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
-				const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelTraitsDefID);
-				collisionChunk.meshDefIDs.set(x, y, z, collisionMeshDefID);
+				const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
+				const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
 				collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
 
+				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
 				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 				const bool voxelHasCollision = voxelTraitsDef.hasCollision(); // @todo: lore/sound triggers aren't included in this
 				collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
 				
 				if (voxelHasCollision)
 				{
-					const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
+					const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 					const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
 
 					// Generate box collider and add to the simulation.
 					JPH::BodyID bodyID;
-					if (TryCreatePhysicsCollider(x, y, z, chunkPos, voxelMeshDef, voxelTraitsDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
+					if (TryCreatePhysicsCollider(x, y, z, chunkPos, voxelShapeDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
 					{
 						collisionChunk.physicsBodyIDs.set(x, y, z, bodyID);
 					}
@@ -114,15 +111,13 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 	CollisionChunk &collisionChunk = this->getChunkAtPosition(chunkPos);
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyMeshDefPositions())
+	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyShapeDefPositions())
 	{
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(voxelPos.x, voxelPos.y, voxelPos.z);
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxelPos.x, voxelPos.y, voxelPos.z);
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk.getOrAddMeshDefIdMapping(voxelChunk, voxelMeshDefID);
-		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelTraitsDefID);
-		collisionChunk.meshDefIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, collisionMeshDefID);
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxelPos.x, voxelPos.y, voxelPos.z);
+		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
 		collisionChunk.shapeDefIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, collisionShapeDefID);
 
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxelPos.x, voxelPos.y, voxelPos.z);
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 		const bool voxelHasCollision = voxelTraitsDef.hasCollision();
 		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, voxelHasCollision);
@@ -135,12 +130,12 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 
 		if (voxelHasCollision)
 		{
-			const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
+			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 			const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
 
 			// Generate box collider and add to the simulation.
 			JPH::BodyID bodyID;
-			if (TryCreatePhysicsCollider(voxelPos.x, voxelPos.y, voxelPos.z, chunkPos, voxelMeshDef, voxelTraitsDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
+			if (TryCreatePhysicsCollider(voxelPos.x, voxelPos.y, voxelPos.z, chunkPos, voxelShapeDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
 			{
 				collisionChunk.physicsBodyIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, bodyID);
 			}

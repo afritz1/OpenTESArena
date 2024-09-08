@@ -16,7 +16,7 @@
 #include "VoxelDoorAnimationInstance.h"
 #include "VoxelDoorVisibilityInstance.h"
 #include "VoxelFadeAnimationInstance.h"
-#include "VoxelMeshDefinition.h"
+#include "VoxelShapeDefinition.h"
 #include "VoxelTextureDefinition.h"
 #include "VoxelTraitsDefinition.h"
 #include "VoxelTriggerDefinition.h"
@@ -38,7 +38,7 @@ class AudioManager;
 class VoxelChunk final : public Chunk
 {
 public:
-	using VoxelMeshDefID = int;
+	using VoxelShapeDefID = int;
 	using VoxelTextureDefID = int;
 	using VoxelTraitsDefID = int;
 	using TransitionDefID = int;
@@ -49,7 +49,7 @@ public:
 	using ChasmDefID = int;
 private:
 	// Definitions pointed to by voxel IDs.
-	std::vector<VoxelMeshDefinition> meshDefs;
+	std::vector<VoxelShapeDefinition> shapeDefs;
 	std::vector<VoxelTextureDefinition> textureDefs;
 	std::vector<VoxelTraitsDefinition> traitsDefs;
 	std::vector<TransitionDefinition> transitionDefs;
@@ -60,17 +60,17 @@ private:
 	std::vector<ChasmDefinition> chasmDefs;
 
 	// Indices into definitions for actual voxels in-game.
-	Buffer3D<VoxelMeshDefID> meshDefIDs;
+	Buffer3D<VoxelShapeDefID> shapeDefIDs;
 	Buffer3D<VoxelTextureDefID> textureDefIDs;
 	Buffer3D<VoxelTraitsDefID> traitsDefIDs;
-	VoxelMeshDefID floorReplacementMeshDefID;
+	VoxelShapeDefID floorReplacementShapeDefID;
 	VoxelTextureDefID floorReplacementTextureDefID;
 	VoxelTraitsDefID floorReplacementTraitsDefID;
 	ChasmDefID floorReplacementChasmDefID;
 
 	// Voxels that changed this frame. Reset at end-of-frame.
 	Buffer3D<VoxelDirtyType> dirtyVoxelTypes;
-	std::vector<VoxelInt3> dirtyMeshDefPositions;
+	std::vector<VoxelInt3> dirtyShapeDefPositions;
 	std::vector<VoxelInt3> dirtyDoorAnimInstPositions;
 	std::vector<VoxelInt3> dirtyDoorVisInstPositions;
 	std::vector<VoxelInt3> dirtyFadeAnimInstPositions;
@@ -101,8 +101,8 @@ private:
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	// This is slightly different than the chunk manager's version since it is chunk-independent (but as
 	// a result, voxels on a chunk edge must be updated by the chunk manager).
-	void getAdjacentMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID,
-		VoxelMeshDefID *outEastID, VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID);
+	void getAdjacentShapeDefIDs(const VoxelInt3 &voxel, VoxelShapeDefID *outNorthID,
+		VoxelShapeDefID *outEastID, VoxelShapeDefID *outSouthID, VoxelShapeDefID *outWestID);
 	void getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID,
 		VoxelTextureDefID *outEastID, VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID);
 	void getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID,
@@ -110,13 +110,13 @@ private:
 
 	// Sets this voxel dirty for geometry updating, etc. if not already.
 	void trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<VoxelInt3> &dirtyPositions, VoxelDirtyType dirtyType);
-	void setMeshDefDirty(SNInt x, int y, WEInt z);
+	void setShapeDefDirty(SNInt x, int y, WEInt z);
 	void setDoorAnimInstDirty(SNInt x, int y, WEInt z);
 	void setDoorVisInstDirty(SNInt x, int y, WEInt z);
 	void setFadeAnimInstDirty(SNInt x, int y, WEInt z);
 	void setChasmWallInstDirty(SNInt x, int y, WEInt z);
 public:
-	static constexpr VoxelMeshDefID AIR_MESH_DEF_ID = 0;
+	static constexpr VoxelShapeDefID AIR_SHAPE_DEF_ID = 0;
 	static constexpr VoxelTextureDefID AIR_TEXTURE_DEF_ID = 0;
 	static constexpr VoxelTraitsDefID AIR_TRAITS_DEF_ID = 0;
 
@@ -124,7 +124,7 @@ public:
 
 	void init(const ChunkInt2 &position, int height);
 
-	int getMeshDefCount() const;
+	int getShapeDefCount() const;
 	int getTextureDefCount() const;
 	int getTraitsDefCount() const;
 	int getTransitionDefCount() const;
@@ -135,7 +135,7 @@ public:
 	int getChasmDefCount() const;
 
 	// Gets the definition associated with a voxel def ID (can iterate with an index too).
-	const VoxelMeshDefinition &getMeshDef(VoxelMeshDefID id) const;
+	const VoxelShapeDefinition &getShapeDef(VoxelShapeDefID id) const;
 	const VoxelTextureDefinition &getTextureDef(VoxelTextureDefID id) const;
 	const VoxelTraitsDefinition &getTraitsDef(VoxelTraitsDefID id) const;
 	const TransitionDefinition &getTransitionDef(TransitionDefID id) const;
@@ -145,11 +145,11 @@ public:
 	const DoorDefinition &getDoorDef(DoorDefID id) const;
 	const ChasmDefinition &getChasmDef(ChasmDefID id) const;
 
-	VoxelMeshDefID getMeshDefID(SNInt x, int y, WEInt z) const;
+	VoxelShapeDefID getShapeDefID(SNInt x, int y, WEInt z) const;
 	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
 	VoxelTraitsDefID getTraitsDefID(SNInt x, int y, WEInt z) const;
 
-	BufferView<const VoxelInt3> getDirtyMeshDefPositions() const;
+	BufferView<const VoxelInt3> getDirtyShapeDefPositions() const;
 	BufferView<const VoxelInt3> getDirtyDoorAnimInstPositions() const; // Either animating or just closed this frame.
 	BufferView<const VoxelInt3> getDirtyDoorVisInstPositions() const;
 	BufferView<const VoxelInt3> getDirtyFadeAnimInstPositions() const; // Either animating or just finished this frame.
@@ -177,16 +177,16 @@ public:
 	BufferView<const VoxelTriggerInstance> getTriggerInsts() const;
 	bool tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
-	void setMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
+	void setShapeDefID(SNInt x, int y, WEInt z, VoxelShapeDefID id);
 	void setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
 	void setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
 	
-	void setFloorReplacementMeshDefID(VoxelMeshDefID id);
+	void setFloorReplacementShapeDefID(VoxelShapeDefID id);
 	void setFloorReplacementTextureDefID(VoxelTextureDefID id);
 	void setFloorReplacementTraitsDefID(VoxelTraitsDefID id);
 	void setFloorReplacementChasmDefID(ChasmDefID id);
 
-	VoxelMeshDefID addMeshDef(VoxelMeshDefinition &&meshDef);
+	VoxelShapeDefID addShapeDef(VoxelShapeDefinition &&shapeDef);
 	VoxelTextureDefID addTextureDef(VoxelTextureDefinition &&textureDef);
 	VoxelTraitsDefID addTraitsDef(VoxelTraitsDefinition &&traitsDef);
 	TransitionDefID addTransitionDef(TransitionDefinition &&transition);

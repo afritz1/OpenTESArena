@@ -800,10 +800,10 @@ double EntityChunkManager::getEntityCorrectedY(EntityInstanceID id, double ceili
 	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelTraitsDefinition::Raised &raised = voxelTraitsDef.raised;
-		const double meshYPos = raised.yOffset + raised.ySize;
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk->getMeshDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
-		const VoxelMeshDefinition &voxelMeshDef = chunk->getMeshDef(voxelMeshDefID);
-		raisedPlatformYOffset = MeshUtils::getScaledVertexY(meshYPos, voxelMeshDef.scaleType, ceilingScale);
+		const double shapeYPos = raised.yOffset + raised.ySize;
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = chunk->getShapeDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
+		const VoxelShapeDefinition &voxelShapeDef = chunk->getShapeDef(voxelShapeDefID);
+		raisedPlatformYOffset = MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}
 
 	return baseYPosition + entityDefYOffset + raisedPlatformYOffset;

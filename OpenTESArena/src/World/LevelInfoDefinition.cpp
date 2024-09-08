@@ -12,14 +12,14 @@ void LevelInfoDefinition::init(double ceilingScale)
 	this->ceilingScale = ceilingScale;
 	
 	// Add air voxel by default.
-	this->addVoxelMeshDef(VoxelMeshDefinition());
+	this->addVoxelShapeDef(VoxelShapeDefinition());
 	this->addVoxelTextureDef(VoxelTextureDefinition());
 	this->addVoxelTraitsDef(VoxelTraitsDefinition());
 }
 
-int LevelInfoDefinition::getVoxelMeshDefCount() const
+int LevelInfoDefinition::getVoxelShapeDefCount() const
 {
-	return static_cast<int>(this->voxelMeshDefs.size());
+	return static_cast<int>(this->voxelShapeDefs.size());
 }
 
 int LevelInfoDefinition::getVoxelTextureDefCount() const
@@ -67,10 +67,10 @@ int LevelInfoDefinition::getChasmDefCount() const
 	return static_cast<int>(this->chasmDefs.size());
 }
 
-const VoxelMeshDefinition &LevelInfoDefinition::getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const
+const VoxelShapeDefinition &LevelInfoDefinition::getVoxelShapeDef(LevelDefinition::VoxelShapeDefID id) const
 {
-	DebugAssertIndex(this->voxelMeshDefs, id);
-	return this->voxelMeshDefs[id];
+	DebugAssertIndex(this->voxelShapeDefs, id);
+	return this->voxelShapeDefs[id];
 }
 
 const VoxelTextureDefinition &LevelInfoDefinition::getVoxelTextureDef(LevelDefinition::VoxelTextureDefID id) const
@@ -140,10 +140,10 @@ double LevelInfoDefinition::getCeilingScale() const
 	return this->ceilingScale;
 }
 
-LevelDefinition::VoxelMeshDefID LevelInfoDefinition::addVoxelMeshDef(VoxelMeshDefinition &&def)
+LevelDefinition::VoxelShapeDefID LevelInfoDefinition::addVoxelShapeDef(VoxelShapeDefinition &&def)
 {
-	const LevelDefinition::VoxelMeshDefID id = static_cast<LevelDefinition::VoxelMeshDefID>(this->voxelMeshDefs.size());
-	this->voxelMeshDefs.emplace_back(std::move(def));
+	const LevelDefinition::VoxelShapeDefID id = static_cast<LevelDefinition::VoxelShapeDefID>(this->voxelShapeDefs.size());
+	this->voxelShapeDefs.emplace_back(std::move(def));
 	return id;
 }
 
