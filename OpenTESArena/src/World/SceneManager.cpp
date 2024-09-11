@@ -169,11 +169,11 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	this->gameWorldPaletteTextureRef.unlockTexels();
 }
 
-void SceneManager::cleanUp()
+void SceneManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
 {
 	this->chunkManager.cleanUp();
 	this->voxelChunkManager.cleanUp();
-	this->entityChunkManager.cleanUp();
+	this->entityChunkManager.cleanUp(physicsSystem);
 	this->renderVoxelChunkManager.cleanUp();
 	this->renderEntityChunkManager.cleanUp();
 	this->renderLightChunkManager.cleanUp();

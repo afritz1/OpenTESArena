@@ -633,7 +633,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	chunkManager.update(playerCoord.chunk, options.getMisc_ChunkDistance());
 
 	sceneManager.voxelChunkManager.recycleAllChunks();
-	sceneManager.entityChunkManager.clear();
+	sceneManager.entityChunkManager.clear(physicsSystem);
 	sceneManager.collisionChunkManager.clear(physicsSystem);
 	sceneManager.voxelVisChunkManager.recycleAllChunks();
 	sceneManager.entityVisChunkManager.recycleAllChunks();
@@ -904,7 +904,7 @@ void GameState::tickEntities(double dt, Game &game)
 	entityChunkManager.update(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
 		chunkManager.getFreedChunkPositions(), player, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices,
 		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game.getRandom(), voxelChunkManager, game.getAudioManager(),
-		game.getTextureManager(), game.getRenderer());
+		game.getPhysicsSystem(), game.getTextureManager(), game.getRenderer());
 }
 
 void GameState::tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game)
