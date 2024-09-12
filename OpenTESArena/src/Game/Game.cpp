@@ -494,6 +494,9 @@ const Rect &Game::getNativeCursorRegion(int index) const
 
 TextBox *Game::getTriggerTextBox()
 {
+	DebugAssert(this->isSimulatingScene());
+	DebugAssert(this->gameState.isActiveMapValid());
+
 	Panel *panel = this->getActivePanel();
 	if (panel == nullptr)
 	{
@@ -501,13 +504,7 @@ TextBox *Game::getTriggerTextBox()
 		return nullptr;
 	}
 
-	GameWorldPanel *gameWorldPanel = dynamic_cast<GameWorldPanel*>(panel);
-	if (gameWorldPanel == nullptr)
-	{
-		DebugLogError("Active panel is not game world panel for trigger text box getter.");
-		return nullptr;
-	}
-
+	GameWorldPanel *gameWorldPanel = static_cast<GameWorldPanel*>(panel); // @todo: can't use dynamic_cast anymore, this isn't safe.
 	return &gameWorldPanel->getTriggerTextBox();
 }
 

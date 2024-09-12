@@ -74,7 +74,7 @@ std::unique_ptr<Item> Accessory::clone() const
 {
 	return std::make_unique<Accessory>(
 		this->getAccessoryType(), this->getMetal().getMetalType(),
-		dynamic_cast<const AccessoryArtifactData*>(this->getArtifactData()));
+		static_cast<const AccessoryArtifactData*>(this->getArtifactData())); // @todo: unsafe cast, can't use dynamic_cast anymore
 }
 
 ItemType Accessory::getItemType() const

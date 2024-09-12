@@ -77,7 +77,7 @@ std::unique_ptr<Item> Shield::clone() const
 {
 	return std::make_unique<Shield>(this->getShieldType(),
 		this->armorMaterial->getMetal().getMetalType(),
-		dynamic_cast<const ShieldArtifactData*>(this->getArtifactData()));
+		static_cast<const ShieldArtifactData*>(this->getArtifactData())); // @todo: unsafe cast, can't use dynamic_cast anymore
 }
 
 double Shield::getWeight() const

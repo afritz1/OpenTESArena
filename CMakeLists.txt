@@ -35,6 +35,9 @@ IF (MSVC)
     # Multi-processor compilation.
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
+    # Disable runtime type info.
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
+
     # Add various optimizations to release builds.
     SET(CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO "/O2 /Ob2 /Oi /Ot /Oy /fp:fast /Zi")
     SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "${CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO} /GL")
@@ -49,6 +52,9 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -pthread")
     ENDIF ()
+
+    # Disable runtime type info (avoids linker error w/ Jolt DebugRendererSimple).
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
     # Debug builds.
     SET(CMAKE_CXX_FLAGS_DEBUG "-g")

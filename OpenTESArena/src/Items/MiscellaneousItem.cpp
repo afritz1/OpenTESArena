@@ -49,7 +49,7 @@ MiscellaneousItem::MiscellaneousItem(const MiscellaneousArtifactData *artifactDa
 std::unique_ptr<Item> MiscellaneousItem::clone() const
 {
 	return std::make_unique<MiscellaneousItem>(this->miscItemType,
-		dynamic_cast<const MiscellaneousArtifactData*>(this->getArtifactData()));
+		static_cast<const MiscellaneousArtifactData*>(this->getArtifactData())); // @todo: unsafe cast, can't use dynamic_cast anymore
 }
 
 ItemType MiscellaneousItem::getItemType() const
