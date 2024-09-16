@@ -297,13 +297,13 @@ void GameWorldPanel::initUiDrawCalls()
 
 	const auto &player = game.getPlayer();
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
-		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
+		player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
 
 	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
 	this->noMagicTextureRef.init(noMagicTextureID, renderer);
 
-	const auto &weaponAnimation = player.getWeaponAnimation();
+	const auto &weaponAnimation = player.weaponAnimation;
 	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 	const std::optional<TextureFileMetadataID> weaponAnimMetadataID = textureManager.tryGetMetadataID(weaponFilename.c_str());
 	if (!weaponAnimMetadataID.has_value())
@@ -339,7 +339,7 @@ void GameWorldPanel::initUiDrawCalls()
 	{
 		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
+			const auto &weaponAnimation = player.weaponAnimation;
 			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
 			return textureRef.get();
 		};
@@ -348,7 +348,7 @@ void GameWorldPanel::initUiDrawCalls()
 		{
 			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
-			const auto &weaponAnimation = player.getWeaponAnimation();
+			const auto &weaponAnimation = player.weaponAnimation;
 			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
 
@@ -370,7 +370,7 @@ void GameWorldPanel::initUiDrawCalls()
 		{
 			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
-			const auto &weaponAnimation = player.getWeaponAnimation();
+			const auto &weaponAnimation = player.weaponAnimation;
 			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
 			const Int2 textureDims(textureRef.getWidth(), textureRef.getHeight());
 			const Double2 texturePercents(
@@ -389,7 +389,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
+			const auto &weaponAnimation = player.weaponAnimation;
 			return !this->isPaused() && !weaponAnimation.isSheathed();
 		};
 
@@ -490,14 +490,14 @@ void GameWorldPanel::initUiDrawCalls()
 	{
 		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
+			const auto &weaponAnimation = player.weaponAnimation;
 			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
 			return textureRef.get();
 		};
 
 		UiDrawCall::PositionFunc weaponAnimPositionFunc = [this, &game, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
+			const auto &weaponAnimation = player.weaponAnimation;
 			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
 
@@ -508,7 +508,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::SizeFunc weaponAnimSizeFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
+			const auto &weaponAnimation = player.weaponAnimation;
 			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
 			return Int2(textureRef.getWidth(), textureRef.getHeight());
 		};
@@ -517,7 +517,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
+			const auto &weaponAnimation = player.weaponAnimation;
 			return !this->isPaused() && !weaponAnimation.isSheathed();
 		};
 
@@ -547,7 +547,7 @@ void GameWorldPanel::initUiDrawCalls()
 			PivotType::TopLeft);
 
 		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-		const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
+		const auto &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
 		if (!charClassDef.canCastMagic())
 		{
 			this->addDrawCall(
@@ -805,8 +805,8 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
 	const auto &player = game.getPlayer();
-	const CoordDouble3 &playerPos = player.getPosition();
-	const VoxelDouble3 &playerDir = player.getDirection();
+	const CoordDouble3 &playerPos = player.camera.position;
+	const VoxelDouble3 &playerDir = player.camera.getDirection();
 
 	auto &gameState = game.getGameState();
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();

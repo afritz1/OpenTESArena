@@ -103,7 +103,7 @@ void GameWorldUiController::onCharacterSheetButtonSelected(Game &game)
 
 void GameWorldUiController::onWeaponButtonSelected(Player &player)
 {
-	WeaponAnimation &weaponAnimation = player.getWeaponAnimation();
+	WeaponAnimation &weaponAnimation = player.weaponAnimation;
 
 	if (weaponAnimation.isSheathed())
 	{
@@ -189,7 +189,7 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 		}();
 
 		const auto &player = game.getPlayer();
-		game.setPanel<AutomapPanel>(player.getPosition(), player.getGroundDirection(), voxelChunkManager, automapLocationName);
+		game.setPanel<AutomapPanel>(player.camera.position, player.getGroundDirection(), voxelChunkManager, automapLocationName);
 	}
 	else
 	{

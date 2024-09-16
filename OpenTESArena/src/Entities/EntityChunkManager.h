@@ -23,7 +23,6 @@ class BinaryAssetLibrary;
 class EntityDefinitionLibrary;
 class LevelDefinition;
 class LevelInfoDefinition;
-class Player;
 class Renderer;
 class TextureManager;
 class VoxelChunk;
@@ -31,6 +30,7 @@ class VoxelChunkManager;
 
 struct EntityObservedResult;
 struct MapSubDefinition;
+struct Player;
 
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {

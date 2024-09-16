@@ -5,13 +5,13 @@
 
 class Game;
 class GameWorldPanel;
-class Player;
 class Rect;
 class TextBox;
 
 enum class MouseButtonType;
 
 struct InputActionCallbackValues;
+struct Player;
 
 namespace GameWorldUiController
 {

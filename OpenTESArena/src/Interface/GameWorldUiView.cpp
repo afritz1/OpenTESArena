@@ -523,8 +523,8 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	}
 
 	const auto &player = game.getPlayer();
-	const CoordDouble3 &rayStart = player.getPosition();
-	const VoxelDouble3 &cameraDirection = player.getDirection();
+	const CoordDouble3 &rayStart = player.camera.position;
+	const VoxelDouble3 &cameraDirection = player.camera.getDirection();
 	const double viewAspectRatio = renderer.getViewAspect();
 
 	const double ceilingScale = gameState.getActiveCeilingScale();
@@ -582,13 +582,13 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 	const auto &options = game.getOptions();
 	const auto &player = game.getPlayer();
-	const Double3 &cameraDirection = player.getDirection();
+	const Double3 &cameraDirection = player.camera.getDirection();
 
 	auto &renderer = game.getRenderer();
 	const Int2 viewDims = renderer.getViewDimensions();
 	const Int2 viewCenterPoint(viewDims.x / 2, viewDims.y / 2);
 
-	const CoordDouble3 rayStart = player.getPosition();
+	const CoordDouble3 rayStart = player.camera.position;
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, viewCenterPoint);
 
 	const SceneManager &sceneManager = game.getSceneManager();
@@ -695,7 +695,7 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 
 	const SceneManager &sceneManager = game.getSceneManager();
 	const Player &player = game.getPlayer();
-	const CoordDouble3 &playerPos = player.getPosition();
+	const CoordDouble3 &playerPos = player.camera.position;
 	const CoordInt3 playerVoxelCoord(playerPos.chunk, VoxelUtils::pointToVoxel(playerPos.point));
 	const VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
 	const VoxelVisibilityChunk *playerVoxelVisChunk = voxelVisChunkManager.tryGetChunkAtPosition(playerPos.chunk);

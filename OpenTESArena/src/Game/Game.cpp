@@ -570,8 +570,8 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	if (this->gameState.isActiveMapValid())
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
-		const CoordDouble3 &playerCoord = this->player.getPosition();
-		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.getDirection(),
+		const CoordDouble3 &playerCoord = this->player.camera.position;
+		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.camera.getDirection(),
 			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
@@ -768,8 +768,8 @@ void Game::renderDebugInfo()
 	if (profilerLevel >= 3)
 	{
 		// Player position, direction, etc.
-		const CoordDouble3 &playerPosition = this->player.getPosition();
-		const Double3 &direction = this->player.getDirection();
+		const CoordDouble3 &playerPosition = this->player.camera.position;
+		const Double3 &direction = this->player.camera.getDirection();
 
 		const std::string chunkStr = playerPosition.chunk.toString();
 		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
@@ -896,7 +896,7 @@ void Game::loop()
 			if (this->isSimulatingScene() && this->gameState.isActiveMapValid())
 			{
 				// Recalculate the active chunks.
-				const CoordDouble3 oldPlayerCoord = this->player.getPosition();
+				const CoordDouble3 oldPlayerCoord = this->player.camera.position;
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
 				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
@@ -918,8 +918,9 @@ void Game::loop()
 				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);
 				this->physicsSystem.Update(clampedDeltaTime, frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
 
-				const CoordDouble3 newPlayerCoord = this->player.getPosition();
-				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, this->player.getDirection(),
+				const CoordDouble3 newPlayerCoord = this->player.camera.position;
+				const Double3 newPlayerDirection = this->player.camera.getDirection();
+				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, newPlayerDirection,
 					this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 
 				this->gameState.tickVisibility(renderCamera, *this);
@@ -927,8 +928,7 @@ void Game::loop()
 
 				// Update audio listener orientation.
 				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(newPlayerCoord);
-				const WorldDouble3 &direction = this->player.getDirection();
-				const AudioManager::ListenerData listenerData(absolutePosition, direction);
+				const AudioManager::ListenerData listenerData(absolutePosition, newPlayerDirection);
 				this->audioManager.updateListener(listenerData);
 			}
 

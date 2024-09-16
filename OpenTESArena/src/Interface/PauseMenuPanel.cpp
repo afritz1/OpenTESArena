@@ -134,7 +134,7 @@ bool PauseMenuPanel::init()
 
 	const auto &player = game.getPlayer();
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
-		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
+		player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
 	this->addDrawCall(
 		this->playerPortraitTextureRef.get(),
@@ -146,7 +146,7 @@ bool PauseMenuPanel::init()
 	this->noMagicTextureRef.init(noMagicTextureID, renderer);
 
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
+	const auto &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
 	if (!charClassDef.canCastMagic())
 	{
 		this->addDrawCall(

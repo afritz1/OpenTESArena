@@ -601,7 +601,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 		const double ceilingScale = this->getActiveCeilingScale();
 
-		const CoordDouble3 oldPlayerPos = player.getPosition(); // The player should be inside the transition voxel.
+		const CoordDouble3 oldPlayerPos = player.camera.position; // The player should be inside the transition voxel.
 		const VoxelInt3 oldPlayerVoxel = VoxelUtils::pointToVoxel(oldPlayerPos.point);
 		const VoxelDouble3 oldPlayerCenteredPoint = VoxelUtils::getVoxelCenter(oldPlayerVoxel);
 		const CoordDouble3 newPlayerPos(
@@ -624,7 +624,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	Renderer &renderer = game.getRenderer();
 	SceneManager &sceneManager = game.getSceneManager();
 
-	const CoordDouble3 &playerCoord = player.getPosition();
+	const CoordDouble3 &playerCoord = player.camera.position;
 
 	// Clear and re-populate scene immediately so it's ready for rendering this frame (otherwise we get a black frame).
 	const Options &options = game.getOptions();
@@ -659,7 +659,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.getRandom(), textureManager);
 
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.camera.getDirection(),
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 
 	this->tickVoxels(0.0, game);
@@ -820,9 +820,9 @@ void GameState::tickUiMessages(double dt)
 void GameState::tickPlayer(double dt, Game &game)
 {
 	auto &player = game.getPlayer();
-	const CoordDouble3 oldPlayerCoord = player.getPosition();
+	const CoordDouble3 oldPlayerCoord = player.camera.position;
 	player.tick(game, dt);
-	const CoordDouble3 newPlayerCoord = player.getPosition();
+	const CoordDouble3 newPlayerCoord = player.camera.position;
 
 	// Handle input for the player's attack.
 	const auto &inputManager = game.getInputManager();
@@ -867,7 +867,7 @@ void GameState::tickVoxels(double dt, Game &game)
 
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	voxelChunkManager.update(dt, chunkManager.getNewChunkPositions(), chunkManager.getFreedChunkPositions(),
-		player.getPosition(), &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs,
+		player.camera.position, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs,
 		this->getActiveCeilingScale(), game.getAudioManager());
 }
 
@@ -959,7 +959,7 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const double chasmAnimPercent = this->getChasmAnimPercent();
 
 	const Player &player = game.getPlayer();
-	const CoordDouble3 &playerCoord = player.getPosition();
+	const CoordDouble3 &playerCoord = player.camera.position;
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 	const Double2 playerDirXZ = player.getGroundDirection();
 

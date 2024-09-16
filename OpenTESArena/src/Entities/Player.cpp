@@ -199,55 +199,10 @@ void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
 	}
 }
 
-const CoordDouble3 &Player::getPosition() const
-{
-	return this->camera.position;
-}
-
-const std::string &Player::getDisplayName() const
-{
-	return this->displayName;
-}
-
 std::string Player::getFirstName() const
 {
 	Buffer<std::string> nameTokens = String::split(this->displayName);
 	return nameTokens[0];
-}
-
-int Player::getPortraitID() const
-{
-	return this->portraitID;
-}
-
-bool Player::isMale() const
-{
-	return this->male;
-}
-
-int Player::getRaceID() const
-{
-	return this->raceID;
-}
-
-int Player::getCharacterClassDefID() const
-{
-	return this->charClassDefID;
-}
-
-const PrimaryAttributeSet &Player::getAttributes() const
-{
-	return this->attributes;
-}
-
-const Double3 &Player::getDirection() const
-{
-	return this->camera.getDirection();
-}
-
-const Double3 &Player::getRight() const
-{
-	return this->camera.getRight();
 }
 
 Double2 Player::getGroundDirection() const
@@ -256,29 +211,9 @@ Double2 Player::getGroundDirection() const
 	return Double2(direction.x, direction.z).normalized();
 }
 
-const VoxelDouble3 &Player::getVelocity() const
-{
-	return this->velocity;
-}
-
 double Player::getJumpMagnitude() const
 {
 	return JUMP_VELOCITY;
-}
-
-WeaponAnimation &Player::getWeaponAnimation()
-{
-	return this->weaponAnimation;
-}
-
-const WeaponAnimation &Player::getWeaponAnimation() const
-{
-	return this->weaponAnimation;
-}
-
-JPH::BodyID Player::getPhysicsBodyID() const
-{
-	return this->physicsBodyID;
 }
 
 double Player::getFeetY() const
@@ -371,7 +306,7 @@ void Player::handleCollision(double dt, const VoxelChunkManager &voxelChunkManag
 	const int feetVoxelY = static_cast<int>(std::floor(this->getFeetY() / ceilingScale));
 
 	// Regular old Euler integration in XZ plane.
-	const CoordDouble3 curPlayerCoord = this->getPosition();
+	const CoordDouble3 curPlayerCoord = this->camera.position;
 	const VoxelDouble3 deltaPosition(this->velocity.x * dt, 0.0, this->velocity.z * dt);
 
 	// The next voxels in X/Y/Z directions based on player movement.
@@ -492,7 +427,7 @@ void Player::setVelocityToZero()
 
 void Player::setDirectionToHorizon()
 {
-	const CoordDouble3 &coord = this->getPosition();
+	const CoordDouble3 &coord = this->camera.position;
 	const WorldDouble2 groundDirection = this->getGroundDirection();
 	const VoxelDouble3 lookAtPoint = coord.point + VoxelDouble3(groundDirection.x, 0.0, groundDirection.y);
 	const CoordDouble3 lookAtCoord(coord.chunk, lookAtPoint);

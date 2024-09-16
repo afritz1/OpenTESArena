@@ -136,7 +136,7 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	const MapType mapType = mapDef.getMapType();
 	const OriginalInt2 displayedCoords = [&player, mapType]()
 	{
-		const WorldDouble3 absolutePlayerPosition = VoxelUtils::coordToWorldPoint(player.getPosition());
+		const WorldDouble3 absolutePlayerPosition = VoxelUtils::coordToWorldPoint(player.camera.position);
 		const WorldInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
 		const WorldInt2 playerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
 		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(playerVoxelXZ);
@@ -201,7 +201,7 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 	{
 		const Player &player = game.getPlayer();
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-		const int charClassDefID = player.getCharacterClassDefID();
+		const int charClassDefID = player.charClassDefID;
 		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 		return charClassDef.canCastMagic();
 	}
@@ -255,8 +255,8 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 	const auto &options = game.getOptions();
 	const auto &renderer = game.getRenderer();
 	const Player &player = game.getPlayer();
-	const CoordDouble3 &playerCoord = player.getPosition();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+	const CoordDouble3 &playerCoord = player.camera.position;
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.camera.getDirection(),
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.

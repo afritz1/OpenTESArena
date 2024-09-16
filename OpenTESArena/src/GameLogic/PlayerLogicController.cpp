@@ -45,7 +45,7 @@ namespace PlayerLogicController
 		// because the Y component is intentionally truncated).
 		const Double2 groundDirection = player.getGroundDirection();
 		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-		const Double3 &rightDirection = player.getRight();
+		const Double3 &rightDirection = player.camera.getRight();
 
 		// Mouse movement takes priority over key movement.
 		if (leftClick && isOnGround)
@@ -65,7 +65,7 @@ namespace PlayerLogicController
 			// Strength of movement is determined by the mouse's position in each region.
 			// Motion magnitude (percent) is between 0.0 and 1.0.
 			double percent = 0.0;
-			Double3 accelDirection(0.0, 0.0, 0.0);
+			Double3 accelDirection = Double3::Zero;
 			if (topLeft.contains(mousePosition))
 			{
 				// Forward.
@@ -130,7 +130,7 @@ namespace PlayerLogicController
 		else if ((forward || backward || ((left || right) && lCtrl) || space) && isOnGround)
 		{
 			// Calculate the acceleration direction based on input.
-			Double3 accelDirection(0.0, 0.0, 0.0);
+			Double3 accelDirection = Double3::Zero;
 
 			if (forward)
 			{
@@ -190,10 +190,10 @@ namespace PlayerLogicController
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
-		const Double3 direction = player.getDirection();
+		const Double3 direction = player.camera.getDirection();
 		const Double2 groundDirection = player.getGroundDirection();
 		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-		const Double3 &rightDirection = player.getRight();
+		const Double3 &rightDirection = player.camera.getRight();
 		const Double3 upDirection = rightDirection.cross(direction).normalized();
 
 		if (!isGhostModeEnabled)
@@ -277,7 +277,7 @@ namespace PlayerLogicController
 			{
 				accelDirection = accelDirection.normalized();
 
-				const CoordDouble3 &playerCoord = player.getPosition();
+				const CoordDouble3 &playerCoord = player.camera.position;
 
 				constexpr double ghostSpeed = 10.0;
 				const VoxelDouble3 deltaPoint = accelDirection * (ghostSpeed * dt);
@@ -380,7 +380,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, B
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
 		auto &player = game.getPlayer();
-		const auto &weaponAnim = player.getWeaponAnimation();
+		const auto &weaponAnim = player.weaponAnimation;
 		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
 
 		if (turning)
@@ -446,7 +446,7 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	// maybe the game loop could call a "Panel::fixedTick()" method.
 
 	// Only handle attacking if the player's weapon is currently idle.
-	auto &weaponAnimation = game.getPlayer().getWeaponAnimation();
+	auto &weaponAnimation = game.getPlayer().weaponAnimation;
 	if (weaponAnimation.isIdle())
 	{
 		const auto &inputManager = game.getInputManager();
@@ -586,8 +586,8 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
 	auto &player = game.getPlayer();
-	const Double3 &cameraDirection = player.getDirection();
-	const CoordDouble3 rayStart = player.getPosition();
+	const Double3 &cameraDirection = player.camera.getDirection();
+	const CoordDouble3 rayStart = player.camera.position;
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 	constexpr bool includeEntities = true;
 

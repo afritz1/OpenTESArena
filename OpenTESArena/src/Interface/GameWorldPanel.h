@@ -15,9 +15,10 @@
 // - The original: compass, portrait, stat bars, and buttons with original mouse.
 // - A modern version: only compass and stat bars with free-look mouse.
 
-class Player;
 class Renderer;
 class TextureManager;
+
+struct Player;
 
 class GameWorldPanel : public Panel
 {

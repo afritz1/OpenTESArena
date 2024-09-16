@@ -723,8 +723,8 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 		player.setVelocityToZero();
 
 		auto &gameState = game.getGameState();
-		const int provinceID = player.getRaceID();
-		const int locationID = game.getRandom().next(32);
+		const int provinceID = player.raceID; // @todo: this should be more like a WorldMapDefinition::getProvinceIdForRaceId() that searches provinces
+		const int locationID = game.getRandom().next(32); // @todo: this should not assume 32 locations per province
 
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
