@@ -134,7 +134,7 @@ namespace MathUtils
 
 	// Finds the intersection of a ray on the given plane. Returns success.
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint);
+		const Double3 &planeOrigin, const Double3 &planeNormal, double *outT);
 
 	// Finds the intersection of a ray with the given triangle. Returns success.
 	bool rayTriangleIntersection(const Double3 &rayStart, const Double3 &rayDirection,
@@ -143,7 +143,11 @@ namespace MathUtils
 	// Finds the intersection of a ray and a quad defined by three vertices. The vertex order
 	// must go around the quad (i.e. v0 = top left, v1 = bottom left, v2 = bottom right).
 	bool rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint);
+		const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT);
+
+	// Finds the intersection of a ray and a box.
+	bool rayBoxIntersection(const Double3 &rayStart, const Double3 &rayDirection, const Double3 &boxCenter,
+		double width, double height, double depth, Radians yRotation, double *outT);
 
 	// Returns the signed distance of the point to the plane (can be negative).
 	double distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal);

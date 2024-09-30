@@ -241,7 +241,7 @@ bool MathUtils::triangleRectangleIntersection(const Double2 &triangleP0, const D
 }
 
 bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-	const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint)
+	const Double3 &planeOrigin, const Double3 &planeNormal, double *outT)
 {
 	DebugAssert(rayDirection.isNormalized());
 	DebugAssert(planeNormal.isNormalized());
@@ -253,8 +253,7 @@ bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &ray
 		const double t = projection.dot(planeNormal) / denominator;
 		if (t >= 0.0)
 		{
-			// An intersection exists. Find it.
-			*outPoint = rayStart + (rayDirection * t);
+			*outT = t;
 			return true;
 		}
 	}
@@ -278,7 +277,7 @@ bool MathUtils::rayTriangleIntersection(const Double3 &rayStart, const Double3 &
 
 	const double invDot = 1.0 / v0v1CrossDot;
 	const Double3 startV0Diff = rayStart - v0;
-	
+
 	// First barycentric coordinate.
 	const double u = invDot * startV0Diff.dot(dirV0V2Cross);
 	if ((u < 0.0) || (u > 1.0))
@@ -288,7 +287,7 @@ bool MathUtils::rayTriangleIntersection(const Double3 &rayStart, const Double3 &
 	}
 
 	const Double3 diffV0V1Cross = startV0Diff.cross(v0v1);
-	
+
 	// Second barycentric coordinate.
 	const double v = invDot * rayDirection.dot(diffV0V1Cross);
 	if ((v < 0.0) || ((u + v) > 1.0))
@@ -309,36 +308,103 @@ bool MathUtils::rayTriangleIntersection(const Double3 &rayStart, const Double3 &
 }
 
 bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-	const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint)
+	const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT)
 {
 	const Double3 v3 = v0 + (v2 - v1);
+	const Double3 quadNormal = (v2 - v0).cross(v1 - v0).normalized();
 
-	// Calculate the normal of the plane which contains the quad.
-	const Double3 normal = (v2 - v0).cross(v1 - v0).normalized();
-
-	// Get the intersection of the ray and the plane that contains the quad.
-	Double3 hitPoint;
-	if (MathUtils::rayPlaneIntersection(rayStart, rayDirection, v0, normal, &hitPoint))
+	double hitT;
+	if (!MathUtils::rayPlaneIntersection(rayStart, rayDirection, v0, quadNormal, &hitT))
 	{
-		// The plane intersection is a point co-planar with the quad. Check if the point is
-		// within the bounds of the quad.
-		const Double3 a = (v1 - v0).cross(hitPoint - v0);
-		const Double3 b = (v2 - v1).cross(hitPoint - v1);
-		const Double3 c = (v3 - v2).cross(hitPoint - v2);
-		const Double3 d = (v0 - v3).cross(hitPoint - v3);
+		return false;
+	}
 
-		const double ab = a.dot(b);
-		const double bc = b.dot(c);
-		const double cd = c.dot(d);
+	// The plane intersection is a point co-planar with the quad. Check if the point is
+	// within the bounds of the quad.
+	const Double3 hitPoint = rayStart + (rayDirection * hitT);
+	const Double3 a = (v1 - v0).cross(hitPoint - v0);
+	const Double3 b = (v2 - v1).cross(hitPoint - v1);
+	const Double3 c = (v3 - v2).cross(hitPoint - v2);
+	const Double3 d = (v0 - v3).cross(hitPoint - v3);
+	const double ab = a.dot(b);
+	const double bc = b.dot(c);
+	const double cd = c.dot(d);	
+	if (((ab * bc) >= 0.0) && ((bc * cd) >= 0.0))
+	{
+		*outT = hitT;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 
-		if (((ab * bc) >= 0.0) && ((bc * cd) >= 0.0))
+bool MathUtils::rayBoxIntersection(const Double3 &rayStart, const Double3 &rayDirection, const Double3 &boxCenter,
+	double width, double height, double depth, Radians yRotation, double *outT)
+{
+	const double halfWidth = width * 0.50;
+	const double halfHeight = height * 0.50;
+	const double halfDepth = depth * 0.50;
+
+	auto makeModelSpaceVertex = [yRotation](double x, double y, double z)
+	{
+		return Double3(
+			(x * std::cos(yRotation)) - (z * std::sin(yRotation)),
+			y,
+			(x * std::sin(yRotation)) + (z * std::cos(yRotation)));
+	};
+	
+	const Double3 modelVertices[] =
+	{
+		makeModelSpaceVertex(-halfWidth, -halfHeight, -halfDepth), // 0 0 0
+		makeModelSpaceVertex(halfWidth, -halfHeight, -halfDepth), // 1 0 0
+		makeModelSpaceVertex(-halfWidth, halfHeight, -halfDepth), // 0 1 0
+		makeModelSpaceVertex(halfWidth, halfHeight, -halfDepth), // 1 1 0
+		makeModelSpaceVertex(-halfWidth, -halfHeight, halfDepth), // 0 0 1
+		makeModelSpaceVertex(halfWidth, -halfHeight, halfDepth), // 1 0 1
+		makeModelSpaceVertex(-halfWidth, halfHeight, halfDepth), // 0 1 1
+		makeModelSpaceVertex(halfWidth, halfHeight, halfDepth) // 1 1 1
+	};
+
+	constexpr int modelIndices[][3] =
+	{
+		{ 2, 0, 4 }, // -X
+		{ 7, 5, 1 }, // +X
+		{ 0, 1, 5 }, // -Y
+		{ 3, 2, 6 }, // +Y
+		{ 3, 1, 0 }, // -Z
+		{ 6, 4, 5 }  // +Z
+	};
+
+	bool anyHit = false;
+	double maxT = std::numeric_limits<double>::infinity();
+	for (const auto &faceIndices : modelIndices)
+	{
+		const Double3 v0 = boxCenter + modelVertices[faceIndices[0]];
+		const Double3 v1 = boxCenter + modelVertices[faceIndices[1]];
+		const Double3 v2 = boxCenter + modelVertices[faceIndices[2]];
+
+		double currentT;
+		if (MathUtils::rayQuadIntersection(rayStart, rayDirection, v0, v1, v2, &currentT))
 		{
-			*outPoint = hitPoint;
-			return true;
+			if (currentT < maxT)
+			{
+				anyHit = true;
+				maxT = currentT;
+			}
 		}
 	}
 
-	return false;
+	if (anyHit)
+	{
+		*outT = maxT;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 double MathUtils::distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal)

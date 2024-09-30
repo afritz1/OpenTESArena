@@ -111,7 +111,7 @@ namespace ArenaMeshUtils
 			this->boxYRotation = 0.0;
 		}
 
-		void initDiagonalBoxValues(bool isAngleReversed)
+		void initDiagonalBoxValues(bool isAnglePositive)
 		{
 			constexpr Radians diagonalAngle = Constants::Pi / 4.0;
 			constexpr double diagonalThickness = 0.050; // Arbitrary thin wall thickness
@@ -121,7 +121,7 @@ namespace ArenaMeshUtils
 			this->boxHeight = 1.0;
 			this->boxDepth = diagonalThickness;
 			this->boxYOffset = 0.0;
-			this->boxYRotation = isAngleReversed ? -diagonalAngle : diagonalAngle;
+			this->boxYRotation = isAnglePositive ? diagonalAngle : -diagonalAngle;
 		}
 	};
 
