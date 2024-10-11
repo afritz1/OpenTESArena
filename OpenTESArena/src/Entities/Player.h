@@ -101,6 +101,9 @@ struct Player
 	// Changes the velocity instantly. Intended for instantaneous acceleration like jumping.
 	void accelerateInstant(const Double3 &direction, double magnitude); // @todo: CharacterVirtual should treat this like a jump
 
+	void prePhysicsStep();
+	void postPhysicsStep();
+
 	// Tick the player by delta time for motion, etc..
 	void tick(Game &game, double dt);
 };

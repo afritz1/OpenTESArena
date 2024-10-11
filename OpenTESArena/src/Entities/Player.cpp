@@ -5,6 +5,8 @@
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
+#include "Jolt/Physics/Character/Character.h"
+#include "Jolt/Physics/Character/CharacterVirtual.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h" // @todo: probably will use CharacterVirtual eventually
 
 #include "CharacterClassDefinition.h"
@@ -30,6 +32,7 @@
 namespace // @todo: could be in a PlayerUtils instead
 {
 	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
+	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (Player::HEIGHT / 2.0) - COLLIDER_RADIUS;
 	constexpr double STEPPING_HEIGHT = 0.25; // Allowed change in height for stepping on stairs.
 	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
 
@@ -46,7 +49,43 @@ namespace // @todo: could be in a PlayerUtils instead
 			*outBodyID = Physics::INVALID_BODY_ID;
 		}
 
-		constexpr double capsuleRadius = COLLIDER_RADIUS;
+		// @TODO: AS OF 10/7/2024, DID CHARACTERTEST.CPP, NOW DO CHARACTERVIRTUALTEST.CPP
+
+		// character & charactervirtual are probably highly advanced and used in horizon. i just need a capsule that runs into things and can jump and step on stairs
+		// https://jrouwe.github.io/JoltPhysics/index.html#character-controllers
+		// https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/Character/CharacterTest.cpp
+		// https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/Character/CharacterVirtualTest.cpp
+
+		constexpr float collisionTolerance = 0.05f; // from Jolt example
+
+		constexpr float characterRadius = 0.5f; // Not sure what this is yet
+
+		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
+		JPH::CharacterVirtualSettings characterVirtualSettings;
+		characterVirtualSettings.SetEmbedded();
+		characterVirtualSettings.mMass = 1.0f;
+		// @todo: see example
+
+		JPH::CharacterSettings characterSettings;
+		characterSettings.SetEmbedded();
+		characterSettings.mFriction = 0.3f;
+		characterSettings.mGravityFactor = 0.0f; // Should have zero gravity when paired w/ CharacterVirtual
+		characterSettings.mShape; DebugNotImplemented(); // @todo init this to capsule?
+		characterSettings.mLayer = PhysicsLayers::MOVING;
+		characterSettings.mMaxSlopeAngle = static_cast<float>(5.0 * Constants::DegToRad); // Game world doesn't have slopes
+		characterSettings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), characterRadius);
+		// @todo: see example
+
+		//JPH::CharacterVirtual characterVirtual; // @todo
+
+		JPH::Character character(&characterSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), 0, &physicsSystem);
+		character.AddToPhysicsSystem(JPH::EActivation::Activate);
+
+		return false;
+
+
+
+		/*constexpr double capsuleRadius = COLLIDER_RADIUS;
 		constexpr double cylinderHalfHeight = (Player::HEIGHT / 2.0) - capsuleRadius;
 		static_assert(cylinderHalfHeight >= 0.0);
 		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0) + (cylinderHalfHeight * 2.0), Player::HEIGHT));
@@ -77,7 +116,7 @@ namespace // @todo: could be in a PlayerUtils instead
 
 		const JPH::BodyID &capsuleBodyID = capsuleBody->GetID();
 		bodyInterface.AddBody(capsuleBodyID, JPH::EActivation::Activate);
-		*outBodyID = capsuleBodyID;
+		*outBodyID = capsuleBodyID;*/
 		return true;
 	}
 }
@@ -476,6 +515,25 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	{
 		this->velocity = this->velocity + additiveVelocity;
 	}
+}
+
+void Player::prePhysicsStep()
+{
+	// @todo: BodyInterface::MoveKinematic()?
+
+	// update velocity member, then:
+	// Character::SetLinearVelocity or CharacterVirtual::SetLinearVelocity before their update()?
+
+	// CharacterVirtual::ExtendedUpdate and ExtendedUpdateSettings ?
+
+	DebugNotImplemented();
+}
+
+void Player::postPhysicsStep()
+{
+	// @todo: Character::PostSimulation() to glue to the ground
+	
+	DebugNotImplemented();
 }
 
 void Player::updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale)
