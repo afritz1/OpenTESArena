@@ -2,7 +2,8 @@
 #define PLAYER_H
 
 #include "Jolt/Jolt.h"
-#include "Jolt/Physics/Body/BodyID.h"
+#include "Jolt/Physics/Character/Character.h"
+#include "Jolt/Physics/Character/CharacterVirtual.h"
 #include "Jolt/Physics/PhysicsSystem.h"
 
 #include "Camera3D.h"
@@ -40,7 +41,9 @@ struct Player
 	WeaponAnimation weaponAnimation;
 	PrimaryAttributeSet attributes;
 	// Other stats...
-	JPH::BodyID physicsBodyID;
+	JPH::Character *physicsCharacter;
+	JPH::CharacterVirtual *physicsCharacterVirtual;
+	JPH::CharacterVsCharacterCollisionSimple physicsCharVsCharCollision;
 
 	Player();
 	~Player();

@@ -5,9 +5,7 @@
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
-#include "Jolt/Physics/Character/Character.h"
-#include "Jolt/Physics/Character/CharacterVirtual.h"
-#include "Jolt/Physics/Collision/Shape/CapsuleShape.h" // @todo: probably will use CharacterVirtual eventually
+#include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
 #include "CharacterClassDefinition.h"
 #include "CharacterClassLibrary.h"
@@ -33,59 +31,28 @@ namespace // @todo: could be in a PlayerUtils instead
 {
 	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
 	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (Player::HEIGHT / 2.0) - COLLIDER_RADIUS;
-	constexpr double STEPPING_HEIGHT = 0.25; // Allowed change in height for stepping on stairs.
+	constexpr double STEPPING_HEIGHT = 0.25; // Allowed change in height for stepping on stairs. @todo: Jolt has CharacterVirtual::WalkStairs()
 	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
 
 	// Friction for slowing the player down on ground.
 	constexpr double FRICTION = 3.0;
 
-	bool TryCreatePhysicsCollider(JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCharacters(JPH::PhysicsSystem &physicsSystem, JPH::Character **outCharacter, JPH::CharacterVirtual **outCharacterVirtual,
+		JPH::CharacterVsCharacterCollisionSimple *outCharVsCharCollision)
 	{
-		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
-		if (!outBodyID->IsInvalid())
+		if (*outCharacter != nullptr)
 		{
-			bodyInterface.RemoveBody(*outBodyID);
-			bodyInterface.DestroyBody(*outBodyID);
-			*outBodyID = Physics::INVALID_BODY_ID;
+			const JPH::BodyID &existingBodyID = (*outCharacter)->GetBodyID();
+			if (!existingBodyID.IsInvalid())
+			{
+				JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+				bodyInterface.RemoveBody(existingBodyID);
+				bodyInterface.DestroyBody(existingBodyID);
+			}
 		}
 
-		// @TODO: AS OF 10/7/2024, DID CHARACTERTEST.CPP, NOW DO CHARACTERVIRTUALTEST.CPP
-
-		// character & charactervirtual are probably highly advanced and used in horizon. i just need a capsule that runs into things and can jump and step on stairs
-		// https://jrouwe.github.io/JoltPhysics/index.html#character-controllers
-		// https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/Character/CharacterTest.cpp
-		// https://github.com/jrouwe/JoltPhysics/blob/master/Samples/Tests/Character/CharacterVirtualTest.cpp
-
-		constexpr float collisionTolerance = 0.05f; // from Jolt example
-
-		constexpr float characterRadius = 0.5f; // Not sure what this is yet
-
-		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
-		JPH::CharacterVirtualSettings characterVirtualSettings;
-		characterVirtualSettings.SetEmbedded();
-		characterVirtualSettings.mMass = 1.0f;
-		// @todo: see example
-
-		JPH::CharacterSettings characterSettings;
-		characterSettings.SetEmbedded();
-		characterSettings.mFriction = 0.3f;
-		characterSettings.mGravityFactor = 0.0f; // Should have zero gravity when paired w/ CharacterVirtual
-		characterSettings.mShape; DebugNotImplemented(); // @todo init this to capsule?
-		characterSettings.mLayer = PhysicsLayers::MOVING;
-		characterSettings.mMaxSlopeAngle = static_cast<float>(5.0 * Constants::DegToRad); // Game world doesn't have slopes
-		characterSettings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), characterRadius);
-		// @todo: see example
-
-		//JPH::CharacterVirtual characterVirtual; // @todo
-
-		JPH::Character character(&characterSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), 0, &physicsSystem);
-		character.AddToPhysicsSystem(JPH::EActivation::Activate);
-
-		return false;
-
-
-
-		/*constexpr double capsuleRadius = COLLIDER_RADIUS;
+		// Create same capsule for physical and virtual collider.
+		constexpr double capsuleRadius = COLLIDER_RADIUS;
 		constexpr double cylinderHalfHeight = (Player::HEIGHT / 2.0) - capsuleRadius;
 		static_assert(cylinderHalfHeight >= 0.0);
 		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0) + (cylinderHalfHeight * 2.0), Player::HEIGHT));
@@ -101,28 +68,57 @@ namespace // @todo: could be in a PlayerUtils instead
 			return false;
 		}
 
-		// Initialize at origin, will be moved by code later.
-		JPH::ShapeRefC capsuleShape = capsuleShapeResult.Get();
-		const JPH::RVec3 capsulePos = JPH::RVec3::sZero();
-		const JPH::Quat capsuleRotation = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), 0.0f);
-		const JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsulePos, capsuleRotation, JPH::EMotionType::Kinematic, PhysicsLayers::MOVING);
-		const JPH::Body *capsuleBody = bodyInterface.CreateBody(capsuleSettings);
-		if (capsuleBody == nullptr)
-		{
-			const uint32_t totalBodyCount = physicsSystem.GetNumBodies();
-			DebugLogError("Couldn't create player Jolt body (total: " + std::to_string(totalBodyCount) + ").");
-			return false;
-		}
+		constexpr float collisionTolerance = 0.05f; // from Jolt example
+		constexpr float characterRadius = 0.5f; // Not sure what this is yet
+		constexpr float characterRadiusStanding = characterRadius; // Not sure what this is yet
+		constexpr float maxSlopeAngle = static_cast<float>(5.0 * Constants::DegToRad); // Game world doesn't have slopes, so this can be very small.
+		constexpr float maxStrength = 100.0f; // from Jolt example
+		constexpr float characterPadding = 0.02f; // from Jolt example
+		constexpr float penetrationRecoverySpeed = 1.0f; // from Jolt example
+		constexpr float predictiveContactDistance = 0.1f; // from Jolt example
 
-		const JPH::BodyID &capsuleBodyID = capsuleBody->GetID();
-		bodyInterface.AddBody(capsuleBodyID, JPH::EActivation::Activate);
-		*outBodyID = capsuleBodyID;*/
+		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
+		// I just need a capsule that runs into things, jumps, and steps on stairs.
+		JPH::CharacterVirtualSettings characterVirtualSettings;
+		characterVirtualSettings.SetEmbedded();
+		characterVirtualSettings.mMass = 1.0f;
+		characterVirtualSettings.mMaxSlopeAngle = maxSlopeAngle;
+		characterVirtualSettings.mMaxStrength = maxStrength;
+		characterVirtualSettings.mShape = capsuleShapeResult.Get();
+		characterVirtualSettings.mBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces;
+		characterVirtualSettings.mCharacterPadding = characterPadding;
+		characterVirtualSettings.mPenetrationRecoverySpeed = penetrationRecoverySpeed;
+		characterVirtualSettings.mPredictiveContactDistance = predictiveContactDistance;
+		characterVirtualSettings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -characterRadiusStanding);
+		characterVirtualSettings.mEnhancedInternalEdgeRemoval = false;
+		characterVirtualSettings.mInnerBodyShape = nullptr;
+		characterVirtualSettings.mInnerBodyLayer = PhysicsLayers::MOVING;
+		
+		JPH::CharacterSettings characterSettings;
+		characterSettings.SetEmbedded();
+		characterSettings.mFriction = 0.3f;
+		characterSettings.mGravityFactor = 0.0f; // Uses zero gravity when paired w/ CharacterVirtual
+		characterSettings.mShape = capsuleShapeResult.Get();
+		characterSettings.mLayer = PhysicsLayers::MOVING;
+		characterSettings.mMaxSlopeAngle = maxSlopeAngle;
+		characterSettings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), characterRadius);
+		
+		constexpr uint64_t characterVirtualUserData = 0;
+		*outCharacterVirtual = new JPH::CharacterVirtual(&characterVirtualSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterVirtualUserData, &physicsSystem);
+		(*outCharacterVirtual)->SetCharacterVsCharacterCollision(outCharVsCharCollision);
+		outCharVsCharCollision->Add(*outCharacterVirtual);
+		(*outCharacterVirtual)->SetListener(nullptr); // @todo
+		DebugNotImplemented("add characterVirtual's contact listeners");
+		
+		constexpr uint64_t characterUserData = 0;
+		*outCharacter = new JPH::Character(&characterSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterUserData, &physicsSystem);
+		(*outCharacter)->AddToPhysicsSystem(JPH::EActivation::Activate);
+
 		return true;
 	}
 }
 
 Player::Player()
-	: physicsBodyID(Physics::INVALID_BODY_ID)
 {
 	this->male = false;
 	this->raceID = -1;
@@ -130,15 +126,15 @@ Player::Player()
 	this->portraitID = -1;
 	this->camera.init(CoordDouble3(), -Double3::UnitX); // To avoid audio listener normalization issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
-	this->friction = 0.0;
+	this->friction = 0.0;	
+	this->physicsCharacter = nullptr;
+	this->physicsCharacterVirtual = nullptr;
 }
 
 Player::~Player()
 {
-	if (!this->physicsBodyID.IsInvalid())
-	{
-		DebugLogError("Didn't free player physics body correctly (ID: " + std::to_string(this->physicsBodyID.GetIndex()) + ").");
-	}
+	DebugAssert(this->physicsCharacter == nullptr);
+	DebugAssert(this->physicsCharacterVirtual == nullptr);
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -157,7 +153,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
 	
-	if (!TryCreatePhysicsCollider(physicsSystem, &this->physicsBodyID))
+	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
 		DebugCrash("Couldn't create player physics collider.");
 	}
@@ -179,7 +175,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
 	
-	if (!TryCreatePhysicsCollider(physicsSystem, &this->physicsBodyID))
+	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
 		DebugCrash("Couldn't create player physics collider.");
 	}
@@ -221,7 +217,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(this->raceID, this->male, random);
 	
-	if (!TryCreatePhysicsCollider(physicsSystem, &this->physicsBodyID))
+	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
 		DebugCrash("Couldn't create player physics collider.");
 	}
@@ -229,12 +225,16 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
 {
-	if (!this->physicsBodyID.IsInvalid())
+	if (this->physicsCharacter != nullptr)
 	{
-		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
-		bodyInterface.RemoveBody(this->physicsBodyID);
-		bodyInterface.DestroyBody(this->physicsBodyID);
-		this->physicsBodyID = Physics::INVALID_BODY_ID;
+		this->physicsCharacter->Release();
+		this->physicsCharacter = nullptr;
+	}
+
+	if (this->physicsCharacterVirtual != nullptr)
+	{
+		this->physicsCharacterVirtual->Release();
+		this->physicsCharacterVirtual = nullptr;
 	}
 }
 
@@ -263,7 +263,7 @@ double Player::getFeetY() const
 
 bool Player::onGround(const CollisionChunkManager &collisionChunkManager) const
 {
-	// @todo: find a non-hack way to do this.
+	// @todo: seems like it's CharacterVirtual::IsSupported()?
 
 	return true;
 
@@ -320,6 +320,8 @@ void Player::lookAt(const CoordDouble3 &point)
 
 void Player::handleCollision(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale)
 {
+	// @todo: this function probably decides the velocity to give to Jolt?
+
 	auto tryGetVoxelTraitsDef = [&voxelChunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
 	{
 		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
