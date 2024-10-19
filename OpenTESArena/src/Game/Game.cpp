@@ -864,7 +864,6 @@ void Game::loop()
 			const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
 			auto onFinishedProcessingEventFunc = [this]()
 			{
-				// See if the event requested any changes in active panels.
 				this->handlePanelChanges();
 			};
 
@@ -872,7 +871,6 @@ void Game::loop()
 
 			if (this->isSimulatingScene())
 			{
-				// Handle input for player motion.
 				const BufferView<const Rect> nativeCursorRegionsView(this->nativeCursorRegions);
 				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, nativeCursorRegionsView);
 				PlayerLogicController::turnPlayer(*this, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
@@ -884,41 +882,36 @@ void Game::loop()
 			DebugCrash("User input exception: " + std::string(e.what()));
 		}
 
-		// Tick.
+		// Tick game state.
 		try
 		{
-			// Animate the current UI panel by delta time.
 			this->getActivePanel()->tick(clampedDeltaTime);
-
-			// See if the panel tick requested any changes in active panels.
 			this->handlePanelChanges();
 
 			if (this->isSimulatingScene() && this->gameState.isActiveMapValid())
 			{
-				// Recalculate the active chunks.
 				const CoordDouble3 oldPlayerCoord = this->player.camera.position;
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
 				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
 
-				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
-				// It shouldn't be abstracted into a game state.
-				// - it should be like "do we need to clear the scene? yes/no. update the scene immediately? yes/no"
-
-				// Tick the various pieces of game world state.
 				this->gameState.tickGameClock(clampedDeltaTime, *this);
 				this->gameState.tickChasmAnimation(clampedDeltaTime);
 				this->gameState.tickSky(clampedDeltaTime, *this);
 				this->gameState.tickWeather(clampedDeltaTime, *this);
 				this->gameState.tickUiMessages(clampedDeltaTime);
-				this->gameState.tickPlayer(clampedDeltaTime, *this);
+				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickEntities(clampedDeltaTime, *this);
-
 				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);
-				this->physicsSystem.Update(clampedDeltaTime, frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
+
+				this->player.prePhysicsStep(clampedDeltaTime, *this);
+				this->physicsSystem.Update(static_cast<float>(clampedDeltaTime), frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
+				this->player.postPhysicsStep(*this);
 
 				const CoordDouble3 newPlayerCoord = this->player.camera.position;
+				this->gameState.tickPlayerMovementTriggers(oldPlayerCoord, newPlayerCoord, *this);
+
 				const Double3 newPlayerDirection = this->player.camera.getDirection();
 				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, newPlayerDirection,
 					this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
@@ -927,8 +920,8 @@ void Game::loop()
 				this->gameState.tickRendering(renderCamera, *this);
 
 				// Update audio listener orientation.
-				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(newPlayerCoord);
-				const AudioManager::ListenerData listenerData(absolutePosition, newPlayerDirection);
+				const WorldDouble3 newPlayerWorldPos = VoxelUtils::coordToWorldPoint(newPlayerCoord);
+				const AudioManager::ListenerData listenerData(newPlayerWorldPos, newPlayerDirection);
 				this->audioManager.updateListener(listenerData);
 			}
 

@@ -108,7 +108,7 @@ namespace // @todo: could be in a PlayerUtils instead
 		(*outCharacterVirtual)->SetCharacterVsCharacterCollision(outCharVsCharCollision);
 		outCharVsCharCollision->Add(*outCharacterVirtual);
 		(*outCharacterVirtual)->SetListener(nullptr); // @todo
-		DebugNotImplemented("add characterVirtual's contact listeners");
+		DebugLogError("\nNeed characterVirtual's contact listeners\n");
 		
 		constexpr uint64_t characterUserData = 0;
 		*outCharacter = new JPH::Character(&characterSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterUserData, &physicsSystem);
@@ -261,7 +261,7 @@ double Player::getFeetY() const
 	return cameraY - Player::HEIGHT;
 }
 
-bool Player::onGround(const CollisionChunkManager &collisionChunkManager) const
+bool Player::onGround() const
 {
 	// @todo: seems like it's CharacterVirtual::IsSupported()?
 
@@ -519,8 +519,22 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	}
 }
 
-void Player::prePhysicsStep()
+void Player::prePhysicsStep(double dt, Game &game)
 {
+	if (game.getOptions().getMisc_GhostMode())
+	{
+		this->setVelocityToZero(); // Prevent leftover momentum when switching cheat modes.
+		return;
+	}
+
+	const SceneManager &sceneManager = game.getSceneManager();
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
+
+	const GameState &gameState = game.getGameState();
+	const double ceilingScale = gameState.getActiveCeilingScale();
+
+
 	// @todo: BodyInterface::MoveKinematic()?
 
 	// update velocity member, then:
@@ -528,22 +542,11 @@ void Player::prePhysicsStep()
 
 	// CharacterVirtual::ExtendedUpdate and ExtendedUpdateSettings ?
 
-	DebugNotImplemented();
-}
 
-void Player::postPhysicsStep()
-{
-	// @todo: Character::PostSimulation() to glue to the ground
-	
-	DebugNotImplemented();
-}
 
-void Player::updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale)
-{
-	// Acceleration from gravity (always).
+	// @todo: only accelerate if !onGround()?
 	this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 
-	// Change the player's velocity based on collision.
 	this->handleCollision(dt, voxelChunkManager, collisionChunkManager, ceilingScale);
 
 	// Temp: get floor Y until Y collision is implemented.
@@ -553,17 +556,16 @@ void Player::updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager
 	// @todo: for now just set the physics body to this position ^
 
 	// Simple Euler integration for updating the player's position.
+	// @todo: let Jolt do this, and just READ Jolt's final player position in the post step?
 	const VoxelDouble3 newPoint = this->camera.position.point + (this->velocity * dt);
 
-	// Update the position if valid.
 	if (std::isfinite(newPoint.length()))
 	{
 		this->camera.position = ChunkUtils::recalculateCoord(this->camera.position.chunk, newPoint);
 	}
 
-	if (this->onGround(collisionChunkManager))
+	if (this->onGround())
 	{
-		// Slow down the player's horizontal velocity with some friction.
 		Double2 velocityXZ(this->velocity.x, this->velocity.z);
 		Double2 frictionDirection = Double2(-velocityXZ.x, -velocityXZ.y).normalized();
 		double frictionMagnitude = velocityXZ.length() * this->friction;
@@ -575,26 +577,16 @@ void Player::updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager
 	}
 }
 
-void Player::tick(Game &game, double dt)
+void Player::postPhysicsStep(Game &game)
 {
-	// Update player position and velocity due to collisions.
-	const bool isGhostModeEnabled = game.getOptions().getMisc_GhostMode();
-	if (!isGhostModeEnabled)
+	if (game.getOptions().getMisc_GhostMode())
 	{
-		const SceneManager &sceneManager = game.getSceneManager();
-		const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-		const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
-
-		const GameState &gameState = game.getGameState();
-		const double ceilingScale = gameState.getActiveCeilingScale();
-
-		this->updatePhysics(dt, voxelChunkManager, collisionChunkManager, ceilingScale);
-	}
-	else
-	{
-		this->setVelocityToZero(); // Prevent leftover momentum when switching cheat modes.
+		return;
 	}
 
-	// Tick weapon animation.
-	this->weaponAnimation.tick(dt);
+	constexpr float maxSeparationDistance = static_cast<float>(Constants::Epsilon);
+	this->physicsCharacter->PostSimulation(maxSeparationDistance);
+
+	// @todo: update player.camera position so it's valid for the rest of Game::loop()
+	//this->camera.position = this->physicsCharacter->GetPosition();
 }

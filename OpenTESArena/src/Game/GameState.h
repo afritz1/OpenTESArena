@@ -200,16 +200,16 @@ public:
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
 	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);
 
-	// Ticks the game clock (for the current time of day and date).
 	void tickGameClock(double dt, Game &game);
 	void tickChasmAnimation(double dt);
 	void tickSky(double dt, Game &game);
 	void tickWeather(double dt, Game &game);
 	void tickUiMessages(double dt);
-	void tickPlayer(double dt, Game &game);
+	void tickPlayerAttack(double dt, Game &game);
 	void tickVoxels(double dt, Game &game);
 	void tickEntities(double dt, Game &game);
 	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
+	void tickPlayerMovementTriggers(const CoordDouble3 &oldPlayerCoord, const CoordDouble3 &newPlayerCoord, Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(const RenderCamera &renderCamera, Game &game);
 };

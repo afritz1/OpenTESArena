@@ -817,20 +817,8 @@ void GameState::tickUiMessages(double dt)
 	}
 }
 
-void GameState::tickPlayer(double dt, Game &game)
+void GameState::tickPlayerMovementTriggers(const CoordDouble3 &oldPlayerCoord, const CoordDouble3 &newPlayerCoord, Game &game)
 {
-	auto &player = game.getPlayer();
-	const CoordDouble3 oldPlayerCoord = player.camera.position;
-	player.tick(game, dt);
-	const CoordDouble3 newPlayerCoord = player.camera.position;
-
-	// Handle input for the player's attack.
-	const auto &inputManager = game.getInputManager();
-	const Int2 mouseDelta = inputManager.getMouseDelta();
-	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
-
-	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
-	// and handle any level transition.
 	const double ceilingScale = this->getActiveCeilingScale();
 	const CoordInt3 oldPlayerVoxelCoord(oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
 	const CoordInt3 newPlayerVoxelCoord(newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
@@ -846,6 +834,16 @@ void GameState::tickPlayer(double dt, Game &game)
 			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
 		}
 	}
+}
+
+void GameState::tickPlayerAttack(double dt, Game &game)
+{
+	auto &player = game.getPlayer();
+	player.weaponAnimation.tick(dt);
+
+	const auto &inputManager = game.getInputManager();
+	const Int2 mouseDelta = inputManager.getMouseDelta();
+	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
 }
 
 void GameState::tickVoxels(double dt, Game &game)

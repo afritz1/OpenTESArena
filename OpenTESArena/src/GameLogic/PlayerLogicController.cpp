@@ -418,10 +418,8 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 	// Arbitrary movement speed.
 	constexpr double walkSpeed = 15.0;
 
-	const GameState &gameState = game.getGameState();
-	const SceneManager &sceneManager = game.getSceneManager();
 	Player &player = game.getPlayer();
-	const bool isOnGround = player.onGround(sceneManager.collisionChunkManager);
+	const bool isOnGround = player.onGround();
 
 	const Options &options = game.getOptions();
 	const bool isGhostModeEnabled = options.getMisc_GhostMode();

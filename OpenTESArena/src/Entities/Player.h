@@ -80,8 +80,7 @@ struct Player
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
 	double getJumpMagnitude() const;
 
-	// Returns whether the player is standing on ground and with no Y velocity.
-	bool onGround(const CollisionChunkManager &collisionChunkManager) const; // @todo: this is a Jolt body question, maybe needs other game logic complimenting it
+	bool onGround() const;
 
 	// Teleports the player to a point.
 	void teleport(const CoordDouble3 &position); // @todo: probably takes PhysicsSystem&
@@ -104,11 +103,8 @@ struct Player
 	// Changes the velocity instantly. Intended for instantaneous acceleration like jumping.
 	void accelerateInstant(const Double3 &direction, double magnitude); // @todo: CharacterVirtual should treat this like a jump
 
-	void prePhysicsStep();
-	void postPhysicsStep();
-
-	// Tick the player by delta time for motion, etc..
-	void tick(Game &game, double dt);
+	void prePhysicsStep(double dt, Game &game);
+	void postPhysicsStep(Game &game);
 };
 
 #endif
