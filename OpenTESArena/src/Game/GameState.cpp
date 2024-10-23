@@ -521,7 +521,7 @@ void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 
 void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt)
 {
-	Player &player = game.getPlayer();
+	Player &player = game.player;
 
 	const VoxelDouble2 startOffset(
 		static_cast<SNDouble>(this->nextMapPlayerStartOffset.x),
@@ -620,14 +620,14 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 	player.setVelocityToZero();
 
-	TextureManager &textureManager = game.getTextureManager();
-	Renderer &renderer = game.getRenderer();
-	SceneManager &sceneManager = game.getSceneManager();
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	SceneManager &sceneManager = game.sceneManager;
 
 	const CoordDouble3 &playerCoord = player.camera.position;
 
 	// Clear and re-populate scene immediately so it's ready for rendering this frame (otherwise we get a black frame).
-	const Options &options = game.getOptions();
+	const Options &options = game.options;
 	ChunkManager &chunkManager = sceneManager.chunkManager;
 	chunkManager.clear();
 	chunkManager.update(playerCoord.chunk, options.getMisc_ChunkDistance());
@@ -657,7 +657,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	sceneManager.renderWeatherManager.loadScene();
 
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.getRandom(), textureManager);
+	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.random, textureManager);
 
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.camera.getDirection(),
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
@@ -678,7 +678,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 			jingleMusicDef = this->nextJingleMusicFunc(game);
 		}
 
-		AudioManager &audioManager = game.getAudioManager();
+		AudioManager &audioManager = game.audioManager;
 		audioManager.setMusic(musicDef, jingleMusicDef);
 
 		this->nextMusicFunc = SceneChangeMusicFunc();
@@ -702,7 +702,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	{
 		// Update the weather list that's used for selecting the current one.
 		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		this->updateWeatherList(game.getArenaRandom(), exeData);
+		this->updateWeatherList(game.arenaRandom, exeData);
 	}
 
 	// Check if the clock hour looped back around.
@@ -734,7 +734,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	const MapType activeMapType = activeMapDef.getMapType();
 	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
 	{
-		AudioManager &audioManager = game.getAudioManager();
+		AudioManager &audioManager = game.audioManager;
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
 		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
@@ -744,7 +744,7 @@ void GameState::tickGameClock(double dt, Game &game)
 		const MusicDefinition *musicDef = nullptr;
 		if (changeToDayMusic)
 		{
-			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather, game.getRandom(),
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather, game.random,
 				[this](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
@@ -759,7 +759,7 @@ void GameState::tickGameClock(double dt, Game &game)
 		}
 		else if (changeToNightMusic)
 		{
-			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
 
 			if (musicDef == nullptr)
 			{
@@ -785,18 +785,18 @@ void GameState::tickChasmAnimation(double dt)
 
 void GameState::tickSky(double dt, Game &game)
 {
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	const LocationDefinition &locationDef = this->getLocationDefinition();
 
 	SkyInstance &skyInst = sceneManager.skyInstance;
-	skyInst.update(dt, locationDef.getLatitude(), this->getDaytimePercent(), this->weatherInst, game.getRandom());
+	skyInst.update(dt, locationDef.getLatitude(), this->getDaytimePercent(), this->weatherInst, game.random);
 }
 
 void GameState::tickWeather(double dt, Game &game)
 {
-	const Renderer &renderer = game.getRenderer();
+	const Renderer &renderer = game.renderer;
 	const double windowAspect = renderer.getWindowAspect();
-	this->weatherInst.update(dt, this->clock, windowAspect, game.getRandom(), game.getAudioManager());
+	this->weatherInst.update(dt, this->clock, windowAspect, game.random, game.audioManager);
 }
 
 void GameState::tickUiMessages(double dt)
@@ -838,20 +838,20 @@ void GameState::tickPlayerMovementTriggers(const CoordDouble3 &oldPlayerCoord, c
 
 void GameState::tickPlayerAttack(double dt, Game &game)
 {
-	auto &player = game.getPlayer();
+	auto &player = game.player;
 	player.weaponAnimation.tick(dt);
 
-	const auto &inputManager = game.getInputManager();
+	const auto &inputManager = game.inputManager;
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
 }
 
 void GameState::tickVoxels(double dt, Game &game)
 {
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 
 	const MapDefinition &mapDef = this->getActiveMapDef();
 	const int levelIndex = this->getActiveLevelIndex();
@@ -866,16 +866,16 @@ void GameState::tickVoxels(double dt, Game &game)
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	voxelChunkManager.update(dt, chunkManager.getNewChunkPositions(), chunkManager.getFreedChunkPositions(),
 		player.camera.position, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs,
-		this->getActiveCeilingScale(), game.getAudioManager());
+		this->getActiveCeilingScale(), game.audioManager);
 }
 
 void GameState::tickEntities(double dt, Game &game)
 {
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 
 	const MapDefinition &mapDef = this->getActiveMapDef();
 	const MapType mapType = mapDef.getMapType();
@@ -901,13 +901,13 @@ void GameState::tickEntities(double dt, Game &game)
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	entityChunkManager.update(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
 		chunkManager.getFreedChunkPositions(), player, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices,
-		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game.getRandom(), voxelChunkManager, game.getAudioManager(),
-		game.getPhysicsSystem(), game.getTextureManager(), game.getRenderer());
+		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game.random, voxelChunkManager, game.audioManager,
+		game.physicsSystem, game.textureManager, game.renderer);
 }
 
 void GameState::tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game)
 {
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const double ceilingScale = this->getActiveCeilingScale();
@@ -919,7 +919,7 @@ void GameState::tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game
 
 void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)
 {
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
 	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
@@ -943,7 +943,7 @@ void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)
 
 void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 {
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
 	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
@@ -956,17 +956,17 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const double ceilingScale = this->getActiveCeilingScale();
 	const double chasmAnimPercent = this->getChasmAnimPercent();
 
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const CoordDouble3 &playerCoord = player.camera.position;
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 	const Double2 playerDirXZ = player.getGroundDirection();
 
-	TextureManager &textureManager = game.getTextureManager();
-	Renderer &renderer = game.getRenderer();
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
 
 	const bool isFoggy = this->isFogActive();
 	const bool nightLightsAreActive = ArenaClockUtils::nightLightsAreActive(this->clock);	
-	const Options &options = game.getOptions();
+	const Options &options = game.options;
 
 	RenderLightChunkManager &renderLightChunkManager = sceneManager.renderLightChunkManager;
 	renderLightChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
@@ -995,7 +995,7 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	renderSkyManager.update(skyInst, skyVisManager, this->weatherInst, playerCoord, isInterior, daytimePercent, isFoggy, distantAmbientPercent, renderer);
 
-	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
+	const WeatherInstance &weatherInst = game.gameState.getWeatherInstance();
 
 	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
 	renderWeatherManager.update(weatherInst, renderCamera, renderer);

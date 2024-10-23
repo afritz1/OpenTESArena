@@ -528,7 +528,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
@@ -545,7 +545,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
 	
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())

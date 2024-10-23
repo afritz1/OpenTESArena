@@ -33,11 +33,11 @@ GameWorldPanel::GameWorldPanel(Game &game)
 GameWorldPanel::~GameWorldPanel()
 {
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, false);
 
 	// If in modern mode, disable free-look.
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	if (modernInterface)
@@ -53,7 +53,7 @@ bool GameWorldPanel::init()
 {
 	auto &game = this->getGame();
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
 	const TextBox::InitInfo playerNameTextBoxInitInfo =
@@ -103,8 +103,8 @@ bool GameWorldPanel::init()
 	this->mapButton = Button<Game&, bool>(
 		GameWorldUiView::getMapButtonRect(), GameWorldUiController::onMapButtonSelected);
 
-	auto &player = game.getPlayer();
-	const auto &options = game.getOptions();
+	auto &player = game.player;
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
@@ -135,7 +135,7 @@ bool GameWorldPanel::init()
 			[this, &game]() { this->mapButton.click(game, false); });
 	}
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, true);
 
 	this->addInputActionListener(InputActionName::Activate,
@@ -217,7 +217,7 @@ bool GameWorldPanel::init()
 		[this](const InputActionCallbackValues &values)
 	{
 		Game &game = values.game;
-		GameState &gameState = game.getGameState();
+		GameState &gameState = game.gameState;
 
 		// @todo: make this click the button eventually when not needed for testing.
 		gameState.setIsCamping(values.performed);
@@ -280,10 +280,10 @@ bool GameWorldPanel::init()
 void GameWorldPanel::initUiDrawCalls()
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	const UiTextureID gameWorldInterfaceTextureID =
@@ -295,7 +295,7 @@ void GameWorldPanel::initUiDrawCalls()
 		GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
 	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
 
-	const auto &player = game.getPlayer();
+	const auto &player = game.player;
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
 		player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
@@ -352,13 +352,13 @@ void GameWorldPanel::initUiDrawCalls()
 			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
 
-			auto &textureManager = game.getTextureManager();
+			auto &textureManager = game.textureManager;
 			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
 			const Double2 offsetPercents(
 				static_cast<double>(offset.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(offset.y) / static_cast<double>(classicViewHeight));
 
-			const auto &renderer = game.getRenderer();
+			const auto &renderer = game.renderer;
 			const Int2 windowDims = renderer.getWindowDimensions();
 			const Int2 nativePosition(
 				static_cast<int>(std::round(offsetPercents.x * static_cast<double>(windowDims.x))),
@@ -377,7 +377,7 @@ void GameWorldPanel::initUiDrawCalls()
 				static_cast<double>(textureDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(textureDims.y) / static_cast<double>(classicViewHeight));
 
-			const auto &renderer = game.getRenderer();
+			const auto &renderer = game.renderer;
 			const Int2 windowDims = renderer.getWindowDimensions();
 			const Int2 nativeTextureDims(
 				static_cast<int>(std::round(texturePercents.x * static_cast<double>(windowDims.x))),
@@ -411,7 +411,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::ActiveFunc compassActiveFunc = [this, &game]()
 		{
-			const auto &options = game.getOptions();
+			const auto &options = game.options;
 			return !this->isPaused() && options.getMisc_ShowCompass();
 		};
 
@@ -446,19 +446,19 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::ActiveFunc triggerTextActiveFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.triggerTextIsVisible();
 		};
 
 		UiDrawCall::ActiveFunc actionTextActiveFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.actionTextIsVisible();
 		};
 
 		UiDrawCall::ActiveFunc effectTextActiveFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.effectTextIsVisible();
 		};
 
@@ -501,7 +501,7 @@ void GameWorldPanel::initUiDrawCalls()
 			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
 
-			auto &textureManager = game.getTextureManager();
+			auto &textureManager = game.textureManager;
 			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
 			return offset;
 		};
@@ -573,7 +573,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::ActiveFunc compassActiveFunc = [this, &game]()
 		{
-			const auto &options = game.getOptions();
+			const auto &options = game.options;
 			return !this->isPaused() && options.getMisc_ShowCompass();
 		};
 
@@ -608,19 +608,19 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::ActiveFunc triggerTextActiveFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.triggerTextIsVisible();
 		};
 
 		UiDrawCall::ActiveFunc actionTextActiveFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.actionTextIsVisible();
 		};
 
 		UiDrawCall::ActiveFunc effectTextActiveFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.effectTextIsVisible();
 		};
 
@@ -713,7 +713,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::PositionFunc cursorPositionFunc = [&game]()
 		{
-			const auto &inputManager = game.getInputManager();
+			const auto &inputManager = game.inputManager;
 			return inputManager.getMousePosition();
 		};
 
@@ -761,7 +761,7 @@ void GameWorldPanel::initUiDrawCalls()
 				return Int2(arrowCursorTextureRef.getWidth(), arrowCursorTextureRef.getHeight());
 			}();
 
-			const auto &options = game.getOptions();
+			const auto &options = game.options;
 			const double cursorScale = options.getGraphics_CursorScale();
 			return Int2(
 				static_cast<int>(static_cast<double>(textureDims.x) * cursorScale),
@@ -804,15 +804,15 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-	const auto &player = game.getPlayer();
+	const auto &player = game.player;
 	const CoordDouble3 &playerPos = player.camera.position;
 	const VoxelDouble3 &playerDir = player.camera.getDirection();
 
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
-	const SceneManager &sceneManager = game.getSceneManager();
+	const SceneManager &sceneManager = game.sceneManager;
 	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	renderSkyManager.populateCommandBuffer(commandBuffer);
 
@@ -834,8 +834,8 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		return locationDef.getLatitude();
 	}();
 
-	auto &renderer = game.getRenderer();
-	const auto &options = game.getOptions();
+	auto &renderer = game.renderer;
+	const auto &options = game.options;
 	const Degrees fovY = options.getGraphics_VerticalFOV();
 	const double viewAspectRatio = renderer.getViewAspect();
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
@@ -875,7 +875,7 @@ void GameWorldPanel::onPauseChanged(bool paused)
 	auto &game = this->getGame();
 
 	// If in modern mode, set free-look to the given value.
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	if (modernInterface)

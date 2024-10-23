@@ -38,14 +38,14 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-			MusicDefinition::Type::CharacterCreation, game.getRandom());
+			MusicDefinition::Type::CharacterCreation, game.random);
 
 		if (musicDef == nullptr)
 		{
 			DebugLogWarning("Missing character creation music.");
 		}
 
-		AudioManager &audioManager = game.getAudioManager();
+		AudioManager &audioManager = game.audioManager;
 		audioManager.setMusic(musicDef);
 	};
 
@@ -78,7 +78,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 	const std::string &paletteFilename = ArenaTextureSequenceName::OpeningScroll;
 	const std::string &sequenceFilename = ArenaTextureSequenceName::OpeningScroll;
 
-	TextureManager &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceFilename.c_str());
 	if (!metadataID.has_value())
 	{
@@ -92,7 +92,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicDefinition::Type::Cinematic, game.getRandom(), [](const MusicDefinition &def)
+		MusicDefinition::Type::Cinematic, game.random, [](const MusicDefinition &def)
 	{
 		DebugAssert(def.getType() == MusicDefinition::Type::Cinematic);
 		const auto &cinematicMusicDef = def.getCinematicMusicDefinition();
@@ -104,7 +104,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 		DebugLogWarning("Missing intro music.");
 	}
 
-	AudioManager &audioManager = game.getAudioManager();
+	AudioManager &audioManager = game.audioManager;
 	audioManager.setMusic(musicDef);
 }
 
@@ -124,15 +124,15 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	// Create a player with random data for testing.
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
-	GameState &gameState = game.getGameState();
-	gameState.init(game.getArenaRandom());
+	GameState &gameState = game.gameState;
+	gameState.init(game.arenaRandom);
 
-	Player &player = game.getPlayer();
-	player.initRandom(CharacterClassLibrary::getInstance(), binaryAssetLibrary.getExeData(), game.getPhysicsSystem(), game.getRandom());
+	Player &player = game.player;
+	player.initRandom(CharacterClassLibrary::getInstance(), binaryAssetLibrary.getExeData(), game.physicsSystem, game.random);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
-	const auto &options = game.getOptions();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
+	const auto &options = game.options;
 	const int starCount = SkyUtils::getStarCountFromDensity(options.getMisc_StarDensity());
 	const int currentDay = gameState.getDate().getDay();
 
@@ -187,7 +187,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			{
 				// Any province besides center province.
 				// @temp: mildly disorganized
-				provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
+				provinceIndex = game.random.next(worldMapDef.getProvinceCount() - 1);
 				locationIndex = MainMenuUiModel::getRandomCityLocationIndex(worldMapDef.getProvinceDef(provinceIndex));
 			}
 
@@ -229,7 +229,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			// Pick a random dungeon based on the dungeon type.
 			const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 
-			const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
+			const int provinceIndex = game.random.next(worldMapDef.getProvinceCount() - 1);
 			const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 			constexpr bool isArtifactDungeon = false;
@@ -273,7 +273,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}
 			else if (mifName == MainMenuUiModel::RandomWildDungeon)
 			{
-				Random &random = game.getRandom();
+				Random &random = game.random;
 				const int wildBlockX = random.next(ArenaWildUtils::WILD_WIDTH);
 				const int wildBlockY = random.next(ArenaWildUtils::WILD_HEIGHT);
 
@@ -378,7 +378,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 				WeatherDefinition weatherDef;
-				weatherDef.initFromClassic(filteredWeatherType, currentDay, game.getRandom());
+				weatherDef.initFromClassic(filteredWeatherType, currentDay, game.random);
 				return weatherDef;
 			}();
 
@@ -389,7 +389,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
 			MapDefinition mapDefinition;
-			if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.getTextureManager()))
+			if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.textureManager))
 			{
 				DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
 				return;
@@ -401,7 +401,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		{
 			// Pick a random location based on the .MIF name, excluding the center province.
 			const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-			const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
+			const int provinceIndex = game.random.next(worldMapDef.getProvinceCount() - 1);
 			const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 			const ArenaTypes::CityType targetCityType = [&mifName]()
@@ -463,7 +463,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 				WeatherDefinition weatherDef;
-				weatherDef.initFromClassic(filteredWeatherType, currentDay, game.getRandom());
+				weatherDef.initFromClassic(filteredWeatherType, currentDay, game.random);
 				return weatherDef;
 			}();
 
@@ -487,7 +487,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	{
 		// Pick a random location and province.
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-		const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
+		const int provinceIndex = game.random.next(worldMapDef.getProvinceCount() - 1);
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 		const int locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceDef);
@@ -506,7 +506,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 			WeatherDefinition weatherDef;
-			weatherDef.initFromClassic(filteredWeatherType, currentDay, game.getRandom());
+			weatherDef.initFromClassic(filteredWeatherType, currentDay, game.random);
 			return weatherDef;
 		}();
 
@@ -543,7 +543,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	{
 		// Get the music that should be active on start.
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		GameState &gameState = game.getGameState();
+		GameState &gameState = game.gameState;
 		const MapType mapType = gameState.getActiveMapType();
 		const bool isExterior = (mapType == MapType::City) || (mapType == MapType::Wilderness);
 
@@ -557,7 +557,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-					game.getRandom(), [weatherDef](const MusicDefinition &def)
+					game.random, [weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
@@ -566,7 +566,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}
 			else
 			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
 			}
 		}
 		else
@@ -576,7 +576,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
 
 			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
-				game.getRandom(), [interiorMusicType](const MusicDefinition &def)
+				game.random, [interiorMusicType](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
 				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
@@ -595,7 +595,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	GameState::SceneChangeMusicFunc jingleMusicFunc = [](Game &game)
 	{
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		GameState &gameState = game.getGameState();
+		GameState &gameState = game.gameState;
 		const MapType mapType = gameState.getActiveMapType();
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const bool isCity = (mapType == MapType::City) && (locationDef.getType() == LocationDefinitionType::City);
@@ -605,7 +605,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		{
 			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
-				game.getRandom(), [&cityDef](const MusicDefinition &def)
+				game.random, [&cityDef](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
 				const auto &jingleMusicDef = def.getJingleMusicDefinition();

@@ -264,8 +264,7 @@ bool Game::init()
 	// Initialize the renderer and window with the given settings.
 	auto resolutionScaleFunc = [this]()
 	{
-		const auto &options = this->getOptions();
-		return options.getGraphics_ResolutionScale();
+		return this->options.getGraphics_ResolutionScale();
 	};
 
 	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
@@ -307,9 +306,7 @@ bool Game::init()
 	{
 		if (values.performed)
 		{
-			// Save a screenshot to the local folder.
-			const auto &renderer = this->getRenderer();
-			const Surface screenshot = renderer.getScreenshot();
+			const Surface screenshot = this->renderer.getScreenshot();
 			this->saveScreenshot(screenshot);
 		}
 	});
@@ -405,31 +402,6 @@ Panel *Game::getActivePanel() const
 	return (this->subPanels.size() > 0) ? this->subPanels.back().get() : this->panel.get();
 }
 
-AudioManager &Game::getAudioManager()
-{
-	return this->audioManager;
-}
-
-InputManager &Game::getInputManager()
-{
-	return this->inputManager;
-}
-
-GameState &Game::getGameState()
-{
-	return this->gameState;
-}
-
-Player &Game::getPlayer()
-{
-	return this->player;
-}
-
-SceneManager &Game::getSceneManager()
-{
-	return this->sceneManager;
-}
-
 bool Game::isSimulatingScene() const
 {
 	return this->shouldSimulateScene;
@@ -449,41 +421,6 @@ CharacterCreationState &Game::getCharacterCreationState() const
 {
 	DebugAssert(this->characterCreationIsActive());
 	return *this->charCreationState.get();
-}
-
-Options &Game::getOptions()
-{
-	return this->options;
-}
-
-Renderer &Game::getRenderer()
-{
-	return this->renderer;
-}
-
-TextureManager &Game::getTextureManager()
-{
-	return this->textureManager;
-}
-
-JPH::PhysicsSystem &Game::getPhysicsSystem()
-{
-	return this->physicsSystem;
-}
-
-Random &Game::getRandom()
-{
-	return this->random;
-}
-
-ArenaRandom &Game::getArenaRandom()
-{
-	return this->arenaRandom;
-}
-
-const FPSCounter &Game::getFPSCounter() const
-{
-	return this->fpsCounter;
 }
 
 const Rect &Game::getNativeCursorRegion(int index) const

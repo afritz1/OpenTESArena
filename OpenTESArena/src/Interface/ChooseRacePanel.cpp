@@ -18,8 +18,8 @@ bool ChooseRacePanel::init()
 	this->addInputActionListener(InputActionName::Back, ChooseRaceUiController::onBackToChooseGenderInputAction);
 	this->addMouseButtonChangedListener(ChooseRaceUiController::onMouseButtonChanged);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const UiTextureID backgroundTextureID = ChooseRaceUiView::allocBackgroundTexture(textureManager, renderer);
 	const UiTextureID noExitTextureID = ChooseRaceUiView::allocNoExitTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
@@ -54,8 +54,8 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 	const std::string text = ChooseRaceUiModel::getTitleText(game);
 	const TextBox::InitInfo textBoxInitInfo = ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(text, game);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();	
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;	
 	const UiTextureID textureID = ChooseRaceUiView::allocInitialPopUpTexture(textureManager, renderer);	
 	ScopedUiTextureRef textureRef(textureID, renderer);
 

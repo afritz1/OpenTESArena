@@ -19,14 +19,14 @@ std::string PauseMenuUiModel::getVolumeString(double percent)
 
 std::string PauseMenuUiModel::getSoundVolumeText(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const double volumePercent = options.getAudio_SoundVolume();
 	return PauseMenuUiModel::getVolumeString(volumePercent);
 }
 
 std::string PauseMenuUiModel::getMusicVolumeText(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const double volumePercent = options.getAudio_MusicVolume();
 	return PauseMenuUiModel::getVolumeString(volumePercent);
 }

@@ -13,7 +13,7 @@
 
 Int2 ProvinceMapUiView::getLocationCenterPoint(Game &game, int provinceID, int locationID)
 {
-	const auto &gameState = game.getGameState();
+	const auto &gameState = game.gameState;
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);

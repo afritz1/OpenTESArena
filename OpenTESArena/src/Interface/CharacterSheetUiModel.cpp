@@ -9,13 +9,13 @@
 
 std::string CharacterSheetUiModel::getPlayerName(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	return player.displayName;
 }
 
 std::string CharacterSheetUiModel::getPlayerRaceName(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 	const auto &singularRaceNames = exeData.races.singularNames;
@@ -27,7 +27,7 @@ std::string CharacterSheetUiModel::getPlayerRaceName(Game &game)
 std::string CharacterSheetUiModel::getPlayerClassName(Game &game)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const int defID = player.charClassDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
 	return charClassDef.getName();
@@ -35,6 +35,6 @@ std::string CharacterSheetUiModel::getPlayerClassName(Game &game)
 
 std::vector<PrimaryAttribute> CharacterSheetUiModel::getPlayerAttributes(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	return player.attributes.getAll();
 }

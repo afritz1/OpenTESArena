@@ -20,7 +20,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 bool PauseMenuPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
@@ -101,7 +101,7 @@ bool PauseMenuPanel::init()
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = PauseMenuUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 	this->addDrawCall(
@@ -132,7 +132,7 @@ bool PauseMenuPanel::init()
 		Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight()),
 		PivotType::TopLeft);
 
-	const auto &player = game.getPlayer();
+	const auto &player = game.player;
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
 		player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);

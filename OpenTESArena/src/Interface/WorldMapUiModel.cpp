@@ -34,7 +34,7 @@ const WorldMapMask &WorldMapUiModel::getMask(const Game &game, int maskID)
 std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosition, bool ignoreCenterProvince,
 	bool ignoreExitButton)
 {
-	const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+	const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
 	const auto &worldMapMasks = BinaryAssetLibrary::getInstance().getWorldMapMasks();
 	const int maskCount = static_cast<int>(worldMapMasks.size());
 	for (int maskID = 0; maskID < maskCount; maskID++)
@@ -69,8 +69,8 @@ std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosit
 
 void FastTravelUiModel::tickTravelTime(Game &game, int travelDays)
 {
-	auto &gameState = game.getGameState();
-	auto &random = game.getRandom();
+	auto &gameState = game.gameState;
+	auto &random = game.random;
 
 	// Tick the game date by the number of travel days.
 	auto &date = gameState.getDate();
@@ -97,7 +97,7 @@ void FastTravelUiModel::tickTravelTime(Game &game, int travelDays)
 std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvinceID,
 	int targetLocationID, int travelDays)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
@@ -220,7 +220,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 			}
 			else
 			{
-				ArenaRandom &random = game.getArenaRandom();
+				ArenaRandom &random = game.arenaRandom;
 				std::string description = [&random, &templateDatTexts]()
 				{
 					const int templateDatTextIndex = random.next() % templateDatTexts.size();
@@ -321,8 +321,8 @@ std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int t
 		FastTravelUiView::CityArrivalLineSpacing,
 		FontLibrary::getInstance());
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const UiTextureID textureID = FastTravelUiView::allocCityArrivalPopUpTexture(
 		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight(), textureManager, renderer);
 	ScopedUiTextureRef textureRef(textureID, renderer);

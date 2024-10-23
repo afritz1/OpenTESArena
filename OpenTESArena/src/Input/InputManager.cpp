@@ -816,7 +816,7 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 						const bool isButtonActive = !buttonProxy.isActiveFunc || buttonProxy.isActiveFunc();
 						if (isButtonActive)
 						{
-							const Int2 classicMousePos = game.getRenderer().nativeToOriginal(mousePosition);
+							const Int2 classicMousePos = game.renderer.nativeToOriginal(mousePosition);
 
 							DebugAssert(buttonProxy.rectFunc);
 							const Rect buttonRect = buttonProxy.rectFunc();

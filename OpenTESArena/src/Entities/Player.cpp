@@ -521,17 +521,17 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 
 void Player::prePhysicsStep(double dt, Game &game)
 {
-	if (game.getOptions().getMisc_GhostMode())
+	if (game.options.getMisc_GhostMode())
 	{
 		this->setVelocityToZero(); // Prevent leftover momentum when switching cheat modes.
 		return;
 	}
 
-	const SceneManager &sceneManager = game.getSceneManager();
+	const SceneManager &sceneManager = game.sceneManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 
-	const GameState &gameState = game.getGameState();
+	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
 
@@ -579,7 +579,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 
 void Player::postPhysicsStep(Game &game)
 {
-	if (game.getOptions().getMisc_GhostMode())
+	if (game.options.getMisc_GhostMode())
 	{
 		return;
 	}

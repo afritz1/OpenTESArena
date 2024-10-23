@@ -9,7 +9,7 @@
 std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 {
 	// If not showing the intro, then jump to the main menu.
-	if (!game.getOptions().getMisc_ShowIntro())
+	if (!game.options.getMisc_ShowIntro())
 	{
 		std::unique_ptr<MainMenuPanel> panel = std::make_unique<MainMenuPanel>(game);
 		if (!panel->init())
@@ -43,7 +43,7 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 		const std::string paletteFilename = IntroUiView::getIntroBookPaletteFilename();
 		const std::string sequenceFilename = IntroUiView::getIntroBookSequenceFilename();
 
-		TextureManager &textureManager = game.getTextureManager();
+		TextureManager &textureManager = game.textureManager;
 		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceFilename.c_str());
 		if (!metadataID.has_value())
 		{

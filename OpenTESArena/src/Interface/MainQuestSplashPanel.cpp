@@ -15,7 +15,7 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game)
 bool MainQuestSplashPanel::init(int provinceID)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string descriptionText = MainQuestSplashUiModel::getDungeonText(game, provinceID);
@@ -46,7 +46,7 @@ bool MainQuestSplashPanel::init(int provinceID)
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	UiTextureID splashTextureID = MainQuestSplashUiView::allocSplashTextureID(game, provinceID);
 	this->splashTextureRef.init(splashTextureID, renderer);
 

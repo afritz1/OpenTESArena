@@ -20,7 +20,7 @@ bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::str
 {
 	auto &game = this->getGame();
 
-	if (!this->textBox.init(textBoxInitInfo, text, game.getRenderer()))
+	if (!this->textBox.init(textBoxInitInfo, text, game.renderer))
 	{
 		DebugLogError("Couldn't init sub-panel text box.");
 		return false;
@@ -62,8 +62,8 @@ bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::str
 		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
 		PivotType::Middle);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
 	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);

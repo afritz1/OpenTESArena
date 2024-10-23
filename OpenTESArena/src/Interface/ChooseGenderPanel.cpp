@@ -13,7 +13,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 bool ChooseGenderPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseGenderUiModel::getTitleText(game);
@@ -58,7 +58,7 @@ bool ChooseGenderPanel::init()
 
 	this->addInputActionListener(InputActionName::Back, ChooseGenderUiController::onBackToChooseNameInputAction);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID parchmentTextureID = ChooseGenderUiView::allocParchmentTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);

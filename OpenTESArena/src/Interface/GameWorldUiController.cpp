@@ -24,7 +24,7 @@
 void GameWorldUiController::onActivate(Game &game, const Int2 &screenPoint, TextBox &actionText)
 {
 	constexpr bool primaryInteraction = true;
-	const auto &inputManager = game.getInputManager();
+	const auto &inputManager = game.inputManager;
 	const bool debugFadeVoxel = inputManager.keyIsDown(SDL_SCANCODE_G);
 	PlayerLogicController::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction,
 		debugFadeVoxel, actionText);
@@ -35,10 +35,10 @@ void GameWorldUiController::onActivateInputAction(const InputActionCallbackValue
 	if (values.performed)
 	{
 		Game &game = values.game;
-		const auto &options = game.getOptions();
+		const auto &options = game.options;
 		if (options.getGraphics_ModernInterface())
 		{
-			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.getRenderer());
+			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.renderer);
 			GameWorldUiController::onActivate(game, screenPoint, actionText);
 		}
 	}
@@ -57,10 +57,10 @@ void GameWorldUiController::onInspectInputAction(const InputActionCallbackValues
 	if (values.performed)
 	{
 		Game &game = values.game;
-		const auto &options = game.getOptions();
+		const auto &options = game.options;
 		if (options.getGraphics_ModernInterface())
 		{
-			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.getRenderer());
+			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.renderer);
 			GameWorldUiController::onInspect(game, screenPoint, actionText);
 		}
 	}
@@ -69,7 +69,7 @@ void GameWorldUiController::onInspectInputAction(const InputActionCallbackValues
 void GameWorldUiController::onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed,
 	const Rect &centerCursorRegion, TextBox &actionText)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	if (!options.getGraphics_ModernInterface() && pressed && centerCursorRegion.contains(position))
 	{
 		if (type == MouseButtonType::Left)
@@ -86,7 +86,7 @@ void GameWorldUiController::onMouseButtonChanged(Game &game, MouseButtonType typ
 void GameWorldUiController::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt,
 	const Rect &centerCursorRegion)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	if (!options.getGraphics_ModernInterface() && !centerCursorRegion.contains(position))
 	{
 		if (type == MouseButtonType::Left)
@@ -136,13 +136,13 @@ void GameWorldUiController::onStatusButtonSelected(Game &game)
 		GameWorldUiView::StatusPopUpTextLineSpacing,
 		FontLibrary::getInstance());
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	Surface surface = TextureUtils::generate(
 		GameWorldUiView::StatusPopUpTexturePatternType,
 		GameWorldUiView::getStatusPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
 		GameWorldUiView::getStatusPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
-		game.getTextureManager(),
+		textureManager,
 		renderer);
 
 	UiTextureID textureID;
@@ -172,11 +172,11 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 	if (goToAutomap)
 	{
 		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		auto &gameState = game.getGameState();
+		auto &gameState = game.gameState;
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const LocationInstance &locationInst = gameState.getLocationInstance();
 		const int activeLevelIndex = gameState.getActiveLevelIndex();
-		const SceneManager &sceneManager = game.getSceneManager();
+		const SceneManager &sceneManager = game.sceneManager;
 		const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 
 		// Some places (like named/wild dungeons) do not display a name on the automap.
@@ -188,7 +188,7 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 			return (isCity || isMainQuestDungeon) ? locationName : std::string();
 		}();
 
-		const auto &player = game.getPlayer();
+		const auto &player = game.player;
 		game.setPanel<AutomapPanel>(player.camera.position, player.getGroundDirection(), voxelChunkManager, automapLocationName);
 	}
 	else
@@ -226,7 +226,7 @@ void GameWorldUiController::onToggleCompassInputAction(const InputActionCallback
 {
 	if (values.performed)
 	{
-		auto &options = values.game.getOptions();
+		auto &options = values.game.options;
 		options.setMisc_ShowCompass(!options.getMisc_ShowCompass());
 	}
 }
@@ -242,7 +242,7 @@ void GameWorldUiController::onPlayerPositionInputAction(const InputActionCallbac
 		const std::string text = GameWorldUiModel::getPlayerPositionText(game);
 		actionText.setText(text);
 
-		auto &gameState = game.getGameState();
+		auto &gameState = game.gameState;
 		gameState.setActionTextDuration(text);
 	}
 }

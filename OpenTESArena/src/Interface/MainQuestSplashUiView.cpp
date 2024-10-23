@@ -52,8 +52,8 @@ TextureAsset MainQuestSplashUiView::getSplashTextureAsset(Game &game, int provin
 
 UiTextureID MainQuestSplashUiView::allocSplashTextureID(Game &game, int provinceID)
 {
-	TextureManager &textureManager = game.getTextureManager();
-	Renderer &renderer = game.getRenderer();
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
 	const TextureAsset textureAsset = MainQuestSplashUiView::getSplashTextureAsset(game, provinceID);
 	const TextureAsset paletteTextureAsset = textureAsset;
 

@@ -16,13 +16,13 @@
 
 std::string GameWorldUiModel::getPlayerNameText(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	return player.getFirstName();
 }
 
 std::string GameWorldUiModel::getStatusButtonText(Game &game)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
@@ -129,9 +129,9 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	GameState &gameState = game.getGameState();
+	GameState &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 
 	const MapType mapType = mapDef.getMapType();
 	const OriginalInt2 displayedCoords = [&player, mapType]()
@@ -171,15 +171,15 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 
 std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (modernInterface)
 	{
 		return std::nullopt;
 	}
 
-	const auto &renderer = game.getRenderer();
-	const auto &inputManager = game.getInputManager();
+	const auto &renderer = game.renderer;
+	const auto &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 classicPosition = renderer.nativeToOriginal(mousePosition);
 	for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
@@ -199,7 +199,7 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 {
 	if (buttonType == ButtonType::Magic)
 	{
-		const Player &player = game.getPlayer();
+		const Player &player = game.player;
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 		const int charClassDefID = player.charClassDefID;
 		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
@@ -242,19 +242,19 @@ void GameWorldUiModel::setFreeLookActive(Game &game, bool active)
 {
 	// Set relative mouse mode. When enabled, this freezes the hardware cursor in place but relative motion
 	// events are still recorded.
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setRelativeMouseMode(active);
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const Int2 windowDims = renderer.getWindowDimensions();
 	renderer.warpMouse(windowDims.x / 2, windowDims.y / 2);
 }
 
 VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 &windowPoint)
 {
-	const auto &options = game.getOptions();
-	const auto &renderer = game.getRenderer();
-	const Player &player = game.getPlayer();
+	const auto &options = game.options;
+	const auto &renderer = game.renderer;
+	const Player &player = game.player;
 	const CoordDouble3 &playerCoord = player.camera.position;
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.camera.getDirection(),
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());

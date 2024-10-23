@@ -21,14 +21,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 MainMenuPanel::~MainMenuPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &inputManager = this->getGame().inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::MainMenu, false);
 }
 
 bool MainMenuPanel::init()
 {
 	Game &game = this->getGame();
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::MainMenu, true);
 
 	this->loadButton = Button<Game&>(MainMenuUiView::getLoadButtonRect(), MainMenuUiController::onLoadGameButtonSelected);
@@ -210,8 +210,8 @@ bool MainMenuPanel::init()
 	this->testIndex2 = 1;
 	this->testWeather = 0;
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const UiTextureID backgroundTextureID = MainMenuUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 	this->addDrawCall(
@@ -227,7 +227,7 @@ bool MainMenuPanel::init()
 	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
 
 	// Unload in case we are returning from a game session.
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
 	sceneManager.renderEntityChunkManager.unloadScene(renderer);
 	sceneManager.renderLightChunkManager.unloadScene(renderer);
@@ -238,8 +238,8 @@ bool MainMenuPanel::init()
 void MainMenuPanel::initTestUI()
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const UiTextureID testArrowsTextureID = MainMenuUiView::allocTestArrowsTexture(textureManager, renderer);
 	this->testArrowsTextureRef.init(testArrowsTextureID, renderer);
 

@@ -66,8 +66,8 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	const OnClosedFunction &onClosed)
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 
 	// The background expands to fit the text, unless overridden.

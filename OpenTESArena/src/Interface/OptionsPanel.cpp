@@ -16,7 +16,7 @@ OptionsPanel::OptionsPanel(Game &game)
 bool OptionsPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const TextBox::InitInfo descTextBoxInitInfo = OptionsUiView::getDescriptionTextBoxInitInfo(fontLibrary);
@@ -102,7 +102,7 @@ bool OptionsPanel::init()
 		updateHoveredOptionIndex();
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = OptionsUiView::allocBackgroundTexture(renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 	this->addDrawCall(
@@ -152,8 +152,8 @@ bool OptionsPanel::init()
 			}
 
 			auto &game = this->getGame();
-			auto &renderer = game.getRenderer();
-			const auto &inputManager = game.getInputManager();
+			auto &renderer = game.renderer;
+			const auto &inputManager = game.inputManager;
 			const Int2 mousePosition = inputManager.getMousePosition();
 			const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
@@ -244,8 +244,8 @@ OptionsUiModel::OptionGroup &OptionsPanel::getVisibleOptions()
 std::optional<int> OptionsPanel::getHoveredOptionIndex() const
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	const auto &inputManager = game.getInputManager();
+	auto &renderer = game.renderer;
+	const auto &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 

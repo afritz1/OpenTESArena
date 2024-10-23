@@ -290,14 +290,14 @@ namespace PlayerLogicController
 
 Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
 {
-	const auto &inputManager = game.getInputManager();
+	const auto &inputManager = game.inputManager;
 
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
 		// Classic interface mode.
-		auto &player = game.getPlayer();
+		auto &player = game.player;
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
@@ -379,13 +379,13 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, B
 		const int dy = mouseDelta.y;
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-		auto &player = game.getPlayer();
+		auto &player = game.player;
 		const auto &weaponAnim = player.weaponAnimation;
 		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
 
 		if (turning)
 		{
-			const Int2 dimensions = game.getRenderer().getWindowDimensions();
+			const Int2 dimensions = game.renderer.getWindowDimensions();
 
 			// Get the smaller of the two dimensions, so the look sensitivity is relative
 			// to a square instead of a rectangle. This keeps the camera look independent
@@ -405,23 +405,23 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, B
 
 void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
 {
-	const auto &options = game.getOptions();
-	auto &player = game.getPlayer();
+	const auto &options = game.options;
+	auto &player = game.player;
 	player.rotate(dx, dy, options.getInput_HorizontalSensitivity(),
 		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 }
 
 void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
 {
-	const InputManager &inputManager = game.getInputManager();
+	const InputManager &inputManager = game.inputManager;
 
 	// Arbitrary movement speed.
 	constexpr double walkSpeed = 15.0;
 
-	Player &player = game.getPlayer();
+	Player &player = game.player;
 	const bool isOnGround = player.onGround();
 
-	const Options &options = game.getOptions();
+	const Options &options = game.options;
 	const bool isGhostModeEnabled = options.getMisc_GhostMode();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
@@ -444,16 +444,16 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	// maybe the game loop could call a "Panel::fixedTick()" method.
 
 	// Only handle attacking if the player's weapon is currently idle.
-	auto &weaponAnimation = game.getPlayer().weaponAnimation;
+	auto &weaponAnimation = game.player.weaponAnimation;
 	if (weaponAnimation.isIdle())
 	{
-		const auto &inputManager = game.getInputManager();
-		auto &audioManager = game.getAudioManager();
+		const auto &inputManager = game.inputManager;
+		auto &audioManager = game.audioManager;
 
 		if (!weaponAnimation.isRanged())
 		{
 			// Handle melee attack.
-			const Int2 dimensions = game.getRenderer().getWindowDimensions();
+			const Int2 dimensions = game.renderer.getWindowDimensions();
 
 			// Get the smaller of the two dimensions, so the percentage change in mouse position
 			// is relative to a square instead of a rectangle.
@@ -528,7 +528,7 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 			// Handle ranged attack.
 			const bool isAttack = [&game, &inputManager]()
 			{
-				const auto &options = game.getOptions();
+				const auto &options = game.options;
 				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
 				if (!options.getGraphics_ModernInterface())
@@ -538,8 +538,8 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 					// that the border between cursor regions is hard to see at a glance, and that might be the
 					// difference between shooting an arrow and not shooting an arrow, so I'm relaxing the
 					// requirements here.
-					auto &textureManager = game.getTextureManager();
-					auto &renderer = game.getRenderer();
+					auto &textureManager = game.textureManager;
+					auto &renderer = game.renderer;
 					const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
 					const std::optional<TextureFileMetadataID> metadataID =
 						textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
@@ -575,15 +575,15 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint,
 	bool primaryInteraction, bool debugFadeVoxel, TextBox &actionTextBox)
 {
-	const auto &options = game.getOptions();
-	auto &gameState = game.getGameState();
+	const auto &options = game.options;
+	auto &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
-	auto &player = game.getPlayer();
+	auto &player = game.player;
 	const Double3 &cameraDirection = player.camera.getDirection();
 	const CoordDouble3 rayStart = player.camera.position;
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
@@ -673,7 +673,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							const DoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
 							const DoorDefinition::OpenSoundDef &openSoundDef = doorDef.getOpenSound();
 
-							auto &audioManager = game.getAudioManager();
+							auto &audioManager = game.audioManager;
 							const std::string &soundFilename = openSoundDef.soundFilename;
 
 							const CoordDouble3 soundCoord(chunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
@@ -694,7 +694,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 						const std::string &buildingName = chunk.getBuildingName(buildingNameID);
 						actionTextBox.setText(buildingName);
 
-						auto &gameState = game.getGameState();
+						auto &gameState = game.gameState;
 						gameState.setActionTextDuration(buildingName);
 					}
 				}
@@ -739,7 +739,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 				actionTextBox.setText(text);
 
-				auto &gameState = game.getGameState();
+				auto &gameState = game.gameState;
 				gameState.setActionTextDuration(text);
 			}
 		}

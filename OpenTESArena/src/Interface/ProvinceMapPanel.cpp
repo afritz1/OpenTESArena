@@ -35,7 +35,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game)
 bool ProvinceMapPanel::init(int provinceID)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const TextBox::InitInfo hoveredLocationTextBoxInitInfo = ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(fontLibrary);
 	if (!this->hoveredLocationTextBox.init(hoveredLocationTextBoxInitInfo, renderer))
@@ -82,9 +82,9 @@ bool ProvinceMapPanel::init(int provinceID)
 		Rect(0, 0, ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
 		[this, &game]()
 	{
-		const auto &inputManager = game.getInputManager();
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+		const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
 
 		if (this->searchButton.contains(classicPosition))
 		{
@@ -117,14 +117,14 @@ bool ProvinceMapPanel::init(int provinceID)
 
 	this->addMouseMotionListener([this](Game &game, int dx, int dy)
 	{
-		const auto &renderer = game.getRenderer();
-		const auto &inputManager = game.getInputManager();
+		const auto &renderer = game.renderer;
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 		this->updateHoveredLocationID(originalPosition);
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const UiTextureID backgroundTextureID = ProvinceMapUiView::allocBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
@@ -143,7 +143,7 @@ bool ProvinceMapPanel::init(int provinceID)
 
 	UiDrawCall::PositionFunc hoveredLocationPositionFunc = [this, &game]()
 	{
-		auto &gameState = game.getGameState();
+		auto &gameState = game.gameState;
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(this->provinceID);
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(this->hoveredLocationID);
@@ -206,7 +206,7 @@ bool ProvinceMapPanel::init(int provinceID)
 	this->provinceID = provinceID;
 	this->hoveredLocationID = -1;
 
-	const auto &inputManager = game.getInputManager();
+	const auto &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	this->updateHoveredLocationID(originalPosition);
@@ -217,8 +217,8 @@ bool ProvinceMapPanel::init(int provinceID)
 void ProvinceMapPanel::initLocationIconUI(int provinceID)
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	// Location icon textures.
@@ -253,7 +253,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 			renderer);
 	}
 
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
@@ -478,7 +478,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 {
 	auto &game = this->getGame();
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
@@ -499,7 +499,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 
 		// Use a copy of the RNG so displaying the travel pop-up multiple times doesn't
 		// cause different day amounts.
-		ArenaRandom tempRandom = game.getArenaRandom();
+		ArenaRandom tempRandom = game.arenaRandom;
 
 		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
 		{
@@ -561,7 +561,7 @@ void ProvinceMapPanel::updateHoveredLocationID(const Int2 &originalPosition)
 	// Look through all visible locations to find the one closest to the mouse.
 	std::optional<int> closestIndex;
 	auto &game = this->getGame();
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
@@ -607,8 +607,8 @@ void ProvinceMapPanel::onPauseChanged(bool paused)
 		// Make sure the hovered location matches where the pointer is now since mouse motion events
 		// aren't processed while this panel is paused.
 		auto &game = this->getGame();
-		const auto &renderer = game.getRenderer();
-		const auto &inputManager = game.getInputManager();
+		const auto &renderer = game.renderer;
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 		this->updateHoveredLocationID(originalPosition);
@@ -617,7 +617,7 @@ void ProvinceMapPanel::onPauseChanged(bool paused)
 
 void ProvinceMapPanel::tick(double dt)
 {
-	const auto &gameState = this->getGame().getGameState();
+	const auto &gameState = this->getGame().gameState;
 	if (gameState.getTravelData() != nullptr)
 	{
 		this->blinkState.update(dt);

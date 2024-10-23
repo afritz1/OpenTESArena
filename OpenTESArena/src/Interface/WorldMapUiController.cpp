@@ -17,7 +17,7 @@
 void WorldMapUiController::onBackToGameButtonSelected(Game &game)
 {
 	// Clear selected map location.
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	gameState.setTravelData(std::nullopt);
 
 	game.setPanel<GameWorldPanel>();
@@ -31,7 +31,7 @@ void WorldMapUiController::onProvinceButtonSelected(Game &game, int provinceID)
 void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays)
 {
 	// Clear selected map location.
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	gameState.setTravelData(std::nullopt);
 
 	// Handle fast travel behavior and decide which panel to switch to.
@@ -44,7 +44,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	FastTravelUiModel::tickTravelTime(game, travelDays);
 
 	// Update weathers.
-	gameState.updateWeatherList(game.getArenaRandom(), exeData);
+	gameState.updateWeatherList(game.arenaRandom, exeData);
 
 	// Clear the lore text (action text and effect text are unchanged).
 	gameState.resetTriggerTextDuration();
@@ -61,7 +61,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	const auto &travelProvinceDef = worldMapDef.getProvinceDef(targetProvinceID);
 	const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
 
-	TextureManager &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 
 	// Decide how to load the location.
 	if (travelLocationDef.getType() == LocationDefinitionType::City)
@@ -82,7 +82,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return ArenaWeatherUtils::getFilteredWeatherType(worldMapWeathers[globalQuarter], cityDef.climateType);
 		}();
 
-		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
+		const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
 
 		// Get city generation values.
 		Buffer<uint8_t> reservedBlocks = [&cityDef]()
@@ -117,7 +117,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
 		{
 			WeatherDefinition weatherDef;
-			weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+			weatherDef.initFromClassic(weatherType, currentDay, game.random);
 			return weatherDef;
 		}();
 
@@ -138,14 +138,14 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		{
 			// Choose time-based music and enter the game world.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			GameState &gameState = game.getGameState();
+			GameState &gameState = game.gameState;
 			const Clock &clock = gameState.getClock();
 			const MusicDefinition *musicDef = nullptr;
 			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-					game.getRandom(), [&weatherDef](const MusicDefinition &def)
+					game.random, [&weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
@@ -154,7 +154,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			}
 			else
 			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
 			}
 
 			if (musicDef == nullptr)
@@ -171,7 +171,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		{
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const MusicDefinition *jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Jingle, game.getRandom(),
+				MusicDefinition::Type::Jingle, game.random,
 				[cityDefType, cityDefClimateType](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
@@ -227,7 +227,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			// Choose random dungeon music and enter game world.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
+				MusicDefinition::Type::Interior, game.random, [](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
 				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
@@ -289,7 +289,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 				// Choose random dungeon music and enter game world.
 				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-					MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
+					MusicDefinition::Type::Interior, game.random, [](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Interior);
 					const auto &interiorMusicDef = def.getInteriorMusicDefinition();

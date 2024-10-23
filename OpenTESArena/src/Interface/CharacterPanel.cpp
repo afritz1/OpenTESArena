@@ -23,14 +23,14 @@ CharacterPanel::CharacterPanel(Game &game)
 
 CharacterPanel::~CharacterPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &inputManager = this->getGame().inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, false);
 }
 
 bool CharacterPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
@@ -95,14 +95,14 @@ bool CharacterPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, this->nextPageButton.getRect(),
 		[this, &game]() { this->nextPageButton.click(game); });
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, true);
 
 	auto doneInputActionFunc = CharacterSheetUiController::onDoneInputAction;
 	this->addInputActionListener(InputActionName::Back, doneInputActionFunc);
 	this->addInputActionListener(InputActionName::CharacterSheet, doneInputActionFunc);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID bodyTextureID = CharacterSheetUiView::allocBodyTexture(game);
 	const UiTextureID pantsTextureID = CharacterSheetUiView::allocPantsTexture(game);
 	const UiTextureID headTextureID = CharacterSheetUiView::allocHeadTexture(game);

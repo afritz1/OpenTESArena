@@ -15,7 +15,7 @@ void ProvinceMapUiController::onSearchButtonSelected(Game &game, ProvinceMapPane
 
 void ProvinceMapUiController::onTravelButtonSelected(Game &game, ProvinceMapPanel &panel)
 {
-	const auto &gameState = game.getGameState();
+	const auto &gameState = game.gameState;
 	const bool hasTravelData = gameState.getTravelData() != nullptr;
 
 	if (hasTravelData)
@@ -57,7 +57,7 @@ void ProvinceMapUiController::onTextPopUpSelected(Game &game)
 
 void ProvinceSearchUiController::onTextAccepted(Game &game, ProvinceSearchSubPanel &panel)
 {
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setTextInputMode(false);
 
 	// Determine what to do with the current location name. If it is a valid match

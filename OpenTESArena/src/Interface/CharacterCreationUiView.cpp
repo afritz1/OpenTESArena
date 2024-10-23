@@ -677,7 +677,7 @@ Int2 ChooseAttributesUiView::getBodyOffset(Game &game)
 {
 	const TextureAsset textureAsset = ChooseAttributesUiView::getBodyTextureAsset(game);
 
-	TextureManager &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
@@ -697,7 +697,7 @@ Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 	constexpr bool trimmed = false;
 	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(headsFilename.c_str());
 	if (!metadataID.has_value())
 	{
@@ -748,7 +748,7 @@ Buffer<TextureAsset> ChooseAttributesUiView::getHeadTextureAssets(Game &game)
 	constexpr bool trimmed = false;
 	std::string headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	return TextureUtils::makeTextureAssets(headsFilename, textureManager);
 }
 
@@ -777,8 +777,8 @@ TextureAsset ChooseAttributesUiView::getPantsTextureAsset(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getBodyTextureAsset(game);
@@ -794,8 +794,8 @@ UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getShirtTextureAsset(game);
@@ -811,8 +811,8 @@ UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocPantsTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getPantsTextureAsset(game);

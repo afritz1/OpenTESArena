@@ -40,7 +40,7 @@ std::string ProvinceMapUiModel::makeAlreadyAtLocationText(Game &game, const std:
 
 std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int locationID)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
@@ -54,7 +54,7 @@ std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int 
 
 std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::string &text)
 {
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string &fontName = ProvinceMapUiView::TextPopUpFontName;
@@ -78,7 +78,7 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 		lineSpacing,
 		fontLibrary);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID textureID = ProvinceMapUiView::allocTextPopUpTexture(
 		textBoxTextureGenInfo.width, textBoxTextureGenInfo.height, textureManager, renderer);
 	ScopedUiTextureRef textureRef(textureID, renderer);
@@ -96,7 +96,7 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex, const LocationDefinition &srcLocationDef,
 	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
@@ -321,7 +321,7 @@ std::string ProvinceSearchUiModel::getTitleText(Game &game)
 std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const std::string &locationName,
 	int provinceIndex, const int **exactLocationIndex)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 

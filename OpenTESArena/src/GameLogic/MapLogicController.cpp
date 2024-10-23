@@ -16,7 +16,7 @@
 
 void MapLogicController::handleNightLightChange(Game &game, bool active)
 {
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 
 	// Turn streetlights on or off.
 	const std::string &newStreetlightAnimStateName = active ? EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
@@ -44,15 +44,15 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 		}
 	}
 
-	const double ceilingScale = game.getGameState().getActiveCeilingScale();	
+	const double ceilingScale = game.gameState.getActiveCeilingScale();	
 	RenderLightChunkManager &renderLightChunkManager = sceneManager.renderLightChunkManager;
 	renderLightChunkManager.setNightLightsActive(active, ceilingScale, entityChunkManager);
 }
 
 void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
 {
-	GameState &gameState = game.getGameState();
-	SceneManager &sceneManager = game.getSceneManager();
+	GameState &gameState = game.gameState;
+	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	VoxelChunk *chunkPtr = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
 	if (chunkPtr == nullptr)
@@ -76,7 +76,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 		const std::string &soundFilename = soundDef.getFilename();
 
 		// Play the sound.
-		auto &audioManager = game.getAudioManager();
+		auto &audioManager = game.audioManager;
 		audioManager.playSound(soundFilename);
 	}
 
@@ -117,9 +117,9 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 	const RayCastVoxelHit &voxelHit = hit.voxelHit;
 	const CoordInt3 hitCoord(hit.coord.chunk, voxelHit.voxel);
 
-	auto &gameState = game.getGameState();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &gameState = game.gameState;
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const MapType activeMapType = activeMapDef.getMapType();
 
@@ -137,7 +137,7 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 		GameState::SceneChangeMusicFunc musicDefFunc = [](Game &game)
 		{
 			// Change to exterior music.
-			GameState &gameState = game.getGameState();
+			GameState &gameState = game.gameState;
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const Clock &clock = gameState.getClock();
 
@@ -146,7 +146,7 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-					game.getRandom(), [&weatherDef](const MusicDefinition &def)
+					game.random, [&weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
@@ -155,7 +155,7 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			}
 			else
 			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
 			}
 
 			if (musicDef == nullptr)
@@ -169,7 +169,7 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 		GameState::SceneChangeMusicFunc jingleMusicDefFunc = [](Game &game)
 		{
 			// Only play jingle if the exterior is inside the city walls.
-			GameState &gameState = game.getGameState();
+			GameState &gameState = game.gameState;
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 
 			const MusicDefinition *jingleMusicDef = nullptr;
@@ -178,7 +178,7 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 				const LocationDefinition &locationDef = gameState.getLocationDefinition();
 				const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
 				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
-					game.getRandom(), [&locationCityDef](const MusicDefinition &def)
+					game.random, [&locationCityDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
 					const auto &jingleMusicDef = def.getJingleMusicDefinition();
@@ -251,13 +251,13 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			{
 				// Change to interior music.
 				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-				const MapDefinition &activeMapDef = game.getGameState().getActiveMapDef();
+				const MapDefinition &activeMapDef = game.gameState.getActiveMapDef();
 				DebugAssert(activeMapDef.getMapType() == MapType::Interior);
 				const MapDefinitionInterior &mapDefInterior = activeMapDef.getSubDefinition().interior;
 				const ArenaTypes::InteriorType interiorType = mapDefInterior.interiorType;
 				const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
 				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-					MusicDefinition::Type::Interior, game.getRandom(), [interiorMusicType](const MusicDefinition &def)
+					MusicDefinition::Type::Interior, game.random, [interiorMusicType](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Interior);
 					const auto &interiorMusicDef = def.getInteriorMusicDefinition();
@@ -286,7 +286,7 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			const LocationDefinition &locationDef = gameState.getLocationDefinition();
 			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 			const int currentDay = gameState.getDate().getDay();
-			const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
+			const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
 
 			if (activeMapType == MapType::City)
 			{
@@ -416,13 +416,13 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 				const MusicDefinition *musicDef = [&game, &musicLibrary]()
 				{
-					GameState &gameState = game.getGameState();
+					GameState &gameState = game.gameState;
 					const Clock &clock = gameState.getClock();
 					if (!ArenaClockUtils::nightMusicIsActive(clock))
 					{
 						const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-							game.getRandom(), [&weatherDef](const MusicDefinition &def)
+							game.random, [&weatherDef](const MusicDefinition &def)
 						{
 							DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 							const auto &weatherMusicDef = def.getWeatherMusicDefinition();
@@ -431,7 +431,7 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 					}
 					else
 					{
-						return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
+						return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
 					}
 				}();
 
@@ -448,14 +448,14 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			GameState::SceneChangeMusicFunc jingleMusicFunc = [cityDefType, cityDefClimateType](Game &game)
 			{
 				// Only play jingle when going wilderness to city.
-				GameState &gameState = game.getGameState();
+				GameState &gameState = game.gameState;
 				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 				const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 				const MusicDefinition *jingleMusicDef = nullptr;
 				if (activeMapDef.getMapType() == MapType::City)
 				{
 					jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
-						game.getRandom(), [cityDefType, cityDefClimateType](const MusicDefinition &def)
+						game.random, [cityDefType, cityDefClimateType](const MusicDefinition &def)
 					{
 						DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
 						const auto &jingleMusicDef = def.getJingleMusicDefinition();
@@ -483,13 +483,13 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &playerCoord,
 	const CoordInt3 &transitionCoord)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 
 	// Level transitions are always between interiors.
 	const MapDefinition &interiorMapDef = gameState.getActiveMapDef();
 	DebugAssert(interiorMapDef.getMapType() == MapType::Interior);
 
-	const SceneManager &sceneManager = game.getSceneManager();
+	const SceneManager &sceneManager = game.sceneManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const VoxelChunk *chunkPtr = voxelChunkManager.tryGetChunkAtPosition(transitionCoord.chunk);
 	if (chunkPtr == nullptr)
@@ -565,7 +565,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		}();
 
 		// Player destination after going through a level up/down voxel.
-		auto &player = game.getPlayer();
+		auto &player = game.player;
 		const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
 		const VoxelInt2 dirToWorldVoxelXZ(dirToWorldVoxel.x, dirToWorldVoxel.z);
 		const VoxelDouble3 dirToWorldPoint(

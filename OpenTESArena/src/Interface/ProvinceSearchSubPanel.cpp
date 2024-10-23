@@ -30,7 +30,7 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game)
 bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provinceID)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Don't initialize the locations list box until it's reached, since its contents
@@ -82,7 +82,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	{
 		if (values.performed)
 		{
-			auto &inputManager = game.getInputManager();
+			auto &inputManager = game.inputManager;
 			inputManager.setTextInputMode(false);
 
 			// Return to the province map panel.
@@ -111,7 +111,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		if (this->mode == ProvinceSearchUiModel::Mode::List)
 		{
 			const Rect &listBoxRect = this->locationsListBox.getRect();
-			const Int2 classicPosition = game.getRenderer().nativeToOriginal(position);
+			const Int2 classicPosition = game.renderer.nativeToOriginal(position);
 			if (listBoxRect.contains(classicPosition))
 			{
 				if (type == MouseWheelScrollType::Up)
@@ -140,7 +140,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID parchmentTextureID = ProvinceSearchUiView::allocParchmentTexture(textureManager, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
@@ -220,7 +220,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	this->provinceID = provinceID;
 
 	// Start with text input enabled.
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setTextInputMode(true);
 
 	return true;
@@ -230,7 +230,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 {
 	// @todo: move the locationNames into UiModel
 	auto &game = this->getGame();
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
@@ -238,7 +238,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
 	this->locationsListBox.init(ProvinceSearchUiView::ListBoxRect,
-		ProvinceSearchUiView::makeListBoxProperties(FontLibrary::getInstance()), game.getRenderer());
+		ProvinceSearchUiView::makeListBoxProperties(FontLibrary::getInstance()), game.renderer);
 
 	this->clearButtonProxies();
 

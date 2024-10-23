@@ -80,7 +80,7 @@ Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 {
 	const TextureAsset textureAsset = CharacterSheetUiView::getBodyTextureAsset(game);
 
-	TextureManager &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
@@ -93,14 +93,14 @@ Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 
 Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const bool isMale = player.male;
 	const int raceID = player.raceID;
 
 	constexpr bool trimmed = false;
 	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(headsFilename.c_str());
 	if (!metadataID.has_value())
 	{
@@ -114,7 +114,7 @@ Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 
 Int2 CharacterSheetUiView::getShirtOffset(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const bool isMale = player.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
@@ -127,7 +127,7 @@ Int2 CharacterSheetUiView::getShirtOffset(Game &game)
 
 Int2 CharacterSheetUiView::getPantsOffset(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const bool isMale = player.male;
 	return ArenaPortraitUtils::getPantsOffset(isMale);
 }
@@ -159,7 +159,7 @@ TextureAsset CharacterSheetUiView::getNextPageButtonTextureAsset()
 
 TextureAsset CharacterSheetUiView::getBodyTextureAsset(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const bool isMale = player.male;
 	const int raceID = player.raceID;
 
@@ -169,7 +169,7 @@ TextureAsset CharacterSheetUiView::getBodyTextureAsset(Game &game)
 
 TextureAsset CharacterSheetUiView::getHeadTextureAsset(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const bool isMale = player.male;
 	const int raceID = player.raceID;
 
@@ -181,7 +181,7 @@ TextureAsset CharacterSheetUiView::getHeadTextureAsset(Game &game)
 
 TextureAsset CharacterSheetUiView::getShirtTextureAsset(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const bool isMale = player.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
@@ -195,7 +195,7 @@ TextureAsset CharacterSheetUiView::getShirtTextureAsset(Game &game)
 
 TextureAsset CharacterSheetUiView::getPantsTextureAsset(Game &game)
 {
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 	const bool isMale = player.male;
 
 	std::string pantsFilename = ArenaPortraitUtils::getPants(isMale);
@@ -204,8 +204,8 @@ TextureAsset CharacterSheetUiView::getPantsTextureAsset(Game &game)
 
 UiTextureID CharacterSheetUiView::allocBodyTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = CharacterSheetUiView::getBodyTextureAsset(game);
@@ -221,8 +221,8 @@ UiTextureID CharacterSheetUiView::allocBodyTexture(Game &game)
 
 UiTextureID CharacterSheetUiView::allocShirtTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = CharacterSheetUiView::getShirtTextureAsset(game);
@@ -238,8 +238,8 @@ UiTextureID CharacterSheetUiView::allocShirtTexture(Game &game)
 
 UiTextureID CharacterSheetUiView::allocPantsTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = CharacterSheetUiView::getPantsTextureAsset(game);
@@ -255,8 +255,8 @@ UiTextureID CharacterSheetUiView::allocPantsTexture(Game &game)
 
 UiTextureID CharacterSheetUiView::allocHeadTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = CharacterSheetUiView::getHeadTextureAsset(game);

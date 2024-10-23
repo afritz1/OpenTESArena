@@ -33,7 +33,7 @@ void IntroUiController::onIntroQuoteFinished(Game &game)
 	const std::string paletteFilename = IntroUiView::getOpeningScrollPaletteFilename();
 	const std::string sequenceFilename = IntroUiView::getOpeningScrollSequenceFilename();
 
-	TextureManager &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceFilename.c_str());
 	if (!metadataID.has_value())
 	{

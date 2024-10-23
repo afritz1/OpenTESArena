@@ -8,7 +8,7 @@ void MainQuestSplashUiController::onExitButtonSelected(Game &game)
 	// Choose random dungeon music and enter game world.
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
+		MusicDefinition::Type::Interior, game.random, [](const MusicDefinition &def)
 	{
 		DebugAssert(def.getType() == MusicDefinition::Type::Interior);
 		const auto &interiorMusicDef = def.getInteriorMusicDefinition();
@@ -20,7 +20,7 @@ void MainQuestSplashUiController::onExitButtonSelected(Game &game)
 		DebugLogWarning("Missing dungeon music.");
 	}
 
-	AudioManager &audioManager = game.getAudioManager();
+	AudioManager &audioManager = game.audioManager;
 	audioManager.setMusic(musicDef);
 
 	game.setPanel<GameWorldPanel>();
