@@ -9,28 +9,28 @@
 #include "StringView.h"
 #include "../debug/Debug.h"
 
-void KeyValueFile::Section::init(std::string &&name)
+void KeyValueFileSection::init(std::string &&name)
 {
 	this->name = std::move(name);
 }
 
-const std::string &KeyValueFile::Section::getName() const
+const std::string &KeyValueFileSection::getName() const
 {
 	return this->name;
 }
 
-int KeyValueFile::Section::getPairCount() const
+int KeyValueFileSection::getPairCount() const
 {
 	return static_cast<int>(this->pairs.size());
 }
 
-const std::pair<std::string, std::string> &KeyValueFile::Section::getPair(int index) const
+const std::pair<std::string, std::string> &KeyValueFileSection::getPair(int index) const
 {
 	DebugAssertIndex(this->pairs, index);
 	return this->pairs[index];
 }
 
-bool KeyValueFile::Section::tryGetValue(const std::string &key, std::string_view &value) const
+bool KeyValueFileSection::tryGetValue(const std::string &key, std::string_view &value) const
 {
 	const std::pair<std::string, std::string> searchPair(key, std::string());
 	const auto iter = std::lower_bound(this->pairs.begin(), this->pairs.end(), searchPair,
@@ -50,7 +50,7 @@ bool KeyValueFile::Section::tryGetValue(const std::string &key, std::string_view
 	}
 }
 
-bool KeyValueFile::Section::tryGetBoolean(const std::string &key, bool &value) const
+bool KeyValueFileSection::tryGetBoolean(const std::string &key, bool &value) const
 {
 	std::string_view str;
 	if (!this->tryGetValue(key, str))
@@ -76,7 +76,7 @@ bool KeyValueFile::Section::tryGetBoolean(const std::string &key, bool &value) c
 	}
 }
 
-bool KeyValueFile::Section::tryGetInteger(const std::string &key, int &value) const
+bool KeyValueFileSection::tryGetInteger(const std::string &key, int &value) const
 {
 	std::string_view str;
 	if (!this->tryGetValue(key, str))
@@ -98,7 +98,7 @@ bool KeyValueFile::Section::tryGetInteger(const std::string &key, int &value) co
 	}
 }
 
-bool KeyValueFile::Section::tryGetDouble(const std::string &key, double &value) const
+bool KeyValueFileSection::tryGetDouble(const std::string &key, double &value) const
 {
 	std::string_view str;
 	if (!this->tryGetValue(key, str))
@@ -120,12 +120,12 @@ bool KeyValueFile::Section::tryGetDouble(const std::string &key, double &value) 
 	}
 }
 
-bool KeyValueFile::Section::tryGetString(const std::string &key, std::string_view &value) const
+bool KeyValueFileSection::tryGetString(const std::string &key, std::string_view &value) const
 {
 	return this->tryGetValue(key, value);
 }
 
-void KeyValueFile::Section::add(std::string &&key, std::string &&value)
+void KeyValueFileSection::add(std::string &&key, std::string &&value)
 {
 	this->pairs.push_back(std::make_pair(std::move(key), std::move(value)));
 	std::sort(this->pairs.begin(), this->pairs.end(),
@@ -137,7 +137,7 @@ void KeyValueFile::Section::add(std::string &&key, std::string &&value)
 	});
 }
 
-void KeyValueFile::Section::clear()
+void KeyValueFileSection::clear()
 {
 	this->pairs.clear();
 }
@@ -156,7 +156,7 @@ bool KeyValueFile::init(const char *filename)
 	// Check each line for a valid section or key-value pair. Start the line numbers at 1
 	// since most users aren't programmers.
 	std::string line;
-	Section *activeSection = nullptr;
+	KeyValueFileSection *activeSection = nullptr;
 	for (int lineNumber = 1; std::getline(iss, line); lineNumber++)
 	{
 		// Get a filtered version of the current line so it can be parsed. If the filtered
@@ -225,7 +225,7 @@ bool KeyValueFile::init(const char *filename)
 				sectionName = StringView::trimFront(StringView::trimBack(sectionName));
 
 				const auto sectionIter = std::find_if(this->sections.begin(), this->sections.end(),
-					[&sectionName](const Section &section)
+					[&sectionName](const KeyValueFileSection &section)
 				{
 					return section.getName() == sectionName;
 				});
@@ -233,7 +233,7 @@ bool KeyValueFile::init(const char *filename)
 				// If the section is new, add it to the section maps.
 				if (sectionIter == this->sections.end())
 				{
-					Section section;
+					KeyValueFileSection section;
 					section.init(std::string(sectionName));
 					this->sections.push_back(std::move(section));
 					activeSection = &this->sections.back();
@@ -298,7 +298,7 @@ bool KeyValueFile::init(const char *filename)
 
 	// Sort for binary search.
 	std::sort(this->sections.begin(), this->sections.end(),
-		[](const Section &sectionA, const Section &sectionB)
+		[](const KeyValueFileSection &sectionA, const KeyValueFileSection &sectionB)
 	{
 		return sectionA.getName() < sectionB.getName();
 	});
@@ -311,16 +311,16 @@ int KeyValueFile::getSectionCount() const
 	return static_cast<int>(this->sections.size());
 }
 
-const KeyValueFile::Section &KeyValueFile::getSection(int index) const
+const KeyValueFileSection &KeyValueFile::getSection(int index) const
 {
 	DebugAssertIndex(this->sections, index);
 	return this->sections[index];
 }
 
-const KeyValueFile::Section *KeyValueFile::getSectionByName(const std::string &name) const
+const KeyValueFileSection *KeyValueFile::getSectionByName(const std::string &name) const
 {
 	const auto iter = std::lower_bound(this->sections.begin(), this->sections.end(), name,
-		[](const Section &section, const std::string &str)
+		[](const KeyValueFileSection &section, const std::string &str)
 	{
 		return section.getName() < str;
 	});

@@ -400,7 +400,7 @@ bool MusicLibrary::init(const char *filename)
 
 	for (int i = 0; i < keyValueFile.getSectionCount(); i++)
 	{
-		const KeyValueFile::Section &section = keyValueFile.getSection(i);
+		const KeyValueFileSection &section = keyValueFile.getSection(i);
 
 		MusicDefinition::Type sectionType;
 		if (!MusicLibrary::tryParseType(section.getName(), &sectionType))

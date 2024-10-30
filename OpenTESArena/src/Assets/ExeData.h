@@ -9,7 +9,6 @@
 #include "ExeTypes.h"
 
 #include "components/utilities/BufferView.h"
-#include "components/utilities/KeyValueFile.h"
 
 // This class stores data from the Arena executable. In other words, it represents a
 // kind of "view" into the executable's data.
@@ -18,6 +17,7 @@
 // members that differ between the two executables, with an _a/_acd suffix.
 
 class KeyValueFile;
+class KeyValueFileSection;
 
 enum class MapType;
 
@@ -557,10 +557,10 @@ private:
 	static constexpr char PAIR_SEPARATOR = ',';
 
 	// Gets the offset value from the given section and key.
-	static int get(const KeyValueFile::Section &section, const std::string &key);
+	static int get(const KeyValueFileSection &section, const std::string &key);
 
 	// Gets the offset + length value from the given section and key.
-	static std::pair<int, int> getPair(const KeyValueFile::Section &section, const std::string &key);
+	static std::pair<int, int> getPair(const KeyValueFileSection &section, const std::string &key);
 
 	static int8_t readInt8(const char *data);
 	static uint8_t readUint8(const char *data);
