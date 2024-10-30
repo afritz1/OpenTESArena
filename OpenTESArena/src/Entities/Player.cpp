@@ -306,11 +306,10 @@ void Player::teleport(const CoordDouble3 &position)
 	this->camera.position = position;
 }
 
-void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivity,
-	double pitchLimit)
+void Player::rotate(Degrees dx, Degrees dy, double pitchLimit)
 {
-	// Multiply sensitivities by 100 so the values in the options are nicer.
-	this->camera.rotate(dx * (100.0 * hSensitivity), dy * (100.0 * vSensitivity), pitchLimit);
+	this->camera.rotateX(dx);
+	this->camera.rotateY(dy, pitchLimit);
 }
 
 void Player::lookAt(const CoordDouble3 &point)

@@ -808,10 +808,14 @@ void Game::loop()
 
 			if (this->isSimulatingScene())
 			{
-				const BufferView<const Rect> nativeCursorRegionsView(this->nativeCursorRegions);
-				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, nativeCursorRegionsView);
-				PlayerLogicController::turnPlayer(*this, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
-				PlayerLogicController::handlePlayerMovement(*this, clampedDeltaTime, nativeCursorRegionsView);
+				const Double2 playerTurnAngleDeltas = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, this->nativeCursorRegions);
+
+				// Multiply by 100 so the values in options are more convenient.
+				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());
+				const Degrees deltaDegreesY = playerTurnAngleDeltas.y * (100.0 * this->options.getInput_VerticalSensitivity());
+				const Degrees pitchLimit = this->options.getInput_CameraPitchLimit();
+				this->player.rotate(deltaDegreesX, deltaDegreesY, pitchLimit);
+				PlayerLogicController::handlePlayerMovement(*this, clampedDeltaTime, this->nativeCursorRegions);
 			}
 		}
 		catch (const std::exception &e)

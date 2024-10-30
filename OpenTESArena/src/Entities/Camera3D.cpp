@@ -6,6 +6,20 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	Radians SafeDegreesToRadians(Degrees degrees)
+	{
+		const Radians radians = degrees * Constants::DegToRad;
+		if (!std::isfinite(radians))
+		{
+			return 0.0;
+		}
+
+		return radians;
+	}
+}
+
 void Camera3D::init(const CoordDouble3 &position, const Double3 &direction)
 {
 	this->position = position;
@@ -24,56 +38,45 @@ const Double3 &Camera3D::getRight() const
 	return this->right;
 }
 
-void Camera3D::pitch(double radians)
+void Camera3D::pitch(Radians deltaAngle)
 {
-	Quaternion q = Quaternion::fromAxisAngle(this->right, radians) *
-		Quaternion(this->forward, 0.0);
-
+	const Quaternion q = Quaternion::fromAxisAngle(this->right, deltaAngle) * Quaternion(this->forward, 0.0);
 	this->forward = Double3(q.x, q.y, q.z).normalized();
 	this->right = this->forward.cross(Double3::UnitY).normalized();
 	this->up = this->right.cross(this->forward).normalized();
 }
 
-void Camera3D::yaw(double radians)
+void Camera3D::yaw(Radians deltaAngle)
 {
-	Quaternion q = Quaternion::fromAxisAngle(Double3::UnitY, radians) *
-		Quaternion(this->forward, 0.0);
-
+	const Quaternion q = Quaternion::fromAxisAngle(Double3::UnitY, deltaAngle) * Quaternion(this->forward, 0.0);
 	this->forward = Double3(q.x, q.y, q.z).normalized();
 	this->right = this->forward.cross(Double3::UnitY).normalized();
 	this->up = this->right.cross(this->forward).normalized();
 }
 
-void Camera3D::rotate(double dx, double dy, double pitchLimit)
+void Camera3D::rotateX(Degrees dx)
+{
+	DebugAssert(std::isfinite(this->forward.length()));
+	const Radians deltaAsRadians = SafeDegreesToRadians(dx);
+	this->yaw(-deltaAsRadians);
+}
+
+void Camera3D::rotateY(Degrees dy, Degrees pitchLimit)
 {
 	DebugAssert(std::isfinite(this->forward.length()));
 	DebugAssert(pitchLimit >= 0.0);
 	DebugAssert(pitchLimit < 90.0);
 
-	auto safeDegToRad = [](double degrees)
-	{
-		const double rads = degrees * Constants::DegToRad;
-		return std::isfinite(rads) ? rads : 0.0;
-	};
+	const Radians deltaAsRadians = SafeDegreesToRadians(dy);
+	const Radians currentAngle = std::acos(this->forward.normalized().y);
+	const Radians requestedAngle = currentAngle - deltaAsRadians;
 
-	const double lookRightRads = safeDegToRad(dx);
-	double lookUpRads = safeDegToRad(dy);
+	// Clamp to avoid breaking cross product.
+	const Radians maxAngle = (90.0 - pitchLimit) * Constants::DegToRad;
+	const Radians minAngle = (90.0 + pitchLimit) * Constants::DegToRad;
+	const Radians actualDeltaAngle = (requestedAngle > minAngle) ? (currentAngle - minAngle) : ((requestedAngle < maxAngle) ? (currentAngle - maxAngle) : deltaAsRadians);
 
-	const double currentDec = std::acos(this->forward.normalized().y);
-	const double requestedDec = currentDec - lookUpRads;
-
-	// Clamp the range that the camera can tilt up or down to avoid breaking
-	// the vector cross product at extreme angles.
-	const double zenithMaxDec = (90.0 - pitchLimit) * Constants::DegToRad;
-	const double zenithMinDec = (90.0 + pitchLimit) * Constants::DegToRad;
-
-	lookUpRads = (requestedDec > zenithMinDec) ? (currentDec - zenithMinDec) :
-		((requestedDec < zenithMaxDec) ? (currentDec - zenithMaxDec) : lookUpRads);
-
-	// Only divide by zoom when sensitivity depends on field of view (which it doesn't here).
-	//const double zoom = 1.0 / std::tan((fovY * 0.5) * DEG_TO_RAD);
-	this->pitch(lookUpRads/* / zoom*/);
-	this->yaw(-lookRightRads/* / zoom*/);
+	this->pitch(actualDeltaAngle);
 }
 
 void Camera3D::lookAt(const CoordDouble3 &coord)

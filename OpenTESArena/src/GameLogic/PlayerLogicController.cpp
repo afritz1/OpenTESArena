@@ -403,14 +403,6 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, B
 	return Double2::Zero;
 }
 
-void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
-{
-	const auto &options = game.options;
-	auto &player = game.player;
-	player.rotate(dx, dy, options.getInput_HorizontalSensitivity(),
-		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
-}
-
 void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
 {
 	const InputManager &inputManager = game.inputManager;
