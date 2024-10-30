@@ -508,7 +508,7 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
 		const CoordDouble3 &playerCoord = this->player.camera.position;
-		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.camera.getDirection(),
+		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.camera.forward,
 			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
@@ -706,7 +706,7 @@ void Game::renderDebugInfo()
 	{
 		// Player position, direction, etc.
 		const CoordDouble3 &playerPosition = this->player.camera.position;
-		const Double3 &direction = this->player.camera.getDirection();
+		const Double3 &direction = this->player.camera.forward;
 
 		const std::string chunkStr = playerPosition.chunk.toString();
 		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
@@ -853,7 +853,7 @@ void Game::loop()
 				const CoordDouble3 newPlayerCoord = this->player.camera.position;
 				this->gameState.tickPlayerMovementTriggers(oldPlayerCoord, newPlayerCoord, *this);
 
-				const Double3 newPlayerDirection = this->player.camera.getDirection();
+				const Double3 newPlayerDirection = this->player.camera.forward;
 				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, newPlayerDirection,
 					this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 

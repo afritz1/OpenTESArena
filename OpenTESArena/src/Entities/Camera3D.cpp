@@ -28,46 +28,23 @@ void Camera3D::init(const CoordDouble3 &position, const Double3 &direction)
 	this->up = this->right.cross(this->forward).normalized();
 }
 
-const Double3 &Camera3D::getDirection() const
-{
-	return this->forward;
-}
-
-const Double3 &Camera3D::getRight() const
-{
-	return this->right;
-}
-
-void Camera3D::pitch(Radians deltaAngle)
-{
-	const Quaternion q = Quaternion::fromAxisAngle(this->right, deltaAngle) * Quaternion(this->forward, 0.0);
-	this->forward = Double3(q.x, q.y, q.z).normalized();
-	this->right = this->forward.cross(Double3::UnitY).normalized();
-	this->up = this->right.cross(this->forward).normalized();
-}
-
-void Camera3D::yaw(Radians deltaAngle)
-{
-	const Quaternion q = Quaternion::fromAxisAngle(Double3::UnitY, deltaAngle) * Quaternion(this->forward, 0.0);
-	this->forward = Double3(q.x, q.y, q.z).normalized();
-	this->right = this->forward.cross(Double3::UnitY).normalized();
-	this->up = this->right.cross(this->forward).normalized();
-}
-
-void Camera3D::rotateX(Degrees dx)
+void Camera3D::rotateX(Degrees deltaX)
 {
 	DebugAssert(std::isfinite(this->forward.length()));
-	const Radians deltaAsRadians = SafeDegreesToRadians(dx);
-	this->yaw(-deltaAsRadians);
+	const Radians deltaAsRadians = SafeDegreesToRadians(deltaX);
+	const Quaternion quat = Quaternion::fromAxisAngle(Double3::UnitY, -deltaAsRadians) * Quaternion(this->forward, 0.0);
+	this->forward = Double3(quat.x, quat.y, quat.z).normalized();
+	this->right = this->forward.cross(Double3::UnitY).normalized();
+	this->up = this->right.cross(this->forward).normalized();
 }
 
-void Camera3D::rotateY(Degrees dy, Degrees pitchLimit)
+void Camera3D::rotateY(Degrees deltaY, Degrees pitchLimit)
 {
 	DebugAssert(std::isfinite(this->forward.length()));
 	DebugAssert(pitchLimit >= 0.0);
 	DebugAssert(pitchLimit < 90.0);
 
-	const Radians deltaAsRadians = SafeDegreesToRadians(dy);
+	const Radians deltaAsRadians = SafeDegreesToRadians(deltaY);
 	const Radians currentAngle = std::acos(this->forward.normalized().y);
 	const Radians requestedAngle = currentAngle - deltaAsRadians;
 
@@ -76,7 +53,10 @@ void Camera3D::rotateY(Degrees dy, Degrees pitchLimit)
 	const Radians minAngle = (90.0 + pitchLimit) * Constants::DegToRad;
 	const Radians actualDeltaAngle = (requestedAngle > minAngle) ? (currentAngle - minAngle) : ((requestedAngle < maxAngle) ? (currentAngle - maxAngle) : deltaAsRadians);
 
-	this->pitch(actualDeltaAngle);
+	const Quaternion quat = Quaternion::fromAxisAngle(this->right, actualDeltaAngle) * Quaternion(this->forward, 0.0);
+	this->forward = Double3(quat.x, quat.y, quat.z).normalized();
+	this->right = this->forward.cross(Double3::UnitY).normalized();
+	this->up = this->right.cross(this->forward).normalized();
 }
 
 void Camera3D::lookAt(const CoordDouble3 &coord)

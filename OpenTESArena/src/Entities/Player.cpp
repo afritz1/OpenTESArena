@@ -246,7 +246,7 @@ std::string Player::getFirstName() const
 
 Double2 Player::getGroundDirection() const
 {
-	const Double3 &direction = this->camera.getDirection();
+	const Double3 &direction = this->camera.forward;
 	return Double2(direction.x, direction.z).normalized();
 }
 

@@ -806,7 +806,7 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
 	const auto &player = game.player;
 	const CoordDouble3 &playerPos = player.camera.position;
-	const VoxelDouble3 &playerDir = player.camera.getDirection();
+	const VoxelDouble3 &playerDir = player.camera.forward;
 
 	auto &gameState = game.gameState;
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();

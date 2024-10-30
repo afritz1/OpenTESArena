@@ -15,28 +15,19 @@
 // 2) they're application-level variables that the user may change frequently,
 // so they do just fine in an "Options" object instead.
 
-class Camera3D
+struct Camera3D
 {
-private:
-	// @todo: polar coordinates (XYZ angles)
-	Double3 forward, right, up;
-
-	void pitch(Radians deltaAngle);
-	void yaw(Radians deltaAngle);
-public:
 	CoordDouble3 position;
+	Double3 forward;
+	Double3 right;
+	Double3 up;
+	// @todo: polar coordinates (XYZ angles)
 
 	void init(const CoordDouble3 &position, const Double3 &direction);
 
-	const Double3 &getDirection() const;
-
-	// Always parallel to the ground (i.e., y == 0). Intended for strafing.
-	const Double3 &getRight() const;
-
-	// Pitches and yaws the camera relative to a fixed global up vector. "pitchLimit" affects how high or low the camera 
-	// can look in degrees.
-	void rotateX(Degrees dx);
-	void rotateY(Degrees dy, Degrees pitchLimit);
+	// Pitches and yaws relative to global up vector.
+	void rotateX(Degrees deltaX);
+	void rotateY(Degrees deltaY, Degrees pitchLimit);
 
 	// Recalculates the camera so it faces the given point. The global up vector is used when generating the new 3D frame,
 	// so don't give a point directly above or below the camera.

@@ -524,7 +524,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 
 	const auto &player = game.player;
 	const CoordDouble3 &rayStart = player.camera.position;
-	const VoxelDouble3 &cameraDirection = player.camera.getDirection();
+	const VoxelDouble3 &cameraDirection = player.camera.forward;
 	const double viewAspectRatio = renderer.getViewAspect();
 
 	const double ceilingScale = gameState.getActiveCeilingScale();
@@ -582,7 +582,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 	const auto &options = game.options;
 	const auto &player = game.player;
-	const Double3 &cameraDirection = player.camera.getDirection();
+	const Double3 &cameraDirection = player.camera.forward;
 
 	auto &renderer = game.renderer;
 	const Int2 viewDims = renderer.getViewDimensions();
