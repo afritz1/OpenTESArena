@@ -1,3 +1,5 @@
+#include <cstdio>
+
 #include "Color.h"
 #include "../Math/Random.h"
 
@@ -71,11 +73,9 @@ Color Color::fromRGB(uint32_t rgb)
 
 std::string Color::toString() const
 {
-	return std::string("[r=") +
-		std::to_string(this->r) + std::string(", g=") +
-		std::to_string(this->g) + std::string(", b=") +
-		std::to_string(this->b) + std::string(", a=") +
-		std::to_string(this->a) + std::string("]");
+	char buffer[64];
+	std::snprintf(buffer, std::size(buffer), "(%d, %d, %d, %d)", this->r, this->g, this->b, this->a);
+	return std::string(buffer);
 }
 
 uint32_t Color::toARGB() const
