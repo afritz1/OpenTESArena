@@ -34,9 +34,6 @@ private:
 		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef;
 
 	void initUiDrawCalls();
-
-	// Called by game loop for rendering the 3D scene.
-	static bool gameWorldRenderCallback(Game &game);
 public:
 	GameWorldPanel(Game &game);
 	~GameWorldPanel() override;
@@ -45,6 +42,9 @@ public:
 
 	// @temp workaround until there are listener callbacks or something for updating text boxes from game logic
 	TextBox &getTriggerTextBox();
+
+	// Called by game loop for rendering the 3D scene.
+	static bool renderScene(Game &game);
 
 	virtual void onPauseChanged(bool paused) override;
 };

@@ -189,6 +189,7 @@ Game::Game()
 	this->requestedSubPanelPop = false;
 
 	this->shouldSimulateScene = false;
+	this->shouldRenderScene = false;
 	this->running = true;
 }
 
@@ -402,16 +403,6 @@ Panel *Game::getActivePanel() const
 	return (this->subPanels.size() > 0) ? this->subPanels.back().get() : this->panel.get();
 }
 
-bool Game::isSimulatingScene() const
-{
-	return this->shouldSimulateScene;
-}
-
-void Game::setIsSimulatingScene(bool active)
-{
-	this->shouldSimulateScene = active;
-}
-
 bool Game::characterCreationIsActive() const
 {
 	return this->charCreationState.get() != nullptr;
@@ -431,7 +422,7 @@ const Rect &Game::getNativeCursorRegion(int index) const
 
 TextBox *Game::getTriggerTextBox()
 {
-	DebugAssert(this->isSimulatingScene());
+	DebugAssert(this->shouldSimulateScene);
 	DebugAssert(this->gameState.isActiveMapValid());
 
 	Panel *panel = this->getActivePanel();
@@ -466,11 +457,6 @@ void Game::popSubPanel()
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
 {
 	this->charCreationState = std::move(charCreationState);
-}
-
-void Game::setGameWorldRenderCallback(const GameWorldRenderCallback &callback)
-{
-	this->gameWorldRenderCallback = callback;
 }
 
 void Game::initOptions(const std::string &basePath, const std::string &optionsPath)
@@ -806,7 +792,7 @@ void Game::loop()
 
 			this->inputManager.update(*this, deltaTime, buttonProxies, onFinishedProcessingEventFunc);
 
-			if (this->isSimulatingScene())
+			if (this->shouldSimulateScene)
 			{
 				const Double2 playerTurnAngleDeltas = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, this->nativeCursorRegions);
 
@@ -829,7 +815,7 @@ void Game::loop()
 			this->getActivePanel()->tick(clampedDeltaTime);
 			this->handlePanelChanges();
 
-			if (this->isSimulatingScene() && this->gameState.isActiveMapValid())
+			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
 				const CoordDouble3 oldPlayerCoord = this->player.camera.position;
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
@@ -900,9 +886,9 @@ void Game::loop()
 
 			this->renderer.clear();
 
-			if (this->gameWorldRenderCallback)
+			if (this->shouldRenderScene)
 			{
-				if (!this->gameWorldRenderCallback(*this))
+				if (!GameWorldPanel::renderScene(*this))
 				{
 					DebugLogError("Couldn't render game world.");
 				}

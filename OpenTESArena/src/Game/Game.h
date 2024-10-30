@@ -40,12 +40,9 @@ class Surface;
 class Game
 {
 public:
-	using GameWorldRenderCallback = std::function<bool(Game&)>;
-
 	AudioManager audioManager;
 	InputManager inputManager;
 	std::unique_ptr<CharacterCreationState> charCreationState;
-	GameWorldRenderCallback gameWorldRenderCallback;
 	Options options;
 	Renderer renderer;
 	TextureManager textureManager; // The texture manager object for loading images from file.
@@ -76,13 +73,18 @@ public:
 	GameState gameState;
 
 	Player player;
+
+	// Whether the game loop should animate voxels, entities, and sky that can change over time.
+	// Used when determining if the player is actively in the game world or in menus. This does 
+	// not affect immediate operations like chunk management or scene transitions.
+	bool shouldSimulateScene;
+
+	// Whether to draw the 3D game world.
+	bool shouldRenderScene;
 private:
 	// Listener IDs are optional in case of failed Game construction.
 	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
 		renderTargetsResetListenerID, takeScreenshotListenerID, debugProfilerListenerID;
-
-	// Engine variables for what kinds of simulation should be attempted each frame.
-	bool shouldSimulateScene;
 
 	bool requestedSubPanelPop;
 	bool running;
@@ -118,12 +120,6 @@ public:
 	Game &operator=(Game&&) = delete;
 
 	bool init();
-
-	// Whether the game loop should animate voxels, entities, and sky that can change over time.
-	// Used when determining if the player is actively in the game world or in menus. This does 
-	// not affect immediate operations like chunk management or scene transitions.
-	bool isSimulatingScene() const;
-	void setIsSimulatingScene(bool active);
 
 	// Returns whether a new character is currently being created.
 	bool characterCreationIsActive() const;
@@ -182,9 +178,6 @@ public:
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.
 	void setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState);
-
-	// Sets the function to call for rendering the 3D scene.
-	void setGameWorldRenderCallback(const GameWorldRenderCallback &callback);
 
 	// Initial method for starting the game loop. This must only be called by main().
 	void loop();

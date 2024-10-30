@@ -45,8 +45,8 @@ GameWorldPanel::~GameWorldPanel()
 		GameWorldUiModel::setFreeLookActive(game, false);
 	}
 
-	game.setIsSimulatingScene(false);
-	game.setGameWorldRenderCallback([](Game&) { return true; });
+	game.shouldSimulateScene = false;
+	game.shouldRenderScene = false;
 }
 
 bool GameWorldPanel::init()
@@ -271,8 +271,8 @@ bool GameWorldPanel::init()
 		GameWorldUiModel::setFreeLookActive(game, true);
 	}
 
-	game.setGameWorldRenderCallback(GameWorldPanel::gameWorldRenderCallback);
-	game.setIsSimulatingScene(true);
+	game.shouldSimulateScene = true;
+	game.shouldRenderScene = true;
 
 	return true;
 }
@@ -797,7 +797,12 @@ void GameWorldPanel::initUiDrawCalls()
 	}
 }
 
-bool GameWorldPanel::gameWorldRenderCallback(Game &game)
+TextBox &GameWorldPanel::getTriggerTextBox()
+{
+	return this->triggerText;
+}
+
+bool GameWorldPanel::renderScene(Game &game)
 {
 	static RenderCommandBuffer commandBuffer;
 	commandBuffer.clear();
@@ -863,11 +868,6 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 	return true;
 }
 
-TextBox &GameWorldPanel::getTriggerTextBox()
-{
-	return this->triggerText;
-}
-
 void GameWorldPanel::onPauseChanged(bool paused)
 {
 	Panel::onPauseChanged(paused);
@@ -883,5 +883,5 @@ void GameWorldPanel::onPauseChanged(bool paused)
 		GameWorldUiModel::setFreeLookActive(game, !paused);
 	}
 
-	game.setIsSimulatingScene(!paused);
+	game.shouldSimulateScene = !paused;
 }
