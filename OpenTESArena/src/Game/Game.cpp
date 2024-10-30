@@ -618,7 +618,7 @@ void Game::handleWindowResized(int width, int height)
 void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
 {
 	// Update screen regions for classic interface player movement.
-	GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect>(this->nativeCursorRegions), windowWidth, windowHeight);
+	GameWorldUiModel::updateNativeCursorRegions(this->nativeCursorRegions, windowWidth, windowHeight);
 }
 
 void Game::renderDebugInfo()

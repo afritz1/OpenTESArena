@@ -1,8 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <array>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -57,7 +55,7 @@ public:
 	std::vector<std::unique_ptr<Panel>> subPanels;
 
 	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
-	std::array<Rect, 9> nativeCursorRegions;
+	Rect nativeCursorRegions[9];
 
 	// Displayed with varying profiler levels.
 	TextBox debugInfoTextBox;
