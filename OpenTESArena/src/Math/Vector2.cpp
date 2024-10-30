@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdio>
 
 #include "Constants.h"
 #include "Random.h"
@@ -68,10 +69,12 @@ Vector2i<T> Vector2i<T>::operator/(const Vector2i<T> &v) const
 	return Vector2i<T>(this->x / v.x, this->y / v.y);
 }
 
-template <typename T>
+template<typename T>
 std::string Vector2i<T>::toString() const
 {
-	return std::to_string(this->x) + ", " + std::to_string(this->y);
+	char buffer[64];
+	std::snprintf(buffer, std::size(buffer), "%d, %d", this->x, this->y);
+	return std::string(buffer);
 }
 
 // -- Vector2f --
@@ -171,7 +174,9 @@ Vector2f<T> Vector2f<T>::operator/(const Vector2f<T> &v) const
 template <typename T>
 std::string Vector2f<T>::toString() const
 {
-	return std::to_string(this->x) + ", " + std::to_string(this->y);
+	char buffer[64];
+	std::snprintf(buffer, std::size(buffer), "%.2f, %.2f", this->x, this->y);
+	return std::string(buffer);
 }
 
 template <typename T>

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdio>
 
 #include "Vector4.h"
 
@@ -75,8 +76,9 @@ Vector4i<T> Vector4i<T>::operator/(const Vector4i<T> &v) const
 template <typename T>
 std::string Vector4i<T>::toString() const
 {
-	return std::to_string(this->x) + ", " + std::to_string(this->y) + ", " +
-		std::to_string(this->z) + ", " + std::to_string(this->w);
+	char buffer[128];
+	std::snprintf(buffer, std::size(buffer), "(%d, %d, %d, %d)", this->x, this->y, this->z, this->w);
+	return std::string(buffer);
 }
 
 // -- Vector4f --
@@ -176,8 +178,9 @@ Vector4f<T> Vector4f<T>::operator/(const Vector4f<T> &v) const
 template <typename T>
 std::string Vector4f<T>::toString() const
 {
-	return std::to_string(this->x) + ", " + std::to_string(this->y) + ", " +
-		std::to_string(this->z) + ", " + std::to_string(this->w);
+	char buffer[128];
+	std::snprintf(buffer, std::size(buffer), "(%.2f, %.2f, %.2f, %.2f)", this->x, this->y, this->z, this->w);
+	return std::string(buffer);
 }
 
 template <typename T>

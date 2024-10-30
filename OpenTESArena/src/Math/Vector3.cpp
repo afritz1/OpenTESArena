@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdio>
 
 #include "Constants.h"
 #include "Random.h"
@@ -68,11 +69,12 @@ Vector3i<T> Vector3i<T>::operator/(const Vector3i<T> &v) const
 	return Vector3i<T>(this->x / v.x, this->y / v.y, this->z / v.z);
 }
 
-template <typename T>
+template<typename T>
 std::string Vector3i<T>::toString() const
 {
-	return std::to_string(this->x) + ", " + std::to_string(this->y) + ", " +
-		std::to_string(this->z);
+	char buffer[64];
+	std::snprintf(buffer, std::size(buffer), "(%d, %d, %d)", this->x, this->y, this->z);
+	return std::string(buffer);
 }
 
 // -- Vector3f --
@@ -183,11 +185,12 @@ Vector3f<T> Vector3f<T>::operator/(const Vector3f<T> &v) const
 	return Vector3f<T>(this->x / v.x, this->y / v.y, this->z / v.z);
 }
 
-template <typename T>
+template<typename T>
 std::string Vector3f<T>::toString() const
 {
-	return std::to_string(this->x) + ", " + std::to_string(this->y) + ", " +
-		std::to_string(this->z);
+	char buffer[64];
+	std::snprintf(buffer, std::size(buffer), "(%.2f, %.2f, %.2f)", this->x, this->y, this->z);
+	return std::string(buffer);
 }
 
 template <typename T>

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdio>
 
 #include "Constants.h"
 #include "Quaternion.h"
@@ -44,10 +45,10 @@ Quaternion Quaternion::fromAxisAngle(const Double4 &v)
 
 Quaternion Quaternion::fromAxisAngle(double x, double y, double z, double w)
 {
-	return Quaternion(Double3(x, y, z), w);
+	return Quaternion(x, y, z, w);
 }
 
-Quaternion Quaternion::operator *(const Quaternion &q) const
+Quaternion Quaternion::operator*(const Quaternion &q) const
 {
 	Double3 left(this->x, this->y, this->z);
 	Double3 right(q.x, q.y, q.z);
@@ -58,11 +59,9 @@ Quaternion Quaternion::operator *(const Quaternion &q) const
 
 std::string Quaternion::toString() const
 {
-	return std::string("[") +
-		std::to_string(this->x) + std::string(", ") +
-		std::to_string(this->y) + std::string(", ") +
-		std::to_string(this->z) + std::string(", ") +
-		std::to_string(this->w) + std::string("]");
+	char buffer[128];
+	std::snprintf(buffer, std::size(buffer), "(%.2f, %.2f, %.2f, %.2f)", this->x, this->y, this->z, this->w);
+	return std::string(buffer);
 }
 
 double Quaternion::length() const
