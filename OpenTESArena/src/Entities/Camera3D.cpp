@@ -32,7 +32,7 @@ void Camera3D::rotateX(Degrees deltaX)
 {
 	DebugAssert(std::isfinite(this->forward.length()));
 	const Radians deltaAsRadians = SafeDegreesToRadians(deltaX);
-	const Quaternion quat = Quaternion::fromAxisAngle(Double3::UnitY, -deltaAsRadians) * Quaternion(this->forward, 0.0);
+	const Quaternion quat = Quaternion::fromAxisAngle(-Double3::UnitY, deltaAsRadians) * Quaternion(this->forward, 0.0);
 	this->forward = Double3(quat.x, quat.y, quat.z).normalized();
 	this->right = this->forward.cross(Double3::UnitY).normalized();
 	this->up = this->right.cross(this->forward).normalized();
