@@ -14,7 +14,9 @@
 #include "components/utilities/Bytes.h"
 
 using Radians = double;
+using RadiansF = float;
 using Degrees = double;
+using DegreesF = float;
 
 namespace MathUtils
 {
@@ -98,6 +100,16 @@ namespace MathUtils
 		}
 	}
 
+	constexpr Radians DegToRad(Degrees degrees)
+	{
+		return degrees * (Constants::Pi / 180.0);
+	}
+
+	constexpr Degrees RadToDeg(Radians radians)
+	{
+		return radians * (180.0 / Constants::Pi);
+	}
+
 	// Gets a real (not integer) index in an array from the given percent.
 	double getRealIndex(int bufferSize, double percent);
 
@@ -165,6 +177,19 @@ namespace MathUtils
 
 	// Gets the X and Y coordinates from a Z value in a Z-order curve. Used with quadtree node look-up.
 	Int2 getZOrderCurvePoint(int index);
+}
+
+namespace MathUtilsF
+{
+	constexpr RadiansF DegToRad(DegreesF degrees)
+	{
+		return degrees * (ConstantsF::Pi / 180.0f);
+	}
+
+	constexpr DegreesF RadToDeg(RadiansF radians)
+	{
+		return radians * (180.0f / ConstantsF::Pi);
+	}
 }
 
 #endif

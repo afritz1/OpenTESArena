@@ -101,8 +101,8 @@ namespace SkyGeneration
 				const double heightPercent = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
 
 				// Clouds can be slightly below the horizon.
-				constexpr Radians minAngle = Constants::DegToRad(-10.0);
-				constexpr Radians maxAngle = Constants::DegToRad(20.0);
+				constexpr Radians minAngle = MathUtils::DegToRad(-10.0);
+				constexpr Radians maxAngle = MathUtils::DegToRad(20.0);
 				return minAngle + ((maxAngle - minAngle) * heightPercent);
 			}();
 

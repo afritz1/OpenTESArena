@@ -10,16 +10,6 @@ namespace Constants
 	constexpr double JustBelowOne = 1.0 - Epsilon;
 	constexpr double Sqrt2 = 1.414213562373095;
 	constexpr double HalfSqrt2 = Sqrt2 / 2.0;
-
-	constexpr double DegToRad(double degrees)
-	{
-		return degrees * (Pi / 180.0);
-	}
-
-	constexpr double RadToDeg(double radians)
-	{
-		return radians * (180.0 / Pi);
-	}
 }
 
 namespace ConstantsF
@@ -31,16 +21,6 @@ namespace ConstantsF
 	constexpr float JustBelowOne = 1.0f - Epsilon;
 	constexpr float Sqrt2 = 1.41421356f;
 	constexpr float HalfSqrt2 = Sqrt2 / 2.0f;
-
-	constexpr float DegToRad(float degrees)
-	{
-		return degrees * (Pi / 180.0f);
-	}
-
-	constexpr float RadToDeg(float radians)
-	{
-		return radians * (180.0f / Pi);
-	}
 }
 
 #endif

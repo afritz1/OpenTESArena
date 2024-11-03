@@ -2,6 +2,7 @@
 #include <cstdio>
 
 #include "Constants.h"
+#include "MathUtils.h"
 #include "Matrix4.h"
 
 template <typename T>
@@ -168,7 +169,7 @@ template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
 	// Differs slightly from other perspective matrices so Z in NDC space is between 0 and 1.
-	const T halfFovRadians = fovY * static_cast<T>(Constants::DegToRad(0.50));
+	const T halfFovRadians = fovY * static_cast<T>(MathUtils::DegToRad(0.50));
 	const T tangent = static_cast<T>(std::tan(halfFovRadians));
 	const T nearFarDiff = near - far;
 
