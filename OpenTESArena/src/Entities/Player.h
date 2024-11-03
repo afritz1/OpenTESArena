@@ -6,10 +6,10 @@
 #include "Jolt/Physics/Character/CharacterVirtual.h"
 #include "Jolt/Physics/PhysicsSystem.h"
 
-#include "Camera3D.h"
 #include "PrimaryAttributeSet.h"
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
+#include "../Math/MathUtils.h"
 #include "../World/Coord.h"
 
 class CharacterClassLibrary;
@@ -34,7 +34,11 @@ struct Player
 	int raceID;
 	int charClassDefID;
 	int portraitID;
-	Camera3D camera; // @todo: what if it was just the Jolt collider position and a Vec3 forward? And other vectors were calculated
+	CoordDouble3 position; // Eye position @todo: what if it was just the Jolt collider position and a Vec3 forward? And other vectors were calculated
+	Double3 forward; // Camera direction
+	Double3 right;
+	Double3 up;
+	// @todo: polar coordinates (XYZ angles)
 	VoxelDouble3 velocity; // @todo: maybe this should come from Jolt collider
 	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
 	double friction;
@@ -52,10 +56,10 @@ struct Player
 	double getFeetY() const;
 
 	// Changes the player's velocity based on collision with objects in the world.
-	void handleCollision(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale); // @todo: maybe delete this, or repurpose as a contact listener maybe?
+	//void handleCollision(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale); // @todo: maybe delete this, or repurpose as a contact listener maybe?
 
 	// Updates the player's position and velocity based on interactions with the world.
-	void updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale); // @todo: this probably would handle climbing mode?
+	//void updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale); // @todo: this probably would handle climbing mode?
 
 	// Make player with rolled attributes based on race & gender.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -66,6 +70,8 @@ struct Player
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
+
+	void initCamera(const CoordDouble3 &coord, const Double3 &forward);
 
 	// Initializes a random player for testing.
 	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
@@ -85,11 +91,13 @@ struct Player
 	// Teleports the player to a point.
 	void teleport(const CoordDouble3 &position); // @todo: probably takes PhysicsSystem&
 
-	// Rotates the player's camera based on some change in X (left/right) and Y (up/down).
-	void rotate(Degrees dx, Degrees dy, double pitchLimit);
+	// Pitches and yaws relative to global up vector.
+	void rotateX(Degrees deltaX);
+	void rotateY(Degrees deltaY, Degrees pitchLimit);
 
-	// Recalculates the player's view so they look at a point.
-	void lookAt(const CoordDouble3 &point);
+	// Recalculates the player's view so they look at a point. The global up vector is used when generating the new 3D frame,
+	// so don't give a point directly above or below the camera.
+	void lookAt(const CoordDouble3 &targetCoord);
 
 	// Intended for stopping after level transitions.
 	void setVelocityToZero(); // @todo: probably takes PhysicsSystem&

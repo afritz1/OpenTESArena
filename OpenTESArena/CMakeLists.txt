@@ -136,8 +136,6 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/BodyPart.cpp"
     "${SRC_ROOT}/Entities/BodyPart.h"
     "${SRC_ROOT}/Entities/BodyPartName.h"
-    "${SRC_ROOT}/Entities/Camera3D.cpp"
-    "${SRC_ROOT}/Entities/Camera3D.h"
     "${SRC_ROOT}/Entities/CharacterClassDefinition.cpp"
     "${SRC_ROOT}/Entities/CharacterClassDefinition.h"
     "${SRC_ROOT}/Entities/CharacterClassLibrary.cpp"

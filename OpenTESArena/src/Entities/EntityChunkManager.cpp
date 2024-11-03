@@ -992,7 +992,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
 
-	const CoordDouble3 &playerCoord = player.camera.position;
+	const CoordDouble3 &playerCoord = player.position;
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 	const bool isPlayerMoving = player.velocity.lengthSquared() >= Constants::Epsilon;
 	const bool isPlayerWeaponSheathed = player.weaponAnimation.isSheathed();

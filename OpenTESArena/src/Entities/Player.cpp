@@ -20,6 +20,7 @@
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
+#include "../Math/Quaternion.h"
 #include "../Math/Random.h"
 #include "../Voxels/VoxelChunkManager.h"
 
@@ -126,6 +127,17 @@ namespace // @todo: could be in a PlayerUtils instead
 		character->SetPosition(physicsPosition);
 		charVirtual->SetPosition(physicsPosition);
 	}
+
+	Radians SafeDegreesToRadians(Degrees degrees)
+	{
+		const Radians radians = degrees * Constants::DegToRad;
+		if (!std::isfinite(radians))
+		{
+			return 0.0;
+		}
+
+		return radians;
+	}
 }
 
 Player::Player()
@@ -134,7 +146,7 @@ Player::Player()
 	this->raceID = -1;
 	this->charClassDefID = -1;
 	this->portraitID = -1;
-	this->camera.init(CoordDouble3(), -Double3::UnitX); // To avoid audio listener normalization issues w/ uninitialized player.
+	this->initCamera(CoordDouble3(), -Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
 	this->friction = 0.0;	
 	this->physicsCharacter = nullptr;
@@ -156,7 +168,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->camera.init(position, direction);
+	this->initCamera(position, direction);
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->friction = FRICTION;
@@ -168,7 +180,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->camera.position));
+	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->position));
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -180,7 +192,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->camera.init(position, direction);
+	this->initCamera(position, direction);
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->friction = FRICTION;
@@ -192,7 +204,15 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->camera.position));
+	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->position));
+}
+
+void Player::initCamera(const CoordDouble3 &coord, const Double3 &forward)
+{
+	this->position = coord;
+	this->forward = forward;
+	this->right = this->forward.cross(Double3::UnitY).normalized();
+	this->up = this->right.cross(this->forward).normalized();
 }
 
 void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
@@ -205,7 +225,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 
 	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
 	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
-	this->camera.init(position, direction);
+	this->initCamera(position, direction);
 	this->velocity = Double3::Zero;
 	this->maxWalkSpeed = Player::DEFAULT_WALK_SPEED;
 	this->friction = FRICTION;
@@ -236,7 +256,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->camera.position));
+	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->position));
 }
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
@@ -262,8 +282,7 @@ std::string Player::getFirstName() const
 
 Double2 Player::getGroundDirection() const
 {
-	const Double3 &direction = this->camera.forward;
-	return Double2(direction.x, direction.z).normalized();
+	return Double2(this->forward.x, this->forward.z).normalized();
 }
 
 double Player::getJumpMagnitude() const
@@ -273,173 +292,64 @@ double Player::getJumpMagnitude() const
 
 double Player::getFeetY() const
 {
-	const double cameraY = this->camera.position.point.y;
+	const double cameraY = this->position.point.y;
 	return cameraY - Player::HEIGHT;
 }
 
 bool Player::onGround() const
 {
-	//return this->physicsCharacter->IsSupported(); // @todo: not sure which is better
+	//return this->physicsCharacter->IsSupported(); // @todo: not sure which is better, maybe virtual is for steps?
 	return this->physicsCharacterVirtual->IsSupported();
 }
 
 void Player::teleport(const CoordDouble3 &position)
 {
-	this->camera.position = position;
+	this->position = position;
 }
 
-void Player::rotate(Degrees dx, Degrees dy, double pitchLimit)
+void Player::rotateX(Degrees deltaX)
 {
-	this->camera.rotateX(dx);
-	this->camera.rotateY(dy, pitchLimit);
+	DebugAssert(std::isfinite(this->forward.length()));
+	const Radians deltaAsRadians = SafeDegreesToRadians(deltaX);
+	const Quaternion quat = Quaternion::fromAxisAngle(-Double3::UnitY, deltaAsRadians) * Quaternion(this->forward, 0.0);
+	this->forward = Double3(quat.x, quat.y, quat.z).normalized();
+	this->right = this->forward.cross(Double3::UnitY).normalized();
+	this->up = this->right.cross(this->forward).normalized();
 }
 
-void Player::lookAt(const CoordDouble3 &point)
+void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
 {
-	this->camera.lookAt(point);
+	DebugAssert(std::isfinite(this->forward.length()));
+	DebugAssert(pitchLimit >= 0.0);
+	DebugAssert(pitchLimit < 90.0);
+
+	const Radians deltaAsRadians = SafeDegreesToRadians(deltaY);
+	const Radians currentAngle = std::acos(this->forward.normalized().y);
+	const Radians requestedAngle = currentAngle - deltaAsRadians;
+
+	// Clamp to avoid breaking cross product.
+	const Radians maxAngle = (90.0 - pitchLimit) * Constants::DegToRad;
+	const Radians minAngle = (90.0 + pitchLimit) * Constants::DegToRad;
+	const Radians actualDeltaAngle = (requestedAngle > minAngle) ? (currentAngle - minAngle) : ((requestedAngle < maxAngle) ? (currentAngle - maxAngle) : deltaAsRadians);
+
+	const Quaternion quat = Quaternion::fromAxisAngle(this->right, actualDeltaAngle) * Quaternion(this->forward, 0.0);
+	this->forward = Double3(quat.x, quat.y, quat.z).normalized();
+	this->right = this->forward.cross(Double3::UnitY).normalized();
+	this->up = this->right.cross(this->forward).normalized();
 }
 
-void Player::handleCollision(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale)
+void Player::lookAt(const CoordDouble3 &targetCoord)
 {
-	// @todo: this function probably decides the velocity to give to Jolt?
+	const Double3 newForward = (targetCoord - this->position).normalized();
+	const Double3 newRight = newForward.cross(Double3::UnitY).normalized();
+	const Double3 newUp = newRight.cross(newForward).normalized();
 
-	auto tryGetVoxelTraitsDef = [&voxelChunkManager](const CoordInt3 &coord) -> const VoxelTraitsDefinition*
+	if (std::isfinite(newUp.length()))
 	{
-		const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
-		if (chunk == nullptr)
-		{
-			// Chunks not in the chunk manager are air.
-			return nullptr;
-		}
-
-		const VoxelInt3 voxel = coord.voxel;
-		if (!chunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
-		{
-			return nullptr;
-		}
-
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
-		return &voxelTraitsDef;
-	};
-
-	// Coordinates of the base of the voxel the feet are in.
-	// - @todo: add delta velocity Y?
-	const int feetVoxelY = static_cast<int>(std::floor(this->getFeetY() / ceilingScale));
-
-	// Regular old Euler integration in XZ plane.
-	const CoordDouble3 curPlayerCoord = this->camera.position;
-	const VoxelDouble3 deltaPosition(this->velocity.x * dt, 0.0, this->velocity.z * dt);
-
-	// The next voxels in X/Y/Z directions based on player movement.
-	const VoxelInt3 nextXVoxel(
-		static_cast<SNInt>(std::floor(curPlayerCoord.point.x + deltaPosition.x)),
-		feetVoxelY,
-		static_cast<WEInt>(std::floor(curPlayerCoord.point.z)));
-	const VoxelInt3 nextYVoxel(
-		static_cast<SNInt>(std::floor(curPlayerCoord.point.x)),
-		nextXVoxel.y,
-		nextXVoxel.z);
-	const VoxelInt3 nextZVoxel(
-		nextYVoxel.x,
-		nextYVoxel.y,
-		static_cast<WEInt>(std::floor(curPlayerCoord.point.z + deltaPosition.z)));
-
-	const CoordInt3 nextXCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextXVoxel);
-	const CoordInt3 nextYCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextYVoxel);
-	const CoordInt3 nextZCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextZVoxel);
-	const VoxelTraitsDefinition *xVoxelTraitsDef = tryGetVoxelTraitsDef(nextXCoord);
-	const VoxelTraitsDefinition *yVoxelTraitsDef = tryGetVoxelTraitsDef(nextYCoord);
-	const VoxelTraitsDefinition *zVoxelTraitsDef = tryGetVoxelTraitsDef(nextZCoord);
-
-	// Check horizontal collisions.
-
-	// -- Temp hack until Y collision detection is implemented --
-	// - @todo: formalize the collision calculation and get rid of this hack.
-	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [&voxelChunkManager, &collisionChunkManager](const CoordInt3 &coord, const VoxelTraitsDefinition &voxelTraitsDef)
-	{
-		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
-
-		if (voxelType == ArenaTypes::VoxelType::TransparentWall)
-		{
-			const VoxelTraitsDefinition::TransparentWall &transparent = voxelTraitsDef.transparentWall;
-			return transparent.collider;
-		}
-		else if (voxelType == ArenaTypes::VoxelType::Edge)
-		{
-			// Edge collision.
-			// - @todo: treat as edge, not solid voxel.
-			const VoxelTraitsDefinition::Edge &edge = voxelTraitsDef.edge;
-			return edge.collider;
-		}
-		else
-		{
-			const ChunkInt2 &chunkPos = coord.chunk;
-			const VoxelInt3 &voxelPos = coord.voxel;
-			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-			const CollisionChunk &collisionChunk = collisionChunkManager.getChunkAtPosition(chunkPos);
-
-			// General voxel collision.
-			const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.shapeDefIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
-			const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
-			const bool isEmpty = collisionShapeDef.type == CollisionShapeType::None;
-
-			// @todo: don't check that it's a door, just check the collision chunk directly for everything (it should be data-driven, not type-driven).
-			const bool isOpenDoor = [voxelType, &voxelPos, &collisionChunk]()
-			{
-				if (voxelType == ArenaTypes::VoxelType::Door)
-				{
-					return !collisionChunk.enabledColliders.get(voxelPos.x, voxelPos.y, voxelPos.z);
-				}
-				else
-				{
-					return false;
-				}
-			}();
-
-			// -- Temporary hack for "on voxel enter" transitions --
-			// - @todo: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelTransition = [&coord, voxelType, &voxelChunk]()
-			{
-				if (voxelType == ArenaTypes::VoxelType::Wall)
-				{
-					const VoxelInt3 &voxel = coord.voxel;
-
-					// Check if there is a level change transition definition for this voxel.
-					VoxelChunk::TransitionDefID transitionDefID;
-					if (!voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
-					{
-						return false;
-					}
-
-					const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
-					return transitionDef.getType() == TransitionType::LevelChange;
-				}
-				else
-				{
-					return false;
-				}
-			}();
-
-			return !isEmpty && !isOpenDoor && !isLevelTransition;
-		}
-	};
-
-	if ((xVoxelTraitsDef != nullptr) && wouldCollideWithVoxel(nextXCoord, *xVoxelTraitsDef))
-	{
-		this->velocity.x = 0.0;
+		this->forward = newForward;
+		this->right = newRight;
+		this->up = newUp;
 	}
-
-	if ((zVoxelTraitsDef != nullptr) && wouldCollideWithVoxel(nextZCoord, *zVoxelTraitsDef))
-	{
-		this->velocity.z = 0.0;
-	}
-
-	this->velocity.y = 0.0;
-	// -- end hack --
-
-	// @todo: use an axis-aligned bounding box or cylinder instead of a point?
 }
 
 void Player::setVelocityToZero()
@@ -449,7 +359,7 @@ void Player::setVelocityToZero()
 
 void Player::setDirectionToHorizon()
 {
-	const CoordDouble3 &coord = this->camera.position;
+	const CoordDouble3 &coord = this->position;
 	const WorldDouble2 groundDirection = this->getGroundDirection();
 	const VoxelDouble3 lookAtPoint = coord.point + VoxelDouble3(groundDirection.x, 0.0, groundDirection.y);
 	const CoordDouble3 lookAtCoord(coord.chunk, lookAtPoint);
@@ -588,5 +498,5 @@ void Player::postPhysicsStep(Game &game)
 		static_cast<double>(physicsCharPos.GetY()),
 		static_cast<WEDouble>(physicsCharPos.GetZ()));
 
-	this->camera.position = VoxelUtils::worldPointToCoord(worldPos);
+	this->position = VoxelUtils::worldPointToCoord(worldPos);
 }

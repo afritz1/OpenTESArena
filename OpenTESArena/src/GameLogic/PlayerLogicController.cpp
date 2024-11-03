@@ -45,7 +45,7 @@ namespace PlayerLogicController
 		// because the Y component is intentionally truncated).
 		const Double2 groundDirection = player.getGroundDirection();
 		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-		const Double3 &rightDirection = player.camera.right;
+		const Double3 &rightDirection = player.right;
 
 		// Mouse movement takes priority over key movement.
 		if (leftClick && isOnGround)
@@ -190,10 +190,10 @@ namespace PlayerLogicController
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
-		const Double3 direction = player.camera.forward;
+		const Double3 direction = player.forward;
 		const Double2 groundDirection = player.getGroundDirection();
 		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-		const Double3 &rightDirection = player.camera.right;
+		const Double3 &rightDirection = player.right;
 		const Double3 upDirection = rightDirection.cross(direction).normalized();
 
 		if (!isGhostModeEnabled)
@@ -277,7 +277,7 @@ namespace PlayerLogicController
 			{
 				accelDirection = accelDirection.normalized();
 
-				const CoordDouble3 &playerCoord = player.camera.position;
+				const CoordDouble3 &playerCoord = player.position;
 
 				constexpr double ghostSpeed = 10.0;
 				const VoxelDouble3 deltaPoint = accelDirection * (ghostSpeed * dt);
@@ -576,8 +576,8 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
 	auto &player = game.player;
-	const Double3 &cameraDirection = player.camera.forward;
-	const CoordDouble3 rayStart = player.camera.position;
+	const Double3 &cameraDirection = player.forward;
+	const CoordDouble3 rayStart = player.position;
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 	constexpr bool includeEntities = true;
 

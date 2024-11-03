@@ -495,8 +495,8 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	if (this->gameState.isActiveMapValid())
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
-		const CoordDouble3 &playerCoord = this->player.camera.position;
-		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.camera.forward,
+		const CoordDouble3 &playerCoord = this->player.position;
+		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.forward,
 			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
@@ -693,8 +693,8 @@ void Game::renderDebugInfo()
 	if (profilerLevel >= 3)
 	{
 		// Player position, direction, etc.
-		const CoordDouble3 &playerPosition = this->player.camera.position;
-		const Double3 &direction = this->player.camera.forward;
+		const CoordDouble3 &playerPosition = this->player.position;
+		const Double3 &direction = this->player.forward;
 
 		const std::string chunkStr = playerPosition.chunk.toString();
 		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
@@ -803,7 +803,8 @@ void Game::loop()
 				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());
 				const Degrees deltaDegreesY = playerTurnAngleDeltas.y * (100.0 * this->options.getInput_VerticalSensitivity());
 				const Degrees pitchLimit = this->options.getInput_CameraPitchLimit();
-				this->player.rotate(deltaDegreesX, deltaDegreesY, pitchLimit);
+				this->player.rotateX(deltaDegreesX);
+				this->player.rotateY(deltaDegreesY, pitchLimit);
 				PlayerLogicController::handlePlayerMovement(*this, clampedDeltaTime, this->nativeCursorRegions);
 			}
 		}
@@ -820,7 +821,7 @@ void Game::loop()
 
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				const CoordDouble3 oldPlayerCoord = this->player.camera.position;
+				const CoordDouble3 oldPlayerCoord = this->player.position;
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
 				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
@@ -839,10 +840,10 @@ void Game::loop()
 				this->physicsSystem.Update(static_cast<float>(clampedDeltaTime), frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
 				this->player.postPhysicsStep(*this);
 
-				const CoordDouble3 newPlayerCoord = this->player.camera.position;
+				const CoordDouble3 newPlayerCoord = this->player.position;
 				this->gameState.tickPlayerMovementTriggers(oldPlayerCoord, newPlayerCoord, *this);
 
-				const Double3 newPlayerDirection = this->player.camera.forward;
+				const Double3 newPlayerDirection = this->player.forward;
 				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, newPlayerDirection,
 					this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 
