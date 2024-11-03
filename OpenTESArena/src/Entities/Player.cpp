@@ -62,12 +62,12 @@ namespace
 		}
 
 		constexpr float collisionTolerance = 0.05f; // from Jolt example
-		constexpr float maxSlopeAngle = MathUtilsF::degToRad(5.0f); // Game world doesn't have slopes, so this can be very small.
+		constexpr float maxSlopeAngle = MathUtilsF::degToRad(1.0f); // Game world doesn't have slopes, so this should be very small, but 0 causes 500 foot jumps off walls.
 		constexpr float maxStrength = 100.0f; // from Jolt example
 		constexpr float characterPadding = 0.02f; // from Jolt example
 		constexpr float penetrationRecoverySpeed = 1.0f; // from Jolt example
 		constexpr float predictiveContactDistance = 0.1f; // from Jolt example
-		const JPH::Plane supportingVolume(JPH::Vec3::sAxisY(), -1.0e10f); // from Jolt default values (half space of that character accepts collisions, we want 100%)
+		const JPH::Plane supportingVolume(JPH::Vec3::sAxisY(), -1.0e10f); // from Jolt default values (half space of the character that accepts collisions, we want 100%)
 
 		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
 		// I just need a capsule that runs into things, jumps, and steps on stairs.
@@ -327,7 +327,9 @@ double Player::getJumpMagnitude() const
 
 bool Player::onGround() const
 {
-	return this->physicsCharacter->IsSupported();
+	// @todo: not sure we should ever be on steep ground in this engine. "maxSlopeAngle" affects that, and 0 and 90 don't seem perfect.
+	const JPH::CharacterBase::EGroundState groundState = this->physicsCharacter->GetGroundState();
+	return groundState == JPH::CharacterBase::EGroundState::OnGround;
 }
 
 bool Player::isMoving() const
