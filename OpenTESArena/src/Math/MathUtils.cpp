@@ -4,6 +4,17 @@
 
 #include "components/debug/Debug.h"
 
+Radians MathUtils::safeDegToRad(Degrees degrees)
+{
+	const Radians radians = degToRad(degrees);
+	if (!std::isfinite(radians))
+	{
+		return 0.0;
+	}
+
+	return radians;
+}
+
 double MathUtils::getRealIndex(int bufferSize, double percent)
 {
 	DebugAssert(bufferSize > 0);
@@ -45,7 +56,7 @@ Radians MathUtils::fullAtan2(const WorldDouble2 &v)
 
 double MathUtils::verticalFovToZoom(Degrees fovY)
 {
-	return 1.0 / std::tan(MathUtils::DegToRad(fovY * 0.5));
+	return 1.0 / std::tan(MathUtils::degToRad(fovY * 0.5));
 }
 
 Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
@@ -54,8 +65,8 @@ Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 	DebugAssert(fovY < 180.0);
 	DebugAssert(aspectRatio > 0.0);
 
-	const double halfDim = aspectRatio * std::tan(MathUtils::DegToRad(fovY * 0.50));
-	return MathUtils::RadToDeg(2.0 * std::atan(halfDim));
+	const double halfDim = aspectRatio * std::tan(MathUtils::degToRad(fovY * 0.50));
+	return MathUtils::radToDeg(2.0 * std::atan(halfDim));
 }
 
 bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &planePoint, const Double2 &planeNormal)

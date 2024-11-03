@@ -100,15 +100,17 @@ namespace MathUtils
 		}
 	}
 
-	constexpr Radians DegToRad(Degrees degrees)
+	constexpr Radians degToRad(Degrees degrees)
 	{
 		return degrees * (Constants::Pi / 180.0);
 	}
 
-	constexpr Degrees RadToDeg(Radians radians)
+	constexpr Degrees radToDeg(Radians radians)
 	{
 		return radians * (180.0 / Constants::Pi);
 	}
+
+	Radians safeDegToRad(Degrees degrees);
 
 	// Gets a real (not integer) index in an array from the given percent.
 	double getRealIndex(int bufferSize, double percent);
@@ -181,12 +183,12 @@ namespace MathUtils
 
 namespace MathUtilsF
 {
-	constexpr RadiansF DegToRad(DegreesF degrees)
+	constexpr RadiansF degToRad(DegreesF degrees)
 	{
 		return degrees * (ConstantsF::Pi / 180.0f);
 	}
 
-	constexpr DegreesF RadToDeg(RadiansF radians)
+	constexpr DegreesF radToDeg(RadiansF radians)
 	{
 		return radians * (180.0f / ConstantsF::Pi);
 	}

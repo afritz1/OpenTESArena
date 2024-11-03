@@ -72,7 +72,7 @@ namespace // @todo: could be in a PlayerUtils instead
 		constexpr float collisionTolerance = 0.05f; // from Jolt example
 		constexpr float characterRadius = 0.5f; // Not sure what this is yet
 		constexpr float characterRadiusStanding = characterRadius; // Not sure what this is yet
-		constexpr float maxSlopeAngle = MathUtilsF::DegToRad(5.0f); // Game world doesn't have slopes, so this can be very small.
+		constexpr float maxSlopeAngle = MathUtilsF::degToRad(5.0f); // Game world doesn't have slopes, so this can be very small.
 		constexpr float maxStrength = 100.0f; // from Jolt example
 		constexpr float characterPadding = 0.02f; // from Jolt example
 		constexpr float penetrationRecoverySpeed = 1.0f; // from Jolt example
@@ -126,17 +126,6 @@ namespace // @todo: could be in a PlayerUtils instead
 			static_cast<float>(position.z));
 		character->SetPosition(physicsPosition);
 		charVirtual->SetPosition(physicsPosition);
-	}
-
-	Radians SafeDegreesToRadians(Degrees degrees)
-	{
-		const Radians radians = MathUtils::DegToRad(degrees);
-		if (!std::isfinite(radians))
-		{
-			return 0.0;
-		}
-
-		return radians;
 	}
 }
 
@@ -310,7 +299,7 @@ void Player::teleport(const CoordDouble3 &position)
 void Player::rotateX(Degrees deltaX)
 {
 	DebugAssert(std::isfinite(this->forward.length()));
-	const Radians deltaAsRadians = SafeDegreesToRadians(deltaX);
+	const Radians deltaAsRadians = MathUtils::safeDegToRad(deltaX);
 	const Quaternion quat = Quaternion::fromAxisAngle(-Double3::UnitY, deltaAsRadians) * Quaternion(this->forward, 0.0);
 	this->forward = Double3(quat.x, quat.y, quat.z).normalized();
 	this->right = this->forward.cross(Double3::UnitY).normalized();
@@ -323,13 +312,13 @@ void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
 	DebugAssert(pitchLimit >= 0.0);
 	DebugAssert(pitchLimit < 90.0);
 
-	const Radians deltaAsRadians = SafeDegreesToRadians(deltaY);
+	const Radians deltaAsRadians = MathUtils::safeDegToRad(deltaY);
 	const Radians currentAngle = std::acos(this->forward.normalized().y);
 	const Radians requestedAngle = currentAngle - deltaAsRadians;
 
 	// Clamp to avoid breaking cross product.
-	const Radians maxAngle = MathUtils::DegToRad(90.0 - pitchLimit);
-	const Radians minAngle = MathUtils::DegToRad(90.0 + pitchLimit);
+	const Radians maxAngle = MathUtils::degToRad(90.0 - pitchLimit);
+	const Radians minAngle = MathUtils::degToRad(90.0 + pitchLimit);
 	const Radians actualDeltaAngle = (requestedAngle > minAngle) ? (currentAngle - minAngle) : ((requestedAngle < maxAngle) ? (currentAngle - maxAngle) : deltaAsRadians);
 
 	const Quaternion quat = Quaternion::fromAxisAngle(this->right, actualDeltaAngle) * Quaternion(this->forward, 0.0);

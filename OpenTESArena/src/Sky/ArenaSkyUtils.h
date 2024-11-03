@@ -10,7 +10,7 @@ namespace ArenaSkyUtils
 	// Original game values.
 	constexpr int UNIQUE_ANGLES = 512;
 	constexpr double IDENTITY_DIM = 320.0;
-	constexpr Radians IDENTITY_ANGLE = MathUtils::DegToRad(90.0);
+	constexpr Radians IDENTITY_ANGLE = MathUtils::degToRad(90.0);
 	constexpr double ANIMATED_LAND_SECONDS_PER_FRAME = 1.0 / 18.0;
 
 	// Sun/moon latitudes, divide by 100.0 for modern latitude.
