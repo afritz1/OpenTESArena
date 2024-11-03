@@ -62,13 +62,12 @@ namespace
 		}
 
 		constexpr float collisionTolerance = 0.05f; // from Jolt example
-		constexpr float characterRadius = 0.5f; // Not sure what this is yet
-		constexpr float characterRadiusStanding = characterRadius; // Not sure what this is yet
 		constexpr float maxSlopeAngle = MathUtilsF::degToRad(5.0f); // Game world doesn't have slopes, so this can be very small.
 		constexpr float maxStrength = 100.0f; // from Jolt example
 		constexpr float characterPadding = 0.02f; // from Jolt example
 		constexpr float penetrationRecoverySpeed = 1.0f; // from Jolt example
 		constexpr float predictiveContactDistance = 0.1f; // from Jolt example
+		const JPH::Plane supportingVolume(JPH::Vec3::sAxisY(), -1.0e10f); // from Jolt default values (half space of that character accepts collisions, we want 100%)
 
 		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
 		// I just need a capsule that runs into things, jumps, and steps on stairs.
@@ -82,7 +81,7 @@ namespace
 		characterVirtualSettings.mCharacterPadding = characterPadding;
 		characterVirtualSettings.mPenetrationRecoverySpeed = penetrationRecoverySpeed;
 		characterVirtualSettings.mPredictiveContactDistance = predictiveContactDistance;
-		characterVirtualSettings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -characterRadiusStanding);
+		characterVirtualSettings.mSupportingVolume = supportingVolume;
 		characterVirtualSettings.mEnhancedInternalEdgeRemoval = false;
 		characterVirtualSettings.mInnerBodyShape = nullptr;
 		characterVirtualSettings.mInnerBodyLayer = PhysicsLayers::MOVING;
@@ -94,7 +93,7 @@ namespace
 		characterSettings.mShape = capsuleShapeResult.Get();
 		characterSettings.mLayer = PhysicsLayers::MOVING;
 		characterSettings.mMaxSlopeAngle = maxSlopeAngle;
-		characterSettings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), characterRadius);
+		characterSettings.mSupportingVolume = supportingVolume;
 		
 		constexpr uint64_t characterVirtualUserData = 0;
 		*outCharacterVirtual = new JPH::CharacterVirtual(&characterVirtualSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterVirtualUserData, &physicsSystem);
