@@ -810,7 +810,7 @@ bool GameWorldPanel::renderScene(Game &game)
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
 	const auto &player = game.player;
-	const CoordDouble3 &playerCoord = player.position;
+	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const VoxelDouble3 &playerDir = player.forward;
 
 	auto &gameState = game.gameState;

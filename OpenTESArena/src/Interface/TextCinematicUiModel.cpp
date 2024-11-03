@@ -77,7 +77,7 @@ std::string TextCinematicUiModel::getSubtitleText(Game &game, const TextCinemati
 	// player's name is too long, which may push the text for every subsequent screen forward
 	// by a little bit.
 	const auto &player = game.player;
-	const std::string playerFirstName = player.getFirstName();
+	const std::string &playerFirstName = player.firstName;
 	cinematicText = String::replace(cinematicText, "%pcf", playerFirstName);
 
 	// Re-distribute newlines.

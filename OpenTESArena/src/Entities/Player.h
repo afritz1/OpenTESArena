@@ -34,28 +34,27 @@ namespace PlayerConstants
 
 struct Player
 {
-	std::string displayName;
-	bool male;
-	int raceID;
-	int charClassDefID;
-	int portraitID;
-	CoordDouble3 position; // Eye position @todo: what if it was just the Jolt collider position and a Vec3 forward? And other vectors were calculated
+	// Physics state.
+	JPH::Character *physicsCharacter;
+	JPH::CharacterVirtual *physicsCharacterVirtual;
+	JPH::CharacterVsCharacterCollisionSimple physicsCharVsCharCollision;
 	Double3 forward; // Camera direction
 	Double3 right;
 	Double3 up;
 	// @todo: polar coordinates (XYZ angles)
+
+	std::string displayName;
+	std::string firstName;
+	bool male;
+	int raceID;
+	int charClassDefID;
+	int portraitID;
 	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
 	WeaponAnimation weaponAnimation;
 	PrimaryAttributeSet attributes;
-	JPH::Character *physicsCharacter;
-	JPH::CharacterVirtual *physicsCharacterVirtual;
-	JPH::CharacterVsCharacterCollisionSimple physicsCharVsCharCollision;
 
 	Player();
 	~Player();
-
-	// Gets the Y position of the player's feet.
-	double getFeetY() const;
 
 	// Make player with rolled attributes based on race & gender.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -67,16 +66,23 @@ struct Player
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
-	void initCamera(const CoordDouble3 &coord, const Double3 &forward);
-
 	// Initializes a random player for testing.
 	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
 
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 
-	std::string getFirstName() const; // @todo: maybe replace this with a PlayerName struct that has fullName and firstName char[]
+	void setCameraFrame(const Double3 &forward);
 
-	// Gets the bird's eye view of the player's direction (in the XZ plane).
+	bool isPhysicsInited() const;
+	WorldDouble3 getPhysicsPosition() const; // Center of the character collider.
+	Double3 getPhysicsVelocity() const;
+	void setPhysicsPosition(const WorldDouble3 &position); // Instantly sets position of the collider. Not the camera eye.
+	void setPhysicsVelocity(const Double3 &velocity);
+	WorldDouble3 getEyePosition() const;
+	CoordDouble3 getEyeCoord() const;
+	WorldDouble3 getFeetPosition() const;
+
+	// Gets the bird's eye view of the player's direction.
 	Double2 getGroundDirection() const;
 
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
@@ -85,9 +91,6 @@ struct Player
 	bool onGround() const;
 	bool isMoving() const;
 
-	// Teleports the player to a point.
-	void teleport(const CoordDouble3 &position);
-
 	// Pitches and yaws relative to global up vector.
 	void rotateX(Degrees deltaX);
 	void rotateY(Degrees deltaY, Degrees pitchLimit);
@@ -95,11 +98,6 @@ struct Player
 	// Recalculates the player's view so they look at a point. The global up vector is used when generating the new 3D frame,
 	// so don't give a point directly above or below the camera.
 	void lookAt(const CoordDouble3 &targetCoord);
-
-	WorldDouble3 getPhysicsPosition() const;
-	Double3 getPhysicsVelocity() const;
-	void setPhysicsPosition(const WorldDouble3 &position); // Position of the collider, not the camera eye.
-	void setPhysicsVelocity(const Double3 &velocity);
 
 	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
 	void setDirectionToHorizon();

@@ -495,7 +495,7 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	if (this->gameState.isActiveMapValid())
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
-		const CoordDouble3 &playerCoord = this->player.position;
+		const CoordDouble3 playerCoord = this->player.getEyeCoord();
 		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.forward,
 			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 		this->gameState.tickVisibility(renderCamera, *this);
@@ -693,13 +693,13 @@ void Game::renderDebugInfo()
 	if (profilerLevel >= 3)
 	{
 		// Player position, direction, etc.
-		const CoordDouble3 &playerPosition = this->player.position;
+		const CoordDouble3 playerCoord = this->player.getEyeCoord();
 		const Double3 &direction = this->player.forward;
 
-		const std::string chunkStr = playerPosition.chunk.toString();
-		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
-		const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
-		const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
+		const std::string chunkStr = playerCoord.chunk.toString();
+		const std::string chunkPosX = String::fixedPrecision(playerCoord.point.x, 2);
+		const std::string chunkPosY = String::fixedPrecision(playerCoord.point.y, 2);
+		const std::string chunkPosZ = String::fixedPrecision(playerCoord.point.z, 2);
 		const std::string dirX = String::fixedPrecision(direction.x, 2);
 		const std::string dirY = String::fixedPrecision(direction.y, 2);
 		const std::string dirZ = String::fixedPrecision(direction.z, 2);
@@ -709,7 +709,7 @@ void Game::renderDebugInfo()
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
 
 		// Set Jolt Physics camera position for LOD.
-		const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerPosition);
+		const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerCoord);
 		this->renderer.SetCameraPos(JPH::RVec3Arg(static_cast<float>(playerWorldPos.x), static_cast<float>(playerWorldPos.y), static_cast<float>(playerWorldPos.z)));
 
 		JPH::BodyManager::DrawSettings drawSettings;
@@ -821,7 +821,7 @@ void Game::loop()
 
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				const CoordDouble3 oldPlayerCoord = this->player.position;
+				const CoordDouble3 oldPlayerCoord = this->player.getEyeCoord();
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
 				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
@@ -840,7 +840,7 @@ void Game::loop()
 				this->physicsSystem.Update(static_cast<float>(clampedDeltaTime), frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
 				this->player.postPhysicsStep(*this);
 
-				const CoordDouble3 newPlayerCoord = this->player.position;
+				const CoordDouble3 newPlayerCoord = this->player.getEyeCoord();
 				this->gameState.tickPlayerMovementTriggers(oldPlayerCoord, newPlayerCoord, *this);
 
 				const Double3 newPlayerDirection = this->player.forward;

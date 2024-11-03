@@ -16,8 +16,7 @@
 
 std::string GameWorldUiModel::getPlayerNameText(Game &game)
 {
-	const Player &player = game.player;
-	return player.getFirstName();
+	return game.player.firstName;
 }
 
 std::string GameWorldUiModel::getStatusButtonText(Game &game)
@@ -136,7 +135,7 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	const MapType mapType = mapDef.getMapType();
 	const OriginalInt2 displayedCoords = [&player, mapType]()
 	{
-		const WorldDouble3 absolutePlayerPosition = VoxelUtils::coordToWorldPoint(player.position);
+		const WorldDouble3 absolutePlayerPosition = player.getEyePosition();
 		const WorldInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
 		const WorldInt2 playerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
 		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(playerVoxelXZ);
@@ -255,7 +254,7 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 	const auto &options = game.options;
 	const auto &renderer = game.renderer;
 	const Player &player = game.player;
-	const CoordDouble3 &playerCoord = player.position;
+	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.forward,
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 

@@ -281,12 +281,11 @@ namespace PlayerLogicController
 			{
 				accelDirection = accelDirection.normalized();
 
-				const CoordDouble3 &playerCoord = player.position;
-
+				const CoordDouble3 playerCoord = player.getEyeCoord();
 				constexpr double ghostSpeed = 10.0;
 				const VoxelDouble3 deltaPoint = accelDirection * (ghostSpeed * dt);
 				const CoordDouble3 newPlayerCoord = ChunkUtils::recalculateCoord(playerCoord.chunk, playerCoord.point + deltaPoint);
-				player.teleport(newPlayerCoord);
+				player.setPhysicsPosition(VoxelUtils::coordToWorldPoint(newPlayerCoord));
 			}
 		}		
 	}
@@ -579,7 +578,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 	auto &player = game.player;
 	const Double3 &cameraDirection = player.forward;
-	const CoordDouble3 rayStart = player.position;
+	const CoordDouble3 rayStart = player.getEyeCoord();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 	constexpr bool includeEntities = true;
 

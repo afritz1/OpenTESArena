@@ -589,8 +589,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 		const CoordDouble3 newPlayerPos(
 			startCoord.chunk,
 			VoxelDouble3(startCoord.point.x + startOffset.x, ceilingScale + PlayerConstants::HEIGHT, startCoord.point.y + startOffset.y));
-
-		player.teleport(newPlayerPos);
+		player.setPhysicsPosition(VoxelUtils::coordToWorldPoint(newPlayerPos));
 
 		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	}
@@ -601,15 +600,15 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 		const double ceilingScale = this->getActiveCeilingScale();
 
-		const CoordDouble3 oldPlayerPos = player.position; // The player should be inside the transition voxel.
-		const VoxelInt3 oldPlayerVoxel = VoxelUtils::pointToVoxel(oldPlayerPos.point);
+		const CoordDouble3 oldPlayerCoord = player.getEyeCoord(); // The player should be inside the transition voxel.
+		const VoxelInt3 oldPlayerVoxel = VoxelUtils::pointToVoxel(oldPlayerCoord.point);
 		const VoxelDouble3 oldPlayerCenteredPoint = VoxelUtils::getVoxelCenter(oldPlayerVoxel);
-		const CoordDouble3 newPlayerPos(
-			oldPlayerPos.chunk,
+		const CoordDouble3 newPlayerCoord(
+			oldPlayerCoord.chunk,
 			VoxelDouble3(oldPlayerCenteredPoint.x + startOffset.x, ceilingScale + PlayerConstants::HEIGHT, oldPlayerCenteredPoint.z + startOffset.y));
 
-		player.teleport(newPlayerPos);
-		player.lookAt(newPlayerPos + VoxelDouble3(startOffset.x, 0.0, startOffset.y));
+		player.setPhysicsPosition(VoxelUtils::coordToWorldPoint(newPlayerCoord));
+		player.lookAt(newPlayerCoord + VoxelDouble3(startOffset.x, 0.0, startOffset.y));
 
 		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	}
@@ -624,7 +623,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	Renderer &renderer = game.renderer;
 	SceneManager &sceneManager = game.sceneManager;
 
-	const CoordDouble3 &playerCoord = player.position;
+	const CoordDouble3 playerCoord = player.getEyeCoord();
 
 	// Clear and re-populate scene immediately so it's ready for rendering this frame (otherwise we get a black frame).
 	const Options &options = game.options;
@@ -865,7 +864,7 @@ void GameState::tickVoxels(double dt, Game &game)
 
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	voxelChunkManager.update(dt, chunkManager.getNewChunkPositions(), chunkManager.getFreedChunkPositions(),
-		player.position, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs,
+		player.getEyeCoord(), &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs,
 		this->getActiveCeilingScale(), game.audioManager);
 }
 
@@ -957,7 +956,7 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const double chasmAnimPercent = this->getChasmAnimPercent();
 
 	const Player &player = game.player;
-	const CoordDouble3 &playerCoord = player.position;
+	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 	const Double2 playerDirXZ = player.getGroundDirection();
 

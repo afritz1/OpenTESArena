@@ -584,10 +584,10 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			const VoxelDouble2 playerVoxelCenterXZ = VoxelUtils::getVoxelCenter(playerVoxelXZ);
 			const VoxelDouble3 playerDestinationPoint(
 				playerVoxelCenterXZ.x,
-				player.position.point.y,
+				player.getEyeCoord().point.y,
 				playerVoxelCenterXZ.y);
 			const CoordDouble3 playerDestinationCoord(playerCoord.chunk, playerDestinationPoint);
-			player.teleport(playerDestinationCoord);
+			player.setPhysicsPosition(VoxelUtils::coordToWorldPoint(playerDestinationCoord));
 			player.setPhysicsVelocity(Double3::Zero);
 
 			game.setPanel<WorldMapPanel>();

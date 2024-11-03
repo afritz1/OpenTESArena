@@ -71,6 +71,16 @@ namespace
 
 		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
 		// I just need a capsule that runs into things, jumps, and steps on stairs.
+		JPH::CharacterSettings characterSettings;
+		characterSettings.SetEmbedded();
+		characterSettings.mMass = 1.0f;
+		characterSettings.mFriction = static_cast<float>(PlayerConstants::FRICTION);
+		characterSettings.mGravityFactor = 0.0f; // Do gravity manually when paired w/ CharacterVirtual.
+		characterSettings.mShape = capsuleShapeResult.Get();
+		characterSettings.mLayer = PhysicsLayers::MOVING;
+		characterSettings.mMaxSlopeAngle = maxSlopeAngle;
+		characterSettings.mSupportingVolume = supportingVolume;
+
 		JPH::CharacterVirtualSettings characterVirtualSettings;
 		characterVirtualSettings.SetEmbedded();
 		characterVirtualSettings.mMass = 1.0f;
@@ -85,15 +95,10 @@ namespace
 		characterVirtualSettings.mEnhancedInternalEdgeRemoval = false;
 		characterVirtualSettings.mInnerBodyShape = nullptr;
 		characterVirtualSettings.mInnerBodyLayer = PhysicsLayers::MOVING;
-		
-		JPH::CharacterSettings characterSettings;
-		characterSettings.SetEmbedded();
-		characterSettings.mFriction = static_cast<float>(PlayerConstants::FRICTION);
-		characterSettings.mGravityFactor = 0.0f; // Do gravity manually when paired w/ CharacterVirtual.
-		characterSettings.mShape = capsuleShapeResult.Get();
-		characterSettings.mLayer = PhysicsLayers::MOVING;
-		characterSettings.mMaxSlopeAngle = maxSlopeAngle;
-		characterSettings.mSupportingVolume = supportingVolume;
+
+		constexpr uint64_t characterUserData = 0;
+		*outCharacter = new JPH::Character(&characterSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterUserData, &physicsSystem);
+		(*outCharacter)->AddToPhysicsSystem(JPH::EActivation::Activate);
 		
 		constexpr uint64_t characterVirtualUserData = 0;
 		*outCharacterVirtual = new JPH::CharacterVirtual(&characterVirtualSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterVirtualUserData, &physicsSystem);
@@ -101,12 +106,30 @@ namespace
 		outCharVsCharCollision->Add(*outCharacterVirtual);
 		(*outCharacterVirtual)->SetListener(nullptr); // @todo
 		DebugLogError("\nNeed characterVirtual's contact listeners\n");
-		
-		constexpr uint64_t characterUserData = 0;
-		*outCharacter = new JPH::Character(&characterSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterUserData, &physicsSystem);
-		(*outCharacter)->AddToPhysicsSystem(JPH::EActivation::Activate);
 
 		return true;
+	}
+
+	std::string GetFirstName(const std::string &fullName)
+	{
+		Buffer<std::string> nameTokens = String::split(fullName);
+		return nameTokens[0];
+	}
+
+	int GetRandomWeaponIdForClass(const CharacterClassDefinition &charClassDef, Random &random)
+	{
+		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
+		Buffer<int> weapons(allowedWeaponCount + 1);
+		for (int i = 0; i < allowedWeaponCount; i++)
+		{
+			weapons.set(i, charClassDef.getAllowedWeapon(i));
+		}
+
+		// Fists.
+		weapons.set(allowedWeaponCount, -1);
+
+		const int randIndex = random.next(weapons.getCount());
+		return weapons.get(randIndex);
 	}
 }
 
@@ -116,7 +139,7 @@ Player::Player()
 	this->raceID = -1;
 	this->charClassDefID = -1;
 	this->portraitID = -1;
-	this->initCamera(CoordDouble3(), -Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
+	this->setCameraFrame(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
 	this->physicsCharacter = nullptr;
 	this->physicsCharacterVirtual = nullptr;
@@ -133,11 +156,11 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
 {
 	this->displayName = displayName;
+	this->firstName = GetFirstName(displayName);
 	this->male = male;
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->initCamera(position, direction);
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
@@ -147,8 +170,9 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(this->position));
+	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(position));
 	this->setPhysicsVelocity(velocity);
+	this->setCameraFrame(direction);
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -156,11 +180,11 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	const Double3 &velocity, double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
+	this->firstName = GetFirstName(displayName);
 	this->male = male;
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->initCamera(position, direction);
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
@@ -170,49 +194,23 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(this->position));
+	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(position));
 	this->setPhysicsVelocity(velocity);
-}
-
-void Player::initCamera(const CoordDouble3 &coord, const Double3 &forward)
-{
-	this->position = coord;
-	this->forward = forward;
-	this->right = this->forward.cross(Double3::UnitY).normalized();
-	this->up = this->right.cross(this->forward).normalized();
+	this->setCameraFrame(direction);
 }
 
 void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
 {
 	this->displayName = "Player";
+	this->firstName = GetFirstName(this->displayName);
 	this->male = random.next(2) == 0;
 	this->raceID = random.next(8);
 	this->charClassDefID = random.next(charClassLibrary.getDefinitionCount());
 	this->portraitID = random.next(10);
-
-	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
-	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
-	this->initCamera(position, direction);
 	this->maxWalkSpeed = PlayerConstants::DEFAULT_WALK_SPEED;
 
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
-	const int weaponID = [&random, &charClassDef]()
-	{
-		// Generate weapons available for this class and pick a random one.
-		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
-		Buffer<int> weapons(allowedWeaponCount + 1);
-		for (int i = 0; i < allowedWeaponCount; i++)
-		{
-			weapons.set(i, charClassDef.getAllowedWeapon(i));
-		}
-
-		// Add fists.
-		weapons.set(allowedWeaponCount, -1);
-
-		const int randIndex = random.next(weapons.getCount());
-		return weapons.get(randIndex);
-	}();
-
+	const int weaponID = GetRandomWeaponIdForClass(charClassDef, random);
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(this->raceID, this->male, random);
 	
@@ -221,8 +219,12 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(this->position));
+	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
+	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(position));
 	this->setPhysicsVelocity(Double3::Zero);
+
+	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
+	this->setCameraFrame(direction);
 }
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
@@ -240,10 +242,77 @@ void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
 	}
 }
 
-std::string Player::getFirstName() const
+void Player::setCameraFrame(const Double3 &forward)
 {
-	Buffer<std::string> nameTokens = String::split(this->displayName);
-	return nameTokens[0];
+	DebugAssert(forward.isNormalized());
+	this->forward = forward;
+	this->right = this->forward.cross(Double3::UnitY).normalized();
+	this->up = this->right.cross(this->forward).normalized();
+}
+
+bool Player::isPhysicsInited() const
+{
+	return (this->physicsCharacter != nullptr) && (this->physicsCharacterVirtual != nullptr);
+}
+
+WorldDouble3 Player::getPhysicsPosition() const
+{
+	DebugAssert(this->isPhysicsInited());
+	const JPH::RVec3 physicsPosition = this->physicsCharacter->GetPosition();
+	return WorldDouble3(
+		static_cast<SNDouble>(physicsPosition.GetX()),
+		static_cast<double>(physicsPosition.GetY()),
+		static_cast<WEDouble>(physicsPosition.GetZ()));
+}
+
+Double3 Player::getPhysicsVelocity() const
+{
+	DebugAssert(this->isPhysicsInited());
+	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
+	return WorldDouble3(
+		static_cast<SNDouble>(physicsVelocity.GetX()),
+		static_cast<double>(physicsVelocity.GetY()),
+		static_cast<WEDouble>(physicsVelocity.GetZ()));
+}
+
+void Player::setPhysicsPosition(const WorldDouble3 &position)
+{
+	DebugAssert(this->isPhysicsInited());
+	const JPH::RVec3 physicsPosition(
+		static_cast<float>(position.x),
+		static_cast<float>(position.y),
+		static_cast<float>(position.z));
+	this->physicsCharacter->SetPosition(physicsPosition);
+	this->physicsCharacterVirtual->SetPosition(physicsPosition);
+}
+
+void Player::setPhysicsVelocity(const Double3 &velocity)
+{
+	DebugAssert(this->isPhysicsInited());
+	const JPH::RVec3 physicsVelocity(
+		static_cast<float>(velocity.x),
+		static_cast<float>(velocity.y),
+		static_cast<float>(velocity.z));
+	this->physicsCharacter->SetLinearVelocity(physicsVelocity);
+	this->physicsCharacterVirtual->SetLinearVelocity(physicsVelocity);
+}
+
+WorldDouble3 Player::getEyePosition() const
+{
+	const WorldDouble3 physicsPosition = this->getPhysicsPosition();
+	return WorldDouble3(physicsPosition.x, physicsPosition.y + (PlayerConstants::HEIGHT * 0.50), physicsPosition.z);
+}
+
+CoordDouble3 Player::getEyeCoord() const
+{
+	const WorldDouble3 eyePosition = this->getEyePosition();
+	return VoxelUtils::worldPointToCoord(eyePosition);
+}
+
+WorldDouble3 Player::getFeetPosition() const
+{
+	const WorldDouble3 physicsPosition = this->getPhysicsPosition();
+	return WorldDouble3(physicsPosition.x, physicsPosition.y - (PlayerConstants::HEIGHT * 0.50), physicsPosition.z);
 }
 
 Double2 Player::getGroundDirection() const
@@ -254,12 +323,6 @@ Double2 Player::getGroundDirection() const
 double Player::getJumpMagnitude() const
 {
 	return PlayerConstants::JUMP_VELOCITY;
-}
-
-double Player::getFeetY() const
-{
-	const double cameraY = this->position.point.y;
-	return cameraY - PlayerConstants::HEIGHT;
 }
 
 bool Player::onGround() const
@@ -273,20 +336,13 @@ bool Player::isMoving() const
 	return physicsVelocity.LengthSq() >= ConstantsF::Epsilon;
 }
 
-void Player::teleport(const CoordDouble3 &position)
-{
-	this->position = position;
-	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(position));
-}
-
 void Player::rotateX(Degrees deltaX)
 {
 	DebugAssert(std::isfinite(this->forward.length()));
 	const Radians deltaAsRadians = MathUtils::safeDegToRad(deltaX);
-	const Quaternion quat = Quaternion::fromAxisAngle(-Double3::UnitY, deltaAsRadians) * Quaternion(this->forward, 0.0);
-	this->forward = Double3(quat.x, quat.y, quat.z).normalized();
-	this->right = this->forward.cross(Double3::UnitY).normalized();
-	this->up = this->right.cross(this->forward).normalized();
+	const Quaternion quat = Quaternion::fromAxisAngle(-Double3::UnitY, deltaAsRadians) * Quaternion(this->forward, 0.0);	
+	const Double3 newForward = Double3(quat.x, quat.y, quat.z).normalized();
+	this->setCameraFrame(newForward);
 }
 
 void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
@@ -305,70 +361,21 @@ void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
 	const Radians actualDeltaAngle = (requestedAngle > minAngle) ? (currentAngle - minAngle) : ((requestedAngle < maxAngle) ? (currentAngle - maxAngle) : deltaAsRadians);
 
 	const Quaternion quat = Quaternion::fromAxisAngle(this->right, actualDeltaAngle) * Quaternion(this->forward, 0.0);
-	this->forward = Double3(quat.x, quat.y, quat.z).normalized();
-	this->right = this->forward.cross(Double3::UnitY).normalized();
-	this->up = this->right.cross(this->forward).normalized();
+	const Double3 newForward = Double3(quat.x, quat.y, quat.z).normalized();
+	this->setCameraFrame(newForward);
 }
 
 void Player::lookAt(const CoordDouble3 &targetCoord)
 {
-	const Double3 newForward = (targetCoord - this->position).normalized();
-	const Double3 newRight = newForward.cross(Double3::UnitY).normalized();
-	const Double3 newUp = newRight.cross(newForward).normalized();
-
-	if (std::isfinite(newUp.length()))
-	{
-		this->forward = newForward;
-		this->right = newRight;
-		this->up = newUp;
-	}
-}
-
-WorldDouble3 Player::getPhysicsPosition() const
-{
-	const JPH::RVec3 physicsPosition = this->physicsCharacter->GetPosition();
-	return WorldDouble3(
-		static_cast<SNDouble>(physicsPosition.GetX()),
-		static_cast<double>(physicsPosition.GetY()),
-		static_cast<WEDouble>(physicsPosition.GetZ()));
-}
-
-Double3 Player::getPhysicsVelocity() const
-{
-	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
-	return WorldDouble3(
-		static_cast<SNDouble>(physicsVelocity.GetX()),
-		static_cast<double>(physicsVelocity.GetY()),
-		static_cast<WEDouble>(physicsVelocity.GetZ()));
-}
-
-void Player::setPhysicsPosition(const WorldDouble3 &position)
-{
-	const JPH::RVec3 physicsPosition(
-		static_cast<float>(position.x),
-		static_cast<float>(position.y),
-		static_cast<float>(position.z));
-	this->physicsCharacter->SetPosition(physicsPosition);
-	this->physicsCharacterVirtual->SetPosition(physicsPosition);
-}
-
-void Player::setPhysicsVelocity(const Double3 &velocity)
-{
-	const JPH::RVec3 physicsVelocity(
-		static_cast<float>(velocity.x),
-		static_cast<float>(velocity.y),
-		static_cast<float>(velocity.z));
-	this->physicsCharacter->SetLinearVelocity(physicsVelocity);
-	this->physicsCharacterVirtual->SetLinearVelocity(physicsVelocity);
+	const Double3 newForward = (targetCoord - this->getEyeCoord()).normalized();
+	this->setCameraFrame(newForward);
 }
 
 void Player::setDirectionToHorizon()
 {
-	const CoordDouble3 &coord = this->position;
-	const WorldDouble2 groundDirection = this->getGroundDirection();
-	const VoxelDouble3 lookAtPoint = coord.point + VoxelDouble3(groundDirection.x, 0.0, groundDirection.y);
-	const CoordDouble3 lookAtCoord(coord.chunk, lookAtPoint);
-	this->lookAt(lookAtCoord);
+	const Double2 groundDirection = this->getGroundDirection();
+	const Double3 newForward = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
+	this->setCameraFrame(newForward);
 }
 
 void Player::accelerate(const Double3 &direction, double magnitude, double dt)
@@ -462,12 +469,4 @@ void Player::postPhysicsStep(Game &game)
 
 	constexpr float maxSeparationDistance = ConstantsF::Epsilon;
 	this->physicsCharacter->PostSimulation(maxSeparationDistance);
-
-	const JPH::RVec3 physicsCharPos = this->physicsCharacter->GetPosition();
-	const WorldDouble3 worldPos(
-		static_cast<SNDouble>(physicsCharPos.GetX()),
-		static_cast<double>(physicsCharPos.GetY()),
-		static_cast<WEDouble>(physicsCharPos.GetZ()));
-
-	this->position = VoxelUtils::worldPointToCoord(worldPos);
 }
