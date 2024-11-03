@@ -184,6 +184,8 @@ namespace
 
 Game::Game()
 {
+	this->physicsTempAllocator = nullptr;
+
 	// Keeps us from deleting a sub-panel the same frame it's in use. The pop is delayed until the
 	// beginning of the next frame.
 	this->requestedSubPanelPop = false;
@@ -742,6 +744,7 @@ void Game::loop()
 	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
 	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
 	
+	this->physicsTempAllocator = &physicsAllocator;
 	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
 
 	PhysicsBodyActivationListener physicsBodyActivationListener;

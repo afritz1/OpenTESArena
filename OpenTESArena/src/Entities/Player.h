@@ -34,8 +34,8 @@ struct Player
 	int raceID;
 	int charClassDefID;
 	int portraitID;
-	Camera3D camera;
-	VoxelDouble3 velocity; // @todo: maybe this should come from Jolt
+	Camera3D camera; // @todo: what if it was just the Jolt collider position and a Vec3 forward? And other vectors were calculated
+	VoxelDouble3 velocity; // @todo: maybe this should come from Jolt collider
 	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
 	double friction;
 	WeaponAnimation weaponAnimation;

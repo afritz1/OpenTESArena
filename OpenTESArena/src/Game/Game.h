@@ -45,6 +45,7 @@ public:
 	Renderer renderer;
 	TextureManager textureManager; // The texture manager object for loading images from file.
 	JPH::PhysicsSystem physicsSystem; // The Jolt physics system for the scene.
+	JPH::TempAllocatorImpl *physicsTempAllocator; // Available when game loop is active.
 
 	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
 	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).

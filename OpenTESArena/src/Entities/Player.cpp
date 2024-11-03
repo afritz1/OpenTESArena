@@ -116,6 +116,16 @@ namespace // @todo: could be in a PlayerUtils instead
 
 		return true;
 	}
+
+	void SetPhysicsPosition(JPH::Character *character, JPH::CharacterVirtual *charVirtual, const WorldDouble3 &position)
+	{
+		const JPH::RVec3Arg physicsPosition(
+			static_cast<float>(position.x),
+			static_cast<float>(position.y),
+			static_cast<float>(position.z));
+		character->SetPosition(physicsPosition);
+		charVirtual->SetPosition(physicsPosition);
+	}
 }
 
 Player::Player()
@@ -157,6 +167,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	{
 		DebugCrash("Couldn't create player physics collider.");
 	}
+
+	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->camera.position));
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -179,6 +191,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	{
 		DebugCrash("Couldn't create player physics collider.");
 	}
+
+	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->camera.position));
 }
 
 void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
@@ -221,6 +235,8 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	{
 		DebugCrash("Couldn't create player physics collider.");
 	}
+
+	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->camera.position));
 }
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
@@ -263,42 +279,8 @@ double Player::getFeetY() const
 
 bool Player::onGround() const
 {
-	// @todo: seems like it's CharacterVirtual::IsSupported()?
-
-	return true;
-
-	// This function seems kind of like a hack right now, since the player's feet
-	// will frequently be at Y == 1.0, which is one voxel above the ground, and
-	// it won't be considered as "on ground" unless it checks the voxel underneath
-	// of this particular Y position (due to the rounding rules being used).
-	/*const double feetY = this->getFeetY();
-	const double feetVoxelYPos = std::floor(feetY);
-	const bool closeEnoughToLowerVoxel = std::abs(feetY - feetVoxelYPos) < EPSILON;
-	const WorldInt3 feetVoxel(
-		static_cast<int>(std::floor(this->camera.position.x)),
-		static_cast<int>(feetVoxelYPos) - (closeEnoughToLowerVoxel ? 1 : 0),
-		static_cast<int>(std::floor(this->camera.position.z)));
-
-	const bool insideWorld = [&feetVoxel, &voxelGrid]()
-	{
-		return (feetVoxel.x >= 0) && (feetVoxel.x < voxelGrid.getWidth()) &&
-			(feetVoxel.y >= 0) && (feetVoxel.y < voxelGrid.getHeight()) &&
-			(feetVoxel.z >= 0) && (feetVoxel.z < voxelGrid.getDepth());
-	}();
-
-	// Don't try to dereference the voxel grid if the player's feet are outside.
-	if (insideWorld)
-	{
-		const char feetVoxelID = voxelGrid.getVoxels()[feetVoxel.x +
-			(feetVoxel.y * voxelGrid.getWidth()) +
-			(feetVoxel.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
-		const VoxelData &voxelData = voxelGrid.getVoxelData(feetVoxelID);
-
-		return (this->velocity.y == 0.0) && !voxelData.isAir() &&
-			(feetY >= (feetVoxelYPos + voxelData.yOffset)) &&
-			(feetY <= (feetVoxelYPos + voxelData.yOffset + voxelData.ySize));
-	}
-	else return false;*/
+	//return this->physicsCharacter->IsSupported(); // @todo: not sure which is better
+	return this->physicsCharacterVirtual->IsSupported();
 }
 
 void Player::teleport(const CoordDouble3 &position)
@@ -523,6 +505,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 	if (game.options.getMisc_GhostMode())
 	{
 		this->setVelocityToZero(); // Prevent leftover momentum when switching cheat modes.
+		// @todo: maybe turn physicsCharacter and virtual off and keep them glued to player arbitrarily? ghost mode is literally "disable jolt"
 		return;
 	}
 
@@ -533,35 +516,19 @@ void Player::prePhysicsStep(double dt, Game &game)
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
-
 	// @todo: BodyInterface::MoveKinematic()?
 
 	// update velocity member, then:
 	// Character::SetLinearVelocity or CharacterVirtual::SetLinearVelocity before their update()?
 
-	// CharacterVirtual::ExtendedUpdate and ExtendedUpdateSettings ?
+	// @todo: move the player collider(s) to where it ATTEMPTS to be for the physics system update, then see where it actually is in postPhysicsStep()
 
-
-
-	// @todo: only accelerate if !onGround()?
-	this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
-
-	this->handleCollision(dt, voxelChunkManager, collisionChunkManager, ceilingScale);
-
-	// Temp: get floor Y until Y collision is implemented.
-	const double floorY = ceilingScale;
-	this->camera.position.point.y = floorY + Player::HEIGHT; // Temp: keep camera Y fixed until Y collision is implemented.
-
-	// @todo: for now just set the physics body to this position ^
-
-	// Simple Euler integration for updating the player's position.
-	// @todo: let Jolt do this, and just READ Jolt's final player position in the post step?
-	const VoxelDouble3 newPoint = this->camera.position.point + (this->velocity * dt);
-
-	if (std::isfinite(newPoint.length()))
+	if (!this->onGround())
 	{
-		this->camera.position = ChunkUtils::recalculateCoord(this->camera.position.chunk, newPoint);
+		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 	}
+
+	//this->handleCollision(dt, voxelChunkManager, collisionChunkManager, ceilingScale);
 
 	if (this->onGround())
 	{
@@ -574,6 +541,32 @@ void Player::prePhysicsStep(double dt, Game &game)
 			this->accelerate(Double3(frictionDirection.x, 0.0, frictionDirection.y), frictionMagnitude, dt);
 		}
 	}
+
+	const JPH::Vec3Arg physicsVelocity(
+		static_cast<float>(this->velocity.x),
+		static_cast<float>(this->velocity.y),
+		static_cast<float>(this->velocity.z));
+	this->physicsCharacterVirtual->SetLinearVelocity(physicsVelocity);
+	this->physicsCharacter->SetLinearVelocity(physicsVelocity);
+
+	JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+	const JPH::Vec3Arg physicsGravity = -this->physicsCharacter->GetUp() * physicsSystem.GetGravity().Length();
+	JPH::CharacterVirtual::ExtendedUpdateSettings extendedUpdateSettings; // @todo: for stepping up/down stairs
+	const JPH::BroadPhaseLayerFilter &broadPhaseLayerFilter = physicsSystem.GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING);
+	const JPH::ObjectLayerFilter &objectLayerFilter = physicsSystem.GetDefaultLayerFilter(PhysicsLayers::MOVING);
+	const JPH::BodyFilter bodyFilter; // Nothing
+	const JPH::ShapeFilter shapeFilter; // Nothing
+
+	// Update + stick to floor + walk stairs
+	this->physicsCharacterVirtual->ExtendedUpdate(
+		static_cast<float>(dt),
+		physicsGravity,
+		extendedUpdateSettings,
+		broadPhaseLayerFilter,
+		objectLayerFilter,
+		bodyFilter,
+		shapeFilter,
+		*game.physicsTempAllocator);
 }
 
 void Player::postPhysicsStep(Game &game)
@@ -583,9 +576,17 @@ void Player::postPhysicsStep(Game &game)
 		return;
 	}
 
+	// @todo: not completely understanding the character + charactervirtual synergy yet
+	// - i think charactervirtual is for stairsteps and 'weird interactions' that character gets driven by?
+
 	constexpr float maxSeparationDistance = static_cast<float>(Constants::Epsilon);
 	this->physicsCharacter->PostSimulation(maxSeparationDistance);
 
-	// @todo: update player.camera position so it's valid for the rest of Game::loop()
-	//this->camera.position = this->physicsCharacter->GetPosition();
+	const JPH::RVec3 physicsCharPos = this->physicsCharacter->GetPosition();
+	const WorldDouble3 worldPos(
+		static_cast<SNDouble>(physicsCharPos.GetX()),
+		static_cast<double>(physicsCharPos.GetY()),
+		static_cast<WEDouble>(physicsCharPos.GetZ()));
+
+	this->camera.position = VoxelUtils::worldPointToCoord(worldPos);
 }
