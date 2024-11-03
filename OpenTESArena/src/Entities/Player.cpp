@@ -89,8 +89,8 @@ namespace
 		
 		JPH::CharacterSettings characterSettings;
 		characterSettings.SetEmbedded();
-		characterSettings.mFriction = 0.3f;
-		characterSettings.mGravityFactor = 0.0f; // Uses zero gravity when paired w/ CharacterVirtual
+		characterSettings.mFriction = static_cast<float>(PlayerConstants::FRICTION);
+		characterSettings.mGravityFactor = 0.0f; // Do gravity manually when paired w/ CharacterVirtual.
 		characterSettings.mShape = capsuleShapeResult.Get();
 		characterSettings.mLayer = PhysicsLayers::MOVING;
 		characterSettings.mMaxSlopeAngle = maxSlopeAngle;
@@ -429,18 +429,6 @@ void Player::prePhysicsStep(double dt, Game &game)
 	{
 		// Need to apply gravity to Character as its gravity factor is 0 when with CharacterVirtual.
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
-	}
-	else
-	{
-		const Double2 oldVelocityXZ(oldVelocity.x, oldVelocity.z);
-		const Double2 frictionDirection = Double2(-oldVelocityXZ.x, -oldVelocityXZ.y).normalized();
-		const double frictionMagnitude = oldVelocityXZ.length() * PlayerConstants::FRICTION;
-
-		// @todo: friction should be taken care of by Jolt
-		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
-		{
-			//this->accelerate(Double3(frictionDirection.x, 0.0, frictionDirection.y), frictionMagnitude, dt);
-		}
 	}
 
 	JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
