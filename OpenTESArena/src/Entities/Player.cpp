@@ -360,16 +360,15 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 
 	// Don't let the horizontal velocity be greater than the max speed for the
 	// current movement state (i.e., walking/running).
-	double maxSpeed = this->maxWalkSpeed;
 	Double2 velocityXZ(this->velocity.x, this->velocity.z);
-	if (velocityXZ.length() > maxSpeed)
+	if (velocityXZ.length() > this->maxWalkSpeed)
 	{
-		velocityXZ = velocityXZ.normalized() * maxSpeed;
+		velocityXZ = velocityXZ.normalized() * this->maxWalkSpeed;
 	}
 
 	// If the velocity is near zero, set it to zero. This fixes a problem where
 	// the velocity could remain at a tiny magnitude and never reach zero.
-	if (this->velocity.length() < 0.001)
+	if (this->velocity.length() < Constants::Epsilon)
 	{
 		this->velocity = Double3::Zero;
 	}

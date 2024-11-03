@@ -407,10 +407,8 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 {
 	const InputManager &inputManager = game.inputManager;
 
-	// Arbitrary movement speed.
-	constexpr double walkSpeed = 15.0;
-
 	Player &player = game.player;
+	const double maxWalkSpeed = player.maxWalkSpeed;
 	const bool isOnGround = player.onGround();
 
 	const Options &options = game.options;
@@ -418,12 +416,12 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
-		PlayerLogicController::handlePlayerMovementClassic(player, dt, walkSpeed, isOnGround, isGhostModeEnabled,
+		PlayerLogicController::handlePlayerMovementClassic(player, dt, maxWalkSpeed, isOnGround, isGhostModeEnabled,
 			inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		PlayerLogicController::handlePlayerMovementModern(player, dt, walkSpeed, isOnGround, isGhostModeEnabled, inputManager);
+		PlayerLogicController::handlePlayerMovementModern(player, dt, maxWalkSpeed, isOnGround, isGhostModeEnabled, inputManager);
 	}
 }
 
