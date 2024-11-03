@@ -198,50 +198,54 @@ namespace PlayerLogicController
 
 		if (!isGhostModeEnabled)
 		{
-			if ((forward || backward || left || right || jump) && isOnGround)
+			if (isOnGround)
 			{
-				// Check for jumping first so the player can't slide jump on the first frame.
-				if (jump)
+				if (forward || backward || left || right || jump)
 				{
-					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					// Check for jumping first so the player can't slide jump on the first frame.
+					if (jump)
+					{
+						player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					}
+					else
+					{
+						Double3 accelDirection = Double3::Zero;
+						if (forward)
+						{
+							accelDirection = accelDirection + groundDirection3D;
+						}
+
+						if (backward)
+						{
+							accelDirection = accelDirection - groundDirection3D;
+						}
+
+						if (right)
+						{
+							accelDirection = accelDirection + rightDirection;
+						}
+
+						if (left)
+						{
+							accelDirection = accelDirection - rightDirection;
+						}
+
+						if (accelDirection.lengthSquared() > 0.0)
+						{
+							accelDirection = accelDirection.normalized();
+							player.accelerate(accelDirection, walkSpeed, dt);
+						}
+					}
 				}
 				else
 				{
-					Double3 accelDirection = Double3::Zero;
-					if (forward)
-					{
-						accelDirection = accelDirection + groundDirection3D;
-					}
-
-					if (backward)
-					{
-						accelDirection = accelDirection - groundDirection3D;
-					}
-
-					if (right)
-					{
-						accelDirection = accelDirection + rightDirection;
-					}
-
-					if (left)
-					{
-						accelDirection = accelDirection - rightDirection;
-					}
-
-					if (accelDirection.lengthSquared() > 0.0)
-					{
-						accelDirection = accelDirection.normalized();
-						player.accelerate(accelDirection, walkSpeed, dt);
-					}
+					player.setPhysicsVelocity(Double3::Zero);
 				}
-			}
-			else if (isOnGround)
-			{
-				player.setPhysicsVelocity(Double3::Zero);
 			}
 		}
 		else
 		{
+			// Ghost movement.
 			Double3 accelDirection = Double3::Zero;
 			if (forward)
 			{
