@@ -56,7 +56,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	std::vector<int32_t> bgIndices;
 
 	constexpr double pointDistance = 1.0; // Arbitrary distance from camera, depth should not be checked.
-	constexpr Radians angleAboveHorizon = 25.0 * Constants::DegToRad;
+	constexpr Radians angleAboveHorizon = Constants::DegToRad(25.0);
 	const double aboveHorizonPointHeight = pointDistance * std::tan(angleAboveHorizon);
 
 	constexpr int zenithVertexIndex = 0;

@@ -45,7 +45,7 @@ Radians MathUtils::fullAtan2(const WorldDouble2 &v)
 
 double MathUtils::verticalFovToZoom(Degrees fovY)
 {
-	return 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
+	return 1.0 / std::tan(Constants::DegToRad(fovY * 0.5));
 }
 
 Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
@@ -54,8 +54,8 @@ Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 	DebugAssert(fovY < 180.0);
 	DebugAssert(aspectRatio > 0.0);
 
-	const double halfDim = aspectRatio * std::tan((fovY * 0.50) * Constants::DegToRad);
-	return (2.0 * std::atan(halfDim)) * Constants::RadToDeg;
+	const double halfDim = aspectRatio * std::tan(Constants::DegToRad(fovY * 0.50));
+	return Constants::RadToDeg(2.0 * std::atan(halfDim));
 }
 
 bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &planePoint, const Double2 &planeNormal)
