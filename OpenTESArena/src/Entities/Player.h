@@ -21,14 +21,19 @@ class LevelInfoDefinition;
 class Random;
 class VoxelChunkManager;
 
+namespace PlayerConstants
+{
+	constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS; // Distance from feet to head.
+	constexpr double DEFAULT_WALK_SPEED = 2.0;
+	constexpr double FRICTION = 3.0; // Friction for slowing the player down on ground.
+	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
+	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (HEIGHT / 2.0) - COLLIDER_RADIUS;
+	constexpr double STEPPING_HEIGHT = 0.25; // Stairsteps delta (used by Jolt CharacterVirtual::ExtendedUpdate()).
+	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
+}
+
 struct Player
 {
-	// Distance from player's feet to head.
-	static constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
-
-	// Arbitrary values for movement speed.
-	static constexpr double DEFAULT_WALK_SPEED = 2.0;
-
 	std::string displayName;
 	bool male;
 	int raceID;
@@ -41,10 +46,8 @@ struct Player
 	// @todo: polar coordinates (XYZ angles)
 	VoxelDouble3 velocity; // @todo: maybe this should come from Jolt collider
 	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
-	double friction;
 	WeaponAnimation weaponAnimation;
 	PrimaryAttributeSet attributes;
-	// Other stats...
 	JPH::Character *physicsCharacter;
 	JPH::CharacterVirtual *physicsCharacterVirtual;
 	JPH::CharacterVsCharacterCollisionSimple physicsCharVsCharCollision;
@@ -54,12 +57,6 @@ struct Player
 
 	// Gets the Y position of the player's feet.
 	double getFeetY() const;
-
-	// Changes the player's velocity based on collision with objects in the world.
-	//void handleCollision(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale); // @todo: maybe delete this, or repurpose as a contact listener maybe?
-
-	// Updates the player's position and velocity based on interactions with the world.
-	//void updatePhysics(double dt, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager, double ceilingScale); // @todo: this probably would handle climbing mode?
 
 	// Make player with rolled attributes based on race & gender.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,

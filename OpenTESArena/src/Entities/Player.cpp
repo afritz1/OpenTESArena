@@ -28,16 +28,8 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/String.h"
 
-namespace // @todo: could be in a PlayerUtils instead
+namespace
 {
-	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
-	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (Player::HEIGHT / 2.0) - COLLIDER_RADIUS;
-	constexpr double STEPPING_HEIGHT = 0.25; // Allowed change in height for stepping on stairs. @todo: Jolt has CharacterVirtual::WalkStairs()
-	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
-
-	// Friction for slowing the player down on ground.
-	constexpr double FRICTION = 3.0;
-
 	bool TryCreatePhysicsCharacters(JPH::PhysicsSystem &physicsSystem, JPH::Character **outCharacter, JPH::CharacterVirtual **outCharacterVirtual,
 		JPH::CharacterVsCharacterCollisionSimple *outCharVsCharCollision)
 	{
@@ -53,10 +45,10 @@ namespace // @todo: could be in a PlayerUtils instead
 		}
 
 		// Create same capsule for physical and virtual collider.
-		constexpr double capsuleRadius = COLLIDER_RADIUS;
-		constexpr double cylinderHalfHeight = (Player::HEIGHT / 2.0) - capsuleRadius;
+		constexpr double capsuleRadius = PlayerConstants::COLLIDER_RADIUS;
+		constexpr double cylinderHalfHeight = (PlayerConstants::HEIGHT / 2.0) - capsuleRadius;
 		static_assert(cylinderHalfHeight >= 0.0);
-		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0) + (cylinderHalfHeight * 2.0), Player::HEIGHT));
+		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0) + (cylinderHalfHeight * 2.0), PlayerConstants::HEIGHT));
 
 		JPH::CapsuleShapeSettings capsuleShapeSettings(cylinderHalfHeight, capsuleRadius);
 		capsuleShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
@@ -137,7 +129,6 @@ Player::Player()
 	this->portraitID = -1;
 	this->initCamera(CoordDouble3(), -Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
-	this->friction = 0.0;	
 	this->physicsCharacter = nullptr;
 	this->physicsCharacterVirtual = nullptr;
 }
@@ -160,7 +151,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->initCamera(position, direction);
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
-	this->friction = FRICTION;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
 	
@@ -184,7 +174,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->initCamera(position, direction);
 	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
-	this->friction = FRICTION;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
 	
@@ -216,8 +205,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
 	this->initCamera(position, direction);
 	this->velocity = Double3::Zero;
-	this->maxWalkSpeed = Player::DEFAULT_WALK_SPEED;
-	this->friction = FRICTION;
+	this->maxWalkSpeed = PlayerConstants::DEFAULT_WALK_SPEED;
 
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
 	const int weaponID = [&random, &charClassDef]()
@@ -276,19 +264,19 @@ Double2 Player::getGroundDirection() const
 
 double Player::getJumpMagnitude() const
 {
-	return JUMP_VELOCITY;
+	return PlayerConstants::JUMP_VELOCITY;
 }
 
 double Player::getFeetY() const
 {
 	const double cameraY = this->position.point.y;
-	return cameraY - Player::HEIGHT;
+	return cameraY - PlayerConstants::HEIGHT;
 }
 
 bool Player::onGround() const
 {
-	//return this->physicsCharacter->IsSupported(); // @todo: not sure which is better, maybe virtual is for steps?
-	return this->physicsCharacterVirtual->IsSupported();
+	return this->physicsCharacter->IsSupported(); // @todo: not sure which is better, maybe virtual is for steps?
+	//return this->physicsCharacterVirtual->IsSupported();
 }
 
 void Player::teleport(const CoordDouble3 &position)
@@ -411,29 +399,18 @@ void Player::prePhysicsStep(double dt, Game &game)
 	const SceneManager &sceneManager = game.sceneManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
-
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
-
-	// @todo: BodyInterface::MoveKinematic()?
-
-	// update velocity member, then:
-	// Character::SetLinearVelocity or CharacterVirtual::SetLinearVelocity before their update()?
-
-	// @todo: move the player collider(s) to where it ATTEMPTS to be for the physics system update, then see where it actually is in postPhysicsStep()
 
 	if (!this->onGround())
 	{
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 	}
-
-	//this->handleCollision(dt, voxelChunkManager, collisionChunkManager, ceilingScale);
-
-	if (this->onGround())
+	else
 	{
 		Double2 velocityXZ(this->velocity.x, this->velocity.z);
 		Double2 frictionDirection = Double2(-velocityXZ.x, -velocityXZ.y).normalized();
-		double frictionMagnitude = velocityXZ.length() * this->friction;
+		double frictionMagnitude = velocityXZ.length() * PlayerConstants::FRICTION;
 
 		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
 		{
@@ -478,7 +455,7 @@ void Player::postPhysicsStep(Game &game)
 	// @todo: not completely understanding the character + charactervirtual synergy yet
 	// - i think charactervirtual is for stairsteps and 'weird interactions' that character gets driven by?
 
-	constexpr float maxSeparationDistance = static_cast<float>(Constants::Epsilon);
+	constexpr float maxSeparationDistance = ConstantsF::Epsilon;
 	this->physicsCharacter->PostSimulation(maxSeparationDistance);
 
 	const JPH::RVec3 physicsCharPos = this->physicsCharacter->GetPosition();

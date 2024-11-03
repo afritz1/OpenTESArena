@@ -588,7 +588,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 		const double ceilingScale = this->getActiveCeilingScale();
 		const CoordDouble3 newPlayerPos(
 			startCoord.chunk,
-			VoxelDouble3(startCoord.point.x + startOffset.x, ceilingScale + Player::HEIGHT, startCoord.point.y + startOffset.y));
+			VoxelDouble3(startCoord.point.x + startOffset.x, ceilingScale + PlayerConstants::HEIGHT, startCoord.point.y + startOffset.y));
 
 		player.teleport(newPlayerPos);
 
@@ -606,7 +606,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 		const VoxelDouble3 oldPlayerCenteredPoint = VoxelUtils::getVoxelCenter(oldPlayerVoxel);
 		const CoordDouble3 newPlayerPos(
 			oldPlayerPos.chunk,
-			VoxelDouble3(oldPlayerCenteredPoint.x + startOffset.x, ceilingScale + Player::HEIGHT, oldPlayerCenteredPoint.z + startOffset.y));
+			VoxelDouble3(oldPlayerCenteredPoint.x + startOffset.x, ceilingScale + PlayerConstants::HEIGHT, oldPlayerCenteredPoint.z + startOffset.y));
 
 		player.teleport(newPlayerPos);
 		player.lookAt(newPlayerPos + VoxelDouble3(startOffset.x, 0.0, startOffset.y));
