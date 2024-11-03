@@ -427,7 +427,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 	const Double3 oldVelocity = this->getPhysicsVelocity();
 	if (!this->onGround())
 	{
-		// @todo: maybe gravity is being applied twice?? see ExtendedUpdate() gravity
+		// Need to apply gravity to Character as its gravity factor is 0 when with CharacterVirtual.
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 	}
 	else
@@ -436,19 +436,12 @@ void Player::prePhysicsStep(double dt, Game &game)
 		const Double2 frictionDirection = Double2(-oldVelocityXZ.x, -oldVelocityXZ.y).normalized();
 		const double frictionMagnitude = oldVelocityXZ.length() * PlayerConstants::FRICTION;
 
+		// @todo: friction should be taken care of by Jolt
 		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
 		{
-			this->accelerate(Double3(frictionDirection.x, 0.0, frictionDirection.y), frictionMagnitude, dt);
+			//this->accelerate(Double3(frictionDirection.x, 0.0, frictionDirection.y), frictionMagnitude, dt);
 		}
 	}
-
-	const Double3 newVelocity = this->getPhysicsVelocity();
-	const JPH::Vec3Arg physicsVelocity(
-		static_cast<float>(newVelocity.x),
-		static_cast<float>(newVelocity.y),
-		static_cast<float>(newVelocity.z));
-	this->physicsCharacterVirtual->SetLinearVelocity(physicsVelocity);
-	this->physicsCharacter->SetLinearVelocity(physicsVelocity);
 
 	JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	const JPH::Vec3Arg physicsGravity = -this->physicsCharacter->GetUp() * physicsSystem.GetGravity().Length();
