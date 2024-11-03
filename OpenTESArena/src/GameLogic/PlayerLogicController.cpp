@@ -173,7 +173,7 @@ namespace PlayerLogicController
 		}
 		else if (isOnGround)
 		{
-			player.setVelocityToZero();
+			player.setPhysicsVelocity(Double3::Zero);
 		}
 	}
 
@@ -237,7 +237,7 @@ namespace PlayerLogicController
 			}
 			else if (isOnGround)
 			{
-				player.setVelocityToZero();
+				player.setPhysicsVelocity(Double3::Zero);
 			}
 		}
 		else

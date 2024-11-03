@@ -994,7 +994,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 
 	const CoordDouble3 &playerCoord = player.position;
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
-	const bool isPlayerMoving = player.velocity.lengthSquared() >= Constants::Epsilon;
+	const bool isPlayerMoving = player.isMoving();
 	const bool isPlayerWeaponSheathed = player.weaponAnimation.isSheathed();
 
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)

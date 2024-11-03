@@ -44,7 +44,6 @@ struct Player
 	Double3 right;
 	Double3 up;
 	// @todo: polar coordinates (XYZ angles)
-	VoxelDouble3 velocity; // @todo: maybe this should come from Jolt collider
 	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
 	WeaponAnimation weaponAnimation;
 	PrimaryAttributeSet attributes;
@@ -84,6 +83,7 @@ struct Player
 	double getJumpMagnitude() const;
 
 	bool onGround() const;
+	bool isMoving() const;
 
 	// Teleports the player to a point.
 	void teleport(const CoordDouble3 &position);
@@ -96,8 +96,10 @@ struct Player
 	// so don't give a point directly above or below the camera.
 	void lookAt(const CoordDouble3 &targetCoord);
 
-	// Intended for stopping after level transitions.
-	void setVelocityToZero(); // @todo: probably takes PhysicsSystem&
+	WorldDouble3 getPhysicsPosition() const;
+	Double3 getPhysicsVelocity() const;
+	void setPhysicsPosition(const WorldDouble3 &position); // Position of the collider, not the camera eye.
+	void setPhysicsVelocity(const Double3 &velocity);
 
 	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
 	void setDirectionToHorizon();

@@ -109,16 +109,6 @@ namespace
 
 		return true;
 	}
-
-	void SetPhysicsPosition(JPH::Character *character, JPH::CharacterVirtual *charVirtual, const WorldDouble3 &position)
-	{
-		const JPH::RVec3Arg physicsPosition(
-			static_cast<float>(position.x),
-			static_cast<float>(position.y),
-			static_cast<float>(position.z));
-		character->SetPosition(physicsPosition);
-		charVirtual->SetPosition(physicsPosition);
-	}
 }
 
 Player::Player()
@@ -149,7 +139,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
 	this->initCamera(position, direction);
-	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
@@ -159,7 +148,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->position));
+	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(this->position));
+	this->setPhysicsVelocity(velocity);
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
@@ -172,7 +162,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
 	this->initCamera(position, direction);
-	this->velocity = velocity;
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
@@ -182,7 +171,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->position));
+	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(this->position));
+	this->setPhysicsVelocity(velocity);
 }
 
 void Player::initCamera(const CoordDouble3 &coord, const Double3 &forward)
@@ -204,7 +194,6 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
 	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
 	this->initCamera(position, direction);
-	this->velocity = Double3::Zero;
 	this->maxWalkSpeed = PlayerConstants::DEFAULT_WALK_SPEED;
 
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
@@ -233,7 +222,8 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(this->position));
+	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(this->position));
+	this->setPhysicsVelocity(Double3::Zero);
 }
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
@@ -278,10 +268,16 @@ bool Player::onGround() const
 	return this->physicsCharacter->IsSupported();
 }
 
+bool Player::isMoving() const
+{
+	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
+	return physicsVelocity.LengthSq() >= ConstantsF::Epsilon;
+}
+
 void Player::teleport(const CoordDouble3 &position)
 {
 	this->position = position;
-	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(position));
+	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(position));
 }
 
 void Player::rotateX(Degrees deltaX)
@@ -329,9 +325,42 @@ void Player::lookAt(const CoordDouble3 &targetCoord)
 	}
 }
 
-void Player::setVelocityToZero()
+WorldDouble3 Player::getPhysicsPosition() const
 {
-	this->velocity = Double3::Zero;
+	const JPH::RVec3 physicsPosition = this->physicsCharacter->GetPosition();
+	return WorldDouble3(
+		static_cast<SNDouble>(physicsPosition.GetX()),
+		static_cast<double>(physicsPosition.GetY()),
+		static_cast<WEDouble>(physicsPosition.GetZ()));
+}
+
+Double3 Player::getPhysicsVelocity() const
+{
+	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
+	return WorldDouble3(
+		static_cast<SNDouble>(physicsVelocity.GetX()),
+		static_cast<double>(physicsVelocity.GetY()),
+		static_cast<WEDouble>(physicsVelocity.GetZ()));
+}
+
+void Player::setPhysicsPosition(const WorldDouble3 &position)
+{
+	const JPH::RVec3 physicsPosition(
+		static_cast<float>(position.x),
+		static_cast<float>(position.y),
+		static_cast<float>(position.z));
+	this->physicsCharacter->SetPosition(physicsPosition);
+	this->physicsCharacterVirtual->SetPosition(physicsPosition);
+}
+
+void Player::setPhysicsVelocity(const Double3 &velocity)
+{
+	const JPH::RVec3 physicsVelocity(
+		static_cast<float>(velocity.x),
+		static_cast<float>(velocity.y),
+		static_cast<float>(velocity.z));
+	this->physicsCharacter->SetLinearVelocity(physicsVelocity);
+	this->physicsCharacterVirtual->SetLinearVelocity(physicsVelocity);
 }
 
 void Player::setDirectionToHorizon()
@@ -350,66 +379,62 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 	DebugAssert(std::isfinite(magnitude));
 	DebugAssert(direction.isNormalized());
 
-	// Simple Euler integration for updating velocity.
-	Double3 newVelocity = this->velocity + (direction * (magnitude * dt));
-
-	if (std::isfinite(newVelocity.length()))
+	const Double3 oldVelocity = this->getPhysicsVelocity();
+	Double3 newVelocity = oldVelocity + (direction * (magnitude * dt));
+	if (!std::isfinite(newVelocity.length()))
 	{
-		this->velocity = newVelocity;
+		return;
 	}
 
-	// Don't let the horizontal velocity be greater than the max speed for the
-	// current movement state (i.e., walking/running).
-	Double2 velocityXZ(this->velocity.x, this->velocity.z);
-	if (velocityXZ.length() > this->maxWalkSpeed)
+	Double2 newVelocityXZ(newVelocity.x, newVelocity.z);
+	if (newVelocityXZ.length() > this->maxWalkSpeed)
 	{
-		velocityXZ = velocityXZ.normalized() * this->maxWalkSpeed;
+		newVelocityXZ = newVelocityXZ.normalized() * this->maxWalkSpeed; // @todo: this is doing nothing but looks important
 	}
 
-	// If the velocity is near zero, set it to zero. This fixes a problem where
-	// the velocity could remain at a tiny magnitude and never reach zero.
-	if (this->velocity.length() < Constants::Epsilon)
+	if (newVelocity.length() < Constants::Epsilon)
 	{
-		this->velocity = Double3::Zero;
+		newVelocity = Double3::Zero;
 	}
+
+	this->setPhysicsVelocity(newVelocity);
 }
 
 void Player::accelerateInstant(const Double3 &direction, double magnitude)
 {
 	DebugAssert(direction.isNormalized());
+	DebugAssert(magnitude >= 0.0);
 
-	const Double3 additiveVelocity = direction * magnitude;
-
-	if (std::isfinite(additiveVelocity.length()))
+	const Double3 oldVelocity = this->getPhysicsVelocity();
+	const Double3 newVelocity = oldVelocity + (direction * magnitude);
+	if (!std::isfinite(newVelocity.length()))
 	{
-		this->velocity = this->velocity + additiveVelocity;
+		return;
 	}
+
+	this->setPhysicsVelocity(newVelocity);
 }
 
 void Player::prePhysicsStep(double dt, Game &game)
 {
 	if (game.options.getMisc_GhostMode())
 	{
-		this->setVelocityToZero(); // Prevent leftover momentum when switching cheat modes.
-		// @todo: maybe turn physicsCharacter and virtual off and keep them glued to player arbitrarily? ghost mode is literally "disable jolt"
+		// Prevent leftover momentum when switching cheat modes.
+		this->setPhysicsVelocity(Double3::Zero);
 		return;
 	}
 
-	const SceneManager &sceneManager = game.sceneManager;
-	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
-	const GameState &gameState = game.gameState;
-	const double ceilingScale = gameState.getActiveCeilingScale();
-
+	const Double3 oldVelocity = this->getPhysicsVelocity();
 	if (!this->onGround())
 	{
+		// @todo: maybe gravity is being applied twice?? see ExtendedUpdate() gravity
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 	}
 	else
 	{
-		Double2 velocityXZ(this->velocity.x, this->velocity.z);
-		Double2 frictionDirection = Double2(-velocityXZ.x, -velocityXZ.y).normalized();
-		double frictionMagnitude = velocityXZ.length() * PlayerConstants::FRICTION;
+		const Double2 oldVelocityXZ(oldVelocity.x, oldVelocity.z);
+		const Double2 frictionDirection = Double2(-oldVelocityXZ.x, -oldVelocityXZ.y).normalized();
+		const double frictionMagnitude = oldVelocityXZ.length() * PlayerConstants::FRICTION;
 
 		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
 		{
@@ -417,10 +442,11 @@ void Player::prePhysicsStep(double dt, Game &game)
 		}
 	}
 
+	const Double3 newVelocity = this->getPhysicsVelocity();
 	const JPH::Vec3Arg physicsVelocity(
-		static_cast<float>(this->velocity.x),
-		static_cast<float>(this->velocity.y),
-		static_cast<float>(this->velocity.z));
+		static_cast<float>(newVelocity.x),
+		static_cast<float>(newVelocity.y),
+		static_cast<float>(newVelocity.z));
 	this->physicsCharacterVirtual->SetLinearVelocity(physicsVelocity);
 	this->physicsCharacter->SetLinearVelocity(physicsVelocity);
 

@@ -618,7 +618,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 		DebugNotImplementedMsg("Unhandled scene change case.");
 	}
 
-	player.setVelocityToZero();
+	player.setPhysicsVelocity(Double3::Zero);
 
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;

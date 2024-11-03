@@ -720,7 +720,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 	{
 		// Teleport the player to a random location based on their race.
 		auto &player = game.player;
-		player.setVelocityToZero();
+		player.setPhysicsVelocity(Double3::Zero);
 
 		auto &gameState = game.gameState;
 		const int provinceID = player.raceID; // @todo: this should be more like a WorldMapDefinition::getProvinceIdForRaceId() that searches provinces
