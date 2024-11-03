@@ -275,13 +275,13 @@ double Player::getFeetY() const
 
 bool Player::onGround() const
 {
-	return this->physicsCharacter->IsSupported(); // @todo: not sure which is better, maybe virtual is for steps?
-	//return this->physicsCharacterVirtual->IsSupported();
+	return this->physicsCharacter->IsSupported();
 }
 
 void Player::teleport(const CoordDouble3 &position)
 {
 	this->position = position;
+	SetPhysicsPosition(this->physicsCharacter, this->physicsCharacterVirtual, VoxelUtils::coordToWorldPoint(position));
 }
 
 void Player::rotateX(Degrees deltaX)

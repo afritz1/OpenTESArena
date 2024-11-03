@@ -86,7 +86,7 @@ struct Player
 	bool onGround() const;
 
 	// Teleports the player to a point.
-	void teleport(const CoordDouble3 &position); // @todo: probably takes PhysicsSystem&
+	void teleport(const CoordDouble3 &position);
 
 	// Pitches and yaws relative to global up vector.
 	void rotateX(Degrees deltaX);
