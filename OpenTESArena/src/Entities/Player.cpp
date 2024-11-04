@@ -346,6 +346,12 @@ bool Player::isMoving() const
 	return physicsVelocity.LengthSq() >= ConstantsF::Epsilon;
 }
 
+bool Player::canJump() const
+{
+	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
+	return this->onGround() && (physicsVelocity.GetY() == 0.0f);
+}
+
 void Player::rotateX(Degrees deltaX)
 {
 	DebugAssert(std::isfinite(this->forward.length()));

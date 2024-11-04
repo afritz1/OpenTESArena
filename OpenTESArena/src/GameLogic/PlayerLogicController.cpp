@@ -117,8 +117,10 @@ namespace PlayerLogicController
 				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 				if (rightClick)
 				{
-					// Jump.
-					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					if (player.canJump())
+					{
+						player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					}
 				}
 				// Change the player's velocity if valid.
 				else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
@@ -162,8 +164,10 @@ namespace PlayerLogicController
 			// Check for jumping first (so the player can't slide jump on the first frame).
 			if (space)
 			{
-				// Jump.
-				player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+				if (player.canJump())
+				{
+					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+				}
 			}
 			// Change the player's velocity if valid.
 			else if (std::isfinite(accelDirection.length()))
@@ -205,7 +209,10 @@ namespace PlayerLogicController
 					// Check for jumping first so the player can't slide jump on the first frame.
 					if (jump)
 					{
-						player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+						if (player.canJump())
+						{
+							player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+						}
 					}
 					else
 					{

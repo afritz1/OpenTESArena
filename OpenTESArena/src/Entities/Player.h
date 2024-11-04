@@ -90,6 +90,7 @@ struct Player
 
 	bool onGround() const;
 	bool isMoving() const;
+	bool canJump() const;
 
 	// Pitches and yaws relative to global up vector.
 	void rotateX(Degrees deltaX);
