@@ -29,7 +29,7 @@
 
 namespace
 {
-	bool TryCreatePhysicsCollider(const CoordDouble2 &coord, double ceilingScale, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const CoordDouble2 &coord, double ceilingScale, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -60,7 +60,9 @@ namespace
 			static_cast<float>(ceilingScale + capsuleHalfTotalHeight),
 			static_cast<float>(capsuleWorldPointXZ.y));
 		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
-		const JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, PhysicsLayers::MOVING);
+		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, PhysicsLayers::MOVING);
+		capsuleSettings.mIsSensor = isSensor;
+
 		const JPH::Body *capsule = bodyInterface.CreateBody(capsuleSettings);
 		if (capsule == nullptr)
 		{
@@ -268,14 +270,10 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				const EntityAnimationDefinitionState &defaultAnimDefState = animDef.states[*defaultAnimStateIndex];
 				animInst.setStateIndex(*defaultAnimStateIndex);
 
-				// @todo: decide if any or all entities should have a capsule collider.
-				const bool hasCollider = true;
-				if (hasCollider)
+				const bool isSensor = !EntityUtils::hasCollision(entityDef);
+				if (!TryCreatePhysicsCollider(entityCoord, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
 				{
-					if (!TryCreatePhysicsCollider(entityCoord, ceilingScale, physicsSystem, &entityInst.physicsBodyID))
-					{
-						DebugLogError("Couldn't allocate Jolt physics body for entity.");
-					}
+					DebugLogError("Couldn't allocate Jolt physics body for entity.");
 				}
 
 				entityChunk.entityIDs.emplace_back(entityInstID);
@@ -400,14 +398,11 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
 			paletteIndices = ArenaAnimUtils::transformCitizenColors(citizenGenInfo->raceID, colorSeed, binaryAssetLibrary.getExeData());
 
-			// @todo: decide if any or all entities should have a capsule collider.
-			const bool hasCollider = true;
-			if (hasCollider)
+			// Citizens don't collide with player.
+			constexpr bool isSensor = true;
+			if (!TryCreatePhysicsCollider(entityCoord, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
 			{
-				if (!TryCreatePhysicsCollider(entityCoord, ceilingScale, physicsSystem, &entityInst.physicsBodyID))
-				{
-					DebugLogError("Couldn't allocate Jolt physics body for entity.");
-				}
+				DebugLogError("Couldn't allocate Jolt physics body for entity.");
 			}
 
 			entityChunk.entityIDs.emplace_back(entityInstID);

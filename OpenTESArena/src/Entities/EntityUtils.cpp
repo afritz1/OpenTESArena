@@ -74,7 +74,7 @@ bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 	{
 		return false;
 	}
-	
+
 	const EntityDefinition::EnemyDefinition &enemyDef = entityDef.getEnemy();
 	if (enemyDef.getType() != EntityDefinition::EnemyDefinition::Type::Creature)
 	{
@@ -120,6 +120,27 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 	{
 		const auto &doodadDef = entityDef.getDoodad();
 		return doodadDef.yOffset;
+	}
+}
+
+bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
+{
+	const EntityDefinition::Type entityType = entityDef.getType();
+	switch (entityType)
+	{
+	case EntityDefinition::Type::Enemy:
+	case EntityDefinition::Type::StaticNPC:
+	case EntityDefinition::Type::Container:
+		return true;
+	case EntityDefinition::Type::Citizen:
+	case EntityDefinition::Type::Item:
+	case EntityDefinition::Type::Projectile:
+	case EntityDefinition::Type::Transition:
+		return false;
+	case EntityDefinition::Type::Doodad:
+		return entityDef.getDoodad().collider;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
 	}
 }
 

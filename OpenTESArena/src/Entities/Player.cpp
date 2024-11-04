@@ -257,7 +257,11 @@ bool Player::isPhysicsInited() const
 
 WorldDouble3 Player::getPhysicsPosition() const
 {
-	DebugAssert(this->isPhysicsInited());
+	if (!this->isPhysicsInited())
+	{
+		return WorldDouble3::Zero;
+	}
+
 	const JPH::RVec3 physicsPosition = this->physicsCharacter->GetPosition();
 	return WorldDouble3(
 		static_cast<SNDouble>(physicsPosition.GetX()),
@@ -267,7 +271,11 @@ WorldDouble3 Player::getPhysicsPosition() const
 
 Double3 Player::getPhysicsVelocity() const
 {
-	DebugAssert(this->isPhysicsInited());
+	if (!this->isPhysicsInited())
+	{
+		return Double3::Zero;
+	}
+
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 	return WorldDouble3(
 		static_cast<SNDouble>(physicsVelocity.GetX()),

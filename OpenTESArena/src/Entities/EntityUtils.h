@@ -34,6 +34,8 @@ namespace EntityUtils
 
 	int getYOffset(const EntityDefinition &entityDef);
 
+	bool hasCollision(const EntityDefinition &entityDef);
+
 	// Returns the entity definition's light radius, if any.
 	std::optional<double> tryGetLightRadius(const EntityDefinition &entityDef);
 
