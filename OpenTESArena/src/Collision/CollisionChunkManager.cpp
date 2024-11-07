@@ -11,12 +11,11 @@
 
 namespace
 {
+	// Creates collider but does not add it to simulation.
 	bool TryCreatePhysicsCollider(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, const VoxelShapeDefinition &voxelShapeDef,
 		const CollisionShapeDefinition &collisionShapeDef, double ceilingScale, JPH::PhysicsSystem &physicsSystem,
 		JPH::BodyID *outBodyID)
 	{
-		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
-
 		const double voxelYBottom = static_cast<double>(y) * ceilingScale;
 
 		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
@@ -44,6 +43,7 @@ namespace
 			return false;
 		}
 
+		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 		JPH::ShapeRefC boxShape = boxShapeResult.Get();
 		const WorldInt3 boxWorldVoxelPos = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, VoxelInt3(x, y, z));
 		const JPH::RVec3 boxJoltPos(
@@ -60,9 +60,7 @@ namespace
 			return false;
 		}
 
-		const JPH::BodyID &boxBodyID = box->GetID();
-		bodyInterface.AddBody(boxBodyID, JPH::EActivation::Activate);
-		*outBodyID = boxBodyID;
+		*outBodyID = box->GetID();
 		return true;
 	}
 }
@@ -73,7 +71,9 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 	CollisionChunk &collisionChunk = this->getChunkAtIndex(index);
 	collisionChunk.init(chunkPos, chunkHeight);
 
-	// @todo: Jolt recommends AddBodiesPrepare and AddBodiesFinalize for bulk situations like this
+	std::vector<JPH::BodyID> createdBodyIDs;
+	createdBodyIDs.reserve(Chunk::WIDTH * chunkHeight * Chunk::DEPTH);
+
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunkHeight; y++)
@@ -94,16 +94,24 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 					const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 					const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
 
-					// Generate box collider and add to the simulation.
+					// Generate collider but don't add to simulation.
 					JPH::BodyID bodyID;
 					if (TryCreatePhysicsCollider(x, y, z, chunkPos, voxelShapeDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
 					{
 						collisionChunk.physicsBodyIDs.set(x, y, z, bodyID);
+						createdBodyIDs.emplace_back(bodyID);
 					}
 				}
 			}
 		}
 	}
+
+	const int createdBodyIDCount = static_cast<int>(createdBodyIDs.size());
+
+	// Add bodies to the simulation in bulk for efficiency.
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+	JPH::BodyInterface::AddState bodyAddState = bodyInterface.AddBodiesPrepare(createdBodyIDs.data(), createdBodyIDCount);
+	bodyInterface.AddBodiesFinalize(createdBodyIDs.data(), createdBodyIDCount, bodyAddState, JPH::EActivation::Activate);
 }
 
 void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double ceilingScale, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem)
@@ -111,7 +119,18 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 	CollisionChunk &collisionChunk = this->getChunkAtPosition(chunkPos);
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyShapeDefPositions())
+	const BufferView<const VoxelInt3> dirtyShapeDefPositions = voxelChunk.getDirtyShapeDefPositions();
+	const BufferView<const VoxelInt3> dirtyDoorAnimInstPositions = voxelChunk.getDirtyDoorAnimInstPositions();
+
+	std::vector<JPH::BodyID> bodyIDsToAdd;
+	std::vector<JPH::BodyID> bodyIDsToRemove;
+	std::vector<JPH::BodyID> bodyIDsToDestroy;
+	bodyIDsToAdd.reserve(dirtyShapeDefPositions.getCount());
+	bodyIDsToRemove.reserve(dirtyDoorAnimInstPositions.getCount());
+	bodyIDsToDestroy.reserve(dirtyShapeDefPositions.getCount());
+
+	// @todo: this dirty shapes list might be full of brand new voxels this frame, so we're accidentally destroying + recreating them all (found during the AddBodiesPrepare/Finalize() work)
+	for (const VoxelInt3 &voxelPos : dirtyShapeDefPositions)
 	{
 		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxelPos.x, voxelPos.y, voxelPos.z);
 		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
@@ -125,7 +144,13 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 		JPH::BodyID existingBodyID = collisionChunk.physicsBodyIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
 		if (!existingBodyID.IsInvalid())
 		{
-			collisionChunk.freePhysicsBodyID(voxelPos.x, voxelPos.y, voxelPos.z, bodyInterface);
+			if (bodyInterface.IsAdded(existingBodyID))
+			{
+				bodyIDsToRemove.emplace_back(existingBodyID);
+			}
+
+			bodyIDsToDestroy.emplace_back(existingBodyID);
+			collisionChunk.physicsBodyIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, Physics::INVALID_BODY_ID);
 		}
 
 		if (voxelHasCollision)
@@ -133,16 +158,18 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 			const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
 
-			// Generate box collider and add to the simulation.
+			// Generate collider but don't add to simulation yet.
 			JPH::BodyID bodyID;
 			if (TryCreatePhysicsCollider(voxelPos.x, voxelPos.y, voxelPos.z, chunkPos, voxelShapeDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
 			{
 				collisionChunk.physicsBodyIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, bodyID);
 			}
+
+			bodyIDsToAdd.emplace_back(bodyID);
 		}
 	}
 
-	for (const VoxelInt3 &voxelPos : voxelChunk.getDirtyDoorAnimInstPositions())
+	for (const VoxelInt3 &voxelPos : dirtyDoorAnimInstPositions)
 	{
 		int doorAnimInstIndex;
 		const bool success = voxelChunk.tryGetDoorAnimInstIndex(voxelPos.x, voxelPos.y, voxelPos.z, &doorAnimInstIndex);
@@ -160,16 +187,34 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 		{
 			if (!bodyInterface.IsAdded(bodyID))
 			{
-				bodyInterface.AddBody(bodyID, JPH::EActivation::Activate);
+				bodyIDsToAdd.emplace_back(bodyID);
 			}
 		}
 		else
 		{
 			if (bodyInterface.IsAdded(bodyID))
 			{
-				bodyInterface.RemoveBody(bodyID);
+				bodyIDsToRemove.emplace_back(bodyID);
 			}
 		}
+	}
+
+	// Do bulk adds/removes for efficiency.
+	if (!bodyIDsToAdd.empty())
+	{
+		const int bodyIDAddCount = static_cast<int>(bodyIDsToAdd.size());
+		JPH::BodyInterface::AddState bodyAddState = bodyInterface.AddBodiesPrepare(bodyIDsToAdd.data(), bodyIDAddCount);
+		bodyInterface.AddBodiesFinalize(bodyIDsToAdd.data(), bodyIDAddCount, bodyAddState, JPH::EActivation::Activate);
+	}
+	
+	if (!bodyIDsToRemove.empty())
+	{
+		bodyInterface.RemoveBodies(bodyIDsToRemove.data(), static_cast<int>(bodyIDsToRemove.size()));
+	}
+
+	if (!bodyIDsToDestroy.empty())
+	{
+		bodyInterface.DestroyBodies(bodyIDsToDestroy.data(), static_cast<int>(bodyIDsToDestroy.size()));
 	}
 }
 

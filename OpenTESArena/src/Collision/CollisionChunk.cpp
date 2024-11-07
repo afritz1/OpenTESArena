@@ -25,33 +25,47 @@ void CollisionChunk::init(const ChunkInt2 &position, int height)
 	this->physicsBodyIDs.fill(Physics::INVALID_BODY_ID);
 }
 
-void CollisionChunk::freePhysicsBodyID(SNInt x, int y, WEInt z, JPH::BodyInterface &bodyInterface)
-{
-	JPH::BodyID &bodyID = this->physicsBodyIDs.get(x, y, z);
-	if (!bodyID.IsInvalid())
-	{
-		if (bodyInterface.IsAdded(bodyID))
-		{
-			bodyInterface.RemoveBody(bodyID);
-		}
-		
-		bodyInterface.DestroyBody(bodyID);
-		bodyID = Physics::INVALID_BODY_ID;
-	}
-}
-
 void CollisionChunk::freePhysicsBodyIDs(JPH::BodyInterface &bodyInterface)
 {
-	// @todo optimize
-	for (WEInt z = 0; z < this->physicsBodyIDs.getDepth(); z++)
+	const SNInt chunkWidth = this->physicsBodyIDs.getWidth();
+	const int chunkHeight = this->physicsBodyIDs.getHeight();
+	const WEInt chunkDepth = this->physicsBodyIDs.getDepth();
+	const int estimatedBodyIDCount = chunkWidth * chunkHeight * chunkDepth;
+
+	std::vector<JPH::BodyID> bodyIDsToRemove;
+	std::vector<JPH::BodyID> bodyIDsToDestroy;
+	bodyIDsToRemove.reserve(estimatedBodyIDCount);
+	bodyIDsToDestroy.reserve(estimatedBodyIDCount);
+
+	for (WEInt z = 0; z < chunkDepth; z++)
 	{
-		for (int y = 0; y < this->physicsBodyIDs.getHeight(); y++)
+		for (int y = 0; y < chunkHeight; y++)
 		{
-			for (SNInt x = 0; x < this->physicsBodyIDs.getWidth(); x++)
+			for (SNInt x = 0; x < chunkWidth; x++)
 			{
-				this->freePhysicsBodyID(x, y, z, bodyInterface);
+				JPH::BodyID &bodyID = this->physicsBodyIDs.get(x, y, z);
+				if (!bodyID.IsInvalid())
+				{
+					if (bodyInterface.IsAdded(bodyID))
+					{
+						bodyIDsToRemove.emplace_back(bodyID);
+					}
+
+					bodyIDsToDestroy.emplace_back(bodyID);
+					bodyID = Physics::INVALID_BODY_ID;
+				}
 			}
 		}
+	}
+
+	if (!bodyIDsToRemove.empty())
+	{
+		bodyInterface.RemoveBodies(bodyIDsToRemove.data(), static_cast<int>(bodyIDsToRemove.size()));
+	}
+	
+	if (!bodyIDsToDestroy.empty())
+	{
+		bodyInterface.DestroyBodies(bodyIDsToDestroy.data(), static_cast<int>(bodyIDsToDestroy.size()));
 	}
 }
 

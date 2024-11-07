@@ -27,7 +27,6 @@ public:
 	static constexpr CollisionShapeDefID AIR_COLLISION_SHAPE_DEF_ID = 0;
 
 	void init(const ChunkInt2 &position, int height);
-	void freePhysicsBodyID(SNInt x, int y, WEInt z, JPH::BodyInterface &bodyInterface);
 	void freePhysicsBodyIDs(JPH::BodyInterface &bodyInterface);
 	void clear();
 
