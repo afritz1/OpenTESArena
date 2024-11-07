@@ -158,11 +158,17 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 
 		if (shouldEnableDoorCollider)
 		{
-			bodyInterface.ActivateBody(bodyID);
+			if (!bodyInterface.IsAdded(bodyID))
+			{
+				bodyInterface.AddBody(bodyID, JPH::EActivation::Activate);
+			}
 		}
 		else
 		{
-			bodyInterface.DeactivateBody(bodyID);
+			if (bodyInterface.IsAdded(bodyID))
+			{
+				bodyInterface.RemoveBody(bodyID);
+			}
 		}
 	}
 }

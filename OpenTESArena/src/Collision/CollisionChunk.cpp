@@ -30,7 +30,11 @@ void CollisionChunk::freePhysicsBodyID(SNInt x, int y, WEInt z, JPH::BodyInterfa
 	JPH::BodyID &bodyID = this->physicsBodyIDs.get(x, y, z);
 	if (!bodyID.IsInvalid())
 	{
-		bodyInterface.RemoveBody(bodyID);
+		if (bodyInterface.IsAdded(bodyID))
+		{
+			bodyInterface.RemoveBody(bodyID);
+		}
+		
 		bodyInterface.DestroyBody(bodyID);
 		bodyID = Physics::INVALID_BODY_ID;
 	}
