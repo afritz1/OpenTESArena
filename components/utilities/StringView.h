@@ -1,7 +1,6 @@
 #ifndef STRING_VIEW_H
 #define STRING_VIEW_H
 
-#include <array>
 #include <cstdint>
 #include <string_view>
 
@@ -29,10 +28,15 @@ namespace StringView
 	// Splits a string view on the given character without allocating the destination array.
 	// Breaks early if too many splits are encountered. Returns whether the split count matches
 	// the destination size.
-	template <size_t T>
-	bool splitExpected(const std::string_view &str, char separator, std::array<std::string_view, T> &dst)
+	template<size_t T>
+	bool splitExpected(const std::string_view &str, char separator, BufferView<std::string_view> dst)
 	{
 		static_assert(T > 0);
+
+		if (dst.getCount() != static_cast<int>(T))
+		{
+			return false;
+		}
 
 		// Bootstrap the loop.
 		dst[0] = std::string_view(str.data(), 0);
@@ -67,8 +71,8 @@ namespace StringView
 	// Splits a string view on whitespace without allocating the destination array. Breaks early
 	// if too many splits are encountered. Returns whether the split count matches the destination
 	// size.
-	template <size_t T>
-	bool splitExpected(const std::string_view &str, std::array<std::string_view, T> &dst)
+	template<size_t T>
+	bool splitExpected(const std::string_view &str, BufferView<std::string_view> dst)
 	{
 		return StringView::splitExpected(str, String::SPACE, dst);
 	}

@@ -972,7 +972,7 @@ std::pair<int, int> ExeData::getPair(const KeyValueFileSection &section, const s
 
 	// Make sure the value has a comma-separated offset + length pair.
 	std::array<std::string_view, 2> tokens;
-	if (!StringView::splitExpected(valueStr, ExeData::PAIR_SEPARATOR, tokens))
+	if (!StringView::splitExpected<2>(valueStr, ExeData::PAIR_SEPARATOR, tokens))
 	{
 		DebugCrash("Invalid offset + length pair \"" + key + "\" (section \"" + section.getName() + "\").");
 	}

@@ -256,7 +256,7 @@ bool KeyValueFile::init(const char *filename)
 		{
 			// Key-value pair line. There must be two tokens: key and value.
 			std::array<std::string_view, 2> tokens;
-			if (!StringView::splitExpected(filteredLine, KeyValueFile::PAIR_SEPARATOR, tokens))
+			if (!StringView::splitExpected<2>(filteredLine, KeyValueFile::PAIR_SEPARATOR, tokens))
 			{
 				DebugLogError("Invalid pair \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + ") in " + filename + ".");
