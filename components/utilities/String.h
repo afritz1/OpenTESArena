@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Buffer.h"
+#include "BufferView.h"
 
 // Various string operations and conversions.
 namespace String
@@ -33,9 +34,14 @@ namespace String
 	// early if too many splits are encountered. Returns whether the split count matches the
 	// destination size.
 	template<size_t T>
-	bool splitExpected(const std::string &str, char separator, std::string (&dst)[T])
+	bool splitExpected(const std::string &str, char separator, BufferView<std::string> dst)
 	{
 		static_assert(T > 0);
+
+		if (dst.getCount() != static_cast<int>(T))
+		{
+			return false;
+		}
 
 		size_t dstIndex = 0;
 		for (const char c : str)
@@ -52,7 +58,7 @@ namespace String
 			else
 			{
 				// Put the character on the end of the current string.
-				dst[dstIndex].push_back(c);
+				dst.get(dstIndex).push_back(c);
 			}
 		}
 
@@ -63,7 +69,7 @@ namespace String
 	// too many splits are encountered. Returns whether the split count matches the destination
 	// size.
 	template<size_t T>
-	bool splitExpected(const std::string &str, std::string (&dst)[T])
+	bool splitExpected(const std::string &str, BufferView<std::string> dst)
 	{
 		return String::splitExpected(str, String::SPACE, dst);
 	}
