@@ -71,7 +71,7 @@ namespace String
 	template<size_t T>
 	bool splitExpected(const std::string &str, BufferView<std::string> dst)
 	{
-		return String::splitExpected(str, String::SPACE, dst);
+		return String::splitExpected<T>(str, String::SPACE, dst);
 	}
 
 	// Removes all whitespace from a string.

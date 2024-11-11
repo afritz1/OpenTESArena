@@ -74,7 +74,7 @@ namespace StringView
 	template<size_t T>
 	bool splitExpected(const std::string_view &str, BufferView<std::string_view> dst)
 	{
-		return StringView::splitExpected(str, String::SPACE, dst);
+		return StringView::splitExpected<T>(str, String::SPACE, dst);
 	}
 
 	// Removes leading whitespace from a string view.
