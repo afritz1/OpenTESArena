@@ -10,26 +10,26 @@
 namespace StringView
 {
 	// Performs a typical ASCII string comparison (mostly intended for const char* convenience).
-	bool equals(const std::string_view &a, const std::string_view &b);
+	bool equals(std::string_view a, std::string_view b);
 
 	// Performs a case-insensitive ASCII string comparison.
-	bool caseInsensitiveEquals(const std::string_view &a, const std::string_view &b);
+	bool caseInsensitiveEquals(std::string_view a, std::string_view b);
 
 	// Returns a substring of a string view. Intended for use with strings, since
 	// std::string::substr() returns a new string which is bad for string_view.
-	std::string_view substr(const std::string_view &str, size_t offset, size_t count);
+	std::string_view substr(std::string_view str, size_t offset, size_t count);
 
 	// Splits a string view on the given character.
-	Buffer<std::string_view> split(const std::string_view &str, char separator);
+	Buffer<std::string_view> split(std::string_view str, char separator);
 
 	// Splits a string view on whitespace.
-	Buffer<std::string_view> split(const std::string_view &str);
+	Buffer<std::string_view> split(std::string_view str);
 
 	// Splits a string view on the given character without allocating the destination array.
 	// Breaks early if too many splits are encountered. Returns whether the split count matches
 	// the destination size.
 	template<size_t T>
-	bool splitExpected(const std::string_view &str, char separator, BufferView<std::string_view> dst)
+	bool splitExpected(std::string_view str, char separator, BufferView<std::string_view> dst)
 	{
 		static_assert(T > 0);
 
@@ -72,19 +72,19 @@ namespace StringView
 	// if too many splits are encountered. Returns whether the split count matches the destination
 	// size.
 	template<size_t T>
-	bool splitExpected(const std::string_view &str, BufferView<std::string_view> dst)
+	bool splitExpected(std::string_view str, BufferView<std::string_view> dst)
 	{
 		return StringView::splitExpected<T>(str, String::SPACE, dst);
 	}
 
 	// Removes leading whitespace from a string view.
-	std::string_view trimFront(const std::string_view &str);
+	std::string_view trimFront(std::string_view str);
 
 	// Removes trailing whitespace from a string view.
-	std::string_view trimBack(const std::string_view &str);
+	std::string_view trimBack(std::string_view str);
 
 	// Gets the right-most extension from a string view, i.e., "txt".
-	std::string_view getExtension(const std::string_view &str);
+	std::string_view getExtension(std::string_view str);
 }
 
 #endif
