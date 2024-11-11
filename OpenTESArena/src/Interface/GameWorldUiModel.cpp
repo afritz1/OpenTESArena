@@ -15,6 +15,22 @@
 
 #include "components/utilities/String.h"
 
+namespace
+{
+	// Original game has eight time ranges for each time of day. They aren't uniformly distributed -- midnight and noon are only one minute.
+	constexpr std::pair<const char*, int> TimeOfDayIndices[] =
+	{
+		std::make_pair(ArenaClockUtils::Midnight, 6),
+		std::make_pair(ArenaClockUtils::Night1, 5),
+		std::make_pair(ArenaClockUtils::EarlyMorning, 0),
+		std::make_pair(ArenaClockUtils::Morning, 1),
+		std::make_pair(ArenaClockUtils::Noon, 2),
+		std::make_pair(ArenaClockUtils::Afternoon, 3),
+		std::make_pair(ArenaClockUtils::Evening, 4),
+		std::make_pair(ArenaClockUtils::Night2, 5)
+	};
+}
+
 std::string GameWorldUiModel::getPlayerNameText(Game &game)
 {
 	return game.player.firstName;
@@ -36,35 +52,17 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 		const int minutes = clock.minutes;
 		const std::string clockTimeString = std::to_string(hours12) + ":" + ((minutes < 10) ? "0" : "") + std::to_string(minutes);
 
-		const int timeOfDayIndex = [&gameState]()
+		// Reverse iterate, checking which range the active clock is in.
+		const auto pairIter = std::find_if(std::rbegin(TimeOfDayIndices), std::rend(TimeOfDayIndices),
+			[&clock](const std::pair<const char*, int> &pair)
 		{
-			// Original game has eight time ranges for each time of day. They aren't uniformly distributed -- midnight and noon are only one minute.
-			const std::pair<const char*, int> clocksAndIndices[] =
-			{
-				std::make_pair(ArenaClockUtils::Midnight, 6),
-				std::make_pair(ArenaClockUtils::Night1, 5),
-				std::make_pair(ArenaClockUtils::EarlyMorning, 0),
-				std::make_pair(ArenaClockUtils::Morning, 1),
-				std::make_pair(ArenaClockUtils::Noon, 2),
-				std::make_pair(ArenaClockUtils::Afternoon, 3),
-				std::make_pair(ArenaClockUtils::Evening, 4),
-				std::make_pair(ArenaClockUtils::Night2, 5)
-			};
+			const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+			const Clock &currentClock = clockLibrary.getClock(pair.first);
+			return clock.getTotalSeconds() >= currentClock.getTotalSeconds();
+		});
 
-			const Clock &presentClock = gameState.getClock();
-
-			// Reverse iterate, checking which range the active clock is in.
-			const auto pairIter = std::find_if(std::rbegin(clocksAndIndices), std::rend(clocksAndIndices),
-				[&presentClock](const std::pair<const char*, int> &pair)
-			{
-				const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
-				const Clock &clock = clockLibrary.getClock(pair.first);
-				return presentClock.getTotalSeconds() >= clock.getTotalSeconds();
-			});
-
-			DebugAssertMsg(pairIter != std::rend(clocksAndIndices), "No valid time of day.");
-			return pairIter->second;
-		}();
+		DebugAssertMsg(pairIter != std::rend(TimeOfDayIndices), "No valid time of day.");
+		const int timeOfDayIndex = pairIter->second;
 
 		const std::string &timeOfDayString = exeData.calendar.timesOfDay.at(timeOfDayIndex);
 		return clockTimeString + ' ' + timeOfDayString;
