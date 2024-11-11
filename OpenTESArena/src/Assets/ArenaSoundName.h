@@ -4,7 +4,6 @@
 #include <string>
 
 // Various sound filenames not otherwise obtained automatically by loading the original game's data.
-
 namespace ArenaSoundName
 {
 	// Combat.

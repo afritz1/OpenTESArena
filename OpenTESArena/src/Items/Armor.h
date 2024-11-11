@@ -5,15 +5,14 @@
 
 #include "Item.h"
 
-// This abstract class is implemented by the BodyArmor (cuirass, helmet, legs, etc.) 
-// class and the Shield class.
-
 class ArmorMaterial;
 class ArtifactData;
 
 enum class ArmorType;
 enum class BodyPartName;
 
+// This abstract class is implemented by the BodyArmor (cuirass, helmet, legs, etc.) 
+// class and the Shield class.
 class Armor : public Item
 {
 public:

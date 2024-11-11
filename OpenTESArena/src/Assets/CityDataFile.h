@@ -8,11 +8,9 @@
 #include "../Math/Rect.h"
 
 // CITYDATA.00 contains basic data for locations in each province on the world map.
-// It has the names of each place and their XY coordinates on the screen.
-
-// *.64 files are for swapping, *.65 files are templates for new characters, and
-// *.0x files contain save-specific modifications (i.e., to save random dungeon names).
-
+// It has the names of each place and their XY coordinates on the screen. *.64 files are
+// for swapping, *.65 files are templates for new characters, and *.0x files contain
+// save-specific modifications (i.e., to save random dungeon names).
 class CityDataFile
 {
 public:

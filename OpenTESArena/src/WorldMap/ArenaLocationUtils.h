@@ -16,7 +16,6 @@ class BinaryAssetLibrary;
 class Rect;
 
 // Various functions for working with original game values like location IDs.
-
 namespace ArenaLocationUtils
 {
 	// Required for handling the original game's special case with the center province's

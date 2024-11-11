@@ -10,7 +10,6 @@
 
 // Various non-texel data about a texture file, useful when only worried about how many textures exist
 // at that filename, as well as some header data (dimensions, screen offsets, etc.).
-
 class TextureFileMetadata
 {
 private:

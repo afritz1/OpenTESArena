@@ -12,7 +12,6 @@
 #include "SkySunDefinition.h"
 
 // Contains object definitions pointed to by a sky definition.
-
 class SkyInfoDefinition
 {
 private:

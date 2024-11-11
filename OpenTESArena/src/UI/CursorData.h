@@ -5,7 +5,8 @@
 
 enum class CursorAlignment;
 
-class CursorData // @todo: rename to CursorDisplayState?
+// @todo: rename to CursorDisplayState?
+class CursorData
 {
 private:
 	TextureBuilderID textureBuilderID; // @todo: maybe should be a UI texture handle at some point.

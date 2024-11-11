@@ -7,7 +7,6 @@
 
 // Despite being called a .TXT file, this is a texture format used only in one place (FOG.TXT) for the
 // screen-space fog effect.
-
 class TXTFile
 {
 private:

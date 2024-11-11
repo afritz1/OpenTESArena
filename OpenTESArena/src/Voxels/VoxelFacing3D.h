@@ -3,7 +3,6 @@
 
 // Directions facing outward from a voxel. These can be matched with a face of the voxel for
 // various calculations.
-
 enum class VoxelFacing3D
 {
 	PositiveX,

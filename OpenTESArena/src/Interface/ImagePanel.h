@@ -7,11 +7,10 @@
 #include "Panel.h"
 #include "../UI/Button.h"
 
-// For rendering still images in a similar fashion to a cinematic, only now it's one image.
-
 class Game;
 class Renderer;
 
+// For rendering still images in a similar fashion to a cinematic, only now it's one image.
 class ImagePanel : public Panel
 {
 public:

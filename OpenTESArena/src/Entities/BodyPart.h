@@ -3,12 +3,10 @@
 
 #include <string>
 
-// Namespace for obtaining the associated armor type and display name for 
-// a particular body part.
-
 enum class ArmorType;
 enum class BodyPartName;
 
+// Namespace for obtaining the associated armor type and display name for a particular body part.
 namespace BodyPart
 {
 	ArmorType getArmorType(BodyPartName partName);

@@ -3,11 +3,10 @@
 
 #include "ArtifactData.h"
 
-// This abstract class determines whether an armor artifact is a body armor artifact
-// or a shield artifact.
-
 enum class ArmorType;
 
+// This abstract class determines whether an armor artifact is a body armor artifact
+// or a shield artifact.
 class ArmorArtifactData : public ArtifactData
 {
 public:

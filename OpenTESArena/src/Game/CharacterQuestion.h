@@ -8,7 +8,6 @@
 // A definition for each question object in QUESTION.TXT. Each question has a 
 // description and three choices. Each choice points to a particular class category 
 // (mage, thief, warrior).
-
 class CharacterQuestion
 {
 public:

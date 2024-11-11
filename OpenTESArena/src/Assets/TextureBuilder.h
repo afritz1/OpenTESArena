@@ -5,14 +5,13 @@
 
 #include "components/utilities/Buffer2D.h"
 
-// Intermediate texture data for initializing renderer-specific textures (voxels, entities, UI, etc.).
-
 enum class TextureBuilderType
 {
 	Paletted,
 	TrueColor
 };
 
+// Intermediate texture data for initializing renderer-specific textures (voxels, entities, UI, etc.).
 class TextureBuilder
 {
 public:

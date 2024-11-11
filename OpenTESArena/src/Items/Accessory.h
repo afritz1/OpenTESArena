@@ -7,10 +7,9 @@
 #include "Item.h"
 #include "Metallic.h"
 
-// All accessories are metal, unlike trinkets which have no metal.
-
 class AccessoryArtifactData;
 
+// All accessories are metal, unlike trinkets which have no metal.
 enum class AccessoryType;
 
 class Accessory : public Item, public Metallic

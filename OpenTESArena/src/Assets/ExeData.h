@@ -10,17 +10,14 @@
 
 #include "components/utilities/BufferView.h"
 
-// This class stores data from the Arena executable. In other words, it represents a
-// kind of "view" into the executable's data.
-
-// When expanding this to work with both A.EXE and ACD.EXE, maybe use a union for
-// members that differ between the two executables, with an _a/_acd suffix.
-
 class KeyValueFile;
 class KeyValueFileSection;
 
 enum class MapType;
 
+// This represents a kind of "view" into the original executable's data. When expanding this to work
+// with both A.EXE and ACD.EXE, maybe use a union for members that differ between the two executables,
+// with an _a/_acd suffix.
 class ExeData
 {
 public:

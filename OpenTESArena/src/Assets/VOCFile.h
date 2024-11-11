@@ -6,11 +6,9 @@
 
 #include "components/utilities/BufferView.h"
 
-// A .VOC file contains audio data in the Creative Voice format. It's used with any 
-// sounds in Arena, and in the CD version it's also used with voices in cinematics.
-
-// All of Arena's .VOC files are mono 8-bit unsigned PCM.
-
+// A .VOC file contains audio data in the Creative Voice format. It's used with all sounds in Arena,
+// and in the CD version it's also used with voices in cinematics. All of Arena's .VOC files are
+// mono 8-bit unsigned PCM.
 class VOCFile
 {
 private:

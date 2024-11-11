@@ -8,7 +8,6 @@
 
 // Slightly cheaper alternative to vector for single-allocation uses.
 // Data can be null. Only need assertions on things that reach into the buffer itself.
-
 template<typename T>
 class Buffer
 {

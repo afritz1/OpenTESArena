@@ -7,9 +7,8 @@
 
 // Potions will be constructed by a given effect. Their name will be given by that
 // effect, and all potions will have a weight of 0.5 kilograms.
-
+//
 // The effect will be in the Consumable class.
-
 class Potion : public Consumable
 {
 public:

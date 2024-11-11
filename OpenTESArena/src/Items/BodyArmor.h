@@ -6,16 +6,15 @@
 
 #include "Armor.h"
 
-// This is one of the concrete implementations of the Armor class, for armor on
-// the body (helm, cuirass, boots). This is necessary because shields are abstract 
-// without their ShieldType, and it would make no sense for the Armor class to have 
-// a ShieldType.
-
 class ArmorMaterial;
 class BodyArmorArtifactData;
 
 enum class BodyPartName;
 
+// This is one of the concrete implementations of the Armor class, for armor on
+// the body (helm, cuirass, boots). This is necessary because shields are abstract 
+// without their ShieldType, and it would make no sense for the Armor class to have 
+// a ShieldType.
 class BodyArmor : public Armor
 {
 private:

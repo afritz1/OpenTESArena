@@ -4,7 +4,6 @@
 #include "../World/Coord.h"
 
 // Simply a record that a trigger occurred at a voxel coordinate. Intended for one-shot text triggers.
-
 struct VoxelTriggerInstance
 {
 	SNInt x;

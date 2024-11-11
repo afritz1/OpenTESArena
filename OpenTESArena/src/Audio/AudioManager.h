@@ -14,12 +14,11 @@
 
 #include "../Math/Vector3.h"
 
-// This class manages what sounds and music are played by OpenAL Soft.
-
 class MusicDefinition;
 class OpenALStream;
 class Options;
 
+// Manages what sounds and music are played by OpenAL Soft.
 class AudioManager
 {
 public:

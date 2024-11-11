@@ -3,7 +3,6 @@
 
 // Both leather and chain are concrete types, but plate is abstract because it 
 // requires a metal type pairing.
-
 enum class ArmorMaterialType
 {
 	Leather,

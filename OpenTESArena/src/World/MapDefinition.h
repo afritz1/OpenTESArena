@@ -19,9 +19,6 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView2D.h"
 
-// Modern replacement for .MIF/.RMD files. Helps create a buffer between how the game world data
-// is defined and how it's represented in-engine, so that it doesn't care about things like chunks.
-
 class ArenaRandom;
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
@@ -76,6 +73,8 @@ struct MapSubDefinition
 	void clear();
 };
 
+// Modern replacement for .MIF/.RMD files. Helps create a buffer between how the game world data
+// is defined and how it's represented in-engine so it doesn't have to care about chunks.
 class MapDefinition
 {
 private:

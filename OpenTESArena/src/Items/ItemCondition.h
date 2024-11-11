@@ -3,12 +3,6 @@
 
 #include <string>
 
-// The specifics for "item condition" aren't in the manual, so I think they should
-// be redesigned for this project.
-
-// The only items with a condition are weapons, armor, and shields. It says that
-// potions are "fragile", but that doesn't really have any gameplay effect at all.
-
 class ArmorMaterial;
 class Metal;
 class Random;
@@ -17,6 +11,11 @@ enum class BodyPartName;
 enum class ItemConditionName;
 enum class ShieldType;
 
+// The specifics for "item condition" aren't in the manual, so I think they should
+// be redesigned for this project.
+//
+// The only items with a condition are weapons, armor, and shields. It says that
+// potions are "fragile", but that doesn't really have any gameplay effect at all.
 class ItemCondition
 {
 private:

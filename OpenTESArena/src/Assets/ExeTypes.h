@@ -4,8 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-// Various helper records for composite data in the executable, primarily used with the
-// ExeData class.
+// Various helper records for composite data in the executable, primarily used with ExeData.
 namespace ExeTypes
 {
 	struct Rect16

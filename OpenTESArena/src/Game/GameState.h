@@ -24,14 +24,6 @@
 #include "../World/MapDefinition.h"
 #include "../WorldMap/WorldMapInstance.h"
 
-// Intended to be a container for the player and world data that is currently active 
-// while a player is loaded (i.e., not in the main menu).
-
-// The GameState object will be initialized only upon loading of the player, and 
-// will be uninitialized when the player goes to the main menu (thus unloading
-// the character resources). Whichever entry points into the "game" there are, they
-// need to load data into the game state object.
-
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
 class CityDataFile;
@@ -52,6 +44,7 @@ enum class MapType;
 
 struct RenderCamera;
 
+// Container for currently loaded game/world data.
 class GameState
 {
 public:

@@ -6,16 +6,13 @@
 
 #include "components/utilities/BufferView.h"
 
-// Stores the current state of the player's weapon animation.
-
-// Since Arena's weapon animations mostly share the same ordering, they can be hardcoded.
-// Fists are an exception because they have fewer frames.
-
-// The bow should not be used here because there is no bow animation in the Arena files;
-// just a single idle frame that disappears when firing an arrow.
-
 class ExeData;
 
+// Stores the current state of the player's weapon animation.
+// Since Arena's weapon animations mostly share the same ordering, they can be hardcoded.
+// Fists are an exception because they have fewer frames.
+// The bow should not be used here because there is no bow animation in the Arena files;
+// just a single idle frame that disappears when firing an arrow.
 class WeaponAnimation
 {
 public:

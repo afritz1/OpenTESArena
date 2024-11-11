@@ -14,14 +14,12 @@
 
 #include "components/utilities/Buffer.h"
 
-// A sub-panel intended for displaying text with some buttons.
-
-// @todo: might eventually make this not a panel, so it's more like TextBox and ListBox.
-// - will need to make rects and textures be public + iterable then
-
 class FontLibrary;
 class Rect;
 
+// A sub-panel intended for displaying text with some buttons.
+// @todo: might eventually make this not a panel, so it's more like TextBox and ListBox.
+// - will need to make rects and textures be public + iterable then
 class MessageBoxSubPanel : public Panel
 {
 public:

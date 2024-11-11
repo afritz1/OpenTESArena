@@ -10,7 +10,6 @@
 
 // Simple scratch allocator for POD types. Very fast destruction, intended for clearing
 // frequently without worrying about heap fragmentation.
-
 class ScratchAllocator
 {
 private:

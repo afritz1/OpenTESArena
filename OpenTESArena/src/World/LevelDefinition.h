@@ -12,7 +12,6 @@
 
 // A single unbaked level of a map with IDs pointing to voxels, entities, etc. defined in a level
 // info definition. This can be for an interior level, whole city, or wilderness block.
-
 class LevelDefinition
 {
 public:

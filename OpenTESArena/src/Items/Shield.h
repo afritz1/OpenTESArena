@@ -8,23 +8,24 @@
 #include "Armor.h"
 #include "HeavyArmorMaterial.h"
 
-// Shields are distinct from BodyArmor because their only ArmorMaterialType is plate, 
-// since they are only designed to be metallic.
-
-// It's a bit more clunky to get the metal than with weapons for example, because the
-// metal depends on the shield's material, not just the shield itself.
-
-// The original Arena does indeed have shields with metal (i.e., Elven or Adamantium),
-// and also shields with no material (i.e., just "Round Shield"), which doesn't make 
-// much sense. That's why I'm giving all shields a metal type in the remake.
-
 class ShieldArtifactData;
 
 enum class BodyPartName;
 enum class MetalType;
 enum class ShieldType;
 
-class Shield : public Armor // Metallic goes through HeavyArmorMaterial.
+// Shields are distinct from BodyArmor because their only ArmorMaterialType is plate, 
+// since they are only designed to be metallic.
+//
+// It's a bit more clunky to get the metal than with weapons for example, because the
+// metal depends on the shield's material, not just the shield itself.
+//
+// The original Arena does indeed have shields with metal (i.e., Elven or Adamantium),
+// and also shields with no material (i.e., just "Round Shield"), which doesn't make 
+// much sense. That's why I'm giving all shields a metal type in the remake.
+//
+// Metallic goes through HeavyArmorMaterial.
+class Shield : public Armor
 {
 private:
 	std::unique_ptr<HeavyArmorMaterial> armorMaterial;

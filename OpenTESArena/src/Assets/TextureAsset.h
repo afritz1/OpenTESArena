@@ -6,7 +6,6 @@
 
 // General-purpose reference for a single texture. The index is set if the filename points to a
 // sequence of individual textures.
-
 struct TextureAsset
 {
 	std::string filename;

@@ -23,18 +23,11 @@
 
 #include "components/utilities/FPSCounter.h"
 
-// This class holds the current game state, manages the primary game loop, and 
-// updates the game state each frame.
-
-// The game state holds all the active player and world data. It is null if a 
-// game session is not currently running (in the main menu, character creation), 
-// and is not null while a game session is running (in the game world, pause menu, 
-// cinematic, journal, etc.).
-
-// Game members should be available through a getter so panels can access them.
-
 class Surface;
 
+// Holds the current game state, manages the primary game loop, and updates game state each frame.
+// The game state holds all the active player and world data. It's empty if a game session is not
+// currently running (in the main menu, character creation).
 class Game
 {
 public:

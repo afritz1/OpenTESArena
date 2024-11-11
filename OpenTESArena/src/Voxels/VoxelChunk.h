@@ -31,10 +31,9 @@
 
 #include "components/utilities/Buffer3D.h"
 
-// A 3D set of voxels for a portion of the game world.
-
 class AudioManager;
 
+// A 3D set of voxels for a 64x64 portion of the game world.
 class VoxelChunk final : public Chunk
 {
 public:

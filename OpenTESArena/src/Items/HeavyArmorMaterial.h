@@ -7,7 +7,6 @@
 #include "Metallic.h"
 
 // For plate armor only.
-
 class HeavyArmorMaterial : public ArmorMaterial, public Metallic
 {
 public:

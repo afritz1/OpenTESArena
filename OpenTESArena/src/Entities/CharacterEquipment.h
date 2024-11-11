@@ -4,6 +4,17 @@
 #include <unordered_map>
 #include <vector>
 
+class Accessory;
+class BodyArmor;
+class Shield;
+class Trinket;
+class Weapon;
+
+enum class AccessoryType;
+enum class ArmorType;
+enum class BodyPartName;
+enum class TrinketType;
+
 // A character equipment object is designed for humanoids with a head, chest, two
 // shoulders, two arms, two legs, and two feet.
 
@@ -21,18 +32,6 @@
 // code. Display name matching in the "getAccessories()" or "getTrinkets()" vectors 
 // should be sufficient for solving that problem, and duplicates will simply get 
 // one of them unequipped.
-
-class Accessory;
-class BodyArmor;
-class Shield;
-class Trinket;
-class Weapon;
-
-enum class AccessoryType;
-enum class ArmorType;
-enum class BodyPartName;
-enum class TrinketType;
-
 class CharacterEquipment
 {
 private:

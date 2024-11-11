@@ -21,7 +21,6 @@
 // Modern replacement for .INF files; defines the actual voxels, entities, etc. pointed to by a
 // level definition. This is intended to separate the level's IDs from what they're pointing to
 // so it's easier to change climates, etc..
-
 class LevelInfoDefinition
 {
 private:

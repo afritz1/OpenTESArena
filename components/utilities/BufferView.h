@@ -9,10 +9,7 @@
 #include "../debug/Debug.h"
 
 // Simple non-owning view over a 1D range of data. Useful when separating a container from the usage
-// of its data.
-
-// Data can be null. Only need assertions on things that reach into the buffer itself.
-
+// of its data. Data can be null. Only need assertions on things that reach into the buffer itself.
 template<typename T>
 class BufferView
 {

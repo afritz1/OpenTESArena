@@ -17,7 +17,6 @@
 // A .MIF file contains a map header and an array of levels. It defines the dimensions of
 // a particular area and which voxels have which IDs, as well as some other data. It is normally
 // paired with an .INF file that tells which textures to use, among other things.
-
 class MIFLevel
 {
 private:

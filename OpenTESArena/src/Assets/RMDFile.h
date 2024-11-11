@@ -10,6 +10,7 @@
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView2D.h"
 
+// Wilderness map data.
 class RMDFile
 {
 private:

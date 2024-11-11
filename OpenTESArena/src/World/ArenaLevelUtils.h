@@ -22,7 +22,6 @@ class TextureManager;
 enum class MapType;
 
 // Various functions for working with Arena level data, shared between world types.
-
 namespace ArenaLevelUtils
 {
 	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));

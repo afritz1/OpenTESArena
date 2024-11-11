@@ -5,10 +5,9 @@
 
 #include "Item.h"
 
-// Trinkets are non-metal accessories, so they don't inherit from Metallic.
-
 enum class TrinketType;
 
+// Trinkets are non-metal accessories, so they don't inherit from Metallic.
 class Trinket : public Item
 {
 private:

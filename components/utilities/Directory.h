@@ -1,6 +1,7 @@
 #ifndef DIRECTORY_H
 #define DIRECTORY_H
 
+// Filesystem functions.
 namespace Directory
 {
 	bool exists(const char *path);

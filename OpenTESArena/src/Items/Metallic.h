@@ -3,10 +3,9 @@
 
 #include "Metal.h"
 
-// Inherit this class if the item type has any kind of metal associated with it.
-
 enum class MetalType;
 
+// Inherit this class if the item type has any kind of metal associated with it.
 class Metallic
 {
 private:

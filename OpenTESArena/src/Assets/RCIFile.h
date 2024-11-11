@@ -8,7 +8,6 @@
 
 // An .RCI file is for screen-space animations like water and lava. It is packed 
 // with five uncompressed 320x100 images.
-
 class RCIFile
 {
 public:

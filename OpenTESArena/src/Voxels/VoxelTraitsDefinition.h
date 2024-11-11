@@ -3,11 +3,10 @@
 
 #include "../Assets/ArenaTypes.h"
 
-// Grab-bag traits that don't fit into other existing categories.
-// @todo: eventually split this up into dedicated definitions
-
 enum class VoxelFacing2D;
 
+// Grab-bag traits that don't fit into other existing categories.
+// @todo: eventually split this up into dedicated definitions
 struct VoxelTraitsDefinition
 {
 	struct Floor

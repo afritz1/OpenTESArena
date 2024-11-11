@@ -6,7 +6,6 @@
 #include "ArmorMaterial.h"
 
 // For leather armor only.
-
 class LightArmorMaterial : public ArmorMaterial
 {
 public:

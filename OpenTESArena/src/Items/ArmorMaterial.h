@@ -4,14 +4,13 @@
 #include <memory>
 #include <string>
 
-// It's not that an armor piece is light or heavy, but its MATERIAL is light
-// or heavy. That's the behavior I was looking for.
-
-// Having every armor piece inherit a material class allows for some polymorphic
-// features like heavy armor materials having a metal type.
-
 enum class ArmorMaterialType;
 
+// It's not that an armor piece is light or heavy, but its MATERIAL is light
+// or heavy. That's the behavior I was looking for.
+//
+// Having every armor piece inherit a material class allows for some polymorphic
+// features like heavy armor materials having a metal type.
 class ArmorMaterial
 {
 public:

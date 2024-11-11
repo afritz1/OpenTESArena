@@ -6,12 +6,11 @@
 
 #include "ArtifactData.h"
 
+enum class ItemType;
+
 // I wanted to try and avoid using an abstract Item class, but in any case, this
 // class should be used to try and bring together several elements, like the weight 
 // or value of an item.
-
-enum class ItemType;
-
 class Item
 {
 private:

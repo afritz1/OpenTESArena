@@ -6,7 +6,6 @@
 #include "ArmorMaterial.h"
 
 // For chain armor only.
-
 class MediumArmorMaterial : public ArmorMaterial
 {
 public:

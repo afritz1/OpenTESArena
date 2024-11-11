@@ -19,10 +19,9 @@
 
 #include "components/utilities/BufferView.h"
 
-// Handles active input action maps, input listeners, and pointer input events.
-
 struct ButtonProxy;
 
+// Handles active input action maps, input listeners, and pointer input events.
 class InputManager
 {
 public:

@@ -4,9 +4,7 @@
 #include "MapGeneration.h"
 #include "TransitionType.h"
 
-// @todo: share with both voxels and entities; probably delete EntityDefinition
-// variant of this class.
-
+// @todo: share with both voxels and entities; probably delete EntityDefinition variant of this class.
 class TransitionDefinition
 {
 public:
