@@ -80,6 +80,16 @@ std::string ChooseClassUiModel::getTitleText(Game &game)
 
 std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefinition &charClassDef)
 {
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	// The original game doesn't list the armor materials by themselves... have to make up something.
+	const std::string armorMaterialStrings[] =
+	{
+		exeData.equipment.leatherArmorNames[0].substr(0, 7),
+		exeData.equipment.chainArmorNames[0].substr(0, 5),
+		exeData.equipment.plateArmorNames[0].substr(0, 5)
+	};
+
 	std::vector<int> allowedArmors(charClassDef.getAllowedArmorCount());
 	for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 	{
@@ -103,7 +113,8 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 		for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 		{
 			const int materialType = allowedArmors[i];
-			std::string materialString = "TODO armor material type " + std::to_string(materialType);
+			DebugAssertIndex(armorMaterialStrings, materialType);
+			const std::string &materialString = armorMaterialStrings[materialType];
 			lengthCounter += static_cast<int>(materialString.size());
 			armorString.append(materialString);
 
@@ -128,6 +139,9 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 
 std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinition &charClassDef)
 {
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const BufferView<const std::string> shieldStrings(exeData.equipment.armorNames.data() + 7, 4);
+
 	std::vector<int> allowedShields(charClassDef.getAllowedShieldCount());
 	for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 	{
@@ -151,7 +165,7 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 		for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 		{
 			const int shieldType = allowedShields[i];
-			std::string typeString = "TODO shield type " + std::to_string(shieldType);
+			const std::string &typeString = shieldStrings[shieldType];
 			lengthCounter += static_cast<int>(typeString.size());
 			shieldsString.append(typeString);
 
@@ -176,7 +190,6 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 
 std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game)
 {
-	// Get weapon names from the executable.
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &weaponStrings = exeData.equipment.weaponNames;
 
