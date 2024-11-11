@@ -46,7 +46,7 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-			MusicDefinition::Type::MainMenu, game.random);
+			MusicType::MainMenu, game.random);
 
 		if (musicDef == nullptr)
 		{
@@ -615,11 +615,11 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	// Play dream music.
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicDefinition::Type::Cinematic, game.random, [](const MusicDefinition &def)
+		MusicType::Cinematic, game.random, [](const MusicDefinition &def)
 	{
-		DebugAssert(def.getType() == MusicDefinition::Type::Cinematic);
-		const auto &cinematicMusicDef = def.getCinematicMusicDefinition();
-		return cinematicMusicDef.type == MusicDefinition::CinematicMusicDefinition::Type::DreamGood;
+		DebugAssert(def.type == MusicType::Cinematic);
+		const CinematicMusicDefinition &cinematicMusicDef = def.cinematic;
+		return cinematicMusicDef.type == CinematicMusicType::DreamGood;
 	});
 
 	if (musicDef == nullptr)
@@ -794,17 +794,17 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			if (!ArenaClockUtils::nightMusicIsActive(gameState.getClock()))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
 					game.random, [&weatherDef](const MusicDefinition &def)
 				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+					DebugAssert(def.type == MusicType::Weather);
+					const WeatherMusicDefinition &weatherMusicDef = def.weather;
 					return weatherMusicDef.weatherDef == weatherDef;
 				});
 			}
 			else
 			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
 			}
 
 			if (musicDef == nullptr)
@@ -829,11 +829,11 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 	// Choose random dungeon music.
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicDefinition::Type::Interior, game.random, [](const MusicDefinition &def)
+		MusicType::Interior, game.random, [](const MusicDefinition &def)
 	{
-		DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-		const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-		return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+		DebugAssert(def.type == MusicType::Interior);
+		const InteriorMusicDefinition &interiorMusicDef = def.interior;
+		return interiorMusicDef.type == InteriorMusicType::Dungeon;
 	});
 
 	if (musicDef == nullptr)

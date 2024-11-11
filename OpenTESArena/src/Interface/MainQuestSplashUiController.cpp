@@ -8,11 +8,11 @@ void MainQuestSplashUiController::onExitButtonSelected(Game &game)
 	// Choose random dungeon music and enter game world.
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicDefinition::Type::Interior, game.random, [](const MusicDefinition &def)
+		MusicType::Interior, game.random, [](const MusicDefinition &def)
 	{
-		DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-		const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-		return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+		DebugAssert(def.type == MusicType::Interior);
+		const InteriorMusicDefinition &interiorMusicDef = def.interior;
+		return interiorMusicDef.type == InteriorMusicType::Dungeon;
 	});
 
 	if (musicDef == nullptr)

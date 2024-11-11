@@ -144,17 +144,17 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
 					game.random, [&weatherDef](const MusicDefinition &def)
 				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+					DebugAssert(def.type == MusicType::Weather);
+					const WeatherMusicDefinition &weatherMusicDef = def.weather;
 					return weatherMusicDef.weatherDef == weatherDef;
 				});
 			}
 			else
 			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
 			}
 
 			if (musicDef == nullptr)
@@ -171,11 +171,11 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		{
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const MusicDefinition *jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Jingle, game.random,
+				MusicType::Jingle, game.random,
 				[cityDefType, cityDefClimateType](const MusicDefinition &def)
 			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-				const auto &jingleMusicDef = def.getJingleMusicDefinition();
+				DebugAssert(def.type == MusicType::Jingle);
+				const JingleMusicDefinition &jingleMusicDef = def.jingle;
 				return (jingleMusicDef.cityType == cityDefType) && (jingleMusicDef.climateType == cityDefClimateType);
 			});
 
@@ -227,11 +227,11 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			// Choose random dungeon music and enter game world.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Interior, game.random, [](const MusicDefinition &def)
+				MusicType::Interior, game.random, [](const MusicDefinition &def)
 			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-				return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+				DebugAssert(def.type == MusicType::Interior);
+				const InteriorMusicDefinition &interiorMusicDef = def.interior;
+				return interiorMusicDef.type == InteriorMusicType::Dungeon;
 			});
 
 			if (musicDef == nullptr)
@@ -289,11 +289,11 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 				// Choose random dungeon music and enter game world.
 				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-					MusicDefinition::Type::Interior, game.random, [](const MusicDefinition &def)
+					MusicType::Interior, game.random, [](const MusicDefinition &def)
 				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-					const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-					return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+					DebugAssert(def.type == MusicType::Interior);
+					const InteriorMusicDefinition &interiorMusicDef = def.interior;
+					return interiorMusicDef.type == InteriorMusicType::Dungeon;
 				});
 
 				if (musicDef == nullptr)

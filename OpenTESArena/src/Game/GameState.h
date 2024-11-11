@@ -33,7 +33,6 @@ class INFFile;
 class LocationDefinition;
 class LocationInstance;
 class MIFFile;
-class MusicDefinition;
 class ProvinceDefinition;
 class Renderer;
 class TextAssetLibrary;
@@ -42,6 +41,7 @@ class TextureManager;
 
 enum class MapType;
 
+struct MusicDefinition;
 struct RenderCamera;
 
 // Container for currently loaded game/world data.

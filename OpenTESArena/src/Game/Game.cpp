@@ -764,7 +764,7 @@ void Game::loop()
 	this->panel = IntroUiModel::makeStartupPanel(*this);
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::MainMenu, this->random);
+	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::MainMenu, this->random);
 	if (mainMenuMusicDef == nullptr)
 	{
 		DebugLogWarning("Missing main menu music.");

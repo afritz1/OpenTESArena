@@ -747,11 +747,11 @@ void GameState::tickGameClock(double dt, Game &game)
 		const MusicDefinition *musicDef = nullptr;
 		if (changeToDayMusic)
 		{
-			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather, game.random,
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather, game.random,
 				[this](const MusicDefinition &def)
 			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+				DebugAssert(def.type == MusicType::Weather);
+				const WeatherMusicDefinition &weatherMusicDef = def.weather;
 				return weatherMusicDef.weatherDef == this->weatherDef;
 			});
 
@@ -762,7 +762,7 @@ void GameState::tickGameClock(double dt, Game &game)
 		}
 		else if (changeToNightMusic)
 		{
-			musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
+			musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
 
 			if (musicDef == nullptr)
 			{

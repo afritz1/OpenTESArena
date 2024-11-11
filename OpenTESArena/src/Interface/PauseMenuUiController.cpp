@@ -26,7 +26,7 @@ void PauseMenuUiController::onNewGameButtonSelected(Game &game)
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-		MusicDefinition::Type::MainMenu, game.random);
+		MusicType::MainMenu, game.random);
 
 	if (musicDef == nullptr)
 	{

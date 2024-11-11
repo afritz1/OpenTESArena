@@ -38,7 +38,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-			MusicDefinition::Type::CharacterCreation, game.random);
+			MusicType::CharacterCreation, game.random);
 
 		if (musicDef == nullptr)
 		{
@@ -92,11 +92,11 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicDefinition::Type::Cinematic, game.random, [](const MusicDefinition &def)
+		MusicType::Cinematic, game.random, [](const MusicDefinition &def)
 	{
-		DebugAssert(def.getType() == MusicDefinition::Type::Cinematic);
-		const auto &cinematicMusicDef = def.getCinematicMusicDefinition();
-		return cinematicMusicDef.type == MusicDefinition::CinematicMusicDefinition::Type::Intro;
+		DebugAssert(def.type == MusicType::Cinematic);
+		const CinematicMusicDefinition &cinematicMusicDef = def.cinematic;
+		return cinematicMusicDef.type == CinematicMusicType::Intro;
 	});
 
 	if (musicDef == nullptr)
@@ -556,30 +556,30 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
 					game.random, [weatherDef](const MusicDefinition &def)
 				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+					DebugAssert(def.type == MusicType::Weather);
+					const WeatherMusicDefinition &weatherMusicDef = def.weather;
 					return weatherMusicDef.weatherDef == weatherDef;
 				});
 			}
 			else
 			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
 			}
 		}
 		else
 		{
 			const MapSubDefinition &mapSubDef = gameState.getActiveMapDef().getSubDefinition();
 			const ArenaTypes::InteriorType interiorType = mapSubDef.interior.interiorType;
-			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
+			const InteriorMusicType interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
 
-			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Interior,
 				game.random, [interiorMusicType](const MusicDefinition &def)
 			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+				DebugAssert(def.type == MusicType::Interior);
+				const InteriorMusicDefinition &interiorMusicDef = def.interior;
 				return interiorMusicDef.type == interiorMusicType;
 			});
 		}
@@ -604,11 +604,11 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		if (isCity)
 		{
 			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Jingle,
 				game.random, [&cityDef](const MusicDefinition &def)
 			{
-				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-				const auto &jingleMusicDef = def.getJingleMusicDefinition();
+				DebugAssert(def.type == MusicType::Jingle);
+				const JingleMusicDefinition &jingleMusicDef = def.jingle;
 				return (jingleMusicDef.cityType == cityDef.type) && (jingleMusicDef.climateType == cityDef.climateType);
 			});
 		}

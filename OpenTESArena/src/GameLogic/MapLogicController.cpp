@@ -145,17 +145,17 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			if (!ArenaClockUtils::nightMusicIsActive(clock))
 			{
 				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
 					game.random, [&weatherDef](const MusicDefinition &def)
 				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+					DebugAssert(def.type == MusicType::Weather);
+					const WeatherMusicDefinition &weatherMusicDef = def.weather;
 					return weatherMusicDef.weatherDef == weatherDef;
 				});
 			}
 			else
 			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
+				musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
 			}
 
 			if (musicDef == nullptr)
@@ -177,11 +177,11 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			{
 				const LocationDefinition &locationDef = gameState.getLocationDefinition();
 				const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
-				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Jingle,
 					game.random, [&locationCityDef](const MusicDefinition &def)
 				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-					const auto &jingleMusicDef = def.getJingleMusicDefinition();
+					DebugAssert(def.type == MusicType::Jingle);
+					const JingleMusicDefinition &jingleMusicDef = def.jingle;
 					return (jingleMusicDef.cityType == locationCityDef.type) && (jingleMusicDef.climateType == locationCityDef.climateType);
 				});
 
@@ -255,12 +255,12 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 				DebugAssert(activeMapDef.getMapType() == MapType::Interior);
 				const MapDefinitionInterior &mapDefInterior = activeMapDef.getSubDefinition().interior;
 				const ArenaTypes::InteriorType interiorType = mapDefInterior.interiorType;
-				const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
+				const InteriorMusicType interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
 				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-					MusicDefinition::Type::Interior, game.random, [interiorMusicType](const MusicDefinition &def)
+					MusicType::Interior, game.random, [interiorMusicType](const MusicDefinition &def)
 				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-					const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+					DebugAssert(def.type == MusicType::Interior);
+					const InteriorMusicDefinition &interiorMusicDef = def.interior;
 					return interiorMusicDef.type == interiorMusicType;
 				});
 
@@ -421,17 +421,17 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 					if (!ArenaClockUtils::nightMusicIsActive(clock))
 					{
 						const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+						return musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
 							game.random, [&weatherDef](const MusicDefinition &def)
 						{
-							DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-							const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+							DebugAssert(def.type == MusicType::Weather);
+							const WeatherMusicDefinition &weatherMusicDef = def.weather;
 							return weatherMusicDef.weatherDef == weatherDef;
 						});
 					}
 					else
 					{
-						return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.random);
+						return musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
 					}
 				}();
 
@@ -454,11 +454,11 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 				const MusicDefinition *jingleMusicDef = nullptr;
 				if (activeMapDef.getMapType() == MapType::City)
 				{
-					jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+					jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Jingle,
 						game.random, [cityDefType, cityDefClimateType](const MusicDefinition &def)
 					{
-						DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-						const auto &jingleMusicDef = def.getJingleMusicDefinition();
+						DebugAssert(def.type == MusicType::Jingle);
+						const JingleMusicDefinition &jingleMusicDef = def.jingle;
 						return (jingleMusicDef.cityType == cityDefType) && (jingleMusicDef.climateType == cityDefClimateType);
 					});
 
