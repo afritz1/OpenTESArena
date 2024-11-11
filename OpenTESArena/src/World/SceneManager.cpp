@@ -5,6 +5,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
 #include "../Game/ArenaClockUtils.h"
+#include "../Game/ClockLibrary.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/debug/Debug.h"
@@ -112,11 +113,17 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	}
 	else
 	{
+		const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+
 		// Use transition colors if during sunrise/sunset.
-		const double startBrighteningPercent = ArenaClockUtils::AmbientStartBrightening.getDayPercent();
-		const double endBrighteningPercent = ArenaClockUtils::AmbientEndBrightening.getDayPercent();
-		const double startDimmingPercent = ArenaClockUtils::AmbientStartDimming.getDayPercent();
-		const double endDimmingPercent = ArenaClockUtils::AmbientEndDimming.getDayPercent();
+		const Clock &startBrighteningClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningStart);
+		const Clock &endBrighteningClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningEnd);
+		const Clock &startDimmingClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingStart);
+		const Clock &endDimmingClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingEnd);
+		const double startBrighteningPercent = startBrighteningClock.getDayPercent();
+		const double endBrighteningPercent = endBrighteningClock.getDayPercent();
+		const double startDimmingPercent = startDimmingClock.getDayPercent();
+		const double endDimmingPercent = endDimmingClock.getDayPercent();
 		const bool isDuringSunrise = (dayPercent >= startBrighteningPercent) && (dayPercent < endBrighteningPercent);
 		const bool isDuringSunset = (dayPercent >= startDimmingPercent) && (dayPercent < endDimmingPercent);
 		const bool isDuringNight = (dayPercent >= endDimmingPercent) || (dayPercent < startBrighteningPercent);

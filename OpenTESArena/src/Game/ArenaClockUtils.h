@@ -3,37 +3,35 @@
 
 #include "Clock.h"
 
-// @todo: maybe eventually read these from a text file
-
 namespace ArenaClockUtils
 {
 	// Beginnings of each time-of-day range.
-	constexpr Clock Midnight(0, 0, 0);
-	constexpr Clock Night1(0, 1, 0);
-	constexpr Clock EarlyMorning(3, 0, 0);
-	constexpr Clock Morning(6, 0, 0);
-	constexpr Clock Noon(12, 0, 0);
-	constexpr Clock Afternoon(12, 1, 0);
-	constexpr Clock Evening(18, 0, 0);
-	constexpr Clock Night2(21, 0, 0);
+	constexpr char Midnight[] = "Midnight";
+	constexpr char Night1[] = "Night1";
+	constexpr char EarlyMorning[] = "EarlyMorning";
+	constexpr char Morning[] = "Morning";
+	constexpr char Noon[] = "Noon";
+	constexpr char Afternoon[] = "Afternoon";
+	constexpr char Evening[] = "Evening";
+	constexpr char Night2[] = "Night2";
 
 	// Ambient lighting change times.
-	constexpr Clock AmbientStartBrightening(6, 0, 0);
-	constexpr Clock AmbientEndBrightening(6, 15, 0);
-	constexpr Clock AmbientStartDimming(17, 45, 0);
-	constexpr Clock AmbientEndDimming(18, 0, 0);
+	constexpr char AmbientBrighteningStart[] = "AmbientBrighteningStart";
+	constexpr char AmbientBrighteningEnd[] = "AmbientBrighteningEnd";
+	constexpr char AmbientDimmingStart[] = "AmbientDimmingStart";
+	constexpr char AmbientDimmingEnd[] = "AmbientDimmingEnd";
 
 	// Lamppost activation times.
-	constexpr Clock LamppostActivate(17, 45, 0);
-	constexpr Clock LamppostDeactivate(6, 15, 0);
+	constexpr char LamppostActivate[] = "LamppostActivate";
+	constexpr char LamppostDeactivate[] = "LamppostDeactivate";
 
 	// Change in music times.
-	constexpr Clock MusicSwitchToDay(6, 19, 0);
-	constexpr Clock MusicSwitchToNight(17, 45, 0);
+	constexpr char MusicSwitchToDay[] = "MusicSwitchToDay";
+	constexpr char MusicSwitchToNight[] = "MusicSwitchToNight";
 
 	// Thunderstorm times.
-	constexpr Clock ThunderstormStart(18, 1, 0);
-	constexpr Clock ThunderstormEnd(6, 0, 0);
+	constexpr char ThunderstormStart[] = "ThunderstormStart";
+	constexpr char ThunderstormEnd[] = "ThunderstormEnd";
 
 	// Returns whether the current music should be for day or night.
 	bool nightMusicIsActive(const Clock &clock);

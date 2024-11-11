@@ -198,6 +198,8 @@ SET(TES_GAME
     "${SRC_ROOT}/Game/CharacterQuestion.h"
     "${SRC_ROOT}/Game/Clock.cpp"
     "${SRC_ROOT}/Game/Clock.h"
+    "${SRC_ROOT}/Game/ClockLibrary.cpp"
+    "${SRC_ROOT}/Game/ClockLibrary.h"
     "${SRC_ROOT}/Game/Date.cpp"
     "${SRC_ROOT}/Game/Date.h"
     "${SRC_ROOT}/Game/Game.cpp"

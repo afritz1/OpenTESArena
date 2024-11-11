@@ -7,6 +7,7 @@
 #include "../Entities/Player.h"
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/ArenaDateUtils.h"
+#include "../Game/ClockLibrary.h"
 #include "../Game/Game.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
@@ -37,9 +38,8 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 
 		const int timeOfDayIndex = [&gameState]()
 		{
-			// Arena has eight time ranges for each time of day. They aren't
-			// uniformly distributed -- midnight and noon are only one minute.
-			const std::array<std::pair<Clock, int>, 8> clocksAndIndices =
+			// Original game has eight time ranges for each time of day. They aren't uniformly distributed -- midnight and noon are only one minute.
+			const std::pair<const char*, int> clocksAndIndices[] =
 			{
 				std::make_pair(ArenaClockUtils::Midnight, 6),
 				std::make_pair(ArenaClockUtils::Night1, 5),
@@ -54,14 +54,15 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 			const Clock &presentClock = gameState.getClock();
 
 			// Reverse iterate, checking which range the active clock is in.
-			const auto pairIter = std::find_if(clocksAndIndices.rbegin(), clocksAndIndices.rend(),
-				[&presentClock](const std::pair<Clock, int> &pair)
+			const auto pairIter = std::find_if(std::rbegin(clocksAndIndices), std::rend(clocksAndIndices),
+				[&presentClock](const std::pair<const char*, int> &pair)
 			{
-				const Clock &clock = pair.first;
+				const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+				const Clock &clock = clockLibrary.getClock(pair.first);
 				return presentClock.getTotalSeconds() >= clock.getTotalSeconds();
 			});
 
-			DebugAssertMsg(pairIter != clocksAndIndices.rend(), "No valid time of day.");
+			DebugAssertMsg(pairIter != std::rend(clocksAndIndices), "No valid time of day.");
 			return pairIter->second;
 		}();
 

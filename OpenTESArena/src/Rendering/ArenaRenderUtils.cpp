@@ -5,6 +5,7 @@
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
 #include "../Game/ArenaClockUtils.h"
+#include "../Game/ClockLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Math/Vector4.h"
@@ -26,13 +27,19 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType, 
 			return 0.0; // This assumes it is during the daytime.
 		}
 
-		const double clockTime = clock.getTotalSeconds();
+		const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
 
 		// Time ranges where the ambient light changes. The start times are inclusive, and the end times are exclusive.
-		const double startBrighteningTime = ArenaClockUtils::AmbientStartBrightening.getTotalSeconds();
-		const double endBrighteningTime = ArenaClockUtils::AmbientEndBrightening.getTotalSeconds();
-		const double startDimmingTime = ArenaClockUtils::AmbientStartDimming.getTotalSeconds();
-		const double endDimmingTime = ArenaClockUtils::AmbientEndDimming.getTotalSeconds();
+		const Clock &startBrighteningClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningStart);
+		const Clock &endBrighteningClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningEnd);
+		const Clock &startDimmingClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingStart);
+		const Clock &endDimmingClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingEnd);
+		const double startBrighteningTime = startBrighteningClock.getTotalSeconds();
+		const double endBrighteningTime = endBrighteningClock.getTotalSeconds();
+		const double startDimmingTime = startDimmingClock.getTotalSeconds();
+		const double endDimmingTime = endDimmingClock.getTotalSeconds();
+
+		const double clockTime = clock.getTotalSeconds();
 
 		constexpr double minAmbient = 0.0;
 		constexpr double maxAmbient = 1.0;

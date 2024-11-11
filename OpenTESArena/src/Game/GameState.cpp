@@ -4,6 +4,7 @@
 #include <tuple>
 
 #include "ArenaClockUtils.h"
+#include "ClockLibrary.h"
 #include "Game.h"
 #include "GameState.h"
 #include "../Assets/ArenaPaletteName.h"
@@ -711,8 +712,12 @@ void GameState::tickGameClock(double dt, Game &game)
 	// See if the clock passed the boundary between night and day, and vice versa.
 	const double oldClockTime = prevClock.getTotalSeconds();
 	const double newClockTime = this->clock.getTotalSeconds();
-	const double lamppostActivateTime = ArenaClockUtils::LamppostActivate.getTotalSeconds();
-	const double lamppostDeactivateTime = ArenaClockUtils::LamppostDeactivate.getTotalSeconds();
+
+	const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+	const Clock &lamppostActivateClock = clockLibrary.getClock(ArenaClockUtils::LamppostActivate);
+	const Clock &lamppostDeactivateClock = clockLibrary.getClock(ArenaClockUtils::LamppostDeactivate);
+	const double lamppostActivateTime = lamppostActivateClock.getTotalSeconds();
+	const double lamppostDeactivateTime = lamppostDeactivateClock.getTotalSeconds();
 	const bool activateNightLights = (oldClockTime < lamppostActivateTime) && (newClockTime >= lamppostActivateTime);
 	const bool deactivateNightLights = (oldClockTime < lamppostDeactivateTime) && (newClockTime >= lamppostDeactivateTime);
 
@@ -730,13 +735,15 @@ void GameState::tickGameClock(double dt, Game &game)
 	const MapType activeMapType = activeMapDef.getMapType();
 	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
 	{
-		AudioManager &audioManager = game.audioManager;
-		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getTotalSeconds();
-		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getTotalSeconds();
+		const Clock &dayMusicStartClock = clockLibrary.getClock(ArenaClockUtils::MusicSwitchToDay);
+		const Clock &nightMusicStartClock = clockLibrary.getClock(ArenaClockUtils::MusicSwitchToNight);
+		const double dayMusicStartTime = dayMusicStartClock.getTotalSeconds();
+		const double nightMusicStartTime = nightMusicStartClock.getTotalSeconds();
 		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);
 		const bool changeToNightMusic = (oldClockTime < nightMusicStartTime) && (newClockTime >= nightMusicStartTime);
 		
+		AudioManager &audioManager = game.audioManager;
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = nullptr;
 		if (changeToDayMusic)
 		{

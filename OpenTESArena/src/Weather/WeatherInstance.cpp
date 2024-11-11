@@ -8,6 +8,7 @@
 #include "../Audio/AudioManager.h"
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/Clock.h"
+#include "../Game/ClockLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -18,10 +19,14 @@ namespace
 {
 	bool IsDuringThunderstorm(const Clock &clock)
 	{
+		const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+		const Clock &thunderstormStartClock = clockLibrary.getClock(ArenaClockUtils::ThunderstormStart);
+		const Clock &thunderstormEndClock = clockLibrary.getClock(ArenaClockUtils::ThunderstormEnd);
+
 		// Starts in the evening, ends in the morning.
 		const double seconds = clock.getTotalSeconds();
-		const double startSeconds = ArenaClockUtils::ThunderstormStart.getTotalSeconds();
-		const double endSeconds = ArenaClockUtils::ThunderstormEnd.getTotalSeconds();
+		const double startSeconds = thunderstormStartClock.getTotalSeconds();
+		const double endSeconds = thunderstormEndClock.getTotalSeconds();
 		return (seconds >= startSeconds) || (seconds < endSeconds);
 	}
 

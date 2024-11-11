@@ -13,6 +13,7 @@
 #include "Jolt/Physics/PhysicsSystem.h"
 #include "SDL.h"
 
+#include "ClockLibrary.h"
 #include "Game.h"
 #include "Options.h"
 #include "PlayerInterface.h"
@@ -340,6 +341,13 @@ bool Game::init()
 	if (!TextAssetLibrary::getInstance().init())
 	{
 		DebugLogError("Couldn't init text asset library.");
+		return false;
+	}
+
+	const std::string clockLibraryPath = dataFolderPath + "Clocks.txt";
+	if (!ClockLibrary::getInstance().init(clockLibraryPath.c_str()))
+	{
+		DebugLogError("Couldn't init clock library with path \"" + clockLibraryPath + "\".");
 		return false;
 	}
 
