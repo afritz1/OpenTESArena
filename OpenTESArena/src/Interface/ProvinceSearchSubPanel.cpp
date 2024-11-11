@@ -126,7 +126,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		}
 	});
 
-	this->addTextInputListener([this](const std::string_view &text)
+	this->addTextInputListener([this](const std::string_view text)
 	{
 		if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
 		{

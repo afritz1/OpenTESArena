@@ -259,12 +259,12 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	return true;
 }
 
-void MessageBoxSubPanel::setTitleText(const std::string_view &text)
+void MessageBoxSubPanel::setTitleText(const std::string_view text)
 {
 	this->titleTextBox.setText(text);
 }
 
-void MessageBoxSubPanel::setItemText(int itemIndex, const std::string_view &text)
+void MessageBoxSubPanel::setItemText(int itemIndex, const std::string_view text)
 {
 	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
 	item.textBox.setText(text);

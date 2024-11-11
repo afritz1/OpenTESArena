@@ -33,7 +33,7 @@ namespace
 	};
 }
 
-bool MusicLibrary::tryParseType(const std::string_view &typeStr, MusicType *outType)
+bool MusicLibrary::tryParseType(const std::string_view typeStr, MusicType *outType)
 {
 	const auto iter = std::find_if(MusicDefinitionTypes.begin(), MusicDefinitionTypes.end(),
 		[&typeStr](const auto &pair)
@@ -52,11 +52,9 @@ bool MusicLibrary::tryParseType(const std::string_view &typeStr, MusicType *outT
 	}
 }
 
-bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicType type,
-	MusicDefinition *outDefinition)
+bool MusicLibrary::tryParseValue(const std::string_view valueStr, MusicType type, MusicDefinition *outDefinition)
 {
-	auto tryParseCinematicType = [](const std::string_view &str,
-		CinematicMusicType *outCinematicType)
+	auto tryParseCinematicType = [](const std::string_view str, CinematicMusicType *outCinematicType)
 	{
 		if (str == "Intro")
 		{
@@ -83,8 +81,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicType typ
 		return true;
 	};
 
-	auto tryParseInteriorType = [](const std::string_view &str,
-		InteriorMusicType *outInteriorType)
+	auto tryParseInteriorType = [](const std::string_view str, InteriorMusicType *outInteriorType)
 	{
 		if (str == "Dungeon")
 		{
@@ -123,7 +120,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicType typ
 		return true;
 	};
 
-	auto tryParseJingleCityType = [](const std::string_view &str, ArenaTypes::CityType *outCityType)
+	auto tryParseJingleCityType = [](const std::string_view str, ArenaTypes::CityType *outCityType)
 	{
 		if (str == "CityState")
 		{
@@ -146,7 +143,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicType typ
 		return true;
 	};
 
-	auto tryParseJingleClimateType = [](const std::string_view &str, ArenaTypes::ClimateType *outClimateType)
+	auto tryParseJingleClimateType = [](const std::string_view str, ArenaTypes::ClimateType *outClimateType)
 	{
 		if (str == "Temperate")
 		{
@@ -169,7 +166,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicType typ
 		return true;
 	};
 
-	auto tryParseWeatherType = [](const std::string_view &str, WeatherType *outWeatherType)
+	auto tryParseWeatherType = [](const std::string_view str, WeatherType *outWeatherType)
 	{
 		if (str == "Clear")
 		{
@@ -197,7 +194,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicType typ
 	};
 
 	// All weather arguments (heavy fog, etc.) are bools.
-	auto tryParseWeatherBoolArg = [](const std::string_view &str, bool *outValue)
+	auto tryParseWeatherBoolArg = [](const std::string_view str, bool *outValue)
 	{
 		if (StringView::caseInsensitiveEquals(str, "True"))
 		{

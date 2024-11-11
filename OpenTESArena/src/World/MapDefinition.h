@@ -101,7 +101,7 @@ private:
 	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX,
 		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
-		bool palaceIsMainQuestDungeon, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
+		bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaTypes::CityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,

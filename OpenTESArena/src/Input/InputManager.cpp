@@ -60,7 +60,7 @@ void InputManager::ListenerLookupEntry::init(ListenerType type, int index)
 	this->index = index;
 }
 
-void InputManager::InputActionListenerEntry::init(const std::string_view &actionName, const InputActionCallback &callback)
+void InputManager::InputActionListenerEntry::init(const std::string_view actionName, const InputActionCallback &callback)
 {
 	this->actionName = std::string(actionName);
 	this->callback = callback;
@@ -365,7 +365,7 @@ InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callba
 	return listenerID;
 }
 
-InputManager::ListenerID InputManager::addInputActionListener(const std::string_view &actionName,
+InputManager::ListenerID InputManager::addInputActionListener(const std::string_view actionName,
 	const InputActionCallback &callback)
 {
 	int insertIndex;

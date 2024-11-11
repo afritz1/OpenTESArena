@@ -977,8 +977,8 @@ std::pair<int, int> ExeData::getPair(const KeyValueFileSection &section, const s
 		DebugCrash("Invalid offset + length pair \"" + key + "\" (section \"" + section.getName() + "\").");
 	}
 
-	const std::string_view &offsetStr = tokens[0];
-	const std::string_view &lengthStr = tokens[1];
+	const std::string_view offsetStr = tokens[0];
+	const std::string_view lengthStr = tokens[1];
 	int offset, length;
 
 	std::stringstream ss;

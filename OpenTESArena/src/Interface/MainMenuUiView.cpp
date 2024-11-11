@@ -33,7 +33,7 @@ Color MainMenuUiView::getTestButtonTextColor()
 	return Color::White;
 }
 
-TextBox::InitInfo MainMenuUiView::getTestButtonTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo MainMenuUiView::getTestButtonTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	const Rect rect = MainMenuUiView::getTestButtonRect();

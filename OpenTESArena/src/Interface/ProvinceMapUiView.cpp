@@ -314,7 +314,7 @@ UiTextureID ProvinceMapUiView::allocTextPopUpTexture(int textWidth, int textHeig
 	return textureID;
 }
 
-TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithXY(

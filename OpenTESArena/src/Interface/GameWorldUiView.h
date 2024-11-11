@@ -80,7 +80,7 @@ namespace GameWorldUiView
 	const Color PlayerNameTextColor(215, 121, 8);
 	constexpr TextAlignment PlayerNameTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	Rect getCharacterSheetButtonRect();
 	Rect getPlayerPortraitRect();
@@ -133,9 +133,9 @@ namespace GameWorldUiView
 	Int2 getActionTextPosition();
 	Int2 getEffectTextPosition();
 
-	double getTriggerTextSeconds(const std::string_view &text);
-	double getActionTextSeconds(const std::string_view &text);
-	double getEffectTextSeconds(const std::string_view &text);
+	double getTriggerTextSeconds(const std::string_view text);
+	double getActionTextSeconds(const std::string_view text);
+	double getEffectTextSeconds(const std::string_view text);
 
 	TextBox::InitInfo getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary);
 	TextBox::InitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);

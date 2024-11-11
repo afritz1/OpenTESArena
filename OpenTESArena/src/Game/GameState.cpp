@@ -428,17 +428,17 @@ void GameState::setTravelData(std::optional<ProvinceMapUiModel::TravelData> trav
 	this->travelData = std::move(travelData);
 }
 
-void GameState::setTriggerTextDuration(const std::string_view &text)
+void GameState::setTriggerTextDuration(const std::string_view text)
 {
 	this->triggerTextRemainingSeconds = GameWorldUiView::getTriggerTextSeconds(text);
 }
 
-void GameState::setActionTextDuration(const std::string_view &text)
+void GameState::setActionTextDuration(const std::string_view text)
 {
 	this->actionTextRemainingSeconds = GameWorldUiView::getActionTextSeconds(text);
 }
 
-void GameState::setEffectTextDuration(const std::string_view &text)
+void GameState::setEffectTextDuration(const std::string_view text)
 {
 	// @todo
 	DebugNotImplemented();

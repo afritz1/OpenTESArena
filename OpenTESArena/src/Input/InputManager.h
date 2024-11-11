@@ -54,7 +54,7 @@ private:
 		InputActionCallback callback;
 		bool enabled;
 
-		void init(const std::string_view &actionName, const InputActionCallback &callback);
+		void init(const std::string_view actionName, const InputActionCallback &callback);
 		void reset();
 	};
 
@@ -203,7 +203,7 @@ public:
 
 	bool setInputActionMapActive(const std::string &name, bool active);
 
-	ListenerID addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback);
+	ListenerID addInputActionListener(const std::string_view actionName, const InputActionCallback &callback);
 	ListenerID addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
 	ListenerID addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
 	ListenerID addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);

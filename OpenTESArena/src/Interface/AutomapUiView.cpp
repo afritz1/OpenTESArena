@@ -19,7 +19,7 @@
 
 #include "components/debug/Debug.h"
 
-TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const TextRenderUtils::TextShadowInfo shadowInfo(
 		AutomapUiView::LocationTextBoxShadowOffsetX,

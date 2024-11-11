@@ -29,7 +29,7 @@ Rect GameWorldUiView::scaleClassicCursorRectToNative(int rectIndex, double xScal
 		static_cast<int>(std::ceil(static_cast<double>(classicRect.getHeight()) * yScale)));
 }
 
-TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithXY(
@@ -180,17 +180,17 @@ Int2 GameWorldUiView::getEffectTextPosition()
 	return Int2::Zero;
 }
 
-double GameWorldUiView::getTriggerTextSeconds(const std::string_view &text)
+double GameWorldUiView::getTriggerTextSeconds(const std::string_view text)
 {
 	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
 }
 
-double GameWorldUiView::getActionTextSeconds(const std::string_view &text)
+double GameWorldUiView::getActionTextSeconds(const std::string_view text)
 {
 	return std::max(2.25, static_cast<double>(text.size()) * 0.050);
 }
 
-double GameWorldUiView::getEffectTextSeconds(const std::string_view &text)
+double GameWorldUiView::getEffectTextSeconds(const std::string_view text)
 {
 	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
 }

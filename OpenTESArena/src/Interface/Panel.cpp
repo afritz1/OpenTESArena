@@ -137,7 +137,7 @@ CursorData Panel::getDefaultCursor() const
 	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
 }
 
-void Panel::addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback)
+void Panel::addInputActionListener(const std::string_view actionName, const InputActionCallback &callback)
 {
 	auto &inputManager = this->game.inputManager;
 	this->inputActionListenerIDs.emplace_back(inputManager.addInputActionListener(actionName, callback));

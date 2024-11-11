@@ -23,7 +23,7 @@ public:
 	TextSubPanel(Game &game);
 	~TextSubPanel() override = default;
 
-	bool init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
+	bool init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view text,
 		const OnClosedFunction &onClosed, ScopedUiTextureRef &&textureRef, const Int2 &textureCenter);
 };
 

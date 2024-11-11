@@ -176,9 +176,9 @@ public:
 	void setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData);
 
 	// Sets on-screen text duration for various types of in-game messages.
-	void setTriggerTextDuration(const std::string_view &text);
-	void setActionTextDuration(const std::string_view &text);
-	void setEffectTextDuration(const std::string_view &text);
+	void setTriggerTextDuration(const std::string_view text);
+	void setActionTextDuration(const std::string_view text);
+	void setEffectTextDuration(const std::string_view text);
 
 	// Resets on-screen text boxes to empty and hidden.
 	void resetTriggerTextDuration();

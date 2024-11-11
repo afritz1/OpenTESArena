@@ -1735,7 +1735,7 @@ namespace MapGeneration
 	}
 
 	void generateArenaCityBuildingNames(uint32_t citySeed, int raceID, bool coastal,
-		const std::string_view &cityTypeName,
+		const std::string_view cityTypeName,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
@@ -2437,7 +2437,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon, BufferView<const uint8_t> reservedBlocks,
-	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName,
+	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName,
 	ArenaTypes::CityType cityType, const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,

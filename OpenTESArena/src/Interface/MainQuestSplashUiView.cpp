@@ -15,7 +15,7 @@ int MainQuestSplashUiView::getDescriptionTextBoxY()
 	return 133;
 }
 
-TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainQuestSplashUiView::DescriptionFontName;
 	int fontDefIndex;

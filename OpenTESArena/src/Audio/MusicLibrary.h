@@ -20,8 +20,8 @@ public:
 private:
 	std::unordered_map<MusicType, std::vector<MusicDefinition>> definitions;
 
-	static bool tryParseType(const std::string_view &typeStr, MusicType *outType);
-	static bool tryParseValue(const std::string_view &valueStr, MusicType type, MusicDefinition *outDefinition);
+	static bool tryParseType(const std::string_view typeStr, MusicType *outType);
+	static bool tryParseValue(const std::string_view valueStr, MusicType type, MusicDefinition *outDefinition);
 public:
 	// Parses music definition file.
 	bool init(const char *filename);

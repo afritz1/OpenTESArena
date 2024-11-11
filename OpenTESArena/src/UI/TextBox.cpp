@@ -31,7 +31,7 @@ void TextBox::InitInfo::init(const Rect &rect, Properties &&properties)
 	this->properties = std::move(properties);
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text, const Int2 &center,
+TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view text, const Int2 &center,
 	const std::string &fontName, const Color &textColor, TextAlignment alignment,
 	const std::optional<TextRenderUtils::TextShadowInfo> &shadow, int lineSpacing, const FontLibrary &fontLibrary)
 {
@@ -54,7 +54,7 @@ TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text
 	return initInfo;
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text, const Int2 &center,
+TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view text, const Int2 &center,
 	const std::string &fontName, const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
 {
 	const std::optional<TextRenderUtils::TextShadowInfo> shadow;
@@ -62,7 +62,7 @@ TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text
 	return InitInfo::makeWithCenter(text, center, fontName, textColor, alignment, shadow, lineSpacing, fontLibrary);
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, int x, int y, const std::string &fontName,
+TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view text, int x, int y, const std::string &fontName,
 	const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
 	int lineSpacing, const FontLibrary &fontLibrary)
 {
@@ -85,7 +85,7 @@ TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, in
 	return initInfo;
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, int x, int y,
+TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view text, int x, int y,
 	const std::string &fontName, const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
 {
 	const std::optional<TextRenderUtils::TextShadowInfo> shadow;
@@ -123,7 +123,7 @@ bool TextBox::init(const InitInfo &initInfo, Renderer &renderer)
 	return this->init(initInfo.rect, initInfo.properties, renderer);
 }
 
-bool TextBox::init(const InitInfo &initInfo, const std::string_view &text, Renderer &renderer)
+bool TextBox::init(const InitInfo &initInfo, const std::string_view text, Renderer &renderer)
 {
 	if (!this->init(initInfo.rect, initInfo.properties, renderer))
 	{
@@ -165,7 +165,7 @@ UiTextureID TextBox::getTextureID()
 	return this->textureRef.get();
 }
 
-void TextBox::setText(const std::string_view &text)
+void TextBox::setText(const std::string_view text)
 {
 	this->text = std::string(text);
 	this->dirty = true;

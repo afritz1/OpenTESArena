@@ -47,9 +47,9 @@ namespace CharacterSheetUiView
 	const Color PlayerAttributeTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerAttributeTextBoxAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	std::map<PrimaryAttributeName, TextBox::InitInfo> getPlayerAttributeTextBoxInitInfoMap(
 		BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
 

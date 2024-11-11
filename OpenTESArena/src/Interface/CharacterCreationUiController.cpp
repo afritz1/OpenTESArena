@@ -137,7 +137,7 @@ void ChooseNameUiController::onBackToChooseClassInputAction(const InputActionCal
 	}
 }
 
-void ChooseNameUiController::onTextInput(const std::string_view &text, std::string &name, bool *outDirty)
+void ChooseNameUiController::onTextInput(const std::string_view text, std::string &name, bool *outDirty)
 {
 	DebugAssert(outDirty != nullptr);
 

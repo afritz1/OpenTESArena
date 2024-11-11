@@ -46,15 +46,15 @@ public:
 
 		void init(const Rect &rect, Properties &&properties);
 
-		static InitInfo makeWithCenter(const std::string_view &text, const Int2 &center, const std::string &fontName,
+		static InitInfo makeWithCenter(const std::string_view text, const Int2 &center, const std::string &fontName,
 			const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
 			int lineSpacing, const FontLibrary &fontLibrary);
-		static InitInfo makeWithCenter(const std::string_view &text, const Int2 &center, const std::string &fontName,
+		static InitInfo makeWithCenter(const std::string_view text, const Int2 &center, const std::string &fontName,
 			const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary);
-		static InitInfo makeWithXY(const std::string_view &text, int x, int y, const std::string &fontName,
+		static InitInfo makeWithXY(const std::string_view text, int x, int y, const std::string &fontName,
 			const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
 			int lineSpacing, const FontLibrary &fontLibrary);
-		static InitInfo makeWithXY(const std::string_view &text, int x, int y, const std::string &fontName,
+		static InitInfo makeWithXY(const std::string_view text, int x, int y, const std::string &fontName,
 			const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary);
 	};
 private:
@@ -74,12 +74,12 @@ public:
 	bool init(const InitInfo &initInfo, Renderer &renderer);
 
 	// Also renders text after initialization as a convenience.
-	bool init(const InitInfo &initInfo, const std::string_view &text, Renderer &renderer);
+	bool init(const InitInfo &initInfo, const std::string_view text, Renderer &renderer);
 
 	const Rect &getRect() const;
 	UiTextureID getTextureID();
 
-	void setText(const std::string_view &text);
+	void setText(const std::string_view text);
 
 	void addOverrideColor(int charIndex, const Color &overrideColor);
 	void clearOverrideColors();

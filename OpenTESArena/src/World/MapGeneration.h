@@ -193,7 +193,7 @@ namespace MapGeneration
 	void generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 		BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-		int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
+		int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName, ArenaTypes::CityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,

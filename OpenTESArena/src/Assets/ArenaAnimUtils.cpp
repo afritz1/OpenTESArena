@@ -867,7 +867,7 @@ bool ArenaAnimUtils::trySetHumanFilenameGender(std::string &filename, bool isMal
 	return true;
 }
 
-bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::string_view &type)
+bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::string_view type)
 {
 	if (filename.size() == 0)
 	{

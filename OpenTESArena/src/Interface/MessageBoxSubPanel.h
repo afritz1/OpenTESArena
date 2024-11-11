@@ -86,8 +86,8 @@ public:
 		const TitleProperties &titleProperties, const ItemsProperties &itemsProperties,
 		const OnClosedFunction &onClosed = OnClosedFunction());
 
-	void setTitleText(const std::string_view &text);
-	void setItemText(int itemIndex, const std::string_view &text);
+	void setTitleText(const std::string_view text);
+	void setItemText(int itemIndex, const std::string_view text);
 	void setItemCallback(int itemIndex, const ItemCallback &callback, bool isCancelButton);
 	void setItemInputAction(int itemIndex, const std::string &inputActionName);
 

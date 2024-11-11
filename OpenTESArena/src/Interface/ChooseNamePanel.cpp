@@ -50,7 +50,7 @@ bool ChooseNamePanel::init()
 		}
 	});
 
-	this->addTextInputListener([this](const std::string_view &text)
+	this->addTextInputListener([this](const std::string_view text)
 	{
 		bool dirty;
 		ChooseNameUiController::onTextInput(text, this->name, &dirty);

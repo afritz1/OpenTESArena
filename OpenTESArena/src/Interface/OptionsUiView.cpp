@@ -42,7 +42,7 @@ Color OptionsUiView::getBackButtonTextColor()
 	return Color::White;
 }
 
-TextBox::InitInfo OptionsUiView::getBackButtonTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo OptionsUiView::getBackButtonTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithCenter(
@@ -74,7 +74,7 @@ Color OptionsUiView::getDescriptionTextColor()
 	return Color::White;
 }
 
-TextBox::InitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::string_view &text,
+TextBox::InitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	const Rect tabRect = OptionsUiView::getTabRect(index);

@@ -11,7 +11,7 @@
 #include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithXY(
@@ -24,7 +24,7 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithXY(
@@ -37,7 +37,7 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithXY(
