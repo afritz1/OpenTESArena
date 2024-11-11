@@ -31,10 +31,9 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 	const std::string timeString = [&game, &gameState, &exeData]()
 	{
 		const Clock &clock = gameState.getClock();
-		const int hours = clock.getHours12();
-		const int minutes = clock.getMinutes();
-		const std::string clockTimeString = std::to_string(hours) + ":" +
-			((minutes < 10) ? "0" : "") + std::to_string(minutes);
+		const int hours12 = clock.getHours12();
+		const int minutes = clock.minutes;
+		const std::string clockTimeString = std::to_string(hours12) + ":" + ((minutes < 10) ? "0" : "") + std::to_string(minutes);
 
 		const int timeOfDayIndex = [&gameState]()
 		{
@@ -55,8 +54,7 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 			const Clock &presentClock = gameState.getClock();
 
 			// Reverse iterate, checking which range the active clock is in.
-			const auto pairIter = std::find_if(
-				clocksAndIndices.rbegin(), clocksAndIndices.rend(),
+			const auto pairIter = std::find_if(clocksAndIndices.rbegin(), clocksAndIndices.rend(),
 				[&presentClock](const std::pair<Clock, int> &pair)
 			{
 				const Clock &clock = pair.first;
@@ -67,9 +65,7 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 			return pairIter->second;
 		}();
 
-		const std::string &timeOfDayString =
-			exeData.calendar.timesOfDay.at(timeOfDayIndex);
-
+		const std::string &timeOfDayString = exeData.calendar.timesOfDay.at(timeOfDayIndex);
 		return clockTimeString + ' ' + timeOfDayString;
 	}();
 

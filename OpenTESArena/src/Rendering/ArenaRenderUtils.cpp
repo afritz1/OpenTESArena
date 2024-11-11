@@ -26,33 +26,33 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType, 
 			return 0.0; // This assumes it is during the daytime.
 		}
 
-		const double clockPreciseSeconds = clock.getPreciseTotalSeconds();
+		const double clockTime = clock.getTotalSeconds();
 
 		// Time ranges where the ambient light changes. The start times are inclusive, and the end times are exclusive.
-		const double startBrighteningTime = ArenaClockUtils::AmbientStartBrightening.getPreciseTotalSeconds();
-		const double endBrighteningTime = ArenaClockUtils::AmbientEndBrightening.getPreciseTotalSeconds();
-		const double startDimmingTime = ArenaClockUtils::AmbientStartDimming.getPreciseTotalSeconds();
-		const double endDimmingTime = ArenaClockUtils::AmbientEndDimming.getPreciseTotalSeconds();
+		const double startBrighteningTime = ArenaClockUtils::AmbientStartBrightening.getTotalSeconds();
+		const double endBrighteningTime = ArenaClockUtils::AmbientEndBrightening.getTotalSeconds();
+		const double startDimmingTime = ArenaClockUtils::AmbientStartDimming.getTotalSeconds();
+		const double endDimmingTime = ArenaClockUtils::AmbientEndDimming.getTotalSeconds();
 
 		constexpr double minAmbient = 0.0;
 		constexpr double maxAmbient = 1.0;
 
 		double ambient;
-		if ((clockPreciseSeconds >= endBrighteningTime) && (clockPreciseSeconds < startDimmingTime))
+		if ((clockTime >= endBrighteningTime) && (clockTime < startDimmingTime))
 		{
 			// Daytime ambient.
 			ambient = maxAmbient;
 		}
-		else if ((clockPreciseSeconds >= startBrighteningTime) && (clockPreciseSeconds < endBrighteningTime))
+		else if ((clockTime >= startBrighteningTime) && (clockTime < endBrighteningTime))
 		{
 			// Interpolate brightening light (in the morning).
-			const double timePercent = (clockPreciseSeconds - startBrighteningTime) / (endBrighteningTime - startBrighteningTime);
+			const double timePercent = (clockTime - startBrighteningTime) / (endBrighteningTime - startBrighteningTime);
 			ambient = minAmbient + ((maxAmbient - minAmbient) * timePercent);
 		}
-		else if ((clockPreciseSeconds >= startDimmingTime) && (clockPreciseSeconds < endDimmingTime))
+		else if ((clockTime >= startDimmingTime) && (clockTime < endDimmingTime))
 		{
 			// Interpolate dimming light (in the evening).
-			const double timePercent = (clockPreciseSeconds - startDimmingTime) / (endDimmingTime - startDimmingTime);
+			const double timePercent = (clockTime - startDimmingTime) / (endDimmingTime - startDimmingTime);
 			ambient = maxAmbient + ((minAmbient - maxAmbient) * timePercent);
 		}
 		else

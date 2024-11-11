@@ -19,9 +19,9 @@ namespace
 	bool IsDuringThunderstorm(const Clock &clock)
 	{
 		// Starts in the evening, ends in the morning.
-		const double seconds = clock.getPreciseTotalSeconds();
-		const double startSeconds = ArenaClockUtils::ThunderstormStart.getPreciseTotalSeconds();
-		const double endSeconds = ArenaClockUtils::ThunderstormEnd.getPreciseTotalSeconds();
+		const double seconds = clock.getTotalSeconds();
+		const double startSeconds = ArenaClockUtils::ThunderstormStart.getTotalSeconds();
+		const double endSeconds = ArenaClockUtils::ThunderstormEnd.getTotalSeconds();
 		return (seconds >= startSeconds) || (seconds < endSeconds);
 	}
 

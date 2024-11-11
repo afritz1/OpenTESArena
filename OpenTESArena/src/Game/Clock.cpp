@@ -2,15 +2,15 @@
 
 #include "components/debug/Debug.h"
 
-Clock::Clock(int hours, int minutes, int seconds, double currentSecond)
+void Clock::init(int hours, int minutes, int seconds, double currentSecond)
 {
-	// Make sure each value is in a valid range.
 	DebugAssert(hours >= 0);
 	DebugAssert(hours < 24);
 	DebugAssert(minutes >= 0);
 	DebugAssert(minutes < 60);
 	DebugAssert(seconds >= 0);
 	DebugAssert(seconds < 60);
+	DebugAssert(currentSecond >= 0.0);
 
 	this->hours = hours;
 	this->minutes = minutes;
@@ -18,15 +18,14 @@ Clock::Clock(int hours, int minutes, int seconds, double currentSecond)
 	this->currentSecond = currentSecond;
 }
 
-Clock::Clock(int hours, int minutes, int seconds)
-	: Clock(hours, minutes, seconds, 0.0) { }
-
-Clock::Clock()
-	: Clock(0, 0, 0, 0.0) { }
-
-int Clock::getHours24() const
+void Clock::init(int hours, int minutes, int seconds)
 {
-	return this->hours;
+	this->init(hours, minutes, seconds, 0.0);
+}
+
+void Clock::clear()
+{
+	this->init(0, 0, 0, 0.0);
 }
 
 int Clock::getHours12() const
@@ -35,34 +34,15 @@ int Clock::getHours12() const
 	return (hoursMod == 0) ? 12 : hoursMod;
 }
 
-int Clock::getMinutes() const
+double Clock::getTotalSeconds() const
 {
-	return this->minutes;
+	const int seconds = (this->hours * 3600) + (this->minutes * 60) + this->seconds;
+	return static_cast<double>(seconds) + this->currentSecond;
 }
 
-int Clock::getSeconds() const
+double Clock::getDayPercent() const
 {
-	return this->seconds;
-}
-
-double Clock::getFractionOfSecond() const
-{
-	return this->currentSecond;
-}
-
-int Clock::getTotalSeconds() const
-{
-	return (this->hours * 3600) + (this->minutes * 60) + this->seconds;
-}
-
-double Clock::getPreciseTotalSeconds() const
-{
-	return static_cast<double>(this->getTotalSeconds()) + this->currentSecond;
-}
-
-double Clock::getDaytimePercent() const
-{
-	return this->getPreciseTotalSeconds() / static_cast<double>(Clock::SECONDS_IN_A_DAY);
+	return this->getTotalSeconds() / static_cast<double>(Clock::SECONDS_IN_A_DAY);
 }
 
 bool Clock::isAM() const
@@ -102,7 +82,7 @@ void Clock::incrementSecond()
 	}
 }
 
-void Clock::tick(double dt)
+void Clock::incrementTime(double dt)
 {
 	this->currentSecond += dt;
 

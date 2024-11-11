@@ -69,25 +69,24 @@ std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosit
 
 void FastTravelUiModel::tickTravelTime(Game &game, int travelDays)
 {
-	auto &gameState = game.gameState;
-	auto &random = game.random;
+	DebugAssert(travelDays >= 0);
 
-	// Tick the game date by the number of travel days.
-	auto &date = gameState.getDate();
+	auto &gameState = game.gameState;
+	Random &random = game.random;
+
+	Date &date = gameState.getDate();
 	for (int i = 0; i < travelDays; i++)
 	{
 		date.incrementDay();
 	}
 
-	// Add between 0 and 22 random hours to the clock time.
-	auto &clock = gameState.getClock();
+	Clock &clock = gameState.getClock();
 	const int randomHours = random.next(23);
 	for (int i = 0; i < randomHours; i++)
 	{
 		clock.incrementHour();
 
-		// Increment day if the clock loops around.
-		if (clock.getHours24() == 0)
+		if (clock.hours == 0)
 		{
 			date.incrementDay();
 		}

@@ -2,72 +2,44 @@
 #define CLOCK_H
 
 // General-purpose 24-hour clock.
-class Clock
+struct Clock
 {
-private:
-	// Current hours (0->23).
-	int hours;
+	int hours; // 0 to 23
+	int minutes; // 0 to 59
+	int seconds; // 0 to 59
+	double currentSecond; // 0 to 1
 
-	// Current minutes (0->59).
-	int minutes;
-
-	// Current seconds (0->59).
-	int seconds;
-
-	// Current fraction of a second (0->1).
-	double currentSecond;
-public:
 	static constexpr int SECONDS_IN_A_DAY = 86400;
 
-	// Starts at some time of day with the current fraction of a second for precise 
-	// time definition.
-	Clock(int hours, int minutes, int seconds, double currentSecond);
+	constexpr Clock(int hours, int minutes, int seconds)
+	{
+		this->hours = hours;
+		this->minutes = minutes;
+		this->seconds = seconds;
+		this->currentSecond = 0.0;
+	}
 
-	// Starts at some time of day.
-	Clock(int hours, int minutes, int seconds);
+	constexpr Clock() : Clock(0, 0, 0) { }
 
-	// Starts at midnight.
-	Clock();
+	void init(int hours, int minutes, int seconds, double currentSecond);
+	void init(int hours, int minutes, int seconds);
+	void clear();
 
-	// Gets the current hours in 24-hour format.
-	int getHours24() const;
-
-	// Gets the current hours in 12-hour format (for AM/PM time).
+	// Gets hours in 12-hour format for AM/PM time.
 	int getHours12() const;
 
-	// Gets the current minutes.
-	int getMinutes() const;
+	// Gets exact instant in time as seconds.
+	double getTotalSeconds() const;
 
-	// Gets the current seconds.
-	int getSeconds() const;
+	// Gets how far through a day it is (0.0 = 12am, 0.50 = 12pm).
+	double getDayPercent() const;
 
-	// Gets the current fraction of a second (between 0 and 1).
-	double getFractionOfSecond() const;
-
-	// Accumulates the current hours, minutes, and seconds into total seconds.
-	int getTotalSeconds() const;
-
-	// Combines the total seconds with the current fraction of a second for a slightly
-	// more precise measurement of the current time in seconds.
-	double getPreciseTotalSeconds() const;
-
-	// Gets the percent of how far along the current day is. 0.0 is 12am and 0.50 is 12pm.
-	double getDaytimePercent() const;
-
-	// Returns whether the current hour is before noon.
 	bool isAM() const;
 
-	// Increments the hour by 1.
 	void incrementHour();
-
-	// Increments the minute by 1.
 	void incrementMinute();
-
-	// Increments the second by 1.
 	void incrementSecond();
-
-	// Ticks the clock by delta time.
-	void tick(double dt);
+	void incrementTime(double dt);
 };
 
 #endif

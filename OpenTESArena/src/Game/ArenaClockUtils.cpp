@@ -2,24 +2,24 @@
 
 bool ArenaClockUtils::nightMusicIsActive(const Clock &clock)
 {
-	const double clockTime = clock.getPreciseTotalSeconds();
-	const bool beforeDayMusicChange = clockTime < ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
-	const bool afterNightMusicChange = clockTime >= ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
+	const double clockTime = clock.getTotalSeconds();
+	const bool beforeDayMusicChange = clockTime < ArenaClockUtils::MusicSwitchToDay.getTotalSeconds();
+	const bool afterNightMusicChange = clockTime >= ArenaClockUtils::MusicSwitchToNight.getTotalSeconds();
 	return beforeDayMusicChange || afterNightMusicChange;
 }
 
 bool ArenaClockUtils::nightLightsAreActive(const Clock &clock)
 {
-	const double clockTime = clock.getPreciseTotalSeconds();
-	const bool beforeLamppostDeactivate = clockTime < ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool afterLamppostActivate = clockTime >= ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
+	const double clockTime = clock.getTotalSeconds();
+	const bool beforeLamppostDeactivate = clockTime < ArenaClockUtils::LamppostDeactivate.getTotalSeconds();
+	const bool afterLamppostActivate = clockTime >= ArenaClockUtils::LamppostActivate.getTotalSeconds();
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 
 bool ArenaClockUtils::isDaytimeFogActive(const Clock &clock)
 {
-	const double clockTime = clock.getPreciseTotalSeconds();
-	const bool afterAmbientEndBrightening = clockTime >= ArenaClockUtils::AmbientEndBrightening.getPreciseTotalSeconds();
-	const bool beforeAmbientStartDimming = clockTime < ArenaClockUtils::AmbientStartDimming.getPreciseTotalSeconds();
+	const double clockTime = clock.getTotalSeconds();
+	const bool afterAmbientEndBrightening = clockTime >= ArenaClockUtils::AmbientEndBrightening.getTotalSeconds();
+	const bool beforeAmbientStartDimming = clockTime < ArenaClockUtils::AmbientStartDimming.getTotalSeconds();
 	return afterAmbientEndBrightening && beforeAmbientStartDimming;
 }

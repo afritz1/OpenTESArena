@@ -847,9 +847,9 @@ bool GameWorldPanel::renderScene(Game &game)
 	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
 	
 	const bool isInterior = gameState.getActiveMapType() == MapType::Interior;
-	const double daytimePercent = gameState.getDaytimePercent();
-	const bool isBefore6AM = daytimePercent < 0.25;
-	const bool isAfter6PM = daytimePercent > 0.75;
+	const double dayPercent = gameState.getDayPercent();
+	const bool isBefore6AM = dayPercent < 0.25;
+	const bool isAfter6PM = dayPercent > 0.75;
 
 	ObjectTextureID lightTableTextureID = sceneManager.normalLightTableDaytimeTextureRef.get();
 	if (isFoggy)

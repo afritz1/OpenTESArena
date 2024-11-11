@@ -359,9 +359,9 @@ Clock &GameState::getClock()
 	return this->clock;
 }
 
-double GameState::getDaytimePercent() const
+double GameState::getDayPercent() const
 {
-	return this->clock.getDaytimePercent();
+	return this->clock.getDayPercent();
 }
 
 double GameState::getChasmAnimPercent() const
@@ -689,17 +689,15 @@ void GameState::tickGameClock(double dt, Game &game)
 {
 	DebugAssert(dt >= 0.0);
 
-	// Tick the game clock.
 	const Clock prevClock = this->clock;
 	const double timeScale = GameState::GAME_TIME_SCALE * (this->isCamping ? 250.0 : 1.0);
-	this->clock.tick(dt * timeScale);
+	this->clock.incrementTime(dt * timeScale);
 
-	// Check if the hour changed.
-	const int prevHour = prevClock.getHours24();
-	const int newHour = this->clock.getHours24();
+	const int prevHour = prevClock.hours;
+	const int newHour = this->clock.hours;
 	if (newHour != prevHour)
 	{
-		// Update the weather list that's used for selecting the current one.
+		// Update possible weathers list.
 		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		this->updateWeatherList(game.arenaRandom, exeData);
 	}
@@ -707,15 +705,14 @@ void GameState::tickGameClock(double dt, Game &game)
 	// Check if the clock hour looped back around.
 	if (newHour < prevHour)
 	{
-		// Increment the day.
 		this->date.incrementDay();
 	}
 
 	// See if the clock passed the boundary between night and day, and vice versa.
-	const double oldClockTime = prevClock.getPreciseTotalSeconds();
-	const double newClockTime = this->clock.getPreciseTotalSeconds();
-	const double lamppostActivateTime = ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
-	const double lamppostDeactivateTime = ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
+	const double oldClockTime = prevClock.getTotalSeconds();
+	const double newClockTime = this->clock.getTotalSeconds();
+	const double lamppostActivateTime = ArenaClockUtils::LamppostActivate.getTotalSeconds();
+	const double lamppostDeactivateTime = ArenaClockUtils::LamppostDeactivate.getTotalSeconds();
 	const bool activateNightLights = (oldClockTime < lamppostActivateTime) && (newClockTime >= lamppostActivateTime);
 	const bool deactivateNightLights = (oldClockTime < lamppostDeactivateTime) && (newClockTime >= lamppostDeactivateTime);
 
@@ -735,8 +732,8 @@ void GameState::tickGameClock(double dt, Game &game)
 	{
 		AudioManager &audioManager = game.audioManager;
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
-		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
+		const double dayMusicStartTime = ArenaClockUtils::MusicSwitchToDay.getTotalSeconds();
+		const double nightMusicStartTime = ArenaClockUtils::MusicSwitchToNight.getTotalSeconds();
 		const bool changeToDayMusic = (oldClockTime < dayMusicStartTime) && (newClockTime >= dayMusicStartTime);
 		const bool changeToNightMusic = (oldClockTime < nightMusicStartTime) && (newClockTime >= nightMusicStartTime);
 		
@@ -788,7 +785,7 @@ void GameState::tickSky(double dt, Game &game)
 	const LocationDefinition &locationDef = this->getLocationDefinition();
 
 	SkyInstance &skyInst = sceneManager.skyInstance;
-	skyInst.update(dt, locationDef.getLatitude(), this->getDaytimePercent(), this->weatherInst, game.random);
+	skyInst.update(dt, locationDef.getLatitude(), this->getDayPercent(), this->weatherInst, game.random);
 }
 
 void GameState::tickWeather(double dt, Game &game)
@@ -986,16 +983,15 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;
 	const WeatherType weatherType = this->weatherDef.type;
-	const double daytimePercent = this->getDaytimePercent();
-	sceneManager.updateGameWorldPalette(isInterior, weatherType, isFoggy, daytimePercent, textureManager);
+	const double dayPercent = this->getDayPercent();
+	sceneManager.updateGameWorldPalette(isInterior, weatherType, isFoggy, dayPercent, textureManager);
 
 	const SkyVisibilityManager &skyVisManager = sceneManager.skyVisManager;
 	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(this->clock);
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.update(skyInst, skyVisManager, this->weatherInst, playerCoord, isInterior, daytimePercent, isFoggy, distantAmbientPercent, renderer);
+	renderSkyManager.update(skyInst, skyVisManager, this->weatherInst, playerCoord, isInterior, dayPercent, isFoggy, distantAmbientPercent, renderer);
 
 	const WeatherInstance &weatherInst = game.gameState.getWeatherInstance();
-
 	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
 	renderWeatherManager.update(weatherInst, renderCamera, renderer);
 }
