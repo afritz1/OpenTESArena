@@ -5,11 +5,6 @@
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
-#include "../Items/ArmorMaterial.h"
-#include "../Items/ArmorMaterialType.h"
-#include "../Items/MetalType.h"
-#include "../Items/Shield.h"
-#include "../Items/ShieldType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -108,8 +103,7 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 		for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 		{
 			const int materialType = allowedArmors[i];
-			auto materialString = ArmorMaterial::typeToString(
-				static_cast<ArmorMaterialType>(materialType));
+			std::string materialString = "TODO armor material type " + std::to_string(materialType);
 			lengthCounter += static_cast<int>(materialString.size());
 			armorString.append(materialString);
 
@@ -157,8 +151,7 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 		for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 		{
 			const int shieldType = allowedShields[i];
-			MetalType dummyMetal = MetalType::Iron;
-			auto typeString = Shield(static_cast<ShieldType>(shieldType), dummyMetal).typeToString();
+			std::string typeString = "TODO shield type " + std::to_string(shieldType);
 			lengthCounter += static_cast<int>(typeString.size());
 			shieldsString.append(typeString);
 

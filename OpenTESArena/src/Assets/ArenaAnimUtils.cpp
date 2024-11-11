@@ -9,7 +9,6 @@
 #include "../Assets/TextureManager.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
-#include "../Items/ArmorMaterialType.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
