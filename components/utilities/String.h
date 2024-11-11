@@ -1,7 +1,6 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include <array>
 #include <cstdint>
 #include <iomanip>
 #include <sstream>
@@ -10,7 +9,6 @@
 #include "Buffer.h"
 
 // Various string operations and conversions.
-
 namespace String
 {
 	static constexpr char SPACE = ' ';
@@ -34,8 +32,8 @@ namespace String
 	// Splits a string on the given character without allocating the destination array. Breaks
 	// early if too many splits are encountered. Returns whether the split count matches the
 	// destination size.
-	template <size_t T>
-	bool splitExpected(const std::string &str, char separator, std::array<std::string, T> &dst)
+	template<size_t T>
+	bool splitExpected(const std::string &str, char separator, std::string (&dst)[T])
 	{
 		static_assert(T > 0);
 
@@ -64,8 +62,8 @@ namespace String
 	// Splits a string on whitespace without allocating the destination array. Breaks early if
 	// too many splits are encountered. Returns whether the split count matches the destination
 	// size.
-	template <size_t T>
-	bool splitExpected(const std::string &str, std::array<std::string, T> &dst)
+	template<size_t T>
+	bool splitExpected(const std::string &str, std::string (&dst)[T])
 	{
 		return String::splitExpected(str, String::SPACE, dst);
 	}
