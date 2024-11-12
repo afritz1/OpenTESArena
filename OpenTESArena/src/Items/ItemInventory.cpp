@@ -129,4 +129,6 @@ bool ItemInventory::insert(ItemDefinitionID defID)
 		ItemInstance &newItemInst = this->items.emplace_back(ItemInstance());
 		newItemInst.init(defID);
 	}
+
+	return true;
 }

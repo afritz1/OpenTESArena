@@ -3,6 +3,11 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	constexpr double KilogramsDivisor = 256.0; // @todo: move this to some ArenaItemUtils
+}
+
 void ItemLibrary::init(const ExeData &exeData)
 {
 	const BufferView<const std::string> accessoryNames = exeData.equipment.enhancementItemNames;
@@ -14,15 +19,22 @@ void ItemLibrary::init(const ExeData &exeData)
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
-	const BufferView<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames.data(), 7);
-	const BufferView<const std::string> chainArmorNames(exeData.equipment.chainArmorNames.data(), 7);
-	const BufferView<const std::string> armorNames(exeData.equipment.armorNames.data(), 7); // Requires an associated material.
+	constexpr int armorCount = 7; // Ignores shields at end.
+	const BufferView<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames.data(), armorCount);
+	const BufferView<const std::string> chainArmorNames(exeData.equipment.chainArmorNames.data(), armorCount);
+	const BufferView<const std::string> armorNames(exeData.equipment.armorNames.data(), armorCount); // Requires an associated material.
+	const BufferView<const uint16_t> leatherArmorWeights(exeData.equipment.leatherArmorWeights.data(), armorCount);
+	const BufferView<const uint16_t> chainArmorWeights(exeData.equipment.chainArmorWeights.data(), armorCount);
+	const BufferView<const uint16_t> plateArmorWeights(exeData.equipment.plateArmorWeights.data(), armorCount);
 	//const BufferView<const std::string> plateArmorNames = exeData.equipment.plateArmorNames; // Not sure 'ordinary' plate exists in-game
 	for (int i = 0; i < leatherArmorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
 		itemDef.init(ItemType::Armor);
-		itemDef.armor.initLeather(leatherArmorNames[i].c_str());
+
+		const int weightOriginal = leatherArmorWeights[i];
+		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		itemDef.armor.initLeather(leatherArmorNames[i].c_str(), weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
@@ -30,7 +42,10 @@ void ItemLibrary::init(const ExeData &exeData)
 	{
 		ItemDefinition itemDef;
 		itemDef.init(ItemType::Armor);
-		itemDef.armor.initChain(chainArmorNames[i].c_str());
+
+		const int weightOriginal = chainArmorWeights[i];
+		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		itemDef.armor.initChain(chainArmorNames[i].c_str(), weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
@@ -38,7 +53,10 @@ void ItemLibrary::init(const ExeData &exeData)
 	{
 		ItemDefinition itemDef;
 		itemDef.init(ItemType::Armor);
-		itemDef.armor.initPlate(armorNames[i].c_str(), -1); // @todo: for loop over all materials
+
+		const int weightOriginal = plateArmorWeights[i];
+		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		itemDef.armor.initPlate(armorNames[i].c_str(), weightKg, -1); // @todo: for loop over all materials
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
@@ -61,12 +79,17 @@ void ItemLibrary::init(const ExeData &exeData)
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	
-	const BufferView<const std::string> shieldNames(exeData.equipment.armorNames.data() + 7, 4);
+	constexpr int shieldCount = 4;
+	const BufferView<const std::string> shieldNames(exeData.equipment.armorNames.data() + armorCount, shieldCount);
+	const BufferView<const uint16_t> shieldWeights(exeData.equipment.plateArmorWeights.data() + armorCount, shieldCount);
 	for (int i = 0; i < shieldNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
 		itemDef.init(ItemType::Shield);
-		itemDef.shield.init(shieldNames[i].c_str());
+
+		const int weightOriginal = shieldWeights[i];
+		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		itemDef.shield.init(shieldNames[i].c_str(), weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	
@@ -91,7 +114,7 @@ void ItemLibrary::init(const ExeData &exeData)
 
 		const char *weaponName = weaponNames[i].c_str();
 		const int weightOriginal = weaponWeights[i];
-		const double weightKg = static_cast<double>(weightOriginal) / 256.0;
+		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
 		const int basePrice = weaponBasePrices[i];
 		const int damageMin = weaponDamages[i].first;
 		const int damageMax = weaponDamages[i].second;

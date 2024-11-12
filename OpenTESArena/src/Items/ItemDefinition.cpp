@@ -78,9 +78,10 @@ void MiscItemDefinition::init(const char *name)
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 }
 
-void ShieldItemDefinition::init(const char *name)
+void ShieldItemDefinition::init(const char *name, double weight)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->weight = weight;
 }
 
 void TrinketItemDefinition::init(const char *name)
@@ -179,7 +180,7 @@ double ItemDefinition::getWeight() const
 	case ItemType::Misc:
 		return 0.0;
 	case ItemType::Shield:
-		return 0.0;
+		return this->shield.weight;
 	case ItemType::Trinket:
 		return 0.0;
 	case ItemType::Weapon:

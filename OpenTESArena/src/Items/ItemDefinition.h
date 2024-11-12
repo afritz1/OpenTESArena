@@ -75,8 +75,9 @@ struct MiscItemDefinition
 struct ShieldItemDefinition
 {
 	char name[64]; // Buckler, kite, etc.
+	double weight;
 
-	void init(const char *name);
+	void init(const char *name, double weight);
 };
 
 struct TrinketItemDefinition
