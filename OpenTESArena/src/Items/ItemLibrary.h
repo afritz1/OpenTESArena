@@ -2,6 +2,7 @@
 #define ITEM_LIBRARY_H
 
 #include <functional>
+#include <vector>
 
 #include "components/utilities/Singleton.h"
 
@@ -19,9 +20,9 @@ private:
 public:
 	void init(const ExeData &exeData);
 
-	int getItemDefCount() const;
-	const ItemDefinition &getItemDef(int index) const;
-	std::vector<int> getItemDefIndicesIf(const ItemLibraryPredicate &predicate) const;
+	int getCount() const;
+	const ItemDefinition &getDefinition(int index) const;
+	std::vector<int> getDefinitionIndicesIf(const ItemLibraryPredicate &predicate) const;
 };
 
 #endif

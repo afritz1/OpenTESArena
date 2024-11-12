@@ -380,12 +380,16 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/WorldMapUiView.h")
 
 SET(TES_ITEMS
+    "${SRC_ROOT}/Items/ItemConditionLibrary.cpp"
+    "${SRC_ROOT}/Items/ItemConditionLibrary.h"
     "${SRC_ROOT}/Items/ItemDefinition.cpp"
     "${SRC_ROOT}/Items/ItemDefinition.h"
     "${SRC_ROOT}/Items/ItemInstance.cpp"
     "${SRC_ROOT}/Items/ItemInstance.h"
     "${SRC_ROOT}/Items/ItemLibrary.cpp"
-    "${SRC_ROOT}/Items/ItemLibrary.h")
+    "${SRC_ROOT}/Items/ItemLibrary.h"
+    "${SRC_ROOT}/Items/ItemMaterialLibrary.cpp"
+    "${SRC_ROOT}/Items/ItemMaterialLibrary.h")
 
 SET(TES_MATH
     "${SRC_ROOT}/Math/BoundingBox.cpp"

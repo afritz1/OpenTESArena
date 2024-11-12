@@ -436,6 +436,7 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	const int materialBonusesOffset = ExeData::get(*section, "MaterialBonuses");
 	const int materialChancesOffset = ExeData::get(*section, "MaterialChances");
 	const int materialPriceMultipliersOffset = ExeData::get(*section, "MaterialPriceMultipliers");
+	const int itemConditionNamesOffset = ExeData::get(*section, "ItemConditionNames");
 	const int armorNamesOffset = ExeData::get(*section, "ArmorNames");
 	const int plateArmorNamesOffset = ExeData::get(*section, "PlateArmorNames");
 	const int plateArmorQualitiesOffset = ExeData::get(*section, "PlateArmorQualities");
@@ -493,6 +494,7 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	initInt8Array(this->materialBonuses, data + materialBonusesOffset);
 	initInt8Array(this->materialChances, data + materialChancesOffset);
 	initInt16Array(this->materialPriceMultipliers, data + materialPriceMultipliersOffset);
+	initStringArray(this->itemConditionNames, data + itemConditionNamesOffset);
 	initStringArray(this->armorNames, data + armorNamesOffset);
 	initStringArray(this->plateArmorNames, data + plateArmorNamesOffset);
 	initInt8Array(this->plateArmorQualities, data + plateArmorQualitiesOffset);

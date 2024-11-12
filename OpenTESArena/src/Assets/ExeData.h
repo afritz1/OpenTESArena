@@ -211,6 +211,9 @@ public:
 		std::array<uint8_t, 8> materialChances;
 		std::array<uint16_t, 8> materialPriceMultipliers; // In quarters.
 
+		// Condition/degradation values.
+		std::array<std::string, 8> itemConditionNames; // New, used, ...
+
 		// Plate armor values (including shields).
 		std::array<std::string, 11> armorNames; // Cuirass, ..., tower shield.
 		std::array<std::string, 11> plateArmorNames; // Plate cuirass, ..., tower shield.

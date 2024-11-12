@@ -112,23 +112,23 @@ void ItemLibrary::init(const ExeData &exeData)
 	}
 }
 
-int ItemLibrary::getItemDefCount() const
+int ItemLibrary::getCount() const
 {
 	return static_cast<int>(this->itemDefs.size());
 }
 
-const ItemDefinition &ItemLibrary::getItemDef(int index) const
+const ItemDefinition &ItemLibrary::getDefinition(int index) const
 {
 	DebugAssertIndex(this->itemDefs, index);
 	return this->itemDefs[index];
 }
 
-std::vector<int> ItemLibrary::getItemDefIndicesIf(const ItemLibraryPredicate &predicate) const
+std::vector<int> ItemLibrary::getDefinitionIndicesIf(const ItemLibraryPredicate &predicate) const
 {
 	std::vector<int> indices;
-	for (int i = 0; i < this->getItemDefCount(); i++)
+	for (int i = 0; i < this->getCount(); i++)
 	{
-		if (predicate(this->getItemDef(i)))
+		if (predicate(this->getDefinition(i)))
 		{
 			indices.emplace_back(i);
 		}
