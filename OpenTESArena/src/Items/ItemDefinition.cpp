@@ -64,9 +64,10 @@ void ArmorItemDefinition::initPlate(const char *name, ItemMaterialDefinitionID m
 	this->plateMaterialDefID = materialDefID;
 }
 
-void ConsumableItemDefinition::init(const char *name)
+void ConsumableItemDefinition::init(const char *name, const char *unidentifiedName)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 }
 
 void MiscItemDefinition::init(const char *name)
@@ -84,18 +85,26 @@ void TrinketItemDefinition::init(const char *name)
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 }
 
-void WeaponItemDefinition::initMelee(const char *name, int handCount, ItemMaterialDefinitionID materialDefID)
+void WeaponItemDefinition::initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID)
 {
 	DebugAssert((handCount == 1) || (handCount == 2));
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->weight = weight;
+	this->basePrice = basePrice;
+	this->damageMin = damageMin;
+	this->damageMax = damageMax;
 	this->handCount = handCount;
 	this->isRanged = false;
 	this->materialDefID = materialDefID;
 }
 
-void WeaponItemDefinition::initRanged(const char *name, ItemMaterialDefinitionID materialDefID)
+void WeaponItemDefinition::initRanged(const char *name, double weight, int basePrice, int damageMin, int damageMax, ItemMaterialDefinitionID materialDefID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->weight = weight;
+	this->basePrice = basePrice;
+	this->damageMin = damageMin;
+	this->damageMax = damageMax;
 	this->handCount = 2;
 	this->isRanged = true;
 	this->materialDefID = materialDefID;

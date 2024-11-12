@@ -39,6 +39,7 @@
 #include "../Interface/GameWorldUiView.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
+#include "../Items/ItemLibrary.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
@@ -361,6 +362,7 @@ bool Game::init()
 	CinematicLibrary::getInstance().init();
 
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	ItemLibrary::getInstance().init(exeData);
 	CharacterClassLibrary::getInstance().init(exeData);
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
 

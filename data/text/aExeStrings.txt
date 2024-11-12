@@ -145,6 +145,8 @@ SpellcastingItemMiscSpellPricesPerCharge=0x3D714
 EnhancementItemNames=0x3D724
 EnhancementItemCumulativeChances=0x3D73E
 EnhancementItemBasePrices=0x3D746
+PotionNames=0x3DFC9
+UnidentifiedPotionName=0x4148C
 BodyPartNames=0x3DB8D
 WeaponAnimationFilenames=0x41DAC
 

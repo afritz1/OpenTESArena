@@ -483,6 +483,8 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	const int enhancementItemNamesOffset = ExeData::get(*section, "EnhancementItemNames");
 	const int enhancementItemCumulativeChancesOffset = ExeData::get(*section, "EnhancementItemCumulativeChances");
 	const int enhancementItemBasePricesOffset = ExeData::get(*section, "EnhancementItemBasePrices");
+	const int potionNamesOffset = ExeData::get(*section, "PotionNames");
+	const int unidentifiedPotionNameOffset = ExeData::get(*section, "UnidentifiedPotionName");
 	const int bodyPartNamesOffset = ExeData::get(*section, "BodyPartNames");
 	const int weaponAnimFilenamesOffset = ExeData::get(*section, "WeaponAnimationFilenames");
 
@@ -538,6 +540,8 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	initStringArray(this->enhancementItemNames, data + enhancementItemNamesOffset);
 	initInt8Array(this->enhancementItemCumulativeChances, data + enhancementItemCumulativeChancesOffset);
 	initInt16Array(this->enhancementItemBasePrices, data + enhancementItemBasePricesOffset);
+	initStringArray(this->potionNames, data + potionNamesOffset);
+	this->unidentifiedPotionName = ExeData::readString(data + unidentifiedPotionNameOffset);
 	initStringArray(this->bodyPartNames, data + bodyPartNamesOffset);
 	initStringArray(this->weaponAnimationFilenames, data + weaponAnimFilenamesOffset);
 

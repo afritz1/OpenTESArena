@@ -275,6 +275,10 @@ public:
 		std::array<uint8_t, 4> enhancementItemCumulativeChances;
 		std::array<uint16_t, 4> enhancementItemBasePrices;
 
+		// Consumables.
+		std::array<std::string, 15> potionNames; // "Potion of <effect>"...
+		std::string unidentifiedPotionName;
+
 		// @todo: artifacts.
 
 		std::array<std::string, 11> bodyPartNames; // Chest, ..., general.

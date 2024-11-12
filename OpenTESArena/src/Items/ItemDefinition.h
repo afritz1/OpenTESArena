@@ -57,9 +57,11 @@ struct ArmorItemDefinition
 
 struct ConsumableItemDefinition
 {
-	char name[64]; // Potion, etc.
+	char name[64]; // "Potion of <effect>", etc.
+	char unidentifiedName[64];
+	// @todo: effect def ID?
 
-	void init(const char *name);
+	void init(const char *name, const char *unidentifiedName);
 };
 
 struct MiscItemDefinition
@@ -86,12 +88,16 @@ struct TrinketItemDefinition
 struct WeaponItemDefinition
 {
 	char name[64]; // Dagger, longsword, etc.
+	double weight;
+	int basePrice;
+	int damageMin;
+	int damageMax;
 	int handCount;
 	bool isRanged;
 	ItemMaterialDefinitionID materialDefID;
 
-	void initMelee(const char *name, int handCount, ItemMaterialDefinitionID materialDefID);
-	void initRanged(const char *name, ItemMaterialDefinitionID materialDefID);
+	void initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID);
+	void initRanged(const char *name, double weight, int basePrice, int damageMin, int damageMax, ItemMaterialDefinitionID materialDefID);
 };
 
 struct ArtifactItemDefinition
