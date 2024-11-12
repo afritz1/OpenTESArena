@@ -98,6 +98,7 @@ MaterialNames=0x3DD3B
 MaterialBonuses=0x3DD74
 MaterialChances=0x3DD7C
 MaterialPriceMultipliers=0x3DF7E
+ItemConditionNames=0x4144D
 ArmorNames=0x3DB20
 PlateArmorNames=0x3DD8A
 PlateArmorQualities=0x3DE21
