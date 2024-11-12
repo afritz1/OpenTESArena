@@ -386,6 +386,8 @@ SET(TES_ITEMS
     "${SRC_ROOT}/Items/ItemDefinition.h"
     "${SRC_ROOT}/Items/ItemInstance.cpp"
     "${SRC_ROOT}/Items/ItemInstance.h"
+    "${SRC_ROOT}/Items/ItemInventory.cpp"
+    "${SRC_ROOT}/Items/ItemInventory.h"
     "${SRC_ROOT}/Items/ItemLibrary.cpp"
     "${SRC_ROOT}/Items/ItemLibrary.h"
     "${SRC_ROOT}/Items/ItemMaterialLibrary.cpp"

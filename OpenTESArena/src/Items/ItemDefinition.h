@@ -47,12 +47,13 @@ enum class ArmorMaterialType
 struct ArmorItemDefinition
 {
 	char name[64]; // Helmet, left pauldron, etc..
+	double weight;
 	ArmorMaterialType materialType;
 	ItemMaterialDefinitionID plateMaterialDefID;
 
-	void initLeather(const char *name);
-	void initChain(const char *name);
-	void initPlate(const char *name, ItemMaterialDefinitionID materialDefID);
+	void initLeather(const char *name, double weight);
+	void initChain(const char *name, double weight);
+	void initPlate(const char *name, double weight, ItemMaterialDefinitionID materialDefID);
 };
 
 struct ConsumableItemDefinition
@@ -145,6 +146,9 @@ struct ItemDefinition
 	ItemDefinition();
 
 	void init(ItemType type);
+
+	std::string getDisplayName() const;
+	double getWeight() const;
 };
 
 #endif

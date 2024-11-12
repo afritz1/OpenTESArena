@@ -3,6 +3,7 @@
 
 #include "ItemDefinition.h"
 
+// Represents a slot in an inventory, supports stacking.
 struct ItemInstance
 {
 	ItemDefinitionID defID;

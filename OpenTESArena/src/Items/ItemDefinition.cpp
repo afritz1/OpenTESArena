@@ -43,23 +43,26 @@ void AccessoryItemDefinition::init(const char *name, ItemMaterialDefinitionID ma
 	this->materialDefID = materialDefID;
 }
 
-void ArmorItemDefinition::initLeather(const char *name)
+void ArmorItemDefinition::initLeather(const char *name, double weight)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->weight = weight;
 	this->materialType = ArmorMaterialType::Leather;
 	this->plateMaterialDefID = -1;
 }
 
-void ArmorItemDefinition::initChain(const char *name)
+void ArmorItemDefinition::initChain(const char *name, double weight)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->weight = weight;
 	this->materialType = ArmorMaterialType::Chain;
 	this->plateMaterialDefID = -1;
 }
 
-void ArmorItemDefinition::initPlate(const char *name, ItemMaterialDefinitionID materialDefID)
+void ArmorItemDefinition::initPlate(const char *name, double weight, ItemMaterialDefinitionID materialDefID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->weight = weight;
 	this->materialType = ArmorMaterialType::Plate;
 	this->plateMaterialDefID = materialDefID;
 }
@@ -136,4 +139,52 @@ void ItemDefinition::init(ItemType type)
 {
 	this->type = type;
 	this->isArtifact = false;
+}
+
+std::string ItemDefinition::getDisplayName() const
+{
+	// @todo eventually this will need stack counts from ItemInstance, so may as well move this there sometime
+
+	switch (this->type)
+	{
+	case ItemType::Accessory:
+		return this->accessory.name;
+	case ItemType::Armor:
+		return this->armor.name;
+	case ItemType::Consumable:
+		return this->consumable.name;
+	case ItemType::Misc:
+		return this->misc.name;
+	case ItemType::Shield:
+		return this->shield.name;
+	case ItemType::Trinket:
+		return this->trinket.name;
+	case ItemType::Weapon:
+		return this->weapon.name;
+	default:
+		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
+double ItemDefinition::getWeight() const
+{
+	switch (this->type)
+	{
+	case ItemType::Accessory:
+		return 0.0;
+	case ItemType::Armor:
+		return this->armor.weight;
+	case ItemType::Consumable:
+		return 0.0;
+	case ItemType::Misc:
+		return 0.0;
+	case ItemType::Shield:
+		return 0.0;
+	case ItemType::Trinket:
+		return 0.0;
+	case ItemType::Weapon:
+		return this->weapon.weight;
+	default:
+		DebugUnhandledReturnMsg(double, std::to_string(static_cast<int>(this->type)));
+	}
 }
