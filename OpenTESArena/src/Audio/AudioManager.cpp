@@ -673,17 +673,17 @@ void AudioManager::setMusic(const MusicDefinition *musicDef, const MusicDefiniti
 	if (optMusicDef != nullptr)
 	{
 		// Play optional music first and set the main music as the next music.
-		const std::string &optFilename = optMusicDef->getFilename();
+		const std::string &optFilename = optMusicDef->filename;
 		const bool loop = false;
 		this->playMusic(optFilename, loop);
 
 		DebugAssert(musicDef != nullptr);
-		mNextSong = musicDef->getFilename();
+		mNextSong = musicDef->filename;
 	}
 	else if (musicDef != nullptr)
 	{
 		// Play main music immediately.
-		const std::string &filename = musicDef->getFilename();
+		const std::string &filename = musicDef->filename;
 		const bool loop = true;
 		this->playMusic(filename, loop);
 	}

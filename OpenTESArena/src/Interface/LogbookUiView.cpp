@@ -2,7 +2,7 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/TextureUtils.h"
 
-TextBox::InitInfo LogbookUiView::getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+TextBox::InitInfo LogbookUiView::getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithCenter(
 		text,

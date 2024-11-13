@@ -9,7 +9,6 @@
 #include "../Assets/TextureManager.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
-#include "../Items/ArmorMaterialType.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -867,7 +866,7 @@ bool ArenaAnimUtils::trySetHumanFilenameGender(std::string &filename, bool isMal
 	return true;
 }
 
-bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::string_view &type)
+bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::string_view type)
 {
 	if (filename.size() == 0)
 	{

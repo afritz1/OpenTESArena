@@ -21,19 +21,19 @@ namespace
 
 void PauseMenuUiController::onNewGameButtonSelected(Game &game)
 {
-	game.getGameState().clearSession();
+	game.gameState.clearSession();
 	game.setPanel<MainMenuPanel>();
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-		MusicDefinition::Type::MainMenu, game.getRandom());
+		MusicType::MainMenu, game.random);
 
 	if (musicDef == nullptr)
 	{
 		DebugLogWarning("Missing main menu music.");
 	}
 
-	AudioManager &audioManager = game.getAudioManager();
+	AudioManager &audioManager = game.audioManager;
 	audioManager.setMusic(musicDef);
 }
 
@@ -71,17 +71,17 @@ void PauseMenuUiController::onOptionsButtonSelected(Game &game)
 
 void PauseMenuUiController::onSoundUpButtonSelected(Game &game, PauseMenuPanel &panel)
 {
-	auto &options = game.getOptions();
+	auto &options = game.options;
 	options.setAudio_SoundVolume(std::min(options.getAudio_SoundVolume() + VOLUME_DELTA, VOLUME_MAX));
 
-	auto &audioManager = game.getAudioManager();
+	auto &audioManager = game.audioManager;
 	audioManager.setSoundVolume(options.getAudio_SoundVolume());
 	panel.updateSoundText(options.getAudio_SoundVolume());
 }
 
 void PauseMenuUiController::onSoundDownButtonSelected(Game &game, PauseMenuPanel &panel)
 {
-	auto &options = game.getOptions();
+	auto &options = game.options;
 	const double newVolume = [&options]()
 	{
 		const double volume = std::max(options.getAudio_SoundVolume() - VOLUME_DELTA, VOLUME_MIN);
@@ -92,24 +92,24 @@ void PauseMenuUiController::onSoundDownButtonSelected(Game &game, PauseMenuPanel
 
 	options.setAudio_SoundVolume(newVolume);
 
-	auto &audioManager = game.getAudioManager();
+	auto &audioManager = game.audioManager;
 	audioManager.setSoundVolume(options.getAudio_SoundVolume());
 	panel.updateSoundText(options.getAudio_SoundVolume());
 }
 
 void PauseMenuUiController::onMusicUpButtonSelected(Game &game, PauseMenuPanel &panel)
 {
-	auto &options = game.getOptions();
+	auto &options = game.options;
 	options.setAudio_MusicVolume(std::min(options.getAudio_MusicVolume() + VOLUME_DELTA, VOLUME_MAX));
 
-	auto &audioManager = game.getAudioManager();
+	auto &audioManager = game.audioManager;
 	audioManager.setMusicVolume(options.getAudio_MusicVolume());
 	panel.updateMusicText(options.getAudio_MusicVolume());
 }
 
 void PauseMenuUiController::onMusicDownButtonSelected(Game &game, PauseMenuPanel &panel)
 {
-	auto &options = game.getOptions();
+	auto &options = game.options;
 	const double newVolume = [&options]()
 	{
 		const double volume = std::max(options.getAudio_MusicVolume() - VOLUME_DELTA, VOLUME_MIN);
@@ -120,7 +120,7 @@ void PauseMenuUiController::onMusicDownButtonSelected(Game &game, PauseMenuPanel
 
 	options.setAudio_MusicVolume(newVolume);
 
-	auto &audioManager = game.getAudioManager();
+	auto &audioManager = game.audioManager;
 	audioManager.setMusicVolume(options.getAudio_MusicVolume());
 	panel.updateMusicText(options.getAudio_MusicVolume());
 }

@@ -573,12 +573,6 @@ void RenderEntityChunkManager::unloadScene(Renderer &renderer)
 	this->transformBufferIDs.clear();
 	this->anims.clear();
 	this->paletteIndicesTextureRefs.clear();
-
-	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
-	{
-		ChunkPtr &chunkPtr = this->activeChunks[i];
-		this->recycleChunk(i);
-	}
-
 	this->drawCallsCache.clear();
+	this->recycleAllChunks();
 }

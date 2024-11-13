@@ -12,10 +12,11 @@
 
 class AudioManager;
 class Options;
-class Player;
 class Renderer;
 
 enum class PlayerInterface;
+
+struct Player;
 
 class OptionsPanel : public Panel
 {

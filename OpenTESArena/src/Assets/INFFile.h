@@ -13,10 +13,6 @@
 #include "components/dos/DOSUtils.h"
 #include "components/utilities/BufferView.h"
 
-// An .INF file contains definitions of what the IDs in a .MIF file point to. These 
-// are mostly texture IDs, but also text IDs and sound IDs telling which voxels have 
-// which kinds of triggers, etc..
-
 struct INFVoxelTexture
 {
 	std::string filename;
@@ -115,6 +111,9 @@ struct INFText
 	INFText(bool displayedOnce);
 };
 
+// An .INF file contains definitions of what the IDs in a .MIF file point to. These 
+// are mostly texture IDs, but also text IDs and sound IDs telling which voxels have 
+// which kinds of triggers, etc..
 class INFFile
 {
 private:

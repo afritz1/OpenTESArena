@@ -13,10 +13,9 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/Singleton.h"
 
-// Contains assets that are generally not human-readable.
-
 class ArenaRandom;
 
+// Contains assets that are generally not human-readable.
 class BinaryAssetLibrary : public Singleton<BinaryAssetLibrary>
 {
 public:

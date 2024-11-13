@@ -26,7 +26,7 @@ TextRenderUtils::ColorOverrideInfo::Entry::Entry(int charIndex, const Color &col
 }
 
 std::vector<TextRenderUtils::ColorOverrideInfo::Entry> TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(
-	const std::string_view &text, const Palette &palette)
+	const std::string_view text, const Palette &palette)
 {
 	// Technically the original game treats these as global color mode changes, not single-character overrides,
 	// so that could be something better-handled maybe.
@@ -111,13 +111,13 @@ void TextRenderUtils::TextShadowInfo::init(int offsetX, int offsetY, const Color
 	this->color = color;
 }
 
-Buffer<std::string_view> TextRenderUtils::getTextLines(const std::string_view &text)
+Buffer<std::string_view> TextRenderUtils::getTextLines(const std::string_view text)
 {
 	// @todo: might eventually handle "\r\n".
 	return StringView::split(text, '\n');
 }
 
-Buffer<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const std::string_view &line, const FontDefinition &fontDef)
+Buffer<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const std::string_view line, const FontDefinition &fontDef)
 {
 	FontDefinition::CharID fallbackCharID;
 	if (!fontDef.tryGetCharacterID("?", &fallbackCharID))
@@ -164,7 +164,7 @@ int TextRenderUtils::getLinePixelWidth(BufferView<const FontDefinition::CharID> 
 	return width;
 }
 
-int TextRenderUtils::getLinePixelWidth(const std::string_view &line, const FontDefinition &fontDef,
+int TextRenderUtils::getLinePixelWidth(const std::string_view line, const FontDefinition &fontDef,
 	const std::optional<TextShadowInfo> &shadow)
 {
 	const Buffer<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
@@ -175,7 +175,7 @@ int TextRenderUtils::getLinesPixelWidth(BufferView<const std::string_view> textL
 	const std::optional<TextShadowInfo> &shadow)
 {
 	int width = 0;
-	for (const std::string_view &line : textLines)
+	for (const std::string_view line : textLines)
 	{
 		const int linePixelWidth = TextRenderUtils::getLinePixelWidth(line, fontDef, shadow);
 		width = std::max(width, linePixelWidth);
@@ -203,7 +203,7 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(BufferView<c
 	return textureGenInfo;
 }
 
-TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view &text,
+TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view text,
 	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow, int lineSpacing)
 {
 	const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(text);
@@ -235,7 +235,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(BufferView<const std::string_
 		// Text lines are centered horizontally around the middle of the texture.
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
-			const std::string_view &textLine = textLines.get(i);
+			const std::string_view textLine = textLines.get(i);
 			const int linePixelWidth = TextRenderUtils::getLinePixelWidth(textLine, fontDef, shadow);
 			offsets[i].x = (textureWidth / 2) - (linePixelWidth / 2);
 		}
@@ -247,7 +247,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(BufferView<const std::string_
 		// Text lines are against the right edge.
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
-			const std::string_view &textLine = textLines.get(i);
+			const std::string_view textLine = textLines.get(i);
 			const int linePixelWidth = TextRenderUtils::getLinePixelWidth(textLine, fontDef, shadow);
 			offsets[i].x = textureWidth - linePixelWidth;
 		}
@@ -371,7 +371,7 @@ void TextRenderUtils::drawTextLine(BufferView<const FontDefinition::CharID> char
 	drawLine(foregroundDstX, foregroundDstY, textColor, allowForegroundColorOverrides);
 }
 
-void TextRenderUtils::drawTextLine(const std::string_view &line, const FontDefinition &fontDef, int dstX, int dstY,
+void TextRenderUtils::drawTextLine(const std::string_view line, const FontDefinition &fontDef, int dstX, int dstY,
 	const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
 	BufferView2D<uint32_t> &outBuffer)
 {
@@ -401,7 +401,7 @@ void TextRenderUtils::drawTextLines(BufferView<const std::string_view> textLines
 	// @todo: might need to draw all shadow lines before all regular lines.
 	for (int i = 0; i < textLines.getCount(); i++)
 	{
-		const std::string_view &textLine = textLines.get(i);
+		const std::string_view textLine = textLines.get(i);
 		const Int2 &offset = offsets[i];
 		TextRenderUtils::drawTextLine(textLine, fontDef, dstX + offset.x, dstY + offset.y, textColor,
 			colorOverrideInfo, shadow, outBuffer);

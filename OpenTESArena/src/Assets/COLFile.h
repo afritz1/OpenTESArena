@@ -4,7 +4,6 @@
 #include "../Utilities/Palette.h"
 
 // A COL file (assuming it means "color" file) has the colors for a palette.
-
 class COLFile
 {
 private:

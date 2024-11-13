@@ -16,14 +16,14 @@ LogbookPanel::LogbookPanel(Game &game)
 
 LogbookPanel::~LogbookPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &inputManager = this->getGame().inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::Logbook, false);
 }
 
 bool LogbookPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string titleText = LogbookUiModel::getTitleText(game);
@@ -34,7 +34,7 @@ bool LogbookPanel::init()
 		return false;
 	}
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::Logbook, true);
 
 	this->backButton = Button<Game&>(
@@ -57,7 +57,7 @@ bool LogbookPanel::init()
 	this->addInputActionListener(InputActionName::Back, backInputActionFunc);
 	this->addInputActionListener(InputActionName::Logbook, backInputActionFunc);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = LogbookUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 	this->addDrawCall(

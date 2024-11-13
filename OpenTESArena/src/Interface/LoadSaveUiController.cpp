@@ -33,11 +33,11 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 		game.popSubPanel();
 	};
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(TextureUtils::PatternType::Dark,
 		textBoxInitInfo.rect.getWidth() + 10, textBoxInitInfo.rect.getHeight() + 10,
-		game.getTextureManager(), renderer);
+		game.textureManager, renderer);
 
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
@@ -54,7 +54,7 @@ void LoadSaveUiController::onBackInputAction(const InputActionCallbackValues &va
 	if (values.performed)
 	{
 		Game &game = values.game;
-		const GameState &gameState = game.getGameState();
+		const GameState &gameState = game.gameState;
 		if (gameState.isActiveMapValid())
 		{
 			game.setPanel<PauseMenuPanel>();

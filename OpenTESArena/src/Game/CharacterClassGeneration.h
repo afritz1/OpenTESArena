@@ -6,7 +6,6 @@
 
 // A record for keeping data from CLASSES.DAT in a nicer format. It is used with
 // the character questions for generating a suggested class for the player.
-
 struct CharacterClassGeneration
 {
 	struct ClassData

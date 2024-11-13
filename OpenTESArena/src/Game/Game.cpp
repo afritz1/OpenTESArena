@@ -7,8 +7,13 @@
 #include <string>
 #include <thread>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Core/JobSystemThreadPool.h"
+#include "Jolt/Core/TempAllocator.h"
+#include "Jolt/Physics/PhysicsSystem.h"
 #include "SDL.h"
 
+#include "ClockLibrary.h"
 #include "Game.h"
 #include "Options.h"
 #include "PlayerInterface.h"
@@ -18,6 +23,10 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Collision/Physics.h"
+#include "../Collision/PhysicsBodyActivationListener.h"
+#include "../Collision/PhysicsContactListener.h"
+#include "../Collision/PhysicsLayer.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../GameLogic/PlayerLogicController.h"
@@ -30,6 +39,9 @@
 #include "../Interface/GameWorldUiView.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
+#include "../Items/ItemConditionLibrary.h"
+#include "../Items/ItemLibrary.h"
+#include "../Items/ItemMaterialLibrary.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
@@ -58,6 +70,17 @@ namespace
 		std::chrono::nanoseconds sleepBias; // Thread sleeping takes longer than it should on some platforms.
 		double deltaTime; // Difference between frame times in seconds.
 		double clampedDeltaTime; // For game logic calculations that become imprecise or break at low FPS.
+		int physicsSteps; // 1 unless the engine has to do more steps this frame to keep numeric accuracy.
+
+		FrameTimer()
+		{
+			this->maximumTime = std::chrono::nanoseconds(0);
+			this->minimumTime = std::chrono::nanoseconds(0);
+			this->sleepBias = std::chrono::nanoseconds(0);
+			this->deltaTime = 0.0;
+			this->clampedDeltaTime = 0.0;
+			this->physicsSteps = 0;
+		}
 
 		void init()
 		{
@@ -91,6 +114,7 @@ namespace
 			constexpr double timeUnitsReal = static_cast<double>(std::nano::den);
 			this->deltaTime = static_cast<double>(previousFrameDuration.count()) / timeUnitsReal;
 			this->clampedDeltaTime = std::fmin(previousFrameDuration.count(), this->maximumTime.count()) / timeUnitsReal;
+			this->physicsSteps = static_cast<int>(std::ceil(this->clampedDeltaTime / Physics::DeltaTime));
 		}
 	};
 
@@ -164,11 +188,14 @@ namespace
 
 Game::Game()
 {
+	this->physicsTempAllocator = nullptr;
+
 	// Keeps us from deleting a sub-panel the same frame it's in use. The pop is delayed until the
 	// beginning of the next frame.
 	this->requestedSubPanelPop = false;
 
 	this->shouldSimulateScene = false;
+	this->shouldRenderScene = false;
 	this->running = true;
 }
 
@@ -244,8 +271,7 @@ bool Game::init()
 	// Initialize the renderer and window with the given settings.
 	auto resolutionScaleFunc = [this]()
 	{
-		const auto &options = this->getOptions();
-		return options.getGraphics_ResolutionScale();
+		return this->options.getGraphics_ResolutionScale();
 	};
 
 	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
@@ -287,9 +313,7 @@ bool Game::init()
 	{
 		if (values.performed)
 		{
-			// Save a screenshot to the local folder.
-			const auto &renderer = this->getRenderer();
-			const Surface screenshot = renderer.getScreenshot();
+			const Surface screenshot = this->renderer.getScreenshot();
 			this->saveScreenshot(screenshot);
 		}
 	});
@@ -323,6 +347,13 @@ bool Game::init()
 		return false;
 	}
 
+	const std::string clockLibraryPath = dataFolderPath + "Clocks.txt";
+	if (!ClockLibrary::getInstance().init(clockLibraryPath.c_str()))
+	{
+		DebugLogError("Couldn't init clock library with path \"" + clockLibraryPath + "\".");
+		return false;
+	}
+
 	const std::string musicLibraryPath = audioDataPath + "MusicDefinitions.txt";
 	if (!MusicLibrary::getInstance().init(musicLibraryPath.c_str()))
 	{
@@ -333,6 +364,9 @@ bool Game::init()
 	CinematicLibrary::getInstance().init();
 
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	ItemConditionLibrary::getInstance().init(exeData);
+	ItemMaterialLibrary::getInstance().init(exeData);
+	ItemLibrary::getInstance().init(exeData);
 	CharacterClassLibrary::getInstance().init(exeData);
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
 
@@ -385,41 +419,6 @@ Panel *Game::getActivePanel() const
 	return (this->subPanels.size() > 0) ? this->subPanels.back().get() : this->panel.get();
 }
 
-AudioManager &Game::getAudioManager()
-{
-	return this->audioManager;
-}
-
-InputManager &Game::getInputManager()
-{
-	return this->inputManager;
-}
-
-GameState &Game::getGameState()
-{
-	return this->gameState;
-}
-
-Player &Game::getPlayer()
-{
-	return this->player;
-}
-
-SceneManager &Game::getSceneManager()
-{
-	return this->sceneManager;
-}
-
-bool Game::isSimulatingScene() const
-{
-	return this->shouldSimulateScene;
-}
-
-void Game::setIsSimulatingScene(bool active)
-{
-	this->shouldSimulateScene = active;
-}
-
 bool Game::characterCreationIsActive() const
 {
 	return this->charCreationState.get() != nullptr;
@@ -431,36 +430,6 @@ CharacterCreationState &Game::getCharacterCreationState() const
 	return *this->charCreationState.get();
 }
 
-Options &Game::getOptions()
-{
-	return this->options;
-}
-
-Renderer &Game::getRenderer()
-{
-	return this->renderer;
-}
-
-TextureManager &Game::getTextureManager()
-{
-	return this->textureManager;
-}
-
-Random &Game::getRandom()
-{
-	return this->random;
-}
-
-ArenaRandom &Game::getArenaRandom()
-{
-	return this->arenaRandom;
-}
-
-const FPSCounter &Game::getFPSCounter() const
-{
-	return this->fpsCounter;
-}
-
 const Rect &Game::getNativeCursorRegion(int index) const
 {
 	DebugAssertIndex(this->nativeCursorRegions, index);
@@ -469,6 +438,9 @@ const Rect &Game::getNativeCursorRegion(int index) const
 
 TextBox *Game::getTriggerTextBox()
 {
+	DebugAssert(this->shouldSimulateScene);
+	DebugAssert(this->gameState.isActiveMapValid());
+
 	Panel *panel = this->getActivePanel();
 	if (panel == nullptr)
 	{
@@ -476,13 +448,7 @@ TextBox *Game::getTriggerTextBox()
 		return nullptr;
 	}
 
-	GameWorldPanel *gameWorldPanel = dynamic_cast<GameWorldPanel*>(panel);
-	if (gameWorldPanel == nullptr)
-	{
-		DebugLogError("Active panel is not game world panel for trigger text box getter.");
-		return nullptr;
-	}
-
+	GameWorldPanel *gameWorldPanel = static_cast<GameWorldPanel*>(panel); // @todo: can't use dynamic_cast anymore, this isn't safe.
 	return &gameWorldPanel->getTriggerTextBox();
 }
 
@@ -507,11 +473,6 @@ void Game::popSubPanel()
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
 {
 	this->charCreationState = std::move(charCreationState);
-}
-
-void Game::setGameWorldRenderCallback(const GameWorldRenderCallback &callback)
-{
-	this->gameWorldRenderCallback = callback;
 }
 
 void Game::initOptions(const std::string &basePath, const std::string &optionsPath)
@@ -548,8 +509,8 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	if (this->gameState.isActiveMapValid())
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
-		const CoordDouble3 &playerCoord = this->player.getPosition();
-		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.getDirection(),
+		const CoordDouble3 playerCoord = this->player.getEyeCoord();
+		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.forward,
 			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
@@ -673,7 +634,7 @@ void Game::handleWindowResized(int width, int height)
 void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
 {
 	// Update screen regions for classic interface player movement.
-	GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect>(this->nativeCursorRegions), windowWidth, windowHeight);
+	GameWorldUiModel::updateNativeCursorRegions(this->nativeCursorRegions, windowWidth, windowHeight);
 }
 
 void Game::renderDebugInfo()
@@ -746,13 +707,13 @@ void Game::renderDebugInfo()
 	if (profilerLevel >= 3)
 	{
 		// Player position, direction, etc.
-		const CoordDouble3 &playerPosition = this->player.getPosition();
-		const Double3 &direction = this->player.getDirection();
+		const CoordDouble3 playerCoord = this->player.getEyeCoord();
+		const Double3 &direction = this->player.forward;
 
-		const std::string chunkStr = playerPosition.chunk.toString();
-		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
-		const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
-		const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
+		const std::string chunkStr = playerCoord.chunk.toString();
+		const std::string chunkPosX = String::fixedPrecision(playerCoord.point.x, 2);
+		const std::string chunkPosY = String::fixedPrecision(playerCoord.point.y, 2);
+		const std::string chunkPosZ = String::fixedPrecision(playerCoord.point.z, 2);
 		const std::string dirX = String::fixedPrecision(direction.x, 2);
 		const std::string dirY = String::fixedPrecision(direction.y, 2);
 		const std::string dirZ = String::fixedPrecision(direction.z, 2);
@@ -760,6 +721,13 @@ void Game::renderDebugInfo()
 		debugText.append("\nChunk: " + chunkStr + '\n' +
 			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
+
+		// Set Jolt Physics camera position for LOD.
+		const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerCoord);
+		this->renderer.SetCameraPos(JPH::RVec3Arg(static_cast<float>(playerWorldPos.x), static_cast<float>(playerWorldPos.y), static_cast<float>(playerWorldPos.z)));
+
+		JPH::BodyManager::DrawSettings drawSettings;
+		this->physicsSystem.DrawBodies(drawSettings, &this->renderer);
 
 		GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(*this);
 	}
@@ -783,11 +751,26 @@ void Game::renderDebugInfo()
 
 void Game::loop()
 {
+	// Set up physics system values.
+	JPH::TempAllocatorImpl physicsAllocator(Physics::TempAllocatorByteCount);
+	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
+	PhysicsBroadPhaseLayerInterface physicsBroadPhaseLayerInterface;
+	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
+	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
+	
+	this->physicsTempAllocator = &physicsAllocator;
+	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
+
+	PhysicsBodyActivationListener physicsBodyActivationListener;
+	PhysicsContactListener physicsContactListener;
+	this->physicsSystem.SetBodyActivationListener(&physicsBodyActivationListener);
+	this->physicsSystem.SetContactListener(&physicsContactListener);
+
 	// Initialize panel and music to default (bootstrapping the first game frame).
 	this->panel = IntroUiModel::makeStartupPanel(*this);
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::MainMenu, this->random);
+	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::MainMenu, this->random);
 	if (mainMenuMusicDef == nullptr)
 	{
 		DebugLogWarning("Missing main menu music.");
@@ -821,19 +804,22 @@ void Game::loop()
 			const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
 			auto onFinishedProcessingEventFunc = [this]()
 			{
-				// See if the event requested any changes in active panels.
 				this->handlePanelChanges();
 			};
 
 			this->inputManager.update(*this, deltaTime, buttonProxies, onFinishedProcessingEventFunc);
 
-			if (this->isSimulatingScene())
+			if (this->shouldSimulateScene)
 			{
-				// Handle input for player motion.
-				const BufferView<const Rect> nativeCursorRegionsView(this->nativeCursorRegions);
-				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, nativeCursorRegionsView);
-				PlayerLogicController::turnPlayer(*this, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
-				PlayerLogicController::handlePlayerMovement(*this, clampedDeltaTime, nativeCursorRegionsView);
+				const Double2 playerTurnAngleDeltas = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, this->nativeCursorRegions);
+
+				// Multiply by 100 so the values in options are more convenient.
+				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());
+				const Degrees deltaDegreesY = playerTurnAngleDeltas.y * (100.0 * this->options.getInput_VerticalSensitivity());
+				const Degrees pitchLimit = this->options.getInput_CameraPitchLimit();
+				this->player.rotateX(deltaDegreesX);
+				this->player.rotateY(deltaDegreesY, pitchLimit);
+				PlayerLogicController::handlePlayerMovement(*this, clampedDeltaTime, this->nativeCursorRegions);
 			}
 		}
 		catch (const std::exception &e)
@@ -841,49 +827,46 @@ void Game::loop()
 			DebugCrash("User input exception: " + std::string(e.what()));
 		}
 
-		// Tick.
+		// Tick game state.
 		try
 		{
-			// Animate the current UI panel by delta time.
 			this->getActivePanel()->tick(clampedDeltaTime);
-
-			// See if the panel tick requested any changes in active panels.
 			this->handlePanelChanges();
 
-			if (this->isSimulatingScene() && this->gameState.isActiveMapValid())
+			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				// Recalculate the active chunks.
-				const CoordDouble3 oldPlayerCoord = this->player.getPosition();
+				const CoordDouble3 oldPlayerCoord = this->player.getEyeCoord();
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
 				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
 
-				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
-				// It shouldn't be abstracted into a game state.
-				// - it should be like "do we need to clear the scene? yes/no. update the scene immediately? yes/no"
-
-				// Tick the various pieces of game world state.
 				this->gameState.tickGameClock(clampedDeltaTime, *this);
 				this->gameState.tickChasmAnimation(clampedDeltaTime);
 				this->gameState.tickSky(clampedDeltaTime, *this);
 				this->gameState.tickWeather(clampedDeltaTime, *this);
 				this->gameState.tickUiMessages(clampedDeltaTime);
-				this->gameState.tickPlayer(clampedDeltaTime, *this);
+				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickEntities(clampedDeltaTime, *this);
-				this->gameState.tickCollision(clampedDeltaTime, *this);
+				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);
 
-				const CoordDouble3 newPlayerCoord = this->player.getPosition();
-				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, this->player.getDirection(),
+				this->player.prePhysicsStep(clampedDeltaTime, *this);
+				this->physicsSystem.Update(static_cast<float>(clampedDeltaTime), frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
+				this->player.postPhysicsStep(*this);
+
+				const CoordDouble3 newPlayerCoord = this->player.getEyeCoord();
+				this->gameState.tickPlayerMovementTriggers(oldPlayerCoord, newPlayerCoord, *this);
+
+				const Double3 newPlayerDirection = this->player.forward;
+				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, newPlayerDirection,
 					this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(renderCamera, *this);
 
 				// Update audio listener orientation.
-				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(newPlayerCoord);
-				const WorldDouble3 &direction = this->player.getDirection();
-				const AudioManager::ListenerData listenerData(absolutePosition, direction);
+				const WorldDouble3 newPlayerWorldPos = VoxelUtils::coordToWorldPoint(newPlayerCoord);
+				const AudioManager::ListenerData listenerData(newPlayerWorldPos, newPlayerDirection);
 				this->audioManager.updateListener(listenerData);
 			}
 
@@ -900,7 +883,7 @@ void Game::loop()
 		{
 			if (this->gameState.hasPendingSceneChange())
 			{
-				this->gameState.applyPendingSceneChange(*this, clampedDeltaTime);
+				this->gameState.applyPendingSceneChange(*this, this->physicsSystem, clampedDeltaTime);
 			}
 		}
 		catch (const std::exception &e)
@@ -921,9 +904,9 @@ void Game::loop()
 
 			this->renderer.clear();
 
-			if (this->gameWorldRenderCallback)
+			if (this->shouldRenderScene)
 			{
-				if (!this->gameWorldRenderCallback(*this))
+				if (!GameWorldPanel::renderScene(*this))
 				{
 					DebugLogError("Couldn't render game world.");
 				}
@@ -979,7 +962,7 @@ void Game::loop()
 		// End-of-frame clean up.
 		try
 		{
-			this->sceneManager.cleanUp();
+			this->sceneManager.cleanUp(this->physicsSystem);
 		}
 		catch (const std::exception &e)
 		{
@@ -988,5 +971,8 @@ void Game::loop()
 	}
 
 	// At this point, the engine has received an exit signal and is now quitting peacefully.
+	this->player.freePhysicsBody(this->physicsSystem);
+	this->sceneManager.collisionChunkManager.clear(this->physicsSystem);
+
 	this->options.saveChanges();
 }

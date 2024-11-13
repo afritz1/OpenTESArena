@@ -66,8 +66,8 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	const OnClosedFunction &onClosed)
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 
 	// The background expands to fit the text, unless overridden.
@@ -259,12 +259,12 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	return true;
 }
 
-void MessageBoxSubPanel::setTitleText(const std::string_view &text)
+void MessageBoxSubPanel::setTitleText(const std::string_view text)
 {
 	this->titleTextBox.setText(text);
 }
 
-void MessageBoxSubPanel::setItemText(int itemIndex, const std::string_view &text)
+void MessageBoxSubPanel::setItemText(int itemIndex, const std::string_view text)
 {
 	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
 	item.textBox.setText(text);

@@ -4,9 +4,7 @@
 #include <string>
 
 // The Date class manages all the data needed to identify a particular date in the game.
-
 // The month and weekday are both zero-based so they can index into the executable strings.
-
 class Date
 {
 private:

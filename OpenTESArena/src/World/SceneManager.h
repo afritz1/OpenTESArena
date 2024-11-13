@@ -1,6 +1,9 @@
 #ifndef SCENE_MANAGER_H
 #define SCENE_MANAGER_H
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+
 #include "ChunkManager.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
@@ -50,8 +53,8 @@ struct SceneManager
 	SceneManager();
 
 	void init(TextureManager &textureManager, Renderer &renderer);
-	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double daytimePercent, TextureManager &textureManager);
-	void cleanUp();
+	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double dayPercent, TextureManager &textureManager);
+	void cleanUp(JPH::PhysicsSystem &physicsSystem);
 };
 
 #endif

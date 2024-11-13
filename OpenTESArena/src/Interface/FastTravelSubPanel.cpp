@@ -16,7 +16,7 @@ bool FastTravelSubPanel::init()
 
 	// Determine how long the animation should run until switching to the game world.
 	auto &game = this->getGame();
-	const auto &gameState = game.getGameState();
+	const auto &gameState = game.gameState;
 	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
 	DebugAssert(travelDataPtr != nullptr);
 	const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
@@ -25,8 +25,8 @@ bool FastTravelSubPanel::init()
 
 	this->frameIndex = 0;
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = FastTravelUiView::getPaletteTextureAsset();
 	const std::string animFilename = FastTravelUiView::getAnimationFilename();
@@ -96,7 +96,7 @@ void FastTravelSubPanel::tick(double dt)
 	this->totalSeconds += dt;
 	if (this->totalSeconds >= this->targetSeconds)
 	{
-		const auto &gameState = game.getGameState();
+		const auto &gameState = game.gameState;
 		const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
 		DebugAssert(travelDataPtr != nullptr);
 		const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;

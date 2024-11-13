@@ -1,6 +1,8 @@
 #include <cmath>
+#include <cstdio>
 
 #include "Constants.h"
+#include "MathUtils.h"
 #include "Matrix4.h"
 
 template <typename T>
@@ -167,7 +169,7 @@ template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
 	// Differs slightly from other perspective matrices so Z in NDC space is between 0 and 1.
-	const T halfFovRadians = fovY * static_cast<T>(0.50 * Constants::DegToRad);
+	const T halfFovRadians = fovY * static_cast<T>(MathUtils::degToRad(0.50));
 	const T tangent = static_cast<T>(std::tan(halfFovRadians));
 	const T nearFarDiff = near - far;
 
@@ -238,29 +240,16 @@ T Matrix4<T>::getDeterminant() const
 	return (xxResult - xyResult) + (xzResult - xwResult);
 }
 
-template <typename T>
+template<typename T>
 std::string Matrix4<T>::toString() const
 {
-	return std::string("[") +
-		std::to_string(this->x.x) + std::string(", ") +
-		std::to_string(this->y.x) + std::string(", ") +
-		std::to_string(this->z.x) + std::string(", ") +
-		std::to_string(this->w.x) + std::string(",\n ") +
-
-		std::to_string(this->x.y) + std::string(", ") +
-		std::to_string(this->y.y) + std::string(", ") +
-		std::to_string(this->z.y) + std::string(", ") +
-		std::to_string(this->w.y) + std::string(",\n ") +
-
-		std::to_string(this->x.z) + std::string(", ") +
-		std::to_string(this->y.z) + std::string(", ") +
-		std::to_string(this->z.z) + std::string(", ") +
-		std::to_string(this->w.z) + std::string(",\n ") +
-
-		std::to_string(this->x.w) + std::string(", ") +
-		std::to_string(this->y.w) + std::string(", ") +
-		std::to_string(this->z.w) + std::string(", ") +
-		std::to_string(this->w.w) + std::string("]");
+	char buffer[512];
+	std::snprintf(buffer, std::size(buffer), "|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|",
+		this->x.x, this->y.x, this->z.x, this->w.x,
+		this->x.y, this->y.y, this->z.y, this->w.y,
+		this->x.z, this->y.z, this->z.z, this->w.z,
+		this->x.w, this->y.w, this->z.w, this->w.w);
+	return std::string(buffer);
 }
 
 // Template instantiations.

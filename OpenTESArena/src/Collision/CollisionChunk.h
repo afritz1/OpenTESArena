@@ -3,7 +3,11 @@
 
 #include <vector>
 
-#include "CollisionMeshDefinition.h"
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/Body/BodyID.h"
+#include "Jolt/Physics/Body/BodyInterface.h"
+
+#include "CollisionShapeDefinition.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../World/Chunk.h"
 
@@ -12,23 +16,24 @@
 class CollisionChunk final : public Chunk
 {
 public:
-	using CollisionMeshDefID = int;
+	using CollisionShapeDefID = int;
 
-	std::vector<CollisionMeshDefinition> meshDefs;
-	std::unordered_map<VoxelChunk::VoxelMeshDefID, CollisionChunk::CollisionMeshDefID> meshMappings;
-	Buffer3D<CollisionMeshDefID> meshDefIDs;
-	Buffer3D<bool> enabledColliders;
+	std::vector<CollisionShapeDefinition> shapeDefs;
+	std::unordered_map<VoxelChunk::VoxelShapeDefID, CollisionChunk::CollisionShapeDefID> shapeMappings;
+	Buffer3D<CollisionShapeDefID> shapeDefIDs;
+	Buffer3D<bool> enabledColliders; // @todo: decide if this is obsolete and whether the Body can store its in/out of world state
+	Buffer3D<JPH::BodyID> physicsBodyIDs;
 
-	static constexpr CollisionMeshDefID AIR_COLLISION_MESH_DEF_ID = 0;
+	static constexpr CollisionShapeDefID AIR_COLLISION_SHAPE_DEF_ID = 0;
 
 	void init(const ChunkInt2 &position, int height);
+	void freePhysicsBodyIDs(JPH::BodyInterface &bodyInterface);
 	void clear();
 
-	int getCollisionMeshDefCount() const;
-	const CollisionMeshDefinition &getCollisionMeshDef(CollisionMeshDefID id) const;
-	CollisionMeshDefID addCollisionMeshDef(CollisionMeshDefinition &&meshDef);
-
-	CollisionChunk::CollisionMeshDefID getOrAddMeshDefIdMapping(const VoxelChunk &voxelChunk, VoxelChunk::VoxelMeshDefID voxelMeshDefID);
+	int getCollisionShapeDefCount() const;
+	const CollisionShapeDefinition &getCollisionShapeDef(CollisionShapeDefID id) const;
+	CollisionShapeDefID addCollisionShapeDef(CollisionShapeDefinition &&shapeDef);
+	CollisionChunk::CollisionShapeDefID getOrAddShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelChunk::VoxelShapeDefID voxelShapeDefID);
 };
 
 #endif

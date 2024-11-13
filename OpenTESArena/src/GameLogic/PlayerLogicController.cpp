@@ -45,7 +45,7 @@ namespace PlayerLogicController
 		// because the Y component is intentionally truncated).
 		const Double2 groundDirection = player.getGroundDirection();
 		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-		const Double3 &rightDirection = player.getRight();
+		const Double3 &rightDirection = player.right;
 
 		// Mouse movement takes priority over key movement.
 		if (leftClick && isOnGround)
@@ -65,7 +65,7 @@ namespace PlayerLogicController
 			// Strength of movement is determined by the mouse's position in each region.
 			// Motion magnitude (percent) is between 0.0 and 1.0.
 			double percent = 0.0;
-			Double3 accelDirection(0.0, 0.0, 0.0);
+			Double3 accelDirection = Double3::Zero;
 			if (topLeft.contains(mousePosition))
 			{
 				// Forward.
@@ -117,8 +117,10 @@ namespace PlayerLogicController
 				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 				if (rightClick)
 				{
-					// Jump.
-					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					if (player.canJump())
+					{
+						player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					}
 				}
 				// Change the player's velocity if valid.
 				else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
@@ -130,7 +132,7 @@ namespace PlayerLogicController
 		else if ((forward || backward || ((left || right) && lCtrl) || space) && isOnGround)
 		{
 			// Calculate the acceleration direction based on input.
-			Double3 accelDirection(0.0, 0.0, 0.0);
+			Double3 accelDirection = Double3::Zero;
 
 			if (forward)
 			{
@@ -162,8 +164,10 @@ namespace PlayerLogicController
 			// Check for jumping first (so the player can't slide jump on the first frame).
 			if (space)
 			{
-				// Jump.
-				player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+				if (player.canJump())
+				{
+					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+				}
 			}
 			// Change the player's velocity if valid.
 			else if (std::isfinite(accelDirection.length()))
@@ -173,7 +177,7 @@ namespace PlayerLogicController
 		}
 		else if (isOnGround)
 		{
-			player.setVelocityToZero();
+			player.setPhysicsVelocity(Double3::Zero);
 		}
 	}
 
@@ -190,58 +194,65 @@ namespace PlayerLogicController
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
-		const Double3 direction = player.getDirection();
+		const Double3 direction = player.forward;
 		const Double2 groundDirection = player.getGroundDirection();
 		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-		const Double3 &rightDirection = player.getRight();
+		const Double3 &rightDirection = player.right;
 		const Double3 upDirection = rightDirection.cross(direction).normalized();
 
 		if (!isGhostModeEnabled)
 		{
-			if ((forward || backward || left || right || jump) && isOnGround)
+			if (isOnGround)
 			{
-				// Check for jumping first so the player can't slide jump on the first frame.
-				if (jump)
+				if (forward || backward || left || right || jump)
 				{
-					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					// Check for jumping first so the player can't slide jump on the first frame.
+					if (jump)
+					{
+						if (player.canJump())
+						{
+							player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+						}
+					}
+					else
+					{
+						Double3 accelDirection = Double3::Zero;
+						if (forward)
+						{
+							accelDirection = accelDirection + groundDirection3D;
+						}
+
+						if (backward)
+						{
+							accelDirection = accelDirection - groundDirection3D;
+						}
+
+						if (right)
+						{
+							accelDirection = accelDirection + rightDirection;
+						}
+
+						if (left)
+						{
+							accelDirection = accelDirection - rightDirection;
+						}
+
+						if (accelDirection.lengthSquared() > 0.0)
+						{
+							accelDirection = accelDirection.normalized();
+							player.accelerate(accelDirection, walkSpeed, dt);
+						}
+					}
 				}
 				else
 				{
-					Double3 accelDirection = Double3::Zero;
-					if (forward)
-					{
-						accelDirection = accelDirection + groundDirection3D;
-					}
-
-					if (backward)
-					{
-						accelDirection = accelDirection - groundDirection3D;
-					}
-
-					if (right)
-					{
-						accelDirection = accelDirection + rightDirection;
-					}
-
-					if (left)
-					{
-						accelDirection = accelDirection - rightDirection;
-					}
-
-					if (accelDirection.lengthSquared() > 0.0)
-					{
-						accelDirection = accelDirection.normalized();
-						player.accelerate(accelDirection, walkSpeed, dt);
-					}
+					player.setPhysicsVelocity(Double3::Zero);
 				}
-			}
-			else if (isOnGround)
-			{
-				player.setVelocityToZero();
 			}
 		}
 		else
 		{
+			// Ghost movement.
 			Double3 accelDirection = Double3::Zero;
 			if (forward)
 			{
@@ -277,12 +288,11 @@ namespace PlayerLogicController
 			{
 				accelDirection = accelDirection.normalized();
 
-				const CoordDouble3 &playerCoord = player.getPosition();
-
+				const CoordDouble3 playerCoord = player.getEyeCoord();
 				constexpr double ghostSpeed = 10.0;
 				const VoxelDouble3 deltaPoint = accelDirection * (ghostSpeed * dt);
 				const CoordDouble3 newPlayerCoord = ChunkUtils::recalculateCoord(playerCoord.chunk, playerCoord.point + deltaPoint);
-				player.teleport(newPlayerCoord);
+				player.setPhysicsPosition(VoxelUtils::coordToWorldPoint(newPlayerCoord));
 			}
 		}		
 	}
@@ -290,14 +300,14 @@ namespace PlayerLogicController
 
 Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
 {
-	const auto &inputManager = game.getInputManager();
+	const auto &inputManager = game.inputManager;
 
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
 		// Classic interface mode.
-		auto &player = game.getPlayer();
+		auto &player = game.player;
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
@@ -379,13 +389,13 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, B
 		const int dy = mouseDelta.y;
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-		auto &player = game.getPlayer();
-		const auto &weaponAnim = player.getWeaponAnimation();
+		auto &player = game.player;
+		const auto &weaponAnim = player.weaponAnimation;
 		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
 
 		if (turning)
 		{
-			const Int2 dimensions = game.getRenderer().getWindowDimensions();
+			const Int2 dimensions = game.renderer.getWindowDimensions();
 
 			// Get the smaller of the two dimensions, so the look sensitivity is relative
 			// to a square instead of a rectangle. This keeps the camera look independent
@@ -403,37 +413,25 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, B
 	return Double2::Zero;
 }
 
-void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
-{
-	const auto &options = game.getOptions();
-	auto &player = game.getPlayer();
-	player.rotate(dx, dy, options.getInput_HorizontalSensitivity(),
-		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
-}
-
 void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
 {
-	const InputManager &inputManager = game.getInputManager();
+	const InputManager &inputManager = game.inputManager;
 
-	// Arbitrary movement speed.
-	constexpr double walkSpeed = 15.0;
+	Player &player = game.player;
+	const double maxWalkSpeed = player.maxWalkSpeed;
+	const bool isOnGround = player.onGround();
 
-	const GameState &gameState = game.getGameState();
-	const SceneManager &sceneManager = game.getSceneManager();
-	Player &player = game.getPlayer();
-	const bool isOnGround = player.onGround(sceneManager.collisionChunkManager);
-
-	const Options &options = game.getOptions();
+	const Options &options = game.options;
 	const bool isGhostModeEnabled = options.getMisc_GhostMode();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
-		PlayerLogicController::handlePlayerMovementClassic(player, dt, walkSpeed, isOnGround, isGhostModeEnabled,
+		PlayerLogicController::handlePlayerMovementClassic(player, dt, maxWalkSpeed, isOnGround, isGhostModeEnabled,
 			inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		PlayerLogicController::handlePlayerMovementModern(player, dt, walkSpeed, isOnGround, isGhostModeEnabled, inputManager);
+		PlayerLogicController::handlePlayerMovementModern(player, dt, maxWalkSpeed, isOnGround, isGhostModeEnabled, inputManager);
 	}
 }
 
@@ -446,16 +444,16 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	// maybe the game loop could call a "Panel::fixedTick()" method.
 
 	// Only handle attacking if the player's weapon is currently idle.
-	auto &weaponAnimation = game.getPlayer().getWeaponAnimation();
+	auto &weaponAnimation = game.player.weaponAnimation;
 	if (weaponAnimation.isIdle())
 	{
-		const auto &inputManager = game.getInputManager();
-		auto &audioManager = game.getAudioManager();
+		const auto &inputManager = game.inputManager;
+		auto &audioManager = game.audioManager;
 
 		if (!weaponAnimation.isRanged())
 		{
 			// Handle melee attack.
-			const Int2 dimensions = game.getRenderer().getWindowDimensions();
+			const Int2 dimensions = game.renderer.getWindowDimensions();
 
 			// Get the smaller of the two dimensions, so the percentage change in mouse position
 			// is relative to a square instead of a rectangle.
@@ -530,7 +528,7 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 			// Handle ranged attack.
 			const bool isAttack = [&game, &inputManager]()
 			{
-				const auto &options = game.getOptions();
+				const auto &options = game.options;
 				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
 				if (!options.getGraphics_ModernInterface())
@@ -540,8 +538,8 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 					// that the border between cursor regions is hard to see at a glance, and that might be the
 					// difference between shooting an arrow and not shooting an arrow, so I'm relaxing the
 					// requirements here.
-					auto &textureManager = game.getTextureManager();
-					auto &renderer = game.getRenderer();
+					auto &textureManager = game.textureManager;
+					auto &renderer = game.renderer;
 					const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
 					const std::optional<TextureFileMetadataID> metadataID =
 						textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
@@ -577,17 +575,17 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint,
 	bool primaryInteraction, bool debugFadeVoxel, TextBox &actionTextBox)
 {
-	const auto &options = game.getOptions();
-	auto &gameState = game.getGameState();
+	const auto &options = game.options;
+	auto &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	SceneManager &sceneManager = game.getSceneManager();
+	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
-	auto &player = game.getPlayer();
-	const Double3 &cameraDirection = player.getDirection();
-	const CoordDouble3 rayStart = player.getPosition();
+	auto &player = game.player;
+	const Double3 &cameraDirection = player.forward;
+	const CoordDouble3 rayStart = player.getEyeCoord();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 	constexpr bool includeEntities = true;
 
@@ -675,7 +673,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							const DoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
 							const DoorDefinition::OpenSoundDef &openSoundDef = doorDef.getOpenSound();
 
-							auto &audioManager = game.getAudioManager();
+							auto &audioManager = game.audioManager;
 							const std::string &soundFilename = openSoundDef.soundFilename;
 
 							const CoordDouble3 soundCoord(chunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
@@ -696,7 +694,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 						const std::string &buildingName = chunk.getBuildingName(buildingNameID);
 						actionTextBox.setText(buildingName);
 
-						auto &gameState = game.getGameState();
+						auto &gameState = game.gameState;
 						gameState.setActionTextDuration(buildingName);
 					}
 				}
@@ -741,7 +739,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 				actionTextBox.setText(text);
 
-				auto &gameState = game.getGameState();
+				auto &gameState = game.gameState;
 				gameState.setActionTextDuration(text);
 			}
 		}

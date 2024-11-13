@@ -3,15 +3,14 @@
 
 #include <string>
 
+enum class DerivedAttributeName;
+
 // Derived attributes are a bit more complicated because, with health for example,
 // it needs a base maximum that is calculated by some attribute, like endurance,
 // and the gain in health per level is not retroactive. That functionality, however, 
 // isn't implemented in this class because it does not have a polymorphic enough 
 // design to satisfy all the different kinds of methods implied above. A manager 
 // class will have the methods in it.
-
-enum class DerivedAttributeName;
-
 class DerivedAttribute
 {
 private:

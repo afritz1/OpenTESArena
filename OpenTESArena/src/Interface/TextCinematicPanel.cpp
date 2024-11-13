@@ -28,14 +28,14 @@ TextCinematicPanel::~TextCinematicPanel()
 {
 	// Stop voice if it is still playing.
 	auto &game = this->getGame();
-	auto &audioManager = game.getAudioManager();
+	auto &audioManager = game.audioManager;
 	audioManager.stopSound();
 }
 
 bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage, const OnFinishedFunction &onFinished)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &cinematicLibrary = CinematicLibrary::getInstance();
 	const auto &fontLibrary = FontLibrary::getInstance();
 
@@ -88,7 +88,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	const std::string subtitleText = TextCinematicUiModel::getSubtitleText(game, textCinematicDef);
 	this->textPages = TextCinematicUiModel::getSubtitleTextPages(subtitleText);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::string &animFilename = textCinematicDef.getAnimationFilename();
 	const Buffer<UiTextureID> animTextureIDs = TextCinematicUiView::allocAnimationTextures(animFilename, textureManager, renderer);
 	if (animTextureIDs.getCount() == 0)
@@ -174,7 +174,7 @@ void TextCinematicPanel::tick(double dt)
 	if (TextCinematicUiModel::shouldPlaySpeech(game))
 	{
 		// Update speech state, optionally ending the cinematic if done with last speech.
-		auto &audioManager = game.getAudioManager();
+		auto &audioManager = game.audioManager;
 
 		const bool playedFirstVoice = !TextCinematicUiModel::SpeechState::isFirstVoice(this->speechState.getNextVoiceIndex());
 		if (!playedFirstVoice)

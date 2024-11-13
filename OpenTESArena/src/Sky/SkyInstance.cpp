@@ -453,7 +453,7 @@ bool SkyInstance::isLightningVisible(int objectIndex) const
 	return this->currentLightningBoltObjectIndex == objectIndex;
 }
 
-void SkyInstance::update(double dt, double latitude, double daytimePercent, const WeatherInstance &weatherInst, Random &random)
+void SkyInstance::update(double dt, double latitude, double dayPercent, const WeatherInstance &weatherInst, Random &random)
 {
 	// Update lightning (if any).
 	if (weatherInst.hasRain())
@@ -529,7 +529,7 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 		animInst.percentDone = std::clamp(animInst.currentSeconds / animInst.targetSeconds, 0.0, 1.0);
 	}
 
-	const Matrix4d timeOfDayRotation = RendererUtils::getTimeOfDayRotation(daytimePercent);
+	const Matrix4d timeOfDayRotation = RendererUtils::getTimeOfDayRotation(dayPercent);
 	const Matrix4d latitudeRotation = RendererUtils::getLatitudeRotation(latitude);
 
 	auto transformObjectsInRange = [this, &timeOfDayRotation, &latitudeRotation](int start, int end)

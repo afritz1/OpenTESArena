@@ -9,18 +9,15 @@
 #include "ExeTypes.h"
 
 #include "components/utilities/BufferView.h"
-#include "components/utilities/KeyValueFile.h"
-
-// This class stores data from the Arena executable. In other words, it represents a
-// kind of "view" into the executable's data.
-
-// When expanding this to work with both A.EXE and ACD.EXE, maybe use a union for
-// members that differ between the two executables, with an _a/_acd suffix.
 
 class KeyValueFile;
+class KeyValueFileSection;
 
 enum class MapType;
 
+// This represents a kind of "view" into the original executable's data. When expanding this to work
+// with both A.EXE and ACD.EXE, maybe use a union for members that differ between the two executables,
+// with an _a/_acd suffix.
 class ExeData
 {
 public:
@@ -214,6 +211,9 @@ public:
 		std::array<uint8_t, 8> materialChances;
 		std::array<uint16_t, 8> materialPriceMultipliers; // In quarters.
 
+		// Condition/degradation values.
+		std::array<std::string, 8> itemConditionNames; // New, used, ...
+
 		// Plate armor values (including shields).
 		std::array<std::string, 11> armorNames; // Cuirass, ..., tower shield.
 		std::array<std::string, 11> plateArmorNames; // Plate cuirass, ..., tower shield.
@@ -277,6 +277,10 @@ public:
 		std::array<std::string, 4> enhancementItemNames;
 		std::array<uint8_t, 4> enhancementItemCumulativeChances;
 		std::array<uint16_t, 4> enhancementItemBasePrices;
+
+		// Consumables.
+		std::array<std::string, 15> potionNames; // "Potion of <effect>"...
+		std::string unidentifiedPotionName;
 
 		// @todo: artifacts.
 
@@ -557,10 +561,10 @@ private:
 	static constexpr char PAIR_SEPARATOR = ',';
 
 	// Gets the offset value from the given section and key.
-	static int get(const KeyValueFile::Section &section, const std::string &key);
+	static int get(const KeyValueFileSection &section, const std::string &key);
 
 	// Gets the offset + length value from the given section and key.
-	static std::pair<int, int> getPair(const KeyValueFile::Section &section, const std::string &key);
+	static std::pair<int, int> getPair(const KeyValueFileSection &section, const std::string &key);
 
 	static int8_t readInt8(const char *data);
 	static uint8_t readUint8(const char *data);

@@ -6,7 +6,6 @@
 #include "components/utilities/Buffer.h"
 
 // Similar to animated land but conditionally rendered based on thunderstorm state.
-
 struct SkyLightningDefinition
 {
 	Buffer<TextureAsset> textureAssets;

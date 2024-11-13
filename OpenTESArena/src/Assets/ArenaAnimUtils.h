@@ -143,7 +143,7 @@ namespace ArenaAnimUtils
 	bool trySetHumanFilenameGender(std::string &filename, bool isMale);
 
 	// Writes the human type data into the given filename if possible.
-	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
+	bool trySetHumanFilenameType(std::string &filename, const std::string_view type);
 
 	// Writes out static entity animation data to animation states.
 	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, MapType mapType,

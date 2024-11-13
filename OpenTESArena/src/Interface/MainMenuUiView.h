@@ -28,7 +28,7 @@ namespace MainMenuUiView
 
 	Color getTestButtonTextColor();
 
-	TextBox::InitInfo getTestButtonTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getTestButtonTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getTestTypeTextBoxInitInfo(const FontLibrary &fontLibrary);
 	TextBox::InitInfo getTestNameTextBoxInitInfo(const FontLibrary &fontLibrary);
 	TextBox::InitInfo getTestWeatherTextBoxInitInfo(const FontLibrary &fontLibrary);

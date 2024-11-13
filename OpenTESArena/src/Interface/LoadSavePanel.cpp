@@ -14,7 +14,7 @@ LoadSavePanel::LoadSavePanel(Game &game)
 bool LoadSavePanel::init(LoadSavePanel::Type type)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Populate save slots.
@@ -51,7 +51,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 
 	this->addInputActionListener(InputActionName::Back, LoadSaveUiController::onBackInputAction);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	UiTextureID backgroundTextureID = LoadSaveUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 	this->addDrawCall(

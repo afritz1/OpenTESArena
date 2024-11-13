@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "Constants.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Voxels/VoxelUtils.h"
@@ -13,15 +14,23 @@
 #include "components/utilities/Bytes.h"
 
 using Radians = double;
+using RadiansF = float;
 using Degrees = double;
+using DegreesF = float;
 
 namespace MathUtils
 {
 	// Returns whether the given value is within epsilon of zero.
-	double almostZero(double value);
+	constexpr double almostZero(double value)
+	{
+		return value <= Constants::Epsilon && value >= -Constants::Epsilon;
+	}
 
 	// Returns whether the two values are within epsilon of each other.
-	double almostEqual(double a, double b);
+	constexpr double almostEqual(double a, double b)
+	{
+		return MathUtils::almostZero(a - b);
+	}
 
 	// Returns whether the given value represents a number on the number line, including infinity.
 	template<typename T>
@@ -91,6 +100,18 @@ namespace MathUtils
 		}
 	}
 
+	constexpr Radians degToRad(Degrees degrees)
+	{
+		return degrees * (Constants::Pi / 180.0);
+	}
+
+	constexpr Degrees radToDeg(Radians radians)
+	{
+		return radians * (180.0 / Constants::Pi);
+	}
+
+	Radians safeDegToRad(Degrees degrees);
+
 	// Gets a real (not integer) index in an array from the given percent.
 	double getRealIndex(int bufferSize, double percent);
 
@@ -127,7 +148,7 @@ namespace MathUtils
 
 	// Finds the intersection of a ray on the given plane. Returns success.
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint);
+		const Double3 &planeOrigin, const Double3 &planeNormal, double *outT);
 
 	// Finds the intersection of a ray with the given triangle. Returns success.
 	bool rayTriangleIntersection(const Double3 &rayStart, const Double3 &rayDirection,
@@ -136,7 +157,11 @@ namespace MathUtils
 	// Finds the intersection of a ray and a quad defined by three vertices. The vertex order
 	// must go around the quad (i.e. v0 = top left, v1 = bottom left, v2 = bottom right).
 	bool rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint);
+		const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT);
+
+	// Finds the intersection of a ray and a box.
+	bool rayBoxIntersection(const Double3 &rayStart, const Double3 &rayDirection, const Double3 &boxCenter,
+		double width, double height, double depth, Radians yRotation, double *outT);
 
 	// Returns the signed distance of the point to the plane (can be negative).
 	double distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal);
@@ -154,6 +179,19 @@ namespace MathUtils
 
 	// Gets the X and Y coordinates from a Z value in a Z-order curve. Used with quadtree node look-up.
 	Int2 getZOrderCurvePoint(int index);
+}
+
+namespace MathUtilsF
+{
+	constexpr RadiansF degToRad(DegreesF degrees)
+	{
+		return degrees * (ConstantsF::Pi / 180.0f);
+	}
+
+	constexpr DegreesF radToDeg(RadiansF radians)
+	{
+		return radians * (180.0f / ConstantsF::Pi);
+	}
 }
 
 #endif

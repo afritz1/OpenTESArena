@@ -12,7 +12,6 @@
 
 // There are a few different methods used for compressing textures in Arena.
 // The reusable decompression algorithms will be kept in this namespace.
-
 namespace Compression
 {
 	// Uncompresses an RLE run of bytes.

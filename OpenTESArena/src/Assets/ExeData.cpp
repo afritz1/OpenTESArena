@@ -8,6 +8,7 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
+#include "components/utilities/KeyValueFile.h"
 #include "components/utilities/String.h"
 #include "components/utilities/StringView.h"
 
@@ -179,7 +180,7 @@ namespace
 bool ExeData::Calendar::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Calendar";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -204,7 +205,7 @@ bool ExeData::Calendar::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::CharacterClasses::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterClasses";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -249,7 +250,7 @@ bool ExeData::CharacterClasses::init(const char *data, const KeyValueFile &keyVa
 bool ExeData::CharacterCreation::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterCreation";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -306,7 +307,7 @@ bool ExeData::CharacterCreation::init(const char *data, const KeyValueFile &keyV
 bool ExeData::CityGeneration::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CityGeneration";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -352,7 +353,7 @@ bool ExeData::CityGeneration::init(const char *data, const KeyValueFile &keyValu
 bool ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Entities";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -423,7 +424,7 @@ bool ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Equipment";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -435,6 +436,7 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	const int materialBonusesOffset = ExeData::get(*section, "MaterialBonuses");
 	const int materialChancesOffset = ExeData::get(*section, "MaterialChances");
 	const int materialPriceMultipliersOffset = ExeData::get(*section, "MaterialPriceMultipliers");
+	const int itemConditionNamesOffset = ExeData::get(*section, "ItemConditionNames");
 	const int armorNamesOffset = ExeData::get(*section, "ArmorNames");
 	const int plateArmorNamesOffset = ExeData::get(*section, "PlateArmorNames");
 	const int plateArmorQualitiesOffset = ExeData::get(*section, "PlateArmorQualities");
@@ -482,6 +484,8 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	const int enhancementItemNamesOffset = ExeData::get(*section, "EnhancementItemNames");
 	const int enhancementItemCumulativeChancesOffset = ExeData::get(*section, "EnhancementItemCumulativeChances");
 	const int enhancementItemBasePricesOffset = ExeData::get(*section, "EnhancementItemBasePrices");
+	const int potionNamesOffset = ExeData::get(*section, "PotionNames");
+	const int unidentifiedPotionNameOffset = ExeData::get(*section, "UnidentifiedPotionName");
 	const int bodyPartNamesOffset = ExeData::get(*section, "BodyPartNames");
 	const int weaponAnimFilenamesOffset = ExeData::get(*section, "WeaponAnimationFilenames");
 
@@ -490,6 +494,7 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	initInt8Array(this->materialBonuses, data + materialBonusesOffset);
 	initInt8Array(this->materialChances, data + materialChancesOffset);
 	initInt16Array(this->materialPriceMultipliers, data + materialPriceMultipliersOffset);
+	initStringArray(this->itemConditionNames, data + itemConditionNamesOffset);
 	initStringArray(this->armorNames, data + armorNamesOffset);
 	initStringArray(this->plateArmorNames, data + plateArmorNamesOffset);
 	initInt8Array(this->plateArmorQualities, data + plateArmorQualitiesOffset);
@@ -537,6 +542,8 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	initStringArray(this->enhancementItemNames, data + enhancementItemNamesOffset);
 	initInt8Array(this->enhancementItemCumulativeChances, data + enhancementItemCumulativeChancesOffset);
 	initInt16Array(this->enhancementItemBasePrices, data + enhancementItemBasePricesOffset);
+	initStringArray(this->potionNames, data + potionNamesOffset);
+	this->unidentifiedPotionName = ExeData::readString(data + unidentifiedPotionNameOffset);
 	initStringArray(this->bodyPartNames, data + bodyPartNamesOffset);
 	initStringArray(this->weaponAnimationFilenames, data + weaponAnimFilenamesOffset);
 
@@ -546,7 +553,7 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 bool ExeData::Light::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Light";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -565,7 +572,7 @@ bool ExeData::Light::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::Locations::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Locations";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -627,7 +634,7 @@ bool ExeData::Locations::init(const char *data, const KeyValueFile &keyValueFile
 bool ExeData::Logbook::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Logbook";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -644,7 +651,7 @@ bool ExeData::Logbook::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::Meta::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Meta";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -659,7 +666,7 @@ bool ExeData::Meta::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::Quests::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Quests";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -684,7 +691,7 @@ bool ExeData::Quests::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::Races::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Races";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -703,7 +710,7 @@ bool ExeData::Races::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::RaisedPlatforms::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "RaisedPlatforms";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -762,7 +769,7 @@ int ExeData::RaisedPlatforms::getTextureMappingValueB(int thicknessIndex, int te
 bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Status";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -789,7 +796,7 @@ bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::Travel::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Travel";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -830,7 +837,7 @@ bool ExeData::Travel::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::UI::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "UI";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -887,7 +894,7 @@ bool ExeData::UI::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::Weather::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Weather";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -904,7 +911,7 @@ bool ExeData::Weather::init(const char *data, const KeyValueFile &keyValueFile)
 bool ExeData::Wilderness::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Wilderness";
-	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
@@ -941,7 +948,7 @@ const std::string ExeData::FLOPPY_VERSION_MAP_FILENAME = "data/text/aExeStrings.
 const std::string ExeData::CD_VERSION_EXE_FILENAME = "ACD.EXE";
 const std::string ExeData::CD_VERSION_MAP_FILENAME = "data/text/acdExeStrings.txt";
 
-int ExeData::get(const KeyValueFile::Section &section, const std::string &key)
+int ExeData::get(const KeyValueFileSection &section, const std::string &key)
 {
 	std::string_view valueStr;
 	if (!section.tryGetString(key, valueStr))
@@ -961,7 +968,7 @@ int ExeData::get(const KeyValueFile::Section &section, const std::string &key)
 	return offset;
 }
 
-std::pair<int, int> ExeData::getPair(const KeyValueFile::Section &section, const std::string &key)
+std::pair<int, int> ExeData::getPair(const KeyValueFileSection &section, const std::string &key)
 {
 	std::string_view valueStr;
 	if (!section.tryGetString(key, valueStr))
@@ -971,13 +978,13 @@ std::pair<int, int> ExeData::getPair(const KeyValueFile::Section &section, const
 
 	// Make sure the value has a comma-separated offset + length pair.
 	std::array<std::string_view, 2> tokens;
-	if (!StringView::splitExpected(valueStr, ExeData::PAIR_SEPARATOR, tokens))
+	if (!StringView::splitExpected<2>(valueStr, ExeData::PAIR_SEPARATOR, tokens))
 	{
 		DebugCrash("Invalid offset + length pair \"" + key + "\" (section \"" + section.getName() + "\").");
 	}
 
-	const std::string_view &offsetStr = tokens[0];
-	const std::string_view &lengthStr = tokens[1];
+	const std::string_view offsetStr = tokens[0];
+	const std::string_view lengthStr = tokens[1];
 	int offset, length;
 
 	std::stringstream ss;

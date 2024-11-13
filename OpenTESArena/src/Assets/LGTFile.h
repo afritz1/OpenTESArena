@@ -7,10 +7,8 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
 
-// Light level file, contains 13 light palettes for shading/transparencies.
-
-// In some foggy dungeons, the game seems to use fog distance for determining light level (FOG.LGT).
-
+// Light level file, contains 13 light palettes for shading/transparencies. In some foggy dungeons,
+// the game seems to use fog distance for determining light level (FOG.LGT).
 class LGTFile
 {
 private:

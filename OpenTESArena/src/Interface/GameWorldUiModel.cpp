@@ -7,6 +7,7 @@
 #include "../Entities/Player.h"
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/ArenaDateUtils.h"
+#include "../Game/ClockLibrary.h"
 #include "../Game/Game.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
@@ -14,15 +15,30 @@
 
 #include "components/utilities/String.h"
 
+namespace
+{
+	// Original game has eight time ranges for each time of day. They aren't uniformly distributed -- midnight and noon are only one minute.
+	constexpr std::pair<const char*, int> TimeOfDayIndices[] =
+	{
+		std::make_pair(ArenaClockUtils::Midnight, 6),
+		std::make_pair(ArenaClockUtils::Night1, 5),
+		std::make_pair(ArenaClockUtils::EarlyMorning, 0),
+		std::make_pair(ArenaClockUtils::Morning, 1),
+		std::make_pair(ArenaClockUtils::Noon, 2),
+		std::make_pair(ArenaClockUtils::Afternoon, 3),
+		std::make_pair(ArenaClockUtils::Evening, 4),
+		std::make_pair(ArenaClockUtils::Night2, 5)
+	};
+}
+
 std::string GameWorldUiModel::getPlayerNameText(Game &game)
 {
-	const Player &player = game.getPlayer();
-	return player.getFirstName();
+	return game.player.firstName;
 }
 
 std::string GameWorldUiModel::getStatusButtonText(Game &game)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
@@ -32,45 +48,23 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 	const std::string timeString = [&game, &gameState, &exeData]()
 	{
 		const Clock &clock = gameState.getClock();
-		const int hours = clock.getHours12();
-		const int minutes = clock.getMinutes();
-		const std::string clockTimeString = std::to_string(hours) + ":" +
-			((minutes < 10) ? "0" : "") + std::to_string(minutes);
+		const int hours12 = clock.getHours12();
+		const int minutes = clock.minutes;
+		const std::string clockTimeString = std::to_string(hours12) + ":" + ((minutes < 10) ? "0" : "") + std::to_string(minutes);
 
-		const int timeOfDayIndex = [&gameState]()
+		// Reverse iterate, checking which range the active clock is in.
+		const auto pairIter = std::find_if(std::rbegin(TimeOfDayIndices), std::rend(TimeOfDayIndices),
+			[&clock](const std::pair<const char*, int> &pair)
 		{
-			// Arena has eight time ranges for each time of day. They aren't
-			// uniformly distributed -- midnight and noon are only one minute.
-			const std::array<std::pair<Clock, int>, 8> clocksAndIndices =
-			{
-				std::make_pair(ArenaClockUtils::Midnight, 6),
-				std::make_pair(ArenaClockUtils::Night1, 5),
-				std::make_pair(ArenaClockUtils::EarlyMorning, 0),
-				std::make_pair(ArenaClockUtils::Morning, 1),
-				std::make_pair(ArenaClockUtils::Noon, 2),
-				std::make_pair(ArenaClockUtils::Afternoon, 3),
-				std::make_pair(ArenaClockUtils::Evening, 4),
-				std::make_pair(ArenaClockUtils::Night2, 5)
-			};
+			const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+			const Clock &currentClock = clockLibrary.getClock(pair.first);
+			return clock.getTotalSeconds() >= currentClock.getTotalSeconds();
+		});
 
-			const Clock &presentClock = gameState.getClock();
+		DebugAssertMsg(pairIter != std::rend(TimeOfDayIndices), "No valid time of day.");
+		const int timeOfDayIndex = pairIter->second;
 
-			// Reverse iterate, checking which range the active clock is in.
-			const auto pairIter = std::find_if(
-				clocksAndIndices.rbegin(), clocksAndIndices.rend(),
-				[&presentClock](const std::pair<Clock, int> &pair)
-			{
-				const Clock &clock = pair.first;
-				return presentClock.getTotalSeconds() >= clock.getTotalSeconds();
-			});
-
-			DebugAssertMsg(pairIter != clocksAndIndices.rend(), "No valid time of day.");
-			return pairIter->second;
-		}();
-
-		const std::string &timeOfDayString =
-			exeData.calendar.timesOfDay.at(timeOfDayIndex);
-
+		const std::string &timeOfDayString = exeData.calendar.timesOfDay.at(timeOfDayIndex);
 		return clockTimeString + ' ' + timeOfDayString;
 	}();
 
@@ -129,14 +123,14 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	GameState &gameState = game.getGameState();
+	GameState &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 
 	const MapType mapType = mapDef.getMapType();
 	const OriginalInt2 displayedCoords = [&player, mapType]()
 	{
-		const WorldDouble3 absolutePlayerPosition = VoxelUtils::coordToWorldPoint(player.getPosition());
+		const WorldDouble3 absolutePlayerPosition = player.getEyePosition();
 		const WorldInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
 		const WorldInt2 playerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
 		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(playerVoxelXZ);
@@ -171,15 +165,15 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 
 std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (modernInterface)
 	{
 		return std::nullopt;
 	}
 
-	const auto &renderer = game.getRenderer();
-	const auto &inputManager = game.getInputManager();
+	const auto &renderer = game.renderer;
+	const auto &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 classicPosition = renderer.nativeToOriginal(mousePosition);
 	for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
@@ -199,9 +193,9 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 {
 	if (buttonType == ButtonType::Magic)
 	{
-		const Player &player = game.getPlayer();
+		const Player &player = game.player;
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-		const int charClassDefID = player.getCharacterClassDefID();
+		const int charClassDefID = player.charClassDefID;
 		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 		return charClassDef.canCastMagic();
 	}
@@ -242,21 +236,21 @@ void GameWorldUiModel::setFreeLookActive(Game &game, bool active)
 {
 	// Set relative mouse mode. When enabled, this freezes the hardware cursor in place but relative motion
 	// events are still recorded.
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setRelativeMouseMode(active);
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const Int2 windowDims = renderer.getWindowDimensions();
 	renderer.warpMouse(windowDims.x / 2, windowDims.y / 2);
 }
 
 VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 &windowPoint)
 {
-	const auto &options = game.getOptions();
-	const auto &renderer = game.getRenderer();
-	const Player &player = game.getPlayer();
-	const CoordDouble3 &playerCoord = player.getPosition();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+	const auto &options = game.options;
+	const auto &renderer = game.renderer;
+	const Player &player = game.player;
+	const CoordDouble3 playerCoord = player.getEyeCoord();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.forward,
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.

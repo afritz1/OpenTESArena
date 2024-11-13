@@ -11,15 +11,11 @@
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 
-// This panel is for choosing character creation attributes and the portrait.
-
-// I think it should be used for level-up purposes, since distributing points is
-// basically identical to setting your character's original attributes.
-
-// Maybe there could be a "LevelUpPanel" for that instead.
-
 class Renderer;
 
+// For choosing character creation attributes and the portrait. I think it should be used for level-up
+// purposes, since distributing points is basically identical to setting your character's original attributes.
+// Maybe there could be a "LevelUpPanel" for that instead.
 class ChooseAttributesPanel : public Panel
 {
 private:

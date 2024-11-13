@@ -7,7 +7,6 @@
 
 // Heap-allocated 1D array accessible as a 3D array.
 // Data can be null. Only need assertions on things that reach into the buffer itself.
-
 template<typename T>
 class Buffer3D
 {

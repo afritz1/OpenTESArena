@@ -115,9 +115,9 @@ Matrix4d RendererUtils::getLatitudeRotation(double latitude)
 	return Matrix4d::zRotation(latitude * (Constants::Pi / 8.0));
 }
 
-Matrix4d RendererUtils::getTimeOfDayRotation(double daytimePercent)
+Matrix4d RendererUtils::getTimeOfDayRotation(double dayPercent)
 {
-	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
+	return Matrix4d::xRotation(dayPercent * Constants::TwoPi);
 }
 
 int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette &palette)

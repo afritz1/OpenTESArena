@@ -19,7 +19,7 @@ namespace LogbookUiView
 	const Color TitleTextColor(255, 207, 12);
 	constexpr TextAlignment TitleTextAlignment = TextAlignment::MiddleCenter;
 
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const Int2 BackButtonCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH - 40,

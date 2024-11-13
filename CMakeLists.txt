@@ -1,10 +1,12 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.16.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.18.0 FATAL_ERROR)
 
 IF (COMMAND cmake_policy)
-    cmake_policy(SET CMP0003 NEW)
+    cmake_policy(SET CMP0003 NEW) # Relative linker paths for more portability
 ENDIF (COMMAND cmake_policy)
 
 PROJECT(OpenTESArena)
+
+include(FetchContent)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -27,8 +29,14 @@ SET(CMAKE_EXE_LINKER_FLAGS_RELEASENATIVE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 
 # Compiler settings (optimizations, debugging, etc.)
 IF (MSVC)
+    # Statically link runtime lib via /MT or /MTd.
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
     # Multi-processor compilation.
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+
+    # Disable runtime type info.
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
 
     # Add various optimizations to release builds.
     SET(CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO "/O2 /Ob2 /Oi /Ot /Oy /fp:fast /Zi")
@@ -44,6 +52,9 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -pthread")
     ENDIF ()
+
+    # Disable runtime type info (avoids linker error w/ Jolt DebugRendererSimple).
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
     # Debug builds.
     SET(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -62,6 +73,17 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
 ENDIF ()
+
+ADD_COMPILE_DEFINITIONS(JPH_NO_FORCE_INLINE) # Fix __forceinline compile error in LTO builds.
+ADD_COMPILE_DEFINITIONS(JPH_DEBUG_RENDERER) # Enable Jolt Physics debug rendering in all builds.
+
+# Include Jolt
+FetchContent_Declare(
+    JoltPhysics
+    GIT_REPOSITORY "https://github.com/jrouwe/JoltPhysics"
+    GIT_TAG cede24d2733a4a473c6d486650ca9b6d0481681a # 5.1.0
+    SOURCE_SUBDIR "Build")
+FetchContent_MakeAvailable(JoltPhysics)
 
 ADD_SUBDIRECTORY(components)
 ADD_SUBDIRECTORY(OpenTESArena)

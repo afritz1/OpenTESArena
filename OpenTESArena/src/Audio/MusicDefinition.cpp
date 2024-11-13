@@ -2,108 +2,75 @@
 
 #include "components/debug/Debug.h"
 
-void MusicDefinition::CinematicMusicDefinition::init(CinematicMusicDefinition::Type type)
+void CinematicMusicDefinition::init(CinematicMusicType type)
 {
 	this->type = type;
 }
 
-void MusicDefinition::InteriorMusicDefinition::init(InteriorMusicDefinition::Type type)
+void InteriorMusicDefinition::init(InteriorMusicType type)
 {
 	this->type = type;
 }
 
-void MusicDefinition::JingleMusicDefinition::init(ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType)
+void JingleMusicDefinition::init(ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType)
 {
 	this->cityType = cityType;
 	this->climateType = climateType;
 }
 
-void MusicDefinition::WeatherMusicDefinition::init(WeatherDefinition &&weatherDef)
+void WeatherMusicDefinition::init(const WeatherDefinition &weatherDef)
 {
-	this->weatherDef = std::move(weatherDef);
+	this->weatherDef = weatherDef;
 }
 
-void MusicDefinition::init(std::string &&filename, Type type)
+void MusicDefinition::initCharacterCreation(const std::string &filename)
 {
-	this->filename = std::move(filename);
-	this->type = type;
+	this->filename = filename;
+	this->type = MusicType::CharacterCreation;
 }
 
-void MusicDefinition::initCharacterCreation(std::string &&filename)
+void MusicDefinition::initCinematic(const std::string &filename, CinematicMusicType type)
 {
-	this->init(std::move(filename), Type::CharacterCreation);
-}
-
-void MusicDefinition::initCinematic(std::string &&filename, CinematicMusicDefinition::Type type)
-{
-	this->init(std::move(filename), Type::Cinematic);
+	this->filename = filename;
+	this->type = MusicType::Cinematic;
 	this->cinematic.init(type);
 }
 
-void MusicDefinition::initInterior(std::string &&filename, InteriorMusicDefinition::Type type)
+void MusicDefinition::initInterior(const std::string &filename, InteriorMusicType type)
 {
-	this->init(std::move(filename), Type::Interior);
+	this->filename = filename;
+	this->type = MusicType::Interior;
 	this->interior.init(type);
 }
 
-void MusicDefinition::initJingle(std::string &&filename, ArenaTypes::CityType cityType,
-	ArenaTypes::ClimateType climateType)
+void MusicDefinition::initJingle(const std::string &filename, ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType)
 {
-	this->init(std::move(filename), Type::Jingle);
+	this->filename = filename;
+	this->type = MusicType::Jingle;
 	this->jingle.init(cityType, climateType);
 }
 
-void MusicDefinition::initMainMenu(std::string &&filename)
+void MusicDefinition::initMainMenu(const std::string &filename)
 {
-	this->init(std::move(filename), Type::MainMenu);
+	this->filename = filename;
+	this->type = MusicType::MainMenu;
 }
 
-void MusicDefinition::initNight(std::string &&filename)
+void MusicDefinition::initNight(const std::string &filename)
 {
-	this->init(std::move(filename), Type::Night);
+	this->filename = filename;
+	this->type = MusicType::Night;
 }
 
-void MusicDefinition::initSwimming(std::string &&filename)
+void MusicDefinition::initSwimming(const std::string &filename)
 {
-	this->init(std::move(filename), Type::Swimming);
+	this->filename = filename;
+	this->type = MusicType::Swimming;
 }
 
-void MusicDefinition::initWeather(std::string &&filename, WeatherDefinition &&weatherDef)
+void MusicDefinition::initWeather(const std::string &filename, const WeatherDefinition &weatherDef)
 {
-	this->init(std::move(filename), Type::Weather);
-	this->weather.init(std::move(weatherDef));
-}
-
-const std::string &MusicDefinition::getFilename() const
-{
-	return this->filename;
-}
-
-MusicDefinition::Type MusicDefinition::getType() const
-{
-	return this->type;
-}
-
-const MusicDefinition::CinematicMusicDefinition &MusicDefinition::getCinematicMusicDefinition() const
-{
-	DebugAssert(this->type == Type::Cinematic);
-	return this->cinematic;
-}
-
-const MusicDefinition::InteriorMusicDefinition &MusicDefinition::getInteriorMusicDefinition() const
-{
-	DebugAssert(this->type == Type::Interior);
-	return this->interior;
-}
-
-const MusicDefinition::JingleMusicDefinition &MusicDefinition::getJingleMusicDefinition() const
-{
-	DebugAssert(this->type == Type::Jingle);
-	return this->jingle;
-}
-
-const MusicDefinition::WeatherMusicDefinition &MusicDefinition::getWeatherMusicDefinition() const
-{
-	DebugAssert(this->type == Type::Weather);
-	return this->weather;
+	this->filename = filename;
+	this->type = MusicType::Weather;
+	this->weather.init(weatherDef);
 }

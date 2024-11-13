@@ -8,7 +8,6 @@
 
 // Stores world map mask data from TAMRIEL.MNU. 9 out of 10 of the masks are for provinces, 
 // while the last one is for the "Exit" button.
-
 class WorldMapMask
 {
 private:

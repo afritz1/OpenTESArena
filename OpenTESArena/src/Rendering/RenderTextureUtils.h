@@ -5,7 +5,6 @@
 
 // Common texture handles allocated by a renderer for a user when they want a new texture in the
 // internal renderer format.
-
 using ObjectTextureID = int; // For all scene geometry (voxels/entities/sky/particles).
 using UiTextureID = int; // For all UI textures.
 

@@ -8,7 +8,7 @@
 
 VoxelChunk::VoxelChunk()
 {
-	this->floorReplacementMeshDefID = -1;
+	this->floorReplacementShapeDefID = -1;
 	this->floorReplacementTextureDefID = -1;
 	this->floorReplacementTraitsDefID = -1;
 	this->floorReplacementChasmDefID = -1;
@@ -19,13 +19,13 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	Chunk::init(position, height);
 
 	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely point to it.
-	this->meshDefs.emplace_back(VoxelMeshDefinition());
+	this->shapeDefs.emplace_back(VoxelShapeDefinition());
 	this->textureDefs.emplace_back(VoxelTextureDefinition());
 	this->traitsDefs.emplace_back(VoxelTraitsDefinition());
 
 	// Set all voxels to air.
-	this->meshDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->meshDefIDs.fill(VoxelChunk::AIR_MESH_DEF_ID);
+	this->shapeDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->shapeDefIDs.fill(VoxelChunk::AIR_SHAPE_DEF_ID);
 
 	this->textureDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->textureDefIDs.fill(VoxelChunk::AIR_TEXTURE_DEF_ID);
@@ -35,13 +35,13 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 
 	this->dirtyVoxelTypes.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
-	this->dirtyMeshDefPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
+	this->dirtyShapeDefPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
 }
 
-void VoxelChunk::getAdjacentMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID, VoxelMeshDefID *outEastID,
-	VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID)
+void VoxelChunk::getAdjacentShapeDefIDs(const VoxelInt3 &voxel, VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID,
+	VoxelShapeDefID *outSouthID, VoxelShapeDefID *outWestID)
 {
-	this->getAdjacentIDsInternal(voxel, this->meshDefIDs, VoxelChunk::AIR_MESH_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal(voxel, this->shapeDefIDs, VoxelChunk::AIR_SHAPE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 void VoxelChunk::getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID,
@@ -56,9 +56,9 @@ void VoxelChunk::getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefI
 	this->getAdjacentIDsInternal(voxel, this->traitsDefIDs, VoxelChunk::AIR_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-int VoxelChunk::getMeshDefCount() const
+int VoxelChunk::getShapeDefCount() const
 {
-	return static_cast<int>(this->meshDefs.size());
+	return static_cast<int>(this->shapeDefs.size());
 }
 
 int VoxelChunk::getTextureDefCount() const
@@ -101,10 +101,10 @@ int VoxelChunk::getChasmDefCount() const
 	return static_cast<int>(this->chasmDefs.size());
 }
 
-const VoxelMeshDefinition &VoxelChunk::getMeshDef(VoxelMeshDefID id) const
+const VoxelShapeDefinition &VoxelChunk::getShapeDef(VoxelShapeDefID id) const
 {
-	DebugAssertIndex(this->meshDefs, id);
-	return this->meshDefs[id];
+	DebugAssertIndex(this->shapeDefs, id);
+	return this->shapeDefs[id];
 }
 
 const VoxelTextureDefinition &VoxelChunk::getTextureDef(VoxelTextureDefID id) const
@@ -155,9 +155,9 @@ const ChasmDefinition &VoxelChunk::getChasmDef(ChasmDefID id) const
 	return this->chasmDefs[id];
 }
 
-VoxelChunk::VoxelMeshDefID VoxelChunk::getMeshDefID(SNInt x, int y, WEInt z) const
+VoxelChunk::VoxelShapeDefID VoxelChunk::getShapeDefID(SNInt x, int y, WEInt z) const
 {
-	return this->meshDefIDs.get(x, y, z);
+	return this->shapeDefIDs.get(x, y, z);
 }
 
 VoxelChunk::VoxelTextureDefID VoxelChunk::getTextureDefID(SNInt x, int y, WEInt z) const
@@ -170,9 +170,9 @@ VoxelChunk::VoxelTraitsDefID VoxelChunk::getTraitsDefID(SNInt x, int y, WEInt z)
 	return this->traitsDefIDs.get(x, y, z);
 }
 
-BufferView<const VoxelInt3> VoxelChunk::getDirtyMeshDefPositions() const
+BufferView<const VoxelInt3> VoxelChunk::getDirtyShapeDefPositions() const
 {
-	return this->dirtyMeshDefPositions;
+	return this->dirtyShapeDefPositions;
 }
 
 BufferView<const VoxelInt3> VoxelChunk::getDirtyDoorAnimInstPositions() const
@@ -417,10 +417,10 @@ bool VoxelChunk::tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) 
 	}
 }
 
-void VoxelChunk::setMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
+void VoxelChunk::setShapeDefID(SNInt x, int y, WEInt z, VoxelShapeDefID id)
 {
-	this->meshDefIDs.set(x, y, z, id);
-	this->setMeshDefDirty(x, y, z);
+	this->shapeDefIDs.set(x, y, z, id);
+	this->setShapeDefDirty(x, y, z);
 }
 
 void VoxelChunk::setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
@@ -433,9 +433,9 @@ void VoxelChunk::setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 	this->traitsDefIDs.set(x, y, z, id);
 }
 
-void VoxelChunk::setFloorReplacementMeshDefID(VoxelMeshDefID id)
+void VoxelChunk::setFloorReplacementShapeDefID(VoxelShapeDefID id)
 {
-	this->floorReplacementMeshDefID = id;
+	this->floorReplacementShapeDefID = id;
 }
 
 void VoxelChunk::setFloorReplacementTextureDefID(VoxelTextureDefID id)
@@ -453,10 +453,10 @@ void VoxelChunk::setFloorReplacementChasmDefID(ChasmDefID id)
 	this->floorReplacementChasmDefID = id;
 }
 
-VoxelChunk::VoxelMeshDefID VoxelChunk::addMeshDef(VoxelMeshDefinition &&voxelMeshDef)
+VoxelChunk::VoxelShapeDefID VoxelChunk::addShapeDef(VoxelShapeDefinition &&voxelShapeDef)
 {
-	const VoxelMeshDefID id = static_cast<VoxelMeshDefID>(this->meshDefs.size());
-	this->meshDefs.emplace_back(std::move(voxelMeshDef));
+	const VoxelShapeDefID id = static_cast<VoxelShapeDefID>(this->shapeDefs.size());
+	this->shapeDefs.emplace_back(std::move(voxelShapeDef));
 	return id;
 }
 
@@ -617,9 +617,9 @@ void VoxelChunk::trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<V
 	}
 }
 
-void VoxelChunk::setMeshDefDirty(SNInt x, int y, WEInt z)
+void VoxelChunk::setShapeDefDirty(SNInt x, int y, WEInt z)
 {
-	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyMeshDefPositions, VoxelDirtyType::MeshDefinition);
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyShapeDefPositions, VoxelDirtyType::ShapeDefinition);
 }
 
 void VoxelChunk::setDoorAnimInstDirty(SNInt x, int y, WEInt z)
@@ -725,7 +725,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 			if (willBecomeChasm)
 			{
 				// Change to water chasm.
-				this->setMeshDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementMeshDefID);
+				this->setShapeDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementShapeDefID);
 				this->setTextureDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTextureDefID);
 				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTraitsDefID);
 				this->chasmDefIndices.emplace(voxel, this->floorReplacementChasmDefID);
@@ -734,7 +734,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 			else
 			{
 				// Air voxel.
-				this->setMeshDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_MESH_DEF_ID);
+				this->setShapeDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_SHAPE_DEF_ID);
 				this->setTextureDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TEXTURE_DEF_ID);
 				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TRAITS_DEF_ID);
 
@@ -767,7 +767,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 void VoxelChunk::cleanUp()
 {
 	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
-	this->dirtyMeshDefPositions.clear();
+	this->dirtyShapeDefPositions.clear();
 	this->dirtyDoorAnimInstPositions.clear();
 	this->dirtyDoorVisInstPositions.clear();
 	this->dirtyFadeAnimInstPositions.clear();
@@ -805,7 +805,7 @@ void VoxelChunk::cleanUp()
 void VoxelChunk::clear()
 {
 	Chunk::clear();
-	this->meshDefs.clear();
+	this->shapeDefs.clear();
 	this->textureDefs.clear();
 	this->traitsDefs.clear();
 	this->transitionDefs.clear();
@@ -814,11 +814,11 @@ void VoxelChunk::clear()
 	this->buildingNames.clear();
 	this->doorDefs.clear();
 	this->chasmDefs.clear();
-	this->meshDefIDs.clear();
+	this->shapeDefIDs.clear();
 	this->textureDefIDs.clear();
 	this->traitsDefIDs.clear();
 	this->dirtyVoxelTypes.clear();
-	this->dirtyMeshDefPositions.clear();
+	this->dirtyShapeDefPositions.clear();
 	this->dirtyDoorAnimInstPositions.clear();
 	this->dirtyDoorVisInstPositions.clear();
 	this->dirtyFadeAnimInstPositions.clear();

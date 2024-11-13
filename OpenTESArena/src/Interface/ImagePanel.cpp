@@ -33,8 +33,8 @@ bool ImagePanel::init(const std::string &paletteName, const std::string &texture
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const TextureAsset textureAsset = TextureAsset(std::string(textureName));
 	const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
 

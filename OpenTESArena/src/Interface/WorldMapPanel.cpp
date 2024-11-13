@@ -16,14 +16,14 @@ WorldMapPanel::WorldMapPanel(Game &game)
 
 WorldMapPanel::~WorldMapPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &inputManager = this->getGame().inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::WorldMap, false);
 }
 
 bool WorldMapPanel::init()
 {
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::WorldMap, true);
 
 	const Rect fullscreenRect(
@@ -37,9 +37,9 @@ bool WorldMapPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, fullscreenRect,
 		[this, &game, backToGameFunc]()
 	{
-		const auto &inputManager = game.getInputManager();
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+		const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
 
 		for (int i = 0; i < WorldMapUiModel::MASK_COUNT; i++)
 		{
@@ -77,8 +77,8 @@ bool WorldMapPanel::init()
 	this->addInputActionListener(InputActionName::Back, backToGameInputActionFunc);
 	this->addInputActionListener(InputActionName::WorldMap, backToGameInputActionFunc);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const UiTextureID backgroundTextureID = WorldMapUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
@@ -89,7 +89,7 @@ bool WorldMapPanel::init()
 		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
 		PivotType::TopLeft);
 
-	const auto &gameState = game.getGameState();
+	const auto &gameState = game.gameState;
 	const int provinceID = gameState.getProvinceDefinition().getRaceID();
 	const Int2 provinceNameOffset = WorldMapUiView::getProvinceNameOffset(provinceID, textureManager);
 	const UiTextureID highlightedTextTextureID = WorldMapUiView::allocHighlightedTextTexture(provinceID, textureManager, renderer);

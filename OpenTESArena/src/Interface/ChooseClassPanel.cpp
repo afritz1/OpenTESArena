@@ -37,7 +37,7 @@ bool ChooseClassPanel::init()
 		return aName.compare(bName) < 0;
 	});
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseClassUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo = ChooseClassUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
@@ -55,7 +55,7 @@ bool ChooseClassPanel::init()
 	}
 
 	this->classesListBox.init(ChooseClassUiView::getListRect(game),
-		ChooseClassUiView::makeListBoxProperties(FontLibrary::getInstance()), game.getRenderer());
+		ChooseClassUiView::makeListBoxProperties(FontLibrary::getInstance()), game.renderer);
 
 	for (int i = 0; i < static_cast<int>(this->charClasses.size()); i++)
 	{
@@ -114,9 +114,9 @@ bool ChooseClassPanel::init()
 
 		auto isActiveFunc = [&game]()
 		{
-			const auto &inputManager = game.getInputManager();
+			const auto &inputManager = game.inputManager;
 			const Int2 mousePosition = inputManager.getMousePosition();
-			const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+			const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
 			const Rect classListRect = ChooseClassUiView::getListRect(game);
 			return classListRect.contains(classicPosition);
 		};
@@ -129,8 +129,8 @@ bool ChooseClassPanel::init()
 	auto updateHoveredClassIndex = [this, &game]()
 	{
 		// Draw tooltip if over a valid element in the list box.
-		auto &renderer = game.getRenderer();
-		const auto &inputManager = game.getInputManager();
+		auto &renderer = game.renderer;
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
@@ -163,7 +163,7 @@ bool ChooseClassPanel::init()
 
 	this->addMouseScrollChangedListener([this, updateHoveredClassIndex](Game &game, MouseWheelScrollType type, const Int2 &position)
 	{
-		const Int2 classicPoint = game.getRenderer().nativeToOriginal(position);
+		const Int2 classicPoint = game.renderer.nativeToOriginal(position);
 		const Rect classListRect = ChooseClassUiView::getListRect(game);
 		if (classListRect.contains(classicPoint))
 		{
@@ -185,7 +185,7 @@ bool ChooseClassPanel::init()
 		updateHoveredClassIndex();
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID popUpTextureID = ChooseClassUiView::allocPopUpTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);

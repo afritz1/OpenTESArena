@@ -6,10 +6,9 @@
 #include "../Math/Vector2.h"
 #include "../World/Coord.h"
 
-// North, northeast, southwest, etc..
-
 enum class CardinalDirectionName;
 
+// North, northeast, southwest, etc..
 namespace CardinalDirection
 {
 	// Cardinal directions in the XZ plane (bird's eye view).

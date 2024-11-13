@@ -1,16 +1,16 @@
 #include "MeshUtils.h"
 #include "../Voxels/ArenaChasmUtils.h"
-#include "../Voxels/VoxelMeshDefinition.h"
+#include "../Voxels/VoxelShapeDefinition.h"
 
-double MeshUtils::getScaledVertexY(double meshY, VoxelMeshScaleType scaleType, double ceilingScale)
+double MeshUtils::getScaledVertexY(double meshY, VoxelShapeScaleType scaleType, double ceilingScale)
 {
 	switch (scaleType)
 	{
-	case VoxelMeshScaleType::ScaledFromMin:
+	case VoxelShapeScaleType::ScaledFromMin:
 		return meshY * ceilingScale;
-	case VoxelMeshScaleType::UnscaledFromMin:
+	case VoxelShapeScaleType::UnscaledFromMin:
 		return meshY;
-	case VoxelMeshScaleType::UnscaledFromMax:
+	case VoxelShapeScaleType::UnscaledFromMax:
 	{
 		constexpr double chasmHeight = ArenaChasmUtils::DEFAULT_HEIGHT;
 		return (meshY * chasmHeight) + (ceilingScale - chasmHeight);

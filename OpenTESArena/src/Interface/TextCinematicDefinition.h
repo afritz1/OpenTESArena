@@ -7,7 +7,6 @@
 #include "../Utilities/Color.h"
 
 // Intended for text cinematics with speech.
-
 class TextCinematicDefinition
 {
 public:

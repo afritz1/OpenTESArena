@@ -4,7 +4,6 @@
 #include "../Voxels/VoxelUtils.h"
 
 // Supports both locks that can be picked, and locks that require a key.
-
 class LockDefinition
 {
 public:

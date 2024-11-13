@@ -5,8 +5,11 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <vector>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Renderer/DebugRendererSimple.h"
 #include "SDL.h"
 
 #include "RendererSystem2D.h"
@@ -32,7 +35,7 @@ struct SDL_Texture;
 struct SDL_Window;
 
 // Manages the active window and 2D and 3D rendering operations.
-class Renderer
+class Renderer : public JPH::DebugRendererSimple
 {
 public:
 	struct DisplayMode
@@ -254,6 +257,11 @@ public:
 	// Wrapper methods for some SDL fill functions.
 	void fillRect(const Color &color, int x, int y, int w, int h);
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
+
+	// Jolt Physics debugging.
+	void DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color) override;
+	void DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3, JPH::ColorArg color, ECastShadow castShadow) override;
+	void DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height) override;
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	void submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer,

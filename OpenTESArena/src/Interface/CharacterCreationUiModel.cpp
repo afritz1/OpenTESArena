@@ -5,11 +5,6 @@
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
-#include "../Items/ArmorMaterial.h"
-#include "../Items/ArmorMaterialType.h"
-#include "../Items/MetalType.h"
-#include "../Items/Shield.h"
-#include "../Items/ShieldType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -85,6 +80,16 @@ std::string ChooseClassUiModel::getTitleText(Game &game)
 
 std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefinition &charClassDef)
 {
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	// The original game doesn't list the armor materials by themselves... have to make up something.
+	const std::string armorMaterialStrings[] =
+	{
+		exeData.equipment.leatherArmorNames[0].substr(0, 7),
+		exeData.equipment.chainArmorNames[0].substr(0, 5),
+		exeData.equipment.plateArmorNames[0].substr(0, 5)
+	};
+
 	std::vector<int> allowedArmors(charClassDef.getAllowedArmorCount());
 	for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 	{
@@ -108,8 +113,8 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 		for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 		{
 			const int materialType = allowedArmors[i];
-			auto materialString = ArmorMaterial::typeToString(
-				static_cast<ArmorMaterialType>(materialType));
+			DebugAssertIndex(armorMaterialStrings, materialType);
+			const std::string &materialString = armorMaterialStrings[materialType];
 			lengthCounter += static_cast<int>(materialString.size());
 			armorString.append(materialString);
 
@@ -134,6 +139,9 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 
 std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinition &charClassDef)
 {
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const BufferView<const std::string> shieldStrings(exeData.equipment.armorNames.data() + 7, 4);
+
 	std::vector<int> allowedShields(charClassDef.getAllowedShieldCount());
 	for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 	{
@@ -157,8 +165,7 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 		for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 		{
 			const int shieldType = allowedShields[i];
-			MetalType dummyMetal = MetalType::Iron;
-			auto typeString = Shield(static_cast<ShieldType>(shieldType), dummyMetal).typeToString();
+			const std::string &typeString = shieldStrings[shieldType];
 			lengthCounter += static_cast<int>(typeString.size());
 			shieldsString.append(typeString);
 
@@ -183,7 +190,6 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 
 std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game)
 {
-	// Get weapon names from the executable.
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &weaponStrings = exeData.equipment.weaponNames;
 
@@ -528,7 +534,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
@@ -545,7 +551,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
 	
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())

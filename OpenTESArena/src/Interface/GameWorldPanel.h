@@ -9,16 +9,15 @@
 #include "../UI/TextBox.h"
 #include "../Voxels/VoxelUtils.h"
 
-// When the GameWorldPanel is active, the game world is ticking.
-
-// There are two desired kinds of interfaces:
-// - The original: compass, portrait, stat bars, and buttons with original mouse.
-// - A modern version: only compass and stat bars with free-look mouse.
-
-class Player;
 class Renderer;
 class TextureManager;
 
+struct Player;
+
+// When the GameWorldPanel is active, the game world is ticking.
+// There are two desired kinds of interfaces:
+// - The original: compass, portrait, stat bars, and buttons with original mouse.
+// - A modern version: only compass and stat bars with free-look mouse.
 class GameWorldPanel : public Panel
 {
 private:
@@ -33,9 +32,6 @@ private:
 		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef;
 
 	void initUiDrawCalls();
-
-	// Called by game loop for rendering the 3D scene.
-	static bool gameWorldRenderCallback(Game &game);
 public:
 	GameWorldPanel(Game &game);
 	~GameWorldPanel() override;
@@ -44,6 +40,9 @@ public:
 
 	// @temp workaround until there are listener callbacks or something for updating text boxes from game logic
 	TextBox &getTriggerTextBox();
+
+	// Called by game loop for rendering the 3D scene.
+	static bool renderScene(Game &game);
 
 	virtual void onPauseChanged(bool paused) override;
 };

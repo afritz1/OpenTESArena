@@ -7,7 +7,7 @@ FIND_PACKAGE(OpenAL REQUIRED)
 FIND_PACKAGE(WildMidi)
 
 SET(EXTERNAL_LIBS ${OPENAL_LIBRARY} ${SDL2_LIBRARY})
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}" ${SDL2_INCLUDE_DIR} ${OPENAL_INCLUDE_DIR})
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}" ${SDL2_INCLUDE_DIR} ${OPENAL_INCLUDE_DIR} ${JOLT_INCLUDE_DIR})
 IF(WILDMIDI_FOUND)
     SET(EXTERNAL_LIBS ${EXTERNAL_LIBS} ${WILDMIDI_LIBRARIES})
     INCLUDE_DIRECTORIES(${WILDMIDI_INCLUDE_DIRS})
@@ -115,10 +115,16 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/CollisionChunk.h"
     "${SRC_ROOT}/Collision/CollisionChunkManager.cpp"
     "${SRC_ROOT}/Collision/CollisionChunkManager.h"
-    "${SRC_ROOT}/Collision/CollisionMeshDefinition.cpp"
-    "${SRC_ROOT}/Collision/CollisionMeshDefinition.h"
+    "${SRC_ROOT}/Collision/CollisionShapeDefinition.cpp"
+    "${SRC_ROOT}/Collision/CollisionShapeDefinition.h"
     "${SRC_ROOT}/Collision/Physics.cpp"
     "${SRC_ROOT}/Collision/Physics.h"
+    "${SRC_ROOT}/Collision/PhysicsBodyActivationListener.cpp"
+    "${SRC_ROOT}/Collision/PhysicsBodyActivationListener.h"
+    "${SRC_ROOT}/Collision/PhysicsContactListener.cpp"
+    "${SRC_ROOT}/Collision/PhysicsContactListener.h"
+    "${SRC_ROOT}/Collision/PhysicsLayer.cpp"
+    "${SRC_ROOT}/Collision/PhysicsLayer.h"
     "${SRC_ROOT}/Collision/RayCastTypes.cpp"
     "${SRC_ROOT}/Collision/RayCastTypes.h"
     "${SRC_ROOT}/Collision/SelectionUtils.h")
@@ -127,17 +133,10 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/AttributeModifier.cpp"
     "${SRC_ROOT}/Entities/AttributeModifier.h"
     "${SRC_ROOT}/Entities/AttributeModifierName.h"
-    "${SRC_ROOT}/Entities/BodyPart.cpp"
-    "${SRC_ROOT}/Entities/BodyPart.h"
-    "${SRC_ROOT}/Entities/BodyPartName.h"
-    "${SRC_ROOT}/Entities/Camera3D.cpp"
-    "${SRC_ROOT}/Entities/Camera3D.h"
     "${SRC_ROOT}/Entities/CharacterClassDefinition.cpp"
     "${SRC_ROOT}/Entities/CharacterClassDefinition.h"
     "${SRC_ROOT}/Entities/CharacterClassLibrary.cpp"
     "${SRC_ROOT}/Entities/CharacterClassLibrary.h"
-    "${SRC_ROOT}/Entities/CharacterEquipment.cpp"
-    "${SRC_ROOT}/Entities/CharacterEquipment.h"
     "${SRC_ROOT}/Entities/CitizenUtils.cpp"
     "${SRC_ROOT}/Entities/CitizenUtils.h"
     "${SRC_ROOT}/Entities/DerivedAttribute.cpp"
@@ -194,6 +193,8 @@ SET(TES_GAME
     "${SRC_ROOT}/Game/CharacterQuestion.h"
     "${SRC_ROOT}/Game/Clock.cpp"
     "${SRC_ROOT}/Game/Clock.h"
+    "${SRC_ROOT}/Game/ClockLibrary.cpp"
+    "${SRC_ROOT}/Game/ClockLibrary.h"
     "${SRC_ROOT}/Game/Date.cpp"
     "${SRC_ROOT}/Game/Date.h"
     "${SRC_ROOT}/Game/Game.cpp"
@@ -379,66 +380,18 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/WorldMapUiView.h")
 
 SET(TES_ITEMS
-    "${SRC_ROOT}/Items/Accessory.cpp"
-    "${SRC_ROOT}/Items/Accessory.h"
-    "${SRC_ROOT}/Items/AccessoryArtifactData.cpp"
-    "${SRC_ROOT}/Items/AccessoryArtifactData.h"
-    "${SRC_ROOT}/Items/AccessoryType.h"
-    "${SRC_ROOT}/Items/Armor.cpp"
-    "${SRC_ROOT}/Items/Armor.h"
-    "${SRC_ROOT}/Items/ArmorArtifactData.cpp"
-    "${SRC_ROOT}/Items/ArmorArtifactData.h"
-    "${SRC_ROOT}/Items/ArmorMaterial.cpp"
-    "${SRC_ROOT}/Items/ArmorMaterial.h"
-    "${SRC_ROOT}/Items/ArmorMaterialType.h"
-    "${SRC_ROOT}/Items/ArmorType.h"
-    "${SRC_ROOT}/Items/ArtifactData.cpp"
-    "${SRC_ROOT}/Items/ArtifactData.h"
-    "${SRC_ROOT}/Items/BodyArmor.cpp"
-    "${SRC_ROOT}/Items/BodyArmor.h"
-    "${SRC_ROOT}/Items/BodyArmorArtifactData.cpp"
-    "${SRC_ROOT}/Items/BodyArmorArtifactData.h"
-    "${SRC_ROOT}/Items/Consumable.cpp"
-    "${SRC_ROOT}/Items/Consumable.h"
-    "${SRC_ROOT}/Items/ConsumableType.h"
-    "${SRC_ROOT}/Items/HeavyArmorMaterial.cpp"
-    "${SRC_ROOT}/Items/HeavyArmorMaterial.h"
-    "${SRC_ROOT}/Items/Item.cpp"
-    "${SRC_ROOT}/Items/Item.h"
-    "${SRC_ROOT}/Items/ItemCondition.cpp"
-    "${SRC_ROOT}/Items/ItemCondition.h"
-    "${SRC_ROOT}/Items/ItemConditionName.h"
-    "${SRC_ROOT}/Items/ItemType.h"
-    "${SRC_ROOT}/Items/LightArmorMaterial.cpp"
-    "${SRC_ROOT}/Items/LightArmorMaterial.h"
-    "${SRC_ROOT}/Items/MediumArmorMaterial.cpp"
-    "${SRC_ROOT}/Items/MediumArmorMaterial.h"
-    "${SRC_ROOT}/Items/Metal.cpp"
-    "${SRC_ROOT}/Items/Metal.h"
-    "${SRC_ROOT}/Items/Metallic.cpp"
-    "${SRC_ROOT}/Items/Metallic.h"
-    "${SRC_ROOT}/Items/MetalType.h"
-    "${SRC_ROOT}/Items/MiscellaneousArtifactData.cpp"
-    "${SRC_ROOT}/Items/MiscellaneousArtifactData.h"
-    "${SRC_ROOT}/Items/MiscellaneousItem.cpp"
-    "${SRC_ROOT}/Items/MiscellaneousItem.h"
-    "${SRC_ROOT}/Items/MiscellaneousItemType.h"
-    "${SRC_ROOT}/Items/Potion.cpp"
-    "${SRC_ROOT}/Items/Potion.h"
-    "${SRC_ROOT}/Items/Shield.cpp"
-    "${SRC_ROOT}/Items/Shield.h"
-    "${SRC_ROOT}/Items/ShieldArtifactData.cpp"
-    "${SRC_ROOT}/Items/ShieldArtifactData.h"
-    "${SRC_ROOT}/Items/ShieldType.h"
-    "${SRC_ROOT}/Items/Trinket.cpp"
-    "${SRC_ROOT}/Items/Trinket.h"
-    "${SRC_ROOT}/Items/TrinketType.h"
-    "${SRC_ROOT}/Items/Weapon.cpp"
-    "${SRC_ROOT}/Items/Weapon.h"
-    "${SRC_ROOT}/Items/WeaponArtifactData.cpp"
-    "${SRC_ROOT}/Items/WeaponArtifactData.h"
-    "${SRC_ROOT}/Items/WeaponHandCount.h"
-    "${SRC_ROOT}/Items/WeaponRangeType.h")
+    "${SRC_ROOT}/Items/ItemConditionLibrary.cpp"
+    "${SRC_ROOT}/Items/ItemConditionLibrary.h"
+    "${SRC_ROOT}/Items/ItemDefinition.cpp"
+    "${SRC_ROOT}/Items/ItemDefinition.h"
+    "${SRC_ROOT}/Items/ItemInstance.cpp"
+    "${SRC_ROOT}/Items/ItemInstance.h"
+    "${SRC_ROOT}/Items/ItemInventory.cpp"
+    "${SRC_ROOT}/Items/ItemInventory.h"
+    "${SRC_ROOT}/Items/ItemLibrary.cpp"
+    "${SRC_ROOT}/Items/ItemLibrary.h"
+    "${SRC_ROOT}/Items/ItemMaterialLibrary.cpp"
+    "${SRC_ROOT}/Items/ItemMaterialLibrary.h")
 
 SET(TES_MATH
     "${SRC_ROOT}/Math/BoundingBox.cpp"
@@ -618,8 +571,8 @@ SET(TES_VOXELS
     "${SRC_ROOT}/Voxels/VoxelFacing3D.h"
     "${SRC_ROOT}/Voxels/VoxelFadeAnimationInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelFadeAnimationInstance.h"
-    "${SRC_ROOT}/Voxels/VoxelMeshDefinition.cpp"
-    "${SRC_ROOT}/Voxels/VoxelMeshDefinition.h"
+    "${SRC_ROOT}/Voxels/VoxelShapeDefinition.cpp"
+    "${SRC_ROOT}/Voxels/VoxelShapeDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelTextureDefinition.cpp"
     "${SRC_ROOT}/Voxels/VoxelTextureDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelTraitsDefinition.cpp"
@@ -768,14 +721,14 @@ ELSE (APPLE)
     ADD_EXECUTABLE(otesa MACOSX_BUNDLE ${TES_SOURCES} ${TES_MAC_ICON})
 ENDIF()
 
-TARGET_LINK_LIBRARIES(otesa components ${EXTERNAL_LIBS})
+TARGET_INCLUDE_DIRECTORIES(otesa PUBLIC "${JoltPhysics_SOURCE_DIR}/..")
+TARGET_LINK_LIBRARIES(otesa Jolt components ${EXTERNAL_LIBS})
 SET_TARGET_PROPERTIES(otesa PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OpenTESArena_BINARY_DIR})
 
 # Visual Studio filters.
 SOURCE_GROUP(TREE ${CMAKE_SOURCE_DIR}/OpenTESArena FILES ${TES_SOURCES})
 
-# DPI-awareness for Visual Studio project (no manifest required).
-# Note this is a CMake 3.16 feature.
 IF (MSVC)
-	SET_TARGET_PROPERTIES(otesa PROPERTIES VS_DPI_AWARE "PerMonitor")
+	SET_TARGET_PROPERTIES(otesa PROPERTIES VS_DPI_AWARE "PerMonitor") # DPI awareness
+    SET_PROPERTY(DIRECTORY PROPERTY VS_STARTUP_PROJECT "otesa") # Default startup project
 ENDIF()

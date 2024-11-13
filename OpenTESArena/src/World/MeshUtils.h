@@ -1,7 +1,7 @@
 #ifndef MESH_UTILS_H
 #define MESH_UTILS_H
 
-enum class VoxelMeshScaleType;
+enum class VoxelShapeScaleType;
 
 namespace MeshUtils
 {
@@ -12,7 +12,7 @@ namespace MeshUtils
 	static constexpr int TEX_COORDS_PER_VERTEX = 2; // UV texture coordinates
 
 	// For positioning raised platforms, etc. correctly.
-	double getScaledVertexY(double meshY, VoxelMeshScaleType scaleType, double ceilingScale);
+	double getScaledVertexY(double meshY, VoxelShapeScaleType scaleType, double ceilingScale);
 }
 
 #endif

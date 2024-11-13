@@ -1,25 +1,38 @@
 #include "ArenaClockUtils.h"
+#include "ClockLibrary.h"
 
 bool ArenaClockUtils::nightMusicIsActive(const Clock &clock)
 {
-	const double clockTime = clock.getPreciseTotalSeconds();
-	const bool beforeDayMusicChange = clockTime < ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
-	const bool afterNightMusicChange = clockTime >= ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
-	return beforeDayMusicChange || afterNightMusicChange;
+	const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+	const Clock &dayMusicStartClock = clockLibrary.getClock(ArenaClockUtils::MusicSwitchToDay);
+	const Clock &nightMusicStartClock = clockLibrary.getClock(ArenaClockUtils::MusicSwitchToNight);
+
+	const double clockTime = clock.getTotalSeconds();
+	const bool isBeforeDayMusicChange = clockTime < dayMusicStartClock.getTotalSeconds();
+	const bool isAfterNightMusicChange = clockTime >= nightMusicStartClock.getTotalSeconds();
+	return isBeforeDayMusicChange || isAfterNightMusicChange;
 }
 
 bool ArenaClockUtils::nightLightsAreActive(const Clock &clock)
 {
-	const double clockTime = clock.getPreciseTotalSeconds();
-	const bool beforeLamppostDeactivate = clockTime < ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool afterLamppostActivate = clockTime >= ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
-	return beforeLamppostDeactivate || afterLamppostActivate;
+	const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+	const Clock &lamppostDeactivateClock = clockLibrary.getClock(ArenaClockUtils::LamppostDeactivate);
+	const Clock &lamppostActivateClock = clockLibrary.getClock(ArenaClockUtils::LamppostActivate);
+
+	const double clockTime = clock.getTotalSeconds();
+	const bool isBeforeLamppostDeactivate = clockTime < lamppostDeactivateClock.getTotalSeconds();
+	const bool isAfterLamppostActivate = clockTime >= lamppostActivateClock.getTotalSeconds();
+	return isBeforeLamppostDeactivate || isAfterLamppostActivate;
 }
 
 bool ArenaClockUtils::isDaytimeFogActive(const Clock &clock)
 {
-	const double clockTime = clock.getPreciseTotalSeconds();
-	const bool afterAmbientEndBrightening = clockTime >= ArenaClockUtils::AmbientEndBrightening.getPreciseTotalSeconds();
-	const bool beforeAmbientStartDimming = clockTime < ArenaClockUtils::AmbientStartDimming.getPreciseTotalSeconds();
-	return afterAmbientEndBrightening && beforeAmbientStartDimming;
+	const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+	const Clock &ambientBrighteningEndClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningEnd);
+	const Clock &ambientDimmingStartClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingStart);
+
+	const double clockTime = clock.getTotalSeconds();
+	const bool isAfterAmbientEndBrightening = clockTime >= ambientBrighteningEndClock.getTotalSeconds();
+	const bool isBeforeAmbientStartDimming = clockTime < ambientDimmingStartClock.getTotalSeconds();
+	return isAfterAmbientEndBrightening && isBeforeAmbientStartDimming;
 }

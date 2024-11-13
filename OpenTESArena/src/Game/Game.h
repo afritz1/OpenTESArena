@@ -1,12 +1,13 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <array>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
 
 #include "CharacterCreationState.h"
 #include "GameState.h"
@@ -22,35 +23,22 @@
 
 #include "components/utilities/FPSCounter.h"
 
-// This class holds the current game state, manages the primary game loop, and 
-// updates the game state each frame.
-
-// The game state holds all the active player and world data. It is null if a 
-// game session is not currently running (in the main menu, character creation), 
-// and is not null while a game session is running (in the game world, pause menu, 
-// cinematic, journal, etc.).
-
-// Game members should be available through a getter so panels can access them.
-
 class Surface;
 
+// Holds the current game state, manages the primary game loop, and updates game state each frame.
+// The game state holds all the active player and world data. It's empty if a game session is not
+// currently running (in the main menu, character creation).
 class Game
 {
 public:
-	using GameWorldRenderCallback = std::function<bool(Game&)>;
-private:
 	AudioManager audioManager;
-
-	// Listener IDs are optional in case of failed Game construction.
 	InputManager inputManager;
-	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
-		renderTargetsResetListenerID, takeScreenshotListenerID, debugProfilerListenerID;
-
 	std::unique_ptr<CharacterCreationState> charCreationState;
-	GameWorldRenderCallback gameWorldRenderCallback;
 	Options options;
 	Renderer renderer;
-	TextureManager textureManager;
+	TextureManager textureManager; // The texture manager object for loading images from file.
+	JPH::PhysicsSystem physicsSystem; // The Jolt physics system for the scene.
+	JPH::TempAllocatorImpl *physicsTempAllocator; // Available when game loop is active.
 
 	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
 	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).
@@ -61,15 +49,13 @@ private:
 	std::vector<std::unique_ptr<Panel>> subPanels;
 
 	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
-	std::array<Rect, 9> nativeCursorRegions;
+	Rect nativeCursorRegions[9];
 
 	// Displayed with varying profiler levels.
 	TextBox debugInfoTextBox;
 
-	// Random number generators; the first is a modern random where accuracy to the original is not needed,
-	// the second is meant to replicate the original game's.
-	Random random;
-	ArenaRandom arenaRandom;
+	Random random; // A modern random, use when accuracy to the original is not needed.
+	ArenaRandom arenaRandom; // Replicates the original game's randomness.
 
 	FPSCounter fpsCounter;
 
@@ -77,10 +63,20 @@ private:
 
 	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
 	GameState gameState;
+
 	Player player;
 
-	// Engine variables for what kinds of simulation should be attempted each frame.
+	// Whether the game loop should animate voxels, entities, and sky that can change over time.
+	// Used when determining if the player is actively in the game world or in menus. This does 
+	// not affect immediate operations like chunk management or scene transitions.
 	bool shouldSimulateScene;
+
+	// Whether to draw the 3D game world.
+	bool shouldRenderScene;
+private:
+	// Listener IDs are optional in case of failed Game construction.
+	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
+		renderTargetsResetListenerID, takeScreenshotListenerID, debugProfilerListenerID;
 
 	bool requestedSubPanelPop;
 	bool running;
@@ -117,48 +113,11 @@ public:
 
 	bool init();
 
-	// Gets the audio manager for changing the current music and sound.
-	AudioManager &getAudioManager();
-
-	// Gets the input manager for obtaining input state. This should be read-only for
-	// all classes except the Game class.
-	InputManager &getInputManager();
-
-	// The game state holds the "session" for the game. If no session is active, do not call this method.
-	// Verify beforehand by calling Game::gameStateIsActive().
-	GameState &getGameState();
-
-	Player &getPlayer();
-	SceneManager &getSceneManager();
-
-	// Whether the game loop should animate voxels, entities, and sky that can change over time.
-	// Used when determining if the player is actively in the game world or in menus. This does 
-	// not affect immediate operations like chunk management or scene transitions.
-	bool isSimulatingScene() const;
-	void setIsSimulatingScene(bool active);
-
 	// Returns whether a new character is currently being created.
 	bool characterCreationIsActive() const;
 
 	// Gets the character creation state. Character creation must be active.
 	CharacterCreationState &getCharacterCreationState() const;
-
-	// Gets the options object for various settings (resolution, volume, sensitivity).
-	Options &getOptions();
-
-	// Gets the renderer object for rendering methods.
-	Renderer &getRenderer();
-
-	// Gets the texture manager object for loading images from file.
-	TextureManager &getTextureManager();
-
-	// Gets the global RNG initialized at program start.
-	Random &getRandom();
-
-	ArenaRandom &getArenaRandom();
-
-	// Gets the frames-per-second counter. This is updated in the game loop.
-	const FPSCounter &getFPSCounter() const;
 
 	// Gets a UI rectangle used with classic game world interface for player movement.
 	const Rect &getNativeCursorRegion(int index) const;
@@ -211,9 +170,6 @@ public:
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.
 	void setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState);
-
-	// Sets the function to call for rendering the 3D scene.
-	void setGameWorldRenderCallback(const GameWorldRenderCallback &callback);
 
 	// Initial method for starting the game loop. This must only be called by main().
 	void loop();

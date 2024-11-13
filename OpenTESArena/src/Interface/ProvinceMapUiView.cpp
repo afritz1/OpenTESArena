@@ -13,7 +13,7 @@
 
 Int2 ProvinceMapUiView::getLocationCenterPoint(Game &game, int provinceID, int locationID)
 {
-	const auto &gameState = game.getGameState();
+	const auto &gameState = game.gameState;
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
@@ -314,7 +314,7 @@ UiTextureID ProvinceMapUiView::allocTextPopUpTexture(int textWidth, int textHeig
 	return textureID;
 }
 
-TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithXY(

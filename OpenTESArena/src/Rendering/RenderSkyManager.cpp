@@ -56,7 +56,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	std::vector<int32_t> bgIndices;
 
 	constexpr double pointDistance = 1.0; // Arbitrary distance from camera, depth should not be checked.
-	constexpr Radians angleAboveHorizon = 25.0 * Constants::DegToRad;
+	constexpr Radians angleAboveHorizon = MathUtils::degToRad(25.0);
 	const double aboveHorizonPointHeight = pointDistance * std::tan(angleAboveHorizon);
 
 	constexpr int zenithVertexIndex = 0;
@@ -633,7 +633,7 @@ void RenderSkyManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer)
 }
 
 void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,
-	const CoordDouble3 &cameraCoord, bool isInterior, double daytimePercent, bool isFoggy, double distantAmbientPercent,
+	const CoordDouble3 &cameraCoord, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent,
 	Renderer &renderer)
 {
 	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
@@ -660,7 +660,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		}
 	}
 
-	const bool isAM = daytimePercent < 0.50;
+	const bool isAM = dayPercent < 0.50;
 	if (thunderstormFlashPercent.has_value())
 	{
 		const int flashTextureCount = this->skyThunderstormTextureRefs.getCount();

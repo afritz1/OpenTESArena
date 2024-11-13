@@ -15,9 +15,6 @@
 
 #include "components/utilities/BufferView.h"
 
-// Each panel interprets user input and draws to the screen. There is only one panel active at
-// a time, and it is owned by the Game, although there can be any number of sub-panels.
-
 class Color;
 class CursorData;
 class FontLibrary;
@@ -33,6 +30,8 @@ struct SDL_Texture;
 
 union SDL_Event;
 
+// Each panel interprets user input and draws to the screen. There is only one panel active at
+// a time, and it is owned by Game, although there can be any number of sub-panels.
 class Panel
 {
 private:
@@ -61,7 +60,7 @@ protected:
 	// Default cursor used by most panels.
 	CursorData getDefaultCursor() const;
 
-	void addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback);
+	void addInputActionListener(const std::string_view actionName, const InputActionCallback &callback);
 	void addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
 	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
 	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);

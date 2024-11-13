@@ -33,7 +33,7 @@ TextBox::InitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &fo
 		fontLibrary);
 }
 
-TextBox::InitInfo PauseMenuUiView::getOptionsTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+TextBox::InitInfo PauseMenuUiView::getOptionsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const TextRenderUtils::TextShadowInfo shadow(
 		PauseMenuUiView::OptionsButtonTextShadowOffsetX,

@@ -7,13 +7,11 @@
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 
-// Maybe rename this to "CharacterStatsPanel"?
-
-// This is the character portrait panel that shows the player's attributes and derived stats.
-
 class Renderer;
 class TextBox;
 
+// The character portrait panel that shows the player's attributes and derived stats.
+// @todo Maybe rename this to "CharacterStatsPanel"?
 class CharacterPanel : public Panel
 {
 private:

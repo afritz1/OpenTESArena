@@ -1,6 +1,9 @@
 #ifndef ENTITY_CHUNK_MANAGER_H
 #define ENTITY_CHUNK_MANAGER_H
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+
 #include "CitizenUtils.h"
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationInstance.h"
@@ -20,7 +23,6 @@ class BinaryAssetLibrary;
 class EntityDefinitionLibrary;
 class LevelDefinition;
 class LevelInfoDefinition;
-class Player;
 class Renderer;
 class TextureManager;
 class VoxelChunk;
@@ -28,6 +30,7 @@ class VoxelChunkManager;
 
 struct EntityObservedResult;
 struct MapSubDefinition;
+struct Player;
 
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
@@ -72,15 +75,15 @@ private:
 		const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const LevelDefinition &levelDef,
 		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
 	void updateCitizenStates(double dt, EntityChunk &entityChunk, const CoordDouble2 &playerCoordXZ, bool isPlayerMoving,
-		bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager);
+		bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,
@@ -119,15 +122,15 @@ public:
 		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
-		TextureManager &textureManager, Renderer &renderer);
+		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
 	// Prepares an entity for destruction later this frame.
 	void queueEntityDestroy(EntityInstanceID entityInstID);
 
 	// @todo: support spawning an entity not from the level def
 
-	void cleanUp();
-	void clear();
+	void cleanUp(JPH::PhysicsSystem &physicsSystem);
+	void clear(JPH::PhysicsSystem &physicsSystem);
 };
 
 #endif

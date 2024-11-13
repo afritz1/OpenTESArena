@@ -1,3 +1,7 @@
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/Body/BodyCreationSettings.h"
+#include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
+
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityObservedResult.h"
@@ -7,6 +11,7 @@
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
+#include "../Collision/PhysicsLayer.h"
 #include "../Game/CardinalDirection.h"
 #include "../Math/Constants.h"
 #include "../Math/RandomUtils.h"
@@ -24,6 +29,54 @@
 
 namespace
 {
+	bool TryCreatePhysicsCollider(const CoordDouble2 &coord, double ceilingScale, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	{
+		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
+		// @todo: use first frame of front-facing idle animation for dimensions?
+
+		const double capsuleRadius = 0.20;
+		const double capsuleTotalHeight = 0.65;
+		const double capsuleHalfTotalHeight = capsuleTotalHeight * 0.50;
+		const double capsuleCylinderHeight = capsuleTotalHeight - (capsuleRadius * 2.0);
+		const double capsuleCylinderHalfHeight = capsuleCylinderHeight * 0.50;
+		DebugAssert(capsuleCylinderHalfHeight >= 0.0);
+
+		JPH::CapsuleShapeSettings capsuleShapeSettings(static_cast<float>(capsuleCylinderHalfHeight), static_cast<float>(capsuleRadius));
+		capsuleShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
+		// @todo: make sure this ^ isn't leaking when we remove/destroy the body
+
+		JPH::ShapeSettings::ShapeResult capsuleShapeResult = capsuleShapeSettings.Create();
+		if (capsuleShapeResult.HasError())
+		{
+			DebugLogError("Couldn't create Jolt capsule shape settings: " + std::string(capsuleShapeResult.GetError().c_str()));
+			return false;
+		}
+
+		JPH::ShapeRefC capsuleShape = capsuleShapeResult.Get();
+		const WorldDouble2 capsuleWorldPointXZ = VoxelUtils::coordToWorldPoint(coord); // @todo: use getEntityCorrectedY()
+		const JPH::RVec3 capsuleJoltPos(
+			static_cast<float>(capsuleWorldPointXZ.x),
+			static_cast<float>(ceilingScale + capsuleHalfTotalHeight),
+			static_cast<float>(capsuleWorldPointXZ.y));
+		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
+		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, PhysicsLayers::MOVING);
+		capsuleSettings.mIsSensor = isSensor;
+
+		const JPH::Body *capsule = bodyInterface.CreateBody(capsuleSettings);
+		if (capsule == nullptr)
+		{
+			const uint32_t totalBodyCount = physicsSystem.GetNumBodies();
+			DebugLogError("Couldn't create Jolt body for entity (total: " + std::to_string(totalBodyCount) + ").");
+			return false;
+		}
+
+		const JPH::BodyID &capsuleBodyID = capsule->GetID();
+		bodyInterface.AddBody(capsuleBodyID, JPH::EActivation::Activate); // @todo: inefficient to add one at a time
+		*outBodyID = capsuleBodyID;
+		return true;
+	}
+
 	Buffer<ScopedObjectTextureRef> MakeAnimTextureRefs(const EntityAnimationDefinition &animDef, TextureManager &textureManager, Renderer &renderer)
 	{
 		const int keyframeCount = animDef.keyframeCount;
@@ -108,7 +161,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 	const LevelDefinition &levelDefinition, const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
 {
 	SNInt startX, endX;
 	int startY, endY;
@@ -217,6 +270,12 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				const EntityAnimationDefinitionState &defaultAnimDefState = animDef.states[*defaultAnimStateIndex];
 				animInst.setStateIndex(*defaultAnimStateIndex);
 
+				const bool isSensor = !EntityUtils::hasCollision(entityDef);
+				if (!TryCreatePhysicsCollider(entityCoord, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
+				{
+					DebugLogError("Couldn't allocate Jolt physics body for entity.");
+				}
+
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
 		}
@@ -232,7 +291,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 		const ChunkInt2 &chunkPos = voxelChunk.getPosition();
 		auto trySpawnCitizenInChunk = [this, &entityChunk, &voxelChunk, &entityGenInfo, &citizenGenInfo, &random,
-			&binaryAssetLibrary, &textureManager, &chunkPos]()
+			&binaryAssetLibrary, &physicsSystem, &textureManager, &chunkPos, ceilingScale]()
 		{
 			const std::optional<VoxelInt2> spawnVoxel = [&voxelChunk, &random]() -> std::optional<VoxelInt2>
 			{
@@ -339,6 +398,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
 			paletteIndices = ArenaAnimUtils::transformCitizenColors(citizenGenInfo->raceID, colorSeed, binaryAssetLibrary.getExeData());
 
+			// Citizens don't collide with player.
+			constexpr bool isSensor = true;
+			if (!TryCreatePhysicsCollider(entityCoord, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
+			{
+				DebugLogError("Couldn't allocate Jolt physics body for entity.");
+			}
+
 			entityChunk.entityIDs.emplace_back(entityInstID);
 
 			return true;
@@ -357,8 +423,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, 
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 &chunkPos = entityChunk.getPosition();
 	const SNInt levelWidth = levelDef.getWidth();
@@ -375,7 +441,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 			// Populate chunk from the part of the level it overlaps.
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
+				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -387,7 +453,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 			// Populate chunk from the part of the level it overlaps.
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
+				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -399,13 +465,15 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 		// Copy level definition directly into chunk.
 		const WorldInt2 levelOffset = WorldInt2::Zero;
 		this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-			citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
+			citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
 	}
 }
 
 void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk, const CoordDouble2 &playerCoordXZ,
-	bool isPlayerMoving, bool isPlayerWeaponSheathed, Random &random, const VoxelChunkManager &voxelChunkManager)
+	bool isPlayerMoving, bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
 {
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
 	for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
 	{
 		const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
@@ -555,6 +623,17 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 			// Integrate by delta time.
 			const VoxelDouble2 entityVelocity = entityDir * CitizenUtils::SPEED;
 			entityCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point + (entityVelocity * dt));
+
+			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+			DebugAssert(!physicsBodyID.IsInvalid());
+
+			const JPH::RVec3 oldBodyPosition = bodyInterface.GetPosition(physicsBodyID);
+			const WorldDouble2 newEntityWorldPointXZ = VoxelUtils::coordToWorldPoint(entityCoord);
+			const JPH::RVec3 newBodyPosition(
+				static_cast<float>(newEntityWorldPointXZ.x),
+				static_cast<float>(oldBodyPosition.GetY()),
+				static_cast<float>(newEntityWorldPointXZ.y));
+			bodyInterface.SetPosition(physicsBodyID, newBodyPosition, JPH::EActivation::Activate);
 		}
 
 		// Transfer ownership of the entity ID to a new chunk if needed.
@@ -800,10 +879,10 @@ double EntityChunkManager::getEntityCorrectedY(EntityInstanceID id, double ceili
 	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelTraitsDefinition::Raised &raised = voxelTraitsDef.raised;
-		const double meshYPos = raised.yOffset + raised.ySize;
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = chunk->getMeshDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
-		const VoxelMeshDefinition &voxelMeshDef = chunk->getMeshDef(voxelMeshDefID);
-		raisedPlatformYOffset = MeshUtils::getScaledVertexY(meshYPos, voxelMeshDef.scaleType, ceilingScale);
+		const double shapeYPos = raised.yOffset + raised.ySize;
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = chunk->getShapeDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
+		const VoxelShapeDefinition &voxelShapeDef = chunk->getShapeDef(voxelShapeDefID);
+		raisedPlatformYOffset = MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}
 
 	return baseYPosition + entityDefYOffset + raisedPlatformYOffset;
@@ -862,7 +941,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
-	TextureManager &textureManager, Renderer &renderer)
+	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
 {
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
@@ -901,17 +980,17 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		}
 
 		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef, entityGenInfo, citizenGenInfo,
-			ceilingScale, random, entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
+			ceilingScale, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
 
-	const CoordDouble3 &playerCoord = player.getPosition();
+	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
-	const bool isPlayerMoving = player.getVelocity().lengthSquared() >= Constants::Epsilon;
-	const bool isPlayerWeaponSheathed = player.getWeaponAnimation().isSheathed();
+	const bool isPlayerMoving = player.isMoving();
+	const bool isPlayerWeaponSheathed = player.weaponAnimation.isSheathed();
 
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
@@ -920,7 +999,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 		// @todo: simulate/animate AI
-		this->updateCitizenStates(dt, entityChunk, playerCoordXZ, isPlayerMoving, isPlayerWeaponSheathed, random, voxelChunkManager);
+		this->updateCitizenStates(dt, entityChunk, playerCoordXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
 
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
@@ -942,8 +1021,10 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID)
 	}
 }
 
-void EntityChunkManager::cleanUp()
+void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
 {
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
 	for (const EntityInstanceID entityInstID : this->destroyedEntityIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
@@ -982,6 +1063,13 @@ void EntityChunkManager::cleanUp()
 		{
 			this->paletteIndices.free(entityInst.paletteIndicesInstID);
 		}
+
+		const JPH::BodyID physicsBodyID = entityInst.physicsBodyID;
+		if (!physicsBodyID.IsInvalid())
+		{
+			bodyInterface.RemoveBody(physicsBodyID);
+			bodyInterface.DestroyBody(physicsBodyID);
+		}
 		
 		this->entities.free(entityInstID);
 	}
@@ -995,7 +1083,7 @@ void EntityChunkManager::cleanUp()
 	}
 }
 
-void EntityChunkManager::clear()
+void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem)
 {
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
@@ -1005,6 +1093,6 @@ void EntityChunkManager::clear()
 		}
 	}
 
-	this->cleanUp();
+	this->cleanUp(physicsSystem);
 	this->recycleAllChunks();
 }

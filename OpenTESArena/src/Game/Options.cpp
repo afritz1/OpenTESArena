@@ -93,7 +93,7 @@ void Options::load(const char *filename, std::unordered_map<std::string, Options
 
 	for (int sectionIndex = 0; sectionIndex < keyValueFile.getSectionCount(); sectionIndex++)
 	{
-		const KeyValueFile::Section &section = keyValueFile.getSection(sectionIndex);
+		const KeyValueFileSection &section = keyValueFile.getSection(sectionIndex);
 		const std::string &sectionName = section.getName();
 
 		// Get the list of key-type pairs to pull from.

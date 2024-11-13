@@ -511,29 +511,30 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 	const ChunkInt2 &chunkPos = voxelChunk.getPosition();
 
 	// Add render chunk voxel mesh instances and create mappings to them.
-	for (int meshDefIndex = 0; meshDefIndex < voxelChunk.getMeshDefCount(); meshDefIndex++)
+	for (int shapeDefIndex = 0; shapeDefIndex < voxelChunk.getShapeDefCount(); shapeDefIndex++)
 	{
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = static_cast<VoxelChunk::VoxelMeshDefID>(meshDefIndex);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = static_cast<VoxelChunk::VoxelShapeDefID>(shapeDefIndex);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 
 		RenderVoxelMeshInstance renderVoxelMeshInst;
-		if (!voxelMeshDef.isEmpty()) // Only attempt to create buffers for non-air voxels.
+		if (voxelShapeDef.type != VoxelShapeType::None) // Only attempt to create buffers for non-air voxels.
 		{
 			constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 			constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
+			const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
 			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshInst.vertexBufferID))
 			{
-				DebugLogError("Couldn't create vertex buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
+				DebugLogError("Couldn't create vertex buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				continue;
 			}
 
 			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &renderVoxelMeshInst.normalBufferID))
 			{
-				DebugLogError("Couldn't create normal attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
+				DebugLogError("Couldn't create normal attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				renderVoxelMeshInst.freeBuffers(renderer);
 				continue;
@@ -541,25 +542,25 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 
 			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &renderVoxelMeshInst.texCoordBufferID))
 			{
-				DebugLogError("Couldn't create tex coord attribute buffer for voxel mesh ID " + std::to_string(voxelMeshDefID) +
+				DebugLogError("Couldn't create tex coord attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				renderVoxelMeshInst.freeBuffers(renderer);
 				continue;
 			}
 
-			ArenaMeshUtils::RenderMeshInitCache meshInitCache;
+			ArenaMeshUtils::ShapeInitCache shapeInitCache;
 
 			// Generate mesh geometry and indices for this voxel definition.
-			voxelMeshDef.writeRendererGeometryBuffers(ceilingScale, meshInitCache.verticesView, meshInitCache.normalsView, meshInitCache.texCoordsView);
-			voxelMeshDef.writeRendererIndexBuffers(meshInitCache.opaqueIndices0View, meshInitCache.opaqueIndices1View,
-				meshInitCache.opaqueIndices2View, meshInitCache.alphaTestedIndices0View);
+			voxelMeshDef.writeRendererGeometryBuffers(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.verticesView, shapeInitCache.normalsView, shapeInitCache.texCoordsView);
+			voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.opaqueIndices0View, shapeInitCache.opaqueIndices1View,
+				shapeInitCache.opaqueIndices2View, shapeInitCache.alphaTestedIndices0View);
 
 			renderer.populateVertexBuffer(renderVoxelMeshInst.vertexBufferID,
-				BufferView<const double>(meshInitCache.vertices.data(), vertexCount * positionComponentsPerVertex));
+				BufferView<const double>(shapeInitCache.vertices.data(), vertexCount * positionComponentsPerVertex));
 			renderer.populateAttributeBuffer(renderVoxelMeshInst.normalBufferID,
-				BufferView<const double>(meshInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
+				BufferView<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
 			renderer.populateAttributeBuffer(renderVoxelMeshInst.texCoordBufferID,
-				BufferView<const double>(meshInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
+				BufferView<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
 
 			const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
 			for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
@@ -568,17 +569,16 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 				IndexBufferID &opaqueIndexBufferID = renderVoxelMeshInst.opaqueIndexBufferIDs[bufferIndex];
 				if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
 				{
-					DebugLogError("Couldn't create opaque index buffer for voxel mesh ID " +
-						std::to_string(voxelMeshDefID) + " in chunk (" + voxelChunk.getPosition().toString() + ").");
+					DebugLogError("Couldn't create opaque index buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
+						" in chunk (" + voxelChunk.getPosition().toString() + ").");
 					renderVoxelMeshInst.freeBuffers(renderer);
 					continue;
 				}
 
 				renderVoxelMeshInst.opaqueIndexBufferIdCount++;
 
-				const auto &indices = *meshInitCache.opaqueIndicesPtrs[bufferIndex];
-				renderer.populateIndexBuffer(opaqueIndexBufferID,
-					BufferView<const int32_t>(indices.data(), opaqueIndexCount));
+				const auto &indices = *shapeInitCache.opaqueIndicesPtrs[bufferIndex];
+				renderer.populateIndexBuffer(opaqueIndexBufferID, BufferView<const int32_t>(indices.data(), opaqueIndexCount));
 			}
 
 			const bool hasAlphaTestedIndexBuffer = voxelMeshDef.alphaTestedIndicesListCount > 0;
@@ -587,19 +587,19 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 				const int alphaTestedIndexCount = static_cast<int>(voxelMeshDef.alphaTestedIndices.size());
 				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &renderVoxelMeshInst.alphaTestedIndexBufferID))
 				{
-					DebugLogError("Couldn't create alpha-tested index buffer for voxel mesh ID " +
-						std::to_string(voxelMeshDefID) + " in chunk (" + voxelChunk.getPosition().toString() + ").");
+					DebugLogError("Couldn't create alpha-tested index buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
+						" in chunk (" + voxelChunk.getPosition().toString() + ").");
 					renderVoxelMeshInst.freeBuffers(renderer);
 					continue;
 				}
 
 				renderer.populateIndexBuffer(renderVoxelMeshInst.alphaTestedIndexBufferID,
-					BufferView<const int32_t>(meshInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
+					BufferView<const int32_t>(shapeInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
 			}
 		}
 
 		const RenderVoxelMeshInstID renderMeshInstID = renderChunk.addMeshInst(std::move(renderVoxelMeshInst));
-		renderChunk.meshInstMappings.emplace(voxelMeshDefID, renderMeshInstID);
+		renderChunk.meshInstMappings.emplace(voxelShapeDefID, renderMeshInstID);
 	}
 }
 
@@ -734,9 +734,9 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 	{
 		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk.getMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
-		if (voxelMeshDef.isEmpty())
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+		if (voxelShapeDef.type == VoxelShapeType::None)
 		{
 			continue;
 		}
@@ -747,7 +747,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
-		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelMeshDefID);
+		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelShapeDefID);
 		DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
 		const RenderVoxelMeshInstID renderMeshInstID = meshInstIter->second;
 		renderChunk.meshInstIDs.set(voxel.x, voxel.y, voxel.z, renderMeshInstID);
@@ -1390,11 +1390,11 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 
 		// Update draw calls of dirty voxels.
 		// - @todo: there is some double/triple updating possible here, maybe optimize.
-		BufferView<const VoxelInt3> dirtyMeshDefVoxels = voxelChunk.getDirtyMeshDefPositions();
+		BufferView<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.getDirtyShapeDefPositions();
 		BufferView<const VoxelInt3> dirtyDoorVisInstVoxels = voxelChunk.getDirtyDoorVisInstPositions();
 		BufferView<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
 		BufferView<const VoxelInt3> dirtyLightVoxels = renderLightChunk.dirtyVoxelPositions;
-		this->updateChunkDrawCalls(renderChunk, dirtyMeshDefVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
 		this->updateChunkDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
 		this->updateChunkDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
 		this->updateChunkDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);

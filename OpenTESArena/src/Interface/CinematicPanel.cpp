@@ -35,7 +35,7 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceName.c_str());
 	if (!metadataID.has_value())
 	{
@@ -46,7 +46,7 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
 	const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	this->textureRefs.init(textureFileMetadata.getTextureCount());
 	for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
 	{

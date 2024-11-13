@@ -31,7 +31,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 bool ChooseClassCreationPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseClassCreationUiModel::getTitleText(game);
@@ -79,7 +79,7 @@ bool ChooseClassCreationPanel::init()
 
 	this->addInputActionListener(InputActionName::Back, ChooseClassCreationUiController::onBackToMainMenuInputAction);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID parchmentTextureID = ChooseClassCreationUiView::allocParchmentTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);

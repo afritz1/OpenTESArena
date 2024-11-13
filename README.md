@@ -48,14 +48,14 @@ Controls:
 1. Open `ARENA` folder then highlight the current directory path and copy with Ctrl+C
 1. Back in the OpenTESArena release folder, open `options/options-default.txt` and paste the game directory after `ArenaPaths=`
    - Example: `ArenaPaths=C:\Program Files (x86)\Steam\steamapps\common\The Elder Scrolls Arena\ARENA`
-  
-#### Run `otesa.exe`
 
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip)
 1. Extract the `.zip`
 1. Move the extracted `eawpats` folder inside the OpenTESArena `data` folder
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
+  
+#### Run `otesa.exe`
 
 #### Common issues
 - Missing MSVCP141.dll error
@@ -92,17 +92,17 @@ unzip ../../Arena106Setup.zip
 rar x Arena106.exe
 ```
 
-#### Run OpenTESArena
-```bash
-cd ..
-./run.sh
-```
-
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
 1. Extract the `.tar.gz`
 1. Move the extracted `eawpats` folder inside the OpenTESArena `data` folder
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
+
+#### Run OpenTESArena
+```bash
+cd ..
+./run.sh
+```
 
 </details>
 
@@ -136,20 +136,25 @@ cd ..
 
 ## Building OpenTESArena from source
 
-### Dependencies
+#### Install third-party tools and libraries
+- [Git](https://git-scm.com/downloads)
 - [CMake](https://cmake.org/download/)
 - [OpenAL Soft 1.19.1](https://openal-soft.org/#download)
 - [SDL 2.0.10](https://github.com/libsdl-org/SDL/releases)
 - [WildMIDI 0.4.4](https://github.com/Mindwerks/wildmidi/releases) (required for music)
-
-Example Unix terminal commands on a fresh machine:
 ```bash
 sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libwildmidi-dev
 ```
 
-### Building OpenTESArena
+#### Download source code
+```bash
+git clone https://github.com/afritz1/OpenTESArena
+cd OpenTESArena
+```
+
+#### Build OpenTESArena
 - Navigate to the root of the repository
-- Use CMake to generate your project file (Visual Studio .sln, Unix Makefile, etc.). In a Unix terminal, the commands might look like:
+- Use CMake to generate your project file. In a Unix terminal, the commands might look like:
     ```bash
     mkdir build
     cd build
@@ -159,7 +164,7 @@ sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libwildmidi-dev
     where `CMAKE_BUILD_TYPE` is one of `Debug`|`ReleaseGenericNoLTO`|`ReleaseGeneric`|`ReleaseNative`
   - For maximum compatibility, use `ReleaseGeneric`
   - For maximum speed only compatible with your specific CPU, use `ReleaseNative`
-- Other parameters for CMake may be necessary depending on the IDE you are using
+- **Note**: by default, Jolt Physics enables vector instructions (SSE, AVX, etc.) which will cause runtime errors if your CPU doesn't support them. You can set these to `OFF` in CMake ([more information](https://github.com/jrouwe/JoltPhysics/blob/20eedf47c4bf064e740c9de2f638a8c1d57ce2ed/Build/README.md#illegal-instruction-error)).
 
 ### Running OpenTESArena
 - Copy the `data` and `options` folders from the project's root folder to the same directory as the game executable (this should be fixed in the future with a post-build command)

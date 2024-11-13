@@ -6,6 +6,7 @@
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
 #include "Renderer.h"
+#include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
 #include "SdlUiRenderer.h"
@@ -25,6 +26,10 @@
 
 namespace
 {
+	RenderCamera g_physicsDebugCamera; // Cached every frame for Jolt Physics debug renderer.
+	constexpr double PHYSICS_DEBUG_MAX_DISTANCE = 3.0;
+	constexpr double PHYSICS_DEBUG_MAX_DISTANCE_SQR = PHYSICS_DEBUG_MAX_DISTANCE * PHYSICS_DEBUG_MAX_DISTANCE;
+
 	int GetSdlWindowPosition(Renderer::WindowMode windowMode)
 	{
 		switch (windowMode)
@@ -1019,11 +1024,101 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rectSdl);
 }
 
+void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color)
+{
+	const RenderCamera &camera = g_physicsDebugCamera;
+	const Double3 worldPoint0(static_cast<double>(src.GetX()), static_cast<double>(src.GetY()), static_cast<double>(src.GetZ()));
+	const Double3 worldPoint1(static_cast<double>(dst.GetX()), static_cast<double>(dst.GetY()), static_cast<double>(dst.GetZ()));
+	const double distSqr0 = (camera.worldPoint - worldPoint0).lengthSquared();
+	const double distSqr1 = (camera.worldPoint - worldPoint1).lengthSquared();
+	if ((distSqr0 > PHYSICS_DEBUG_MAX_DISTANCE_SQR) || (distSqr1 > PHYSICS_DEBUG_MAX_DISTANCE_SQR))
+	{
+		return;
+	}
+
+	const Double4 clipPoint0 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint0, 1.0), camera.viewProjMatrix);
+	const Double4 clipPoint1 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint1, 1.0), camera.viewProjMatrix);
+	if ((clipPoint0.w <= 0.0) || (clipPoint1.w <= 0.0))
+	{
+		return;
+	}
+
+	const Int2 viewDims = this->getViewDimensions();
+	const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clipPoint0);
+	const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clipPoint1);
+	const Double2 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, viewDims.x, viewDims.y);
+	const Double2 screenSpace1 = RendererUtils::ndcToScreenSpace(ndc1, viewDims.x, viewDims.y);
+	const Int2 pixelSpace0(static_cast<int>(screenSpace0.x), static_cast<int>(screenSpace0.y));
+	const Int2 pixelSpace1(static_cast<int>(screenSpace1.x), static_cast<int>(screenSpace1.y));
+
+	const double distanceRatio = std::max(distSqr0, distSqr1) / PHYSICS_DEBUG_MAX_DISTANCE_SQR;
+	const double intensityPercent = std::clamp(1.0 - (distanceRatio * distanceRatio * distanceRatio), 0.0, 1.0);
+	Double4 colorComponents = Double4::fromARGB(color.GetUInt32());
+	colorComponents = colorComponents * intensityPercent;
+	const Color presentedColor = Color::fromARGB(colorComponents.toARGB());
+	this->drawLine(presentedColor, pixelSpace0.x, pixelSpace0.y, pixelSpace1.x, pixelSpace1.y);
+}
+
+void Renderer::DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3, JPH::ColorArg color, ECastShadow castShadow)
+{
+	const RenderCamera &camera = g_physicsDebugCamera;
+	const Double3 worldPoint0(static_cast<double>(v1.GetX()), static_cast<double>(v1.GetY()), static_cast<double>(v1.GetZ()));
+	const Double3 worldPoint1(static_cast<double>(v2.GetX()), static_cast<double>(v2.GetY()), static_cast<double>(v2.GetZ()));
+	const Double3 worldPoint2(static_cast<double>(v3.GetX()), static_cast<double>(v3.GetY()), static_cast<double>(v3.GetZ()));
+	const double distSqr0 = (camera.worldPoint - worldPoint0).lengthSquared();
+	const double distSqr1 = (camera.worldPoint - worldPoint1).lengthSquared();
+	const double distSqr2 = (camera.worldPoint - worldPoint2).lengthSquared();
+	if ((distSqr0 > PHYSICS_DEBUG_MAX_DISTANCE_SQR) || (distSqr1 > PHYSICS_DEBUG_MAX_DISTANCE_SQR) || (distSqr2 > PHYSICS_DEBUG_MAX_DISTANCE_SQR))
+	{
+		return;
+	}
+
+	const Double4 clipPoint0 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint0, 1.0), camera.viewProjMatrix);
+	const Double4 clipPoint1 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint1, 1.0), camera.viewProjMatrix);
+	const Double4 clipPoint2 = RendererUtils::worldSpaceToClipSpace(Double4(worldPoint2, 1.0), camera.viewProjMatrix);
+	if ((clipPoint0.w <= 0.0) || (clipPoint1.w <= 0.0) || (clipPoint2.w <= 0.0))
+	{
+		return;
+	}
+
+	const Int2 viewDims = this->getViewDimensions();
+	const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clipPoint0);
+	const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clipPoint1);
+	const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clipPoint2);
+	const Double2 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, viewDims.x, viewDims.y);
+	const Double2 screenSpace1 = RendererUtils::ndcToScreenSpace(ndc1, viewDims.x, viewDims.y);
+	const Double2 screenSpace2 = RendererUtils::ndcToScreenSpace(ndc2, viewDims.x, viewDims.y);
+	const Double2 screenSpace01 = screenSpace1 - screenSpace0;
+	const Double2 screenSpace12 = screenSpace2 - screenSpace1;
+	const Double2 screenSpace20 = screenSpace0 - screenSpace2;
+	const double screenSpace01Cross12 = screenSpace12.cross(screenSpace01);
+	const double screenSpace12Cross20 = screenSpace20.cross(screenSpace12);
+	const double screenSpace20Cross01 = screenSpace01.cross(screenSpace20);
+
+	// Discard back-facing.
+	const bool isFrontFacing = (screenSpace01Cross12 + screenSpace12Cross20 + screenSpace20Cross01) > 0.0;
+	if (!isFrontFacing)
+	{
+		return;
+	}
+
+	this->DrawLine(v1, v2, color);
+	this->DrawLine(v2, v3, color);
+	this->DrawLine(v3, v1, color);
+}
+
+void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height)
+{
+	// Do nothing.
+}
+
 void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
 	ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode,
 	DitheringMode ditheringMode)
 {
 	DebugAssert(this->renderer3D->isInited());
+
+	g_physicsDebugCamera = camera;
 
 	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
 

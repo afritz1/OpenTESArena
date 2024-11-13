@@ -10,15 +10,13 @@
 #include "../UI/ListBox.h"
 #include "../UI/TextBox.h"
 
-// The original class list design in Arena is pretty bad. It's an alphabetical 
-// list that says nothing about the classes (thus requiring the manual for 
-// information). I think it's better to have tooltips.
-
 class ExeData;
 class Rect;
 class Renderer;
 class Surface;
 
+// The original class list design in Arena is pretty bad. It's an alphabetical list that says nothing
+// about the classes (thus requiring the manual for information). I think it's better to have tooltips.
 class ChooseClassPanel : public Panel
 {
 private:

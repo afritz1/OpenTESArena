@@ -39,7 +39,7 @@ AutomapPanel::AutomapPanel(Game &game)
 AutomapPanel::~AutomapPanel()
 {
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, false);
 }
 
@@ -50,7 +50,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const TextBox::InitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
-	if (!this->locationTextBox.init(locationTextBoxInitInfo, game.getRenderer()))
+	if (!this->locationTextBox.init(locationTextBoxInitInfo, game.renderer))
 	{
 		DebugLogError("Couldn't init location text box.");
 		return false;
@@ -67,7 +67,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	this->addButtonProxy(MouseButtonType::Left, this->backToGameButton.getRect(),
 		[&game]() { AutomapUiController::onBackToGameButtonSelected(game); });
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, true);
 
 	auto backToGameInputActionFunc = AutomapUiController::onBackToGameInputAction;
@@ -80,14 +80,14 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		AutomapUiController::onMouseButtonHeld(game, buttonType, position, dt, &this->automapOffset);
 	});
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
 	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
 	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(
-		game.getGameState(), playerCoordXZ, playerDirection, voxelChunkManager, renderer);
+		game.gameState, playerCoordXZ, playerDirection, voxelChunkManager, renderer);
 	this->mapTextureRef.init(mapTextureID, renderer);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = AutomapUiView::allocBgTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 
@@ -116,7 +116,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 
 	UiDrawCall::SizeFunc automapSizeFunc = [this, &game]()
 	{
-		auto &renderer = game.getRenderer();
+		auto &renderer = game.renderer;
 		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(this->mapTextureRef.get());
 		if (!dims.has_value())
 		{

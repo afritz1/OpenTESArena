@@ -6,7 +6,6 @@
 #include "VoxelUtils.h"
 
 // Can have a sound and/or text definition.
-
 class VoxelTriggerDefinition
 {
 public:

@@ -9,7 +9,6 @@
 
 // Various types used with Arena's binary data files. Struct sizes are hardcoded to show
 // intent and to avoid issues with padding since they map directly to Arena's data.
-
 namespace ArenaTypes
 {
 	// For .MIF and .RMD FLOR/MAP1/MAP2 voxels.

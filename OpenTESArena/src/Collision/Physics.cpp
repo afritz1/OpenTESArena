@@ -133,7 +133,7 @@ namespace Physics
 		{
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
-			
+
 			EntityObservedResult observedResult;
 			entityChunkManager.getEntityObservedResult(entityInstID, viewCoordXZ, observedResult);
 
@@ -203,10 +203,10 @@ namespace Physics
 		// Do a ray test to see if the ray intersects.
 		const WorldDouble3 absoluteRayPoint = VoxelUtils::coordToWorldPoint(rayPoint);
 		const WorldDouble3 absoluteFlatPosition = VoxelUtils::coordToWorldPoint(entityCoord);
-		WorldDouble3 absoluteHitPoint;
-		if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition,
-			entityForward, &absoluteHitPoint))
+		double hitT;
+		if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition, entityForward, &hitT))
 		{
+			const WorldDouble3 absoluteHitPoint = absoluteRayPoint + (rayDirection * hitT);
 			const WorldDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
 
 			// Get the texture coordinates. It's okay if they are outside the entity.
@@ -233,21 +233,20 @@ namespace Physics
 		}
 	}
 
+	// @todo: use Jolt instead
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelInt3 &voxel,
 		VoxelFacing3D farFacing, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
-		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		const ChunkInt2 &chunkPos = rayCoord.chunk;
+		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(chunkPos);
 		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
-
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
-		DebugAssert(collisionChunk != nullptr);
 
 		if (!voxelChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
 		{
@@ -255,189 +254,112 @@ namespace Physics
 			return false;
 		}
 
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(chunkPos);
+		DebugAssert(collisionChunk != nullptr);
 		if (!collisionChunk->enabledColliders.get(voxel.x, voxel.y, voxel.z))
 		{
 			// Collider is not turned on.
 			return false;
 		}
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
-		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
+		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
-		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
-		const BufferView<const double> verticesView(collisionMeshDef.vertices);
-		const BufferView<const double> normalsView(collisionMeshDef.normals);
-		const BufferView<const int> indicesView(collisionMeshDef.indices);
+		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const CollisionShapeDefinition &collisionShapeDef = collisionChunk->getCollisionShapeDef(collisionShapeDefID);
+		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
+		const CollisionBoxShapeDefinition &collisionBoxShapeDef = collisionShapeDef.box;
 
-		// Each collision triangle is formed by 6 indices.
-		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
+		const WorldInt3 worldVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, voxel);
+		const WorldDouble3 worldVoxelReal(
+			static_cast<SNDouble>(worldVoxel.x),
+			static_cast<double>(worldVoxel.y) * ceilingScale,
+			static_cast<WEDouble>(worldVoxel.z));
+		const WorldDouble3 collisionBoxShapeCenter(
+			worldVoxelReal.x + 0.50,
+			worldVoxelReal.y + MeshUtils::getScaledVertexY(collisionBoxShapeDef.yOffset + (collisionBoxShapeDef.height * 0.50), scaleType, ceilingScale),
+			worldVoxelReal.z + 0.50);
+		const WorldDouble3 worldRayStart = VoxelUtils::coordToWorldPoint(rayCoord);
 
-		const VoxelDouble3 voxelReal(
-			static_cast<SNDouble>(voxel.x),
-			static_cast<double>(voxel.y) * ceilingScale,
-			static_cast<WEDouble>(voxel.z));
-		bool success = false;
-		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
+		double hitT;
+		if (MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeDef.height,
+			collisionBoxShapeDef.depth, collisionBoxShapeDef.yRotation, &hitT))
 		{
-			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
-			const int vertexIndex0 = indicesView.get(indicesIndex) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			const int vertexIndex1 = indicesView.get(indicesIndex + 2) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			const int vertexIndex2 = indicesView.get(indicesIndex + 4) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			//const int normalIndex0 = indicesView.get(indicesIndex + 1) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			//const int normalIndex1 = indicesView.get(indicesIndex + 3) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			//const int normalIndex2 = indicesView.get(indicesIndex + 5) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-
-			const double vertex0X = verticesView.get(vertexIndex0);
-			const double vertex0Y = verticesView.get(vertexIndex0 + 1);
-			const double vertex0Z = verticesView.get(vertexIndex0 + 2);
-			const double vertex1X = verticesView.get(vertexIndex1);
-			const double vertex1Y = verticesView.get(vertexIndex1 + 1);
-			const double vertex1Z = verticesView.get(vertexIndex1 + 2);
-			const double vertex2X = verticesView.get(vertexIndex2);
-			const double vertex2Y = verticesView.get(vertexIndex2 + 1);
-			const double vertex2Z = verticesView.get(vertexIndex2 + 2);
-
-			// Normals are the same per face.
-			//const double normal0X = normalsView.get(normalIndex0);
-			//const double normal0Y = normalsView.get(normalIndex0 + 1);
-			//const double normal0Z = normalsView.get(normalIndex0 + 2);
-
-			const Double3 v0(vertex0X, vertex0Y, vertex0Z);
-			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
-			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
-
-			const Double3 v0Actual(
-				v0.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v0.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v0.z + voxelReal.z);
-			const Double3 v1Actual(
-				v1.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v1.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v1.z + voxelReal.z);
-			const Double3 v2Actual(
-				v2.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v2.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v2.z + voxelReal.z);
-
-			double t;
-			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
-			if (success)
-			{
-				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
-				hit.initVoxel(t, hitCoord, voxel, farFacing);
-				break;
-			}
+			const WorldDouble3 hitPoint = worldRayStart + (rayDirection * hitT);
+			const CoordDouble3 hitCoord = VoxelUtils::worldPointToCoord(hitPoint);
+			hit.initVoxel(hitT, hitCoord, voxel, farFacing);
+			return true;
 		}
-
-		return success;
+		else
+		{
+			return false;
+		}
 	}
 
+	// @todo: use Jolt instead
 	// Checks a voxel for ray hits and writes them into the output parameter. The near point and far point
 	// are in the voxel coord's chunk, not necessarily the ray's. Returns true if the ray hit something.
 	bool testVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const CoordInt3 &voxelCoord,
-		VoxelFacing3D nearFacing, const CoordDouble3 &nearCoord, const CoordDouble3 &farCoord,
-		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager,
-		RayCastHit &hit)
+		VoxelFacing3D nearFacing, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
-		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(voxelCoord.chunk);
+		const ChunkInt2 &chunkPos = voxelCoord.chunk;
+		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(chunkPos);
 		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
 
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(voxelCoord.chunk);
-		DebugAssert(collisionChunk != nullptr);
-
 		const VoxelInt3 &voxel = voxelCoord.voxel;
-		if (!collisionChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
+		if (!voxelChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
 		{
 			// Not in the chunk.
 			return false;
 		}
 
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(chunkPos);
+		DebugAssert(collisionChunk != nullptr);
 		if (!collisionChunk->enabledColliders.get(voxel.x, voxel.y, voxel.z))
 		{
 			// Collider is not turned on.
 			return false;
 		}
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
-		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
+		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
-		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
-		const BufferView<const double> verticesView(collisionMeshDef.vertices);
-		const BufferView<const double> normalsView(collisionMeshDef.normals);
-		const BufferView<const int> indicesView(collisionMeshDef.indices);
+		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const CollisionShapeDefinition &collisionShapeDef = collisionChunk->getCollisionShapeDef(collisionShapeDefID);
+		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
+		const CollisionBoxShapeDefinition &collisionBoxShapeDef = collisionShapeDef.box;
 
-		// Each collision triangle is formed by 6 indices.
-		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
+		const WorldInt3 worldVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, voxel);
+		const WorldDouble3 worldVoxelReal(
+			static_cast<SNDouble>(worldVoxel.x),
+			static_cast<double>(worldVoxel.y) * ceilingScale,
+			static_cast<WEDouble>(worldVoxel.z));
+		const WorldDouble3 collisionBoxShapeCenter(
+			worldVoxelReal.x + 0.50,
+			worldVoxelReal.y + MeshUtils::getScaledVertexY(collisionBoxShapeDef.yOffset + (collisionBoxShapeDef.height * 0.50), scaleType, ceilingScale),
+			worldVoxelReal.z + 0.50);
+		const WorldDouble3 worldRayStart = VoxelUtils::coordToWorldPoint(rayCoord);
 
-		const VoxelDouble3 voxelReal(
-			static_cast<SNDouble>(voxel.x),
-			static_cast<double>(voxel.y) * ceilingScale,
-			static_cast<WEDouble>(voxel.z));
-		const WorldDouble3 rayStartWorldPoint = VoxelUtils::coordToWorldPoint(rayCoord);
-
-		bool success = false;
-		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
+		double hitT;
+		if (MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeDef.height,
+			collisionBoxShapeDef.depth, collisionBoxShapeDef.yRotation, &hitT))
 		{
-			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
-			const int vertexIndex0 = indicesView.get(indicesIndex) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			const int vertexIndex1 = indicesView.get(indicesIndex + 2) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			const int vertexIndex2 = indicesView.get(indicesIndex + 4) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			//const int normalIndex0 = indicesView.get(indicesIndex + 1) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			//const int normalIndex1 = indicesView.get(indicesIndex + 3) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			//const int normalIndex2 = indicesView.get(indicesIndex + 5) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-
-			const double vertex0X = verticesView.get(vertexIndex0);
-			const double vertex0Y = verticesView.get(vertexIndex0 + 1);
-			const double vertex0Z = verticesView.get(vertexIndex0 + 2);
-			const double vertex1X = verticesView.get(vertexIndex1);
-			const double vertex1Y = verticesView.get(vertexIndex1 + 1);
-			const double vertex1Z = verticesView.get(vertexIndex1 + 2);
-			const double vertex2X = verticesView.get(vertexIndex2);
-			const double vertex2Y = verticesView.get(vertexIndex2 + 1);
-			const double vertex2Z = verticesView.get(vertexIndex2 + 2);
-
-			// Normals are the same per face.
-			//const double normal0X = normalsView.get(normalIndex0);
-			//const double normal0Y = normalsView.get(normalIndex0 + 1);
-			//const double normal0Z = normalsView.get(normalIndex0 + 2);
-
-			const Double3 v0Actual(
-				vertex0X + voxelReal.x,
-				MeshUtils::getScaledVertexY(vertex0Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				vertex0Z + voxelReal.z);
-			const Double3 v1Actual(
-				vertex1X + voxelReal.x,
-				MeshUtils::getScaledVertexY(vertex1Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				vertex1Z + voxelReal.z);
-			const Double3 v2Actual(
-				vertex2X + voxelReal.x,
-				MeshUtils::getScaledVertexY(vertex2Y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				vertex2Z + voxelReal.z);
-
-			const WorldDouble3 v0World = VoxelUtils::chunkPointToWorldPoint(voxelCoord.chunk, v0Actual);
-			const WorldDouble3 v1World = VoxelUtils::chunkPointToWorldPoint(voxelCoord.chunk, v1Actual);
-			const WorldDouble3 v2World = VoxelUtils::chunkPointToWorldPoint(voxelCoord.chunk, v2Actual);
-
-			double t;
-			success = MathUtils::rayTriangleIntersection(rayStartWorldPoint, rayDirection, v0World, v1World, v2World, &t);
-			if (success)
-			{
-				const CoordDouble3 hitCoord = ChunkUtils::recalculateCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
-				const VoxelFacing3D facing = nearFacing; // @todo: probably needs to take hit normal into account
-				hit.initVoxel(t, hitCoord, voxel, facing);
-				break;
-			}
+			const WorldDouble3 hitPoint = worldRayStart + (rayDirection * hitT);
+			const CoordDouble3 hitCoord = VoxelUtils::worldPointToCoord(hitPoint);
+			hit.initVoxel(hitT, hitCoord, voxel, nearFacing);
+			return true;
 		}
-
-		return success;
+		else
+		{
+			return false;
+		}
 	}
 
 	// Helper function for testing which entities in a voxel are intersected by a ray.
@@ -639,7 +561,7 @@ namespace Physics
 		// We do need an exit condition in case Y stepping would result in never being in the chunk, since it doesn't
 		// follow the same wrapping rule as X and Z. Doing this instead of "is voxel Y valid?" lets the player be
 		// above or below the chunk and still select things.
-		bool canDoYStep = (currentChunkPtr != nullptr) && 
+		bool canDoYStep = (currentChunkPtr != nullptr) &&
 			(NonNegativeDirY ? (currentVoxel.y < currentChunkPtr->getHeight()) : (currentVoxel.y >= 0));
 
 		// Helper values for ray distance calculation.
@@ -744,14 +666,12 @@ namespace Physics
 
 			// Near and far points in the voxel. The near point is where the voxel was hit before, and the far
 			// point is where the voxel was just hit on the far side.
-			const CoordDouble3 nearCoord = ChunkUtils::recalculateCoord(
-				rayCoord.chunk, rayCoord.point + (rayDirection * savedDistance));
-			const CoordDouble3 farCoord = ChunkUtils::recalculateCoord(
-				rayCoord.chunk, rayCoord.point + (rayDirection * rayDistance));
+			//const CoordDouble3 nearCoord = ChunkUtils::recalculateCoord(rayCoord.chunk, rayCoord.point + (rayDirection * savedDistance));
+			//const CoordDouble3 farCoord = ChunkUtils::recalculateCoord(rayCoord.chunk, rayCoord.point + (rayDirection * rayDistance));
 
 			// Test the current voxel's geometry for ray intersections.
-			bool success = Physics::testVoxelRay(rayCoord, rayDirection, savedVoxelCoord, savedFacing,
-				nearCoord, farCoord, ceilingScale, voxelChunkManager, collisionChunkManager, hit);
+			bool success = Physics::testVoxelRay(rayCoord, rayDirection, savedVoxelCoord, savedFacing, ceilingScale,
+				voxelChunkManager, collisionChunkManager, hit);
 
 			if (includeEntities)
 			{

@@ -31,7 +31,7 @@ namespace PauseMenuUiView
 	constexpr int OptionsButtonTextShadowOffsetX = -1;
 	constexpr int OptionsButtonTextShadowOffsetY = 1;
 
-	TextBox::InitInfo getOptionsTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getOptionsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	Rect getNewGameButtonRect();
 	Rect getLoadButtonRect();

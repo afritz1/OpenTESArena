@@ -13,7 +13,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 bool ChooseNamePanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseNameUiModel::getTitleText(game);
@@ -50,7 +50,7 @@ bool ChooseNamePanel::init()
 		}
 	});
 
-	this->addTextInputListener([this](const std::string_view &text)
+	this->addTextInputListener([this](const std::string_view text)
 	{
 		bool dirty;
 		ChooseNameUiController::onTextInput(text, this->name, &dirty);
@@ -61,10 +61,10 @@ bool ChooseNamePanel::init()
 		}
 	});
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setTextInputMode(true);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID parchmentTextureID = ChooseNameUiView::allocParchmentTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);

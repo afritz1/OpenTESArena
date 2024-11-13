@@ -7,11 +7,12 @@
 
 #include "../Assets/MIFUtils.h"
 
-class Clock;
 class Random;
 class TextureManager;
 
 enum class MapType;
+
+struct Clock;
 
 namespace ArenaRenderUtils
 {

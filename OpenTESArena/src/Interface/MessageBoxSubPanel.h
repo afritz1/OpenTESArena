@@ -14,14 +14,12 @@
 
 #include "components/utilities/Buffer.h"
 
-// A sub-panel intended for displaying text with some buttons.
-
-// @todo: might eventually make this not a panel, so it's more like TextBox and ListBox.
-// - will need to make rects and textures be public + iterable then
-
 class FontLibrary;
 class Rect;
 
+// A sub-panel intended for displaying text with some buttons.
+// @todo: might eventually make this not a panel, so it's more like TextBox and ListBox.
+// - will need to make rects and textures be public + iterable then
 class MessageBoxSubPanel : public Panel
 {
 public:
@@ -88,8 +86,8 @@ public:
 		const TitleProperties &titleProperties, const ItemsProperties &itemsProperties,
 		const OnClosedFunction &onClosed = OnClosedFunction());
 
-	void setTitleText(const std::string_view &text);
-	void setItemText(int itemIndex, const std::string_view &text);
+	void setTitleText(const std::string_view text);
+	void setItemText(int itemIndex, const std::string_view text);
 	void setItemCallback(int itemIndex, const ItemCallback &callback, bool isCancelButton);
 	void setItemInputAction(int itemIndex, const std::string &inputActionName);
 

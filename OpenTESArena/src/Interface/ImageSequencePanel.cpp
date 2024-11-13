@@ -58,8 +58,8 @@ bool ImageSequencePanel::init(BufferView<const std::string> paletteNames,
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const int textureCount = textureNames.getCount();
 	this->textureRefs.init(textureCount);
 	for (int i = 0; i < textureCount; i++)

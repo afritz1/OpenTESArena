@@ -7,7 +7,6 @@
 #include "RenderTextureUtils.h"
 
 // 3D renderer variables that can change each frame.
-
 struct RenderFrameSettings
 {
 	double ambientPercent;

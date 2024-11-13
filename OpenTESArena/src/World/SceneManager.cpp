@@ -5,6 +5,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
 #include "../Game/ArenaClockUtils.h"
+#include "../Game/ClockLibrary.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/debug/Debug.h"
@@ -54,7 +55,7 @@ void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 	this->fogLightTableTextureRef.unlockTexels();
 }
 
-void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double daytimePercent, TextureManager &textureManager)
+void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double dayPercent, TextureManager &textureManager)
 {
 	constexpr int paletteLength = PaletteLength;
 
@@ -65,9 +66,9 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	{
 		skyGradientFilename = (weatherType == WeatherType::Clear) ? &ArenaPaletteName::Daytime : &ArenaPaletteName::Dreary;
 
-		const double daytimePercent6AM = 0.25;
-		const double daytimePercent6PM = 0.75;
-		const double skyGradientDaytimePercent = (daytimePercent - daytimePercent6AM) / (daytimePercent6PM - daytimePercent6AM);
+		const double dayPercent6AM = Clock(6, 0, 0).getDayPercent();
+		const double dayPercent6PM = Clock(18, 0, 0).getDayPercent();
+		const double skyGradientDaytimePercent = (dayPercent - dayPercent6AM) / (dayPercent6PM - dayPercent6AM);
 		daytimePaletteIndexOffset = std::clamp(static_cast<int>(skyGradientDaytimePercent * static_cast<double>(paletteLength)), 0, paletteLength - 1);
 	}
 
@@ -112,14 +113,20 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	}
 	else
 	{
+		const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+
 		// Use transition colors if during sunrise/sunset.
-		const double startBrighteningPercent = ArenaClockUtils::AmbientStartBrightening.getDaytimePercent();
-		const double endBrighteningPercent = ArenaClockUtils::AmbientEndBrightening.getDaytimePercent();
-		const double startDimmingPercent = ArenaClockUtils::AmbientStartDimming.getDaytimePercent();
-		const double endDimmingPercent = ArenaClockUtils::AmbientEndDimming.getDaytimePercent();
-		const bool isDuringSunrise = (daytimePercent >= startBrighteningPercent) && (daytimePercent < endBrighteningPercent);
-		const bool isDuringSunset = (daytimePercent >= startDimmingPercent) && (daytimePercent < endDimmingPercent);
-		const bool isDuringNight = (daytimePercent >= endDimmingPercent) || (daytimePercent < startBrighteningPercent);
+		const Clock &startBrighteningClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningStart);
+		const Clock &endBrighteningClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningEnd);
+		const Clock &startDimmingClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingStart);
+		const Clock &endDimmingClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingEnd);
+		const double startBrighteningPercent = startBrighteningClock.getDayPercent();
+		const double endBrighteningPercent = endBrighteningClock.getDayPercent();
+		const double startDimmingPercent = startDimmingClock.getDayPercent();
+		const double endDimmingPercent = endDimmingClock.getDayPercent();
+		const bool isDuringSunrise = (dayPercent >= startBrighteningPercent) && (dayPercent < endBrighteningPercent);
+		const bool isDuringSunset = (dayPercent >= startDimmingPercent) && (dayPercent < endDimmingPercent);
+		const bool isDuringNight = (dayPercent >= endDimmingPercent) || (dayPercent < startBrighteningPercent);
 
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
@@ -146,12 +153,12 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 
 		if (isDuringSunrise)
 		{
-			const double transitionPercent = std::clamp((daytimePercent - startBrighteningPercent) / (endBrighteningPercent - startBrighteningPercent), 0.0, 1.0);
+			const double transitionPercent = std::clamp((dayPercent - startBrighteningPercent) / (endBrighteningPercent - startBrighteningPercent), 0.0, 1.0);
 			windowColor = getWindowRGBForTransitionPercent(transitionPercent);
 		}
 		else if (isDuringSunset)
 		{
-			const double transitionPercent = std::clamp(1.0 - ((daytimePercent - startDimmingPercent) / (endDimmingPercent - startDimmingPercent)), 0.0, 1.0);
+			const double transitionPercent = std::clamp(1.0 - ((dayPercent - startDimmingPercent) / (endDimmingPercent - startDimmingPercent)), 0.0, 1.0);
 			windowColor = getWindowRGBForTransitionPercent(transitionPercent);
 		}
 		else if (isDuringNight)
@@ -169,11 +176,11 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	this->gameWorldPaletteTextureRef.unlockTexels();
 }
 
-void SceneManager::cleanUp()
+void SceneManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
 {
 	this->chunkManager.cleanUp();
 	this->voxelChunkManager.cleanUp();
-	this->entityChunkManager.cleanUp();
+	this->entityChunkManager.cleanUp(physicsSystem);
 	this->renderVoxelChunkManager.cleanUp();
 	this->renderEntityChunkManager.cleanUp();
 	this->renderLightChunkManager.cleanUp();

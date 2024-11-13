@@ -5,9 +5,6 @@
 #include <string>
 #include <type_traits>
 
-// Below are various debug methods and macros for replacing asserts or program exits 
-// that might be accompanied with messages and logging.
-
 enum class DebugMessageType
 {
 	Status,
@@ -15,6 +12,7 @@ enum class DebugMessageType
 	Error
 };
 
+// Various macros/asserts/program exits that may be accompanied with messages and logging.
 class Debug
 {
 private:

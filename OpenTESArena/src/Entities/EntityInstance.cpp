@@ -40,4 +40,5 @@ void EntityInstance::clear()
 	this->creatureSoundInstID = -1;
 	this->citizenDirectionIndexID = -1;
 	this->paletteIndicesInstID = -1;
+	this->physicsBodyID = JPH::BodyID();
 }

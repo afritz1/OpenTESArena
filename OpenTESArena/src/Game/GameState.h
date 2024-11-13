@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+
 #include "Clock.h"
 #include "Date.h"
 #include "../Assets/ArenaTypes.h"
@@ -21,14 +24,6 @@
 #include "../World/MapDefinition.h"
 #include "../WorldMap/WorldMapInstance.h"
 
-// Intended to be a container for the player and world data that is currently active 
-// while a player is loaded (i.e., not in the main menu).
-
-// The GameState object will be initialized only upon loading of the player, and 
-// will be uninitialized when the player goes to the main menu (thus unloading
-// the character resources). Whichever entry points into the "game" there are, they
-// need to load data into the game state object.
-
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
 class CityDataFile;
@@ -38,7 +33,6 @@ class INFFile;
 class LocationDefinition;
 class LocationInstance;
 class MIFFile;
-class MusicDefinition;
 class ProvinceDefinition;
 class Renderer;
 class TextAssetLibrary;
@@ -47,8 +41,10 @@ class TextureManager;
 
 enum class MapType;
 
+struct MusicDefinition;
 struct RenderCamera;
 
+// Container for currently loaded game/world data.
 class GameState
 {
 public:
@@ -153,9 +149,7 @@ public:
 	ArenaTypes::WeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
 	Date &getDate();
 	Clock &getClock();
-
-	// Gets a percentage representing how far along the current day is. 0.0 is 12:00am and 0.50 is noon.
-	double getDaytimePercent() const;
+	double getDayPercent() const;
 
 	// Gets a percentage representing the current progress through the looping chasm animation.
 	double getChasmAnimPercent() const;
@@ -182,9 +176,9 @@ public:
 	void setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData);
 
 	// Sets on-screen text duration for various types of in-game messages.
-	void setTriggerTextDuration(const std::string_view &text);
-	void setActionTextDuration(const std::string_view &text);
-	void setEffectTextDuration(const std::string_view &text);
+	void setTriggerTextDuration(const std::string_view text);
+	void setActionTextDuration(const std::string_view text);
+	void setEffectTextDuration(const std::string_view text);
 
 	// Resets on-screen text boxes to empty and hidden.
 	void resetTriggerTextDuration();
@@ -195,18 +189,18 @@ public:
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
-	void applyPendingSceneChange(Game &game, double dt);
+	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);
 
-	// Ticks the game clock (for the current time of day and date).
 	void tickGameClock(double dt, Game &game);
 	void tickChasmAnimation(double dt);
 	void tickSky(double dt, Game &game);
 	void tickWeather(double dt, Game &game);
 	void tickUiMessages(double dt);
-	void tickPlayer(double dt, Game &game);
+	void tickPlayerAttack(double dt, Game &game);
 	void tickVoxels(double dt, Game &game);
 	void tickEntities(double dt, Game &game);
-	void tickCollision(double dt, Game &game);
+	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
+	void tickPlayerMovementTriggers(const CoordDouble3 &oldPlayerCoord, const CoordDouble3 &newPlayerCoord, Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(const RenderCamera &renderCamera, Game &game);
 };

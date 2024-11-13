@@ -1,6 +1,9 @@
 #ifndef ENTITY_INSTANCE_H
 #define ENTITY_INSTANCE_H
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/Body/Body.h"
+
 #include "EntityUtils.h"
 
 using EntityInstanceID = int;
@@ -23,6 +26,7 @@ struct EntityInstance
 	EntityCreatureSoundInstanceID creatureSoundInstID;
 	EntityCitizenDirectionIndexID citizenDirectionIndexID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
+	JPH::BodyID physicsBodyID;
 
 	EntityInstance();
 

@@ -1,16 +1,15 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include <array>
 #include <cstdint>
 #include <iomanip>
 #include <sstream>
 #include <string>
 
 #include "Buffer.h"
+#include "BufferView.h"
 
 // Various string operations and conversions.
-
 namespace String
 {
 	static constexpr char SPACE = ' ';
@@ -34,10 +33,15 @@ namespace String
 	// Splits a string on the given character without allocating the destination array. Breaks
 	// early if too many splits are encountered. Returns whether the split count matches the
 	// destination size.
-	template <size_t T>
-	bool splitExpected(const std::string &str, char separator, std::array<std::string, T> &dst)
+	template<size_t T>
+	bool splitExpected(const std::string &str, char separator, BufferView<std::string> dst)
 	{
 		static_assert(T > 0);
+
+		if (dst.getCount() != static_cast<int>(T))
+		{
+			return false;
+		}
 
 		size_t dstIndex = 0;
 		for (const char c : str)
@@ -54,7 +58,7 @@ namespace String
 			else
 			{
 				// Put the character on the end of the current string.
-				dst[dstIndex].push_back(c);
+				dst.get(dstIndex).push_back(c);
 			}
 		}
 
@@ -64,10 +68,10 @@ namespace String
 	// Splits a string on whitespace without allocating the destination array. Breaks early if
 	// too many splits are encountered. Returns whether the split count matches the destination
 	// size.
-	template <size_t T>
-	bool splitExpected(const std::string &str, std::array<std::string, T> &dst)
+	template<size_t T>
+	bool splitExpected(const std::string &str, BufferView<std::string> dst)
 	{
-		return String::splitExpected(str, String::SPACE, dst);
+		return String::splitExpected<T>(str, String::SPACE, dst);
 	}
 
 	// Removes all whitespace from a string.

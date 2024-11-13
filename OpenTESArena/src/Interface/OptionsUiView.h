@@ -26,7 +26,7 @@ namespace OptionsUiView
 	Color getBackButtonTextColor();
 	constexpr TextAlignment BackButtonTextAlignment = TextAlignment::MiddleCenter;
 
-	TextBox::InitInfo getBackButtonTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getBackButtonTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	Rect getBackButtonRect();
 
@@ -43,7 +43,7 @@ namespace OptionsUiView
 	Color getDescriptionTextColor();
 	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getTabTextBoxInitInfo(int index, const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getTabTextBoxInitInfo(int index, const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getOptionTextBoxInitInfo(int index, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
 

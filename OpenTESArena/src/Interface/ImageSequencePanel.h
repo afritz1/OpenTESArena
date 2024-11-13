@@ -14,7 +14,6 @@
 // Halfway between a CinematicPanel and an ImagePanel, this panel displays still images one at a time and
 // allows only the escape button to fully skip until the end, unlike the CinematicPanel. Mouse clicks, etc.
 // will skip one image.
-
 class ImageSequencePanel : public Panel
 {
 public:

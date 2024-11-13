@@ -7,10 +7,9 @@
 #include "../Math/Vector2.h"
 #include "../Voxels/VoxelUtils.h"
 
-// Various functions for working with .MIF files.
-
 class ArenaRandom;
 
+// Various functions for working with .MIF files.
 namespace MIFUtils
 {
 	// Texture IDs for various chasms in voxel data.

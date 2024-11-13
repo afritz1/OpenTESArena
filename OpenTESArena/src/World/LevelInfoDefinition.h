@@ -12,7 +12,7 @@
 #include "../Entities/EntityDefinition.h"
 #include "../Voxels/ChasmDefinition.h"
 #include "../Voxels/DoorDefinition.h"
-#include "../Voxels/VoxelMeshDefinition.h"
+#include "../Voxels/VoxelShapeDefinition.h"
 #include "../Voxels/VoxelTextureDefinition.h"
 #include "../Voxels/VoxelTraitsDefinition.h"
 #include "../Voxels/VoxelTriggerDefinition.h"
@@ -21,13 +21,12 @@
 // Modern replacement for .INF files; defines the actual voxels, entities, etc. pointed to by a
 // level definition. This is intended to separate the level's IDs from what they're pointing to
 // so it's easier to change climates, etc..
-
 class LevelInfoDefinition
 {
 private:
 	// Definitions pointed to by a level definition. These should all be engine-independent now
 	// (meaning that they could theoretically work with a standalone editor).
-	std::vector<VoxelMeshDefinition> voxelMeshDefs;
+	std::vector<VoxelShapeDefinition> voxelShapeDefs;
 	std::vector<VoxelTextureDefinition> voxelTextureDefs;
 	std::vector<VoxelTraitsDefinition> voxelTraitsDefs;
 	std::vector<EntityDefinition> entityDefs;
@@ -47,7 +46,7 @@ public:
 
 	void init(double ceilingScale);
 
-	int getVoxelMeshDefCount() const;
+	int getVoxelShapeDefCount() const;
 	int getVoxelTextureDefCount() const;
 	int getVoxelTraitsDefCount() const;
 	int getEntityDefCount() const;
@@ -58,7 +57,7 @@ public:
 	int getDoorDefCount() const;
 	int getChasmDefCount() const;
 
-	const VoxelMeshDefinition &getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const;
+	const VoxelShapeDefinition &getVoxelShapeDef(LevelDefinition::VoxelShapeDefID id) const;
 	const VoxelTextureDefinition &getVoxelTextureDef(LevelDefinition::VoxelTextureDefID id) const;
 	const VoxelTraitsDefinition &getVoxelTraitsDef(LevelDefinition::VoxelTraitsDefID id) const;
 	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
@@ -70,7 +69,7 @@ public:
 	const ChasmDefinition &getChasmDef(LevelDefinition::ChasmDefID id) const;
 	double getCeilingScale() const;
 
-	LevelDefinition::VoxelMeshDefID addVoxelMeshDef(VoxelMeshDefinition &&def);
+	LevelDefinition::VoxelShapeDefID addVoxelShapeDef(VoxelShapeDefinition &&def);
 	LevelDefinition::VoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&def);
 	LevelDefinition::VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&def);
 	LevelDefinition::EntityDefID addEntityDef(EntityDefinition &&def);

@@ -4,14 +4,12 @@
 #include <string>
 #include <unordered_map>
 
-// Settings found in the options menu are saved in this object, which should live in
-// the game state object since it persists for the lifetime of the program.
-
 enum class PlayerInterface;
 
 // Supported value types by the parser.
 enum class OptionType { Bool, Int, Double, String };
 
+// Options menu settings are saved in this. Persists for the lifetime of the program.
 class Options
 {
 private:
@@ -34,8 +32,7 @@ private:
 	std::unordered_map<std::string, MapGroup> defaultMaps, changedMaps;
 
 	// Opens the given file and reads its key-value pairs into the given maps.
-	static void load(const char *filename,
-		std::unordered_map<std::string, Options::MapGroup> &maps);
+	static void load(const char *filename, std::unordered_map<std::string, Options::MapGroup> &maps);
 
 	bool getBool(const std::string &section, const std::string &key) const;
 	int getInt(const std::string &section, const std::string &key) const;

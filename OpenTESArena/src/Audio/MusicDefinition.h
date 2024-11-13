@@ -5,73 +5,71 @@
 
 #include "../Assets/ArenaTypes.h"
 #include "../Weather/WeatherDefinition.h"
-#include "../WorldMap/LocationDefinition.h"
 
-class MusicDefinition
+enum class CinematicMusicType
 {
-public:
-	enum class Type
-	{
-		CharacterCreation,
-		Cinematic,
-		Interior,
-		Jingle,
-		MainMenu,
-		Night,
-		Swimming,
-		Weather
-	};
+	Intro,
+	DreamGood,
+	DreamBad,
+	Ending
+};
 
-	struct CinematicMusicDefinition
-	{
-		enum class Type
-		{
-			Intro,
-			DreamGood,
-			DreamBad,
-			Ending
-		};
+struct CinematicMusicDefinition
+{
+	CinematicMusicType type;
 
-		CinematicMusicDefinition::Type type;
+	void init(CinematicMusicType type);
+};
 
-		void init(CinematicMusicDefinition::Type type);
-	};
+enum class InteriorMusicType
+{
+	Dungeon,
+	Equipment,
+	House,
+	MagesGuild,
+	Palace,
+	Tavern,
+	Temple
+};
 
-	struct InteriorMusicDefinition
-	{
-		enum class Type
-		{
-			Dungeon,
-			Equipment,
-			House,
-			MagesGuild,
-			Palace,
-			Tavern,
-			Temple
-		};
+struct InteriorMusicDefinition
+{
+	InteriorMusicType type;
 
-		InteriorMusicDefinition::Type type;
+	void init(InteriorMusicType type);
+};
 
-		void init(InteriorMusicDefinition::Type type);
-	};
+struct JingleMusicDefinition
+{
+	ArenaTypes::CityType cityType;
+	ArenaTypes::ClimateType climateType;
 
-	struct JingleMusicDefinition
-	{
-		ArenaTypes::CityType cityType;
-		ArenaTypes::ClimateType climateType;
+	void init(ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType);
+};
 
-		void init(ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType);
-	};
+struct WeatherMusicDefinition
+{
+	WeatherDefinition weatherDef;
 
-	struct WeatherMusicDefinition
-	{
-		WeatherDefinition weatherDef;
+	void init(const WeatherDefinition &weatherDef);
+};
 
-		void init(WeatherDefinition &&weatherDef);
-	};
-private:
+enum class MusicType
+{
+	CharacterCreation,
+	Cinematic,
+	Interior,
+	Jingle,
+	MainMenu,
+	Night,
+	Swimming,
+	Weather
+};
+
+struct MusicDefinition
+{
 	std::string filename;
-	Type type;
+	MusicType type;
 
 	// Only one is active at a time, given by 'type' (no union because of WeatherMusicDefinition).
 	CinematicMusicDefinition cinematic;
@@ -79,24 +77,14 @@ private:
 	JingleMusicDefinition jingle;
 	WeatherMusicDefinition weather;
 
-	void init(std::string &&filename, Type type);
-public:
-	void initCharacterCreation(std::string &&filename);
-	void initCinematic(std::string &&filename, CinematicMusicDefinition::Type type);
-	void initInterior(std::string &&filename, InteriorMusicDefinition::Type type);
-	void initJingle(std::string &&filename, ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType);
-	void initMainMenu(std::string &&filename);
-	void initNight(std::string &&filename);
-	void initSwimming(std::string &&filename);
-	void initWeather(std::string &&filename, WeatherDefinition &&weatherDef);
-
-	const std::string &getFilename() const;
-	Type getType() const;
-
-	const CinematicMusicDefinition &getCinematicMusicDefinition() const;
-	const InteriorMusicDefinition &getInteriorMusicDefinition() const;
-	const JingleMusicDefinition &getJingleMusicDefinition() const;
-	const WeatherMusicDefinition &getWeatherMusicDefinition() const;
+	void initCharacterCreation(const std::string &filename);
+	void initCinematic(const std::string &filename, CinematicMusicType type);
+	void initInterior(const std::string &filename, InteriorMusicType type);
+	void initJingle(const std::string &filename, ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType);
+	void initMainMenu(const std::string &filename);
+	void initNight(const std::string &filename);
+	void initSwimming(const std::string &filename);
+	void initWeather(const std::string &filename, const WeatherDefinition &weatherDef);
 };
 
 #endif

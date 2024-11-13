@@ -6,8 +6,7 @@
 #include <cstdint>
 #include <type_traits>
 
-// Namespace for interacting with bits and bytes.
-
+// For interacting with bits and bytes.
 namespace Bytes
 {
 	uint16_t getLE16(const uint8_t *buf);

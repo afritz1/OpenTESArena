@@ -4,7 +4,6 @@
 #include <string>
 
 // Namespace for various platform-specific functions.
-
 namespace Platform
 {
 	// Gets the current platform name via SDL_GetPlatform().

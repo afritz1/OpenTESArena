@@ -5,14 +5,13 @@
 
 #include "../Math/Vector2.h"
 
-// A button for toggling on and off. When the button is toggled, the 
-// function for the new toggle state is called.
-
-// I wonder if this class should be redesigned to take variadic template arguments 
-// like the new Button class.
-
 class Game;
 
+// A button for toggling on and off. When the button is toggled, the 
+// function for the new toggle state is called.
+//
+// I wonder if this class should be redesigned to take variadic template arguments 
+// like the new Button class.
 class ToggleButton
 {
 private:

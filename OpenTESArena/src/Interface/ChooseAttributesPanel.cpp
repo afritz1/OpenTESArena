@@ -24,7 +24,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 bool ChooseAttributesPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	auto &charCreationState = game.getCharacterCreationState();
@@ -113,7 +113,7 @@ bool ChooseAttributesPanel::init()
 
 	this->addInputActionListener(InputActionName::Back, ChooseAttributesUiController::onBackToRaceSelectionInputAction);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID bodyTextureID = ChooseAttributesUiView::allocBodyTexture(game);
 	const UiTextureID pantsTextureID = ChooseAttributesUiView::allocPantsTexture(game);
 	const UiTextureID shirtTextureID = ChooseAttributesUiView::allocShirtTexture(game);
@@ -268,7 +268,7 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiView::InitialTextPatternType,
 		ChooseAttributesUiView::getInitialTextureWidth(),
 		ChooseAttributesUiView::getInitialTextureHeight(),
-		game.getTextureManager(),
+		game.textureManager,
 		renderer);
 	
 	UiTextureID initialPopUpTextureID;

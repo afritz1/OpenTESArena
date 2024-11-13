@@ -56,7 +56,7 @@ namespace RendererUtils
 	Matrix4d getLatitudeRotation(double latitude);
 
 	// Creates a rotation matrix for drawing distant space objects relative to the time of day.
-	Matrix4d getTimeOfDayRotation(double daytimePercent);
+	Matrix4d getTimeOfDayRotation(double dayPercent);
 
 	// Gets the palette index of the color that most closely matches the given one.
 	int getNearestPaletteColorIndex(const Color &color, const Palette &palette);

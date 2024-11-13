@@ -29,7 +29,7 @@ Rect GameWorldUiView::scaleClassicCursorRectToNative(int rectIndex, double xScal
 		static_cast<int>(std::ceil(static_cast<double>(classicRect.getHeight()) * yScale)));
 }
 
-TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithXY(
@@ -156,7 +156,7 @@ Int2 GameWorldUiView::getNoMagicTexturePosition()
 
 Int2 GameWorldUiView::getTriggerTextPosition(Game &game, int gameWorldInterfaceTextureHeight)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	const int textX = ArenaRenderUtils::SCREEN_WIDTH / 2;
@@ -180,17 +180,17 @@ Int2 GameWorldUiView::getEffectTextPosition()
 	return Int2::Zero;
 }
 
-double GameWorldUiView::getTriggerTextSeconds(const std::string_view &text)
+double GameWorldUiView::getTriggerTextSeconds(const std::string_view text)
 {
 	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
 }
 
-double GameWorldUiView::getActionTextSeconds(const std::string_view &text)
+double GameWorldUiView::getActionTextSeconds(const std::string_view text)
 {
 	return std::max(2.25, static_cast<double>(text.size()) * 0.050);
 }
 
-double GameWorldUiView::getEffectTextSeconds(const std::string_view &text)
+double GameWorldUiView::getEffectTextSeconds(const std::string_view text)
 {
 	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
 }
@@ -253,7 +253,7 @@ TextBox::InitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &f
 
 Int2 GameWorldUiView::getTooltipPosition(Game &game)
 {
-	DebugAssert(!game.getOptions().getGraphics_ModernInterface());
+	DebugAssert(!game.options.getGraphics_ModernInterface());
 
 	const int x = 0;
 	const int y = ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.getHeight();
@@ -303,7 +303,7 @@ Int2 GameWorldUiView::getWeaponAnimationOffset(const std::string &weaponFilename
 
 Int2 GameWorldUiView::getInterfaceCenter(Game &game)
 {
-	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
+	const bool modernInterface = game.options.getGraphics_ModernInterface();
 	if (modernInterface)
 	{
 		return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
@@ -509,26 +509,26 @@ UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureMan
 // @todo: As of SDL 2.0.10 which introduced batching, this now behaves like the color is per frame, not per call, which isn't correct, and flushing doesn't help.
 void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 {
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const int selectionDim = 3;
 	const Int2 windowDims = renderer.getWindowDimensions();
 
 	constexpr int xOffset = 16;
 	constexpr int yOffset = 16;
 
-	const auto &gameState = game.getGameState();
+	const auto &gameState = game.gameState;
 	if (!gameState.isActiveMapValid())
 	{
 		return;
 	}
 
-	const auto &player = game.getPlayer();
-	const CoordDouble3 &rayStart = player.getPosition();
-	const VoxelDouble3 &cameraDirection = player.getDirection();
+	const auto &player = game.player;
+	const CoordDouble3 rayStart = player.getEyeCoord();
+	const Double3 &cameraDirection = player.forward;
 	const double viewAspectRatio = renderer.getViewAspect();
 
 	const double ceilingScale = gameState.getActiveCeilingScale();
-	const SceneManager &sceneManager = game.getSceneManager();
+	const SceneManager &sceneManager = game.sceneManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
@@ -580,23 +580,23 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	// ray cast out from center and display hit info (faster/better than console logging).
 	GameWorldUiView::DEBUG_ColorRaycastPixel(game);
 
-	const auto &options = game.getOptions();
-	const auto &player = game.getPlayer();
-	const Double3 &cameraDirection = player.getDirection();
+	const auto &options = game.options;
+	const auto &player = game.player;
+	const Double3 &cameraDirection = player.forward;
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const Int2 viewDims = renderer.getViewDimensions();
 	const Int2 viewCenterPoint(viewDims.x / 2, viewDims.y / 2);
 
-	const CoordDouble3 rayStart = player.getPosition();
+	const CoordDouble3 rayStart = player.getEyeCoord();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, viewCenterPoint);
 
-	const SceneManager &sceneManager = game.getSceneManager();
+	const SceneManager &sceneManager = game.sceneManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 
-	const auto &gameState = game.getGameState();
+	const auto &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
 	EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
@@ -681,7 +681,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 {
-	Renderer &renderer = game.getRenderer();
+	Renderer &renderer = game.renderer;
 	constexpr int quadtreeTextureDim = ChunkUtils::CHUNK_DIM;
 	UiTextureID quadtreeTextureID;
 	if (!renderer.tryCreateUiTexture(quadtreeTextureDim, quadtreeTextureDim, &quadtreeTextureID))
@@ -693,12 +693,12 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 	ScopedUiTextureRef quadtreeTextureRef(quadtreeTextureID, renderer);
 	const Int2 quadtreeTextureDims(quadtreeTextureRef.getWidth(), quadtreeTextureRef.getHeight());
 
-	const SceneManager &sceneManager = game.getSceneManager();
-	const Player &player = game.getPlayer();
-	const CoordDouble3 &playerPos = player.getPosition();
-	const CoordInt3 playerVoxelCoord(playerPos.chunk, VoxelUtils::pointToVoxel(playerPos.point));
+	const SceneManager &sceneManager = game.sceneManager;
+	const Player &player = game.player;
+	const CoordDouble3 playerCoord = player.getEyeCoord();
+	const CoordInt3 playerVoxelCoord(playerCoord.chunk, VoxelUtils::pointToVoxel(playerCoord.point));
 	const VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
-	const VoxelVisibilityChunk *playerVoxelVisChunk = voxelVisChunkManager.tryGetChunkAtPosition(playerPos.chunk);
+	const VoxelVisibilityChunk *playerVoxelVisChunk = voxelVisChunkManager.tryGetChunkAtPosition(playerCoord.chunk);
 	if (playerVoxelVisChunk != nullptr)
 	{
 		const uint32_t visibleColor = Color::Green.toARGB();

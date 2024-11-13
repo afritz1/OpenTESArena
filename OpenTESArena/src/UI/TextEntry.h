@@ -17,7 +17,7 @@ namespace TextEntry
 		bool(*charIsAllowed)(char), size_t maxLength);
 
 	// Attempts to append the given input text. Returns whether the text changed.
-	bool append(std::string &text, const std::string_view &inputText, bool(*isCharAllowed)(char),
+	bool append(std::string &text, const std::string_view inputText, bool(*isCharAllowed)(char),
 		size_t maxLength = std::string::npos);
 
 	// Attempts to delete the backmost character. Returns whether the text changed.

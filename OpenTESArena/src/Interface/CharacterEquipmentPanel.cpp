@@ -18,14 +18,14 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 
 CharacterEquipmentPanel::~CharacterEquipmentPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &inputManager = this->getGame().inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterEquipment, false);
 }
 
 bool CharacterEquipmentPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
@@ -63,7 +63,7 @@ bool CharacterEquipmentPanel::init()
 	}
 
 	this->inventoryListBox.init(InventoryUiView::PlayerInventoryRect,
-		InventoryUiView::makePlayerInventoryListBoxProperties(fontLibrary), game.getRenderer());
+		InventoryUiView::makePlayerInventoryListBoxProperties(fontLibrary), game.renderer);
 	for (int i = 0; i < static_cast<int>(elements.size()); i++)
 	{
 		auto &pair = elements[i];
@@ -117,7 +117,7 @@ bool CharacterEquipmentPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, this->scrollUpButton.getRect(),
 		[this, &game]() { this->scrollUpButton.click(this->inventoryListBox); });
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterEquipment, true);
 
 	auto backToStatsInputActionFunc = CharacterSheetUiController::onBackToStatsInputAction;
@@ -136,7 +136,7 @@ bool CharacterEquipmentPanel::init()
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID bodyTextureID = CharacterSheetUiView::allocBodyTexture(game);
 	const UiTextureID pantsTextureID = CharacterSheetUiView::allocPantsTexture(game);
 	const UiTextureID headTextureID = CharacterSheetUiView::allocHeadTexture(game);

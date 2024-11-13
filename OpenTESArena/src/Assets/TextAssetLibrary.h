@@ -10,13 +10,11 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/Singleton.h"
 
-// Contains assets that are generally human-readable.
-
-// @todo: refactor text processing so we never convert '\r' to '\n'. The engine should handle
-// carriage returns.
-
 class ArenaRandom;
 
+// Contains assets that are generally human-readable.
+// @todo: refactor text processing so we never convert '\r' to '\n'. The engine should handle
+// carriage returns.
 class TextAssetLibrary : public Singleton<TextAssetLibrary>
 {
 public:
