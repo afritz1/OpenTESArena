@@ -337,7 +337,7 @@ bool Player::onGround() const
 {
 	// @todo: not sure we should ever be on steep ground in this engine. "maxSlopeAngle" affects that, and 0 and 90 don't seem perfect.
 	const JPH::CharacterBase::EGroundState groundState = this->physicsCharacter->GetGroundState();
-	return groundState == JPH::CharacterBase::EGroundState::OnGround;
+	return (groundState == JPH::CharacterBase::EGroundState::OnGround) || (groundState == JPH::CharacterBase::EGroundState::OnSteepGround);
 }
 
 bool Player::isMoving() const
@@ -349,7 +349,8 @@ bool Player::isMoving() const
 bool Player::canJump() const
 {
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
-	return this->onGround() && (physicsVelocity.GetY() == 0.0f);
+	constexpr float tinyEpsilon = 1e-8f;
+	return this->onGround() && (std::abs(physicsVelocity.GetY()) <= tinyEpsilon);
 }
 
 void Player::rotateX(Degrees deltaX)
