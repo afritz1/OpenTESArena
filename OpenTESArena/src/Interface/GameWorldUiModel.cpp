@@ -29,25 +29,9 @@ namespace
 		std::make_pair(ArenaClockUtils::Evening, 4),
 		std::make_pair(ArenaClockUtils::Night2, 5)
 	};
-}
 
-std::string GameWorldUiModel::getPlayerNameText(Game &game)
-{
-	return game.player.firstName;
-}
-
-std::string GameWorldUiModel::getStatusButtonText(Game &game)
-{
-	auto &gameState = game.gameState;
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
-	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	const LocationInstance &locationInst = gameState.getLocationInstance();
-	const std::string &locationName = locationInst.getName(locationDef);
-
-	const std::string timeString = [&game, &gameState, &exeData]()
+	std::string GetStatusTimeString(const Clock &clock, const ExeData &exeData)
 	{
-		const Clock &clock = gameState.getClock();
 		const int hours12 = clock.getHours12();
 		const int minutes = clock.minutes;
 		const std::string clockTimeString = std::to_string(hours12) + ":" + ((minutes < 10) ? "0" : "") + std::to_string(minutes);
@@ -66,44 +50,12 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 
 		const std::string &timeOfDayString = exeData.calendar.timesOfDay.at(timeOfDayIndex);
 		return clockTimeString + ' ' + timeOfDayString;
-	}();
+	}
 
-	// Get the base status text.
-	std::string baseText = exeData.status.popUp;
-
-	// Replace carriage returns with newlines.
-	baseText = String::replace(baseText, '\r', '\n');
-
-	// Replace first %s with location name.
-	size_t index = baseText.find("%s");
-	baseText.replace(index, 2, locationName);
-
-	// Replace second %s with time string.
-	index = baseText.find("%s", index);
-	baseText.replace(index, 2, timeString);
-
-	// Replace third %s with date string, filled in with each value.
-	std::string dateString = ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
-	dateString.back() = '\n'; // Replace \r with \n.
-
-	index = baseText.find("%s", index);
-	baseText.replace(index, 2, dateString);
-
-	// Replace %d's with current and total weight.
-	const int currentWeight = 0;
-	index = baseText.find("%d", index);
-	baseText.replace(index, 2, std::to_string(currentWeight));
-
-	const int weightCapacity = 0;
-	index = baseText.find("%d", index);
-	baseText.replace(index, 2, std::to_string(weightCapacity));
-
-	// Append the list of effects at the bottom (healthy/diseased...).
-	const std::string effectText = [&exeData]()
+	// Healthy/diseased/etc.
+	std::string GetStatusEffectString(const ExeData &exeData)
 	{
 		std::string text = exeData.status.effect;
-
-		// Replace carriage returns with newlines.
 		text = String::replace(text, '\r', '\n');
 
 		// Replace %s with placeholder.
@@ -115,7 +67,49 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 		text.pop_back();
 
 		return text;
-	}();
+	}
+}
+
+std::string GameWorldUiModel::getPlayerNameText(Game &game)
+{
+	return game.player.firstName;
+}
+
+std::string GameWorldUiModel::getStatusButtonText(Game &game)
+{
+	auto &gameState = game.gameState;
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const auto &exeData = binaryAssetLibrary.getExeData();
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
+	const LocationInstance &locationInst = gameState.getLocationInstance();
+	const std::string &locationName = locationInst.getName(locationDef);
+	const Player &player = game.player;
+	const std::string timeString = GetStatusTimeString(gameState.getClock(), exeData);
+
+	std::string baseText = exeData.status.popUp;
+	baseText = String::replace(baseText, '\r', '\n');
+
+	size_t index = baseText.find("%s");
+	baseText.replace(index, 2, locationName);
+
+	index = baseText.find("%s", index);
+	baseText.replace(index, 2, timeString);
+
+	std::string dateString = ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
+	dateString.back() = '\n'; // Replace \r with \n.
+
+	index = baseText.find("%s", index);
+	baseText.replace(index, 2, dateString);
+
+	const int currentWeight = static_cast<int>(player.inventory.getWeight());
+	index = baseText.find("%d", index);
+	baseText.replace(index, 2, std::to_string(currentWeight));
+
+	const int weightCapacity = 0; // @todo player strength attribute
+	index = baseText.find("%d", index);
+	baseText.replace(index, 2, std::to_string(weightCapacity));
+
+	const std::string effectText = GetStatusEffectString(exeData);
 
 	return baseText + effectText;
 }
