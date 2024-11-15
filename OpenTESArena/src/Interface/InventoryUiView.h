@@ -7,6 +7,8 @@
 
 class FontLibrary;
 
+struct ItemInstance;
+
 namespace InventoryUiView
 {
 	const Rect PlayerInventoryRect(14, 50, 150, 75);
@@ -18,6 +20,8 @@ namespace InventoryUiView
 	const Color PlayerInventoryUnequipableColor(199, 32, 0);
 
 	ListBox::Properties makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary);
+
+	const Color &getItemDisplayColor(const ItemInstance &itemInst);
 }
 
 #endif

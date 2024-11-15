@@ -69,6 +69,23 @@ bool CharacterEquipmentPanel::init()
 		auto &pair = elements[i];
 		this->inventoryListBox.add(std::move(pair.first));
 		this->inventoryListBox.setOverrideColor(i, pair.second);
+		this->inventoryListBox.setCallback(i,
+			[this, &game, i]()
+		{
+			ItemInventory &playerInventory = game.player.inventory;
+			ItemInstance &itemInst = playerInventory.getSlot(i);
+			itemInst.isEquipped = !itemInst.isEquipped;
+
+			const Color &equipColor = InventoryUiView::getItemDisplayColor(itemInst);
+			this->inventoryListBox.setOverrideColor(i, equipColor);
+		});
+
+		this->addButtonProxy(MouseButtonType::Left, this->inventoryListBox.getItemGlobalRect(i),
+			[this, i]()
+		{
+			const int firstVisibleIndex = this->inventoryListBox.getFirstVisibleItemIndex();
+			this->inventoryListBox.getCallback(firstVisibleIndex + i)();
+		});
 	}
 
 	this->backToStatsButton = Button<Game&>(
@@ -107,7 +124,7 @@ bool CharacterEquipmentPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, this->dropButton.getRect(),
 		[this, &game]()
 	{
-		// @todo: give the index of the clicked item instead.
+		// @todo: give the index of the currently selected item instead.
 		const int itemIndex = 0;
 		this->dropButton.click(game, itemIndex);
 	});

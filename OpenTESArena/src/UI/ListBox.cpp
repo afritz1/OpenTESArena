@@ -95,6 +95,11 @@ const ListBox::ItemCallback &ListBox::getCallback(int index) const
 	return this->items[index].callback;
 }
 
+int ListBox::getFirstVisibleItemIndex() const
+{
+	return static_cast<int>(this->scrollPixelOffset) / (this->properties.itemHeight + this->properties.itemSpacing);
+}
+
 UiTextureID ListBox::getTextureID()
 {
 	if (this->dirty)

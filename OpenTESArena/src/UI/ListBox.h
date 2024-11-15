@@ -76,6 +76,8 @@ public:
 	// falls within the list box rect.
 	const ItemCallback &getCallback(int index) const;
 
+	int getFirstVisibleItemIndex() const;
+
 	UiTextureID getTextureID();
 
 	void insert(int index, std::string &&text);

@@ -1,4 +1,5 @@
 #include "InventoryUiView.h"
+#include "../Items/ItemInstance.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/TextRenderUtils.h"
@@ -33,4 +34,18 @@ ListBox::Properties InventoryUiView::makePlayerInventoryListBoxProperties(const 
 	constexpr double scrollScale = 1.0;
 	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
 		InventoryUiView::PlayerInventoryEquipmentColor, scrollScale, rowSpacing);
+}
+
+const Color &InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst)
+{
+	// @todo magic items
+
+	// @todo: class non-equippable items
+
+	if (itemInst.isEquipped)
+	{
+		return InventoryUiView::PlayerInventoryEquipmentEquippedColor;
+	}
+
+	return InventoryUiView::PlayerInventoryEquipmentColor;
 }

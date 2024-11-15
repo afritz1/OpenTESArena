@@ -16,27 +16,22 @@ Buffer<InventoryUiModel::ItemUiDefinition> InventoryUiModel::getPlayerInventoryI
 {
 	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 	const Player &player = game.player;
-
-	std::vector<const ItemDefinition*> itemDefs;
-	for (int i = 0; i < player.inventory.getTotalSlotCount(); i++)
+	const ItemInventory &playerInventory = player.inventory;
+	const int itemCount = playerInventory.getTotalSlotCount();
+	Buffer<ItemUiDefinition> buffer(itemCount);
+	for (int i = 0; i < itemCount; i++)
 	{
-		const ItemInstance &itemInst = player.inventory.getSlot(i);
-		if (itemInst.isValid())
+		const ItemInstance &itemInst = playerInventory.getSlot(i);
+		if (!itemInst.isValid())
 		{
-			const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-			itemDefs.emplace_back(&itemDef);
+			continue;
 		}
-	}
 
-	const int elementCount = static_cast<int>(itemDefs.size());
-	Buffer<ItemUiDefinition> buffer(elementCount);
-	for (int i = 0; i < elementCount; i++)
-	{
-		const ItemDefinition &itemDef = *itemDefs[i];
+		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
 
 		char itemDisplayName[64];
 		std::snprintf(std::begin(itemDisplayName), std::size(itemDisplayName), "%s (%.1fkg)", itemDef.getDisplayName().c_str(), itemDef.getWeight());
-		const Color &itemTextColor = InventoryUiView::PlayerInventoryEquipmentColor;
+		const Color &itemTextColor = InventoryUiView::getItemDisplayColor(itemInst);
 
 		ItemUiDefinition itemUiDef;
 		itemUiDef.init(itemDisplayName, itemTextColor);

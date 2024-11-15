@@ -7,6 +7,7 @@
 struct ItemInstance
 {
 	ItemDefinitionID defID;
+	bool isEquipped;
 
 	ItemInstance();
 

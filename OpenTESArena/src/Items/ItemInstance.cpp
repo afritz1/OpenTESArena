@@ -3,11 +3,13 @@
 ItemInstance::ItemInstance()
 {
 	this->defID = -1;
+	this->isEquipped = false;
 }
 
 void ItemInstance::init(ItemDefinitionID defID)
 {
 	this->defID = defID;
+	this->isEquipped = false;
 }
 
 bool ItemInstance::isValid() const
