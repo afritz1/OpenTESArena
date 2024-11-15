@@ -19,7 +19,7 @@ int ItemInventory::getEmptySlotCount() const
 	for (int i = 0; i < this->getTotalSlotCount(); i++)
 	{
 		const ItemInstance &itemInst = this->getSlot(i);
-		if (itemInst.defID == -1)
+		if (!itemInst.isValid())
 		{
 			count++;
 		}
@@ -53,13 +53,12 @@ double ItemInventory::getWeight() const
 	for (int i = 0; i < this->getTotalSlotCount(); i++)
 	{
 		const ItemInstance &itemInst = this->getSlot(i);
-		const ItemDefinitionID itemDefID = itemInst.defID;
-		if (itemDefID == -1)
+		if (!itemInst.isValid())
 		{
 			continue;
 		}
 
-		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemDefID);
+		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
 		totalWeight += itemDef.getWeight();
 	}
 
@@ -71,7 +70,7 @@ bool ItemInventory::findFirstEmptySlot(int *outIndex) const
 	for (int i = 0; i < this->getTotalSlotCount(); i++)
 	{
 		const ItemInstance &itemInst = this->getSlot(i);
-		if (itemInst.defID == -1)
+		if (!itemInst.isValid())
 		{
 			*outIndex = i;
 			return true;
@@ -111,24 +110,15 @@ bool ItemInventory::findLastSlot(ItemDefinitionID defID, int *outIndex) const
 	return false;
 }
 
-bool ItemInventory::insert(ItemDefinitionID defID)
+void ItemInventory::insert(ItemDefinitionID defID)
 {
 	int insertIndex;
 	if (!this->findFirstEmptySlot(&insertIndex))
 	{
-		return false;
+		insertIndex = static_cast<int>(this->items.size());
+		this->items.emplace_back(ItemInstance());
 	}
 
-	if (insertIndex < this->getTotalSlotCount())
-	{
-		ItemInstance &existingItemInst = this->getSlot(insertIndex);
-		existingItemInst.init(defID);
-	}
-	else
-	{
-		ItemInstance &newItemInst = this->items.emplace_back(ItemInstance());
-		newItemInst.init(defID);
-	}
-
-	return true;
+	ItemInstance &itemInst = this->getSlot(insertIndex);
+	itemInst.init(defID);
 }

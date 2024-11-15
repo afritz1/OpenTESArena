@@ -9,6 +9,7 @@
 #include "PrimaryAttributeSet.h"
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
+#include "../Items/ItemInventory.h"
 #include "../Math/MathUtils.h"
 #include "../World/Coord.h"
 
@@ -52,6 +53,7 @@ struct Player
 	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
 	WeaponAnimation weaponAnimation;
 	PrimaryAttributeSet attributes;
+	ItemInventory inventory;
 
 	Player();
 	~Player();

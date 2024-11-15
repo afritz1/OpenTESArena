@@ -23,7 +23,7 @@ public:
 	bool findFirstSlot(ItemDefinitionID defID, int *outIndex) const;
 	bool findLastSlot(ItemDefinitionID defID, int *outIndex) const;
 
-	bool insert(ItemDefinitionID defID); // @todo: attempt stacking if possible.
+	void insert(ItemDefinitionID defID); // @todo: attempt stacking if possible.
 	// @todo: if inserting multiple, want some kind of "ItemInventoryTransferResult" struct that holds what didn't go
 
 	// @todo: sort() or shrink()

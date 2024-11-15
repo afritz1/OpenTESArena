@@ -2,6 +2,8 @@
 
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
+#include "../Entities/Player.h"
+#include "../Game/Game.h"
 #include "../Items/ItemLibrary.h"
 
 void InventoryUiModel::ItemUiDefinition::init(const std::string &text, const Color &color)
@@ -12,13 +14,18 @@ void InventoryUiModel::ItemUiDefinition::init(const std::string &text, const Col
 
 Buffer<InventoryUiModel::ItemUiDefinition> InventoryUiModel::getPlayerInventoryItems(Game &game)
 {
-	// @todo: actually grab from player inventory
-	std::vector<const ItemDefinition*> itemDefs;
 	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-	for (int i = 0; i < itemLibrary.getCount(); i++)
+	const Player &player = game.player;
+
+	std::vector<const ItemDefinition*> itemDefs;
+	for (int i = 0; i < player.inventory.getTotalSlotCount(); i++)
 	{
-		const ItemDefinition &itemDef = itemLibrary.getDefinition(i);
-		itemDefs.emplace_back(&itemDef);
+		const ItemInstance &itemInst = player.inventory.getSlot(i);
+		if (itemInst.isValid())
+		{
+			const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
+			itemDefs.emplace_back(&itemDef);
+		}
 	}
 
 	const int elementCount = static_cast<int>(itemDefs.size());

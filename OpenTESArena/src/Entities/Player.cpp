@@ -19,6 +19,7 @@
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
+#include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
@@ -164,6 +165,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(raceID, male, random);
+	this->inventory.clear();
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
@@ -188,6 +190,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes = std::move(attributes);
+	this->inventory.clear();
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
@@ -213,6 +216,14 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	const int weaponID = GetRandomWeaponIdForClass(charClassDef, random);
 	this->weaponAnimation.init(weaponID, exeData);
 	this->attributes.init(this->raceID, this->male, random);
+	
+	this->inventory.clear();
+	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+	for (int i = 0; i < itemLibrary.getCount(); i++)
+	{
+		const ItemDefinitionID itemDefID = static_cast<ItemDefinitionID>(i);
+		this->inventory.insert(itemDefID);
+	}
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
