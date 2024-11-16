@@ -4040,7 +4040,7 @@ void SoftwareRenderer::freeLight(RenderLightID id)
 	this->lights.free(id);
 }
 
-RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
+Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
 {
 	const int renderWidth = this->paletteIndexBuffer.getWidth();
 	const int renderHeight = this->paletteIndexBuffer.getHeight();
@@ -4064,8 +4064,8 @@ RendererSystem3D::ProfilerData SoftwareRenderer::getProfilerData() const
 	const int totalDepthTests = g_totalDepthTests;
 	const int totalColorWrites = g_totalColorWrites;
 
-	return ProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, presentedTriangleCount, textureCount,
-		textureByteCount, totalLightCount, totalDepthTests, totalColorWrites);
+	return Renderer3DProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, presentedTriangleCount,
+		textureCount, textureByteCount, totalLightCount, totalDepthTests, totalColorWrites);
 }
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,

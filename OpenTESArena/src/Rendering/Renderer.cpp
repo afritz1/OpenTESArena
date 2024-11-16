@@ -30,32 +30,32 @@ namespace
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE = 3.0;
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE_SQR = PHYSICS_DEBUG_MAX_DISTANCE * PHYSICS_DEBUG_MAX_DISTANCE;
 
-	int GetSdlWindowPosition(Renderer::WindowMode windowMode)
+	int GetSdlWindowPosition(RenderWindowMode windowMode)
 	{
 		switch (windowMode)
 		{
-		case Renderer::WindowMode::Window:
+		case RenderWindowMode::Window:
 			return SDL_WINDOWPOS_CENTERED;
-		case Renderer::WindowMode::BorderlessFullscreen:
-		case Renderer::WindowMode::ExclusiveFullscreen:
+		case RenderWindowMode::BorderlessFullscreen:
+		case RenderWindowMode::ExclusiveFullscreen:
 			return SDL_WINDOWPOS_UNDEFINED;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(windowMode)));
 		}
 	}
 
-	uint32_t GetSdlWindowFlags(Renderer::WindowMode windowMode)
+	uint32_t GetSdlWindowFlags(RenderWindowMode windowMode)
 	{
 		uint32_t flags = SDL_WINDOW_ALLOW_HIGHDPI;
-		if (windowMode == Renderer::WindowMode::Window)
+		if (windowMode == RenderWindowMode::Window)
 		{
 			flags |= SDL_WINDOW_RESIZABLE;
 		}
-		else if (windowMode == Renderer::WindowMode::BorderlessFullscreen)
+		else if (windowMode == RenderWindowMode::BorderlessFullscreen)
 		{
 			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 		}
-		else if (windowMode == Renderer::WindowMode::ExclusiveFullscreen)
+		else if (windowMode == RenderWindowMode::ExclusiveFullscreen)
 		{
 			flags |= SDL_WINDOW_FULLSCREEN;
 		}
@@ -73,9 +73,9 @@ namespace
 		return "nearest";
 	}
 
-	Int2 GetWindowDimsForMode(Renderer::WindowMode windowMode, int fallbackWidth, int fallbackHeight)
+	Int2 GetWindowDimsForMode(RenderWindowMode windowMode, int fallbackWidth, int fallbackHeight)
 	{
-		if (windowMode == Renderer::WindowMode::ExclusiveFullscreen)
+		if (windowMode == RenderWindowMode::ExclusiveFullscreen)
 		{
 			// Use desktop resolution of the primary display device. In the future, the display index could be
 			// an option in the options menu.
@@ -172,14 +172,14 @@ namespace
 	}
 }
 
-Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
+RenderDisplayMode::RenderDisplayMode(int width, int height, int refreshRate)
 {
 	this->width = width;
 	this->height = height;
 	this->refreshRate = refreshRate;
 }
 
-Renderer::ProfilerData::ProfilerData()
+RendererProfilerData::RendererProfilerData()
 {
 	this->width = -1;
 	this->height = -1;
@@ -196,7 +196,7 @@ Renderer::ProfilerData::ProfilerData()
 	this->presentTime = 0.0;
 }
 
-void Renderer::ProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
+void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
 	int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites,
 	double renderTime, double presentTime)
 {
@@ -284,7 +284,7 @@ double Renderer::getWindowAspect() const
 	return static_cast<double>(dims.x) / static_cast<double>(dims.y);
 }
 
-BufferView<const Renderer::DisplayMode> Renderer::getDisplayModes() const
+BufferView<const RenderDisplayMode> Renderer::getDisplayModes() const
 {
 	return this->displayModes;
 }
@@ -389,7 +389,7 @@ Surface Renderer::getScreenshot() const
 	return screenshot;
 }
 
-const Renderer::ProfilerData &Renderer::getProfilerData() const
+const RendererProfilerData &Renderer::getProfilerData() const
 {
 	return this->profilerData;
 }
@@ -489,8 +489,8 @@ Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
 	return texture;
 }
 
-bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
-	const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
+bool Renderer::init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
+	const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
 	int renderThreadsMode, DitheringMode ditheringMode)
 {
 	DebugLog("Initializing.");
@@ -546,7 +546,7 @@ bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 			// know how to do that for all possible displays out there.
 			if (mode.format == SDL_PIXELFORMAT_RGB888)
 			{
-				this->displayModes.emplace_back(DisplayMode(mode.w, mode.h, mode.refresh_rate));
+				this->displayModes.emplace_back(RenderDisplayMode(mode.w, mode.h, mode.refresh_rate));
 			}
 		}
 	}
@@ -697,10 +697,10 @@ void Renderer::setLetterboxMode(int letterboxMode)
 	this->letterboxMode = letterboxMode;
 }
 
-void Renderer::setWindowMode(WindowMode mode)
+void Renderer::setWindowMode(RenderWindowMode mode)
 {
 	int result = 0;
-	if (mode == WindowMode::ExclusiveFullscreen)
+	if (mode == RenderWindowMode::ExclusiveFullscreen)
 	{
 		SDL_DisplayMode displayMode; // @todo: may consider changing this to some GetDisplayModeForWindowMode()
 		result = SDL_GetDesktopDisplayMode(0, &displayMode);
@@ -1151,7 +1151,7 @@ void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer
 	const double presentTotalTime = static_cast<double>((presentEndTime - presentStartTime).count()) / static_cast<double>(std::nano::den);
 
 	// Update profiler stats.
-	const RendererSystem3D::ProfilerData swProfilerData = this->renderer3D->getProfilerData();
+	const Renderer3DProfilerData swProfilerData = this->renderer3D->getProfilerData();
 	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
 		swProfilerData.drawCallCount, swProfilerData.presentedTriangleCount, swProfilerData.textureCount,
 		swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalDepthTests,

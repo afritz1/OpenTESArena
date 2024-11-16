@@ -22,27 +22,27 @@ struct RenderDrawCall;
 struct RenderFrameSettings;
 struct RenderInitSettings;
 
+// Profiling info gathered from internal renderer state.
+struct Renderer3DProfilerData
+{
+	int width, height;
+	int threadCount;
+	int drawCallCount;
+	int presentedTriangleCount;
+	int textureCount;
+	int64_t textureByteCount;
+	int totalLightCount;
+	int totalDepthTests;
+	int totalColorWrites;
+
+	Renderer3DProfilerData(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
+		int textureCount, int64_t textureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites);
+};
+
 // Abstract base class for 3D renderer.
 class RendererSystem3D
 {
 public:
-	// Profiling info gathered from internal renderer state.
-	struct ProfilerData
-	{
-		int width, height;
-		int threadCount;
-		int drawCallCount;
-		int presentedTriangleCount;
-		int textureCount;
-		int64_t textureByteCount;
-		int totalLightCount;
-		int totalDepthTests;
-		int totalColorWrites;
-
-		ProfilerData(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
-			int textureCount, int64_t textureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites);
-	};
-
 	virtual ~RendererSystem3D();
 
 	virtual void init(const RenderInitSettings &settings) = 0;
@@ -84,7 +84,7 @@ public:
 	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
 
 	// Gets various profiler information about internal renderer state.
-	virtual ProfilerData getProfilerData() const = 0;
+	virtual Renderer3DProfilerData getProfilerData() const = 0;
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.

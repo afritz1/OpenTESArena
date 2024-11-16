@@ -34,67 +34,67 @@ struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 
+struct RenderDisplayMode
+{
+	int width, height, refreshRate;
+
+	RenderDisplayMode(int width, int height, int refreshRate);
+};
+
+enum class RenderWindowMode
+{
+	Window,
+	BorderlessFullscreen,
+	ExclusiveFullscreen
+};
+
+// Profiler information from the most recently rendered frame.
+struct RendererProfilerData
+{
+	// Internal renderer resolution.
+	int width, height;
+	int pixelCount;
+
+	int threadCount;
+	int drawCallCount;
+
+	// Geometry.
+	int presentedTriangleCount; // After clipping, only screen-space triangles with onscreen area.
+
+	// Textures.
+	int objectTextureCount;
+	int64_t objectTextureByteCount;
+
+	// Lights.
+	int totalLightCount;
+
+	// Pixel writes/overdraw.
+	int totalDepthTests;
+	int totalColorWrites;
+
+	double renderTime;
+	double presentTime;
+
+	RendererProfilerData();
+
+	void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
+		int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites, double renderTime, double presentTime);
+};
+
+using RenderResolutionScaleFunc = std::function<double()>;
+
 // Manages the active window and 2D and 3D rendering operations.
 class Renderer : public JPH::DebugRendererSimple
 {
-public:
-	struct DisplayMode
-	{
-		int width, height, refreshRate;
-
-		DisplayMode(int width, int height, int refreshRate);
-	};
-
-	enum class WindowMode
-	{
-		Window,
-		BorderlessFullscreen,
-		ExclusiveFullscreen
-	};
-
-	// Profiler information from the most recently rendered frame.
-	struct ProfilerData
-	{
-		// Internal renderer resolution.
-		int width, height;
-		int pixelCount;
-
-		int threadCount;
-		int drawCallCount;
-
-		// Geometry.
-		int presentedTriangleCount; // After clipping, only screen-space triangles with onscreen area.
-
-		// Textures.
-		int objectTextureCount;
-		int64_t objectTextureByteCount;
-
-		// Lights.
-		int totalLightCount;
-
-		// Pixel writes/overdraw.
-		int totalDepthTests;
-		int totalColorWrites;
-
-		double renderTime;
-		double presentTime;
-
-		ProfilerData();
-
-		void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
-			int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites, double renderTime, double presentTime);
-	};
-
-	using ResolutionScaleFunc = std::function<double()>;
 private:
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	std::vector<DisplayMode> displayModes;
+	std::vector<RenderDisplayMode> displayModes;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
-	ProfilerData profilerData;
-	ResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
+	RendererProfilerData profilerData;
+	RenderResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 public:
@@ -118,7 +118,7 @@ public:
 	double getWindowAspect() const;
 
 	// Gets a list of supported fullscreen display modes.
-	BufferView<const DisplayMode> getDisplayModes() const;
+	BufferView<const RenderDisplayMode> getDisplayModes() const;
 
 	// Gets the active window's pixels-per-inch scale divided by platform DPI.
 	double getDpiScale() const;
@@ -137,7 +137,7 @@ public:
 	Surface getScreenshot() const;
 
 	// Gets profiler data (timings, renderer properties, etc.).
-	const ProfilerData &getProfilerData() const;
+	const RendererProfilerData &getProfilerData() const;
 
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
@@ -155,8 +155,8 @@ public:
 	// Wrapper methods for SDL_CreateTexture.
 	Texture createTexture(uint32_t format, int access, int w, int h);
 
-	bool init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
-		const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
+	bool init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
+		const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
 		RendererSystemType3D systemType3D, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Resizes the renderer dimensions.
@@ -169,7 +169,7 @@ public:
 	void setLetterboxMode(int letterboxMode);
 
 	// Sets whether the program is windowed, fullscreen, etc..
-	void setWindowMode(WindowMode mode);
+	void setWindowMode(RenderWindowMode mode);
 
 	// Sets the window icon to be the given surface.
 	void setWindowIcon(const Surface &icon);

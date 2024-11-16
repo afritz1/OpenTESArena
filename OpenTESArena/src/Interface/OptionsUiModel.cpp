@@ -206,18 +206,18 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeWindowModeOption(
 		auto &renderer = game.renderer;
 		options.setGraphics_WindowMode(value);
 
-		const Renderer::WindowMode mode = [value]()
+		const RenderWindowMode mode = [value]()
 		{
 			switch (value)
 			{
 			case 0:
-				return Renderer::WindowMode::Window;
+				return RenderWindowMode::Window;
 			case 1:
-				return Renderer::WindowMode::BorderlessFullscreen;
+				return RenderWindowMode::BorderlessFullscreen;
 			case 2:
-				return Renderer::WindowMode::ExclusiveFullscreen;
+				return RenderWindowMode::ExclusiveFullscreen;
 			default:
-				DebugUnhandledReturnMsg(Renderer::WindowMode, std::to_string(value));
+				DebugUnhandledReturnMsg(RenderWindowMode, std::to_string(value));
 			}
 		}();
 

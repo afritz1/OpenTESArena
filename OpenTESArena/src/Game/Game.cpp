@@ -278,7 +278,7 @@ bool Game::init()
 	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
 	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
-		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
+		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
 		this->options.getGraphics_ModernInterface(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D,
 		this->options.getGraphics_RenderThreadsMode(), ditheringMode))
 	{
@@ -671,7 +671,7 @@ void Game::renderDebugInfo()
 		const std::string windowHeight = std::to_string(windowDims.y);
 		debugText.append("\nScreen: " + windowWidth + "x" + windowHeight);
 
-		const Renderer::ProfilerData &profilerData = this->renderer.getProfilerData();
+		const RendererProfilerData &profilerData = this->renderer.getProfilerData();
 		const Int2 renderDims(profilerData.width, profilerData.height);
 		const bool profilerDataIsValid = (renderDims.x > 0) && (renderDims.y > 0);
 		if (profilerDataIsValid)

@@ -239,7 +239,7 @@ public:
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
 	void freeLight(RenderLightID id) override;
 
-	ProfilerData getProfilerData() const override;
+	Renderer3DProfilerData getProfilerData() const override;
 
 	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
 		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) override;
