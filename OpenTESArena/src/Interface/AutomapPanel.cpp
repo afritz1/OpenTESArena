@@ -10,8 +10,6 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/TextureManager.h"
-#include "../Game/CardinalDirection.h"
-#include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Input/InputActionMapName.h"

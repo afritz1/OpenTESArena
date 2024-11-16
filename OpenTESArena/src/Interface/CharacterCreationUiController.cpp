@@ -23,7 +23,6 @@
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/ArenaClockUtils.h"
-#include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
@@ -32,6 +31,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
+#include "../World/CardinalDirection.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"

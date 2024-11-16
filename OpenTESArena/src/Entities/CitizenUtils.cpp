@@ -7,11 +7,11 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextureManager.h"
-#include "../Game/CardinalDirection.h"
-#include "../Game/CardinalDirectionName.h"
 #include "../Math/Random.h"
 #include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
+#include "../World/CardinalDirection.h"
+#include "../World/CardinalDirectionName.h"
 #include "../World/MapType.h"
 #include "../WorldMap/ProvinceDefinition.h"
 

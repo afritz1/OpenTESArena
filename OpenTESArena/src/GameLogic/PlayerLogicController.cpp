@@ -8,13 +8,13 @@
 #include "../Collision/SelectionUtils.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
-#include "../Game/CardinalDirection.h"
-#include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../UI/TextBox.h"
 #include "../Voxels/ArenaVoxelUtils.h"
+#include "../World/CardinalDirection.h"
+#include "../World/CardinalDirectionName.h"
 
 #include "components/utilities/String.h"
 

@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "../Assets/TextureAsset.h"
-#include "../Game/CardinalDirectionName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -15,6 +14,7 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../Utilities/Color.h"
+#include "../World/CardinalDirectionName.h"
 #include "../World/Coord.h"
 
 #include "components/utilities/Buffer2D.h"

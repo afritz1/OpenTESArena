@@ -5,7 +5,6 @@
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
 #include "RendererUtils.h"
-#include "../Game/CardinalDirection.h"
 #include "../Math/BoundingBox.h"
 #include "../Math/Constants.h"
 #include "../Utilities/Platform.h"

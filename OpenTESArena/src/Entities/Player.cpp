@@ -15,7 +15,6 @@
 #include "../Collision/CollisionChunkManager.h"
 #include "../Collision/Physics.h"
 #include "../Collision/PhysicsLayer.h"
-#include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
@@ -24,6 +23,7 @@
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
 #include "../Voxels/VoxelChunkManager.h"
+#include "../World/CardinalDirection.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"

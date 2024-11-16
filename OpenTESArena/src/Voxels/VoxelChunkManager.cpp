@@ -3,8 +3,6 @@
 
 #include "VoxelChunkManager.h"
 #include "../Assets/ArenaTypes.h"
-#include "../Game/CardinalDirection.h"
-#include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MapType.h"

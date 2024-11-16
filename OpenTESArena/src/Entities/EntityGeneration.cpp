@@ -1,5 +1,4 @@
 #include "EntityGeneration.h"
-#include "../Game/CardinalDirection.h"
 
 void EntityGeneration::EntityGenInfo::init(bool nightLightsAreActive)
 {
