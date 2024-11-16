@@ -74,10 +74,8 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	{
 		const VoxelTriggerDefinition::SoundDef &soundDef = triggerDef.getSoundDef();
 		const std::string &soundFilename = soundDef.getFilename();
-
-		// Play the sound.
 		auto &audioManager = game.audioManager;
-		audioManager.playSound(soundFilename);
+		audioManager.playSound(soundFilename.c_str());
 	}
 
 	if (triggerDef.hasTextDef())

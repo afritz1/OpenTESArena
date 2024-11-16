@@ -180,7 +180,7 @@ void TextCinematicPanel::tick(double dt)
 		if (!playedFirstVoice)
 		{
 			const std::string voiceFilename = this->speechState.getVoiceFilename(this->speechState.getNextVoiceIndex());
-			audioManager.playSound(voiceFilename);
+			audioManager.playSound(voiceFilename.c_str());
 			this->speechState.incrementVoiceIndex();
 		}
 		else
@@ -196,7 +196,7 @@ void TextCinematicPanel::tick(double dt)
 
 				if (audioManager.soundExists(nextVoiceFilename))
 				{
-					audioManager.playSound(nextVoiceFilename);
+					audioManager.playSound(nextVoiceFilename.c_str());
 					this->speechState.incrementVoiceIndex();
 
 					if (TextCinematicUiModel::SpeechState::isBeginningOfNewPage(nextVoiceIndex))

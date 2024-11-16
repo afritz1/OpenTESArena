@@ -117,8 +117,7 @@ void WeatherRainInstance::Thunderstorm::update(double dt, const Clock &clock,
 			this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 			this->lightningBoltAngle = MakeLightningBoltAngle(random);
 
-			const std::string &soundFilename = ArenaSoundName::Thunder;
-			audioManager.playSound(soundFilename);
+			audioManager.playSound(ArenaSoundName::Thunder);
 		}
 	}
 }

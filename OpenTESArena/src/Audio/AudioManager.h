@@ -103,8 +103,7 @@ public:
 
 	// Plays a sound file. All sounds should play once. If 'position' is empty then the sound
 	// is played globally.
-	void playSound(const std::string &filename,
-		const std::optional<Double3> &position = std::nullopt);
+	void playSound(const char *filename, const std::optional<Double3> &position = std::nullopt);
 
 	// Sets the music to the given music definition, with an optional music to play first as a
 	// lead-in to the actual music. If no music definition is given, the current music is stopped.

@@ -550,27 +550,24 @@ void AudioManager::setListenerOrientation(const Double3 &direction)
 	alListenerfv(AL_ORIENTATION, orientation.data());
 }
 
-void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
+void AudioManager::playSound(const char *filename, const std::optional<Double3> &position)
 {
 	// Certain sounds should only have one live instance at a time. This is purely an arbitrary
-	// rule to avoid having long sounds overlap each other which would be very annoying and/or
+	// rule to avoid having long sounds overlap each other which would be very annoying or
 	// distracting for the player.
-	const bool isSingleInstance = std::find(mSingleInstanceSounds.begin(),
-		mSingleInstanceSounds.end(), filename) != mSingleInstanceSounds.end();
-	const bool allowedToPlay = !isSingleInstance ||
-		(isSingleInstance && !this->isPlayingSound(filename));
+	const bool isSingleInstance = std::find(mSingleInstanceSounds.begin(), mSingleInstanceSounds.end(), std::string(filename)) != mSingleInstanceSounds.end();
+	const bool allowedToPlay = !isSingleInstance || (isSingleInstance && !this->isPlayingSound(filename));
 
 	if (!mFreeSources.empty() && allowedToPlay)
 	{
 		auto vocIter = mSoundBuffers.find(filename);
-
 		if (vocIter == mSoundBuffers.end())
 		{
 			// Load the .VOC file and give its PCM data to a new OpenAL buffer.
 			VOCFile voc;
-			if (!voc.init(filename.c_str()))
+			if (!voc.init(filename))
 			{
-				DebugCrash("Could not init .VOC file \"" + filename + "\".");
+				DebugCrash("Could not init .VOC file \"" + std::string(filename) + "\".");
 			}
 
 			// Clear OpenAL error.
@@ -622,7 +619,6 @@ void AudioManager::playSound(const std::string &filename, const std::optional<Do
 			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
 		}
 
-		// Play the sound.
 		alSourcePlay(source);
 
 		mUsedSources.push_front(std::make_pair(filename, source));

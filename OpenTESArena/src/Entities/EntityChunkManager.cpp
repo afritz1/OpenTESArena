@@ -925,7 +925,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 						entityCoord.chunk,
 						VoxelDouble3(entityCoord.point.x, ceilingScale * 1.50, entityCoord.point.y));
 					const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
-					audioManager.playSound(creatureSoundFilename, absoluteSoundPosition);
+					audioManager.playSound(creatureSoundFilename.c_str(), absoluteSoundPosition);
 
 					secondsTillCreatureSound = EntityUtils::nextCreatureSoundWaitTime(random);
 				}
