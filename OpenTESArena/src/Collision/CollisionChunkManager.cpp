@@ -50,7 +50,8 @@ namespace
 			static_cast<float>(boxWorldVoxelPos.x + 0.50),
 			static_cast<float>(scaledYBottom + scaledHalfHeight),
 			static_cast<float>(boxWorldVoxelPos.z + 0.50));
-		const JPH::Quat boxJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), boxShapeDef.yRotation);
+		const RadiansF boxYRotation = static_cast<RadiansF>(boxShapeDef.yRotation);
+		const JPH::Quat boxJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), boxYRotation);
 		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, boxJoltQuat, JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
 		const JPH::Body *box = bodyInterface.CreateBody(boxSettings);
 		if (box == nullptr)

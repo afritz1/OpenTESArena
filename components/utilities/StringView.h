@@ -28,12 +28,12 @@ namespace StringView
 	// Splits a string view on the given character without allocating the destination array.
 	// Breaks early if too many splits are encountered. Returns whether the split count matches
 	// the destination size.
-	template<size_t T>
+	template<int T>
 	bool splitExpected(std::string_view str, char separator, BufferView<std::string_view> dst)
 	{
 		static_assert(T > 0);
 
-		if (dst.getCount() != static_cast<int>(T))
+		if (dst.getCount() != T)
 		{
 			return false;
 		}
@@ -41,8 +41,8 @@ namespace StringView
 		// Bootstrap the loop.
 		dst[0] = std::string_view(str.data(), 0);
 
-		size_t dstIndex = 0;
-		for (size_t i = 0; i < str.size(); i++)
+		int dstIndex = 0;
+		for (int i = 0; i < static_cast<int>(str.size()); i++)
 		{
 			const char c = str[i];
 
@@ -71,7 +71,7 @@ namespace StringView
 	// Splits a string view on whitespace without allocating the destination array. Breaks early
 	// if too many splits are encountered. Returns whether the split count matches the destination
 	// size.
-	template<size_t T>
+	template<int T>
 	bool splitExpected(std::string_view str, BufferView<std::string_view> dst)
 	{
 		return StringView::splitExpected<T>(str, String::SPACE, dst);
