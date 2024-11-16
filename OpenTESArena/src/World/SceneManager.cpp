@@ -4,9 +4,9 @@
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
-#include "../Game/ArenaClockUtils.h"
-#include "../Game/ClockLibrary.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Time/ArenaClockUtils.h"
+#include "../Time/ClockLibrary.h"
 
 #include "components/debug/Debug.h"
 

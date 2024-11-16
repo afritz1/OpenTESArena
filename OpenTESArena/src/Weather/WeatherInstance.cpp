@@ -6,12 +6,12 @@
 #include "WeatherInstance.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Audio/AudioManager.h"
-#include "../Game/ArenaClockUtils.h"
-#include "../Game/Clock.h"
-#include "../Game/ClockLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Time/ArenaClockUtils.h"
+#include "../Time/Clock.h"
+#include "../Time/ClockLibrary.h"
 
 #include "components/debug/Debug.h"
 

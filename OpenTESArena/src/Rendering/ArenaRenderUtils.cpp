@@ -4,11 +4,11 @@
 #include "ArenaRenderUtils.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
-#include "../Game/ArenaClockUtils.h"
-#include "../Game/ClockLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Math/Vector4.h"
+#include "../Time/ArenaClockUtils.h"
+#include "../Time/ClockLibrary.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"

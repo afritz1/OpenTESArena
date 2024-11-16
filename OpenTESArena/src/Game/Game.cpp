@@ -13,7 +13,6 @@
 #include "Jolt/Physics/PhysicsSystem.h"
 #include "SDL.h"
 
-#include "ClockLibrary.h"
 #include "Game.h"
 #include "Options.h"
 #include "PlayerInterface.h"
@@ -46,6 +45,7 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Time/ClockLibrary.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"

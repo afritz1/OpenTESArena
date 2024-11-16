@@ -180,22 +180,12 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/WeaponAnimation.h")
 
 SET(TES_GAME
-    "${SRC_ROOT}/Game/ArenaClockUtils.cpp"
-    "${SRC_ROOT}/Game/ArenaClockUtils.h"
-    "${SRC_ROOT}/Game/ArenaDateUtils.cpp"
-    "${SRC_ROOT}/Game/ArenaDateUtils.h"
     "${SRC_ROOT}/Game/CharacterClassGeneration.cpp"
     "${SRC_ROOT}/Game/CharacterClassGeneration.h"
     "${SRC_ROOT}/Game/CharacterCreationState.cpp"
     "${SRC_ROOT}/Game/CharacterCreationState.h"
     "${SRC_ROOT}/Game/CharacterQuestion.cpp"
     "${SRC_ROOT}/Game/CharacterQuestion.h"
-    "${SRC_ROOT}/Game/Clock.cpp"
-    "${SRC_ROOT}/Game/Clock.h"
-    "${SRC_ROOT}/Game/ClockLibrary.cpp"
-    "${SRC_ROOT}/Game/ClockLibrary.h"
-    "${SRC_ROOT}/Game/Date.cpp"
-    "${SRC_ROOT}/Game/Date.h"
     "${SRC_ROOT}/Game/Game.cpp"
     "${SRC_ROOT}/Game/Game.h"
     "${SRC_ROOT}/Game/GameState.cpp"
@@ -498,6 +488,18 @@ SET(TES_SKY
     "${SRC_ROOT}/Sky/SkyVisibilityManager.cpp"
     "${SRC_ROOT}/Sky/SkyVisibilityManager.h")
 
+SET(TES_TIME
+    "${SRC_ROOT}/Time/ArenaClockUtils.cpp"
+    "${SRC_ROOT}/Time/ArenaClockUtils.h"
+    "${SRC_ROOT}/Time/ArenaDateUtils.cpp"
+    "${SRC_ROOT}/Time/ArenaDateUtils.h"
+    "${SRC_ROOT}/Time/Clock.cpp"
+    "${SRC_ROOT}/Time/Clock.h"
+    "${SRC_ROOT}/Time/ClockLibrary.cpp"
+    "${SRC_ROOT}/Time/ClockLibrary.h"
+    "${SRC_ROOT}/Time/Date.cpp"
+    "${SRC_ROOT}/Time/Date.h")
+
 SET(TES_UI
     "${SRC_ROOT}/UI/AnimationState.cpp"
     "${SRC_ROOT}/UI/AnimationState.h"
@@ -672,6 +674,7 @@ SET(TES_SOURCES
     ${TES_MATH}
     ${TES_RENDERING}
     ${TES_SKY}
+    ${TES_TIME}
     ${TES_UI}
     ${TES_UTILITIES}
     ${TES_VOXELS}

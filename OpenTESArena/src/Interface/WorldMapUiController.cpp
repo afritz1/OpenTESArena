@@ -8,9 +8,9 @@
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
-#include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
+#include "../Time/ArenaClockUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 

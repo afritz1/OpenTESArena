@@ -3,8 +3,6 @@
 #include <cmath>
 #include <tuple>
 
-#include "ArenaClockUtils.h"
-#include "ClockLibrary.h"
 #include "Game.h"
 #include "GameState.h"
 #include "../Assets/ArenaPaletteName.h"
@@ -24,6 +22,8 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Time/ArenaClockUtils.h"
+#include "../Time/ClockLibrary.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
