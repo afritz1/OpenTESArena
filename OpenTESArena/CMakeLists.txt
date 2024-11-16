@@ -105,6 +105,8 @@ SET(TES_AUDIO
     "${SRC_ROOT}/Audio/MusicLibrary.h"
     "${SRC_ROOT}/Audio/MusicUtils.cpp"
     "${SRC_ROOT}/Audio/MusicUtils.h"
+    "${SRC_ROOT}/Audio/SoundLibrary.cpp"
+    "${SRC_ROOT}/Audio/SoundLibrary.h"
     "${SRC_ROOT}/Audio/WildMidi.cpp"
     "${SRC_ROOT}/Audio/WildMidi.h")
 

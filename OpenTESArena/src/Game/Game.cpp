@@ -23,6 +23,7 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Audio/SoundLibrary.h"
 #include "../Collision/Physics.h"
 #include "../Collision/PhysicsBodyActivationListener.h"
 #include "../Collision/PhysicsContactListener.h"
@@ -353,6 +354,8 @@ bool Game::init()
 		DebugLogError("Couldn't init clock library with path \"" + clockLibraryPath + "\".");
 		return false;
 	}
+
+	SoundLibrary::getInstance().init();
 
 	const std::string musicLibraryPath = audioDataPath + "MusicDefinitions.txt";
 	if (!MusicLibrary::getInstance().init(musicLibraryPath.c_str()))
