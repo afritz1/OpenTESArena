@@ -46,10 +46,11 @@ namespace
 		}
 
 		// Create same capsule for physical and virtual collider.
-		constexpr double capsuleRadius = PlayerConstants::COLLIDER_RADIUS;
-		constexpr double cylinderHalfHeight = (PlayerConstants::HEIGHT / 2.0) - capsuleRadius;
-		static_assert(cylinderHalfHeight >= 0.0);
-		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0) + (cylinderHalfHeight * 2.0), PlayerConstants::HEIGHT));
+		constexpr float playerHeight = static_cast<float>(PlayerConstants::HEIGHT);
+		constexpr float capsuleRadius = static_cast<float>(PlayerConstants::COLLIDER_RADIUS);
+		constexpr float cylinderHalfHeight = static_cast<float>((playerHeight / 2.0) - capsuleRadius);
+		static_assert(cylinderHalfHeight >= 0.0f);
+		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0f) + (cylinderHalfHeight * 2.0f), playerHeight));
 
 		JPH::CapsuleShapeSettings capsuleShapeSettings(cylinderHalfHeight, capsuleRadius);
 		capsuleShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
