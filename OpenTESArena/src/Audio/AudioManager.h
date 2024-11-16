@@ -19,22 +19,18 @@ class Options;
 
 struct MusicDefinition;
 
+// Contains data for defining the state of an audio listener.
+struct AudioListenerData
+{
+	Double3 position;
+	Double3 direction;
+
+	AudioListenerData(const Double3 &position, const Double3 &direction);
+};
+
 // Manages what sounds and music are played by OpenAL Soft.
 class AudioManager
 {
-public:
-	// Contains data for defining the state of an audio listener.
-	class ListenerData
-	{
-	private:
-		Double3 position;
-		Double3 direction;
-	public:
-		ListenerData(const Double3 &position, const Double3 &direction);
-
-		const Double3 &getPosition() const;
-		const Double3 &getDirection() const;
-	};
 private:
 	static constexpr ALint UNSUPPORTED_EXTENSION = -1;
 
@@ -139,7 +135,7 @@ public:
 	void updateSources();
 
 	// Updates the position of the 3D listener.
-	void updateListener(const ListenerData &listenerData);
+	void updateListener(const AudioListenerData &listenerData);
 };
 
 #endif

@@ -313,18 +313,8 @@ public:
 	}
 };
 
-AudioManager::ListenerData::ListenerData(const Double3 &position, const Double3 &direction)
+AudioListenerData::AudioListenerData(const Double3 &position, const Double3 &direction)
 	: position(position), direction(direction) { }
-
-const Double3 &AudioManager::ListenerData::getPosition() const
-{
-	return this->position;
-}
-
-const Double3 &AudioManager::ListenerData::getDirection() const
-{
-	return this->direction;
-}
 
 AudioManager::AudioManager()
 {
@@ -821,8 +811,8 @@ void AudioManager::updateSources()
 	}
 }
 
-void AudioManager::updateListener(const ListenerData &listenerData)
+void AudioManager::updateListener(const AudioListenerData &listenerData)
 {
-	this->setListenerPosition(listenerData.getPosition());
-	this->setListenerOrientation(listenerData.getDirection());
+	this->setListenerPosition(listenerData.position);
+	this->setListenerOrientation(listenerData.direction);
 }

@@ -866,7 +866,7 @@ void Game::loop()
 
 				// Update audio listener orientation.
 				const WorldDouble3 newPlayerWorldPos = VoxelUtils::coordToWorldPoint(newPlayerCoord);
-				const AudioManager::ListenerData listenerData(newPlayerWorldPos, newPlayerDirection);
+				const AudioListenerData listenerData(newPlayerWorldPos, newPlayerDirection);
 				this->audioManager.updateListener(listenerData);
 			}
 
