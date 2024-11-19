@@ -9,6 +9,14 @@
 #include "StringView.h"
 #include "../debug/Debug.h"
 
+namespace
+{
+	bool KeyValuePairComparer(const std::pair<std::string, std::string> &a, const std::pair<std::string, std::string> &b)
+	{
+		return a.first < b.first;
+	}
+}
+
 void KeyValueFileSection::init(std::string &&name)
 {
 	this->name = std::move(name);
@@ -33,13 +41,9 @@ const std::pair<std::string, std::string> &KeyValueFileSection::getPair(int inde
 bool KeyValueFileSection::tryGetValue(const std::string &key, std::string_view &value) const
 {
 	const std::pair<std::string, std::string> searchPair(key, std::string());
-	const auto iter = std::lower_bound(this->pairs.begin(), this->pairs.end(), searchPair,
-		[](const auto &pairA, const auto &pairB)
-	{
-		return pairA.first < pairB.first;
-	});
+	const auto iter = std::lower_bound(this->pairs.begin(), this->pairs.end(), searchPair, KeyValuePairComparer);
 
-	if (iter != this->pairs.end())
+	if ((iter != this->pairs.end()) && (iter->first == key))
 	{
 		value = iter->second;
 		return true;
@@ -127,14 +131,8 @@ bool KeyValueFileSection::tryGetString(const std::string &key, std::string_view 
 
 void KeyValueFileSection::add(std::string &&key, std::string &&value)
 {
-	this->pairs.push_back(std::make_pair(std::move(key), std::move(value)));
-	std::sort(this->pairs.begin(), this->pairs.end(),
-		[](const auto &pairA, const auto &pairB)
-	{
-		const std::string &strA = pairA.first;
-		const std::string &strB = pairB.first;
-		return strA < strB;
-	});
+	this->pairs.emplace_back(std::move(key), std::move(value));
+	std::sort(this->pairs.begin(), this->pairs.end(), KeyValuePairComparer);
 }
 
 void KeyValueFileSection::clear()
