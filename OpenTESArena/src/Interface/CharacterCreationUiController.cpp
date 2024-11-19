@@ -558,7 +558,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const int charClassDefID = charCreationState.getClassDefID();
 		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
-		PrimaryAttributeSet attributes = charCreationState.getAttributes();
+		const PrimaryAttributes &attributes = charCreationState.getAttributes();
 
 		const int portraitIndex = charCreationState.getPortraitIndex();
 
@@ -566,7 +566,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const int weaponID = charClassDef.getAllowedWeapon(game.random.next(allowedWeaponCount));
 
 		Player &player = game.player;
-		player.init(std::string(name), male, raceIndex, charClassDefID, std::move(attributes), portraitIndex,
+		player.init(std::string(name), male, raceIndex, charClassDefID, attributes, portraitIndex,
 			dummyPosition, direction, velocity, PlayerConstants::DEFAULT_WALK_SPEED, weaponID, exeData, game.physicsSystem);
 	};
 

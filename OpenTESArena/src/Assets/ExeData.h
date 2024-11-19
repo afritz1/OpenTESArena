@@ -124,6 +124,8 @@ public:
 
 	struct Entities
 	{
+		std::array<std::string, 8> attributeNames; // Strength, ... Luck.
+
 		// Creature races are 1-based.
 		std::array<std::string, 23> creatureNames; // Rat, Goblin, ...
 		std::array<uint8_t, 24> creatureLevels; // Zero-based, as with the player.

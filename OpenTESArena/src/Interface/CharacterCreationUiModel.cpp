@@ -35,11 +35,11 @@ std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
 	return charClassDef.getName();
 }
 
-std::vector<PrimaryAttribute> CharacterCreationUiModel::getPlayerAttributes(Game &game)
+const PrimaryAttributes &CharacterCreationUiModel::getPlayerAttributes(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const PrimaryAttributeSet &attributeSet = charCreationState.getAttributes();
-	return attributeSet.getAll();
+	const PrimaryAttributes &attributes = charCreationState.getAttributes();
+	return attributes;
 }
 
 std::string ChooseClassCreationUiModel::getTitleText(Game &game)

@@ -478,17 +478,8 @@ SET(TES_SKY
     "${SRC_ROOT}/Sky/SkyVisibilityManager.h")
 
 SET(TES_STATS
-    "${SRC_ROOT}/Stats/AttributeModifier.cpp"
-    "${SRC_ROOT}/Stats/AttributeModifier.h"
-    "${SRC_ROOT}/Stats/AttributeModifierName.h"
-    "${SRC_ROOT}/Stats/DerivedAttribute.cpp"
-    "${SRC_ROOT}/Stats/DerivedAttribute.h"
-    "${SRC_ROOT}/Stats/DerivedAttributeName.h"
     "${SRC_ROOT}/Stats/PrimaryAttribute.cpp"
-    "${SRC_ROOT}/Stats/PrimaryAttribute.h"
-    "${SRC_ROOT}/Stats/PrimaryAttributeName.h"
-    "${SRC_ROOT}/Stats/PrimaryAttributeSet.cpp"
-    "${SRC_ROOT}/Stats/PrimaryAttributeSet.h")
+    "${SRC_ROOT}/Stats/PrimaryAttribute.h")
 
 SET(TES_TIME
     "${SRC_ROOT}/Time/ArenaClockUtils.cpp"

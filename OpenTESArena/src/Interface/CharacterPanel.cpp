@@ -10,7 +10,6 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Stats/PrimaryAttribute.h"
-#include "../Stats/PrimaryAttributeName.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 
@@ -58,20 +57,19 @@ bool CharacterPanel::init()
 		return false;
 	}
 
-	const std::vector<PrimaryAttribute> playerAttributes = CharacterSheetUiModel::getPlayerAttributes(game);
-	const std::map<PrimaryAttributeName, TextBox::InitInfo> playerAttributesTextBoxInitInfoMap =
-		CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(playerAttributes, fontLibrary);
-	for (const PrimaryAttribute &attribute : playerAttributes)
+	const PrimaryAttributes &playerAttributes = CharacterSheetUiModel::getPlayerAttributes(game);
+	const BufferView<const PrimaryAttribute> playerAttributesView = playerAttributes.getAttributes();
+	const std::vector<TextBox::InitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(playerAttributesView, fontLibrary);
+	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
-		const int attributeValue = attribute.get();
+		const PrimaryAttribute &attribute = playerAttributesView.get(i);
+		const int attributeValue = attribute.maxValue;
 		const std::string attributeValueText = std::to_string(attributeValue);
-		const PrimaryAttributeName attributeName = attribute.getAttributeName();
-		const TextBox::InitInfo attributeTextBoxInitInfo = playerAttributesTextBoxInitInfoMap.at(attributeName);
-		this->playerAttributeTextBoxes.emplace_back(TextBox());
-		if (!this->playerAttributeTextBoxes.back().init(attributeTextBoxInitInfo, attributeValueText, renderer))
+		DebugAssertIndex(playerAttributesTextBoxInitInfos, i);
+		const TextBox::InitInfo &attributeTextBoxInitInfo = playerAttributesTextBoxInitInfos[i];
+		if (!this->playerAttributeTextBoxes[i].init(attributeTextBoxInitInfo, attributeValueText, renderer))
 		{
-			const std::string attributeNameText = attribute.toString();
-			DebugLogError("Couldn't init player " + attributeNameText + " text box.");
+			DebugLogError("Couldn't init player attribute " + std::string(attribute.name) + " text box.");
 			return false;
 		}
 	}
@@ -173,11 +171,11 @@ bool CharacterPanel::init()
 		Int2(playerClassTextBoxRect.getWidth(), playerClassTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	for (int i = 0; i < this->playerAttributeTextBoxes.size(); i++)
+	for (TextBox &playerAttributeTextBox : this->playerAttributeTextBoxes)
 	{
-		const Rect &playerAttributeTextBoxRect = this->playerAttributeTextBoxes[i].getRect();
+		const Rect &playerAttributeTextBoxRect = playerAttributeTextBox.getRect();
 		this->addDrawCall(
-			this->playerAttributeTextBoxes[i].getTextureID(),
+			playerAttributeTextBox.getTextureID(),
 			playerAttributeTextBoxRect.getTopLeft(),
 			Int2(playerAttributeTextBoxRect.getWidth(), playerAttributeTextBoxRect.getHeight()),
 			PivotType::TopLeft);

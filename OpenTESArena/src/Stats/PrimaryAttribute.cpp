@@ -1,102 +1,67 @@
-#include <unordered_map>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstring>
 
-#include "AttributeModifierName.h"
 #include "PrimaryAttribute.h"
-#include "PrimaryAttributeName.h"
-#include "../Math/Random.h"
+#include "../Assets/ExeData.h"
 
 #include "components/debug/Debug.h"
 
-const std::unordered_map<PrimaryAttributeName, std::string> PrimaryAttributeDisplayNames =
+static_assert(sizeof(PrimaryAttributes) == (sizeof(PrimaryAttribute) * PrimaryAttributes::COUNT));
+static_assert(offsetof(PrimaryAttributes, strength) == 0);
+static_assert(offsetof(PrimaryAttributes, luck) == (sizeof(PrimaryAttribute) * (PrimaryAttributes::COUNT - 1)));
+
+PrimaryAttribute::PrimaryAttribute()
 {
-	{ PrimaryAttributeName::Strength, "Strength" },
-	{ PrimaryAttributeName::Intelligence, "Intelligence" },
-	{ PrimaryAttributeName::Willpower, "Willpower" },
-	{ PrimaryAttributeName::Agility, "Agility" },
-	{ PrimaryAttributeName::Speed, "Speed" },
-	{ PrimaryAttributeName::Endurance, "Endurance" },
-	{ PrimaryAttributeName::Personality, "Personality" },
-	{ PrimaryAttributeName::Luck, "Luck" }
-};
-
-const std::unordered_map<PrimaryAttributeName, std::vector<AttributeModifierName>> PrimaryAttributeModifierNames =
-{
-	{ PrimaryAttributeName::Strength, { AttributeModifierName::MeleeDamage } },
-	{ PrimaryAttributeName::Intelligence, { } },
-	{ PrimaryAttributeName::Willpower, { AttributeModifierName::MagicDefense } },
-	{ PrimaryAttributeName::Agility, { AttributeModifierName::ToHit, AttributeModifierName::ToDefense } },
-	{ PrimaryAttributeName::Speed, { } },
-	{ PrimaryAttributeName::Endurance, { AttributeModifierName::HealthPerLevel, 
-	AttributeModifierName::HealModifier } },
-	{ PrimaryAttributeName::Personality, { AttributeModifierName::Charisma } },
-	{ PrimaryAttributeName::Luck, { } }
-};
-
-const int PrimaryAttribute::MIN_VALUE = 0;
-const int PrimaryAttribute::MAX_VALUE = 100;
-
-PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int baseValue)
-{
-	DebugAssert(baseValue >= PrimaryAttribute::MIN_VALUE);
-	DebugAssert(baseValue <= PrimaryAttribute::MAX_VALUE);
-
-	this->attributeName = attributeName;
-	this->baseValue = baseValue;
+	this->clear();
 }
 
-PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int raceID, bool male, Random &random)
+void PrimaryAttribute::init(const char *name, int maxValue)
 {
-	DebugAssert(raceID >= 0);
-	DebugAssert(raceID <= 7);
-
-	this->attributeName = attributeName;
-
-	// @todo: read from ExeData::entities::raceAttributes
-	this->baseValue = 0;
+	DebugAssert(maxValue >= 0);
+	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->maxValue = maxValue;
 }
 
-int PrimaryAttribute::get() const
+void PrimaryAttribute::clear()
 {
-	DebugAssert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
-	DebugAssert(this->baseValue <= PrimaryAttribute::MAX_VALUE);
-
-	return this->baseValue;
+	std::fill(std::begin(this->name), std::end(this->name), '\0');
+	this->maxValue = 0;
 }
 
-PrimaryAttributeName PrimaryAttribute::getAttributeName() const
+void PrimaryAttributes::init(int raceID, bool isMale, const ExeData &exeData)
 {
-	return this->attributeName;
+	BufferView<PrimaryAttribute> attributes = this->getAttributes();
+	for (int i = 0; i < COUNT; i++)
+	{
+		DebugAssertIndex(exeData.entities.attributeNames, i);
+		const std::string &attributeName = exeData.entities.attributeNames[i];
+		const int raceAttributesIndex = (raceID * 2) + (isMale ? 0 : 1); // Alternates male/female
+		DebugAssertIndex(exeData.entities.raceAttributes, raceAttributesIndex);
+		const BufferView<const uint8_t> raceAttributesView = exeData.entities.raceAttributes[raceAttributesIndex];
+		const uint8_t attributeValue = raceAttributesView[i]; // 0..255
+		const int attributeValueCorrected = static_cast<int>(std::round(static_cast<double>(attributeValue) / (255.0 / 100.0)));
+
+		PrimaryAttribute &attribute = attributes[i];
+		attribute.init(attributeName.c_str(), attributeValueCorrected);
+	}
 }
 
-std::vector<AttributeModifierName> PrimaryAttribute::getModifierNames() const
+BufferView<PrimaryAttribute> PrimaryAttributes::getAttributes()
 {
-	auto modifierNames = PrimaryAttributeModifierNames.at(this->getAttributeName());
-	return modifierNames;
+	return BufferView<PrimaryAttribute>(&this->strength, COUNT);
 }
 
-int PrimaryAttribute::getModifier() const
+BufferView<const PrimaryAttribute> PrimaryAttributes::getAttributes() const
 {
-	DebugAssert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
-	DebugAssert(this->baseValue <= PrimaryAttribute::MAX_VALUE);
-
-	// This value is exactly right. Try some more experiments.
-	int modifierValue = (this->baseValue - 50) / 10;
-	return modifierValue;
+	return BufferView<const PrimaryAttribute>(&this->strength, COUNT);
 }
 
-std::string PrimaryAttribute::toString() const
+void PrimaryAttributes::clear()
 {
-	std::string displayName = PrimaryAttributeDisplayNames.at(this->getAttributeName());
-	return displayName;
-}
-
-void PrimaryAttribute::set(int value)
-{
-	// The caller shouldn't try to set the value to a bad value. If only this was Ada!
-	// Ada has automatic bounds checking on numeric types, like "percent is 0.0...100.0"
-	// or something, so no assertions would be necessary.
-	DebugAssert(value >= PrimaryAttribute::MIN_VALUE);
-	DebugAssert(value <= PrimaryAttribute::MAX_VALUE);
-
-	this->baseValue = value;
+	for (PrimaryAttribute &attribute : this->getAttributes())
+	{
+		attribute.clear();
+	}
 }

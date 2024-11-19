@@ -10,7 +10,6 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../Stats/PrimaryAttribute.h"
-#include "../Stats/PrimaryAttributeName.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -50,8 +49,7 @@ namespace CharacterSheetUiView
 	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	std::map<PrimaryAttributeName, TextBox::InitInfo> getPlayerAttributeTextBoxInitInfoMap(
-		BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
+	std::vector<TextBox::InitInfo> getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

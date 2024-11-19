@@ -360,6 +360,7 @@ bool ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 		return false;
 	}
 
+	const int attributeNamesOffset = ExeData::get(*section, "AttributeNames");
 	const int creatureNamesOffset = ExeData::get(*section, "CreatureNames");
 	const int creatureLevelsOffset = ExeData::get(*section, "CreatureLevels");
 	const int creatureHitPointsOffset = ExeData::get(*section, "CreatureHitPoints");
@@ -389,6 +390,7 @@ bool ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 	const int citizenColorBaseOffset = ExeData::get(*section, "CitizenColorBase");
 	const int citizenSkinColorsOffset = ExeData::get(*section, "CitizenSkinColors");
 
+	initStringArray(this->attributeNames, data + attributeNamesOffset);
 	initStringArray(this->creatureNames, data + creatureNamesOffset);
 	initInt8Array(this->creatureLevels, data + creatureLevelsOffset);
 	initInt16PairArray(this->creatureHitPoints, data + creatureHitPointsOffset);

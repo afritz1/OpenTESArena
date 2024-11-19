@@ -13,7 +13,6 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../Stats/PrimaryAttribute.h"
-#include "../Stats/PrimaryAttributeName.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
@@ -59,21 +58,19 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 
-	const std::vector<PrimaryAttribute> playerAttributes = CharacterCreationUiModel::getPlayerAttributes(game);
-	const std::map<PrimaryAttributeName, TextBox::InitInfo>
-		playerAttributesTextBoxInitInfoMap = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
-			playerAttributes, fontLibrary);
-	for (const PrimaryAttribute attribute : playerAttributes)
+	const PrimaryAttributes &playerAttributes = CharacterCreationUiModel::getPlayerAttributes(game);
+	const BufferView<const PrimaryAttribute> playerAttributesView = playerAttributes.getAttributes();
+	const std::vector<TextBox::InitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(playerAttributesView, fontLibrary);
+	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
-		const int attributeValue = attribute.get();
+		const PrimaryAttribute &attribute = playerAttributesView.get(i);
+		const int attributeValue = attribute.maxValue;
 		const std::string attributeValueText = std::to_string(attributeValue);
-		const PrimaryAttributeName attributeName = attribute.getAttributeName();
-		const TextBox::InitInfo attributeTextBoxInitInfo = playerAttributesTextBoxInitInfoMap.at(attributeName);
-		this->attributeTextBoxes.insert({ attributeName, TextBox() });
-		if (!this->attributeTextBoxes.at(attributeName).init(attributeTextBoxInitInfo, attributeValueText, renderer))
+		DebugAssertIndex(playerAttributesTextBoxInitInfos, i);
+		const TextBox::InitInfo &attributeTextBoxInitInfo = playerAttributesTextBoxInitInfos[i];
+		if (!this->attributeTextBoxes[i].init(attributeTextBoxInitInfo, attributeValueText, renderer))
 		{
-			const std::string attributeNameText = attribute.toString();
-			DebugLogError("Couldn't init player " + attributeNameText + " text box.");
+			DebugLogError("Couldn't init player attribute " + std::string(attribute.name) + " text box.");
 			return false;
 		}
 	}
@@ -211,27 +208,29 @@ bool ChooseAttributesPanel::init()
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	for (const PrimaryAttributeName attributeName : PRIMARY_ATTRIBUTE_NAMES)
+	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
-		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeName]()
+		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeIndex]()
 		{
-			auto &charCreationState = game.getCharacterCreationState();
-			const PrimaryAttributeSet &attributes = charCreationState.getAttributes();
-			const int attributeValue = attributes.getValue(attributeName);
+			const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+			const PrimaryAttributes &attributes = charCreationState.getAttributes();
+			const PrimaryAttribute &attribute = attributes.getAttributes()[attributeIndex];
+			const int attributeValue = attribute.maxValue;
 			const std::string attributeValueText = std::to_string(attributeValue);
-			this->attributeTextBoxes.at(attributeName).setText(attributeValueText);
-			return this->attributeTextBoxes.at(attributeName).getTextureID();
+			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
+			attributeTextBox.setText(attributeValueText);
+			return attributeTextBox.getTextureID();
 		};
 
-		UiDrawCall::PositionFunc attributePositionFunc = [this, attributeName]()
+		UiDrawCall::PositionFunc attributePositionFunc = [this, attributeIndex]()
 		{
-			const Rect &attributeTextBoxRect = this->attributeTextBoxes.at(attributeName).getRect();
+			const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 			return attributeTextBoxRect.getTopLeft();
 		};
 
-		UiDrawCall::SizeFunc attributeSizeFunc = [this, attributeName]()
+		UiDrawCall::SizeFunc attributeSizeFunc = [this, attributeIndex]()
 		{
-			const Rect &attributeTextBoxRect = this->attributeTextBoxes.at(attributeName).getRect();
+			const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 			return Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight());
 		};
 

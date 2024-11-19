@@ -10,7 +10,7 @@
 #include "../Assets/MIFUtils.h"
 #include "../Items/ItemInventory.h"
 #include "../Math/MathUtils.h"
-#include "../Stats/PrimaryAttributeSet.h"
+#include "../Stats/PrimaryAttribute.h"
 #include "../World/Coord.h"
 
 class CharacterClassLibrary;
@@ -52,7 +52,7 @@ struct Player
 	int portraitID;
 	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
 	WeaponAnimation weaponAnimation;
-	PrimaryAttributeSet attributes;
+	PrimaryAttributes primaryAttributes;
 	ItemInventory inventory;
 
 	Player();
@@ -64,7 +64,7 @@ struct Player
 		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
 
 	// Make player with given attributes.
-	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, PrimaryAttributeSet &&attributes,
+	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 

@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include "CharacterCreationState.h"
+#include "../Assets/BinaryAssetLibrary.h"
 
 #include "components/debug/Debug.h"
 
@@ -24,7 +25,7 @@ int CharacterCreationState::getRaceIndex() const
 	return this->raceIndex;
 }
 
-const PrimaryAttributeSet &CharacterCreationState::getAttributes() const
+const PrimaryAttributes &CharacterCreationState::getAttributes() const
 {
 	return this->attributes;
 }
@@ -56,7 +57,9 @@ void CharacterCreationState::setRaceIndex(int index)
 
 void CharacterCreationState::rollAttributes(Random &random)
 {
-	this->attributes.init(this->raceIndex, this->male, random);
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	this->attributes.init(this->raceIndex, this->male, exeData);
 }
 
 void CharacterCreationState::setPortraitIndex(int index)

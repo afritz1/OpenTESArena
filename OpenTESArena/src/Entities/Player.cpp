@@ -21,7 +21,6 @@
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
-#include "../Stats/PrimaryAttributeName.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/CardinalDirection.h"
 
@@ -165,7 +164,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->portraitID = portraitID;
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->weaponAnimation.init(weaponID, exeData);
-	this->attributes.init(raceID, male, random);
+	this->primaryAttributes.init(raceID, male, exeData);
 	this->inventory.clear();
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
@@ -179,7 +178,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	PrimaryAttributeSet &&attributes, int portraitID, const CoordDouble3 &position, const Double3 &direction,
+	const PrimaryAttributes &primaryAttributes, int portraitID, const CoordDouble3 &position, const Double3 &direction,
 	const Double3 &velocity, double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
@@ -189,8 +188,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
 	this->maxWalkSpeed = maxWalkSpeed;
-	this->weaponAnimation.init(weaponID, exeData);
-	this->attributes = std::move(attributes);
+	this->weaponAnimation.init(weaponID, exeData);	
+	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
@@ -216,8 +215,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
 	const int weaponID = GetRandomWeaponIdForClass(charClassDef, random);
 	this->weaponAnimation.init(weaponID, exeData);
-	this->attributes.init(this->raceID, this->male, random);
-	
+	this->primaryAttributes.init(this->raceID, this->male, exeData);	
 	this->inventory.clear();
 	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 	for (int i = 0; i < itemLibrary.getCount(); i++)

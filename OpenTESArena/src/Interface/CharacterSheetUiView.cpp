@@ -9,7 +9,6 @@
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Stats/PrimaryAttribute.h"
-#include "../Stats/PrimaryAttributeName.h"
 
 TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
@@ -50,16 +49,14 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std:
 		fontLibrary);
 }
 
-std::map<PrimaryAttributeName, TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfoMap(
-	BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary)
+std::vector<TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary)
 {
-	std::map<PrimaryAttributeName, TextBox::InitInfo> textBoxInitInfoMap;
+	std::vector<TextBox::InitInfo> textBoxInitInfos;
 	
 	for (int i = 0; i < attributes.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = attributes[i];
-		const PrimaryAttributeName attributeName = attribute.getAttributeName();
-		const int attributeValue = attribute.get();
+		const int attributeValue = attribute.maxValue;
 		const std::string attributeValueStr = std::to_string(attributeValue);
 		TextBox::InitInfo initInfo = TextBox::InitInfo::makeWithXY(
 			attributeValueStr,
@@ -70,10 +67,10 @@ std::map<PrimaryAttributeName, TextBox::InitInfo> CharacterSheetUiView::getPlaye
 			CharacterSheetUiView::PlayerAttributeTextBoxAlignment,
 			fontLibrary);
 
-		textBoxInitInfoMap.emplace(attributeName, std::move(initInfo));
+		textBoxInitInfos.emplace_back(std::move(initInfo));
 	}
 
-	return textBoxInitInfoMap;
+	return textBoxInitInfos;
 }
 
 Int2 CharacterSheetUiView::getBodyOffset(Game &game)

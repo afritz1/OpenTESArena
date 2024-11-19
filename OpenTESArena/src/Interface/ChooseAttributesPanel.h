@@ -1,13 +1,10 @@
 #ifndef CHOOSE_ATTRIBUTES_PANEL_H
 #define CHOOSE_ATTRIBUTES_PANEL_H
 
-#include <map>
-#include <string>
 #include <vector>
 
 #include "Panel.h"
-#include "../Math/Vector2.h"
-#include "../Stats/PrimaryAttributeName.h"
+#include "../Stats/PrimaryAttribute.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 
@@ -20,7 +17,7 @@ class ChooseAttributesPanel : public Panel
 {
 private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
-	std::map<PrimaryAttributeName, TextBox> attributeTextBoxes;
+	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
 	Button<Game&, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;

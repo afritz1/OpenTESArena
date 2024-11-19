@@ -63,6 +63,7 @@ EquipmentSuffixes=0x3679E
 MagesGuildMenuName=0x42911
 
 [Entities]
+AttributeNames=0x3E500
 CreatureNames=0x36DBE
 CreatureLevels=0x3E669
 CreatureHitPoints=0x3E6B2

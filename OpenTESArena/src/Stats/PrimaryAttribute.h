@@ -1,41 +1,33 @@
 #ifndef PRIMARY_ATTRIBUTE_H
 #define PRIMARY_ATTRIBUTE_H
 
-#include <string>
-#include <vector>
+#include "components/utilities/BufferView.h"
 
-#include "../Math/Random.h"
+class ExeData;
 
-class AttributeModifier;
-
-enum class AttributeModifierName;
-enum class PrimaryAttributeName;
-
-// The AttributeModifier class is just for the modifier display names. The modifier 
-// value can be obtained in this class. AttributeModifiers are in PDF page 22 of the
-// manual.
-class PrimaryAttribute
+struct PrimaryAttribute
 {
-private:
-	static const int MIN_VALUE;
-	static const int MAX_VALUE;
+	char name[32];
+	int maxValue;
 
-	PrimaryAttributeName attributeName;
-	int baseValue; // Based on allocated points.
-public:
-	PrimaryAttribute(PrimaryAttributeName attributeName, int baseValue);
-	PrimaryAttribute(PrimaryAttributeName attributeName, int raceID, bool male, Random &random); // Rolls new value based on race & gender.
+	PrimaryAttribute();
+	
+	void init(const char *name, int maxValue);
+	void clear();
+};
 
-	int get() const;
-	PrimaryAttributeName getAttributeName() const;
-	std::vector<AttributeModifierName> getModifierNames() const;
-	int getModifier() const;
-	std::string toString() const;
+struct PrimaryAttributes
+{
+	static constexpr int COUNT = 8;
 
-	// Perhaps there would be a "getCalculatedValue(EquippedItems..., StatusEffects...)", 
-	// which would cap between the min and max value behind the scenes here.
+	PrimaryAttribute strength, intelligence, willpower, agility, speed, endurance, personality, luck;
 
-	void set(int value);
+	void init(int raceID, bool isMale, const ExeData &exeData);
+
+	BufferView<PrimaryAttribute> getAttributes();
+	BufferView<const PrimaryAttribute> getAttributes() const;
+
+	void clear();
 };
 
 #endif

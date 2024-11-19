@@ -33,8 +33,7 @@ std::string CharacterSheetUiModel::getPlayerClassName(Game &game)
 	return charClassDef.getName();
 }
 
-std::vector<PrimaryAttribute> CharacterSheetUiModel::getPlayerAttributes(Game &game)
+const PrimaryAttributes &CharacterSheetUiModel::getPlayerAttributes(Game &game)
 {
-	const Player &player = game.player;
-	return player.attributes.getAll();
+	return game.player.primaryAttributes;
 }

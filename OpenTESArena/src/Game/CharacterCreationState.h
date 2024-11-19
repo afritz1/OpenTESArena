@@ -6,7 +6,7 @@
 #include <string_view>
 
 #include "../Math/Random.h"
-#include "../Stats/PrimaryAttributeSet.h"
+#include "../Stats/PrimaryAttribute.h"
 
 class CharacterCreationState
 {
@@ -20,14 +20,14 @@ private:
 	int raceIndex;
 	int portraitIndex;
 	bool male;
-	PrimaryAttributeSet attributes;
+	PrimaryAttributes attributes;
 public:
 	CharacterCreationState();
 
 	const std::string_view getName() const;
 	int getClassDefID() const;
 	int getRaceIndex() const;
-	const PrimaryAttributeSet &getAttributes() const;
+	const PrimaryAttributes &getAttributes() const;
 	int getPortraitIndex() const;
 	bool isMale() const;
 
