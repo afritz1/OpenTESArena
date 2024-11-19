@@ -7,9 +7,9 @@
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Entities/CharacterClassLibrary.h"
-#include "../Entities/PrimaryAttribute.h"
-#include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
+#include "../Stats/PrimaryAttribute.h"
+#include "../Stats/PrimaryAttributeName.h"
 
 TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)

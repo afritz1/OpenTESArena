@@ -3,8 +3,8 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
-#include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
+#include "../Stats/PrimaryAttribute.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

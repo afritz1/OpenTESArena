@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "../Entities/PrimaryAttribute.h"
+#include "../Stats/PrimaryAttribute.h"
 
 class Game;
 

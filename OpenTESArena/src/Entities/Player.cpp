@@ -10,7 +10,6 @@
 #include "CharacterClassDefinition.h"
 #include "CharacterClassLibrary.h"
 #include "Player.h"
-#include "PrimaryAttributeName.h"
 #include "../Collision/CollisionChunk.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Collision/Physics.h"
@@ -22,6 +21,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
+#include "../Stats/PrimaryAttributeName.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/CardinalDirection.h"
 

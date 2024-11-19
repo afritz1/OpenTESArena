@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "../Entities/PrimaryAttribute.h"
 #include "../Math/Vector2.h"
+#include "../Stats/PrimaryAttribute.h"
 #include "../UI/TextRenderUtils.h"
 
 class CharacterClassDefinition;

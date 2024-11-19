@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "Panel.h"
-#include "../Entities/PrimaryAttributeName.h"
 #include "../Math/Vector2.h"
+#include "../Stats/PrimaryAttributeName.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 

@@ -6,11 +6,11 @@
 #include "Jolt/Physics/Character/CharacterVirtual.h"
 #include "Jolt/Physics/PhysicsSystem.h"
 
-#include "PrimaryAttributeSet.h"
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
 #include "../Items/ItemInventory.h"
 #include "../Math/MathUtils.h"
+#include "../Stats/PrimaryAttributeSet.h"
 #include "../World/Coord.h"
 
 class CharacterClassLibrary;

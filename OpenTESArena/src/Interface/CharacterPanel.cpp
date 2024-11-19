@@ -1,18 +1,16 @@
 #include <map>
 #include <vector>
 
-#include "SDL.h"
-
 #include "CharacterPanel.h"
 #include "CharacterSheetUiController.h"
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "CommonUiView.h"
-#include "../Entities/PrimaryAttribute.h"
-#include "../Entities/PrimaryAttributeName.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../Stats/PrimaryAttribute.h"
+#include "../Stats/PrimaryAttributeName.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 

@@ -2,8 +2,8 @@
 
 #include "CharacterSheetUiModel.h"
 #include "../Entities/CharacterClassLibrary.h"
-#include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
+#include "../Stats/PrimaryAttribute.h"
 
 #include "components/debug/Debug.h"
 

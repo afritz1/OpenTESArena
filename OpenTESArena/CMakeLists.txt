@@ -132,18 +132,12 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/SelectionUtils.h")
 
 SET(TES_ENTITIES
-    "${SRC_ROOT}/Entities/AttributeModifier.cpp"
-    "${SRC_ROOT}/Entities/AttributeModifier.h"
-    "${SRC_ROOT}/Entities/AttributeModifierName.h"
     "${SRC_ROOT}/Entities/CharacterClassDefinition.cpp"
     "${SRC_ROOT}/Entities/CharacterClassDefinition.h"
     "${SRC_ROOT}/Entities/CharacterClassLibrary.cpp"
     "${SRC_ROOT}/Entities/CharacterClassLibrary.h"
     "${SRC_ROOT}/Entities/CitizenUtils.cpp"
     "${SRC_ROOT}/Entities/CitizenUtils.h"
-    "${SRC_ROOT}/Entities/DerivedAttribute.cpp"
-    "${SRC_ROOT}/Entities/DerivedAttribute.h"
-    "${SRC_ROOT}/Entities/DerivedAttributeName.h"
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.cpp"
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.h"
     "${SRC_ROOT}/Entities/EntityAnimationInstance.cpp"
@@ -171,11 +165,6 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/EntityVisibilityChunkManager.h"
     "${SRC_ROOT}/Entities/Player.cpp"
     "${SRC_ROOT}/Entities/Player.h"
-    "${SRC_ROOT}/Entities/PrimaryAttribute.cpp"
-    "${SRC_ROOT}/Entities/PrimaryAttribute.h"
-    "${SRC_ROOT}/Entities/PrimaryAttributeName.h"
-    "${SRC_ROOT}/Entities/PrimaryAttributeSet.cpp"
-    "${SRC_ROOT}/Entities/PrimaryAttributeSet.h"
     "${SRC_ROOT}/Entities/WeaponAnimation.cpp"
     "${SRC_ROOT}/Entities/WeaponAnimation.h")
 
@@ -488,6 +477,19 @@ SET(TES_SKY
     "${SRC_ROOT}/Sky/SkyVisibilityManager.cpp"
     "${SRC_ROOT}/Sky/SkyVisibilityManager.h")
 
+SET(TES_STATS
+    "${SRC_ROOT}/Stats/AttributeModifier.cpp"
+    "${SRC_ROOT}/Stats/AttributeModifier.h"
+    "${SRC_ROOT}/Stats/AttributeModifierName.h"
+    "${SRC_ROOT}/Stats/DerivedAttribute.cpp"
+    "${SRC_ROOT}/Stats/DerivedAttribute.h"
+    "${SRC_ROOT}/Stats/DerivedAttributeName.h"
+    "${SRC_ROOT}/Stats/PrimaryAttribute.cpp"
+    "${SRC_ROOT}/Stats/PrimaryAttribute.h"
+    "${SRC_ROOT}/Stats/PrimaryAttributeName.h"
+    "${SRC_ROOT}/Stats/PrimaryAttributeSet.cpp"
+    "${SRC_ROOT}/Stats/PrimaryAttributeSet.h")
+
 SET(TES_TIME
     "${SRC_ROOT}/Time/ArenaClockUtils.cpp"
     "${SRC_ROOT}/Time/ArenaClockUtils.h"
@@ -674,6 +676,7 @@ SET(TES_SOURCES
     ${TES_MATH}
     ${TES_RENDERING}
     ${TES_SKY}
+    ${TES_STATS}
     ${TES_TIME}
     ${TES_UI}
     ${TES_UTILITIES}

@@ -5,8 +5,8 @@
 #include <optional>
 #include <string_view>
 
-#include "../Entities/PrimaryAttributeSet.h"
 #include "../Math/Random.h"
+#include "../Stats/PrimaryAttributeSet.h"
 
 class CharacterCreationState
 {
