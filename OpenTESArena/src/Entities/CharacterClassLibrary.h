@@ -21,8 +21,8 @@ public:
 	void init(const ExeData &exeData);
 
 	int getDefinitionCount() const;
-	bool findDefinitionIndexIf(const Predicate &predicate, int *outIndex) const;
 	const CharacterClassDefinition &getDefinition(int index) const;
+	bool findDefinitionIndexIf(const Predicate &predicate, int *outIndex) const;
 	bool tryGetDefinitionIndex(const CharacterClassDefinition &def, int *outIndex) const;
 };
 

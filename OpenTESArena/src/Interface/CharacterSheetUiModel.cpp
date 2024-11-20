@@ -2,6 +2,7 @@
 
 #include "CharacterSheetUiModel.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/CharacterRaceLibrary.h"
 #include "../Game/Game.h"
 #include "../Stats/PrimaryAttribute.h"
 
@@ -16,12 +17,9 @@ std::string CharacterSheetUiModel::getPlayerName(Game &game)
 std::string CharacterSheetUiModel::getPlayerRaceName(Game &game)
 {
 	const Player &player = game.player;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-	const auto &singularRaceNames = exeData.races.singularNames;
-	const int raceNameIndex = player.raceID;
-	DebugAssertIndex(singularRaceNames, raceNameIndex);
-	return singularRaceNames[raceNameIndex];
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(player.raceID);
+	return characterRaceDefinition.singularName;
 }
 
 std::string CharacterSheetUiModel::getPlayerClassName(Game &game)

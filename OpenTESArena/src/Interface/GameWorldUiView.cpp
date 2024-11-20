@@ -8,6 +8,7 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Collision/RayCastTypes.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/CharacterRaceLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
@@ -341,8 +342,17 @@ TextureAsset GameWorldUiView::getStatusGradientTextureAsset(StatusGradientType g
 
 TextureAsset GameWorldUiView::getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID)
 {
-	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, true);
-	return TextureAsset(std::string(headsFilename), portraitID);
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(raceID);
+
+	if (isMale)
+	{
+		return TextureAsset(std::string(characterRaceDefinition.maleGameUiHeadsFilename), portraitID);
+	}
+	else
+	{
+		return TextureAsset(std::string(characterRaceDefinition.femaleGameUiHeadsFilename), portraitID);
+	}
 }
 
 TextureAsset GameWorldUiView::getNoMagicTextureAsset()

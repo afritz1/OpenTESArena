@@ -148,6 +148,12 @@ int CharacterClassLibrary::getDefinitionCount() const
 	return static_cast<int>(this->defs.size());
 }
 
+const CharacterClassDefinition &CharacterClassLibrary::getDefinition(int index) const
+{
+	DebugAssertIndex(this->defs, index);
+	return this->defs[index];
+}
+
 bool CharacterClassLibrary::findDefinitionIndexIf(const Predicate &predicate, int *outIndex) const
 {
 	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)
@@ -161,12 +167,6 @@ bool CharacterClassLibrary::findDefinitionIndexIf(const Predicate &predicate, in
 	}
 
 	return false;
-}
-
-const CharacterClassDefinition &CharacterClassLibrary::getDefinition(int index) const
-{
-	DebugAssertIndex(this->defs, index);
-	return this->defs[index];
 }
 
 bool CharacterClassLibrary::tryGetDefinitionIndex(const CharacterClassDefinition &def, int *outIndex) const

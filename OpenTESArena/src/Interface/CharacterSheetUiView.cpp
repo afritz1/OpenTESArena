@@ -7,6 +7,7 @@
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/CharacterRaceLibrary.h"
 #include "../Game/Game.h"
 #include "../Stats/PrimaryAttribute.h"
 
@@ -157,23 +158,34 @@ TextureAsset CharacterSheetUiView::getNextPageButtonTextureAsset()
 TextureAsset CharacterSheetUiView::getBodyTextureAsset(Game &game)
 {
 	const Player &player = game.player;
-	const bool isMale = player.male;
-	const int raceID = player.raceID;
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(player.raceID);
 
-	std::string bodyFilename = ArenaPortraitUtils::getBody(isMale, raceID);
-	return TextureAsset(std::move(bodyFilename));
+	if (player.male)
+	{
+		return characterRaceDefinition.maleCharSheetBodyTextureAsset;
+	}
+	else
+	{
+		return characterRaceDefinition.femaleCharSheetBodyTextureAsset;
+	}
 }
 
 TextureAsset CharacterSheetUiView::getHeadTextureAsset(Game &game)
 {
 	const Player &player = game.player;
-	const bool isMale = player.male;
-	const int raceID = player.raceID;
-
-	constexpr bool trimmed = false;
-	std::string headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(player.raceID);
 	const int headIndex = player.portraitID;
-	return TextureAsset(std::move(headsFilename), headIndex);
+
+	if (player.male)
+	{
+		return TextureAsset(std::string(characterRaceDefinition.maleCharSheetHeadsFilename), headIndex);
+	}
+	else
+	{
+		return TextureAsset(std::string(characterRaceDefinition.femaleCharSheetHeadsFilename), headIndex);
+	}
 }
 
 TextureAsset CharacterSheetUiView::getShirtTextureAsset(Game &game)

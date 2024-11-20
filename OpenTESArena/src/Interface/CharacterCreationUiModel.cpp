@@ -3,6 +3,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/CharacterRaceLibrary.h"
 #include "../Game/Game.h"
 #include "../Stats/PrimaryAttribute.h"
 
@@ -18,12 +19,10 @@ std::string CharacterCreationUiModel::getPlayerName(Game &game)
 std::string CharacterCreationUiModel::getPlayerRaceName(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-	const auto &singularRaceNames = exeData.races.singularNames;
-	const int raceNameIndex = charCreationState.getRaceIndex();
-	DebugAssertIndex(singularRaceNames, raceNameIndex);
-	return singularRaceNames[raceNameIndex];
+	const int raceIndex = charCreationState.getRaceIndex();
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(raceIndex);
+	return std::string(characterRaceDefinition.singularName);
 }
 
 std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
@@ -341,9 +340,9 @@ std::string ChooseRaceUiModel::getProvinceConfirmTitleText(Game &game)
 	DebugAssertIndex(charCreationProvinceNames, raceIndex);
 	const std::string &provinceName = charCreationProvinceNames[raceIndex];
 
-	const auto &pluralRaceNames = exeData.races.pluralNames;
-	DebugAssertIndex(pluralRaceNames, raceIndex);
-	const std::string &pluralRaceName = pluralRaceNames[raceIndex];
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(raceIndex);
+	const std::string pluralRaceName = characterRaceDefinition.pluralName;
 
 	// Replace first %s with province name.
 	size_t index = text.find("%s");
@@ -366,16 +365,6 @@ std::string ChooseRaceUiModel::getProvinceConfirmNoText(Game &game)
 	return "No"; // @todo: get from ExeData
 }
 
-std::string ChooseRaceUiModel::getProvinceTooltipText(Game &game, int provinceID)
-{
-	// Get the race name associated with the province.
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const auto &pluralNames = exeData.races.pluralNames;
-	DebugAssertIndex(pluralNames, provinceID);
-	const std::string &raceName = pluralNames[provinceID];
-	return "Land of the " + raceName;
-}
-
 std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 {
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
@@ -390,9 +379,9 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 	DebugAssertIndex(charCreationProvinceNames, raceIndex);
 	const std::string &provinceName = charCreationProvinceNames[raceIndex];
 
-	const auto &pluralRaceNames = exeData.races.pluralNames;
-	DebugAssertIndex(pluralRaceNames, raceIndex);
-	const std::string &pluralRaceName = pluralRaceNames[raceIndex];
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(raceIndex);
+	const std::string pluralRaceName = characterRaceDefinition.pluralName;
 
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();

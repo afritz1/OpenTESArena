@@ -28,6 +28,7 @@
 #include "../Collision/PhysicsContactListener.h"
 #include "../Collision/PhysicsLayer.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/CharacterRaceLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
@@ -371,6 +372,7 @@ bool Game::init()
 	ItemMaterialLibrary::getInstance().init(exeData);
 	ItemLibrary::getInstance().init(exeData);
 	CharacterClassLibrary::getInstance().init(exeData);
+	CharacterRaceLibrary::getInstance().init(exeData);
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
 
 	this->sceneManager.init(this->textureManager, this->renderer);
