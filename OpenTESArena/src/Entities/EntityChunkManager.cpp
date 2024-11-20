@@ -2,6 +2,7 @@
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
+#include "ArenaCitizenUtils.h"
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityObservedResult.h"
@@ -508,7 +509,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		int8_t &citizenDirIndex = this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID);
 		if (animInst.currentStateIndex == idleStateIndex)
 		{
-			const bool shouldChangeToWalking = !isPlayerWeaponSheathed || (distToPlayerSqr > CitizenUtils::IDLE_DISTANCE_SQR) || isPlayerMoving;
+			const bool shouldChangeToWalking = !isPlayerWeaponSheathed || (distToPlayerSqr > ArenaCitizenUtils::IDLE_DISTANCE_REAL_SQR) || isPlayerMoving;
 
 			// @todo: need to preserve their previous direction so they stay aligned with
 			// the center of the voxel. Basically need to store cardinal direction as internal state.
@@ -526,7 +527,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		}
 		else if (animInst.currentStateIndex == walkStateIndex)
 		{
-			const bool shouldChangeToIdle = isPlayerWeaponSheathed && (distToPlayerSqr <= CitizenUtils::IDLE_DISTANCE_SQR) && !isPlayerMoving;
+			const bool shouldChangeToIdle = isPlayerWeaponSheathed && (distToPlayerSqr <= ArenaCitizenUtils::IDLE_DISTANCE_REAL_SQR) && !isPlayerMoving;
 			if (shouldChangeToIdle)
 			{
 				animInst.setStateIndex(*idleStateIndex);
@@ -583,7 +584,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					const CardinalDirectionName curDirectionName = CardinalDirection::getDirectionName(entityDir);
 
 					// Shuffle citizen direction indices so they don't all switch to the same direction every time.
-					constexpr auto &dirIndices = CitizenUtils::DIRECTION_INDICES;
+					constexpr auto &dirIndices = ArenaCitizenUtils::DIRECTION_INDICES;
 					int8_t randomDirectionIndices[std::size(dirIndices)];
 					std::copy(std::begin(dirIndices), std::end(dirIndices), std::begin(randomDirectionIndices));
 					RandomUtils::shuffle<int8_t>(randomDirectionIndices, random);
@@ -621,7 +622,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 			}
 
 			// Integrate by delta time.
-			const VoxelDouble2 entityVelocity = entityDir * CitizenUtils::SPEED;
+			const VoxelDouble2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
 			entityCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point + (entityVelocity * dt));
 
 			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;

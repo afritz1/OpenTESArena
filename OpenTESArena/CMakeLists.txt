@@ -132,6 +132,7 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/SelectionUtils.h")
 
 SET(TES_ENTITIES
+    "${SRC_ROOT}/Entities/ArenaCitizenUtils.h"
     "${SRC_ROOT}/Entities/CharacterClassDefinition.cpp"
     "${SRC_ROOT}/Entities/CharacterClassDefinition.h"
     "${SRC_ROOT}/Entities/CharacterClassLibrary.cpp"
