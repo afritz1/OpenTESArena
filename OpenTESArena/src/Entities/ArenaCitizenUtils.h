@@ -8,6 +8,15 @@
 
 namespace ArenaCitizenUtils
 {
+	constexpr int CITY_COUNT = 15;
+	constexpr int WILD_COUNT = 7;
+
+	// Min and max spawn distance from player.
+	constexpr int SPAWN_DISTANCE_MIN_UNITS = 2048;
+	constexpr int SPAWN_DISTANCE_MAX_UNITS = 3072;
+	constexpr double SPAWN_DISTANCE_MIN_REAL = static_cast<double>(SPAWN_DISTANCE_MIN_UNITS) / MIFUtils::ARENA_UNITS;
+	constexpr double SPAWN_DISTANCE_MAX_REAL = static_cast<double>(SPAWN_DISTANCE_MAX_UNITS) / MIFUtils::ARENA_UNITS;
+
 	// How far away a citizen will consider idling to the player.
 	constexpr int IDLE_DISTANCE_UNITS = 200;
 	constexpr double IDLE_DISTANCE_REAL = static_cast<double>(IDLE_DISTANCE_UNITS) / MIFUtils::ARENA_UNITS;
