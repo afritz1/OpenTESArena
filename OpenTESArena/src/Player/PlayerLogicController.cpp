@@ -1,4 +1,3 @@
-#include "MapLogicController.h"
 #include "PlayerLogicController.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaSoundName.h"
@@ -6,15 +5,16 @@
 #include "../Collision/Physics.h"
 #include "../Collision/RayCastTypes.h"
 #include "../Collision/SelectionUtils.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/TextBox.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../World/CardinalDirection.h"
 #include "../World/CardinalDirectionName.h"
+#include "../World/MapLogicController.h"
 
 #include "components/utilities/String.h"
 

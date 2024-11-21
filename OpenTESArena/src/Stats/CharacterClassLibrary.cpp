@@ -2,7 +2,7 @@
 
 #include "CharacterClassLibrary.h"
 #include "../Assets/ExeData.h"
-#include "../Game/CharacterClassGeneration.h"
+#include "../Player/CharacterClassGeneration.h"
 
 #include "components/debug/Debug.h"
 

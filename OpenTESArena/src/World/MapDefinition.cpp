@@ -14,10 +14,10 @@
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
 #include "../Assets/TextAssetLibrary.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Math/Random.h"
 #include "../Sky/SkyGeneration.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Weather/WeatherUtils.h"
 
 #include "components/debug/Debug.h"

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "../Entities/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassDefinition.h"
 
 // A definition for each question object in QUESTION.TXT. Each question has a 
 // description and three choices. Each choice points to a particular class category 

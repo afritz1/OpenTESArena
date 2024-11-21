@@ -8,9 +8,9 @@
 #include "PauseMenuPanel.h"
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
-#include "../Entities/Player.h"
 #include "../Game/Game.h"
-#include "../GameLogic/PlayerLogicController.h"
+#include "../Player/Player.h"
+#include "../Player/PlayerLogicController.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ArenaDateUtils.h"
 #include "../UI/FontLibrary.h"
@@ -26,8 +26,7 @@ void GameWorldUiController::onActivate(Game &game, const Int2 &screenPoint, Text
 	constexpr bool primaryInteraction = true;
 	const auto &inputManager = game.inputManager;
 	const bool debugFadeVoxel = inputManager.keyIsDown(SDL_SCANCODE_G);
-	PlayerLogicController::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction,
-		debugFadeVoxel, actionText);
+	PlayerLogicController::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction, debugFadeVoxel, actionText);
 }
 
 void GameWorldUiController::onActivateInputAction(const InputActionCallbackValues &values, TextBox &actionText)

@@ -7,8 +7,8 @@
 #include "BinaryAssetLibrary.h"
 #include "MIFUtils.h"
 #include "../Assets/TextureManager.h"
-#include "../Entities/CharacterClassDefinition.h"
-#include "../Entities/CharacterClassLibrary.h"
+#include "../Stats/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"

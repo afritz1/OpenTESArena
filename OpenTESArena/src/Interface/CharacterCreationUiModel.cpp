@@ -2,9 +2,10 @@
 #include "CharacterCreationUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
-#include "../Entities/CharacterClassLibrary.h"
-#include "../Entities/CharacterRaceLibrary.h"
 #include "../Game/Game.h"
+#include "../Player/CharacterCreationState.h"
+#include "../Stats/CharacterClassLibrary.h"
+#include "../Stats/CharacterRaceLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
 #include "components/debug/Debug.h"

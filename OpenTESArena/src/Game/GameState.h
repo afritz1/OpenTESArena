@@ -13,10 +13,10 @@
 
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
-#include "../Entities/Player.h"
 #include "../Interface/ProvinceMapUiModel.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
+#include "../Player/Player.h"
 #include "../Time/Clock.h"
 #include "../Time/Date.h"
 #include "../Weather/WeatherDefinition.h"

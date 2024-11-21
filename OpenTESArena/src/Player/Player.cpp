@@ -7,8 +7,6 @@
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
-#include "CharacterClassDefinition.h"
-#include "CharacterClassLibrary.h"
 #include "Player.h"
 #include "../Collision/CollisionChunk.h"
 #include "../Collision/CollisionChunkManager.h"
@@ -21,6 +19,8 @@
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
+#include "../Stats/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/CardinalDirection.h"
 

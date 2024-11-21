@@ -1,12 +1,12 @@
 #include <algorithm>
 
-#include "CharacterClassDefinition.h"
-#include "CharacterClassLibrary.h"
 #include "EntityDefinition.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityUtils.h"
 #include "../Math/Random.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Stats/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../World/ChunkUtils.h"
 
 #include "components/debug/Debug.h"

@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "Panel.h"
-#include "../Entities/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassDefinition.h"
 #include "../UI/Button.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextBox.h"

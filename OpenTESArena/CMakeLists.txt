@@ -133,14 +133,6 @@ SET(TES_COLLISION
 
 SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/ArenaCitizenUtils.h"
-    "${SRC_ROOT}/Entities/CharacterClassDefinition.cpp"
-    "${SRC_ROOT}/Entities/CharacterClassDefinition.h"
-    "${SRC_ROOT}/Entities/CharacterClassLibrary.cpp"
-    "${SRC_ROOT}/Entities/CharacterClassLibrary.h"
-    "${SRC_ROOT}/Entities/CharacterRaceDefinition.cpp"
-    "${SRC_ROOT}/Entities/CharacterRaceDefinition.h"
-    "${SRC_ROOT}/Entities/CharacterRaceLibrary.cpp"
-    "${SRC_ROOT}/Entities/CharacterRaceLibrary.h"
     "${SRC_ROOT}/Entities/CitizenUtils.cpp"
     "${SRC_ROOT}/Entities/CitizenUtils.h"
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.cpp"
@@ -167,32 +159,15 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/EntityVisibilityChunk.cpp"
     "${SRC_ROOT}/Entities/EntityVisibilityChunk.h"
     "${SRC_ROOT}/Entities/EntityVisibilityChunkManager.cpp"
-    "${SRC_ROOT}/Entities/EntityVisibilityChunkManager.h"
-    "${SRC_ROOT}/Entities/Player.cpp"
-    "${SRC_ROOT}/Entities/Player.h"
-    "${SRC_ROOT}/Entities/WeaponAnimation.cpp"
-    "${SRC_ROOT}/Entities/WeaponAnimation.h")
+    "${SRC_ROOT}/Entities/EntityVisibilityChunkManager.h")
 
 SET(TES_GAME
-    "${SRC_ROOT}/Game/CharacterClassGeneration.cpp"
-    "${SRC_ROOT}/Game/CharacterClassGeneration.h"
-    "${SRC_ROOT}/Game/CharacterCreationState.cpp"
-    "${SRC_ROOT}/Game/CharacterCreationState.h"
-    "${SRC_ROOT}/Game/CharacterQuestion.cpp"
-    "${SRC_ROOT}/Game/CharacterQuestion.h"
     "${SRC_ROOT}/Game/Game.cpp"
     "${SRC_ROOT}/Game/Game.h"
     "${SRC_ROOT}/Game/GameState.cpp"
     "${SRC_ROOT}/Game/GameState.h"
     "${SRC_ROOT}/Game/Options.cpp"
-    "${SRC_ROOT}/Game/Options.h"
-    "${SRC_ROOT}/Game/PlayerInterface.h")
-
-SET(TES_GAME_LOGIC
-    "${SRC_ROOT}/GameLogic/MapLogicController.cpp"
-    "${SRC_ROOT}/GameLogic/MapLogicController.h"
-    "${SRC_ROOT}/GameLogic/PlayerLogicController.cpp"
-    "${SRC_ROOT}/GameLogic/PlayerLogicController.h")
+    "${SRC_ROOT}/Game/Options.h")
 
 SET(TES_INPUT
     "${SRC_ROOT}/Input/ApplicationEvents.h"
@@ -398,6 +373,21 @@ SET(TES_MATH
     "${SRC_ROOT}/Math/Vector4.cpp"
     "${SRC_ROOT}/Math/Vector4.h")
 
+SET(TES_PLAYER
+    "${SRC_ROOT}/Player/CharacterClassGeneration.cpp"
+    "${SRC_ROOT}/Player/CharacterClassGeneration.h"
+    "${SRC_ROOT}/Player/CharacterCreationState.cpp"
+    "${SRC_ROOT}/Player/CharacterCreationState.h"
+    "${SRC_ROOT}/Player/CharacterQuestion.cpp"
+    "${SRC_ROOT}/Player/CharacterQuestion.h"
+    "${SRC_ROOT}/Player/Player.cpp"
+    "${SRC_ROOT}/Player/Player.h"
+    "${SRC_ROOT}/Player/PlayerInterface.h"
+    "${SRC_ROOT}/Player/PlayerLogicController.cpp"
+    "${SRC_ROOT}/Player/PlayerLogicController.h"
+    "${SRC_ROOT}/Player/WeaponAnimation.cpp"
+    "${SRC_ROOT}/Player/WeaponAnimation.h")
+
 SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.cpp"
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.h"
@@ -483,6 +473,14 @@ SET(TES_SKY
     "${SRC_ROOT}/Sky/SkyVisibilityManager.h")
 
 SET(TES_STATS
+    "${SRC_ROOT}/Stats/CharacterClassDefinition.cpp"
+    "${SRC_ROOT}/Stats/CharacterClassDefinition.h"
+    "${SRC_ROOT}/Stats/CharacterClassLibrary.cpp"
+    "${SRC_ROOT}/Stats/CharacterClassLibrary.h"
+    "${SRC_ROOT}/Stats/CharacterRaceDefinition.cpp"
+    "${SRC_ROOT}/Stats/CharacterRaceDefinition.h"
+    "${SRC_ROOT}/Stats/CharacterRaceLibrary.cpp"
+    "${SRC_ROOT}/Stats/CharacterRaceLibrary.h"
     "${SRC_ROOT}/Stats/PrimaryAttribute.cpp"
     "${SRC_ROOT}/Stats/PrimaryAttribute.h")
 
@@ -631,6 +629,8 @@ SET(TES_WORLD
     "${SRC_ROOT}/World/MapDefinition.h"
     "${SRC_ROOT}/World/MapGeneration.cpp"
     "${SRC_ROOT}/World/MapGeneration.h"
+    "${SRC_ROOT}/World/MapLogicController.cpp"
+    "${SRC_ROOT}/World/MapLogicController.h"
     "${SRC_ROOT}/World/MapType.h"
     "${SRC_ROOT}/World/MeshUtils.cpp"
     "${SRC_ROOT}/World/MeshUtils.h"
@@ -665,11 +665,11 @@ SET(TES_SOURCES
     ${TES_COLLISION}
     ${TES_ENTITIES}
     ${TES_GAME}
-    ${TES_GAME_LOGIC}
     ${TES_INPUT}
     ${TES_INTERFACE}
     ${TES_ITEMS}
     ${TES_MATH}
+    ${TES_PLAYER}
     ${TES_RENDERING}
     ${TES_SKY}
     ${TES_STATS}

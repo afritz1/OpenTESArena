@@ -1,18 +1,18 @@
 #include "MapLogicController.h"
+#include "MapType.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Collision/RayCastTypes.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
 #include "../Sky/SkyUtils.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../UI/TextBox.h"
 #include "../Voxels/VoxelFacing3D.h"
-#include "../World/MapType.h"
 
 void MapLogicController::handleNightLightChange(Game &game, bool active)
 {

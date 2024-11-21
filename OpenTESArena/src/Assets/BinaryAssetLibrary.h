@@ -8,7 +8,7 @@
 #include "CityDataFile.h"
 #include "ExeData.h"
 #include "WorldMapMask.h"
-#include "../Game/CharacterClassGeneration.h"
+#include "../Player/CharacterClassGeneration.h"
 
 #include "components/utilities/BufferView.h"
 #include "components/utilities/Singleton.h"

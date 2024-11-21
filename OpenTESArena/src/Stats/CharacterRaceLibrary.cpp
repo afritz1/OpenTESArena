@@ -1,7 +1,7 @@
+#include "CharacterRaceLibrary.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
-#include "CharacterRaceLibrary.h"
 
 #include "components/debug/Debug.h"
 

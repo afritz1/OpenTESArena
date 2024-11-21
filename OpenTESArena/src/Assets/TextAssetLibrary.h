@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "../Game/CharacterQuestion.h"
+#include "../Player/CharacterQuestion.h"
 
 #include "components/utilities/BufferView.h"
 #include "components/utilities/Singleton.h"

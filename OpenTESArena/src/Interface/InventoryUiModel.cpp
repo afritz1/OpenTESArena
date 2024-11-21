@@ -2,9 +2,9 @@
 
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
-#include "../Entities/Player.h"
 #include "../Game/Game.h"
 #include "../Items/ItemLibrary.h"
+#include "../Player/Player.h"
 
 void InventoryUiModel::ItemUiDefinition::init(const std::string &text, const Color &color)
 {

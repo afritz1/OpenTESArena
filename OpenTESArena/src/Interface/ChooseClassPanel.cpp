@@ -5,9 +5,9 @@
 #include "CharacterCreationUiView.h"
 #include "ChooseClassPanel.h"
 #include "CommonUiView.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
 
 #include "components/debug/Debug.h"
