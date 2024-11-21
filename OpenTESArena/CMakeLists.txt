@@ -374,6 +374,8 @@ SET(TES_MATH
     "${SRC_ROOT}/Math/Vector4.h")
 
 SET(TES_PLAYER
+    "${SRC_ROOT}/Player/ArenaPlayerUtils.cpp"
+    "${SRC_ROOT}/Player/ArenaPlayerUtils.h"
     "${SRC_ROOT}/Player/CharacterClassGeneration.cpp"
     "${SRC_ROOT}/Player/CharacterClassGeneration.h"
     "${SRC_ROOT}/Player/CharacterCreationState.cpp"
