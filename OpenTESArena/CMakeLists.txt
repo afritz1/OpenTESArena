@@ -133,6 +133,8 @@ SET(TES_COLLISION
 
 SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/ArenaCitizenUtils.h"
+    "${SRC_ROOT}/Entities/ArenaEntityUtils.cpp"
+    "${SRC_ROOT}/Entities/ArenaEntityUtils.h"
     "${SRC_ROOT}/Entities/CitizenUtils.cpp"
     "${SRC_ROOT}/Entities/CitizenUtils.h"
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.cpp"
