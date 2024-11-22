@@ -1,12 +1,10 @@
+#include <algorithm>
+
+#include "ArenaItemUtils.h"
 #include "ItemLibrary.h"
 #include "../Assets/ExeData.h"
 
 #include "components/debug/Debug.h"
-
-namespace
-{
-	constexpr double KilogramsDivisor = 256.0; // @todo: move this to some ArenaItemUtils
-}
 
 void ItemLibrary::init(const ExeData &exeData)
 {
@@ -19,6 +17,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
+	constexpr double kgDivisor = ArenaItemUtils::KilogramsDivisor;
 	constexpr int armorCount = 7; // Ignores shields at end.
 	const BufferView<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames.data(), armorCount);
 	const BufferView<const std::string> chainArmorNames(exeData.equipment.chainArmorNames.data(), armorCount);
@@ -33,7 +32,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		itemDef.init(ItemType::Armor);
 
 		const int weightOriginal = leatherArmorWeights[i];
-		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
 		itemDef.armor.initLeather(leatherArmorNames[i].c_str(), weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -44,7 +43,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		itemDef.init(ItemType::Armor);
 
 		const int weightOriginal = chainArmorWeights[i];
-		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
 		itemDef.armor.initChain(chainArmorNames[i].c_str(), weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -55,7 +54,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		itemDef.init(ItemType::Armor);
 
 		const int weightOriginal = plateArmorWeights[i];
-		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
 		itemDef.armor.initPlate(armorNames[i].c_str(), weightKg, -1); // @todo: for loop over all materials
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -88,7 +87,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		itemDef.init(ItemType::Shield);
 
 		const int weightOriginal = shieldWeights[i];
-		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
 		itemDef.shield.init(shieldNames[i].c_str(), weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -114,13 +113,16 @@ void ItemLibrary::init(const ExeData &exeData)
 
 		const char *weaponName = weaponNames[i].c_str();
 		const int weightOriginal = weaponWeights[i];
-		const double weightKg = static_cast<double>(weightOriginal) / KilogramsDivisor;
+		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
 		const int basePrice = weaponBasePrices[i];
 		const int damageMin = weaponDamages[i].first;
 		const int damageMax = weaponDamages[i].second;
 		const int handCount = weaponHandednesses[i];
 		const ItemMaterialDefinitionID materialDefID = -1; // @todo: for loop over all materials
-		const bool isRanged = (i == 16) || (i == 17);
+
+		const auto rangedWeaponIDsBegin = std::begin(ArenaItemUtils::RangedWeaponIDs);
+		const auto rangedWeaponIDsEnd = std::end(ArenaItemUtils::RangedWeaponIDs);
+		const bool isRanged = std::find(rangedWeaponIDsBegin, rangedWeaponIDsEnd, i) != rangedWeaponIDsEnd;
 
 		if (!isRanged)
 		{

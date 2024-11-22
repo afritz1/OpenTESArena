@@ -338,6 +338,7 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/WorldMapUiView.h")
 
 SET(TES_ITEMS
+    "${SRC_ROOT}/Items/ArenaItemUtils.h"
     "${SRC_ROOT}/Items/ItemConditionLibrary.cpp"
     "${SRC_ROOT}/Items/ItemConditionLibrary.h"
     "${SRC_ROOT}/Items/ItemDefinition.cpp"
