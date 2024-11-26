@@ -5,6 +5,7 @@
 #include "FontFile.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
 namespace
@@ -37,7 +38,8 @@ bool FontFile::init(const char *filename)
 	// The character height is in the first byte.
 	const uint8_t charHeight = srcPtr[0];
 	const uint8_t *counts = srcPtr;
-	const uint16_t *lines = reinterpret_cast<const uint16_t*>(counts + 95);
+	const uint16_t *linesPtr = reinterpret_cast<const uint16_t*>(counts + 95);
+	int linesOffset = 0;
 
 	std::array<FontElement, 96> symbols;
 	symbols.fill(FontElement());
@@ -56,8 +58,8 @@ bool FontFile::init(const char *filename)
 		{
 			DebugAssertIndex(element.lines, lineNum);
 			uint16_t &line = element.lines[lineNum];
-			line = *lines;
-			lines++;
+			line = Bytes::getLE16(reinterpret_cast<const uint8_t*>(linesPtr + linesOffset));
+			linesOffset++;
 
 			uint16_t mask = 0x8000;
 			for (uint32_t c = 0; c < 16; c++)
