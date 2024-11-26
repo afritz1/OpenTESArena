@@ -80,6 +80,7 @@ namespace Bytes
 	T ror(T value, unsigned int count)
 	{
 		static_assert(std::is_integral_v<T>);
+		static_assert(std::is_unsigned_v<T>);
 		constexpr unsigned int mask = (CHAR_BIT * sizeof(value)) - 1;
 		count &= mask;
 		return (value >> count) | (value << (static_cast<unsigned int>(-static_cast<int>(count)) & mask));
@@ -90,6 +91,7 @@ namespace Bytes
 	T rol(T value, unsigned int count)
 	{
 		static_assert(std::is_integral_v<T>);
+		static_assert(std::is_unsigned_v<T>);
 		constexpr unsigned int mask = (CHAR_BIT * sizeof(value)) - 1;
 		count &= mask;
 		return (value << count) | (value >> (static_cast<unsigned int>(-static_cast<int>(count)) & mask));
