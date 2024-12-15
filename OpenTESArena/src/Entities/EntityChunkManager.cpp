@@ -325,7 +325,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				return false;
 			}
 
-			const bool isMale = random.next(2) == 0;
+			const bool isMale = random.nextBool();
 			const EntityDefID entityDefID = isMale ? citizenGenInfo->maleEntityDefID : citizenGenInfo->femaleEntityDefID;
 			const EntityDefinition &entityDef = isMale ? *citizenGenInfo->maleEntityDef : *citizenGenInfo->femaleEntityDef;
 			const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();

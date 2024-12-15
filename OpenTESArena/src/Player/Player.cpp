@@ -181,7 +181,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 {
 	this->displayName = "Player";
 	this->firstName = GetFirstName(this->displayName);
-	this->male = random.next(2) == 0;
+	this->male = random.nextBool();
 	this->raceID = random.next(8);
 	this->charClassDefID = random.next(charClassLibrary.getDefinitionCount());
 	this->portraitID = random.next(10);
