@@ -30,16 +30,13 @@
 
 namespace
 {
-	bool TryCreatePhysicsCollider(const CoordDouble2 &coord, double ceilingScale, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const CoordDouble2 &coord, double colliderHeight, double ceilingScale, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-		// @todo: use first frame of front-facing idle animation for dimensions?
-
-		const double capsuleRadius = 0.20;
-		const double capsuleTotalHeight = 0.65;
-		const double capsuleHalfTotalHeight = capsuleTotalHeight * 0.50;
-		const double capsuleCylinderHeight = capsuleTotalHeight - (capsuleRadius * 2.0);
+		const double capsuleHalfTotalHeight = colliderHeight * 0.50;
+		const double capsuleRadius = std::min(colliderHeight, 0.20);
+		const double capsuleCylinderHeight = std::max(colliderHeight - (capsuleRadius * 2.0), 0.0);
 		const double capsuleCylinderHalfHeight = capsuleCylinderHeight * 0.50;
 		DebugAssert(capsuleCylinderHalfHeight >= 0.0);
 
@@ -272,7 +269,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				animInst.setStateIndex(*defaultAnimStateIndex);
 
 				const bool isSensor = !EntityUtils::hasCollision(entityDef);
-				if (!TryCreatePhysicsCollider(entityCoord, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
+				if (!TryCreatePhysicsCollider(entityCoord, animMaxHeight, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
 				{
 					DebugLogError("Couldn't allocate Jolt physics body for entity.");
 				}
@@ -401,7 +398,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			// Citizens don't collide with player.
 			constexpr bool isSensor = true;
-			if (!TryCreatePhysicsCollider(entityCoord, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
+			if (!TryCreatePhysicsCollider(entityCoord, animMaxHeight, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
 			{
 				DebugLogError("Couldn't allocate Jolt physics body for entity.");
 			}
