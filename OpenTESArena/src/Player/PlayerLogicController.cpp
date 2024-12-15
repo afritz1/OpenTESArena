@@ -288,11 +288,11 @@ namespace PlayerLogicController
 			{
 				accelDirection = accelDirection.normalized();
 
-				const CoordDouble3 playerCoord = player.getEyeCoord();
 				constexpr double ghostSpeed = 10.0;
-				const VoxelDouble3 deltaPoint = accelDirection * (ghostSpeed * dt);
-				const CoordDouble3 newPlayerCoord = ChunkUtils::recalculateCoord(playerCoord.chunk, playerCoord.point + deltaPoint);
-				player.setPhysicsPosition(VoxelUtils::coordToWorldPoint(newPlayerCoord));
+				const WorldDouble3 playerFeetPosition = player.getFeetPosition();
+				const WorldDouble3 deltaPosition = accelDirection * (ghostSpeed * dt);
+				const WorldDouble3 newPlayerFeetPosition = playerFeetPosition + deltaPosition;
+				player.setPhysicsPositionRelativeToFeet(newPlayerFeetPosition);
 			}
 		}		
 	}

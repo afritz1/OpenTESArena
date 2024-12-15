@@ -539,7 +539,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		// Initialize player.
-		const CoordDouble3 dummyPosition(ChunkInt2::Zero, VoxelDouble3::Zero);
+		const CoordDouble3 dummyCoord(ChunkInt2::Zero, VoxelDouble3::Zero);
 		const Double3 direction(
 			CardinalDirection::North.x,
 			0.0,
@@ -567,7 +567,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 		Player &player = game.player;
 		player.init(std::string(name), male, raceIndex, charClassDefID, attributes, portraitIndex,
-			dummyPosition, direction, velocity, PlayerConstants::DEFAULT_WALK_SPEED, weaponID, exeData, game.physicsSystem);
+			dummyCoord, direction, velocity, PlayerConstants::DEFAULT_WALK_SPEED, weaponID, exeData, game.physicsSystem);
 	};
 
 	gameStateFunction(game);

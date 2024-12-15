@@ -60,12 +60,12 @@ struct Player
 
 	// Make player with rolled attributes based on race & gender.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+		int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
 
 	// Make player with given attributes.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
-		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+		int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
 	// Initializes a random player for testing.
@@ -76,9 +76,10 @@ struct Player
 	void setCameraFrame(const Double3 &forward);
 
 	bool isPhysicsInited() const;
-	WorldDouble3 getPhysicsPosition() const; // Center of the character collider.
+	WorldDouble3 getPhysicsPosition() const; // Center of the character collider (halfway between eyes and feet).
 	Double3 getPhysicsVelocity() const;
-	void setPhysicsPosition(const WorldDouble3 &position); // Instantly sets position of the collider. Not the camera eye.
+	void setPhysicsPosition(const WorldDouble3 &position); // Instantly sets collider position. Drives where camera eye is next.
+	void setPhysicsPositionRelativeToFeet(const WorldDouble3 &feetPosition); // Instantly sets collider position using new feet as reference.
 	void setPhysicsVelocity(const Double3 &velocity);
 	WorldDouble3 getEyePosition() const;
 	CoordDouble3 getEyeCoord() const;

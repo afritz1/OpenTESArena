@@ -153,7 +153,7 @@ Player::~Player()
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
+	int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction, const Double3 &velocity,
 	double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
 {
 	this->displayName = displayName;
@@ -172,13 +172,13 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(position));
+	this->setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(feetCoord));
 	this->setPhysicsVelocity(velocity);
 	this->setCameraFrame(direction);
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	const PrimaryAttributes &primaryAttributes, int portraitID, const CoordDouble3 &position, const Double3 &direction,
+	const PrimaryAttributes &primaryAttributes, int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction,
 	const Double3 &velocity, double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
@@ -197,7 +197,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(position));
+	this->setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(feetCoord));
 	this->setPhysicsVelocity(velocity);
 	this->setCameraFrame(direction);
 }
@@ -230,7 +230,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	}
 
 	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
-	this->setPhysicsPosition(VoxelUtils::coordToWorldPoint(position));
+	this->setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(position));
 	this->setPhysicsVelocity(Double3::Zero);
 
 	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
@@ -302,6 +302,19 @@ void Player::setPhysicsPosition(const WorldDouble3 &position)
 		static_cast<float>(position.z));
 	this->physicsCharacter->SetPosition(physicsPosition);
 	this->physicsCharacterVirtual->SetPosition(physicsPosition);
+}
+
+void Player::setPhysicsPositionRelativeToFeet(const WorldDouble3 &feetPosition)
+{
+	DebugAssert(this->isPhysicsInited());
+	const JPH::Shape *colliderShape = this->physicsCharacter->GetShape();
+	const JPH::AABox colliderBBox = colliderShape->GetLocalBounds();
+	const float colliderHeight = colliderBBox.GetSize().GetY();
+	const WorldDouble3 newPhysicsPosition(
+		feetPosition.x,
+		feetPosition.y + (static_cast<double>(colliderHeight) * 0.5),
+		feetPosition.z);
+	this->setPhysicsPosition(newPhysicsPosition);
 }
 
 void Player::setPhysicsVelocity(const Double3 &velocity)

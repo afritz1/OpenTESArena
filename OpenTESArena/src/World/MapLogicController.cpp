@@ -574,18 +574,18 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 
 		// Lambda for opening the world map when the player enters a transition voxel
 		// that will "lead to the surface of the dungeon".
-		auto switchToWorldMap = [&playerCoord, &game, &player]()
+		auto switchToWorldMap = [&playerCoord, &game, &gameState, &player]()
 		{
 			// Move player to center of previous voxel in case they change their mind
 			// about fast traveling. Don't change their direction.
 			const VoxelInt2 playerVoxelXZ(playerCoord.voxel.x, playerCoord.voxel.z);
 			const VoxelDouble2 playerVoxelCenterXZ = VoxelUtils::getVoxelCenter(playerVoxelXZ);
-			const VoxelDouble3 playerDestinationPoint(
+			const VoxelDouble3 playerFeetDestinationPoint(
 				playerVoxelCenterXZ.x,
-				player.getEyeCoord().point.y,
+				gameState.getActiveCeilingScale(),
 				playerVoxelCenterXZ.y);
-			const CoordDouble3 playerDestinationCoord(playerCoord.chunk, playerDestinationPoint);
-			player.setPhysicsPosition(VoxelUtils::coordToWorldPoint(playerDestinationCoord));
+			const WorldDouble3 playerFeetDestinationPosition = VoxelUtils::coordToWorldPoint(CoordDouble3(playerCoord.chunk, playerFeetDestinationPoint));
+			player.setPhysicsPositionRelativeToFeet(playerFeetDestinationPosition);
 			player.setPhysicsVelocity(Double3::Zero);
 
 			game.setPanel<WorldMapPanel>();
