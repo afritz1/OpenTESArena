@@ -35,7 +35,7 @@ namespace
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
 		const double capsuleHalfTotalHeight = colliderHeight * 0.50;
-		const double capsuleRadius = std::min(colliderHeight, 0.20);
+		const double capsuleRadius = std::min(capsuleHalfTotalHeight, 0.20);
 		const double capsuleCylinderHeight = std::max(colliderHeight - (capsuleRadius * 2.0), 0.0);
 		const double capsuleCylinderHalfHeight = capsuleCylinderHeight * 0.50;
 		DebugAssert(capsuleCylinderHalfHeight >= 0.0);
