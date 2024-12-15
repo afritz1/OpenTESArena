@@ -153,31 +153,6 @@ Player::~Player()
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction, const Double3 &velocity,
-	double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
-{
-	this->displayName = displayName;
-	this->firstName = GetFirstName(displayName);
-	this->male = male;
-	this->raceID = raceID;
-	this->charClassDefID = charClassDefID;
-	this->portraitID = portraitID;
-	this->maxWalkSpeed = maxWalkSpeed;
-	this->weaponAnimation.init(weaponID, exeData);
-	this->primaryAttributes.init(raceID, male, exeData);
-	this->inventory.clear();
-	
-	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
-	{
-		DebugCrash("Couldn't create player physics collider.");
-	}
-
-	this->setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(feetCoord));
-	this->setPhysicsVelocity(velocity);
-	this->setCameraFrame(direction);
-}
-
-void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 	const PrimaryAttributes &primaryAttributes, int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction,
 	const Double3 &velocity, double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {

@@ -58,11 +58,6 @@ struct Player
 	Player();
 	~Player();
 
-	// Make player with rolled attributes based on race & gender.
-	void init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-		int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction, const Double3 &velocity,
-		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
-
 	// Make player with given attributes.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
 		int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction, const Double3 &velocity,
