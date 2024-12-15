@@ -6,6 +6,7 @@ namespace ArenaItemUtils
 	// Converts Arena weight units to kilograms.
 	constexpr double KilogramsDivisor = 256.0;
 
+	constexpr int FistsWeaponID = -1;
 	constexpr int RangedWeaponIDs[] = { 16, 17 };
 }
 

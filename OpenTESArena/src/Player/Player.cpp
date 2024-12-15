@@ -15,6 +15,7 @@
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
+#include "../Items/ArenaItemUtils.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
@@ -126,8 +127,7 @@ namespace
 			weapons.set(i, charClassDef.getAllowedWeapon(i));
 		}
 
-		// Fists.
-		weapons.set(allowedWeaponCount, -1);
+		weapons.set(allowedWeaponCount, ArenaItemUtils::FistsWeaponID);
 
 		const int randIndex = random.next(weapons.getCount());
 		return weapons.get(randIndex);
