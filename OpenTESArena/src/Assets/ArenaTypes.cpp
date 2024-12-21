@@ -82,9 +82,11 @@ void ArenaTypes::SaveGame::init(const uint8_t *data)
 	const uint8_t *gameStateEnd = gameStateStart + GameState::SIZE;
 	this->gameState.init(gameStateStart);
 
-	const uint16_t *gameLevelStart = reinterpret_cast<const uint16_t*>(gameStateEnd);
-	const uint16_t *gameLevelEnd = gameLevelStart + this->gameLevel.size();
-	std::copy(gameLevelStart, gameLevelEnd, this->gameLevel.begin());
+	const uint8_t *gameLevelStart = gameStateEnd;
+	for (int i = 0; i < static_cast<int>(this->gameLevel.size()); i++)
+	{
+		this->gameLevel[i] = Bytes::getLE16(gameLevelStart + (i * 2));
+	}
 }
 
 void ArenaTypes::InventoryItem::init(const uint8_t *data)
