@@ -729,7 +729,7 @@ bool ExeData::RaisedPlatforms::init(const char *data, const KeyValueFile &keyVal
 	initInt16Array(this->boxArraysCopy, data + boxArraysCopyOffset);
 	initInt16Array(this->box3a, data + box3aOffset);
 	initInt16Array(this->box3b, data + box3bOffset);
-	initInt8Array(this->box4, data + box4Offset);
+	initInt16Array(this->box4, data + box4Offset);
 
 	this->heightsInterior.init(this->boxArrays.data(), 8);
 	this->heightsCity.init(this->boxArrays.data() + 8, 8);
@@ -739,7 +739,7 @@ bool ExeData::RaisedPlatforms::init(const char *data, const KeyValueFile &keyVal
 	this->thicknessesWild = this->thicknessesCity;
 	this->texMappingInterior.init(this->box3a);
 	this->texMappingCity.init(this->box3b);
-	this->texMappingWild.init(reinterpret_cast<uint16_t*>(this->box4.data()), 8); // Treat Box4 as a Box3C.
+	this->texMappingWild.init(this->box4); // Treat Box4 as a Box3C.
 
 	return true;
 }

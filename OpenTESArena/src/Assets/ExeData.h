@@ -430,7 +430,7 @@ public:
 		std::array<uint16_t, 8> box3a, box3b;
 
 		// Number of texels tall a 64x64 texture is rendered as, also used with calculation for starting row in texture.
-		std::array<uint8_t, 16> box4;
+		std::array<uint16_t, 8> box4;
 
 		BufferView<uint16_t> heightsInterior, heightsCity, heightsWild;
 		BufferView<uint16_t> thicknessesInterior, thicknessesCity, thicknessesWild;
