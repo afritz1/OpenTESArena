@@ -383,11 +383,7 @@ bool MIFFile::init(const char *filename)
 	// Load start locations from the header. Not all are set (i.e., some are (0, 0)).
 	for (size_t i = 0; i < this->startPoints.size(); i++)
 	{
-		static_assert(std::tuple_size<decltype(mifHeader.startX)>::value ==
-			std::tuple_size<decltype(this->startPoints)>::value);
-		static_assert(std::tuple_size<decltype(mifHeader.startY)>::value ==
-			std::tuple_size<decltype(this->startPoints)>::value);
-
+		static_assert(std::tuple_size<decltype(this->startPoints)>::value == ArenaTypes::MIFHeader::START_POINT_COUNT);
 		const uint16_t mifX = mifHeader.startX[i];
 		const uint16_t mifY = mifHeader.startY[i];
 		this->startPoints[i] = OriginalInt2(mifX, mifY);

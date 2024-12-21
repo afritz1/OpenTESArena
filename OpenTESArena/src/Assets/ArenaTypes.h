@@ -143,11 +143,13 @@ namespace ArenaTypes
 
 	struct MIFHeader
 	{
+		static constexpr int START_POINT_COUNT = 4;
+
 		uint8_t unknown1, entryCount;
-		std::array<uint16_t, 4> startX, startY;
+		uint16_t startX[START_POINT_COUNT], startY[START_POINT_COUNT];
 		uint8_t startingLevelIndex, levelCount, unknown2;
 		uint16_t mapWidth, mapHeight;
-		std::array<uint8_t, 34> unknown3;
+		uint8_t unknown3[34];
 
 		void init(const uint8_t *data);
 	};
