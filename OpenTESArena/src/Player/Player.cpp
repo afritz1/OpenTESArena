@@ -8,6 +8,7 @@
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
 #include "Player.h"
+#include "WeaponAnimationLibrary.h"
 #include "../Collision/CollisionChunk.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Collision/Physics.h"
@@ -132,6 +133,28 @@ namespace
 		const int randIndex = random.next(weapons.getCount());
 		return weapons.get(randIndex);
 	}
+
+	void InitWeaponAnimationInstance(WeaponAnimationInstance &animInst, int weaponID)
+	{
+		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+		const WeaponAnimationDefinition &animDef = weaponAnimLibrary.getDefinition(weaponID);
+
+		animInst.clear();
+		for (int i = 0; i < animDef.stateCount; i++)
+		{
+			const WeaponAnimationDefinitionState &animDefState = animDef.states[i];
+			animInst.addState(animDefState.seconds);
+		}
+
+		int defaultStateIndex = -1;
+		if (!animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHED.c_str(), &defaultStateIndex))
+		{
+			DebugLogError("Couldn't get sheathed state for weapon ID " + std::to_string(weaponID) + ".");
+			return;
+		}
+
+		animInst.setStateIndex(defaultStateIndex);
+	}
 }
 
 Player::Player()
@@ -142,6 +165,7 @@ Player::Player()
 	this->portraitID = -1;
 	this->setCameraFrame(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
 	this->maxWalkSpeed = 0.0;
+	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
 	this->physicsCharacter = nullptr;
 	this->physicsCharacterVirtual = nullptr;
 }
@@ -163,7 +187,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
 	this->maxWalkSpeed = maxWalkSpeed;
-	this->weaponAnimation.init(weaponID, exeData);	
+	this->weaponAnimDefID = weaponID;
+	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
 	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
 	
@@ -189,7 +214,8 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
 	const int weaponID = GetRandomWeaponIdForClass(charClassDef, random);
-	this->weaponAnimation.init(weaponID, exeData);
+	this->weaponAnimDefID = weaponID;
+	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
 	this->primaryAttributes.init(this->raceID, this->male, exeData);	
 	this->inventory.clear();
 	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();

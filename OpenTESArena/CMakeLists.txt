@@ -340,6 +340,7 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/WorldMapUiView.h")
 
 SET(TES_ITEMS
+    "${SRC_ROOT}/Items/ArenaItemUtils.cpp"
     "${SRC_ROOT}/Items/ArenaItemUtils.h"
     "${SRC_ROOT}/Items/ItemConditionLibrary.cpp"
     "${SRC_ROOT}/Items/ItemConditionLibrary.h"
@@ -379,6 +380,7 @@ SET(TES_MATH
 SET(TES_PLAYER
     "${SRC_ROOT}/Player/ArenaPlayerUtils.cpp"
     "${SRC_ROOT}/Player/ArenaPlayerUtils.h"
+    "${SRC_ROOT}/Player/ArenaWeaponUtils.h"
     "${SRC_ROOT}/Player/CharacterClassGeneration.cpp"
     "${SRC_ROOT}/Player/CharacterClassGeneration.h"
     "${SRC_ROOT}/Player/CharacterCreationState.cpp"
@@ -391,7 +393,11 @@ SET(TES_PLAYER
     "${SRC_ROOT}/Player/PlayerLogicController.cpp"
     "${SRC_ROOT}/Player/PlayerLogicController.h"
     "${SRC_ROOT}/Player/WeaponAnimation.cpp"
-    "${SRC_ROOT}/Player/WeaponAnimation.h")
+    "${SRC_ROOT}/Player/WeaponAnimation.h"
+    "${SRC_ROOT}/Player/WeaponAnimationLibrary.cpp"
+    "${SRC_ROOT}/Player/WeaponAnimationLibrary.h"
+    "${SRC_ROOT}/Player/WeaponAnimationUtils.cpp"
+    "${SRC_ROOT}/Player/WeaponAnimationUtils.h")
 
 SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.cpp"

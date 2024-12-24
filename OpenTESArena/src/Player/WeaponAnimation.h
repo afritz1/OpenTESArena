@@ -2,81 +2,70 @@
 #define WEAPON_ANIMATION_H
 
 #include <cstddef>
-#include <string>
 
-#include "components/utilities/BufferView.h"
+#include "../Assets/TextureAsset.h"
 
-class ExeData;
+#include "WeaponAnimationUtils.h"
 
-// Stores the current state of the player's weapon animation.
-// Since Arena's weapon animations mostly share the same ordering, they can be hardcoded.
-// Fists are an exception because they have fewer frames.
-// The bow should not be used here because there is no bow animation in the Arena files;
-// just a single idle frame that disappears when firing an arrow.
-class WeaponAnimation
+struct WeaponAnimationDefinitionState
 {
-public:
-	enum class State
-	{
-		Sheathed, // Not displayed on-screen.
-		Unsheathing,
-		Idle,
-		Forward,
-		Down,
-		Right,
-		Left,
-		DownRight,
-		DownLeft,
-		Firing, // Reserved for ranged weapons.
-		Sheathing // Reverse of unsheathing animation.
-	};
-private:
-	// Default time spent per animation frame.
-	static constexpr double DEFAULT_TIME_PER_FRAME = 1.0 / 16.0;
-	static constexpr int FISTS_ID = -1;
+	char name[WeaponAnimationUtils::MAX_NAME_LENGTH];
+	double seconds;
+	int framesIndex;
+	int frameCount;
+};
 
-	WeaponAnimation::State state;
-	int weaponID;
-	std::string animationFilename;
-	double currentTime;
-	int rangeIndex;
+struct WeaponAnimationDefinitionFrame
+{
+	TextureAsset textureAsset;
+	int width, height;
+	int xOffset, yOffset;
+};
 
-	// Gets the time in seconds for each animation frame in the current state.
-	double getTimePerFrame() const;
+struct WeaponAnimationDefinition
+{
+	static constexpr int MAX_STATES = 12;
+	static constexpr int MAX_FRAMES = 64;
 
-	// Gets the range of indices associated with the current animation state.
-	BufferView<const int> getCurrentRange() const;
-public:
-	WeaponAnimation();
+	WeaponAnimationDefinitionState states[MAX_STATES];
+	int stateCount;
 
-	void init(int weaponID, const ExeData &exeData);
+	WeaponAnimationDefinitionFrame frames[MAX_FRAMES];
+	int frameCount;
 
-	// Returns whether the animation is for a ranged weapon.
-	bool isRanged() const;
+	WeaponAnimationDefinition();
 
-	// Returns whether the weapon is currently sheathed (meaning it is not displayed).
-	bool isSheathed() const;
+	bool tryGetStateIndex(const char *name, int *outIndex) const;
 
-	// Returns whether the weapon is currently not moving. This is relevant when
-	// determining if the state can safely be changed without interrupting something.
-	bool isIdle() const;
+	int addState(const char *name, double seconds);
+	int addFrame(int stateIndex, const TextureAsset &textureAsset, int width, int height, int xOffset, int yOffset);
+};
 
-	// Gets the filename associated with the weapon (i.e., AXE, HAMMER, etc.).
-	// This is used with the current index to determine which frame is drawn.
-	const std::string &getAnimationFilename() const;
+struct WeaponAnimationInstance
+{
+	static constexpr int MAX_STATES = WeaponAnimationDefinition::MAX_STATES;
 
-	// Gets the index into the .CIF animation's current frame. Do not call this
-	// method if the sheathed animation is active.
-	int getFrameIndex() const;
+	// Cached data for ease of state switching.
+	double targetSecondsList[MAX_STATES];
 
-	// Sets the current weapon state. This resets the current animation index to the
-	// beginning of the new state's range.
-	void setState(WeaponAnimation::State state);
+	double currentSeconds; // Updated every frame.
+	double targetSeconds; // Updated when changing states.
+	double progressPercent; // Updated every frame.
+	int currentStateIndex; // Points into this weapon's animation def.
+	int nextStateIndex; // Next state to transition to, otherwise loops current state.
+	int stateCount;
 
-	// Ticks the weapon animation by delta time. If the weapon animation is swinging or
-	// unsheathing, it will return to the idle animation automatically. If sheathing, it 
-	// will return to the sheathed state automatically.
-	void tick(double dt);
+	WeaponAnimationInstance();
+
+	bool isLooping() const;
+
+	void addState(double targetSeconds);
+
+	void setStateIndex(int index);
+	void setNextStateIndex(int index);
+	void resetTime();
+	void clear();
+	void update(double dt);
 };
 
 #endif

@@ -9,6 +9,8 @@
 #include "../Game/Game.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
+#include "../Items/ArenaItemUtils.h"
+#include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../UI/TextBox.h"
 #include "../Voxels/ArenaVoxelUtils.h"
@@ -296,6 +298,45 @@ namespace PlayerLogicController
 			}
 		}		
 	}
+
+	int getMeleeAnimDirectionStateIndex(const WeaponAnimationDefinition &animDef, CardinalDirectionName direction)
+	{
+		int stateIndex = -1;
+		if (direction == CardinalDirectionName::North)
+		{
+			animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_FORWARD.c_str(), &stateIndex);
+		}
+		else if (direction == CardinalDirectionName::NorthEast)
+		{
+			animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_RIGHT.c_str(), &stateIndex);
+		}
+		else if (direction == CardinalDirectionName::East)
+		{
+			animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_RIGHT.c_str(), &stateIndex);
+		}
+		else if (direction == CardinalDirectionName::SouthEast)
+		{
+			animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_DOWN_RIGHT.c_str(), &stateIndex);
+		}
+		else if (direction == CardinalDirectionName::South)
+		{
+			animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_DOWN.c_str(), &stateIndex);
+		}
+		else if (direction == CardinalDirectionName::SouthWest)
+		{
+			animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_DOWN_LEFT.c_str(), &stateIndex);
+		}
+		else if (direction == CardinalDirectionName::West)
+		{
+			animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_LEFT.c_str(), &stateIndex);
+		}
+		else if (direction == CardinalDirectionName::NorthWest)
+		{
+			animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_LEFT.c_str(), &stateIndex);
+		}
+
+		return stateIndex;
+	}
 }
 
 Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
@@ -389,9 +430,12 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, B
 		const int dy = mouseDelta.y;
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-		auto &player = game.player;
-		const auto &weaponAnim = player.weaponAnimation;
-		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
+		const Player &player = game.player;
+		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+		const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+		const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+		const bool turning = ((dx != 0) || (dy != 0)) && (WeaponAnimationUtils::isSheathed(weaponAnimDefState) || !rightClick);
 
 		if (turning)
 		{
@@ -437,137 +481,91 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 
 void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelta)
 {
-	// @todo: run this method at fixed time-steps instead of every frame, because if,
-	// for example, the game is running at 200 fps, then the player has to move their
-	// cursor much faster for it to count as a swing. The GameWorldPanel would probably
-	// need to save its own "swing" mouse delta independently of the input manager, or
-	// maybe the game loop could call a "Panel::fixedTick()" method.
-
-	// Only handle attacking if the player's weapon is currently idle.
-	auto &weaponAnimation = game.player.weaponAnimation;
-	if (weaponAnimation.isIdle())
+	Player &player = game.player;
+	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+	if (!WeaponAnimationUtils::isIdle(weaponAnimDefState))
 	{
-		const auto &inputManager = game.inputManager;
-		auto &audioManager = game.audioManager;
+		return;
+	}
 
-		if (!weaponAnimation.isRanged())
+
+	const InputManager &inputManager = game.inputManager;
+	const Options &options = game.options;
+
+	const bool isAttackMouseButtonDown = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+	const int weaponAnimIdleStateIndex = weaponAnimInst.currentStateIndex;
+	int newStateIndex = weaponAnimIdleStateIndex;
+	int nextStateIndex = -1;
+	const char *sfxFilename = nullptr;
+
+	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
+	{
+		const Int2 dimensions = game.renderer.getWindowDimensions();
+
+		// Get smaller screen dimension so mouse delta is relative to a square.
+		const int minDimension = std::min(dimensions.x, dimensions.y);
+
+		// @todo: this isn't frame-rate-independent, maybe need to track last 1/30 seconds of mouse positions?
+		const double mouseDeltaXPercent = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
+		const double mouseDeltaYPercent = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
+		const double mouseDistancePercent = std::sqrt((mouseDeltaXPercent * mouseDeltaXPercent) + (mouseDeltaYPercent * mouseDeltaYPercent));
+		constexpr double requiredDistancePercent = 0.060;
+		const bool isMouseDeltaFastEnough = mouseDistancePercent >= requiredDistancePercent;
+		if (isAttackMouseButtonDown && isMouseDeltaFastEnough)
 		{
-			// Handle melee attack.
-			const Int2 dimensions = game.renderer.getWindowDimensions();
+			const Double2 mouseDirection = Double2(mouseDeltaXPercent, -mouseDeltaYPercent).normalized();
+			CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(Double2(-mouseDirection.y, -mouseDirection.x));
 
-			// Get the smaller of the two dimensions, so the percentage change in mouse position
-			// is relative to a square instead of a rectangle.
-			const int minDimension = std::min(dimensions.x, dimensions.y);
-
-			// Percentages that the mouse moved across the screen.
-			const double dxx = static_cast<double>(mouseDelta.x) /
-				static_cast<double>(minDimension);
-			const double dyy = static_cast<double>(mouseDelta.y) /
-				static_cast<double>(minDimension);
-
-			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
-
-			// If the mouse moves fast enough, it's considered an attack. The distances
-			// are in percentages of screen dimensions.
-			const double requiredDistance = 0.060;
-			const double mouseDistance = std::sqrt((dxx * dxx) + (dyy * dyy));
-			const bool isAttack = rightClick && (mouseDistance >= requiredDistance);
-
-			if (isAttack)
-			{
-				// Convert the change in mouse coordinates to a vector. Reverse the change in
-				// y so that positive values are up.
-				const Double2 mouseDirection = Double2(dxx, -dyy).normalized();
-
-				// Calculate the direction the mouse moved in (let's use cardinal directions
-				// for convenience. This is actually a little weird now because +X is south
-				// and +Y is west).
-				CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(
-					Double2(-mouseDirection.y, -mouseDirection.x));
-
-				// Set the weapon animation state.
-				if (cardinalDirection == CardinalDirectionName::North)
-				{
-					weaponAnimation.setState(WeaponAnimation::State::Forward);
-				}
-				else if (cardinalDirection == CardinalDirectionName::NorthEast)
-				{
-					weaponAnimation.setState(WeaponAnimation::State::Right);
-				}
-				else if (cardinalDirection == CardinalDirectionName::East)
-				{
-					weaponAnimation.setState(WeaponAnimation::State::Right);
-				}
-				else if (cardinalDirection == CardinalDirectionName::SouthEast)
-				{
-					weaponAnimation.setState(WeaponAnimation::State::DownRight);
-				}
-				else if (cardinalDirection == CardinalDirectionName::South)
-				{
-					weaponAnimation.setState(WeaponAnimation::State::Down);
-				}
-				else if (cardinalDirection == CardinalDirectionName::SouthWest)
-				{
-					weaponAnimation.setState(WeaponAnimation::State::DownLeft);
-				}
-				else if (cardinalDirection == CardinalDirectionName::West)
-				{
-					weaponAnimation.setState(WeaponAnimation::State::Left);
-				}
-				else if (cardinalDirection == CardinalDirectionName::NorthWest)
-				{
-					weaponAnimation.setState(WeaponAnimation::State::Left);
-				}
-
-				// Play the swing sound.
-				audioManager.playSound(ArenaSoundName::Swish);
-			}
+			newStateIndex = PlayerLogicController::getMeleeAnimDirectionStateIndex(weaponAnimDef, cardinalDirection);
+			nextStateIndex = weaponAnimIdleStateIndex;
+			sfxFilename = ArenaSoundName::Swish;
+		}
+	}
+	else
+	{
+		bool isAttack = false;
+		if (options.getGraphics_ModernInterface())
+		{
+			isAttack = isAttackMouseButtonDown;
 		}
 		else
 		{
-			// Handle ranged attack.
-			const bool isAttack = [&game, &inputManager]()
+			// Cursor must be above game world interface. In the original game, it has to be an "X", but relaxing that here.
+			auto &textureManager = game.textureManager;
+			auto &renderer = game.renderer;
+			const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
+			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
+			if (!metadataID.has_value())
 			{
-				const auto &options = game.options;
-				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
-
-				if (!options.getGraphics_ModernInterface())
-				{
-					// The cursor must be above the game world interface in order to fire. In the original game,
-					// the cursor has to be in the center "X" region, but that seems pretty inconvenient, given
-					// that the border between cursor regions is hard to see at a glance, and that might be the
-					// difference between shooting an arrow and not shooting an arrow, so I'm relaxing the
-					// requirements here.
-					auto &textureManager = game.textureManager;
-					auto &renderer = game.renderer;
-					const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
-					const std::optional<TextureFileMetadataID> metadataID =
-						textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
-					if (!metadataID.has_value())
-					{
-						DebugCrash("Couldn't get game world interface metadata ID for \"" + gameWorldInterfaceTextureAsset.filename + "\".");
-					}
-
-					const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
-					const int gameWorldInterfaceHeight = metadata.getHeight(0);
-					const int originalCursorY = renderer.nativeToOriginal(inputManager.getMousePosition()).y;
-					return rightClick && (originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight));
-				}
-				else
-				{
-					// Right clicking anywhere in modern mode fires an arrow.
-					return rightClick;
-				}
-			}();
-
-			if (isAttack)
-			{
-				// Set firing state for animation.
-				weaponAnimation.setState(WeaponAnimation::State::Firing);
-
-				// Play the firing sound.
-				audioManager.playSound(ArenaSoundName::ArrowFire);
+				DebugCrash("Couldn't get game world interface metadata ID for \"" + gameWorldInterfaceTextureAsset.filename + "\".");
 			}
+
+			const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+			const int gameWorldInterfaceHeight = metadata.getHeight(0);
+			const int originalCursorY = renderer.nativeToOriginal(inputManager.getMousePosition()).y;
+			isAttack = isAttackMouseButtonDown && (originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight));
+		}
+
+		if (isAttack)
+		{
+			weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_FIRING.c_str(), &newStateIndex);
+			nextStateIndex = weaponAnimIdleStateIndex;
+			sfxFilename = ArenaSoundName::ArrowFire;
+		}
+	}
+
+	if (newStateIndex != weaponAnimIdleStateIndex)
+	{
+		weaponAnimInst.setStateIndex(newStateIndex);
+		weaponAnimInst.setNextStateIndex(nextStateIndex);
+
+		if (sfxFilename != nullptr)
+		{
+			AudioManager &audioManager = game.audioManager;
+			audioManager.playSound(sfxFilename);
 		}
 	}
 }

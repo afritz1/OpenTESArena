@@ -841,10 +841,10 @@ void GameState::tickPlayerMovementTriggers(const CoordDouble3 &oldPlayerCoord, c
 
 void GameState::tickPlayerAttack(double dt, Game &game)
 {
-	auto &player = game.player;
-	player.weaponAnimation.tick(dt);
+	Player &player = game.player;
+	player.weaponAnimInst.update(dt);
 
-	const auto &inputManager = game.inputManager;
+	const InputManager &inputManager = game.inputManager;
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
 }

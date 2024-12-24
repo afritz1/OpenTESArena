@@ -41,6 +41,7 @@
 #include "../Items/ItemMaterialLibrary.h"
 #include "../Player/PlayerInterface.h"
 #include "../Player/PlayerLogicController.h"
+#include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
@@ -371,6 +372,7 @@ bool Game::init()
 	ItemConditionLibrary::getInstance().init(exeData);
 	ItemMaterialLibrary::getInstance().init(exeData);
 	ItemLibrary::getInstance().init(exeData);
+	WeaponAnimationLibrary::getInstance().init(exeData, this->textureManager);
 	CharacterClassLibrary::getInstance().init(exeData);
 	CharacterRaceLibrary::getInstance().init(exeData);
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);

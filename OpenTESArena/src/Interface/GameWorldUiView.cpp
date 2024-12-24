@@ -292,6 +292,8 @@ Int2 GameWorldUiView::getCompassFramePosition()
 Int2 GameWorldUiView::getWeaponAnimationOffset(const std::string &weaponFilename, int frameIndex,
 	TextureManager &textureManager)
 {
+	// @todo: this is obsoleted by WeaponAnimationDefinition
+
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(weaponFilename.c_str());
 	if (!metadataID.has_value())
 	{
@@ -362,6 +364,7 @@ TextureAsset GameWorldUiView::getNoMagicTextureAsset()
 
 TextureAsset GameWorldUiView::getWeaponAnimTextureAsset(const std::string &weaponFilename, int index)
 {
+	// @todo: this is obsoleted by WeaponAnimationDefinition
 	return TextureAsset(std::string(weaponFilename), index);
 }
 

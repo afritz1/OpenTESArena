@@ -16,6 +16,7 @@
 #include "../Math/RandomUtils.h"
 #include "../Math/Random.h"
 #include "../Player/Player.h"
+#include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelChunkManager.h"
@@ -988,7 +989,12 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 	const bool isPlayerMoving = player.isMoving();
-	const bool isPlayerWeaponSheathed = player.weaponAnimation.isSheathed();
+
+	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+	const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+	const bool isPlayerWeaponSheathed = WeaponAnimationUtils::isSheathed(weaponAnimDefState);
 
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{

@@ -11,6 +11,7 @@
 #include "../Game/Game.h"
 #include "../Player/Player.h"
 #include "../Player/PlayerLogicController.h"
+#include "../Player/WeaponAnimationLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ArenaDateUtils.h"
 #include "../UI/FontLibrary.h"
@@ -102,17 +103,28 @@ void GameWorldUiController::onCharacterSheetButtonSelected(Game &game)
 
 void GameWorldUiController::onWeaponButtonSelected(Player &player)
 {
-	WeaponAnimation &weaponAnimation = player.weaponAnimation;
+	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
 
-	if (weaponAnimation.isSheathed())
+	int newStateIndex = -1;
+	int nextStateIndex = -1;
+	if (WeaponAnimationUtils::isSheathed(weaponAnimDefState))
 	{
-		// Begin unsheathing the weapon.
-		weaponAnimation.setState(WeaponAnimation::State::Unsheathing);
+		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_UNSHEATHING.c_str(), &newStateIndex);
+		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_IDLE.c_str(), &nextStateIndex);
 	}
-	else if (weaponAnimation.isIdle())
+	else if (WeaponAnimationUtils::isIdle(weaponAnimDefState))
 	{
-		// Begin sheathing the weapon.
-		weaponAnimation.setState(WeaponAnimation::State::Sheathing);
+		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHING.c_str(), &newStateIndex);
+		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHED.c_str(), &nextStateIndex);
+	}
+
+	if (newStateIndex >= 0)
+	{
+		weaponAnimInst.setStateIndex(newStateIndex);
+		weaponAnimInst.setNextStateIndex(nextStateIndex);
 	}
 }
 

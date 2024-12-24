@@ -15,6 +15,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Player/PlayerLogicController.h"
+#include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RenderCommandBuffer.h"
 #include "../Rendering/RendererUtils.h"
@@ -286,37 +287,32 @@ void GameWorldPanel::initUiDrawCalls()
 	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
-	const UiTextureID gameWorldInterfaceTextureID =
-		GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
+	const UiTextureID gameWorldInterfaceTextureID = GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
 	this->gameWorldInterfaceTextureRef.init(gameWorldInterfaceTextureID, renderer);
 
 	constexpr GameWorldUiView::StatusGradientType gradientType = GameWorldUiView::StatusGradientType::Default;
-	const UiTextureID statusGradientTextureID =
-		GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
+	const UiTextureID statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
 	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
 
 	const auto &player = game.player;
-	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
-		player.male, player.raceID, player.portraitID, textureManager, renderer);
+	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
 
 	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
 	this->noMagicTextureRef.init(noMagicTextureID, renderer);
 
-	const auto &weaponAnimation = player.weaponAnimation;
-	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-	const std::optional<TextureFileMetadataID> weaponAnimMetadataID = textureManager.tryGetMetadataID(weaponFilename.c_str());
-	if (!weaponAnimMetadataID.has_value())
+	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+	this->weaponAnimTextureRefs.init(weaponAnimDef.frameCount);
+	for (int i = 0; i < weaponAnimDef.frameCount; i++)
 	{
-		DebugCrash("Couldn't get texture file metadata ID for weapon animation \"" + weaponFilename + "\".");
-	}
-
-	const TextureFileMetadata &weaponAnimMetadata = textureManager.getMetadataHandle(*weaponAnimMetadataID);
-	this->weaponAnimTextureRefs.init(weaponAnimMetadata.getTextureCount());
-	for (int i = 0; i < weaponAnimMetadata.getTextureCount(); i++)
-	{
-		const UiTextureID weaponTextureID =
-			GameWorldUiView::allocWeaponAnimTexture(weaponFilename, i, textureManager, renderer);
+		const WeaponAnimationDefinitionFrame &weaponAnimDefFrame = weaponAnimDef.frames[i];
+		const TextureAsset &weaponAnimDefFrameTextureAsset = weaponAnimDefFrame.textureAsset;
+		const std::string &weaponAnimDefFrameTextureFilename = weaponAnimDefFrameTextureAsset.filename;
+		DebugAssert(weaponAnimDefFrameTextureAsset.index.has_value());
+		const int weaponAnimDefFrameTextureIndex = *weaponAnimDefFrameTextureAsset.index;
+		// @todo: some WeaponAnimationDefinitionFrames are duplicates, this can cause duplicate UiTextureID allocations, maybe map TextureAsset to UiTextureID to avoid it
+		const UiTextureID weaponTextureID = GameWorldUiView::allocWeaponAnimTexture(weaponAnimDefFrameTextureFilename, weaponAnimDefFrameTextureIndex, textureManager, renderer);
 		this->weaponAnimTextureRefs.set(i, ScopedUiTextureRef(weaponTextureID, renderer));
 	}
 
@@ -339,8 +335,11 @@ void GameWorldPanel::initUiDrawCalls()
 	{
 		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.weaponAnimation;
-			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
 			return textureRef.get();
 		};
 
@@ -348,15 +347,16 @@ void GameWorldPanel::initUiDrawCalls()
 		{
 			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
-			const auto &weaponAnimation = player.weaponAnimation;
-			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const WeaponAnimationDefinitionFrame &weaponAnimFrame = weaponAnimDef.frames[weaponAnimFrameIndex];
 
 			auto &textureManager = game.textureManager;
-			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
 			const Double2 offsetPercents(
-				static_cast<double>(offset.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
-				static_cast<double>(offset.y) / static_cast<double>(classicViewHeight));
+				static_cast<double>(weaponAnimFrame.xOffset) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
+				static_cast<double>(weaponAnimFrame.yOffset) / static_cast<double>(classicViewHeight));
 
 			const auto &renderer = game.renderer;
 			const Int2 windowDims = renderer.getWindowDimensions();
@@ -370,8 +370,11 @@ void GameWorldPanel::initUiDrawCalls()
 		{
 			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
-			const auto &weaponAnimation = player.weaponAnimation;
-			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
 			const Int2 textureDims(textureRef.getWidth(), textureRef.getHeight());
 			const Double2 texturePercents(
 				static_cast<double>(textureDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
@@ -389,8 +392,11 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.weaponAnimation;
-			return !this->isPaused() && !weaponAnimation.isSheathed();
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+			return !this->isPaused() && !WeaponAnimationUtils::isSheathed(weaponAnimDefState);
 		};
 
 		this->addDrawCall(
@@ -490,26 +496,31 @@ void GameWorldPanel::initUiDrawCalls()
 	{
 		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.weaponAnimation;
-			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
 			return textureRef.get();
 		};
 
 		UiDrawCall::PositionFunc weaponAnimPositionFunc = [this, &game, &player]()
 		{
-			const auto &weaponAnimation = player.weaponAnimation;
-			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
-
-			auto &textureManager = game.textureManager;
-			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
-			return offset;
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const WeaponAnimationDefinitionFrame &weaponAnimFrame = weaponAnimDef.frames[weaponAnimFrameIndex];
+			return Int2(weaponAnimFrame.xOffset, weaponAnimFrame.yOffset);
 		};
 
 		UiDrawCall::SizeFunc weaponAnimSizeFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.weaponAnimation;
-			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
 			return Int2(textureRef.getWidth(), textureRef.getHeight());
 		};
 
@@ -517,8 +528,11 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.weaponAnimation;
-			return !this->isPaused() && !weaponAnimation.isSheathed();
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+			return !this->isPaused() && !WeaponAnimationUtils::isSheathed(weaponAnimDefState);
 		};
 
 		this->addDrawCall(

@@ -51,7 +51,11 @@ struct Player
 	int charClassDefID;
 	int portraitID;
 	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
-	WeaponAnimation weaponAnimation;
+
+	// Player always has a weapon animation even if it's just fists
+	int weaponAnimDefID;
+	WeaponAnimationInstance weaponAnimInst;
+
 	PrimaryAttributes primaryAttributes;
 	ItemInventory inventory;
 
