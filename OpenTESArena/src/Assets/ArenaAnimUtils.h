@@ -65,6 +65,7 @@ namespace ArenaAnimUtils
 	constexpr bool HumanDeathLoop = CreatureDeathLoop;
 	constexpr int HumanIdleIndices[] = { 0 };
 	constexpr int HumanWalkIndices[] = { 0, 1, 2, 3, 4, 5 };
+	const std::string HumanDeathFilename = "DEADBODY.IMG";
 
 	// Animation values for citizens with .CFA files.
 	constexpr double CitizenIdleSecondsPerFrame = 1.0 / 4.0;
@@ -155,10 +156,8 @@ namespace ArenaAnimUtils
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out human enemy animation data to animation states.
-	bool tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale,
-		const CharacterClassLibrary &charClassLibrary, const INFFile &inf,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		EntityAnimationDefinition *outAnimDef);
+	bool tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary, 
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out dynamic entity animation data to animation states. Use this when the dynamic
 	// entity type (creature, human, etc.) is unknown.

@@ -511,23 +511,12 @@ namespace ArenaAnimUtils
 		return true;
 	}
 
-	bool tryAddDynamicEntityHumanDeathAnimState(const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
+	bool tryAddDynamicEntityHumanDeathAnimState(TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
 		constexpr bool isMirrored = false;
 
 		// Humans use a single dead body image.
-		const std::string animName = [&inf]()
-		{
-			constexpr ArenaTypes::ItemIndex corpseItemIndex = 2;
-			const INFFlat *corpseFlat = inf.getFlatWithItemIndex(corpseItemIndex);
-			DebugAssertMsg(corpseFlat != nullptr, "Missing human corpse flat.");
-			const int corpseFlatTextureIndex = corpseFlat->textureIndex;
-			const BufferView<const INFFlatTexture> flatTextures = inf.getFlatTextures();
-			DebugAssertIndex(flatTextures, corpseFlatTextureIndex);
-			const INFFlatTexture &flatTextureData = flatTextures[corpseFlatTextureIndex];
-			return String::toUppercase(flatTextureData.filename);
-		}();
-
+		const std::string &animName = ArenaAnimUtils::HumanDeathFilename;
 		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animName.c_str());
 		if (!metadataID.has_value())
 		{
@@ -989,10 +978,8 @@ bool ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(int creatureID, const Exe
 	return true;
 }
 
-bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale,
-	const CharacterClassLibrary &charClassLibrary, const INFFile &inf,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-	EntityAnimationDefinition *outAnimDef)
+bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary, 
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	// Basic states are idle and walk. Human enemies don't have look animations.
 	if (!ArenaAnimUtils::tryAddDynamicEntityHumanBasicAnimState(charClassIndex, isMale, EntityAnimationUtils::STATE_IDLE.c_str(),
@@ -1018,7 +1005,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isM
 	}
 
 	// Death state.
-	if (!ArenaAnimUtils::tryAddDynamicEntityHumanDeathAnimState(inf, textureManager, outAnimDef))
+	if (!ArenaAnimUtils::tryAddDynamicEntityHumanDeathAnimState(textureManager, outAnimDef))
 	{
 		DebugLogWarning("Couldn't add death anim for character class \"" + std::to_string(charClassIndex) + "\".");
 		return false;
@@ -1057,8 +1044,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, 
 	{
 		DebugAssert(isMale.has_value());
 		const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(itemIndex);
-		return ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(charClassIndex, *isMale, charClassLibrary, inf,
-			binaryAssetLibrary, textureManager, outAnimDef);
+		return ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(charClassIndex, *isMale, charClassLibrary, binaryAssetLibrary, textureManager, outAnimDef);
 	}
 	else
 	{
