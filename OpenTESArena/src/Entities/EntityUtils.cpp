@@ -11,19 +11,19 @@
 
 #include "components/debug/Debug.h"
 
-bool EntityUtils::isDynamicEntity(EntityDefinition::Type defType)
+bool EntityUtils::isDynamicEntity(EntityDefinitionType defType)
 {
 	switch (defType)
 	{
-	case EntityDefinition::Type::StaticNPC:
-	case EntityDefinition::Type::Item:
-	case EntityDefinition::Type::Container:
-	case EntityDefinition::Type::Transition:
-	case EntityDefinition::Type::Doodad:
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Doodad:
 		return false;
-	case EntityDefinition::Type::Enemy:
-	case EntityDefinition::Type::Citizen:
-	case EntityDefinition::Type::Projectile:
+	case EntityDefinitionType::Enemy:
+	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::Projectile:
 		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(defType)));
@@ -32,25 +32,25 @@ bool EntityUtils::isDynamicEntity(EntityDefinition::Type defType)
 
 std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 {
-	const EntityDefinition::Type type = entityDef.getType();
+	const EntityDefinitionType type = entityDef.getType();
 
 	switch (type)
 	{
-	case EntityDefinition::Type::Citizen:
+	case EntityDefinitionType::Citizen:
 		return "Citizen";
-	case EntityDefinition::Type::Container:
+	case EntityDefinitionType::Container:
 		return "Container";
-	case EntityDefinition::Type::Doodad:
+	case EntityDefinitionType::Doodad:
 		return "Doodad";
-	case EntityDefinition::Type::Enemy:
+	case EntityDefinitionType::Enemy:
 		return "Enemy";
-	case EntityDefinition::Type::Item:
+	case EntityDefinitionType::Item:
 		return "Item";
-	case EntityDefinition::Type::Projectile:
+	case EntityDefinitionType::Projectile:
 		return "Projectile";
-	case EntityDefinition::Type::StaticNPC:
+	case EntityDefinitionType::StaticNPC:
 		return "StaticNPC";
-	case EntityDefinition::Type::Transition:
+	case EntityDefinitionType::Transition:
 		return "Transition";
 	default:
 		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(type)));
@@ -65,12 +65,12 @@ bool EntityUtils::isLevelDependentDef(EntityDefID defID,
 
 bool EntityUtils::isStreetlight(const EntityDefinition &entityDef)
 {
-	return (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().streetlight;
+	return (entityDef.getType() == EntityDefinitionType::Doodad) && entityDef.getDoodad().streetlight;
 }
 
 bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 {
-	if (entityDef.getType() != EntityDefinition::Type::Enemy)
+	if (entityDef.getType() != EntityDefinitionType::Enemy)
 	{
 		return false;
 	}
@@ -86,7 +86,7 @@ bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 
 bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
 {
-	if (entityDef.getType() != EntityDefinition::Type::Doodad)
+	if (entityDef.getType() != EntityDefinitionType::Doodad)
 	{
 		return false;
 	}
@@ -97,9 +97,9 @@ bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
 
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 {
-	const EntityDefinition::Type type = entityDef.getType();
-	const bool isEnemy = type == EntityDefinition::Type::Enemy;
-	const bool isDoodad = type == EntityDefinition::Type::Doodad;
+	const EntityDefinitionType type = entityDef.getType();
+	const bool isEnemy = type == EntityDefinitionType::Enemy;
+	const bool isDoodad = type == EntityDefinitionType::Doodad;
 	if (!isEnemy && !isDoodad)
 	{
 		return 0;
@@ -125,19 +125,19 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 
 bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 {
-	const EntityDefinition::Type entityType = entityDef.getType();
+	const EntityDefinitionType entityType = entityDef.getType();
 	switch (entityType)
 	{
-	case EntityDefinition::Type::Enemy:
-	case EntityDefinition::Type::StaticNPC:
-	case EntityDefinition::Type::Container:
+	case EntityDefinitionType::Enemy:
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Container:
 		return true;
-	case EntityDefinition::Type::Citizen:
-	case EntityDefinition::Type::Item:
-	case EntityDefinition::Type::Projectile:
-	case EntityDefinition::Type::Transition:
+	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Transition:
 		return false;
-	case EntityDefinition::Type::Doodad:
+	case EntityDefinitionType::Doodad:
 		return entityDef.getDoodad().collider;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
@@ -146,7 +146,7 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 
 std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef)
 {
-	if (entityDef.getType() != EntityDefinition::Type::Doodad)
+	if (entityDef.getType() != EntityDefinitionType::Doodad)
 	{
 		return std::nullopt;
 	}
@@ -199,8 +199,8 @@ double EntityUtils::getCenterY(double feetY, double bboxHeight)
 bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
 	const CharacterClassLibrary &charClassLibrary, std::string *outName)
 {
-	const EntityDefinition::Type type = entityDef.getType();
-	const bool isEnemy = type == EntityDefinition::Type::Enemy;
+	const EntityDefinitionType type = entityDef.getType();
+	const bool isEnemy = type == EntityDefinitionType::Enemy;
 	if (!isEnemy)
 	{
 		return false;

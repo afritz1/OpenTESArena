@@ -175,7 +175,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const LevelDefinition::EntityPlacementDef &placementDef = levelDefinition.getEntityPlacementDef(i);
 		const LevelDefinition::EntityDefID levelEntityDefID = placementDef.id;
 		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
-		const EntityDefinition::Type entityDefType = entityDef.getType();
+		const EntityDefinitionType entityDefType = entityDef.getType();
 		const bool isDynamicEntity = EntityUtils::isDynamicEntity(entityDefType);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
@@ -240,7 +240,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
 					entityDir = CardinalDirection::North;
 
-					if (entityDefType == EntityDefinition::Type::Enemy)
+					if (entityDefType == EntityDefinitionType::Enemy)
 					{
 						if (!this->creatureSoundInsts.tryAlloc(&entityInst.creatureSoundInstID))
 						{
@@ -651,7 +651,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID) const
 {
 	const EntityDefinition &entityDef = this->getEntityDef(defID);
-	if (entityDef.getType() != EntityDefinition::Type::Enemy)
+	if (entityDef.getType() != EntityDefinitionType::Enemy)
 	{
 		return std::string();
 	}

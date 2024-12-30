@@ -52,7 +52,7 @@ bool CitizenUtils::canMapTypeSpawnCitizens(MapType mapType)
 CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType)
 {
 	// Citizen entity definitions are level-independent and stored in a library beforehand.
-	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinition::Type::Citizen));
+	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinitionType::Citizen));
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
 	EntityDefinitionKey maleEntityDefKey, femaleEntityDefKey;

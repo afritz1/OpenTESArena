@@ -16,7 +16,7 @@ class Random;
 
 namespace EntityUtils
 {
-	bool isDynamicEntity(EntityDefinition::Type defType);
+	bool isDynamicEntity(EntityDefinitionType defType);
 
 	// Gets the display name of the entity definition type for debugging.
 	std::string defTypeToString(const EntityDefinition &entityDef);

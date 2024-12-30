@@ -94,12 +94,12 @@ public:
 	// Only a subset of definition types are supported due to variable information
 	// available for each. For example, it is currently hard to differentiate a tree
 	// and a chair, so they are not supported here.
-	static constexpr bool supportsDefType(EntityDefinition::Type type)
+	static constexpr bool supportsDefType(EntityDefinitionType type)
 	{
 		switch (type)
 		{
-		case EntityDefinition::Type::Citizen:
-		case EntityDefinition::Type::Enemy:
+		case EntityDefinitionType::Citizen:
+		case EntityDefinitionType::Enemy:
 			return true;
 		default:
 			return false;

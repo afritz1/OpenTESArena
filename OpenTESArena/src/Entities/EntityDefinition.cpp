@@ -579,7 +579,7 @@ bool EntityDefinition::DoodadDefinition::operator==(const DoodadDefinition &othe
 	return true;
 }
 
-void EntityDefinition::init(Type type, EntityAnimationDefinition &&animDef)
+void EntityDefinition::init(EntityDefinitionType type, EntityAnimationDefinition &&animDef)
 {
 	this->type = type;
 	this->animDef = std::move(animDef);
@@ -587,7 +587,7 @@ void EntityDefinition::init(Type type, EntityAnimationDefinition &&animDef)
 
 EntityDefinition::EntityDefinition()
 {
-	this->type = static_cast<Type>(-1);
+	this->type = static_cast<EntityDefinitionType>(-1);
 }
 
 bool EntityDefinition::operator==(const EntityDefinition &other) const
@@ -609,28 +609,28 @@ bool EntityDefinition::operator==(const EntityDefinition &other) const
 
 	switch (this->type)
 	{
-	case EntityDefinition::Type::Enemy:
+	case EntityDefinitionType::Enemy:
 		return this->enemy == other.enemy;
-	case EntityDefinition::Type::Citizen:
+	case EntityDefinitionType::Citizen:
 		return this->citizen == other.citizen;
-	case EntityDefinition::Type::StaticNPC:
+	case EntityDefinitionType::StaticNPC:
 		return this->staticNpc == other.staticNpc;
-	case EntityDefinition::Type::Item:
+	case EntityDefinitionType::Item:
 		return this->item == other.item;
-	case EntityDefinition::Type::Container:
+	case EntityDefinitionType::Container:
 		return this->container == other.container;
-	case EntityDefinition::Type::Projectile:
+	case EntityDefinitionType::Projectile:
 		return this->projectile == other.projectile;
-	case EntityDefinition::Type::Transition:
+	case EntityDefinitionType::Transition:
 		return this->transition == other.transition;
-	case EntityDefinition::Type::Doodad:
+	case EntityDefinitionType::Doodad:
 		return this->doodad == other.doodad;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
 	}
 }
 
-EntityDefinition::Type EntityDefinition::getType() const
+EntityDefinitionType EntityDefinition::getType() const
 {
 	return this->type;
 }
@@ -642,119 +642,119 @@ const EntityAnimationDefinition &EntityDefinition::getAnimDef() const
 
 const EntityDefinition::EnemyDefinition &EntityDefinition::getEnemy() const
 {
-	DebugAssert(this->type == Type::Enemy);
+	DebugAssert(this->type == EntityDefinitionType::Enemy);
 	return this->enemy;
 }
 
 const EntityDefinition::CitizenDefinition &EntityDefinition::getCitizen() const
 {
-	DebugAssert(this->type == Type::Citizen);
+	DebugAssert(this->type == EntityDefinitionType::Citizen);
 	return this->citizen;
 }
 
 const EntityDefinition::StaticNpcDefinition &EntityDefinition::getStaticNpc() const
 {
-	DebugAssert(this->type == Type::StaticNPC);
+	DebugAssert(this->type == EntityDefinitionType::StaticNPC);
 	return this->staticNpc;
 }
 
 const EntityDefinition::ItemDefinition &EntityDefinition::getItem() const
 {
-	DebugAssert(this->type == Type::Item);
+	DebugAssert(this->type == EntityDefinitionType::Item);
 	return this->item;
 }
 
 const EntityDefinition::ContainerDefinition &EntityDefinition::getContainer() const
 {
-	DebugAssert(this->type == Type::Container);
+	DebugAssert(this->type == EntityDefinitionType::Container);
 	return this->container;
 }
 
 const EntityDefinition::ProjectileDefinition &EntityDefinition::getProjectile() const
 {
-	DebugAssert(this->type == Type::Projectile);
+	DebugAssert(this->type == EntityDefinitionType::Projectile);
 	return this->projectile;
 }
 
 const EntityDefinition::TransitionDefinition &EntityDefinition::getTransition() const
 {
-	DebugAssert(this->type == Type::Transition);
+	DebugAssert(this->type == EntityDefinitionType::Transition);
 	return this->transition;
 }
 
 const EntityDefinition::DoodadDefinition &EntityDefinition::getDoodad() const
 {
-	DebugAssert(this->type == Type::Doodad);
+	DebugAssert(this->type == EntityDefinitionType::Doodad);
 	return this->doodad;
 }
 
 void EntityDefinition::initEnemyCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData,
 	EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Enemy, std::move(animDef));
+	this->init(EntityDefinitionType::Enemy, std::move(animDef));
 	this->enemy.initCreature(creatureIndex, isFinalBoss, exeData);
 }
 
 void EntityDefinition::initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Enemy, std::move(animDef));
+	this->init(EntityDefinitionType::Enemy, std::move(animDef));
 	this->enemy.initHuman(male, charClassID);
 }
 
 void EntityDefinition::initCitizen(bool male, ArenaTypes::ClimateType climateType,
 	EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Citizen, std::move(animDef));
+	this->init(EntityDefinitionType::Citizen, std::move(animDef));
 	this->citizen.init(male, climateType);
 }
 
 void EntityDefinition::initStaticNpcShopkeeper(StaticNpcDefinition::ShopkeeperDefinition::Type type,
 	EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::StaticNPC, std::move(animDef));
+	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
 	this->staticNpc.initShopkeeper(type);
 }
 
 void EntityDefinition::initStaticNpcPerson(EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::StaticNPC, std::move(animDef));
+	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
 	this->staticNpc.initPerson();
 }
 
 void EntityDefinition::initItemKey(EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Item, std::move(animDef));
+	this->init(EntityDefinitionType::Item, std::move(animDef));
 	this->item.initKey();
 }
 
 void EntityDefinition::initItemQuestItem(EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Item, std::move(animDef));
+	this->init(EntityDefinitionType::Item, std::move(animDef));
 	this->item.initQuestItem();
 }
 
 void EntityDefinition::initContainerHolder(bool locked, EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Container, std::move(animDef));
+	this->init(EntityDefinitionType::Container, std::move(animDef));
 	this->container.initHolder(locked);
 }
 
 void EntityDefinition::initContainerPile(EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Container, std::move(animDef));
+	this->init(EntityDefinitionType::Container, std::move(animDef));
 	this->container.initPile();
 }
 
 void EntityDefinition::initProjectile(bool hasGravity, EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Projectile, std::move(animDef));
+	this->init(EntityDefinitionType::Projectile, std::move(animDef));
 	this->projectile.init(hasGravity);
 }
 
 void EntityDefinition::initTransition(LevelDefinition::TransitionDefID defID,
 	EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Transition, std::move(animDef));
+	this->init(EntityDefinitionType::Transition, std::move(animDef));
 	this->transition.init(defID);
 }
 
@@ -762,7 +762,6 @@ void EntityDefinition::initDoodad(int yOffset, double scale, bool collider, bool
 	bool ceiling, bool streetlight, bool puddle, int lightIntensity,
 	EntityAnimationDefinition &&animDef)
 {
-	this->init(Type::Doodad, std::move(animDef));
-	this->doodad.init(yOffset, scale, collider, transparent, ceiling, streetlight,
-		puddle, lightIntensity);
+	this->init(EntityDefinitionType::Doodad, std::move(animDef));
+	this->doodad.init(yOffset, scale, collider, transparent, ceiling, streetlight, puddle, lightIntensity);
 }

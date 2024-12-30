@@ -10,21 +10,21 @@
 #include "../Assets/ExeData.h"
 #include "../World/LevelDefinition.h"
 
+enum class EntityDefinitionType
+{
+	Enemy, // Creatures and human enemies.
+	Citizen, // Wandering people.
+	StaticNPC, // Bartenders, priests, etc..
+	Item, // Keys, tablets, staff pieces, etc..
+	Container, // Chests, loot piles, etc..
+	Projectile, // Arrows, spells, etc..
+	Transition, // Wilderness den.
+	Doodad // Trees, chairs, streetlights, etc..
+};
+
 class EntityDefinition
 {
 public:
-	enum class Type
-	{
-		Enemy, // Creatures and human enemies.
-		Citizen, // Wandering people.
-		StaticNPC, // Bartenders, priests, etc..
-		Item, // Keys, tablets, staff pieces, etc..
-		Container, // Chests, loot piles, etc..
-		Projectile, // Arrows, spells, etc..
-		Transition, // Wilderness den.
-		Doodad // Trees, chairs, streetlights, etc..
-	};
-
 	class EnemyDefinition
 	{
 	public:
@@ -291,7 +291,7 @@ public:
 		bool operator==(const DoodadDefinition &other) const;
 	};
 private:
-	Type type;
+	EntityDefinitionType type;
 	EntityAnimationDefinition animDef;
 
 	union
@@ -306,13 +306,13 @@ private:
 		DoodadDefinition doodad;
 	};
 
-	void init(Type type, EntityAnimationDefinition &&animDef);
+	void init(EntityDefinitionType type, EntityAnimationDefinition &&animDef);
 public:
 	EntityDefinition();
 
 	bool operator==(const EntityDefinition &other) const;
 
-	Type getType() const;
+	EntityDefinitionType getType() const;
 	const EntityAnimationDefinition &getAnimDef() const;
 	const EnemyDefinition &getEnemy() const;
 	const CitizenDefinition &getCitizen() const;
