@@ -250,14 +250,13 @@ namespace MapGeneration
 
 			// @todo: read from EntityDefinitionLibrary instead, and don't make anim def above.
 			// Currently these are just going to be duplicates of defs in the library.
-			EntityDefinitionLibrary::Key entityDefKey;
+			EntityDefinitionKey entityDefKey;
 			entityDefKey.initCreature(creatureIndex, isFinalBoss);
 
 			EntityDefID entityDefID;
 			if (!entityDefLibrary.tryGetDefinitionID(entityDefKey, &entityDefID))
 			{
-				DebugLogWarning("Couldn't get creature definition " +
-					std::to_string(creatureIndex) + " from library.");
+				DebugLogWarning("Couldn't get creature definition " + std::to_string(creatureIndex) + " from library.");
 				return false;
 			}
 

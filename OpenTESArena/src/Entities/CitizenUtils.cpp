@@ -55,7 +55,7 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinition::Type::Citizen));
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
-	EntityDefinitionLibrary::Key maleEntityDefKey, femaleEntityDefKey;
+	EntityDefinitionKey maleEntityDefKey, femaleEntityDefKey;
 	maleEntityDefKey.initCitizen(true, climateType);
 	femaleEntityDefKey.initCitizen(false, climateType);
 
