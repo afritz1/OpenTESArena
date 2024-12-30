@@ -246,7 +246,7 @@ namespace MapGeneration
 		{
 			const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
 			const int creatureID = isFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
-			const int creatureIndex = creatureID - 1;
+			const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 
 			// @todo: read from EntityDefinitionLibrary instead, and don't make anim def above.
 			// Currently these are just going to be duplicates of defs in the library.
