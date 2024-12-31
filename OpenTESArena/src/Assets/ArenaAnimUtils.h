@@ -75,6 +75,9 @@ namespace ArenaAnimUtils
 	constexpr int CitizenIdleIndices[] = { 6, 7, 8 };
 	constexpr int CitizenWalkIndices[] = { 0, 1, 2, 3, 4, 5 };
 
+	// Animation values for VFX like spells and melee strikes.
+	constexpr double VfxIdleSecondsPerFrame = 1.0 / 12.0;
+
 	// The final boss is sort of a special case. Their *ITEM index is at the very end of 
 	// human enemies, but they are treated like a creature.
 	bool isFinalBossIndex(ArenaTypes::ItemIndex itemIndex);
@@ -169,6 +172,9 @@ namespace ArenaAnimUtils
 	// Writes out citizen animation data to animation states.
 	bool tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bool isMale, const ExeData &exeData,
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
+
+	// Writes out animation for spell projectile, explosion, or melee VFX.
+	bool tryMakeVfxAnim(const std::string &animFilename, bool isLooping, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Transforms the palette indices used for a citizen's clothes and skin. The given seed value is
 	// "pure random" and can essentially be anything.

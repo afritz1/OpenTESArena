@@ -8,6 +8,7 @@
 #include "../World/ArenaClimateUtils.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 CreatureEntityAnimationKey::CreatureEntityAnimationKey()
 {
@@ -41,6 +42,29 @@ void CitizenEntityAnimationKey::init(bool male, ArenaTypes::ClimateType climateT
 {
 	this->male = male;
 	this->climateType = climateType;
+}
+
+VfxEntityAnimationKey::VfxEntityAnimationKey()
+{
+	this->type = static_cast<VfxEntityAnimationType>(-1);
+}
+
+void VfxEntityAnimationKey::initSpellProjectile(int spellIndex)
+{
+	this->type = VfxEntityAnimationType::SpellProjectile;
+	this->spellIndex = spellIndex;
+}
+
+void VfxEntityAnimationKey::initSpellExplosion(int spellIndex)
+{
+	this->type = VfxEntityAnimationType::SpellExplosion;
+	this->spellIndex = spellIndex;
+}
+
+void VfxEntityAnimationKey::initMeleeStrike(int bloodIndex)
+{
+	this->type = VfxEntityAnimationType::MeleeStrike;
+	this->bloodIndex = bloodIndex;
 }
 
 void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, const CharacterClassLibrary &charClassLibrary, TextureManager &textureManager)
@@ -127,8 +151,68 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 		this->citizenDefIDs.emplace_back(std::move(femaleAnimKey), femaleAnimDefID);
 	}
 
-	// @todo: explosion animations
+	// VFX
+	const int spellTypeCount = 12;
+	const int meleeVfxCount = 3;
+	const int spellProjectileStartIndex = spellTypeCount;
+	const int spellExplosionStartIndex = 0;
+	const int meleeVfxStartIndex = spellProjectileStartIndex + spellTypeCount;
+	const BufferView<const std::string> spellProjectileAnimFilenames(exeData.entities.effectAnimations.data() + spellProjectileStartIndex, spellTypeCount);
+	const BufferView<const std::string> spellExplosionAnimFilenames(exeData.entities.effectAnimations.data() + spellExplosionStartIndex, spellTypeCount);
+	const BufferView<const std::string> meleeVfxAnimFilenames(exeData.entities.effectAnimations.data() + meleeVfxStartIndex, meleeVfxCount); // Blood, demon, undead	
+	for (int i = 0; i < spellProjectileAnimFilenames.getCount(); i++)
+	{
+		const std::string animFilename = String::toUppercase(spellProjectileAnimFilenames[i]);
+		EntityAnimationDefinition animDef;
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, textureManager, &animDef))
+		{
+			DebugLogError("Couldn't create VFX animation definition for spell projectile \"" + animFilename + "\".");
+			continue;
+		}
 
+		const EntityAnimationDefinitionID animDefID = static_cast<EntityAnimationDefinitionID>(this->defs.size());
+		this->defs.emplace_back(std::move(animDef));
+
+		VfxEntityAnimationKey animKey;
+		animKey.initSpellProjectile(i);
+		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
+	}
+
+	for (int i = 0; i < spellExplosionAnimFilenames.getCount(); i++)
+	{
+		const std::string animFilename = String::toUppercase(spellExplosionAnimFilenames[i]);
+		EntityAnimationDefinition animDef;
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, textureManager, &animDef))
+		{
+			DebugLogError("Couldn't create VFX animation definition for spell explosion \"" + animFilename + "\".");
+			continue;
+		}
+
+		const EntityAnimationDefinitionID animDefID = static_cast<EntityAnimationDefinitionID>(this->defs.size());
+		this->defs.emplace_back(std::move(animDef));
+
+		VfxEntityAnimationKey animKey;
+		animKey.initSpellExplosion(i);
+		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
+	}
+	
+	for (int i = 0; i < meleeVfxAnimFilenames.getCount(); i++)
+	{
+		const std::string animFilename = String::toUppercase(meleeVfxAnimFilenames[i]);
+		EntityAnimationDefinition animDef;
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, textureManager, &animDef))
+		{
+			DebugLogError("Couldn't create VFX animation definition for melee strike \"" + animFilename + "\".");
+			continue;
+		}
+
+		const EntityAnimationDefinitionID animDefID = static_cast<EntityAnimationDefinitionID>(this->defs.size());
+		this->defs.emplace_back(std::move(animDef));
+
+		VfxEntityAnimationKey animKey;
+		animKey.initMeleeStrike(i);
+		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
+	}
 }
 
 int EntityAnimationLibrary::getDefinitionCount() const
@@ -172,6 +256,33 @@ EntityAnimationDefinitionID EntityAnimationLibrary::getCitizenAnimDefID(const Ci
 	});
 
 	DebugAssert(iter != this->citizenDefIDs.end());
+	return iter->second;
+}
+
+EntityAnimationDefinitionID EntityAnimationLibrary::getVfxAnimDefID(const VfxEntityAnimationKey &key) const
+{
+	const auto iter = std::find_if(this->vfxDefIDs.begin(), this->vfxDefIDs.end(),
+		[&key](const auto &pair)
+	{
+		const VfxEntityAnimationKey &animKey = pair.first;
+		if (animKey.type != key.type)
+		{
+			return false;
+		}
+
+		switch (animKey.type)
+		{
+		case VfxEntityAnimationType::SpellProjectile:
+		case VfxEntityAnimationType::SpellExplosion:
+			return animKey.spellIndex == key.spellIndex;
+		case VfxEntityAnimationType::MeleeStrike:
+			return animKey.bloodIndex == key.bloodIndex;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(animKey.type)));
+		}
+	});
+
+	DebugAssert(iter != this->vfxDefIDs.end());
 	return iter->second;
 }
 

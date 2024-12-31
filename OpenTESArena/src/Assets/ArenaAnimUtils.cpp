@@ -77,6 +77,11 @@ namespace ArenaAnimUtils
 		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
 	}
 
+	void MakeVfxKeyframeDimensions(int width, int height, double *outWidth, double *outHeight)
+	{
+		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
+	}
+
 	int GetCitizenAnimationFilenameIndex(bool isMale, ArenaTypes::ClimateType climateType)
 	{
 		if (isMale)
@@ -1071,6 +1076,36 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bo
 		textureManager, outAnimDef))
 	{
 		DebugLogWarning("Couldn't add walk anim state for citizen ID \"" + std::to_string(animFilenameIndex) + "\".");
+	}
+
+	return true;
+}
+
+bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLooping, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
+{
+	DebugAssert(outAnimDef->stateCount == 0);
+
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogWarning("Couldn't get VFX anim texture file metadata for \"" + animFilename + "\".");
+		return false;
+	}
+
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const int keyframeCount = textureFileMetadata.getTextureCount();
+	const double stateSeconds = static_cast<double>(keyframeCount) * VfxIdleSecondsPerFrame;
+	const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_IDLE.c_str(), stateSeconds, isLooping);
+
+	constexpr bool isMirrored = false;
+	const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
+	for (int i = 0; i < keyframeCount; i++)
+	{
+		double width, height;
+		MakeVfxKeyframeDimensions(textureFileMetadata.getWidth(i), textureFileMetadata.getHeight(i), &width, &height);
+
+		TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), i);
+		outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 	}
 
 	return true;
