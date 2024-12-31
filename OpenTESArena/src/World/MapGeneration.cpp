@@ -188,31 +188,25 @@ namespace MapGeneration
 		const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 
 		bool isFinalBoss;
-		const bool isCreature = optItemIndex.has_value() &&
-			ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
-		const bool isHumanEnemy = optItemIndex.has_value() &&
-			ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
+		const bool isCreature = optItemIndex.has_value() && ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
+		const bool isHumanEnemy = optItemIndex.has_value() && ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
 		EntityAnimationDefinition entityAnimDef;
 		if (!isDynamicEntity)
 		{
-			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType,
-				rulerIsMale, inf, textureManager, &entityAnimDef))
+			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType, rulerIsMale, inf, textureManager, &entityAnimDef))
 			{
-				DebugLogWarning("Couldn't make static entity anims for flat \"" +
-					std::to_string(flatIndex) + "\".");
+				DebugLogWarning("Couldn't make static entity anims for flat \"" + std::to_string(flatIndex) + "\".");
 				return false;
 			}
 
 			// The entity can only be instantiated if there is at least an idle animation.
-			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(
-				EntityAnimationUtils::STATE_IDLE.c_str());
+			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 			if (!idleStateIndex.has_value())
 			{
-				DebugLogWarning("Missing static entity idle anim state for flat \"" +
-					std::to_string(flatIndex) + "\".");
+				DebugLogWarning("Missing static entity idle anim state for flat \"" + std::to_string(flatIndex) + "\".");
 				return false;
 			}
 		}
@@ -221,21 +215,17 @@ namespace MapGeneration
 			// Assume that human enemies in level data are male.
 			const std::optional<bool> isMale = true;
 
-			if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, inf, charClassLibrary,
-				binaryAssetLibrary, textureManager, &entityAnimDef))
+			if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, inf, charClassLibrary, binaryAssetLibrary, textureManager, &entityAnimDef))
 			{
-				DebugLogWarning("Couldn't make dynamic entity anims for flat \"" +
-					std::to_string(flatIndex) + "\".");
+				DebugLogWarning("Couldn't make dynamic entity anims for flat \"" + std::to_string(flatIndex) + "\".");
 				return false;
 			}
 
 			// Must have at least an idle animation.
-			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(
-				EntityAnimationUtils::STATE_IDLE.c_str());
+			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 			if (!idleStateIndex.has_value())
 			{
-				DebugLogWarning("Missing dynamic entity idle anim state for flat \"" +
-					std::to_string(flatIndex) + "\".");
+				DebugLogWarning("Missing dynamic entity idle anim state for flat \"" + std::to_string(flatIndex) + "\".");
 				return false;
 			}
 		}
@@ -278,9 +268,8 @@ namespace MapGeneration
 			// @todo: TransitionDefID from flatIndex -- use MapGeneration::isMap1TransitionEntity().
 			// @todo: support wild den transitions here. Might need to pass the transition cache here.
 
-			outDef->initDoodad(flatData.yOffset, scale, flatData.collider,
-				flatData.transparent, flatData.ceiling, streetLight, flatData.puddle,
-				lightIntensity, std::move(entityAnimDef));
+			outDef->initDoodad(flatData.yOffset, scale, flatData.collider, flatData.transparent, flatData.ceiling, streetLight,
+				flatData.puddle, lightIntensity, std::move(entityAnimDef));
 		}
 
 		return true;

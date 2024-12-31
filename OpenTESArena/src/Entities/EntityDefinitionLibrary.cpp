@@ -1,3 +1,4 @@
+#include "EntityAnimationLibrary.h"
 #include "EntityDefinitionLibrary.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
@@ -109,21 +110,19 @@ int EntityDefinitionLibrary::findDefIndex(const EntityDefinitionKey &key) const
 	return NO_INDEX;
 }
 
-void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textureManager)
+void EntityDefinitionLibrary::init(const ExeData &exeData, const EntityAnimationLibrary &entityAnimLibrary)
 {
 	// This init method assumes that all creatures, human enemies, and citizens are known
 	// in advance of loading any levels, and any code that relies on those definitions can
 	// assume that no others are added by a level.
 
-	auto addCreatureDef = [this, &exeData, &textureManager](int creatureID, bool isFinalBoss)
+	auto addCreatureDef = [this, &exeData, &entityAnimLibrary](int creatureID, bool isFinalBoss)
 	{
-		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(creatureID, exeData, textureManager, &animDef))
-		{
-			DebugLogWarning("Couldn't make creature anims for creature ID \"" + std::to_string(creatureID) + "\".");
-			return;
-		}
+		CreatureEntityAnimationKey animKey;
+		animKey.init(creatureID);
 
+		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getCreatureAnimDefID(animKey);
+		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
 		const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 
 		EntityDefinitionKey key;
@@ -135,14 +134,13 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textu
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
-	auto addCitizenDef = [this, &exeData, &textureManager](ArenaTypes::ClimateType climateType, bool male)
+	auto addCitizenDef = [this, &exeData, &entityAnimLibrary](ArenaTypes::ClimateType climateType, bool male)
 	{
-		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, exeData, textureManager, &animDef))
-		{
-			DebugLogWarning("Couldn't make citizen anims for citizen \"" + std::to_string(static_cast<int>(climateType)) + "\".");
-			return;
-		}
+		CitizenEntityAnimationKey animKey;
+		animKey.init(male, climateType);
+
+		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getCitizenAnimDefID(animKey);
+		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
 
 		EntityDefinitionKey key;
 		key.initCitizen(male, climateType);

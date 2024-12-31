@@ -9,6 +9,7 @@
 
 #include "components/utilities/Singleton.h"
 
+class EntityAnimationLibrary;
 class ExeData;
 class TextureManager;
 
@@ -106,7 +107,7 @@ public:
 		}
 	}
 
-	void init(const ExeData &exeData, TextureManager &textureManager);
+	void init(const ExeData &exeData, const EntityAnimationLibrary &entityAnimLibrary);
 
 	// Gets the number of entity definitions. This is useful for the currently-active entity
 	// manager that needs to start its definition IDs at the end of these.

@@ -378,8 +378,10 @@ bool Game::init()
 	CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	charClassLibrary.init(exeData);
 	CharacterRaceLibrary::getInstance().init(exeData);
-	EntityAnimationLibrary::getInstance().init(binaryAssetLibrary, charClassLibrary, this->textureManager);
-	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
+
+	EntityAnimationLibrary &entityAnimLibrary = EntityAnimationLibrary::getInstance();
+	entityAnimLibrary.init(binaryAssetLibrary, charClassLibrary, this->textureManager);
+	EntityDefinitionLibrary::getInstance().init(exeData, entityAnimLibrary);
 
 	this->sceneManager.init(this->textureManager, this->renderer);
 	this->sceneManager.renderVoxelChunkManager.init(this->renderer);
