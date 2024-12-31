@@ -26,6 +26,7 @@
 #include "../Collision/PhysicsBodyActivationListener.h"
 #include "../Collision/PhysicsContactListener.h"
 #include "../Collision/PhysicsLayer.h"
+#include "../Entities/EntityAnimationLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CinematicLibrary.h"
@@ -373,8 +374,11 @@ bool Game::init()
 	ItemMaterialLibrary::getInstance().init(exeData);
 	ItemLibrary::getInstance().init(exeData);
 	WeaponAnimationLibrary::getInstance().init(exeData, this->textureManager);
-	CharacterClassLibrary::getInstance().init(exeData);
+
+	CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	charClassLibrary.init(exeData);
 	CharacterRaceLibrary::getInstance().init(exeData);
+	EntityAnimationLibrary::getInstance().init(binaryAssetLibrary, charClassLibrary, this->textureManager);
 	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
 
 	this->sceneManager.init(this->textureManager, this->renderer);

@@ -141,6 +141,8 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.h"
     "${SRC_ROOT}/Entities/EntityAnimationInstance.cpp"
     "${SRC_ROOT}/Entities/EntityAnimationInstance.h"
+    "${SRC_ROOT}/Entities/EntityAnimationLibrary.cpp"
+    "${SRC_ROOT}/Entities/EntityAnimationLibrary.h"
     "${SRC_ROOT}/Entities/EntityAnimationUtils.h"
     "${SRC_ROOT}/Entities/EntityChunk.cpp"
     "${SRC_ROOT}/Entities/EntityChunk.h"
