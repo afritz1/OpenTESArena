@@ -1,8 +1,6 @@
 #ifndef ARENA_ITEM_UTILS_H
 #define ARENA_ITEM_UTILS_H
 
-#include <algorithm>
-
 namespace ArenaItemUtils
 {
 	// Converts Arena weight units to kilograms.

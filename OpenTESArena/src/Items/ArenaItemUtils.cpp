@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iterator>
 
 #include "ArenaItemUtils.h"
 
