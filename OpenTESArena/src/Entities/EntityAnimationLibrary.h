@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "EntityAnimationDefinition.h"
+#include "EntityDefinition.h"
 #include "../Assets/ArenaTypes.h"
 
 #include "components/utilities/Singleton.h"
@@ -43,22 +44,10 @@ struct CitizenEntityAnimationKey
 	void init(bool male, ArenaTypes::ClimateType climateType);
 };
 
-enum class VfxEntityAnimationType
-{
-	SpellProjectile,
-	SpellExplosion,
-	MeleeStrike
-};
-
 struct VfxEntityAnimationKey
 {
 	VfxEntityAnimationType type;
-
-	union
-	{
-		int spellIndex; // 0-11
-		int bloodIndex; // 0-2
-	};
+	int index; // 0-11 for spells, 0-2 for melee effects.
 
 	VfxEntityAnimationKey();
 

@@ -17,9 +17,17 @@ enum class EntityDefinitionType
 	StaticNPC, // Bartenders, priests, etc..
 	Item, // Keys, tablets, staff pieces, etc..
 	Container, // Chests, loot piles, etc..
-	Projectile, // Arrows, spells, etc..
+	Projectile, // Arrows
+	Vfx, // Spell projectile, explosion, or melee strike
 	Transition, // Wilderness den.
 	Doodad // Trees, chairs, streetlights, etc..
+};
+
+enum class VfxEntityAnimationType
+{
+	SpellProjectile,
+	SpellExplosion,
+	MeleeStrike
 };
 
 class EntityDefinition
@@ -257,6 +265,18 @@ public:
 		bool operator==(const ProjectileDefinition &other) const;
 	};
 
+	struct VfxDefinition
+	{
+		VfxEntityAnimationType type;
+		int index; // Points into projectiles, explosions, or blood effects.
+
+		VfxDefinition();
+
+		void init(VfxEntityAnimationType type, int index);
+
+		bool operator==(const VfxDefinition &other) const;
+	};
+
 	struct TransitionDefinition
 	{
 		// Should be fine to store this ID that points into a LevelInfoDefinition since transition
@@ -302,6 +322,7 @@ private:
 		ItemDefinition item;
 		ContainerDefinition container;
 		ProjectileDefinition projectile;
+		VfxDefinition vfx;
 		TransitionDefinition transition;
 		DoodadDefinition doodad;
 	};
@@ -320,39 +341,32 @@ public:
 	const ItemDefinition &getItem() const;
 	const ContainerDefinition &getContainer() const;
 	const ProjectileDefinition &getProjectile() const;
+	const VfxDefinition &getVfx() const;
 	const TransitionDefinition &getTransition() const;
 	const DoodadDefinition &getDoodad() const;
 
-	// Enemy.
-	void initEnemyCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData,
-		EntityAnimationDefinition &&animDef);
+	void initEnemyCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData, EntityAnimationDefinition &&animDef);
 	void initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef);
 
-	// Citizen.
 	void initCitizen(bool male, ArenaTypes::ClimateType climateType, EntityAnimationDefinition &&animDef);
 
-	// Static NPC.
-	void initStaticNpcShopkeeper(StaticNpcDefinition::ShopkeeperDefinition::Type type,
-		EntityAnimationDefinition &&animDef);
+	void initStaticNpcShopkeeper(StaticNpcDefinition::ShopkeeperDefinition::Type type, EntityAnimationDefinition &&animDef);
 	void initStaticNpcPerson(EntityAnimationDefinition &&animDef);
 
-	// Item.
 	void initItemKey(EntityAnimationDefinition &&animDef);
 	void initItemQuestItem(EntityAnimationDefinition &&animDef);
 
-	// Container.
 	void initContainerHolder(bool locked, EntityAnimationDefinition &&animDef);
 	void initContainerPile(EntityAnimationDefinition &&animDef);
 
-	// Projectile.
 	void initProjectile(bool hasGravity, EntityAnimationDefinition &&animDef);
+	
+	void initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef);
 
-	// Transition.
 	void initTransition(LevelDefinition::TransitionDefID defID, EntityAnimationDefinition &&animDef);
 
-	// Doodad.
-	void initDoodad(int yOffset, double scale, bool collider, bool transparent, bool ceiling,
-		bool streetlight, bool puddle, int lightIntensity, EntityAnimationDefinition &&animDef);
+	void initDoodad(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle,
+		int lightIntensity, EntityAnimationDefinition &&animDef);
 };
 
 #endif

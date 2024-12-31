@@ -17,7 +17,8 @@ enum class EntityDefinitionKeyType
 {
 	Creature,
 	HumanEnemy,
-	Citizen
+	Citizen,
+	Vfx
 };
 
 struct CreatureEntityDefinitionKey
@@ -50,6 +51,16 @@ struct CitizenEntityDefinitionKey
 	void init(bool male, ArenaTypes::ClimateType climateType);
 };
 
+struct VfxEntityDefinitionKey
+{
+	VfxEntityAnimationType type;
+	int index;
+
+	bool operator==(const VfxEntityDefinitionKey &other) const;
+
+	void init(VfxEntityAnimationType type, int index);
+};
+
 struct EntityDefinitionKey
 {
 	EntityDefinitionKeyType type;
@@ -59,6 +70,7 @@ struct EntityDefinitionKey
 		CreatureEntityDefinitionKey creature;
 		HumanEnemyEntityDefinitionKey humanEnemy;
 		CitizenEntityDefinitionKey citizen;
+		VfxEntityDefinitionKey vfx;
 	};
 
 	void init(EntityDefinitionKeyType type);
@@ -70,6 +82,7 @@ struct EntityDefinitionKey
 	void initCreature(int creatureIndex, bool isFinalBoss);
 	void initHumanEnemy(bool male, int charClassID);
 	void initCitizen(bool male, ArenaTypes::ClimateType climateType);
+	void initVfx(VfxEntityAnimationType type, int index);
 };
 
 // Collection of various entity definitions. Not all definition types are supported

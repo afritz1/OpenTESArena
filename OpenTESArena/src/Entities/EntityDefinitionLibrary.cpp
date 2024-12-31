@@ -41,6 +41,17 @@ void CitizenEntityDefinitionKey::init(bool male, ArenaTypes::ClimateType climate
 	this->climateType = climateType;
 }
 
+bool VfxEntityDefinitionKey::operator==(const VfxEntityDefinitionKey &other) const
+{
+	return (this->type == other.type) && (this->index == other.index);
+}
+
+void VfxEntityDefinitionKey::init(VfxEntityAnimationType type, int index)
+{
+	this->type = type;
+	this->index = index;
+}
+
 EntityDefinitionKey::EntityDefinitionKey()
 {
 	this->type = static_cast<EntityDefinitionKeyType>(-1);
@@ -64,6 +75,10 @@ bool EntityDefinitionKey::operator==(const EntityDefinitionKey &other) const
 	else if (this->type == EntityDefinitionKeyType::Citizen)
 	{
 		return this->citizen == other.citizen;
+	}
+	else if (this->type == EntityDefinitionKeyType::Vfx)
+	{
+		return this->vfx == other.vfx;
 	}
 	else
 	{
@@ -92,6 +107,12 @@ void EntityDefinitionKey::initCitizen(bool male, ArenaTypes::ClimateType climate
 {
 	this->init(EntityDefinitionKeyType::Citizen);
 	this->citizen.init(male, climateType);
+}
+
+void EntityDefinitionKey::initVfx(VfxEntityAnimationType type, int index)
+{
+	this->init(EntityDefinitionKeyType::Vfx);
+	this->vfx.init(type, index);
 }
 
 EntityDefinitionLibrary::Entry::Entry(EntityDefinitionKey &&key, EntityDefinition &&def)
@@ -169,6 +190,37 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
+	auto addVfxDef = [this, &exeData, &entityAnimLibrary](VfxEntityAnimationType type, int index)
+	{
+		VfxEntityAnimationKey animKey;
+		switch (type)
+		{
+		case VfxEntityAnimationType::SpellProjectile:
+			animKey.initSpellProjectile(index);
+			break;
+		case VfxEntityAnimationType::SpellExplosion:
+			animKey.initSpellExplosion(index);
+			break;
+		case VfxEntityAnimationType::MeleeStrike:
+			animKey.initMeleeStrike(index);
+			break;
+		default:
+			DebugNotImplemented();
+			break;
+		}
+
+		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getVfxAnimDefID(animKey);
+		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
+
+		EntityDefinitionKey key;
+		key.initVfx(type, index);
+
+		EntityDefinition entityDef;
+		entityDef.initVfx(type, index, std::move(animDef));
+
+		this->addDefinition(std::move(key), std::move(entityDef));
+	};
+
 	// Iterate all creatures + final boss.
 	const int creatureCount = static_cast<int>(exeData.entities.creatureNames.size());
 	for (int i = 0; i < creatureCount; i++)
@@ -190,12 +242,30 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		addHumanEnemyDef(false, charClassID);
 	}
 
-	// Iterate all climate type + gender combinations.
+	// Iterate all climate type + gender combinations for citizens.
 	for (int i = 0; i < ArenaClimateUtils::getClimateTypeCount(); i++)
 	{
 		const ArenaTypes::ClimateType climateType = ArenaClimateUtils::getClimateType(i);
 		addCitizenDef(climateType, true);
 		addCitizenDef(climateType, false);
+	}
+
+	// Iterate all spell effects and melee effects.
+	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;
+	const int meleeVfxCount = EntityAnimationUtils::MELEE_VFX_COUNT;
+	for (int i = 0; i < spellTypeCount; i++)
+	{
+		addVfxDef(VfxEntityAnimationType::SpellProjectile, i);
+	}
+
+	for (int i = 0; i < spellTypeCount; i++)
+	{
+		addVfxDef(VfxEntityAnimationType::SpellExplosion, i);
+	}
+
+	for (int i = 0; i < meleeVfxCount; i++)
+	{
+		addVfxDef(VfxEntityAnimationType::MeleeStrike, i);
 	}
 }
 

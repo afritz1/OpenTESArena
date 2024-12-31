@@ -484,6 +484,28 @@ bool EntityDefinition::ProjectileDefinition::operator==(const ProjectileDefiniti
 	return this->hasGravity == other.hasGravity;
 }
 
+EntityDefinition::VfxDefinition::VfxDefinition()
+{
+	this->type = static_cast<VfxEntityAnimationType>(-1);
+	this->index = -1;
+}
+
+void EntityDefinition::VfxDefinition::init(VfxEntityAnimationType type, int index)
+{
+	this->type = type;
+	this->index = index;
+}
+
+bool EntityDefinition::VfxDefinition::operator==(const VfxDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return (this->type == other.type) && (this->index == other.index);
+}
+
 EntityDefinition::TransitionDefinition::TransitionDefinition()
 {
 	this->transitionDefID = -1;
@@ -676,6 +698,12 @@ const EntityDefinition::ProjectileDefinition &EntityDefinition::getProjectile() 
 	return this->projectile;
 }
 
+const EntityDefinition::VfxDefinition &EntityDefinition::getVfx() const
+{
+	DebugAssert(this->type == EntityDefinitionType::Vfx);
+	return this->vfx;
+}
+
 const EntityDefinition::TransitionDefinition &EntityDefinition::getTransition() const
 {
 	DebugAssert(this->type == EntityDefinitionType::Transition);
@@ -749,6 +777,12 @@ void EntityDefinition::initProjectile(bool hasGravity, EntityAnimationDefinition
 {
 	this->init(EntityDefinitionType::Projectile, std::move(animDef));
 	this->projectile.init(hasGravity);
+}
+
+void EntityDefinition::initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef)
+{
+	this->init(EntityDefinitionType::Vfx, std::move(animDef));
+	this->vfx.init(type, index);
 }
 
 void EntityDefinition::initTransition(LevelDefinition::TransitionDefID defID,

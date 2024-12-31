@@ -47,24 +47,25 @@ void CitizenEntityAnimationKey::init(bool male, ArenaTypes::ClimateType climateT
 VfxEntityAnimationKey::VfxEntityAnimationKey()
 {
 	this->type = static_cast<VfxEntityAnimationType>(-1);
+	this->index = -1;
 }
 
 void VfxEntityAnimationKey::initSpellProjectile(int spellIndex)
 {
 	this->type = VfxEntityAnimationType::SpellProjectile;
-	this->spellIndex = spellIndex;
+	this->index = spellIndex;
 }
 
 void VfxEntityAnimationKey::initSpellExplosion(int spellIndex)
 {
 	this->type = VfxEntityAnimationType::SpellExplosion;
-	this->spellIndex = spellIndex;
+	this->index = spellIndex;
 }
 
 void VfxEntityAnimationKey::initMeleeStrike(int bloodIndex)
 {
 	this->type = VfxEntityAnimationType::MeleeStrike;
-	this->bloodIndex = bloodIndex;
+	this->index = bloodIndex;
 }
 
 void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, const CharacterClassLibrary &charClassLibrary, TextureManager &textureManager)
@@ -152,8 +153,8 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	}
 
 	// VFX
-	const int spellTypeCount = 12;
-	const int meleeVfxCount = 3;
+	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;
+	const int meleeVfxCount = EntityAnimationUtils::MELEE_VFX_COUNT;
 	const int spellProjectileStartIndex = spellTypeCount;
 	const int spellExplosionStartIndex = 0;
 	const int meleeVfxStartIndex = spellProjectileStartIndex + spellTypeCount;
@@ -265,21 +266,7 @@ EntityAnimationDefinitionID EntityAnimationLibrary::getVfxAnimDefID(const VfxEnt
 		[&key](const auto &pair)
 	{
 		const VfxEntityAnimationKey &animKey = pair.first;
-		if (animKey.type != key.type)
-		{
-			return false;
-		}
-
-		switch (animKey.type)
-		{
-		case VfxEntityAnimationType::SpellProjectile:
-		case VfxEntityAnimationType::SpellExplosion:
-			return animKey.spellIndex == key.spellIndex;
-		case VfxEntityAnimationType::MeleeStrike:
-			return animKey.bloodIndex == key.bloodIndex;
-		default:
-			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(animKey.type)));
-		}
+		return (animKey.type == key.type) && (animKey.index == key.index);
 	});
 
 	DebugAssert(iter != this->vfxDefIDs.end());
