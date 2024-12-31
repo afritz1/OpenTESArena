@@ -381,7 +381,7 @@ bool Game::init()
 
 	EntityAnimationLibrary &entityAnimLibrary = EntityAnimationLibrary::getInstance();
 	entityAnimLibrary.init(binaryAssetLibrary, charClassLibrary, this->textureManager);
-	EntityDefinitionLibrary::getInstance().init(exeData, entityAnimLibrary);
+	EntityDefinitionLibrary::getInstance().init(exeData, charClassLibrary, entityAnimLibrary);
 
 	this->sceneManager.init(this->textureManager, this->renderer);
 	this->sceneManager.renderVoxelChunkManager.init(this->renderer);

@@ -16,7 +16,7 @@ class TextureManager;
 enum class EntityDefinitionKeyType
 {
 	Creature,
-	//HumanEnemy, // Not supported due to dependence on .INF file's corpse texture.
+	HumanEnemy,
 	Citizen
 };
 
@@ -30,15 +30,15 @@ struct CreatureEntityDefinitionKey
 	void init(int creatureIndex, bool isFinalBoss);
 };
 
-/*struct HumanEnemyKey
+struct HumanEnemyEntityDefinitionKey
 {
 	bool male;
 	int charClassID;
 
-	bool operator==(const HumanEnemyKey &other) const;
+	bool operator==(const HumanEnemyEntityDefinitionKey &other) const;
 
 	void init(bool male, int charClassID);
-};*/
+};
 
 struct CitizenEntityDefinitionKey
 {
@@ -57,7 +57,7 @@ struct EntityDefinitionKey
 	union
 	{
 		CreatureEntityDefinitionKey creature;
-		//HumanEnemyKey humanEnemy;
+		HumanEnemyEntityDefinitionKey humanEnemy;
 		CitizenEntityDefinitionKey citizen;
 	};
 
@@ -68,7 +68,7 @@ struct EntityDefinitionKey
 	bool operator==(const EntityDefinitionKey &other) const;
 
 	void initCreature(int creatureIndex, bool isFinalBoss);
-	//void initHumanEnemy(bool male, int charClassID);
+	void initHumanEnemy(bool male, int charClassID);
 	void initCitizen(bool male, ArenaTypes::ClimateType climateType);
 };
 
@@ -107,7 +107,7 @@ public:
 		}
 	}
 
-	void init(const ExeData &exeData, const EntityAnimationLibrary &entityAnimLibrary);
+	void init(const ExeData &exeData, const CharacterClassLibrary &charClassLibrary, const EntityAnimationLibrary &entityAnimLibrary);
 
 	// Gets the number of entity definitions. This is useful for the currently-active entity
 	// manager that needs to start its definition IDs at the end of these.
