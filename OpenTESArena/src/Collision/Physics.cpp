@@ -266,7 +266,7 @@ namespace Physics
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
 		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
-		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const CollisionShapeDefinition &collisionShapeDef = collisionChunk->getCollisionShapeDef(collisionShapeDefID);
 		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
 		const CollisionBoxShapeDefinition &collisionBoxShapeDef = collisionShapeDef.box;
@@ -331,7 +331,7 @@ namespace Physics
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
 		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
-		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const CollisionShapeDefinition &collisionShapeDef = collisionChunk->getCollisionShapeDef(collisionShapeDefID);
 		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
 		const CollisionBoxShapeDefinition &collisionBoxShapeDef = collisionShapeDef.box;

@@ -81,7 +81,7 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
-				const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
+				const CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
 				collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
 
 				const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
@@ -144,7 +144,7 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 		const int y = voxelPos.y;
 		const WEInt z = voxelPos.z;
 		const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
-		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
+		const CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
 		collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
 
 		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);

@@ -13,13 +13,13 @@
 
 #include "components/utilities/Buffer3D.h"
 
+using CollisionShapeDefID = int;
+
 class CollisionChunk final : public Chunk
 {
 public:
-	using CollisionShapeDefID = int;
-
 	std::vector<CollisionShapeDefinition> shapeDefs;
-	std::unordered_map<VoxelShapeDefID, CollisionChunk::CollisionShapeDefID> shapeMappings;
+	std::unordered_map<VoxelShapeDefID, CollisionShapeDefID> shapeMappings;
 	Buffer3D<CollisionShapeDefID> shapeDefIDs;
 	Buffer3D<bool> enabledColliders; // @todo: decide if this is obsolete and whether the Body can store its in/out of world state
 	Buffer3D<JPH::BodyID> physicsBodyIDs;
@@ -33,7 +33,7 @@ public:
 	int getCollisionShapeDefCount() const;
 	const CollisionShapeDefinition &getCollisionShapeDef(CollisionShapeDefID id) const;
 	CollisionShapeDefID addCollisionShapeDef(CollisionShapeDefinition &&shapeDef);
-	CollisionChunk::CollisionShapeDefID getOrAddShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID);
+	CollisionShapeDefID getOrAddShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID);
 };
 
 #endif

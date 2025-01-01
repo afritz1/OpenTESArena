@@ -90,16 +90,16 @@ const CollisionShapeDefinition &CollisionChunk::getCollisionShapeDef(CollisionSh
 	return this->shapeDefs[id];
 }
 
-CollisionChunk::CollisionShapeDefID CollisionChunk::addCollisionShapeDef(CollisionShapeDefinition &&shapeDef)
+CollisionShapeDefID CollisionChunk::addCollisionShapeDef(CollisionShapeDefinition &&shapeDef)
 {
 	const CollisionShapeDefID id = static_cast<CollisionShapeDefID>(this->shapeDefs.size());
 	this->shapeDefs.emplace_back(std::move(shapeDef));
 	return id;
 }
 
-CollisionChunk::CollisionShapeDefID CollisionChunk::getOrAddShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID)
+CollisionShapeDefID CollisionChunk::getOrAddShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID)
 {
-	CollisionChunk::CollisionShapeDefID collisionShapeDefID = -1;
+	CollisionShapeDefID collisionShapeDefID = -1;
 
 	const auto iter = this->shapeMappings.find(voxelShapeDefID);
 	if (iter != this->shapeMappings.end())
