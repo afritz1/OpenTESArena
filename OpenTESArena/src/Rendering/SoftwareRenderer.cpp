@@ -3899,18 +3899,18 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 		return false;
 	}
 
-	const TextureBuilderType textureBuilderType = textureBuilder.getType();
+	const TextureBuilderType textureBuilderType = textureBuilder.type;
 	ObjectTexture &texture = this->objectTextures.get(*outID);
 	if (textureBuilderType == TextureBuilderType::Paletted)
 	{
-		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
 		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
 		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
 		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
 	}
 	else if (textureBuilderType == TextureBuilderType::TrueColor)
 	{
-		const TextureBuilder::TrueColorTexture &trueColorTexture = textureBuilder.getTrueColor();
+		const TextureBuilderTrueColorTexture &trueColorTexture = textureBuilder.trueColorTexture;
 		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
 		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.begin());
 		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);

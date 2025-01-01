@@ -52,7 +52,7 @@ namespace
 					const int textureHeight = textureBuilder.getHeight();
 					const int texelCount = textureWidth * textureHeight;
 					constexpr int bytesPerTexel = 1;
-					DebugAssert(textureBuilder.getType() == TextureBuilderType::Paletted);
+					DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
 
 					ObjectTextureID textureID;
 					if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
@@ -63,7 +63,7 @@ namespace
 
 					ScopedObjectTextureRef textureRef(textureID, renderer);
 
-					const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+					const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
 					const uint8_t *srcTexels = palettedTexture.texels.begin();
 
 					LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);

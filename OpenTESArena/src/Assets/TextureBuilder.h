@@ -11,28 +11,27 @@ enum class TextureBuilderType
 	TrueColor
 };
 
-// Intermediate texture data for initializing renderer-specific textures (voxels, entities, UI, etc.).
-class TextureBuilder
+struct TextureBuilderPalettedTexture
 {
-public:
-	struct PalettedTexture
-	{
-		Buffer2D<uint8_t> texels;
+	Buffer2D<uint8_t> texels;
 
-		void init(int width, int height, const uint8_t *texels);
-	};
+	void init(int width, int height, const uint8_t *texels);
+};
 
-	struct TrueColorTexture
-	{
-		Buffer2D<uint32_t> texels;
+struct TextureBuilderTrueColorTexture
+{
+	Buffer2D<uint32_t> texels;
 
-		void init(int width, int height, const uint32_t *texels);
-	};
-private:
+	void init(int width, int height, const uint32_t *texels);
+};
+
+// Intermediate texture data for initializing renderer-specific textures (voxels, entities, UI, etc.).
+struct TextureBuilder
+{
 	TextureBuilderType type;
-	PalettedTexture paletteTexture;
-	TrueColorTexture trueColorTexture;
-public:
+	TextureBuilderPalettedTexture paletteTexture;
+	TextureBuilderTrueColorTexture trueColorTexture;
+
 	TextureBuilder();
 
 	void initPaletted(int width, int height, const uint8_t *texels);
@@ -41,9 +40,6 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 	int getBytesPerTexel() const;
-	TextureBuilderType getType() const;
-	const PalettedTexture &getPaletted() const;
-	const TrueColorTexture &getTrueColor() const;
 };
 
 #endif

@@ -14,13 +14,13 @@
 #include "components/utilities/BufferView.h"
 
 class Random;
-class TextureBuilder;
 
 struct RenderCamera;
 struct RenderCommandBuffer;
 struct RenderDrawCall;
 struct RenderFrameSettings;
 struct RenderInitSettings;
+struct TextureBuilder;
 
 // Profiling info gathered from internal renderer state.
 struct Renderer3DProfilerData
