@@ -86,7 +86,7 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 
 				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
 				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-				const bool voxelHasCollision = voxelTraitsDef.hasCollision(); // @todo: lore/sound triggers aren't included in this
+				const bool voxelHasCollision = voxelTraitsDef.hasCollision();
 				collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
 
 				VoxelChunk::TriggerDefID triggerDefID;
