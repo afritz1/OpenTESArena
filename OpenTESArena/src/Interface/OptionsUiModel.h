@@ -62,20 +62,16 @@ namespace OptionsUiModel
 	// This is the base class for all interactive options. Each option has a write-only interface
 	// since the options panel shouldn't really store all the values itself; it's intended to be
 	// a ferry between the UI and wherever in the program the options are actually used.
-	class Option
+	struct Option
 	{
-	private:
 		const std::string &name; // Reference to global constant.
 		std::string tooltip;
 		OptionType type;
-	public:
+
 		Option(const std::string &name, std::string &&tooltip, OptionType type);
 		Option(const std::string &name, OptionType type);
 		virtual ~Option() = default;
 
-		const std::string &getName() const;
-		const std::string &getTooltip() const;
-		OptionType getType() const;
 		virtual std::string getDisplayedValue() const = 0;
 
 		virtual void tryIncrement() = 0;
@@ -84,19 +80,18 @@ namespace OptionsUiModel
 
 	using OptionGroup = std::vector<std::unique_ptr<OptionsUiModel::Option>>;
 
-	class BoolOption : public Option
+	struct BoolOption : public Option
 	{
-	public:
 		using Callback = std::function<void(bool)>;
-	private:
+
 		bool value;
 		Callback callback;
-	public:
+
 		BoolOption(const std::string &name, std::string &&tooltip, bool value, Callback &&callback);
 		BoolOption(const std::string &name, bool value, Callback &&callback);
 		~BoolOption() override = default;
 
-		virtual std::string getDisplayedValue() const override;
+		std::string getDisplayedValue() const override;
 
 		void tryIncrement() override;
 		void tryDecrement() override;
@@ -104,27 +99,23 @@ namespace OptionsUiModel
 		void toggle();
 	};
 
-	class IntOption : public Option
+	struct IntOption : public Option
 	{
-	public:
 		using Callback = std::function<void(int)>;
-	private:
+
 		int value, delta, min, max;
 		std::vector<std::string> displayOverrides; // For displaying names instead of integers.
 		Callback callback;
-	public:
-		IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max,
-			std::vector<std::string> &&displayOverrides, Callback &&callback);
-		IntOption(const std::string &name, int value, int delta, int min, int max,
-			std::vector<std::string> &&displayOverrides, Callback &&callback);
-		IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max,
-			Callback &&callback);
+
+		IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max, std::vector<std::string> &&displayOverrides, Callback &&callback);
+		IntOption(const std::string &name, int value, int delta, int min, int max, std::vector<std::string> &&displayOverrides, Callback &&callback);
+		IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max, Callback &&callback);
 		IntOption(const std::string &name, int value, int delta, int min, int max, Callback &&callback);
 		~IntOption() override = default;
 
 		int getNext() const; // Adds delta to current value, clamped between [min, max].
 		int getPrev() const; // Subtracts delta from current value, clamped between [min, max].
-		virtual std::string getDisplayedValue() const override;
+		std::string getDisplayedValue() const override;
 
 		void tryIncrement() override;
 		void tryDecrement() override;
@@ -132,24 +123,21 @@ namespace OptionsUiModel
 		void set(int value);
 	};
 
-	class DoubleOption : public Option
+	struct DoubleOption : public Option
 	{
-	public:
 		using Callback = std::function<void(double)>;
-	private:
+
 		double value, delta, min, max;
 		int precision;
 		Callback callback;
-	public:
-		DoubleOption(const std::string &name, std::string &&tooltip, double value, double delta,
-			double min, double max, int precision, Callback &&callback);
-		DoubleOption(const std::string &name, double value, double delta, double min, double max,
-			int precision, Callback &&callback);
+
+		DoubleOption(const std::string &name, std::string &&tooltip, double value, double delta, double min, double max, int precision, Callback &&callback);
+		DoubleOption(const std::string &name, double value, double delta, double min, double max, int precision, Callback &&callback);
 		~DoubleOption() override = default;
 
 		double getNext() const; // Adds delta to current value, clamped between [min, max].
 		double getPrev() const; // Subtracts delta from current value, clamped between [min, max].
-		virtual std::string getDisplayedValue() const override;
+		std::string getDisplayedValue() const override;
 
 		void tryIncrement() override;
 		void tryDecrement() override;
@@ -157,19 +145,18 @@ namespace OptionsUiModel
 		void set(double value);
 	};
 
-	class StringOption : public Option
+	struct StringOption : public Option
 	{
-	public:
 		using Callback = std::function<void(const std::string&)>;
-	private:
+
 		std::string value;
 		Callback callback;
-	public:
+
 		StringOption(const std::string &name, std::string &&tooltip, std::string &&value, Callback &&callback);
 		StringOption(const std::string &name, std::string &&value, Callback &&callback);
 		~StringOption() override = default;
 
-		virtual std::string getDisplayedValue() const override;
+		std::string getDisplayedValue() const override;
 
 		void tryIncrement() override;
 		void tryDecrement() override;

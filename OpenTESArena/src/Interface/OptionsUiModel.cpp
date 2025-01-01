@@ -12,23 +12,7 @@ OptionsUiModel::Option::Option(const std::string &name, std::string &&tooltip, O
 OptionsUiModel::Option::Option(const std::string &name, OptionType type)
 	: Option(name, std::string(), type) { }
 
-const std::string &OptionsUiModel::Option::getName() const
-{
-	return this->name;
-}
-
-const std::string &OptionsUiModel::Option::getTooltip() const
-{
-	return this->tooltip;
-}
-
-OptionsUiModel::OptionType OptionsUiModel::Option::getType() const
-{
-	return this->type;
-}
-
-OptionsUiModel::BoolOption::BoolOption(const std::string &name, std::string &&tooltip,
-	bool value, Callback &&callback)
+OptionsUiModel::BoolOption::BoolOption(const std::string &name, std::string &&tooltip, bool value, Callback &&callback)
 	: Option(name, std::move(tooltip), OptionType::Bool), callback(std::move(callback))
 {
 	this->value = value;
@@ -58,10 +42,9 @@ void OptionsUiModel::BoolOption::toggle()
 	this->callback(this->value);
 }
 
-OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min,
-	int max, std::vector<std::string> &&displayOverrides, Callback &&callback)
-	: Option(name, std::move(tooltip), OptionType::Int), displayOverrides(std::move(displayOverrides)),
-	callback(std::move(callback))
+OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max,
+	std::vector<std::string> &&displayOverrides, Callback &&callback)
+	: Option(name, std::move(tooltip), OptionType::Int), displayOverrides(std::move(displayOverrides)), callback(std::move(callback))
 {
 	this->value = value;
 	this->delta = delta;
@@ -73,12 +56,10 @@ OptionsUiModel::IntOption::IntOption(const std::string &name, int value, int del
 	std::vector<std::string> &&displayOverrides, Callback &&callback)
 	: IntOption(name, std::string(), value, delta, min, max, std::move(displayOverrides), std::move(callback)) { }
 
-OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta,
-	int min, int max, Callback &&callback)
+OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max, Callback &&callback)
 	: IntOption(name, std::move(tooltip), value, delta, min, max, std::vector<std::string>(), std::move(callback)) { }
 
-OptionsUiModel::IntOption::IntOption(const std::string &name, int value, int delta, int min, int max,
-	Callback &&callback)
+OptionsUiModel::IntOption::IntOption(const std::string &name, int value, int delta, int min, int max, Callback &&callback)
 	: IntOption(name, std::string(), value, delta, min, max, std::move(callback)) { }
 
 int OptionsUiModel::IntOption::getNext() const
@@ -93,8 +74,7 @@ int OptionsUiModel::IntOption::getPrev() const
 
 std::string OptionsUiModel::IntOption::getDisplayedValue() const
 {
-	return (this->displayOverrides.size() > 0) ?
-		this->displayOverrides.at(this->value) : std::to_string(this->value);
+	return (this->displayOverrides.size() > 0) ? this->displayOverrides.at(this->value) : std::to_string(this->value);
 }
 
 void OptionsUiModel::IntOption::tryIncrement()
@@ -113,8 +93,8 @@ void OptionsUiModel::IntOption::set(int value)
 	this->callback(this->value);
 }
 
-OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, std::string &&tooltip,
-	double value, double delta, double min, double max, int precision, Callback &&callback)
+OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, std::string &&tooltip, double value, double delta,
+	double min, double max, int precision, Callback &&callback)
 	: Option(name, std::move(tooltip), OptionType::Double), callback(std::move(callback))
 {
 	this->value = value;
@@ -124,8 +104,8 @@ OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, std::string 
 	this->precision = precision;
 }
 
-OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, double value, double delta,
-	double min, double max, int precision, Callback &&callback)
+OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, double value, double delta, double min, double max,
+	int precision, Callback &&callback)
 	: DoubleOption(name, std::string(), value, delta, min, max, precision, std::move(callback)) { }
 
 double OptionsUiModel::DoubleOption::getNext() const
@@ -159,13 +139,10 @@ void OptionsUiModel::DoubleOption::set(double value)
 	this->callback(this->value);
 }
 
-OptionsUiModel::StringOption::StringOption(const std::string &name, std::string &&tooltip,
-	std::string &&value, Callback &&callback)
-	: Option(name, std::move(tooltip), OptionType::String), value(std::move(value)),
-	callback(std::move(callback)) { }
+OptionsUiModel::StringOption::StringOption(const std::string &name, std::string &&tooltip, std::string &&value, Callback &&callback)
+	: Option(name, std::move(tooltip), OptionType::String), value(std::move(value)), callback(std::move(callback)) { }
 
-OptionsUiModel::StringOption::StringOption(const std::string &name, std::string &&value,
-	Callback &&callback)
+OptionsUiModel::StringOption::StringOption(const std::string &name, std::string &&value, Callback &&callback)
 	: StringOption(name, std::string(), std::move(value), std::move(callback)) { }
 
 std::string OptionsUiModel::StringOption::getDisplayedValue() const
