@@ -12,15 +12,13 @@
 namespace
 {
 	// Creates collider but does not add it to simulation.
-	bool TryCreatePhysicsCollider(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, const VoxelShapeDefinition &voxelShapeDef,
-		const CollisionShapeDefinition &collisionShapeDef, double ceilingScale, JPH::PhysicsSystem &physicsSystem,
-		JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, const CollisionShapeDefinition &collisionShapeDef,
+		VoxelShapeScaleType scaleType, double ceilingScale, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		const double voxelYBottom = static_cast<double>(y) * ceilingScale;
 
 		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
 		const CollisionBoxShapeDefinition &boxShapeDef = collisionShapeDef.box;
-		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 		const double scaledYBottom = voxelYBottom + MeshUtils::getScaledVertexY(boxShapeDef.yOffset, scaleType, ceilingScale);
 		const double scaledYTop = voxelYBottom + MeshUtils::getScaledVertexY(boxShapeDef.yOffset + boxShapeDef.height, scaleType, ceilingScale);
 		const double scaledHeight = scaledYTop - scaledYBottom;
@@ -53,15 +51,16 @@ namespace
 		const RadiansF boxYRotation = static_cast<RadiansF>(boxShapeDef.yRotation);
 		const JPH::Quat boxJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), boxYRotation);
 		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, boxJoltQuat, JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
-		const JPH::Body *box = bodyInterface.CreateBody(boxSettings);
-		if (box == nullptr)
+		JPH::Body *boxBody = bodyInterface.CreateBody(boxSettings);
+		if (boxBody == nullptr)
 		{
 			const uint32_t totalBodyCount = physicsSystem.GetNumBodies();
 			DebugLogError("Couldn't create Jolt body at (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z) + ") in chunk (" + chunkPos.toString() + ") (total: " + std::to_string(totalBodyCount) + ").");
 			return false;
 		}
 
-		*outBodyID = box->GetID();
+		boxBody->SetIsSensor(isSensor);
+		*outBodyID = boxBody->GetID();
 		return true;
 	}
 }
@@ -89,15 +88,23 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 				const bool voxelHasCollision = voxelTraitsDef.hasCollision(); // @todo: lore/sound triggers aren't included in this
 				collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
-				
-				if (voxelHasCollision)
+
+				VoxelChunk::TriggerDefID triggerDefID;
+				const bool isTriggerVoxel = voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID);
+
+				VoxelChunk::TransitionDefID transitionDefID;
+				const bool isTransitionVoxel = voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID);
+				const bool isSensorCollider = isTriggerVoxel || isTransitionVoxel;
+				const bool shouldCreateCollider = voxelHasCollision || isSensorCollider;
+
+				if (shouldCreateCollider)
 				{
 					const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 					const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
 
 					// Generate collider but don't add to simulation.
 					JPH::BodyID bodyID;
-					if (TryCreatePhysicsCollider(x, y, z, chunkPos, voxelShapeDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
+					if (TryCreatePhysicsCollider(x, y, z, chunkPos, collisionShapeDef, voxelShapeDef.scaleType, ceilingScale, isSensorCollider, physicsSystem, &bodyID))
 					{
 						collisionChunk.physicsBodyIDs.set(x, y, z, bodyID);
 						createdBodyIDs.emplace_back(bodyID);
@@ -133,16 +140,19 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 	// @todo: this dirty shapes list might be full of brand new voxels this frame, so we're accidentally destroying + recreating them all (found during the AddBodiesPrepare/Finalize() work)
 	for (const VoxelInt3 &voxelPos : dirtyShapeDefPositions)
 	{
-		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxelPos.x, voxelPos.y, voxelPos.z);
+		const SNInt x = voxelPos.x;
+		const int y = voxelPos.y;
+		const WEInt z = voxelPos.z;
+		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
 		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
-		collisionChunk.shapeDefIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, collisionShapeDefID);
+		collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
 
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxelPos.x, voxelPos.y, voxelPos.z);
+		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 		const bool voxelHasCollision = voxelTraitsDef.hasCollision();
-		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, voxelHasCollision);
+		collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
 
-		JPH::BodyID existingBodyID = collisionChunk.physicsBodyIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
+		JPH::BodyID existingBodyID = collisionChunk.physicsBodyIDs.get(x, y, z);
 		if (!existingBodyID.IsInvalid())
 		{
 			if (bodyInterface.IsAdded(existingBodyID))
@@ -151,19 +161,27 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 			}
 
 			bodyIDsToDestroy.emplace_back(existingBodyID);
-			collisionChunk.physicsBodyIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, Physics::INVALID_BODY_ID);
+			collisionChunk.physicsBodyIDs.set(x, y, z, Physics::INVALID_BODY_ID);
 		}
 
-		if (voxelHasCollision)
+		VoxelChunk::TriggerDefID triggerDefID;
+		const bool isTriggerVoxel = voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID);
+
+		VoxelChunk::TransitionDefID transitionDefID;
+		const bool isTransitionVoxel = voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID);
+		const bool isSensorCollider = isTriggerVoxel || isTransitionVoxel;
+		const bool shouldCreateCollider = voxelHasCollision || isSensorCollider;
+
+		if (shouldCreateCollider)
 		{
 			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 			const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
 
 			// Generate collider but don't add to simulation yet.
 			JPH::BodyID bodyID;
-			if (TryCreatePhysicsCollider(voxelPos.x, voxelPos.y, voxelPos.z, chunkPos, voxelShapeDef, collisionShapeDef, ceilingScale, physicsSystem, &bodyID))
+			if (TryCreatePhysicsCollider(x, y, z, chunkPos, collisionShapeDef, voxelShapeDef.scaleType, ceilingScale, isSensorCollider, physicsSystem, &bodyID))
 			{
-				collisionChunk.physicsBodyIDs.set(voxelPos.x, voxelPos.y, voxelPos.z, bodyID);
+				collisionChunk.physicsBodyIDs.set(x, y, z, bodyID);
 			}
 
 			bodyIDsToAdd.emplace_back(bodyID);

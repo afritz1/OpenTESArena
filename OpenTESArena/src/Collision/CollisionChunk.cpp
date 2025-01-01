@@ -111,14 +111,14 @@ CollisionChunk::CollisionShapeDefID CollisionChunk::getOrAddShapeDefIdMapping(co
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 
 		CollisionShapeDefinition collisionShapeDef;
-		if (voxelShapeDef.type == VoxelShapeType::None)
-		{
-			collisionShapeDef.initNone();
-		}
-		else
+		if (voxelShapeDef.type == VoxelShapeType::Box)
 		{
 			const VoxelBoxShapeDefinition &voxelBoxShapeDef = voxelShapeDef.box;
 			collisionShapeDef.initBox(voxelBoxShapeDef.width, voxelBoxShapeDef.height, voxelBoxShapeDef.depth, voxelBoxShapeDef.yOffset, voxelBoxShapeDef.yRotation);
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelShapeDef.type)));
 		}
 		
 		collisionShapeDefID = this->addCollisionShapeDef(std::move(collisionShapeDef));

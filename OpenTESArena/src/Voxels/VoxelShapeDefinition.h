@@ -11,7 +11,6 @@
 
 enum class VoxelShapeType
 {
-	None, // Air
 	Box
 };
 
@@ -74,7 +73,6 @@ struct VoxelShapeDefinition
 
 	VoxelShapeDefinition();
 
-	void initNone();
 	void initBoxFromClassic(ArenaTypes::VoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache);
 };
 

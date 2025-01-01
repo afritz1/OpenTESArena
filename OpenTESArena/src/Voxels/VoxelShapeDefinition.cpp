@@ -142,24 +142,10 @@ void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outOpaqu
 
 VoxelShapeDefinition::VoxelShapeDefinition()
 {
-	// Air by default.
-	this->initNone();
-}
-
-void VoxelShapeDefinition::initNone()
-{
-	this->type = VoxelShapeType::None;
-	std::memset(&this->box, 0, sizeof(this->box));
-
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::None;
-	constexpr VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
-	ArenaMeshUtils::ShapeInitCache shapeInitCache;
-	this->mesh.initClassic(voxelType, scaleType, shapeInitCache);
-	this->scaleType = scaleType;
-	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
-	this->allowsAdjacentDoorFaces = ArenaMeshUtils::AllowsAdjacentDoorFaces(voxelType);
-	this->enablesNeighborGeometry = ArenaMeshUtils::EnablesNeighborVoxelGeometry(voxelType);
-	this->isContextSensitive = ArenaMeshUtils::HasContextSensitiveGeometry(voxelType);
+	// Air by default. Needs the shape defined in case of trigger voxels, but doesn't need a render mesh.
+	ArenaMeshUtils::ShapeInitCache airShapeInitCache;
+	airShapeInitCache.initDefaultBoxValues();
+	this->initBoxFromClassic(ArenaTypes::VoxelType::None, VoxelShapeScaleType::ScaledFromMin, airShapeInitCache);
 }
 
 void VoxelShapeDefinition::initBoxFromClassic(ArenaTypes::VoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache)

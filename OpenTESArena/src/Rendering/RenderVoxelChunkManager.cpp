@@ -515,15 +515,16 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 	{
 		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = static_cast<VoxelChunk::VoxelShapeDefID>(shapeDefIndex);
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+		const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
+		const bool isRenderMeshValid = !voxelMeshDef.isEmpty(); // Air has a shape for trigger voxels but no mesh
 
 		RenderVoxelMeshInstance renderVoxelMeshInst;
-		if (voxelShapeDef.type != VoxelShapeType::None) // Only attempt to create buffers for non-air voxels.
+		if (isRenderMeshValid)
 		{
 			constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 			constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
-			const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
 			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshInst.vertexBufferID))
 			{
@@ -736,7 +737,8 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 
 		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
-		if (voxelShapeDef.type == VoxelShapeType::None)
+		const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
+		if (voxelMeshDef.isEmpty())
 		{
 			continue;
 		}

@@ -28,12 +28,7 @@ void CollisionCapsuleShapeDefinition::init(double radius, double middleHeight)
 CollisionShapeDefinition::CollisionShapeDefinition()
 {
 	std::memset(this, 0, sizeof(*this));
-	this->type = CollisionShapeType::None;
-}
-
-void CollisionShapeDefinition::initNone()
-{
-	this->type = CollisionShapeType::None;
+	this->type = static_cast<CollisionShapeType>(-1);
 }
 
 void CollisionShapeDefinition::initBox(double width, double height, double depth, double yOffset, Radians yRotation)
