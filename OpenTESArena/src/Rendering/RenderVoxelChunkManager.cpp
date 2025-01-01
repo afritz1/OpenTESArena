@@ -71,14 +71,14 @@ namespace
 			return false;
 		}
 
-		if (textureList.animType == VoxelChasmDefinition::AnimationType::SolidColor)
+		if (textureList.animType == VoxelChasmAnimationType::SolidColor)
 		{
 			return textureList.paletteIndex == chasmDef.solidColor.paletteIndex;
 		}
-		else if (textureList.animType == VoxelChasmDefinition::AnimationType::Animated)
+		else if (textureList.animType == VoxelChasmAnimationType::Animated)
 		{
 			const int textureAssetCount = static_cast<int>(textureList.textureAssets.size());
-			const VoxelChasmDefinition::Animated &chasmDefAnimated = chasmDef.animated;
+			const VoxelChasmAnimated &chasmDefAnimated = chasmDef.animated;
 
 			if (textureAssetCount != chasmDefAnimated.textureAssets.getCount())
 			{
@@ -138,7 +138,7 @@ namespace
 		{
 			// Load the required textures and add a key for them.
 			RenderVoxelChunkManager::LoadedChasmFloorTextureList newTextureList;
-			if (chasmDef.animType == VoxelChasmDefinition::AnimationType::SolidColor)
+			if (chasmDef.animType == VoxelChasmAnimationType::SolidColor)
 			{
 				// Dry chasms are a single color, no texture asset.
 				ObjectTextureID dryChasmTextureID;
@@ -166,7 +166,7 @@ namespace
 				newTextureList.initColor(paletteIndex, std::move(dryChasmTextureRef));
 				chasmFloorTextureLists.emplace_back(std::move(newTextureList));
 			}
-			else if (chasmDef.animType == VoxelChasmDefinition::AnimationType::Animated)
+			else if (chasmDef.animType == VoxelChasmAnimationType::Animated)
 			{
 				std::vector<TextureAsset> newTextureAssets;
 				std::vector<ScopedObjectTextureRef> newObjectTextureRefs;
@@ -289,14 +289,14 @@ void RenderVoxelChunkManager::LoadedTexture::init(const TextureAsset &textureAss
 
 RenderVoxelChunkManager::LoadedChasmFloorTextureList::LoadedChasmFloorTextureList()
 {
-	this->animType = static_cast<VoxelChasmDefinition::AnimationType>(-1);
+	this->animType = static_cast<VoxelChasmAnimationType>(-1);
 	this->paletteIndex = 0;
 }
 
 void RenderVoxelChunkManager::LoadedChasmFloorTextureList::initColor(uint8_t paletteIndex,
 	ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->animType = VoxelChasmDefinition::AnimationType::SolidColor;
+	this->animType = VoxelChasmAnimationType::SolidColor;
 	this->paletteIndex = paletteIndex;
 	this->objectTextureRefs.emplace_back(std::move(objectTextureRef));
 }
@@ -304,7 +304,7 @@ void RenderVoxelChunkManager::LoadedChasmFloorTextureList::initColor(uint8_t pal
 void RenderVoxelChunkManager::LoadedChasmFloorTextureList::initTextured(std::vector<TextureAsset> &&textureAssets,
 	std::vector<ScopedObjectTextureRef> &&objectTextureRefs)
 {
-	this->animType = VoxelChasmDefinition::AnimationType::Animated;
+	this->animType = VoxelChasmAnimationType::Animated;
 	this->textureAssets = std::move(textureAssets);
 	this->objectTextureRefs = std::move(objectTextureRefs);
 }
@@ -314,11 +314,11 @@ int RenderVoxelChunkManager::LoadedChasmFloorTextureList::getTextureIndex(double
 	const int textureCount = static_cast<int>(this->objectTextureRefs.size());
 	DebugAssert(textureCount >= 1);
 
-	if (this->animType == VoxelChasmDefinition::AnimationType::SolidColor)
+	if (this->animType == VoxelChasmAnimationType::SolidColor)
 	{
 		return 0;
 	}
-	else if (this->animType == VoxelChasmDefinition::AnimationType::Animated)
+	else if (this->animType == VoxelChasmAnimationType::Animated)
 	{
 		const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
 		return index;
@@ -783,7 +783,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		if (isChasm)
 		{
 			chasmDef = &voxelChunk.getChasmDef(chasmDefID);
-			isAnimatingChasm = chasmDef->animType == VoxelChasmDefinition::AnimationType::Animated;
+			isAnimatingChasm = chasmDef->animType == VoxelChasmAnimationType::Animated;
 			isEmissiveChasm = chasmDef->isEmissive;
 
 			const auto chasmWallIndexBufferIdIter = renderChunk.chasmWallIndexBufferIDsMap.find(voxel);

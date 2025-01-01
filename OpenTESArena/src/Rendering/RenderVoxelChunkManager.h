@@ -40,7 +40,7 @@ public:
 	// The draw call and pixel shader need two textures in order to support chasm wall rendering.
 	struct LoadedChasmFloorTextureList
 	{
-		VoxelChasmDefinition::AnimationType animType;
+		VoxelChasmAnimationType animType;
 
 		uint8_t paletteIndex;
 		std::vector<TextureAsset> textureAssets;

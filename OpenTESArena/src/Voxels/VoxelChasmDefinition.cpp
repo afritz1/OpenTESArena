@@ -4,17 +4,17 @@
 #include "VoxelChasmDefinition.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
-VoxelChasmDefinition::SolidColor::SolidColor()
+VoxelChasmSolidColor::VoxelChasmSolidColor()
 {
 	this->paletteIndex = 0;
 }
 
-void VoxelChasmDefinition::SolidColor::init(uint8_t paletteIndex)
+void VoxelChasmSolidColor::init(uint8_t paletteIndex)
 {
 	this->paletteIndex = paletteIndex;
 }
 
-void VoxelChasmDefinition::Animated::init(Buffer<TextureAsset> &&textureAssets)
+void VoxelChasmAnimated::init(Buffer<TextureAsset> &&textureAssets)
 {
 	this->textureAssets = std::move(textureAssets);
 }
@@ -24,7 +24,7 @@ VoxelChasmDefinition::VoxelChasmDefinition()
 	this->allowsSwimming = false;
 	this->isDamaging = false;
 	this->isEmissive = false;
-	this->animType = static_cast<AnimationType>(-1);
+	this->animType = static_cast<VoxelChasmAnimationType>(-1);
 }
 
 VoxelChasmDefinition::VoxelChasmDefinition(const VoxelChasmDefinition &other)
@@ -35,11 +35,11 @@ VoxelChasmDefinition::VoxelChasmDefinition(const VoxelChasmDefinition &other)
 	this->wallTextureAsset = other.wallTextureAsset;
 	this->animType = other.animType;
 
-	if (this->animType == AnimationType::SolidColor)
+	if (this->animType == VoxelChasmAnimationType::SolidColor)
 	{
 		this->solidColor.init(other.solidColor.paletteIndex);
 	}
-	else if (this->animType == AnimationType::Animated)
+	else if (this->animType == VoxelChasmAnimationType::Animated)
 	{
 		const Buffer<TextureAsset> &otherTextureAssets = other.animated.textureAssets;
 		Buffer<TextureAsset> textureAssets(otherTextureAssets.getCount());
@@ -62,12 +62,12 @@ void VoxelChasmDefinition::initClassic(ArenaTypes::ChasmType chasmType, const Te
 
 	if (chasmType == ArenaTypes::ChasmType::Dry)
 	{
-		this->animType = AnimationType::SolidColor;
+		this->animType = VoxelChasmAnimationType::SolidColor;
 		this->solidColor.init(ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR);
 	}
 	else if ((chasmType == ArenaTypes::ChasmType::Wet) || (chasmType == ArenaTypes::ChasmType::Lava))
 	{
-		this->animType = AnimationType::Animated;
+		this->animType = VoxelChasmAnimationType::Animated;
 		this->animated.init(ArenaChasmUtils::getTextureAssets(chasmType, textureManager));
 	}
 	else
