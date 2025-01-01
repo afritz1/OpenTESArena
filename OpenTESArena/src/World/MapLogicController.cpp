@@ -72,25 +72,25 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 	const VoxelTriggerDefinition &triggerDef = chunk.getTriggerDef(triggerDefID);
 	if (triggerDef.hasSoundDef())
 	{
-		const VoxelTriggerDefinition::SoundDef &soundDef = triggerDef.getSoundDef();
-		const std::string &soundFilename = soundDef.getFilename();
+		const VoxelTriggerSoundDefinition &soundDef = triggerDef.sound;
+		const std::string &soundFilename = soundDef.filename;
 		auto &audioManager = game.audioManager;
 		audioManager.playSound(soundFilename.c_str());
 	}
 
 	if (triggerDef.hasTextDef())
 	{
-		const VoxelTriggerDefinition::TextDef &textDef = triggerDef.getTextDef();
+		const VoxelTriggerTextDefinition &textDef = triggerDef.text;
 		const VoxelInt3 &voxel = coord.voxel;
 
 		int triggerInstIndex;
 		const bool hasBeenTriggered = chunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
-		const bool canDisplay = !textDef.isDisplayedOnce() || !hasBeenTriggered;
+		const bool canDisplay = !textDef.isDisplayedOnce || !hasBeenTriggered;
 
 		if (canDisplay)
 		{
 			// Ignore the newline at the end.
-			const std::string &textDefText = textDef.getText();
+			const std::string &textDefText = textDef.text;
 			const std::string text = textDefText.substr(0, textDefText.size() - 1);
 			triggerTextBox.setText(text);
 			gameState.setTriggerTextDuration(text);

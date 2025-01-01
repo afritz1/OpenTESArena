@@ -106,9 +106,9 @@ struct INFRiddle
 struct INFText
 {
 	std::string text; // Stores display text for a text trigger.
-	bool displayedOnce; // Whether the text is only displayed once (starts with '~').
+	bool isDisplayedOnce; // Whether the text is only displayed once (starts with '~').
 
-	INFText(bool displayedOnce);
+	INFText(bool isDisplayedOnce);
 };
 
 // An .INF file contains definitions of what the IDs in a .MIF file point to. These 

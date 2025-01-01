@@ -869,13 +869,13 @@ namespace MapGeneration
 		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
 		{
 			const INFText &textData = inf.getText(trigger.textIndex);
-			triggerDef.setTextDef(std::string(textData.text), textData.displayedOnce);
+			triggerDef.text.init(textData.text, textData.isDisplayedOnce);
 		}
 
 		if (isSoundTrigger)
 		{
 			const char *soundName = inf.getSound(trigger.soundIndex);
-			triggerDef.setSoundDef(String::toUppercase(soundName));
+			triggerDef.sound.init(String::toUppercase(soundName));
 		}
 
 		return triggerDef;
@@ -1152,8 +1152,7 @@ namespace MapGeneration
 		std::string closeSoundFilename = inf.getSound(doorDefGenInfo.closeSoundIndex);
 
 		VoxelDoorDefinition doorDef;
-		doorDef.init(doorDefGenInfo.doorType, std::move(openSoundFilename), doorDefGenInfo.closeType,
-			std::move(closeSoundFilename));
+		doorDef.init(doorDefGenInfo.doorType, openSoundFilename, doorDefGenInfo.closeType, closeSoundFilename);
 		return doorDef;
 	}
 
@@ -1580,9 +1579,9 @@ namespace MapGeneration
 			triggerMappings->emplace_back(std::make_pair(trigger, triggerDefID));
 
 			const VoxelTriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
-			const SNInt x = triggerDef.getX();
-			const int y = triggerDef.getY();
-			const WEInt z = triggerDef.getZ();
+			const SNInt x = triggerDef.x;
+			const int y = triggerDef.y;
+			const WEInt z = triggerDef.z;
 			outLevelDef->addTrigger(triggerDefID, WorldInt3(x, y, z));
 		}
 	}

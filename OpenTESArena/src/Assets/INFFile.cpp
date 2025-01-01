@@ -174,9 +174,9 @@ INFRiddle::INFRiddle(int firstNumber, int secondNumber)
 	this->secondNumber = secondNumber;
 }
 
-INFText::INFText(bool displayedOnce)
+INFText::INFText(bool isDisplayedOnce)
 {
-	this->displayedOnce = displayedOnce;
+	this->isDisplayedOnce = isDisplayedOnce;
 }
 
 bool INFFile::init(const char *filename)
@@ -785,8 +785,8 @@ bool INFFile::init(const char *filename)
 		{
 			textState.mode = TextState::Mode::Text;
 
-			const bool displayedOnce = true;
-			textState.textData = INFText(displayedOnce);
+			const bool isDisplayedOnce = true;
+			textState.textData = INFText(isDisplayedOnce);
 
 			// Append the rest of the line to the text data.
 			textState.textData->text += line.substr(1, line.size() - 1) + '\n';
@@ -854,8 +854,8 @@ bool INFFile::init(const char *filename)
 
 				textState.mode = TextState::Mode::Text;
 
-				const bool displayedOnce = false;
-				textState.textData = INFText(displayedOnce);
+				const bool isDisplayedOnce = false;
+				textState.textData = INFText(isDisplayedOnce);
 			}
 
 			// Read the line into the text data.
