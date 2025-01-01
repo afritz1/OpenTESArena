@@ -10,7 +10,6 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Stats/PrimaryAttribute.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 
 #include "components/debug/Debug.h"

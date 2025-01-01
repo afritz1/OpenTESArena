@@ -21,7 +21,6 @@
 #include "../Rendering/RendererUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Time/ArenaClockUtils.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../World/MapLogicController.h"
 #include "../World/MapType.h"

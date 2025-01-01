@@ -7,7 +7,6 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../UI/ArenaFontName.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"

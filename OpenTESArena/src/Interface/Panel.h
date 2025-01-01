@@ -16,7 +16,6 @@
 #include "components/utilities/BufferView.h"
 
 class Color;
-class CursorData;
 class FontLibrary;
 class Game;
 class Rect;
@@ -56,9 +55,6 @@ protected:
 	Game &getGame() const;
 
 	bool isPaused() const;
-
-	// Default cursor used by most panels.
-	CursorData getDefaultCursor() const;
 
 	void addInputActionListener(const std::string_view actionName, const InputActionCallback &callback);
 	void addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);

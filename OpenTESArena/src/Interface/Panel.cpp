@@ -13,7 +13,6 @@
 #include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
@@ -111,30 +110,6 @@ Game &Panel::getGame() const
 bool Panel::isPaused() const
 {
 	return this->paused;
-}
-
-CursorData Panel::getDefaultCursor() const
-{
-	auto &game = this->getGame();
-	auto &renderer = game.renderer;
-	auto &textureManager = game.textureManager;
-
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const std::string &textureFilename = ArenaTextureName::SwordCursor;
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
 }
 
 void Panel::addInputActionListener(const std::string_view actionName, const InputActionCallback &callback)

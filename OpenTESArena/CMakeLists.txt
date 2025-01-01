@@ -516,8 +516,6 @@ SET(TES_UI
     "${SRC_ROOT}/UI/Button.cpp"
     "${SRC_ROOT}/UI/Button.h"
     "${SRC_ROOT}/UI/CursorAlignment.h"
-    "${SRC_ROOT}/UI/CursorData.cpp"
-    "${SRC_ROOT}/UI/CursorData.h"
     "${SRC_ROOT}/UI/FontDefinition.cpp"
     "${SRC_ROOT}/UI/FontDefinition.h"
     "${SRC_ROOT}/UI/FontLibrary.cpp"

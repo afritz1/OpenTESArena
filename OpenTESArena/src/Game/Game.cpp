@@ -49,7 +49,6 @@
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/CharacterRaceLibrary.h"
 #include "../Time/ClockLibrary.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"

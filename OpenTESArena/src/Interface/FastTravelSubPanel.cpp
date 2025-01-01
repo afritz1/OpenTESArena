@@ -4,7 +4,6 @@
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
 #include "../Game/Game.h"
-#include "../UI/CursorData.h"
 
 FastTravelSubPanel::FastTravelSubPanel(Game &game)
 	: Panel(game) { }

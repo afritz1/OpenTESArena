@@ -12,7 +12,6 @@
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"

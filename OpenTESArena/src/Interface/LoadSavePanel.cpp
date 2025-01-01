@@ -5,7 +5,6 @@
 #include "LoadSaveUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 
 LoadSavePanel::LoadSavePanel(Game &game)

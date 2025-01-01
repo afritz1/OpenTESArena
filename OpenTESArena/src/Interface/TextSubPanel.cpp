@@ -8,7 +8,6 @@
 #include "../Math/Rect.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/TextBox.h"
 

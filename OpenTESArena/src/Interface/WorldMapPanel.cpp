@@ -7,7 +7,6 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/CursorData.h"
 
 #include "components/debug/Debug.h"
 
