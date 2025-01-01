@@ -32,7 +32,7 @@ bool EntityUtils::isDynamicEntity(EntityDefinitionType defType)
 
 std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 {
-	const EntityDefinitionType type = entityDef.getType();
+	const EntityDefinitionType type = entityDef.type;
 
 	switch (type)
 	{
@@ -65,39 +65,39 @@ bool EntityUtils::isLevelDependentDef(EntityDefID defID,
 
 bool EntityUtils::isStreetlight(const EntityDefinition &entityDef)
 {
-	return (entityDef.getType() == EntityDefinitionType::Doodad) && entityDef.getDoodad().streetlight;
+	return (entityDef.type == EntityDefinitionType::Doodad) && entityDef.doodad.streetlight;
 }
 
 bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 {
-	if (entityDef.getType() != EntityDefinitionType::Enemy)
+	if (entityDef.type != EntityDefinitionType::Enemy)
 	{
 		return false;
 	}
 
-	const EntityDefinition::EnemyDefinition &enemyDef = entityDef.getEnemy();
-	if (enemyDef.getType() != EntityDefinition::EnemyDefinition::Type::Creature)
+	const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+	if (enemyDef.type != EnemyEntityDefinitionType::Creature)
 	{
 		return false;
 	}
 
-	return enemyDef.getCreature().ghost;
+	return enemyDef.creature.ghost;
 }
 
 bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
 {
-	if (entityDef.getType() != EntityDefinitionType::Doodad)
+	if (entityDef.type != EntityDefinitionType::Doodad)
 	{
 		return false;
 	}
 
-	const EntityDefinition::DoodadDefinition &doodad = entityDef.getDoodad();
+	const DoodadEntityDefinition &doodad = entityDef.doodad;
 	return doodad.puddle;
 }
 
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 {
-	const EntityDefinitionType type = entityDef.getType();
+	const EntityDefinitionType type = entityDef.type;
 	const bool isEnemy = type == EntityDefinitionType::Enemy;
 	const bool isDoodad = type == EntityDefinitionType::Doodad;
 	if (!isEnemy && !isDoodad)
@@ -107,25 +107,25 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 
 	if (isEnemy)
 	{
-		const auto &enemyDef = entityDef.getEnemy();
-		if (enemyDef.getType() != EntityDefinition::EnemyDefinition::Type::Creature)
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+		if (enemyDef.type != EnemyEntityDefinitionType::Creature)
 		{
 			return 0;
 		}
 
-		const auto &creatureDef = enemyDef.getCreature();
+		const EnemyEntityDefinition::CreatureDefinition &creatureDef = enemyDef.creature;
 		return creatureDef.yOffset;
 	}
 	else
 	{
-		const auto &doodadDef = entityDef.getDoodad();
+		const DoodadEntityDefinition &doodadDef = entityDef.doodad;
 		return doodadDef.yOffset;
 	}
 }
 
 bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 {
-	const EntityDefinitionType entityType = entityDef.getType();
+	const EntityDefinitionType entityType = entityDef.type;
 	switch (entityType)
 	{
 	case EntityDefinitionType::Enemy:
@@ -138,7 +138,7 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Transition:
 		return false;
 	case EntityDefinitionType::Doodad:
-		return entityDef.getDoodad().collider;
+		return entityDef.doodad.collider;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
 	}
@@ -146,12 +146,12 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 
 std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef)
 {
-	if (entityDef.getType() != EntityDefinitionType::Doodad)
+	if (entityDef.type != EntityDefinitionType::Doodad)
 	{
 		return std::nullopt;
 	}
 
-	const EntityDefinition::DoodadDefinition &doodadDef = entityDef.getDoodad();
+	const DoodadEntityDefinition &doodadDef = entityDef.doodad;
 	if (doodadDef.streetlight)
 	{
 		return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
@@ -196,26 +196,25 @@ double EntityUtils::getCenterY(double feetY, double bboxHeight)
 	return feetY + (bboxHeight * 0.50);
 }
 
-bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
-	const CharacterClassLibrary &charClassLibrary, std::string *outName)
+bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const CharacterClassLibrary &charClassLibrary, std::string *outName)
 {
-	const EntityDefinitionType type = entityDef.getType();
+	const EntityDefinitionType type = entityDef.type;
 	const bool isEnemy = type == EntityDefinitionType::Enemy;
 	if (!isEnemy)
 	{
 		return false;
 	}
 
-	const auto &enemyDef = entityDef.getEnemy();
-	const auto enemyType = enemyDef.getType();
-	if (enemyType == EntityDefinition::EnemyDefinition::Type::Creature)
+	const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+	const EnemyEntityDefinitionType enemyType = enemyDef.type;
+	if (enemyType == EnemyEntityDefinitionType::Creature)
 	{
-		const auto &creatureDef = enemyDef.getCreature();
+		const auto &creatureDef = enemyDef.creature;
 		*outName = creatureDef.name;
 	}
-	else if (enemyType == EntityDefinition::EnemyDefinition::Type::Human)
+	else if (enemyType == EnemyEntityDefinitionType::Human)
 	{
-		const auto &humanDef = enemyDef.getHuman();
+		const auto &humanDef = enemyDef.human;
 		const auto &charClass = charClassLibrary.getDefinition(humanDef.charClassID);
 		*outName = charClass.getName();
 	}

@@ -175,9 +175,9 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const LevelEntityPlacementDefinition &placementDef = levelDefinition.getEntityPlacementDef(i);
 		const LevelVoxelEntityDefID levelEntityDefID = placementDef.id;
 		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
-		const EntityDefinitionType entityDefType = entityDef.getType();
+		const EntityDefinitionType entityDefType = entityDef.type;
 		const bool isDynamicEntity = EntityUtils::isDynamicEntity(entityDefType);
-		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
 
 		const std::string &defaultAnimStateName = EntityGeneration::getDefaultAnimationStateName(entityDef, entityGenInfo);
 		const std::optional<int> defaultAnimStateIndex = animDef.tryGetStateIndex(defaultAnimStateName.c_str());
@@ -326,7 +326,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			const bool isMale = random.nextBool();
 			const EntityDefID entityDefID = isMale ? citizenGenInfo->maleEntityDefID : citizenGenInfo->femaleEntityDefID;
 			const EntityDefinition &entityDef = isMale ? *citizenGenInfo->maleEntityDef : *citizenGenInfo->femaleEntityDef;
-			const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
+			const EntityAnimationDefinition &entityAnimDef = entityDef.animDef;
 
 			EntityInstanceID entityInstID = this->spawnEntity();
 			EntityInstance &entityInst = this->entities.get(entityInstID);
@@ -488,7 +488,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
 
 		const std::optional<int> idleStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 		if (!idleStateIndex.has_value())
@@ -651,18 +651,18 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID) const
 {
 	const EntityDefinition &entityDef = this->getEntityDef(defID);
-	if (entityDef.getType() != EntityDefinitionType::Enemy)
+	if (entityDef.type != EntityDefinitionType::Enemy)
 	{
 		return std::string();
 	}
 
-	const auto &enemyDef = entityDef.getEnemy();
-	if (enemyDef.getType() != EntityDefinition::EnemyDefinition::Type::Creature)
+	const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+	if (enemyDef.type != EnemyEntityDefinitionType::Creature)
 	{
 		return std::string();
 	}
 
-	const auto &creatureDef = enemyDef.getCreature();
+	const EnemyEntityDefinition::CreatureDefinition &creatureDef = enemyDef.creature;
 	const std::string_view creatureSoundName = creatureDef.soundName;
 	return String::toUppercase(std::string(creatureSoundName));
 }
@@ -785,7 +785,7 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Coor
 {
 	const EntityInstance &entityInst = this->entities.get(id);
 	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+	const EntityAnimationDefinition &animDef = entityDef.animDef;
 	const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 
 	const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);

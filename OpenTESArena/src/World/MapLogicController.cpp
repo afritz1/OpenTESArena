@@ -30,7 +30,7 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			if (EntityUtils::isStreetlight(entityDef))
 			{
-				const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
+				const EntityAnimationDefinition &entityAnimDef = entityDef.animDef;
 				const std::optional<int> newAnimStateIndex = entityAnimDef.tryGetStateIndex(newStreetlightAnimStateName.c_str());
 				if (!newAnimStateIndex.has_value())
 				{

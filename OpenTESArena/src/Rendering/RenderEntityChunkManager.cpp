@@ -233,7 +233,7 @@ ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityIn
 	entityChunkManager.getEntityObservedResult(entityInstID, cameraCoordXZ, observedResult);
 
 	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
-	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+	const EntityAnimationDefinition &animDef = entityDef.animDef;
 	const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
 	BufferView<const ScopedObjectTextureRef> textureRefs = defIter->textureRefs;
 	return textureRefs.get(linearizedKeyframeIndex).get();
@@ -256,7 +256,7 @@ void RenderEntityChunkManager::loadTextures(const EntityChunk &entityChunk, cons
 		if (animIter == this->anims.end())
 		{
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
-			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+			const EntityAnimationDefinition &animDef = entityDef.animDef;
 			Buffer<ScopedObjectTextureRef> textureRefs = MakeEntityAnimationTextures(animDef, textureManager, renderer);
 
 			LoadedAnimation loadedEntityAnim;
@@ -512,7 +512,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 		{
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+			const EntityAnimationDefinition &animDef = entityDef.animDef;
 
 			EntityObservedResult observedResult;
 			entityChunkManager.getEntityObservedResult(entityInstID, cameraCoordXZ, observedResult);

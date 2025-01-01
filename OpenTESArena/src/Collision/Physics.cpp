@@ -214,7 +214,7 @@ namespace Physics
 				0.5 - (diff.dot(entityRight) / entityWidth),
 				1.0 - (diff.dot(entityUp) / entityHeight));
 
-			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+			const EntityAnimationDefinition &animDef = entityDef.animDef;
 			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
 			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
 			const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
@@ -386,7 +386,7 @@ namespace Physics
 
 				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-				const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+				const EntityAnimationDefinition &animDef = entityDef.animDef;
 				DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
 				const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
 				const double flatWidth = animKeyframe.width;

@@ -10,12 +10,13 @@
 #include "../World/Coord.h"
 
 class EntityChunkManager;
-class EntityDefinition;
 class LocationDefinition;
 class Random;
 
 enum class CardinalDirectionName;
 enum class MapType;
+
+struct EntityDefinition;
 
 namespace CitizenUtils
 {

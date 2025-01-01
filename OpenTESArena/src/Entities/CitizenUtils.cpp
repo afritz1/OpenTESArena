@@ -90,8 +90,8 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 	};
 
 	EntityAnimationInstance maleAnimInst, femaleAnimInst;
-	initAnimInst(maleAnimInst, maleEntityDef.getAnimDef());
-	initAnimInst(femaleAnimInst, femaleEntityDef.getAnimDef());
+	initAnimInst(maleAnimInst, maleEntityDef.animDef);
+	initAnimInst(femaleAnimInst, femaleEntityDef.animDef);
 
 	CitizenGenInfo citizenGenInfo;
 	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef,
