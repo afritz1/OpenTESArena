@@ -108,7 +108,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 
 void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, const TransitionDefinition &transitionDef)
 {
-	const TransitionType transitionType = transitionDef.getType();
+	const TransitionType transitionType = transitionDef.type;
 	DebugAssert(transitionType != TransitionType::LevelChange);
 
 	DebugAssert(hit.type == RayCastHitType::Voxel);
@@ -235,13 +235,13 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 				return hitCoord + delta;
 			}();
 
-			const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef.getInteriorEntrance();
+			const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
 			const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
 
 			MapDefinition mapDefinition;
 			if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 			{
-				DebugLogError("Couldn't init MapDefinition for interior type " + std::to_string(static_cast<int>(interiorGenInfo.getInteriorType())) + ".");
+				DebugLogError("Couldn't init MapDefinition for interior type " + std::to_string(static_cast<int>(interiorGenInfo.interiorType)) + ".");
 				return;
 			}
 
@@ -592,11 +592,11 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		};
 
 		// See if it's a level up or level down transition. Ignore other transition types.
-		if (transitionDef.getType() == TransitionType::LevelChange)
+		if (transitionDef.type == TransitionType::LevelChange)
 		{
 			const int activeLevelIndex = gameState.getActiveLevelIndex();
 			const int levelCount = interiorMapDef.getLevels().getCount();
-			const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef.getLevelChange();
+			const LevelChangeTransitionDefinition &levelChangeDef = transitionDef.levelChange;
 			if (levelChangeDef.isLevelUp)
 			{
 				// Level up transition. If the custom function has a target, call it and reset it (necessary

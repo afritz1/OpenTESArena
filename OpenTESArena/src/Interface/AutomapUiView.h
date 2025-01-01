@@ -22,11 +22,11 @@
 class GameState;
 class Renderer;
 class Texture;
-class TransitionDefinition;
 class VoxelChunkManager;
 
 enum class CardinalDirectionName;
 
+struct TransitionDefinition;
 struct VoxelTraitsDefinition;
 
 namespace AutomapUiView

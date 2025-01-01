@@ -5,9 +5,9 @@
 
 class Game;
 class TextBox;
-class TransitionDefinition;
 
 struct RayCastHit;
+struct TransitionDefinition;
 
 namespace MapLogicController
 {

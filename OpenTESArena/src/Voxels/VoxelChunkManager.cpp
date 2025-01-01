@@ -308,14 +308,14 @@ void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
 				}
 
 				const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
-				if (transitionDef.getType() != TransitionType::EnterInterior)
+				if (transitionDef.type != TransitionType::EnterInterior)
 				{
 					continue;
 				}
 
-				const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef.getInteriorEntrance();
+				const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
 				const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-				const ArenaTypes::InteriorType interiorType = interiorGenInfo.getInteriorType();
+				const ArenaTypes::InteriorType interiorType = interiorGenInfo.interiorType;
 
 				LevelVoxelBuildingNameID buildingNameID;
 				if (!buildingNameInfo.tryGetBuildingNameID(interiorType, &buildingNameID))

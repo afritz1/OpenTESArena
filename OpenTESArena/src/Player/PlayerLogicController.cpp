@@ -630,7 +630,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 								if (chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 								{
 									const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
-									if (transitionDef.getType() != TransitionType::LevelChange)
+									if (transitionDef.type != TransitionType::LevelChange)
 									{
 										MapLogicController::handleMapTransition(game, hit, transitionDef);
 									}

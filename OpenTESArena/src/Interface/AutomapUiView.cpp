@@ -105,7 +105,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 			}
 			else
 			{
-				const TransitionType transitionType = transitionDef->getType();
+				const TransitionType transitionType = transitionDef->type;
 				if ((transitionType == TransitionType::CityGate) ||
 					(transitionType == TransitionType::EnterInterior) ||
 					(transitionType == TransitionType::ExitInterior))
@@ -114,7 +114,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 				}
 				else if (transitionType == TransitionType::LevelChange)
 				{
-					const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
+					const LevelChangeTransitionDefinition &levelChangeDef = transitionDef->levelChange;
 					return levelChangeDef.isLevelUp ? AutomapUiView::ColorLevelUp : AutomapUiView::ColorLevelDown;
 				}
 				else
@@ -219,7 +219,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 			}
 			else
 			{
-				const TransitionType transitionType = transitionDef->getType();
+				const TransitionType transitionType = transitionDef->type;
 				if ((transitionType == TransitionType::CityGate) ||
 					(transitionType == TransitionType::EnterInterior) ||
 					(transitionType == TransitionType::ExitInterior))
@@ -232,7 +232,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 				}
 				else if (transitionType == TransitionType::LevelChange)
 				{
-					const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
+					const LevelChangeTransitionDefinition &levelChangeDef = transitionDef->levelChange;
 					return levelChangeDef.isLevelUp ? AutomapUiView::ColorLevelUp : AutomapUiView::ColorLevelDown;
 				}
 				else

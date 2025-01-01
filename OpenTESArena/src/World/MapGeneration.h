@@ -62,6 +62,7 @@ namespace MapGeneration
 	struct InteriorGenInfo
 	{
 		InteriorGenType type;
+		ArenaTypes::InteriorType interiorType;
 		InteriorPrefabGenInfo prefab;
 		InteriorDungeonGenInfo dungeon;
 
@@ -69,8 +70,6 @@ namespace MapGeneration
 
 		void initPrefab(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale);
 		void initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon);
-
-		ArenaTypes::InteriorType getInteriorType() const;
 	};
 
 	// Input: 1 .MIF + 1 weather .INF

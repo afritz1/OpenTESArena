@@ -1758,16 +1758,16 @@ namespace MapGeneration
 			}
 
 			const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(*transitionDefID);
-			const TransitionType transitionType = transitionDef.getType();
+			const TransitionType transitionType = transitionDef.type;
 			if (transitionType != TransitionType::EnterInterior)
 			{
 				// Not a transition to an interior.
 				return std::nullopt;
 			}
 
-			const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
+			const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
 			const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-			return interiorGenInfo.getInteriorType();
+			return interiorGenInfo.interiorType;
 		};
 
 		// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
@@ -2057,16 +2057,16 @@ namespace MapGeneration
 			{
 				const LevelTransitionPlacementDefinition &placementDef = levelDef.getTransitionPlacementDef(i);
 				const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(placementDef.id);
-				const TransitionType transitionType = transitionDef.getType();
+				const TransitionType transitionType = transitionDef.type;
 				if (transitionType != TransitionType::EnterInterior)
 				{
 					// Not a transition to an interior.
 					continue;
 				}
 
-				const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
+				const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
 				const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-				if (interiorGenInfo.getInteriorType() != interiorType)
+				if (interiorGenInfo.interiorType != interiorType)
 				{
 					// Not the interior we're generating a name for.
 					continue;
@@ -2141,29 +2141,15 @@ MapGeneration::InteriorGenInfo::InteriorGenInfo()
 void MapGeneration::InteriorGenInfo::initPrefab(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale)
 {
 	this->type = InteriorGenType::Prefab;
+	this->interiorType = interiorType;
 	this->prefab.init(mifName, interiorType, rulerIsMale);
 }
 
 void MapGeneration::InteriorGenInfo::initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
 {
 	this->type = InteriorGenType::Dungeon;
+	this->interiorType = ArenaTypes::InteriorType::Dungeon;
 	this->dungeon.init(dungeonDef, isArtifactDungeon);
-}
-
-ArenaTypes::InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
-{
-	if (this->type == InteriorGenType::Prefab)
-	{
-		return this->prefab.interiorType;
-	}
-	else if (this->type == InteriorGenType::Dungeon)
-	{
-		return ArenaTypes::InteriorType::Dungeon;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(ArenaTypes::InteriorType, std::to_string(static_cast<int>(this->type)));
-	}
 }
 
 void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType,

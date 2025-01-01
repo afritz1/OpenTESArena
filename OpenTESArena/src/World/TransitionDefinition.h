@@ -4,40 +4,33 @@
 #include "MapGeneration.h"
 #include "TransitionType.h"
 
-// @todo: share with both voxels and entities; probably delete EntityDefinition variant of this class.
-class TransitionDefinition
+struct InteriorEntranceTransitionDefinition
 {
-public:
-	struct InteriorEntranceDef
-	{
-		MapGeneration::InteriorGenInfo interiorGenInfo;
+	MapGeneration::InteriorGenInfo interiorGenInfo;
 
-		void init(MapGeneration::InteriorGenInfo &&interiorGenInfo);
-	};
+	void init(MapGeneration::InteriorGenInfo &&interiorGenInfo);
+};
 
-	struct LevelChangeDef
-	{
-		bool isLevelUp;
+struct LevelChangeTransitionDefinition
+{
+	bool isLevelUp;
 
-		void init(bool isLevelUp);
-	};
-private:
+	void init(bool isLevelUp);
+};
+
+// @todo: share with both voxels and entities; probably delete EntityDefinition variant of this class.
+struct TransitionDefinition
+{
 	TransitionType type;
-	InteriorEntranceDef interiorEntrance;
-	LevelChangeDef levelChange;
+	InteriorEntranceTransitionDefinition interiorEntrance;
+	LevelChangeTransitionDefinition levelChange;
 
-	void init(TransitionType type);
-public:
 	TransitionDefinition();
 
 	void initCityGate();
 	void initInteriorEntrance(MapGeneration::InteriorGenInfo &&interiorGenInfo);
 	void initInteriorExit();
 	void initLevelChange(bool isLevelUp);
-
-	TransitionType getType() const;
-	const InteriorEntranceDef &getInteriorEntrance() const;
-	const LevelChangeDef &getLevelChange() const;
 };
 
 #endif
