@@ -2054,7 +2054,7 @@ namespace MapGeneration
 			// the name has been found.
 			for (int i = 0; i < levelDef.getTransitionPlacementDefCount(); i++)
 			{
-				const LevelDefinition::TransitionPlacementDef &placementDef = levelDef.getTransitionPlacementDef(i);
+				const LevelTransitionPlacementDefinition &placementDef = levelDef.getTransitionPlacementDef(i);
 				const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(placementDef.id);
 				const TransitionType transitionType = transitionDef.getType();
 				if (transitionType != TransitionType::EnterInterior)

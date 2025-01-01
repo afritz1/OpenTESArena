@@ -158,7 +158,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 	// Add transitions.
 	for (int i = 0; i < levelDefinition.getTransitionPlacementDefCount(); i++)
 	{
-		const LevelDefinition::TransitionPlacementDef &placementDef = levelDefinition.getTransitionPlacementDef(i);
+		const LevelTransitionPlacementDefinition &placementDef = levelDefinition.getTransitionPlacementDef(i);
 		const TransitionDefinition &transitionDef = levelInfoDefinition.getTransitionDef(placementDef.id);
 
 		std::optional<VoxelTransitionDefID> transitionDefID;
@@ -180,7 +180,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 	// Add triggers.
 	for (int i = 0; i < levelDefinition.getTriggerPlacementDefCount(); i++)
 	{
-		const LevelDefinition::TriggerPlacementDef &placementDef = levelDefinition.getTriggerPlacementDef(i);
+		const LevelTriggerPlacementDefinition &placementDef = levelDefinition.getTriggerPlacementDef(i);
 		const VoxelTriggerDefinition &triggerDef = levelInfoDefinition.getTriggerDef(placementDef.id);
 
 		std::optional<VoxelTriggerDefID> triggerDefID;
@@ -202,7 +202,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 	// Add locks.
 	for (int i = 0; i < levelDefinition.getLockPlacementDefCount(); i++)
 	{
-		const LevelDefinition::LockPlacementDef &placementDef = levelDefinition.getLockPlacementDef(i);
+		const LevelLockPlacementDefinition &placementDef = levelDefinition.getLockPlacementDef(i);
 		const LockDefinition &lockDef = levelInfoDefinition.getLockDef(placementDef.id);
 
 		std::optional<VoxelLockDefID> lockDefID;
@@ -225,7 +225,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 	// level definition; they also need the chunk coordinate).
 	for (int i = 0; i < levelDefinition.getBuildingNamePlacementDefCount(); i++)
 	{
-		const LevelDefinition::BuildingNamePlacementDef &placementDef = levelDefinition.getBuildingNamePlacementDef(i);
+		const LevelBuildingNamePlacementDefinition &placementDef = levelDefinition.getBuildingNamePlacementDef(i);
 		const std::string &buildingName = levelInfoDefinition.getBuildingName(placementDef.id);
 
 		std::optional<VoxelBuildingNameID> buildingNameID;
@@ -247,7 +247,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 	// Add door definitions.
 	for (int i = 0; i < levelDefinition.getDoorPlacementDefCount(); i++)
 	{
-		const LevelDefinition::DoorPlacementDef &placementDef = levelDefinition.getDoorPlacementDef(i);
+		const LevelDoorPlacementDefinition &placementDef = levelDefinition.getDoorPlacementDef(i);
 		const VoxelDoorDefinition &doorDef = levelInfoDefinition.getDoorDef(placementDef.id);
 
 		std::optional<VoxelDoorDefID> doorDefID;
@@ -269,7 +269,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 	// Add chasm definitions.
 	for (int i = 0; i < levelDefinition.getChasmPlacementDefCount(); i++)
 	{
-		const LevelDefinition::ChasmPlacementDef &placementDef = levelDefinition.getChasmPlacementDef(i);
+		const LevelChasmPlacementDefinition &placementDef = levelDefinition.getChasmPlacementDef(i);
 		const VoxelChasmDefinition &chasmDef = levelInfoDefinition.getChasmDef(placementDef.id);
 
 		std::optional<VoxelChasmDefID> chasmDefID;

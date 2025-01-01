@@ -172,7 +172,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 	for (int i = 0; i < levelDefinition.getEntityPlacementDefCount(); i++)
 	{
-		const LevelDefinition::EntityPlacementDef &placementDef = levelDefinition.getEntityPlacementDef(i);
+		const LevelEntityPlacementDefinition &placementDef = levelDefinition.getEntityPlacementDef(i);
 		const LevelVoxelEntityDefID levelEntityDefID = placementDef.id;
 		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
 		const EntityDefinitionType entityDefType = entityDef.getType();
