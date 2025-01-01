@@ -3,50 +3,42 @@
 
 #include "../Voxels/VoxelUtils.h"
 
-// Supports both locks that can be picked, and locks that require a key.
-class LockDefinition
+enum class LockDefinitionType
 {
-public:
-	enum class Type { LeveledLock, KeyLock };
+	LeveledLock,
+	KeyLock
+};
 
-	class LeveledLockDef
-	{
-	private:
-		int lockLevel;
-	public:
-		void init(int lockLevel);
-	};
+struct LeveledLockDefinition
+{
+	int lockLevel;
 
-	class KeyLockDef
-	{
-	private:
-		// @todo: key reference somewhere
-	public:
-		void init();
-	};
-private:
+	void init(int lockLevel);
+};
+
+struct KeyLockDefinition
+{
+	// @todo: key reference somewhere
+
+	void init();
+};
+
+// Supports both locks that can be picked, and locks that require a key.
+struct LockDefinition
+{
 	SNInt x;
 	int y;
 	WEInt z;
-	Type type;
+	LockDefinitionType type;
 
 	union
 	{
-		LeveledLockDef leveledLock;
-		KeyLockDef keyLock;
+		LeveledLockDefinition leveledLock;
+		KeyLockDefinition keyLock;
 	};
 
-	void init(SNInt x, int y, WEInt z, Type type);
-public:
-	static LockDefinition makeLeveledLock(SNInt x, int y, WEInt z, int lockLevel);
-	static LockDefinition makeKeyLock(SNInt x, int y, WEInt z);
-
-	SNInt getX() const;
-	int getY() const;
-	WEInt getZ() const;
-	Type getType() const;
-	const LeveledLockDef &getLeveledLockDef() const;
-	const KeyLockDef &getKeyLockDef() const;
+	void initLeveledLock(SNInt x, int y, WEInt z, int lockLevel);
+	void initKeyLock(SNInt x, int y, WEInt z);
 };
 
 #endif

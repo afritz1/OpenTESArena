@@ -849,11 +849,12 @@ namespace MapGeneration
 	{
 		const OriginalInt2 lockPos(lock.x, lock.y);
 		const WorldInt2 newLockPos = VoxelUtils::originalVoxelToWorldVoxel(lockPos);
-		return LockDefinition::makeLeveledLock(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
+		LockDefinition lockDef;
+		lockDef.initLeveledLock(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
+		return lockDef;
 	}
 
-	VoxelTriggerDefinition makeTriggerDefFromArenaTrigger(const ArenaTypes::MIFTrigger &trigger,
-		const INFFile &inf)
+	VoxelTriggerDefinition makeTriggerDefFromArenaTrigger(const ArenaTypes::MIFTrigger &trigger, const INFFile &inf)
 	{
 		const OriginalInt2 triggerPos(trigger.x, trigger.y);
 		const WorldInt2 newTriggerPos = VoxelUtils::originalVoxelToWorldVoxel(triggerPos);
@@ -1552,9 +1553,9 @@ namespace MapGeneration
 		}
 
 		const LockDefinition &lockDef = outLevelInfoDef->getLockDef(lockDefID);
-		const SNInt x = lockDef.getX();
-		const int y = lockDef.getY();
-		const WEInt z = lockDef.getZ();
+		const SNInt x = lockDef.x;
+		const int y = lockDef.y;
+		const WEInt z = lockDef.z;
 		outLevelDef->addLock(lockDefID, WorldInt3(x, y, z));
 	}
 
