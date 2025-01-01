@@ -1100,8 +1100,7 @@ namespace MapGeneration
 			else
 			{
 				// Arena doesn't seem to have splitting doors, but they are supported.
-				DebugLogWarning("Unrecognized door type \"" + std::to_string(type) +
-					"\", treating as splitting.");
+				DebugLogWarning("Unrecognized door type \"" + std::to_string(type) + "\", treating as splitting.");
 				return ArenaTypes::DoorType::Splitting;
 			}
 		}();
@@ -1109,29 +1108,26 @@ namespace MapGeneration
 		const std::optional<int> openSoundIndex = ArenaVoxelUtils::tryGetOpenSoundIndex(doorType);
 		if (!openSoundIndex.has_value())
 		{
-			DebugLogWarning("Couldn't get open sound index for door type \"" +
-				std::to_string(static_cast<int>(doorType)) + "\".");
+			DebugLogWarning("Couldn't get open sound index for door type \"" + std::to_string(static_cast<int>(doorType)) + "\".");
 			return std::nullopt;
 		}
 
 		const std::optional<int> closeSoundIndex = ArenaVoxelUtils::tryGetCloseSoundIndex(doorType);
 		if (!closeSoundIndex.has_value())
 		{
-			DebugLogWarning("Couldn't get close sound index for door type \"" +
-				std::to_string(static_cast<int>(doorType)) + "\".");
+			DebugLogWarning("Couldn't get close sound index for door type \"" + std::to_string(static_cast<int>(doorType)) + "\".");
 			return std::nullopt;
 		}
 
-		const std::optional<VoxelDoorDefinition::CloseType> closeType = [doorType]()
-			-> std::optional<VoxelDoorDefinition::CloseType>
+		const std::optional<VoxelDoorCloseType> closeType = [doorType]() -> std::optional<VoxelDoorCloseType>
 		{
 			if (ArenaVoxelUtils::doorHasSoundOnClosed(doorType))
 			{
-				return VoxelDoorDefinition::CloseType::OnClosed;
+				return VoxelDoorCloseType::OnClosed;
 			}
 			else if (ArenaVoxelUtils::doorHasSoundOnClosing(doorType))
 			{
-				return VoxelDoorDefinition::CloseType::OnClosing;
+				return VoxelDoorCloseType::OnClosing;
 			}
 			else
 			{
@@ -1141,8 +1137,7 @@ namespace MapGeneration
 
 		if (!closeType.has_value())
 		{
-			DebugLogWarning("Can't determine close sound type for door type \"" +
-				std::to_string(static_cast<int>(doorType)) + "\".");
+			DebugLogWarning("Can't determine close sound type for door type \"" + std::to_string(static_cast<int>(doorType)) + "\".");
 			return std::nullopt;
 		}
 
@@ -2282,8 +2277,7 @@ void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 	this->isLevelUp = isLevelUp;
 }
 
-void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex,
-	VoxelDoorDefinition::CloseType closeType)
+void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex, VoxelDoorCloseType closeType)
 {
 	this->doorType = doorType;
 	this->openSoundIndex = openSoundIndex;

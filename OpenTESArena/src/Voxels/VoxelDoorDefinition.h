@@ -5,43 +5,37 @@
 
 #include "../Assets/ArenaTypes.h"
 
-class VoxelDoorDefinition
+// Each door has a certain behavior for playing sounds when closing.
+enum class VoxelDoorCloseType
 {
-public:
-	// Each door has a certain behavior for playing sounds when closing.
-	enum class CloseType
-	{
-		OnClosed,
-		OnClosing
-	};
+	OnClosed,
+	OnClosing
+};
 
-	struct OpenSoundDef
-	{
-		std::string soundFilename;
+struct VoxelDoorOpenSoundDefinition
+{
+	std::string soundFilename;
 
-		void init(std::string &&soundFilename);
-	};
+	void init(const std::string &soundFilename);
+};
 
-	struct CloseSoundDef
-	{
-		CloseType closeType;
-		std::string soundFilename;
+struct VoxelDoorCloseSoundDefinition
+{
+	VoxelDoorCloseType closeType;
+	std::string soundFilename;
 
-		void init(CloseType closeType, std::string &&soundFilename);
-	};
-private:
+	void init(VoxelDoorCloseType closeType, const std::string &soundFilename);
+};
+
+struct VoxelDoorDefinition
+{
 	ArenaTypes::DoorType type;
-	OpenSoundDef openSoundDef;
-	CloseSoundDef closeSoundDef;
-public:
+	VoxelDoorOpenSoundDefinition openSoundDef;
+	VoxelDoorCloseSoundDefinition closeSoundDef;
+
 	VoxelDoorDefinition();
 
-	void init(ArenaTypes::DoorType type, std::string &&openSoundFilename, CloseType closeType,
-		std::string &&closeSoundFilename);
-
-	ArenaTypes::DoorType getType() const;
-	const OpenSoundDef &getOpenSound() const;
-	const CloseSoundDef &getCloseSound() const;
+	void init(ArenaTypes::DoorType type, const std::string &openSoundFilename, VoxelDoorCloseType closeType, const std::string &closeSoundFilename);
 };
 
 #endif

@@ -685,7 +685,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 				{
 					// Door transform uniform buffers. These are separate because each voxel has a RenderTransform per door face.
 					const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
-					const ArenaTypes::DoorType doorType = doorDef.getType();
+					const ArenaTypes::DoorType doorType = doorDef.type;
 					DebugAssert(renderChunk.doorTransformBuffers.find(voxel) == renderChunk.doorTransformBuffers.end());
 
 					constexpr int doorFaceCount = DoorUtils::FACE_COUNT;
@@ -855,7 +855,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			const auto transformIter = renderChunk.doorTransformBuffers.find(voxel);
 			DebugAssert(transformIter != renderChunk.doorTransformBuffers.end());
 
-			const UniformBufferID preScaleTranslationBufferID = (doorDef->getType() == ArenaTypes::DoorType::Raising) ? this->raisingDoorPreScaleTranslationBufferID : -1;
+			const UniformBufferID preScaleTranslationBufferID = (doorDef->type == ArenaTypes::DoorType::Raising) ? this->raisingDoorPreScaleTranslationBufferID : -1;
 			for (int i = 0; i < maxTransformsPerVoxel; i++)
 			{
 				DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
@@ -1000,7 +1000,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		{
 			DrawCallShadingInitInfo &doorShadingInitInfo = shadingInitInfos[0];
 
-			const ArenaTypes::DoorType doorType = doorDef->getType();
+			const ArenaTypes::DoorType doorType = doorDef->type;
 			switch (doorType)
 			{
 			case ArenaTypes::DoorType::Swinging:
@@ -1375,7 +1375,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 			}
 
 			const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
-			const ArenaTypes::DoorType doorType = doorDef.getType();
+			const ArenaTypes::DoorType doorType = doorDef.type;
 			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.getPosition(), doorVoxel, ceilingScale);
 			const double doorAnimPercent = DoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
 

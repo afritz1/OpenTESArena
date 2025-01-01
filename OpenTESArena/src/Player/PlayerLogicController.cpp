@@ -669,7 +669,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							}
 
 							const VoxelDoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
-							const VoxelDoorDefinition::OpenSoundDef &openSoundDef = doorDef.getOpenSound();
+							const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
 
 							auto &audioManager = game.audioManager;
 							const std::string &soundFilename = openSoundDef.soundFilename;

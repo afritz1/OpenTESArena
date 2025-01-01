@@ -162,10 +162,9 @@ namespace MapGeneration
 		int openSoundIndex;
 		int closeSoundIndex;
 
-		VoxelDoorDefinition::CloseType closeType;
+		VoxelDoorCloseType closeType;
 
-		void init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex,
-			VoxelDoorDefinition::CloseType closeType);
+		void init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex, VoxelDoorCloseType closeType);
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
