@@ -525,7 +525,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
+		interiorGenInfo.initPrefab(mifName, ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 

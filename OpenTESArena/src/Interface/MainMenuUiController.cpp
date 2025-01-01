@@ -211,7 +211,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}();
 
 			MapGeneration::InteriorGenInfo interiorGenInfo;
-			interiorGenInfo.initPrefab(std::string(mifName), interiorType, rulerIsMale);
+			interiorGenInfo.initPrefab(mifName, interiorType, rulerIsMale);
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
 

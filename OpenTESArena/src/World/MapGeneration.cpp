@@ -162,7 +162,7 @@ namespace MapGeneration
 			ArenaTypes::InteriorType::Dungeon : interiorType;
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(std::move(mifName), revisedInteriorType, rulerIsMale);
+		interiorGenInfo.initPrefab(mifName, revisedInteriorType, rulerIsMale);
 		return interiorGenInfo;
 	}
 
@@ -2119,16 +2119,14 @@ namespace MapGeneration
 	}
 }
 
-void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, ArenaTypes::InteriorType interiorType,
-	const std::optional<bool> &rulerIsMale)
+void MapGeneration::InteriorPrefabGenInfo::init(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale)
 {
-	this->mifName = std::move(mifName);
+	this->mifName = mifName;
 	this->interiorType = interiorType;
 	this->rulerIsMale = rulerIsMale;
 }
 
-void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDungeonDefinition &dungeonDef,
-	bool isArtifactDungeon)
+void MapGeneration::InteriorDungeonGenInfo::init(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
 {
 	this->dungeonDef = dungeonDef;
 	this->isArtifactDungeon = isArtifactDungeon;
@@ -2136,52 +2134,28 @@ void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDungeonDefiniti
 
 MapGeneration::InteriorGenInfo::InteriorGenInfo()
 {
-	this->type = static_cast<InteriorGenInfo::Type>(-1);
+	this->type = static_cast<InteriorGenType>(-1);
 }
 
-void MapGeneration::InteriorGenInfo::init(InteriorGenInfo::Type type)
+void MapGeneration::InteriorGenInfo::initPrefab(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale)
 {
-	this->type = type;
+	this->type = InteriorGenType::Prefab;
+	this->prefab.init(mifName, interiorType, rulerIsMale);
 }
 
-void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, ArenaTypes::InteriorType interiorType,
-	const std::optional<bool> &rulerIsMale)
+void MapGeneration::InteriorGenInfo::initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
 {
-	this->init(InteriorGenInfo::Type::Prefab);
-	this->prefab.init(std::move(mifName), interiorType, rulerIsMale);
-}
-
-void MapGeneration::InteriorGenInfo::initDungeon(const LocationDungeonDefinition &dungeonDef,
-	bool isArtifactDungeon)
-{
-	this->init(InteriorGenInfo::Type::Dungeon);
+	this->type = InteriorGenType::Dungeon;
 	this->dungeon.init(dungeonDef, isArtifactDungeon);
-}
-
-MapGeneration::InteriorGenInfo::Type MapGeneration::InteriorGenInfo::getType() const
-{
-	return this->type;
-}
-
-const MapGeneration::InteriorGenInfo::Prefab &MapGeneration::InteriorGenInfo::getPrefab() const
-{
-	DebugAssert(this->type == InteriorGenInfo::Type::Prefab);
-	return this->prefab;
-}
-
-const MapGeneration::InteriorGenInfo::Dungeon &MapGeneration::InteriorGenInfo::getDungeon() const
-{
-	DebugAssert(this->type == InteriorGenInfo::Type::Dungeon);
-	return this->dungeon;
 }
 
 ArenaTypes::InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
 {
-	if (this->type == InteriorGenInfo::Type::Prefab)
+	if (this->type == InteriorGenType::Prefab)
 	{
 		return this->prefab.interiorType;
 	}
-	else if (this->type == InteriorGenInfo::Type::Dungeon)
+	else if (this->type == InteriorGenType::Dungeon)
 	{
 		return ArenaTypes::InteriorType::Dungeon;
 	}

@@ -431,10 +431,10 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 
 	this->init(MapType::Interior);
 
-	const MapGeneration::InteriorGenInfo::Type interiorType = generationInfo.getType();
-	if (interiorType == MapGeneration::InteriorGenInfo::Type::Prefab)
+	const MapGeneration::InteriorGenType interiorType = generationInfo.type;
+	if (interiorType == MapGeneration::InteriorGenType::Prefab)
 	{
-		const MapGeneration::InteriorGenInfo::Prefab &prefabGenInfo = generationInfo.getPrefab();
+		const MapGeneration::InteriorPrefabGenInfo &prefabGenInfo = generationInfo.prefab;
 		MIFFile mif;
 		if (!mif.init(prefabGenInfo.mifName.c_str()))
 		{
@@ -448,9 +448,9 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 		this->initStartPoints(mif);
 		this->startLevelIndex = mif.getStartingLevelIndex();
 	}
-	else if (interiorType == MapGeneration::InteriorGenInfo::Type::Dungeon)
+	else if (interiorType == MapGeneration::InteriorGenType::Dungeon)
 	{
-		const MapGeneration::InteriorGenInfo::Dungeon &dungeonGenInfo = generationInfo.getDungeon();
+		const MapGeneration::InteriorDungeonGenInfo &dungeonGenInfo = generationInfo.dungeon;
 
 		// Dungeon .MIF file with chunks for random generation.
 		const std::string &mifName = ArenaInteriorUtils::DUNGEON_MIF_NAME;

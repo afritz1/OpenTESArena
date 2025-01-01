@@ -35,49 +35,41 @@ enum class MapType;
 
 namespace MapGeneration
 {
-	// Data for generating an interior map (building interior, wild den, world map dungeon, etc.).
-	class InteriorGenInfo
+	enum class InteriorGenType { Prefab, Dungeon };
+
+	// Input: N .MIF levels + N level-referenced .INFs
+	// Output: N LevelDefinition / LevelInfoDefinition pairs
+	struct InteriorPrefabGenInfo
 	{
-	public:
-		enum class Type { Prefab, Dungeon };
+		std::string mifName;
+		ArenaTypes::InteriorType interiorType;
+		std::optional<bool> rulerIsMale;
 
-		// Input: N .MIF levels + N level-referenced .INFs
-		// Output: N LevelDefinition / LevelInfoDefinition pairs
-		struct Prefab
-		{
-			std::string mifName;
-			ArenaTypes::InteriorType interiorType;
-			std::optional<bool> rulerIsMale;
+		void init(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale);
+	};
 
-			void init(std::string &&mifName, ArenaTypes::InteriorType interiorType,
-				const std::optional<bool> &rulerIsMale);
-		};
+	// Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
+	// Output: N LevelDefinitions + 1 LevelInfoDefinition
+	struct InteriorDungeonGenInfo
+	{
+		LocationDungeonDefinition dungeonDef;
+		bool isArtifactDungeon;
 
-		// Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
-		// Output: N LevelDefinitions + 1 LevelInfoDefinition
-		struct Dungeon
-		{
-			LocationDungeonDefinition dungeonDef;
-			bool isArtifactDungeon;
+		void init(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon);
+	};
 
-			void init(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon);
-		};
-	private:
-		Type type;
-		Prefab prefab;
-		Dungeon dungeon;
+	// Data for generating an interior map (building interior, wild den, world map dungeon, etc.).
+	struct InteriorGenInfo
+	{
+		InteriorGenType type;
+		InteriorPrefabGenInfo prefab;
+		InteriorDungeonGenInfo dungeon;
 
-		void init(Type type);
-	public:
 		InteriorGenInfo();
 
-		void initPrefab(std::string &&mifName, ArenaTypes::InteriorType interiorType,
-			const std::optional<bool> &rulerIsMale);
+		void initPrefab(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale);
 		void initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon);
 
-		Type getType() const;
-		const Prefab &getPrefab() const;
-		const Dungeon &getDungeon() const;
 		ArenaTypes::InteriorType getInteriorType() const;
 	};
 
@@ -122,8 +114,7 @@ namespace MapGeneration
 		const LocationCityDefinition *cityDef;
 		uint32_t fallbackSeed;
 
-		void init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
-			const LocationCityDefinition &cityDef, uint32_t fallbackSeed);
+		void init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs, const LocationCityDefinition &cityDef, uint32_t fallbackSeed);
 	};
 
 	// Building names in the wild are shared per-chunk.
