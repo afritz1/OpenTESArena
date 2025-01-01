@@ -80,19 +80,19 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
+				const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
 				const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
 				collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
 
-				const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
+				const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
 				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 				const bool voxelHasCollision = voxelTraitsDef.hasCollision();
 				collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
 
-				VoxelChunk::TriggerDefID triggerDefID;
+				VoxelTriggerDefID triggerDefID;
 				const bool isTriggerVoxel = voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID);
 
-				VoxelChunk::TransitionDefID transitionDefID;
+				VoxelTransitionDefID transitionDefID;
 				const bool isTransitionVoxel = voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID);
 				const bool isSensorCollider = isTriggerVoxel || isTransitionVoxel;
 				const bool shouldCreateCollider = voxelHasCollision || isSensorCollider;
@@ -143,11 +143,11 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 		const SNInt x = voxelPos.x;
 		const int y = voxelPos.y;
 		const WEInt z = voxelPos.z;
-		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
 		const CollisionChunk::CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
 		collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
 
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
+		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 		const bool voxelHasCollision = voxelTraitsDef.hasCollision();
 		collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
@@ -164,10 +164,10 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 			collisionChunk.physicsBodyIDs.set(x, y, z, Physics::INVALID_BODY_ID);
 		}
 
-		VoxelChunk::TriggerDefID triggerDefID;
+		VoxelTriggerDefID triggerDefID;
 		const bool isTriggerVoxel = voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID);
 
-		VoxelChunk::TransitionDefID transitionDefID;
+		VoxelTransitionDefID transitionDefID;
 		const bool isTransitionVoxel = voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID);
 		const bool isSensorCollider = isTriggerVoxel || isTransitionVoxel;
 		const bool shouldCreateCollider = voxelHasCollision || isSensorCollider;

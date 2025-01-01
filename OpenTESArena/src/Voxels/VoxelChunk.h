@@ -33,19 +33,19 @@
 
 class AudioManager;
 
-// A 3D set of voxels for a 64x64 portion of the game world.
+using VoxelShapeDefID = int;
+using VoxelTextureDefID = int;
+using VoxelTraitsDefID = int;
+using VoxelTransitionDefID = int;
+using VoxelTriggerDefID = int;
+using VoxelLockDefID = int;
+using VoxelBuildingNameID = int;
+using VoxelDoorDefID = int;
+using VoxelChasmDefID = int;
+
+// Gameplay values for a 3D set of voxels occupying a 64x64 portion of the game world.
 class VoxelChunk final : public Chunk
 {
-public:
-	using VoxelShapeDefID = int;
-	using VoxelTextureDefID = int;
-	using VoxelTraitsDefID = int;
-	using TransitionDefID = int;
-	using TriggerDefID = int;
-	using LockDefID = int;
-	using BuildingNameID = int;
-	using DoorDefID = int;
-	using ChasmDefID = int;
 private:
 	// Definitions pointed to by voxel IDs.
 	std::vector<VoxelShapeDefinition> shapeDefs;
@@ -65,7 +65,7 @@ private:
 	VoxelShapeDefID floorReplacementShapeDefID;
 	VoxelTextureDefID floorReplacementTextureDefID;
 	VoxelTraitsDefID floorReplacementTraitsDefID;
-	ChasmDefID floorReplacementChasmDefID;
+	VoxelChasmDefID floorReplacementChasmDefID;
 
 	// Voxels that changed this frame. Reset at end-of-frame.
 	Buffer3D<VoxelDirtyType> dirtyVoxelTypes;
@@ -76,12 +76,12 @@ private:
 	std::vector<VoxelInt3> dirtyChasmWallInstPositions;
 
 	// Indices into decorators (generally sparse in comparison to voxels themselves).
-	std::unordered_map<VoxelInt3, TransitionDefID> transitionDefIndices;
-	std::unordered_map<VoxelInt3, TriggerDefID> triggerDefIndices;
-	std::unordered_map<VoxelInt3, LockDefID> lockDefIndices;
-	std::unordered_map<VoxelInt3, BuildingNameID> buildingNameIndices;
-	std::unordered_map<VoxelInt3, DoorDefID> doorDefIndices;
-	std::unordered_map<VoxelInt3, ChasmDefID> chasmDefIndices;
+	std::unordered_map<VoxelInt3, VoxelTransitionDefID> transitionDefIndices;
+	std::unordered_map<VoxelInt3, VoxelTriggerDefID> triggerDefIndices;
+	std::unordered_map<VoxelInt3, VoxelLockDefID> lockDefIndices;
+	std::unordered_map<VoxelInt3, VoxelBuildingNameID> buildingNameIndices;
+	std::unordered_map<VoxelInt3, VoxelDoorDefID> doorDefIndices;
+	std::unordered_map<VoxelInt3, VoxelChasmDefID> chasmDefIndices;
 
 	// Animations.
 	std::vector<VoxelDoorAnimationInstance> doorAnimInsts;
@@ -137,12 +137,12 @@ public:
 	const VoxelShapeDefinition &getShapeDef(VoxelShapeDefID id) const;
 	const VoxelTextureDefinition &getTextureDef(VoxelTextureDefID id) const;
 	const VoxelTraitsDefinition &getTraitsDef(VoxelTraitsDefID id) const;
-	const TransitionDefinition &getTransitionDef(TransitionDefID id) const;
-	const VoxelTriggerDefinition &getTriggerDef(TriggerDefID id) const;
-	const LockDefinition &getLockDef(LockDefID id) const;
-	const std::string &getBuildingName(BuildingNameID id) const;
-	const VoxelDoorDefinition &getDoorDef(DoorDefID id) const;
-	const VoxelChasmDefinition &getChasmDef(ChasmDefID id) const;
+	const TransitionDefinition &getTransitionDef(VoxelTransitionDefID id) const;
+	const VoxelTriggerDefinition &getTriggerDef(VoxelTriggerDefID id) const;
+	const LockDefinition &getLockDef(VoxelLockDefID id) const;
+	const std::string &getBuildingName(VoxelBuildingNameID id) const;
+	const VoxelDoorDefinition &getDoorDef(VoxelDoorDefID id) const;
+	const VoxelChasmDefinition &getChasmDef(VoxelChasmDefID id) const;
 
 	VoxelShapeDefID getShapeDefID(SNInt x, int y, WEInt z) const;
 	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
@@ -154,12 +154,12 @@ public:
 	BufferView<const VoxelInt3> getDirtyFadeAnimInstPositions() const; // Either animating or just finished this frame.
 	BufferView<const VoxelInt3> getDirtyChasmWallInstPositions() const;
 
-	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID *outID) const;
-	bool tryGetTriggerDefID(SNInt x, int y, WEInt z, TriggerDefID *outID) const;
-	bool tryGetLockDefID(SNInt x, int y, WEInt z, LockDefID *outID) const;
-	bool tryGetBuildingNameID(SNInt x, int y, WEInt z, BuildingNameID *outID) const;
-	bool tryGetDoorDefID(SNInt x, int y, WEInt z, DoorDefID *outID) const;
-	bool tryGetChasmDefID(SNInt x, int y, WEInt z, ChasmDefID *outID) const;
+	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, VoxelTransitionDefID *outID) const;
+	bool tryGetTriggerDefID(SNInt x, int y, WEInt z, VoxelTriggerDefID *outID) const;
+	bool tryGetLockDefID(SNInt x, int y, WEInt z, VoxelLockDefID *outID) const;
+	bool tryGetBuildingNameID(SNInt x, int y, WEInt z, VoxelBuildingNameID *outID) const;
+	bool tryGetDoorDefID(SNInt x, int y, WEInt z, VoxelDoorDefID *outID) const;
+	bool tryGetChasmDefID(SNInt x, int y, WEInt z, VoxelChasmDefID *outID) const;
 
 	// Animation instance getters. A destroyed instance is still valid to read until end-of-frame.
 	BufferView<const VoxelDoorAnimationInstance> getDoorAnimInsts() const;
@@ -183,24 +183,24 @@ public:
 	void setFloorReplacementShapeDefID(VoxelShapeDefID id);
 	void setFloorReplacementTextureDefID(VoxelTextureDefID id);
 	void setFloorReplacementTraitsDefID(VoxelTraitsDefID id);
-	void setFloorReplacementChasmDefID(ChasmDefID id);
+	void setFloorReplacementChasmDefID(VoxelChasmDefID id);
 
 	VoxelShapeDefID addShapeDef(VoxelShapeDefinition &&shapeDef);
 	VoxelTextureDefID addTextureDef(VoxelTextureDefinition &&textureDef);
 	VoxelTraitsDefID addTraitsDef(VoxelTraitsDefinition &&traitsDef);
-	TransitionDefID addTransitionDef(TransitionDefinition &&transition);
-	TriggerDefID addTriggerDef(VoxelTriggerDefinition &&trigger);
-	LockDefID addLockDef(LockDefinition &&lock);
-	BuildingNameID addBuildingName(std::string &&buildingName);
-	DoorDefID addDoorDef(VoxelDoorDefinition &&door);
-	ChasmDefID addChasmDef(VoxelChasmDefinition &&chasm);
+	VoxelTransitionDefID addTransitionDef(TransitionDefinition &&transition);
+	VoxelTriggerDefID addTriggerDef(VoxelTriggerDefinition &&trigger);
+	VoxelLockDefID addLockDef(LockDefinition &&lock);
+	VoxelBuildingNameID addBuildingName(std::string &&buildingName);
+	VoxelDoorDefID addDoorDef(VoxelDoorDefinition &&door);
+	VoxelChasmDefID addChasmDef(VoxelChasmDefinition &&chasm);
 
-	void addTransitionDefPosition(TransitionDefID id, const VoxelInt3 &voxel);
-	void addTriggerDefPosition(TriggerDefID id, const VoxelInt3 &voxel);
-	void addLockDefPosition(LockDefID id, const VoxelInt3 &voxel);
-	void addBuildingNamePosition(BuildingNameID id, const VoxelInt3 &voxel);
-	void addDoorDefPosition(DoorDefID id, const VoxelInt3 &voxel);
-	void addChasmDefPosition(ChasmDefID id, const VoxelInt3 &voxel);
+	void addTransitionDefPosition(VoxelTransitionDefID id, const VoxelInt3 &voxel);
+	void addTriggerDefPosition(VoxelTriggerDefID id, const VoxelInt3 &voxel);
+	void addLockDefPosition(VoxelLockDefID id, const VoxelInt3 &voxel);
+	void addBuildingNamePosition(VoxelBuildingNameID id, const VoxelInt3 &voxel);
+	void addDoorDefPosition(VoxelDoorDefID id, const VoxelInt3 &voxel);
+	void addChasmDefPosition(VoxelChasmDefID id, const VoxelInt3 &voxel);
 
 	void addDirtyChasmWallInstPosition(const VoxelInt3 &voxel);
 	void addDirtyDoorVisInstPosition(const VoxelInt3 &voxel);

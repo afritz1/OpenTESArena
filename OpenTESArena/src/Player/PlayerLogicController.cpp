@@ -603,7 +603,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 			const RayCastVoxelHit &voxelHit = hit.voxelHit;
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
 			const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
@@ -626,7 +626,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 							if (isWall || isEdge)
 							{
-								VoxelChunk::TransitionDefID transitionDefID;
+								VoxelTransitionDefID transitionDefID;
 								if (chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 								{
 									const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
@@ -662,7 +662,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							chunk.addDoorAnimInst(std::move(newDoorAnimInst));
 
 							// Get the door's opening sound and play it at the center of the voxel.
-							VoxelChunk::DoorDefID doorDefID;
+							VoxelDoorDefID doorDefID;
 							if (!chunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
 							{
 								DebugCrash("Expected door def ID to exist.");
@@ -686,7 +686,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				// Handle secondary click (i.e. right click).
 				if (ArenaSelectionUtils::isVoxelSelectableAsSecondary(voxelType))
 				{
-					VoxelChunk::BuildingNameID buildingNameID;
+					VoxelBuildingNameID buildingNameID;
 					if (chunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
 					{
 						const std::string &buildingName = chunk.getBuildingName(buildingNameID);

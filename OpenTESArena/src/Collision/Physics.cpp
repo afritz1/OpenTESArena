@@ -262,7 +262,7 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
 		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
@@ -327,7 +327,7 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
 		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 

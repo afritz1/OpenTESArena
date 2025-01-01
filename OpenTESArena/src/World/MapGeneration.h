@@ -131,14 +131,14 @@ namespace MapGeneration
 	{
 	private:
 		ChunkInt2 chunk;
-		std::unordered_map<ArenaTypes::InteriorType, LevelDefinition::BuildingNameID> ids;
+		std::unordered_map<ArenaTypes::InteriorType, LevelVoxelBuildingNameID> ids;
 	public:
 		void init(const ChunkInt2 &chunk);
 
 		const ChunkInt2 &getChunk() const;
 		bool hasBuildingNames() const;
-		bool tryGetBuildingNameID(ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID *outID) const;
-		void setBuildingNameID(ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID id);
+		bool tryGetBuildingNameID(ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID *outID) const;
+		void setBuildingNameID(ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID id);
 	};
 
 	// Data that can be used when creating an actual transition definition.

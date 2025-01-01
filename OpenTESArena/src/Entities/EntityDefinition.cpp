@@ -511,7 +511,7 @@ EntityDefinition::TransitionDefinition::TransitionDefinition()
 	this->transitionDefID = -1;
 }
 
-void EntityDefinition::TransitionDefinition::init(LevelDefinition::TransitionDefID transitionDefID)
+void EntityDefinition::TransitionDefinition::init(LevelVoxelTransitionDefID transitionDefID)
 {
 	this->transitionDefID = transitionDefID;
 }
@@ -785,7 +785,7 @@ void EntityDefinition::initVfx(VfxEntityAnimationType type, int index, EntityAni
 	this->vfx.init(type, index);
 }
 
-void EntityDefinition::initTransition(LevelDefinition::TransitionDefID defID,
+void EntityDefinition::initTransition(LevelVoxelTransitionDefID defID,
 	EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Transition, std::move(animDef));

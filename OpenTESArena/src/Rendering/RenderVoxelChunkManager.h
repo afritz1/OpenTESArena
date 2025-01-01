@@ -58,11 +58,11 @@ public:
 	struct LoadedChasmTextureKey
 	{
 		ChunkInt2 chunkPos;
-		VoxelChunk::ChasmDefID chasmDefID;
+		VoxelChasmDefID chasmDefID;
 		int chasmFloorListIndex;
 		int chasmWallIndex; // Points into voxel textures.
 
-		void init(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
+		void init(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 	};
 private:
 	// Buffer for all raising doors' translation to push/pop during vertex shading so they scale towards the ceiling.
@@ -80,8 +80,8 @@ private:
 	std::vector<RenderDrawCall> drawCallsCache;
 
 	ObjectTextureID getTextureID(const TextureAsset &textureAsset) const;
-	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID, double chasmAnimPercent) const;
-	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChunk::ChasmDefID chasmDefID) const;
+	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID, double chasmAnimPercent) const;
+	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID) const;
 
 	void loadTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer);
 	void loadMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);

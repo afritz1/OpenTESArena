@@ -38,9 +38,9 @@ namespace MapGeneration
 	// Each 2-byte Arena voxel maps to a shape + texture + traits tuple.
 	struct ArenaVoxelMappingEntry
 	{
-		LevelDefinition::VoxelShapeDefID shapeDefID;
-		LevelDefinition::VoxelTextureDefID textureDefID;
-		LevelDefinition::VoxelTraitsDefID traitsDefID;
+		LevelVoxelShapeDefID shapeDefID;
+		LevelVoxelTextureDefID textureDefID;
+		LevelVoxelTraitsDefID traitsDefID;
 
 		ArenaVoxelMappingEntry()
 		{
@@ -49,8 +49,8 @@ namespace MapGeneration
 			this->traitsDefID = -1;
 		}
 
-		void init(LevelDefinition::VoxelShapeDefID shapeDefID, LevelDefinition::VoxelTextureDefID textureDefID,
-			LevelDefinition::VoxelTraitsDefID traitsDefID)
+		void init(LevelVoxelShapeDefID shapeDefID, LevelVoxelTextureDefID textureDefID,
+			LevelVoxelTraitsDefID traitsDefID)
 		{
 			this->shapeDefID = shapeDefID;
 			this->textureDefID = textureDefID;
@@ -60,13 +60,13 @@ namespace MapGeneration
 
 	// Mapping caches of .MIF/.RMD voxels, etc. to modern level info entries.
 	using ArenaVoxelMappingCache = std::unordered_map<ArenaTypes::VoxelID, ArenaVoxelMappingEntry>;
-	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::EntityDefID>;
-	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelDefinition::LockDefID>>;
-	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID>>;
-	using ArenaTransitionMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::TransitionDefID>;
-	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelDefinition::BuildingNameID>;
-	using ArenaDoorMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::DoorDefID>;
-	using ArenaChasmMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::ChasmDefID>;
+	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelEntityDefID>;
+	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelVoxelLockDefID>>;
+	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelVoxelTriggerDefID>>;
+	using ArenaTransitionMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelTransitionDefID>;
+	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelVoxelBuildingNameID>;
+	using ArenaDoorMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelDoorDefID>;
+	using ArenaChasmMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelChasmDefID>;
 
 	// Converts the given Arena *MENU ID to a modern interior type, if any.
 	std::optional<ArenaTypes::InteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, MapType mapType)
@@ -1178,9 +1178,9 @@ namespace MapGeneration
 				const ArenaTypes::VoxelID florVoxel = flor.get(florX, florZ);
 
 				// Get voxel def IDs from cache or create a new entry.
-				LevelDefinition::VoxelShapeDefID voxelShapeDefID;
-				LevelDefinition::VoxelTextureDefID voxelTextureDefID;
-				LevelDefinition::VoxelTraitsDefID voxelTraitsDefID;
+				LevelVoxelShapeDefID voxelShapeDefID;
+				LevelVoxelTextureDefID voxelTextureDefID;
+				LevelVoxelTraitsDefID voxelTraitsDefID;
 				const auto defIter = voxelCache->find(florVoxel);
 				if (defIter != voxelCache->end())
 				{
@@ -1216,7 +1216,7 @@ namespace MapGeneration
 				if (floorFlatID > 0)
 				{
 					// Get entity def ID from cache or create a new one.
-					LevelDefinition::EntityDefID entityDefID;
+					LevelVoxelEntityDefID entityDefID;
 					const auto iter = entityCache->find(florVoxel);
 					if (iter != entityCache->end())
 					{
@@ -1254,7 +1254,7 @@ namespace MapGeneration
 				{
 					const VoxelTraitsDefinition::Chasm &chasm = traitsDef.chasm;
 
-					LevelDefinition::ChasmDefID chasmDefID;
+					LevelVoxelChasmDefID chasmDefID;
 					const auto chasmIter = chasmCache->find(florVoxel);
 					if (chasmIter != chasmCache->end())
 					{
@@ -1286,10 +1286,10 @@ namespace MapGeneration
 		MapGeneration::writeDefsForFloorReplacement(inf, textureManager, &floorReplacementShapeDef, &floorReplacementTextureDef,
 			&floorReplacementTraitsDef, &floorReplacementChasmDef);
 
-		const LevelDefinition::VoxelShapeDefID floorReplacementVoxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(floorReplacementShapeDef));
-		const LevelDefinition::VoxelTextureDefID floorReplacementVoxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(floorReplacementTextureDef));
-		const LevelDefinition::VoxelTraitsDefID floorReplacementVoxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(floorReplacementTraitsDef));
-		const LevelDefinition::ChasmDefID floorReplacementChasmDefID = outLevelInfoDef->addChasmDef(std::move(floorReplacementChasmDef));
+		const LevelVoxelShapeDefID floorReplacementVoxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(floorReplacementShapeDef));
+		const LevelVoxelTextureDefID floorReplacementVoxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(floorReplacementTextureDef));
+		const LevelVoxelTraitsDefID floorReplacementVoxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(floorReplacementTraitsDef));
+		const LevelVoxelChasmDefID floorReplacementChasmDefID = outLevelInfoDef->addChasmDef(std::move(floorReplacementChasmDef));
 		outLevelDef->setFloorReplacementShapeDefID(floorReplacementVoxelShapeDefID);
 		outLevelDef->setFloorReplacementTextureDefID(floorReplacementVoxelTextureDefID);
 		outLevelDef->setFloorReplacementTraitsDefID(floorReplacementVoxelTraitsDefID);
@@ -1331,9 +1331,9 @@ namespace MapGeneration
 				if (isVoxel)
 				{
 					// Get voxel def IDs from cache or create a new entry.
-					LevelDefinition::VoxelShapeDefID voxelShapeDefID;
-					LevelDefinition::VoxelTextureDefID voxelTextureDefID;
-					LevelDefinition::VoxelTraitsDefID voxelTraitsDefID;
+					LevelVoxelShapeDefID voxelShapeDefID;
+					LevelVoxelTextureDefID voxelTextureDefID;
+					LevelVoxelTraitsDefID voxelTraitsDefID;
 					const auto defIter = voxelCache->find(map1Voxel);
 					if (defIter != voxelCache->end())
 					{
@@ -1372,7 +1372,7 @@ namespace MapGeneration
 					if (transitionDefGenInfo.has_value())
 					{
 						// Get transition def ID from cache or create a new one.
-						LevelDefinition::TransitionDefID transitionDefID;
+						LevelVoxelTransitionDefID transitionDefID;
 						const auto iter = transitionCache->find(map1Voxel);
 						if (iter != transitionCache->end())
 						{
@@ -1398,7 +1398,7 @@ namespace MapGeneration
 					if (doorDefGenInfo.has_value())
 					{
 						// Get door def ID from cache or create a new one.
-						LevelDefinition::DoorDefID doorDefID;
+						LevelVoxelDoorDefID doorDefID;
 						const auto iter = doorCache->find(map1Voxel);
 						if (iter != doorCache->end())
 						{
@@ -1417,7 +1417,7 @@ namespace MapGeneration
 				else
 				{
 					// Get entity def ID from cache or create a new one.
-					LevelDefinition::EntityDefID entityDefID;
+					LevelVoxelEntityDefID entityDefID;
 					const auto iter = entityCache->find(map1Voxel);
 					if (iter != entityCache->end())
 					{
@@ -1467,9 +1467,9 @@ namespace MapGeneration
 				}
 
 				// Get voxel def ID from cache or create a new one.
-				LevelDefinition::VoxelShapeDefID voxelShapeDefID;
-				LevelDefinition::VoxelTextureDefID voxelTextureDefID;
-				LevelDefinition::VoxelTraitsDefID voxelTraitsDefID;
+				LevelVoxelShapeDefID voxelShapeDefID;
+				LevelVoxelTextureDefID voxelTextureDefID;
+				LevelVoxelTraitsDefID voxelTraitsDefID;
 				const auto defIter = voxelCache->find(map2Voxel);
 				if (defIter != voxelCache->end())
 				{
@@ -1516,9 +1516,9 @@ namespace MapGeneration
 		VoxelTextureDefinition voxelTextureDef;
 		VoxelTraitsDefinition voxelTraitsDef;
 		MapGeneration::writeDefsForCeiling(inf, &voxelShapeDef, &voxelTextureDef, &voxelTraitsDef);
-		const LevelDefinition::VoxelShapeDefID voxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(voxelShapeDef));
-		const LevelDefinition::VoxelTextureDefID voxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(voxelTextureDef));
-		const LevelDefinition::VoxelTraitsDefID voxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(voxelTraitsDef));
+		const LevelVoxelShapeDefID voxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(voxelShapeDef));
+		const LevelVoxelTextureDefID voxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(voxelTextureDef));
+		const LevelVoxelTraitsDefID voxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(voxelTraitsDef));
 
 		for (SNInt levelX = 0; levelX < outLevelDef->getWidth(); levelX++)
 		{
@@ -1538,9 +1538,9 @@ namespace MapGeneration
 		// @todo: see if .INF file key data is relevant here.
 
 		// Get lock def ID from cache or create a new one.
-		LevelDefinition::LockDefID lockDefID;
+		LevelVoxelLockDefID lockDefID;
 		const auto iter = std::find_if(lockMappings->begin(), lockMappings->end(),
-			[&lock](const std::pair<ArenaTypes::MIFLock, LevelDefinition::LockDefID> &pair)
+			[&lock](const std::pair<ArenaTypes::MIFLock, LevelVoxelLockDefID> &pair)
 		{
 			const ArenaTypes::MIFLock &mifLock = pair.first;
 			return (mifLock.x == lock.x) && (mifLock.y == lock.y) && (mifLock.lockLevel == lock.lockLevel);
@@ -1571,7 +1571,7 @@ namespace MapGeneration
 		// See if the trigger has already been added. Prevent duplicate triggers since they exist in at least
 		// one of the original game's main quest dungeons.
 		const auto iter = std::find_if(triggerMappings->begin(), triggerMappings->end(),
-			[&trigger](const std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID> &pair)
+			[&trigger](const std::pair<ArenaTypes::MIFTrigger, LevelVoxelTriggerDefID> &pair)
 		{
 			const ArenaTypes::MIFTrigger &mifTrigger = pair.first;
 			return (mifTrigger.x == trigger.x) && (mifTrigger.y == trigger.y) &&
@@ -1580,7 +1580,7 @@ namespace MapGeneration
 
 		if (iter == triggerMappings->end())
 		{
-			const LevelDefinition::TriggerDefID triggerDefID = outLevelInfoDef->addTriggerDef(
+			const LevelVoxelTriggerDefID triggerDefID = outLevelInfoDef->addTriggerDef(
 				MapGeneration::makeTriggerDefFromArenaTrigger(trigger, inf));
 			triggerMappings->emplace_back(std::make_pair(trigger, triggerDefID));
 
@@ -1736,7 +1736,7 @@ namespace MapGeneration
 			-> std::optional<ArenaTypes::InteriorType>
 		{
 			auto tryGetTransitionDefID = [outLevelDef](SNInt x, WEInt z)
-				-> std::optional<LevelDefinition::TransitionDefID>
+				-> std::optional<LevelVoxelTransitionDefID>
 			{
 				// Find the associated transition for this voxel (if any).
 				const WorldInt3 voxel(x, 1, z);
@@ -1755,7 +1755,7 @@ namespace MapGeneration
 				return std::nullopt;
 			};
 
-			const std::optional<LevelDefinition::TransitionDefID> transitionDefID = tryGetTransitionDefID(x, z);
+			const std::optional<LevelVoxelTransitionDefID> transitionDefID = tryGetTransitionDefID(x, z);
 			if (!transitionDefID.has_value())
 			{
 				// No transition at this voxel.
@@ -1945,7 +1945,7 @@ namespace MapGeneration
 						name = createTempleName(model, suffixIndex);
 					}
 
-					const LevelDefinition::BuildingNameID buildingNameID =
+					const LevelVoxelBuildingNameID buildingNameID =
 						outLevelInfoDef->addBuildingName(std::move(name));
 					outLevelDef->addBuildingName(buildingNameID, WorldInt3(x, 1, z));
 					seen.emplace_back(hash);
@@ -1969,7 +1969,7 @@ namespace MapGeneration
 
 				// Added an index variable in this solution since the original game seems to store
 				// its building names in a way other than with a vector.
-				const LevelDefinition::BuildingNameID buildingNameID =
+				const LevelVoxelBuildingNameID buildingNameID =
 					mainQuestTempleOverride->menuNamesIndex;
 
 				std::string buildingName = createTempleName(modelIndex, suffixIndex);
@@ -1982,7 +1982,7 @@ namespace MapGeneration
 		generateNames(ArenaTypes::InteriorType::Temple);
 
 		// Add names for any mage's guild entrances.
-		std::optional<LevelDefinition::BuildingNameID> magesGuildBuildingNameID;
+		std::optional<LevelVoxelBuildingNameID> magesGuildBuildingNameID;
 		for (WEInt z = 0; z < outLevelDef->getDepth(); z++)
 		{
 			for (SNInt x = 0; x < outLevelDef->getWidth(); x++)
@@ -2111,7 +2111,7 @@ namespace MapGeneration
 				}
 				else
 				{
-					const LevelDefinition::BuildingNameID buildingNameID = outLevelInfoDef->addBuildingName(std::string(buildingName));
+					const LevelVoxelBuildingNameID buildingNameID = outLevelInfoDef->addBuildingName(std::string(buildingName));
 					outBuildingNameInfo->setBuildingNameID(interiorType, buildingNameID);
 					buildingNameMappings->emplace(std::move(buildingName), buildingNameID);
 				}
@@ -2244,7 +2244,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::hasBuildingNames() const
 }
 
 bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
-	ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID *outID) const
+	ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID *outID) const
 {
 	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
@@ -2259,7 +2259,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
 }
 
 void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
-	ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID id)
+	ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID id)
 {
 	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())

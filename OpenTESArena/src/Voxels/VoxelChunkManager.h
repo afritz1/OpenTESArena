@@ -19,16 +19,16 @@ class VoxelChunkManager final : public SpecializedChunkManager<VoxelChunk>
 private:
 	void getAdjacentVoxelShapeDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-		VoxelChunk::VoxelShapeDefID *outNorthID, VoxelChunk::VoxelShapeDefID *outEastID, VoxelChunk::VoxelShapeDefID *outSouthID,
-		VoxelChunk::VoxelShapeDefID *outWestID);
+		VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID, VoxelShapeDefID *outSouthID,
+		VoxelShapeDefID *outWestID);
 	void getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-		VoxelChunk::VoxelTextureDefID *outNorthID, VoxelChunk::VoxelTextureDefID *outEastID, VoxelChunk::VoxelTextureDefID *outSouthID,
-		VoxelChunk::VoxelTextureDefID *outWestID);
+		VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID, VoxelTextureDefID *outSouthID,
+		VoxelTextureDefID *outWestID);
 	void getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-		VoxelChunk::VoxelTraitsDefID *outNorthID, VoxelChunk::VoxelTraitsDefID *outEastID, VoxelChunk::VoxelTraitsDefID *outSouthID,
-		VoxelChunk::VoxelTraitsDefID *outWestID);
+		VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID,
+		VoxelTraitsDefID *outWestID);
 
 	// Helper function for setting the chunk's voxel definitions.
 	void populateChunkVoxelDefs(VoxelChunk &chunk, const LevelDefinition &levelDefinition,

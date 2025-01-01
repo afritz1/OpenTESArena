@@ -63,7 +63,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 
 	VoxelChunk &chunk = *chunkPtr;
 	const VoxelInt3 &voxel = coord.voxel;
-	VoxelChunk::TriggerDefID triggerDefID;
+	VoxelTriggerDefID triggerDefID;
 	if (!chunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
 	{
 		return;
@@ -507,7 +507,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	// Get the voxel definition associated with the voxel.
 	const VoxelTraitsDefinition &voxelTraitsDef = [&chunk, &transitionVoxel]()
 	{
-		const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
+		const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
 		return chunk.getTraitsDef(voxelTraitsDefID);
 	}();
 
@@ -515,7 +515,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		const VoxelInt3 &voxel = transitionCoord.voxel;
-		VoxelChunk::TransitionDefID transitionDefID;
+		VoxelTransitionDefID transitionDefID;
 		if (!chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 		{
 			return;

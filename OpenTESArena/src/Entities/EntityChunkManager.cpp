@@ -173,7 +173,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 	for (int i = 0; i < levelDefinition.getEntityPlacementDefCount(); i++)
 	{
 		const LevelDefinition::EntityPlacementDef &placementDef = levelDefinition.getEntityPlacementDef(i);
-		const LevelDefinition::EntityDefID levelEntityDefID = placementDef.id;
+		const LevelVoxelEntityDefID levelEntityDefID = placementDef.id;
 		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
 		const EntityDefinitionType entityDefType = entityDef.getType();
 		const bool isDynamicEntity = EntityUtils::isDynamicEntity(entityDefType);
@@ -300,8 +300,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
 				{
 					const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
-					const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
-					const VoxelChunk::VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
+					const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
+					const VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
 					const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 					const VoxelTraitsDefinition &groundVoxelTraitsDef = voxelChunk.getTraitsDef(groundVoxelTraitsDefID);
 
@@ -559,7 +559,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					auto isPassableVoxel = [&coord, voxelChunk]()
 					{
 						const VoxelInt3 voxel(coord.voxel.x, 1, coord.voxel.y);
-						const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
+						const VoxelTraitsDefID voxelTraitsDefID = voxelChunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
 						const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk->getTraitsDef(voxelTraitsDefID);
 						return voxelTraitsDef.type == ArenaTypes::VoxelType::None;
 					};
@@ -567,7 +567,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					auto isWalkableVoxel = [&coord, voxelChunk]()
 					{
 						const VoxelInt3 voxel(coord.voxel.x, 0, coord.voxel.y);
-						const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = voxelChunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
+						const VoxelTraitsDefID voxelTraitsDefID = voxelChunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
 						const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk->getTraitsDef(voxelTraitsDefID);
 						return voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
 					};
@@ -873,13 +873,13 @@ double EntityChunkManager::getEntityCorrectedY(EntityInstanceID id, double ceili
 
 	// If they are in a raised platform voxel, they are set on top of it.
 	double raisedPlatformYOffset = 0.0;
-	const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
+	const VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
 	const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
 	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelTraitsDefinition::Raised &raised = voxelTraitsDef.raised;
 		const double shapeYPos = raised.yOffset + raised.ySize;
-		const VoxelChunk::VoxelShapeDefID voxelShapeDefID = chunk->getShapeDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
+		const VoxelShapeDefID voxelShapeDefID = chunk->getShapeDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
 		const VoxelShapeDefinition &voxelShapeDef = chunk->getShapeDef(voxelShapeDefID);
 		raisedPlatformYOffset = MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}

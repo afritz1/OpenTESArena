@@ -282,11 +282,11 @@ public:
 		// Should be fine to store this ID that points into a LevelInfoDefinition since transition
 		// entities should only exist on the level they're spawned and wouldn't be globally reusable
 		// like some entity definitions.
-		LevelDefinition::TransitionDefID transitionDefID;
+		LevelVoxelTransitionDefID transitionDefID;
 
 		TransitionDefinition();
 
-		void init(LevelDefinition::TransitionDefID transitionDefID);
+		void init(LevelVoxelTransitionDefID transitionDefID);
 
 		bool operator==(const TransitionDefinition &other) const;
 	};
@@ -363,7 +363,7 @@ public:
 	
 	void initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef);
 
-	void initTransition(LevelDefinition::TransitionDefID defID, EntityAnimationDefinition &&animDef);
+	void initTransition(LevelVoxelTransitionDefID defID, EntityAnimationDefinition &&animDef);
 
 	void initDoodad(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle,
 		int lightIntensity, EntityAnimationDefinition &&animDef);

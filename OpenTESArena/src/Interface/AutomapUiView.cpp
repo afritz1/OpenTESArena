@@ -347,12 +347,12 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 			{
 				for (WEInt z = 0; z < ChunkUtils::CHUNK_DIM; z++)
 				{
-					const VoxelChunk::VoxelTraitsDefID floorVoxelTraitsDefID = chunk.getTraitsDefID(x, 0, z);
-					const VoxelChunk::VoxelTraitsDefID wallVoxelTraitsDefID = chunk.getTraitsDefID(x, 1, z);
+					const VoxelTraitsDefID floorVoxelTraitsDefID = chunk.getTraitsDefID(x, 0, z);
+					const VoxelTraitsDefID wallVoxelTraitsDefID = chunk.getTraitsDefID(x, 1, z);
 					const VoxelTraitsDefinition &floorVoxelTraitsDef = chunk.getTraitsDef(floorVoxelTraitsDefID);
 					const VoxelTraitsDefinition &wallVoxelTraitsDef = chunk.getTraitsDef(wallVoxelTraitsDefID);
 					
-					VoxelChunk::TransitionDefID transitionDefID;
+					VoxelTransitionDefID transitionDefID;
 					const TransitionDefinition *transitionDef = nullptr;
 					if (chunk.tryGetTransitionDefID(x, 1, z, &transitionDefID))
 					{

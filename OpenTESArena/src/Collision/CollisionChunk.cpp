@@ -97,7 +97,7 @@ CollisionChunk::CollisionShapeDefID CollisionChunk::addCollisionShapeDef(Collisi
 	return id;
 }
 
-CollisionChunk::CollisionShapeDefID CollisionChunk::getOrAddShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelChunk::VoxelShapeDefID voxelShapeDefID)
+CollisionChunk::CollisionShapeDefID CollisionChunk::getOrAddShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID)
 {
 	CollisionChunk::CollisionShapeDefID collisionShapeDefID = -1;
 

@@ -34,7 +34,7 @@ private:
 	std::vector<VoxelTriggerDefinition> triggerDefs;
 	std::vector<TransitionDefinition> transitionDefs;
 	std::vector<std::string> buildingNames;
-	std::unordered_map<LevelDefinition::BuildingNameID, std::string> buildingNameOverrides;
+	std::unordered_map<LevelVoxelBuildingNameID, std::string> buildingNameOverrides;
 	std::vector<VoxelDoorDefinition> doorDefs;
 	std::vector<VoxelChasmDefinition> chasmDefs;
 
@@ -57,31 +57,31 @@ public:
 	int getDoorDefCount() const;
 	int getChasmDefCount() const;
 
-	const VoxelShapeDefinition &getVoxelShapeDef(LevelDefinition::VoxelShapeDefID id) const;
-	const VoxelTextureDefinition &getVoxelTextureDef(LevelDefinition::VoxelTextureDefID id) const;
-	const VoxelTraitsDefinition &getVoxelTraitsDef(LevelDefinition::VoxelTraitsDefID id) const;
-	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
-	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
-	const VoxelTriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
-	const TransitionDefinition &getTransitionDef(LevelDefinition::TransitionDefID id) const;
-	const std::string &getBuildingName(LevelDefinition::BuildingNameID id) const;
-	const VoxelDoorDefinition &getDoorDef(LevelDefinition::DoorDefID id) const;
-	const VoxelChasmDefinition &getChasmDef(LevelDefinition::ChasmDefID id) const;
+	const VoxelShapeDefinition &getVoxelShapeDef(LevelVoxelShapeDefID id) const;
+	const VoxelTextureDefinition &getVoxelTextureDef(LevelVoxelTextureDefID id) const;
+	const VoxelTraitsDefinition &getVoxelTraitsDef(LevelVoxelTraitsDefID id) const;
+	const EntityDefinition &getEntityDef(LevelVoxelEntityDefID id) const;
+	const LockDefinition &getLockDef(LevelVoxelLockDefID id) const;
+	const VoxelTriggerDefinition &getTriggerDef(LevelVoxelTriggerDefID id) const;
+	const TransitionDefinition &getTransitionDef(LevelVoxelTransitionDefID id) const;
+	const std::string &getBuildingName(LevelVoxelBuildingNameID id) const;
+	const VoxelDoorDefinition &getDoorDef(LevelVoxelDoorDefID id) const;
+	const VoxelChasmDefinition &getChasmDef(LevelVoxelChasmDefID id) const;
 	double getCeilingScale() const;
 
-	LevelDefinition::VoxelShapeDefID addVoxelShapeDef(VoxelShapeDefinition &&def);
-	LevelDefinition::VoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&def);
-	LevelDefinition::VoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&def);
-	LevelDefinition::EntityDefID addEntityDef(EntityDefinition &&def);
-	LevelDefinition::LockDefID addLockDef(LockDefinition &&def);
-	LevelDefinition::TriggerDefID addTriggerDef(VoxelTriggerDefinition &&def);
-	LevelDefinition::TransitionDefID addTransitionDef(TransitionDefinition &&def);
-	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
-	LevelDefinition::DoorDefID addDoorDef(VoxelDoorDefinition &&def);
-	LevelDefinition::ChasmDefID addChasmDef(VoxelChasmDefinition &&def);
+	LevelVoxelShapeDefID addVoxelShapeDef(VoxelShapeDefinition &&def);
+	LevelVoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&def);
+	LevelVoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&def);
+	LevelVoxelEntityDefID addEntityDef(EntityDefinition &&def);
+	LevelVoxelLockDefID addLockDef(LockDefinition &&def);
+	LevelVoxelTriggerDefID addTriggerDef(VoxelTriggerDefinition &&def);
+	LevelVoxelTransitionDefID addTransitionDef(TransitionDefinition &&def);
+	LevelVoxelBuildingNameID addBuildingName(std::string &&name);
+	LevelVoxelDoorDefID addDoorDef(VoxelDoorDefinition &&def);
+	LevelVoxelChasmDefID addChasmDef(VoxelChasmDefinition &&def);
 
 	// Handles some special cases in main quest cities.
-	void setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name);
+	void setBuildingNameOverride(LevelVoxelBuildingNameID id, std::string &&name);
 };
 
 #endif

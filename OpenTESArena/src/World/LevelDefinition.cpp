@@ -2,45 +2,43 @@
 
 #include "LevelDefinition.h"
 
-LevelDefinition::EntityPlacementDef::EntityPlacementDef(EntityDefID id, std::vector<WorldDouble3> &&positions)
+LevelDefinition::EntityPlacementDef::EntityPlacementDef(LevelVoxelEntityDefID id, std::vector<WorldDouble3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::LockPlacementDef::LockPlacementDef(LockDefID id, std::vector<WorldInt3> &&positions)
+LevelDefinition::LockPlacementDef::LockPlacementDef(LevelVoxelLockDefID id, std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::TriggerPlacementDef::TriggerPlacementDef(TriggerDefID id, std::vector<WorldInt3> &&positions)
+LevelDefinition::TriggerPlacementDef::TriggerPlacementDef(LevelVoxelTriggerDefID id, std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::TransitionPlacementDef::TransitionPlacementDef(TransitionDefID id,
-	std::vector<WorldInt3> &&positions)
+LevelDefinition::TransitionPlacementDef::TransitionPlacementDef(LevelVoxelTransitionDefID id, std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::BuildingNamePlacementDef::BuildingNamePlacementDef(BuildingNameID id,
-	std::vector<WorldInt3> &&positions)
+LevelDefinition::BuildingNamePlacementDef::BuildingNamePlacementDef(LevelVoxelBuildingNameID id, std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::DoorPlacementDef::DoorPlacementDef(DoorDefID id, std::vector<WorldInt3> &&positions)
+LevelDefinition::DoorPlacementDef::DoorPlacementDef(LevelVoxelDoorDefID id, std::vector<WorldInt3> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
 }
 
-LevelDefinition::ChasmPlacementDef::ChasmPlacementDef(ChasmDefID id, std::vector<WorldInt3>&& positions)
+LevelDefinition::ChasmPlacementDef::ChasmPlacementDef(LevelVoxelChasmDefID id, std::vector<WorldInt3>&& positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
@@ -81,72 +79,72 @@ WEInt LevelDefinition::getDepth() const
 	return this->voxelShapeIDs.getDepth();
 }
 
-LevelDefinition::VoxelShapeDefID LevelDefinition::getVoxelShapeID(SNInt x, int y, WEInt z) const
+LevelVoxelShapeDefID LevelDefinition::getVoxelShapeID(SNInt x, int y, WEInt z) const
 {
 	return this->voxelShapeIDs.get(x, y, z);
 }
 
-LevelDefinition::VoxelTextureDefID LevelDefinition::getVoxelTextureID(SNInt x, int y, WEInt z) const
+LevelVoxelTextureDefID LevelDefinition::getVoxelTextureID(SNInt x, int y, WEInt z) const
 {
 	return this->voxelTextureIDs.get(x, y, z);
 }
 
-LevelDefinition::VoxelTraitsDefID LevelDefinition::getVoxelTraitsID(SNInt x, int y, WEInt z) const
+LevelVoxelTraitsDefID LevelDefinition::getVoxelTraitsID(SNInt x, int y, WEInt z) const
 {
 	return this->voxelTraitsIDs.get(x, y, z);
 }
 
-void LevelDefinition::setVoxelShapeID(SNInt x, int y, WEInt z, VoxelShapeDefID id)
+void LevelDefinition::setVoxelShapeID(SNInt x, int y, WEInt z, LevelVoxelShapeDefID id)
 {
 	this->voxelShapeIDs.set(x, y, z, id);
 }
 
-void LevelDefinition::setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
+void LevelDefinition::setVoxelTextureID(SNInt x, int y, WEInt z, LevelVoxelTextureDefID id)
 {
 	this->voxelTextureIDs.set(x, y, z, id);
 }
 
-void LevelDefinition::setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
+void LevelDefinition::setVoxelTraitsID(SNInt x, int y, WEInt z, LevelVoxelTraitsDefID id)
 {
 	this->voxelTraitsIDs.set(x, y, z, id);
 }
 
-LevelDefinition::VoxelShapeDefID LevelDefinition::getFloorReplacementShapeDefID() const
+LevelVoxelShapeDefID LevelDefinition::getFloorReplacementShapeDefID() const
 {
 	return this->floorReplacementShapeDefID;
 }
 
-LevelDefinition::VoxelTextureDefID LevelDefinition::getFloorReplacementTextureDefID() const
+LevelVoxelTextureDefID LevelDefinition::getFloorReplacementTextureDefID() const
 {
 	return this->floorReplacementTextureDefID;
 }
 
-LevelDefinition::VoxelTraitsDefID LevelDefinition::getFloorReplacementTraitsDefID() const
+LevelVoxelTraitsDefID LevelDefinition::getFloorReplacementTraitsDefID() const
 {
 	return this->floorReplacementTraitsDefID;
 }
 
-LevelDefinition::ChasmDefID LevelDefinition::getFloorReplacementChasmDefID() const
+LevelVoxelChasmDefID LevelDefinition::getFloorReplacementChasmDefID() const
 {
 	return this->floorReplacementChasmDefID;
 }
 
-void LevelDefinition::setFloorReplacementShapeDefID(VoxelShapeDefID id)
+void LevelDefinition::setFloorReplacementShapeDefID(LevelVoxelShapeDefID id)
 {
 	this->floorReplacementShapeDefID = id;
 }
 
-void LevelDefinition::setFloorReplacementTextureDefID(VoxelTextureDefID id)
+void LevelDefinition::setFloorReplacementTextureDefID(LevelVoxelTextureDefID id)
 {
 	this->floorReplacementTextureDefID = id;
 }
 
-void LevelDefinition::setFloorReplacementTraitsDefID(VoxelTraitsDefID id)
+void LevelDefinition::setFloorReplacementTraitsDefID(LevelVoxelTraitsDefID id)
 {
 	this->floorReplacementTraitsDefID = id;
 }
 
-void LevelDefinition::setFloorReplacementChasmDefID(ChasmDefID id)
+void LevelDefinition::setFloorReplacementChasmDefID(LevelVoxelChasmDefID id)
 {
 	this->floorReplacementChasmDefID = id;
 }
@@ -228,7 +226,7 @@ const LevelDefinition::ChasmPlacementDef &LevelDefinition::getChasmPlacementDef(
 	return this->chasmPlacementDefs[index];
 }
 
-void LevelDefinition::addEntity(EntityDefID id, const WorldDouble3 &position)
+void LevelDefinition::addEntity(LevelVoxelEntityDefID id, const WorldDouble3 &position)
 {
 	const auto iter = std::find_if(this->entityPlacementDefs.begin(), this->entityPlacementDefs.end(),
 		[id](const EntityPlacementDef &def)
@@ -247,7 +245,7 @@ void LevelDefinition::addEntity(EntityDefID id, const WorldDouble3 &position)
 	}
 }
 
-void LevelDefinition::addLock(LockDefID id, const WorldInt3 &position)
+void LevelDefinition::addLock(LevelVoxelLockDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->lockPlacementDefs.begin(), this->lockPlacementDefs.end(),
 		[id](const LockPlacementDef &def)
@@ -266,7 +264,7 @@ void LevelDefinition::addLock(LockDefID id, const WorldInt3 &position)
 	}
 }
 
-void LevelDefinition::addTrigger(TriggerDefID id, const WorldInt3 &position)
+void LevelDefinition::addTrigger(LevelVoxelTriggerDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->triggerPlacementDefs.begin(), this->triggerPlacementDefs.end(),
 		[id](const TriggerPlacementDef &def)
@@ -285,7 +283,7 @@ void LevelDefinition::addTrigger(TriggerDefID id, const WorldInt3 &position)
 	}
 }
 
-void LevelDefinition::addTransition(TransitionDefID id, const WorldInt3 &position)
+void LevelDefinition::addTransition(LevelVoxelTransitionDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->transitionPlacementDefs.begin(), this->transitionPlacementDefs.end(),
 		[id](const TransitionPlacementDef &def)
@@ -304,7 +302,7 @@ void LevelDefinition::addTransition(TransitionDefID id, const WorldInt3 &positio
 	}
 }
 
-void LevelDefinition::addBuildingName(BuildingNameID id, const WorldInt3 &position)
+void LevelDefinition::addBuildingName(LevelVoxelBuildingNameID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->buildingNamePlacementDefs.begin(),
 		this->buildingNamePlacementDefs.end(), [id](const BuildingNamePlacementDef &def)
@@ -323,7 +321,7 @@ void LevelDefinition::addBuildingName(BuildingNameID id, const WorldInt3 &positi
 	}
 }
 
-void LevelDefinition::addDoor(DoorDefID id, const WorldInt3 &position)
+void LevelDefinition::addDoor(LevelVoxelDoorDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->doorPlacementDefs.begin(),
 		this->doorPlacementDefs.end(), [id](const DoorPlacementDef &def)
@@ -342,7 +340,7 @@ void LevelDefinition::addDoor(DoorDefID id, const WorldInt3 &position)
 	}
 }
 
-void LevelDefinition::addChasm(ChasmDefID id, const WorldInt3 &position)
+void LevelDefinition::addChasm(LevelVoxelChasmDefID id, const WorldInt3 &position)
 {
 	const auto iter = std::find_if(this->chasmPlacementDefs.begin(),
 		this->chasmPlacementDefs.end(), [id](const ChasmPlacementDef &def)

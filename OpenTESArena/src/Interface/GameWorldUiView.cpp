@@ -631,7 +631,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 			const RayCastVoxelHit &voxelHit = hit.voxelHit;
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const VoxelChunk::VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
 
 			text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelTraitsDef.type)) + ' ' + std::to_string(hit.t);
