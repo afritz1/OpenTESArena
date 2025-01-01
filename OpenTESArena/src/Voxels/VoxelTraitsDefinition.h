@@ -36,8 +36,8 @@ struct VoxelTraitsDefinition
 
 	struct Chasm
 	{
-		// @todo: should move this into LevelDefinition/LevelInfoDefinition/Chunk as a ChasmDefinition,
-		// the same as DoorDefinition.
+		// @todo: should move this into LevelDefinition/LevelInfoDefinition/Chunk as a VoxelChasmDefinition,
+		// the same as VoxelDoorDefinition.
 		ArenaTypes::ChasmType type;
 	};
 

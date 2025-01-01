@@ -10,8 +10,8 @@
 #include "MapGeneration.h"
 #include "TransitionDefinition.h"
 #include "../Entities/EntityDefinition.h"
-#include "../Voxels/ChasmDefinition.h"
-#include "../Voxels/DoorDefinition.h"
+#include "../Voxels/VoxelChasmDefinition.h"
+#include "../Voxels/VoxelDoorDefinition.h"
 #include "../Voxels/VoxelShapeDefinition.h"
 #include "../Voxels/VoxelTextureDefinition.h"
 #include "../Voxels/VoxelTraitsDefinition.h"
@@ -35,8 +35,8 @@ private:
 	std::vector<TransitionDefinition> transitionDefs;
 	std::vector<std::string> buildingNames;
 	std::unordered_map<LevelDefinition::BuildingNameID, std::string> buildingNameOverrides;
-	std::vector<DoorDefinition> doorDefs;
-	std::vector<ChasmDefinition> chasmDefs;
+	std::vector<VoxelDoorDefinition> doorDefs;
+	std::vector<VoxelChasmDefinition> chasmDefs;
 
 	// @todo: interior gen info ID for when player creates a wall on water.
 
@@ -65,8 +65,8 @@ public:
 	const VoxelTriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
 	const TransitionDefinition &getTransitionDef(LevelDefinition::TransitionDefID id) const;
 	const std::string &getBuildingName(LevelDefinition::BuildingNameID id) const;
-	const DoorDefinition &getDoorDef(LevelDefinition::DoorDefID id) const;
-	const ChasmDefinition &getChasmDef(LevelDefinition::ChasmDefID id) const;
+	const VoxelDoorDefinition &getDoorDef(LevelDefinition::DoorDefID id) const;
+	const VoxelChasmDefinition &getChasmDef(LevelDefinition::ChasmDefID id) const;
 	double getCeilingScale() const;
 
 	LevelDefinition::VoxelShapeDefID addVoxelShapeDef(VoxelShapeDefinition &&def);
@@ -77,8 +77,8 @@ public:
 	LevelDefinition::TriggerDefID addTriggerDef(VoxelTriggerDefinition &&def);
 	LevelDefinition::TransitionDefID addTransitionDef(TransitionDefinition &&def);
 	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
-	LevelDefinition::DoorDefID addDoorDef(DoorDefinition &&def);
-	LevelDefinition::ChasmDefID addChasmDef(ChasmDefinition &&def);
+	LevelDefinition::DoorDefID addDoorDef(VoxelDoorDefinition &&def);
+	LevelDefinition::ChasmDefID addChasmDef(VoxelChasmDefinition &&def);
 
 	// Handles some special cases in main quest cities.
 	void setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name);

@@ -123,13 +123,13 @@ const std::string &LevelInfoDefinition::getBuildingName(LevelDefinition::Buildin
 	}
 }
 
-const DoorDefinition &LevelInfoDefinition::getDoorDef(LevelDefinition::DoorDefID id) const
+const VoxelDoorDefinition &LevelInfoDefinition::getDoorDef(LevelDefinition::DoorDefID id) const
 {
 	DebugAssertIndex(this->doorDefs, id);
 	return this->doorDefs[id];
 }
 
-const ChasmDefinition &LevelInfoDefinition::getChasmDef(LevelDefinition::ChasmDefID id) const
+const VoxelChasmDefinition &LevelInfoDefinition::getChasmDef(LevelDefinition::ChasmDefID id) const
 {
 	DebugAssertIndex(this->chasmDefs, id);
 	return this->chasmDefs[id];
@@ -196,14 +196,14 @@ LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string
 	return id;
 }
 
-LevelDefinition::DoorDefID LevelInfoDefinition::addDoorDef(DoorDefinition &&def)
+LevelDefinition::DoorDefID LevelInfoDefinition::addDoorDef(VoxelDoorDefinition &&def)
 {
 	const LevelDefinition::DoorDefID id = static_cast<LevelDefinition::DoorDefID>(this->doorDefs.size());
 	this->doorDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::ChasmDefID LevelInfoDefinition::addChasmDef(ChasmDefinition &&def)
+LevelDefinition::ChasmDefID LevelInfoDefinition::addChasmDef(VoxelChasmDefinition &&def)
 {
 	const LevelDefinition::ChasmDefID id = static_cast<LevelDefinition::ChasmDefID>(this->chasmDefs.size());
 	this->chasmDefs.emplace_back(std::move(def));

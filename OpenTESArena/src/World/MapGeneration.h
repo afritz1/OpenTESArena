@@ -12,7 +12,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
-#include "../Voxels/DoorDefinition.h"
+#include "../Voxels/VoxelDoorDefinition.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 
@@ -162,10 +162,10 @@ namespace MapGeneration
 		int openSoundIndex;
 		int closeSoundIndex;
 
-		DoorDefinition::CloseType closeType;
+		VoxelDoorDefinition::CloseType closeType;
 
 		void init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex,
-			DoorDefinition::CloseType closeType);
+			VoxelDoorDefinition::CloseType closeType);
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.

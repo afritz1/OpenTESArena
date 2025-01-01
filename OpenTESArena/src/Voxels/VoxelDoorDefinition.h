@@ -5,7 +5,7 @@
 
 #include "../Assets/ArenaTypes.h"
 
-class DoorDefinition
+class VoxelDoorDefinition
 {
 public:
 	// Each door has a certain behavior for playing sounds when closing.
@@ -34,7 +34,7 @@ private:
 	OpenSoundDef openSoundDef;
 	CloseSoundDef closeSoundDef;
 public:
-	DoorDefinition();
+	VoxelDoorDefinition();
 
 	void init(ArenaTypes::DoorType type, std::string &&openSoundFilename, CloseType closeType,
 		std::string &&closeSoundFilename);

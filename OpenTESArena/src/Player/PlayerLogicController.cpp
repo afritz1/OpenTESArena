@@ -668,8 +668,8 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 								DebugCrash("Expected door def ID to exist.");
 							}
 
-							const DoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
-							const DoorDefinition::OpenSoundDef &openSoundDef = doorDef.getOpenSound();
+							const VoxelDoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
+							const VoxelDoorDefinition::OpenSoundDef &openSoundDef = doorDef.getOpenSound();
 
 							auto &audioManager = game.audioManager;
 							const std::string &soundFilename = openSoundDef.soundFilename;

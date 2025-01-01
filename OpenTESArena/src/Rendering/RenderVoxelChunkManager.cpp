@@ -64,21 +64,21 @@ namespace
 		}
 	}
 
-	bool LoadedChasmFloorComparer(const RenderVoxelChunkManager::LoadedChasmFloorTextureList &textureList, const ChasmDefinition &chasmDef)
+	bool LoadedChasmFloorComparer(const RenderVoxelChunkManager::LoadedChasmFloorTextureList &textureList, const VoxelChasmDefinition &chasmDef)
 	{
 		if (textureList.animType != chasmDef.animType)
 		{
 			return false;
 		}
 
-		if (textureList.animType == ChasmDefinition::AnimationType::SolidColor)
+		if (textureList.animType == VoxelChasmDefinition::AnimationType::SolidColor)
 		{
 			return textureList.paletteIndex == chasmDef.solidColor.paletteIndex;
 		}
-		else if (textureList.animType == ChasmDefinition::AnimationType::Animated)
+		else if (textureList.animType == VoxelChasmDefinition::AnimationType::Animated)
 		{
 			const int textureAssetCount = static_cast<int>(textureList.textureAssets.size());
-			const ChasmDefinition::Animated &chasmDefAnimated = chasmDef.animated;
+			const VoxelChasmDefinition::Animated &chasmDefAnimated = chasmDef.animated;
 
 			if (textureAssetCount != chasmDefAnimated.textureAssets.getCount())
 			{
@@ -108,7 +108,7 @@ namespace
 		TextureManager &textureManager, Renderer &renderer)
 	{
 		const ChunkInt2 chunkPos = voxelChunk.getPosition();
-		const ChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
+		const VoxelChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
 
 		// Check if this chasm already has a mapping (i.e. have we seen this chunk before?).
 		const auto keyIter = std::find_if(chasmTextureKeys.begin(), chasmTextureKeys.end(),
@@ -138,7 +138,7 @@ namespace
 		{
 			// Load the required textures and add a key for them.
 			RenderVoxelChunkManager::LoadedChasmFloorTextureList newTextureList;
-			if (chasmDef.animType == ChasmDefinition::AnimationType::SolidColor)
+			if (chasmDef.animType == VoxelChasmDefinition::AnimationType::SolidColor)
 			{
 				// Dry chasms are a single color, no texture asset.
 				ObjectTextureID dryChasmTextureID;
@@ -166,7 +166,7 @@ namespace
 				newTextureList.initColor(paletteIndex, std::move(dryChasmTextureRef));
 				chasmFloorTextureLists.emplace_back(std::move(newTextureList));
 			}
-			else if (chasmDef.animType == ChasmDefinition::AnimationType::Animated)
+			else if (chasmDef.animType == VoxelChasmDefinition::AnimationType::Animated)
 			{
 				std::vector<TextureAsset> newTextureAssets;
 				std::vector<ScopedObjectTextureRef> newObjectTextureRefs;
@@ -289,14 +289,14 @@ void RenderVoxelChunkManager::LoadedTexture::init(const TextureAsset &textureAss
 
 RenderVoxelChunkManager::LoadedChasmFloorTextureList::LoadedChasmFloorTextureList()
 {
-	this->animType = static_cast<ChasmDefinition::AnimationType>(-1);
+	this->animType = static_cast<VoxelChasmDefinition::AnimationType>(-1);
 	this->paletteIndex = 0;
 }
 
 void RenderVoxelChunkManager::LoadedChasmFloorTextureList::initColor(uint8_t paletteIndex,
 	ScopedObjectTextureRef &&objectTextureRef)
 {
-	this->animType = ChasmDefinition::AnimationType::SolidColor;
+	this->animType = VoxelChasmDefinition::AnimationType::SolidColor;
 	this->paletteIndex = paletteIndex;
 	this->objectTextureRefs.emplace_back(std::move(objectTextureRef));
 }
@@ -304,7 +304,7 @@ void RenderVoxelChunkManager::LoadedChasmFloorTextureList::initColor(uint8_t pal
 void RenderVoxelChunkManager::LoadedChasmFloorTextureList::initTextured(std::vector<TextureAsset> &&textureAssets,
 	std::vector<ScopedObjectTextureRef> &&objectTextureRefs)
 {
-	this->animType = ChasmDefinition::AnimationType::Animated;
+	this->animType = VoxelChasmDefinition::AnimationType::Animated;
 	this->textureAssets = std::move(textureAssets);
 	this->objectTextureRefs = std::move(objectTextureRefs);
 }
@@ -314,11 +314,11 @@ int RenderVoxelChunkManager::LoadedChasmFloorTextureList::getTextureIndex(double
 	const int textureCount = static_cast<int>(this->objectTextureRefs.size());
 	DebugAssert(textureCount >= 1);
 
-	if (this->animType == ChasmDefinition::AnimationType::SolidColor)
+	if (this->animType == VoxelChasmDefinition::AnimationType::SolidColor)
 	{
 		return 0;
 	}
-	else if (this->animType == ChasmDefinition::AnimationType::Animated)
+	else if (this->animType == VoxelChasmDefinition::AnimationType::Animated)
 	{
 		const int index = std::clamp(static_cast<int>(static_cast<double>(textureCount) * chasmAnimPercent), 0, textureCount - 1);
 		return index;
@@ -684,7 +684,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 				if (voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID))
 				{
 					// Door transform uniform buffers. These are separate because each voxel has a RenderTransform per door face.
-					const DoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+					const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 					const ArenaTypes::DoorType doorType = doorDef.getType();
 					DebugAssert(renderChunk.doorTransformBuffers.find(voxel) == renderChunk.doorTransformBuffers.end());
 
@@ -758,7 +758,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 
 		VoxelChunk::DoorDefID doorDefID;
 		const bool isDoor = voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID);
-		const DoorDefinition *doorDef = isDoor ? &voxelChunk.getDoorDef(doorDefID) : nullptr;
+		const VoxelDoorDefinition *doorDef = isDoor ? &voxelChunk.getDoorDef(doorDefID) : nullptr;
 
 		double doorAnimPercent = 0.0;
 		if (isDoor)
@@ -775,7 +775,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		VoxelChunk::ChasmDefID chasmDefID;
 		const bool isChasm = voxelChunk.tryGetChasmDefID(voxel.x, voxel.y, voxel.z, &chasmDefID);
 
-		const ChasmDefinition *chasmDef = nullptr;
+		const VoxelChasmDefinition *chasmDef = nullptr;
 		bool isAnimatingChasm = false;
 		bool isEmissiveChasm = false;
 		bool hasChasmWall = false;
@@ -783,7 +783,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		if (isChasm)
 		{
 			chasmDef = &voxelChunk.getChasmDef(chasmDefID);
-			isAnimatingChasm = chasmDef->animType == ChasmDefinition::AnimationType::Animated;
+			isAnimatingChasm = chasmDef->animType == VoxelChasmDefinition::AnimationType::Animated;
 			isEmissiveChasm = chasmDef->isEmissive;
 
 			const auto chasmWallIndexBufferIdIter = renderChunk.chasmWallIndexBufferIDsMap.find(voxel);
@@ -1374,7 +1374,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 				continue;
 			}
 
-			const DoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+			const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 			const ArenaTypes::DoorType doorType = doorDef.getType();
 			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.getPosition(), doorVoxel, ceilingScale);
 			const double doorAnimPercent = DoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);

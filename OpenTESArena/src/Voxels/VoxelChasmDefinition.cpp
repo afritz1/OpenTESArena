@@ -1,25 +1,25 @@
 #include <algorithm>
 
 #include "ArenaChasmUtils.h"
-#include "ChasmDefinition.h"
+#include "VoxelChasmDefinition.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
-ChasmDefinition::SolidColor::SolidColor()
+VoxelChasmDefinition::SolidColor::SolidColor()
 {
 	this->paletteIndex = 0;
 }
 
-void ChasmDefinition::SolidColor::init(uint8_t paletteIndex)
+void VoxelChasmDefinition::SolidColor::init(uint8_t paletteIndex)
 {
 	this->paletteIndex = paletteIndex;
 }
 
-void ChasmDefinition::Animated::init(Buffer<TextureAsset> &&textureAssets)
+void VoxelChasmDefinition::Animated::init(Buffer<TextureAsset> &&textureAssets)
 {
 	this->textureAssets = std::move(textureAssets);
 }
 
-ChasmDefinition::ChasmDefinition()
+VoxelChasmDefinition::VoxelChasmDefinition()
 {
 	this->allowsSwimming = false;
 	this->isDamaging = false;
@@ -27,7 +27,7 @@ ChasmDefinition::ChasmDefinition()
 	this->animType = static_cast<AnimationType>(-1);
 }
 
-ChasmDefinition::ChasmDefinition(const ChasmDefinition &other)
+VoxelChasmDefinition::VoxelChasmDefinition(const VoxelChasmDefinition &other)
 {
 	this->allowsSwimming = other.allowsSwimming;
 	this->isDamaging = other.isDamaging;
@@ -52,7 +52,7 @@ ChasmDefinition::ChasmDefinition(const ChasmDefinition &other)
 	}
 }
 
-void ChasmDefinition::initClassic(ArenaTypes::ChasmType chasmType, const TextureAsset &wallTextureAsset,
+void VoxelChasmDefinition::initClassic(ArenaTypes::ChasmType chasmType, const TextureAsset &wallTextureAsset,
 	TextureManager &textureManager)
 {
 	this->allowsSwimming = ArenaChasmUtils::allowsSwimming(chasmType);

@@ -143,13 +143,13 @@ const std::string &VoxelChunk::getBuildingName(BuildingNameID id) const
 	return this->buildingNames[id];
 }
 
-const DoorDefinition &VoxelChunk::getDoorDef(DoorDefID id) const
+const VoxelDoorDefinition &VoxelChunk::getDoorDef(DoorDefID id) const
 {
 	DebugAssertIndex(this->doorDefs, id);
 	return this->doorDefs[id];
 }
 
-const ChasmDefinition &VoxelChunk::getChasmDef(ChasmDefID id) const
+const VoxelChasmDefinition &VoxelChunk::getChasmDef(ChasmDefID id) const
 {
 	DebugAssertIndex(this->chasmDefs, id);
 	return this->chasmDefs[id];
@@ -502,14 +502,14 @@ VoxelChunk::BuildingNameID VoxelChunk::addBuildingName(std::string &&buildingNam
 	return id;
 }
 
-VoxelChunk::DoorDefID VoxelChunk::addDoorDef(DoorDefinition &&door)
+VoxelChunk::DoorDefID VoxelChunk::addDoorDef(VoxelDoorDefinition &&door)
 {
 	const DoorDefID id = static_cast<int>(this->doorDefs.size());
 	this->doorDefs.emplace_back(std::move(door));
 	return id;
 }
 
-VoxelChunk::ChasmDefID VoxelChunk::addChasmDef(ChasmDefinition &&chasm)
+VoxelChunk::ChasmDefID VoxelChunk::addChasmDef(VoxelChasmDefinition &&chasm)
 {
 	const ChasmDefID id = static_cast<int>(this->chasmDefs.size());
 	this->chasmDefs.emplace_back(std::move(chasm));
@@ -676,9 +676,9 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 						DebugCrash("Expected door def ID to exist.");
 					}
 
-					const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
-					const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
-					if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosing)
+					const VoxelDoorDefinition &doorDef = this->getDoorDef(doorDefID);
+					const VoxelDoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
+					if (closeSoundDef.closeType == VoxelDoorDefinition::CloseType::OnClosing)
 					{
 						const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(voxelCoord);
 						audioManager.playSound(closeSoundDef.soundFilename.c_str(), absoluteSoundPosition);
@@ -695,9 +695,9 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				DebugCrash("Expected door def ID to exist.");
 			}
 
-			const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
-			const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
-			if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosed)
+			const VoxelDoorDefinition &doorDef = this->getDoorDef(doorDefID);
+			const VoxelDoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
+			if (closeSoundDef.closeType == VoxelDoorDefinition::CloseType::OnClosed)
 			{
 				const CoordDouble3 soundCoord(chunkPos, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 				const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(soundCoord);

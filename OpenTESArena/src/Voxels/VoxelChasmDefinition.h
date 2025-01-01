@@ -10,7 +10,7 @@
 
 class TextureManager;
 
-struct ChasmDefinition
+struct VoxelChasmDefinition
 {
 	enum class AnimationType
 	{
@@ -43,8 +43,8 @@ struct ChasmDefinition
 	SolidColor solidColor;
 	Animated animated;
 
-	ChasmDefinition();
-	ChasmDefinition(const ChasmDefinition &other);
+	VoxelChasmDefinition();
+	VoxelChasmDefinition(const VoxelChasmDefinition &other);
 
 	void initClassic(ArenaTypes::ChasmType chasmType, const TextureAsset &wallTextureAsset, TextureManager &textureManager);
 };

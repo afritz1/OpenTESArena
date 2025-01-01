@@ -421,7 +421,7 @@ namespace MapGeneration
 	}
 
 	void writeDefsForFloorReplacement(const INFFile &inf, TextureManager &textureManager, VoxelShapeDefinition *outShapeDef,
-		VoxelTextureDefinition *outTextureDef, VoxelTraitsDefinition *outTraitsDef, ChasmDefinition *outChasmDef)
+		VoxelTextureDefinition *outTextureDef, VoxelTraitsDefinition *outTraitsDef, VoxelChasmDefinition *outChasmDef)
 	{
 		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Chasm;
 		constexpr ArenaTypes::ChasmType chasmType = ArenaTypes::ChasmType::Wet;
@@ -1122,16 +1122,16 @@ namespace MapGeneration
 			return std::nullopt;
 		}
 
-		const std::optional<DoorDefinition::CloseType> closeType = [doorType]()
-			-> std::optional<DoorDefinition::CloseType>
+		const std::optional<VoxelDoorDefinition::CloseType> closeType = [doorType]()
+			-> std::optional<VoxelDoorDefinition::CloseType>
 		{
 			if (ArenaVoxelUtils::doorHasSoundOnClosed(doorType))
 			{
-				return DoorDefinition::CloseType::OnClosed;
+				return VoxelDoorDefinition::CloseType::OnClosed;
 			}
 			else if (ArenaVoxelUtils::doorHasSoundOnClosing(doorType))
 			{
-				return DoorDefinition::CloseType::OnClosing;
+				return VoxelDoorDefinition::CloseType::OnClosing;
 			}
 			else
 			{
@@ -1151,12 +1151,12 @@ namespace MapGeneration
 		return doorDefGenInfo;
 	}
 
-	DoorDefinition makeDoorDef(const MapGeneration::DoorDefGenInfo &doorDefGenInfo, const INFFile &inf)
+	VoxelDoorDefinition makeDoorDef(const MapGeneration::DoorDefGenInfo &doorDefGenInfo, const INFFile &inf)
 	{
 		std::string openSoundFilename = inf.getSound(doorDefGenInfo.openSoundIndex);
 		std::string closeSoundFilename = inf.getSound(doorDefGenInfo.closeSoundIndex);
 
-		DoorDefinition doorDef;
+		VoxelDoorDefinition doorDef;
 		doorDef.init(doorDefGenInfo.doorType, std::move(openSoundFilename), doorDefGenInfo.closeType,
 			std::move(closeSoundFilename));
 		return doorDef;
@@ -1248,7 +1248,7 @@ namespace MapGeneration
 
 				// Add chasm definition if any.
 				// @todo: the traits def look-up should be replaced by just getting an isChasm from the florVoxel decoding function,
-				// because all users of chasm look-ups in the engine should go through ChasmDefinition, not VoxelTraitsDefinition.
+				// because all users of chasm look-ups in the engine should go through VoxelChasmDefinition, not VoxelTraitsDefinition.
 				const VoxelTraitsDefinition &traitsDef = outLevelInfoDef->getVoxelTraitsDef(voxelTraitsDefID);
 				if (traitsDef.type == ArenaTypes::VoxelType::Chasm)
 				{
@@ -1265,7 +1265,7 @@ namespace MapGeneration
 						const VoxelTextureDefinition &voxelTextureDef = outLevelInfoDef->getVoxelTextureDef(voxelTextureDefID);
 						const TextureAsset &chasmWallTextureAsset = voxelTextureDef.getTextureAsset(0);
 
-						ChasmDefinition chasmDef;
+						VoxelChasmDefinition chasmDef;
 						chasmDef.initClassic(chasm.type, chasmWallTextureAsset, textureManager);
 
 						chasmDefID = outLevelInfoDef->addChasmDef(std::move(chasmDef));
@@ -1282,7 +1282,7 @@ namespace MapGeneration
 		VoxelShapeDefinition floorReplacementShapeDef;
 		VoxelTextureDefinition floorReplacementTextureDef;
 		VoxelTraitsDefinition floorReplacementTraitsDef;
-		ChasmDefinition floorReplacementChasmDef;
+		VoxelChasmDefinition floorReplacementChasmDef;
 		MapGeneration::writeDefsForFloorReplacement(inf, textureManager, &floorReplacementShapeDef, &floorReplacementTextureDef,
 			&floorReplacementTraitsDef, &floorReplacementChasmDef);
 
@@ -1406,7 +1406,7 @@ namespace MapGeneration
 						}
 						else
 						{
-							DoorDefinition doorDef = MapGeneration::makeDoorDef(*doorDefGenInfo, inf);
+							VoxelDoorDefinition doorDef = MapGeneration::makeDoorDef(*doorDefGenInfo, inf);
 							doorDefID = outLevelInfoDef->addDoorDef(std::move(doorDef));
 							doorCache->emplace(map1Voxel, doorDefID);
 						}
@@ -2283,7 +2283,7 @@ void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 }
 
 void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex,
-	DoorDefinition::CloseType closeType)
+	VoxelDoorDefinition::CloseType closeType)
 {
 	this->doorType = doorType;
 	this->openSoundIndex = openSoundIndex;

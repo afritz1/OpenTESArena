@@ -9,11 +9,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ChasmDefinition.h"
-#include "DoorDefinition.h"
+#include "VoxelChasmDefinition.h"
 #include "VoxelChasmWallInstance.h"
 #include "VoxelDirtyType.h"
 #include "VoxelDoorAnimationInstance.h"
+#include "VoxelDoorDefinition.h"
 #include "VoxelDoorVisibilityInstance.h"
 #include "VoxelFadeAnimationInstance.h"
 #include "VoxelShapeDefinition.h"
@@ -55,8 +55,8 @@ private:
 	std::vector<VoxelTriggerDefinition> triggerDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<std::string> buildingNames;
-	std::vector<DoorDefinition> doorDefs;
-	std::vector<ChasmDefinition> chasmDefs;
+	std::vector<VoxelDoorDefinition> doorDefs;
+	std::vector<VoxelChasmDefinition> chasmDefs;
 
 	// Indices into definitions for actual voxels in-game.
 	Buffer3D<VoxelShapeDefID> shapeDefIDs;
@@ -141,8 +141,8 @@ public:
 	const VoxelTriggerDefinition &getTriggerDef(TriggerDefID id) const;
 	const LockDefinition &getLockDef(LockDefID id) const;
 	const std::string &getBuildingName(BuildingNameID id) const;
-	const DoorDefinition &getDoorDef(DoorDefID id) const;
-	const ChasmDefinition &getChasmDef(ChasmDefID id) const;
+	const VoxelDoorDefinition &getDoorDef(DoorDefID id) const;
+	const VoxelChasmDefinition &getChasmDef(ChasmDefID id) const;
 
 	VoxelShapeDefID getShapeDefID(SNInt x, int y, WEInt z) const;
 	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
@@ -192,8 +192,8 @@ public:
 	TriggerDefID addTriggerDef(VoxelTriggerDefinition &&trigger);
 	LockDefID addLockDef(LockDefinition &&lock);
 	BuildingNameID addBuildingName(std::string &&buildingName);
-	DoorDefID addDoorDef(DoorDefinition &&door);
-	ChasmDefID addChasmDef(ChasmDefinition &&chasm);
+	DoorDefID addDoorDef(VoxelDoorDefinition &&door);
+	ChasmDefID addChasmDef(VoxelChasmDefinition &&chasm);
 
 	void addTransitionDefPosition(TransitionDefID id, const VoxelInt3 &voxel);
 	void addTriggerDefPosition(TriggerDefID id, const VoxelInt3 &voxel);
