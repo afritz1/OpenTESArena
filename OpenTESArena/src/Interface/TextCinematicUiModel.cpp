@@ -69,7 +69,7 @@ std::string TextCinematicUiModel::getSubtitleText(Game &game, const TextCinemati
 {
 	const auto &textAssetLibrary = TextAssetLibrary::getInstance();
 	const auto &templateDat = textAssetLibrary.getTemplateDat();
-	const auto &templateDatEntry = templateDat.getEntry(textCinematicDef.getTemplateDatKey());
+	const auto &templateDatEntry = templateDat.getEntry(textCinematicDef.templateDatKey);
 	std::string cinematicText = templateDatEntry.values.front();
 	cinematicText.push_back('\n');
 

@@ -40,7 +40,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const TextCinematicDefinition &textCinematicDef = cinematicLibrary.getTextDefinition(textCinematicDefIndex);
-	const TextBox::InitInfo subtitlesTextBoxInitInfo = TextCinematicUiView::getSubtitlesTextBoxInitInfo(textCinematicDef.getFontColor(), fontLibrary);
+	const TextBox::InitInfo subtitlesTextBoxInitInfo = TextCinematicUiView::getSubtitlesTextBoxInitInfo(textCinematicDef.fontColor, fontLibrary);
 	if (!this->textBox.init(subtitlesTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init subtitles text box.");
@@ -89,7 +89,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	this->textPages = TextCinematicUiModel::getSubtitleTextPages(subtitleText);
 
 	auto &textureManager = game.textureManager;
-	const std::string &animFilename = textCinematicDef.getAnimationFilename();
+	const std::string &animFilename = textCinematicDef.animFilename;
 	const Buffer<UiTextureID> animTextureIDs = TextCinematicUiView::allocAnimationTextures(animFilename, textureManager, renderer);
 	if (animTextureIDs.getCount() == 0)
 	{
@@ -128,7 +128,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	// Optionally initialize speech state if speech is available.
 	if (TextCinematicUiModel::shouldPlaySpeech(game))
 	{
-		this->speechState.init(textCinematicDef.getTemplateDatKey());
+		this->speechState.init(textCinematicDef.templateDatKey);
 	}
 
 	this->onFinished = onFinished;

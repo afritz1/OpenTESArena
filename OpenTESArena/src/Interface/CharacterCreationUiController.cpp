@@ -578,9 +578,9 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	const bool success = cinematicLibrary.findTextDefinitionIndexIf(
 		[&defPtr](const TextCinematicDefinition &def)
 	{
-		if (def.getType() == TextCinematicDefinition::Type::MainQuest)
+		if (def.type == TextCinematicDefinitionType::MainQuest)
 		{
-			const auto &mainQuestCinematicDef = def.getMainQuestDefinition();
+			const MainQuestTextCinematicDefinition &mainQuestCinematicDef = def.mainQuest;
 			const bool isMainQuestStartCinematic = mainQuestCinematicDef.progress == 0;
 			if (isMainQuestStartCinematic)
 			{
@@ -600,7 +600,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	game.setCharacterCreationState(nullptr);
 
 	TextureManager &textureManager = game.textureManager;
-	const std::string &cinematicFilename = defPtr->getAnimationFilename();
+	const std::string &cinematicFilename = defPtr->animFilename;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
 	if (!metadataID.has_value())
 	{
