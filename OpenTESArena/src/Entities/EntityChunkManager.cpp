@@ -291,52 +291,11 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 	if (citizenGenInfo.has_value())
 	{
-		// Spawn citizens if the total active limit has not been reached.
-		const int currentCitizenCount = CitizenUtils::getCitizenCount(*this);
-		const int remainingCitizensToSpawn = std::min(CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
-
-		// @todo: spawn X male citizens then Y female citizens instead of randomly switching between defs/anim defs/etc.
-
-		const ChunkInt2 &chunkPos = voxelChunk.getPosition();
-		auto trySpawnCitizenInChunk = [this, &entityChunk, &voxelChunk, &entityGenInfo, &citizenGenInfo, &random,
-			&binaryAssetLibrary, &physicsSystem, &textureManager, &chunkPos, ceilingScale]()
+		const ChunkInt2 chunkPos = voxelChunk.getPosition();
+		auto spawnCitizenAtVoxel = [this, &entityChunk, &random, &binaryAssetLibrary, &physicsSystem, &textureManager,
+			&chunkPos, ceilingScale](const VoxelInt2 &voxelPos, EntityDefID entityDefID, const EntityDefinition &entityDef,
+			const EntityAnimationDefinition &entityAnimDef, const EntityAnimationInstance &animInst, int raceID)
 		{
-			const std::optional<VoxelInt2> spawnVoxel = [&voxelChunk, &random]() -> std::optional<VoxelInt2>
-			{
-				DebugAssert(voxelChunk.getHeight() >= 2);
-
-				constexpr int spawnTriesCount = 20;
-				for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
-				{
-					const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
-					const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
-					const VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
-					const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-					const VoxelTraitsDefinition &groundVoxelTraitsDef = voxelChunk.getTraitsDef(groundVoxelTraitsDefID);
-
-					// @todo: this type check could ostensibly be replaced with some "allowsCitizenSpawn".
-					if ((voxelTraitsDef.type == ArenaTypes::VoxelType::None) &&
-						(groundVoxelTraitsDef.type == ArenaTypes::VoxelType::Floor))
-					{
-						return spawnVoxel;
-					}
-				}
-
-				// No spawn position found.
-				return std::nullopt;
-			}();
-
-			if (!spawnVoxel.has_value())
-			{
-				DebugLogWarning("Couldn't find spawn voxel for citizen.");
-				return false;
-			}
-
-			const bool isMale = random.nextBool();
-			const EntityDefID entityDefID = isMale ? citizenGenInfo->maleEntityDefID : citizenGenInfo->femaleEntityDefID;
-			const EntityDefinition &entityDef = isMale ? *citizenGenInfo->maleEntityDef : *citizenGenInfo->femaleEntityDef;
-			const EntityAnimationDefinition &entityAnimDef = entityDef.animDef;
-
 			EntityInstanceID entityInstID = this->spawnEntity();
 			EntityInstance &entityInst = this->entities.get(entityInstID);
 
@@ -344,20 +303,18 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			if (!this->positions.tryAlloc(&positionID))
 			{
 				DebugLogError("Couldn't allocate citizen EntityPositionID.");
-				return false;
 			}
 
 			EntityBoundingBoxID bboxID;
 			if (!this->boundingBoxes.tryAlloc(&bboxID))
 			{
 				DebugLogError("Couldn't allocate citizen EntityBoundingBoxID.");
-				return false;
 			}
 
 			entityInst.init(entityInstID, entityDefID, positionID, bboxID);
 
 			CoordDouble2 &entityCoord = this->positions.get(positionID);
-			entityCoord = CoordDouble2(chunkPos, VoxelUtils::getVoxelCenter(*spawnVoxel));
+			entityCoord = CoordDouble2(chunkPos, VoxelUtils::getVoxelCenter(voxelPos));
 
 			double animMaxWidth, animMaxHeight;
 			EntityUtils::getAnimationMaxDims(entityAnimDef, &animMaxWidth, &animMaxHeight);
@@ -372,7 +329,6 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			if (!this->citizenDirectionIndices.tryAlloc(&entityInst.citizenDirectionIndexID))
 			{
 				DebugLogError("Couldn't allocate citizen EntityCitizenDirectionIndexID.");
-				return false;
 			}
 
 			int8_t &citizenDirIndex = this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID);
@@ -381,7 +337,6 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			if (!this->directions.tryAlloc(&entityInst.directionID))
 			{
 				DebugLogError("Couldn't allocate citizen EntityDirectionID.");
-				return false;
 			}
 
 			VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
@@ -390,40 +345,83 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			if (!this->animInsts.tryAlloc(&entityInst.animInstID))
 			{
 				DebugLogError("Couldn't allocate citizen EntityAnimationInstanceID.");
-				return false;
 			}
 
-			EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-			animInst = isMale ? citizenGenInfo->maleAnimInst : citizenGenInfo->femaleAnimInst;
+			this->animInsts.get(entityInst.animInstID) = animInst;
 
 			if (!this->paletteIndices.tryAlloc(&entityInst.paletteIndicesInstID))
 			{
 				DebugLogError("Couldn't allocate citizen EntityPaletteIndicesInstanceID.");
-				return false;
 			}
 
 			const uint16_t colorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
 			PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
-			paletteIndices = ArenaAnimUtils::transformCitizenColors(citizenGenInfo->raceID, colorSeed, binaryAssetLibrary.getExeData());
+			paletteIndices = ArenaAnimUtils::transformCitizenColors(raceID, colorSeed, binaryAssetLibrary.getExeData());
 
 			// Citizens don't collide with player.
 			constexpr bool isSensor = true;
 			if (!TryCreatePhysicsCollider(entityCoord, animMaxHeight, ceilingScale, isSensor, physicsSystem, &entityInst.physicsBodyID))
 			{
-				DebugLogError("Couldn't allocate Jolt physics body for entity.");
+				DebugLogError("Couldn't allocate Jolt physics body for citizen entity.");
 			}
 
 			entityChunk.entityIDs.emplace_back(entityInstID);
-
-			return true;
 		};
 
-		for (int i = 0; i < remainingCitizensToSpawn; i++)
+		auto tryMakeCitizenSpawnVoxel = [&voxelChunk, &random]() -> std::optional<VoxelInt2>
 		{
-			if (!trySpawnCitizenInChunk())
+			constexpr int maxSpawnAttemptsCount = 30;
+			for (int spawnAttempt = 0; spawnAttempt < maxSpawnAttemptsCount; spawnAttempt++)
 			{
-				DebugLogWarning("Couldn't spawn citizen in chunk \"" + chunkPos.toString() + "\".");
+				const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
+				const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
+				const VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
+				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+				const VoxelTraitsDefinition &groundVoxelTraitsDef = voxelChunk.getTraitsDef(groundVoxelTraitsDefID);
+				const bool isValidSpawnVoxel = (voxelTraitsDef.type == ArenaTypes::VoxelType::None) && (groundVoxelTraitsDef.type == ArenaTypes::VoxelType::Floor);				
+				if (isValidSpawnVoxel)
+				{
+					return spawnVoxel;
+				}
 			}
+
+			return std::nullopt;
+		};
+
+		const int currentCitizenCount = CitizenUtils::getCitizenCount(*this);
+		const int targetCitizensToSpawn = std::min(CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
+		const int remainingMaleCitizensToSpawn = targetCitizensToSpawn / 2;
+		const int remainingFemaleCitizensToSpawn = targetCitizensToSpawn - remainingMaleCitizensToSpawn;
+		const int citizenRaceID = citizenGenInfo->raceID;
+
+		for (int i = 0; i < remainingMaleCitizensToSpawn; i++)
+		{
+			const std::optional<VoxelInt2> maleSpawnVoxel = tryMakeCitizenSpawnVoxel();
+			if (!maleSpawnVoxel.has_value())
+			{
+				continue;
+			}
+
+			const EntityDefID maleEntityDefID = citizenGenInfo->maleEntityDefID;
+			const EntityDefinition &maleEntityDef = *citizenGenInfo->maleEntityDef;
+			const EntityAnimationDefinition &maleAnimDef = maleEntityDef.animDef;
+			const EntityAnimationInstance &maleAnimInst = citizenGenInfo->maleAnimInst;
+			spawnCitizenAtVoxel(*maleSpawnVoxel, maleEntityDefID, maleEntityDef, maleAnimDef, maleAnimInst, citizenRaceID);
+		}
+
+		for (int i = 0; i < remainingFemaleCitizensToSpawn; i++)
+		{
+			const std::optional<VoxelInt2> femaleSpawnVoxel = tryMakeCitizenSpawnVoxel();
+			if (!femaleSpawnVoxel.has_value())
+			{
+				continue;
+			}
+
+			const EntityDefID femaleEntityDefID = citizenGenInfo->femaleEntityDefID;
+			const EntityDefinition &femaleEntityDef = *citizenGenInfo->femaleEntityDef;
+			const EntityAnimationDefinition &femaleAnimDef = femaleEntityDef.animDef;
+			const EntityAnimationInstance &femaleAnimInst = citizenGenInfo->maleAnimInst;
+			spawnCitizenAtVoxel(*femaleSpawnVoxel, femaleEntityDefID, femaleEntityDef, femaleAnimDef, femaleAnimInst, citizenRaceID);
 		}
 	}
 }
