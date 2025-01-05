@@ -11,6 +11,7 @@
 #include "EntityGeneration.h"
 #include "EntityInstance.h"
 #include "EntityUtils.h"
+#include "../Items/ItemInventory.h"
 #include "../Math/BoundingBox.h"
 #include "../World/SpecializedChunkManager.h"
 
@@ -43,6 +44,7 @@ private:
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
 	using EntityCitizenDirectionIndexPool = RecyclablePool<int8_t, EntityCitizenDirectionIndexID>;
 	using EntityPaletteIndicesInstancePool = RecyclablePool<PaletteIndices, EntityPaletteIndicesInstanceID>;
+	using EntityItemInventoryInstancePool = RecyclablePool<ItemInventory, EntityItemInventoryInstanceID>;
 
 	EntityPool entities;
 	EntityPositionPool positions;
@@ -56,6 +58,8 @@ private:
 	// that hardly any citizen instances share textures due to variations in their random palette. As a result,
 	// citizen textures will need to be 8-bit.
 	EntityPaletteIndicesInstancePool paletteIndices;
+
+	EntityItemInventoryInstancePool itemInventories;
 
 	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
@@ -96,8 +100,9 @@ public:
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
 	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
-	const int8_t &getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
+	int8_t getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
 	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;
+	ItemInventory &getEntityItemInventory(EntityItemInventoryInstanceID id);
 
 	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
 	// simulated or rendered.

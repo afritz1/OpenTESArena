@@ -14,6 +14,7 @@ using EntityAnimationInstanceID = int;
 using EntityCreatureSoundInstanceID = int;
 using EntityCitizenDirectionIndexID = int;
 using EntityPaletteIndicesInstanceID = int;
+using EntityItemInventoryInstanceID = int;
 
 struct EntityInstance
 {
@@ -26,6 +27,7 @@ struct EntityInstance
 	EntityCreatureSoundInstanceID creatureSoundInstID;
 	EntityCitizenDirectionIndexID citizenDirectionIndexID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
+	EntityItemInventoryInstanceID itemInventoryInstID;
 	JPH::BodyID physicsBodyID;
 
 	EntityInstance();
@@ -37,6 +39,8 @@ struct EntityInstance
 	bool isDynamic() const;
 
 	bool isCitizen() const;
+
+	bool hasInventory() const;
 
 	void clear();
 };

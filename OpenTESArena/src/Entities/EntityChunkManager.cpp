@@ -275,6 +275,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					DebugLogError("Couldn't allocate Jolt physics body for entity.");
 				}
 
+				bool hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
+				if (hasInventory)
+				{
+					if (!this->itemInventories.tryAlloc(&entityInst.itemInventoryInstID))
+					{
+						DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
+					}
+				}
+
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
 		}
@@ -697,7 +706,7 @@ const EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(En
 	return this->animInsts.get(id);
 }
 
-const int8_t &EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const
+int8_t EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const
 {
 	return this->citizenDirectionIndices.get(id);
 }
@@ -705,6 +714,11 @@ const int8_t &EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDi
 const PaletteIndices &EntityChunkManager::getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const
 {
 	return this->paletteIndices.get(id);
+}
+
+ItemInventory &EntityChunkManager::getEntityItemInventory(EntityItemInventoryInstanceID id)
+{
+	return this->itemInventories.get(id);
 }
 
 int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
@@ -1066,6 +1080,11 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
 		if (entityInst.paletteIndicesInstID >= 0)
 		{
 			this->paletteIndices.free(entityInst.paletteIndicesInstID);
+		}
+
+		if (entityInst.itemInventoryInstID >= 0)
+		{
+			this->itemInventories.free(entityInst.itemInventoryInstID);
 		}
 
 		const JPH::BodyID physicsBodyID = entityInst.physicsBodyID;

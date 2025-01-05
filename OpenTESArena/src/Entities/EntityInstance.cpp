@@ -29,6 +29,11 @@ bool EntityInstance::isCitizen() const
 	return this->citizenDirectionIndexID >= 0;
 }
 
+bool EntityInstance::hasInventory() const
+{
+	return this->itemInventoryInstID >= 0;
+}
+
 void EntityInstance::clear()
 {
 	this->instanceID = -1;
@@ -40,5 +45,6 @@ void EntityInstance::clear()
 	this->creatureSoundInstID = -1;
 	this->citizenDirectionIndexID = -1;
 	this->paletteIndicesInstID = -1;
+	this->itemInventoryInstID = -1;
 	this->physicsBodyID = JPH::BodyID();
 }
