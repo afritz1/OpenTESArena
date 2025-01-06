@@ -37,7 +37,7 @@ namespace
 		VoxelDouble2 point;
 		WorldDouble3 bboxMin, bboxMax; // Centered on the entity in model space
 		double animMaxHeight;
-		char defaultAnimStateName[EntityAnimationUtils::NAME_LENGTH];
+		char initialAnimStateIndex;
 		bool isSensorCollider;
 		std::optional<Double2> direction;
 		std::optional<int8_t> citizenDirectionIndex;
@@ -50,7 +50,7 @@ namespace
 		{
 			this->defID = -1;
 			this->animMaxHeight = 0.0;
-			std::fill(std::begin(this->defaultAnimStateName), std::end(this->defaultAnimStateName), '\0');
+			this->initialAnimStateIndex = -1;
 			this->isSensorCollider = false;
 			this->hasInventory = false;
 			this->hasCreatureSound = false;
@@ -227,10 +227,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			const EntityAnimationDefinitionState &animDefState = animDef.states[animDefStateIndex];
 			animInst.addState(animDefState.seconds, animDefState.isLooping);
 		}
-
-		const std::optional<int> defaultAnimStateIndex = animDef.tryGetStateIndex(initInfo.defaultAnimStateName);
-		DebugAssert(defaultAnimStateIndex.has_value());
-		animInst.setStateIndex(*defaultAnimStateIndex);
+		
+		animInst.setStateIndex(initInfo.initialAnimStateIndex);
 
 		if (!TryCreatePhysicsCollider(entityCoord, initInfo.animMaxHeight, ceilingScale, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 		{
@@ -306,7 +304,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const EntityDefinitionType entityDefType = entityDef.type;
 		const bool isDynamicEntity = EntityUtils::isDynamicEntity(entityDefType);
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
-		const std::string &defaultAnimStateName = EntityGeneration::getDefaultAnimationStateName(entityDef, entityGenInfo);
+
+		const char *initialAnimStateName = animDef.initialStateName;
+		if (EntityUtils::isStreetlight(entityDef) && entityGenInfo.nightLightsAreActive)
+		{
+			initialAnimStateName = EntityAnimationUtils::STATE_ACTIVATED.c_str();
+		}
+		
+		const std::optional<int> initialAnimStateIndex = animDef.tryGetStateIndex(initialAnimStateName);
+		DebugAssert(initialAnimStateIndex.has_value());
 
 		std::optional<EntityDefID> entityDefID; // Global entity def ID (shared across all active chunks).
 		for (const WorldDouble3 &position : placementDef.positions)
@@ -337,8 +343,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			initInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
 
 			initInfo.animMaxHeight = animMaxHeight;
-			std::snprintf(initInfo.defaultAnimStateName, std::size(initInfo.defaultAnimStateName), "%s", defaultAnimStateName.c_str());
-
+			initInfo.initialAnimStateIndex = *initialAnimStateIndex;
 			initInfo.isSensorCollider = !EntityUtils::hasCollision(entityDef);
 
 			if (isDynamicEntity)
@@ -391,7 +396,12 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			DebugAssertIndex(citizenCountsToSpawn, citizenGenderIndex);
 			const int citizensToSpawn = citizenCountsToSpawn[citizenGenderIndex];
 			const EntityDefID citizenEntityDefID = citizenDefIDs[citizenGenderIndex];
-			const EntityDefinition &citizenDef = *citizenDefs[citizenGenderIndex];
+			const EntityDefinition &citizenDef = *citizenDefs[citizenGenderIndex];			
+			const EntityAnimationDefinition &citizenAnimDef = citizenDef.animDef;
+
+			const std::optional<int> initialCitizenAnimStateIndex = citizenAnimDef.tryGetStateIndex(citizenAnimDef.initialStateName);
+			DebugAssert(initialCitizenAnimStateIndex.has_value());
+
 			for (int i = 0; i < citizensToSpawn; i++)
 			{
 				const std::optional<VoxelInt2> citizenSpawnVoxel = tryMakeCitizenSpawnVoxel();
@@ -413,8 +423,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
 
 				citizenInitInfo.animMaxHeight = animMaxHeight;
-				std::snprintf(citizenInitInfo.defaultAnimStateName, std::size(citizenInitInfo.defaultAnimStateName), "%s", EntityAnimationUtils::STATE_IDLE.c_str());
-
+				citizenInitInfo.initialAnimStateIndex = *initialCitizenAnimStateIndex;
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);

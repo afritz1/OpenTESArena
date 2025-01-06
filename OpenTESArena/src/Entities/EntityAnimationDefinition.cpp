@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -112,6 +113,12 @@ EntityAnimationDefinition::EntityAnimationDefinition()
 	this->stateCount = 0;
 	this->keyframeListCount = 0;
 	this->keyframeCount = 0;
+	std::fill(std::begin(this->initialStateName), std::end(this->initialStateName), '\0');
+}
+
+void EntityAnimationDefinition::init(const char *initialStateName)
+{
+	std::snprintf(this->initialStateName, std::size(this->initialStateName), "%s", initialStateName);
 }
 
 bool EntityAnimationDefinition::operator==(const EntityAnimationDefinition &other) const
@@ -164,6 +171,11 @@ bool EntityAnimationDefinition::operator==(const EntityAnimationDefinition &othe
 		{
 			return false;
 		}
+	}
+
+	if (!StringView::equals(this->initialStateName, other.initialStateName))
+	{
+		return false;
 	}
 
 	return true;

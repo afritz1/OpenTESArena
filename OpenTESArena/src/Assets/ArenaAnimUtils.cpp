@@ -892,6 +892,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 	const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	DebugAssert(outAnimDef != nullptr);
+	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 
 	// Generate animation states based on what the entity needs. The animations to load depend on
 	// the flat index. The wilderness does not have any streetlights (there is no ID for them).
@@ -944,6 +945,8 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 bool ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(int creatureID, const ExeData &exeData,
 	TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
+	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
+
 	// Basic states are idle/look/walk.
 	if (!ArenaAnimUtils::tryAddDynamicEntityCreatureBasicAnimState(creatureID, EntityAnimationUtils::STATE_IDLE.c_str(),
 		CreatureIdleSecondsPerFrame, CreatureIdleLoop, CreatureIdleIndices, exeData, textureManager, outAnimDef))
@@ -986,6 +989,8 @@ bool ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(int creatureID, const Exe
 bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary, 
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
+	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
+
 	// Basic states are idle and walk. Human enemies don't have look animations.
 	if (!ArenaAnimUtils::tryAddDynamicEntityHumanBasicAnimState(charClassIndex, isMale, EntityAnimationUtils::STATE_IDLE.c_str(),
 		HumanIdleSecondsPerFrame, HumanIdleLoop, HumanIdleIndices, charClassLibrary, binaryAssetLibrary, textureManager, outAnimDef))
@@ -1061,6 +1066,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, 
 bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bool isMale, const ExeData &exeData,
 	TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
+	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 	const int animFilenameIndex = GetCitizenAnimationFilenameIndex(isMale, climateType);
 
 	if (!ArenaAnimUtils::tryAddDynamicEntityCitizenBasicAnimState(EntityAnimationUtils::STATE_IDLE.c_str(),
@@ -1084,6 +1090,7 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bo
 bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLooping, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	DebugAssert(outAnimDef->stateCount == 0);
+	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
 	if (!metadataID.has_value())

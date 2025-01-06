@@ -201,34 +201,19 @@ namespace MapGeneration
 				DebugLogWarning("Couldn't make static entity anims for flat \"" + std::to_string(flatIndex) + "\".");
 				return false;
 			}
-
-			// The entity can only be instantiated if there is at least an idle animation.
-			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
-			if (!idleStateIndex.has_value())
-			{
-				DebugLogWarning("Missing static entity idle anim state for flat \"" + std::to_string(flatIndex) + "\".");
-				return false;
-			}
 		}
 		else
 		{
 			// Assume that human enemies in level data are male.
 			const std::optional<bool> isMale = true;
-
 			if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, inf, charClassLibrary, binaryAssetLibrary, textureManager, &entityAnimDef))
 			{
 				DebugLogWarning("Couldn't make dynamic entity anims for flat \"" + std::to_string(flatIndex) + "\".");
 				return false;
 			}
-
-			// Must have at least an idle animation.
-			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
-			if (!idleStateIndex.has_value())
-			{
-				DebugLogWarning("Missing dynamic entity idle anim state for flat \"" + std::to_string(flatIndex) + "\".");
-				return false;
-			}
 		}
+
+		DebugAssert(!String::isNullOrEmpty(entityAnimDef.initialStateName));
 
 		// @todo: replace isCreature/etc. with some flatIndex -> EntityDefinition::Type function.
 		// - Most likely also need location/interior type, etc. because flatIndex is level-dependent.

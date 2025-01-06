@@ -52,7 +52,11 @@ struct EntityAnimationDefinition
 	EntityAnimationDefinitionKeyframe keyframes[MAX_KEYFRAMES];
 	int keyframeCount;
 
+	char initialStateName[EntityAnimationUtils::NAME_LENGTH];
+
 	EntityAnimationDefinition();
+
+	void init(const char *initialStateName);
 
 	bool operator==(const EntityAnimationDefinition &other) const;
 	bool operator!=(const EntityAnimationDefinition &other) const;
