@@ -236,7 +236,7 @@ bool EntityUtils::withinHearingDistance(const CoordDouble3 &listenerCoord, const
 	return diff.lengthSquared() < hearingDistanceSqr;
 }
 
-double EntityUtils::nextCreatureSoundWaitTime(Random &random)
+double EntityUtils::nextCreatureSoundWaitSeconds(Random &random)
 {
 	// Arbitrary amount of time.
 	return 2.75 + (random.nextReal() * 4.50);

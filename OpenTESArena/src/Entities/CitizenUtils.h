@@ -30,13 +30,10 @@ namespace CitizenUtils
 		EntityDefID femaleEntityDefID;
 		const EntityDefinition *maleEntityDef;
 		const EntityDefinition *femaleEntityDef;
-		EntityAnimationInstance maleAnimInst;
-		EntityAnimationInstance femaleAnimInst;
 		int raceID;
 
 		void init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID, const EntityDefinition *maleEntityDef,
-			const EntityDefinition *femaleEntityDef, EntityAnimationInstance &&maleAnimInst,
-			EntityAnimationInstance &&femaleAnimInst, int raceID);
+			const EntityDefinition *femaleEntityDef, int raceID);
 	};
 
 	bool canMapTypeSpawnCitizens(MapType mapType);

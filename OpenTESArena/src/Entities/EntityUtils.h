@@ -55,7 +55,7 @@ namespace EntityUtils
 
 	bool withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale);
 
-	double nextCreatureSoundWaitTime(Random &random);
+	double nextCreatureSoundWaitSeconds(Random &random);
 }
 
 #endif

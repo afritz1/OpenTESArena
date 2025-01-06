@@ -32,15 +32,12 @@ namespace
 }
 
 void CitizenUtils::CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID,
-	const EntityDefinition *maleEntityDef, const EntityDefinition *femaleEntityDef,
-	EntityAnimationInstance &&maleAnimInst, EntityAnimationInstance &&femaleAnimInst, int raceID)
+	const EntityDefinition *maleEntityDef, const EntityDefinition *femaleEntityDef, int raceID)
 {
 	this->maleEntityDefID = maleEntityDefID;
 	this->femaleEntityDefID = femaleEntityDefID;
 	this->maleEntityDef = maleEntityDef;
 	this->femaleEntityDef = femaleEntityDef;
-	this->maleAnimInst = std::move(maleAnimInst);
-	this->femaleAnimInst = std::move(femaleAnimInst);
 	this->raceID = raceID;
 }
 
@@ -66,36 +63,12 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 		DebugCrash("Couldn't get citizen entity def ID from library.");
 	}
 
-	// Only two citizen entity definitions for a given climate, based on the gender.
+	// Two citizen entity definitions per climate.
 	const EntityDefinition &maleEntityDef = entityDefLibrary.getDefinition(maleEntityDefID);
 	const EntityDefinition &femaleEntityDef = entityDefLibrary.getDefinition(femaleEntityDefID);
 
-	auto initAnimInst = [](EntityAnimationInstance &animInst, const EntityAnimationDefinition &animDef)
-	{
-		for (int i = 0; i < animDef.stateCount; i++)
-		{
-			const EntityAnimationDefinitionState &animDefState = animDef.states[i];
-			animInst.addState(animDefState.seconds, animDefState.isLooping);
-		}
-		
-		// Idle animation by default.
-		const std::optional<int> stateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
-		if (!stateIndex.has_value())
-		{
-			DebugLogError("Couldn't get idle state index for citizen.");
-			return;
-		}
-
-		animInst.setStateIndex(*stateIndex);
-	};
-
-	EntityAnimationInstance maleAnimInst, femaleAnimInst;
-	initAnimInst(maleAnimInst, maleEntityDef.animDef);
-	initAnimInst(femaleAnimInst, femaleEntityDef.animDef);
-
 	CitizenGenInfo citizenGenInfo;
-	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef,
-		std::move(maleAnimInst), std::move(femaleAnimInst), raceID);
+	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef, raceID);
 	return citizenGenInfo;
 }
 
