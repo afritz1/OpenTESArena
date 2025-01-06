@@ -112,9 +112,9 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 				{
 					return AutomapUiView::ColorDoor;
 				}
-				else if (transitionType == TransitionType::LevelChange)
+				else if (transitionType == TransitionType::InteriorLevelChange)
 				{
-					const LevelChangeTransitionDefinition &levelChangeDef = transitionDef->levelChange;
+					const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef->interiorLevelChange;
 					return levelChangeDef.isLevelUp ? AutomapUiView::ColorLevelUp : AutomapUiView::ColorLevelDown;
 				}
 				else
@@ -230,9 +230,9 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 					const bool isHidden = false; // @todo
 					return isHidden ? AutomapUiView::ColorWildWall : AutomapUiView::ColorWildDoor;
 				}
-				else if (transitionType == TransitionType::LevelChange)
+				else if (transitionType == TransitionType::InteriorLevelChange)
 				{
-					const LevelChangeTransitionDefinition &levelChangeDef = transitionDef->levelChange;
+					const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef->interiorLevelChange;
 					return levelChangeDef.isLevelUp ? AutomapUiView::ColorLevelUp : AutomapUiView::ColorLevelDown;
 				}
 				else

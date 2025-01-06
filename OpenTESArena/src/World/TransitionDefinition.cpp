@@ -7,7 +7,7 @@ void InteriorEntranceTransitionDefinition::init(MapGeneration::InteriorGenInfo &
 	this->interiorGenInfo = std::move(interiorGenInfo);
 }
 
-void LevelChangeTransitionDefinition::init(bool isLevelUp)
+void InteriorLevelChangeTransitionDefinition::init(bool isLevelUp)
 {
 	this->isLevelUp = isLevelUp;
 }
@@ -33,8 +33,8 @@ void TransitionDefinition::initInteriorExit()
 	this->type = TransitionType::ExitInterior;
 }
 
-void TransitionDefinition::initLevelChange(bool isLevelUp)
+void TransitionDefinition::initInteriorLevelChange(bool isLevelUp)
 {
-	this->type = TransitionType::LevelChange;
-	this->levelChange.init(isLevelUp);
+	this->type = TransitionType::InteriorLevelChange;
+	this->interiorLevelChange.init(isLevelUp);
 }

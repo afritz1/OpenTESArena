@@ -11,7 +11,7 @@ struct InteriorEntranceTransitionDefinition
 	void init(MapGeneration::InteriorGenInfo &&interiorGenInfo);
 };
 
-struct LevelChangeTransitionDefinition
+struct InteriorLevelChangeTransitionDefinition
 {
 	bool isLevelUp;
 
@@ -23,14 +23,14 @@ struct TransitionDefinition
 {
 	TransitionType type;
 	InteriorEntranceTransitionDefinition interiorEntrance;
-	LevelChangeTransitionDefinition levelChange;
+	InteriorLevelChangeTransitionDefinition interiorLevelChange;
 
 	TransitionDefinition();
 
 	void initCityGate();
 	void initInteriorEntrance(MapGeneration::InteriorGenInfo &&interiorGenInfo);
 	void initInteriorExit();
-	void initLevelChange(bool isLevelUp);
+	void initInteriorLevelChange(bool isLevelUp);
 };
 
 #endif

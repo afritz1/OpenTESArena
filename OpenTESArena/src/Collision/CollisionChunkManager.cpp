@@ -92,9 +92,15 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 				VoxelTriggerDefID triggerDefID;
 				const bool isTriggerVoxel = voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID);
 
+				bool isInteriorLevelChangeVoxel = false;
 				VoxelTransitionDefID transitionDefID;
-				const bool isTransitionVoxel = voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID);
-				const bool isSensorCollider = isTriggerVoxel || isTransitionVoxel;
+				if (voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
+				{
+					const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
+					isInteriorLevelChangeVoxel = transitionDef.type == TransitionType::InteriorLevelChange;
+				}
+
+				const bool isSensorCollider = isTriggerVoxel || isInteriorLevelChangeVoxel;
 				const bool shouldCreateCollider = voxelHasCollision || isSensorCollider;
 
 				if (shouldCreateCollider)
@@ -167,9 +173,15 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 		VoxelTriggerDefID triggerDefID;
 		const bool isTriggerVoxel = voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID);
 
+		bool isInteriorLevelChangeVoxel = false;
 		VoxelTransitionDefID transitionDefID;
-		const bool isTransitionVoxel = voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID);
-		const bool isSensorCollider = isTriggerVoxel || isTransitionVoxel;
+		if (voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
+		{
+			const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
+			isInteriorLevelChangeVoxel = transitionDef.type == TransitionType::InteriorLevelChange;
+		}
+
+		const bool isSensorCollider = isTriggerVoxel || isInteriorLevelChangeVoxel;
 		const bool shouldCreateCollider = voxelHasCollision || isSensorCollider;
 
 		if (shouldCreateCollider)

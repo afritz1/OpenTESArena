@@ -109,7 +109,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, const TransitionDefinition &transitionDef)
 {
 	const TransitionType transitionType = transitionDef.type;
-	DebugAssert(transitionType != TransitionType::LevelChange);
+	DebugAssert(transitionType != TransitionType::InteriorLevelChange);
 
 	DebugAssert(hit.type == RayCastHitType::Voxel);
 	const RayCastVoxelHit &voxelHit = hit.voxelHit;
@@ -592,11 +592,11 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		};
 
 		// See if it's a level up or level down transition. Ignore other transition types.
-		if (transitionDef.type == TransitionType::LevelChange)
+		if (transitionDef.type == TransitionType::InteriorLevelChange)
 		{
 			const int activeLevelIndex = gameState.getActiveLevelIndex();
 			const int levelCount = interiorMapDef.getLevels().getCount();
-			const LevelChangeTransitionDefinition &levelChangeDef = transitionDef.levelChange;
+			const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef.interiorLevelChange;
 			if (levelChangeDef.isLevelUp)
 			{
 				// Level up transition. If the custom function has a target, call it and reset it (necessary

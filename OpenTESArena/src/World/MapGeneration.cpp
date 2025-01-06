@@ -893,14 +893,13 @@ namespace MapGeneration
 
 			if (isValid)
 			{
-				const bool isLevelChange = matchesLevelUp || matchesLevelDown;
-				const TransitionType transitionType = isLevelChange ?
-					TransitionType::LevelChange : TransitionType::ExitInterior;
+				const bool isInteriorLevelChange = matchesLevelUp || matchesLevelDown;
+				const TransitionType transitionType = isInteriorLevelChange ? TransitionType::InteriorLevelChange : TransitionType::ExitInterior;
 
 				constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Can't have interiors in interiors.
-				const std::optional<bool> isLevelUp = [matchesLevelUp, isLevelChange]() -> std::optional<bool>
+				const std::optional<bool> isInteriorLevelUp = [matchesLevelUp, isInteriorLevelChange]() -> std::optional<bool>
 				{
-					if (isLevelChange)
+					if (isInteriorLevelChange)
 					{
 						return matchesLevelUp;
 					}
@@ -911,7 +910,7 @@ namespace MapGeneration
 				}();
 
 				MapGeneration::TransitionDefGenInfo transitionDefGenInfo;
-				transitionDefGenInfo.init(transitionType, interiorType, menuIndex, isLevelUp);
+				transitionDefGenInfo.init(transitionType, interiorType, menuIndex, isInteriorLevelUp);
 				return transitionDefGenInfo;
 			}
 			else
@@ -1046,10 +1045,10 @@ namespace MapGeneration
 		{
 			transitionDef.initInteriorExit();
 		}
-		else if (transitionDefGenInfo.transitionType == TransitionType::LevelChange)
+		else if (transitionDefGenInfo.transitionType == TransitionType::InteriorLevelChange)
 		{
 			DebugAssert(transitionDefGenInfo.isLevelUp.has_value());
-			transitionDef.initLevelChange(*transitionDefGenInfo.isLevelUp);
+			transitionDef.initInteriorLevelChange(*transitionDefGenInfo.isLevelUp);
 		}
 		else
 		{
