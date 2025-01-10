@@ -15,44 +15,44 @@
 
 class ArenaRandom;
 
+class WorldMapTerrain
+{
+private:
+	static constexpr int WIDTH = 320;
+	static constexpr int HEIGHT = 200;
+
+	static constexpr uint8_t TEMPERATE1 = 254;
+	static constexpr uint8_t TEMPERATE2 = 251;
+	static constexpr uint8_t MOUNTAIN1 = 249;
+	static constexpr uint8_t MOUNTAIN2 = 250;
+	static constexpr uint8_t DESERT1 = 253;
+	static constexpr uint8_t DESERT2 = 252;
+	static constexpr uint8_t SEA = 248;
+
+	// 320x200 palette indices.
+	std::array<uint8_t, WorldMapTerrain::WIDTH * WorldMapTerrain::HEIGHT> indices;
+public:
+	// Converts a terrain index to a climate type. The given index must be for a land pixel.
+	static ArenaTypes::ClimateType toClimateType(uint8_t index);
+
+	// Converts a terrain index to a normalized index (such that sea = 0).
+	static uint8_t getNormalizedIndex(uint8_t index);
+
+	// Gets the terrain at the given XY coordinate without any correction.
+	uint8_t getAt(int x, int y) const;
+
+	// Gets the terrain at the given XY coordinate (also accounts for the 12 pixel
+	// error and does a fail-safe search for sea pixels).
+	uint8_t getFailSafeAt(int x, int y) const;
+
+	bool init(const char *filename);
+};
+
+using WorldMapMasks = std::array<WorldMapMask, 10>;
+
 // Contains assets that are generally not human-readable.
 class BinaryAssetLibrary : public Singleton<BinaryAssetLibrary>
 {
-public:
-	class WorldMapTerrain
-	{
-	private:
-		static constexpr int WIDTH = 320;
-		static constexpr int HEIGHT = 200;
-
-		static constexpr uint8_t TEMPERATE1 = 254;
-		static constexpr uint8_t TEMPERATE2 = 251;
-		static constexpr uint8_t MOUNTAIN1 = 249;
-		static constexpr uint8_t MOUNTAIN2 = 250;
-		static constexpr uint8_t DESERT1 = 253;
-		static constexpr uint8_t DESERT2 = 252;
-		static constexpr uint8_t SEA = 248;
-
-		// 320x200 palette indices.
-		std::array<uint8_t, WorldMapTerrain::WIDTH * WorldMapTerrain::HEIGHT> indices;
-	public:
-		// Converts a terrain index to a climate type. The given index must be for a land pixel.
-		static ArenaTypes::ClimateType toClimateType(uint8_t index);
-
-		// Converts a terrain index to a normalized index (such that sea = 0).
-		static uint8_t getNormalizedIndex(uint8_t index);
-
-		// Gets the terrain at the given XY coordinate without any correction.
-		uint8_t getAt(int x, int y) const;
-
-		// Gets the terrain at the given XY coordinate (also accounts for the 12 pixel
-		// error and does a fail-safe search for sea pixels).
-		uint8_t getFailSafeAt(int x, int y) const;
-
-		bool init(const char *filename);
-	};
-
-	using WorldMapMasks = std::array<WorldMapMask, 10>;
 private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
 	CityDataFile cityDataFile;

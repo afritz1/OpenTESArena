@@ -13,8 +13,7 @@
 namespace ArenaLocationUtils
 {
 	// Parent function for getting the climate type of a location.
-	ArenaTypes::ClimateType getClimateType(int locationID, int provinceID,
-		const BinaryAssetLibrary &binaryAssetLibrary)
+	ArenaTypes::ClimateType getClimateType(int locationID, int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
 	{
 		const auto &cityData = binaryAssetLibrary.getCityDataFile();
 		const auto &province = cityData.getProvinceData(provinceID);
@@ -23,7 +22,7 @@ namespace ArenaLocationUtils
 		const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, province.getGlobalRect());
 		const auto &worldMapTerrain = binaryAssetLibrary.getWorldMapTerrain();
 		const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
-		return BinaryAssetLibrary::WorldMapTerrain::toClimateType(terrain);
+		return WorldMapTerrain::toClimateType(terrain);
 	}
 }
 
@@ -208,8 +207,7 @@ int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &
 
 		// The type of terrain at the world map point.
 		const auto &worldMapTerrain = binaryAssetLibrary.getWorldMapTerrain();
-		const uint8_t terrainIndex = BinaryAssetLibrary::WorldMapTerrain::getNormalizedIndex(
-			worldMapTerrain.getAt(point.x, point.y));
+		const uint8_t terrainIndex = WorldMapTerrain::getNormalizedIndex(worldMapTerrain.getAt(point.x, point.y));
 
 		// Calculate the travel speed based on climate and weather.
 		const auto &exeData = binaryAssetLibrary.getExeData();

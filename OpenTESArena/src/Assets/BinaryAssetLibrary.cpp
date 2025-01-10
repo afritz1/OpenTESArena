@@ -6,7 +6,7 @@
 #include "components/utilities/Buffer.h"
 #include "components/vfs/manager.hpp"
 
-ArenaTypes::ClimateType BinaryAssetLibrary::WorldMapTerrain::toClimateType(uint8_t index)
+ArenaTypes::ClimateType WorldMapTerrain::toClimateType(uint8_t index)
 {
 	if ((index == WorldMapTerrain::TEMPERATE1) ||
 		(index == WorldMapTerrain::TEMPERATE2))
@@ -29,18 +29,18 @@ ArenaTypes::ClimateType BinaryAssetLibrary::WorldMapTerrain::toClimateType(uint8
 	}
 }
 
-uint8_t BinaryAssetLibrary::WorldMapTerrain::getNormalizedIndex(uint8_t index)
+uint8_t WorldMapTerrain::getNormalizedIndex(uint8_t index)
 {
 	return index - WorldMapTerrain::SEA;
 }
 
-uint8_t BinaryAssetLibrary::WorldMapTerrain::getAt(int x, int y) const
+uint8_t WorldMapTerrain::getAt(int x, int y) const
 {
 	const int index = DebugMakeIndex(this->indices, x + (y * WorldMapTerrain::WIDTH));
 	return this->indices[index];
 }
 
-uint8_t BinaryAssetLibrary::WorldMapTerrain::getFailSafeAt(int x, int y) const
+uint8_t WorldMapTerrain::getFailSafeAt(int x, int y) const
 {
 	// Lambda for obtaining a terrain pixel at some XY coordinate.
 	auto getTerrainAt = [this](int x, int y)
@@ -104,7 +104,7 @@ uint8_t BinaryAssetLibrary::WorldMapTerrain::getFailSafeAt(int x, int y) const
 	}
 }
 
-bool BinaryAssetLibrary::WorldMapTerrain::init(const char *filename)
+bool WorldMapTerrain::init(const char *filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	if (stream == nullptr)
@@ -123,8 +123,7 @@ bool BinaryAssetLibrary::initExecutableData(bool floppyVersion)
 {
 	if (!this->exeData.init(floppyVersion))
 	{
-		DebugLogError("Could not init .EXE data; is floppy version: " +
-			std::to_string(floppyVersion) + ".");
+		DebugLogError("Could not init .EXE data; is floppy version: " + std::to_string(floppyVersion) + ".");
 		return false;
 	}
 
@@ -305,12 +304,12 @@ const ArenaTypes::Spellsg &BinaryAssetLibrary::getStandardSpells() const
 	return this->standardSpells;
 }
 
-const BinaryAssetLibrary::WorldMapMasks &BinaryAssetLibrary::getWorldMapMasks() const
+const WorldMapMasks &BinaryAssetLibrary::getWorldMapMasks() const
 {
 	return this->worldMapMasks;
 }
 
-const BinaryAssetLibrary::WorldMapTerrain &BinaryAssetLibrary::getWorldMapTerrain() const
+const WorldMapTerrain &BinaryAssetLibrary::getWorldMapTerrain() const
 {
 	return this->worldMapTerrain;
 }
