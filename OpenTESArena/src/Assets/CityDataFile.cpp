@@ -10,22 +10,22 @@
 #include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
-bool CityDataFile::ProvinceData::LocationData::isVisible() const
+bool ArenaLocationData::isVisible() const
 {
 	return (this->visibility & 0x2) != 0;
 }
 
-void CityDataFile::ProvinceData::LocationData::setVisible(bool visible)
+void ArenaLocationData::setVisible(bool visible)
 {
 	this->visibility = visible ? 0x2 : 0;
 }
 
-Rect CityDataFile::ProvinceData::getGlobalRect() const
+Rect ArenaProvinceData::getGlobalRect() const
 {
 	return Rect(this->globalX, this->globalY, this->globalW, this->globalH);
 }
 
-const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getLocationData(int locationID) const
+const ArenaLocationData &ArenaProvinceData::getLocationData(int locationID) const
 {
 	if (locationID < 8)
 	{
@@ -69,13 +69,13 @@ const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getL
 	}
 }
 
-CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index)
+ArenaProvinceData &CityDataFile::getProvinceData(int index)
 {
 	DebugAssertIndex(this->provinces, index);
 	return this->provinces[index];
 }
 
-const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
+const ArenaProvinceData &CityDataFile::getProvinceData(int index) const
 {
 	DebugAssertIndex(this->provinces, index);
 	return this->provinces[index];
@@ -93,7 +93,7 @@ bool CityDataFile::init(const char *filename)
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
 
 	// Iterate over each province and initialize the location data.
-	for (size_t i = 0; i < this->provinces.size(); i++)
+	for (size_t i = 0; i < std::size(this->provinces); i++)
 	{
 		auto &province = this->provinces[i];
 
@@ -118,8 +118,7 @@ bool CityDataFile::init(const char *filename)
 		const uint8_t *locationPtr = provinceGlobalDimsPtr + (sizeof(uint16_t) * 4);
 
 		// Lambda for initializing the given location and pushing the location pointer forward.
-		auto initLocation = [nameSize, &locationPtr](
-			CityDataFile::ProvinceData::LocationData &locationData)
+		auto initLocation = [nameSize, &locationPtr](ArenaLocationData &locationData)
 		{
 			const char *locationNamePtr = reinterpret_cast<const char*>(locationPtr);
 			locationData.name = std::string(locationNamePtr);

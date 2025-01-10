@@ -229,9 +229,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		rulerIsMale, palaceIsMainQuestDungeon);
 }
 
-void LocationDefinition::initDungeon(int localDungeonID, int provinceID,
-	const CityDataFile::ProvinceData::LocationData &locationData,
-	const CityDataFile::ProvinceData &provinceData)
+void LocationDefinition::initDungeon(int localDungeonID, int provinceID, const ArenaLocationData &locationData, const ArenaProvinceData &provinceData)
 {
 	DebugAssert((localDungeonID >= 2) && (localDungeonID < 16));
 

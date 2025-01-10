@@ -130,7 +130,7 @@ int ArenaLocationUtils::getGlobalQuarter(const Int2 &globalPoint, const CityData
 	Rect provinceRect;
 	for (int i = 0; i < CityDataFile::PROVINCE_COUNT; i++)
 	{
-		const CityDataFile::ProvinceData &province = cityData.getProvinceData(i);
+		const ArenaProvinceData &province = cityData.getProvinceData(i);
 		const Rect &curProvinceRect = province.getGlobalRect();
 
 		if (curProvinceRect.containsInclusive(globalPoint))
@@ -247,14 +247,14 @@ int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &
 	return travelDays;
 }
 
-uint32_t ArenaLocationUtils::getCitySeed(int localCityID, const CityDataFile::ProvinceData &province)
+uint32_t ArenaLocationUtils::getCitySeed(int localCityID, const ArenaProvinceData &province)
 {
 	const int locationID = ArenaLocationUtils::cityToLocationID(localCityID);
 	const auto &location = province.getLocationData(locationID);
 	return static_cast<uint32_t>((location.x << 16) + location.y);
 }
 
-uint32_t ArenaLocationUtils::getWildernessSeed(int localCityID, const CityDataFile::ProvinceData &province)
+uint32_t ArenaLocationUtils::getWildernessSeed(int localCityID, const ArenaProvinceData &province)
 {
 	const auto &location = province.getLocationData(ArenaLocationUtils::cityToLocationID(localCityID));
 	const std::string &locationName = location.name;
@@ -283,10 +283,9 @@ uint32_t ArenaLocationUtils::getSkySeed(const Int2 &localPoint, int provinceID, 
 	return seed * provinceID;
 }
 
-uint32_t ArenaLocationUtils::getDungeonSeed(int localDungeonID, int provinceID,
-	const CityDataFile::ProvinceData &province)
+uint32_t ArenaLocationUtils::getDungeonSeed(int localDungeonID, int provinceID, const ArenaProvinceData &province)
 {
-	const auto &dungeon = [localDungeonID, &province]()
+	const ArenaLocationData &dungeon = [localDungeonID, &province]()
 	{
 		if (localDungeonID == 0)
 		{
@@ -300,7 +299,9 @@ uint32_t ArenaLocationUtils::getDungeonSeed(int localDungeonID, int provinceID,
 		}
 		else
 		{
-			return province.randomDungeons.at(localDungeonID - 2);
+			const int randomDungeonIndex = localDungeonID - 2;
+			DebugAssertIndex(province.randomDungeons, randomDungeonIndex);
+			return province.randomDungeons[randomDungeonIndex];
 		}
 	}();
 
@@ -308,20 +309,19 @@ uint32_t ArenaLocationUtils::getDungeonSeed(int localDungeonID, int provinceID,
 	return (~Bytes::rol(seed, 5)) & 0xFFFFFFFF;
 }
 
-uint32_t ArenaLocationUtils::getProvinceSeed(int provinceID, const CityDataFile::ProvinceData &province)
+uint32_t ArenaLocationUtils::getProvinceSeed(int provinceID, const ArenaProvinceData &province)
 {
 	const uint32_t provinceSeed = ((province.globalX << 16) + province.globalY) * provinceID;
 	return provinceSeed;
 }
 
-uint32_t ArenaLocationUtils::getWildernessDungeonSeed(int provinceID,
-	const CityDataFile::ProvinceData &province, int wildBlockX, int wildBlockY)
+uint32_t ArenaLocationUtils::getWildernessDungeonSeed(int provinceID, const ArenaProvinceData &province, int wildBlockX, int wildBlockY)
 {
 	const uint32_t provinceSeed = ArenaLocationUtils::getProvinceSeed(provinceID, province);
 	return (provinceSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 
-bool ArenaLocationUtils::isRulerMale(int localCityID, const CityDataFile::ProvinceData &province)
+bool ArenaLocationUtils::isRulerMale(int localCityID, const ArenaProvinceData &province)
 {
 	const auto &location = province.getLocationData(localCityID);
 	const Int2 localPoint(location.x, location.y);
