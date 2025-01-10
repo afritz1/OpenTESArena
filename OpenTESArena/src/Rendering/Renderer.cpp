@@ -1053,9 +1053,8 @@ void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg colo
 
 	const double distanceRatio = std::max(distSqr0, distSqr1) / PHYSICS_DEBUG_MAX_DISTANCE_SQR;
 	const double intensityPercent = std::clamp(1.0 - (distanceRatio * distanceRatio * distanceRatio), 0.0, 1.0);
-	Double4 colorComponents = Double4::fromARGB(color.GetUInt32());
-	colorComponents = colorComponents * intensityPercent;
-	const Color presentedColor = Color::fromARGB(colorComponents.toARGB());
+	const ColorReal multipliedColor = ColorReal::fromARGB(color.GetUInt32()) * intensityPercent;
+	const Color presentedColor = Color::fromARGB(multipliedColor.toARGB());
 	this->drawLine(presentedColor, pixelSpace0.x, pixelSpace0.y, pixelSpace1.x, pixelSpace1.y);
 }
 

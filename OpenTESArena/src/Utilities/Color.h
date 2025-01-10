@@ -63,4 +63,62 @@ struct Color
 	Color clamped(uint8_t low, uint8_t high) const;
 };
 
+struct ColorReal
+{
+	double r, g, b, a;
+
+	constexpr ColorReal(double r, double g, double b, double a)
+	{
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = a;
+	}
+
+	constexpr ColorReal(double r, double g, double b)
+	{
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = 1.0;
+	}
+
+	constexpr ColorReal()
+	{
+		this->r = 0.0;
+		this->g = 0.0;
+		this->b = 0.0;
+		this->a = 1.0;
+	}
+
+	static const ColorReal Red;
+	static const ColorReal Green;
+	static const ColorReal Blue;
+	static const ColorReal Cyan;
+	static const ColorReal Magenta;
+	static const ColorReal Yellow;
+	static const ColorReal Black;
+	static const ColorReal White;
+	static const ColorReal Gray;
+	static const ColorReal Transparent;
+
+	static ColorReal randomRGBA(Random &random);
+	static ColorReal randomRGB(Random &random);
+	static ColorReal fromARGB(uint32_t argb);
+	static ColorReal fromRGBA(uint32_t rgba);
+	static ColorReal fromRGB(uint32_t rgb);
+
+	ColorReal operator+(const ColorReal &other) const;
+	ColorReal operator-(const ColorReal &other) const;
+	ColorReal operator*(double value) const;
+	bool operator==(const ColorReal &other) const;
+	bool operator!=(const ColorReal &other) const;
+
+	std::string toString() const;
+	uint32_t toARGB() const;
+	uint32_t toRGBA() const;
+	uint32_t toRGB() const;
+	ColorReal clamped(double low, double high) const;
+};
+
 #endif
