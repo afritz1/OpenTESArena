@@ -37,12 +37,12 @@ private:
 	Game &game;
 
 	// Allocated input listener IDs that must be freed when the panel is done with them.
-	std::vector<InputManager::ListenerID> inputActionListenerIDs;
-	std::vector<InputManager::ListenerID> mouseButtonChangedListenerIDs;
-	std::vector<InputManager::ListenerID> mouseButtonHeldListenerIDs;
-	std::vector<InputManager::ListenerID> mouseScrollChangedListenerIDs;
-	std::vector<InputManager::ListenerID> mouseMotionListenerIDs;
-	std::vector<InputManager::ListenerID> textInputListenerIDs;
+	std::vector<InputListenerID> inputActionListenerIDs;
+	std::vector<InputListenerID> mouseButtonChangedListenerIDs;
+	std::vector<InputListenerID> mouseButtonHeldListenerIDs;
+	std::vector<InputListenerID> mouseScrollChangedListenerIDs;
+	std::vector<InputListenerID> mouseMotionListenerIDs;
+	std::vector<InputListenerID> textInputListenerIDs;
 
 	std::vector<ButtonProxy> buttonProxies;
 

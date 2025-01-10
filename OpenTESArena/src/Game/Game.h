@@ -75,7 +75,7 @@ public:
 	bool shouldRenderScene;
 private:
 	// Listener IDs are optional in case of failed Game construction.
-	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
+	std::optional<InputListenerID> applicationExitListenerID, windowResizedListenerID,
 		renderTargetsResetListenerID, takeScreenshotListenerID, debugProfilerListenerID;
 
 	bool requestedSubPanelPop;

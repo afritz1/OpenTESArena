@@ -21,11 +21,11 @@
 
 struct ButtonProxy;
 
+using InputListenerID = int;
+
 // Handles active input action maps, input listeners, and pointer input events.
 class InputManager
 {
-public:
-	using ListenerID = int;
 private:
 	enum class ListenerType
 	{
@@ -145,7 +145,7 @@ private:
 	std::vector<TextInputListenerEntry> textInputListeners;
 
 	// Look-up values for valid listener entries, shared by all listener containers.
-	std::unordered_map<ListenerID, ListenerLookupEntry> listenerLookupEntries;
+	std::unordered_map<InputListenerID, ListenerLookupEntry> listenerLookupEntries;
 
 	// Indices to listener entries that were used but can be reclaimed by a future registration.
 	std::vector<int> freedInputActionListenerIndices;
@@ -158,17 +158,17 @@ private:
 	std::vector<int> freedRenderTargetsResetListenerIndices;
 	std::vector<int> freedTextInputListenerIndices;
 
-	ListenerID nextListenerID;
-	std::vector<ListenerID> freedListenerIDs;
+	InputListenerID nextListenerID;
+	std::vector<InputListenerID> freedListenerIDs;
 
 	Int2 mouseDelta;
 
-	ListenerID getNextListenerID();
+	InputListenerID getNextListenerID();
 
 	bool isInTextEntryMode() const;
 
 	template <typename EntryType, typename CallbackType>
-	ListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
+	InputListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
 		std::vector<int> &freedListenerIndices);
 	
 	void handleHeldInputs(Game &game, BufferView<const InputActionMap*> activeMaps,
@@ -203,20 +203,20 @@ public:
 
 	bool setInputActionMapActive(const std::string &name, bool active);
 
-	ListenerID addInputActionListener(const std::string_view actionName, const InputActionCallback &callback);
-	ListenerID addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
-	ListenerID addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
-	ListenerID addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
-	ListenerID addMouseMotionListener(const MouseMotionCallback &callback);
-	ListenerID addApplicationExitListener(const ApplicationExitCallback &callback);
-	ListenerID addWindowResizedListener(const WindowResizedCallback &callback);
-	ListenerID addRenderTargetsResetListener(const RenderTargetsResetCallback &callback);
-	ListenerID addTextInputListener(const TextInputCallback &callback);
+	InputListenerID addInputActionListener(const std::string_view actionName, const InputActionCallback &callback);
+	InputListenerID addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
+	InputListenerID addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
+	InputListenerID addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
+	InputListenerID addMouseMotionListener(const MouseMotionCallback &callback);
+	InputListenerID addApplicationExitListener(const ApplicationExitCallback &callback);
+	InputListenerID addWindowResizedListener(const WindowResizedCallback &callback);
+	InputListenerID addRenderTargetsResetListener(const RenderTargetsResetCallback &callback);
+	InputListenerID addTextInputListener(const TextInputCallback &callback);
 
-	void removeListener(ListenerID id);
+	void removeListener(InputListenerID id);
 
 	// Sets whether a valid listener can hear input callbacks.
-	void setListenerEnabled(ListenerID id, bool enabled);
+	void setListenerEnabled(InputListenerID id, bool enabled);
 
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);

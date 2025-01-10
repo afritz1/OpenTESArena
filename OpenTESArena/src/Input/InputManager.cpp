@@ -286,9 +286,9 @@ bool InputManager::isTextInput(const SDL_Event &e) const
 	return e.type == SDL_TEXTINPUT;
 }
 
-InputManager::ListenerID InputManager::getNextListenerID()
+InputListenerID InputManager::getNextListenerID()
 {
-	ListenerID listenerID;
+	InputListenerID listenerID;
 	if (!this->freedListenerIDs.empty())
 	{
 		listenerID = this->freedListenerIDs.back();
@@ -336,8 +336,8 @@ bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 	}
 }
 
-template <typename EntryType, typename CallbackType>
-InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callback, ListenerType listenerType,
+template<typename EntryType, typename CallbackType>
+InputListenerID InputManager::addListenerInternal(CallbackType &&callback, ListenerType listenerType,
 	std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices)
 {
 	int insertIndex;
@@ -356,7 +356,7 @@ InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callba
 	EntryType &listenerEntry = listeners[insertIndex];
 	listenerEntry.init(callback);
 
-	const ListenerID listenerID = this->getNextListenerID();
+	const InputListenerID listenerID = this->getNextListenerID();
 
 	ListenerLookupEntry lookupEntry;
 	lookupEntry.init(listenerType, insertIndex);
@@ -365,8 +365,7 @@ InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callba
 	return listenerID;
 }
 
-InputManager::ListenerID InputManager::addInputActionListener(const std::string_view actionName,
-	const InputActionCallback &callback)
+InputListenerID InputManager::addInputActionListener(const std::string_view actionName, const InputActionCallback &callback)
 {
 	int insertIndex;
 	if (!this->freedInputActionListenerIndices.empty())
@@ -384,7 +383,7 @@ InputManager::ListenerID InputManager::addInputActionListener(const std::string_
 	InputActionListenerEntry &listenerEntry = this->inputActionListeners[insertIndex];
 	listenerEntry.init(actionName, callback);
 
-	const ListenerID listenerID = this->getNextListenerID();
+	const InputListenerID listenerID = this->getNextListenerID();
 
 	ListenerLookupEntry lookupEntry;
 	lookupEntry.init(ListenerType::InputAction, insertIndex);
@@ -393,49 +392,49 @@ InputManager::ListenerID InputManager::addInputActionListener(const std::string_
 	return listenerID;
 }
 
-InputManager::ListenerID InputManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
+InputListenerID InputManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::MouseButtonChanged,
 		this->mouseButtonChangedListeners, this->freedMouseButtonChangedListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
+InputListenerID InputManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::MouseButtonHeld,
 		this->mouseButtonHeldListeners, this->freedMouseButtonHeldListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
+InputListenerID InputManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::MouseScrollChanged,
 		this->mouseScrollChangedListeners, this->freedMouseScrollChangedListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addMouseMotionListener(const MouseMotionCallback &callback)
+InputListenerID InputManager::addMouseMotionListener(const MouseMotionCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::MouseMotion,
 		this->mouseMotionListeners, this->freedMouseMotionListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addApplicationExitListener(const ApplicationExitCallback &callback)
+InputListenerID InputManager::addApplicationExitListener(const ApplicationExitCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::ApplicationExit,
 		this->applicationExitListeners, this->freedApplicationExitListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addWindowResizedListener(const WindowResizedCallback &callback)
+InputListenerID InputManager::addWindowResizedListener(const WindowResizedCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::WindowResized,
 		this->windowResizedListeners, this->freedWindowResizedListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addRenderTargetsResetListener(const RenderTargetsResetCallback &callback)
+InputListenerID InputManager::addRenderTargetsResetListener(const RenderTargetsResetCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::RenderTargetsReset,
 		this->renderTargetsResetListeners, this->freedRenderTargetsResetListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addTextInputListener(const TextInputCallback &callback)
+InputListenerID InputManager::addTextInputListener(const TextInputCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::TextInput,
 		this->textInputListeners, this->freedTextInputListenerIndices);
@@ -453,7 +452,7 @@ void InputManager::setTextInputMode(bool active)
 	}
 }
 
-void InputManager::removeListener(ListenerID id)
+void InputManager::removeListener(InputListenerID id)
 {
 	auto resetListenerEntry = [](auto &listeners, auto &freedIndices, int removeIndex)
 	{
@@ -524,7 +523,7 @@ void InputManager::removeListener(ListenerID id)
 	}
 }
 
-void InputManager::setListenerEnabled(ListenerID id, bool enabled)
+void InputManager::setListenerEnabled(InputListenerID id, bool enabled)
 {
 	const auto iter = this->listenerLookupEntries.find(id);
 	if (iter == this->listenerLookupEntries.end())

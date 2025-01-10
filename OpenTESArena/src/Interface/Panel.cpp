@@ -32,32 +32,32 @@ Panel::~Panel()
 	InputManager &inputManager = this->game.inputManager;
 
 	// Free all the input listener IDs.
-	for (const InputManager::ListenerID listenerID : this->inputActionListenerIDs)
+	for (const InputListenerID listenerID : this->inputActionListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->mouseButtonChangedListenerIDs)
+	for (const InputListenerID listenerID : this->mouseButtonChangedListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->mouseButtonHeldListenerIDs)
+	for (const InputListenerID listenerID : this->mouseButtonHeldListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->mouseScrollChangedListenerIDs)
+	for (const InputListenerID listenerID : this->mouseScrollChangedListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->mouseMotionListenerIDs)
+	for (const InputListenerID listenerID : this->mouseMotionListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->textInputListenerIDs)
+	for (const InputListenerID listenerID : this->textInputListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
@@ -78,9 +78,9 @@ void Panel::onPauseChanged(bool paused)
 	this->paused = paused;
 
 	InputManager &inputManager = this->game.inputManager;
-	auto setListenersEnabled = [paused, &inputManager](std::vector<InputManager::ListenerID> &listenerIDs)
+	auto setListenersEnabled = [paused, &inputManager](std::vector<InputListenerID> &listenerIDs)
 	{
-		for (const InputManager::ListenerID listenerID : listenerIDs)
+		for (const InputListenerID listenerID : listenerIDs)
 		{
 			inputManager.setListenerEnabled(listenerID, !paused);
 		}
