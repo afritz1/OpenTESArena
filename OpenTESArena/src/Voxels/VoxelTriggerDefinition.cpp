@@ -38,3 +38,8 @@ bool VoxelTriggerDefinition::hasTextDef() const
 {
 	return !this->text.text.empty();
 }
+
+bool VoxelTriggerDefinition::hasValidDef() const
+{
+	return this->hasSoundDef() || this->hasTextDef();
+}

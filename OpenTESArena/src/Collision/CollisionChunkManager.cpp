@@ -89,8 +89,13 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 				const bool voxelHasCollision = voxelTraitsDef.hasCollision();
 				collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
 
+				bool isTriggerVoxel = false;
 				VoxelTriggerDefID triggerDefID;
-				const bool isTriggerVoxel = voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID);
+				if (voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID))
+				{
+					const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.getTriggerDef(triggerDefID);
+					isTriggerVoxel = voxelTriggerDef.hasValidDef();
+				}
 
 				bool isInteriorLevelChangeVoxel = false;
 				VoxelTransitionDefID transitionDefID;
@@ -170,8 +175,13 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 			collisionChunk.physicsBodyIDs.set(x, y, z, Physics::INVALID_BODY_ID);
 		}
 
+		bool isTriggerVoxel = false;
 		VoxelTriggerDefID triggerDefID;
-		const bool isTriggerVoxel = voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID);
+		if (voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID))
+		{
+			const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.getTriggerDef(triggerDefID);
+			isTriggerVoxel = voxelTriggerDef.hasValidDef();
+		}
 
 		bool isInteriorLevelChangeVoxel = false;
 		VoxelTransitionDefID transitionDefID;

@@ -35,6 +35,7 @@ struct VoxelTriggerDefinition
 
 	bool hasSoundDef() const;
 	bool hasTextDef() const;
+	bool hasValidDef() const;
 };
 
 #endif
