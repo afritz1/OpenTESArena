@@ -16,6 +16,7 @@ public:
 	Rect();
 	Rect(const Rect &rect);
 
+	bool isEmpty() const;
 	int getWidth() const;
 	int getHeight() const;
 	int getLeft() const;

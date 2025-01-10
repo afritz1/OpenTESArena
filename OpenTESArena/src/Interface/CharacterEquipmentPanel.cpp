@@ -86,19 +86,7 @@ bool CharacterEquipmentPanel::init()
 
 		ButtonProxy::Callback itemCallback = this->inventoryListBox.getCallback(i);
 
-		ButtonProxy::ActiveFunction itemActiveFunction = [this, &game]()
-		{
-			// @todo: I don't like every button proxy having to handle mouse position, fix this design.
-			// - maybe should give the button proxy a parent rect that all clicks have to be inside, then
-			//   the active func becomes obsolete
-			const InputManager &inputManager = game.inputManager;
-			const Int2 mousePosition = inputManager.getMousePosition();
-			const Int2 mouseClassicPosition = game.renderer.nativeToOriginal(mousePosition);
-			const Rect inventoryListBoxRect = this->inventoryListBox.getRect();
-			return inventoryListBoxRect.contains(mouseClassicPosition);
-		};
-
-		this->addButtonProxy(MouseButtonType::Left, itemRectFunc, itemCallback, itemActiveFunction);
+		this->addButtonProxy(MouseButtonType::Left, itemRectFunc, itemCallback, this->inventoryListBox.getRect());
 	}
 
 	this->backToStatsButton = Button<Game&>(

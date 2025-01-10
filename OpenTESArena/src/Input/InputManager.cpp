@@ -820,7 +820,8 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 
 							DebugAssert(buttonProxy.rectFunc);
 							const Rect buttonRect = buttonProxy.rectFunc();
-							const bool isValidMouseSelection = buttonRect.contains(classicMousePos);
+							const Rect buttonParentRect = buttonProxy.parentRect;
+							const bool isValidMouseSelection = buttonRect.contains(classicMousePos) && (buttonParentRect.isEmpty() || buttonParentRect.contains(classicMousePos));
 							const bool matchesButtonType = *buttonType == buttonProxy.buttonType;
 							if (isValidMouseSelection && matchesButtonType)
 							{

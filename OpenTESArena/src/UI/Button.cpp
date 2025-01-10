@@ -1,8 +1,8 @@
 #include "Button.h"
 
 ButtonProxy::ButtonProxy(MouseButtonType buttonType, const RectFunction &rectFunc,
-	const Callback &callback, const ActiveFunction &isActiveFunc)
-	: rectFunc(rectFunc), callback(callback), isActiveFunc(isActiveFunc)
+	const Callback &callback, const Rect &parentRect, const ActiveFunction &isActiveFunc)
+	: rectFunc(rectFunc), callback(callback), parentRect(parentRect), isActiveFunc(isActiveFunc)
 {
 	this->buttonType = buttonType;
 }

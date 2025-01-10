@@ -65,11 +65,12 @@ protected:
 
 	// Adds a button proxy for a dynamic button (i.e. ListBox items).
 	void addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,
-		const ButtonProxy::Callback &callback, const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
+		const ButtonProxy::Callback &callback, const Rect &parentRect = Rect(),
+		const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
 
 	// Adds a button proxy for a static button.
 	void addButtonProxy(MouseButtonType buttonType, const Rect &rect, const ButtonProxy::Callback &callback,
-		const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
+		const Rect &parentRect = Rect(), const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
 
 	void clearButtonProxies();
 

@@ -149,16 +149,16 @@ void Panel::addTextInputListener(const TextInputCallback &callback)
 }
 
 void Panel::addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,
-	const ButtonProxy::Callback &callback, const ButtonProxy::ActiveFunction &isActiveFunc)
+	const ButtonProxy::Callback &callback, const Rect &parentRect, const ButtonProxy::ActiveFunction &isActiveFunc)
 {
-	this->buttonProxies.emplace_back(buttonType, rectFunc, callback, isActiveFunc);
+	this->buttonProxies.emplace_back(buttonType, rectFunc, callback, parentRect, isActiveFunc);
 }
 
 void Panel::addButtonProxy(MouseButtonType buttonType, const Rect &rect, const ButtonProxy::Callback &callback,
-	const ButtonProxy::ActiveFunction &isActiveFunc)
+	const Rect &parentRect, const ButtonProxy::ActiveFunction &isActiveFunc)
 {
 	auto rectFunc = [rect]() { return rect; };
-	this->addButtonProxy(buttonType, rectFunc, callback, isActiveFunc);
+	this->addButtonProxy(buttonType, rectFunc, callback, parentRect, isActiveFunc);
 }
 
 void Panel::clearButtonProxies()

@@ -27,6 +27,11 @@ Rect::Rect()
 Rect::Rect(const Rect &rect)
 	: Rect(rect.x, rect.y, rect.w, rect.h) { }
 
+bool Rect::isEmpty() const
+{
+	return (this->w == 0) || (this->h == 0);
+}
+
 int Rect::getWidth() const
 {
 	return this->w;

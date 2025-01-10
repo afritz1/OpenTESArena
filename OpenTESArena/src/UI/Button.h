@@ -110,12 +110,13 @@ struct ButtonProxy
 	using ActiveFunction = std::function<bool()>;
 
 	MouseButtonType buttonType; // Which mouse button triggers a click.
-	RectFunction rectFunc; // Position + size in classic UI space. Uses a function for dynamic buttons (ListBox, etc.).
+	RectFunction rectFunc; // Classic UI space rect for clickable button. Might move around due to being e.g. a ListBox item.
+	Rect parentRect; // Classic UI space rect that mouse clicks have to be within.
 	Callback callback; // Called if the button is clicked.
 	ActiveFunction isActiveFunc; // Contains a callable function if it can be inactive.
 
-	ButtonProxy(MouseButtonType buttonType, const RectFunction &rectFunc,
-		const Callback &callback, const ActiveFunction &isActiveFunc = ActiveFunction());
+	ButtonProxy(MouseButtonType buttonType, const RectFunction &rectFunc, const Callback &callback,
+		const Rect &parentRect = Rect(), const ActiveFunction &isActiveFunc = ActiveFunction());
 	ButtonProxy();
 };
 

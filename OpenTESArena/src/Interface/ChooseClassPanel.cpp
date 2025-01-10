@@ -112,16 +112,7 @@ bool ChooseClassPanel::init()
 
 		auto callback = this->classesListBox.getCallback(i);
 
-		auto isActiveFunc = [&game]()
-		{
-			const auto &inputManager = game.inputManager;
-			const Int2 mousePosition = inputManager.getMousePosition();
-			const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
-			const Rect classListRect = ChooseClassUiView::getListRect(game);
-			return classListRect.contains(classicPosition);
-		};
-
-		this->addButtonProxy(MouseButtonType::Left, rectFunc, callback, isActiveFunc);
+		this->addButtonProxy(MouseButtonType::Left, rectFunc, callback, this->classesListBox.getRect());
 	}
 
 	this->addInputActionListener(InputActionName::Back, ChooseClassUiController::onBackToChooseClassCreationInputAction);
