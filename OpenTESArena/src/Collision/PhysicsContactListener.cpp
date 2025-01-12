@@ -3,6 +3,7 @@
 
 #include "PhysicsContactListener.h"
 #include "../Game/Game.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -49,18 +50,28 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 
-	const bool isPlayerVsEntitySensorCollision = entityChunkManager.getEntityFromPhysicsBodyID(otherBodyID) != -1;
+	const EntityInstanceID otherBodyEntityInstanceID = entityChunkManager.getEntityFromPhysicsBodyID(otherBodyID);
+	const bool isPlayerVsEntitySensorCollision = otherBodyEntityInstanceID != -1;
 	const bool isPlayerVsVoxelSensorCollision = !isPlayerVsEntitySensorCollision;
 
-	// Note that waking up while contacting also counts as contact added, may want to handle? (sleep happens after like 0.75s?)
+	if (isPlayerVsVoxelSensorCollision)
+	{
+		const GameState &gameState = this->game.gameState;
+		const double ceilingScale = gameState.getActiveCeilingScale();
 
-	if (isPlayerVsEntitySensorCollision)
-	{
-		DebugLog("Player contacted entity sensor " + std::to_string(otherBodyID.GetIndex()));
+		const JPH::RVec3 otherBodyPosition = otherBody->GetCenterOfMassPosition();
+		const CoordDouble3 otherBodyCoord = VoxelUtils::worldPointToCoord(WorldDouble3(
+			static_cast<SNDouble>(otherBodyPosition.GetX()),
+			static_cast<double>(otherBodyPosition.GetY()),
+			static_cast<WEDouble>(otherBodyPosition.GetZ())));
+		const CoordInt3 otherBodyVoxelCoord(otherBodyCoord.chunk, VoxelUtils::pointToVoxel(otherBodyCoord.point, ceilingScale));
+		DebugLog("Player contacted voxel sensor " + std::to_string(otherBodyID.GetIndex()) + " in chunk (" + otherBodyVoxelCoord.chunk.toString() + ") at (" + otherBodyVoxelCoord.voxel.toString() + ").");
 	}
-	else if (isPlayerVsVoxelSensorCollision)
+	else if (isPlayerVsEntitySensorCollision)
 	{
-		DebugLog("Player contacted voxel sensor " + std::to_string(otherBodyID.GetIndex()));
+		const EntityInstance &entityInst = entityChunkManager.getEntity(otherBodyEntityInstanceID);
+		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
+		DebugLog("Player contacted entity sensor " + std::to_string(otherBodyID.GetIndex()) + " in chunk (" + entityCoord.chunk.toString() + ") at (" + entityCoord.point.toString() + ").");
 	}
 }
 
