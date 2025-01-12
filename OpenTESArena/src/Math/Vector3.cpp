@@ -73,7 +73,7 @@ template<typename T>
 std::string Vector3i<T>::toString() const
 {
 	char buffer[64];
-	std::snprintf(buffer, std::size(buffer), "(%d, %d, %d)", this->x, this->y, this->z);
+	std::snprintf(buffer, std::size(buffer), "%d, %d, %d", this->x, this->y, this->z);
 	return std::string(buffer);
 }
 
@@ -189,7 +189,7 @@ template<typename T>
 std::string Vector3f<T>::toString() const
 {
 	char buffer[64];
-	std::snprintf(buffer, std::size(buffer), "(%.2f, %.2f, %.2f)", this->x, this->y, this->z);
+	std::snprintf(buffer, std::size(buffer), "%.2f, %.2f, %.2f", this->x, this->y, this->z);
 	return std::string(buffer);
 }
 
