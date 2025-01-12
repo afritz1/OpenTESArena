@@ -102,6 +102,12 @@ namespace
 		constexpr uint64_t characterUserData = 0;
 		*outCharacter = new JPH::Character(&characterSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterUserData, &physicsSystem);
 		(*outCharacter)->AddToPhysicsSystem(JPH::EActivation::Activate);
+
+		const JPH::BodyLockInterface &bodyLockInterface = physicsSystem.GetBodyLockInterface();
+		const JPH::BodyLockWrite characterBodyLock(bodyLockInterface, (*outCharacter)->GetBodyID());
+		DebugAssert(characterBodyLock.Succeeded());
+		JPH::Body &characterBody = characterBodyLock.GetBody();
+		characterBody.SetAllowSleeping(false); // Don't refire contact added when waking up inside sensor colliders
 		
 		constexpr uint64_t characterVirtualUserData = 0;
 		*outCharacterVirtual = new JPH::CharacterVirtual(&characterVirtualSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterVirtualUserData, &physicsSystem);
