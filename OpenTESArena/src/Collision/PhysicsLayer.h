@@ -11,14 +11,16 @@ namespace PhysicsLayers
 {
 	static constexpr JPH::ObjectLayer NON_MOVING = 0;
 	static constexpr JPH::ObjectLayer MOVING = 1;
-	static constexpr JPH::ObjectLayer NUM_LAYERS = 2;
+	static constexpr JPH::ObjectLayer SENSOR = 2;
+	static constexpr JPH::ObjectLayer NUM_LAYERS = 3;
 };
 
 namespace PhysicsBroadPhaseLayers
 {
 	static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
 	static constexpr JPH::BroadPhaseLayer MOVING(1);
-	static constexpr uint32_t NUM_LAYERS = 2;
+	static constexpr JPH::BroadPhaseLayer SENSOR(2);
+	static constexpr uint32_t NUM_LAYERS = 3;
 };
 
 class PhysicsObjectLayerPairFilter : public JPH::ObjectLayerPairFilter

@@ -50,7 +50,10 @@ namespace
 			static_cast<float>(boxWorldVoxelPos.z + 0.50));
 		const RadiansF boxYRotation = static_cast<RadiansF>(boxShapeDef.yRotation);
 		const JPH::Quat boxJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), boxYRotation);
-		const JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, boxJoltQuat, JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
+		const JPH::ObjectLayer boxObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::NON_MOVING;
+		JPH::BodyCreationSettings boxSettings(boxShape, boxJoltPos, boxJoltQuat, JPH::EMotionType::Static, boxObjectLayer);
+		boxSettings.mIsSensor = isSensor;
+
 		JPH::Body *boxBody = bodyInterface.CreateBody(boxSettings);
 		if (boxBody == nullptr)
 		{
@@ -59,7 +62,6 @@ namespace
 			return false;
 		}
 
-		boxBody->SetIsSensor(isSensor);
 		*outBodyID = boxBody->GetID();
 		return true;
 	}

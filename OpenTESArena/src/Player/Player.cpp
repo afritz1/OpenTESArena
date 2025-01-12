@@ -357,11 +357,32 @@ double Player::getJumpMagnitude() const
 	return PlayerConstants::JUMP_VELOCITY;
 }
 
-bool Player::onGround() const
+bool Player::onGround(const JPH::PhysicsSystem &physicsSystem) const
 {
-	// @todo: not sure we should ever be on steep ground in this engine. "maxSlopeAngle" affects that, and 0 and 90 don't seem perfect.
 	const JPH::CharacterBase::EGroundState groundState = this->physicsCharacter->GetGroundState();
-	return (groundState == JPH::CharacterBase::EGroundState::OnGround) || (groundState == JPH::CharacterBase::EGroundState::OnSteepGround);
+
+	// @todo: not sure we should ever be on steep ground in this engine. "maxSlopeAngle" affects that, and 0 and 90 don't seem perfect.
+	if ((groundState != JPH::CharacterBase::EGroundState::OnGround) && (groundState != JPH::CharacterBase::EGroundState::OnSteepGround))
+	{
+		return false;
+	}
+
+	const JPH::BodyID groundBodyID = this->physicsCharacter->GetGroundBodyID();
+	if (groundBodyID.IsInvalid())
+	{
+		return false;
+	}
+
+	const JPH::BodyLockInterface &bodyInterface = physicsSystem.GetBodyLockInterface();
+	const JPH::BodyLockRead groundBodyLock(bodyInterface, groundBodyID);
+	if (!groundBodyLock.Succeeded())
+	{
+		return false;
+	}
+
+	// @todo: not sure this is the best way. why are sensor colliders being considered ground?
+	const JPH::Body &groundBody = groundBodyLock.GetBody();
+	return !groundBody.IsSensor();
 }
 
 bool Player::isMoving() const
@@ -370,11 +391,11 @@ bool Player::isMoving() const
 	return physicsVelocity.LengthSq() >= ConstantsF::Epsilon;
 }
 
-bool Player::canJump() const
+bool Player::canJump(const JPH::PhysicsSystem &physicsSystem) const
 {
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 	constexpr float tinyEpsilon = 1e-8f;
-	return this->onGround() && (std::abs(physicsVelocity.GetY()) <= tinyEpsilon);
+	return this->onGround(physicsSystem) && (std::abs(physicsVelocity.GetY()) <= tinyEpsilon);
 }
 
 void Player::rotateX(Degrees deltaX)
@@ -471,14 +492,14 @@ void Player::prePhysicsStep(double dt, Game &game)
 		return;
 	}
 
+	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	const Double3 oldVelocity = this->getPhysicsVelocity();
-	if (!this->onGround())
+	if (!this->onGround(physicsSystem))
 	{
 		// Need to apply gravity to Character as its gravity factor is 0 when with CharacterVirtual.
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 	}
 
-	JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	const JPH::Vec3Arg physicsGravity = -this->physicsCharacter->GetUp() * physicsSystem.GetGravity().Length();
 	JPH::CharacterVirtual::ExtendedUpdateSettings extendedUpdateSettings; // @todo: for stepping up/down stairs
 	const JPH::BroadPhaseLayerFilter &broadPhaseLayerFilter = physicsSystem.GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING);

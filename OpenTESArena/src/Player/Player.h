@@ -90,9 +90,9 @@ struct Player
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
 	double getJumpMagnitude() const;
 
-	bool onGround() const;
+	bool onGround(const JPH::PhysicsSystem &physicsSystem) const;
 	bool isMoving() const;
-	bool canJump() const;
+	bool canJump(const JPH::PhysicsSystem &physicsSystem) const;
 
 	// Pitches and yaws relative to global up vector.
 	void rotateX(Degrees deltaX);

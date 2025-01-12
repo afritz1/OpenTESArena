@@ -85,7 +85,8 @@ namespace
 			static_cast<float>(ceilingScale + capsuleHalfTotalHeight),
 			static_cast<float>(capsuleWorldPointXZ.y));
 		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
-		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, PhysicsLayers::MOVING);
+		const JPH::ObjectLayer capsuleObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::MOVING;
+		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, capsuleObjectLayer);
 		capsuleSettings.mIsSensor = isSensor;
 
 		const JPH::Body *capsule = bodyInterface.CreateBody(capsuleSettings);
