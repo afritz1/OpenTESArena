@@ -38,6 +38,9 @@ struct EntityInstance
 	// Whether the entity is capable of moving + looking.
 	bool isDynamic() const;
 
+	// Whether the entity can be placed on raised platforms.
+	bool canUseElevatedPlatforms() const;
+
 	bool isCitizen() const;
 
 	bool hasInventory() const;

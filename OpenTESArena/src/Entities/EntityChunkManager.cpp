@@ -1000,6 +1000,40 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 	}
 }
 
+void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem)
+{
+	for (const VoxelFadeAnimationInstance &fadeAnimInst : voxelChunk.getFadeAnimInsts())
+	{
+		if (fadeAnimInst.isDoneFading())
+		{
+			for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
+			{
+				const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
+				const EntityInstance &entityInst = this->entities.get(entityInstID);
+				const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
+				const VoxelInt2 entityVoxel = VoxelUtils::pointToVoxel(entityCoord.point);
+
+				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.y == fadeAnimInst.z);
+				
+				// @todo: we don't know if this was a raised platform because the voxel shape has already changed this frame, so just assume yes for "can be elevated" entities
+				if (matchesFadedVoxel && entityInst.canUseElevatedPlatforms())
+				{
+					JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+					const JPH::BodyID entityPhysicsBodyID = entityInst.physicsBodyID;
+					const JPH::RVec3 oldEntityPhysicsPosition = bodyInterface.GetPosition(entityPhysicsBodyID);
+					const JPH::ShapeRefC entityPhysicsShape = bodyInterface.GetShape(entityPhysicsBodyID);
+					const JPH::AABox entityColliderBBox = entityPhysicsShape->GetLocalBounds();
+					const float entityColliderHeight = entityColliderBBox.GetSize().GetY();
+					const double newEntityFeetY = ceilingScale;
+					const double newEntityPhysicsCenterY = newEntityFeetY + (entityColliderHeight * 0.50);
+					const JPH::RVec3 newEntityPhysicsPosition(oldEntityPhysicsPosition.GetX(), newEntityPhysicsCenterY, oldEntityPhysicsPosition.GetZ());
+					bodyInterface.SetPosition(entityPhysicsBodyID, newEntityPhysicsPosition, JPH::EActivation::Activate);
+				}
+			}
+		}
+	}
+}
+
 void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
 	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
@@ -1080,6 +1114,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		}
 
 		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, audioManager);
+		this->updateFadedElevatedPlatforms(entityChunk, voxelChunk, ceilingScale, physicsSystem);
 	}
 }
 

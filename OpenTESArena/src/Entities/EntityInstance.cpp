@@ -24,6 +24,11 @@ bool EntityInstance::isDynamic() const
 	return this->directionID >= 0;
 }
 
+bool EntityInstance::canUseElevatedPlatforms() const
+{
+	return !this->isDynamic();
+}
+
 bool EntityInstance::isCitizen() const
 {
 	return this->citizenDirectionIndexID >= 0;
