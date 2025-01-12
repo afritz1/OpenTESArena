@@ -37,6 +37,7 @@ namespace
 		VoxelDouble2 point;
 		WorldDouble3 bboxMin, bboxMax; // Centered on the entity in model space
 		double animMaxHeight;
+		double feetY;
 		char initialAnimStateIndex;
 		bool isSensorCollider;
 		std::optional<Double2> direction;
@@ -50,6 +51,7 @@ namespace
 		{
 			this->defID = -1;
 			this->animMaxHeight = 0.0;
+			this->feetY = 0.0;
 			this->initialAnimStateIndex = -1;
 			this->isSensorCollider = false;
 			this->hasInventory = false;
@@ -57,7 +59,7 @@ namespace
 		}
 	};
 
-	bool TryCreatePhysicsCollider(const CoordDouble2 &coord, double colliderHeight, double ceilingScale, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const CoordDouble2 &coord, double colliderHeight, double feetY, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -82,7 +84,7 @@ namespace
 		const WorldDouble2 capsuleWorldPointXZ = VoxelUtils::coordToWorldPoint(coord); // @todo: use getEntityCorrectedY()
 		const JPH::RVec3 capsuleJoltPos(
 			static_cast<float>(capsuleWorldPointXZ.x),
-			static_cast<float>(ceilingScale + capsuleHalfTotalHeight),
+			static_cast<float>(feetY + capsuleHalfTotalHeight),
 			static_cast<float>(capsuleWorldPointXZ.y));
 		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
 		const JPH::ObjectLayer capsuleObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::MOVING;
@@ -132,6 +134,17 @@ namespace
 		}
 
 		return animTextureRefs;
+	}
+
+	double GetElevatedPlatformHeight(const VoxelShapeDefinition &voxelShapeDef)
+	{
+		if (!voxelShapeDef.isElevatedPlatform)
+		{
+			return 0.0;
+		}
+
+		DebugAssert(voxelShapeDef.type == VoxelShapeType::Box);
+		return voxelShapeDef.box.yOffset + voxelShapeDef.box.height;
 	}
 }
 
@@ -231,7 +244,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		
 		animInst.setStateIndex(initInfo.initialAnimStateIndex);
 
-		if (!TryCreatePhysicsCollider(entityCoord, initInfo.animMaxHeight, ceilingScale, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+		if (!TryCreatePhysicsCollider(entityCoord, initInfo.animMaxHeight, initInfo.feetY, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 		{
 			DebugLogError("Couldn't allocate entity Jolt physics body.");
 		}
@@ -316,10 +329,11 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		DebugAssert(initialAnimStateIndex.has_value());
 
 		std::optional<EntityDefID> entityDefID; // Global entity def ID (shared across all active chunks).
-		for (const WorldDouble3 &position : placementDef.positions)
+		for (const WorldDouble2 &worldPosition : placementDef.positions)
 		{
-			const WorldInt3 voxelPosition = VoxelUtils::pointToVoxel(position, ceilingScale);
-			if (!ChunkUtils::IsInWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
+			const WorldInt2 worldVoxelXZ = VoxelUtils::pointToVoxel(worldPosition);
+			const WorldInt3 worldVoxel(worldVoxelXZ.x, 1, worldVoxelXZ.y);
+			if (!ChunkUtils::IsInWritingRange(worldVoxel, startX, endX, startY, endY, startZ, endZ))
 			{
 				continue;
 			}
@@ -329,7 +343,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				entityDefID = this->getOrAddEntityDefID(entityDef, entityDefLibrary);
 			}
 
-			const VoxelDouble3 point = ChunkUtils::MakeChunkPointFromLevel(position, startX, startY, startZ);
+			const VoxelDouble2 point = ChunkUtils::MakeChunkPointFromLevel(worldPosition, startX, startZ);
+			const VoxelInt3 voxel = VoxelUtils::worldVoxelToCoord(worldVoxel).voxel;
 
 			double animMaxWidth, animMaxHeight;
 			EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
@@ -337,13 +352,18 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			EntityInitInfo initInfo;
 			initInfo.defID = *entityDefID;
-			initInfo.point = VoxelDouble2(point.x, point.z);
+			initInfo.point = point;
 
 			// Bounding box is centered on the entity in model space.
 			initInfo.bboxMin = WorldDouble3(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
 			initInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
 
 			initInfo.animMaxHeight = animMaxHeight;
+			
+			const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+			initInfo.feetY = ceilingScale + GetElevatedPlatformHeight(voxelShapeDef);
+
 			initInfo.initialAnimStateIndex = *initialAnimStateIndex;
 			initInfo.isSensorCollider = !EntityUtils::hasCollision(entityDef);
 
@@ -424,6 +444,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
 
 				citizenInitInfo.animMaxHeight = animMaxHeight;
+				citizenInitInfo.feetY = ceilingScale;
 				citizenInitInfo.initialAnimStateIndex = *initialCitizenAnimStateIndex;
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);

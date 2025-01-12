@@ -25,9 +25,9 @@ using LevelVoxelChasmDefID = int;
 struct LevelEntityPlacementDefinition
 {
 	LevelVoxelEntityDefID id;
-	std::vector<WorldDouble3> positions;
+	std::vector<WorldDouble2> positions;
 
-	LevelEntityPlacementDefinition(LevelVoxelEntityDefID id, std::vector<WorldDouble3> &&positions);
+	LevelEntityPlacementDefinition(LevelVoxelEntityDefID id, std::vector<WorldDouble2> &&positions);
 };
 
 struct LevelLockPlacementDefinition
@@ -137,7 +137,7 @@ public:
 	int getChasmPlacementDefCount() const;
 	const LevelChasmPlacementDefinition &getChasmPlacementDef(int index) const;
 
-	void addEntity(LevelVoxelEntityDefID id, const WorldDouble3 &position);
+	void addEntity(LevelVoxelEntityDefID id, const WorldDouble2 &position);
 	void addLock(LevelVoxelLockDefID id, const WorldInt3 &position);
 	void addTrigger(LevelVoxelTriggerDefID id, const WorldInt3 &position);
 	void addTransition(LevelVoxelTransitionDefID id, const WorldInt3 &position);

@@ -2,7 +2,7 @@
 
 #include "LevelDefinition.h"
 
-LevelEntityPlacementDefinition::LevelEntityPlacementDefinition(LevelVoxelEntityDefID id, std::vector<WorldDouble3> &&positions)
+LevelEntityPlacementDefinition::LevelEntityPlacementDefinition(LevelVoxelEntityDefID id, std::vector<WorldDouble2> &&positions)
 	: positions(std::move(positions))
 {
 	this->id = id;
@@ -226,7 +226,7 @@ const LevelChasmPlacementDefinition &LevelDefinition::getChasmPlacementDef(int i
 	return this->chasmPlacementDefs[index];
 }
 
-void LevelDefinition::addEntity(LevelVoxelEntityDefID id, const WorldDouble3 &position)
+void LevelDefinition::addEntity(LevelVoxelEntityDefID id, const WorldDouble2 &position)
 {
 	const auto iter = std::find_if(this->entityPlacementDefs.begin(), this->entityPlacementDefs.end(),
 		[id](const LevelEntityPlacementDefinition &def)
@@ -236,12 +236,12 @@ void LevelDefinition::addEntity(LevelVoxelEntityDefID id, const WorldDouble3 &po
 
 	if (iter != this->entityPlacementDefs.end())
 	{
-		std::vector<WorldDouble3> &positions = iter->positions;
+		std::vector<WorldDouble2> &positions = iter->positions;
 		positions.emplace_back(position);
 	}
 	else
 	{
-		this->entityPlacementDefs.emplace_back(id, std::vector<WorldDouble3> { position });
+		this->entityPlacementDefs.emplace_back(id, std::vector<WorldDouble2> { position });
 	}
 }
 

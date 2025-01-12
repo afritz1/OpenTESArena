@@ -1211,9 +1211,8 @@ namespace MapGeneration
 						entityCache->emplace(florVoxel, entityDefID);
 					}
 
-					const WorldDouble3 entityPos(
+					const WorldDouble2 entityPos(
 						static_cast<SNDouble>(levelX) + 0.50,
-						1.0, // Will probably be ignored in favor of raised platform top face.
 						static_cast<WEDouble>(levelZ) + 0.50);
 					outLevelDef->addEntity(entityDefID, entityPos);
 				}
@@ -1412,9 +1411,8 @@ namespace MapGeneration
 						entityCache->emplace(map1Voxel, entityDefID);
 					}
 
-					const WorldDouble3 entityPos(
+					const WorldDouble2 entityPos(
 						static_cast<SNDouble>(levelX) + 0.50,
-						1.0,
 						static_cast<WEDouble>(levelZ) + 0.50);
 					outLevelDef->addEntity(entityDefID, entityPos);
 				}
