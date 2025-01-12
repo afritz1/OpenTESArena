@@ -745,10 +745,10 @@ EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID body
 	// @todo: probably want a smarter lookup than this
 	for (int i = 0; i < this->entities.getTotalCount(); i++)
 	{
-		const EntityInstance &entityInst = this->entities.get(i);
-		if (entityInst.physicsBodyID == bodyID)
+		const EntityInstance *entityInst = this->entities.tryGet(i);
+		if (entityInst != nullptr && entityInst->physicsBodyID == bodyID)
 		{
-			return entityInst.instanceID;
+			return entityInst->instanceID;
 		}
 	}
 
