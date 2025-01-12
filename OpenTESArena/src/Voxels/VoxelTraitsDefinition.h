@@ -16,11 +16,6 @@ struct VoxelTraitsDefinition
 		bool isWildWallColored;
 	};
 
-	struct Raised
-	{
-		double yOffset, ySize;
-	};
-
 	struct TransparentWall
 	{
 		// @todo: maybe put in some VoxelCollisionTraitsDefinition? For other voxels, their collision def would assume 'always a collider'.
@@ -48,7 +43,6 @@ struct VoxelTraitsDefinition
 	union
 	{
 		Floor floor;
-		Raised raised;
 		TransparentWall transparentWall;
 		Edge edge;
 		Chasm chasm;
@@ -58,7 +52,6 @@ struct VoxelTraitsDefinition
 
 	void initGeneral(ArenaTypes::VoxelType type); // @todo: ideally this function wouldn't be needed
 	void initFloor(bool isWildWallColored);
-	void initRaised(double yOffset, double ySize);
 	void initTransparentWall(bool collider);
 	void initEdge(VoxelFacing2D facing, bool collider);
 	void initChasm(ArenaTypes::ChasmType chasmType);

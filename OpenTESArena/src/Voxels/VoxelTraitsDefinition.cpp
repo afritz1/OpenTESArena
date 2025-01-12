@@ -20,13 +20,6 @@ void VoxelTraitsDefinition::initFloor(bool isWildWallColored)
 	this->floor.isWildWallColored = isWildWallColored;
 }
 
-void VoxelTraitsDefinition::initRaised(double yOffset, double ySize)
-{
-	this->initGeneral(ArenaTypes::VoxelType::Raised);
-	this->raised.yOffset = yOffset;
-	this->raised.ySize = ySize;
-}
-
 void VoxelTraitsDefinition::initTransparentWall(bool collider)
 {
 	this->initGeneral(ArenaTypes::VoxelType::TransparentWall);

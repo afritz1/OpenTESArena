@@ -483,6 +483,27 @@ namespace ArenaMeshUtils
 		}
 	}
 
+	constexpr bool IsElevatedPlatform(ArenaTypes::VoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaTypes::VoxelType::None:
+		case ArenaTypes::VoxelType::Wall:
+		case ArenaTypes::VoxelType::Floor:
+		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaTypes::VoxelType::Edge:
+		case ArenaTypes::VoxelType::Chasm:
+		case ArenaTypes::VoxelType::Door:
+			return false;
+		case ArenaTypes::VoxelType::Raised:
+			return true;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
 	// Mesh writing functions. All of these are in unscaled model space.
 	void WriteWallUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals);
 	void WriteWallRendererGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);

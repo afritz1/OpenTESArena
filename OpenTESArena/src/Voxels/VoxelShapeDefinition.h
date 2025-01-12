@@ -70,6 +70,7 @@ struct VoxelShapeDefinition
 	bool allowsAdjacentDoorFaces; // For voxels that don't prevent a door's face from rendering.
 	bool enablesNeighborGeometry; // For voxels that influence adjacent context-sensitive voxels like chasms.
 	bool isContextSensitive; // For voxels like chasms whose geometry is conditional to what's around them.
+	bool isElevatedPlatform; // For voxels that entities sit on top of and for letting player sleep in peace.
 
 	VoxelShapeDefinition();
 

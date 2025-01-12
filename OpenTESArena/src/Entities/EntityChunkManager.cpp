@@ -898,20 +898,18 @@ double EntityChunkManager::getEntityCorrectedY(EntityInstanceID id, double ceili
 	const double entityDefYOffset = static_cast<double>(-entityDefArenaYOffset) / MIFUtils::ARENA_UNITS;
 	constexpr int entityVoxelY = 1; // All entities are at Y=1 in the grid.
 
-	// If they are in a raised platform voxel, they are set on top of it.
-	double raisedPlatformYOffset = 0.0;
-	const VoxelTraitsDefID voxelTraitsDefID = chunk->getTraitsDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
-	const VoxelTraitsDefinition &voxelTraitsDef = chunk->getTraitsDef(voxelTraitsDefID);
-	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Raised)
+	double platformYOffset = 0.0;
+	const VoxelShapeDefID voxelShapeDefID = chunk->getShapeDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
+	const VoxelShapeDefinition &voxelShapeDef = chunk->getShapeDef(voxelShapeDefID);
+	if (voxelShapeDef.isElevatedPlatform)
 	{
-		const VoxelTraitsDefinition::Raised &raised = voxelTraitsDef.raised;
-		const double shapeYPos = raised.yOffset + raised.ySize;
-		const VoxelShapeDefID voxelShapeDefID = chunk->getShapeDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
-		const VoxelShapeDefinition &voxelShapeDef = chunk->getShapeDef(voxelShapeDefID);
-		raisedPlatformYOffset = MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
+		// Set entity on top of platform.
+		DebugAssert(voxelShapeDef.type == VoxelShapeType::Box);
+		const double shapeYPos = voxelShapeDef.box.yOffset + voxelShapeDef.box.height;
+		platformYOffset = MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}
 
-	return baseYPosition + entityDefYOffset + raisedPlatformYOffset;
+	return baseYPosition + entityDefYOffset + platformYOffset;
 }
 
 CoordDouble3 EntityChunkManager::getEntityPosition3D(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const

@@ -158,4 +158,5 @@ void VoxelShapeDefinition::initBoxFromClassic(ArenaTypes::VoxelType voxelType, V
 	this->allowsAdjacentDoorFaces = ArenaMeshUtils::AllowsAdjacentDoorFaces(voxelType);
 	this->enablesNeighborGeometry = ArenaMeshUtils::EnablesNeighborVoxelGeometry(voxelType);
 	this->isContextSensitive = ArenaMeshUtils::HasContextSensitiveGeometry(voxelType);
+	this->isElevatedPlatform = ArenaMeshUtils::IsElevatedPlatform(voxelType);
 }

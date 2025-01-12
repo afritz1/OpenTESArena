@@ -424,8 +424,8 @@ namespace MapGeneration
 
 	void writeVoxelInfoForMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf,
 		const ExeData &exeData, ArenaTypes::VoxelType *outVoxelType, ArenaMeshUtils::ShapeInitCache *outShapeInitCache,
-		TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1, TextureAsset *outTextureAsset2, double *outYOffset,
-		double *outYSize, bool *outIsCollider, VoxelFacing2D *outFacing)
+		TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1, TextureAsset *outTextureAsset2, bool *outIsCollider,
+		VoxelFacing2D *outFacing)
 	{
 		DebugAssert(map1Voxel != 0);
 		DebugAssert(mostSigNibble != 0x8);
@@ -561,9 +561,6 @@ namespace MapGeneration
 				*outTextureAsset2 = TextureAsset(
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedCeilingID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedCeilingID, inf));
-
-				*outYOffset = yOffset;
-				*outYSize = ySize;
 			}
 		}
 		else
@@ -725,11 +722,10 @@ namespace MapGeneration
 		ArenaTypes::VoxelType voxelType;
 		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
-		double yOffset, ySize;
 		bool isCollider;
 		VoxelFacing2D facing;
 		MapGeneration::writeVoxelInfoForMAP1(map1Voxel, mostSigNibble, mapType, inf, exeData, &voxelType, &shapeInitCache,
-			&textureAsset0, &textureAsset1, &textureAsset2, &yOffset, &ySize, &isCollider, &facing);
+			&textureAsset0, &textureAsset1, &textureAsset2, &isCollider, &facing);
 
 		VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
 		if (voxelType == ArenaTypes::VoxelType::Raised)
@@ -750,9 +746,6 @@ namespace MapGeneration
 
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::Raised:
-			outTraitsDef->initRaised(yOffset, ySize);
-			break;
 		case ArenaTypes::VoxelType::TransparentWall:
 			outTraitsDef->initTransparentWall(isCollider);
 			break;
