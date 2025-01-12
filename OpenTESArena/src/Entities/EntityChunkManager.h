@@ -104,6 +104,8 @@ public:
 	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;
 	ItemInventory &getEntityItemInventory(EntityItemInventoryInstanceID id);
 
+	EntityInstanceID getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const;
+
 	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
 	// simulated or rendered.
 	BufferView<const EntityInstanceID> getQueuedDestroyEntityIDs() const;

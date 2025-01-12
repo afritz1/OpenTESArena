@@ -735,6 +735,26 @@ ItemInventory &EntityChunkManager::getEntityItemInventory(EntityItemInventoryIns
 	return this->itemInventories.get(id);
 }
 
+EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const
+{
+	if (bodyID.IsInvalid())
+	{
+		return -1;
+	}
+
+	// @todo: probably want a smarter lookup than this
+	for (int i = 0; i < this->entities.getTotalCount(); i++)
+	{
+		const EntityInstance &entityInst = this->entities.get(i);
+		if (entityInst.physicsBodyID == bodyID)
+		{
+			return entityInst.instanceID;
+		}
+	}
+
+	return -1;
+}
+
 int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
 {
 	int count = 0;

@@ -774,7 +774,7 @@ void Game::loop()
 	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
 
 	PhysicsBodyActivationListener physicsBodyActivationListener;
-	PhysicsContactListener physicsContactListener;
+	PhysicsContactListener physicsContactListener(*this);
 	this->physicsSystem.SetBodyActivationListener(&physicsBodyActivationListener);
 	this->physicsSystem.SetContactListener(&physicsContactListener);
 
