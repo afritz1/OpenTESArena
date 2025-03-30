@@ -1,5 +1,4 @@
 #include "Jolt/Jolt.h"
-#include "Jolt/Physics/PhysicsSettings.h"
 
 #include "CollisionChunk.h"
 #include "Physics.h"
@@ -21,51 +20,26 @@ void CollisionChunk::init(const ChunkInt2 &position, int height)
 	this->enabledColliders.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->enabledColliders.fill(false);
 
-	this->physicsBodyIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->physicsBodyIDs.fill(Physics::INVALID_BODY_ID);
+	this->nonMovingCompoundBodyID = JPH::BodyID();
+	this->sensorCompoundBodyID = JPH::BodyID();
+	//this->physicsSubShapeIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	//this->physicsSubShapeIDs.fill(Physics::INVALID_SUB_SHAPE_ID);
 }
 
-void CollisionChunk::freePhysicsBodyIDs(JPH::BodyInterface &bodyInterface)
+void CollisionChunk::freePhysicsCompoundBodies(JPH::BodyInterface &bodyInterface)
 {
-	const SNInt chunkWidth = this->physicsBodyIDs.getWidth();
-	const int chunkHeight = this->physicsBodyIDs.getHeight();
-	const WEInt chunkDepth = this->physicsBodyIDs.getDepth();
-	const int estimatedBodyIDCount = chunkWidth * chunkHeight * chunkDepth;
-
-	std::vector<JPH::BodyID> bodyIDsToRemove;
-	std::vector<JPH::BodyID> bodyIDsToDestroy;
-	bodyIDsToRemove.reserve(estimatedBodyIDCount);
-	bodyIDsToDestroy.reserve(estimatedBodyIDCount);
-
-	for (WEInt z = 0; z < chunkDepth; z++)
+	if (!this->nonMovingCompoundBodyID.IsInvalid())
 	{
-		for (int y = 0; y < chunkHeight; y++)
-		{
-			for (SNInt x = 0; x < chunkWidth; x++)
-			{
-				JPH::BodyID &bodyID = this->physicsBodyIDs.get(x, y, z);
-				if (!bodyID.IsInvalid())
-				{
-					if (bodyInterface.IsAdded(bodyID))
-					{
-						bodyIDsToRemove.emplace_back(bodyID);
-					}
-
-					bodyIDsToDestroy.emplace_back(bodyID);
-					bodyID = Physics::INVALID_BODY_ID;
-				}
-			}
-		}
+		bodyInterface.RemoveBody(this->nonMovingCompoundBodyID);
+		bodyInterface.DestroyBody(this->nonMovingCompoundBodyID);
+		this->nonMovingCompoundBodyID = Physics::INVALID_BODY_ID;
 	}
 
-	if (!bodyIDsToRemove.empty())
+	if (!this->sensorCompoundBodyID.IsInvalid())
 	{
-		bodyInterface.RemoveBodies(bodyIDsToRemove.data(), static_cast<int>(bodyIDsToRemove.size()));
-	}
-	
-	if (!bodyIDsToDestroy.empty())
-	{
-		bodyInterface.DestroyBodies(bodyIDsToDestroy.data(), static_cast<int>(bodyIDsToDestroy.size()));
+		bodyInterface.RemoveBody(this->sensorCompoundBodyID);
+		bodyInterface.DestroyBody(this->sensorCompoundBodyID);
+		this->sensorCompoundBodyID = Physics::INVALID_BODY_ID;
 	}
 }
 
@@ -76,7 +50,9 @@ void CollisionChunk::clear()
 	this->shapeMappings.clear();
 	this->shapeDefIDs.clear();
 	this->enabledColliders.clear();
-	this->physicsBodyIDs.clear();
+	DebugAssert(this->nonMovingCompoundBodyID == Physics::INVALID_BODY_ID);
+	DebugAssert(this->sensorCompoundBodyID == Physics::INVALID_BODY_ID);
+	//this->physicsSubShapeIDs.clear();
 }
 
 int CollisionChunk::getCollisionShapeDefCount() const

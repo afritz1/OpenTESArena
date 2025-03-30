@@ -29,10 +29,10 @@ namespace Physics
 	// Shape creation tweaks.
 	constexpr double BoxConvexRadius = 0.020;
 
-	// Magnitude of -Y acceleration in the air.
 	constexpr double GRAVITY = 9.81;
 
 	const JPH::BodyID INVALID_BODY_ID;
+	const JPH::SubShapeID INVALID_SUB_SHAPE_ID;
 
 	// @todo: bit mask elements for each voxel type.
 
