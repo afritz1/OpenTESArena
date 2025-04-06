@@ -2,7 +2,7 @@
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Body/BodyLock.h"
 #include "Jolt/Physics/Collision/Shape/BoxShape.h"
-#include "Jolt/Physics/Collision/Shape/MutableCompoundShape.h"
+#include "Jolt/Physics/Collision/Shape/StaticCompoundShape.h"
 
 #include "CollisionChunkManager.h"
 #include "CollisionShapeDefinition.h"
@@ -13,12 +13,14 @@
 
 namespace
 {
-	JPH::MutableCompoundShape *GetShapeAsCompoundShape(JPH::Shape *shape)
+	enum class CompoundShapeCategory
 	{
-		return static_cast<JPH::MutableCompoundShape*>(shape);
-	}
+		Walls,
+		Doors,
+		Sensors
+	};
 
-	JPH::MutableCompoundShape *GetCompoundShapeFromBody(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
+	JPH::CompoundShape *GetCompoundShapeFromBody(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
 	{
 		if (bodyID.IsInvalid())
 		{
@@ -32,8 +34,16 @@ namespace
 		}
 
 		JPH::Body &physicsCompoundBody = lock.GetBody();
-		JPH::MutableCompoundShape *mutShape = GetShapeAsCompoundShape(const_cast<JPH::Shape*>(physicsCompoundBody.GetShape()));
-		return mutShape;
+		JPH::CompoundShape *shape = static_cast<JPH::CompoundShape*>(const_cast<JPH::Shape*>(physicsCompoundBody.GetShape()));
+		return shape;
+	}
+
+	JPH::StaticCompoundShape *GetStaticCompoundShapeFromBody(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
+	{
+		JPH::CompoundShape *baseShape = GetCompoundShapeFromBody(bodyID, physicsSystem);
+		DebugAssert(baseShape != nullptr);
+		JPH::StaticCompoundShape *shape = static_cast<JPH::StaticCompoundShape*>(baseShape);
+		return shape;
 	}
 
 	void MakePhysicsColliderInitValues(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, const CollisionShapeDefinition &collisionShapeDef,
@@ -63,20 +73,116 @@ namespace
 		const RadiansF boxYRotation = static_cast<RadiansF>(boxShapeDef.yRotation);
 		*outRotation = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), boxYRotation);
 	}
+
+	JPH::BodyID createChunkCompoundShape(const CollisionChunk &collisionChunk, const VoxelChunk &voxelChunk, double ceilingScale, CompoundShapeCategory category, JPH::PhysicsSystem &physicsSystem)
+	{
+		const ChunkInt2 chunkPos = collisionChunk.getPosition();
+		const int chunkHeight = collisionChunk.getHeight();
+
+		JPH::StaticCompoundShapeSettings compoundShapeSettings;
+		compoundShapeSettings.SetEmbedded();
+
+		std::vector<JPH::Ref<JPH::BoxShapeSettings>> boxShapeSettingsList; // Freed at end of scope
+
+		for (WEInt z = 0; z < Chunk::DEPTH; z++)
+		{
+			for (int y = 0; y < chunkHeight; y++)
+			{
+				for (SNInt x = 0; x < Chunk::WIDTH; x++)
+				{
+					bool isTriggerVoxel = false;
+					VoxelTriggerDefID triggerDefID;
+					if (voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID))
+					{
+						const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.getTriggerDef(triggerDefID);
+						isTriggerVoxel = voxelTriggerDef.hasValidDef();
+					}
+
+					bool isInteriorLevelChangeVoxel = false;
+					VoxelTransitionDefID transitionDefID;
+					if (voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
+					{
+						const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
+						isInteriorLevelChangeVoxel = transitionDef.type == TransitionType::InteriorLevelChange;
+					}
+
+					bool isDoorVoxel = false;
+					bool isClosedDoor = false;
+					VoxelDoorDefID doorDefID;
+					if (voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID))
+					{
+						isDoorVoxel = true;
+						int doorAnimInstIndex;
+						if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
+						{
+							const BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
+							const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
+							isClosedDoor = doorAnimInst.stateType == VoxelDoorAnimationInstance::StateType::Closed;
+						}
+						else
+						{
+							isClosedDoor = true;
+						}
+					}
+
+					const bool voxelHasCollision = collisionChunk.enabledColliders.get(x, y, z);
+					const bool isSensorCollider = isTriggerVoxel || isInteriorLevelChangeVoxel;
+
+					const bool shouldAddWall = (voxelHasCollision && !isSensorCollider && !isDoorVoxel) && (category == CompoundShapeCategory::Walls);
+					const bool shouldAddDoor = isClosedDoor && (category == CompoundShapeCategory::Doors);
+					const bool shouldAddSensor = isSensorCollider && (category == CompoundShapeCategory::Sensors);
+					const bool shouldCreateCollider = shouldAddWall || shouldAddDoor || shouldAddSensor;
+
+					if (shouldCreateCollider)
+					{
+						const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
+						const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+						const CollisionShapeDefID collisionShapeDefID = collisionChunk.shapeDefIDs.get(x, y, z);
+						const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
+
+						boxShapeSettingsList.emplace_back(new JPH::BoxShapeSettings());
+						JPH::BoxShapeSettings *boxShapeSettings = boxShapeSettingsList.back().GetPtr();
+
+						JPH::Vec3 boxPosition;
+						JPH::Quat boxRotation;
+						MakePhysicsColliderInitValues(x, y, z, chunkPos, collisionShapeDef, voxelShapeDef.scaleType, ceilingScale, isSensorCollider, physicsSystem, boxShapeSettings, &boxPosition, &boxRotation);
+
+						compoundShapeSettings.AddShape(boxPosition, boxRotation, boxShapeSettings);
+					}
+				}
+			}
+		}
+
+		if (compoundShapeSettings.mSubShapes.empty())
+		{
+			// Jolt doesn't like creating a compound shape with 0 sub-shapes
+			return Physics::INVALID_BODY_ID;
+		}
+
+		const JPH::Vec3 compoundBodyPosition = JPH::Vec3::sZero();
+		const JPH::Quat compoundBodyRotation = JPH::Quat::sIdentity();
+		const JPH::ObjectLayer objectLayer = (category == CompoundShapeCategory::Sensors) ? PhysicsLayers::SENSOR : PhysicsLayers::NON_MOVING;
+		JPH::BodyCreationSettings compoundBodyCreationSettings(&compoundShapeSettings, compoundBodyPosition, compoundBodyRotation, JPH::EMotionType::Static, objectLayer);
+
+		if (category == CompoundShapeCategory::Walls)
+		{
+			// Keep player from erratically hopping/skipping as much when running due to no contact welding in Jolt.
+			compoundBodyCreationSettings.mEnhancedInternalEdgeRemoval = true;
+		}
+		else if (category == CompoundShapeCategory::Sensors)
+		{
+			compoundBodyCreationSettings.mIsSensor = true;
+		}
+
+		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+		JPH::BodyID compoundBodyID = bodyInterface.CreateAndAddBody(compoundBodyCreationSettings, JPH::EActivation::Activate);
+		return compoundBodyID;
+	}
 }
 
-void CollisionChunkManager::populateChunk(int index, double ceilingScale, const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem)
+void CollisionChunkManager::populateChunkShapeDefs(CollisionChunk &collisionChunk, const VoxelChunk &voxelChunk)
 {
-	const int chunkHeight = voxelChunk.getHeight();
-	CollisionChunk &collisionChunk = this->getChunkAtIndex(index);
-	collisionChunk.init(chunkPos, chunkHeight);
-
-	JPH::MutableCompoundShapeSettings nonMovingCompoundSettings;
-	JPH::MutableCompoundShapeSettings sensorCompoundSettings;
-	nonMovingCompoundSettings.SetEmbedded();
-	sensorCompoundSettings.SetEmbedded();
-
-	std::vector<JPH::Ref<JPH::BoxShapeSettings>> boxShapeSettingsList; // Freed at end of scope
+	const int chunkHeight = collisionChunk.getHeight();
 
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
@@ -85,75 +191,65 @@ void CollisionChunkManager::populateChunk(int index, double ceilingScale, const 
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
-				const CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
+				CollisionShapeDefID collisionShapeDefID = collisionChunk.findShapeDefIdMapping(voxelChunk, voxelShapeDefID);
+				if (collisionShapeDefID == -1)
+				{
+					collisionShapeDefID = collisionChunk.addShapeDefIdMapping(voxelChunk, voxelShapeDefID);
+				}
+
 				collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
-
-				const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
-				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-				const bool voxelHasCollision = voxelTraitsDef.hasCollision();
-				collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
-
-				bool isTriggerVoxel = false;
-				VoxelTriggerDefID triggerDefID;
-				if (voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID))
-				{
-					const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.getTriggerDef(triggerDefID);
-					isTriggerVoxel = voxelTriggerDef.hasValidDef();
-				}
-
-				bool isInteriorLevelChangeVoxel = false;
-				VoxelTransitionDefID transitionDefID;
-				if (voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
-				{
-					const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
-					isInteriorLevelChangeVoxel = transitionDef.type == TransitionType::InteriorLevelChange;
-				}
-
-				const bool isSensorCollider = isTriggerVoxel || isInteriorLevelChangeVoxel;
-				const bool shouldCreateCollider = voxelHasCollision || isSensorCollider;
-
-				if (shouldCreateCollider)
-				{
-					const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
-					const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
-
-					boxShapeSettingsList.emplace_back(new JPH::BoxShapeSettings());
-					JPH::BoxShapeSettings *boxShapeSettings = boxShapeSettingsList.back().GetPtr();
-
-					JPH::Vec3 boxPosition;
-					JPH::Quat boxRotation;
-					MakePhysicsColliderInitValues(x, y, z, chunkPos, collisionShapeDef, voxelShapeDef.scaleType, ceilingScale, isSensorCollider, physicsSystem, boxShapeSettings, &boxPosition, &boxRotation);
-
-					if (isSensorCollider)
-					{
-						sensorCompoundSettings.AddShape(boxPosition, boxRotation, boxShapeSettings);
-					}
-					else
-					{
-						nonMovingCompoundSettings.AddShape(boxPosition, boxRotation, boxShapeSettings);
-					}
-
-					//collisionChunk.physicsSubShapeIDs.set(x, y, z, bodyID); // @todo: not sure how to create/get subshapeid at this stage
-				}
 			}
 		}
 	}
+}
 
-	const JPH::Vec3 compoundBodyPosition = JPH::Vec3::sZero();
-	const JPH::Quat compoundBodyRotation = JPH::Quat::sIdentity();
-	JPH::BodyCreationSettings nonMovingCompoundBodyCreationSettings(&nonMovingCompoundSettings, compoundBodyPosition, compoundBodyRotation, JPH::EMotionType::Static, PhysicsLayers::NON_MOVING);
-	JPH::BodyCreationSettings sensorCompoundBodyCreationSettings(&sensorCompoundSettings, compoundBodyPosition, compoundBodyRotation, JPH::EMotionType::Static, PhysicsLayers::SENSOR);
-	
-	// Keep player from erratically hopping/skipping when running due to no contact welding in Jolt.
-	nonMovingCompoundBodyCreationSettings.mEnhancedInternalEdgeRemoval = true;
+void CollisionChunkManager::populateChunkEnabledColliders(CollisionChunk &collisionChunk, const VoxelChunk &voxelChunk)
+{
+	const int chunkHeight = collisionChunk.getHeight();
 
-	sensorCompoundBodyCreationSettings.mIsSensor = true;
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	{
+		for (int y = 0; y < chunkHeight; y++)
+		{
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			{
+				bool voxelHasCollision = false;
 
-	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
-	collisionChunk.nonMovingCompoundBodyID = bodyInterface.CreateAndAddBody(nonMovingCompoundBodyCreationSettings, JPH::EActivation::Activate);
-	collisionChunk.sensorCompoundBodyID = bodyInterface.CreateAndAddBody(sensorCompoundBodyCreationSettings, JPH::EActivation::Activate);
+				int doorAnimInstIndex;
+				if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
+				{
+					const BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
+					const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
+					voxelHasCollision = doorAnimInst.stateType == VoxelDoorAnimationInstance::StateType::Closed;
+				}
+				else
+				{
+					const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
+					const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+					voxelHasCollision = voxelTraitsDef.hasCollision();
+				}
 
-	// @todo: set all collisionChunk.physicsSubShapeIDs?
+				collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
+			}
+		}
+	}
+}
+
+void CollisionChunkManager::populateChunk(int index, double ceilingScale, const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem)
+{
+	const int chunkHeight = voxelChunk.getHeight();
+	CollisionChunk &collisionChunk = this->getChunkAtIndex(index);
+	collisionChunk.init(chunkPos, chunkHeight);
+
+	populateChunkShapeDefs(collisionChunk, voxelChunk); // @todo: give positions span that is all WxHxD
+	populateChunkEnabledColliders(collisionChunk, voxelChunk); // @todo: give positions span that is all WxHxD
+
+	DebugAssert(collisionChunk.wallCompoundBodyID == Physics::INVALID_BODY_ID);
+	DebugAssert(collisionChunk.doorCompoundBodyID == Physics::INVALID_BODY_ID);
+	DebugAssert(collisionChunk.sensorCompoundBodyID == Physics::INVALID_BODY_ID);
+	collisionChunk.wallCompoundBodyID = createChunkCompoundShape(collisionChunk, voxelChunk, ceilingScale, CompoundShapeCategory::Walls, physicsSystem);
+	collisionChunk.doorCompoundBodyID = createChunkCompoundShape(collisionChunk, voxelChunk, ceilingScale, CompoundShapeCategory::Doors, physicsSystem);
+	collisionChunk.sensorCompoundBodyID = createChunkCompoundShape(collisionChunk, voxelChunk, ceilingScale, CompoundShapeCategory::Sensors, physicsSystem);
 }
 
 void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double ceilingScale, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem)
@@ -161,130 +257,47 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 	CollisionChunk &collisionChunk = this->getChunkAtPosition(chunkPos);
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
+	// @todo: this dirty shapes list might be full of 10k brand new voxels this frame, so we're accidentally destroying + recreating them all (found during the AddBodiesPrepare/Finalize() work)
+
 	const BufferView<const VoxelInt3> dirtyShapeDefPositions = voxelChunk.getDirtyShapeDefPositions();
 	const BufferView<const VoxelInt3> dirtyDoorAnimInstPositions = voxelChunk.getDirtyDoorAnimInstPositions();
 
-	JPH::MutableCompoundShape *nonMovingCompoundShape = GetCompoundShapeFromBody(collisionChunk.nonMovingCompoundBodyID, physicsSystem);
-
-	/*std::vector<JPH::BodyID> bodyIDsToAdd;
-	std::vector<JPH::BodyID> bodyIDsToRemove;
-	std::vector<JPH::BodyID> bodyIDsToDestroy;
-	bodyIDsToAdd.reserve(dirtyShapeDefPositions.getCount());
-	bodyIDsToRemove.reserve(dirtyDoorAnimInstPositions.getCount());
-	bodyIDsToDestroy.reserve(dirtyShapeDefPositions.getCount());*/
-
-	// @todo: this dirty shapes list might be full of brand new voxels this frame, so we're accidentally destroying + recreating them all (found during the AddBodiesPrepare/Finalize() work)
-	for (const VoxelInt3 &voxelPos : dirtyShapeDefPositions)
+	if (dirtyShapeDefPositions.getCount() > 0)
 	{
-		const SNInt x = voxelPos.x;
-		const int y = voxelPos.y;
-		const WEInt z = voxelPos.z;
-		const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
-		const CollisionShapeDefID collisionShapeDefID = collisionChunk.getOrAddShapeDefIdMapping(voxelChunk, voxelShapeDefID);
-		collisionChunk.shapeDefIDs.set(x, y, z, collisionShapeDefID);
-
-		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
-		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-		const bool voxelHasCollision = voxelTraitsDef.hasCollision();
-		collisionChunk.enabledColliders.set(x, y, z, voxelHasCollision);
-
-		// @todo
-		/*JPH::BodyID existingBodyID = collisionChunk.physicsBodyIDs.get(x, y, z);
-		if (!existingBodyID.IsInvalid())
+		if (collisionChunk.wallCompoundBodyID != Physics::INVALID_BODY_ID)
 		{
-			if (bodyInterface.IsAdded(existingBodyID))
-			{
-				bodyIDsToRemove.emplace_back(existingBodyID);
-			}
-
-			bodyIDsToDestroy.emplace_back(existingBodyID);
-			collisionChunk.physicsBodyIDs.set(x, y, z, Physics::INVALID_BODY_ID);
-		}*/
-
-		bool isTriggerVoxel = false;
-		VoxelTriggerDefID triggerDefID;
-		if (voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID))
-		{
-			const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.getTriggerDef(triggerDefID);
-			isTriggerVoxel = voxelTriggerDef.hasValidDef();
+			bodyInterface.RemoveBody(collisionChunk.wallCompoundBodyID);
+			bodyInterface.DestroyBody(collisionChunk.wallCompoundBodyID);
+			collisionChunk.wallCompoundBodyID = Physics::INVALID_BODY_ID;
 		}
 
-		bool isInteriorLevelChangeVoxel = false;
-		VoxelTransitionDefID transitionDefID;
-		if (voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
+		if (collisionChunk.sensorCompoundBodyID != Physics::INVALID_BODY_ID)
 		{
-			const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
-			isInteriorLevelChangeVoxel = transitionDef.type == TransitionType::InteriorLevelChange;
+			bodyInterface.RemoveBody(collisionChunk.sensorCompoundBodyID);
+			bodyInterface.DestroyBody(collisionChunk.sensorCompoundBodyID);
+			collisionChunk.sensorCompoundBodyID = Physics::INVALID_BODY_ID;
 		}
 
-		const bool isSensorCollider = isTriggerVoxel || isInteriorLevelChangeVoxel;
-		const bool shouldCreateCollider = voxelHasCollision || isSensorCollider;
+		populateChunkShapeDefs(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
+		populateChunkEnabledColliders(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
 
-		if (shouldCreateCollider)
-		{
-			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
-			const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
-
-			// @todo
-
-			/*// Generate collider but don't add to simulation yet.
-			JPH::BodyID bodyID;
-			if (TryCreatePhysicsColliderInitInfo(x, y, z, chunkPos, collisionShapeDef, voxelShapeDef.scaleType, ceilingScale, isSensorCollider, physicsSystem, &bodyID))
-			{
-				collisionChunk.physicsBodyIDs.set(x, y, z, bodyID);
-			}*/
-
-			//bodyIDsToAdd.emplace_back(bodyID);
-		}
+		collisionChunk.wallCompoundBodyID = createChunkCompoundShape(collisionChunk, voxelChunk, ceilingScale, CompoundShapeCategory::Walls, physicsSystem);
+		collisionChunk.sensorCompoundBodyID = createChunkCompoundShape(collisionChunk, voxelChunk, ceilingScale, CompoundShapeCategory::Sensors, physicsSystem);
 	}
 
-	for (const VoxelInt3 &voxelPos : dirtyDoorAnimInstPositions)
+	if (dirtyDoorAnimInstPositions.getCount() > 0)
 	{
-		int doorAnimInstIndex;
-		const bool success = voxelChunk.tryGetDoorAnimInstIndex(voxelPos.x, voxelPos.y, voxelPos.z, &doorAnimInstIndex);
-		DebugAssertMsg(success, "Expected door anim inst to be available for (" + voxelPos.toString() + ").");
-		
-		const BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
-		const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
-		const bool shouldEnableDoorCollider = doorAnimInst.stateType == VoxelDoorAnimationInstance::StateType::Closed;
-		collisionChunk.enabledColliders.set(voxelPos.x, voxelPos.y, voxelPos.z, shouldEnableDoorCollider);
-
-		/*const JPH::BodyID &bodyID = collisionChunk.physicsBodyIDs.get(voxelPos.x, voxelPos.y, voxelPos.z);
-		DebugAssertMsg(!bodyID.IsInvalid(), "Expected valid Jolt body for door voxel at (" + voxelPos.toString() + ") in chunk (" + chunkPos.toString() + ").");*/
-
-		if (shouldEnableDoorCollider)
+		if (collisionChunk.doorCompoundBodyID != Physics::INVALID_BODY_ID)
 		{
-			/*if (!bodyInterface.IsAdded(bodyID))
-			{
-				bodyIDsToAdd.emplace_back(bodyID);
-			}*/
+			bodyInterface.RemoveBody(collisionChunk.doorCompoundBodyID);
+			bodyInterface.DestroyBody(collisionChunk.doorCompoundBodyID);
+			collisionChunk.doorCompoundBodyID = Physics::INVALID_BODY_ID;
 		}
-		else
-		{
-			/*if (bodyInterface.IsAdded(bodyID))
-			{
-				bodyIDsToRemove.emplace_back(bodyID);
-			}*/
-		}
-	}
 
-	// Do bulk adds/removes for efficiency.
-	/*if (!bodyIDsToAdd.empty())
-	{
-		const int bodyIDAddCount = static_cast<int>(bodyIDsToAdd.size());
-		JPH::BodyInterface::AddState bodyAddState = bodyInterface.AddBodiesPrepare(bodyIDsToAdd.data(), bodyIDAddCount);
-		bodyInterface.AddBodiesFinalize(bodyIDsToAdd.data(), bodyIDAddCount, bodyAddState, JPH::EActivation::Activate);
-	}
-	
-	if (!bodyIDsToRemove.empty())
-	{
-		bodyInterface.RemoveBodies(bodyIDsToRemove.data(), static_cast<int>(bodyIDsToRemove.size()));
-	}
+		populateChunkEnabledColliders(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
 
-	if (!bodyIDsToDestroy.empty())
-	{
-		bodyInterface.DestroyBodies(bodyIDsToDestroy.data(), static_cast<int>(bodyIDsToDestroy.size()));
-	}*/
+		collisionChunk.doorCompoundBodyID = createChunkCompoundShape(collisionChunk, voxelChunk, ceilingScale, CompoundShapeCategory::Doors, physicsSystem);
+	}
 }
 
 void CollisionChunkManager::update(double dt, BufferView<const ChunkInt2> activeChunkPositions,

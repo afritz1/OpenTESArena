@@ -24,9 +24,9 @@ public:
 	Buffer3D<CollisionShapeDefID> shapeDefIDs;
 	Buffer3D<bool> enabledColliders; // @todo: decide if this is obsolete and whether the Body can store its in/out of world state
 	
-	JPH::BodyID nonMovingCompoundBodyID; // Holds NON_MOVING colliders, uses enhanced internal edge removal setting.
-	JPH::BodyID sensorCompoundBodyID; // Holds SENSOR colliders, uses enhanced internal edge removal setting.
-	//Buffer3D<JPH::SubShapeID> physicsSubShapeIDs; // Each concrete collider in compound shape.
+	JPH::BodyID wallCompoundBodyID; // Holds most of the game world, uses enhanced internal edge removal setting.
+	JPH::BodyID doorCompoundBodyID; // Holds door colliders
+	JPH::BodyID sensorCompoundBodyID; // Holds SENSOR colliders
 
 	static constexpr CollisionShapeDefID AIR_COLLISION_SHAPE_DEF_ID = 0;
 
@@ -36,8 +36,8 @@ public:
 
 	int getCollisionShapeDefCount() const;
 	const CollisionShapeDefinition &getCollisionShapeDef(CollisionShapeDefID id) const;
-	CollisionShapeDefID addCollisionShapeDef(CollisionShapeDefinition &&shapeDef);
-	CollisionShapeDefID getOrAddShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID);
+	CollisionShapeDefID findShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID) const;
+	CollisionShapeDefID addShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID);
 };
 
 #endif
