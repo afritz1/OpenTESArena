@@ -126,9 +126,9 @@ CoordInt3 VoxelUtils::worldVoxelToCoord(const WorldInt3 &voxel)
 		((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim,
 		((voxel.z >= 0) ? voxel.z : (voxel.z - (chunkDim - 1))) / chunkDim);
 	const VoxelInt3 newVoxel(
-		(voxel.x >= 0) ? (voxel.x % chunkDim) : (chunkDim - (-voxel.x % chunkDim)),
+		(voxel.x >= 0) ? (voxel.x % chunkDim) : ((chunkDim - (-voxel.x % chunkDim)) % chunkDim),
 		voxel.y,
-		(voxel.z >= 0) ? (voxel.z % chunkDim) : (chunkDim - (-voxel.z % chunkDim)));
+		(voxel.z >= 0) ? (voxel.z % chunkDim) : ((chunkDim - (-voxel.z % chunkDim)) % chunkDim));
 	return CoordInt3(chunk, newVoxel);
 }
 
@@ -139,8 +139,8 @@ CoordInt2 VoxelUtils::worldVoxelToCoord(const WorldInt2 &voxel)
 		((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim,
 		((voxel.y >= 0) ? voxel.y : (voxel.y - (chunkDim - 1))) / chunkDim);
 	const VoxelInt2 newVoxel(
-		(voxel.x >= 0) ? (voxel.x % chunkDim) : (chunkDim - (-voxel.x % chunkDim)),
-		(voxel.y >= 0) ? (voxel.y % chunkDim) : (chunkDim - (-voxel.y % chunkDim)));
+		(voxel.x >= 0) ? (voxel.x % chunkDim) : ((chunkDim - (-voxel.x % chunkDim)) % chunkDim),
+		(voxel.y >= 0) ? (voxel.y % chunkDim) : ((chunkDim - (-voxel.y % chunkDim)) % chunkDim));
 	return CoordInt2(chunk, newVoxel);
 }
 
