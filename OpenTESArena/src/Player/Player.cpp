@@ -463,9 +463,11 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 	Double2 newVelocityXZ(newVelocity.x, newVelocity.z);
 	if (newVelocityXZ.length() > this->maxWalkSpeed)
 	{
-		newVelocityXZ = newVelocityXZ.normalized() * this->maxWalkSpeed; // @todo: this is doing nothing but looks important
+		newVelocityXZ = newVelocityXZ.normalized() * this->maxWalkSpeed;
 	}
 
+	newVelocity.x = newVelocityXZ.x;
+	newVelocity.z = newVelocityXZ.y;
 	if (newVelocity.length() < Constants::Epsilon)
 	{
 		newVelocity = Double3::Zero;
