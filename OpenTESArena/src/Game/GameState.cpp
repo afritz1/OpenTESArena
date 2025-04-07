@@ -587,10 +587,10 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 		}
 
 		const double ceilingScale = this->getActiveCeilingScale();
-		const CoordDouble3 newPlayerPos(
+		const CoordDouble3 newPlayerFeetCoord(
 			startCoord.chunk,
 			VoxelDouble3(startCoord.point.x + startOffset.x, ceilingScale, startCoord.point.y + startOffset.y));
-		player.setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(newPlayerPos));
+		player.setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(newPlayerFeetCoord));
 
 		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	}
@@ -604,12 +604,14 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 		const CoordDouble3 oldPlayerEyeCoord = player.getEyeCoord(); // The player should be inside the transition voxel.
 		const VoxelInt3 oldPlayerVoxel = VoxelUtils::pointToVoxel(oldPlayerEyeCoord.point);
 		const VoxelDouble3 oldPlayerCenteredPoint = VoxelUtils::getVoxelCenter(oldPlayerVoxel);
-		const CoordDouble3 newPlayerCoord(
+		const CoordDouble3 newPlayerFeetCoord(
 			oldPlayerEyeCoord.chunk,
 			VoxelDouble3(oldPlayerCenteredPoint.x + startOffset.x, ceilingScale, oldPlayerCenteredPoint.z + startOffset.y));
 
-		player.setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(newPlayerCoord));
-		player.lookAt(newPlayerCoord + VoxelDouble3(startOffset.x, 0.0, startOffset.y));
+		player.setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(newPlayerFeetCoord));
+
+		const CoordDouble3 newPlayerEyeCoord = player.getEyeCoord();
+		player.lookAt(newPlayerEyeCoord + VoxelDouble3(startOffset.x, 0.0, startOffset.y));
 
 		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	}
