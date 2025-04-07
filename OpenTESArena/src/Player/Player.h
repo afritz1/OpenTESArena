@@ -27,6 +27,7 @@ namespace PlayerConstants
 	constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS; // Distance from feet to head.
 	constexpr double DEFAULT_WALK_SPEED = 15.0;
 	constexpr double CLAMPED_WALK_SPEED = DEFAULT_WALK_SPEED * 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
+	constexpr double GHOST_MODE_SPEED = 15.0; // When ghost mode option is enabled.
 	constexpr double FRICTION = 0.30; // Slows down when on ground.
 	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
 	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (HEIGHT / 2.0) - COLLIDER_RADIUS;

@@ -290,9 +290,8 @@ namespace PlayerLogicController
 			{
 				accelDirection = accelDirection.normalized();
 
-				constexpr double ghostSpeed = 10.0;
 				const WorldDouble3 playerFeetPosition = player.getFeetPosition();
-				const WorldDouble3 deltaPosition = accelDirection * (ghostSpeed * dt);
+				const WorldDouble3 deltaPosition = accelDirection * (PlayerConstants::GHOST_MODE_SPEED * dt);
 				const WorldDouble3 newPlayerFeetPosition = playerFeetPosition + deltaPosition;
 				player.setPhysicsPositionRelativeToFeet(newPlayerFeetPosition);
 			}
