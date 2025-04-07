@@ -460,10 +460,11 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 		return;
 	}
 
+	const double clampedSpeed = PlayerConstants::CLAMPED_WALK_SPEED;
 	Double2 newVelocityXZ(newVelocity.x, newVelocity.z);
-	if (newVelocityXZ.length() > this->maxWalkSpeed)
+	if (newVelocityXZ.length() > clampedSpeed)
 	{
-		newVelocityXZ = newVelocityXZ.normalized() * this->maxWalkSpeed;
+		newVelocityXZ = newVelocityXZ.normalized() * clampedSpeed;
 	}
 
 	newVelocity.x = newVelocityXZ.x;
