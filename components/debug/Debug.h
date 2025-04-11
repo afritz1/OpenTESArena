@@ -1,6 +1,7 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#include <cstdio>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -21,6 +22,17 @@ private:
 
 	// Writes a debug message to the console with the file path and line number.
 	static void write(DebugMessageType type, const std::string &filePath, int lineNumber, const std::string &message);
+
+	template<typename... Args>
+	static void internalLogFormat(void (*logFunc)(const char*, int, const std::string&), const char *__file__, int lineNumber, const char *message, Args... args)
+	{
+		const int charCount = std::snprintf(nullptr, 0, message, args...);
+		const int requiredBytes = charCount + 1;
+		char *buffer = new char[requiredBytes];
+		std::snprintf(buffer, requiredBytes, message, args...);
+		logFunc(__file__, lineNumber, buffer);
+		delete[] buffer;
+	}
 public:
 	static bool init(const char *logDirectory);
 	static void shutdown();
@@ -31,19 +43,40 @@ public:
 	// Use DebugLog() instead. Helper method for mentioning something about program state.
 	static void log(const char *__file__, int lineNumber, const std::string &message);
 
+	template<typename... Args>
+	static void logFormat(const char *__file__, int lineNumber, const char *message, Args... args)
+	{
+		Debug::internalLogFormat(Debug::log, __file__, lineNumber, message, args...);
+	}
+
 	// Use DebugLogWarning() instead. Helper method for warning the user about something.
 	static void logWarning(const char *__file__, int lineNumber, const std::string &message);
 
+	template<typename... Args>
+	static void logWarningFormat(const char *__file__, int lineNumber, const char *message, Args... args)
+	{
+		Debug::internalLogFormat(Debug::logWarning, __file__, lineNumber, message, args...);
+	}
+
 	// Use DebugLogError() instead. Helper method for reporting an error while still continuing.
 	static void logError(const char *__file__, int lineNumber, const std::string &message);
+
+	template<typename... Args>
+	static void logErrorFormat(const char *__file__, int lineNumber, const char *message, Args... args)
+	{
+		Debug::internalLogFormat(Debug::logError, __file__, lineNumber, message, args...);
+	}
 
 	// Use DebugCrash() instead. Helper method for crashing the program with a reason.
 	[[noreturn]] static void crash(const char *__file__, int lineNumber, const std::string &message);
 
 	// General logging defines.
 #define DebugLog(message) Debug::log(__FILE__, __LINE__, message)
+#define DebugLogFormat(message, ...) Debug::logFormat(__FILE__, __LINE__, message, ##__VA_ARGS__)
 #define DebugLogWarning(message) Debug::logWarning(__FILE__, __LINE__, message)
+#define DebugLogWarningFormat(message, ...) Debug::logWarning(__FILE__, __LINE__, message, ##__VA_ARGS__)
 #define DebugLogError(message) Debug::logError(__FILE__, __LINE__, message)
+#define DebugLogErrorFormat(message, ...) Debug::logError(__FILE__, __LINE__, message, ##__VA_ARGS__)
 
 	// Crash define, when the program simply cannot continue.
 #define DebugCrash(message) Debug::crash(__FILE__, __LINE__, message)
