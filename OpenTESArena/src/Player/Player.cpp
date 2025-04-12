@@ -545,9 +545,23 @@ void Player::prePhysicsStep(double dt, Game &game)
 				ArenaSoundName::Swim // Swimming
 			};
 
+			const WorldDouble3 playerFeetPosition = this->getFeetPosition();
+			const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
+			const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point));
+			const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
+
+			bool isSwimming = false;
+			const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(playerFeetVoxelCoord.chunk);
+			VoxelChasmDefID voxelChasmDefID;
+			if (voxelChunk.tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &voxelChasmDefID))
+			{
+				const VoxelChasmDefinition &chasmDef = voxelChunk.getChasmDef(voxelChasmDefID);
+				isSwimming = chasmDef.allowsSwimming;
+			}
+
 			const GameState &gameState = game.gameState;
 			const MapType activeMapType = gameState.getActiveMapType();
-			const bool isSwimming = false; // @todo
 
 			int movementSoundNameIndex = 0;
 			if (isSwimming)
