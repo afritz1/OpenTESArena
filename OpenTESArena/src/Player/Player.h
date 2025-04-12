@@ -45,6 +45,7 @@ struct Player
 	Double3 right;
 	Double3 up;
 	// @todo: polar coordinates (XYZ angles)
+	double movementSoundProgress;
 
 	std::string displayName;
 	std::string firstName;

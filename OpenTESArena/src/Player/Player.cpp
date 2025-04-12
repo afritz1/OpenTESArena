@@ -9,6 +9,7 @@
 
 #include "Player.h"
 #include "WeaponAnimationLibrary.h"
+#include "../Assets/ArenaSoundName.h"
 #include "../Collision/CollisionChunk.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Collision/Physics.h"
@@ -25,6 +26,7 @@
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/CardinalDirection.h"
+#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -170,6 +172,7 @@ Player::Player()
 	this->charClassDefID = -1;
 	this->portraitID = -1;
 	this->setCameraFrame(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
+	this->movementSoundProgress = 0.0;
 	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
 	this->physicsCharacter = nullptr;
 	this->physicsCharacterVirtual = nullptr;
@@ -204,6 +207,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(feetCoord));
 	this->setPhysicsVelocity(velocity);
 	this->setCameraFrame(direction);
+	this->movementSoundProgress = 0.0;
 }
 
 void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
@@ -239,6 +243,7 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 
 	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
 	this->setCameraFrame(direction);
+	this->movementSoundProgress = 0.0;
 }
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
@@ -499,11 +504,75 @@ void Player::prePhysicsStep(double dt, Game &game)
 	}
 
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
-	const Double3 oldVelocity = this->getPhysicsVelocity();
-	if (!this->onGround(physicsSystem))
+	const bool isOnGround = this->onGround(physicsSystem);
+	if (!isOnGround)
 	{
-		// Need to apply gravity to Character as its gravity factor is 0 when with CharacterVirtual.
-		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
+		// Apply gravity to Character as gravity factor is 0 when with CharacterVirtual.
+		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);		
+	}
+
+	const bool isMovementSoundAccumulating = isOnGround && this->isMoving();
+	if (isMovementSoundAccumulating)
+	{
+		const Double3 velocity = this->getPhysicsVelocity();
+		const Double3 groundVelocity = Double3(velocity.x, 0.0, velocity.z);
+
+		constexpr double tempRateBias = 2.0; // @temp due to Jolt movement still being bouncy even with enhanced internal edge removal fix
+		const double movementSoundProgressRate = (groundVelocity.length() * tempRateBias) / PlayerConstants::CLAMPED_MOVE_SPEED; // ~2 steps/second
+
+		constexpr double maxMovementSoundProgress = 1.0;
+		constexpr double leftStepSoundProgress = maxMovementSoundProgress / 2.0;
+		constexpr double rightStepSoundProgress = maxMovementSoundProgress;
+		const double prevMovementSoundProgress = this->movementSoundProgress;
+		this->movementSoundProgress = std::min(this->movementSoundProgress + (movementSoundProgressRate * dt), maxMovementSoundProgress);
+
+		const bool isLeftStepReady = (prevMovementSoundProgress < leftStepSoundProgress) && (this->movementSoundProgress >= leftStepSoundProgress);
+		const bool isRightStepReady = (prevMovementSoundProgress < rightStepSoundProgress) && (this->movementSoundProgress >= rightStepSoundProgress);
+
+		if (isLeftStepReady || isRightStepReady)
+		{
+			// Always left step sound in original game
+			constexpr const char *movementSoundNames[] =
+			{
+				nullptr, // Exterior (no sound)
+				ArenaSoundName::DirtLeft, // Interior
+				ArenaSoundName::MudLeft, // Exterior rain (unused)
+				ArenaSoundName::SnowLeft, // Exterior snow (unused)
+				ArenaSoundName::Swim // Swimming
+			};
+
+			const GameState &gameState = game.gameState;
+			const MapType activeMapType = gameState.getActiveMapType();
+			const bool isSwimming = false; // @todo
+
+			int movementSoundNameIndex = 0;
+			if (isSwimming)
+			{
+				movementSoundNameIndex = 4;
+			}
+			else if (activeMapType == MapType::Interior)
+			{
+				movementSoundNameIndex = 1;
+			}
+
+			DebugAssertIndex(movementSoundNames, movementSoundNameIndex);
+			const char *movementSoundName = movementSoundNames[movementSoundNameIndex];
+			if (!String::isNullOrEmpty(movementSoundName))
+			{
+				AudioManager &audioManager = game.audioManager;
+				audioManager.playSound(movementSoundName);
+			}
+		}
+
+		const bool shouldResetMovementSoundProgress = isRightStepReady;
+		if (shouldResetMovementSoundProgress)
+		{
+			this->movementSoundProgress = std::fmod(this->movementSoundProgress, maxMovementSoundProgress);
+		}
+	}
+	else
+	{
+		this->movementSoundProgress = 0.0;
 	}
 
 	const JPH::Vec3Arg physicsGravity = -this->physicsCharacter->GetUp() * physicsSystem.GetGravity().Length();
