@@ -25,17 +25,15 @@ namespace PlayerLogicController
 	void handlePlayerMovementClassic(Player &player, double dt, double walkSpeed, bool isOnGround, bool canJump, bool isGhostModeEnabled,
 		const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
 	{
-		// Classic interface mode.
-		// Arena uses arrow keys, but let's use the left hand side of the keyboard
-		// because we like being comfortable.
+		if (!isOnGround)
+		{
+			return;
+		}
 
-		// A and D turn the player, and if Ctrl is held, the player slides instead.
-		// Let's keep the turning part in the other method because turning doesn't
-		// affect velocity.
+		const Double3 groundDirection = player.getGroundDirection();
+		const Double3 rightDirection = player.right;
 
-		// Listen for mouse, WASD, and Ctrl.
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
-
 		const bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
 		const bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
@@ -43,12 +41,11 @@ namespace PlayerLogicController
 		const bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
 		const bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
-		// Get some relevant player direction data (getDirection() isn't necessary here because the Y component is intentionally truncated).
-		const Double3 groundDirection = player.getGroundDirection();
-		const Double3 rightDirection = player.right;
+		const bool anyMouseMovementInput = leftClick;
+		const bool anyKeyboardMovementInput = forward || backward || ((left || right) && lCtrl) || space;
 
-		// Mouse movement takes priority over key movement.
-		if (leftClick && isOnGround)
+		// Mouse movement takes priority.
+		if (anyMouseMovementInput)
 		{
 			const Int2 mousePosition = inputManager.getMousePosition();
 			const int mouseX = mousePosition.x;
@@ -104,32 +101,35 @@ namespace PlayerLogicController
 			}
 
 			// Only attempt to accelerate if a direction was chosen.
-			if (accelDirection.lengthSquared() > 0.0)
+			if (accelDirection.lengthSquared() == 0.0)
 			{
-				// Use a normalized direction.
-				accelDirection = accelDirection.normalized();
+				player.setPhysicsVelocity(Double3::Zero);
+				return;
+			}
 
-				// Set the magnitude of the acceleration to some arbitrary number. These values
-				// are independent of max speed.
-				double accelMagnitude = percent * walkSpeed;
+			// Use a normalized direction.
+			accelDirection = accelDirection.normalized();
 
-				// Check for jumping first (so the player can't slide jump on the first frame).
-				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
-				if (rightClick)
+			// Set the magnitude of the acceleration to some arbitrary number. These values
+			// are independent of max speed.
+			double accelMagnitude = percent * walkSpeed;
+
+			// Check for jumping first (so the player can't slide jump on the first frame).
+			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+			if (rightClick)
+			{
+				if (canJump)
 				{
-					if (canJump)
-					{
-						player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
-					}
-				}
-				// Change the player's velocity if valid.
-				else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
-				{
-					player.accelerate(accelDirection, accelMagnitude, dt);
+					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
 				}
 			}
+			// Change the player's velocity if valid.
+			else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
+			{
+				player.accelerate(accelDirection, accelMagnitude, dt);
+			}
 		}
-		else if ((forward || backward || ((left || right) && lCtrl) || space) && isOnGround)
+		else if (anyKeyboardMovementInput)
 		{
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection = Double3::Zero;
@@ -175,7 +175,7 @@ namespace PlayerLogicController
 				player.accelerate(accelDirection, accelMagnitude, dt);
 			}
 		}
-		else if (isOnGround)
+		else
 		{
 			player.setPhysicsVelocity(Double3::Zero);
 		}

@@ -964,7 +964,7 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const Player &player = game.player;
 	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
-	const Double2 playerDirXZ = player.getGroundDirection();
+	const Double2 playerDirXZ = player.getGroundDirectionXZ();
 
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
