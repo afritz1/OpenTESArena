@@ -25,8 +25,8 @@ class VoxelChunkManager;
 namespace PlayerConstants
 {
 	constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS; // Distance from feet to head.
-	constexpr double DEFAULT_WALK_SPEED = 15.0;
-	constexpr double CLAMPED_WALK_SPEED = DEFAULT_WALK_SPEED * 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
+	constexpr double MOVE_SPEED = 15.0;
+	constexpr double CLAMPED_MOVE_SPEED = MOVE_SPEED * 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
 	constexpr double GHOST_MODE_SPEED = 15.0; // When ghost mode option is enabled.
 	constexpr double FRICTION = 0.30; // Slows down when on ground.
 	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
@@ -52,7 +52,6 @@ struct Player
 	int raceID;
 	int charClassDefID;
 	int portraitID;
-	double maxWalkSpeed; // Eventually a function of 'Speed' attribute
 
 	// Player always has a weapon animation even if it's just fists
 	int weaponAnimDefID;
@@ -67,7 +66,7 @@ struct Player
 	// Make player with given attributes.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
 		int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction, const Double3 &velocity,
-		double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
+		int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
 	// Initializes a random player for testing.
 	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);

@@ -567,7 +567,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 		Player &player = game.player;
 		player.init(std::string(name), male, raceIndex, charClassDefID, attributes, portraitIndex,
-			dummyCoord, direction, velocity, PlayerConstants::DEFAULT_WALK_SPEED, weaponID, exeData, game.physicsSystem);
+			dummyCoord, direction, velocity, weaponID, exeData, game.physicsSystem);
 	};
 
 	gameStateFunction(game);

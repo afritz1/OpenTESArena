@@ -170,7 +170,6 @@ Player::Player()
 	this->charClassDefID = -1;
 	this->portraitID = -1;
 	this->setCameraFrame(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
-	this->maxWalkSpeed = 0.0;
 	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
 	this->physicsCharacter = nullptr;
 	this->physicsCharacterVirtual = nullptr;
@@ -184,7 +183,7 @@ Player::~Player()
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
 	const PrimaryAttributes &primaryAttributes, int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction,
-	const Double3 &velocity, double maxWalkSpeed, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
+	const Double3 &velocity, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
@@ -192,7 +191,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->maxWalkSpeed = maxWalkSpeed;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
 	this->primaryAttributes = primaryAttributes;
@@ -216,7 +214,6 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	this->raceID = random.next(8);
 	this->charClassDefID = random.next(charClassLibrary.getDefinitionCount());
 	this->portraitID = random.next(10);
-	this->maxWalkSpeed = PlayerConstants::DEFAULT_WALK_SPEED;
 
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
 	const int weaponID = GetRandomWeaponIdForClass(charClassDef, random);
@@ -460,7 +457,7 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 		return;
 	}
 
-	const double clampedSpeed = PlayerConstants::CLAMPED_WALK_SPEED;
+	const double clampedSpeed = PlayerConstants::CLAMPED_MOVE_SPEED;
 	Double2 newVelocityXZ(newVelocity.x, newVelocity.z);
 	if (newVelocityXZ.length() > clampedSpeed)
 	{

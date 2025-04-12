@@ -462,7 +462,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 
 	Player &player = game.player;
-	const double maxWalkSpeed = player.maxWalkSpeed;
+	const double maxWalkSpeed = PlayerConstants::MOVE_SPEED;
 	const bool isOnGround = player.onGround(physicsSystem);
 	const bool canJump = player.canJump(physicsSystem);
 
@@ -490,7 +490,6 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	{
 		return;
 	}
-
 
 	const InputManager &inputManager = game.inputManager;
 	const Options &options = game.options;
