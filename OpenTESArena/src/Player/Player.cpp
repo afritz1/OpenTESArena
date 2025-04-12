@@ -355,7 +355,12 @@ WorldDouble3 Player::getFeetPosition() const
 	return WorldDouble3(physicsPosition.x, physicsPosition.y - (PlayerConstants::HEIGHT * 0.50), physicsPosition.z);
 }
 
-Double2 Player::getGroundDirection() const
+Double3 Player::getGroundDirection() const
+{
+	return Double3(this->forward.x, 0.0, this->forward.z).normalized();
+}
+
+Double2 Player::getGroundDirectionXZ() const
 {
 	return Double2(this->forward.x, this->forward.z).normalized();
 }
@@ -443,9 +448,8 @@ void Player::lookAt(const CoordDouble3 &targetCoord)
 
 void Player::setDirectionToHorizon()
 {
-	const Double2 groundDirection = this->getGroundDirection();
-	const Double3 newForward = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-	this->setCameraFrame(newForward);
+	const Double3 groundDirection = this->getGroundDirection();
+	this->setCameraFrame(groundDirection);
 }
 
 void Player::accelerate(const Double3 &direction, double magnitude, double dt)

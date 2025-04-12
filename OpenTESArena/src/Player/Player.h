@@ -87,7 +87,8 @@ struct Player
 	WorldDouble3 getFeetPosition() const;
 
 	// Gets the bird's eye view of the player's direction.
-	Double2 getGroundDirection() const;
+	Double3 getGroundDirection() const;
+	Double2 getGroundDirectionXZ() const;
 
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
 	double getJumpMagnitude() const;

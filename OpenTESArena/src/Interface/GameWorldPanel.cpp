@@ -409,7 +409,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
 		{
-			const VoxelDouble2 &playerDirection = player.getGroundDirection();
+			const Double2 playerDirection = player.getGroundDirectionXZ();
 			const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
 			return sliderPosition;
 		};
@@ -579,7 +579,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
 		{
-			const VoxelDouble2 &playerDirection = player.getGroundDirection();
+			const Double2 playerDirection = player.getGroundDirectionXZ();
 			const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
 			return sliderPosition;
 		};

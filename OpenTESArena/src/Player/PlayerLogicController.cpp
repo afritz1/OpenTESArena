@@ -43,11 +43,9 @@ namespace PlayerLogicController
 		const bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
 		const bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
-		// Get some relevant player direction data (getDirection() isn't necessary here
-		// because the Y component is intentionally truncated).
-		const Double2 groundDirection = player.getGroundDirection();
-		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-		const Double3 &rightDirection = player.right;
+		// Get some relevant player direction data (getDirection() isn't necessary here because the Y component is intentionally truncated).
+		const Double3 groundDirection = player.getGroundDirection();
+		const Double3 rightDirection = player.right;
 
 		// Mouse movement takes priority over key movement.
 		if (leftClick && isOnGround)
@@ -71,19 +69,19 @@ namespace PlayerLogicController
 			if (topLeft.contains(mousePosition))
 			{
 				// Forward.
-				accelDirection = accelDirection + groundDirection3D;
+				accelDirection = accelDirection + groundDirection;
 				percent = 1.0 - (static_cast<double>(mouseY) / topLeft.getHeight());
 			}
 			else if (top.contains(mousePosition))
 			{
 				// Forward.
-				accelDirection = accelDirection + groundDirection3D;
+				accelDirection = accelDirection + groundDirection;
 				percent = 1.0 - (static_cast<double>(mouseY) / top.getHeight());
 			}
 			else if (topRight.contains(mousePosition))
 			{
 				// Forward.
-				accelDirection = accelDirection + groundDirection3D;
+				accelDirection = accelDirection + groundDirection;
 				percent = 1.0 - (static_cast<double>(mouseY) / topRight.getHeight());
 			}
 			else if (bottomLeft.contains(mousePosition))
@@ -95,7 +93,7 @@ namespace PlayerLogicController
 			else if (bottom.contains(mousePosition))
 			{
 				// Backwards.
-				accelDirection = accelDirection - groundDirection3D;
+				accelDirection = accelDirection - groundDirection;
 				percent = static_cast<double>(mouseY - bottom.getTop()) / bottom.getHeight();
 			}
 			else if (bottomRight.contains(mousePosition))
@@ -138,12 +136,12 @@ namespace PlayerLogicController
 
 			if (forward)
 			{
-				accelDirection = accelDirection + groundDirection3D;
+				accelDirection = accelDirection + groundDirection;
 			}
 
 			if (backward)
 			{
-				accelDirection = accelDirection - groundDirection3D;
+				accelDirection = accelDirection - groundDirection;
 			}
 
 			if (right)
@@ -197,9 +195,8 @@ namespace PlayerLogicController
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
 		const Double3 direction = player.forward;
-		const Double2 groundDirection = player.getGroundDirection();
-		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0, groundDirection.y).normalized();
-		const Double3 &rightDirection = player.right;
+		const Double3 groundDirection = player.getGroundDirection();
+		const Double3 rightDirection = player.right;
 		const Double3 upDirection = rightDirection.cross(direction).normalized();
 
 		if (!isGhostModeEnabled)
@@ -221,12 +218,12 @@ namespace PlayerLogicController
 						Double3 accelDirection = Double3::Zero;
 						if (forward)
 						{
-							accelDirection = accelDirection + groundDirection3D;
+							accelDirection = accelDirection + groundDirection;
 						}
 
 						if (backward)
 						{
-							accelDirection = accelDirection - groundDirection3D;
+							accelDirection = accelDirection - groundDirection;
 						}
 
 						if (right)
