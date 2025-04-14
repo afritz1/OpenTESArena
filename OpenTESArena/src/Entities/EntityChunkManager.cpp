@@ -1026,7 +1026,7 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 					const float entityColliderHeight = entityColliderBBox.GetSize().GetY();
 					const double newEntityFeetY = ceilingScale;
 					const double newEntityPhysicsCenterY = newEntityFeetY + (entityColliderHeight * 0.50);
-					const JPH::RVec3 newEntityPhysicsPosition(oldEntityPhysicsPosition.GetX(), newEntityPhysicsCenterY, oldEntityPhysicsPosition.GetZ());
+					const JPH::RVec3 newEntityPhysicsPosition(oldEntityPhysicsPosition.GetX(), static_cast<float>(newEntityPhysicsCenterY), oldEntityPhysicsPosition.GetZ());
 					bodyInterface.SetPosition(entityPhysicsBodyID, newEntityPhysicsPosition, JPH::EActivation::Activate);
 				}
 			}
