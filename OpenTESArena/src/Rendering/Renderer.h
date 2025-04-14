@@ -21,13 +21,13 @@
 
 #include "components/utilities/BufferView.h"
 
-class Color;
 class Rect;
 class Surface;
 class TextureManager;
 
 enum class CursorAlignment;
 
+struct Color;
 struct SDL_Rect;
 struct SDL_Renderer;
 struct SDL_Surface;

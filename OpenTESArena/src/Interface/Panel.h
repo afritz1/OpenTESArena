@@ -15,7 +15,6 @@
 
 #include "components/utilities/BufferView.h"
 
-class Color;
 class FontLibrary;
 class Game;
 class Rect;
@@ -25,6 +24,7 @@ class Texture;
 enum class CursorAlignment;
 enum class MouseButtonType;
 
+struct Color;
 struct SDL_Texture;
 
 union SDL_Event;

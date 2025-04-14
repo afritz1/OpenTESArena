@@ -6,11 +6,11 @@
 
 #include "components/utilities/Buffer.h"
 
-class Color;
 class ExeData;
 class Random;
 class TextureManager;
 
+struct Color;
 struct TextureAsset;
 
 // Various functions for working with the original game's weather.
