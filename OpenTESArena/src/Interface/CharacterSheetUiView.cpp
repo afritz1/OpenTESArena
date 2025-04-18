@@ -118,7 +118,7 @@ Int2 CharacterSheetUiView::getShirtOffset(Game &game)
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = player.charClassDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	const bool isMagic = charClassDef.canCastMagic();
+	const bool isMagic = charClassDef.castsMagic;
 
 	return ArenaPortraitUtils::getShirtOffset(isMale, isMagic);
 }
@@ -196,7 +196,7 @@ TextureAsset CharacterSheetUiView::getShirtTextureAsset(Game &game)
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = player.charClassDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	const bool isMagic = charClassDef.canCastMagic();
+	const bool isMagic = charClassDef.castsMagic;
 
 	std::string shirtFilename = ArenaPortraitUtils::getShirt(isMale, isMagic);
 	return TextureAsset(std::move(shirtFilename));

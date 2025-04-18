@@ -25,6 +25,11 @@ bool StringView::caseInsensitiveEquals(std::string_view a, std::string_view b)
 	return true;
 }
 
+int StringView::compare(std::string_view a, std::string_view b)
+{
+	return a.compare(b);
+}
+
 std::string_view StringView::substr(std::string_view str, size_t offset, size_t count)
 {
 	return str.substr(offset, count);

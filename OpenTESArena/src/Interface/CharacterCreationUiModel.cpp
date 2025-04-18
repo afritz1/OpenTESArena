@@ -32,7 +32,7 @@ std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const int defID = charCreationState.getClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
-	return charClassDef.getName();
+	return charClassDef.name;
 }
 
 const PrimaryAttributes &CharacterCreationUiModel::getPlayerAttributes(Game &game)
@@ -255,12 +255,12 @@ std::string ChooseClassUiModel::getFullTooltipText(const CharacterClassDefinitio
 		"Mage", "Thief", "Warrior"
 	};
 
-	const int categoryIndex = charClassDef.getCategoryID();
+	const int categoryIndex = charClassDef.categoryID;
 	DebugAssertIndex(ClassCategoryNames, categoryIndex);
 	const std::string categoryName = ClassCategoryNames[categoryIndex];
-	const std::string text = charClassDef.getName() + " (" + categoryName + " class)" + "\n\n" +
-		(charClassDef.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
-		"Health die: " + "d" + std::to_string(charClassDef.getHealthDie()) + "\n" +
+	const std::string text = std::string(charClassDef.name) + " (" + categoryName + " class)" + "\n\n" +
+		(charClassDef.castsMagic ? "Can" : "Cannot") + " cast magic" + "\n" +
+		"Health die: " + "d" + std::to_string(charClassDef.healthDie) + "\n" +
 		"Armors: " + ChooseClassUiModel::getArmorTooltipText(charClassDef) + "\n" +
 		"Shields: " + ChooseClassUiModel::getShieldTooltipText(charClassDef) + "\n" +
 		"Weapons: " + ChooseClassUiModel::getWeaponTooltipText(charClassDef, game);
@@ -295,7 +295,7 @@ std::string ChooseNameUiModel::getTitleText(Game &game)
 
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseName;
-	text = String::replace(text, "%s", charClassDef.getName());
+	text = String::replace(text, "%s", charClassDef.name);
 	return text;
 }
 
@@ -323,7 +323,7 @@ std::string ChooseRaceUiModel::getTitleText(Game &game)
 
 	// Replace second "%s" with character class.
 	index = text.find("%s");
-	text.replace(index, 2, charClassDef.getName());
+	text.replace(index, 2, charClassDef.name);
 
 	return text;
 }
@@ -390,7 +390,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 
 	// Replace first %s with player class.
 	size_t index = segment.find("%s");
-	segment.replace(index, 2, charClassDef.getName());
+	segment.replace(index, 2, charClassDef.name);
 
 	// Replace second %s with player name.
 	index = segment.find("%s");
@@ -465,7 +465,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 
 	// Replace second %s with class name.
 	index = segment.find("%s");
-	segment.replace(index, 2, charClassDef.getName());
+	segment.replace(index, 2, charClassDef.name);
 
 	return segment;
 }

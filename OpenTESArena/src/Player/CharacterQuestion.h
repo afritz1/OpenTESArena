@@ -11,7 +11,7 @@
 class CharacterQuestion
 {
 public:
-	using Choice = std::pair<std::string, CharacterClassDefinition::CategoryID>;
+	using Choice = std::pair<std::string, CharacterClassCategoryID>;
 private:
 	std::string description;
 	Choice a, b, c;

@@ -146,7 +146,7 @@ bool PauseMenuPanel::init()
 
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	const auto &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
-	if (!charClassDef.canCastMagic())
+	if (!charClassDef.castsMagic)
 	{
 		this->addDrawCall(
 			this->noMagicTextureRef.get(),

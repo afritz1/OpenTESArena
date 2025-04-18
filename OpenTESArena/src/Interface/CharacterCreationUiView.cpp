@@ -717,7 +717,7 @@ Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	const bool isMagic = charClassDef.canCastMagic();
+	const bool isMagic = charClassDef.castsMagic;
 
 	return ArenaPortraitUtils::getShirtOffset(isMale, isMagic);
 }
@@ -760,7 +760,7 @@ TextureAsset ChooseAttributesUiView::getShirtTextureAsset(Game &game)
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const int charClassDefID = charCreationState.getClassDefID();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	const bool isMagic = charClassDef.canCastMagic();
+	const bool isMagic = charClassDef.castsMagic;
 
 	std::string shirtFilename = ArenaPortraitUtils::getShirt(isMale, isMagic);
 	return TextureAsset(std::move(shirtFilename));

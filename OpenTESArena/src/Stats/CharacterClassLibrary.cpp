@@ -5,6 +5,7 @@
 #include "../Player/CharacterClassGeneration.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/StringView.h"
 
 void CharacterClassLibrary::init(const ExeData &exeData)
 {
@@ -136,7 +137,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 		const bool criticalHit = (classNumberToID & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
 
 		CharacterClassDefinition def;
-		def.init(std::move(name), category, std::move(preferredAttributes), allowedArmors, allowedShields, allowedWeapons,
+		def.init(name.c_str(), category, preferredAttributes.c_str(), allowedArmors, allowedShields, allowedWeapons,
 			mage, healthDie, initialExperienceCap, lockpickPercent, criticalHit, classIndex);
 
 		this->defs.emplace_back(std::move(def));
@@ -174,7 +175,7 @@ bool CharacterClassLibrary::tryGetDefinitionIndex(const CharacterClassDefinition
 	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)
 	{
 		const CharacterClassDefinition &charClassDef = this->defs[i];
-		if (charClassDef.getName() == def.getName())
+		if (StringView::equals(charClassDef.name, def.name))
 		{
 			*outIndex = i;
 			return true;

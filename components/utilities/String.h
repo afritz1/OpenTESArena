@@ -24,6 +24,8 @@ namespace String
 	// Performs a case-insensitive ASCII string comparison.
 	bool caseInsensitiveEquals(const std::string &a, const std::string &b);
 
+	int compare(const std::string &a, const std::string &b);
+
 	// Splits a string on the given character.
 	Buffer<std::string> split(const std::string &str, char separator);
 

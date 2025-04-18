@@ -216,7 +216,7 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const Cha
 	{
 		const auto &humanDef = enemyDef.human;
 		const auto &charClass = charClassLibrary.getDefinition(humanDef.charClassID);
-		*outName = charClass.getName();
+		*outName = charClass.name;
 	}
 	else
 	{

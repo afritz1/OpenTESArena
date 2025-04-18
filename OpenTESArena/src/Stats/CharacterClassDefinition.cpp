@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 
 #include "CharacterClassDefinition.h"
 
@@ -7,21 +8,24 @@
 
 CharacterClassDefinition::CharacterClassDefinition()
 {
+	std::fill(std::begin(this->name), std::end(this->name), '\0');
+	this->categoryID = -1;
+	std::fill(std::begin(this->preferredAttributes), std::end(this->preferredAttributes), '\0');
 	this->castsMagic = false;
 	this->healthDie = -1;
 	this->initialExpCap = -1;
 	this->lockpickPercent = 0.0;
 	this->criticalHit = false;
+	this->originalClassIndex = -1;
 }
 
-void CharacterClassDefinition::init(std::string &&name, CategoryID categoryID, std::string &&preferredAttributes,
+void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID categoryID, const char *preferredAttributes,
 	BufferView<const int> allowedArmors, BufferView<const int> allowedShields, BufferView<const int> allowedWeapons,
-	bool castsMagic, int healthDie, int initialExpCap, double lockpickPercent, bool criticalHit,
-	const std::optional<int> &originalClassIndex)
+	bool castsMagic, int healthDie, int initialExpCap, double lockpickPercent, bool criticalHit, int originalClassIndex)
 {
-	this->name = std::move(name);
+	std::snprintf(this->name, std::size(this->name), "%s", name);
 	this->categoryID = categoryID;
-	this->preferredAttributes = std::move(preferredAttributes);
+	std::snprintf(this->preferredAttributes, std::size(this->preferredAttributes), "%s", preferredAttributes);
 	
 	this->allowedArmors.resize(allowedArmors.getCount());
 	this->allowedShields.resize(allowedShields.getCount());
@@ -36,41 +40,6 @@ void CharacterClassDefinition::init(std::string &&name, CategoryID categoryID, s
 	this->lockpickPercent = lockpickPercent;
 	this->criticalHit = criticalHit;
 	this->originalClassIndex = originalClassIndex;
-}
-
-int CharacterClassDefinition::getExperienceCap(int level, int initialExpCap)
-{
-	DebugAssert(level >= 0);
-
-	if (level == 0)
-	{
-		return 0;
-	}
-	else if (level == 1)
-	{
-		return initialExpCap;
-	}
-	else
-	{
-		const int prevExperienceCap = CharacterClassDefinition::getExperienceCap(level - 1, initialExpCap);
-		const double multiplier = ((level >= 2) && (level <= 8)) ? (30.0 / 16.0) : 1.50;
-		return static_cast<int>(std::floor(static_cast<double>(prevExperienceCap) * multiplier));
-	}
-}
-
-const std::string &CharacterClassDefinition::getName() const
-{
-	return this->name;
-}
-
-CharacterClassDefinition::CategoryID CharacterClassDefinition::getCategoryID() const
-{
-	return this->categoryID;
-}
-
-const std::string &CharacterClassDefinition::getPreferredAttributes() const
-{
-	return this->preferredAttributes;
 }
 
 int CharacterClassDefinition::getAllowedArmorCount() const
@@ -106,32 +75,22 @@ int CharacterClassDefinition::getAllowedWeapon(int index) const
 	return this->allowedWeapons[index];
 }
 
-bool CharacterClassDefinition::canCastMagic() const
+int CharacterClassDefinition::getExperienceCap(int level, int initialExpCap)
 {
-	return this->castsMagic;
-}
+	DebugAssert(level >= 0);
 
-int CharacterClassDefinition::getHealthDie() const
-{
-	return this->healthDie;
-}
-
-int CharacterClassDefinition::getInitialExperienceCap() const
-{
-	return this->initialExpCap;
-}
-
-double CharacterClassDefinition::getLockpickPercent() const
-{
-	return this->lockpickPercent;
-}
-
-bool CharacterClassDefinition::hasCriticalHit() const
-{
-	return this->criticalHit;
-}
-
-const std::optional<int> &CharacterClassDefinition::getOriginalClassIndex() const
-{
-	return this->originalClassIndex;
+	if (level == 0)
+	{
+		return 0;
+	}
+	else if (level == 1)
+	{
+		return initialExpCap;
+	}
+	else
+	{
+		const int prevExperienceCap = CharacterClassDefinition::getExperienceCap(level - 1, initialExpCap);
+		const double multiplier = ((level >= 2) && (level <= 8)) ? (30.0 / 16.0) : 1.50;
+		return static_cast<int>(std::floor(static_cast<double>(prevExperienceCap) * multiplier));
+	}
 }

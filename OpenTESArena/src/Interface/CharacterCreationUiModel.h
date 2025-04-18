@@ -9,8 +9,9 @@
 #include "../Stats/PrimaryAttribute.h"
 #include "../UI/TextRenderUtils.h"
 
-class CharacterClassDefinition;
 class Game;
+
+struct CharacterClassDefinition;
 
 namespace CharacterCreationUiModel
 {

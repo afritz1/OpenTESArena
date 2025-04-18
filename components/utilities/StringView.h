@@ -15,6 +15,8 @@ namespace StringView
 	// Performs a case-insensitive ASCII string comparison.
 	bool caseInsensitiveEquals(std::string_view a, std::string_view b);
 
+	int compare(std::string_view a, std::string_view b);
+
 	// Returns a substring of a string view. Intended for use with strings, since
 	// std::string::substr() returns a new string which is bad for string_view.
 	std::string_view substr(std::string_view str, size_t offset, size_t count);

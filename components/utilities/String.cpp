@@ -26,6 +26,11 @@ bool String::caseInsensitiveEquals(const std::string &a, const std::string &b)
 	return true;
 }
 
+int String::compare(const std::string &a, const std::string &b)
+{
+	return a.compare(b);
+}
+
 Buffer<std::string> String::split(const std::string &str, char separator)
 {
 	// Always have at least one string.

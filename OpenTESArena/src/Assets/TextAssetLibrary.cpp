@@ -671,7 +671,7 @@ bool TextAssetLibrary::initQuestionTxt()
 		const std::string &a, const std::string &b, const std::string &c)
 	{
 		// Lambda for determining which choices point to which class categories.
-		auto getCategory = [](const std::string &choice) -> CharacterClassDefinition::CategoryID
+		auto getCategory = [](const std::string &choice) -> CharacterClassCategoryID
 		{
 			const char mageChar = 'l'; // Logical?
 			const char thiefChar = 'c'; // Clever?
@@ -698,9 +698,7 @@ bool TextAssetLibrary::initQuestionTxt()
 			}
 		};
 
-		this->questionTxt.emplace_back(CharacterQuestion(std::string(description),
-			std::make_pair(a, getCategory(a)), std::make_pair(b, getCategory(b)),
-			std::make_pair(c, getCategory(c))));
+		this->questionTxt.emplace_back(CharacterQuestion(description.c_str(), std::make_pair(a, getCategory(a)), std::make_pair(b, getCategory(b)), std::make_pair(c, getCategory(c))));
 	};
 
 	// Step line by line through the text, creating question objects.

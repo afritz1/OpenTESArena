@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstring>
 
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
@@ -11,6 +12,7 @@
 #include "../UI/FontLibrary.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/StringView.h"
 
 ChooseClassPanel::ChooseClassPanel(Game &game)
 	: Panel(game) { }
@@ -32,9 +34,7 @@ bool ChooseClassPanel::init()
 	std::sort(this->charClasses.begin(), this->charClasses.end(),
 		[](const CharacterClassDefinition &a, const CharacterClassDefinition &b) // @todo: move this lambda to UiModel/UiView
 	{
-		const std::string &aName = a.getName();
-		const std::string &bName = b.getName();
-		return aName.compare(bName) < 0;
+		return StringView::compare(a.name, b.name) < 0;
 	});
 
 	auto &renderer = game.renderer;
@@ -60,14 +60,14 @@ bool ChooseClassPanel::init()
 	for (int i = 0; i < static_cast<int>(this->charClasses.size()); i++)
 	{
 		const CharacterClassDefinition &charClass = this->charClasses[i];
-		this->classesListBox.add(std::string(charClass.getName()));
+		this->classesListBox.add(std::string(charClass.name));
 		this->classesListBox.setCallback(i, [&game, &charClass]()
 		{
 			const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 			int charClassDefID;
 			if (!charClassLibrary.tryGetDefinitionIndex(charClass, &charClassDefID))
 			{
-				DebugLogError("Couldn't get index of character class definition \"" + charClass.getName() + "\".");
+				DebugLogErrorFormat("Couldn't get index of character class definition \"%s\".", charClass.name);
 				return;
 			}
 

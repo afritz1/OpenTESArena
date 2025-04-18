@@ -775,21 +775,18 @@ bool ArenaAnimUtils::trySetCitizenFilenameDirection(std::string &filename, int a
 	return trySetDynamicEntityFilenameDirection(filename, animDirectionID);
 }
 
-void ArenaAnimUtils::getHumanEnemyProperties(int charClassIndex,
-	const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, int *outTypeIndex)
+void ArenaAnimUtils::getHumanEnemyProperties(int charClassIndex, const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, int *outTypeIndex)
 {
 	int charClassDefIndex;
 	const bool success = charClassLibrary.findDefinitionIndexIf(
 		[charClassIndex](const CharacterClassDefinition &def)
 	{
-		const auto &originalClassIndex = def.getOriginalClassIndex();
-		return originalClassIndex.has_value() && (*originalClassIndex == charClassIndex);
+		return def.originalClassIndex == charClassIndex;
 	}, &charClassDefIndex);
 
 	if (!success)
 	{
-		DebugLogWarning("Couldn't get character class definition for index \"" +
-			std::to_string(charClassIndex) + "\".");
+		DebugLogWarningFormat("Couldn't get character class definition for index \"%d\".", charClassIndex);
 		return;
 	}
 
@@ -811,7 +808,7 @@ void ArenaAnimUtils::getHumanEnemyProperties(int charClassIndex,
 			hasLeather |= allowedArmor == 0;
 		}
 
-		const auto &originalClassIndex = charClassDef.getOriginalClassIndex();
+		const int originalClassIndex = charClassDef.originalClassIndex;
 
 		if (hasPlate)
 		{
@@ -825,17 +822,17 @@ void ArenaAnimUtils::getHumanEnemyProperties(int charClassIndex,
 		{
 			return 2;
 		}
-		else if (charClassDef.canCastMagic())
+		else if (charClassDef.castsMagic)
 		{
 			// Spellcaster.
 			return 4;
 		}
-		else if (originalClassIndex.has_value() && (*originalClassIndex == 12))
+		else if (originalClassIndex == 12)
 		{
 			// Monk.
 			return 5;
 		}
-		else if (originalClassIndex.has_value() && (*originalClassIndex == 15))
+		else if (originalClassIndex == 15)
 		{
 			// Barbarian.
 			return 6;

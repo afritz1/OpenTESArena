@@ -29,7 +29,7 @@ std::string CharacterSheetUiModel::getPlayerClassName(Game &game)
 	const Player &player = game.player;
 	const int defID = player.charClassDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
-	return charClassDef.getName();
+	return charClassDef.name;
 }
 
 const PrimaryAttributes &CharacterSheetUiModel::getPlayerAttributes(Game &game)
