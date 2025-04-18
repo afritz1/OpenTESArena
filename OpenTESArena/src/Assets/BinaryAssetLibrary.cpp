@@ -147,26 +147,26 @@ bool BinaryAssetLibrary::initClasses(const ExeData &exeData)
 	auto &choices = this->classesDat.choices;
 
 	// The class IDs take up the first 18 bytes.
-	for (size_t i = 0; i < classes.size(); i++)
+	for (size_t i = 0; i < std::size(classes); i++)
 	{
 		const uint8_t value = *(srcPtr + i);
 
-		CharacterClassGeneration::ClassData &classData = classes[i];
-		classData.id = value & CharacterClassGeneration::ID_MASK;
-		classData.isSpellcaster = (value & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
-		classData.hasCriticalHit = (value & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
-		classData.isThief = (value & CharacterClassGeneration::THIEF_MASK) != 0;
+		CharacterClassGenerationClass &genClass = classes[i];
+		genClass.id = value & CharacterClassGeneration::ID_MASK;
+		genClass.isSpellcaster = (value & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
+		genClass.hasCriticalHit = (value & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
+		genClass.isThief = (value & CharacterClassGeneration::THIEF_MASK) != 0;
 	}
 
 	// After the class IDs are 66 groups of "A, B, C" choices. They account for all 
 	// the combinations of answers to character questions. When the user is done
 	// answering questions, their A/B/C counts map to some index in the Choices array.
-	for (size_t i = 0; i < choices.size(); i++)
+	for (size_t i = 0; i < std::size(choices); i++)
 	{
 		const int choiceSize = 3;
-		const size_t offset = classes.size() + (choiceSize * i);
+		const size_t offset = std::size(classes) + (choiceSize * i);
 
-		CharacterClassGeneration::ChoiceData &choice = choices[i];
+		CharacterClassGenerationChoice &choice = choices[i];
 		choice.a = *(srcPtr + offset);
 		choice.b = *(srcPtr + offset + 1);
 		choice.c = *(srcPtr + offset + 2);
