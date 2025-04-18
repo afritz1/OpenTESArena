@@ -19,7 +19,7 @@ namespace Debug
 	// Shortens __FILE__ for readability.
 	std::string getShorterPath(const char *__file__);
 
-	void exitApplication();
+	[[noreturn]] void exitApplication();
 
 	void write(const std::string &filePath, int lineNumber, const std::string &messagePrefix, const std::string &message);
 
