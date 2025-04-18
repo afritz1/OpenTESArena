@@ -1,25 +1,28 @@
+#include <algorithm>
+#include <cstring>
+
 #include "CharacterQuestion.h"
 
-CharacterQuestion::CharacterQuestion(std::string &&description, Choice &&a,
-	Choice &&b, Choice &&c)
-	: description(std::move(description)), a(std::move(a)), b(std::move(b)), c(std::move(c)) { }
-
-const std::string &CharacterQuestion::getDescription() const
+CharacterQuestionChoice::CharacterQuestionChoice()
 {
-	return this->description;
+	this->categoryID = -1;
 }
 
-const CharacterQuestion::Choice &CharacterQuestion::getA() const
+void CharacterQuestionChoice::init(const char *text, CharacterClassCategoryID categoryID)
 {
-	return this->a;
+	std::snprintf(this->text, std::size(this->text), "%s", text);
+	this->categoryID = categoryID;
 }
 
-const CharacterQuestion::Choice &CharacterQuestion::getB() const
+CharacterQuestion::CharacterQuestion()
 {
-	return this->b;
+	std::fill(std::begin(this->description), std::end(this->description), '\0');
 }
 
-const CharacterQuestion::Choice &CharacterQuestion::getC() const
+void CharacterQuestion::init(const char *description, const CharacterQuestionChoice &a, const CharacterQuestionChoice &b, const CharacterQuestionChoice &c)
 {
-	return this->c;
+	std::snprintf(this->description, std::size(this->description), "%s", description);
+	this->a = a;
+	this->b = b;
+	this->c = c;
 }

@@ -667,8 +667,7 @@ bool TextAssetLibrary::initQuestionTxt()
 	const std::string text(reinterpret_cast<const char*>(srcPtr), src.getCount());
 
 	// Lambda for adding a new question to the questions list.
-	auto addQuestion = [this](const std::string &description,
-		const std::string &a, const std::string &b, const std::string &c)
+	auto addQuestion = [this](const std::string &description, const std::string &a, const std::string &b, const std::string &c)
 	{
 		// Lambda for determining which choices point to which class categories.
 		auto getCategory = [](const std::string &choice) -> CharacterClassCategoryID
@@ -692,13 +691,20 @@ bool TextAssetLibrary::initQuestionTxt()
 			}
 			else
 			{
-				// @todo: redesign error-handling via bools so we don't need exceptions
-				// for file correctness.
-				throw DebugException("Bad QUESTION.TXT class category.");
+				DebugUnhandledReturnMsg(int, "Bad QUESTION.TXT class category.");
 			}
 		};
 
-		this->questionTxt.emplace_back(CharacterQuestion(description.c_str(), std::make_pair(a, getCategory(a)), std::make_pair(b, getCategory(b)), std::make_pair(c, getCategory(c))));
+		CharacterQuestionChoice questionChoiceA;
+		CharacterQuestionChoice questionChoiceB;
+		CharacterQuestionChoice questionChoiceC;
+		questionChoiceA.init(a.c_str(), getCategory(a));
+		questionChoiceB.init(b.c_str(), getCategory(b));
+		questionChoiceC.init(c.c_str(), getCategory(c));
+
+		CharacterQuestion question;
+		question.init(description.c_str(), questionChoiceA, questionChoiceB, questionChoiceC);
+		this->questionTxt.emplace_back(std::move(question));
 	};
 
 	// Step line by line through the text, creating question objects.
