@@ -115,8 +115,7 @@ namespace
 		*outCharacterVirtual = new JPH::CharacterVirtual(&characterVirtualSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterVirtualUserData, &physicsSystem);
 		(*outCharacterVirtual)->SetCharacterVsCharacterCollision(outCharVsCharCollision);
 		outCharVsCharCollision->Add(*outCharacterVirtual);
-		(*outCharacterVirtual)->SetListener(nullptr); // @todo
-		DebugLogError("\nNeed characterVirtual's contact listeners\n");
+		(*outCharacterVirtual)->SetListener(nullptr); // Doesn't seem necessary, Character contact listener is working
 
 		return true;
 	}
