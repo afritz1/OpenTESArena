@@ -115,10 +115,10 @@ namespace Debug
 #define DebugException(message) \
 	std::runtime_error(std::string(message) + " (" + Debug::getShorterPath(__FILE__) + "(" + std::to_string(__LINE__) + "))")
 
-#define DebugValidIndex(container, index) \
+#define DebugIsValidIndex(container, index) \
 	(std::is_integral_v<std::remove_reference_t<decltype(index)>> && ((index) >= 0) && ((index) < std::size(container)))
 #define DebugAssertIndex(container, index) \
-	do { if (!DebugValidIndex(container, index)) DebugCrash("Index '" + std::to_string(index) + "' out of bounds."); } while (false)
+	do { if (!DebugIsValidIndex(container, index)) DebugCrashFormat("Index '%d' out of bounds.", index); } while (false)
 #define DebugMakeIndex(container, index) \
 	([&]() { const auto val = (index); DebugAssertIndex(container, val); return val; }())
 
