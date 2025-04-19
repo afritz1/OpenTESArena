@@ -77,6 +77,11 @@ private:
 	bool nextMapClearsPrevious; // Clears any previously-loaded map defs (such as when fast travelling).
 	int nextLevelIndex;
 	SceneChangeMusicFunc nextMusicFunc, nextJingleMusicFunc; // Music changes after a map change.
+
+	// Level transition calculation, stored during physics contact w/ transition voxel and applied afterwards to avoid player physics deadlock.
+	CoordInt3 levelTransitionCalculationPlayerCoord;
+	CoordInt3 levelTransitionCalculationTransitionCoord;
+	bool isLevelTransitionCalculationPending;
 	
 	// Player's current world map location data.
 	WorldMapDefinition worldMapDef;
@@ -130,6 +135,12 @@ public:
 		bool clearPreviousMap = false, const std::optional<WeatherDefinition> &weatherDef = std::nullopt);
 	void queueMapDefPop();
 	void queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, const SceneChangeMusicFunc &jingleMusicFunc = SceneChangeMusicFunc());
+
+	bool hasPendingLevelTransitionCalculation() const;
+	const CoordInt3 &getLevelTransitionCalculationPlayerCoord() const;
+	const CoordInt3 &getLevelTransitionCalculationTransitionCoord() const;
+	void queueLevelTransitionCalculation(const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord);
+	void clearLevelTransitionCalculation();
 
 	MapType getActiveMapType() const;
 	bool isActiveMapValid() const; // Basically "is there something we can populate the scene with?".
@@ -200,7 +211,6 @@ public:
 	void tickVoxels(double dt, Game &game);
 	void tickEntities(double dt, Game &game);
 	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
-	void tickPlayerMovementTriggers(const CoordDouble3 &oldPlayerCoord, const CoordDouble3 &newPlayerCoord, Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(const RenderCamera &renderCamera, Game &game);
 };

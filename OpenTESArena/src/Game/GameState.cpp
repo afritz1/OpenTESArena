@@ -52,6 +52,8 @@ GameState::GameState()
 	this->nextMapClearsPrevious = false;
 	this->nextLevelIndex = -1;
 
+	this->isLevelTransitionCalculationPending = false;
+
 	this->triggerTextRemainingSeconds = 0.0;
 	this->actionTextRemainingSeconds = 0.0;
 	this->effectTextRemainingSeconds = 0.0;
@@ -109,6 +111,8 @@ void GameState::init(ArenaRandom &random)
 void GameState::clearSession()
 {
 	// @todo: this function doesn't clear everything, i.e. weather state. Might want to revise later.
+
+	this->isLevelTransitionCalculationPending = false;
 
 	// Don't have to clear on-screen text box durations.
 	this->provinceIndex = -1;
@@ -235,6 +239,43 @@ void GameState::queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, c
 
 	this->nextMusicFunc = musicFunc;
 	this->nextJingleMusicFunc = jingleMusicFunc;
+}
+
+bool GameState::hasPendingLevelTransitionCalculation() const
+{
+	return this->isLevelTransitionCalculationPending;
+}
+
+const CoordInt3 &GameState::getLevelTransitionCalculationPlayerCoord() const
+{
+	DebugAssert(this->isLevelTransitionCalculationPending);
+	return this->levelTransitionCalculationPlayerCoord;
+}
+
+const CoordInt3 &GameState::getLevelTransitionCalculationTransitionCoord() const
+{
+	DebugAssert(this->isLevelTransitionCalculationPending);
+	return this->levelTransitionCalculationTransitionCoord;
+}
+
+void GameState::queueLevelTransitionCalculation(const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord)
+{
+	if (this->isLevelTransitionCalculationPending)
+	{
+		DebugLogError("Already calculating level transition.");
+		return;
+	}
+
+	this->levelTransitionCalculationPlayerCoord = playerCoord;
+	this->levelTransitionCalculationTransitionCoord = transitionCoord;
+	this->isLevelTransitionCalculationPending = true;
+}
+
+void GameState::clearLevelTransitionCalculation()
+{
+	this->isLevelTransitionCalculationPending = false;
+	this->levelTransitionCalculationPlayerCoord = CoordInt3();
+	this->levelTransitionCalculationTransitionCoord = CoordInt3();
 }
 
 MapType GameState::getActiveMapType() const
@@ -819,25 +860,6 @@ void GameState::tickUiMessages(double dt)
 	if (this->effectTextIsVisible())
 	{
 		this->effectTextRemainingSeconds -= dt;
-	}
-}
-
-void GameState::tickPlayerMovementTriggers(const CoordDouble3 &oldPlayerCoord, const CoordDouble3 &newPlayerCoord, Game &game)
-{
-	const double ceilingScale = this->getActiveCeilingScale();
-	const CoordInt3 oldPlayerVoxelCoord(oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
-	const CoordInt3 newPlayerVoxelCoord(newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
-	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
-	{
-		TextBox *triggerTextBox = game.getTriggerTextBox();
-		DebugAssert(triggerTextBox != nullptr);
-		MapLogicController::handleTriggers(game, newPlayerVoxelCoord, *triggerTextBox);
-
-		const MapType activeMapType = this->getActiveMapType();
-		if (activeMapType == MapType::Interior)
-		{
-			MapLogicController::handleLevelTransition(game, oldPlayerVoxelCoord, newPlayerVoxelCoord);
-		}
 	}
 }
 

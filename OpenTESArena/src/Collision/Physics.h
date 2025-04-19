@@ -3,6 +3,8 @@
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/BodyID.h"
+#include "Jolt/Physics/Collision/Shape/StaticCompoundShape.h"
+#include "Jolt/Physics/PhysicsSystem.h"
 
 #include "../Entities/EntityInstance.h"
 #include "../Math/Vector2.h"
@@ -46,6 +48,11 @@ namespace Physics
 		bool includeEntities, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 		const CollisionChunkManager &collisionChunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 		RayCastHit &hit);
+
+	JPH::CompoundShape *getCompoundShapeFromBody(const JPH::Body &body, JPH::PhysicsSystem &physicsSystem);
+	JPH::CompoundShape *getCompoundShapeFromBodyID(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem);
+	JPH::StaticCompoundShape *getStaticCompoundShapeFromBody(const JPH::Body &body, JPH::PhysicsSystem &physicsSystem);
+	JPH::StaticCompoundShape *getStaticCompoundShapeFromBodyID(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem);
 };
 
 #endif

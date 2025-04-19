@@ -789,3 +789,45 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 	return Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraForward, includeEntities, voxelChunkManager,
 		entityChunkManager, collisionChunkManager, entityDefLibrary, hit);
 }
+
+JPH::CompoundShape *Physics::getCompoundShapeFromBody(const JPH::Body &body, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::Shape *baseShape = const_cast<JPH::Shape*>(body.GetShape());
+	DebugAssert(baseShape->GetType() == JPH::EShapeType::Compound);
+	JPH::CompoundShape *derivedShape = static_cast<JPH::CompoundShape*>(baseShape);
+	return derivedShape;
+}
+
+JPH::CompoundShape *Physics::getCompoundShapeFromBodyID(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
+{
+	if (bodyID.IsInvalid())
+	{
+		return nullptr;
+	}
+
+	JPH::BodyLockWrite lock(physicsSystem.GetBodyLockInterface(), bodyID);
+	if (!lock.Succeeded())
+	{
+		return nullptr;
+	}
+
+	JPH::Body &physicsCompoundBody = lock.GetBody();
+	return Physics::getCompoundShapeFromBody(physicsCompoundBody, physicsSystem);
+}
+
+JPH::StaticCompoundShape *Physics::getStaticCompoundShapeFromBody(const JPH::Body &body, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::CompoundShape *baseShape = Physics::getCompoundShapeFromBody(body, physicsSystem);
+	DebugAssert(baseShape->GetSubType() == JPH::EShapeSubType::StaticCompound);
+	JPH::StaticCompoundShape *derivedShape = static_cast<JPH::StaticCompoundShape*>(baseShape);
+	return derivedShape;
+}
+
+JPH::StaticCompoundShape *Physics::getStaticCompoundShapeFromBodyID(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::CompoundShape *baseShape = Physics::getCompoundShapeFromBodyID(bodyID, physicsSystem);
+	DebugAssert(baseShape != nullptr);
+	DebugAssert(baseShape->GetSubType() == JPH::EShapeSubType::StaticCompound);
+	JPH::StaticCompoundShape *derivedShape = static_cast<JPH::StaticCompoundShape*>(baseShape);
+	return derivedShape;
+}

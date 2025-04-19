@@ -20,32 +20,6 @@ namespace
 		Sensors
 	};
 
-	JPH::CompoundShape *GetCompoundShapeFromBody(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
-	{
-		if (bodyID.IsInvalid())
-		{
-			return nullptr;
-		}
-
-		JPH::BodyLockWrite lock(physicsSystem.GetBodyLockInterface(), bodyID);
-		if (!lock.Succeeded())
-		{
-			return nullptr;
-		}
-
-		JPH::Body &physicsCompoundBody = lock.GetBody();
-		JPH::CompoundShape *shape = static_cast<JPH::CompoundShape*>(const_cast<JPH::Shape*>(physicsCompoundBody.GetShape()));
-		return shape;
-	}
-
-	JPH::StaticCompoundShape *GetStaticCompoundShapeFromBody(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
-	{
-		JPH::CompoundShape *baseShape = GetCompoundShapeFromBody(bodyID, physicsSystem);
-		DebugAssert(baseShape != nullptr);
-		JPH::StaticCompoundShape *shape = static_cast<JPH::StaticCompoundShape*>(baseShape);
-		return shape;
-	}
-
 	void MakePhysicsColliderInitValues(SNInt x, int y, WEInt z, const ChunkInt2 &chunkPos, const CollisionShapeDefinition &collisionShapeDef,
 		VoxelShapeScaleType scaleType, double ceilingScale, bool isSensor, JPH::PhysicsSystem &physicsSystem,
 		JPH::BoxShapeSettings *outBoxShapeSettings, JPH::Vec3 *outPosition, JPH::Quat *outRotation)

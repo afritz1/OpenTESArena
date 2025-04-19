@@ -53,6 +53,7 @@
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
+#include "../World/MapLogicController.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
@@ -866,9 +867,13 @@ void Game::loop()
 				this->physicsSystem.Update(static_cast<float>(clampedDeltaTime), frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
 				this->player.postPhysicsStep(*this);
 
-				const CoordDouble3 newPlayerCoord = this->player.getEyeCoord();
-				this->gameState.tickPlayerMovementTriggers(oldPlayerCoord, newPlayerCoord, *this);
+				if (this->gameState.hasPendingLevelTransitionCalculation())
+				{
+					MapLogicController::handleLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());
+					this->gameState.clearLevelTransitionCalculation();
+				}
 
+				const CoordDouble3 newPlayerCoord = this->player.getEyeCoord();
 				const Double3 newPlayerDirection = this->player.forward;
 				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, newPlayerDirection,
 					this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
