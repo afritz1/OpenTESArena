@@ -2,30 +2,20 @@
 
 #include "components/debug/Debug.h"
 
-void LeveledLockDefinition::init(int lockLevel)
+LockDefinition::LockDefinition()
 {
+	this->x = 0;
+	this->y = 0;
+	this->z = 0;
+	this->lockLevel = -1;
+	this->keyID = -1;
+}
+
+void LockDefinition::init(SNInt x, int y, WEInt z, int lockLevel)
+{
+	this->x = x;
+	this->y = y;
+	this->z = z;
 	this->lockLevel = lockLevel;
-}
-
-void KeyLockDefinition::init()
-{
-	// Do nothing.
-}
-
-void LockDefinition::initLeveledLock(SNInt x, int y, WEInt z, int lockLevel)
-{
-	this->x = x;
-	this->y = y;
-	this->z = z;
-	this->type = LockDefinitionType::LeveledLock;
-	this->leveledLock.init(lockLevel);
-}
-
-void LockDefinition::initKeyLock(SNInt x, int y, WEInt z)
-{
-	this->x = x;
-	this->y = y;
-	this->z = z;
-	this->type = LockDefinitionType::KeyLock;
-	this->keyLock.init();
+	this->keyID = (lockLevel - 1) % 12;
 }

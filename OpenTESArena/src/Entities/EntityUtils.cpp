@@ -45,7 +45,18 @@ std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Enemy:
 		return "Enemy";
 	case EntityDefinitionType::Item:
-		return "Item";
+	{
+		const ItemEntityDefinitionType itemType = entityDef.item.type;
+		switch (itemType)
+		{
+		case ItemEntityDefinitionType::Key:
+			return "Key";
+		case ItemEntityDefinitionType::QuestItem:
+			return "Quest Item";
+		default:
+			DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(itemType)));
+		}
+	}
 	case EntityDefinitionType::Projectile:
 		return "Projectile";
 	case EntityDefinitionType::StaticNPC:

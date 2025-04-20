@@ -90,6 +90,7 @@ struct INFFlat
 struct INFKey
 {
 	int id; // Key ID (starts with '+').
+	int revisedID; // ID to use with .MIF door
 
 	INFKey(int id);
 };

@@ -190,6 +190,7 @@ namespace MapGeneration
 		bool isFinalBoss;
 		const bool isCreature = optItemIndex.has_value() && ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
 		const bool isHumanEnemy = optItemIndex.has_value() && ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
+		const bool isKey = optItemIndex.has_value() && (*optItemIndex == ArenaAnimUtils::KeyItemIndex);
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
@@ -243,7 +244,11 @@ namespace MapGeneration
 			const int charClassID = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
 			outDef->initEnemyHuman(male, charClassID, std::move(entityAnimDef));
 		}
-		else // @todo: handle other entity definition types.
+		else if (isKey)
+		{
+			outDef->initItemKey(std::move(entityAnimDef));
+		}
+		else
 		{
 			// Doodad.
 			const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, mapType);
@@ -828,7 +833,7 @@ namespace MapGeneration
 		const OriginalInt2 lockPos(lock.x, lock.y);
 		const WorldInt2 newLockPos = VoxelUtils::originalVoxelToWorldVoxel(lockPos);
 		LockDefinition lockDef;
-		lockDef.initLeveledLock(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
+		lockDef.init(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
 		return lockDef;
 	}
 
@@ -1505,8 +1510,6 @@ namespace MapGeneration
 	void readArenaLock(const ArenaTypes::MIFLock &lock, const INFFile &inf, LevelDefinition *outLevelDef,
 		LevelInfoDefinition *outLevelInfoDef, ArenaLockMappingCache *lockMappings)
 	{
-		// @todo: see if .INF file key data is relevant here.
-
 		// Get lock def ID from cache or create a new one.
 		LevelVoxelLockDefID lockDefID;
 		const auto iter = std::find_if(lockMappings->begin(), lockMappings->end(),

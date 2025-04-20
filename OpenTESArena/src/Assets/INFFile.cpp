@@ -166,6 +166,7 @@ INFFlat::INFFlat()
 INFKey::INFKey(int id)
 {
 	this->id = id;
+	this->revisedID = (id - 1) % 12;
 }
 
 INFRiddle::INFRiddle(int firstNumber, int secondNumber)

@@ -96,6 +96,8 @@ namespace ArenaAnimUtils
 	// The first creature's *ITEM index (rat).
 	constexpr ArenaTypes::ItemIndex FirstCreatureItemIndex = 32;
 
+	constexpr ArenaTypes::ItemIndex KeyItemIndex = 1;
+
 	// The final boss is a special case, essentially hardcoded at the end of the creatures.
 	constexpr int FinalBossCreatureID = 24;
 
