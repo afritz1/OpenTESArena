@@ -178,9 +178,11 @@ namespace ArenaTypes
 
 		uint8_t x, y;
 
-		// Some text and sound indices are negative (which means they're unused), 
-		// so they need to be signed.
-		int8_t textIndex, soundIndex;
+		// *TEXT field which is 1) lore text, 2) riddle, or 3) door key ID if non-negative.
+		int8_t textIndex;
+
+		// @SOUND field if non-negative.
+		int8_t soundIndex;
 
 		void init(const uint8_t *data);
 	};

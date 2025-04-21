@@ -78,9 +78,9 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, Text
 		audioManager.playSound(soundFilename.c_str());
 	}
 
-	if (triggerDef.hasTextDef())
+	if (triggerDef.hasLoreTextDef())
 	{
-		const VoxelTriggerTextDefinition &textDef = triggerDef.text;
+		const VoxelTriggerLoreTextDefinition &textDef = triggerDef.loreText;
 		const VoxelInt3 &voxel = coord.voxel;
 
 		int triggerInstIndex;

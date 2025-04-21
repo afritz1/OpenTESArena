@@ -1055,7 +1055,7 @@ bool INFFile::hasRiddleIndex(int index) const
 	return this->riddles.find(index) != this->riddles.end();
 }
 
-bool INFFile::hasTextIndex(int index) const
+bool INFFile::hasLoreTextIndex(int index) const
 {
 	return this->texts.find(index) != this->texts.end();
 }

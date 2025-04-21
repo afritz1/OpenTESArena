@@ -90,7 +90,7 @@ struct INFFlat
 struct INFKey
 {
 	int id; // Key ID (starts with '+').
-	int revisedID; // ID to use with .MIF door
+	int revisedID; // ID to use with texture lookup
 
 	INFKey(int id);
 };
@@ -134,13 +134,9 @@ private:
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
 
-	// Key info for *TEXT IDs.
+	// A *TEXT field can be one of 1) lore text, 2) riddle, or 3) door key ID, accessed by its *TEXT #.
 	std::unordered_map<int, INFKey> keys;
-
-	// Riddle info for *TEXT IDs.
 	std::unordered_map<int, INFRiddle> riddles;
-
-	// Text pop-ups for *TEXT IDs. Some places have several dozen *TEXT definitions.
 	std::unordered_map<int, INFText> texts;
 
 	std::string name;
@@ -164,7 +160,7 @@ public:
 	const char *getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;
-	bool hasTextIndex(int index) const;
+	bool hasLoreTextIndex(int index) const;
 	const INFKey &getKey(int index) const;
 	const INFRiddle &getRiddle(int index) const;
 	const INFText &getText(int index) const;

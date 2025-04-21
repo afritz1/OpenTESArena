@@ -292,7 +292,7 @@ namespace PlayerLogicController
 				const WorldDouble3 newPlayerFeetPosition = playerFeetPosition + deltaPosition;
 				player.setPhysicsPositionRelativeToFeet(newPlayerFeetPosition);
 			}
-		}		
+		}
 	}
 
 	int getMeleeAnimDirectionStateIndex(const WeaponAnimationDefinition &animDef, CardinalDirectionName direction)
@@ -574,7 +574,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
 	auto &player = game.player;
@@ -593,14 +593,16 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	// See if the ray hit anything.
 	if (success)
 	{
+		const CoordDouble3 &hitCoord = hit.coord;
+		const ChunkInt2 chunkPos = hitCoord.chunk;
+		VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+
 		if (hit.type == RayCastHitType::Voxel)
 		{
-			const ChunkInt2 chunkPos = hit.coord.chunk;
-			VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 			const RayCastVoxelHit &voxelHit = hit.voxelHit;
 			const VoxelInt3 &voxel = voxelHit.voxel;
-			const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+			const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 			const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
 
 			// Primary interaction handles selection in the game world. Secondary interaction handles
@@ -623,9 +625,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							if (isWall || isEdge)
 							{
 								VoxelTransitionDefID transitionDefID;
-								if (chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
+								if (voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 								{
-									const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
+									const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
 									if (transitionDef.type != TransitionType::InteriorLevelChange)
 									{
 										MapLogicController::handleMapTransition(game, hit, transitionDef);
@@ -637,11 +639,11 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 						{
 							// @temp: add to fading voxels if it doesn't already exist.
 							int fadeAnimInstIndex;
-							if (!chunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
+							if (!voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
 							{
 								VoxelFadeAnimationInstance fadeAnimInst;
 								fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-								chunk.addFadeAnimInst(std::move(fadeAnimInst));
+								voxelChunk.addFadeAnimInst(std::move(fadeAnimInst));
 							}
 						}
 					}
@@ -649,28 +651,28 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 					{
 						// If the door is closed, then open it.
 						int doorAnimInstIndex;
-						const bool isClosed = !chunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
+						const bool isClosed = !voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
 						if (isClosed)
 						{
 							// Add the door to the open doors list.
 							VoxelDoorAnimationInstance newDoorAnimInst;
 							newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-							chunk.addDoorAnimInst(std::move(newDoorAnimInst));
+							voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
 
 							// Get the door's opening sound and play it at the center of the voxel.
 							VoxelDoorDefID doorDefID;
-							if (!chunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+							if (!voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
 							{
 								DebugCrash("Expected door def ID to exist.");
 							}
 
-							const VoxelDoorDefinition &doorDef = chunk.getDoorDef(doorDefID);
+							const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 							const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
 
 							auto &audioManager = game.audioManager;
 							const std::string &soundFilename = openSoundDef.soundFilename;
 
-							const CoordDouble3 soundCoord(chunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+							const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 							const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
 							audioManager.playSound(soundFilename.c_str(), soundPosition);
 						}
@@ -683,9 +685,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				if (ArenaSelectionUtils::isVoxelSelectableAsSecondary(voxelType))
 				{
 					VoxelBuildingNameID buildingNameID;
-					if (chunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
+					if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
 					{
-						const std::string &buildingName = chunk.getBuildingName(buildingNameID);
+						const std::string &buildingName = voxelChunk.getBuildingName(buildingNameID);
 						actionTextBox.setText(buildingName);
 
 						auto &gameState = game.gameState;
@@ -697,6 +699,8 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 		else if (hit.type == RayCastHitType::Entity)
 		{
 			const RayCastEntityHit &entityHit = hit.entityHit;
+			const CoordInt3 hitVoxelCoord(chunkPos, VoxelUtils::pointToVoxel(hitCoord.point, ceilingScale));
+			const VoxelInt3 hitVoxel = hitVoxelCoord.voxel;
 			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 			if (primaryInteraction)
@@ -712,8 +716,10 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				}*/
 
 				// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
-				const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
+				const EntityInstanceID entityInstID = entityHit.id;
+				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+				const EntityDefinitionType entityType = entityDef.type;
 				const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 
 				std::string entityName;
@@ -727,12 +733,33 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				}
 				else
 				{
-					// Placeholder text for testing.
-					text = "Entity " + std::to_string(entityHit.id) + " (" + EntityUtils::defTypeToString(entityDef) + ")";
+					switch (entityType)
+					{
+					case EntityDefinitionType::Item:
+					{
+						const ItemEntityDefinition &itemDef = entityDef.item;
+						if (itemDef.type == ItemEntityDefinitionType::Key)
+						{
+							// Pick up door key.
+							VoxelTriggerDefID triggerDefID;
+							if (voxelChunk.tryGetTriggerDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &triggerDefID))
+							{
+								const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
+								if (triggerDef.hasKeyDef())
+								{
+									const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
+									player.addToKeyInventory(triggerKeyDef.keyID);
+									entityChunkManager.queueEntityDestroy(entityInstID);
+								}
+							}
+						}
 
-					if (entityDef.type == EntityDefinitionType::Item && entityDef.item.type == ItemEntityDefinitionType::Key)
-					{						
-						player.addToKeyInventory(game.random.next(12));
+						break;
+					}
+					default:
+						// Placeholder text for testing.
+						text = "Entity " + std::to_string(entityInstID) + " (" + EntityUtils::defTypeToString(entityDef) + ")";
+						break;
 					}
 				}
 

@@ -9,10 +9,25 @@ void VoxelTriggerSoundDefinition::init(const std::string &filename)
 	this->filename = filename;
 }
 
-void VoxelTriggerTextDefinition::init(const std::string &text, bool isDisplayedOnce)
+VoxelTriggerLoreTextDefinition::VoxelTriggerLoreTextDefinition()
+{
+	this->isDisplayedOnce = false;
+}
+
+void VoxelTriggerLoreTextDefinition::init(const std::string &text, bool isDisplayedOnce)
 {
 	this->text = text;
 	this->isDisplayedOnce = isDisplayedOnce;
+}
+
+VoxelTriggerKeyDefinition::VoxelTriggerKeyDefinition()
+{
+	this->keyID = -1;
+}
+
+void VoxelTriggerKeyDefinition::init(int keyID)
+{
+	this->keyID = keyID;
 }
 
 VoxelTriggerDefinition::VoxelTriggerDefinition()
@@ -34,12 +49,17 @@ bool VoxelTriggerDefinition::hasSoundDef() const
 	return !this->sound.filename.empty();
 }
 
-bool VoxelTriggerDefinition::hasTextDef() const
+bool VoxelTriggerDefinition::hasLoreTextDef() const
 {
-	return !this->text.text.empty();
+	return !this->loreText.text.empty();
 }
 
-bool VoxelTriggerDefinition::hasValidDef() const
+bool VoxelTriggerDefinition::hasKeyDef() const
 {
-	return this->hasSoundDef() || this->hasTextDef();
+	return this->key.keyID >= 0;
+}
+
+bool VoxelTriggerDefinition::hasValidDefForPhysics() const
+{
+	return this->hasSoundDef() || this->hasLoreTextDef();
 }

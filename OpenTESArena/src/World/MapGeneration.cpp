@@ -869,18 +869,31 @@ namespace MapGeneration
 		VoxelTriggerDefinition triggerDef;
 		triggerDef.init(newTriggerPos.x, 1, newTriggerPos.y);
 
-		// There can be a text trigger and sound trigger in the same voxel.
-		const bool isTextTrigger = trigger.textIndex != -1;
-		const bool isSoundTrigger = trigger.soundIndex != -1;
+		// There can be a *TEXT trigger and @SOUND trigger in the same voxel.
+		const bool isValidTextTrigger = trigger.textIndex != -1;
+		const bool isValidSoundTrigger = trigger.soundIndex != -1;
 
-		// Make sure the text index points to a text value (i.e., not a key or riddle).
-		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
+		if (isValidTextTrigger)
 		{
-			const INFText &textData = inf.getText(trigger.textIndex);
-			triggerDef.text.init(textData.text, textData.isDisplayedOnce);
+			if (inf.hasLoreTextIndex(trigger.textIndex))
+			{
+				const INFText &textData = inf.getText(trigger.textIndex);
+				triggerDef.loreText.init(textData.text, textData.isDisplayedOnce);
+			}
+			else if (inf.hasRiddleIndex(trigger.textIndex))
+			{
+				const INFRiddle &riddleData = inf.getRiddle(trigger.textIndex);
+				DebugLogWarningFormat("Riddles not implemented, trigger (%d, %d).", newTriggerPos.x, newTriggerPos.y);
+				// @todo
+			}
+			else if (inf.hasKeyIndex(trigger.textIndex))
+			{
+				const INFKey &keyData = inf.getKey(trigger.textIndex);
+				triggerDef.key.init(keyData.revisedID);
+			}
 		}
 
-		if (isSoundTrigger)
+		if (isValidSoundTrigger)
 		{
 			const char *soundName = inf.getSound(trigger.soundIndex);
 			triggerDef.sound.init(String::toUppercase(soundName));

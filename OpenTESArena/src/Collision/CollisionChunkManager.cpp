@@ -69,7 +69,7 @@ namespace
 					if (voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID))
 					{
 						const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.getTriggerDef(triggerDefID);
-						isTriggerVoxel = voxelTriggerDef.hasValidDef();
+						isTriggerVoxel = voxelTriggerDef.hasValidDefForPhysics();
 					}
 
 					bool isInteriorLevelChangeVoxel = false;
