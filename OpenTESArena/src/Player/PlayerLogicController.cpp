@@ -729,6 +729,11 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				{
 					// Placeholder text for testing.
 					text = "Entity " + std::to_string(entityHit.id) + " (" + EntityUtils::defTypeToString(entityDef) + ")";
+
+					if (entityDef.type == EntityDefinitionType::Item && entityDef.item.type == ItemEntityDefinitionType::Key)
+					{						
+						player.addToKeyInventory(game.random.next(12));
+					}
 				}
 
 				actionTextBox.setText(text);

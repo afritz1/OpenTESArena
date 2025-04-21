@@ -166,15 +166,16 @@ namespace
 
 Player::Player()
 {
+	this->physicsCharacter = nullptr;
+	this->physicsCharacterVirtual = nullptr;
+	this->setCameraFrame(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
+	this->movementSoundProgress = 0.0;
 	this->male = false;
 	this->raceID = -1;
 	this->charClassDefID = -1;
 	this->portraitID = -1;
-	this->setCameraFrame(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
-	this->movementSoundProgress = 0.0;
 	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
-	this->physicsCharacter = nullptr;
-	this->physicsCharacterVirtual = nullptr;
+	this->clearKeyInventory();
 }
 
 Player::~Player()
@@ -197,6 +198,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
 	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
+	this->clearKeyInventory();
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
@@ -224,13 +226,15 @@ void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const Exe
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
 	this->primaryAttributes.init(this->raceID, this->male, exeData);	
 	this->inventory.clear();
+	this->clearKeyInventory();
+
 	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 	for (int i = 0; i < itemLibrary.getCount(); i++)
 	{
 		const ItemDefinitionID itemDefID = static_cast<ItemDefinitionID>(i);
 		this->inventory.insert(itemDefID);
-	}
-	
+	}	
+
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
 		DebugCrash("Couldn't create player physics collider.");
@@ -258,6 +262,34 @@ void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
 		this->physicsCharacterVirtual->Release();
 		this->physicsCharacterVirtual = nullptr;
 	}
+}
+
+void Player::addToKeyInventory(int keyID)
+{
+	DebugAssert(keyID >= 0);
+
+	int insertIndex = -1;
+	for (int i = 0; i < static_cast<int>(std::size(this->keyInventory)); i++)
+	{
+		if (this->keyInventory[i] == ArenaItemUtils::InvalidDoorKeyID)
+		{
+			insertIndex = i;
+			break;
+		}
+	}
+
+	if (insertIndex < 0)
+	{
+		DebugLogWarningFormat("No room in key inventory for key %d.", keyID);
+		return;
+	}
+
+	this->keyInventory[insertIndex] = keyID;
+}
+
+void Player::clearKeyInventory()
+{
+	std::fill(std::begin(this->keyInventory), std::end(this->keyInventory), ArenaItemUtils::InvalidDoorKeyID);
 }
 
 void Player::setCameraFrame(const Double3 &forward)

@@ -14,6 +14,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../Items/ArenaItemUtils.h"
 #include "../Player/PlayerLogicController.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderCamera.h"
@@ -340,10 +341,20 @@ void GameWorldPanel::initUiDrawCalls()
 
 	for (int i = 0; i < this->keyTextureRefs.getCount(); i++)
 	{
-		UiDrawCall::TextureFunc keyTextureFunc = [this, i]()
+		auto getKeyIdAtIndex = [&game](int keyIndex)
 		{
-			// @todo: get the currently carried key from "key inventory" wherever that is
-			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(i);
+			const Player &player = game.player;
+			const auto &keyInventory = player.keyInventory;
+			DebugAssertIndex(keyInventory, keyIndex);
+			const int keyID = keyInventory[keyIndex];
+			return keyID;
+		};
+
+		UiDrawCall::TextureFunc keyTextureFunc = [this, &game, i, getKeyIdAtIndex]()
+		{
+			const int keyID = getKeyIdAtIndex(i);
+			DebugAssert(keyID != ArenaItemUtils::InvalidDoorKeyID);
+			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(keyID);
 			return textureRef.get();
 		};
 
@@ -352,18 +363,19 @@ void GameWorldPanel::initUiDrawCalls()
 			return GameWorldUiView::getKeyPosition(i);
 		};
 
-		UiDrawCall::SizeFunc keySizeFunc = [this, i]()
+		UiDrawCall::SizeFunc keySizeFunc = [this, i, getKeyIdAtIndex]()
 		{
-			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(i);
+			const int keyID = getKeyIdAtIndex(i);
+			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(keyID);
 			return Int2(textureRef.getWidth(), textureRef.getHeight());
 		};
 
 		UiDrawCall::PivotFunc keyPivotFunc = []() { return PivotType::TopLeft; };
 
-		UiDrawCall::ActiveFunc keyActiveFunc = [this, i]()
+		UiDrawCall::ActiveFunc keyActiveFunc = [&game, i, getKeyIdAtIndex]()
 		{
-			// @todo: only if this # of keys is active in key inventory
-			return true;
+			const int keyID = getKeyIdAtIndex(i);
+			return keyID != ArenaItemUtils::InvalidDoorKeyID;
 		};
 
 		this->addDrawCall(

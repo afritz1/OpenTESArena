@@ -60,6 +60,7 @@ struct Player
 
 	PrimaryAttributes primaryAttributes;
 	ItemInventory inventory;
+	int keyInventory[ArenaItemUtils::DoorKeyCount];
 
 	Player();
 	~Player();
@@ -73,6 +74,9 @@ struct Player
 	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
 
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
+
+	void addToKeyInventory(int keyID);
+	void clearKeyInventory();
 
 	void setCameraFrame(const Double3 &forward);
 

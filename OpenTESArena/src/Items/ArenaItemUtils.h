@@ -9,6 +9,9 @@ namespace ArenaItemUtils
 	constexpr int FistsWeaponID = -1;
 	constexpr int RangedWeaponIDs[] = { 16, 17 };
 
+	constexpr int DoorKeyCount = 12;
+	constexpr int InvalidDoorKeyID = -1;
+
 	bool isRangedWeapon(int weaponID);
 }
 
