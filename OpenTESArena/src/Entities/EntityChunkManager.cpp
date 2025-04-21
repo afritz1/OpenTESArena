@@ -1124,6 +1124,16 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID)
 	if (iter == this->destroyedEntityIDs.end())
 	{
 		this->destroyedEntityIDs.emplace_back(entityInstID);
+
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const CoordDouble2 &entityCoord = this->getEntityPosition(entityInst.positionID);
+		const ChunkInt2 entityChunkPos = entityCoord.chunk;
+		EntityChunk &entityChunk = this->getChunkAtPosition(entityChunkPos);
+		
+		const auto chunkEntityIter = std::find(entityChunk.entityIDs.begin(), entityChunk.entityIDs.end(), entityInstID);
+		DebugAssert(chunkEntityIter != entityChunk.entityIDs.end());
+		entityChunk.entityIDs.erase(chunkEntityIter);
+		entityChunk.removedEntityIDs.emplace_back(entityInstID);
 	}
 }
 
