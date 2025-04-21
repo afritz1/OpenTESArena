@@ -198,8 +198,10 @@ double GameWorldUiView::getEffectTextSeconds(const std::string_view text)
 
 TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
+	constexpr int maxNewLines = 6;
+
 	std::string dummyText;
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < maxNewLines; i++)
 	{
 		std::string dummyLine(40, TextRenderUtils::LARGEST_CHAR); // Arbitrary worst-case line size.
 		dummyText += dummyLine + '\n';
