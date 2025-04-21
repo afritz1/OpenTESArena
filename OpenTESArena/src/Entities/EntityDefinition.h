@@ -159,7 +159,9 @@ struct ItemEntityDefinition
 
 	struct QuestItemDefinition
 	{
-		// @todo
+		int yOffset;
+
+		bool operator==(const QuestItemDefinition &other) const;
 	};
 
 	ItemEntityDefinitionType type;
@@ -173,7 +175,7 @@ struct ItemEntityDefinition
 	ItemEntityDefinition();
 
 	void initKey();
-	void initQuestItem();
+	void initQuestItem(int yOffset);
 
 	bool operator==(const ItemEntityDefinition &other) const;
 };
@@ -186,7 +188,6 @@ enum class ContainerEntityDefinitionType
 
 struct ContainerEntityDefinition
 {
-public:
 	struct HolderDefinition
 	{
 		bool locked;
@@ -205,7 +206,7 @@ public:
 
 		bool operator==(const PileDefinition &other) const;
 	};
-private:
+
 	ContainerEntityDefinitionType type;
 
 	union
@@ -213,7 +214,7 @@ private:
 		HolderDefinition holder;
 		PileDefinition pile;
 	};
-public:
+
 	ContainerEntityDefinition();
 
 	void initHolder(bool locked);
@@ -321,7 +322,7 @@ struct EntityDefinition
 	void initStaticNpcPerson(EntityAnimationDefinition &&animDef);
 
 	void initItemKey(EntityAnimationDefinition &&animDef);
-	void initItemQuestItem(EntityAnimationDefinition &&animDef);
+	void initItemQuestItem(int yOffset, EntityAnimationDefinition &&animDef);
 
 	void initContainerHolder(bool locked, EntityAnimationDefinition &&animDef);
 	void initContainerPile(EntityAnimationDefinition &&animDef);

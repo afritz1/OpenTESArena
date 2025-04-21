@@ -187,10 +187,24 @@ namespace MapGeneration
 		const bool isDynamicEntity = ArenaAnimUtils::isDynamicEntity(flatIndex, inf);
 		const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 
-		bool isFinalBoss;
-		const bool isCreature = optItemIndex.has_value() && ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
-		const bool isHumanEnemy = optItemIndex.has_value() && ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
-		const bool isKey = optItemIndex.has_value() && (*optItemIndex == ArenaAnimUtils::KeyItemIndex);
+		bool isCreature = false;
+		bool isCreatureFinalBoss = false;
+		bool isHumanEnemy = false;
+		bool isPileContainer = false;
+		bool isLockedHolderContainer = false;
+		bool isUnlockedHolderContainer = false;
+		bool isKey = false;
+		bool isQuestItem = false;
+		if (optItemIndex.has_value())
+		{
+			isCreature = ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isCreatureFinalBoss);
+			isHumanEnemy = ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
+			isPileContainer = ArenaAnimUtils::isTreasurePileContainerIndex(*optItemIndex);
+			isLockedHolderContainer = ArenaAnimUtils::isLockedHolderContainerIndex(*optItemIndex);
+			isUnlockedHolderContainer = ArenaAnimUtils::isUnlockedHolderContainerIndex(*optItemIndex);
+			isKey = *optItemIndex == ArenaAnimUtils::KeyItemIndex;
+			isQuestItem = *optItemIndex == ArenaAnimUtils::QuestItemIndex;
+		}
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
@@ -216,18 +230,16 @@ namespace MapGeneration
 
 		DebugAssert(!String::isNullOrEmpty(entityAnimDef.initialStateName));
 
-		// @todo: replace isCreature/etc. with some flatIndex -> EntityDefinition::Type function.
-		// - Most likely also need location/interior type, etc. because flatIndex is level-dependent.
 		if (isCreature)
 		{
 			const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
-			const int creatureID = isFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
+			const int creatureID = isCreatureFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 
 			// @todo: read from EntityDefinitionLibrary instead, and don't make anim def above.
 			// Currently these are just going to be duplicates of defs in the library.
 			EntityDefinitionKey entityDefKey;
-			entityDefKey.initCreature(creatureIndex, isFinalBoss);
+			entityDefKey.initCreature(creatureIndex, isCreatureFinalBoss);
 
 			EntityDefID entityDefID;
 			if (!entityDefLibrary.tryGetDefinitionID(entityDefKey, &entityDefID))
@@ -244,9 +256,21 @@ namespace MapGeneration
 			const int charClassID = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
 			outDef->initEnemyHuman(male, charClassID, std::move(entityAnimDef));
 		}
+		else if (isPileContainer)
+		{
+			outDef->initContainerPile(std::move(entityAnimDef));
+		}
+		else if (isLockedHolderContainer || isUnlockedHolderContainer)
+		{
+			outDef->initContainerHolder(isLockedHolderContainer,  std::move(entityAnimDef));
+		}
 		else if (isKey)
 		{
 			outDef->initItemKey(std::move(entityAnimDef));
+		}
+		else if (isQuestItem)
+		{
+			outDef->initItemQuestItem(flatData.yOffset, std::move(entityAnimDef));
 		}
 		else
 		{

@@ -38,8 +38,19 @@ std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 	{
 	case EntityDefinitionType::Citizen:
 		return "Citizen";
-	case EntityDefinitionType::Container:
-		return "Container";
+	case EntityDefinitionType::Container:		
+	{
+		const ContainerEntityDefinitionType containerType = entityDef.container.type;
+		switch (containerType)
+		{
+		case ContainerEntityDefinitionType::Holder:
+			return std::string("Holder") + (entityDef.container.holder.locked ? " Locked" : " Unlocked");
+		case ContainerEntityDefinitionType::Pile:
+			return "Pile";
+		default:
+			DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(containerType)));
+		}
+	}
 	case EntityDefinitionType::Doodad:
 		return "Doodad";
 	case EntityDefinitionType::Enemy:
@@ -110,8 +121,9 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 {
 	const EntityDefinitionType type = entityDef.type;
 	const bool isEnemy = type == EntityDefinitionType::Enemy;
+	const bool isItem = type == EntityDefinitionType::Item;
 	const bool isDoodad = type == EntityDefinitionType::Doodad;
-	if (!isEnemy && !isDoodad)
+	if (!isEnemy && !isItem && !isDoodad)
 	{
 		return 0;
 	}
@@ -126,6 +138,17 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 
 		const EnemyEntityDefinition::CreatureDefinition &creatureDef = enemyDef.creature;
 		return creatureDef.yOffset;
+	}
+	else if (isItem)
+	{
+		const ItemEntityDefinition &itemDef = entityDef.item;
+		if (itemDef.type == ItemEntityDefinitionType::Key)
+		{
+			return 0;
+		}
+
+		const ItemEntityDefinition::QuestItemDefinition &questItemDef = itemDef.questItem;
+		return questItemDef.yOffset;
 	}
 	else
 	{

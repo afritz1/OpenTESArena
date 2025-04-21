@@ -300,6 +300,16 @@ bool StaticNpcEntityDefinition::operator==(const StaticNpcEntityDefinition &othe
 	}
 }
 
+bool ItemEntityDefinition::QuestItemDefinition::operator==(const QuestItemDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	return this->yOffset == other.yOffset;
+}
+
 ItemEntityDefinition::ItemEntityDefinition()
 {
 	this->type = static_cast<ItemEntityDefinitionType>(-1);
@@ -310,9 +320,10 @@ void ItemEntityDefinition::initKey()
 	this->type = ItemEntityDefinitionType::Key;
 }
 
-void ItemEntityDefinition::initQuestItem()
+void ItemEntityDefinition::initQuestItem(int yOffset)
 {
 	this->type = ItemEntityDefinitionType::QuestItem;
+	this->questItem.yOffset = yOffset;
 }
 
 bool ItemEntityDefinition::operator==(const ItemEntityDefinition &other) const
@@ -322,7 +333,20 @@ bool ItemEntityDefinition::operator==(const ItemEntityDefinition &other) const
 		return true;
 	}
 
-	return this->type == other.type;
+	if (this->type != other.type)
+	{
+		return false;
+	}
+
+	switch (this->type)
+	{
+	case ItemEntityDefinitionType::Key:
+		return true;
+	case ItemEntityDefinitionType::QuestItem:
+		return this->questItem == other.questItem;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
+	}
 }
 
 ContainerEntityDefinition::HolderDefinition::HolderDefinition()
@@ -618,10 +642,10 @@ void EntityDefinition::initItemKey(EntityAnimationDefinition &&animDef)
 	this->item.initKey();
 }
 
-void EntityDefinition::initItemQuestItem(EntityAnimationDefinition &&animDef)
+void EntityDefinition::initItemQuestItem(int yOffset, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Item, std::move(animDef));
-	this->item.initQuestItem();
+	this->item.initQuestItem(yOffset);
 }
 
 void EntityDefinition::initContainerHolder(bool locked, EntityAnimationDefinition &&animDef)

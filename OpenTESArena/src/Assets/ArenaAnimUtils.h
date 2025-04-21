@@ -88,6 +88,11 @@ namespace ArenaAnimUtils
 	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
 	bool isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex);
 
+	bool isLockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex);
+	bool isUnlockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex);
+	bool isTreasurePileContainerIndex(ArenaTypes::ItemIndex itemIndex);
+	bool isContainerIndex(ArenaTypes::ItemIndex itemIndex);
+
 	// Returns whether the given flat index is for a static or dynamic entity.
 	bool isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
 
@@ -97,6 +102,7 @@ namespace ArenaAnimUtils
 	constexpr ArenaTypes::ItemIndex FirstCreatureItemIndex = 32;
 
 	constexpr ArenaTypes::ItemIndex KeyItemIndex = 1;
+	constexpr ArenaTypes::ItemIndex QuestItemIndex = 13;
 
 	// The final boss is a special case, essentially hardcoded at the end of the creatures.
 	constexpr int FinalBossCreatureID = 24;

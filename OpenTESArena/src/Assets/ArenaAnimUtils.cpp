@@ -644,6 +644,27 @@ bool ArenaAnimUtils::isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex)
 	return itemIndex >= 55 && itemIndex <= 72;
 }
 
+bool ArenaAnimUtils::isLockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex)
+{
+	return itemIndex == 7;
+}
+
+bool ArenaAnimUtils::isUnlockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex)
+{
+	return itemIndex == 8;
+}
+
+bool ArenaAnimUtils::isTreasurePileContainerIndex(ArenaTypes::ItemIndex itemIndex)
+{
+	return itemIndex >= 3 && itemIndex <= 6;
+}
+
+bool ArenaAnimUtils::isContainerIndex(ArenaTypes::ItemIndex itemIndex)
+{
+	const bool isHolder = ArenaAnimUtils::isLockedHolderContainerIndex(itemIndex) || ArenaAnimUtils::isUnlockedHolderContainerIndex(itemIndex);
+	return isHolder || ArenaAnimUtils::isTreasurePileContainerIndex(itemIndex);
+}
+
 bool ArenaAnimUtils::isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFFile &inf)
 {
 	const auto &flatData = inf.getFlat(flatIndex);
