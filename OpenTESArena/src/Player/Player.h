@@ -8,6 +8,7 @@
 
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
+#include "../Items/ArenaItemUtils.h"
 #include "../Items/ItemInventory.h"
 #include "../Math/MathUtils.h"
 #include "../Stats/PrimaryAttribute.h"
