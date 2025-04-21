@@ -315,6 +315,14 @@ void GameWorldPanel::initUiDrawCalls()
 		this->weaponAnimTextureRefs.set(i, ScopedUiTextureRef(weaponTextureID, renderer));
 	}
 
+	const int keyTextureCount = GameWorldUiView::getKeyTextureCount(textureManager);
+	this->keyTextureRefs.init(keyTextureCount);
+	for (int i = 0; i < keyTextureCount; i++)
+	{
+		const UiTextureID keyTextureID = GameWorldUiView::allocKeyTexture(i, textureManager, renderer);
+		this->keyTextureRefs.set(i, ScopedUiTextureRef(keyTextureID, renderer));
+	}	
+
 	const UiTextureID compassFrameTextureID = GameWorldUiView::allocCompassFrameTexture(textureManager, renderer);
 	const UiTextureID compassSliderTextureID = GameWorldUiView::allocCompassSliderTexture(textureManager, renderer);
 	this->compassFrameTextureRef.init(compassFrameTextureID, renderer);
@@ -328,6 +336,42 @@ void GameWorldPanel::initUiDrawCalls()
 	{
 		const UiTextureID arrowTextureID = GameWorldUiView::allocArrowCursorTexture(i, textureManager, renderer);
 		this->arrowCursorTextureRefs.set(i, ScopedUiTextureRef(arrowTextureID, renderer));
+	}
+
+	for (int i = 0; i < this->keyTextureRefs.getCount(); i++)
+	{
+		UiDrawCall::TextureFunc keyTextureFunc = [this, i]()
+		{
+			// @todo: get the currently carried key from "key inventory" wherever that is
+			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(i);
+			return textureRef.get();
+		};
+
+		UiDrawCall::PositionFunc keyPositionFunc = [i]()
+		{
+			return GameWorldUiView::getKeyPosition(i);
+		};
+
+		UiDrawCall::SizeFunc keySizeFunc = [this, i]()
+		{
+			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(i);
+			return Int2(textureRef.getWidth(), textureRef.getHeight());
+		};
+
+		UiDrawCall::PivotFunc keyPivotFunc = []() { return PivotType::TopLeft; };
+
+		UiDrawCall::ActiveFunc keyActiveFunc = [this, i]()
+		{
+			// @todo: only if this # of keys is active in key inventory
+			return true;
+		};
+
+		this->addDrawCall(
+			keyTextureFunc,
+			keyPositionFunc,
+			keySizeFunc,
+			keyPivotFunc,
+			keyActiveFunc);
 	}
 
 	if (modernInterface)

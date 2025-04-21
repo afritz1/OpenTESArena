@@ -111,6 +111,9 @@ namespace GameWorldUiView
 
 	Int2 getNoMagicTexturePosition();
 
+	int getKeyTextureCount(TextureManager &textureManager);
+	Int2 getKeyPosition(int keyIndex);
+
 	const std::string TriggerTextFontName = ArenaFontName::Arena;
 	const Color TriggerTextColor(215, 121, 8);
 	constexpr TextAlignment TriggerTextAlignment = TextAlignment::BottomCenter;
@@ -166,6 +169,7 @@ namespace GameWorldUiView
 	TextureAsset getCompassFrameTextureAsset();
 	TextureAsset getCompassSliderTextureAsset();
 	TextureAsset getArrowCursorTextureAsset(int cursorIndex);
+	TextureAsset getKeyTextureAsset(int keyIndex);
 
 	UiTextureID allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocStatusGradientTexture(StatusGradientType gradientType, TextureManager &textureManager, Renderer &renderer);
@@ -176,6 +180,7 @@ namespace GameWorldUiView
 	UiTextureID allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, const FontLibrary &fontLibrary, Renderer &renderer);
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocKeyTexture(int keyIndex, TextureManager &textureManager, Renderer &renderer);
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);

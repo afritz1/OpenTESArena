@@ -27,7 +27,7 @@ private:
 	Button<> stealButton, magicButton, useItemButton, campButton;
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
-	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, tooltipTextureRefs;
+	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, keyTextureRefs, tooltipTextureRefs;
 	ScopedUiTextureRef gameWorldInterfaceTextureRef, statusGradientTextureRef, playerPortraitTextureRef,
 		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef;
 

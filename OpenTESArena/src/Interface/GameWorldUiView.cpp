@@ -155,6 +155,25 @@ Int2 GameWorldUiView::getNoMagicTexturePosition()
 	return Int2(91, 177);
 }
 
+int GameWorldUiView::getKeyTextureCount(TextureManager &textureManager)
+{
+	const TextureAsset &textureAsset = GameWorldUiView::getKeyTextureAsset(0);
+	std::optional<TextureFileMetadataID> textureFileMetadataID = textureManager.tryGetMetadataID(textureAsset.filename.c_str());
+	if (!textureFileMetadataID.has_value())
+	{
+		DebugLogErrorFormat("Couldn't get texture file metadata ID for key textures \"%s\".", textureAsset.filename.c_str());
+		return 0;
+	}
+
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*textureFileMetadataID);
+	return textureFileMetadata.getTextureCount();
+}
+
+Int2 GameWorldUiView::getKeyPosition(int keyIndex)
+{
+	return Int2(8, 16 + (10 * keyIndex));
+}
+
 Int2 GameWorldUiView::getTriggerTextPosition(Game &game, int gameWorldInterfaceTextureHeight)
 {
 	const auto &options = game.options;
@@ -385,6 +404,11 @@ TextureAsset GameWorldUiView::getArrowCursorTextureAsset(int cursorIndex)
 	return TextureAsset(std::string(ArenaTextureName::ArrowCursors), cursorIndex);
 }
 
+TextureAsset GameWorldUiView::getKeyTextureAsset(int keyIndex)
+{
+	return TextureAsset(std::string(ArenaTextureName::DoorKeys), keyIndex);
+}
+
 UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAsset textureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
@@ -514,6 +538,20 @@ UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureMan
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create UI texture for arrow cursor " + std::to_string(cursorIndex) + ".");
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocKeyTexture(int keyIndex, TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAsset textureAsset = GameWorldUiView::getKeyTextureAsset(keyIndex);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
+	{
+		DebugCrashFormat("Couldn't create UI texture for key %d.", keyIndex);
 	}
 
 	return textureID;
