@@ -274,7 +274,7 @@ namespace MapGeneration
 		}
 		else
 		{
-			// Doodad.
+			// Decoration.
 			const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, mapType);
 			const double scale = ArenaAnimUtils::getDimensionModifier(flatData);
 			const int lightIntensity = flatData.lightIntensity.has_value() ? *flatData.lightIntensity : 0;
@@ -282,7 +282,7 @@ namespace MapGeneration
 			// @todo: TransitionDefID from flatIndex -- use MapGeneration::isMap1TransitionEntity().
 			// @todo: support wild den transitions here. Might need to pass the transition cache here.
 
-			outDef->initDoodad(flatData.yOffset, scale, flatData.collider, flatData.transparent, flatData.ceiling, streetLight,
+			outDef->initDecoration(flatData.yOffset, scale, flatData.collider, flatData.transparent, flatData.ceiling, streetLight,
 				flatData.puddle, lightIntensity, std::move(entityAnimDef));
 		}
 

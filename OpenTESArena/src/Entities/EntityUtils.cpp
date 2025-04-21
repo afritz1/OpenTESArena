@@ -19,7 +19,7 @@ bool EntityUtils::isDynamicEntity(EntityDefinitionType defType)
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Container:
 	case EntityDefinitionType::Transition:
-	case EntityDefinitionType::Doodad:
+	case EntityDefinitionType::Decoration:
 		return false;
 	case EntityDefinitionType::Enemy:
 	case EntityDefinitionType::Citizen:
@@ -51,8 +51,8 @@ std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 			DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(containerType)));
 		}
 	}
-	case EntityDefinitionType::Doodad:
-		return "Doodad";
+	case EntityDefinitionType::Decoration:
+		return "Decoration";
 	case EntityDefinitionType::Enemy:
 		return "Enemy";
 	case EntityDefinitionType::Item:
@@ -87,7 +87,7 @@ bool EntityUtils::isLevelDependentDef(EntityDefID defID,
 
 bool EntityUtils::isStreetlight(const EntityDefinition &entityDef)
 {
-	return (entityDef.type == EntityDefinitionType::Doodad) && entityDef.doodad.streetlight;
+	return (entityDef.type == EntityDefinitionType::Decoration) && entityDef.decoration.streetlight;
 }
 
 bool EntityUtils::isGhost(const EntityDefinition &entityDef)
@@ -108,13 +108,13 @@ bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 
 bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
 {
-	if (entityDef.type != EntityDefinitionType::Doodad)
+	if (entityDef.type != EntityDefinitionType::Decoration)
 	{
 		return false;
 	}
 
-	const DoodadEntityDefinition &doodad = entityDef.doodad;
-	return doodad.puddle;
+	const DecorationEntityDefinition &decoration = entityDef.decoration;
+	return decoration.puddle;
 }
 
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)
@@ -122,8 +122,8 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 	const EntityDefinitionType type = entityDef.type;
 	const bool isEnemy = type == EntityDefinitionType::Enemy;
 	const bool isItem = type == EntityDefinitionType::Item;
-	const bool isDoodad = type == EntityDefinitionType::Doodad;
-	if (!isEnemy && !isItem && !isDoodad)
+	const bool isDecoration = type == EntityDefinitionType::Decoration;
+	if (!isEnemy && !isItem && !isDecoration)
 	{
 		return 0;
 	}
@@ -152,8 +152,8 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 	}
 	else
 	{
-		const DoodadEntityDefinition &doodadDef = entityDef.doodad;
-		return doodadDef.yOffset;
+		const DecorationEntityDefinition &decorationDef = entityDef.decoration;
+		return decorationDef.yOffset;
 	}
 }
 
@@ -171,8 +171,8 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Projectile:
 	case EntityDefinitionType::Transition:
 		return false;
-	case EntityDefinitionType::Doodad:
-		return entityDef.doodad.collider;
+	case EntityDefinitionType::Decoration:
+		return entityDef.decoration.collider;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
 	}
@@ -180,19 +180,19 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 
 std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef)
 {
-	if (entityDef.type != EntityDefinitionType::Doodad)
+	if (entityDef.type != EntityDefinitionType::Decoration)
 	{
 		return std::nullopt;
 	}
 
-	const DoodadEntityDefinition &doodadDef = entityDef.doodad;
-	if (doodadDef.streetlight)
+	const DecorationEntityDefinition &decorationDef = entityDef.decoration;
+	if (decorationDef.streetlight)
 	{
 		return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
 	}
-	else if (doodadDef.lightIntensity > 0)
+	else if (decorationDef.lightIntensity > 0)
 	{
-		return static_cast<double>(doodadDef.lightIntensity);
+		return static_cast<double>(decorationDef.lightIntensity);
 	}
 	else
 	{

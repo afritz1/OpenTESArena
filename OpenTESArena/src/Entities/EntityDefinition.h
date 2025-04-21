@@ -20,7 +20,7 @@ enum class EntityDefinitionType
 	Projectile, // Arrows
 	Vfx, // Spell projectile, explosion, or melee strike
 	Transition, // Wilderness den.
-	Doodad // Trees, chairs, streetlights, etc..
+	Decoration // Trees, chairs, streetlights, etc..
 };
 
 enum class EnemyEntityDefinitionType
@@ -269,7 +269,7 @@ struct TransitionEntityDefinition
 	bool operator==(const TransitionEntityDefinition &other) const;
 };
 
-struct DoodadEntityDefinition
+struct DecorationEntityDefinition
 {
 	// @todo: eventually convert these to modern values (percentages, etc.).
 	int yOffset;
@@ -281,11 +281,11 @@ struct DoodadEntityDefinition
 	bool puddle;
 	int lightIntensity; // Has intensity if over 0.
 
-	DoodadEntityDefinition();
+	DecorationEntityDefinition();
 
 	void init(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle, int lightIntensity);
 
-	bool operator==(const DoodadEntityDefinition &other) const;
+	bool operator==(const DecorationEntityDefinition &other) const;
 };
 
 struct EntityDefinition
@@ -303,7 +303,7 @@ struct EntityDefinition
 		ProjectileEntityDefinition projectile;
 		VfxEntityDefinition vfx;
 		TransitionEntityDefinition transition;
-		DoodadEntityDefinition doodad;
+		DecorationEntityDefinition decoration;
 	};
 
 	EntityDefinition();
@@ -333,7 +333,7 @@ struct EntityDefinition
 
 	void initTransition(LevelVoxelTransitionDefID defID, EntityAnimationDefinition &&animDef);
 
-	void initDoodad(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle,
+	void initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle,
 		int lightIntensity, EntityAnimationDefinition &&animDef);
 };
 

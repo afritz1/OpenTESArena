@@ -480,7 +480,7 @@ bool TransitionEntityDefinition::operator==(const TransitionEntityDefinition &ot
 	return this->transitionDefID == other.transitionDefID;
 }
 
-DoodadEntityDefinition::DoodadEntityDefinition()
+DecorationEntityDefinition::DecorationEntityDefinition()
 {
 	this->yOffset = 0;
 	this->scale = 0.0;
@@ -492,7 +492,7 @@ DoodadEntityDefinition::DoodadEntityDefinition()
 	this->lightIntensity = 0;
 }
 
-void DoodadEntityDefinition::init(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle, int lightIntensity)
+void DecorationEntityDefinition::init(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle, int lightIntensity)
 {
 	this->yOffset = yOffset;
 	this->scale = scale;
@@ -504,7 +504,7 @@ void DoodadEntityDefinition::init(int yOffset, double scale, bool collider, bool
 	this->lightIntensity = lightIntensity;
 }
 
-bool DoodadEntityDefinition::operator==(const DoodadEntityDefinition &other) const
+bool DecorationEntityDefinition::operator==(const DecorationEntityDefinition &other) const
 {
 	if (this == &other)
 	{
@@ -598,8 +598,8 @@ bool EntityDefinition::operator==(const EntityDefinition &other) const
 		return this->projectile == other.projectile;
 	case EntityDefinitionType::Transition:
 		return this->transition == other.transition;
-	case EntityDefinitionType::Doodad:
-		return this->doodad == other.doodad;
+	case EntityDefinitionType::Decoration:
+		return this->decoration == other.decoration;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
 	}
@@ -679,9 +679,9 @@ void EntityDefinition::initTransition(LevelVoxelTransitionDefID defID,
 	this->transition.init(defID);
 }
 
-void EntityDefinition::initDoodad(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight,
+void EntityDefinition::initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight,
 	bool puddle, int lightIntensity, EntityAnimationDefinition &&animDef)
 {
-	this->init(EntityDefinitionType::Doodad, std::move(animDef));
-	this->doodad.init(yOffset, scale, collider, transparent, ceiling, streetlight, puddle, lightIntensity);
+	this->init(EntityDefinitionType::Decoration, std::move(animDef));
+	this->decoration.init(yOffset, scale, collider, transparent, ceiling, streetlight, puddle, lightIntensity);
 }
