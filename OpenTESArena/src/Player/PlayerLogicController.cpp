@@ -7,6 +7,7 @@
 #include "../Collision/SelectionUtils.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
+#include "../Interface/GameWorldUiController.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../Items/ArenaItemUtils.h"
@@ -694,19 +695,18 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 
 								const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 								const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
-
-								auto &audioManager = game.audioManager;
 								const std::string &soundFilename = openSoundDef.soundFilename;
-
 								const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 								const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
-								audioManager.playSound(soundFilename.c_str(), soundPosition);
 
 								if (isUsingDoorKey)
 								{
-									const std::string doorUnlockMessage = GameWorldUiModel::getDoorUnlockWithKeyMessage(requiredDoorKeyID, exeData);
-									// @todo pushSubPanel instead and only print it once, maybe store in VoxelTriggerInstance
-									DebugLog(doorUnlockMessage);
+									GameWorldUiController::onDoorUnlockedWithKey(game, requiredDoorKeyID, soundFilename, soundPosition, exeData);
+								}
+								else
+								{
+									AudioManager &audioManager = game.audioManager;
+									audioManager.playSound(soundFilename.c_str(), soundPosition);
 								}
 							}
 							else
@@ -787,10 +787,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 								{
 									const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
 									const int keyID = triggerKeyDef.keyID;
-									const std::string keyPickupMessage = GameWorldUiModel::getKeyPickUpMessage(keyID, exeData);
-									// @todo pushSubPanel instead
-									DebugLog(keyPickupMessage);
-
+									GameWorldUiController::onKeyPickedUp(game, keyID, exeData);
 									player.addToKeyInventory(keyID);
 									entityChunkManager.queueEntityDestroy(entityInstID);
 								}

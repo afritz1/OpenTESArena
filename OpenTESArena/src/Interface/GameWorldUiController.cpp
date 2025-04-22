@@ -266,3 +266,83 @@ void GameWorldUiController::onPauseInputAction(const InputActionCallbackValues &
 		game.setPanel<PauseMenuPanel>();
 	}
 }
+
+void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &exeData)
+{
+	// @todo: make functions to reuse code from onStatusButtonSelected()
+
+	const std::string text = GameWorldUiModel::getKeyPickUpMessage(keyID, exeData);
+	const Int2 center = GameWorldUiView::getStatusPopUpTextCenterPoint(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		center,
+		GameWorldUiView::StatusPopUpFontName,
+		GameWorldUiView::StatusPopUpTextColor,
+		GameWorldUiView::StatusPopUpTextAlignment,
+		std::nullopt,
+		GameWorldUiView::StatusPopUpTextLineSpacing,
+		FontLibrary::getInstance());
+
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
+	Surface surface = TextureUtils::generate(
+		GameWorldUiView::StatusPopUpTexturePatternType,
+		GameWorldUiView::getStatusPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
+		GameWorldUiView::getStatusPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
+		textureManager,
+		renderer);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create key pickup pop-up texture.");
+	}
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	const Int2 textureCenter = center;
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), textureCenter);
+}
+
+void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData)
+{
+	// @todo: make functions to reuse code from onStatusButtonSelected()
+
+	const std::string text = GameWorldUiModel::getDoorUnlockWithKeyMessage(keyID, exeData);
+	const Int2 center = GameWorldUiView::getStatusPopUpTextCenterPoint(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		center,
+		GameWorldUiView::StatusPopUpFontName,
+		GameWorldUiView::StatusPopUpTextColor,
+		GameWorldUiView::StatusPopUpTextAlignment,
+		std::nullopt,
+		GameWorldUiView::StatusPopUpTextLineSpacing,
+		FontLibrary::getInstance());
+
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
+	Surface surface = TextureUtils::generate(
+		GameWorldUiView::StatusPopUpTexturePatternType,
+		GameWorldUiView::getStatusPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
+		GameWorldUiView::getStatusPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
+		textureManager,
+		renderer);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create door unlock pop-up texture.");
+	}
+
+	auto onCloseCallback = [soundFilename, soundPosition](Game &game)
+	{
+		GameWorldUiController::onStatusPopUpSelected(game);
+
+		AudioManager &audioManager = game.audioManager;
+		audioManager.playSound(soundFilename.c_str(), soundPosition);
+	};
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	const Int2 textureCenter = center;
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, onCloseCallback, std::move(textureRef), textureCenter);
+}

@@ -38,6 +38,9 @@ namespace GameWorldUiController
 	void onToggleCompassInputAction(const InputActionCallbackValues &values);
 	void onPlayerPositionInputAction(const InputActionCallbackValues &values, TextBox &actionText);
 	void onPauseInputAction(const InputActionCallbackValues &values);
+
+	void onKeyPickedUp(Game &game, int keyID, const ExeData &exeData);
+	void onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData);
 }
 
 #endif
