@@ -113,7 +113,7 @@ namespace
 
 		std::optional<INFKey> keyData;
 		std::optional<RiddleState> riddleState;
-		std::optional<INFText> textData;
+		std::optional<INFLoreText> textData;
 		TextState::Mode mode; // Determines which data is in use.
 		int id; // *TEXT ID.
 
@@ -175,7 +175,7 @@ INFRiddle::INFRiddle(int firstNumber, int secondNumber)
 	this->secondNumber = secondNumber;
 }
 
-INFText::INFText(bool isDisplayedOnce)
+INFLoreText::INFLoreText(bool isDisplayedOnce)
 {
 	this->isDisplayedOnce = isDisplayedOnce;
 }
@@ -256,7 +256,7 @@ bool INFFile::init(const char *filename)
 		}
 		else if (textState.mode == TextState::Mode::Text)
 		{
-			this->texts.emplace(textState.id, textState.textData.value());
+			this->loreTexts.emplace(textState.id, textState.textData.value());
 		}
 	};
 
@@ -787,7 +787,7 @@ bool INFFile::init(const char *filename)
 			textState.mode = TextState::Mode::Text;
 
 			const bool isDisplayedOnce = true;
-			textState.textData = INFText(isDisplayedOnce);
+			textState.textData = INFLoreText(isDisplayedOnce);
 
 			// Append the rest of the line to the text data.
 			textState.textData->text += line.substr(1, line.size() - 1) + '\n';
@@ -856,7 +856,7 @@ bool INFFile::init(const char *filename)
 				textState.mode = TextState::Mode::Text;
 
 				const bool isDisplayedOnce = false;
-				textState.textData = INFText(isDisplayedOnce);
+				textState.textData = INFLoreText(isDisplayedOnce);
 			}
 
 			// Read the line into the text data.
@@ -1057,7 +1057,7 @@ bool INFFile::hasRiddleIndex(int index) const
 
 bool INFFile::hasLoreTextIndex(int index) const
 {
-	return this->texts.find(index) != this->texts.end();
+	return this->loreTexts.find(index) != this->loreTexts.end();
 }
 
 const INFKey &INFFile::getKey(int index) const
@@ -1070,9 +1070,9 @@ const INFRiddle &INFFile::getRiddle(int index) const
 	return this->riddles.at(index);
 }
 
-const INFText &INFFile::getText(int index) const
+const INFLoreText &INFFile::getLoreText(int index) const
 {
-	return this->texts.at(index);
+	return this->loreTexts.at(index);
 }
 
 const char *INFFile::getName() const

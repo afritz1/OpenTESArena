@@ -877,8 +877,8 @@ namespace MapGeneration
 		{
 			if (inf.hasLoreTextIndex(trigger.textIndex))
 			{
-				const INFText &textData = inf.getText(trigger.textIndex);
-				triggerDef.loreText.init(textData.text, textData.isDisplayedOnce);
+				const INFLoreText &loreTextData = inf.getLoreText(trigger.textIndex);
+				triggerDef.loreText.init(loreTextData.text, loreTextData.isDisplayedOnce);
 			}
 			else if (inf.hasRiddleIndex(trigger.textIndex))
 			{

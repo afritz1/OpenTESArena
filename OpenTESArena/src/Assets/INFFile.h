@@ -104,12 +104,12 @@ struct INFRiddle
 	INFRiddle(int firstNumber, int secondNumber);
 };
 
-struct INFText
+struct INFLoreText
 {
 	std::string text; // Stores display text for a text trigger.
 	bool isDisplayedOnce; // Whether the text is only displayed once (starts with '~').
 
-	INFText(bool isDisplayedOnce);
+	INFLoreText(bool isDisplayedOnce);
 };
 
 // An .INF file contains definitions of what the IDs in a .MIF file point to. These 
@@ -137,7 +137,7 @@ private:
 	// A *TEXT field can be one of 1) lore text, 2) riddle, or 3) door key ID, accessed by its *TEXT #.
 	std::unordered_map<int, INFKey> keys;
 	std::unordered_map<int, INFRiddle> riddles;
-	std::unordered_map<int, INFText> texts;
+	std::unordered_map<int, INFLoreText> loreTexts;
 
 	std::string name;
 
@@ -163,7 +163,7 @@ public:
 	bool hasLoreTextIndex(int index) const;
 	const INFKey &getKey(int index) const;
 	const INFRiddle &getRiddle(int index) const;
-	const INFText &getText(int index) const;
+	const INFLoreText &getLoreText(int index) const;
 	const char *getName() const;
 	const std::optional<int> &getDryChasmIndex() const;
 	const std::optional<int> &getLavaChasmIndex() const;
