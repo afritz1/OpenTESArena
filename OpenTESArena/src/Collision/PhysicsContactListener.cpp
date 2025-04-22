@@ -78,7 +78,7 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 
 		TextBox *triggerTextBox = game.getTriggerTextBox();
 		DebugAssert(triggerTextBox != nullptr);
-		MapLogicController::handleTriggers(game, otherSubShapeVoxelCoord, *triggerTextBox);
+		MapLogicController::handleTriggersInVoxel(game, otherSubShapeVoxelCoord, *triggerTextBox);
 
 		const MapType activeMapType = gameState.getActiveMapType();
 		if (activeMapType == MapType::Interior)

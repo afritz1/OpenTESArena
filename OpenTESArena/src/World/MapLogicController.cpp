@@ -49,7 +49,7 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 	renderLightChunkManager.setNightLightsActive(active, ceilingScale, entityChunkManager);
 }
 
-void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
+void MapLogicController::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
 {
 	GameState &gameState = game.gameState;
 	SceneManager &sceneManager = game.sceneManager;
