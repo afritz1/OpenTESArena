@@ -564,7 +564,7 @@ namespace PlayerLogicController
 	}
 }
 
-Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
+Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, BufferView<const Rect> nativeCursorRegions)
 {
 	const auto &inputManager = game.inputManager;
 
@@ -650,7 +650,6 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, B
 	else
 	{
 		// Modern interface. Make the camera look around if the player's weapon is not in use.
-		const Int2 mouseDelta = inputManager.getMouseDelta();
 		const int dx = mouseDelta.x;
 		const int dy = mouseDelta.y;
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
@@ -728,12 +727,10 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 
 	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
 	{
-		const Int2 dimensions = game.renderer.getWindowDimensions();
-
 		// Get smaller screen dimension so mouse delta is relative to a square.
+		const Int2 dimensions = game.renderer.getWindowDimensions();
 		const int minDimension = std::min(dimensions.x, dimensions.y);
 
-		// @todo: this isn't frame-rate-independent, maybe need to track last 1/30 seconds of mouse positions?
 		const double mouseDeltaXPercent = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
 		const double mouseDeltaYPercent = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
 		const double mouseDistancePercent = std::sqrt((mouseDeltaXPercent * mouseDeltaXPercent) + (mouseDeltaYPercent * mouseDeltaYPercent));

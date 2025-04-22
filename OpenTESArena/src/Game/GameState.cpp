@@ -869,8 +869,13 @@ void GameState::tickPlayerAttack(double dt, Game &game)
 	player.weaponAnimInst.update(dt);
 
 	const InputManager &inputManager = game.inputManager;
-	const Int2 mouseDelta = inputManager.getMouseDelta();
-	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
+
+	// Use a frame-rate independent mouse delta
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 previousCombatMousePosition = inputManager.getPreviousCombatMousePosition();
+	const Int2 combatMouseDelta = mousePosition - previousCombatMousePosition;
+
+	PlayerLogicController::handlePlayerAttack(game, combatMouseDelta);
 }
 
 void GameState::tickVoxels(double dt, Game &game)

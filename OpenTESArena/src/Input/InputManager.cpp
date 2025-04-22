@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <optional>
 #include <type_traits>
 
@@ -174,6 +175,7 @@ InputManager::InputManager()
 	: mouseDelta(0, 0)
 {
 	this->nextListenerID = 0;
+	this->secondsSincePreviousCombatMousePosition = 0.0;
 }
 
 void InputManager::init()
@@ -313,6 +315,11 @@ Int2 InputManager::getMousePosition() const
 Int2 InputManager::getMouseDelta() const
 {
 	return this->mouseDelta;
+}
+
+Int2 InputManager::getPreviousCombatMousePosition() const
+{
+	return this->previousCombatMousePosition;
 }
 
 bool InputManager::setInputActionMapActive(const std::string &name, bool active)
@@ -658,8 +665,15 @@ void InputManager::handleHeldInputs(Game &game, BufferView<const InputActionMap*
 void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> buttonProxies,
 	const std::function<void()> &onFinishedProcessingEvent)
 {
-	// @todo: don't save mouse delta as member, just keep local variable here once we can.
 	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
+
+	constexpr double targetSecondsSincePreviousMousePosition = 1.0 / 30.0; // 30 fps weapon swing snapshots
+	this->secondsSincePreviousCombatMousePosition += dt;
+	if (this->secondsSincePreviousCombatMousePosition >= targetSecondsSincePreviousMousePosition)
+	{
+		SDL_GetMouseState(&this->previousCombatMousePosition.x, &this->previousCombatMousePosition.y);
+		this->secondsSincePreviousCombatMousePosition = std::fmod(this->secondsSincePreviousCombatMousePosition, targetSecondsSincePreviousMousePosition);
+	}
 
 	// Cache active maps and listeners before looping over them since callbacks can change which ones are active.
 	std::vector<const InputActionMap*> activeMaps;

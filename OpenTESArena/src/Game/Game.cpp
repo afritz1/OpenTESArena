@@ -824,7 +824,7 @@ void Game::loop()
 
 			if (this->shouldSimulateScene)
 			{
-				const Double2 playerTurnAngleDeltas = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, this->nativeCursorRegions);
+				const Double2 playerTurnAngleDeltas = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), this->nativeCursorRegions);
 
 				// Multiply by 100 so the values in options are more convenient.
 				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());

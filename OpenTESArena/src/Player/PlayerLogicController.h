@@ -13,7 +13,7 @@ namespace PlayerLogicController
 {
 	// Determines how much to turn the player by, given user input and delta time.
 	// @todo: make these be Radians instead of "units".
-	Double2 makeTurningAngularValues(Game &game, double dt, BufferView<const Rect> nativeCursorRegions);
+	Double2 makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, BufferView<const Rect> nativeCursorRegions);
 
 
 	// @todo: can't there just be a MakeNextVelocity() convenience function that 

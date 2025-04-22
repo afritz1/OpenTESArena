@@ -162,6 +162,10 @@ private:
 	std::vector<InputListenerID> freedListenerIDs;
 
 	Int2 mouseDelta;
+	
+	// Frame-rate independent weapon swings.
+	Int2 previousCombatMousePosition;
+	double secondsSincePreviousCombatMousePosition;
 
 	InputListenerID getNextListenerID();
 
@@ -200,6 +204,7 @@ public:
 	bool isTextInput(const SDL_Event &e) const;
 	Int2 getMousePosition() const;
 	Int2 getMouseDelta() const;
+	Int2 getPreviousCombatMousePosition() const;
 
 	bool setInputActionMapActive(const std::string &name, bool active);
 
@@ -225,8 +230,7 @@ public:
 	void setTextInputMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(Game &game, double dt, BufferView<const ButtonProxy> buttonProxies,
-		const std::function<void()> &onFinishedProcessingEvent);
+	void update(Game &game, double dt, BufferView<const ButtonProxy> buttonProxies, const std::function<void()> &onFinishedProcessingEvent);
 };
 
 #endif
