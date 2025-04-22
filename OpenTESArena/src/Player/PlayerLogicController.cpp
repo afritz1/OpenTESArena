@@ -577,6 +577,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+
 	auto &player = game.player;
 	const Double3 &cameraDirection = player.forward;
 	const CoordDouble3 rayStart = player.getEyeCoord();
@@ -649,32 +652,70 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 					}
 					else if (voxelType == ArenaTypes::VoxelType::Door)
 					{
-						// If the door is closed, then open it.
+						// If the door is closed, try to open it.
 						int doorAnimInstIndex;
 						const bool isClosed = !voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
 						if (isClosed)
 						{
-							// Add the door to the open doors list.
-							VoxelDoorAnimationInstance newDoorAnimInst;
-							newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-							voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
+							bool canDoorBeOpened = true;
+							std::string requiredDoorKeyName;
 
-							// Get the door's opening sound and play it at the center of the voxel.
-							VoxelDoorDefID doorDefID;
-							if (!voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+							VoxelLockDefID lockDefID;
+							if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
 							{
-								DebugCrash("Expected door def ID to exist.");
+								const LockDefinition &lockDef = voxelChunk.getLockDef(lockDefID);
+								const int requiredDoorKeyID = lockDef.keyID;
+								if (requiredDoorKeyID >= 0)
+								{
+									if (player.isIdInKeyInventory(requiredDoorKeyID))
+									{
+										requiredDoorKeyName = exeData.status.keyNames[requiredDoorKeyID];
+									}
+									else
+									{
+										canDoorBeOpened = false;
+									}									
+								}
 							}
 
-							const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
-							const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
+							if (canDoorBeOpened)
+							{
+								VoxelDoorAnimationInstance newDoorAnimInst;
+								newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
+								voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
 
-							auto &audioManager = game.audioManager;
-							const std::string &soundFilename = openSoundDef.soundFilename;
+								VoxelDoorDefID doorDefID;
+								if (!voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+								{
+									DebugCrash("Expected door def ID to exist.");
+								}
 
-							const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
-							const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
-							audioManager.playSound(soundFilename.c_str(), soundPosition);
+								const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+								const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
+
+								auto &audioManager = game.audioManager;
+								const std::string &soundFilename = openSoundDef.soundFilename;
+
+								const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+								const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
+								audioManager.playSound(soundFilename.c_str(), soundPosition);
+
+								if (!requiredDoorKeyName.empty())
+								{
+									std::string doorUnlockMessage = exeData.status.doorUnlockedWithKey;
+									size_t keyReplaceIndex = doorUnlockMessage.find("%s");
+									doorUnlockMessage.replace(keyReplaceIndex, 2, requiredDoorKeyName);
+									// @todo pushSubPanel instead and only print it once, maybe store in VoxelTriggerInstance
+									DebugLog(doorUnlockMessage);
+								}
+							}
+							else
+							{
+								const int lockDifficultyIndex = 0; // @todo determine from thieving skill value
+								const std::string &requiredDoorKeyMsg = exeData.status.lockDifficultyMessages[lockDifficultyIndex];
+								actionTextBox.setText(requiredDoorKeyMsg);
+								gameState.setActionTextDuration(requiredDoorKeyMsg);
+							}							
 						}
 					}
 				}
@@ -689,8 +730,6 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 					{
 						const std::string &buildingName = voxelChunk.getBuildingName(buildingNameID);
 						actionTextBox.setText(buildingName);
-
-						auto &gameState = game.gameState;
 						gameState.setActionTextDuration(buildingName);
 					}
 				}
@@ -701,7 +740,6 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 			const RayCastEntityHit &entityHit = hit.entityHit;
 			const CoordInt3 hitVoxelCoord(chunkPos, VoxelUtils::pointToVoxel(hitCoord.point, ceilingScale));
 			const VoxelInt3 hitVoxel = hitVoxelCoord.voxel;
-			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 			if (primaryInteraction)
 			{
@@ -748,7 +786,17 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 								if (triggerDef.hasKeyDef())
 								{
 									const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
-									player.addToKeyInventory(triggerKeyDef.keyID);
+									const int keyID = triggerKeyDef.keyID;
+									std::string keyPickupMessage = exeData.status.keyPickedUp;
+
+									DebugAssertIndex(exeData.status.keyNames, keyID);
+									const std::string &keyName = exeData.status.keyNames[keyID];
+									size_t replaceIndex = keyPickupMessage.find("%s");
+									keyPickupMessage.replace(replaceIndex, 2, keyName);
+									// @todo pushSubPanel instead
+									DebugLog(keyPickupMessage);
+
+									player.addToKeyInventory(keyID);
 									entityChunkManager.queueEntityDestroy(entityInstID);
 								}
 							}
@@ -764,8 +812,6 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 				}
 
 				actionTextBox.setText(text);
-
-				auto &gameState = game.gameState;
 				gameState.setActionTextDuration(text);
 			}
 		}

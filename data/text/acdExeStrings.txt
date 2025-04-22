@@ -188,9 +188,6 @@ DataSegmentOffset=0x3276A
 [Quests]
 MainQuestItemNames=0x40612
 StaffPieces=0x40692
-KeyNames=0x3EE2B
-KeyPickedUp=0x406A5
-DoorUnlockedWithKey=0x406BC
 
 [Races]
 SingularNames=0x3E594
@@ -210,6 +207,10 @@ Fortify=0x42230
 Disease=0x42247
 Effect=0x42255
 EffectsList=0x42262
+KeyNames=0x3EE2B
+KeyPickedUp=0x406A5
+DoorUnlockedWithKey=0x406BC
+LockDifficultyMessages=0x377D4
 
 [Travel]
 LocationFormatTexts=0x376AD

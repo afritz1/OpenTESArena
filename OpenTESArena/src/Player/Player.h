@@ -77,6 +77,7 @@ struct Player
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 
 	void addToKeyInventory(int keyID);
+	bool isIdInKeyInventory(int keyID) const;
 	void clearKeyInventory();
 
 	void setCameraFrame(const Double3 &forward);

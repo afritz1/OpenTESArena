@@ -390,10 +390,6 @@ public:
 		// Staff piece count in inventory.
 		std::string staffPieces;
 
-		std::array<std::string, 12> keyNames;
-		std::string keyPickedUp;
-		std::string doorUnlockedWithKey;
-
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
@@ -457,6 +453,11 @@ public:
 		std::string disease; // With %s token.
 		std::string effect; // With %s token.
 		std::array<std::string, 23> effectsList; // Healthy, diseased, etc..
+
+		std::array<std::string, 12> keyNames;
+		std::string keyPickedUp;
+		std::string doorUnlockedWithKey;
+		std::array<std::string, 14> lockDifficultyMessages;
 
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
@@ -529,8 +530,7 @@ public:
 		// "race#" points to the race in "province #". Race 7 is a special case; they
 		// use "xLIZn.IMG" instead, where 'x' is either 'M' or 'F', and 'n' is the
 		// armor type (plate=0, etc.).
-		std::array<uint8_t, 30> helmetPaletteIndices, race1HelmetPaletteValues,
-			race3HelmetPaletteValues, race4HelmetPaletteValues;
+		std::array<uint8_t, 30> helmetPaletteIndices, race1HelmetPaletteValues, race3HelmetPaletteValues, race4HelmetPaletteValues;
 
 		// Displayed when pressing F2.
 		std::string currentWorldPosition;

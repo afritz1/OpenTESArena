@@ -287,6 +287,19 @@ void Player::addToKeyInventory(int keyID)
 	this->keyInventory[insertIndex] = keyID;
 }
 
+bool Player::isIdInKeyInventory(int keyID) const
+{
+	for (int i = 0; i < static_cast<int>(std::size(this->keyInventory)); i++)
+	{
+		if (this->keyInventory[i] == keyID)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Player::clearKeyInventory()
 {
 	std::fill(std::begin(this->keyInventory), std::end(this->keyInventory), ArenaItemUtils::InvalidDoorKeyID);

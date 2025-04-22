@@ -677,15 +677,9 @@ bool ExeData::Quests::init(const char *data, const KeyValueFile &keyValueFile)
 
 	const int mainQuestItemNamesOffset = ExeData::get(*section, "MainQuestItemNames");
 	const int staffPiecesOffset = ExeData::get(*section, "StaffPieces");
-	const int keyNamesOffset = ExeData::get(*section, "KeyNames");
-	const int keyPickedUpOffset = ExeData::get(*section, "KeyPickedUp");
-	const int doorUnlockedWithKeyOffset = ExeData::get(*section, "DoorUnlockedWithKey");
 
 	initStringArray(this->mainQuestItemNames, data + mainQuestItemNamesOffset);
 	this->staffPieces = ExeData::readString(data + staffPiecesOffset);
-	initStringArray(this->keyNames, data + keyNamesOffset);
-	this->keyPickedUp = ExeData::readString(data + keyPickedUpOffset);
-	this->doorUnlockedWithKey = ExeData::readString(data + doorUnlockedWithKeyOffset);
 
 	return true;
 }
@@ -784,6 +778,10 @@ bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 	const int diseaseOffset = ExeData::get(*section, "Disease");
 	const int effectOffset = ExeData::get(*section, "Effect");
 	const int effectsListOffset = ExeData::get(*section, "EffectsList");
+	const int keyNamesOffset = ExeData::get(*section, "KeyNames");
+	const int keyPickedUpOffset = ExeData::get(*section, "KeyPickedUp");
+	const int doorUnlockedWithKeyOffset = ExeData::get(*section, "DoorUnlockedWithKey");
+	const int lockDifficultyMessagesOffset = ExeData::get(*section, "LockDifficultyMessages");
 
 	this->popUp = ExeData::readString(data + popUpOffset);
 	this->date = ExeData::readString(data + dateOffset);
@@ -791,6 +789,10 @@ bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 	this->disease = ExeData::readString(data + diseaseOffset);
 	this->effect = ExeData::readString(data + effectOffset);
 	initStringArray(this->effectsList, data + effectsListOffset);
+	initStringArray(this->keyNames, data + keyNamesOffset);
+	this->keyPickedUp = ExeData::readString(data + keyPickedUpOffset);
+	this->doorUnlockedWithKey = ExeData::readString(data + doorUnlockedWithKeyOffset);
+	initStringArray(this->lockDifficultyMessages, data + lockDifficultyMessagesOffset);
 
 	return true;
 }
