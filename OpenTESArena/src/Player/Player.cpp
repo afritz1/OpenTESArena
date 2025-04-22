@@ -124,22 +124,7 @@ namespace
 	{
 		Buffer<std::string> nameTokens = String::split(fullName);
 		return nameTokens[0];
-	}
-
-	int GetRandomWeaponIdForClass(const CharacterClassDefinition &charClassDef, Random &random)
-	{
-		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
-		Buffer<int> weapons(allowedWeaponCount + 1);
-		for (int i = 0; i < allowedWeaponCount; i++)
-		{
-			weapons.set(i, charClassDef.getAllowedWeapon(i));
-		}
-
-		weapons.set(allowedWeaponCount, ArenaItemUtils::FistsWeaponID);
-
-		const int randIndex = random.next(weapons.getCount());
-		return weapons.get(randIndex);
-	}
+	}	
 
 	void InitWeaponAnimationInstance(WeaponAnimationInstance &animInst, int weaponID)
 	{
@@ -185,8 +170,8 @@ Player::~Player()
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	const PrimaryAttributes &primaryAttributes, int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction,
-	const Double3 &velocity, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
+	const PrimaryAttributes &primaryAttributes, int portraitID, int weaponID, const ExeData &exeData,
+	JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
@@ -199,53 +184,24 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
 	this->clearKeyInventory();
-	
-	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
-	{
-		DebugCrash("Couldn't create player physics collider.");
-	}
-
-	this->setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(feetCoord));
-	this->setPhysicsVelocity(velocity);
-	this->setCameraFrame(direction);
-	this->movementSoundProgress = 0.0;
-}
-
-void Player::initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random)
-{
-	this->displayName = "Player";
-	this->firstName = GetFirstName(this->displayName);
-	this->male = random.nextBool();
-	this->raceID = random.next(8);
-	this->charClassDefID = random.next(charClassLibrary.getDefinitionCount());
-	this->portraitID = random.next(10);
-
-	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
-	const int weaponID = GetRandomWeaponIdForClass(charClassDef, random);
-	this->weaponAnimDefID = weaponID;
-	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
-	this->primaryAttributes.init(this->raceID, this->male, exeData);	
-	this->inventory.clear();
-	this->clearKeyInventory();
 
 	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 	for (int i = 0; i < itemLibrary.getCount(); i++)
 	{
 		const ItemDefinitionID itemDefID = static_cast<ItemDefinitionID>(i);
 		this->inventory.insert(itemDefID);
-	}	
-
+	}
+	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
 		DebugCrash("Couldn't create player physics collider.");
 	}
 
-	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
-	this->setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(position));
+	this->setPhysicsPositionRelativeToFeet(WorldDouble3::Zero);
 	this->setPhysicsVelocity(Double3::Zero);
 
-	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
-	this->setCameraFrame(direction);
+	const Double3 cameraDirection(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
+	this->setCameraFrame(cameraDirection);
 	this->movementSoundProgress = 0.0;
 }
 

@@ -66,13 +66,8 @@ struct Player
 	Player();
 	~Player();
 
-	// Make player with given attributes.
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
-		int portraitID, const CoordDouble3 &feetCoord, const Double3 &direction, const Double3 &velocity,
-		int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
-
-	// Initializes a random player for testing.
-	void initRandom(const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem, Random &random);
+		int portraitID, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 

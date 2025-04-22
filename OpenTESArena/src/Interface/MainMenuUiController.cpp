@@ -23,6 +23,24 @@
 #include "../World/MapType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
+namespace
+{
+	int GetRandomWeaponIdForClass(const CharacterClassDefinition &charClassDef, Random &random)
+	{
+		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
+		Buffer<int> weapons(allowedWeaponCount + 1);
+		for (int i = 0; i < allowedWeaponCount; i++)
+		{
+			weapons.set(i, charClassDef.getAllowedWeapon(i));
+		}
+
+		weapons.set(allowedWeaponCount, ArenaItemUtils::FistsWeaponID);
+
+		const int randIndex = random.next(weapons.getCount());
+		return weapons.get(randIndex);
+	}
+}
+
 void MainMenuUiController::onLoadGameButtonSelected(Game &game)
 {
 	game.setPanel<LoadSavePanel>(LoadSavePanel::Type::Load);
@@ -123,12 +141,25 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	// Game data instance, to be initialized further by one of the loading methods below.
 	// Create a player with random data for testing.
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const auto &exeData = binaryAssetLibrary.getExeData();
+	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 
 	GameState &gameState = game.gameState;
 	gameState.init(game.arenaRandom);
 
+	Random &random = game.random;
+	const std::string testPlayerName = "Player";
+	const bool testIsMale = random.nextBool();
+	const int testRaceID = random.next(8);
+	const int testCharClassDefID = random.next(charClassLibrary.getDefinitionCount());
+	PrimaryAttributes testPrimaryAttributes;
+	testPrimaryAttributes.init(testRaceID, testIsMale, exeData);
+	const int testPortraitID = random.next(10);
+	const int testWeaponID = GetRandomWeaponIdForClass(charClassLibrary.getDefinition(testCharClassDefID), random);
+
 	Player &player = game.player;
-	player.initRandom(CharacterClassLibrary::getInstance(), binaryAssetLibrary.getExeData(), game.physicsSystem, game.random);
+	player.init(testPlayerName, testIsMale, testRaceID, testCharClassDefID, testPrimaryAttributes, testPortraitID,
+		testWeaponID, exeData, game.physicsSystem);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
@@ -149,7 +180,6 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			if (testType == MainMenuUiModel::TestType_MainQuest)
 			{
 				// Fetch from a global function.
-				const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 				MainMenuUiModel::SpecialCaseType specialCaseType;
 				MainMenuUiModel::getMainQuestLocationFromIndex(testIndex, exeData, &locationIndex, &provinceIndex, &specialCaseType);
 
@@ -187,7 +217,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			{
 				// Any province besides center province.
 				// @temp: mildly disorganized
-				provinceIndex = game.random.next(worldMapDef.getProvinceCount() - 1);
+				provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
 				locationIndex = MainMenuUiModel::getRandomCityLocationIndex(worldMapDef.getProvinceDef(provinceIndex));
 			}
 
@@ -229,7 +259,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			// Pick a random dungeon based on the dungeon type.
 			const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 
-			const int provinceIndex = game.random.next(worldMapDef.getProvinceCount() - 1);
+			const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
 			const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 			constexpr bool isArtifactDungeon = false;
@@ -273,7 +303,6 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}
 			else if (mifName == MainMenuUiModel::RandomWildDungeon)
 			{
-				Random &random = game.random;
 				const int wildBlockX = random.next(ArenaWildUtils::WILD_WIDTH);
 				const int wildBlockY = random.next(ArenaWildUtils::WILD_HEIGHT);
 
@@ -401,7 +430,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		{
 			// Pick a random location based on the .MIF name, excluding the center province.
 			const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-			const int provinceIndex = game.random.next(worldMapDef.getProvinceCount() - 1);
+			const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
 			const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 			const ArenaTypes::CityType targetCityType = [&mifName]()
@@ -487,7 +516,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	{
 		// Pick a random location and province.
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-		const int provinceIndex = game.random.next(worldMapDef.getProvinceCount() - 1);
+		const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 		const int locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceDef);
