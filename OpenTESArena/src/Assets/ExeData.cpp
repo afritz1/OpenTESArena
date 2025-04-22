@@ -957,7 +957,8 @@ int ExeData::get(const KeyValueFileSection &section, const std::string &key)
 	std::string_view valueStr;
 	if (!section.tryGetString(key, valueStr))
 	{
-		DebugCrash("Couldn't get \"" + key + "\" (section \"" + section.getName() + "\").");
+		DebugLogError("Couldn't get \"" + key + "\" (section \"" + section.getName() + "\").");
+		return 0;
 	}
 
 	// Make sure the value only has an offset and isn't an offset + length pair.
@@ -977,7 +978,8 @@ std::pair<int, int> ExeData::getPair(const KeyValueFileSection &section, const s
 	std::string_view valueStr;
 	if (!section.tryGetString(key, valueStr))
 	{
-		DebugCrash("Couldn't get \"" + key + "\" (section \"" + section.getName() + "\").");
+		DebugLogError("Couldn't get \"" + key + "\" (section \"" + section.getName() + "\").");
+		return std::make_pair(0, 0);
 	}
 
 	// Make sure the value has a comma-separated offset + length pair.
