@@ -492,9 +492,11 @@ namespace PlayerLogicController
 				case EntityDefinitionType::Item:
 				{
 					const ItemEntityDefinition &itemDef = entityDef.item;
-					if (itemDef.type == ItemEntityDefinitionType::Key)
+					const ItemEntityDefinitionType itemDefType = itemDef.type;
+
+					// Attempt to pick up item.
+					if (itemDefType == ItemEntityDefinitionType::Key)
 					{
-						// Pick up door key.
 						VoxelTriggerDefID triggerDefID;
 						if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
 						{
@@ -508,6 +510,13 @@ namespace PlayerLogicController
 								entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
 							}
 						}
+					}
+					else if (itemDefType == ItemEntityDefinitionType::QuestItem)
+					{
+						AudioManager &audioManager = game.audioManager;
+						audioManager.playSound(ArenaSoundName::Fanfare2);
+						DebugLog("Picked up quest item.");
+						entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
 					}
 
 					break;
