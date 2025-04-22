@@ -1052,7 +1052,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		const EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
-			this->queueEntityDestroy(entityInstID);
+			this->queueEntityDestroy(entityInstID, false);
 		}
 
 		this->recycleChunk(chunkIndex);
@@ -1118,23 +1118,35 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	}
 }
 
-void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID)
+void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)
 {
 	const auto iter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
 	if (iter == this->destroyedEntityIDs.end())
 	{
 		this->destroyedEntityIDs.emplace_back(entityInstID);
 
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		const CoordDouble2 &entityCoord = this->getEntityPosition(entityInst.positionID);
-		const ChunkInt2 entityChunkPos = entityCoord.chunk;
-		EntityChunk &entityChunk = this->getChunkAtPosition(entityChunkPos);
-		
-		const auto chunkEntityIter = std::find(entityChunk.entityIDs.begin(), entityChunk.entityIDs.end(), entityInstID);
-		DebugAssert(chunkEntityIter != entityChunk.entityIDs.end());
-		entityChunk.entityIDs.erase(chunkEntityIter);
-		entityChunk.removedEntityIDs.emplace_back(entityInstID);
+		if (chunkToNotify != nullptr)
+		{
+			EntityChunk &entityChunk = this->getChunkAtPosition(*chunkToNotify);
+			const auto iter = std::find(entityChunk.entityIDs.begin(), entityChunk.entityIDs.end(), entityInstID);
+			DebugAssert(iter != entityChunk.entityIDs.end());
+			entityChunk.entityIDs.erase(iter);
+			entityChunk.removedEntityIDs.emplace_back(entityInstID);
+		}
 	}
+}
+
+void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk)
+{
+	const ChunkInt2 *chunkToNotify = nullptr;
+	if (notifyChunk)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
+		chunkToNotify = &entityCoord.chunk;
+	}
+	
+	this->queueEntityDestroy(entityInstID, chunkToNotify);
 }
 
 void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
@@ -1210,7 +1222,7 @@ void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem)
 	{
 		for (const EntityInstanceID entityInstID : chunkPtr->entityIDs)
 		{
-			this->queueEntityDestroy(entityInstID);
+			this->queueEntityDestroy(entityInstID, false);
 		}
 	}
 

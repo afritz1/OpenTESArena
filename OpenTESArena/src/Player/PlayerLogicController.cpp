@@ -798,7 +798,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 									const int keyID = triggerKeyDef.keyID;
 									GameWorldUiController::onKeyPickedUp(game, keyID, exeData);
 									player.addToKeyInventory(keyID);
-									entityChunkManager.queueEntityDestroy(entityInstID);
+									entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
 								}
 							}
 						}

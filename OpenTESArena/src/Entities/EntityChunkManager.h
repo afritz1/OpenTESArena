@@ -132,8 +132,9 @@ public:
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
-	// Prepares an entity for destruction later this frame.
-	void queueEntityDestroy(EntityInstanceID entityInstID);
+	// Prepares an entity for destruction later this frame, optionally notifying its chunk to remove its reference.
+	void queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify);
+	void queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk);
 
 	// @todo: support spawning an entity not from the level def
 
