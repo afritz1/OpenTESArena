@@ -59,6 +59,8 @@ struct Player
 	int weaponAnimDefID;
 	WeaponAnimationInstance weaponAnimInst;
 
+	int level;
+	int experience;
 	PrimaryAttributes primaryAttributes;
 	ItemInventory inventory;
 	int keyInventory[ArenaItemUtils::DoorKeyCount];

@@ -160,6 +160,8 @@ Player::Player()
 	this->charClassDefID = -1;
 	this->portraitID = -1;
 	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
+	this->level = 0;
+	this->experience = 0;
 	this->clearKeyInventory();
 }
 
@@ -181,6 +183,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->portraitID = portraitID;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
+	this->level = 1;
+	this->experience = 0;
 	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
 	this->clearKeyInventory();
