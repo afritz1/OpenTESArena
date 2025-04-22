@@ -34,9 +34,7 @@ struct CharacterClassDefinition
 	int getAllowedArmor(int index) const;
 	int getAllowedShield(int index) const;
 	int getAllowedWeapon(int index) const;
-
-	// Gets the experience required for the given level with some initial experience cap.
-	static int getExperienceCap(int level, int initialExpCap);
+	int getExperienceCap(int level) const;
 };
 
 #endif

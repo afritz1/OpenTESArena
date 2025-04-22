@@ -6,6 +6,23 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	double GetExperienceMultiplierForLevel(int level)
+	{
+		constexpr double lowLevelMultiplier = 30.0 / 16.0;
+		constexpr double highLevelMultiplier = 1.50;
+		if ((level >= 2) && (level <= 8))
+		{
+			return lowLevelMultiplier;
+		}
+		else
+		{
+			return highLevelMultiplier;
+		}
+	}
+}
+
 CharacterClassDefinition::CharacterClassDefinition()
 {
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
@@ -75,22 +92,19 @@ int CharacterClassDefinition::getAllowedWeapon(int index) const
 	return this->allowedWeapons[index];
 }
 
-int CharacterClassDefinition::getExperienceCap(int level, int initialExpCap)
+int CharacterClassDefinition::getExperienceCap(int level) const
 {
-	DebugAssert(level >= 0);
-
-	if (level == 0)
+	if (level <= 0)
 	{
 		return 0;
 	}
-	else if (level == 1)
+
+	int experienceCap = this->initialExpCap;
+	for (int currentLevel = 2; currentLevel <= level; currentLevel++)
 	{
-		return initialExpCap;
+		const double multiplier = GetExperienceMultiplierForLevel(currentLevel);
+		experienceCap = static_cast<int>(std::floor(static_cast<double>(experienceCap) * multiplier));
 	}
-	else
-	{
-		const int prevExperienceCap = CharacterClassDefinition::getExperienceCap(level - 1, initialExpCap);
-		const double multiplier = ((level >= 2) && (level <= 8)) ? (30.0 / 16.0) : 1.50;
-		return static_cast<int>(std::floor(static_cast<double>(prevExperienceCap) * multiplier));
-	}
+
+	return experienceCap;
 }
