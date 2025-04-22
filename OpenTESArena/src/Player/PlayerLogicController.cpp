@@ -658,23 +658,25 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 						if (isClosed)
 						{
 							bool canDoorBeOpened = true;
-							std::string requiredDoorKeyName;
+							bool isUsingDoorKey = false;
+							int requiredDoorKeyID = -1;
 
 							VoxelLockDefID lockDefID;
 							if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
 							{
 								const LockDefinition &lockDef = voxelChunk.getLockDef(lockDefID);
-								const int requiredDoorKeyID = lockDef.keyID;
+								requiredDoorKeyID = lockDef.keyID;
+
 								if (requiredDoorKeyID >= 0)
 								{
 									if (player.isIdInKeyInventory(requiredDoorKeyID))
 									{
-										requiredDoorKeyName = exeData.status.keyNames[requiredDoorKeyID];
+										isUsingDoorKey = true;
 									}
 									else
 									{
 										canDoorBeOpened = false;
-									}									
+									}
 								}
 							}
 
@@ -700,11 +702,9 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 								const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
 								audioManager.playSound(soundFilename.c_str(), soundPosition);
 
-								if (!requiredDoorKeyName.empty())
+								if (isUsingDoorKey)
 								{
-									std::string doorUnlockMessage = exeData.status.doorUnlockedWithKey;
-									size_t keyReplaceIndex = doorUnlockMessage.find("%s");
-									doorUnlockMessage.replace(keyReplaceIndex, 2, requiredDoorKeyName);
+									const std::string doorUnlockMessage = GameWorldUiModel::getDoorUnlockWithKeyMessage(requiredDoorKeyID, exeData);
 									// @todo pushSubPanel instead and only print it once, maybe store in VoxelTriggerInstance
 									DebugLog(doorUnlockMessage);
 								}
@@ -712,10 +712,10 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 							else
 							{
 								const int lockDifficultyIndex = 0; // @todo determine from thieving skill value
-								const std::string &requiredDoorKeyMsg = exeData.status.lockDifficultyMessages[lockDifficultyIndex];
+								const std::string requiredDoorKeyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
 								actionTextBox.setText(requiredDoorKeyMsg);
 								gameState.setActionTextDuration(requiredDoorKeyMsg);
-							}							
+							}
 						}
 					}
 				}
@@ -787,12 +787,7 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 								{
 									const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
 									const int keyID = triggerKeyDef.keyID;
-									std::string keyPickupMessage = exeData.status.keyPickedUp;
-
-									DebugAssertIndex(exeData.status.keyNames, keyID);
-									const std::string &keyName = exeData.status.keyNames[keyID];
-									size_t replaceIndex = keyPickupMessage.find("%s");
-									keyPickupMessage.replace(replaceIndex, 2, keyName);
+									const std::string keyPickupMessage = GameWorldUiModel::getKeyPickUpMessage(keyID, exeData);
 									// @todo pushSubPanel instead
 									DebugLog(keyPickupMessage);
 

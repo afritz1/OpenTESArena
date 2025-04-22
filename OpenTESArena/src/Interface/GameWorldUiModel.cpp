@@ -271,3 +271,31 @@ void GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect> nativeCursorRe
 		nativeCursorRegions.set(i, GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale));
 	}
 }
+
+std::string GameWorldUiModel::getLockDifficultyMessage(int lockLevel, const ExeData &exeData)
+{
+	DebugAssertIndex(exeData.status.lockDifficultyMessages, lockLevel);
+	return exeData.status.lockDifficultyMessages[lockLevel];
+}
+
+std::string GameWorldUiModel::getKeyPickUpMessage(int keyID, const ExeData &exeData)
+{
+	DebugAssertIndex(exeData.status.keyNames, keyID);
+	const std::string &keyName = exeData.status.keyNames[keyID];
+
+	std::string keyPickupMessage = exeData.status.keyPickedUp;
+	size_t replaceIndex = keyPickupMessage.find("%s");
+	keyPickupMessage.replace(replaceIndex, 2, keyName);
+	return keyPickupMessage;
+}
+
+std::string GameWorldUiModel::getDoorUnlockWithKeyMessage(int keyID, const ExeData &exeData)
+{
+	DebugAssertIndex(exeData.status.keyNames, keyID);
+	const std::string &keyName = exeData.status.keyNames[keyID];
+
+	std::string doorUnlockMessage = exeData.status.doorUnlockedWithKey;
+	size_t replaceIndex = doorUnlockMessage.find("%s");
+	doorUnlockMessage.replace(replaceIndex, 2, keyName);
+	return doorUnlockMessage;
+}
