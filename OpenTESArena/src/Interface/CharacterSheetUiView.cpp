@@ -74,6 +74,30 @@ std::vector<TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxIn
 	return textBoxInitInfos;
 }
 
+TextBox::InitInfo CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerExperienceTextBoxX,
+		CharacterSheetUiView::PlayerExperienceTextBoxY,
+		CharacterSheetUiView::PlayerExperienceTextBoxFontName,
+		CharacterSheetUiView::PlayerExperienceTextBoxColor,
+		CharacterSheetUiView::PlayerExperienceTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerLevelTextBoxX,
+		CharacterSheetUiView::PlayerLevelTextBoxY,
+		CharacterSheetUiView::PlayerLevelTextBoxFontName,
+		CharacterSheetUiView::PlayerLevelTextBoxColor,
+		CharacterSheetUiView::PlayerLevelTextBoxAlignment,
+		fontLibrary);
+}
+
 Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 {
 	const TextureAsset textureAsset = CharacterSheetUiView::getBodyTextureAsset(game);

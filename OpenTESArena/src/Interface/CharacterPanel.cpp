@@ -30,27 +30,24 @@ bool CharacterPanel::init()
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
-	const TextBox::InitInfo playerNameTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
-	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
+	const TextBox::InitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
+	if (!this->nameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
 		DebugLogError("Couldn't init player name text box.");
 		return false;
 	}
 
 	const std::string playerRaceText = CharacterSheetUiModel::getPlayerRaceName(game);
-	const TextBox::InitInfo playerRaceTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
-	if (!this->playerRaceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
+	const TextBox::InitInfo playerRaceTextBoxInitInfo = CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
+	if (!this->raceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
 	{
 		DebugLogError("Couldn't init player race text box.");
 		return false;
 	}
 
 	const std::string playerClassText = CharacterSheetUiModel::getPlayerClassName(game);
-	const TextBox::InitInfo playerClassTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
-	if (!this->playerClassTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
+	const TextBox::InitInfo playerClassTextBoxInitInfo = CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
+	if (!this->classTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
 	{
 		DebugLogError("Couldn't init player class text box.");
 		return false;
@@ -66,11 +63,27 @@ bool CharacterPanel::init()
 		const std::string attributeValueText = std::to_string(attributeValue);
 		DebugAssertIndex(playerAttributesTextBoxInitInfos, i);
 		const TextBox::InitInfo &attributeTextBoxInitInfo = playerAttributesTextBoxInitInfos[i];
-		if (!this->playerAttributeTextBoxes[i].init(attributeTextBoxInitInfo, attributeValueText, renderer))
+		if (!this->attributeTextBoxes[i].init(attributeTextBoxInitInfo, attributeValueText, renderer))
 		{
 			DebugLogError("Couldn't init player attribute " + std::string(attribute.name) + " text box.");
 			return false;
 		}
+	}
+
+	const std::string playerExperienceText = CharacterSheetUiModel::getPlayerExperience(game);
+	const TextBox::InitInfo playerExperienceTextBoxInitInfo = CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(playerExperienceText, fontLibrary);
+	if (!this->experienceTextBox.init(playerExperienceTextBoxInitInfo, playerExperienceText, renderer))
+	{
+		DebugLogError("Couldn't init player experience text box.");
+		return false;
+	}
+
+	const std::string playerLevelText = CharacterSheetUiModel::getPlayerLevel(game);
+	const TextBox::InitInfo playerLevelTextBoxInitInfo = CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(playerLevelText, fontLibrary);
+	if (!this->levelTextBox.init(playerLevelTextBoxInitInfo, playerLevelText, renderer))
+	{
+		DebugLogError("Couldn't init player level text box.");
+		return false;
 	}
 
 	this->doneButton = Button<Game&>(
@@ -149,28 +162,28 @@ bool CharacterPanel::init()
 		nextPageTextureDims,
 		PivotType::TopLeft);
 
-	const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
+	const Rect &playerNameTextBoxRect = this->nameTextBox.getRect();
 	this->addDrawCall(
-		this->playerNameTextBox.getTextureID(),
+		this->nameTextBox.getTextureID(),
 		playerNameTextBoxRect.getTopLeft(),
 		Int2(playerNameTextBoxRect.getWidth(), playerNameTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const Rect &playerRaceTextBoxRect = this->playerRaceTextBox.getRect();
+	const Rect &playerRaceTextBoxRect = this->raceTextBox.getRect();
 	this->addDrawCall(
-		this->playerRaceTextBox.getTextureID(),
+		this->raceTextBox.getTextureID(),
 		playerRaceTextBoxRect.getTopLeft(),
 		Int2(playerRaceTextBoxRect.getWidth(), playerRaceTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const Rect &playerClassTextBoxRect = this->playerClassTextBox.getRect();
+	const Rect &playerClassTextBoxRect = this->classTextBox.getRect();
 	this->addDrawCall(
-		this->playerClassTextBox.getTextureID(),
+		this->classTextBox.getTextureID(),
 		playerClassTextBoxRect.getTopLeft(),
 		Int2(playerClassTextBoxRect.getWidth(), playerClassTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	for (TextBox &playerAttributeTextBox : this->playerAttributeTextBoxes)
+	for (TextBox &playerAttributeTextBox : this->attributeTextBoxes)
 	{
 		const Rect &playerAttributeTextBoxRect = playerAttributeTextBox.getRect();
 		this->addDrawCall(
@@ -179,6 +192,20 @@ bool CharacterPanel::init()
 			Int2(playerAttributeTextBoxRect.getWidth(), playerAttributeTextBoxRect.getHeight()),
 			PivotType::TopLeft);
 	}
+
+	const Rect &playerExperienceTextBoxRect = this->experienceTextBox.getRect();
+	this->addDrawCall(
+		this->experienceTextBox.getTextureID(),
+		playerExperienceTextBoxRect.getTopLeft(),
+		Int2(playerExperienceTextBoxRect.getWidth(), playerExperienceTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+
+	const Rect &playerLevelTextBoxRect = this->levelTextBox.getRect();
+	this->addDrawCall(
+		this->levelTextBox.getTextureID(),
+		playerLevelTextBoxRect.getTopLeft(),
+		Int2(playerLevelTextBoxRect.getWidth(), playerLevelTextBoxRect.getHeight()),
+		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

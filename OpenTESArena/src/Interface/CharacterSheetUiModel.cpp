@@ -36,3 +36,15 @@ const PrimaryAttributes &CharacterSheetUiModel::getPlayerAttributes(Game &game)
 {
 	return game.player.primaryAttributes;
 }
+
+std::string CharacterSheetUiModel::getPlayerExperience(Game &game)
+{
+	const Player &player = game.player;
+	return std::to_string(player.experience);
+}
+
+std::string CharacterSheetUiModel::getPlayerLevel(Game &game)
+{
+	const Player &player = game.player;
+	return std::to_string(player.level);
+}

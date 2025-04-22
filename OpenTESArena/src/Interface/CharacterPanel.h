@@ -13,8 +13,9 @@ class Renderer;
 class CharacterPanel : public Panel
 {
 private:
-	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox;
-	TextBox playerAttributeTextBoxes[PrimaryAttributes::COUNT];
+	TextBox nameTextBox, raceTextBox, classTextBox;
+	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
+	TextBox experienceTextBox, levelTextBox;
 	Button<Game&> doneButton, nextPageButton;
 	ScopedUiTextureRef bodyTextureRef, headTextureRef, shirtTextureRef, pantsTextureRef,
 		statsBgTextureRef, nextPageTextureRef, cursorTextureRef;

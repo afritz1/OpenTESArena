@@ -28,27 +28,24 @@ bool CharacterEquipmentPanel::init()
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
-	const TextBox::InitInfo playerNameTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
-	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
+	const TextBox::InitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
+	if (!this->nameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
 		DebugLogError("Couldn't init player name text box.");
 		return false;
 	}
 
 	const std::string playerRaceText = CharacterSheetUiModel::getPlayerRaceName(game);
-	const TextBox::InitInfo playerRaceTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
-	if (!this->playerRaceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
+	const TextBox::InitInfo playerRaceTextBoxInitInfo = CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
+	if (!this->raceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
 	{
 		DebugLogError("Couldn't init player race text box.");
 		return false;
 	}
 
 	const std::string playerClassText = CharacterSheetUiModel::getPlayerClassName(game);
-	const TextBox::InitInfo playerClassTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
-	if (!this->playerClassTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
+	const TextBox::InitInfo playerClassTextBoxInitInfo = CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
+	if (!this->classTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
 	{
 		DebugLogError("Couldn't init player class text box.");
 		return false;
@@ -198,23 +195,23 @@ bool CharacterEquipmentPanel::init()
 		equipmentBgTextureDims,
 		PivotType::TopLeft);
 
-	const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
+	const Rect &playerNameTextBoxRect = this->nameTextBox.getRect();
 	this->addDrawCall(
-		this->playerNameTextBox.getTextureID(),
+		this->nameTextBox.getTextureID(),
 		playerNameTextBoxRect.getTopLeft(),
 		Int2(playerNameTextBoxRect.getWidth(), playerNameTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const Rect &playerRaceTextBoxRect = this->playerRaceTextBox.getRect();
+	const Rect &playerRaceTextBoxRect = this->raceTextBox.getRect();
 	this->addDrawCall(
-		this->playerRaceTextBox.getTextureID(),
+		this->raceTextBox.getTextureID(),
 		playerRaceTextBoxRect.getTopLeft(),
 		Int2(playerRaceTextBoxRect.getWidth(), playerRaceTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const Rect &playerClassTextBoxRect = this->playerClassTextBox.getRect();
+	const Rect &playerClassTextBoxRect = this->classTextBox.getRect();
 	this->addDrawCall(
-		this->playerClassTextBox.getTextureID(),
+		this->classTextBox.getTextureID(),
 		playerClassTextBoxRect.getTopLeft(),
 		Int2(playerClassTextBoxRect.getWidth(), playerClassTextBoxRect.getHeight()),
 		PivotType::TopLeft);

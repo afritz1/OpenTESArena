@@ -11,7 +11,7 @@ class Renderer;
 class CharacterEquipmentPanel : public Panel
 {
 private:
-	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox;
+	TextBox nameTextBox, raceTextBox, classTextBox;
 	ListBox inventoryListBox;
 	Button<Game&> backToStatsButton, spellbookButton;
 	Button<Game&, int> dropButton;

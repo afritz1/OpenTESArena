@@ -14,6 +14,8 @@ namespace CharacterSheetUiModel
 	std::string getPlayerRaceName(Game &game);
 	std::string getPlayerClassName(Game &game);
 	const PrimaryAttributes &getPlayerAttributes(Game &game);
+	std::string getPlayerExperience(Game &game);
+	std::string getPlayerLevel(Game &game);
 }
 
 #endif

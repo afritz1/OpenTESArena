@@ -46,10 +46,24 @@ namespace CharacterSheetUiView
 	const Color PlayerAttributeTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerAttributeTextBoxAlignment = TextAlignment::TopLeft;
 
+	constexpr int PlayerExperienceTextBoxX = 45;
+	constexpr int PlayerExperienceTextBoxY = 158;
+	const std::string PlayerExperienceTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerExperienceTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerExperienceTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerLevelTextBoxX = 45;
+	constexpr int PlayerLevelTextBoxY = 167;
+	const std::string PlayerLevelTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerLevelTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerLevelTextBoxAlignment = TextAlignment::TopLeft;
+
 	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	std::vector<TextBox::InitInfo> getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

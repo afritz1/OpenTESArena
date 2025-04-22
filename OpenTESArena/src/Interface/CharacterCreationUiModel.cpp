@@ -42,6 +42,16 @@ const PrimaryAttributes &CharacterCreationUiModel::getPlayerAttributes(Game &gam
 	return attributes;
 }
 
+std::string CharacterCreationUiModel::getPlayerLevel(Game &game)
+{
+	return std::to_string(1);
+}
+
+std::string CharacterCreationUiModel::getPlayerExperience(Game &game)
+{
+	return std::to_string(0);
+}
+
 std::string ChooseClassCreationUiModel::getTitleText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
