@@ -656,7 +656,7 @@ bool ArenaAnimUtils::isUnlockedHolderContainerIndex(ArenaTypes::ItemIndex itemIn
 
 bool ArenaAnimUtils::isTreasurePileContainerIndex(ArenaTypes::ItemIndex itemIndex)
 {
-	return itemIndex >= 3 && itemIndex <= 6;
+	return itemIndex >= 2 && itemIndex <= 6;
 }
 
 bool ArenaAnimUtils::isContainerIndex(ArenaTypes::ItemIndex itemIndex)
