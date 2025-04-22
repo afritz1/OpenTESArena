@@ -655,8 +655,8 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 					{
 						// If the door is closed, try to open it.
 						int doorAnimInstIndex;
-						const bool isClosed = !voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
-						if (isClosed)
+						const bool isDoorClosed = !voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
+						if (isDoorClosed)
 						{
 							bool canDoorBeOpened = true;
 							bool isUsingDoorKey = false;
@@ -672,7 +672,12 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 								{
 									if (player.isIdInKeyInventory(requiredDoorKeyID))
 									{
-										isUsingDoorKey = true;
+										int triggerInstIndex;
+										const bool isDoorKeyAlreadyUsed = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
+										if (!isDoorKeyAlreadyUsed)
+										{
+											isUsingDoorKey = true;
+										}
 									}
 									else
 									{
@@ -702,6 +707,10 @@ void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int
 								if (isUsingDoorKey)
 								{
 									GameWorldUiController::onDoorUnlockedWithKey(game, requiredDoorKeyID, soundFilename, soundPosition, exeData);
+
+									VoxelTriggerInstance newTriggerInst;
+									newTriggerInst.init(voxel.x, voxel.y, voxel.z);
+									voxelChunk.addTriggerInst(std::move(newTriggerInst));
 								}
 								else
 								{
