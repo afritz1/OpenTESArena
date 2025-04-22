@@ -164,9 +164,9 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 	{
 	case EntityDefinitionType::Enemy:
 	case EntityDefinitionType::StaticNPC:
-	case EntityDefinitionType::Container:
 		return true;
 	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::Container:
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Projectile:
 	case EntityDefinitionType::Transition:
