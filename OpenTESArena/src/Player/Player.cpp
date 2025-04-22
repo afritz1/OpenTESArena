@@ -271,7 +271,13 @@ void Player::addToKeyInventory(int keyID)
 	int insertIndex = -1;
 	for (int i = 0; i < static_cast<int>(std::size(this->keyInventory)); i++)
 	{
-		if (this->keyInventory[i] == ArenaItemUtils::InvalidDoorKeyID)
+		const int currentKeyID = this->keyInventory[i];
+		if (currentKeyID == keyID)
+		{
+			DebugLogWarningFormat("Already have key %d in key inventory.", keyID);
+			return;
+		}
+		else if (currentKeyID == ArenaItemUtils::InvalidDoorKeyID)
 		{
 			insertIndex = i;
 			break;
