@@ -296,6 +296,234 @@ namespace PlayerLogicController
 		}
 	}
 
+	void handleRayCastHitVoxel(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, bool debugDestroyVoxel, double ceilingScale, VoxelChunk &voxelChunk, TextBox &actionTextBox)
+	{
+		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
+
+		const RayCastVoxelHit &voxelHit = hit.voxelHit;
+		const VoxelInt3 &voxel = voxelHit.voxel;
+		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
+
+		GameState &gameState = game.gameState;
+		const Player &player = game.player;
+
+		if (isPrimaryInteraction)
+		{
+			// Arbitrary max distance for selection.
+			// @todo: move to some ArenaPlayerUtils maybe
+			if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
+			{
+				if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
+				{
+					if (!debugDestroyVoxel)
+					{
+						const bool isWall = voxelType == ArenaTypes::VoxelType::Wall;
+
+						// The only edge voxels with a transition should be should be palace entrances (with collision).
+						const bool isEdge = (voxelType == ArenaTypes::VoxelType::Edge) && voxelTraitsDef.edge.collider;
+
+						if (isWall || isEdge)
+						{
+							VoxelTransitionDefID transitionDefID;
+							if (voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
+							{
+								const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
+								if (transitionDef.type != TransitionType::InteriorLevelChange)
+								{
+									MapLogicController::handleMapTransition(game, hit, transitionDef);
+								}
+							}
+						}
+					}
+					else
+					{
+						// @temp: add to fading voxels if it doesn't already exist.
+						int fadeAnimInstIndex;
+						if (!voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
+						{
+							VoxelFadeAnimationInstance fadeAnimInst;
+							fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
+							voxelChunk.addFadeAnimInst(std::move(fadeAnimInst));
+						}
+					}
+				}
+				else if (voxelType == ArenaTypes::VoxelType::Door)
+				{
+					// If the door is closed, try to open it.
+					int doorAnimInstIndex;
+					const bool isDoorClosed = !voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
+					if (isDoorClosed)
+					{
+						bool canDoorBeOpened = true;
+						bool isUsingDoorKey = false;
+						int requiredDoorKeyID = -1;
+
+						VoxelLockDefID lockDefID;
+						if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
+						{
+							const LockDefinition &lockDef = voxelChunk.getLockDef(lockDefID);
+							requiredDoorKeyID = lockDef.keyID;
+
+							if (requiredDoorKeyID >= 0)
+							{
+								if (player.isIdInKeyInventory(requiredDoorKeyID))
+								{
+									int triggerInstIndex;
+									const bool isDoorKeyAlreadyUsed = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
+									if (!isDoorKeyAlreadyUsed)
+									{
+										isUsingDoorKey = true;
+									}
+								}
+								else
+								{
+									canDoorBeOpened = false;
+								}
+							}
+						}
+
+						if (canDoorBeOpened)
+						{
+							VoxelDoorAnimationInstance newDoorAnimInst;
+							newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
+							voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
+
+							VoxelDoorDefID doorDefID;
+							if (!voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+							{
+								DebugCrash("Expected door def ID to exist.");
+							}
+
+							const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+							const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
+							const std::string &soundFilename = openSoundDef.soundFilename;
+							const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+							const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
+
+							if (isUsingDoorKey)
+							{
+								GameWorldUiController::onDoorUnlockedWithKey(game, requiredDoorKeyID, soundFilename, soundPosition, exeData);
+
+								VoxelTriggerInstance newTriggerInst;
+								newTriggerInst.init(voxel.x, voxel.y, voxel.z);
+								voxelChunk.addTriggerInst(std::move(newTriggerInst));
+							}
+							else
+							{
+								AudioManager &audioManager = game.audioManager;
+								audioManager.playSound(soundFilename.c_str(), soundPosition);
+							}
+						}
+						else
+						{
+							const int lockDifficultyIndex = 0; // @todo determine from thieving skill value
+							const std::string requiredDoorKeyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
+							actionTextBox.setText(requiredDoorKeyMsg);
+							gameState.setActionTextDuration(requiredDoorKeyMsg);
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			// Handle secondary click (i.e. right click).
+			if (ArenaSelectionUtils::isVoxelSelectableAsSecondary(voxelType))
+			{
+				VoxelBuildingNameID buildingNameID;
+				if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
+				{
+					const std::string &buildingName = voxelChunk.getBuildingName(buildingNameID);
+					actionTextBox.setText(buildingName);
+					gameState.setActionTextDuration(buildingName);
+				}
+			}
+		}
+	}
+
+	void handleRayCastHitEntity(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, double ceilingScale, VoxelChunk &voxelChunk, TextBox &actionTextBox)
+	{
+		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
+
+		const ChunkInt2 chunkPos = hit.coord.chunk;
+		const RayCastEntityHit &entityHit = hit.entityHit;
+		const VoxelInt3 voxel = VoxelUtils::pointToVoxel(hit.coord.point, ceilingScale);
+
+		GameState &gameState = game.gameState;
+		Player &player = game.player;
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+
+		if (isPrimaryInteraction)
+		{
+			// @todo: max selection distance matters when talking to NPCs and selecting corpses.
+			// - need to research a bit since I think it switches between select and inspect
+			//   depending on distance and entity state.
+			// - Also need the "too far away..." text?
+			/*const double maxSelectionDist = 1.50;
+			if (hit.t <= maxSelectionDist)
+			{
+
+			}*/
+
+			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
+			const EntityInstanceID entityInstID = entityHit.id;
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			const EntityDefinitionType entityType = entityDef.type;
+			const auto &charClassLibrary = CharacterClassLibrary::getInstance();
+
+			std::string entityName;
+			std::string text;
+			if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
+			{
+				text = exeData.ui.inspectedEntityName;
+
+				// Replace format specifier with entity name.
+				text = String::replace(text, "%s", entityName);
+			}
+			else
+			{
+				switch (entityType)
+				{
+				case EntityDefinitionType::Item:
+				{
+					const ItemEntityDefinition &itemDef = entityDef.item;
+					if (itemDef.type == ItemEntityDefinitionType::Key)
+					{
+						// Pick up door key.
+						VoxelTriggerDefID triggerDefID;
+						if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
+						{
+							const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
+							if (triggerDef.hasKeyDef())
+							{
+								const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
+								const int keyID = triggerKeyDef.keyID;
+								GameWorldUiController::onKeyPickedUp(game, keyID, exeData);
+								player.addToKeyInventory(keyID);
+								entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+							}
+						}
+					}
+
+					break;
+				}
+				default:
+					// Placeholder text for testing.
+					text = "Entity " + std::to_string(entityInstID) + " (" + EntityUtils::defTypeToString(entityDef) + ")";
+					break;
+				}
+			}
+
+			actionTextBox.setText(text);
+			gameState.setActionTextDuration(text);
+		}
+	}
+
 	int getMeleeAnimDirectionStateIndex(const WeaponAnimationDefinition &animDef, CardinalDirectionName direction)
 	{
 		int stateIndex = -1;
@@ -567,254 +795,38 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	}
 }
 
-void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint,
-	bool primaryInteraction, bool debugFadeVoxel, TextBox &actionTextBox)
+void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool isPrimaryInteraction,
+	bool debugFadeVoxel, TextBox &actionTextBox)
 {
-	const auto &options = game.options;
-	auto &gameState = game.gameState;
-	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
+	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
-	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const ExeData &exeData = binaryAssetLibrary.getExeData();
-
-	auto &player = game.player;
+	const Player &player = game.player;
 	const Double3 &cameraDirection = player.forward;
 	const CoordDouble3 rayStart = player.getEyeCoord();
 	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 	constexpr bool includeEntities = true;
-
-	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 
 	RayCastHit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
 		includeEntities, voxelChunkManager, entityChunkManager, collisionChunkManager,
 		EntityDefinitionLibrary::getInstance(), hit);
 
-	// See if the ray hit anything.
 	if (success)
 	{
-		const CoordDouble3 &hitCoord = hit.coord;
-		const ChunkInt2 chunkPos = hitCoord.chunk;
-		VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(hit.coord.chunk);
 
 		if (hit.type == RayCastHitType::Voxel)
 		{
-			const RayCastVoxelHit &voxelHit = hit.voxelHit;
-			const VoxelInt3 &voxel = voxelHit.voxel;
-			const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-			const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
-
-			// Primary interaction handles selection in the game world. Secondary interaction handles
-			// reading names of things.
-			if (primaryInteraction)
-			{
-				// Arbitrary max distance for selection.
-				// @todo: move to some ArenaPlayerUtils maybe
-				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
-				{
-					if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
-					{
-						if (!debugFadeVoxel)
-						{
-							const bool isWall = voxelType == ArenaTypes::VoxelType::Wall;
-
-							// The only edge voxels with a transition should be should be palace entrances (with collision).
-							const bool isEdge = (voxelType == ArenaTypes::VoxelType::Edge) && voxelTraitsDef.edge.collider;
-
-							if (isWall || isEdge)
-							{
-								VoxelTransitionDefID transitionDefID;
-								if (voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
-								{
-									const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
-									if (transitionDef.type != TransitionType::InteriorLevelChange)
-									{
-										MapLogicController::handleMapTransition(game, hit, transitionDef);
-									}
-								}
-							}
-						}
-						else
-						{
-							// @temp: add to fading voxels if it doesn't already exist.
-							int fadeAnimInstIndex;
-							if (!voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
-							{
-								VoxelFadeAnimationInstance fadeAnimInst;
-								fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-								voxelChunk.addFadeAnimInst(std::move(fadeAnimInst));
-							}
-						}
-					}
-					else if (voxelType == ArenaTypes::VoxelType::Door)
-					{
-						// If the door is closed, try to open it.
-						int doorAnimInstIndex;
-						const bool isDoorClosed = !voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
-						if (isDoorClosed)
-						{
-							bool canDoorBeOpened = true;
-							bool isUsingDoorKey = false;
-							int requiredDoorKeyID = -1;
-
-							VoxelLockDefID lockDefID;
-							if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
-							{
-								const LockDefinition &lockDef = voxelChunk.getLockDef(lockDefID);
-								requiredDoorKeyID = lockDef.keyID;
-
-								if (requiredDoorKeyID >= 0)
-								{
-									if (player.isIdInKeyInventory(requiredDoorKeyID))
-									{
-										int triggerInstIndex;
-										const bool isDoorKeyAlreadyUsed = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
-										if (!isDoorKeyAlreadyUsed)
-										{
-											isUsingDoorKey = true;
-										}
-									}
-									else
-									{
-										canDoorBeOpened = false;
-									}
-								}
-							}
-
-							if (canDoorBeOpened)
-							{
-								VoxelDoorAnimationInstance newDoorAnimInst;
-								newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-								voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
-
-								VoxelDoorDefID doorDefID;
-								if (!voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
-								{
-									DebugCrash("Expected door def ID to exist.");
-								}
-
-								const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
-								const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
-								const std::string &soundFilename = openSoundDef.soundFilename;
-								const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
-								const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
-
-								if (isUsingDoorKey)
-								{
-									GameWorldUiController::onDoorUnlockedWithKey(game, requiredDoorKeyID, soundFilename, soundPosition, exeData);
-
-									VoxelTriggerInstance newTriggerInst;
-									newTriggerInst.init(voxel.x, voxel.y, voxel.z);
-									voxelChunk.addTriggerInst(std::move(newTriggerInst));
-								}
-								else
-								{
-									AudioManager &audioManager = game.audioManager;
-									audioManager.playSound(soundFilename.c_str(), soundPosition);
-								}
-							}
-							else
-							{
-								const int lockDifficultyIndex = 0; // @todo determine from thieving skill value
-								const std::string requiredDoorKeyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
-								actionTextBox.setText(requiredDoorKeyMsg);
-								gameState.setActionTextDuration(requiredDoorKeyMsg);
-							}
-						}
-					}
-				}
-			}
-			else
-			{
-				// Handle secondary click (i.e. right click).
-				if (ArenaSelectionUtils::isVoxelSelectableAsSecondary(voxelType))
-				{
-					VoxelBuildingNameID buildingNameID;
-					if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
-					{
-						const std::string &buildingName = voxelChunk.getBuildingName(buildingNameID);
-						actionTextBox.setText(buildingName);
-						gameState.setActionTextDuration(buildingName);
-					}
-				}
-			}
+			handleRayCastHitVoxel(game, hit, isPrimaryInteraction, debugFadeVoxel, ceilingScale, voxelChunk, actionTextBox);
 		}
 		else if (hit.type == RayCastHitType::Entity)
 		{
-			const RayCastEntityHit &entityHit = hit.entityHit;
-			const CoordInt3 hitVoxelCoord(chunkPos, VoxelUtils::pointToVoxel(hitCoord.point, ceilingScale));
-			const VoxelInt3 hitVoxel = hitVoxelCoord.voxel;
-
-			if (primaryInteraction)
-			{
-				// @todo: max selection distance matters when talking to NPCs and selecting corpses.
-				// - need to research a bit since I think it switches between select and inspect
-				//   depending on distance and entity state.
-				// - Also need the "too far away..." text?
-				/*const double maxSelectionDist = 1.50;
-				if (hit.t <= maxSelectionDist)
-				{
-
-				}*/
-
-				// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
-				const EntityInstanceID entityInstID = entityHit.id;
-				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-				const EntityDefinitionType entityType = entityDef.type;
-				const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-
-				std::string entityName;
-				std::string text;
-				if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
-				{
-					text = exeData.ui.inspectedEntityName;
-
-					// Replace format specifier with entity name.
-					text = String::replace(text, "%s", entityName);
-				}
-				else
-				{
-					switch (entityType)
-					{
-					case EntityDefinitionType::Item:
-					{
-						const ItemEntityDefinition &itemDef = entityDef.item;
-						if (itemDef.type == ItemEntityDefinitionType::Key)
-						{
-							// Pick up door key.
-							VoxelTriggerDefID triggerDefID;
-							if (voxelChunk.tryGetTriggerDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &triggerDefID))
-							{
-								const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
-								if (triggerDef.hasKeyDef())
-								{
-									const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
-									const int keyID = triggerKeyDef.keyID;
-									GameWorldUiController::onKeyPickedUp(game, keyID, exeData);
-									player.addToKeyInventory(keyID);
-									entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
-								}
-							}
-						}
-
-						break;
-					}
-					default:
-						// Placeholder text for testing.
-						text = "Entity " + std::to_string(entityInstID) + " (" + EntityUtils::defTypeToString(entityDef) + ")";
-						break;
-					}
-				}
-
-				actionTextBox.setText(text);
-				gameState.setActionTextDuration(text);
-			}
+			handleRayCastHitEntity(game, hit, isPrimaryInteraction, ceilingScale, voxelChunk, actionTextBox);
 		}
 		else
 		{
