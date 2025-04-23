@@ -66,15 +66,16 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 		const double ceilingScale = gameState.getActiveCeilingScale();
 
 		// Determine which sensor subshape was hit since it's in a compound shape.
+		const JPH::Vec3 otherBodyScale = JPH::Vec3::sReplicate(1.0f);
 		JPH::SubShapeID remainderSubShapeID;
-		const JPH::TransformedShape otherSubShapeTransformed = otherBody->GetShape()->GetSubShapeTransformedShape(otherSubShapeID, otherBody->GetCenterOfMassPosition(), otherBody->GetRotation(), JPH::Vec3Arg::sReplicate(1.0f), remainderSubShapeID);
+		const JPH::TransformedShape otherSubShapeTransformed = otherBody->GetShape()->GetSubShapeTransformedShape(otherSubShapeID, otherBody->GetCenterOfMassPosition(), otherBody->GetRotation(), otherBodyScale, remainderSubShapeID);
 		const JPH::RVec3 otherSubShapePosition = otherSubShapeTransformed.mShapePositionCOM;		
 		const CoordDouble3 otherSubShapeCoord = VoxelUtils::worldPointToCoord(WorldDouble3(
 			static_cast<SNDouble>(otherSubShapePosition.GetX()),
 			static_cast<double>(otherSubShapePosition.GetY()),
 			static_cast<WEDouble>(otherSubShapePosition.GetZ())));
 		const CoordInt3 otherSubShapeVoxelCoord(otherSubShapeCoord.chunk, VoxelUtils::pointToVoxel(otherSubShapeCoord.point, ceilingScale));
-		//DebugLog("Player contacted voxel sensor " + std::to_string(otherBodyID.GetIndex()) + " in chunk (" + otherSubShapeVoxelCoord.chunk.toString() + ") at (" + otherSubShapeVoxelCoord.voxel.toString() + ").");
+		const VoxelInt3 otherSubShapeVoxel = otherSubShapeVoxelCoord.voxel;
 
 		TextBox *triggerTextBox = game.getTriggerTextBox();
 		DebugAssert(triggerTextBox != nullptr);
@@ -83,6 +84,13 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 		const MapType activeMapType = gameState.getActiveMapType();
 		if (activeMapType == MapType::Interior)
 		{
+			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(otherSubShapeVoxelCoord.chunk);
+			VoxelTransitionDefID transitionDefID;
+			if (!voxelChunk.tryGetTransitionDefID(otherSubShapeVoxel.x, otherSubShapeVoxel.y, otherSubShapeVoxel.z, &transitionDefID))
+			{
+				return;
+			}
+
 			const JPH::RVec3 playerBodyPosition = playerBody->GetCenterOfMassPosition();
 			const CoordDouble3 playerBodyCoord = VoxelUtils::worldPointToCoord(WorldDouble3(
 				static_cast<SNDouble>(playerBodyPosition.GetX()),

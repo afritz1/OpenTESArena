@@ -478,10 +478,9 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 	}
 }
 
-void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &playerCoord,
-	const CoordInt3 &transitionCoord)
+void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord)
 {
-	auto &gameState = game.gameState;
+	GameState &gameState = game.gameState;
 
 	// Level transitions are always between interiors.
 	const MapDefinition &interiorMapDef = gameState.getActiveMapDef();
@@ -500,138 +499,130 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	const VoxelInt3 &transitionVoxel = transitionCoord.voxel;
 	if (!chunk.isValidVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z))
 	{
-		// Not in the chunk.
 		return;
 	}
 
-	// Get the voxel definition associated with the voxel.
-	const VoxelTraitsDefinition &voxelTraitsDef = [&chunk, &transitionVoxel]()
+	const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);	
+	const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+	if (voxelTraitsDef.type != ArenaTypes::VoxelType::Wall)
 	{
-		const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
-		return chunk.getTraitsDef(voxelTraitsDefID);
+		return;
+	}
+
+	VoxelTransitionDefID transitionDefID;
+	if (!chunk.tryGetTransitionDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z, &transitionDefID))
+	{
+		return;
+	}
+
+	const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
+	if (transitionDef.type != TransitionType::InteriorLevelChange)
+	{
+		return;
+	}
+
+	// The direction from a level up/down voxel to where the player should end up after going through.
+	// It points to the destination voxel adjacent to the level up/down voxel.
+	const VoxelInt3 dirToWorldVoxel = [&playerCoord, &transitionCoord]()
+	{
+		const VoxelInt3 diff = transitionCoord - playerCoord;
+
+		// @todo: this probably isn't robust enough. Maybe also check the player's angle
+		// of velocity with angles to the voxel's corners to get the "arrival vector"
+		// and thus the "near face" that is intersected, because this method doesn't
+		// handle the player coming in at a diagonal.
+
+		// Check which way the player is going and get the reverse of it.
+		if (diff.x > 0)
+		{
+			// From south to north.
+			return -Int3::UnitX;
+		}
+		else if (diff.x < 0)
+		{
+			// From north to south.
+			return Int3::UnitX;
+		}
+		else if (diff.z > 0)
+		{
+			// From west to east.
+			return -Int3::UnitZ;
+		}
+		else if (diff.z < 0)
+		{
+			// From east to west.
+			return Int3::UnitZ;
+		}
+		else
+		{
+			DebugLogError("Couldn't determine player direction for transition (" + transitionCoord.voxel.toString() + ") in chunk (" + transitionCoord.chunk.toString() + ").");
+			return -Int3::UnitX;
+		}
 	}();
 
-	// If the associated voxel data is a wall, then it might be a transition voxel.
-	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Wall)
+	Player &player = game.player;
+	const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
+	const VoxelInt2 dirToWorldVoxelXZ(dirToWorldVoxel.x, dirToWorldVoxel.z);
+	const VoxelDouble3 dirToWorldPoint(
+		static_cast<SNDouble>(dirToWorldVoxel.x),
+		static_cast<double>(dirToWorldVoxel.y),
+		static_cast<WEDouble>(dirToWorldVoxel.z));
+	const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(transitionCoord.chunk, transitionVoxelCenter + dirToWorldPoint);
+
+	// Lambda for opening the world map when the player enters a transition voxel
+	// that will "lead to the surface of the dungeon".
+	auto switchToWorldMap = [&playerCoord, &game, &gameState, &player]()
 	{
-		const VoxelInt3 &voxel = transitionCoord.voxel;
-		VoxelTransitionDefID transitionDefID;
-		if (!chunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
+		// Move player to center of previous voxel in case they change their mind
+		// about fast traveling. Don't change their direction.
+		const VoxelInt2 playerVoxelXZ(playerCoord.voxel.x, playerCoord.voxel.z);
+		const VoxelDouble2 playerVoxelCenterXZ = VoxelUtils::getVoxelCenter(playerVoxelXZ);
+		const VoxelDouble3 playerFeetDestinationPoint(
+			playerVoxelCenterXZ.x,
+			gameState.getActiveCeilingScale(),
+			playerVoxelCenterXZ.y);
+		const WorldDouble3 playerFeetDestinationPosition = VoxelUtils::coordToWorldPoint(CoordDouble3(playerCoord.chunk, playerFeetDestinationPoint));
+		player.setPhysicsPositionRelativeToFeet(playerFeetDestinationPosition);
+		player.setPhysicsVelocity(Double3::Zero);
+
+		game.setPanel<WorldMapPanel>();
+	};
+
+	const int activeLevelIndex = gameState.getActiveLevelIndex();
+	const int levelCount = interiorMapDef.getLevels().getCount();
+	const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef.interiorLevelChange;
+	if (levelChangeDef.isLevelUp)
+	{
+		// Level up transition. If the custom function has a target, call it and reset it (necessary
+		// for main quest start dungeon).
+		auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
+
+		if (onLevelUpVoxelEnter)
 		{
-			return;
+			onLevelUpVoxelEnter(game);
+			onLevelUpVoxelEnter = std::function<void(Game&)>();
 		}
-
-		const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
-
-		// The direction from a level up/down voxel to where the player should end up after
-		// going through. In other words, it points to the destination voxel adjacent to the
-		// level up/down voxel.
-		const VoxelInt3 dirToWorldVoxel = [&playerCoord, &transitionCoord]()
+		else if (activeLevelIndex > 0)
 		{
-			const VoxelInt3 diff = transitionCoord - playerCoord;
-
-			// @todo: this probably isn't robust enough. Maybe also check the player's angle
-			// of velocity with angles to the voxel's corners to get the "arrival vector"
-			// and thus the "near face" that is intersected, because this method doesn't
-			// handle the player coming in at a diagonal.
-
-			// Check which way the player is going and get the reverse of it.
-			if (diff.x > 0)
-			{
-				// From south to north.
-				return -Int3::UnitX;
-			}
-			else if (diff.x < 0)
-			{
-				// From north to south.
-				return Int3::UnitX;
-			}
-			else if (diff.z > 0)
-			{
-				// From west to east.
-				return -Int3::UnitZ;
-			}
-			else if (diff.z < 0)
-			{
-				// From east to west.
-				return Int3::UnitZ;
-			}
-			else
-			{
-				DebugLogError("Couldn't determine player direction for transition (" + transitionCoord.voxel.toString() + ") in chunk (" + transitionCoord.chunk.toString() + ").");
-				return -Int3::UnitX;
-			}
-		}();
-
-		// Player destination after going through a level up/down voxel.
-		auto &player = game.player;
-		const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
-		const VoxelInt2 dirToWorldVoxelXZ(dirToWorldVoxel.x, dirToWorldVoxel.z);
-		const VoxelDouble3 dirToWorldPoint(
-			static_cast<SNDouble>(dirToWorldVoxel.x),
-			static_cast<double>(dirToWorldVoxel.y),
-			static_cast<WEDouble>(dirToWorldVoxel.z));
-		const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(transitionCoord.chunk, transitionVoxelCenter + dirToWorldPoint);
-
-		// Lambda for opening the world map when the player enters a transition voxel
-		// that will "lead to the surface of the dungeon".
-		auto switchToWorldMap = [&playerCoord, &game, &gameState, &player]()
+			// Decrement the world's level index and activate the new level.
+			gameState.queueLevelIndexChange(activeLevelIndex - 1, dirToWorldVoxelXZ);
+		}
+		else
 		{
-			// Move player to center of previous voxel in case they change their mind
-			// about fast traveling. Don't change their direction.
-			const VoxelInt2 playerVoxelXZ(playerCoord.voxel.x, playerCoord.voxel.z);
-			const VoxelDouble2 playerVoxelCenterXZ = VoxelUtils::getVoxelCenter(playerVoxelXZ);
-			const VoxelDouble3 playerFeetDestinationPoint(
-				playerVoxelCenterXZ.x,
-				gameState.getActiveCeilingScale(),
-				playerVoxelCenterXZ.y);
-			const WorldDouble3 playerFeetDestinationPosition = VoxelUtils::coordToWorldPoint(CoordDouble3(playerCoord.chunk, playerFeetDestinationPoint));
-			player.setPhysicsPositionRelativeToFeet(playerFeetDestinationPosition);
-			player.setPhysicsVelocity(Double3::Zero);
-
-			game.setPanel<WorldMapPanel>();
-		};
-
-		// See if it's a level up or level down transition. Ignore other transition types.
-		if (transitionDef.type == TransitionType::InteriorLevelChange)
+			switchToWorldMap();
+		}
+	}
+	else
+	{
+		// Level down transition.
+		if (activeLevelIndex < (levelCount - 1))
 		{
-			const int activeLevelIndex = gameState.getActiveLevelIndex();
-			const int levelCount = interiorMapDef.getLevels().getCount();
-			const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef.interiorLevelChange;
-			if (levelChangeDef.isLevelUp)
-			{
-				// Level up transition. If the custom function has a target, call it and reset it (necessary
-				// for main quest start dungeon).
-				auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
-
-				if (onLevelUpVoxelEnter)
-				{
-					onLevelUpVoxelEnter(game);
-					onLevelUpVoxelEnter = std::function<void(Game&)>();
-				}
-				else if (activeLevelIndex > 0)
-				{
-					// Decrement the world's level index and activate the new level.
-					gameState.queueLevelIndexChange(activeLevelIndex - 1, dirToWorldVoxelXZ);
-				}
-				else
-				{
-					switchToWorldMap();
-				}
-			}
-			else
-			{
-				// Level down transition.
-				if (activeLevelIndex < (levelCount - 1))
-				{
-					// Increment the world's level index and activate the new level.
-					gameState.queueLevelIndexChange(activeLevelIndex + 1, dirToWorldVoxelXZ);
-				}
-				else
-				{
-					switchToWorldMap();
-				}
-			}
+			// Increment the world's level index and activate the new level.
+			gameState.queueLevelIndexChange(activeLevelIndex + 1, dirToWorldVoxelXZ);
+		}
+		else
+		{
+			switchToWorldMap();
 		}
 	}
 }
