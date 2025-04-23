@@ -558,7 +558,8 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 			}
 			else
 			{
-				throw DebugException("Bad player transition voxel.");
+				DebugLogError("Couldn't determine player direction for transition (" + transitionCoord.voxel.toString() + ") in chunk (" + transitionCoord.chunk.toString() + ").");
+				return -Int3::UnitX;
 			}
 		}();
 
