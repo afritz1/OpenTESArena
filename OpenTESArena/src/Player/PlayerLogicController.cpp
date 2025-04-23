@@ -697,7 +697,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 
 	Player &player = game.player;
 	const double maxWalkSpeed = PlayerConstants::MOVE_SPEED;
-	const PlayerGroundState groundState = player.getGroundState(game, physicsSystem);
+	const PlayerGroundState &groundState = player.groundState;
 	const bool isOnGround = groundState.onGround;
 	const bool canJump = groundState.canJump;
 

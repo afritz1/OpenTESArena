@@ -40,6 +40,7 @@ struct PlayerGroundState
 {
 	bool onGround;
 	bool isSwimming;
+	bool enteredWater;
 	bool canJump;
 
 	PlayerGroundState();
@@ -55,6 +56,7 @@ struct Player
 	Double3 right;
 	Double3 up;
 	// @todo: polar coordinates (XYZ angles)
+	PlayerGroundState groundState, prevGroundState;
 	double movementSoundProgress;
 
 	std::string displayName;
@@ -105,7 +107,6 @@ struct Player
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
 	double getJumpMagnitude() const;
 
-	PlayerGroundState getGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem) const;
 	bool isMoving() const;
 
 	// Pitches and yaws relative to global up vector.
@@ -125,6 +126,7 @@ struct Player
 	// Changes the velocity instantly. Intended for instantaneous acceleration like jumping.
 	void accelerateInstant(const Double3 &direction, double magnitude); // @todo: CharacterVirtual should treat this like a jump
 
+	void updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem);
 	void prePhysicsStep(double dt, Game &game);
 	void postPhysicsStep(Game &game);
 };

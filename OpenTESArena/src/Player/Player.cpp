@@ -153,6 +153,7 @@ PlayerGroundState::PlayerGroundState()
 {
 	this->onGround = false;
 	this->isSwimming = false;
+	this->enteredWater = false;
 	this->canJump = false;
 }
 
@@ -387,53 +388,6 @@ double Player::getJumpMagnitude() const
 	return PlayerConstants::JUMP_VELOCITY;
 }
 
-PlayerGroundState Player::getGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem) const
-{
-	PlayerGroundState groundState;
-
-	const JPH::CharacterBase::EGroundState physicsGroundState = this->physicsCharacter->GetGroundState();
-	if ((physicsGroundState == JPH::CharacterBase::EGroundState::OnGround) || (physicsGroundState == JPH::CharacterBase::EGroundState::OnSteepGround))
-	{
-		const JPH::BodyID groundBodyID = this->physicsCharacter->GetGroundBodyID();
-		if (!groundBodyID.IsInvalid())
-		{
-			const JPH::BodyLockInterface &bodyInterface = physicsSystem.GetBodyLockInterface();
-			const JPH::BodyLockRead groundBodyLock(bodyInterface, groundBodyID);
-			if (groundBodyLock.Succeeded())
-			{
-				const JPH::Body &groundBody = groundBodyLock.GetBody();
-				groundState.onGround = !groundBody.IsSensor();
-			}
-		}
-	}
-
-	if (groundState.onGround)
-	{
-		const WorldDouble3 playerFeetPosition = this->getFeetPosition();
-		const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
-		const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point));
-		const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
-
-		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
-		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(playerFeetVoxelCoord.chunk);
-		VoxelChasmDefID chasmDefID;
-		if (voxelChunk.tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
-		{
-			const VoxelChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
-			groundState.isSwimming = chasmDef.allowsSwimming;
-		}
-
-		if (!groundState.isSwimming)
-		{
-			const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
-			constexpr float tinyEpsilon = 1e-8f;
-			groundState.canJump = groundState.onGround && (std::abs(physicsVelocity.GetY()) <= tinyEpsilon);
-		}		
-	}
-
-	return groundState;
-}
-
 bool Player::isMoving() const
 {
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
@@ -527,6 +481,57 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	this->setPhysicsVelocity(newVelocity);
 }
 
+void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem)
+{
+	PlayerGroundState newGroundState;
+
+	const JPH::CharacterBase::EGroundState physicsGroundState = this->physicsCharacter->GetGroundState();
+	if ((physicsGroundState == JPH::CharacterBase::EGroundState::OnGround) || (physicsGroundState == JPH::CharacterBase::EGroundState::OnSteepGround))
+	{
+		const JPH::BodyID groundBodyID = this->physicsCharacter->GetGroundBodyID();
+		if (!groundBodyID.IsInvalid())
+		{
+			const JPH::BodyLockInterface &bodyInterface = physicsSystem.GetBodyLockInterface();
+			const JPH::BodyLockRead groundBodyLock(bodyInterface, groundBodyID);
+			if (groundBodyLock.Succeeded())
+			{
+				const JPH::Body &groundBody = groundBodyLock.GetBody();
+				newGroundState.onGround = !groundBody.IsSensor();
+			}
+		}
+	}
+
+	const WorldDouble3 playerFeetPosition = this->getFeetPosition();
+	const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
+	const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point));
+	const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
+	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
+
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+	const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(playerFeetVoxelCoord.chunk);
+	if (voxelChunk != nullptr)
+	{
+		VoxelChasmDefID chasmDefID;
+		if (voxelChunk->tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
+		{
+			const VoxelChasmDefinition &chasmDef = voxelChunk->getChasmDef(chasmDefID);
+			newGroundState.isSwimming = newGroundState.onGround && chasmDef.allowsSwimming;
+
+			const bool isFallingFastEnoughToSplash = physicsVelocity.GetY() <= -0.8f;
+			newGroundState.enteredWater = !this->prevGroundState.isSwimming && newGroundState.isSwimming && isFallingFastEnoughToSplash;
+		}
+	}
+
+	if (newGroundState.onGround && !newGroundState.isSwimming)
+	{
+		constexpr float tinyEpsilon = 1e-8f;
+		newGroundState.canJump = std::abs(physicsVelocity.GetY()) <= tinyEpsilon;
+	}
+
+	this->prevGroundState = this->groundState;
+	this->groundState = newGroundState;
+}
+
 void Player::prePhysicsStep(double dt, Game &game)
 {
 	if (game.options.getMisc_GhostMode())
@@ -537,17 +542,24 @@ void Player::prePhysicsStep(double dt, Game &game)
 	}
 
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
-	const PlayerGroundState groundState = this->getGroundState(game, physicsSystem);
-	if (!groundState.onGround)
+	this->updateGroundState(game, physicsSystem);
+
+	if (!this->groundState.onGround)
 	{
 		// Apply gravity to Character as gravity factor is 0 when with CharacterVirtual.
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);		
 	}
 
-	const bool isMovementSoundAccumulating = groundState.onGround && this->isMoving();
+	if (this->groundState.enteredWater)
+	{
+		AudioManager &audioManager = game.audioManager;
+		audioManager.playSound(ArenaSoundName::Splash);
+	}
+
+	const Double3 velocity = this->getPhysicsVelocity();
+	const bool isMovementSoundAccumulating = this->groundState.onGround && this->isMoving();
 	if (isMovementSoundAccumulating)
 	{
-		const Double3 velocity = this->getPhysicsVelocity();
 		const Double3 groundVelocity = Double3(velocity.x, 0.0, velocity.z);
 
 		constexpr double tempRateBias = 2.0; // @temp due to Jolt movement still being bouncy even with enhanced internal edge removal fix
@@ -578,7 +590,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 			const MapType activeMapType = gameState.getActiveMapType();
 
 			int movementSoundNameIndex = 0;
-			if (groundState.isSwimming)
+			if (this->groundState.isSwimming)
 			{
 				movementSoundNameIndex = 4;
 			}
