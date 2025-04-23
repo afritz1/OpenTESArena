@@ -23,7 +23,7 @@
 
 namespace PlayerLogicController
 {
-	void handlePlayerMovementClassic(Player &player, double dt, double walkSpeed, bool isOnGround, bool canJump, bool isGhostModeEnabled,
+	void handlePlayerMovementClassic(Player &player, double dt, double moveSpeed, bool isOnGround, bool canJump, bool isGhostModeEnabled,
 		const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
 	{
 		if (!isOnGround)
@@ -113,7 +113,7 @@ namespace PlayerLogicController
 
 			// Set the magnitude of the acceleration to some arbitrary number. These values
 			// are independent of max speed.
-			double accelMagnitude = percent * walkSpeed;
+			double accelMagnitude = percent * moveSpeed;
 
 			// Check for jumping first (so the player can't slide jump on the first frame).
 			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
@@ -160,7 +160,7 @@ namespace PlayerLogicController
 
 			// Set the magnitude of the acceleration to some arbitrary number. These values
 			// are independent of max speed.
-			double accelMagnitude = walkSpeed;
+			double accelMagnitude = moveSpeed;
 
 			// Check for jumping first (so the player can't slide jump on the first frame).
 			if (space)
@@ -182,7 +182,7 @@ namespace PlayerLogicController
 		}
 	}
 
-	void handlePlayerMovementModern(Player &player, double dt, double walkSpeed, bool isOnGround, bool canJump, bool isGhostModeEnabled,
+	void handlePlayerMovementModern(Player &player, double dt, double moveSpeed, bool isOnGround, bool canJump, bool isGhostModeEnabled,
 		const InputManager &inputManager)
 	{
 		// Modern interface. Listen for WASD.
@@ -240,7 +240,7 @@ namespace PlayerLogicController
 						if (accelDirection.lengthSquared() > 0.0)
 						{
 							accelDirection = accelDirection.normalized();
-							player.accelerate(accelDirection, walkSpeed, dt);
+							player.accelerate(accelDirection, moveSpeed, dt);
 						}
 					}
 				}
@@ -696,21 +696,21 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 
 	Player &player = game.player;
-	const double maxWalkSpeed = PlayerConstants::MOVE_SPEED;
 	const PlayerGroundState &groundState = player.groundState;
 	const bool isOnGround = groundState.onGround;
 	const bool canJump = groundState.canJump;
+	const double maxMoveSpeed = player.getMaxMoveSpeed();
 
 	const Options &options = game.options;
 	const bool isGhostModeEnabled = options.getMisc_GhostMode();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
-		PlayerLogicController::handlePlayerMovementClassic(player, dt, maxWalkSpeed, isOnGround, canJump, isGhostModeEnabled, inputManager, nativeCursorRegions);
+		PlayerLogicController::handlePlayerMovementClassic(player, dt, maxMoveSpeed, isOnGround, canJump, isGhostModeEnabled, inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		PlayerLogicController::handlePlayerMovementModern(player, dt, maxWalkSpeed, isOnGround, canJump, isGhostModeEnabled, inputManager);
+		PlayerLogicController::handlePlayerMovementModern(player, dt, maxMoveSpeed, isOnGround, canJump, isGhostModeEnabled, inputManager);
 	}
 }
 

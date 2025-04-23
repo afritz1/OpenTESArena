@@ -388,6 +388,11 @@ double Player::getJumpMagnitude() const
 	return PlayerConstants::JUMP_VELOCITY;
 }
 
+double Player::getMaxMoveSpeed() const
+{
+	return !this->groundState.isSwimming ? PlayerConstants::MOVE_SPEED : PlayerConstants::SWIMMING_MOVE_SPEED;
+}
+
 bool Player::isMoving() const
 {
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
@@ -449,7 +454,9 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 		return;
 	}
 
-	const double clampedSpeed = PlayerConstants::CLAMPED_MOVE_SPEED;
+	const double moveSpeed = this->getMaxMoveSpeed();
+	const double clampedSpeed = moveSpeed * PlayerConstants::CLAMPED_MOVE_SPEED_PERCENT;
+
 	Double2 newVelocityXZ(newVelocity.x, newVelocity.z);
 	if (newVelocityXZ.length() > clampedSpeed)
 	{
@@ -563,7 +570,8 @@ void Player::prePhysicsStep(double dt, Game &game)
 		const Double3 groundVelocity = Double3(velocity.x, 0.0, velocity.z);
 
 		constexpr double tempRateBias = 2.0; // @temp due to Jolt movement still being bouncy even with enhanced internal edge removal fix
-		const double movementSoundProgressRate = (groundVelocity.length() * tempRateBias) / PlayerConstants::CLAMPED_MOVE_SPEED; // ~2 steps/second
+		const double clampedMoveSpeed = this->getMaxMoveSpeed() * PlayerConstants::CLAMPED_MOVE_SPEED_PERCENT;
+		const double movementSoundProgressRate = (groundVelocity.length() * tempRateBias) / clampedMoveSpeed; // ~2 steps/second
 
 		constexpr double maxMovementSoundProgress = 1.0;
 		constexpr double leftStepSoundProgress = maxMovementSoundProgress / 2.0;
