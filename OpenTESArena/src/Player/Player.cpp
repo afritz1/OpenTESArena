@@ -149,6 +149,13 @@ namespace
 	}
 }
 
+PlayerGroundState::PlayerGroundState()
+{
+	this->onGround = false;
+	this->isSwimming = false;
+	this->canJump = false;
+}
+
 Player::Player()
 {
 	this->physicsCharacter = nullptr;
@@ -380,45 +387,57 @@ double Player::getJumpMagnitude() const
 	return PlayerConstants::JUMP_VELOCITY;
 }
 
-bool Player::onGround(const JPH::PhysicsSystem &physicsSystem) const
+PlayerGroundState Player::getGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem) const
 {
-	const JPH::CharacterBase::EGroundState groundState = this->physicsCharacter->GetGroundState();
+	PlayerGroundState groundState;
 
-	// @todo: not sure we should ever be on steep ground in this engine. "maxSlopeAngle" affects that, and 0 and 90 don't seem perfect.
-	if ((groundState != JPH::CharacterBase::EGroundState::OnGround) && (groundState != JPH::CharacterBase::EGroundState::OnSteepGround))
+	const JPH::CharacterBase::EGroundState physicsGroundState = this->physicsCharacter->GetGroundState();
+	if ((physicsGroundState == JPH::CharacterBase::EGroundState::OnGround) || (physicsGroundState == JPH::CharacterBase::EGroundState::OnSteepGround))
 	{
-		return false;
+		const JPH::BodyID groundBodyID = this->physicsCharacter->GetGroundBodyID();
+		if (!groundBodyID.IsInvalid())
+		{
+			const JPH::BodyLockInterface &bodyInterface = physicsSystem.GetBodyLockInterface();
+			const JPH::BodyLockRead groundBodyLock(bodyInterface, groundBodyID);
+			if (groundBodyLock.Succeeded())
+			{
+				const JPH::Body &groundBody = groundBodyLock.GetBody();
+				groundState.onGround = !groundBody.IsSensor();
+			}
+		}
 	}
 
-	const JPH::BodyID groundBodyID = this->physicsCharacter->GetGroundBodyID();
-	if (groundBodyID.IsInvalid())
+	if (groundState.onGround)
 	{
-		return false;
+		const WorldDouble3 playerFeetPosition = this->getFeetPosition();
+		const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
+		const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point));
+		const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
+
+		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(playerFeetVoxelCoord.chunk);
+		VoxelChasmDefID chasmDefID;
+		if (voxelChunk.tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
+		{
+			const VoxelChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
+			groundState.isSwimming = chasmDef.allowsSwimming;
+		}
+
+		if (!groundState.isSwimming)
+		{
+			const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
+			constexpr float tinyEpsilon = 1e-8f;
+			groundState.canJump = groundState.onGround && (std::abs(physicsVelocity.GetY()) <= tinyEpsilon);
+		}		
 	}
 
-	const JPH::BodyLockInterface &bodyInterface = physicsSystem.GetBodyLockInterface();
-	const JPH::BodyLockRead groundBodyLock(bodyInterface, groundBodyID);
-	if (!groundBodyLock.Succeeded())
-	{
-		return false;
-	}
-
-	// @todo: not sure this is the best way. why are sensor colliders being considered ground?
-	const JPH::Body &groundBody = groundBodyLock.GetBody();
-	return !groundBody.IsSensor();
+	return groundState;
 }
 
 bool Player::isMoving() const
 {
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 	return physicsVelocity.LengthSq() >= ConstantsF::Epsilon;
-}
-
-bool Player::canJump(const JPH::PhysicsSystem &physicsSystem) const
-{
-	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
-	constexpr float tinyEpsilon = 1e-8f;
-	return this->onGround(physicsSystem) && (std::abs(physicsVelocity.GetY()) <= tinyEpsilon);
 }
 
 void Player::rotateX(Degrees deltaX)
@@ -518,14 +537,14 @@ void Player::prePhysicsStep(double dt, Game &game)
 	}
 
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
-	const bool isOnGround = this->onGround(physicsSystem);
-	if (!isOnGround)
+	const PlayerGroundState groundState = this->getGroundState(game, physicsSystem);
+	if (!groundState.onGround)
 	{
 		// Apply gravity to Character as gravity factor is 0 when with CharacterVirtual.
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);		
 	}
 
-	const bool isMovementSoundAccumulating = isOnGround && this->isMoving();
+	const bool isMovementSoundAccumulating = groundState.onGround && this->isMoving();
 	if (isMovementSoundAccumulating)
 	{
 		const Double3 velocity = this->getPhysicsVelocity();
@@ -555,26 +574,11 @@ void Player::prePhysicsStep(double dt, Game &game)
 				ArenaSoundName::Swim // Swimming
 			};
 
-			const WorldDouble3 playerFeetPosition = this->getFeetPosition();
-			const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
-			const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point));
-			const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
-
-			bool isSwimming = false;
-			const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
-			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(playerFeetVoxelCoord.chunk);
-			VoxelChasmDefID voxelChasmDefID;
-			if (voxelChunk.tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &voxelChasmDefID))
-			{
-				const VoxelChasmDefinition &chasmDef = voxelChunk.getChasmDef(voxelChasmDefID);
-				isSwimming = chasmDef.allowsSwimming;
-			}
-
 			const GameState &gameState = game.gameState;
 			const MapType activeMapType = gameState.getActiveMapType();
 
 			int movementSoundNameIndex = 0;
-			if (isSwimming)
+			if (groundState.isSwimming)
 			{
 				movementSoundNameIndex = 4;
 			}

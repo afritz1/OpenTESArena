@@ -36,6 +36,15 @@ namespace PlayerConstants
 	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
 }
 
+struct PlayerGroundState
+{
+	bool onGround;
+	bool isSwimming;
+	bool canJump;
+
+	PlayerGroundState();
+};
+
 struct Player
 {
 	// Physics state.
@@ -96,9 +105,8 @@ struct Player
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
 	double getJumpMagnitude() const;
 
-	bool onGround(const JPH::PhysicsSystem &physicsSystem) const;
+	PlayerGroundState getGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem) const;
 	bool isMoving() const;
-	bool canJump(const JPH::PhysicsSystem &physicsSystem) const;
 
 	// Pitches and yaws relative to global up vector.
 	void rotateX(Degrees deltaX);
