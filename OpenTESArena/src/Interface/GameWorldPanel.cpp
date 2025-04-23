@@ -332,6 +332,9 @@ void GameWorldPanel::initUiDrawCalls()
 	const UiTextureID defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->defaultCursorTextureRef.init(defaultCursorTextureID, renderer);
 
+	const UiTextureID modernModeCursorTextureID = GameWorldUiView::allocModernModeReticleTexture(textureManager, renderer);
+	this->modernModeReticleTextureRef.init(modernModeCursorTextureID, renderer);
+
 	this->arrowCursorTextureRefs.init(GameWorldUiView::ArrowCursorRegionCount);
 	for (int i = 0; i < GameWorldUiView::ArrowCursorRegionCount; i++)
 	{
@@ -546,6 +549,12 @@ void GameWorldPanel::initUiDrawCalls()
 			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getWidth(), effectTextBoxRect.getHeight()); },
 			[]() { return PivotType::Bottom; },
 			effectTextActiveFunc);
+
+		this->addDrawCall(
+			this->modernModeReticleTextureRef.get(),
+			GameWorldUiView::getInterfaceCenter(game),
+			Int2(this->modernModeReticleTextureRef.getWidth(), this->modernModeReticleTextureRef.getHeight()),
+			PivotType::Middle);
 	}
 	else
 	{

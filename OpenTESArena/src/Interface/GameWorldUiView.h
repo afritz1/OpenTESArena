@@ -180,6 +180,7 @@ namespace GameWorldUiView
 	UiTextureID allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, const FontLibrary &fontLibrary, Renderer &renderer);
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocModernModeReticleTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocKeyTexture(int keyIndex, TextureManager &textureManager, Renderer &renderer);
 
 	void DEBUG_ColorRaycastPixel(Game &game);

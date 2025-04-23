@@ -543,6 +543,47 @@ UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureMan
 	return textureID;
 }
 
+UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	constexpr int width = 7;
+	constexpr int height = width;
+
+	UiTextureID id;
+	if (!renderer.tryCreateUiTexture(width, height, &id))
+	{
+		DebugCrash("Couldn't create modern mode cursor texture.");
+	}
+
+	uint32_t *lockedTexels = renderer.lockUiTexture(id);
+	BufferView2D<uint32_t> texelsView(static_cast<uint32_t*>(lockedTexels), width, height);
+
+	constexpr Color cursorBgColor(0, 0, 0, 0);
+	const uint32_t cursorBgARGB = cursorBgColor.toARGB();
+	texelsView.fill(cursorBgARGB);
+	
+	constexpr Color cursorColor(255, 255, 255, 128);
+	const uint32_t cursorColorARGB = cursorColor.toARGB();
+
+	constexpr int middleX = width / 2;
+	constexpr int middleY = height / 2;
+
+	for (int x = 0; x < (middleX - 1); x++)
+	{
+		texelsView.set(x, middleY, cursorColorARGB);
+		texelsView.set(width - x - 1, middleY, cursorColorARGB);
+	}
+
+	for (int y = 0; y < (middleY - 1); y++)
+	{
+		texelsView.set(middleX, y, cursorColorARGB);
+		texelsView.set(middleX, height - y - 1, cursorColorARGB);
+	}
+
+	renderer.unlockUiTexture(id);
+
+	return id;
+}
+
 UiTextureID GameWorldUiView::allocKeyTexture(int keyIndex, TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAsset textureAsset = GameWorldUiView::getKeyTextureAsset(keyIndex);

@@ -3,6 +3,7 @@
 
 #include "../Math/Vector2.h"
 
+class ExeData;
 class Game;
 class GameWorldPanel;
 class Rect;

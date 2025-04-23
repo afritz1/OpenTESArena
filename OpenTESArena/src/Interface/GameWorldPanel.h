@@ -3,14 +3,10 @@
 
 #include "Panel.h"
 #include "../Assets/TextureUtils.h"
-#include "../Collision/Physics.h"
 #include "../Math/Rect.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 #include "../Voxels/VoxelUtils.h"
-
-class Renderer;
-class TextureManager;
 
 struct Player;
 
@@ -29,7 +25,7 @@ private:
 	Button<Game&, bool> mapButton;
 	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, keyTextureRefs, tooltipTextureRefs;
 	ScopedUiTextureRef gameWorldInterfaceTextureRef, statusGradientTextureRef, playerPortraitTextureRef,
-		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef;
+		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef, modernModeReticleTextureRef;
 
 	void initUiDrawCalls();
 public:
