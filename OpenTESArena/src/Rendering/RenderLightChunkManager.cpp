@@ -309,18 +309,9 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 				const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
 				const WorldDouble3 entityLightWorldPos = GetEntityLightPosition(entityWorldPos, entityBBox);
 
-				double lightStartRadius, lightEndRadius;
-				if (*entityLightRadius >= ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS)
-				{
-					lightStartRadius = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
-					lightEndRadius = *entityLightRadius;
-				}
-				else
-				{
-					// Only happens with main quest lava mines lower floor "S:1" .INF candles
-					lightStartRadius = *entityLightRadius * 0.5;
-					lightEndRadius = *entityLightRadius;
-				}
+				// The original game doesn't seem to update a light's radius after transitioning levels, it just uses the "S:#" from the start level.
+				const double lightEndRadius = *entityLightRadius;
+				const double lightStartRadius = lightEndRadius * 0.50;
 
 				Light light;
 				light.init(lightID, entityLightWorldPos, lightStartRadius, lightEndRadius, isLightEnabled, ceilingScale, chunkHeight);

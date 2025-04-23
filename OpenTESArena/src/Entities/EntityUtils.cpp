@@ -192,7 +192,7 @@ std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &ent
 	}
 	else if (decorationDef.lightIntensity > 0)
 	{
-		return static_cast<double>(decorationDef.lightIntensity);
+		return static_cast<double>(decorationDef.lightIntensity) * (MIFUtils::ARENA_UNITS / 100.0);
 	}
 	else
 	{
