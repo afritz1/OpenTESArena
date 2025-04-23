@@ -309,8 +309,21 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 				const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
 				const WorldDouble3 entityLightWorldPos = GetEntityLightPosition(entityWorldPos, entityBBox);
 
+				double lightStartRadius, lightEndRadius;
+				if (*entityLightRadius >= ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS)
+				{
+					lightStartRadius = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
+					lightEndRadius = *entityLightRadius;
+				}
+				else
+				{
+					// Only happens with main quest lava mines lower floor "S:1" .INF candles
+					lightStartRadius = *entityLightRadius * 0.5;
+					lightEndRadius = *entityLightRadius;
+				}
+
 				Light light;
-				light.init(lightID, entityLightWorldPos, ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS, *entityLightRadius, isLightEnabled, ceilingScale, chunkHeight);
+				light.init(lightID, entityLightWorldPos, lightStartRadius, lightEndRadius, isLightEnabled, ceilingScale, chunkHeight);
 
 				if (isLightEnabled)
 				{
