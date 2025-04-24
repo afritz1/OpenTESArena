@@ -1,7 +1,7 @@
 #include <algorithm>
 
+#include "ArenaAnimUtils.h"
 #include "EntityAnimationLibrary.h"
-#include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
 #include "../Stats/CharacterClassLibrary.h"

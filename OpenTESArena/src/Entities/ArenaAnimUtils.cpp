@@ -3,9 +3,8 @@
 #include <numeric>
 
 #include "ArenaAnimUtils.h"
-#include "ArenaTypes.h"
-#include "BinaryAssetLibrary.h"
-#include "MIFUtils.h"
+#include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
 #include "../Stats/CharacterClassDefinition.h"
 #include "../Stats/CharacterClassLibrary.h"

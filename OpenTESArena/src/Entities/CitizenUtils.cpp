@@ -1,9 +1,9 @@
 #include <algorithm>
 
+#include "ArenaAnimUtils.h"
 #include "CitizenUtils.h"
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
-#include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextureManager.h"

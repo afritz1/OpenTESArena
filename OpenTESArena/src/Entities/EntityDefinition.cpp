@@ -2,8 +2,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "ArenaAnimUtils.h"
 #include "EntityDefinition.h"
-#include "../Assets/ArenaAnimUtils.h"
 
 void EnemyEntityDefinition::CreatureDefinition::init(int creatureIndex, bool isFinalBoss, const ExeData &exeData)
 {

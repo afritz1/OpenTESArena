@@ -19,8 +19,6 @@ ENDIF(WILDMIDI_FOUND)
 SET(SRC_ROOT ${otesa_SOURCE_DIR}/src)
 
 SET(TES_ASSETS
-    "${SRC_ROOT}/Assets/ArenaAnimUtils.cpp"
-    "${SRC_ROOT}/Assets/ArenaAnimUtils.h"
     "${SRC_ROOT}/Assets/ArenaAssetUtils.h"
     "${SRC_ROOT}/Assets/ArenaLevelLibrary.cpp"
     "${SRC_ROOT}/Assets/ArenaLevelLibrary.h"
@@ -132,6 +130,8 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/SelectionUtils.h")
 
 SET(TES_ENTITIES
+    "${SRC_ROOT}/Entities/ArenaAnimUtils.cpp"
+    "${SRC_ROOT}/Entities/ArenaAnimUtils.h"
     "${SRC_ROOT}/Entities/ArenaCitizenUtils.h"
     "${SRC_ROOT}/Entities/ArenaEntityUtils.cpp"
     "${SRC_ROOT}/Entities/ArenaEntityUtils.h"

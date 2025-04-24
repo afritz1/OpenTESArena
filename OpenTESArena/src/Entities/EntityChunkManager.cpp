@@ -2,11 +2,11 @@
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
+#include "ArenaAnimUtils.h"
 #include "ArenaCitizenUtils.h"
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityObservedResult.h"
-#include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"

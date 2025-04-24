@@ -1,6 +1,6 @@
+#include "ArenaAnimUtils.h"
 #include "EntityAnimationLibrary.h"
 #include "EntityDefinitionLibrary.h"
-#include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 #include "../Stats/CharacterClassLibrary.h"

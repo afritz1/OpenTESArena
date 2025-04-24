@@ -6,8 +6,8 @@
 #include <string>
 #include <string_view>
 
-#include "ArenaTypes.h"
-#include "INFFile.h"
+#include "../Assets/ArenaTypes.h"
+#include "../Assets/INFFile.h"
 #include "../Entities/EntityAnimationDefinition.h"
 #include "../Utilities/Palette.h"
 
