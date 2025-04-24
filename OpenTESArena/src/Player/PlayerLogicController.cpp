@@ -586,17 +586,16 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, c
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
-
-		// Don't turn if LCtrl is held.
 		const bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
-		// Mouse turning takes priority over key turning.
+		const double turningScale = !player.groundState.isSwimming ? 1.0 : (2.0 / 3.0);
+
+		// Mouse takes priority over keyboard.
 		if (leftClick)
 		{
 			const Int2 mousePosition = inputManager.getMousePosition();
 
-			// Strength of turning is determined by proximity of the mouse cursor to
-			// the left or right screen edge.
+			// Turning strength is determined by closeness of the mouse cursor to left/right screen edge.
 			const double dx = [&mousePosition, &nativeCursorRegions]()
 			{
 				// Measure the magnitude of rotation. -1.0 is left, 1.0 is right.
@@ -636,23 +635,18 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, c
 				return std::isfinite(percent) ? percent : 0.0;
 			}();
 
-			// Yaw the camera left or right. No vertical movement in classic camera mode.
-			// Multiply turning speed by delta time so it behaves correctly with different
-			// frame rates.
-			return Double2(dx * dt, 0.0);
+			return Double2((dx * turningScale) * dt, 0.0);
 		}
 		else if (!lCtrl)
 		{
-			// If left control is not held, then turning is permitted.
+			// Turn with keyboard.
 			if (left)
 			{
-				// Turn left at a fixed angular velocity.
-				return Double2(-dt, 0.0);
+				return Double2(-turningScale * dt, 0.0);
 			}
 			else if (right)
 			{
-				// Turn right at a fixed angular velocity.
-				return Double2(dt, 0.0);
+				return Double2(turningScale * dt, 0.0);
 			}
 		}
 	}
@@ -686,7 +680,6 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, c
 		}
 	}
 
-	// No turning.
 	return Double2::Zero;
 }
 
