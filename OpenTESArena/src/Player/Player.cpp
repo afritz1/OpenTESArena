@@ -157,6 +157,12 @@ PlayerGroundState::PlayerGroundState()
 	this->canJump = false;
 }
 
+PlayerClimbingState::PlayerClimbingState()
+{
+	this->shouldStartPercent = 0.0;
+	this->isClimbing = false;
+}
+
 Player::Player()
 {
 	this->physicsCharacter = nullptr;
@@ -440,7 +446,7 @@ void Player::setDirectionToHorizon()
 	this->setCameraFrame(groundDirection);
 }
 
-void Player::accelerate(const Double3 &direction, double magnitude, double dt)
+void Player::accelerate(const Double3 &direction, double magnitude, double ceilingScale, double dt)
 {
 	DebugAssert(dt >= 0.0);
 	DebugAssert(magnitude >= 0.0);
@@ -456,7 +462,6 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 
 	const double moveSpeed = this->getMaxMoveSpeed();
 	const double clampedSpeed = moveSpeed * PlayerConstants::CLAMPED_MOVE_SPEED_PERCENT;
-
 	Double2 newVelocityXZ(newVelocity.x, newVelocity.z);
 	if (newVelocityXZ.length() > clampedSpeed)
 	{
@@ -470,7 +475,38 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 		newVelocity = Double3::Zero;
 	}
 
-	this->setPhysicsVelocity(newVelocity);
+	constexpr double climbingStartMaxVelocity = 0.20; // For some reason looking direction influences this??
+	if (newVelocity.length() < climbingStartMaxVelocity)
+	{
+		const CoordDouble3 feetCoord = VoxelUtils::worldPointToCoord(this->getFeetPosition());
+		const VoxelInt3 feetVoxel = VoxelUtils::pointToVoxel(feetCoord.point, ceilingScale);
+
+		const Double2 directionXZ = Double2(direction.x, direction.z).normalized();
+		const Double2 forwardXZ = this->getGroundDirectionXZ();
+		const bool isFacingWall = directionXZ.dot(forwardXZ) >= 0.90;
+		const bool feetInChasmVoxel = feetVoxel.y <= 0; // Dry chasms might be -1
+
+		// Try to accumulate climbing if pushing into a chasm wall.
+		const bool canAccumulateStartClimbing = isFacingWall && this->groundState.onGround && feetInChasmVoxel;
+		if (canAccumulateStartClimbing || this->climbingState.isClimbing)
+		{
+			constexpr double startClimbingAccumulationRate = 5.0;
+			this->climbingState.shouldStartPercent += startClimbingAccumulationRate * dt;
+
+			if (this->climbingState.shouldStartPercent >= 1.0)
+			{
+				this->climbingState.isClimbing = true;
+				this->climbingState.shouldStartPercent = 1.0;
+			}
+		}
+	}
+	else
+	{
+		this->climbingState.isClimbing = false;
+		this->climbingState.shouldStartPercent = 0.0;
+	}
+
+	this->setPhysicsVelocity(newVelocity);	
 }
 
 void Player::accelerateInstant(const Double3 &direction, double magnitude)
@@ -553,14 +589,22 @@ void Player::prePhysicsStep(double dt, Game &game)
 
 	if (!this->groundState.onGround)
 	{
+		const double ceilingScale = game.gameState.getActiveCeilingScale();
+
 		// Apply gravity to Character as gravity factor is 0 when with CharacterVirtual.
-		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);		
+		this->accelerate(-Double3::UnitY, Physics::GRAVITY, ceilingScale, dt);
 	}
 
 	if (this->groundState.enteredWater)
 	{
 		AudioManager &audioManager = game.audioManager;
 		audioManager.playSound(ArenaSoundName::Splash);
+	}
+
+	if (this->climbingState.isClimbing)
+	{
+		const Double3 climbingVelocity(0.0, 4.0, 0.0);
+		this->setPhysicsVelocity(climbingVelocity);
 	}
 
 	const Double3 velocity = this->getPhysicsVelocity();

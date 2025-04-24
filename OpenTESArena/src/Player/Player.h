@@ -47,6 +47,14 @@ struct PlayerGroundState
 	PlayerGroundState();
 };
 
+struct PlayerClimbingState
+{
+	double shouldStartPercent; // Accumulate while pushing into wall, start climbing at 100%.
+	bool isClimbing;
+
+	PlayerClimbingState();
+};
+
 struct Player
 {
 	// Physics state.
@@ -58,6 +66,7 @@ struct Player
 	Double3 up;
 	// @todo: polar coordinates (XYZ angles)
 	PlayerGroundState groundState, prevGroundState;
+	PlayerClimbingState climbingState;
 	double movementSoundProgress;
 
 	std::string displayName;
@@ -123,7 +132,7 @@ struct Player
 	void setDirectionToHorizon();
 
 	// Changes the velocity (as a force) given a normalized direction, magnitude, and delta time.
-	void accelerate(const Double3 &direction, double magnitude, double dt); // @todo: this will give CharacterVirtual a force probably?
+	void accelerate(const Double3 &direction, double magnitude, double ceilingScale, double dt); // @todo: this will give CharacterVirtual a force probably?
 
 	// Changes the velocity instantly. Intended for instantaneous acceleration like jumping.
 	void accelerateInstant(const Double3 &direction, double magnitude); // @todo: CharacterVirtual should treat this like a jump

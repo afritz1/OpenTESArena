@@ -23,7 +23,7 @@
 
 namespace PlayerLogicController
 {
-	void handlePlayerMovementClassic(Player &player, double dt, double moveSpeed, bool isOnGround, bool canJump, bool isGhostModeEnabled,
+	void handlePlayerMovementClassic(Player &player, double dt, double moveSpeed, bool isOnGround, bool canJump, double ceilingScale, bool isGhostModeEnabled,
 		const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
 	{
 		if (!isOnGround)
@@ -127,7 +127,7 @@ namespace PlayerLogicController
 			// Change the player's velocity if valid.
 			else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
 			{
-				player.accelerate(accelDirection, accelMagnitude, dt);
+				player.accelerate(accelDirection, accelMagnitude, ceilingScale, dt);
 			}
 		}
 		else if (anyKeyboardMovementInput)
@@ -173,7 +173,7 @@ namespace PlayerLogicController
 			// Change the player's velocity if valid.
 			else if (std::isfinite(accelDirection.length()))
 			{
-				player.accelerate(accelDirection, accelMagnitude, dt);
+				player.accelerate(accelDirection, accelMagnitude, ceilingScale, dt);
 			}
 		}
 		else
@@ -182,8 +182,8 @@ namespace PlayerLogicController
 		}
 	}
 
-	void handlePlayerMovementModern(Player &player, double dt, double moveSpeed, bool isOnGround, bool canJump, bool isGhostModeEnabled,
-		const InputManager &inputManager)
+	void handlePlayerMovementModern(Player &player, double dt, double moveSpeed, bool isOnGround, bool canJump, double ceilingScale,
+		bool isGhostModeEnabled, const InputManager &inputManager)
 	{
 		// Modern interface. Listen for WASD.
 		const bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
@@ -240,7 +240,7 @@ namespace PlayerLogicController
 						if (accelDirection.lengthSquared() > 0.0)
 						{
 							accelDirection = accelDirection.normalized();
-							player.accelerate(accelDirection, moveSpeed, dt);
+							player.accelerate(accelDirection, moveSpeed, ceilingScale, dt);
 						}
 					}
 				}
@@ -687,6 +687,7 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 {
 	const InputManager &inputManager = game.inputManager;
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+	const double ceilingScale = game.gameState.getActiveCeilingScale();
 
 	Player &player = game.player;
 	const PlayerGroundState &groundState = player.groundState;
@@ -699,11 +700,11 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
-		PlayerLogicController::handlePlayerMovementClassic(player, dt, maxMoveSpeed, isOnGround, canJump, isGhostModeEnabled, inputManager, nativeCursorRegions);
+		PlayerLogicController::handlePlayerMovementClassic(player, dt, maxMoveSpeed, isOnGround, canJump, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		PlayerLogicController::handlePlayerMovementModern(player, dt, maxMoveSpeed, isOnGround, canJump, isGhostModeEnabled, inputManager);
+		PlayerLogicController::handlePlayerMovementModern(player, dt, maxMoveSpeed, isOnGround, canJump, ceilingScale, isGhostModeEnabled, inputManager);
 	}
 }
 
