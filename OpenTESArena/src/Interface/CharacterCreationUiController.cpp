@@ -20,6 +20,7 @@
 #include "WorldMapUiModel.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Audio/MusicUtils.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -782,23 +783,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 			// Set music based on weather and time.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			GameState &gameState = game.gameState;
-			const MusicDefinition *musicDef = nullptr;
-			if (!ArenaClockUtils::nightMusicIsActive(gameState.getClock()))
-			{
-				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
-					game.random, [&weatherDef](const MusicDefinition &def)
-				{
-					DebugAssert(def.type == MusicType::Weather);
-					const WeatherMusicDefinition &weatherMusicDef = def.weather;
-					return weatherMusicDef.weatherDef == weatherDef;
-				});
-			}
-			else
-			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
-			}
-
+			const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
 			if (musicDef == nullptr)
 			{
 				DebugLogWarning("Missing exterior music.");

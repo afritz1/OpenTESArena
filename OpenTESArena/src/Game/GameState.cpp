@@ -401,6 +401,11 @@ Clock &GameState::getClock()
 	return this->clock;
 }
 
+const Clock &GameState::getClock() const
+{
+	return this->clock;
+}
+
 double GameState::getDayPercent() const
 {
 	return this->clock.getDayPercent();

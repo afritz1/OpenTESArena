@@ -6,11 +6,11 @@
 #include "WorldMapUiModel.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Audio/MusicUtils.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
-#include "../Time/ArenaClockUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
@@ -138,25 +138,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		{
 			// Choose time-based music and enter the game world.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			GameState &gameState = game.gameState;
-			const Clock &clock = gameState.getClock();
-			const MusicDefinition *musicDef = nullptr;
-			if (!ArenaClockUtils::nightMusicIsActive(clock))
-			{
-				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
-					game.random, [&weatherDef](const MusicDefinition &def)
-				{
-					DebugAssert(def.type == MusicType::Weather);
-					const WeatherMusicDefinition &weatherMusicDef = def.weather;
-					return weatherMusicDef.weatherDef == weatherDef;
-				});
-			}
-			else
-			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
-			}
-
+			const GameState &gameState = game.gameState;
+			const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
 			if (musicDef == nullptr)
 			{
 				DebugLogWarning("Missing exterior music.");

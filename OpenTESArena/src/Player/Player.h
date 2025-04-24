@@ -40,9 +40,10 @@ namespace PlayerConstants
 struct PlayerGroundState
 {
 	bool onGround;
-	bool isSwimming;
-	bool enteredWater;
+	bool isSwimming; // For swimming SFX
+	bool enteredWater; // For splash SFX
 	bool canJump;
+	bool isFeetInsideChasm; // For restoring music
 
 	PlayerGroundState();
 };

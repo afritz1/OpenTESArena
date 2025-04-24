@@ -160,6 +160,7 @@ public:
 	ArenaTypes::WeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
 	Date &getDate();
 	Clock &getClock();
+	const Clock &getClock() const;
 	double getDayPercent() const;
 
 	// Gets a percentage representing the current progress through the looping chasm animation.

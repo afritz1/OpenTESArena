@@ -10,6 +10,8 @@
 #include "Player.h"
 #include "WeaponAnimationLibrary.h"
 #include "../Assets/ArenaSoundName.h"
+#include "../Audio/MusicLibrary.h"
+#include "../Audio/MusicUtils.h"
 #include "../Collision/CollisionChunk.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Collision/Physics.h"
@@ -155,6 +157,7 @@ PlayerGroundState::PlayerGroundState()
 	this->isSwimming = false;
 	this->enteredWater = false;
 	this->canJump = false;
+	this->isFeetInsideChasm = false;
 }
 
 PlayerClimbingState::PlayerClimbingState()
@@ -562,6 +565,8 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 
 			const bool isFallingFastEnoughToSplash = physicsVelocity.GetY() <= -0.8f;
 			newGroundState.enteredWater = !this->prevGroundState.isSwimming && newGroundState.isSwimming && isFallingFastEnoughToSplash;
+
+			newGroundState.isFeetInsideChasm = true;
 		}
 	}
 
@@ -587,18 +592,36 @@ void Player::prePhysicsStep(double dt, Game &game)
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	this->updateGroundState(game, physicsSystem);
 
+	const double ceilingScale = game.gameState.getActiveCeilingScale();
+
 	if (!this->groundState.onGround)
 	{
-		const double ceilingScale = game.gameState.getActiveCeilingScale();
-
 		// Apply gravity to Character as gravity factor is 0 when with CharacterVirtual.
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, ceilingScale, dt);
 	}
 
+	AudioManager &audioManager = game.audioManager;
+	const GameState &gameState = game.gameState;
+	const MapType activeMapType = gameState.getActiveMapType();
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+
 	if (this->groundState.enteredWater)
 	{
-		AudioManager &audioManager = game.audioManager;
 		audioManager.playSound(ArenaSoundName::Splash);
+
+		if (activeMapType != MapType::Interior)
+		{
+			const MusicDefinition *swimmingMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::Swimming, game.random);
+			audioManager.setMusic(swimmingMusicDef);
+		}
+	}
+	else if (!this->groundState.isFeetInsideChasm && this->prevGroundState.isFeetInsideChasm)
+	{
+		if (activeMapType != MapType::Interior)
+		{
+			const MusicDefinition *exteriorMusicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
+			audioManager.setMusic(exteriorMusicDef);
+		}
 	}
 
 	if (this->climbingState.isClimbing)
@@ -637,9 +660,6 @@ void Player::prePhysicsStep(double dt, Game &game)
 				ArenaSoundName::SnowLeft, // Exterior snow (unused)
 				ArenaSoundName::Swim // Swimming
 			};
-
-			const GameState &gameState = game.gameState;
-			const MapType activeMapType = gameState.getActiveMapType();
 
 			int movementSoundNameIndex = 0;
 			if (this->groundState.isSwimming)

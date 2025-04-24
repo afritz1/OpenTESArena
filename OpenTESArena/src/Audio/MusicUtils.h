@@ -4,11 +4,18 @@
 #include "MusicDefinition.h"
 #include "../Assets/ArenaTypes.h"
 
+class Random;
+
+struct Clock;
+struct WeatherDefinition;
+
 // Various functions for working with the original game's music.
 namespace MusicUtils
 {
 	// Gets the music type associated with an interior.
 	InteriorMusicType getInteriorMusicType(ArenaTypes::InteriorType interiorType);
+
+	const MusicDefinition *getExteriorMusicDefinition(const WeatherDefinition &weatherDef, const Clock &clock, Random &random);
 }
 
 #endif

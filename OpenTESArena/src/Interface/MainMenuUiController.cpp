@@ -581,22 +581,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		const MusicDefinition *musicDef = nullptr;
 		if (isExterior)
 		{
-			const Clock &clock = gameState.getClock();
-			if (!ArenaClockUtils::nightMusicIsActive(clock))
-			{
-				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
-					game.random, [weatherDef](const MusicDefinition &def)
-				{
-					DebugAssert(def.type == MusicType::Weather);
-					const WeatherMusicDefinition &weatherMusicDef = def.weather;
-					return weatherMusicDef.weatherDef == weatherDef;
-				});
-			}
-			else
-			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
-			}
+			musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
 		}
 		else
 		{

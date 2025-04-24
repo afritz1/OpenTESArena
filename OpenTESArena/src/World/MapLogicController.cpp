@@ -134,28 +134,8 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 
 		GameState::SceneChangeMusicFunc musicDefFunc = [](Game &game)
 		{
-			// Change to exterior music.
-			GameState &gameState = game.gameState;
-			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			const Clock &clock = gameState.getClock();
-
-			const MusicDefinition *musicDef = nullptr;
-			if (!ArenaClockUtils::nightMusicIsActive(clock))
-			{
-				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
-					game.random, [&weatherDef](const MusicDefinition &def)
-				{
-					DebugAssert(def.type == MusicType::Weather);
-					const WeatherMusicDefinition &weatherMusicDef = def.weather;
-					return weatherMusicDef.weatherDef == weatherDef;
-				});
-			}
-			else
-			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
-			}
-
+			const GameState &gameState = game.gameState;
+			const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
 			if (musicDef == nullptr)
 			{
 				DebugLogWarning("Missing exterior music.");
@@ -175,8 +155,8 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			{
 				const LocationDefinition &locationDef = gameState.getLocationDefinition();
 				const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
-				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Jingle,
-					game.random, [&locationCityDef](const MusicDefinition &def)
+				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Jingle, game.random,
+					[&locationCityDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.type == MusicType::Jingle);
 					const JingleMusicDefinition &jingleMusicDef = def.jingle;
@@ -411,28 +391,8 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 			// Reset the current music (even if it's the same one).
 			GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 			{
-				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-				const MusicDefinition *musicDef = [&game, &musicLibrary]()
-				{
-					GameState &gameState = game.gameState;
-					const Clock &clock = gameState.getClock();
-					if (!ArenaClockUtils::nightMusicIsActive(clock))
-					{
-						const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-						return musicLibrary.getRandomMusicDefinitionIf(MusicType::Weather,
-							game.random, [&weatherDef](const MusicDefinition &def)
-						{
-							DebugAssert(def.type == MusicType::Weather);
-							const WeatherMusicDefinition &weatherMusicDef = def.weather;
-							return weatherMusicDef.weatherDef == weatherDef;
-						});
-					}
-					else
-					{
-						return musicLibrary.getRandomMusicDefinition(MusicType::Night, game.random);
-					}
-				}();
-
+				const GameState &gameState = game.gameState;
+				const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
 				if (musicDef == nullptr)
 				{
 					DebugLogWarning("Missing exterior music.");
