@@ -781,7 +781,8 @@ void GameState::tickGameClock(double dt, Game &game)
 	// Check for changes in exterior music depending on the time.
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	const MapType activeMapType = activeMapDef.getMapType();
-	if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
+	const Player &player = game.player;
+	if ((activeMapType != MapType::Interior) && !player.groundState.isSwimming)
 	{
 		const Clock &dayMusicStartClock = clockLibrary.getClock(ArenaClockUtils::MusicSwitchToDay);
 		const Clock &nightMusicStartClock = clockLibrary.getClock(ArenaClockUtils::MusicSwitchToNight);
