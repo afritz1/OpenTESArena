@@ -1,7 +1,5 @@
 #include <cstring>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "Compression.h"
 #include "IMGFile.h"
@@ -11,6 +9,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Bytes.h"
+#include "components/utilities/StringView.h"
 #include "components/vfs/manager.hpp"
 
 namespace
@@ -18,7 +17,7 @@ namespace
 	constexpr int HeaderSize = 12;
 
 	// These .IMG files are actually headerless/raw files with hardcoded dimensions.
-	const std::unordered_map<std::string, Int2> RawImgOverride =
+	constexpr std::pair<const char*, Int2> RawImgOverride[] =
 	{
 		{ "ARENARW.IMG", { 16, 16 } },
 		{ "CITY.IMG", { 16, 11 } },
@@ -38,18 +37,44 @@ namespace
 	};
 
 	// These .IMG filenames are misspelled, and Arena does not use them in-game.
-	const std::unordered_set<std::string> MisspelledIMGs =
+	constexpr const char *MisspelledIMGs[] =
 	{
 		"SFOUNF1M.IMG",
 		"SFOUNF1T.IMG"
 	};
+
+	const Int2 *TryGetRawImgDimensions(const char *filename)
+	{
+		for (const auto &pair : RawImgOverride)
+		{
+			if (StringView::equals(pair.first, filename))
+			{
+				return &pair.second;
+			}
+		}
+
+		return nullptr;
+	}
+
+	bool IsMisspelledIMG(const char *filename)
+	{
+		for (const char *curFilename : MisspelledIMGs)
+		{
+			if (StringView::equals(curFilename, filename))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
 
 bool IMGFile::init(const char *filename)
 {
-	// There are a couple .INFs that reference misspelled .IMGs. Arena doesn't seem
-	// to use them, so if they are requested here, just return a dummy image.
-	if (MisspelledIMGs.find(filename) != MisspelledIMGs.end())
+	// There are a couple .INFs that reference misspelled .IMGs. Arena doesn't seem to use them,
+	// so if they are requested here, just return a dummy image.
+	if (IsMisspelledIMG(filename))
 	{
 		this->image.init(1, 1);
 		this->image.set(0, 0, 0);
@@ -67,14 +92,14 @@ bool IMGFile::init(const char *filename)
 	uint16_t xOffset, yOffset, width, height, flags, len;
 
 	// Read header data if not raw. Wall .IMGs have no header and are 4096 bytes.
-	const auto rawOverride = RawImgOverride.find(filename);
-	const bool isRaw = rawOverride != RawImgOverride.end();
+	const Int2 *rawOverrideDims = TryGetRawImgDimensions(filename);
+	const bool isRaw = rawOverrideDims != nullptr;
 	if (isRaw)
 	{
 		xOffset = 0;
 		yOffset = 0;
-		width = rawOverride->second.x;
-		height = rawOverride->second.y;
+		width = rawOverrideDims->x;
+		height = rawOverrideDims->y;
 		flags = 0;
 		len = width * height;
 	}
