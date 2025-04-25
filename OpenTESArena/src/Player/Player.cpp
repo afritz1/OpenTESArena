@@ -636,7 +636,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 	{
 		const Double3 groundVelocity = Double3(velocity.x, 0.0, velocity.z);
 
-		constexpr double tempRateBias = 2.0; // @temp due to Jolt movement still being bouncy even with enhanced internal edge removal fix
+		constexpr double tempRateBias = 1.40; // @temp due to Jolt movement still being bouncy even with enhanced internal edge removal fix
 		const double clampedMoveSpeed = this->getMaxMoveSpeed() * PlayerConstants::CLAMPED_MOVE_SPEED_PERCENT;
 		const double movementSoundProgressRate = (groundVelocity.length() * tempRateBias) / clampedMoveSpeed; // ~2 steps/second
 
@@ -720,6 +720,6 @@ void Player::postPhysicsStep(Game &game)
 	// @todo: not completely understanding the character + charactervirtual synergy yet
 	// - i think charactervirtual is for stairsteps and 'weird interactions' that character gets driven by?
 
-	constexpr float maxSeparationDistance = ConstantsF::Epsilon;
+	constexpr float maxSeparationDistance = 2e-2f; // @temp this feels very high but it helps with movement sound accumulation and overcoming the end of chasm climbing
 	this->physicsCharacter->PostSimulation(maxSeparationDistance);
 }
