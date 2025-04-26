@@ -50,6 +50,7 @@ struct PlayerGroundState
 
 struct PlayerClimbingState
 {
+	bool isAccelerationValidForClimbStart; // Is force being applied in a direction that could start climbing?
 	double shouldStartPercent; // Accumulate while pushing into wall, start climbing at 100%.
 	bool isClimbing;
 
@@ -140,7 +141,7 @@ struct Player
 
 	void updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem);
 	void prePhysicsStep(double dt, Game &game);
-	void postPhysicsStep(Game &game);
+	void postPhysicsStep(double dt, Game &game);
 };
 
 #endif

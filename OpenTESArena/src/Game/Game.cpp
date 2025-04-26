@@ -865,7 +865,7 @@ void Game::loop()
 
 				this->player.prePhysicsStep(clampedDeltaTime, *this);
 				this->physicsSystem.Update(static_cast<float>(clampedDeltaTime), frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
-				this->player.postPhysicsStep(*this);
+				this->player.postPhysicsStep(clampedDeltaTime, *this);
 
 				if (this->gameState.hasPendingLevelTransitionCalculation())
 				{

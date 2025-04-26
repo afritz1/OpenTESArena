@@ -162,6 +162,7 @@ PlayerGroundState::PlayerGroundState()
 
 PlayerClimbingState::PlayerClimbingState()
 {
+	this->isAccelerationValidForClimbStart = false;
 	this->shouldStartPercent = 0.0;
 	this->isClimbing = false;
 }
@@ -478,38 +479,13 @@ void Player::accelerate(const Double3 &direction, double magnitude, double ceili
 		newVelocity = Double3::Zero;
 	}
 
-	constexpr double climbingStartMaxVelocity = 0.20; // For some reason looking direction influences this??
-	if (newVelocity.length() < climbingStartMaxVelocity)
-	{
-		const CoordDouble3 feetCoord = VoxelUtils::worldPointToCoord(this->getFeetPosition());
-		const VoxelInt3 feetVoxel = VoxelUtils::pointToVoxel(feetCoord.point, ceilingScale);
+	const Double2 directionXZ = Double2(direction.x, direction.z).normalized();
+	const Double2 forwardXZ = this->getGroundDirectionXZ();
+	const bool isFacingWall = directionXZ.dot(forwardXZ) >= 0.90;
+	const bool isPushingEnough = magnitude >= 0.2;
+	this->climbingState.isAccelerationValidForClimbStart = this->groundState.onGround && isFacingWall && isPushingEnough;
 
-		const Double2 directionXZ = Double2(direction.x, direction.z).normalized();
-		const Double2 forwardXZ = this->getGroundDirectionXZ();
-		const bool isFacingWall = directionXZ.dot(forwardXZ) >= 0.90;
-		const bool feetInChasmVoxel = feetVoxel.y <= 0; // Dry chasms might be -1
-
-		// Try to accumulate climbing if pushing into a chasm wall.
-		const bool canAccumulateStartClimbing = isFacingWall && this->groundState.onGround && feetInChasmVoxel;
-		if (canAccumulateStartClimbing || this->climbingState.isClimbing)
-		{
-			constexpr double startClimbingAccumulationRate = 5.0;
-			this->climbingState.shouldStartPercent += startClimbingAccumulationRate * dt;
-
-			if (this->climbingState.shouldStartPercent >= 1.0)
-			{
-				this->climbingState.isClimbing = true;
-				this->climbingState.shouldStartPercent = 1.0;
-			}
-		}
-	}
-	else
-	{
-		this->climbingState.isClimbing = false;
-		this->climbingState.shouldStartPercent = 0.0;
-	}
-
-	this->setPhysicsVelocity(newVelocity);	
+	this->setPhysicsVelocity(newVelocity);
 }
 
 void Player::accelerateInstant(const Double3 &direction, double magnitude)
@@ -626,7 +602,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 
 	if (this->climbingState.isClimbing)
 	{
-		const Double3 climbingVelocity(0.0, 4.0, 0.0);
+		const Double3 climbingVelocity(0.0, 3.5 * (ceilingScale * 0.80), 0.0); // Arbitrary, just for prototyping
 		this->setPhysicsVelocity(climbingVelocity);
 	}
 
@@ -710,7 +686,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 		*game.physicsTempAllocator);
 }
 
-void Player::postPhysicsStep(Game &game)
+void Player::postPhysicsStep(double dt, Game &game)
 {
 	if (game.options.getMisc_GhostMode())
 	{
@@ -722,4 +698,37 @@ void Player::postPhysicsStep(Game &game)
 
 	constexpr float maxSeparationDistance = 2e-2f; // @temp this feels very high but it helps with movement sound accumulation and overcoming the end of chasm climbing
 	this->physicsCharacter->PostSimulation(maxSeparationDistance);
+
+	const Double3 physicsVelocity = this->getPhysicsVelocity();
+	const double isSlowEnoughToStartClimbing = physicsVelocity.length() < 0.01;
+	if (!isSlowEnoughToStartClimbing)
+	{
+		this->climbingState.isAccelerationValidForClimbStart = false;
+	}
+
+	if (this->climbingState.isAccelerationValidForClimbStart)
+	{
+		const double ceilingScale = game.gameState.getActiveCeilingScale();
+		const CoordDouble3 feetCoord = VoxelUtils::worldPointToCoord(this->getFeetPosition());
+		const VoxelInt3 feetVoxel = VoxelUtils::pointToVoxel(feetCoord.point, ceilingScale);
+		const bool feetInChasmVoxel = feetVoxel.y <= 0; // Dry chasms might be -1
+
+		const bool canAccumulateStartClimbing = this->groundState.onGround && feetInChasmVoxel;
+		if (canAccumulateStartClimbing || this->climbingState.isClimbing)
+		{
+			constexpr double startClimbingAccumulationRate = 10.0;
+			this->climbingState.shouldStartPercent += startClimbingAccumulationRate * dt;
+
+			if (this->climbingState.shouldStartPercent >= 1.0)
+			{
+				this->climbingState.isClimbing = true;
+				this->climbingState.shouldStartPercent = 1.0;
+			}
+		}
+	}	
+	else
+	{
+		this->climbingState.isClimbing = false;
+		this->climbingState.shouldStartPercent = 0.0;
+	}
 }
