@@ -56,7 +56,7 @@ private:
 
 	ALint mResampler;
 	bool mIs3D;
-	std::string mNextSong;
+	std::string mCurrentSong, mNextSong;
 
 	// Sounds which are allowed only one active instance at a time, otherwise they would
 	// sound a bit obnoxious. This functionality is added here because the original game
@@ -67,7 +67,7 @@ private:
 	std::vector<VocRepairEntry> mVocRepairEntries;
 
 	// Currently active song and playback stream.
-	MidiSongPtr mCurrentSong;
+	MidiSongPtr mCurrentMidiSong;
 	std::unique_ptr<OpenALStream> mSongStream;
 
 	// Loaded sound buffers from .VOC files.

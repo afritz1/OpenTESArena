@@ -734,28 +734,37 @@ void AudioManager::playSound(const char *filename, const std::optional<Double3> 
 
 void AudioManager::playMusic(const std::string &filename, bool loop)
 {
+	if (mCurrentSong == filename)
+	{
+		return;
+	}
+
 	stopMusic();
 
 	if (!mFreeSources.empty())
 	{
 		if (MidiDevice::isInited())
-			mCurrentSong = MidiDevice::get().open(filename);
-		if (!mCurrentSong)
 		{
-			DebugLogWarning("Failed to play " + filename + ".");
+			mCurrentMidiSong = MidiDevice::get().open(filename);
+		}
+
+		if (!mCurrentMidiSong)
+		{
+			DebugLogWarning("Failed to play music " + filename + ".");
 			return;
 		}
 
-		mSongStream = std::make_unique<OpenALStream>(&mFreeSources, mCurrentSong.get());
+		mSongStream = std::make_unique<OpenALStream>(&mFreeSources, mCurrentMidiSong.get());
 		if (mSongStream->init(mFreeSources.front(), mMusicVolume, loop))
 		{
 			mFreeSources.pop_front();
 			mSongStream->play();
+			mCurrentSong = filename;
 			DebugLog("Playing music " + filename + ".");
 		}
 		else
 		{
-			DebugLogWarning("Failed to init " + filename + " stream.");
+			DebugLogWarning("Failed to init music stream " + filename + ".");
 		}
 	}
 }
@@ -793,8 +802,8 @@ void AudioManager::stopMusic()
 		mSongStream->stop();
 	}
 
+	mCurrentMidiSong = nullptr;
 	mSongStream = nullptr;
-	mCurrentSong = nullptr;
 }
 
 void AudioManager::stopSound()
