@@ -529,6 +529,7 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 	const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 
+	const double ceilingScale = game.gameState.getActiveCeilingScale();
 	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 	const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(playerFeetVoxelCoord.chunk);
 	if (voxelChunk != nullptr)
@@ -537,12 +538,21 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 		if (voxelChunk->tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
 		{
 			const VoxelChasmDefinition &chasmDef = voxelChunk->getChasmDef(chasmDefID);
-			newGroundState.isSwimming = newGroundState.onGround && chasmDef.allowsSwimming;
+			const VoxelShapeDefID chasmFloorShapeDefID = voxelChunk->getShapeDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z);
+			const VoxelShapeDefinition &chasmFloorShapeDef = voxelChunk->getShapeDef(chasmFloorShapeDefID);
+			DebugAssert(chasmFloorShapeDef.type == VoxelShapeType::Box);
+			const double chasmFloorShapeYPos = chasmFloorShapeDef.box.yOffset + chasmFloorShapeDef.box.height;
+			const double chasmBottomY = static_cast<double>(playerFeetVoxel.y) + MeshUtils::getScaledVertexY(chasmFloorShapeYPos, chasmFloorShapeDef.scaleType, ceilingScale);
+			const double chasmTopY = static_cast<double>(playerFeetVoxel.y + 1) * ceilingScale;
+			const double chasmMiddleY = chasmBottomY + ((chasmTopY - chasmBottomY) * 0.50);
+			const double chasmLowerPortionY = chasmBottomY + ((chasmMiddleY - chasmBottomY) * 0.50);
+			const bool areFeetInChasm = playerFeetPosition.y <= chasmMiddleY; // Arbitrary "deep enough"
+			const bool areFeetInWater = (playerFeetPosition.y <= chasmLowerPortionY) && chasmDef.allowsSwimming;
+			const bool isFastEnoughToSplash = physicsVelocity.GetY() <= -0.6f;
 
-			const bool isFallingFastEnoughToSplash = physicsVelocity.GetY() <= -0.8f;
-			newGroundState.enteredWater = !this->prevGroundState.isSwimming && newGroundState.isSwimming && isFallingFastEnoughToSplash;
-
-			newGroundState.isFeetInsideChasm = true;
+			newGroundState.isSwimming = newGroundState.onGround && chasmDef.allowsSwimming && areFeetInWater;
+			newGroundState.enteredWater = !this->prevGroundState.isSwimming && newGroundState.isSwimming && areFeetInWater && isFastEnoughToSplash;
+			newGroundState.isFeetInsideChasm = areFeetInChasm;
 		}
 	}
 
