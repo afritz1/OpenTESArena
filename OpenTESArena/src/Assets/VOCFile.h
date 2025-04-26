@@ -21,6 +21,7 @@ public:
 	int getSampleRate() const;
 
 	// Gets the 8-bit unsigned PCM audio data.
+	BufferView<uint8_t> getAudioData();
 	BufferView<const uint8_t> getAudioData() const;
 };
 

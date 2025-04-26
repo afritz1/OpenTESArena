@@ -28,6 +28,22 @@ struct AudioListenerData
 	AudioListenerData(const Double3 &position, const Double3 &direction);
 };
 
+struct VocRepairSpan
+{
+	int startIndex;
+	int count;
+	uint8_t replacementSample;
+
+	VocRepairSpan();
+};
+
+// For spot-fixing bad samples in .VOC files, eventually to be done by a mod.
+struct VocRepairEntry
+{
+	std::string filename;
+	std::vector<VocRepairSpan> spans;
+};
+
 // Manages what sounds and music are played by OpenAL Soft.
 class AudioManager
 {
@@ -46,6 +62,9 @@ private:
 	// sound a bit obnoxious. This functionality is added here because the original game
 	// can only play one sound at a time, so it doesn't have this problem.
 	std::vector<std::string> mSingleInstanceSounds;
+
+	// The engine can overwrite .VOC file sample data with revised data to fix annoying pops.
+	std::vector<VocRepairEntry> mVocRepairEntries;
 
 	// Currently active song and playback stream.
 	MidiSongPtr mCurrentSong;

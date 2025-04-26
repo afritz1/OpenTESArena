@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <charconv>
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -24,8 +25,51 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
+#include "components/utilities/StringView.h"
 #include "components/utilities/TextLinesFile.h"
 #include "components/vfs/manager.hpp"
+
+namespace
+{
+	bool ProcessVocRepairLine(const std::string_view text, std::string *outFilename, VocRepairSpan *outSpan)
+	{
+		constexpr int expectedTokenCount = 4;
+		std::string_view tokens[expectedTokenCount];
+		if (!StringView::splitExpected<expectedTokenCount>(text, ',', tokens))
+		{
+			DebugLogErrorFormat("Invalid .VOC repair format, skipping: \"%s\"", text);
+			return false;
+		}
+
+		*outFilename = tokens[0];
+
+		const std::string_view startIndexView = tokens[1];
+		std::from_chars_result result = std::from_chars(startIndexView.data(), startIndexView.data() + startIndexView.size(), outSpan->startIndex);
+		if (result.ec != std::errc())
+		{
+			DebugLogError("Couldn't parse .VOC repair startIndex \"" + std::string(startIndexView) + "\".");
+			return false;
+		}
+
+		const std::string_view countView = tokens[2];
+		result = std::from_chars(countView.data(), countView.data() + countView.size(), outSpan->count);
+		if (result.ec != std::errc())
+		{
+			DebugLogError("Couldn't parse .VOC repair count \"" + std::string(countView) + "\".");
+			return false;
+		}
+
+		const std::string_view replacementByteView = tokens[3];
+		result = std::from_chars(replacementByteView.data(), replacementByteView.data() + replacementByteView.size(), outSpan->replacementSample);
+		if (result.ec != std::errc())
+		{
+			DebugLogError("Couldn't parse .VOC repair replacementByte \"" + std::string(replacementByteView) + "\".");
+			return false;
+		}
+
+		return true;
+	}
+}
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
@@ -316,6 +360,13 @@ public:
 AudioListenerData::AudioListenerData(const Double3 &position, const Double3 &direction)
 	: position(position), direction(direction) { }
 
+VocRepairSpan::VocRepairSpan()
+{
+	this->startIndex = -1;
+	this->count = 0;
+	this->replacementSample = 0;
+}
+
 AudioManager::AudioManager()
 {
 	mMusicVolume = 0.0f;
@@ -433,19 +484,55 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	// Load single-instance sounds file, a new feature with this engine since the one-sound-at-a-time limit
 	// no longer exists.
 	TextLinesFile singleInstanceSoundsFile;
-	const std::string singleInstanceSoundsPath = audioDataPath + "SingleInstanceSounds.txt";
-	if (singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
+	const std::string singleInstanceSoundsFilename = "SingleInstanceSounds.txt";
+	const std::string singleInstanceSoundsPath = audioDataPath + singleInstanceSoundsFilename;
+	if (!singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
 	{
-		for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
+		DebugLogWarningFormat("Missing %s in \"%s\".", singleInstanceSoundsFilename.c_str(), audioDataPath.c_str());
+	}
+
+	for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
+	{
+		std::string soundFilename = singleInstanceSoundsFile.getLine(i);
+		mSingleInstanceSounds.emplace_back(std::move(soundFilename));
+	}
+
+	// Load .VOC repair file, a temporary fix for annoying pops until a proper mod is available.
+	TextLinesFile vocRepairFile;
+	const std::string vocRepairFilename = "VocRepair.txt";
+	const std::string vocRepairPath = audioDataPath + vocRepairFilename;
+	if (!vocRepairFile.init(vocRepairPath.c_str()))
+	{
+		DebugLogWarningFormat("Missing %s in \"%s\".", vocRepairFilename.c_str(), audioDataPath.c_str());
+	}
+
+	for (int i = 0; i < vocRepairFile.getLineCount(); i++)
+	{
+		const std::string &entry = vocRepairFile.getLine(i);
+
+		std::string vocFilename;
+		VocRepairSpan vocRepairSpan;
+		if (ProcessVocRepairLine(entry, &vocFilename, &vocRepairSpan))
 		{
-			std::string soundFilename = singleInstanceSoundsFile.getLine(i);
-			mSingleInstanceSounds.emplace_back(std::move(soundFilename));
+			const auto existingIter = std::find_if(this->mVocRepairEntries.begin(), this->mVocRepairEntries.end(),
+				[&vocFilename](const VocRepairEntry &entry)
+			{
+				return entry.filename == vocFilename;
+			});
+
+			if (existingIter == this->mVocRepairEntries.end())
+			{
+				VocRepairEntry newEntry;
+				newEntry.filename = vocFilename;
+				newEntry.spans.emplace_back(vocRepairSpan);
+				this->mVocRepairEntries.emplace_back(std::move(newEntry));
+			}
+			else
+			{
+				existingIter->spans.emplace_back(vocRepairSpan);
+			}
 		}
-	}
-	else
-	{
-		DebugLogWarning("Missing single instance sounds file at \"" + singleInstanceSoundsPath + "\".");
-	}
+	}	
 }
 
 double AudioManager::getMusicVolume() const
@@ -582,7 +669,26 @@ void AudioManager::playSound(const char *filename, const std::optional<Double3> 
 				DebugLogWarning("alGenBuffers() error 0x" + String::toHexString(status));
 			}
 
-			const BufferView<const uint8_t> audioData = voc.getAudioData();
+			BufferView<uint8_t> audioData = voc.getAudioData();
+
+			// Find and repair any bad samples we know of. A mod should eventually do this.
+			const auto repairIter = std::find_if(this->mVocRepairEntries.begin(), this->mVocRepairEntries.end(),
+				[filename](const VocRepairEntry &entry)
+			{
+				return StringView::equals(entry.filename, filename);
+			});
+
+			if (repairIter != this->mVocRepairEntries.end())
+			{
+				const BufferView<const VocRepairSpan> repairSpans = repairIter->spans;
+				for (const VocRepairSpan span : repairSpans)
+				{
+					const auto spanBegin = audioData.begin() + span.startIndex;
+					const auto spanEnd = spanBegin + span.count;
+					DebugAssert(spanEnd <= audioData.end());
+					std::fill(spanBegin, spanEnd, span.replacementSample);
+				}
+			}
 
 			alBufferData(bufferID, AL_FORMAT_MONO8,
 				static_cast<const ALvoid*>(audioData.begin()),
