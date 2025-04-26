@@ -68,13 +68,13 @@ namespace
 			return false;
 		}
 
-		constexpr float collisionTolerance = 0.05f; // from Jolt example
-		constexpr float maxSlopeAngle = MathUtilsF::degToRad(1.0f); // Game world doesn't have slopes, so this should be very small, but 0 causes 500 foot jumps off walls.
-		constexpr float maxStrength = 100.0f; // from Jolt example
-		constexpr float characterPadding = 0.02f; // from Jolt example
-		constexpr float penetrationRecoverySpeed = 1.0f; // from Jolt example
-		constexpr float predictiveContactDistance = 0.1f; // from Jolt example
-		const JPH::Plane supportingVolume(JPH::Vec3::sAxisY(), -1.0e10f); // from Jolt default values (half space of the character that accepts collisions, we want 100%)
+		constexpr float collisionTolerance = 0.03f;
+		constexpr float maxSlopeAngle = MathUtilsF::degToRad(45.0f); // Game world doesn't have slopes so this is unimportant
+		constexpr float maxStrength = 1.0f;
+		constexpr float characterPadding = 0.02f;
+		constexpr float penetrationRecoverySpeed = 0.5f;
+		constexpr float predictiveContactDistance = 0.05f;
+		const JPH::Plane supportingVolume(JPH::Vec3::sAxisY(), -1.0e10f); // Half space of the character that accepts collisions, we want 100% of them
 
 		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
 		// I just need a capsule that runs into things, jumps, and steps on stairs.
