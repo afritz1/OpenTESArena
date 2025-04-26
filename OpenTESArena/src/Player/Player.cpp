@@ -556,7 +556,7 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 			const bool isFastEnoughToSplash = physicsVelocity.GetY() <= -0.6f;
 
 			newGroundState.isSwimming = newGroundState.onGround && chasmDef.allowsSwimming && areFeetInWater;
-			newGroundState.enteredWater = !this->prevGroundState.isSwimming && newGroundState.isSwimming && areFeetInWater && isFastEnoughToSplash;
+			newGroundState.enteredWater = !this->prevGroundState.enteredWater && !this->prevGroundState.isSwimming && newGroundState.isSwimming && areFeetInWater && isFastEnoughToSplash;
 			newGroundState.isFeetInsideChasm = areFeetInChasm;
 		}
 	}
@@ -631,7 +631,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 	const MapType activeMapType = gameState.getActiveMapType();
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 
-	if (this->groundState.enteredWater)
+	if (this->groundState.enteredWater && !this->prevGroundState.enteredWater)
 	{
 		audioManager.playSound(ArenaSoundName::Splash);
 
