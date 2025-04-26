@@ -68,12 +68,10 @@ bool VOCFile::init(const char *filename)
 	int offset = headerSize;
 	while (offset < src.getCount())
 	{
-		const int blockHeaderSize = 4;
+		constexpr int blockHeaderSize = 4;
 
-		// One byte for the block type (0-9). Don't read any further if it's a 
-		// terminator block.
+		// One byte for the block type (0-9). Don't read any further if it's a terminator block.
 		const BlockType blockType = static_cast<BlockType>(*(srcPtr + offset));
-
 		if (blockType == BlockType::Terminator)
 		{
 			// End of file.
@@ -86,12 +84,6 @@ bool VOCFile::init(const char *filename)
 		// Pointer to the beginning of the block's data (after the common header).
 		const uint8_t *blockData = srcPtr + offset + blockHeaderSize;
 
-		// Regarding this #define: the repeating drums are working just fine now, but they
-		// can get a little annoying after a while, so only define this name when repeating
-		// drums are desired (like in later builds, so we don't get sick of it now).
-#define DRUMS_REPEAT
-
-		// Decide how to use the data block.
 		if (blockType == BlockType::SoundData)
 		{
 			// Read 8-bit unsigned PCM data.
@@ -101,10 +93,9 @@ bool VOCFile::init(const char *filename)
 			const uint8_t *audioEnd = blockData + blockSize;
 			const int sampleRate = 1000000 / (256 - frequencyDivisor);
 
-			// The codec must be 0 (8-bit unsigned PCM).
-			DebugAssert(pcmCodec == 0);
+			constexpr int unsigned8BitPcmCodec = 0;
+			DebugAssert(pcmCodec == unsigned8BitPcmCodec);
 
-			// Assign the sample rate if it hasn't been assigned yet.
 			if (this->sampleRate == 0)
 			{
 				this->sampleRate = sampleRate;
@@ -115,8 +106,6 @@ bool VOCFile::init(const char *filename)
 				DebugAssert(this->sampleRate == sampleRate);
 			}
 
-			// Append the PCM data to the target vector depending on whether it's in
-			// repeating mode or not.
 			if (repeating)
 			{
 				repeatData.insert(repeatData.end(), audioBegin, audioEnd);
@@ -128,7 +117,6 @@ bool VOCFile::init(const char *filename)
 		}
 		else if (blockType == BlockType::RepeatStart)
 		{
-#ifdef DRUMS_REPEAT
 			// Only used with DRUMS.VOC.
 			// The sound blocks following this block should be repeated some number of times.
 			repeatCount = Bytes::getLE16(blockData) + 1;
@@ -136,11 +124,9 @@ bool VOCFile::init(const char *filename)
 
 			// Don't handle the 0xFFFF special case (no .VOC repeats indefinitely in Arena).
 			DebugAssert(repeatCount != 0xFFFF);
-#endif
 		}
 		else if (blockType == BlockType::RepeatEnd)
 		{
-#ifdef DRUMS_REPEAT
 			// Only used with DRUMS.VOC.
 			// An empty block like the terminator, tells when to stop repeating data blocks.
 			// Take the repeat vector and append it onto the audio vector "repeatCount" times.
@@ -152,7 +138,6 @@ bool VOCFile::init(const char *filename)
 			repeatData.clear();
 			repeatCount = 0;
 			repeating = false;
-#endif
 		}
 		else
 		{
