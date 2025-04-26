@@ -575,17 +575,51 @@ void Player::prePhysicsStep(double dt, Game &game)
 		return;
 	}
 
-	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
-	this->updateGroundState(game, physicsSystem);
-
 	const double ceilingScale = game.gameState.getActiveCeilingScale();
-
 	if (!this->groundState.onGround)
 	{
 		// Apply gravity to Character as gravity factor is 0 when with CharacterVirtual.
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, ceilingScale, dt);
 	}
 
+	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+	const JPH::Vec3Arg physicsGravity = -this->physicsCharacter->GetUp() * physicsSystem.GetGravity().Length();
+	JPH::CharacterVirtual::ExtendedUpdateSettings extendedUpdateSettings; // @todo: for stepping up/down stairs
+	const JPH::BroadPhaseLayerFilter &broadPhaseLayerFilter = physicsSystem.GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING);
+	const JPH::ObjectLayerFilter &objectLayerFilter = physicsSystem.GetDefaultLayerFilter(PhysicsLayers::MOVING);
+	const JPH::BodyFilter bodyFilter; // Nothing
+	const JPH::ShapeFilter shapeFilter; // Nothing
+
+	// Update + stick to floor + walk stairs
+	this->physicsCharacterVirtual->ExtendedUpdate(
+		static_cast<float>(dt),
+		physicsGravity,
+		extendedUpdateSettings,
+		broadPhaseLayerFilter,
+		objectLayerFilter,
+		bodyFilter,
+		shapeFilter,
+		*game.physicsTempAllocator);
+}
+
+void Player::postPhysicsStep(double dt, Game &game)
+{
+	if (game.options.getMisc_GhostMode())
+	{
+		return;
+	}
+
+	// @todo: not completely understanding the character + charactervirtual synergy yet
+	// - i think charactervirtual is for stairsteps and 'weird interactions' that character gets driven by?
+
+	constexpr float maxSeparationDistance = 2e-2f; // @temp this feels very high but it helps with movement sound accumulation and overcoming the end of chasm climbing
+	this->physicsCharacter->PostSimulation(maxSeparationDistance);
+	const Double3 physicsVelocity = this->getPhysicsVelocity();
+
+	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+	this->updateGroundState(game, physicsSystem);
+
+	const double ceilingScale = game.gameState.getActiveCeilingScale();
 	AudioManager &audioManager = game.audioManager;
 	const GameState &gameState = game.gameState;
 	const MapType activeMapType = gameState.getActiveMapType();
@@ -610,21 +644,14 @@ void Player::prePhysicsStep(double dt, Game &game)
 		}
 	}
 
-	if (this->climbingState.isClimbing)
-	{
-		const Double3 climbingVelocity(0.0, 3.5 * (ceilingScale * 0.80), 0.0); // Arbitrary, just for prototyping
-		this->setPhysicsVelocity(climbingVelocity);
-	}
-
-	const Double3 velocity = this->getPhysicsVelocity();
 	const bool isMovementSoundAccumulating = this->groundState.onGround && this->isMoving();
 	if (isMovementSoundAccumulating)
 	{
-		const Double3 groundVelocity = Double3(velocity.x, 0.0, velocity.z);
+		const Double2 physicsVelocityXZ(physicsVelocity.x, physicsVelocity.z);
 
 		constexpr double tempRateBias = 1.40; // @temp due to Jolt movement still being bouncy even with enhanced internal edge removal fix
 		const double clampedMoveSpeed = this->getMaxMoveSpeed() * PlayerConstants::CLAMPED_MOVE_SPEED_PERCENT;
-		const double movementSoundProgressRate = (groundVelocity.length() * tempRateBias) / clampedMoveSpeed; // ~2 steps/second
+		const double movementSoundProgressRate = (physicsVelocityXZ.length() * tempRateBias) / clampedMoveSpeed; // ~2 steps/second
 
 		constexpr double maxMovementSoundProgress = 1.0;
 		constexpr double leftStepSoundProgress = maxMovementSoundProgress / 2.0;
@@ -677,39 +704,6 @@ void Player::prePhysicsStep(double dt, Game &game)
 		this->movementSoundProgress = 0.0;
 	}
 
-	const JPH::Vec3Arg physicsGravity = -this->physicsCharacter->GetUp() * physicsSystem.GetGravity().Length();
-	JPH::CharacterVirtual::ExtendedUpdateSettings extendedUpdateSettings; // @todo: for stepping up/down stairs
-	const JPH::BroadPhaseLayerFilter &broadPhaseLayerFilter = physicsSystem.GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING);
-	const JPH::ObjectLayerFilter &objectLayerFilter = physicsSystem.GetDefaultLayerFilter(PhysicsLayers::MOVING);
-	const JPH::BodyFilter bodyFilter; // Nothing
-	const JPH::ShapeFilter shapeFilter; // Nothing
-
-	// Update + stick to floor + walk stairs
-	this->physicsCharacterVirtual->ExtendedUpdate(
-		static_cast<float>(dt),
-		physicsGravity,
-		extendedUpdateSettings,
-		broadPhaseLayerFilter,
-		objectLayerFilter,
-		bodyFilter,
-		shapeFilter,
-		*game.physicsTempAllocator);
-}
-
-void Player::postPhysicsStep(double dt, Game &game)
-{
-	if (game.options.getMisc_GhostMode())
-	{
-		return;
-	}
-
-	// @todo: not completely understanding the character + charactervirtual synergy yet
-	// - i think charactervirtual is for stairsteps and 'weird interactions' that character gets driven by?
-
-	constexpr float maxSeparationDistance = 2e-2f; // @temp this feels very high but it helps with movement sound accumulation and overcoming the end of chasm climbing
-	this->physicsCharacter->PostSimulation(maxSeparationDistance);
-
-	const Double3 physicsVelocity = this->getPhysicsVelocity();
 	const double isSlowEnoughToStartClimbing = physicsVelocity.length() < 0.01;
 	if (!isSlowEnoughToStartClimbing)
 	{
@@ -740,5 +734,11 @@ void Player::postPhysicsStep(double dt, Game &game)
 	{
 		this->climbingState.isClimbing = false;
 		this->climbingState.shouldStartPercent = 0.0;
+	}
+
+	if (this->climbingState.isClimbing)
+	{
+		const Double3 climbingVelocity(0.0, 3.5 * (ceilingScale * 0.80), 0.0); // Arbitrary, just for prototyping
+		this->setPhysicsVelocity(climbingVelocity);
 	}
 }
