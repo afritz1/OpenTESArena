@@ -507,18 +507,23 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 {
 	PlayerGroundState newGroundState;
 
-	const JPH::CharacterBase::EGroundState physicsGroundState = this->physicsCharacter->GetGroundState();
-	if ((physicsGroundState == JPH::CharacterBase::EGroundState::OnGround) || (physicsGroundState == JPH::CharacterBase::EGroundState::OnSteepGround))
+	if (this->physicsCharacter->IsSupported())
 	{
-		const JPH::BodyID groundBodyID = this->physicsCharacter->GetGroundBodyID();
-		if (!groundBodyID.IsInvalid())
+		const JPH::Vec3 groundNormal = this->physicsCharacter->GetGroundNormal();
+		const JPH::Vec3 upVector = JPH::Vec3::sAxisY();
+		const bool isOnFlatGround = groundNormal.Dot(upVector) >= 0.95f;
+		if (isOnFlatGround)
 		{
-			const JPH::BodyLockInterface &bodyInterface = physicsSystem.GetBodyLockInterface();
-			const JPH::BodyLockRead groundBodyLock(bodyInterface, groundBodyID);
-			if (groundBodyLock.Succeeded())
+			const JPH::BodyID groundBodyID = this->physicsCharacter->GetGroundBodyID();
+			if (!groundBodyID.IsInvalid())
 			{
-				const JPH::Body &groundBody = groundBodyLock.GetBody();
-				newGroundState.onGround = !groundBody.IsSensor();
+				const JPH::BodyLockInterface &bodyInterface = physicsSystem.GetBodyLockInterface();
+				const JPH::BodyLockRead groundBodyLock(bodyInterface, groundBodyID);
+				if (groundBodyLock.Succeeded())
+				{
+					const JPH::Body &groundBody = groundBodyLock.GetBody();
+					newGroundState.onGround = !groundBody.IsSensor();
+				}
 			}
 		}
 	}
@@ -591,6 +596,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 	const JPH::ShapeFilter shapeFilter; // Nothing
 
 	// Update + stick to floor + walk stairs
+	// @todo pretty sure CharacterVirtual is contributing to all the ghost collisions, probably need to configure this better
 	this->physicsCharacterVirtual->ExtendedUpdate(
 		static_cast<float>(dt),
 		physicsGravity,
