@@ -138,7 +138,7 @@ bool ChooseAttributesPanel::init()
 	// text for Arrows 
 	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
 	UiTextureID upDownTextureID;
-	const TextureAsset paletteTextureAsset = TextureAsset(std::string(ArenaPaletteName::Default));
+	const TextureAsset paletteTextureAsset = TextureAsset(std::string(ArenaPaletteName::CharSheet));
 	if (!TextureUtils::tryAllocUiTexture(upDownTextureAsset, paletteTextureAsset, textureManager, renderer, &upDownTextureID))
 	{
 		DebugLogError("Couldn't get texture ID for up/down arrows.");
