@@ -256,25 +256,32 @@ bool ChooseAttributesPanel::init()
 			PivotType::Middle);
 			
 		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[attributeIndex].getRect(),
-			[this, attributeIndex, &game]()
-			{
+			[this, attributeIndex, &game]() {
 
-				const CharacterCreationState& charCreationState = game.getCharacterCreationState();
-				BufferView<PrimaryAttribute> attributesView = const_cast<PrimaryAttributes&>(charCreationState.getAttributes()).getAttributes();
-				PrimaryAttribute& modifiableAttribute = attributesView.get(attributeIndex);
-				modifiableAttribute.maxValue += 1;
-				DebugLog("Selected attribute: " + std::string(modifiableAttribute.name));
+				auto& charCreationState = game.getCharacterCreationState();
+				auto& attributes = const_cast<PrimaryAttributes&>(charCreationState.getAttributes());
+				auto& modifiableAttribute = attributes.getAttributes()[attributeIndex];
+				++modifiableAttribute.maxValue;
+				DebugLog("Atributo seleccionado: " + std::string(modifiableAttribute.name) + ", nuevo valor: " + std::to_string(modifiableAttribute.maxValue));
 
-				// update the  TextBox for atribute
-				std::string updatedValueText = std::to_string(modifiableAttribute.maxValue);
-				this->attributeTextBoxes[attributeIndex].setText(updatedValueText);
-				const Rect& attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+				// Update the TextBox
+				auto& attributeTextBox = this->attributeTextBoxes[attributeIndex];
+				attributeTextBox.setText(std::to_string(modifiableAttribute.maxValue));
+				auto attributeTextBoxRect = attributeTextBox.getRect();
+
 				this->addDrawCall(
-					[this, attributeIndex]() { return this->attributeTextBoxes[attributeIndex].getTextureID(); },
-					[attributeTextBoxRect]() { return attributeTextBoxRect.getTopLeft(); },
-					[attributeTextBoxRect]() { return Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()); },
-					[]() { return PivotType::TopLeft; },
-					UiDrawCall::defaultActiveFunc);			
+					[this, attributeIndex]() {
+						return this->attributeTextBoxes[attributeIndex].getTextureID();
+					},
+					[attributeTextBoxRect]() {
+						return attributeTextBoxRect.getTopLeft();
+					},
+						[attributeTextBoxRect]() {
+						return Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight());
+					},
+						[]() { return PivotType::TopLeft; },
+						UiDrawCall::defaultActiveFunc
+						);
 			});
 	}
 
