@@ -15,6 +15,9 @@
 #include "../Stats/PrimaryAttribute.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
+#include "../Assets/ArenaTextureName.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/TextureUtils.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game) { }
@@ -132,6 +135,17 @@ bool ChooseAttributesPanel::init()
 	this->shirtTextureRef.init(shirtTextureID, renderer);
 	this->statsBgTextureRef.init(statsBgTextureID, renderer);
 
+	// text for Arrows 
+	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
+	UiTextureID upDownTextureID;
+	const TextureAsset paletteTextureAsset = TextureAsset(std::string(ArenaPaletteName::Default));
+	if (!TextureUtils::tryAllocUiTexture(upDownTextureAsset, paletteTextureAsset, textureManager, renderer, &upDownTextureID))
+	{
+		DebugLogError("Couldn't get texture ID for up/down arrows.");
+		return false;
+	}
+	this->upDownTextureRef.init(upDownTextureID, renderer);
+
 	const Buffer<TextureAsset> headTextureAssets = ChooseAttributesUiView::getHeadTextureAssets(game);
 	this->headTextureRefs.init(headTextureAssets.getCount());
 	for (int i = 0; i < headTextureAssets.getCount(); i++)
@@ -145,6 +159,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 pantsTextureDims = *renderer.tryGetUiTextureDims(pantsTextureID);
 	const Int2 shirtTextureDims = *renderer.tryGetUiTextureDims(shirtTextureID);
 	const Int2 statsBgTextureDims = *renderer.tryGetUiTextureDims(statsBgTextureID);
+	const Int2 upDownTextureDims = *renderer.tryGetUiTextureDims(upDownTextureID);
 
 	UiDrawCall::TextureFunc headTextureFunc = [this, &game]()
 	{
@@ -219,6 +234,37 @@ bool ChooseAttributesPanel::init()
 		classTextBoxRect.getTopLeft(),
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
+
+	// code arrow
+	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
+	{
+		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+		const Int2 buttonCenter(
+			attributeTextBoxRect.getRight() + 5,
+			attributeTextBoxRect.getCenter().y);
+		
+		this->upDownButtons[attributeIndex] = Button<>();
+		this->upDownButtons[attributeIndex].setX(buttonCenter.x - (upDownTextureDims.x / 2));
+		this->upDownButtons[attributeIndex].setY(buttonCenter.y - (upDownTextureDims.y / 2));
+		this->upDownButtons[attributeIndex].setWidth(upDownTextureDims.x);
+		this->upDownButtons[attributeIndex].setHeight(upDownTextureDims.y);
+			
+		this->addDrawCall(
+			upDownTextureID,
+			buttonCenter,
+			upDownTextureDims,
+			PivotType::Middle);
+			
+		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[attributeIndex].getRect(),
+			[this, attributeIndex, &game]()
+			{
+				const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+				const PrimaryAttributes &attributes = charCreationState.getAttributes();
+				const BufferView<const PrimaryAttribute> attributesView = attributes.getAttributes();
+				const PrimaryAttribute &attribute = attributesView.get(attributeIndex);
+				DebugLog("Selected attribute: " + std::string(attribute.name));
+			});
+	}
 
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{

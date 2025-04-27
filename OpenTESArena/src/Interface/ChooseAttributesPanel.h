@@ -19,6 +19,8 @@ private:
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;
 	ScopedUiTextureRef bodyTextureRef, shirtTextureRef, pantsTextureRef, statsBgTextureRef, cursorTextureRef;
+	ScopedUiTextureRef upDownTextureRef;
+	Button<> upDownButtons[PrimaryAttributes::COUNT];
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 public:
 	ChooseAttributesPanel(Game &game);
