@@ -258,11 +258,23 @@ bool ChooseAttributesPanel::init()
 		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[attributeIndex].getRect(),
 			[this, attributeIndex, &game]()
 			{
-				const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-				const PrimaryAttributes &attributes = charCreationState.getAttributes();
-				const BufferView<const PrimaryAttribute> attributesView = attributes.getAttributes();
-				const PrimaryAttribute &attribute = attributesView.get(attributeIndex);
-				DebugLog("Selected attribute: " + std::string(attribute.name));
+
+				const CharacterCreationState& charCreationState = game.getCharacterCreationState();
+				BufferView<PrimaryAttribute> attributesView = const_cast<PrimaryAttributes&>(charCreationState.getAttributes()).getAttributes();
+				PrimaryAttribute& modifiableAttribute = attributesView.get(attributeIndex);
+				modifiableAttribute.maxValue += 1;
+				DebugLog("Selected attribute: " + std::string(modifiableAttribute.name));
+
+				// update the  TextBox for atribute
+				std::string updatedValueText = std::to_string(modifiableAttribute.maxValue);
+				this->attributeTextBoxes[attributeIndex].setText(updatedValueText);
+				const Rect& attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+				this->addDrawCall(
+					[this, attributeIndex]() { return this->attributeTextBoxes[attributeIndex].getTextureID(); },
+					[attributeTextBoxRect]() { return attributeTextBoxRect.getTopLeft(); },
+					[attributeTextBoxRect]() { return Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()); },
+					[]() { return PivotType::TopLeft; },
+					UiDrawCall::defaultActiveFunc);			
 			});
 	}
 
