@@ -7,6 +7,7 @@ void RenderLightChunk::init(const ChunkInt2 &position, int height)
 	Chunk::init(position, height);
 	this->lightIdLists.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->dirtyVoxels.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
+	this->dirtyVoxels.fill(false);
 }
 
 void RenderLightChunk::setVoxelDirty(const VoxelInt3 &position)
