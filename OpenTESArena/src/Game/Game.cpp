@@ -822,7 +822,7 @@ void Game::loop()
 
 			this->inputManager.update(*this, deltaTime, buttonProxies, onFinishedProcessingEventFunc);
 
-			if (this->shouldSimulateScene)
+			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
 				const Double2 playerTurnAngleDeltas = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), this->nativeCursorRegions);
 
