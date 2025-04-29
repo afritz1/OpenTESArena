@@ -15,6 +15,9 @@
 #include "../Stats/PrimaryAttribute.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
+#include "../UI/TextRenderUtils.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/ArenaFontName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextureUtils.h"
@@ -30,6 +33,9 @@ bool ChooseAttributesPanel::init()
 
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setPortraitIndex(0);
+	charCreationState.clearChangedPoints();
+
+	this->bonusPoints = 10;
 
 	this->attributesAreSaved = false;
 
@@ -266,46 +272,88 @@ bool ChooseAttributesPanel::init()
 			PivotType::Middle);
 			
 		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[attributeIndex].getRect(),
-			[this, attributeIndex, &game]() {
+			[this, attributeIndex]() {
+				if (this->bonusPoints > 0) {
+					Game& game = this->getGame();
+					auto& charCreationState = game.getCharacterCreationState();
+					int* changedPoints = charCreationState.getChangedPoints();
+					changedPoints[attributeIndex]++;
+					this->bonusPoints--;
 
-				auto& charCreationState = game.getCharacterCreationState();
-				auto& attributes = const_cast<PrimaryAttributes&>(charCreationState.getAttributes());
-				auto& modifiableAttribute = attributes.getAttributes()[attributeIndex];
-				++modifiableAttribute.maxValue;
-				DebugLog("Atributo seleccionado: " + std::string(modifiableAttribute.name) + ", nuevo valor: " + std::to_string(modifiableAttribute.maxValue));
+					const PrimaryAttributes& attributes = charCreationState.getAttributes();
+					const BufferView<const PrimaryAttribute> attributesView = attributes.getAttributes();
+					const PrimaryAttribute& attribute = attributesView.get(attributeIndex);
+					
+					auto& modifiableAttribute = const_cast<PrimaryAttribute&>(attribute);
+					modifiableAttribute.maxValue += 1;
+					
+					// Actualizar el texto con el nuevo valor
+					this->attributeTextBoxes[attributeIndex].setText(std::to_string(modifiableAttribute.maxValue));
+					
+					// Actualizar visualización del atributo
+					const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+					this->addDrawCall(
+						this->attributeTextBoxes[attributeIndex].getTextureID(),
+						attributeTextBoxRect.getTopLeft(),
+						Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()),
+						PivotType::TopLeft);
 
-				// Update the TextBox
-				auto& attributeTextBox = this->attributeTextBoxes[attributeIndex];
-				attributeTextBox.setText(std::to_string(modifiableAttribute.maxValue));
-				auto attributeTextBoxRect = attributeTextBox.getRect();
+					// Actualizar texto de puntos bonus
+					this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
+					const Rect &bonusTextBoxRect = this->bonusPointsTextBox.getRect();
+					this->addDrawCall(
+						this->bonusPointsTextBox.getTextureID(),
+						bonusTextBoxRect.getTopLeft(),
+						Int2(bonusTextBoxRect.getWidth(), bonusTextBoxRect.getHeight()),
+						PivotType::TopLeft);
 
-				this->addDrawCall(
-					[this, attributeIndex]() {
-						return this->attributeTextBoxes[attributeIndex].getTextureID();
-					},
-					[attributeTextBoxRect]() {
-						return attributeTextBoxRect.getTopLeft();
-					},
-						[attributeTextBoxRect]() {
-						return Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight());
-					},
-						[]() { return PivotType::TopLeft; },
-						UiDrawCall::defaultActiveFunc
-						);
+					DebugLog(std::string(attribute.name) + " incrementado por " + 
+						std::to_string(modifiableAttribute.maxValue) + 
+						", puntos bonus restantes: " + std::to_string(this->bonusPoints));
+				}
 			});
 	}
 
+	// posicion charisma atributo
+	const Rect &lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 1].getRect();
+
 	// code for botton points
 	const Int2 bonusPointsTextureDims = *renderer.tryGetUiTextureDims(bonusPointsTextureID);
-	const Rect& lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 1].getRect();
 	const Int2 bonusPointsPosition(
 		lastAttributeTextBoxRect.getLeft() + 25,
 		lastAttributeTextBoxRect.getTop()
 	);
+
+	// fondo bonus PTS
 	this->addDrawCall(
 		bonusPointsTextureID,
 		bonusPointsPosition,
 		bonusPointsTextureDims,
+		PivotType::TopLeft);
+
+	// Iniciar TextBox de puntos bonus
+	const TextBox::InitInfo bonusPointsTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		std::to_string(bonusPoints),
+		Int2(bonusPointsPosition.x + bonusPointsTextureDims.x - 30,  // 30 pixels desde el borde derecho
+			bonusPointsPosition.y + (bonusPointsTextureDims.y / 2)),  // Centrado verticalmente
+		ArenaFontName::Arena,
+		Color::Yellow,
+		TextAlignment::MiddleCenter,
+		std::nullopt,
+		1,
+		fontLibrary);
+
+	if (!this->bonusPointsTextBox.init(bonusPointsTextBoxInitInfo, std::to_string(bonusPoints), renderer))
+	{
+		DebugLogError("Couldn't init bonus points text box.");
+		return false;
+	}
+
+	const Rect &bonusPointsTextBoxRect = this->bonusPointsTextBox.getRect();
+	this->addDrawCall(
+		this->bonusPointsTextBox.getTextureID(),
+		bonusPointsTextBoxRect.getTopLeft(),
+		Int2(bonusPointsTextBoxRect.getWidth(), bonusPointsTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)

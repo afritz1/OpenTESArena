@@ -21,6 +21,8 @@ private:
 	int portraitIndex;
 	bool male;
 	PrimaryAttributes attributes;
+	std::array<int, 8> changedPoints;
+
 public:
 	CharacterCreationState();
 
@@ -30,6 +32,8 @@ public:
 	const PrimaryAttributes &getAttributes() const;
 	int getPortraitIndex() const;
 	bool isMale() const;
+	const int* getChangedPoints() const { return changedPoints.data(); }
+	int* getChangedPoints() { return changedPoints.data(); }
 
 	void setName(const char *name);
 	void setClassDefID(int id);
@@ -37,6 +41,7 @@ public:
 	void setPortraitIndex(int index);
 	void setGender(bool male);
 	void rollAttributes(Random &random);
+	void clearChangedPoints() { changedPoints.fill(0); }
 
 	void clear();
 };

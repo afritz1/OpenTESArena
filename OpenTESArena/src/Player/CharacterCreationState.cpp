@@ -80,4 +80,5 @@ void CharacterCreationState::clear()
 	this->portraitIndex = CharacterCreationState::NO_INDEX;
 	this->male = false;
 	this->attributes.clear();
+	this->changedPoints.fill(0);
 }
