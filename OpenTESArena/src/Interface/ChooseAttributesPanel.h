@@ -15,11 +15,12 @@ private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
 	TextBox experienceTextBox, levelTextBox;
+	TextBox bonusPointsTextBox;
 	Button<Game&, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;
 	ScopedUiTextureRef bodyTextureRef, shirtTextureRef, pantsTextureRef, statsBgTextureRef, cursorTextureRef;
-	ScopedUiTextureRef upDownTextureRef;
+	ScopedUiTextureRef upDownTextureRef, bonusPointsTextureRef;
 	Button<> upDownButtons[PrimaryAttributes::COUNT];
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 public:

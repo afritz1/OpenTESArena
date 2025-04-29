@@ -135,7 +135,7 @@ bool ChooseAttributesPanel::init()
 	this->shirtTextureRef.init(shirtTextureID, renderer);
 	this->statsBgTextureRef.init(statsBgTextureID, renderer);
 
-	// text for Arrows 
+	// texture for Arrows 
 	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
 	UiTextureID upDownTextureID;
 	const TextureAsset paletteTextureAsset = TextureAsset(std::string(ArenaPaletteName::CharSheet));
@@ -145,6 +145,16 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 	this->upDownTextureRef.init(upDownTextureID, renderer);
+
+	// texture bonus points
+	const TextureAsset bonusPointsTextureAsset = TextureAsset(std::string(ArenaTextureName::BonusPointsText));
+	UiTextureID bonusPointsTextureID;
+	if (!TextureUtils::tryAllocUiTexture(bonusPointsTextureAsset, paletteTextureAsset, textureManager, renderer, &bonusPointsTextureID))
+	{
+		DebugLogError("Couldn't get texture ID for bonus points.");
+		return false;
+	}
+	this->bonusPointsTextureRef.init(bonusPointsTextureID, renderer);
 
 	const Buffer<TextureAsset> headTextureAssets = ChooseAttributesUiView::getHeadTextureAssets(game);
 	this->headTextureRefs.init(headTextureAssets.getCount());
@@ -284,6 +294,19 @@ bool ChooseAttributesPanel::init()
 						);
 			});
 	}
+
+	// code for botton points
+	const Int2 bonusPointsTextureDims = *renderer.tryGetUiTextureDims(bonusPointsTextureID);
+	const Rect& lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 1].getRect();
+	const Int2 bonusPointsPosition(
+		lastAttributeTextBoxRect.getLeft() + 25,
+		lastAttributeTextBoxRect.getTop()
+	);
+	this->addDrawCall(
+		bonusPointsTextureID,
+		bonusPointsPosition,
+		bonusPointsTextureDims,
+		PivotType::TopLeft);
 
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
