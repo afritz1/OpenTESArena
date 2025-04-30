@@ -31,6 +31,8 @@ namespace PlayerConstants
 	constexpr double MOVE_SPEED = 15.0;
 	constexpr double SWIMMING_MOVE_SPEED = MOVE_SPEED * 0.5;
 	constexpr double CLAMPED_MOVE_SPEED_PERCENT = 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
+	constexpr double CLIMBING_SPEED = 100.0 / MIFUtils::ARENA_UNITS;
+	constexpr double CLIMBING_FINAL_PUSH_SPEED = 2.0;
 	constexpr double GHOST_MODE_SPEED = 15.0; // When ghost mode option is enabled.
 	constexpr double FRICTION = 0.30; // Slows down when on ground.
 	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.

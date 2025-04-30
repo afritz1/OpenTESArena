@@ -813,7 +813,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 			}
 			else if (!isDoneClimbing)
 			{
-				constexpr double baseClimbingSpeed = 100.0 / MIFUtils::ARENA_UNITS;
+				constexpr double baseClimbingSpeed = PlayerConstants::CLIMBING_SPEED;
 				// @todo: race check for faster climbing
 				const Double3 climbingVelocity(0.0, baseClimbingSpeed, 0.0);
 				newVelocity = climbingVelocity;
@@ -824,7 +824,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 				this->movementType = PlayerMovementType::Default;
 				this->climbingState.isAccelerationValidForClimbing = false;
 
-				const Double3 finalPushVelocity = groundDirection * 2.0;
+				const Double3 finalPushVelocity = groundDirection * PlayerConstants::CLIMBING_FINAL_PUSH_SPEED;
 				newVelocity = finalPushVelocity;
 			}			
 		}
