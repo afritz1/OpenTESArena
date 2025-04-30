@@ -395,7 +395,7 @@ namespace PlayerLogicController
 								}
 								else
 								{
-									canDoorBeOpened = false;
+									canDoorBeOpened = false || debugDestroyVoxel; // Can't open unless using debug input
 								}
 							}
 						}
