@@ -757,6 +757,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 		if (this->climbingState.isAccelerationValidForClimbing)
 		{
 			const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+			const CollisionChunkManager &collisionChunkManager = game.sceneManager.collisionChunkManager;
 			const Double3 groundDirection = this->getGroundDirection();
 			double climbingFeetTargetY = ceilingScale;
 
@@ -793,8 +794,24 @@ void Player::postPhysicsStep(double dt, Game &game)
 			// Extra bias to allow final push to have some air time.
 			climbingFeetTargetY += 0.05;
 
+			const WorldDouble3 eyePosition = this->getEyePosition();
+			const WorldInt3 eyeWorldVoxel = VoxelUtils::pointToVoxel(eyePosition, ceilingScale);
+			constexpr double eyeToTopOfHeadDistance = 0.01;
+			const double ceilingCheckY = eyePosition.y + eyeToTopOfHeadDistance;
+			const WorldInt3 ceilingCheckWorldVoxel = VoxelUtils::pointToVoxel(VoxelDouble3(eyePosition.x, ceilingCheckY, eyePosition.z), ceilingScale);
+			const CoordInt3 ceilingCheckVoxelCoord = VoxelUtils::worldVoxelToCoord(ceilingCheckWorldVoxel);
+			const VoxelInt3 ceilingCheckVoxel = ceilingCheckVoxelCoord.voxel;
+			const CollisionChunk &ceilingCheckCollisionChunk = collisionChunkManager.getChunkAtPosition(ceilingCheckVoxelCoord.chunk);
+			const bool isCeilingCheckColliderEnabled = ceilingCheckCollisionChunk.enabledColliders.get(ceilingCheckVoxel.x, ceilingCheckVoxel.y, ceilingCheckVoxel.z);
+			const bool isHeadHittingCeiling = (ceilingCheckWorldVoxel.y > eyeWorldVoxel.y) && isCeilingCheckColliderEnabled;
 			const bool isDoneClimbing = feetCoord.point.y >= climbingFeetTargetY;
-			if (!isDoneClimbing)
+
+			if (isHeadHittingCeiling)
+			{
+				this->movementType = PlayerMovementType::Default;
+				this->climbingState.isAccelerationValidForClimbing = false;
+			}
+			else if (!isDoneClimbing)
 			{
 				constexpr double baseClimbingSpeed = 100.0 / MIFUtils::ARENA_UNITS;
 				// @todo: race check for faster climbing
