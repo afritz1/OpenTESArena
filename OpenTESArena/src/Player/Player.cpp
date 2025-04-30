@@ -51,11 +51,11 @@ namespace
 		}
 
 		// Create same capsule for physical and virtual collider.
-		constexpr float playerHeight = static_cast<float>(PlayerConstants::HEIGHT);
+		constexpr float playerColliderHeight = static_cast<float>(PlayerConstants::TOP_OF_HEAD_HEIGHT);
 		constexpr float capsuleRadius = static_cast<float>(PlayerConstants::COLLIDER_RADIUS);
-		constexpr float cylinderHalfHeight = static_cast<float>((playerHeight / 2.0) - capsuleRadius);
+		constexpr float cylinderHalfHeight = static_cast<float>((playerColliderHeight / 2.0) - capsuleRadius);
 		static_assert(cylinderHalfHeight >= 0.0f);
-		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0f) + (cylinderHalfHeight * 2.0f), playerHeight));
+		static_assert(MathUtils::almostEqual((capsuleRadius * 2.0f) + (cylinderHalfHeight * 2.0f), playerColliderHeight));
 
 		JPH::CapsuleShapeSettings capsuleShapeSettings(cylinderHalfHeight, capsuleRadius);
 		capsuleShapeSettings.SetEmbedded(); // Marked embedded to prevent it from being freed when its ref count reaches 0.
@@ -369,7 +369,8 @@ void Player::setPhysicsVelocity(const Double3 &velocity)
 WorldDouble3 Player::getEyePosition() const
 {
 	const WorldDouble3 physicsPosition = this->getPhysicsPosition();
-	return WorldDouble3(physicsPosition.x, physicsPosition.y + (PlayerConstants::HEIGHT * 0.50), physicsPosition.z);
+	const double topOfHeadY = physicsPosition.y + (PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.50);
+	return WorldDouble3(physicsPosition.x, topOfHeadY - PlayerConstants::EYE_TO_TOP_OF_HEAD_DISTANCE, physicsPosition.z);
 }
 
 CoordDouble3 Player::getEyeCoord() const
@@ -381,7 +382,7 @@ CoordDouble3 Player::getEyeCoord() const
 WorldDouble3 Player::getFeetPosition() const
 {
 	const WorldDouble3 physicsPosition = this->getPhysicsPosition();
-	return WorldDouble3(physicsPosition.x, physicsPosition.y - (PlayerConstants::HEIGHT * 0.50), physicsPosition.z);
+	return WorldDouble3(physicsPosition.x, physicsPosition.y - (PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.50), physicsPosition.z);
 }
 
 Double3 Player::getGroundDirection() const
@@ -796,8 +797,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 
 			const WorldDouble3 eyePosition = this->getEyePosition();
 			const WorldInt3 eyeWorldVoxel = VoxelUtils::pointToVoxel(eyePosition, ceilingScale);
-			constexpr double eyeToTopOfHeadDistance = 0.01;
-			const double ceilingCheckY = eyePosition.y + eyeToTopOfHeadDistance;
+			const double ceilingCheckY = eyePosition.y + PlayerConstants::EYE_TO_TOP_OF_HEAD_DISTANCE + Constants::Epsilon;
 			const WorldInt3 ceilingCheckWorldVoxel = VoxelUtils::pointToVoxel(VoxelDouble3(eyePosition.x, ceilingCheckY, eyePosition.z), ceilingScale);
 			const CoordInt3 ceilingCheckVoxelCoord = VoxelUtils::worldVoxelToCoord(ceilingCheckWorldVoxel);
 			const VoxelInt3 ceilingCheckVoxel = ceilingCheckVoxelCoord.voxel;

@@ -25,14 +25,16 @@ class VoxelChunkManager;
 
 namespace PlayerConstants
 {
-	constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS; // Distance from feet to head.
+	constexpr double EYE_HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
+	constexpr double TOP_OF_HEAD_HEIGHT = EYE_HEIGHT + (3.0 / MIFUtils::ARENA_UNITS);
+	constexpr double EYE_TO_TOP_OF_HEAD_DISTANCE = TOP_OF_HEAD_HEIGHT - EYE_HEIGHT;
 	constexpr double MOVE_SPEED = 15.0;
 	constexpr double SWIMMING_MOVE_SPEED = MOVE_SPEED * 0.5;
 	constexpr double CLAMPED_MOVE_SPEED_PERCENT = 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
 	constexpr double GHOST_MODE_SPEED = 15.0; // When ghost mode option is enabled.
 	constexpr double FRICTION = 0.30; // Slows down when on ground.
 	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
-	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (HEIGHT / 2.0) - COLLIDER_RADIUS;
+	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (TOP_OF_HEAD_HEIGHT / 2.0) - COLLIDER_RADIUS;
 	constexpr double STEPPING_HEIGHT = 0.25; // Stairsteps delta (used by Jolt CharacterVirtual::ExtendedUpdate()).
 	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
 }
