@@ -127,7 +127,7 @@ namespace PlayerLogicController
 			// Change the player's velocity if valid.
 			else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
 			{
-				player.accelerate(accelDirection, accelMagnitude, ceilingScale, dt);
+				player.accelerate(accelDirection, accelMagnitude, dt);
 			}
 		}
 		else if (anyKeyboardMovementInput)
@@ -173,7 +173,7 @@ namespace PlayerLogicController
 			// Change the player's velocity if valid.
 			else if (std::isfinite(accelDirection.length()))
 			{
-				player.accelerate(accelDirection, accelMagnitude, ceilingScale, dt);
+				player.accelerate(accelDirection, accelMagnitude, dt);
 			}
 		}
 		else
@@ -240,7 +240,7 @@ namespace PlayerLogicController
 						if (accelDirection.lengthSquared() > 0.0)
 						{
 							accelDirection = accelDirection.normalized();
-							player.accelerate(accelDirection, moveSpeed, ceilingScale, dt);
+							player.accelerate(accelDirection, moveSpeed, dt);
 						}
 					}
 				}

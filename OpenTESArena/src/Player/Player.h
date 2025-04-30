@@ -37,6 +37,12 @@ namespace PlayerConstants
 	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
 }
 
+enum class PlayerMovementType
+{
+	Default,
+	Climbing
+};
+
 struct PlayerGroundState
 {
 	bool onGround;
@@ -50,9 +56,8 @@ struct PlayerGroundState
 
 struct PlayerClimbingState
 {
-	bool isAccelerationValidForClimbStart; // Is force being applied in a direction that could start climbing?
+	bool isAccelerationValidForClimbing; // Is force being applied in a direction that could start climbing?
 	double shouldStartPercent; // Accumulate while pushing into wall, start climbing at 100%.
-	bool isClimbing;
 
 	PlayerClimbingState();
 };
@@ -67,6 +72,7 @@ struct Player
 	Double3 right;
 	Double3 up;
 	// @todo: polar coordinates (XYZ angles)
+	PlayerMovementType movementType;
 	PlayerGroundState groundState, prevGroundState;
 	PlayerClimbingState climbingState;
 	double movementSoundProgress;
@@ -134,7 +140,7 @@ struct Player
 	void setDirectionToHorizon();
 
 	// Changes the velocity (as a force) given a normalized direction, magnitude, and delta time.
-	void accelerate(const Double3 &direction, double magnitude, double ceilingScale, double dt); // @todo: this will give CharacterVirtual a force probably?
+	void accelerate(const Double3 &direction, double magnitude, double dt); // @todo: this will give CharacterVirtual a force probably?
 
 	// Changes the velocity instantly. Intended for instantaneous acceleration like jumping.
 	void accelerateInstant(const Double3 &direction, double magnitude); // @todo: CharacterVirtual should treat this like a jump
