@@ -703,7 +703,6 @@ void Player::postPhysicsStep(double dt, Game &game)
 			const char *movementSoundName = movementSoundNames[movementSoundNameIndex];
 			if (!String::isNullOrEmpty(movementSoundName))
 			{
-				AudioManager &audioManager = game.audioManager;
 				audioManager.playSound(movementSoundName);
 			}
 		}
@@ -757,8 +756,42 @@ void Player::postPhysicsStep(double dt, Game &game)
 
 		if (this->climbingState.isAccelerationValidForClimbing)
 		{
-			// @todo: handle raised platforms that touch at the floor
-			const double climbingFeetTargetY = ceilingScale * 1.05;
+			const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+			const Double3 groundDirection = this->getGroundDirection();
+			double climbingFeetTargetY = ceilingScale;
+
+			// If there's a raised platform close by, set its top as the target.
+			constexpr double raisedPlatformGatherDistance = PlayerConstants::COLLIDER_RADIUS * 1.15;
+			constexpr Double3 raisedPlatformGatherDistanceVector(raisedPlatformGatherDistance, 0.0, raisedPlatformGatherDistance);
+			const WorldDouble3 raisedPlatformGatherMin = VoxelUtils::coordToWorldPoint(feetCoord) - raisedPlatformGatherDistanceVector;
+			const WorldDouble3 raisedPlatformGatherMax = raisedPlatformGatherMin + (raisedPlatformGatherDistanceVector * 2.0);
+			const WorldInt3 raisedPlatformGatherWorldVoxelMin = VoxelUtils::pointToVoxel(raisedPlatformGatherMin);
+			const WorldInt3 raisedPlatformGatherWorldVoxelMax = VoxelUtils::pointToVoxel(raisedPlatformGatherMax);
+			for (WEInt gatherWorldVoxelZ = raisedPlatformGatherWorldVoxelMin.z; gatherWorldVoxelZ <= raisedPlatformGatherWorldVoxelMax.z; gatherWorldVoxelZ++)
+			{
+				for (SNInt gatherWorldVoxelX = raisedPlatformGatherWorldVoxelMin.x; gatherWorldVoxelX <= raisedPlatformGatherWorldVoxelMax.x; gatherWorldVoxelX++)
+				{
+					const WorldInt3 gatherWorldVoxel(gatherWorldVoxelX, 1, gatherWorldVoxelZ);
+					const CoordInt3 gatherVoxelCoord = VoxelUtils::worldVoxelToCoord(gatherWorldVoxel);
+					const VoxelInt3 gatherVoxel = gatherVoxelCoord.voxel;
+					const VoxelChunk &gatherVoxelChunk = voxelChunkManager.getChunkAtPosition(gatherVoxelCoord.chunk);
+					const VoxelShapeDefID gatherVoxelShapeDefID = gatherVoxelChunk.getShapeDefID(gatherVoxel.x, gatherVoxel.y, gatherVoxel.z);
+					const VoxelShapeDefinition &gatherVoxelShapeDef = gatherVoxelChunk.getShapeDef(gatherVoxelShapeDefID);
+					if (gatherVoxelShapeDef.isElevatedPlatform)
+					{
+						DebugAssert(gatherVoxelShapeDef.type == VoxelShapeType::Box);
+						const VoxelBoxShapeDefinition &boxShape = gatherVoxelShapeDef.box;
+						const bool isPlatformOnFloor = boxShape.yOffset == 0.0;
+						if (isPlatformOnFloor)
+						{
+							climbingFeetTargetY = std::max(ceilingScale + boxShape.height, climbingFeetTargetY);
+						}
+					}
+				}
+			}
+
+			// Extra bias to allow final push to have some air time.
+			climbingFeetTargetY += 0.05;
 
 			const bool isDoneClimbing = feetCoord.point.y >= climbingFeetTargetY;
 			if (!isDoneClimbing)
@@ -773,9 +806,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 				// Done climbing.
 				this->movementType = PlayerMovementType::Default;
 				this->climbingState.isAccelerationValidForClimbing = false;
-				this->climbingState.shouldStartPercent = 0.0;
 
-				const Double3 groundDirection = this->getGroundDirection();
 				const Double3 finalPushVelocity = groundDirection * 2.0;
 				newVelocity = finalPushVelocity;
 			}			
@@ -784,7 +815,6 @@ void Player::postPhysicsStep(double dt, Game &game)
 		{
 			this->movementType = PlayerMovementType::Default;
 			this->climbingState.isAccelerationValidForClimbing = false;
-			this->climbingState.shouldStartPercent = 0.0;
 		}
 
 		this->setPhysicsVelocity(newVelocity);
