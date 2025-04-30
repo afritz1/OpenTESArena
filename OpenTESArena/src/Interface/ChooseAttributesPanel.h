@@ -27,6 +27,7 @@ private:
 	Button<> upDownButtons[PrimaryAttributes::COUNT * 2];
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 	int bonusPoints;
+	int calculateInitialBonusPoints() const;
 public:
 	ChooseAttributesPanel(Game &game);
 	~ChooseAttributesPanel() override = default;

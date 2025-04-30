@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <map>
+#include <random>
 
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
@@ -25,6 +26,19 @@
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game) { }
 
+int ChooseAttributesPanel::calculateInitialBonusPoints() const
+{
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> d6(1, 6);
+	
+	int totalPoints = 0;
+	for (int i = 0; i < 4; i++) {
+		totalPoints += d6(gen);
+	}
+	return totalPoints;
+}
+
 bool ChooseAttributesPanel::init()
 {
 	auto &game = this->getGame();
@@ -35,7 +49,7 @@ bool ChooseAttributesPanel::init()
 	charCreationState.setPortraitIndex(0);
 	charCreationState.clearChangedPoints();
 
-	this->bonusPoints = 10;
+	this->bonusPoints = calculateInitialBonusPoints();
 
 	this->attributesAreSaved = false;
 
@@ -334,8 +348,8 @@ bool ChooseAttributesPanel::init()
 	// Iniciar TextBox de puntos bonus
 	const TextBox::InitInfo bonusPointsTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		std::to_string(bonusPoints),
-		Int2(bonusPointsPosition.x + bonusPointsTextureDims.x - 30,  // 30 pixels desde el borde derecho
-			bonusPointsPosition.y + (bonusPointsTextureDims.y / 2)),  // Centrado verticalmente
+		Int2(bonusPointsPosition.x + bonusPointsTextureDims.x - 28,
+			bonusPointsPosition.y + (bonusPointsTextureDims.y / 2)),
 		ArenaFontName::Arena,
 		Color::Yellow,
 		TextAlignment::MiddleCenter,
