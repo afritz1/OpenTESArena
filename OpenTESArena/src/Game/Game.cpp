@@ -832,7 +832,27 @@ void Game::loop()
 				const Degrees pitchLimit = this->options.getInput_CameraPitchLimit();
 				this->player.rotateX(deltaDegreesX);
 				this->player.rotateY(deltaDegreesY, pitchLimit);
-				PlayerLogicController::handlePlayerMovement(*this, clampedDeltaTime, this->nativeCursorRegions);
+				
+				const PlayerInputAcceleration inputAcceleration = PlayerLogicController::getPlayerInputAcceleration(*this, this->nativeCursorRegions);
+				if (inputAcceleration.shouldResetVelocity)
+				{
+					this->player.setPhysicsVelocity(Double3::Zero);
+				}
+
+				if (inputAcceleration.isGhostMode)
+				{
+					const WorldDouble3 oldPlayerFeetPosition = this->player.getFeetPosition();
+					const WorldDouble3 newPlayerFeetPosition = oldPlayerFeetPosition + (inputAcceleration.direction * (inputAcceleration.magnitude * clampedDeltaTime));
+					this->player.setPhysicsPositionRelativeToFeet(newPlayerFeetPosition);
+				}
+				else if (inputAcceleration.isInstant)
+				{
+					this->player.accelerateInstant(inputAcceleration.direction, inputAcceleration.magnitude);
+				}
+				else if (inputAcceleration.direction.isNormalized())
+				{
+					this->player.accelerate(inputAcceleration.direction, inputAcceleration.magnitude, clampedDeltaTime);
+				}
 			}
 		}
 		catch (const std::exception &e)

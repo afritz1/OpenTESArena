@@ -23,12 +23,14 @@
 
 namespace PlayerLogicController
 {
-	void handlePlayerMovementClassic(Player &player, double dt, double moveSpeed, bool isOnGround, bool canJump, double ceilingScale, bool isGhostModeEnabled,
-		const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
+	PlayerInputAcceleration getPlayerInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, double ceilingScale,
+		bool isGhostModeEnabled, const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
 	{
+		PlayerInputAcceleration inputAcceleration;
+
 		if (!isOnGround)
 		{
-			return;
+			return inputAcceleration;
 		}
 
 		const Double3 groundDirection = player.getGroundDirection();
@@ -102,32 +104,35 @@ namespace PlayerLogicController
 			}
 
 			// Only attempt to accelerate if a direction was chosen.
-			if (accelDirection.lengthSquared() == 0.0)
+			if (accelDirection.lengthSquared() > 0.0)
 			{
-				player.setPhysicsVelocity(Double3::Zero);
-				return;
-			}
+				accelDirection = accelDirection.normalized();
 
-			// Use a normalized direction.
-			accelDirection = accelDirection.normalized();
+				// Set the magnitude of the acceleration to some arbitrary number. These values
+				// are independent of max speed.
+				double accelMagnitude = percent * moveSpeed;
 
-			// Set the magnitude of the acceleration to some arbitrary number. These values
-			// are independent of max speed.
-			double accelMagnitude = percent * moveSpeed;
-
-			// Check for jumping first (so the player can't slide jump on the first frame).
-			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
-			if (rightClick)
-			{
-				if (canJump)
+				// Check for jumping first (so the player can't slide jump on the first frame).
+				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+				if (rightClick)
 				{
-					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					if (canJump)
+					{
+						inputAcceleration.direction = Double3::UnitY;
+						inputAcceleration.magnitude = player.getJumpMagnitude();
+						inputAcceleration.isInstant = true;
+					}
+				}
+				else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
+				{
+					inputAcceleration.direction = accelDirection;
+					inputAcceleration.magnitude = accelMagnitude;
+					inputAcceleration.isInstant = false;
 				}
 			}
-			// Change the player's velocity if valid.
-			else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
+			else
 			{
-				player.accelerate(accelDirection, accelMagnitude, dt);
+				inputAcceleration.shouldResetVelocity = true;
 			}
 		}
 		else if (anyKeyboardMovementInput)
@@ -167,25 +172,31 @@ namespace PlayerLogicController
 			{
 				if (canJump)
 				{
-					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+					inputAcceleration.direction = Double3::UnitY;
+					inputAcceleration.magnitude = player.getJumpMagnitude();
+					inputAcceleration.isInstant = true;
 				}
 			}
-			// Change the player's velocity if valid.
 			else if (std::isfinite(accelDirection.length()))
 			{
-				player.accelerate(accelDirection, accelMagnitude, dt);
+				inputAcceleration.direction = accelDirection;
+				inputAcceleration.magnitude = accelMagnitude;
+				inputAcceleration.isInstant = false;
 			}
 		}
 		else
 		{
-			player.setPhysicsVelocity(Double3::Zero);
+			inputAcceleration.shouldResetVelocity = true;
 		}
+
+		return inputAcceleration;
 	}
 
-	void handlePlayerMovementModern(Player &player, double dt, double moveSpeed, bool isOnGround, bool canJump, double ceilingScale,
-		bool isGhostModeEnabled, const InputManager &inputManager)
+	PlayerInputAcceleration getPlayerInputAccelerationModern(Player &player, double moveSpeed, bool isOnGround, bool canJump,
+		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
 	{
-		// Modern interface. Listen for WASD.
+		PlayerInputAcceleration inputAcceleration;
+
 		const bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
 		const bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
@@ -211,7 +222,9 @@ namespace PlayerLogicController
 					{
 						if (canJump)
 						{
-							player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+							inputAcceleration.direction = Double3::UnitY;
+							inputAcceleration.magnitude = player.getJumpMagnitude();
+							inputAcceleration.isInstant = true;
 						}
 					}
 					else
@@ -240,13 +253,14 @@ namespace PlayerLogicController
 						if (accelDirection.lengthSquared() > 0.0)
 						{
 							accelDirection = accelDirection.normalized();
-							player.accelerate(accelDirection, moveSpeed, dt);
+							inputAcceleration.direction = accelDirection;
+							inputAcceleration.magnitude = moveSpeed;
 						}
 					}
 				}
 				else
 				{
-					player.setPhysicsVelocity(Double3::Zero);
+					inputAcceleration.shouldResetVelocity = true;
 				}
 			}
 		}
@@ -287,13 +301,14 @@ namespace PlayerLogicController
 			if (accelDirection.lengthSquared() > 0.0)
 			{
 				accelDirection = accelDirection.normalized();
-
-				const WorldDouble3 playerFeetPosition = player.getFeetPosition();
-				const WorldDouble3 deltaPosition = accelDirection * (PlayerConstants::GHOST_MODE_SPEED * dt);
-				const WorldDouble3 newPlayerFeetPosition = playerFeetPosition + deltaPosition;
-				player.setPhysicsPositionRelativeToFeet(newPlayerFeetPosition);
+				inputAcceleration.direction = accelDirection;
+				inputAcceleration.magnitude = PlayerConstants::GHOST_MODE_SPEED;
+				inputAcceleration.isGhostMode = true;
+				inputAcceleration.shouldResetVelocity = true;
 			}
 		}
+
+		return inputAcceleration;
 	}
 
 	void handleRayCastHitVoxel(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, bool debugDestroyVoxel, double ceilingScale, VoxelChunk &voxelChunk, TextBox &actionTextBox)
@@ -573,6 +588,14 @@ namespace PlayerLogicController
 	}
 }
 
+PlayerInputAcceleration::PlayerInputAcceleration()
+{
+	this->magnitude = 0.0;
+	this->isInstant = false;
+	this->isGhostMode = false;
+	this->shouldResetVelocity = false;
+}
+
 Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, BufferView<const Rect> nativeCursorRegions)
 {
 	const auto &inputManager = game.inputManager;
@@ -683,7 +706,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, c
 	return Double2::Zero;
 }
 
-void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferView<const Rect> nativeCursorRegions)
+PlayerInputAcceleration PlayerLogicController::getPlayerInputAcceleration(Game &game, BufferView<const Rect> nativeCursorRegions)
 {
 	const InputManager &inputManager = game.inputManager;
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
@@ -698,14 +721,18 @@ void PlayerLogicController::handlePlayerMovement(Game &game, double dt, BufferVi
 	const Options &options = game.options;
 	const bool isGhostModeEnabled = options.getMisc_GhostMode();
 	const bool modernInterface = options.getGraphics_ModernInterface();
+
+	PlayerInputAcceleration inputAcceleration;
 	if (!modernInterface)
 	{
-		PlayerLogicController::handlePlayerMovementClassic(player, dt, maxMoveSpeed, isOnGround, canJump, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
+		inputAcceleration = PlayerLogicController::getPlayerInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		PlayerLogicController::handlePlayerMovementModern(player, dt, maxMoveSpeed, isOnGround, canJump, ceilingScale, isGhostModeEnabled, inputManager);
+		inputAcceleration = PlayerLogicController::getPlayerInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, ceilingScale, isGhostModeEnabled, inputManager);
 	}
+
+	return inputAcceleration;
 }
 
 void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelta)
