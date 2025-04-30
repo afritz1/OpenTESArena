@@ -833,6 +833,12 @@ void Game::loop()
 				this->player.rotateX(deltaDegreesX);
 				this->player.rotateY(deltaDegreesY, pitchLimit);
 				
+				if (this->player.movementType == PlayerMovementType::Climbing)
+				{
+					// Have to keep pushing every frame to keep from falling.
+					this->player.climbingState.isAccelerationValidForClimbing = false;
+				}
+				
 				const PlayerInputAcceleration inputAcceleration = PlayerLogicController::getPlayerInputAcceleration(*this, this->nativeCursorRegions);
 				if (inputAcceleration.shouldResetVelocity)
 				{

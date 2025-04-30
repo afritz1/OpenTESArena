@@ -23,12 +23,11 @@
 
 namespace PlayerLogicController
 {
-	PlayerInputAcceleration getPlayerInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, double ceilingScale,
-		bool isGhostModeEnabled, const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
+	PlayerInputAcceleration getPlayerInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
+		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
 	{
 		PlayerInputAcceleration inputAcceleration;
-
-		if (!isOnGround)
+		if (!isOnGround && !isClimbing)
 		{
 			return inputAcceleration;
 		}
@@ -130,7 +129,7 @@ namespace PlayerLogicController
 					inputAcceleration.isInstant = false;
 				}
 			}
-			else
+			else if (!isClimbing)
 			{
 				inputAcceleration.shouldResetVelocity = true;
 			}
@@ -184,7 +183,7 @@ namespace PlayerLogicController
 				inputAcceleration.isInstant = false;
 			}
 		}
-		else
+		else if (!isClimbing)
 		{
 			inputAcceleration.shouldResetVelocity = true;
 		}
@@ -193,7 +192,7 @@ namespace PlayerLogicController
 	}
 
 	PlayerInputAcceleration getPlayerInputAccelerationModern(Player &player, double moveSpeed, bool isOnGround, bool canJump,
-		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
+		bool isClimbing, double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
 	{
 		PlayerInputAcceleration inputAcceleration;
 
@@ -213,7 +212,7 @@ namespace PlayerLogicController
 
 		if (!isGhostModeEnabled)
 		{
-			if (isOnGround)
+			if (isOnGround || isClimbing)
 			{
 				if (forward || backward || left || right || jump)
 				{
@@ -258,7 +257,7 @@ namespace PlayerLogicController
 						}
 					}
 				}
-				else
+				else if (!isClimbing)
 				{
 					inputAcceleration.shouldResetVelocity = true;
 				}
@@ -716,6 +715,7 @@ PlayerInputAcceleration PlayerLogicController::getPlayerInputAcceleration(Game &
 	const PlayerGroundState &groundState = player.groundState;
 	const bool isOnGround = groundState.onGround;
 	const bool canJump = groundState.canJump;
+	const bool isClimbing = player.movementType == PlayerMovementType::Climbing;
 	const double maxMoveSpeed = player.getMaxMoveSpeed();
 
 	const Options &options = game.options;
@@ -725,11 +725,11 @@ PlayerInputAcceleration PlayerLogicController::getPlayerInputAcceleration(Game &
 	PlayerInputAcceleration inputAcceleration;
 	if (!modernInterface)
 	{
-		inputAcceleration = PlayerLogicController::getPlayerInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
+		inputAcceleration = PlayerLogicController::getPlayerInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, isClimbing, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		inputAcceleration = PlayerLogicController::getPlayerInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, ceilingScale, isGhostModeEnabled, inputManager);
+		inputAcceleration = PlayerLogicController::getPlayerInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, isClimbing, ceilingScale, isGhostModeEnabled, inputManager);
 	}
 
 	return inputAcceleration;

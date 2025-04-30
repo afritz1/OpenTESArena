@@ -461,8 +461,8 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 
 	const Double2 directionXZ = Double2(direction.x, direction.z).normalized();
 	const Double2 forwardXZ = this->getGroundDirectionXZ();
-	const bool isFacingWall = directionXZ.dot(forwardXZ) >= 0.90;
-	const bool isPushingEnoughToClimb = magnitude >= 0.2;
+	const bool isAccelerationForward = directionXZ.dot(forwardXZ) >= 0.90;
+	const bool isPushingEnoughToClimb = magnitude >= 1.0;
 
 	if (this->movementType == PlayerMovementType::Default)
 	{
@@ -488,13 +488,13 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 			newVelocity = Double3::Zero;
 		}
 
-		this->climbingState.isAccelerationValidForClimbing = this->groundState.onGround && isFacingWall && isPushingEnoughToClimb;
+		this->climbingState.isAccelerationValidForClimbing = this->groundState.onGround && isAccelerationForward && isPushingEnoughToClimb;
 
 		this->setPhysicsVelocity(newVelocity);
 	}
 	else if (this->movementType == PlayerMovementType::Climbing)
 	{
-		this->climbingState.isAccelerationValidForClimbing = isFacingWall && isPushingEnoughToClimb;		
+		this->climbingState.isAccelerationValidForClimbing = isAccelerationForward && isPushingEnoughToClimb;
 	}
 	else
 	{
