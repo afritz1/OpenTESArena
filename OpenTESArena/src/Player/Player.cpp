@@ -397,7 +397,7 @@ Double2 Player::getGroundDirectionXZ() const
 
 double Player::getJumpMagnitude() const
 {
-	return PlayerConstants::JUMP_VELOCITY;
+	return PlayerConstants::JUMP_SPEED;
 }
 
 double Player::getMaxMoveSpeed() const
@@ -763,7 +763,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 			double climbingFeetTargetY = ceilingScale;
 
 			// If there's a raised platform close by, set its top as the target.
-			constexpr double raisedPlatformGatherDistance = PlayerConstants::COLLIDER_RADIUS * 1.15;
+			constexpr double raisedPlatformGatherDistance = PlayerConstants::CLIMBING_RAISED_PLATFORM_GATHER_DISTANCE;
 			constexpr Double3 raisedPlatformGatherDistanceVector(raisedPlatformGatherDistance, 0.0, raisedPlatformGatherDistance);
 			const WorldDouble3 raisedPlatformGatherMin = VoxelUtils::coordToWorldPoint(feetCoord) - raisedPlatformGatherDistanceVector;
 			const WorldDouble3 raisedPlatformGatherMax = raisedPlatformGatherMin + (raisedPlatformGatherDistanceVector * 2.0);

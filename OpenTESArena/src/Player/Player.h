@@ -28,17 +28,20 @@ namespace PlayerConstants
 	constexpr double EYE_HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
 	constexpr double TOP_OF_HEAD_HEIGHT = EYE_HEIGHT + (3.0 / MIFUtils::ARENA_UNITS);
 	constexpr double EYE_TO_TOP_OF_HEAD_DISTANCE = TOP_OF_HEAD_HEIGHT - EYE_HEIGHT;
+	constexpr double STEPPING_HEIGHT = 0.25; // Stairsteps delta (used by Jolt CharacterVirtual::ExtendedUpdate()).
+	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
+	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (TOP_OF_HEAD_HEIGHT / 2.0) - COLLIDER_RADIUS;
+
 	constexpr double MOVE_SPEED = 15.0;
 	constexpr double SWIMMING_MOVE_SPEED = MOVE_SPEED * 0.5;
 	constexpr double CLAMPED_MOVE_SPEED_PERCENT = 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
 	constexpr double CLIMBING_SPEED = 100.0 / MIFUtils::ARENA_UNITS;
 	constexpr double CLIMBING_FINAL_PUSH_SPEED = 2.0;
+	constexpr double CLIMBING_RAISED_PLATFORM_GATHER_DISTANCE = COLLIDER_RADIUS * 1.15; // Raised platforms affect final climbing height.
 	constexpr double GHOST_MODE_SPEED = 15.0; // When ghost mode option is enabled.
+	constexpr double JUMP_SPEED = 3.0; // Instantaneous change in Y velocity when jumping.
+
 	constexpr double FRICTION = 0.30; // Slows down when on ground.
-	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
-	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (TOP_OF_HEAD_HEIGHT / 2.0) - COLLIDER_RADIUS;
-	constexpr double STEPPING_HEIGHT = 0.25; // Stairsteps delta (used by Jolt CharacterVirtual::ExtendedUpdate()).
-	constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
 }
 
 enum class PlayerMovementType
