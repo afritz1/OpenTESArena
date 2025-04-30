@@ -141,7 +141,7 @@ struct Player
 
 	// Recalculates the player's view so they look at a point. The global up vector is used when generating the new 3D frame,
 	// so don't give a point directly above or below the camera.
-	void lookAt(const CoordDouble3 &targetCoord);
+	void lookAt(const WorldDouble3 &targetPosition);
 
 	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
 	void setDirectionToHorizon();

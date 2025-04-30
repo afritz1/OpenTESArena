@@ -440,9 +440,9 @@ void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
 	this->setCameraFrame(newForward);
 }
 
-void Player::lookAt(const CoordDouble3 &targetCoord)
+void Player::lookAt(const WorldDouble3 &targetPosition)
 {
-	const Double3 newForward = (targetCoord - this->getEyeCoord()).normalized();
+	const Double3 newForward = (targetPosition - this->getEyePosition()).normalized();
 	this->setCameraFrame(newForward);
 }
 

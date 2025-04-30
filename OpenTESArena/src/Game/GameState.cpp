@@ -661,8 +661,8 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 		player.setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(newPlayerFeetCoord));
 
-		const CoordDouble3 newPlayerEyeCoord = player.getEyeCoord();
-		player.lookAt(newPlayerEyeCoord + VoxelDouble3(startOffsetReal.x, 0.0, startOffsetReal.y));
+		const WorldDouble3 newPlayerEyePosition = player.getEyePosition();
+		player.lookAt(newPlayerEyePosition + Double3(startOffsetReal.x, 0.0, startOffsetReal.y));
 
 		this->nextMapLevelTransitionVoxel = VoxelInt2::Zero;
 		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
