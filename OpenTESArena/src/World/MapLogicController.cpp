@@ -521,13 +521,8 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 	}();
 
 	Player &player = game.player;
-	const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
+	const VoxelInt2 transitionVoxelXZ(transitionCoord.voxel.x, transitionCoord.voxel.z);
 	const VoxelInt2 dirToWorldVoxelXZ(dirToWorldVoxel.x, dirToWorldVoxel.z);
-	const VoxelDouble3 dirToWorldPoint(
-		static_cast<SNDouble>(dirToWorldVoxel.x),
-		static_cast<double>(dirToWorldVoxel.y),
-		static_cast<WEDouble>(dirToWorldVoxel.z));
-	const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(transitionCoord.chunk, transitionVoxelCenter + dirToWorldPoint);
 
 	// Lambda for opening the world map when the player enters a transition voxel
 	// that will "lead to the surface of the dungeon".
@@ -565,7 +560,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		else if (activeLevelIndex > 0)
 		{
 			// Decrement the world's level index and activate the new level.
-			gameState.queueLevelIndexChange(activeLevelIndex - 1, dirToWorldVoxelXZ);
+			gameState.queueLevelIndexChange(activeLevelIndex - 1, transitionVoxelXZ, dirToWorldVoxelXZ);
 		}
 		else
 		{
@@ -578,7 +573,7 @@ void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &play
 		if (activeLevelIndex < (levelCount - 1))
 		{
 			// Increment the world's level index and activate the new level.
-			gameState.queueLevelIndexChange(activeLevelIndex + 1, dirToWorldVoxelXZ);
+			gameState.queueLevelIndexChange(activeLevelIndex + 1, transitionVoxelXZ, dirToWorldVoxelXZ);
 		}
 		else
 		{

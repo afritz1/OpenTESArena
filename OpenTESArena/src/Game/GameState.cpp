@@ -144,21 +144,22 @@ bool GameState::hasPendingSceneChange() const
 	return this->hasPendingLevelIndexChange() || this->hasPendingMapDefChange();
 }
 
-void GameState::queueLevelIndexChange(int newLevelIndex, const VoxelInt2 &playerStartOffset)
+void GameState::queueLevelIndexChange(int newLevelIndex, const VoxelInt2 &transitionVoxel, const VoxelInt2 &playerStartOffset)
 {
 	if (this->hasPendingLevelIndexChange())
 	{
-		DebugLogError("Already queued level index change to level " + std::to_string(this->nextLevelIndex) + ".");
+		DebugLogErrorFormat("Already queued level index change to level %d.", this->nextLevelIndex);
 		return;
 	}
 
 	if (this->hasPendingMapDefChange())
 	{
-		DebugLogError("Already changing map definition change to " + std::to_string(static_cast<int>(this->nextMapDef.getMapType())) + " this frame.");
+		DebugLogErrorFormat("Already changing map definition change to %d this frame.", this->nextMapDef.getMapType());
 		return;
 	}
 
 	this->nextLevelIndex = newLevelIndex;
+	this->nextMapLevelTransitionVoxel = transitionVoxel;
 	this->nextMapPlayerStartOffset = playerStartOffset;
 }
 
@@ -570,7 +571,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 {
 	Player &player = game.player;
 
-	const VoxelDouble2 startOffset(
+	const VoxelDouble2 startOffsetReal(
 		static_cast<SNDouble>(this->nextMapPlayerStartOffset.x),
 		static_cast<WEDouble>(this->nextMapPlayerStartOffset.y));
 
@@ -633,9 +634,10 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 		}
 
 		const double ceilingScale = this->getActiveCeilingScale();
+
 		const CoordDouble3 newPlayerFeetCoord(
 			startCoord.chunk,
-			VoxelDouble3(startCoord.point.x + startOffset.x, ceilingScale, startCoord.point.y + startOffset.y));
+			VoxelDouble3(startCoord.point.x + startOffsetReal.x, ceilingScale, startCoord.point.y + startOffsetReal.y));
 		player.setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(newPlayerFeetCoord));
 
 		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
@@ -647,18 +649,22 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 		const double ceilingScale = this->getActiveCeilingScale();
 
-		const CoordDouble3 oldPlayerEyeCoord = player.getEyeCoord(); // The player should be inside the transition voxel.
-		const VoxelInt3 oldPlayerVoxel = VoxelUtils::pointToVoxel(oldPlayerEyeCoord.point);
-		const VoxelDouble3 oldPlayerCenteredPoint = VoxelUtils::getVoxelCenter(oldPlayerVoxel);
+		// Can't rely on player being inside transition voxel now due to physics simulation/colliders.
+		// Manually set position based on transition voxel + start offset.
+		const CoordDouble3 oldPlayerEyeCoord = player.getEyeCoord();
+		const ChunkInt2 oldPlayerChunk = player.getEyeCoord().chunk;
+		const CoordInt2 newPlayerVoxelCoord = ChunkUtils::recalculateCoord(oldPlayerChunk, this->nextMapLevelTransitionVoxel + this->nextMapPlayerStartOffset);
+		const VoxelDouble2 newPlayerPositionXZ = VoxelUtils::getVoxelCenter(newPlayerVoxelCoord.voxel);
 		const CoordDouble3 newPlayerFeetCoord(
-			oldPlayerEyeCoord.chunk,
-			VoxelDouble3(oldPlayerCenteredPoint.x + startOffset.x, ceilingScale, oldPlayerCenteredPoint.z + startOffset.y));
+			newPlayerVoxelCoord.chunk,
+			VoxelDouble3(newPlayerPositionXZ.x, ceilingScale, newPlayerPositionXZ.y));
 
 		player.setPhysicsPositionRelativeToFeet(VoxelUtils::coordToWorldPoint(newPlayerFeetCoord));
 
 		const CoordDouble3 newPlayerEyeCoord = player.getEyeCoord();
-		player.lookAt(newPlayerEyeCoord + VoxelDouble3(startOffset.x, 0.0, startOffset.y));
+		player.lookAt(newPlayerEyeCoord + VoxelDouble3(startOffsetReal.x, 0.0, startOffsetReal.y));
 
+		this->nextMapLevelTransitionVoxel = VoxelInt2::Zero;
 		this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	}
 	else
