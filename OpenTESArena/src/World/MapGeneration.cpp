@@ -2567,7 +2567,7 @@ void MapGeneration::generateRmdWilderness(BufferView<const ArenaWildUtils::WildB
 			const int levelDefIndex = levelDefIndices.get(x, z);
 			const LevelDefinition &levelDef = outLevelDefs.get(levelDefIndex);
 			const ChunkInt2 chunk(x, z);
-			const uint32_t chunkSeed = ArenaWildUtils::makeWildChunkSeed(chunk.x, chunk.y);
+			const uint32_t chunkSeed = ArenaWildUtils::makeWildChunkSeed(chunk.y, chunk.x);
 			MapGeneration::WildChunkBuildingNameInfo buildingNameInfo;
 			buildingNameInfo.init(chunk);
 
