@@ -851,9 +851,9 @@ void Game::loop()
 					const WorldDouble3 newPlayerFeetPosition = oldPlayerFeetPosition + (inputAcceleration.direction * (inputAcceleration.magnitude * clampedDeltaTime));
 					this->player.setPhysicsPositionRelativeToFeet(newPlayerFeetPosition);
 				}
-				else if (inputAcceleration.isInstant)
+				else if (inputAcceleration.isInstantJump)
 				{
-					this->player.accelerateInstant(inputAcceleration.direction, inputAcceleration.magnitude);
+					this->player.setPhysicsVelocityY(inputAcceleration.magnitude);
 				}
 				else if (inputAcceleration.direction.isNormalized())
 				{

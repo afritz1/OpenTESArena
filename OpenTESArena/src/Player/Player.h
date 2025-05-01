@@ -121,6 +121,7 @@ struct Player
 	void setPhysicsPosition(const WorldDouble3 &position); // Instantly sets collider position. Drives where camera eye is next.
 	void setPhysicsPositionRelativeToFeet(const WorldDouble3 &feetPosition); // Instantly sets collider position using new feet as reference.
 	void setPhysicsVelocity(const Double3 &velocity);
+	void setPhysicsVelocityY(double velocityY); // For jumping
 	WorldDouble3 getEyePosition() const;
 	CoordDouble3 getEyeCoord() const;
 	WorldDouble3 getFeetPosition() const;

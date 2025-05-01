@@ -14,7 +14,7 @@ struct PlayerInputAcceleration
 {
 	Double3 direction;
 	double magnitude;
-	bool isInstant;
+	bool isInstantJump;
 	bool isGhostMode;
 	bool shouldResetVelocity;
 

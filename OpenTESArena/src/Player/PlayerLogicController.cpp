@@ -119,14 +119,13 @@ namespace PlayerLogicController
 					{
 						inputAcceleration.direction = Double3::UnitY;
 						inputAcceleration.magnitude = player.getJumpMagnitude();
-						inputAcceleration.isInstant = true;
+						inputAcceleration.isInstantJump = true;
 					}
 				}
 				else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
 				{
 					inputAcceleration.direction = accelDirection;
 					inputAcceleration.magnitude = accelMagnitude;
-					inputAcceleration.isInstant = false;
 				}
 			}
 			else if (!isClimbing)
@@ -173,14 +172,13 @@ namespace PlayerLogicController
 				{
 					inputAcceleration.direction = Double3::UnitY;
 					inputAcceleration.magnitude = player.getJumpMagnitude();
-					inputAcceleration.isInstant = true;
+					inputAcceleration.isInstantJump = true;
 				}
 			}
 			else if (std::isfinite(accelDirection.length()))
 			{
 				inputAcceleration.direction = accelDirection;
 				inputAcceleration.magnitude = accelMagnitude;
-				inputAcceleration.isInstant = false;
 			}
 		}
 		else if (!isClimbing)
@@ -223,7 +221,7 @@ namespace PlayerLogicController
 						{
 							inputAcceleration.direction = Double3::UnitY;
 							inputAcceleration.magnitude = player.getJumpMagnitude();
-							inputAcceleration.isInstant = true;
+							inputAcceleration.isInstantJump = true;
 						}
 					}
 					else
@@ -590,7 +588,7 @@ namespace PlayerLogicController
 PlayerInputAcceleration::PlayerInputAcceleration()
 {
 	this->magnitude = 0.0;
-	this->isInstant = false;
+	this->isInstantJump = false;
 	this->isGhostMode = false;
 	this->shouldResetVelocity = false;
 }

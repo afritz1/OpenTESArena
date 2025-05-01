@@ -366,6 +366,12 @@ void Player::setPhysicsVelocity(const Double3 &velocity)
 	this->physicsCharacterVirtual->SetLinearVelocity(physicsVelocity);
 }
 
+void Player::setPhysicsVelocityY(double velocityY)
+{
+	const Double3 currentVelocity = this->getPhysicsVelocity();
+	this->setPhysicsVelocity(Double3(currentVelocity.x, velocityY, currentVelocity.z));
+}
+
 WorldDouble3 Player::getEyePosition() const
 {
 	const WorldDouble3 physicsPosition = this->getPhysicsPosition();
@@ -575,11 +581,7 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 		}
 	}
 
-	if (newGroundState.onGround && !newGroundState.isSwimming)
-	{
-		constexpr float tinyEpsilon = 1e-8f;
-		newGroundState.canJump = std::abs(physicsVelocity.GetY()) <= tinyEpsilon;
-	}
+	newGroundState.canJump = newGroundState.onGround && !newGroundState.isSwimming;
 
 	this->prevGroundState = this->groundState;
 	this->groundState = newGroundState;
