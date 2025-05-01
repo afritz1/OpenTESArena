@@ -53,8 +53,8 @@ enum class PlayerMovementType
 struct PlayerGroundState
 {
 	bool onGround;
-	bool isSwimming; // For swimming SFX
-	bool enteredWater; // For splash SFX
+	bool isSwimming; // For swimming and splash SFXs
+	bool hasSplashedInChasm;
 	bool canJump;
 	bool isFeetInsideChasm; // For restoring music
 

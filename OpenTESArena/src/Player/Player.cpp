@@ -155,7 +155,7 @@ PlayerGroundState::PlayerGroundState()
 {
 	this->onGround = false;
 	this->isSwimming = false;
-	this->enteredWater = false;
+	this->hasSplashedInChasm = false;
 	this->canJump = false;
 	this->isFeetInsideChasm = false;
 }
@@ -573,10 +573,9 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 			const double chasmLowerPortionY = chasmBottomY + ((chasmMiddleY - chasmBottomY) * 0.50);
 			const bool areFeetInChasm = playerFeetPosition.y <= chasmMiddleY; // Arbitrary "deep enough"
 			const bool areFeetInWater = (playerFeetPosition.y <= chasmLowerPortionY) && chasmDef.allowsSwimming;
-			const bool isFastEnoughToSplash = physicsVelocity.GetY() <= -0.6f;
 
 			newGroundState.isSwimming = newGroundState.onGround && chasmDef.allowsSwimming && areFeetInWater;
-			newGroundState.enteredWater = !this->prevGroundState.enteredWater && !this->prevGroundState.isSwimming && newGroundState.isSwimming && areFeetInWater && isFastEnoughToSplash;
+			newGroundState.hasSplashedInChasm = this->groundState.hasSplashedInChasm;
 			newGroundState.isFeetInsideChasm = areFeetInChasm;
 		}
 	}
@@ -643,22 +642,31 @@ void Player::postPhysicsStep(double dt, Game &game)
 	const MapType activeMapType = gameState.getActiveMapType();
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 
-	if (this->groundState.enteredWater && !this->prevGroundState.enteredWater)
+	if (this->groundState.isSwimming)
 	{
-		audioManager.playSound(ArenaSoundName::Splash);
-
-		if (activeMapType != MapType::Interior)
+		if (!this->groundState.hasSplashedInChasm)
 		{
-			const MusicDefinition *swimmingMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::Swimming, game.random);
-			audioManager.setMusic(swimmingMusicDef);
+			this->groundState.hasSplashedInChasm = true;
+			audioManager.playSound(ArenaSoundName::Splash);
+
+			if (activeMapType != MapType::Interior)
+			{
+				const MusicDefinition *swimmingMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::Swimming, game.random);
+				audioManager.setMusic(swimmingMusicDef);
+			}
 		}
 	}
-	else if (!this->groundState.isFeetInsideChasm && this->prevGroundState.isFeetInsideChasm)
+	else if (!this->groundState.isFeetInsideChasm)
 	{
-		if (activeMapType != MapType::Interior)
+		this->groundState.hasSplashedInChasm = false;
+
+		if (this->prevGroundState.isFeetInsideChasm)
 		{
-			const MusicDefinition *exteriorMusicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
-			audioManager.setMusic(exteriorMusicDef);
+			if (activeMapType != MapType::Interior)
+			{
+				const MusicDefinition *exteriorMusicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
+				audioManager.setMusic(exteriorMusicDef);
+			}
 		}
 	}
 
