@@ -58,12 +58,23 @@ namespace MapGeneration
 		}
 	};
 
+	struct TransitionMappingKey
+	{
+		ArenaTypes::VoxelID voxelID;
+		WorldInt2 levelXZ; // .MIF name generation depends on XY coordinate.
+
+		TransitionMappingKey()
+		{
+			this->voxelID = 0;
+		}
+	};
+
 	// Mapping caches of .MIF/.RMD voxels, etc. to modern level info entries.
 	using ArenaVoxelMappingCache = std::unordered_map<ArenaTypes::VoxelID, ArenaVoxelMappingEntry>;
 	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelEntityDefID>;
 	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelVoxelLockDefID>>;
 	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelVoxelTriggerDefID>>;
-	using ArenaTransitionMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelTransitionDefID>;
+	using ArenaTransitionMappingCache = std::vector<std::pair<TransitionMappingKey, LevelVoxelTransitionDefID>>;
 	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelVoxelBuildingNameID>;
 	using ArenaDoorMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelDoorDefID>;
 	using ArenaChasmMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelChasmDefID>;
@@ -1377,6 +1388,7 @@ namespace MapGeneration
 					outLevelDef->setVoxelTraitsID(levelX, levelY, levelZ, voxelTraitsDefID);
 
 					const WorldInt3 levelPosition(levelX, levelY, levelZ);
+					const WorldInt2 levelPositionXZ(levelX, levelZ);
 
 					// Try to make transition info if this MAP1 voxel is a transition.
 					const std::optional<MapGeneration::TransitionDefGenInfo> transitionDefGenInfo =
@@ -1384,9 +1396,16 @@ namespace MapGeneration
 
 					if (transitionDefGenInfo.has_value())
 					{
-						// Get transition def ID from cache or create a new one.
+						// Get transition def ID from cache or create a new one. These rely on XY coordinates
+						// for interior .MIF name generation so can't really reuse them.
 						LevelVoxelTransitionDefID transitionDefID;
-						const auto iter = transitionCache->find(map1Voxel);
+						const auto iter = std::find_if(transitionCache->begin(), transitionCache->end(),
+							[map1Voxel, levelPositionXZ](const std::pair<TransitionMappingKey, LevelVoxelTransitionDefID> &pair)
+						{
+							const TransitionMappingKey &key = pair.first;
+							return (key.voxelID == map1Voxel) && (key.levelXZ == levelPositionXZ);
+						});
+
 						if (iter != transitionCache->end())
 						{
 							transitionDefID = iter->second;
@@ -1398,7 +1417,11 @@ namespace MapGeneration
 								rulerIsMale, palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon,
 								mapType, binaryAssetLibrary.getExeData());
 							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
-							transitionCache->emplace(map1Voxel, transitionDefID);
+
+							TransitionMappingKey transitionMappingKey;
+							transitionMappingKey.voxelID = map1Voxel;
+							transitionMappingKey.levelXZ = levelPositionXZ;
+							transitionCache->emplace_back(transitionMappingKey, transitionDefID);
 						}
 
 						outLevelDef->addTransition(transitionDefID, levelPosition);
