@@ -253,7 +253,7 @@ void Player::addToKeyInventory(int keyID)
 		const int currentKeyID = this->keyInventory[i];
 		if (currentKeyID == keyID)
 		{
-			DebugLogWarningFormat("Already have key %d in key inventory.", keyID);
+			DebugLogFormat("Already have key %d in key inventory.", keyID);
 			return;
 		}
 		else if (currentKeyID == ArenaItemUtils::InvalidDoorKeyID)

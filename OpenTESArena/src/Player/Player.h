@@ -26,7 +26,7 @@ class VoxelChunkManager;
 namespace PlayerConstants
 {
 	constexpr double EYE_HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
-	constexpr double TOP_OF_HEAD_HEIGHT = EYE_HEIGHT + (3.0 / MIFUtils::ARENA_UNITS);
+	constexpr double TOP_OF_HEAD_HEIGHT = EYE_HEIGHT + (1.0 / MIFUtils::ARENA_UNITS);
 	constexpr double EYE_TO_TOP_OF_HEAD_DISTANCE = TOP_OF_HEAD_HEIGHT - EYE_HEIGHT;
 	constexpr double STEPPING_HEIGHT = 0.25; // Stairsteps delta (used by Jolt CharacterVirtual::ExtendedUpdate()).
 	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
