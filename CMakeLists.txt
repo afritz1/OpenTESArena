@@ -81,7 +81,7 @@ ADD_COMPILE_DEFINITIONS(JPH_DEBUG_RENDERER) # Enable Jolt Physics debug renderin
 FetchContent_Declare(
     JoltPhysics
     GIT_REPOSITORY "https://github.com/jrouwe/JoltPhysics"
-    GIT_TAG cede24d2733a4a473c6d486650ca9b6d0481681a # 5.1.0
+    GIT_TAG 0373ec0dd762e4bc2f6acdb08371ee84fa23c6db # 5.3.0
     SOURCE_SUBDIR "Build")
 FetchContent_MakeAvailable(JoltPhysics)
 
