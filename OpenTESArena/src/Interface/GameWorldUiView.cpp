@@ -173,9 +173,9 @@ Int2 GameWorldUiView::getGameWorldInterfacePosition()
 	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
 }
 
-int GameWorldUiView::getStatusBarCurrentHeight(int maxHeight, int currentValue, int maxValue)
+int GameWorldUiView::getStatusBarCurrentHeight(int maxHeight, double currentValue, double maxValue)
 {
-	const double percent = static_cast<double>(currentValue) / static_cast<double>(maxValue);
+	const double percent = currentValue / maxValue;
 	return static_cast<int>(static_cast<double>(maxHeight) * percent);
 }
 

@@ -91,12 +91,12 @@ struct Player
 	int charClassDefID;
 	int portraitID;
 
-	int maxHealth; // @todo calculate from primary attributes
-	int currentHealth;
-	int maxStamina; // @todo calculate from primary attributes
-	int currentStamina;
-	int maxSpellPoints; // @todo calculate from primary attributes
-	int currentSpellPoints;
+	double maxHealth; // @todo calculate from primary attributes
+	double currentHealth;
+	double maxStamina; // @todo calculate from primary attributes
+	double currentStamina;
+	double maxSpellPoints; // @todo calculate from primary attributes
+	double currentSpellPoints;
 
 	// Player always has a weapon animation even if it's just fists
 	int weaponAnimDefID;

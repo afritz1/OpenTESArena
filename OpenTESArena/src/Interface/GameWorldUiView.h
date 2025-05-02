@@ -117,7 +117,7 @@ namespace GameWorldUiView
 	constexpr Color SpellPointsBarColor(0, 0, 203);
 	constexpr PivotType StatusBarPivotType = PivotType::BottomLeft;
 
-	int getStatusBarCurrentHeight(int maxHeight, int currentValue, int maxValue);
+	int getStatusBarCurrentHeight(int maxHeight, double currentValue, double maxValue);
 
 	Int2 getNoMagicTexturePosition();
 
