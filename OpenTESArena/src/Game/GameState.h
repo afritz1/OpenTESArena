@@ -209,6 +209,7 @@ public:
 	void tickSky(double dt, Game &game);
 	void tickWeather(double dt, Game &game);
 	void tickUiMessages(double dt);
+	void tickPlayerStamina(double dt, Game &game);
 	void tickPlayerAttack(double dt, Game &game);
 	void tickVoxels(double dt, Game &game);
 	void tickEntities(double dt, Game &game);

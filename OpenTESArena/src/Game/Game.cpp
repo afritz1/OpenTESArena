@@ -884,7 +884,8 @@ void Game::loop()
 				this->gameState.tickSky(clampedDeltaTime, *this);
 				this->gameState.tickWeather(clampedDeltaTime, *this);
 				this->gameState.tickUiMessages(clampedDeltaTime);
-				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
+				this->gameState.tickPlayerStamina(clampedDeltaTime, *this);
+				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);				
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickEntities(clampedDeltaTime, *this);
 				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);

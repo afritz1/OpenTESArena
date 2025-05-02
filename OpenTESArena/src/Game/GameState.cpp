@@ -875,6 +875,21 @@ void GameState::tickUiMessages(double dt)
 	}
 }
 
+void GameState::tickPlayerStamina(double dt, Game &game)
+{
+	constexpr double AWAKE_STAMINA_LOSS_PER_SECOND = 0.10;
+	constexpr double SWIMMING_STAMINA_LOSS_PER_SECOND = 0.30;
+
+	Player &player = game.player;
+	double staminaChange = AWAKE_STAMINA_LOSS_PER_SECOND * dt;
+	if (player.groundState.isSwimming)
+	{
+		staminaChange += SWIMMING_STAMINA_LOSS_PER_SECOND * dt;
+	}
+
+	player.currentStamina = std::max(player.currentStamina - staminaChange, 0.0);
+}
+
 void GameState::tickPlayerAttack(double dt, Game &game)
 {
 	Player &player = game.player;
