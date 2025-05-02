@@ -211,6 +211,9 @@ KeyNames=0x3EE2B
 KeyPickedUp=0x406A5
 DoorUnlockedWithKey=0x406BC
 LockDifficultyMessages=0x377D4
+StaminaExhaustedRecover=0x434E0
+StaminaExhaustedDeath=0x4356A
+StaminaDrowning=0x4352F
 
 [Travel]
 LocationFormatTexts=0x376AD

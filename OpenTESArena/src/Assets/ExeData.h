@@ -459,6 +459,10 @@ public:
 		std::string doorUnlockedWithKey;
 		std::array<std::string, 14> lockDifficultyMessages;
 
+		std::string staminaExhaustedRecover;
+		std::string staminaExhaustedDeath;
+		std::string staminaDrowning;
+
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 

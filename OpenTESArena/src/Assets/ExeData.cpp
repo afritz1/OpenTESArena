@@ -782,6 +782,9 @@ bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 	const int keyPickedUpOffset = ExeData::get(*section, "KeyPickedUp");
 	const int doorUnlockedWithKeyOffset = ExeData::get(*section, "DoorUnlockedWithKey");
 	const int lockDifficultyMessagesOffset = ExeData::get(*section, "LockDifficultyMessages");
+	const int staminaExhaustedRecoverOffset = ExeData::get(*section, "StaminaExhaustedRecover");
+	const int staminaExhaustedDeathOffset = ExeData::get(*section, "StaminaExhaustedDeath");
+	const int staminaDrowningOffset = ExeData::get(*section, "StaminaDrowning");
 
 	this->popUp = ExeData::readString(data + popUpOffset);
 	this->date = ExeData::readString(data + dateOffset);
@@ -793,6 +796,9 @@ bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 	this->keyPickedUp = ExeData::readString(data + keyPickedUpOffset);
 	this->doorUnlockedWithKey = ExeData::readString(data + doorUnlockedWithKeyOffset);
 	initStringArray(this->lockDifficultyMessages, data + lockDifficultyMessagesOffset);
+	this->staminaExhaustedRecover = ExeData::readString(data + staminaExhaustedRecoverOffset);
+	this->staminaExhaustedDeath = ExeData::readString(data + staminaExhaustedDeathOffset);
+	this->staminaDrowning = ExeData::readString(data + staminaDrowningOffset);
 
 	return true;
 }
