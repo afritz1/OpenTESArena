@@ -148,6 +148,11 @@ namespace
 	}
 }
 
+EntityTransferResult::EntityTransferResult()
+{
+	this->id = -1;
+}
+
 const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID) const
 {
 	const EntityDefinitionLibrary &defLibrary = EntityDefinitionLibrary::getInstance();
@@ -685,9 +690,13 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		{
 			EntityChunk &curEntityChunk = this->getChunkAtPosition(curEntityChunkPos);
 			entityChunk.entityIDs.erase(entityChunk.entityIDs.begin() + i);
-			entityChunk.removedEntityIDs.emplace_back(entityInstID);
 			curEntityChunk.entityIDs.emplace_back(entityInstID);
-			curEntityChunk.addedEntityIDs.emplace_back(entityInstID);
+
+			EntityTransferResult transferResult;
+			transferResult.id = entityInstID;
+			transferResult.oldChunkPos = prevEntityChunkPos;
+			transferResult.newChunkPos = curEntityChunkPos;
+			this->transferResults.emplace_back(std::move(transferResult));
 		}
 	}
 }
@@ -848,6 +857,11 @@ int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chu
 BufferView<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs() const
 {
 	return this->destroyedEntityIDs;
+}
+
+BufferView<const EntityTransferResult> EntityChunkManager::getEntityTransferResults() const
+{
+	return this->transferResults;
 }
 
 void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const CoordDouble2 &eye2D, EntityObservedResult &result) const
@@ -1131,7 +1145,6 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const
 			const auto iter = std::find(entityChunk.entityIDs.begin(), entityChunk.entityIDs.end(), entityInstID);
 			DebugAssert(iter != entityChunk.entityIDs.end());
 			entityChunk.entityIDs.erase(iter);
-			entityChunk.removedEntityIDs.emplace_back(entityInstID);
 		}
 	}
 }
@@ -1208,12 +1221,7 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
 	}
 
 	this->destroyedEntityIDs.clear();
-
-	for (ChunkPtr &chunkPtr : this->activeChunks)
-	{
-		chunkPtr->addedEntityIDs.clear();
-		chunkPtr->removedEntityIDs.clear();
-	}
+	this->transferResults.clear();
 }
 
 void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem)

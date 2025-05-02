@@ -33,6 +33,16 @@ struct EntityObservedResult;
 struct MapSubDefinition;
 struct Player;
 
+// Generated when an entity moves between chunks so systems can update resource ownership.
+struct EntityTransferResult
+{
+	EntityInstanceID id;
+	ChunkInt2 oldChunkPos;
+	ChunkInt2 newChunkPos;
+
+	EntityTransferResult();
+};
+
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 private:
@@ -69,6 +79,9 @@ private:
 	// Entities that should have their instance resources freed, either because the chunk they were in
 	// was unloaded, or they were otherwise despawned. Cleared at end-of-frame.
 	std::vector<EntityInstanceID> destroyedEntityIDs;
+
+	// Entities that have moved from one chunk to another and are still in play.
+	std::vector<EntityTransferResult> transferResults;
 
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
 	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);
@@ -110,6 +123,9 @@ public:
 	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
 	// simulated or rendered.
 	BufferView<const EntityInstanceID> getQueuedDestroyEntityIDs() const;
+
+	// Gets all entities who have moved between chunks this frame. Cleared at end of frame.
+	BufferView<const EntityTransferResult> getEntityTransferResults() const;
 
 	// Count functions for specialized entities.
 	int getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const;
