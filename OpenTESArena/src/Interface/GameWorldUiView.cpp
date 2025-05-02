@@ -605,7 +605,7 @@ UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textu
 	const uint32_t cursorBgARGB = cursorBgColor.toARGB();
 	texelsView.fill(cursorBgARGB);
 	
-	constexpr Color cursorColor(255, 255, 255, 128);
+	constexpr Color cursorColor(255, 255, 255, 160);
 	const uint32_t cursorColorARGB = cursorColor.toARGB();
 
 	constexpr int middleX = width / 2;
