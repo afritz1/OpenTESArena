@@ -16,6 +16,7 @@ namespace MusicUtils
 	InteriorMusicType getInteriorMusicType(ArenaTypes::InteriorType interiorType);
 
 	const MusicDefinition *getExteriorMusicDefinition(const WeatherDefinition &weatherDef, const Clock &clock, Random &random);
+	const MusicDefinition *getRandomDungeonMusicDefinition(Random &random);
 }
 
 #endif

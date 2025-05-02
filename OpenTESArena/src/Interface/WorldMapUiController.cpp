@@ -207,16 +207,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 		{
-			// Choose random dungeon music and enter game world.
-			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicType::Interior, game.random, [](const MusicDefinition &def)
-			{
-				DebugAssert(def.type == MusicType::Interior);
-				const InteriorMusicDefinition &interiorMusicDef = def.interior;
-				return interiorMusicDef.type == InteriorMusicType::Dungeon;
-			});
-
+			const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(game.random);
 			if (musicDef == nullptr)
 			{
 				DebugLogWarning("Missing dungeon music.");
@@ -269,16 +260,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		{
 			GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 			{
-				// Choose random dungeon music and enter game world.
-				const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-					MusicType::Interior, game.random, [](const MusicDefinition &def)
-				{
-					DebugAssert(def.type == MusicType::Interior);
-					const InteriorMusicDefinition &interiorMusicDef = def.interior;
-					return interiorMusicDef.type == InteriorMusicType::Dungeon;
-				});
-
+				const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(game.random);
 				if (musicDef == nullptr)
 				{
 					DebugLogWarning("Missing dungeon music.");

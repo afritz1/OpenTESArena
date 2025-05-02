@@ -803,16 +803,7 @@ void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game
 	// Initialize the game world panel.
 	game.setPanel<GameWorldPanel>();
 
-	// Choose random dungeon music.
-	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicType::Interior, game.random, [](const MusicDefinition &def)
-	{
-		DebugAssert(def.type == MusicType::Interior);
-		const InteriorMusicDefinition &interiorMusicDef = def.interior;
-		return interiorMusicDef.type == InteriorMusicType::Dungeon;
-	});
-
+	const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(game.random);
 	if (musicDef == nullptr)
 	{
 		DebugLogWarning("Missing dungeon music.");

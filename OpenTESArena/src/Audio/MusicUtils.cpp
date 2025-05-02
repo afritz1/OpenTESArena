@@ -66,3 +66,17 @@ const MusicDefinition *MusicUtils::getExteriorMusicDefinition(const WeatherDefin
 
 	return musicDef;
 }
+
+const MusicDefinition *MusicUtils::getRandomDungeonMusicDefinition(Random &random)
+{
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Interior, random,
+		[](const MusicDefinition &def)
+	{
+		DebugAssert(def.type == MusicType::Interior);
+		const InteriorMusicDefinition &interiorMusicDef = def.interior;
+		return interiorMusicDef.type == InteriorMusicType::Dungeon;
+	});
+
+	return musicDef;
+}
