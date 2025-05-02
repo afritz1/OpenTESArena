@@ -177,6 +177,12 @@ Player::Player()
 	this->raceID = -1;
 	this->charClassDefID = -1;
 	this->portraitID = -1;
+	this->maxHealth = 0;
+	this->currentHealth = 0;
+	this->maxStamina = 0;
+	this->currentStamina = 0;
+	this->maxSpellPoints = 0;
+	this->currentSpellPoints = 0;
 	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
 	this->level = 0;
 	this->experience = 0;
@@ -199,6 +205,12 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
+	this->maxHealth = 100; // @todo
+	this->currentHealth = this->maxHealth;
+	this->maxStamina = 100; // @todo
+	this->currentStamina = this->maxStamina;
+	this->maxSpellPoints = 100; // @todo
+	this->currentSpellPoints = this->maxSpellPoints;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
 	this->level = 1;

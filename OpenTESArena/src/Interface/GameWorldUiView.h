@@ -109,6 +109,16 @@ namespace GameWorldUiView
 
 	Int2 getGameWorldInterfacePosition();
 
+	const Rect HealthBarRect(57, 168, 4, 26);
+	constexpr Color HealthBarColor(0, 182, 0);
+	const Rect StaminaBarRect(67, 168, 4, 26);
+	constexpr Color StaminaBarColor(195, 0, 0);
+	const Rect SpellPointsBarRect(77, 168, 4, 26);
+	constexpr Color SpellPointsBarColor(0, 0, 203);
+	constexpr PivotType StatusBarPivotType = PivotType::BottomLeft;
+
+	int getStatusBarCurrentHeight(int maxHeight, int currentValue, int maxValue);
+
 	Int2 getNoMagicTexturePosition();
 
 	int getKeyTextureCount(TextureManager &textureManager);
@@ -172,6 +182,9 @@ namespace GameWorldUiView
 	TextureAsset getKeyTextureAsset(int keyIndex);
 
 	UiTextureID allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocHealthBarTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocStaminaBarTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocSpellPointsBarTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocStatusGradientTexture(StatusGradientType gradientType, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocNoMagicTexture(TextureManager &textureManager, Renderer &renderer);

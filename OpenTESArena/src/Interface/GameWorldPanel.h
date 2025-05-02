@@ -24,8 +24,9 @@ private:
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
 	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, keyTextureRefs, tooltipTextureRefs;
-	ScopedUiTextureRef gameWorldInterfaceTextureRef, statusGradientTextureRef, playerPortraitTextureRef,
-		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef, modernModeReticleTextureRef;
+	ScopedUiTextureRef gameWorldInterfaceTextureRef, healthBarTextureRef, staminaBarTextureRef, spellPointsBarTextureRef,
+		statusGradientTextureRef, playerPortraitTextureRef, noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef,
+		defaultCursorTextureRef, modernModeReticleTextureRef;
 
 	void initUiDrawCalls();
 public:

@@ -13,8 +13,8 @@ private:
 	TextBox playerNameTextBox, musicTextBox, soundTextBox, optionsTextBox;
 	Button<Game&> loadButton, exitButton, newButton, saveButton, resumeButton, optionsButton;
 	Button<Game&, PauseMenuPanel&> soundUpButton, soundDownButton, musicUpButton, musicDownButton;
-	ScopedUiTextureRef backgroundTextureRef, gameWorldInterfaceTextureRef, statusGradientTextureRef,
-		playerPortraitTextureRef, noMagicTextureRef, optionsButtonTextureRef, cursorTextureRef;
+	ScopedUiTextureRef backgroundTextureRef, gameWorldInterfaceTextureRef, healthBarTextureRef, staminaBarTextureRef, spellPointsBarTextureRef,
+		statusGradientTextureRef, playerPortraitTextureRef, noMagicTextureRef, optionsButtonTextureRef, cursorTextureRef;
 public:
 	PauseMenuPanel(Game &game);
 	~PauseMenuPanel() override = default;

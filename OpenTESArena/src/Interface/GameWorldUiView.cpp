@@ -19,6 +19,29 @@
 
 #include "components/utilities/String.h"
 
+namespace
+{
+	UiTextureID AllocStatusBarTexture(const Rect &rect, const Color &color, Renderer &renderer)
+	{
+		const int width = rect.getWidth();
+		const int height = rect.getHeight();
+
+		UiTextureID textureID;
+		if (!renderer.tryCreateUiTexture(width, height, &textureID))
+		{
+			DebugCrash("Couldn't create status bar texture with color " + color.toString() + ".");
+		}
+
+		uint32_t *texels = renderer.lockUiTexture(textureID);
+		BufferView2D<uint32_t> texelsView(texels, width, height);
+		const uint32_t texelARGB = color.toARGB();
+		texelsView.fill(texelARGB);
+		renderer.unlockUiTexture(textureID);
+
+		return textureID;
+	}
+}
+
 Rect GameWorldUiView::scaleClassicCursorRectToNative(int rectIndex, double xScale, double yScale)
 {
 	DebugAssertIndex(GameWorldUiView::CursorRegions, rectIndex);
@@ -148,6 +171,12 @@ int GameWorldUiView::getStatusPopUpTextureHeight(int textHeight)
 Int2 GameWorldUiView::getGameWorldInterfacePosition()
 {
 	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
+}
+
+int GameWorldUiView::getStatusBarCurrentHeight(int maxHeight, int currentValue, int maxValue)
+{
+	const double percent = static_cast<double>(currentValue) / static_cast<double>(maxValue);
+	return static_cast<int>(static_cast<double>(maxHeight) * percent);
 }
 
 Int2 GameWorldUiView::getNoMagicTexturePosition()
@@ -421,6 +450,21 @@ UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &text
 	}
 
 	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocHealthBarTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return AllocStatusBarTexture(GameWorldUiView::HealthBarRect, GameWorldUiView::HealthBarColor, renderer);
+}
+
+UiTextureID GameWorldUiView::allocStaminaBarTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return AllocStatusBarTexture(GameWorldUiView::StaminaBarRect, GameWorldUiView::StaminaBarColor, renderer);
+}
+
+UiTextureID GameWorldUiView::allocSpellPointsBarTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return AllocStatusBarTexture(GameWorldUiView::SpellPointsBarRect, GameWorldUiView::SpellPointsBarColor, renderer);
 }
 
 UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradientType,

@@ -290,6 +290,13 @@ void GameWorldPanel::initUiDrawCalls()
 	const UiTextureID gameWorldInterfaceTextureID = GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
 	this->gameWorldInterfaceTextureRef.init(gameWorldInterfaceTextureID, renderer);
 
+	const UiTextureID healthTextureID = GameWorldUiView::allocHealthBarTexture(textureManager, renderer);
+	this->healthBarTextureRef.init(healthTextureID, renderer);
+	const UiTextureID staminaTextureID = GameWorldUiView::allocStaminaBarTexture(textureManager, renderer);
+	this->staminaBarTextureRef.init(staminaTextureID, renderer);	
+	const UiTextureID spellPointsTextureID = GameWorldUiView::allocSpellPointsBarTexture(textureManager, renderer);
+	this->spellPointsBarTextureRef.init(spellPointsTextureID, renderer);
+
 	constexpr GameWorldUiView::StatusGradientType gradientType = GameWorldUiView::StatusGradientType::Default;
 	const UiTextureID statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
 	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
@@ -623,6 +630,56 @@ void GameWorldPanel::initUiDrawCalls()
 			portraitRect.getTopLeft(),
 			Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight()),
 			PivotType::TopLeft);
+
+		UiDrawCall::TextureFunc healthBarTextureFunc = [this]() { return this->healthBarTextureRef.get(); };
+		UiDrawCall::TextureFunc staminaBarTextureFunc = [this]() { return this->staminaBarTextureRef.get(); };
+		UiDrawCall::TextureFunc spellPointsBarTextureFunc = [this]() { return this->spellPointsBarTextureRef.get(); };
+		UiDrawCall::PositionFunc healthBarPositionFunc = []() { return GameWorldUiView::HealthBarRect.getBottomLeft(); };
+		UiDrawCall::PositionFunc staminaBarPositionFunc = []() { return GameWorldUiView::StaminaBarRect.getBottomLeft(); };
+		UiDrawCall::PositionFunc spellPointsBarPositionFunc = []() { return GameWorldUiView::SpellPointsBarRect.getBottomLeft(); };
+
+		UiDrawCall::SizeFunc healthBarSizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::HealthBarRect;
+			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentHealth, player.maxHealth));
+		};
+
+		UiDrawCall::SizeFunc staminaBarSizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::StaminaBarRect;
+			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentStamina, player.maxStamina));
+		};
+
+		UiDrawCall::SizeFunc spellPointsBarSizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
+			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentSpellPoints, player.maxSpellPoints));
+		};
+
+		UiDrawCall::PivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
+		UiDrawCall::ActiveFunc statusBarActiveFunc = []() { return true; };
+
+		this->addDrawCall(
+			healthBarTextureFunc,
+			healthBarPositionFunc,
+			healthBarSizeFunc,
+			statusBarPivotFunc,
+			statusBarActiveFunc);
+		this->addDrawCall(
+			staminaBarTextureFunc,
+			staminaBarPositionFunc,
+			staminaBarSizeFunc,
+			statusBarPivotFunc,
+			statusBarActiveFunc);
+		this->addDrawCall(
+			spellPointsBarTextureFunc,
+			spellPointsBarPositionFunc,
+			spellPointsBarSizeFunc,
+			statusBarPivotFunc,
+			statusBarActiveFunc);
 
 		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 		const auto &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
