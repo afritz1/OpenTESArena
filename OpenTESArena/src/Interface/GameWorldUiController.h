@@ -42,6 +42,8 @@ namespace GameWorldUiController
 
 	void onKeyPickedUp(Game &game, int keyID, const ExeData &exeData);
 	void onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData);
+
+	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);
 }
 
 #endif

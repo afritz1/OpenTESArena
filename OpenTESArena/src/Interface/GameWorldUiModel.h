@@ -52,6 +52,8 @@ namespace GameWorldUiModel
 	std::string getLockDifficultyMessage(int lockLevel, const ExeData &exeData);
 	std::string getKeyPickUpMessage(int keyID, const ExeData &exeData);
 	std::string getDoorUnlockWithKeyMessage(int keyID, const ExeData &exeData);
+
+	std::string getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData);
 }
 
 #endif

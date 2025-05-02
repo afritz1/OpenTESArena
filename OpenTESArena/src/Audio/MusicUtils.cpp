@@ -80,3 +80,17 @@ const MusicDefinition *MusicUtils::getRandomDungeonMusicDefinition(Random &rando
 
 	return musicDef;
 }
+
+const MusicDefinition *MusicUtils::getMainQuestCinematicGoodMusicDefinition(Random &random)
+{
+	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+		MusicType::Cinematic, random, [](const MusicDefinition &def)
+	{
+		DebugAssert(def.type == MusicType::Cinematic);
+		const CinematicMusicDefinition &cinematicMusicDef = def.cinematic;
+		return cinematicMusicDef.type == CinematicMusicType::DreamGood;
+	});
+
+	return musicDef;
+}

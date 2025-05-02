@@ -299,3 +299,26 @@ std::string GameWorldUiModel::getDoorUnlockWithKeyMessage(int keyID, const ExeDa
 	doorUnlockMessage.replace(replaceIndex, 2, keyName);
 	return doorUnlockMessage;
 }
+
+std::string GameWorldUiModel::getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData)
+{
+	std::string text;
+
+	if (isSwimming)
+	{
+		text = exeData.status.staminaDrowning;
+	}
+	else if (!isInterior && isNight)
+	{
+		text = exeData.status.staminaExhaustedDeath;
+	}
+	else
+	{
+		text = exeData.status.staminaExhaustedRecover;
+	}
+
+	text = String::replace(text, '\r', '\n');
+	text.erase(text.find_last_of('\n'));
+
+	return text;
+}

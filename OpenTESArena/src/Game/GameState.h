@@ -58,11 +58,11 @@ public:
 
 		WorldMapLocationIDs(int provinceID, int locationID);
 	};
-private:
+
 	// Determines length of a real-time second in-game. For the original game, one real second is
 	// twenty in-game seconds.
 	static constexpr double GAME_TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
-
+private:
 	MapDefinition activeMapDef;
 	int activeLevelIndex;
 	MapDefinition prevMapDef; // Stored map definition when in an interior.

@@ -14,6 +14,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Interface/GameWorldUiController.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../Math/Constants.h"
 #include "../Player/Player.h"
@@ -882,12 +883,21 @@ void GameState::tickPlayerStamina(double dt, Game &game)
 
 	Player &player = game.player;
 	double staminaChange = AWAKE_STAMINA_LOSS_PER_SECOND * dt;
-	if (player.groundState.isSwimming)
+
+	const bool isSwimming = player.groundState.isSwimming;
+	if (isSwimming)
 	{
 		staminaChange += SWIMMING_STAMINA_LOSS_PER_SECOND * dt;
 	}
 
 	player.currentStamina = std::max(player.currentStamina - staminaChange, 0.0);
+
+	if (player.currentStamina == 0.0)
+	{
+		const bool isInterior = this->getActiveMapType() == MapType::Interior;
+		const bool isNight = ArenaClockUtils::nightLightsAreActive(this->clock);
+		GameWorldUiController::onStaminaExhausted(game, isSwimming, isInterior, isNight);
+	}
 }
 
 void GameState::tickPlayerAttack(double dt, Game &game)

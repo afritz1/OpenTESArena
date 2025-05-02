@@ -17,6 +17,7 @@ namespace MusicUtils
 
 	const MusicDefinition *getExteriorMusicDefinition(const WeatherDefinition &weatherDef, const Clock &clock, Random &random);
 	const MusicDefinition *getRandomDungeonMusicDefinition(Random &random);
+	const MusicDefinition *getMainQuestCinematicGoodMusicDefinition(Random &random);
 }
 
 #endif

@@ -1,5 +1,6 @@
 #include "AutomapPanel.h"
 #include "CharacterPanel.h"
+#include "CinematicLibrary.h"
 #include "GameWorldPanel.h"
 #include "GameWorldUiController.h"
 #include "GameWorldUiModel.h"
@@ -8,7 +9,10 @@
 #include "PauseMenuPanel.h"
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
+#include "../Audio/MusicUtils.h"
 #include "../Game/Game.h"
+#include "../Interface/PauseMenuUiController.h"
+#include "../Interface/TextCinematicPanel.h"
 #include "../Player/Player.h"
 #include "../Player/PlayerLogicController.h"
 #include "../Player/WeaponAnimationLibrary.h"
@@ -306,6 +310,89 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 
 		AudioManager &audioManager = game.audioManager;
 		audioManager.playSound(soundFilename.c_str(), soundPosition);
+	};
+
+	Renderer &renderer = game.renderer;
+	ScopedUiTextureRef textureRef(textureID, renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, onCloseCallback, std::move(textureRef), center);
+}
+
+void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight)
+{
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const std::string text = GameWorldUiModel::getStaminaExhaustedMessage(isSwimming, isInterior, isNight, exeData);
+
+	Int2 center;
+	TextBox::InitInfo textBoxInitInfo;
+	UiTextureID textureID;
+	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
+
+	auto onCloseCallback = [isSwimming, isInterior, isNight](Game &game)
+	{
+		GameWorldUiController::onStatusPopUpSelected(game);
+
+		const bool isPlayerDying = isSwimming || (!isInterior && isNight);
+		if (isPlayerDying)
+		{
+			// Death cinematic then main menu.
+			const CinematicLibrary &cinematicLibrary = CinematicLibrary::getInstance();
+
+			int textCinematicDefIndex;
+			const TextCinematicDefinition *defPtr = nullptr;
+			const bool success = cinematicLibrary.findTextDefinitionIndexIf(
+				[&defPtr](const TextCinematicDefinition &def)
+			{
+				if (def.type == TextCinematicDefinitionType::Death)
+				{
+					const DeathTextCinematicDefinition &deathTextCinematicDef = def.death;
+					if (deathTextCinematicDef.type == DeathTextCinematicType::Good)
+					{
+						defPtr = &def;
+						return true;
+					}
+				}
+
+				return false;
+			}, &textCinematicDefIndex);
+
+			if (!success)
+			{
+				DebugCrash("Couldn't find death text cinematic definition.");
+			}
+
+			TextureManager &textureManager = game.textureManager;
+			const std::string &cinematicFilename = defPtr->animFilename;
+			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
+			if (!metadataID.has_value())
+			{
+				DebugLogError("Couldn't get texture file metadata for death cinematic \"" + cinematicFilename + "\".");
+				return;
+			}
+
+			const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+			const double secondsPerFrame = metadata.getSecondsPerFrame();
+			game.setPanel<TextCinematicPanel>(textCinematicDefIndex, secondsPerFrame, PauseMenuUiController::onNewGameButtonSelected);
+
+			const MusicDefinition *musicDef = MusicUtils::getMainQuestCinematicGoodMusicDefinition(game.random);
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing death cinematic music.");
+			}
+
+			AudioManager &audioManager = game.audioManager;
+			audioManager.setMusic(musicDef);
+		}
+		else
+		{
+			// Give some emergency stamina and rest for a while.
+			Player &player = game.player;
+			player.currentStamina = std::max(player.maxStamina * 0.080, 15.0);
+
+			constexpr double secondsPerHour = 60.0 * 60.0;
+			constexpr double realSecondsPerInGameHour = secondsPerHour / GameState::GAME_TIME_SCALE;
+			game.gameState.tickGameClock(realSecondsPerInGameHour, game);
+		}
 	};
 
 	Renderer &renderer = game.renderer;
