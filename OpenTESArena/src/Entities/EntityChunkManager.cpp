@@ -884,7 +884,6 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 	const WorldDouble2 eyePositionXZ(eyePosition.x, eyePosition.z);
 	const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 	const WorldDouble2 entityPositionXZ(entityPosition.x, entityPosition.z);
-	const bool isDynamic = entityInst.isDynamic();
 
 	const int stateIndex = animInst.currentStateIndex;
 	DebugAssert(stateIndex >= 0);
@@ -894,7 +893,7 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 
 	// Get animation angle based on relative facing to camera. Static entities always face the camera.
 	Radians animAngle = 0.0;
-	if (isDynamic)
+	if (entityInst.isDynamic())
 	{
 		const VoxelDouble2 &entityDir = this->getEntityDirection(entityInst.directionID);
 		const VoxelDouble2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
@@ -914,18 +913,26 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 	const int unclampedAngleIndex = static_cast<int>(angleCountReal * anglePercent);
 	const int angleIndex = std::clamp(unclampedAngleIndex, 0, angleCount - 1);
 	const int animDefKeyframeListIndex = animDefState.keyframeListsIndex + angleIndex;
-	DebugAssert(animDefKeyframeListIndex >= 0);
+	DebugAssert(angleIndex >= 0);
+	DebugAssert(angleIndex < animDefState.keyframeListCount);
 	DebugAssert(animDefKeyframeListIndex < animDef.keyframeListCount);
 	const EntityAnimationDefinitionKeyframeList &animDefKeyframeList = animDef.keyframeLists[animDefKeyframeListIndex];
 
 	// Get current keyframe.
-	const int keyframeCount = animDefKeyframeList.keyframeCount;
-	const double keyframeCountReal = static_cast<double>(keyframeCount);
-	const int unclampedKeyframeIndex = static_cast<int>(keyframeCountReal * animInst.progressPercent);
-	const int keyframeIndex = std::clamp(unclampedKeyframeIndex, 0, keyframeCount - 1);
+	const int frameCount = animDefKeyframeList.keyframeCount;
+	const double frameCountReal = static_cast<double>(frameCount);
+	const int unclampedFrameIndex = static_cast<int>(frameCountReal * animInst.progressPercent);
+	const int frameIndex = std::clamp(unclampedFrameIndex, 0, frameCount - 1);
+	const int animDefKeyframeIndex = animDefKeyframeList.keyframesIndex + frameIndex;
+	DebugAssert(frameIndex >= 0);
+	DebugAssert(frameIndex < frameCount);
+	DebugAssert(animDefKeyframeIndex < animDef.keyframeCount);
+	const EntityAnimationDefinitionKeyframe &animDefKeyframe = animDef.keyframes[animDefKeyframeIndex];
+	const int linearizedKeyframeIndex = animDefKeyframe.linearizedIndex;
+	DebugAssert(linearizedKeyframeIndex >= 0);
+	DebugAssert(linearizedKeyframeIndex < animDef.keyframeCount);
 
-	const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(stateIndex, angleIndex, keyframeIndex);
-	result.init(id, stateIndex, angleIndex, keyframeIndex, linearizedKeyframeIndex);
+	result.init(id, linearizedKeyframeIndex);
 }
 
 void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChunk, const WorldDouble3 &playerPosition,

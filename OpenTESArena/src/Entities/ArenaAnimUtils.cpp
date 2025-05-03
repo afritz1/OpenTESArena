@@ -956,6 +956,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 		}
 	}
 
+	outAnimDef->populateLinearizedIndices();
 	return true;
 }
 
@@ -1000,6 +1001,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(int creatureID, const Exe
 		return false;
 	}
 
+	outAnimDef->populateLinearizedIndices();
 	return true;
 }
 
@@ -1038,6 +1040,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isM
 		return false;
 	}
 
+	outAnimDef->populateLinearizedIndices();
 	return true;
 }
 
@@ -1062,22 +1065,26 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, 
 	const bool isCreature = ArenaAnimUtils::isCreatureIndex(itemIndex, &isFinalBoss);
 	const bool isHuman = ArenaAnimUtils::isHumanEnemyIndex(itemIndex);
 
+	bool success = false;
 	if (isCreature)
 	{
 		const int creatureID = ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
-		return ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(creatureID, exeData, textureManager, outAnimDef);
+		success = ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(creatureID, exeData, textureManager, outAnimDef);
 	}
 	else if (isHuman)
 	{
 		DebugAssert(isMale.has_value());
 		const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(itemIndex);
-		return ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(charClassIndex, *isMale, charClassLibrary, binaryAssetLibrary, textureManager, outAnimDef);
+		success = ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(charClassIndex, *isMale, charClassLibrary, binaryAssetLibrary, textureManager, outAnimDef);
 	}
 	else
 	{
-		DebugCrash("Unrecognized *ITEM index \"" + std::to_string(itemIndex) + "\".");
-		return false;
+		DebugLogError("Unrecognized *ITEM index \"" + std::to_string(itemIndex) + "\".");
+		success = false;
 	}
+
+	outAnimDef->populateLinearizedIndices();
+	return success;
 }
 
 bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bool isMale, const ExeData &exeData,
@@ -1101,6 +1108,7 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bo
 		DebugLogWarning("Couldn't add walk anim state for citizen ID \"" + std::to_string(animFilenameIndex) + "\".");
 	}
 
+	outAnimDef->populateLinearizedIndices();
 	return true;
 }
 
@@ -1132,6 +1140,7 @@ bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLoop
 		outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 	}
 
+	outAnimDef->populateLinearizedIndices();
 	return true;
 }
 

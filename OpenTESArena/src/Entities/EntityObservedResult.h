@@ -7,14 +7,11 @@
 struct EntityObservedResult
 {
 	EntityInstanceID entityInstID;
-	int stateIndex;
-	int angleIndex;
-	int keyframeIndex;
 	int linearizedKeyframeIndex;
 
 	EntityObservedResult();
 
-	void init(EntityInstanceID entityInstID, int stateIndex, int angleIndex, int keyframeIndex, int linearizedKeyframeIndex);
+	void init(EntityInstanceID entityInstID, int linearizedKeyframeIndex);
 };
 
 #endif
