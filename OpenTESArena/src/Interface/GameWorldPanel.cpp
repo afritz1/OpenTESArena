@@ -382,10 +382,10 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCall::PivotFunc keyPivotFunc = []() { return PivotType::TopLeft; };
 
-		UiDrawCall::ActiveFunc keyActiveFunc = [&game, i, getKeyIdAtIndex]()
+		UiDrawCall::ActiveFunc keyActiveFunc = [this, &game, i, getKeyIdAtIndex]()
 		{
 			const int keyID = getKeyIdAtIndex(i);
-			return keyID != ArenaItemUtils::InvalidDoorKeyID;
+			return !this->isPaused() && (keyID != ArenaItemUtils::InvalidDoorKeyID);
 		};
 
 		this->addDrawCall(
