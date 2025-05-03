@@ -43,10 +43,6 @@ public:
 		void init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs);
 	};
 private:
-	// Transform buffer IDs for each entity.
-	// @optimization: instead of a uniform buffer per entity, all could share one buffer, and a RecyclablePool would store the indices into that uniform buffer.
-	std::unordered_map<EntityInstanceID, UniformBufferID> transformBufferIDs;
-
 	std::vector<LoadedAnimation> anims;
 	RenderEntityMeshInstance meshInst; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> paletteIndicesTextureRefs;
@@ -57,7 +53,6 @@ private:
 	ObjectTextureID getTextureID(EntityInstanceID entityInstID, const WorldDouble3 &cameraPosition, const EntityChunkManager &entityChunkManager) const;
 
 	void loadTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
-	void loadUniformBuffers(const EntityChunk &entityChunk, Renderer &renderer);
 
 	void addDrawCall(UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
 		const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,

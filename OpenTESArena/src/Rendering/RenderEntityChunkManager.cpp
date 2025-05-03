@@ -203,13 +203,6 @@ void RenderEntityChunkManager::shutdown(Renderer &renderer)
 		this->recycleChunk(i);
 	}
 
-	for (const auto &pair : this->transformBufferIDs)
-	{
-		const UniformBufferID entityTransformBufferID = pair.second;
-		renderer.freeUniformBuffer(entityTransformBufferID);
-	}
-
-	this->transformBufferIDs.clear();
 	this->anims.clear();
 	this->meshInst.freeBuffers(renderer);
 	this->paletteIndicesTextureRefs.clear();
@@ -275,31 +268,6 @@ void RenderEntityChunkManager::loadTextures(const EntityChunk &entityChunk, cons
 				this->paletteIndicesTextureRefs.emplace(paletteIndicesInstID, std::move(paletteIndicesTextureRef));
 			}
 		}
-	}
-}
-
-void RenderEntityChunkManager::loadUniformBuffers(const EntityChunk &entityChunk, Renderer &renderer)
-{
-	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
-	{
-		DebugAssert(this->transformBufferIDs.find(entityInstID) == this->transformBufferIDs.end());
-
-		// Each entity has a uniform buffer.
-		UniformBufferID entityTransformBufferID;
-		if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &entityTransformBufferID))
-		{
-			DebugLogError("Couldn't create uniform buffer for entity transform.");
-			return;
-		}
-
-		// Initialize to default transform; it gets updated each frame.
-		RenderTransform renderTransform;
-		renderTransform.translation = Matrix4d::identity();
-		renderTransform.rotation = Matrix4d::identity();
-		renderTransform.scale = Matrix4d::identity();
-		renderer.populateUniformBuffer(entityTransformBufferID, renderTransform);
-
-		this->transformBufferIDs.emplace(entityInstID, entityTransformBufferID);
 	}
 }
 
@@ -381,11 +349,9 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 			lightIdsView = voxelLightIdList.getLightIDs();
 		}
 
-		const auto transformBufferIter = this->transformBufferIDs.find(entityInstID);
-		DebugAssert(transformBufferIter != this->transformBufferIDs.end());
-		const UniformBufferID entityTransformBufferID = transformBufferIter->second;
-		const int entityTransformIndex = 0; // Each entity has their own transform buffer.
-		this->addDrawCall(entityTransformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView, pixelShaderType, renderChunk.drawCalls);
+		const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
+		const int entityTransformIndex = 0; // Each entity has their own transform buffer for now.
+		this->addDrawCall(transformBufferID, entityTransformIndex, textureID0, textureID1, lightIdsView, pixelShaderType, renderChunk.drawCalls);
 	}
 }
 
@@ -479,12 +445,6 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 				this->paletteIndicesTextureRefs.erase(paletteIndicesIter);
 			}
 		}
-
-		const auto transformBufferIter = this->transformBufferIDs.find(entityInstID);
-		DebugAssert(transformBufferIter != this->transformBufferIDs.end());
-		const UniformBufferID entityTransformBufferID = transformBufferIter->second;
-		renderer.freeUniformBuffer(entityTransformBufferID);
-		this->transformBufferIDs.erase(transformBufferIter);
 	}
 
 	for (const ChunkInt2 &chunkPos : newChunkPositions)
@@ -492,7 +452,6 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 		RenderEntityChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		this->loadTextures(entityChunk, entityChunkManager, textureManager, renderer);
-		this->loadUniformBuffers(entityChunk, renderer);
 	}
 
 	// The rotation all entities share for facing the camera.
@@ -521,15 +480,12 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
 			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
 
-			const auto transformBufferIter = this->transformBufferIDs.find(entityInstID);
-			DebugAssert(transformBufferIter != this->transformBufferIDs.end());
-			const UniformBufferID entityTransformBufferID = transformBufferIter->second;
-
+			const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
 			RenderTransform entityRenderTransform;
 			entityRenderTransform.translation = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
 			entityRenderTransform.rotation = allEntitiesRotationMatrix;
 			entityRenderTransform.scale = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
-			renderer.populateUniformBuffer(entityTransformBufferID, entityRenderTransform);
+			renderer.populateUniformBuffer(transformBufferID, entityRenderTransform);
 		}
 
 		this->rebuildChunkDrawCalls(renderChunk, entityVisChunk, renderLightChunk, cameraPosition, ceilingScale, entityChunkManager);
@@ -558,13 +514,6 @@ void RenderEntityChunkManager::cleanUp()
 
 void RenderEntityChunkManager::unloadScene(Renderer &renderer)
 {
-	for (const auto &pair : this->transformBufferIDs)
-	{
-		const UniformBufferID transformBufferID = pair.second;
-		renderer.freeUniformBuffer(transformBufferID);
-	}
-
-	this->transformBufferIDs.clear();
 	this->anims.clear();
 	this->paletteIndicesTextureRefs.clear();
 	this->drawCallsCache.clear();

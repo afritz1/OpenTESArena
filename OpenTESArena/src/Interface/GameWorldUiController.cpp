@@ -281,7 +281,7 @@ void GameWorldUiController::onPauseInputAction(const InputActionCallbackValues &
 	}
 }
 
-void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &exeData)
+void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &exeData, const std::function<void()> postStatusPopUpCallback)
 {
 	const std::string text = GameWorldUiModel::getKeyPickUpMessage(keyID, exeData);
 	
@@ -290,9 +290,15 @@ void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
+	auto onSelectedFunc = [postStatusPopUpCallback](Game &game)
+	{
+		GameWorldUiController::onStatusPopUpSelected(game);
+		postStatusPopUpCallback();
+	};
+
 	Renderer &renderer = game.renderer;
 	ScopedUiTextureRef textureRef(textureID, renderer);
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, onSelectedFunc, std::move(textureRef), center);
 }
 
 void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData)

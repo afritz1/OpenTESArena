@@ -5,6 +5,7 @@
 #include "Jolt/Physics/Body/Body.h"
 
 #include "EntityUtils.h"
+#include "../Rendering/RenderShaderUtils.h"
 
 using EntityInstanceID = int;
 using EntityPositionID = int;
@@ -29,11 +30,12 @@ struct EntityInstance
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;
 	JPH::BodyID physicsBodyID;
+	UniformBufferID renderTransformBufferID;
 
 	EntityInstance();
 
-	// All entities at least have an instance ID, definition, position, and bounding box.
-	void init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID, EntityBoundingBoxID bboxID);
+	// All entities at least have an instance ID, definition, position, bounding box, and render transform.
+	void init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID, EntityBoundingBoxID bboxID, UniformBufferID renderTransformBufferID);
 
 	// Whether the entity is capable of moving + looking.
 	bool isDynamic() const;

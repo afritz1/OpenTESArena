@@ -1,6 +1,8 @@
 #ifndef GAME_WORLD_UI_CONTROLLER_H
 #define GAME_WORLD_UI_CONTROLLER_H
 
+#include <functional>
+
 #include "../Math/Vector2.h"
 
 class ExeData;
@@ -40,7 +42,7 @@ namespace GameWorldUiController
 	void onPlayerPositionInputAction(const InputActionCallbackValues &values, TextBox &actionText);
 	void onPauseInputAction(const InputActionCallbackValues &values);
 
-	void onKeyPickedUp(Game &game, int keyID, const ExeData &exeData);
+	void onKeyPickedUp(Game &game, int keyID, const ExeData &exeData, const std::function<void()> postStatusPopUpCallback);
 	void onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData);
 
 	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);

@@ -7,16 +7,18 @@ EntityInstance::EntityInstance()
 	this->clear();
 }
 
-void EntityInstance::init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID, EntityBoundingBoxID bboxID)
+void EntityInstance::init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID, EntityBoundingBoxID bboxID, UniformBufferID renderTransformBufferID)
 {
 	DebugAssert(instanceID >= 0);
 	DebugAssert(defID >= 0);
 	DebugAssert(positionID >= 0);
 	DebugAssert(bboxID >= 0);
+	DebugAssert(renderTransformBufferID >= 0);
 	this->instanceID = instanceID;
 	this->defID = defID;
 	this->positionID = positionID;
 	this->bboxID = bboxID;
+	this->renderTransformBufferID = renderTransformBufferID;
 }
 
 bool EntityInstance::isDynamic() const
@@ -52,4 +54,5 @@ void EntityInstance::clear()
 	this->paletteIndicesInstID = -1;
 	this->itemInventoryInstID = -1;
 	this->physicsBodyID = JPH::BodyID();
+	this->renderTransformBufferID = -1;
 }

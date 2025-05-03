@@ -688,7 +688,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	chunkManager.update(playerCoord.chunk, options.getMisc_ChunkDistance());
 
 	sceneManager.voxelChunkManager.recycleAllChunks();
-	sceneManager.entityChunkManager.clear(physicsSystem);
+	sceneManager.entityChunkManager.clear(physicsSystem, renderer);
 	sceneManager.collisionChunkManager.clear(physicsSystem);
 	sceneManager.voxelVisChunkManager.recycleAllChunks();
 	sceneManager.entityVisChunkManager.recycleAllChunks();

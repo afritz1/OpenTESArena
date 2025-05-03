@@ -1006,7 +1006,7 @@ void Game::loop()
 		// End-of-frame clean up.
 		try
 		{
-			this->sceneManager.cleanUp(this->physicsSystem);
+			this->sceneManager.cleanUp(this->physicsSystem, this->renderer);
 		}
 		catch (const std::exception &e)
 		{

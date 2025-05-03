@@ -517,9 +517,15 @@ namespace PlayerLogicController
 							{
 								const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
 								const int keyID = triggerKeyDef.keyID;
-								GameWorldUiController::onKeyPickedUp(game, keyID, exeData);
 								player.addToKeyInventory(keyID);
-								entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+								
+								// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityChunkManager draw calls due to skipping scene simulation.
+								const auto callback = [&entityChunkManager, chunkPos, entityInstID]()
+								{
+									entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+								};
+
+								GameWorldUiController::onKeyPickedUp(game, keyID, exeData, callback);
 							}
 						}
 					}

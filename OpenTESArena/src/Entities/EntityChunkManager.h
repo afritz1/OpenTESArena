@@ -150,8 +150,8 @@ public:
 
 	// @todo: support spawning an entity not from the level def
 
-	void cleanUp(JPH::PhysicsSystem &physicsSystem);
-	void clear(JPH::PhysicsSystem &physicsSystem);
+	void cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
+	void clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 };
 
 #endif

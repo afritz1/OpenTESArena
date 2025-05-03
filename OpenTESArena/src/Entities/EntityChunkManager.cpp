@@ -18,6 +18,7 @@
 #include "../Player/Player.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RenderTransform.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/CardinalDirection.h"
@@ -208,7 +209,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 	const ChunkInt2 chunkPos = voxelChunk.getPosition();
 	const double ceilingScale = levelInfoDefinition.getCeilingScale();
 
-	auto initializeEntity = [this, &random, &binaryAssetLibrary, &physicsSystem, ceilingScale](
+	auto initializeEntity = [this, &random, &binaryAssetLibrary, &physicsSystem, &renderer, ceilingScale](
 		EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef, const EntityInitInfo &initInfo)
 	{
 		EntityPositionID positionID;
@@ -223,8 +224,14 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			DebugLogError("Couldn't allocate EntityBoundingBoxID.");
 		}
 
+		UniformBufferID renderTransformBufferID;
+		if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &renderTransformBufferID))
+		{
+			DebugLogError("Couldn't create uniform buffer for entity transform.");
+		}
+
 		const EntityDefID defID = initInfo.defID;
-		entityInst.init(instID, defID, positionID, bboxID);
+		entityInst.init(instID, defID, positionID, bboxID, renderTransformBufferID);
 
 		WorldDouble3 &entityPosition = this->positions.get(positionID);
 		entityPosition = initInfo.feetPosition;
@@ -1125,7 +1132,7 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool 
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
 }
 
-void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
+void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -1179,6 +1186,11 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
 			bodyInterface.RemoveBody(physicsBodyID);
 			bodyInterface.DestroyBody(physicsBodyID);
 		}
+
+		if (entityInst.renderTransformBufferID >= 0)
+		{
+			renderer.freeUniformBuffer(entityInst.renderTransformBufferID);
+		}
 		
 		this->entities.free(entityInstID);
 	}
@@ -1187,7 +1199,7 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem)
 	this->transferResults.clear();
 }
 
-void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem)
+void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
@@ -1197,6 +1209,6 @@ void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem)
 		}
 	}
 
-	this->cleanUp(physicsSystem);
+	this->cleanUp(physicsSystem, renderer);
 	this->recycleAllChunks();
 }
