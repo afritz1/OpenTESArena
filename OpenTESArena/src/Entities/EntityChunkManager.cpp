@@ -890,58 +890,39 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 	DebugAssert(stateIndex >= 0);
 	DebugAssert(stateIndex < animDef.stateCount);
 	const EntityAnimationDefinitionState &animDefState = animDef.states[stateIndex];
-
-	// Get animation angle based on entity direction relative to camera.
 	const int angleCount = animDefState.keyframeListCount;
-	const Radians animAngle = [this, &eyePositionXZ, &entityInst, &entityPositionXZ, isDynamic, angleCount]()
+
+	// Get animation angle based on relative facing to camera. Static entities always face the camera.
+	Radians animAngle = 0.0;
+	if (isDynamic)
 	{
-		if (!isDynamic)
-		{
-			// Static entities always face the camera.
-			return 0.0;
-		}
-		
 		const VoxelDouble2 &entityDir = this->getEntityDirection(entityInst.directionID);
-
-		// Dynamic entities are angle-dependent.
 		const VoxelDouble2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
-
 		const Radians entityAngle = MathUtils::fullAtan2(entityDir);
 		const Radians diffAngle = MathUtils::fullAtan2(diffDir);
+		const Radians relativeAngle = Constants::TwoPi + (entityAngle - diffAngle);
 
-		// Use the difference of the two angles to get the relative angle.
-		const Radians resultAngle = Constants::TwoPi + (entityAngle - diffAngle);
-
-		// Angle bias so the final direction is centered within its angle range.
+		// Keep final direction centered within its angle range.
 		const Radians angleBias = (Constants::TwoPi / static_cast<double>(angleCount)) * 0.50;
 
-		return std::fmod(resultAngle + angleBias, Constants::TwoPi);
-	}();
+		animAngle = std::fmod(relativeAngle + angleBias, Constants::TwoPi);
+	}
 
-	// Index into animation keyframe lists for the state.
-	const int angleIndex = [angleCount, animAngle]()
-	{
-		const double angleCountReal = static_cast<double>(angleCount);
-		const double anglePercent = animAngle / Constants::TwoPi;
-		const int angleIndex = static_cast<int>(angleCountReal * anglePercent);
-		return std::clamp(angleIndex, 0, angleCount - 1);
-	}();
-
-	// Keyframe list for the current state and angle.
+	// Get current keyframe list.
+	const double angleCountReal = static_cast<double>(angleCount);
+	const double anglePercent = animAngle / Constants::TwoPi;
+	const int unclampedAngleIndex = static_cast<int>(angleCountReal * anglePercent);
+	const int angleIndex = std::clamp(unclampedAngleIndex, 0, angleCount - 1);
 	const int animDefKeyframeListIndex = animDefState.keyframeListsIndex + angleIndex;
 	DebugAssert(animDefKeyframeListIndex >= 0);
 	DebugAssert(animDefKeyframeListIndex < animDef.keyframeListCount);
 	const EntityAnimationDefinitionKeyframeList &animDefKeyframeList = animDef.keyframeLists[animDefKeyframeListIndex];
 
-	// Progress through current animation.
-	const int keyframeIndex = [&animInst, &animDefState, &animDefKeyframeList]()
-	{
-		const int keyframeCount = animDefKeyframeList.keyframeCount;
-		const double keyframeCountReal = static_cast<double>(keyframeCount);
-		const double animPercent = animInst.progressPercent;
-		const int keyframeIndex = static_cast<int>(keyframeCountReal * animPercent);
-		return std::clamp(keyframeIndex, 0, keyframeCount - 1);
-	}();
+	// Get current keyframe.
+	const int keyframeCount = animDefKeyframeList.keyframeCount;
+	const double keyframeCountReal = static_cast<double>(keyframeCount);
+	const int unclampedKeyframeIndex = static_cast<int>(keyframeCountReal * animInst.progressPercent);
+	const int keyframeIndex = std::clamp(unclampedKeyframeIndex, 0, keyframeCount - 1);
 
 	const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(stateIndex, angleIndex, keyframeIndex);
 	result.init(id, stateIndex, angleIndex, keyframeIndex, linearizedKeyframeIndex);
