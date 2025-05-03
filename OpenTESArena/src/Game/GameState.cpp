@@ -1026,8 +1026,8 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const double chasmAnimPercent = this->getChasmAnimPercent();
 
 	const Player &player = game.player;
+	const WorldDouble3 playerPosition = player.getEyePosition();
 	const CoordDouble3 playerCoord = player.getEyeCoord();
-	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 	const Double2 playerDirXZ = player.getGroundDirectionXZ();
 
 	TextureManager &textureManager = game.textureManager;
@@ -1051,7 +1051,7 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
 	RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
 	renderEntityChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
-	renderEntityChunkManager.update(activeChunkPositions, newChunkPositions, playerCoordXZ, playerDirXZ, ceilingScale,
+	renderEntityChunkManager.update(activeChunkPositions, newChunkPositions, playerPosition, playerDirXZ, ceilingScale,
 		voxelChunkManager, entityChunkManager, entityVisChunkManager, renderLightChunkManager, textureManager, renderer);
 
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;

@@ -105,7 +105,7 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 	else if (isPlayerVsEntitySensorCollision)
 	{
 		const EntityInstance &entityInst = entityChunkManager.getEntity(otherBodyEntityInstanceID);
-		const CoordDouble2 &entityCoord = entityChunkManager.getEntityPosition(entityInst.positionID);
+		const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
 		//DebugLog("Player contacted entity sensor " + std::to_string(otherBodyID.GetIndex()) + " in chunk (" + entityCoord.chunk.toString() + ") at (" + entityCoord.point.toString() + ").");
 
 		// @todo: do we actually care about player + entity sensor collisions? maybe don't need this branch?

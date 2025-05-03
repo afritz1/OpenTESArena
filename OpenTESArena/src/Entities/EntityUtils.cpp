@@ -225,11 +225,6 @@ void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, 
 	*outMaxHeight = maxAnimHeight;
 }
 
-double EntityUtils::getCenterY(double feetY, double bboxHeight)
-{
-	return feetY + (bboxHeight * 0.50);
-}
-
 bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const CharacterClassLibrary &charClassLibrary, std::string *outName)
 {
 	const EntityDefinitionType type = entityDef.type;
@@ -260,12 +255,9 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const Cha
 	return true;
 }
 
-bool EntityUtils::withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale)
+bool EntityUtils::withinHearingDistance(const WorldDouble3 &listenerPosition, const WorldDouble3 &soundPosition)
 {
-	const CoordDouble3 soundCoord3D(
-		soundCoord.chunk,
-		VoxelDouble3(soundCoord.point.x, ceilingScale * 1.50, soundCoord.point.y));
-	const VoxelDouble3 diff = soundCoord3D - listenerCoord;
+	const Double3 diff = soundPosition - listenerPosition;
 	constexpr double hearingDistanceSqr = EntityUtils::HearingDistance * EntityUtils::HearingDistance;
 	return diff.lengthSquared() < hearingDistanceSqr;
 }

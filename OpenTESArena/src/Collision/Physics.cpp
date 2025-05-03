@@ -125,6 +125,8 @@ namespace Physics
 			}
 		}
 
+		const WorldDouble3 viewPosition = VoxelUtils::coordToWorldPoint(viewCoord);
+
 		ChunkEntityMap chunkEntityMap;
 		chunkEntityMap.init(chunk);
 
@@ -132,37 +134,29 @@ namespace Physics
 		for (const EntityInstanceID entityInstID : entityInstIDs)
 		{
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
 
 			EntityObservedResult observedResult;
-			entityChunkManager.getEntityObservedResult(entityInstID, viewCoordXZ, observedResult);
-
-			const CoordDouble3 entityCoord = entityChunkManager.getEntityPosition3D(entityInstID, ceilingScale, voxelChunkManager);
-
-			// Get the entity's view-independent bounding box to help determine which voxels they are in.
-			const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-			const CoordDouble3 minCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point - Double3(entityBBox.halfWidth, 0.0, entityBBox.halfDepth));
-			const CoordDouble3 maxCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point + Double3(entityBBox.halfWidth, entityBBox.height, entityBBox.halfDepth));
-
-			// Get min and max coordinates in chunk space and get the difference for iteration.
-			const CoordInt3 minVoxelCoord(minCoord.chunk, VoxelUtils::pointToVoxel(minCoord.point, ceilingScale));
-			const CoordInt3 maxVoxelCoord(maxCoord.chunk, VoxelUtils::pointToVoxel(maxCoord.point, ceilingScale));
-			const VoxelInt3 voxelCoordDiff = maxVoxelCoord - minVoxelCoord;
+			entityChunkManager.getEntityObservedResult(entityInstID, viewPosition, observedResult);
 
 			// Iterate over the voxels the entity's bounding box touches.
+			const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
+			const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
+			const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+			const WorldDouble3 entityMinWorldPoint = entityPosition - Double3(entityBBox.halfWidth, 0.0, entityBBox.halfDepth);
+			const WorldDouble3 entityMaxWorldPoint = entityPosition + Double3(entityBBox.halfWidth, entityBBox.height, entityBBox.halfDepth);
+			const WorldInt3 entityMinWorldVoxel = VoxelUtils::pointToVoxel(entityMinWorldPoint, ceilingScale);
+			const WorldInt3 entityMaxWorldVoxel = VoxelUtils::pointToVoxel(entityMaxWorldPoint, ceilingScale);
+			const WorldInt3 voxelCoordDiff = entityMaxWorldVoxel - entityMinWorldVoxel;
+
 			for (WEInt z = 0; z <= voxelCoordDiff.z; z++)
 			{
 				for (int y = 0; y <= voxelCoordDiff.y; y++)
 				{
 					for (SNInt x = 0; x <= voxelCoordDiff.x; x++)
 					{
-						const VoxelInt3 curVoxel(
-							minVoxelCoord.voxel.x + x,
-							minVoxelCoord.voxel.y + y,
-							minVoxelCoord.voxel.z + z);
-						const CoordInt3 curCoord = ChunkUtils::recalculateCoord(minVoxelCoord.chunk, curVoxel);
+						const WorldInt3 curWorldVoxel(entityMinWorldVoxel.x + x, entityMinWorldVoxel.y + y, entityMinWorldVoxel.z + z);
+						const CoordInt3 curCoord = VoxelUtils::worldVoxelToCoord(curWorldVoxel);
 
-						// If it's in the center chunk, add a mapping.
 						if (curCoord.chunk == chunk)
 						{
 							EntityEntry entry;

@@ -54,7 +54,7 @@ private:
 	// All accumulated draw calls from entities each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
 
-	ObjectTextureID getTextureID(EntityInstanceID entityInstID, const CoordDouble2 &cameraCoordXZ, const EntityChunkManager &entityChunkManager) const;
+	ObjectTextureID getTextureID(EntityInstanceID entityInstID, const WorldDouble3 &cameraPosition, const EntityChunkManager &entityChunkManager) const;
 
 	void loadTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 	void loadUniformBuffers(const EntityChunk &entityChunk, Renderer &renderer);
@@ -63,8 +63,8 @@ private:
 		const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
 		std::vector<RenderDrawCall> &drawCalls);
 	void rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityVisibilityChunk &entityVisChunk,
-		const RenderLightChunk &renderLightChunk, const CoordDouble2 &cameraCoordXZ, double ceilingScale,
-		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager);
+		const RenderLightChunk &renderLightChunk, const WorldDouble3 &cameraPosition, double ceilingScale,
+		const EntityChunkManager &entityChunkManager);
 	void rebuildDrawCallsList();
 public:
 	RenderEntityChunkManager();
@@ -79,7 +79,7 @@ public:
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 
 	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
-		const CoordDouble2 &cameraCoordXZ, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		const WorldDouble3 &cameraPosition, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, const EntityVisibilityChunkManager &entityVisChunkManager,
 		const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager, Renderer &renderer);
 

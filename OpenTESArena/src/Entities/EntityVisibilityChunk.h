@@ -9,7 +9,6 @@
 
 class EntityChunk;
 class EntityChunkManager;
-class VoxelChunkManager;
 
 struct RenderCamera;
 
@@ -21,7 +20,7 @@ struct EntityVisibilityChunk final : public Chunk
 
 	void init(const ChunkInt2 &position, int height);
 	void update(const RenderCamera &camera, double ceilingScale, const EntityChunk &entityChunk,
-		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager);
+		const EntityChunkManager &entityChunkManager);
 	void clear();
 };
 

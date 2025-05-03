@@ -8,9 +8,9 @@
 
 namespace
 {
-	Double3 GetEntityLightPosition(const WorldDouble3 &entityPos, const BoundingBox3D &entityBBox)
+	Double3 GetLightPositionInEntity(const WorldDouble3 &entityPos, const BoundingBox3D &entityBBox)
 	{
-		const double entityCenterYPosition = EntityUtils::getCenterY(entityPos.y, entityBBox.height);
+		const double entityCenterYPosition = entityPos.y + entityBBox.halfHeight;
 		return WorldDouble3(entityPos.x, entityCenterYPosition, entityPos.z);
 	}
 }
@@ -303,11 +303,9 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 
 				const bool isLightEnabled = !EntityUtils::isStreetlight(entityDef) || nightLightsAreActive;
 
-				const CoordDouble3 entityCoord3D = entityChunkManager.getEntityPosition3D(entityInstID, ceilingScale, voxelChunkManager);
-				const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord3D);
-
+				const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
 				const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-				const WorldDouble3 entityLightWorldPos = GetEntityLightPosition(entityWorldPos, entityBBox);
+				const WorldDouble3 entityLightWorldPos = GetLightPositionInEntity(entityPosition, entityBBox);
 
 				// The original game doesn't seem to update a light's radius after transitioning levels, it just uses the "S:#" from the start level.
 				const double lightEndRadius = *entityLightRadius;
@@ -362,10 +360,9 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	{
 		const EntityInstanceID entityInstID = pair.first;
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-		const CoordDouble3 entityCoord = entityChunkManager.getEntityPosition3D(entityInstID, ceilingScale, voxelChunkManager);
-		const WorldDouble3 entityWorldPos = VoxelUtils::coordToWorldPoint(entityCoord);
+		const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
 		const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-		const WorldDouble3 entityLightWorldPos = GetEntityLightPosition(entityWorldPos, entityBBox);
+		const WorldDouble3 entityLightWorldPos = GetLightPositionInEntity(entityPosition, entityBBox);
 
 		Light &light = pair.second;
 		light.update(entityLightWorldPos, light.startRadius, light.endRadius, ceilingScale, chunkHeight);

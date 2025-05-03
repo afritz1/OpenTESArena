@@ -34,10 +34,9 @@ namespace
 	struct EntityInitInfo
 	{
 		EntityDefID defID;
-		VoxelDouble2 point;
+		WorldDouble3 feetPosition;
 		WorldDouble3 bboxMin, bboxMax; // Centered on the entity in model space
 		double animMaxHeight;
-		double feetY;
 		char initialAnimStateIndex;
 		bool isSensorCollider;
 		std::optional<Double2> direction;
@@ -51,7 +50,6 @@ namespace
 		{
 			this->defID = -1;
 			this->animMaxHeight = 0.0;
-			this->feetY = 0.0;
 			this->initialAnimStateIndex = -1;
 			this->isSensorCollider = false;
 			this->hasInventory = false;
@@ -59,7 +57,7 @@ namespace
 		}
 	};
 
-	bool TryCreatePhysicsCollider(const CoordDouble2 &coord, double colliderHeight, double feetY, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -81,11 +79,10 @@ namespace
 		}
 
 		JPH::ShapeRefC capsuleShape = capsuleShapeResult.Get();
-		const WorldDouble2 capsuleWorldPointXZ = VoxelUtils::coordToWorldPoint(coord); // @todo: use getEntityCorrectedY()
 		const JPH::RVec3 capsuleJoltPos(
-			static_cast<float>(capsuleWorldPointXZ.x),
-			static_cast<float>(feetY + capsuleHalfTotalHeight),
-			static_cast<float>(capsuleWorldPointXZ.y));
+			static_cast<float>(feetPosition.x),
+			static_cast<float>(feetPosition.y + capsuleHalfTotalHeight),
+			static_cast<float>(feetPosition.z));
 		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
 		const JPH::ObjectLayer capsuleObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::MOVING;
 		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, capsuleObjectLayer);
@@ -136,7 +133,7 @@ namespace
 		return animTextureRefs;
 	}
 
-	double GetElevatedPlatformHeight(const VoxelShapeDefinition &voxelShapeDef)
+	double GetElevatedPlatformHeight(const VoxelShapeDefinition &voxelShapeDef, double ceilingScale)
 	{
 		if (!voxelShapeDef.isElevatedPlatform)
 		{
@@ -144,7 +141,8 @@ namespace
 		}
 
 		DebugAssert(voxelShapeDef.type == VoxelShapeType::Box);
-		return voxelShapeDef.box.yOffset + voxelShapeDef.box.height;
+		const double shapeYPos = voxelShapeDef.box.yOffset + voxelShapeDef.box.height;
+		return MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}
 }
 
@@ -210,7 +208,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 	const ChunkInt2 chunkPos = voxelChunk.getPosition();
 	const double ceilingScale = levelInfoDefinition.getCeilingScale();
 
-	auto initializeEntity = [this, &random, &binaryAssetLibrary, &physicsSystem, &chunkPos, ceilingScale](
+	auto initializeEntity = [this, &random, &binaryAssetLibrary, &physicsSystem, ceilingScale](
 		EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef, const EntityInitInfo &initInfo)
 	{
 		EntityPositionID positionID;
@@ -228,8 +226,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const EntityDefID defID = initInfo.defID;
 		entityInst.init(instID, defID, positionID, bboxID);
 
-		CoordDouble2 &entityCoord = this->positions.get(positionID);
-		entityCoord = CoordDouble2(chunkPos, initInfo.point);
+		WorldDouble3 &entityPosition = this->positions.get(positionID);
+		entityPosition = initInfo.feetPosition;
 
 		BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
 		entityBBox.init(initInfo.bboxMin, initInfo.bboxMax);
@@ -249,7 +247,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		
 		animInst.setStateIndex(initInfo.initialAnimStateIndex);
 
-		if (!TryCreatePhysicsCollider(entityCoord, initInfo.animMaxHeight, initInfo.feetY, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+		if (!TryCreatePhysicsCollider(entityPosition, initInfo.animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 		{
 			DebugLogError("Couldn't allocate entity Jolt physics body.");
 		}
@@ -321,9 +319,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const LevelVoxelEntityDefID levelEntityDefID = placementDef.id;
 		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
 		const EntityDefinitionType entityDefType = entityDef.type;
-		const bool isDynamicEntity = EntityUtils::isDynamicEntity(entityDefType);
-		const EntityAnimationDefinition &animDef = entityDef.animDef;
+		
+		const int entityDefArenaYOffset = EntityUtils::getYOffset(entityDef);
+		const double entityDefYOffset = static_cast<double>(-entityDefArenaYOffset) / MIFUtils::ARENA_UNITS;
 
+		const bool isDynamicEntity = EntityUtils::isDynamicEntity(entityDefType);
+
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
 		const char *initialAnimStateName = animDef.initialStateName;
 		if (EntityUtils::isStreetlight(entityDef) && entityGenInfo.nightLightsAreActive)
 		{
@@ -348,8 +350,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				entityDefID = this->getOrAddEntityDefID(entityDef, entityDefLibrary);
 			}
 
-			const VoxelDouble2 point = ChunkUtils::MakeChunkPointFromLevel(worldPosition, startX, startZ);
+			const CoordDouble2 coordXZ(chunkPos, ChunkUtils::MakeChunkPointFromLevel(worldPosition, startX, startZ));
+			const WorldDouble2 worldPositionXZ = VoxelUtils::coordToWorldPoint(coordXZ);
+
 			const VoxelInt3 voxel = VoxelUtils::worldVoxelToCoord(worldVoxel).voxel;
+			const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+			const double feetY = ceilingScale + entityDefYOffset + GetElevatedPlatformHeight(voxelShapeDef, ceilingScale);
 
 			double animMaxWidth, animMaxHeight;
 			EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
@@ -357,18 +364,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			EntityInitInfo initInfo;
 			initInfo.defID = *entityDefID;
-			initInfo.point = point;
+			initInfo.feetPosition = WorldDouble3(worldPositionXZ.x, feetY, worldPositionXZ.y);
 
 			// Bounding box is centered on the entity in model space.
 			initInfo.bboxMin = WorldDouble3(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
 			initInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
 
 			initInfo.animMaxHeight = animMaxHeight;
-			
-			const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
-			initInfo.feetY = ceilingScale + GetElevatedPlatformHeight(voxelShapeDef);
-
 			initInfo.initialAnimStateIndex = *initialAnimStateIndex;
 			initInfo.isSensorCollider = !EntityUtils::hasCollision(entityDef);
 
@@ -436,9 +438,12 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					continue;
 				}
 
+				const CoordDouble2 coordXZ(chunkPos, VoxelUtils::getVoxelCenter(*citizenSpawnVoxel));
+				const WorldDouble2 worldPositionXZ = VoxelUtils::coordToWorldPoint(coordXZ);
+
 				EntityInitInfo citizenInitInfo;
 				citizenInitInfo.defID = citizenEntityDefID;
-				citizenInitInfo.point = VoxelUtils::getVoxelCenter(*citizenSpawnVoxel);
+				citizenInitInfo.feetPosition = WorldDouble3(worldPositionXZ.x, ceilingScale, worldPositionXZ.y);
 
 				double animMaxWidth, animMaxHeight;
 				EntityUtils::getAnimationMaxDims(citizenDef.animDef, &animMaxWidth, &animMaxHeight);
@@ -449,7 +454,6 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
 
 				citizenInitInfo.animMaxHeight = animMaxHeight;
-				citizenInitInfo.feetY = ceilingScale;
 				citizenInitInfo.initialAnimStateIndex = *initialCitizenAnimStateIndex;
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
@@ -531,9 +535,12 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 			continue;
 		}
 
-		CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
-		const ChunkInt2 prevEntityChunkPos = entityCoord.chunk;
-		const VoxelDouble2 dirToPlayer = playerCoordXZ - entityCoord;
+		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
+		const CoordDouble2 entityCoordXZ(entityCoord.chunk, VoxelDouble2(entityCoord.point.x, entityCoord.point.z));
+		const ChunkInt2 prevEntityChunkPos = entityCoordXZ.chunk;
+		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
+		const VoxelDouble2 dirToPlayer = playerCoordXZ - entityCoordXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
@@ -585,13 +592,13 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		const int curAnimStateIndex = animInst.currentStateIndex;
 		if (curAnimStateIndex == *walkStateIndex)
 		{
-			auto getVoxelAtDistance = [&entityCoord](const VoxelDouble2 &checkDist) -> CoordInt2
+			auto getVoxelAtDistance = [&entityCoordXZ](const VoxelDouble2 &checkDist) -> CoordInt2
 			{
-				const CoordDouble2 pos = entityCoord + checkDist;
+				const CoordDouble2 pos = entityCoordXZ + checkDist;
 				return CoordInt2(pos.chunk, VoxelUtils::pointToVoxel(pos.point));
 			};
 
-			const CoordInt2 curVoxel(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point));
+			const CoordInt2 curVoxel(entityCoordXZ.chunk, VoxelUtils::pointToVoxel(entityCoordXZ.point));
 			const CoordInt2 nextVoxel = getVoxelAtDistance(entityDir * 0.50);
 
 			if (nextVoxel != curVoxel)
@@ -670,13 +677,17 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 
 			// Integrate by delta time.
 			const VoxelDouble2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
-			entityCoord = ChunkUtils::recalculateCoord(entityCoord.chunk, entityCoord.point + (entityVelocity * dt));
+			const CoordDouble2 curEntityCoordXZ = ChunkUtils::recalculateCoord(entityCoordXZ.chunk, entityCoordXZ.point + (entityVelocity * dt));
+			const WorldDouble2 curEntityPositionXZ = VoxelUtils::coordToWorldPoint(curEntityCoordXZ);
+			entityPosition.x = curEntityPositionXZ.x;
+			entityPosition.z = curEntityPositionXZ.y;			
+			curEntityChunkPos = curEntityCoordXZ.chunk;
 
 			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 			DebugAssert(!physicsBodyID.IsInvalid());
 
 			const JPH::RVec3 oldBodyPosition = bodyInterface.GetPosition(physicsBodyID);
-			const WorldDouble2 newEntityWorldPointXZ = VoxelUtils::coordToWorldPoint(entityCoord);
+			const WorldDouble2 newEntityWorldPointXZ = VoxelUtils::coordToWorldPoint(curEntityCoordXZ);
 			const JPH::RVec3 newBodyPosition(
 				static_cast<float>(newEntityWorldPointXZ.x),
 				static_cast<float>(oldBodyPosition.GetY()),
@@ -685,7 +696,6 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		}
 
 		// Transfer ownership of the entity ID to a new chunk if needed.
-		const ChunkInt2 curEntityChunkPos = entityCoord.chunk;
 		if (curEntityChunkPos != prevEntityChunkPos)
 		{
 			EntityChunk &curEntityChunk = this->getChunkAtPosition(curEntityChunkPos);
@@ -725,7 +735,7 @@ const EntityInstance &EntityChunkManager::getEntity(EntityInstanceID id) const
 	return this->entities.get(id);
 }
 
-const CoordDouble2 &EntityChunkManager::getEntityPosition(EntityPositionID id) const
+const WorldDouble3 &EntityChunkManager::getEntityPosition(EntityPositionID id) const
 {
 	return this->positions.get(id);
 }
@@ -864,14 +874,16 @@ BufferView<const EntityTransferResult> EntityChunkManager::getEntityTransferResu
 	return this->transferResults;
 }
 
-void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const CoordDouble2 &eye2D, EntityObservedResult &result) const
+void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const
 {
 	const EntityInstance &entityInst = this->entities.get(id);
 	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 	const EntityAnimationDefinition &animDef = entityDef.animDef;
 	const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 
-	const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
+	const WorldDouble2 eyePositionXZ(eyePosition.x, eyePosition.z);
+	const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+	const WorldDouble2 entityPositionXZ(entityPosition.x, entityPosition.z);
 	const bool isDynamic = entityInst.isDynamic();
 
 	const int stateIndex = animInst.currentStateIndex;
@@ -881,7 +893,7 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Coor
 
 	// Get animation angle based on entity direction relative to camera.
 	const int angleCount = animDefState.keyframeListCount;
-	const Radians animAngle = [this, &eye2D, &entityInst, &entityCoord, isDynamic, angleCount]()
+	const Radians animAngle = [this, &eyePositionXZ, &entityInst, &entityPositionXZ, isDynamic, angleCount]()
 	{
 		if (!isDynamic)
 		{
@@ -892,7 +904,7 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Coor
 		const VoxelDouble2 &entityDir = this->getEntityDirection(entityInst.directionID);
 
 		// Dynamic entities are angle-dependent.
-		const VoxelDouble2 diffDir = (eye2D - entityCoord).normalized();
+		const VoxelDouble2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
 
 		const Radians entityAngle = MathUtils::fullAtan2(entityDir);
 		const Radians diffAngle = MathUtils::fullAtan2(diffDir);
@@ -935,49 +947,8 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Coor
 	result.init(id, stateIndex, angleIndex, keyframeIndex, linearizedKeyframeIndex);
 }
 
-double EntityChunkManager::getEntityCorrectedY(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const
-{
-	const EntityInstance &entityInst = this->entities.get(id);
-	const CoordDouble2 &entityCoord = this->getEntityPosition(entityInst.positionID);
-	const CoordInt2 entityVoxelCoord(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point));
-	const double baseYPosition = ceilingScale;
-
-	const VoxelChunk *chunk = voxelChunkManager.tryGetChunkAtPosition(entityVoxelCoord.chunk);
-	if (chunk == nullptr)
-	{
-		// Not sure this is ever reachable, but handle just in case.
-		return baseYPosition;
-	}
-
-	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-	const int entityDefArenaYOffset = EntityUtils::getYOffset(entityDef);
-	const double entityDefYOffset = static_cast<double>(-entityDefArenaYOffset) / MIFUtils::ARENA_UNITS;
-	constexpr int entityVoxelY = 1; // All entities are at Y=1 in the grid.
-
-	double platformYOffset = 0.0;
-	const VoxelShapeDefID voxelShapeDefID = chunk->getShapeDefID(entityVoxelCoord.voxel.x, entityVoxelY, entityVoxelCoord.voxel.y);
-	const VoxelShapeDefinition &voxelShapeDef = chunk->getShapeDef(voxelShapeDefID);
-	if (voxelShapeDef.isElevatedPlatform)
-	{
-		// Set entity on top of platform.
-		DebugAssert(voxelShapeDef.type == VoxelShapeType::Box);
-		const double shapeYPos = voxelShapeDef.box.yOffset + voxelShapeDef.box.height;
-		platformYOffset = MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
-	}
-
-	return baseYPosition + entityDefYOffset + platformYOffset;
-}
-
-CoordDouble3 EntityChunkManager::getEntityPosition3D(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const
-{
-	const EntityInstance &entityInst = this->entities.get(id);
-	const CoordDouble2 &entityCoord = this->getEntityPosition(entityInst.positionID);
-	const double y = this->getEntityCorrectedY(id, ceilingScale, voxelChunkManager);
-	return CoordDouble3(entityCoord.chunk, VoxelDouble3(entityCoord.point.x, y, entityCoord.point.y));
-}
-
-void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,
-	double ceilingScale, Random &random, AudioManager &audioManager)
+void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChunk, const WorldDouble3 &playerPosition,
+	Random &random, AudioManager &audioManager)
 {
 	const int entityCount = static_cast<int>(entityChunk.entityIDs.size());
 	for (int i = 0; i < entityCount; i++)
@@ -990,8 +961,10 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 			secondsTillCreatureSound -= dt;
 			if (secondsTillCreatureSound <= 0.0)
 			{
-				const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
-				if (EntityUtils::withinHearingDistance(playerCoord, entityCoord, ceilingScale))
+				const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+				const BoundingBox3D &entityBBox = this->boundingBoxes.get(entityInst.bboxID);
+				const WorldDouble3 entitySoundPosition(entityPosition.x, entityPosition.y + entityBBox.halfHeight, entityPosition.z);
+				if (EntityUtils::withinHearingDistance(playerPosition, entitySoundPosition))
 				{
 					// @todo: store some kind of sound def ID w/ the secondsTillCreatureSound instead of generating the sound filename here.
 					const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID);
@@ -1001,11 +974,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 					}
 
 					// Center the sound inside the creature.
-					const CoordDouble3 soundCoord(
-						entityCoord.chunk,
-						VoxelDouble3(entityCoord.point.x, ceilingScale * 1.50, entityCoord.point.y));
-					const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
-					audioManager.playSound(creatureSoundFilename.c_str(), absoluteSoundPosition);
+					audioManager.playSound(creatureSoundFilename.c_str(), entitySoundPosition);
 
 					secondsTillCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
 				}
@@ -1024,10 +993,12 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 			{
 				const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
 				const EntityInstance &entityInst = this->entities.get(entityInstID);
-				const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
-				const VoxelInt2 entityVoxel = VoxelUtils::pointToVoxel(entityCoord.point);
+				WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+				const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
+				const CoordInt3 entityVoxelCoord(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point, ceilingScale));
+				const VoxelInt3 entityVoxel = entityVoxelCoord.voxel;
 
-				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.y == fadeAnimInst.z);
+				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.z == fadeAnimInst.z);
 				
 				// @todo: we don't know if this was a raised platform because the voxel shape has already changed this frame, so just assume yes for "can be elevated" entities
 				if (matchesFadedVoxel && entityInst.canUseElevatedPlatforms())
@@ -1039,6 +1010,8 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 					const JPH::AABox entityColliderBBox = entityPhysicsShape->GetLocalBounds();
 					const float entityColliderHeight = entityColliderBBox.GetSize().GetY();
 					const double newEntityFeetY = ceilingScale;
+					entityPosition.y = newEntityFeetY; // Probably don't need entity def Y offset
+
 					const double newEntityPhysicsCenterY = newEntityFeetY + (entityColliderHeight * 0.50);
 					const JPH::RVec3 newEntityPhysicsPosition(oldEntityPhysicsPosition.GetX(), static_cast<float>(newEntityPhysicsCenterY), oldEntityPhysicsPosition.GetZ());
 					bodyInterface.SetPosition(entityPhysicsBodyID, newEntityPhysicsPosition, JPH::EActivation::Activate);
@@ -1101,6 +1074,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
 
+	const WorldDouble3 playerPosition = player.getEyePosition();
 	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
 	const bool isPlayerMoving = player.isMoving();
@@ -1127,7 +1101,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 			animInst.update(dt);
 		}
 
-		this->updateCreatureSounds(dt, entityChunk, playerCoord, ceilingScale, random, audioManager);
+		this->updateCreatureSounds(dt, entityChunk, playerPosition, random, audioManager);
 		this->updateFadedElevatedPlatforms(entityChunk, voxelChunk, ceilingScale, physicsSystem);
 	}
 }
@@ -1155,7 +1129,8 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool 
 	if (notifyChunk)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		const CoordDouble2 &entityCoord = this->positions.get(entityInst.positionID);
+		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+		const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
 		chunkToNotify = &entityCoord.chunk;
 	}
 	

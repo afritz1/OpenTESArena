@@ -27,6 +27,6 @@ void EntityVisibilityChunkManager::update(BufferView<const ChunkInt2> activeChun
 	{
 		EntityVisibilityChunk &visChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		visChunk.update(camera, ceilingScale, entityChunk, voxelChunkManager, entityChunkManager);
+		visChunk.update(camera, ceilingScale, entityChunk, entityChunkManager);
 	}
 }

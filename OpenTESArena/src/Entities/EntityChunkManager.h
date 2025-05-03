@@ -47,9 +47,9 @@ class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 private:
 	using EntityPool = RecyclablePool<EntityInstance, EntityInstanceID>;
-	using EntityPositionPool = RecyclablePool<CoordDouble2, EntityPositionID>;
+	using EntityPositionPool = RecyclablePool<WorldDouble3, EntityPositionID>;
 	using EntityBoundingBoxPool = RecyclablePool<BoundingBox3D, EntityBoundingBoxID>;
-	using EntityDirectionPool = RecyclablePool<VoxelDouble2, EntityDirectionID>;
+	using EntityDirectionPool = RecyclablePool<Double2, EntityDirectionID>;
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
 	using EntityCitizenDirectionIndexPool = RecyclablePool<int8_t, EntityCitizenDirectionIndexID>;
@@ -103,13 +103,13 @@ private:
 		bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
-	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const CoordDouble3 &playerCoord,
-		double ceilingScale, Random &random, AudioManager &audioManager);
+	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const WorldDouble3 &playerPosition,
+		Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	const EntityInstance &getEntity(EntityInstanceID id) const;
-	const CoordDouble2 &getEntityPosition(EntityPositionID id) const;
+	const WorldDouble3 &getEntityPosition(EntityPositionID id) const;
 	const BoundingBox3D &getEntityBoundingBox(EntityBoundingBoxID id) const;
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
 	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
@@ -133,11 +133,7 @@ public:
 	int getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const;
 
 	// Gets the entity visibility state necessary for rendering and ray cast selection.
-	void getEntityObservedResult(EntityInstanceID id, const CoordDouble2 &eye2D, EntityObservedResult &result) const;
-
-	// Gets where the entity should be on the Y axis for their current voxel.
-	double getEntityCorrectedY(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const;
-	CoordDouble3 getEntityPosition3D(EntityInstanceID id, double ceilingScale, const VoxelChunkManager &voxelChunkManager) const;
+	void getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const;
 
 	void update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
 		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

@@ -42,9 +42,6 @@ namespace EntityUtils
 	// Gets the max width and height from the entity animation's frames.
 	void getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight);
 
-	// Gets the world space Y position in the center of the entity
-	double getCenterY(double feetY, double bboxHeight);
-
 	// Returns whether the entity definition has a display name.
 	bool tryGetDisplayName(const EntityDefinition &entityDef,
 		const CharacterClassLibrary &charClassLibrary, std::string *outName);
@@ -53,7 +50,7 @@ namespace EntityUtils
 	// @todo: make this be part of the player, not creatures.
 	constexpr double HearingDistance = 6.0;
 
-	bool withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale);
+	bool withinHearingDistance(const WorldDouble3 &listenerPosition, const WorldDouble3 &soundPosition);
 
 	double nextCreatureSoundWaitSeconds(Random &random);
 }
