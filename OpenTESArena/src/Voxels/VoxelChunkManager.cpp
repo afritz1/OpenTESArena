@@ -604,46 +604,46 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 		*outWest = getChasmFace(outWestChunkIndex, westDefID);
 	};
 
-	int chasmInstIndex;
-	if (chunk.tryGetChasmWallInstIndex(x, y, z, &chasmInstIndex))
+	const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(x, y, z);
+	const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
 	{
-		// The chasm wall instance already exists. See if it should be updated or removed.
-		bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
-		getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
-
-		if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
+		int chasmInstIndex;
+		if (chunk.tryGetChasmWallInstIndex(x, y, z, &chasmInstIndex))
 		{
-			// The instance is still needed. Update its chasm walls.
-			BufferView<VoxelChasmWallInstance> chasmWallInsts = chunk.getChasmWallInsts();
-			VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmInstIndex];
+			// The chasm wall instance already exists. See if it should be updated or removed.
+			bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
+			getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
 
-			const bool shouldDirtyChasmWallInst = (chasmWallInst.north != hasNorthFace) || (chasmWallInst.east != hasEastFace) ||
-				(chasmWallInst.south != hasSouthFace) || (chasmWallInst.west != hasWestFace);
-
-			chasmWallInst.north = hasNorthFace;
-			chasmWallInst.east = hasEastFace;
-			chasmWallInst.south = hasSouthFace;
-			chasmWallInst.west = hasWestFace;
-
-			if (shouldDirtyChasmWallInst)
+			if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 			{
+				// The instance is still needed. Update its chasm walls.
+				BufferView<VoxelChasmWallInstance> chasmWallInsts = chunk.getChasmWallInsts();
+				VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmInstIndex];
+
+				const bool shouldDirtyChasmWallInst = (chasmWallInst.north != hasNorthFace) || (chasmWallInst.east != hasEastFace) ||
+					(chasmWallInst.south != hasSouthFace) || (chasmWallInst.west != hasWestFace);
+
+				chasmWallInst.north = hasNorthFace;
+				chasmWallInst.east = hasEastFace;
+				chasmWallInst.south = hasSouthFace;
+				chasmWallInst.west = hasWestFace;
+
+				if (shouldDirtyChasmWallInst)
+				{
+					chunk.addDirtyChasmWallInstPosition(voxel);
+				}
+			}
+			else
+			{
+				// The chasm wall instance no longer has any interesting data.
+				chunk.removeChasmWallInst(voxel);
 				chunk.addDirtyChasmWallInstPosition(voxel);
 			}
 		}
 		else
 		{
-			// The chasm wall instance no longer has any interesting data.
-			chunk.removeChasmWallInst(voxel);
-			chunk.addDirtyChasmWallInstPosition(voxel);
-		}
-	}
-	else
-	{
-		// No instance yet. If it's a chasm, add a new voxel instance.
-		const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(x, y, z);
-		const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
-		if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
-		{
+			// No instance yet. Add a new voxel instance.
 			bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
 			getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
 
