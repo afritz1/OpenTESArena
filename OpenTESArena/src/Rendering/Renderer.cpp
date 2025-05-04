@@ -190,6 +190,7 @@ RendererProfilerData::RendererProfilerData()
 	this->objectTextureCount = -1;
 	this->objectTextureByteCount = -1;
 	this->totalLightCount = -1;
+	this->totalCoverageTests = -1;
 	this->totalDepthTests = -1;
 	this->totalColorWrites = -1;
 	this->renderTime = 0.0;
@@ -197,8 +198,8 @@ RendererProfilerData::RendererProfilerData()
 }
 
 void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
-	int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites,
-	double renderTime, double presentTime)
+	int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalCoverageTests, int totalDepthTests,
+	int totalColorWrites, double renderTime, double presentTime)
 {
 	this->width = width;
 	this->height = height;
@@ -209,6 +210,7 @@ void RendererProfilerData::init(int width, int height, int threadCount, int draw
 	this->objectTextureCount = objectTextureCount;
 	this->objectTextureByteCount = objectTextureByteCount;
 	this->totalLightCount = totalLightCount;
+	this->totalCoverageTests = totalCoverageTests;
 	this->totalDepthTests = totalDepthTests;
 	this->totalColorWrites = totalColorWrites;
 	this->renderTime = renderTime;
@@ -1153,8 +1155,8 @@ void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer
 	const Renderer3DProfilerData swProfilerData = this->renderer3D->getProfilerData();
 	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
 		swProfilerData.drawCallCount, swProfilerData.presentedTriangleCount, swProfilerData.textureCount,
-		swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalDepthTests,
-		swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
+		swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalCoverageTests,
+		swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)

@@ -1063,6 +1063,7 @@ namespace
 	}
 
 	// For measuring overdraw.
+	std::atomic<int> g_totalCoverageTests = 0;
 	std::atomic<int> g_totalDepthTests = 0;
 	std::atomic<int> g_totalColorWrites = 0;
 
@@ -1072,6 +1073,7 @@ namespace
 		//std::fill(g_paletteIndexBuffer, g_paletteIndexBuffer + g_frameBufferPixelCount, 0);
 		std::fill(g_depthBuffer, g_depthBuffer + g_frameBufferPixelCount, std::numeric_limits<double>::infinity());
 		//std::fill(g_colorBuffer, g_colorBuffer + g_frameBufferPixelCount, 0);
+		g_totalCoverageTests = 0;
 		g_totalDepthTests = 0;
 		g_totalColorWrites = 0;
 	}
@@ -3026,6 +3028,7 @@ namespace
 		}
 
 		// Local variables added to a global afterwards to avoid fighting with threads.
+		int totalCoverageTests = 0;
 		int totalDepthTests = 0;
 		int totalColorWrites = 0;
 
@@ -3141,6 +3144,9 @@ namespace
 					const bool isPixelCenterIn1 = pixelCenterDot1 >= 0.0;
 					const bool isPixelCenterIn2 = pixelCenterDot2 >= 0.0;
 					const bool pixelCenterHasCoverage = isPixelCenterIn0 && isPixelCenterIn1 && isPixelCenterIn2;
+					
+					totalCoverageTests++;
+
 					if (!pixelCenterHasCoverage)
 					{
 						continue;
@@ -3310,6 +3316,7 @@ namespace
 			}
 		}
 
+		g_totalCoverageTests += totalCoverageTests;
 		g_totalDepthTests += totalDepthTests;
 		g_totalColorWrites += totalColorWrites;
 	}
@@ -4061,11 +4068,12 @@ Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
 	}
 
 	const int totalLightCount = this->lights.getUsedCount();
+	const int totalCoverageTests = g_totalCoverageTests;
 	const int totalDepthTests = g_totalDepthTests;
 	const int totalColorWrites = g_totalColorWrites;
 
 	return Renderer3DProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, presentedTriangleCount,
-		textureCount, textureByteCount, totalLightCount, totalDepthTests, totalColorWrites);
+		textureCount, textureByteCount, totalLightCount, totalCoverageTests, totalDepthTests, totalColorWrites);
 }
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,

@@ -697,6 +697,7 @@ void Game::renderDebugInfo()
 			const std::string renderTime = String::fixedPrecision(profilerData.renderTime * 1000.0, 2);
 			const std::string presentTime = String::fixedPrecision(profilerData.presentTime * 1000.0, 2);
 			const std::string renderDrawCallCount = std::to_string(profilerData.drawCallCount);
+			const std::string renderCoverageTestRatio = String::fixedPrecision(static_cast<double>(profilerData.totalCoverageTests) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string renderDepthTestRatio = String::fixedPrecision(static_cast<double>(profilerData.totalDepthTests) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string renderColorOverdrawRatio = String::fixedPrecision(static_cast<double>(profilerData.totalColorWrites) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string objectTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.objectTextureByteCount) / (1024.0 * 1024.0), 2);
@@ -708,6 +709,7 @@ void Game::renderDebugInfo()
 				"Draw calls: " + renderDrawCallCount + '\n' +
 				"Rendered Tris: " + std::to_string(profilerData.presentedTriangleCount) + '\n' +
 				"Lights: " + std::to_string(profilerData.totalLightCount) + '\n' +
+				"Coverage tests: " + renderCoverageTestRatio + "x" + '\n' +
 				"Depth tests: " + renderDepthTestRatio + "x" + '\n' +
 				"Overdraw: " + renderColorOverdrawRatio + "x");
 		}

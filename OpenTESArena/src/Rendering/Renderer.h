@@ -69,6 +69,7 @@ struct RendererProfilerData
 	int totalLightCount;
 
 	// Pixel writes/overdraw.
+	int totalCoverageTests;
 	int totalDepthTests;
 	int totalColorWrites;
 
@@ -78,7 +79,8 @@ struct RendererProfilerData
 	RendererProfilerData();
 
 	void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
-		int64_t objectTextureByteCount, int totalLightCount, int totalDepthTests, int totalColorWrites, double renderTime, double presentTime);
+		int64_t objectTextureByteCount, int totalLightCount, int totalCoverageTests, int totalDepthTests, int totalColorWrites,
+		double renderTime, double presentTime);
 };
 
 using RenderResolutionScaleFunc = std::function<double()>;
