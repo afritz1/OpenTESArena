@@ -16,7 +16,7 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 {
 	this->bbox.clear();
 	this->entityWorldBBoxCache.clear();
-	this->visibleEntities.clear();
+	this->visibleEntityEntries.clear();
 
 	this->entityWorldBBoxCache.reserve(entityChunk.entityIDs.size());
 
@@ -75,8 +75,18 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 	if (isBBoxCompletelyVisible)
 	{
 		// All entities are visible.
-		this->visibleEntities.resize(entityChunk.entityIDs.size());
-		std::copy(entityChunk.entityIDs.begin(), entityChunk.entityIDs.end(), this->visibleEntities.begin());
+		this->visibleEntityEntries.resize(entityChunk.entityIDs.size());
+
+		for (int i = 0; i < static_cast<int>(entityChunk.entityIDs.size()); i++)
+		{
+			const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
+			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
+			
+			VisibleEntityEntry &visibleEntityEntry = this->visibleEntityEntries[i];
+			visibleEntityEntry.id = entityInstID;
+			visibleEntityEntry.position = entityPosition;
+		}
 	}
 	else
 	{
@@ -91,7 +101,9 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 
 			if (!isEntityBBoxCompletelyInvisible)
 			{
-				this->visibleEntities.emplace_back(entityInstID);
+				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+				const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
+				this->visibleEntityEntries.emplace_back(entityInstID, entityPosition);
 			}
 		}
 	}
@@ -99,13 +111,11 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 	const WorldDouble2 cameraWorldPointXZ(camera.worldPoint.x, camera.worldPoint.z);
 
 	// Sort entities far to near.
-	std::sort(this->visibleEntities.begin(), this->visibleEntities.end(),
-		[&entityChunkManager, &cameraWorldPointXZ](const EntityInstanceID idA, const EntityInstanceID idB)
+	std::sort(this->visibleEntityEntries.begin(), this->visibleEntityEntries.end(),
+		[&cameraWorldPointXZ](const VisibleEntityEntry &entryA, const VisibleEntityEntry &entryB)
 	{
-		const EntityInstance &entityInstA = entityChunkManager.getEntity(idA);
-		const EntityInstance &entityInstB = entityChunkManager.getEntity(idB);
-		const WorldDouble3 entityPositionA = entityChunkManager.getEntityPosition(entityInstA.positionID);
-		const WorldDouble3 entityPositionB = entityChunkManager.getEntityPosition(entityInstB.positionID);
+		const WorldDouble3 entityPositionA = entryA.position;
+		const WorldDouble3 entityPositionB = entryB.position;
 		const WorldDouble2 entityPositionXZA(entityPositionA.x, entityPositionA.z);
 		const WorldDouble2 entityPositionXZB(entityPositionB.x, entityPositionB.z);
 		const double entityDistSqrA = (entityPositionXZA - cameraWorldPointXZ).lengthSquared();
@@ -119,5 +129,5 @@ void EntityVisibilityChunk::clear()
 	Chunk::clear();
 	this->bbox.clear();
 	this->entityWorldBBoxCache.clear();
-	this->visibleEntities.clear();
+	this->visibleEntityEntries.clear();
 }

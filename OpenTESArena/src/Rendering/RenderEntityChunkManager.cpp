@@ -309,11 +309,12 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 {
 	renderChunk.drawCalls.clear();
 
-	for (const EntityInstanceID entityInstID : entityVisChunk.visibleEntities)
+	for (const VisibleEntityEntry &visibleEntity : entityVisChunk.visibleEntityEntries)
 	{
+		const EntityInstanceID entityInstID = visibleEntity.id;
+		const WorldDouble3 entityPosition = visibleEntity.position;
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-		const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
 
 		const ObjectTextureID textureID0 = this->getTextureID(entityInstID, cameraPosition, entityChunkManager);
 		std::optional<ObjectTextureID> textureID1 = std::nullopt;
