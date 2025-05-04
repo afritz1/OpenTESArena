@@ -3,33 +3,33 @@
 
 #include "components/debug/Debug.h"
 
-InputActionDefinition::MouseButtonDefinition::MouseButtonDefinition()
+InputActionMouseButtonDefinition::InputActionMouseButtonDefinition()
 {
 	this->type = static_cast<MouseButtonType>(-1);
 }
 
-void InputActionDefinition::MouseButtonDefinition::init(MouseButtonType type)
+void InputActionMouseButtonDefinition::init(MouseButtonType type)
 {
 	this->type = type;
 }
 
-InputActionDefinition::MouseScrollDefinition::MouseScrollDefinition()
+InputActionMouseScrollDefinition::InputActionMouseScrollDefinition()
 {
 	this->type = static_cast<MouseWheelScrollType>(-1);
 }
 
-void InputActionDefinition::MouseScrollDefinition::init(MouseWheelScrollType type)
+void InputActionMouseScrollDefinition::init(MouseWheelScrollType type)
 {
 	this->type = type;
 }
 
-InputActionDefinition::KeyDefinition::KeyDefinition()
+InputActionKeyDefinition::InputActionKeyDefinition()
 {
 	this->keycode = static_cast<SDL_Keycode>(-1);
 	this->keymod = 0;
 }
 
-void InputActionDefinition::KeyDefinition::init(SDL_Keycode keycode, Keymod keymod)
+void InputActionKeyDefinition::init(SDL_Keycode keycode, KeyDefinitionKeymod keymod)
 {
 	this->keycode = keycode;
 	this->keymod = keymod;
@@ -40,30 +40,28 @@ InputActionDefinition::InputActionDefinition()
 	this->type = static_cast<InputActionType>(-1);
 }
 
-void InputActionDefinition::init(std::string &&name, InputActionType type,
-	const std::optional<InputStateType> &stateType)
+void InputActionDefinition::init(const std::string &name, InputActionType type, const std::optional<InputStateType> &stateType)
 {
-	this->name = std::move(name);
+	this->name = name;
 	this->type = type;
 	this->stateType = stateType;
 }
 
-void InputActionDefinition::initMouseButtonDef(const std::string &name, InputStateType stateType,
-	MouseButtonType buttonType)
+void InputActionDefinition::initMouseButtonDef(const std::string &name, InputStateType stateType, MouseButtonType buttonType)
 {
-	this->init(std::string(name), InputActionType::MouseButton, stateType);
+	this->init(name, InputActionType::MouseButton, stateType);
 	this->mouseButtonDef.init(buttonType);
 }
 
 void InputActionDefinition::initMouseScrollDef(const std::string &name, MouseWheelScrollType scrollType)
 {
-	this->init(std::string(name), InputActionType::MouseWheel, std::nullopt);
+	this->init(name, InputActionType::MouseWheel, std::nullopt);
 	this->mouseScrollDef.init(scrollType);
 }
 
 void InputActionDefinition::initKeyDef(const std::string &name, InputStateType stateType,
-	SDL_Keycode keycode, const std::optional<KeyDefinition::Keymod> &keymod)
+	SDL_Keycode keycode, const std::optional<KeyDefinitionKeymod> &keymod)
 {
-	this->init(std::string(name), InputActionType::Key, stateType);
+	this->init(name, InputActionType::Key, stateType);
 	this->keyDef.init(keycode, keymod.value_or(SDL_Keymod::KMOD_NONE));
 }

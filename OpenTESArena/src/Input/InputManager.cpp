@@ -636,12 +636,12 @@ void InputManager::handleHeldInputs(Game &game, BufferView<const InputActionMap*
 				{
 					if (def.type == InputActionType::MouseButton)
 					{
-						const InputActionDefinition::MouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
+						const InputActionMouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
 						handleHeldMouseButton(mouseButtonDef.type);
 					}
 					else if (def.type == InputActionType::Key)
 					{
-						const InputActionDefinition::KeyDefinition &keyDef = def.keyDef;
+						const InputActionKeyDefinition &keyDef = def.keyDef;
 						const SDL_Scancode scancode = SDL_GetScancodeFromKey(keyDef.keycode);
 						const bool isKeyHeld = (keyboardState[scancode] != 0) && (keyDef.keymod == keyboardMod);
 						if (isKeyHeld)
@@ -772,10 +772,10 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 	{
 		if (this->isKeyEvent(e))
 		{
-			static_assert(std::is_same_v<InputActionDefinition::KeyDefinition::Keymod, decltype(e.key.keysym.mod)>);
+			static_assert(std::is_same_v<KeyDefinitionKeymod, decltype(e.key.keysym.mod)>);
 
 			const SDL_Keycode keycode = e.key.keysym.sym;
-			const InputActionDefinition::KeyDefinition::Keymod keymod = GetFilteredSdlKeymod(e.key.keysym.mod);
+			const KeyDefinitionKeymod keymod = GetFilteredSdlKeymod(e.key.keysym.mod);
 			const bool isKeyDown = e.type == SDL_KEYDOWN;
 			const bool isKeyUp = e.type == SDL_KEYUP;
 
@@ -790,7 +790,7 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 
 						if ((def.type == InputActionType::Key) && matchesStateType)
 						{
-							const InputActionDefinition::KeyDefinition &keyDef = def.keyDef;
+							const InputActionKeyDefinition &keyDef = def.keyDef;
 
 							// Handle the keymod as an exact comparison; if the definition specifies LCtrl and RCtrl,
 							// both must be held, so combinations like Ctrl + Alt + Delete are possible.
@@ -859,7 +859,7 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 
 						if ((def.type == InputActionType::MouseButton) && matchesStateType)
 						{
-							const InputActionDefinition::MouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
+							const InputActionMouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
 							if (mouseButtonDef.type == *buttonType)
 							{
 								for (const InputActionListenerEntry *entry : enabledInputActionListeners)
@@ -909,7 +909,7 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 
 						if ((def.type == InputActionType::MouseWheel) && matchesStateType)
 						{
-							const InputActionDefinition::MouseScrollDefinition &mouseScrollDef = def.mouseScrollDef;
+							const InputActionMouseScrollDefinition &mouseScrollDef = def.mouseScrollDef;
 							if (mouseScrollDef.type == *scrollType)
 							{
 								for (const InputActionListenerEntry *entry : enabledInputActionListeners)
