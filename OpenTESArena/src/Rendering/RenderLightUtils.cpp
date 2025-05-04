@@ -93,6 +93,26 @@ void RenderLightIdList::tryAddLight(RenderLightID id, double distanceSqr)
 	}
 }
 
+int RenderLightIdList::findLight(RenderLightID id)
+{
+	if (id == NO_LIGHT_ID)
+	{
+		return -1;
+	}
+
+	int index = -1;
+	for (int i = 0; i < this->lightCount; i++)
+	{
+		if (this->lightIDs[i] == id)
+		{
+			index = i;
+			break;
+		}
+	}
+
+	return index;
+}
+
 void RenderLightIdList::removeLightAt(int index)
 {
 	DebugAssert(index >= 0);
@@ -112,18 +132,7 @@ void RenderLightIdList::removeLightAt(int index)
 
 void RenderLightIdList::removeLight(RenderLightID id)
 {
-	DebugAssert(id != NO_LIGHT_ID);
-
-	int index = -1;
-	for (int i = 0; i < this->lightCount; i++)
-	{
-		if (this->lightIDs[i] == id)
-		{
-			index = i;
-			break;
-		}
-	}
-
+	const int index = this->findLight(id);
 	if (index >= 0)
 	{
 		this->removeLightAt(index);

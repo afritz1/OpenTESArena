@@ -215,10 +215,16 @@ void RenderLightChunkManager::registerLightToVoxels(const Light &light, BufferVi
 
 void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, BufferView<const WorldInt3> voxels)
 {
+	RenderLightChunk *renderChunkPtr = nullptr; // Cache for performance in big scenes
+
 	for (const WorldInt3 &voxel : voxels)
 	{
 		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(voxel);
-		RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+		if (renderChunkPtr == nullptr || renderChunkPtr->getPosition() != curLightCoord.chunk)
+		{
+			renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+		}
+
 		if (renderChunkPtr != nullptr)
 		{
 			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
@@ -227,9 +233,12 @@ void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, Buff
 			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))
 			{
 				RenderLightIdList &voxelLightIdList = renderChunkPtr->lightIdLists.get(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z);
-				voxelLightIdList.removeLight(light.lightID);
-
-				renderChunkPtr->setVoxelDirty(curLightVoxel);
+				const int lightIndex = voxelLightIdList.findLight(light.lightID);
+				if (lightIndex >= 0)
+				{
+					voxelLightIdList.removeLightAt(lightIndex);
+					renderChunkPtr->setVoxelDirty(curLightVoxel);
+				}
 			}
 		}
 	}
