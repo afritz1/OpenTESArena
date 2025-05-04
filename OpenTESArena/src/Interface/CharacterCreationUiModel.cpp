@@ -434,8 +434,8 @@ std::string ChooseRaceUiModel::getProvinceConfirmedSecondText(Game &game)
 	const int raceIndex = charCreationState.getRaceIndex();
 
 	// Get race description from TEMPLATE.DAT.
-	const auto &templateDat = TextAssetLibrary::getInstance().getTemplateDat();
-	constexpr std::array<int, 8> raceTemplateIDs =
+	const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;
+	constexpr int raceTemplateIDs[] =
 	{
 		1409, 1410, 1411, 1412, 1413, 1414, 1415, 1416
 	};

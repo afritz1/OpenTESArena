@@ -67,9 +67,9 @@ bool TextCinematicUiModel::shouldPlaySpeech(Game &game)
 
 std::string TextCinematicUiModel::getSubtitleText(Game &game, const TextCinematicDefinition &textCinematicDef)
 {
-	const auto &textAssetLibrary = TextAssetLibrary::getInstance();
-	const auto &templateDat = textAssetLibrary.getTemplateDat();
-	const auto &templateDatEntry = templateDat.getEntry(textCinematicDef.templateDatKey);
+	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+	const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
+	const ArenaTemplateDatEntry &templateDatEntry = templateDat.getEntry(textCinematicDef.templateDatKey);
 	std::string cinematicText = templateDatEntry.values.front();
 	cinematicText.push_back('\n');
 

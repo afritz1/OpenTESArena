@@ -179,12 +179,11 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 		// Get the description for the local location. If it's a town or village, choose
 		// one of the three substrings randomly. Otherwise, get the city description text
 		// directly.
-		const std::string description = [&game, &binaryAssetLibrary, &exeData, provinceID, localCityID,
-			&locationDef, locationType]()
+		const std::string description = [&game, &binaryAssetLibrary, &exeData, provinceID, localCityID, &locationDef, locationType]()
 		{
 			// City descriptions start at #0600. The three town descriptions are at #1422,
 			// and the three village descriptions are at #1423.
-			const std::vector<std::string> &templateDatTexts = [&binaryAssetLibrary, provinceID, localCityID, locationType]()
+			const BufferView<const std::string> templateDatTexts = [&binaryAssetLibrary, provinceID, localCityID, locationType]()
 			{
 				// Get the key that maps into TEMPLATE.DAT.
 				const int key = [provinceID, localCityID, locationType]()
@@ -207,23 +206,22 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 					}
 				}();
 
-				const auto &textAssetLibrary = TextAssetLibrary::getInstance();
-				const auto &templateDat = textAssetLibrary.getTemplateDat();
-				const auto &entry = templateDat.getEntry(key);
+				const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+				const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
+				const ArenaTemplateDatEntry &entry = templateDat.getEntry(key);
 				return entry.values;
 			}();
 
 			if (locationType == ArenaTypes::LocationType::CityState)
 			{
-				return templateDatTexts.front();
+				return templateDatTexts[0];
 			}
 			else
 			{
 				ArenaRandom &random = game.arenaRandom;
 				std::string description = [&random, &templateDatTexts]()
 				{
-					const int templateDatTextIndex = random.next() % templateDatTexts.size();
-					DebugAssertIndex(templateDatTexts, templateDatTextIndex);
+					const int templateDatTextIndex = random.next() % templateDatTexts.getCount();
 					return templateDatTexts[templateDatTextIndex];
 				}();
 
@@ -247,8 +245,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 				index = description.find("%t");
 				if (index != std::string::npos)
 				{
-					const std::string &rulerTitle = binaryAssetLibrary.getRulerTitle(
-						provinceID, locationType, isMale, random);
+					const std::string &rulerTitle = binaryAssetLibrary.getRulerTitle(provinceID, locationType, isMale, random);
 					description.replace(index, 2, rulerTitle);
 				}
 
