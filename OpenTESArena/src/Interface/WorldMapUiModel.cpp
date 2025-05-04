@@ -183,34 +183,30 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 		{
 			// City descriptions start at #0600. The three town descriptions are at #1422,
 			// and the three village descriptions are at #1423.
-			const BufferView<const std::string> templateDatTexts = [&binaryAssetLibrary, provinceID, localCityID, locationType]()
+			const int templateDatEntryKey = [provinceID, localCityID, locationType]()
 			{
-				// Get the key that maps into TEMPLATE.DAT.
-				const int key = [provinceID, localCityID, locationType]()
+				if (locationType == ArenaTypes::LocationType::CityState)
 				{
-					if (locationType == ArenaTypes::LocationType::CityState)
-					{
-						return 600 + localCityID + (8 * provinceID);
-					}
-					else if (locationType == ArenaTypes::LocationType::Town)
-					{
-						return 1422;
-					}
-					else if (locationType == ArenaTypes::LocationType::Village)
-					{
-						return 1423;
-					}
-					else
-					{
-						DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
-					}
-				}();
-
-				const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-				const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
-				const ArenaTemplateDatEntry &entry = templateDat.getEntry(key);
-				return entry.values;
+					return 600 + localCityID + (8 * provinceID);
+				}
+				else if (locationType == ArenaTypes::LocationType::Town)
+				{
+					return 1422;
+				}
+				else if (locationType == ArenaTypes::LocationType::Village)
+				{
+					return 1423;
+				}
+				else
+				{
+					DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
+				}
 			}();
+
+			const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+			const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
+			const ArenaTemplateDatEntry &entry = templateDat.getEntry(templateDatEntryKey);
+			const BufferView<const std::string> templateDatTexts = entry.values;
 
 			if (locationType == ArenaTypes::LocationType::CityState)
 			{
