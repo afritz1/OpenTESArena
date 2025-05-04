@@ -54,6 +54,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	// subsequent LEVELUP voxel.
 	gameState.getOnLevelUpVoxelEnter() = std::function<void(Game&)>();
 
+	// Clear keys inventory in case we're leaving a main quest dungeon.
+	Player &player = game.player;
+	player.clearKeyInventory();
+
 	// Pop this sub-panel on the next game loop. The game loop pops old sub-panels before
 	// pushing new ones, so call order doesn't matter.
 	game.popSubPanel();
