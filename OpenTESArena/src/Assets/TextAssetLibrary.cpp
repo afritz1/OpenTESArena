@@ -23,20 +23,7 @@ namespace
 		IndexStringChance, // Points into chunk lists, w/ string and chance.
 	};
 
-	struct NameRuleIndexChance
-	{
-		int index, chance;
-	};
-
-	struct NameRuleIndexStringChance
-	{
-		int index;
-		std::array<char, 4> str;
-		int chance;
-	};
-
-	// Discriminated union for name composition rules used with NAMECHNK.DAT.
-	// Each rule is either:
+	// Name composition rules used with NAMECHNK.DAT. Each rule is either:
 	// - Index
 	// - Pre-defined string
 	// - Index with chance
@@ -44,150 +31,170 @@ namespace
 	struct NameRule
 	{
 		NameRuleType type;
+		int index;
+		const char *str;
+		int chance;
 
-		union
-		{
-			int index;
-			std::array<char, 4> str;
-			NameRuleIndexChance indexChance;
-			NameRuleIndexStringChance indexStringChance;
-		};
-
-		NameRule(int index)
+		constexpr NameRule(int index)
 		{
 			this->type = NameRuleType::Index;
 			this->index = index;
+			this->str = nullptr;
+			this->chance = -1;
 		}
 
-		NameRule(const std::string &str)
+		constexpr NameRule(const char *str)
 		{
 			this->type = NameRuleType::String;
-			this->str.fill('\0');
-			const size_t charCount = std::min(str.size(), this->str.size());
-			std::copy(str.begin(), str.begin() + charCount, this->str.begin());
+			this->index = -1;
+			this->str = str;
+			this->chance = -1;
 		}
 
-		NameRule(int index, int chance)
+		constexpr NameRule(int index, int chance)
 		{
 			this->type = NameRuleType::IndexChance;
-			this->indexChance.index = index;
-			this->indexChance.chance = chance;
+			this->index = index;
+			this->str = nullptr;
+			this->chance = chance;
 		}
 
-		NameRule(int index, const std::string &str, int chance)
+		constexpr NameRule(int index, const char *str, int chance)
 		{
 			this->type = NameRuleType::IndexStringChance;
-			this->indexStringChance.index = index;
-
-			this->indexStringChance.str.fill('\0');
-			const size_t charCount = std::min(str.size(), this->indexStringChance.str.size());
-			std::copy(str.begin(), str.begin() + charCount, this->indexStringChance.str.begin());
-
-			this->indexStringChance.chance = chance;
+			this->index = index;
+			this->str = str;
+			this->chance = chance;
 		}
 	};
 
-	// Rules for how to access NAMECHNK.DAT lists for name creation (with associated
-	// chances, if any).
-	const std::array<std::vector<NameRule>, 48> NameRules =
+	using GenderNameRules = BufferView<const NameRule>;
+
+	constexpr NameRule NameRules_Race0_Male[] = { { 0 }, { 1 }, { " " }, { 4 }, { 5 } };
+	constexpr NameRule NameRules_Race0_Female[] = { { 2 }, { 3 }, { " " }, { 4 }, { 5 } };
+	const GenderNameRules NameRules_Race0[] = { NameRules_Race0_Male, NameRules_Race0_Female };
+
+	constexpr NameRule NameRules_Race1_Male[] = { { 6 }, { 7 }, { 8 }, { 9, 75 } };
+	constexpr NameRule NameRules_Race1_Female[] = { { 6 }, { 7 }, { 8 }, { 9, 75 }, { 10 } };
+	const GenderNameRules NameRules_Race1[] = { NameRules_Race1_Male, NameRules_Race1_Female };
+
+	constexpr NameRule NameRules_Race2_Male[] = { { 11 }, { 12 }, { " " }, { 15 }, { 16 }, { "sen" } };
+	constexpr NameRule NameRules_Race2_Female[] = { { 13 }, { 14 }, { " " }, { 15 }, { 16 }, { "sen" } };
+	const GenderNameRules NameRules_Race2[] = { NameRules_Race2_Male, NameRules_Race2_Female };
+
+	constexpr NameRule NameRules_Race3_Male[] = { { 17 }, { 18 }, { " " }, { 21 }, { 22 } };
+	constexpr NameRule NameRules_Race3_Female[] = { { 19 }, { 20 }, { " " }, { 21 }, { 22 } };
+	const GenderNameRules NameRules_Race3[] = { NameRules_Race3_Male, NameRules_Race3_Female };
+
+	constexpr NameRule NameRules_Race4_Male[] = { { 23 }, { 24 }, { " " }, { 27 }, { 28 } };
+	constexpr NameRule NameRules_Race4_Female[] = { { 25 }, { 26 }, { " " }, { 27 }, { 28 } };
+	const GenderNameRules NameRules_Race4[] = { NameRules_Race4_Male, NameRules_Race4_Female };
+
+	constexpr NameRule NameRules_Race5_Male[] = { { 29 }, { 30 }, { " " }, { 33 }, { 34 } };
+	constexpr NameRule NameRules_Race5_Female[] = { { 31 }, { 32 }, { " " }, { 33 }, { 34 } };
+	const GenderNameRules NameRules_Race5[] = { NameRules_Race5_Male, NameRules_Race5_Female };
+
+	constexpr NameRule NameRules_Race6_Male[] = { { 35 }, { 36 }, { " " }, { 39 }, { 40 } };
+	constexpr NameRule NameRules_Race6_Female[] = { { 37 }, { 38 }, { " " }, { 39 }, { 40 } };
+	const GenderNameRules NameRules_Race6[] = { NameRules_Race6_Male, NameRules_Race6_Female };
+
+	constexpr NameRule NameRules_Race7_Male[] = { { 41 }, { 42 }, { " " }, { 45 }, { 46 } };
+	constexpr NameRule NameRules_Race7_Female[] = { { 43 }, { 44 }, { " " }, { 45 }, { 46 } };
+	const GenderNameRules NameRules_Race7[] = { NameRules_Race7_Male, NameRules_Race7_Female };
+
+	constexpr NameRule NameRules_Race8_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race8_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race8[] = { NameRules_Race8_Male, NameRules_Race8_Female };
+
+	constexpr NameRule NameRules_Race9_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race9_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race9[] = { NameRules_Race9_Male, NameRules_Race9_Female };
+
+	constexpr NameRule NameRules_Race10_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race10_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race10[] = { NameRules_Race10_Male, NameRules_Race10_Female };
+
+	constexpr NameRule NameRules_Race11_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race11_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race11[] = { NameRules_Race11_Male, NameRules_Race11_Female };
+
+	constexpr NameRule NameRules_Race12_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race12_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race12[] = { NameRules_Race12_Male, NameRules_Race12_Female };
+
+	constexpr NameRule NameRules_Race13_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race13_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race13[] = { NameRules_Race13_Male, NameRules_Race13_Female };
+
+	constexpr NameRule NameRules_Race14_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race14_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race14[] = { NameRules_Race14_Male, NameRules_Race14_Female };
+
+	constexpr NameRule NameRules_Race15_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race15_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race15[] = { NameRules_Race15_Male, NameRules_Race15_Female };
+
+	constexpr NameRule NameRules_Race16_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race16_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race16[] = { NameRules_Race16_Male, NameRules_Race16_Female };
+
+	constexpr NameRule NameRules_Race17_Male[] = { { 50 }, { 51, 75 }, { 52 } };
+	constexpr NameRule NameRules_Race17_Female[] = { { 50 }, { 51, 75 }, { 52 } };
+	const GenderNameRules NameRules_Race17[] = { NameRules_Race17_Male, NameRules_Race17_Female };
+
+	constexpr NameRule NameRules_Race18_Male[] = { { 50 }, { 51, 75 }, { 52 } };
+	constexpr NameRule NameRules_Race18_Female[] = { { 50 }, { 51, 75 }, { 52 } };
+	const GenderNameRules NameRules_Race18[] = { NameRules_Race18_Male, NameRules_Race18_Female };
+
+	constexpr NameRule NameRules_Race19_Male[] = { { 50 }, { 51, 75 }, { 52 } };
+	constexpr NameRule NameRules_Race19_Female[] = { { 50 }, { 51, 75 }, { 52 } };
+	const GenderNameRules NameRules_Race19[] = { NameRules_Race19_Male, NameRules_Race19_Female };
+
+	constexpr NameRule NameRules_Race20_Male[] = { { 50 }, { 51, 75 }, { 52 } };
+	constexpr NameRule NameRules_Race20_Female[] = { { 50 }, { 51, 75 }, { 52 } };
+	const GenderNameRules NameRules_Race20[] = { NameRules_Race20_Male, NameRules_Race20_Female };
+
+	constexpr NameRule NameRules_Race21_Male[] = { { 50 }, { 52 }, { 53 } };
+	constexpr NameRule NameRules_Race21_Female[] = { { 50 }, { 52 }, { 53 } };
+	const GenderNameRules NameRules_Race21[] = { NameRules_Race21_Male, NameRules_Race21_Female };
+
+	constexpr NameRule NameRules_Race22_Male[] = { { 54, " ", 25 }, { 55 }, { 56 }, { 57 } };
+	constexpr NameRule NameRules_Race22_Female[] = { { 54, " ", 25 }, { 55 }, { 56 }, { 57 } };
+	const GenderNameRules NameRules_Race22[] = { NameRules_Race22_Male, NameRules_Race22_Female };
+
+	constexpr NameRule NameRules_Race23_Male[] = { { 55 }, { 56 }, { 57 } };
+	constexpr NameRule NameRules_Race23_Female[] = { { 55 }, { 56 }, { 57 } };
+	const GenderNameRules NameRules_Race23[] = { NameRules_Race23_Male, NameRules_Race23_Female };
+
+	using RaceNameRules = BufferView<const GenderNameRules>;
+
+	// Rules for accessing NAMECHNK.DAT lists for name generation, with associated chances if any.
+	const RaceNameRules NameRules[] =
 	{
-		{
-			// Race 0.
-			{ { 0 }, { 1 }, { " " }, { 4 }, { 5 } },
-			{ { 2 }, { 3 }, { " " }, { 4 }, { 5 } },
-
-			// Race 1.
-			{ { 6 }, { 7 }, { 8 }, { 9, 75 } },
-			{ { 6 }, { 7 }, { 8 }, { 9, 75 }, { 10 } },
-
-			// Race 2.
-			{ { 11 }, { 12 }, { " " }, { 15 }, { 16 }, { "sen" } },
-			{ { 13 }, { 14 }, { " " }, { 15 }, { 16 }, { "sen" } },
-
-			// Race 3.
-			{ { 17 }, { 18 }, { " " }, { 21 }, { 22 } },
-			{ { 19 }, { 20 }, { " " }, { 21 }, { 22 } },
-
-			// Race 4.
-			{ { 23 }, { 24 }, { " " }, { 27 }, { 28 } },
-			{ { 25 }, { 26 }, { " " }, { 27 }, { 28 } },
-
-			// Race 5.
-			{ { 29 }, { 30 }, { " " }, { 33 }, { 34 } },
-			{ { 31 }, { 32 }, { " " }, { 33 }, { 34 } },
-
-			// Race 6.
-			{ { 35 }, { 36 }, { " " }, { 39 }, { 40 } },
-			{ { 37 }, { 38 }, { " " }, { 39 }, { 40 } },
-
-			// Race 7.
-			{ { 41 }, { 42 }, { " " }, { 45 }, { 46 } },
-			{ { 43 }, { 44 }, { " " }, { 45 }, { 46 } },
-
-			// Race 8.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 9.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 10.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 11.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 12.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 13.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 14.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 15.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 16.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 17.
-			{ { 50 }, { 51, 75 }, { 52 } },
-			{ { 50 }, { 51, 75 }, { 52 } },
-
-			// Race 18.
-			{ { 50 }, { 51, 75 }, { 52 } },
-			{ { 50 }, { 51, 75 }, { 52 } },
-
-			// Race 19.
-			{ { 50 }, { 51, 75 }, { 52 } },
-			{ { 50 }, { 51, 75 }, { 52 } },
-
-			// Race 20.
-			{ { 50 }, { 51, 75 }, { 52 } },
-			{ { 50 }, { 51, 75 }, { 52 } },
-
-			// Race 21.
-			{ { 50 }, { 52 }, { 53 } },
-			{ { 50 }, { 52 }, { 53 } },
-
-			// Race 22.
-			{ { 54, " ", 25 }, { 55 }, { 56 }, { 57 } },
-			{ { 54, " ", 25 }, { 55 }, { 56 }, { 57 } },
-
-			// Race 23.
-			{ { 55 }, { 56 }, { 57 } },
-			{ { 55 }, { 56 }, { 57 } }
-		}
+		NameRules_Race0,
+		NameRules_Race1,
+		NameRules_Race2,
+		NameRules_Race3,
+		NameRules_Race4,
+		NameRules_Race5,
+		NameRules_Race6,
+		NameRules_Race7,
+		NameRules_Race8,
+		NameRules_Race9,
+		NameRules_Race10,
+		NameRules_Race11,
+		NameRules_Race12,
+		NameRules_Race13,
+		NameRules_Race14,
+		NameRules_Race15,
+		NameRules_Race16,
+		NameRules_Race17,
+		NameRules_Race18,
+		NameRules_Race19,
+		NameRules_Race20,
+		NameRules_Race21,
+		NameRules_Race22,
+		NameRules_Race23
 	};
 }
 
@@ -917,13 +924,12 @@ bool TextAssetLibrary::init()
 
 std::string TextAssetLibrary::generateNpcName(int raceID, bool isMale, ArenaRandom &random) const
 {
-	const int nameRuleIndex = (raceID * 2) + (isMale ? 0 : 1);
-	DebugAssertIndex(NameRules, nameRuleIndex);
-	const BufferView<const NameRule> &chunkRules = NameRules[nameRuleIndex];
+	const RaceNameRules selectedRaceNameRules = NameRules[raceID];
+	const GenderNameRules selectedGenderNameRules = selectedRaceNameRules[isMale ? 0 : 1];
 
 	// Construct the name from each part of the rule.
 	std::string name;
-	for (const NameRule &rule : chunkRules)
+	for (const NameRule &rule : selectedGenderNameRules)
 	{
 		if (rule.type == NameRuleType::Index)
 		{
@@ -934,13 +940,13 @@ std::string TextAssetLibrary::generateNpcName(int raceID, bool isMale, ArenaRand
 		}
 		else if (rule.type == NameRuleType::String)
 		{
-			name += std::string(rule.str.data());
+			name += std::string(rule.str);
 		}
 		else if (rule.type == NameRuleType::IndexChance)
 		{
-			DebugAssertIndex(this->nameChunks, rule.indexChance.index);
-			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.indexChance.index];
-			if ((random.next() % 100) <= rule.indexChance.chance)
+			DebugAssertIndex(this->nameChunks, rule.index);
+			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.index];
+			if ((random.next() % 100) <= rule.chance)
 			{
 				const int chunkListIndex = DebugMakeIndex(chunkList, random.next() % static_cast<int>(chunkList.size()));
 				name += chunkList[chunkListIndex];
@@ -948,12 +954,12 @@ std::string TextAssetLibrary::generateNpcName(int raceID, bool isMale, ArenaRand
 		}
 		else if (rule.type == NameRuleType::IndexStringChance)
 		{
-			DebugAssertIndex(this->nameChunks, rule.indexStringChance.index);
-			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.indexStringChance.index];
-			if ((random.next() % 100) <= rule.indexStringChance.chance)
+			DebugAssertIndex(this->nameChunks, rule.index);
+			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.index];
+			if ((random.next() % 100) <= rule.chance)
 			{
 				const int chunkListIndex = DebugMakeIndex(chunkList, random.next() % static_cast<int>(chunkList.size()));
-				name += chunkList[chunkListIndex] + std::string(rule.indexStringChance.str.data());
+				name += chunkList[chunkListIndex] + std::string(rule.str);
 			}
 		}
 		else
