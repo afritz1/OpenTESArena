@@ -434,7 +434,7 @@ bool ArenaTemplateDat::init()
 
 		// Add entry to the entry list.
 		DebugAssertIndex(this->entryLists, index);
-		std::vector<ArenaTemplateDatEntry> outputEntryList = this->entryLists[index];
+		std::vector<ArenaTemplateDatEntry> &outputEntryList = this->entryLists[index];
 		outputEntryList.emplace_back(std::move(entry));
 
 		// Reset key, letter, and value string.
