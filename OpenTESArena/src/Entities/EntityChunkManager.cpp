@@ -993,7 +993,7 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 				WorldInt3 entityWorldVoxel = VoxelUtils::pointToVoxel(entityPosition, ceilingScale);
 				const CoordInt3 entityVoxelCoord = VoxelUtils::worldVoxelToCoord(entityWorldVoxel);
 				const VoxelInt3 entityVoxel = entityVoxelCoord.voxel;
-				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.z == fadeAnimInst.z);
+				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.y == fadeAnimInst.y) && (entityVoxel.z == fadeAnimInst.z);
 				
 				// @todo: we don't know if this was a raised platform because the voxel shape has already changed this frame, so just assume yes for "can be elevated" entities
 				if (matchesFadedVoxel && entityInst.canUseElevatedPlatforms())
