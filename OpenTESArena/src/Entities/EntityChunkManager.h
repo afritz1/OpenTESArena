@@ -99,7 +99,7 @@ private:
 		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
-	void updateCitizenStates(double dt, EntityChunk &entityChunk, const CoordDouble2 &playerCoordXZ, bool isPlayerMoving,
+	void updateCitizenStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving,
 		bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;

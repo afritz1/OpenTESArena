@@ -528,7 +528,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	}
 }
 
-void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk, const CoordDouble2 &playerCoordXZ,
+void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ,
 	bool isPlayerMoving, bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
@@ -543,11 +543,10 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		}
 
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
-		const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
-		const CoordDouble2 entityCoordXZ(entityCoord.chunk, VoxelDouble2(entityCoord.point.x, entityCoord.point.z));
-		const ChunkInt2 prevEntityChunkPos = entityCoordXZ.chunk;
+		const WorldDouble2 entityPositionXZ(entityPosition.x, entityPosition.z);
+		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToCoord(entityPositionXZ).chunk;
 		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
-		const VoxelDouble2 dirToPlayer = playerCoordXZ - entityCoordXZ;
+		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
@@ -599,46 +598,50 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		const int curAnimStateIndex = animInst.currentStateIndex;
 		if (curAnimStateIndex == *walkStateIndex)
 		{
-			auto getVoxelAtDistance = [&entityCoordXZ](const VoxelDouble2 &checkDist) -> CoordInt2
+			auto getVoxelAtDistance = [&entityPositionXZ](const VoxelDouble2 &checkDist) -> WorldInt2
 			{
-				const CoordDouble2 pos = entityCoordXZ + checkDist;
-				return CoordInt2(pos.chunk, VoxelUtils::pointToVoxel(pos.point));
+				const WorldDouble2 worldPosition = entityPositionXZ + checkDist;
+				return VoxelUtils::pointToVoxel(worldPosition);
 			};
 
-			const CoordInt2 curVoxel(entityCoordXZ.chunk, VoxelUtils::pointToVoxel(entityCoordXZ.point));
-			const CoordInt2 nextVoxel = getVoxelAtDistance(entityDir * 0.50);
+			const WorldInt2 curWorldVoxel = VoxelUtils::pointToVoxel(entityPositionXZ);
+			const WorldInt2 nextWorldVoxel = getVoxelAtDistance(entityDir * 0.50);
 
-			if (nextVoxel != curVoxel)
+			if (nextWorldVoxel != curWorldVoxel)
 			{
-				auto isSuitableVoxel = [&voxelChunkManager](const CoordInt2 &coord)
+				auto isSuitableVoxel = [&voxelChunkManager](const WorldInt2 &worldVoxel)
 				{
+					const CoordInt2 coord = VoxelUtils::worldVoxelToCoord(worldVoxel);
 					const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
 
-					auto isValidVoxel = [voxelChunk]()
+					const bool isValidVoxel = voxelChunk != nullptr;
+					if (!isValidVoxel)
 					{
-						return voxelChunk != nullptr;
-					};
+						return false;
+					}
 
-					auto isPassableVoxel = [&coord, voxelChunk]()
+					const VoxelInt3 mainFloorVoxel(coord.voxel.x, 1, coord.voxel.y);
+					const VoxelTraitsDefID mainFloorVoxelTraitsDefID = voxelChunk->getTraitsDefID(mainFloorVoxel.x, mainFloorVoxel.y, mainFloorVoxel.z);
+					const VoxelTraitsDefinition &mainFloorVoxelTraitsDef = voxelChunk->getTraitsDef(mainFloorVoxelTraitsDefID);
+					const bool isPassableVoxel = mainFloorVoxelTraitsDef.type == ArenaTypes::VoxelType::None;
+					if (!isPassableVoxel)
 					{
-						const VoxelInt3 voxel(coord.voxel.x, 1, coord.voxel.y);
-						const VoxelTraitsDefID voxelTraitsDefID = voxelChunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
-						const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk->getTraitsDef(voxelTraitsDefID);
-						return voxelTraitsDef.type == ArenaTypes::VoxelType::None;
-					};
+						return false;
+					}
 
-					auto isWalkableVoxel = [&coord, voxelChunk]()
+					const VoxelInt3 floorVoxel(coord.voxel.x, 0, coord.voxel.y);
+					const VoxelTraitsDefID floorVoxelTraitsDefID = voxelChunk->getTraitsDefID(floorVoxel.x, floorVoxel.y, floorVoxel.z);
+					const VoxelTraitsDefinition &floorVoxelTraitsDef = voxelChunk->getTraitsDef(floorVoxelTraitsDefID);
+					const bool isWalkableVoxel = floorVoxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
+					if (!isWalkableVoxel)
 					{
-						const VoxelInt3 voxel(coord.voxel.x, 0, coord.voxel.y);
-						const VoxelTraitsDefID voxelTraitsDefID = voxelChunk->getTraitsDefID(voxel.x, voxel.y, voxel.z);
-						const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk->getTraitsDef(voxelTraitsDefID);
-						return voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
-					};
+						return false;
+					}
 
-					return isValidVoxel() && isPassableVoxel() && isWalkableVoxel();
+					return true;
 				};
 
-				if (!isSuitableVoxel(nextVoxel))
+				if (!isSuitableVoxel(nextWorldVoxel))
 				{
 					// Need to change walking direction. Determine another safe route, or if
 					// none exist, then stop walking.
@@ -659,9 +662,9 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 						const CardinalDirectionName cardinalDirectionName = CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
 						if (cardinalDirectionName != curDirectionName)
 						{
-							const WorldDouble2 &direction = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
-							const CoordInt2 voxel = getVoxelAtDistance(direction * 0.50);
-							if (isSuitableVoxel(voxel))
+							const WorldDouble2 &possibleDirection = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
+							const WorldInt2 possibleVoxel = getVoxelAtDistance(possibleDirection * 0.50);
+							if (isSuitableVoxel(possibleVoxel))
 							{
 								return true;
 							}
@@ -684,21 +687,19 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 
 			// Integrate by delta time.
 			const VoxelDouble2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
-			const CoordDouble2 curEntityCoordXZ = ChunkUtils::recalculateCoord(entityCoordXZ.chunk, entityCoordXZ.point + (entityVelocity * dt));
-			const WorldDouble2 curEntityPositionXZ = VoxelUtils::coordToWorldPoint(curEntityCoordXZ);
-			entityPosition.x = curEntityPositionXZ.x;
-			entityPosition.z = curEntityPositionXZ.y;			
-			curEntityChunkPos = curEntityCoordXZ.chunk;
+			const WorldDouble2 newEntityPositionXZ = entityPositionXZ + (entityVelocity * dt);
+			entityPosition.x = newEntityPositionXZ.x;
+			entityPosition.z = newEntityPositionXZ.y;
+			curEntityChunkPos = VoxelUtils::worldPointToCoord(newEntityPositionXZ).chunk;
 
 			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 			DebugAssert(!physicsBodyID.IsInvalid());
 
 			const JPH::RVec3 oldBodyPosition = bodyInterface.GetPosition(physicsBodyID);
-			const WorldDouble2 newEntityWorldPointXZ = VoxelUtils::coordToWorldPoint(curEntityCoordXZ);
 			const JPH::RVec3 newBodyPosition(
-				static_cast<float>(newEntityWorldPointXZ.x),
+				static_cast<float>(newEntityPositionXZ.x),
 				static_cast<float>(oldBodyPosition.GetY()),
-				static_cast<float>(newEntityWorldPointXZ.y));
+				static_cast<float>(newEntityPositionXZ.y));
 			bodyInterface.SetPosition(physicsBodyID, newBodyPosition, JPH::EActivation::Activate);
 		}
 
@@ -1070,8 +1071,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	this->chunkPool.clear();
 
 	const WorldDouble3 playerPosition = player.getEyePosition();
-	const CoordDouble3 playerCoord = player.getEyeCoord();
-	const CoordDouble2 playerCoordXZ(playerCoord.chunk, VoxelDouble2(playerCoord.point.x, playerCoord.point.z));
+	const WorldDouble2 playerPositionXZ(playerPosition.x, playerPosition.z);
 	const bool isPlayerMoving = player.isMoving();
 
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
@@ -1085,9 +1085,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-
-		// @todo: simulate/animate AI
-		this->updateCitizenStates(dt, entityChunk, playerCoordXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
+		this->updateCitizenStates(dt, entityChunk, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
 
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
