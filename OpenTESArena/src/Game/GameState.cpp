@@ -679,13 +679,14 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	Renderer &renderer = game.renderer;
 	SceneManager &sceneManager = game.sceneManager;
 
-	const CoordDouble3 playerCoord = player.getEyeCoord();
+	const WorldDouble3 playerPosition = player.getEyePosition();
+	const ChunkInt2 playerChunk = VoxelUtils::worldPointToChunk(playerPosition);
 
 	// Clear and re-populate scene immediately so it's ready for rendering this frame (otherwise we get a black frame).
 	const Options &options = game.options;
 	ChunkManager &chunkManager = sceneManager.chunkManager;
 	chunkManager.clear();
-	chunkManager.update(playerCoord.chunk, options.getMisc_ChunkDistance());
+	chunkManager.update(playerChunk, options.getMisc_ChunkDistance());
 
 	sceneManager.voxelChunkManager.recycleAllChunks();
 	sceneManager.entityChunkManager.clear(physicsSystem, renderer);
@@ -714,7 +715,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.random, textureManager);
 
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.forward,
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.forward,
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 
 	this->tickVoxels(0.0, game);

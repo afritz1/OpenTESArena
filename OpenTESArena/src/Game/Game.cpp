@@ -522,8 +522,8 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	if (this->gameState.isActiveMapValid())
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
-		const CoordDouble3 playerCoord = this->player.getEyeCoord();
-		const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, this->player.forward,
+		const WorldDouble3 playerPosition = this->player.getEyePosition();
+		const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.forward,
 			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
@@ -902,17 +902,16 @@ void Game::loop()
 					this->gameState.clearLevelTransitionCalculation();
 				}
 
-				const CoordDouble3 newPlayerCoord = this->player.getEyeCoord();
+				const WorldDouble3 newPlayerPosition = this->player.getEyePosition();
 				const Double3 newPlayerDirection = this->player.forward;
-				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerCoord.chunk, newPlayerCoord.point, newPlayerDirection,
-					this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
+				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerPosition, newPlayerDirection, this->options.getGraphics_VerticalFOV(),
+					this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(renderCamera, *this);
 
 				// Update audio listener orientation.
-				const WorldDouble3 newPlayerWorldPos = VoxelUtils::coordToWorldPoint(newPlayerCoord);
-				const AudioListenerData listenerData(newPlayerWorldPos, newPlayerDirection);
+				const AudioListenerData listenerData(newPlayerPosition, newPlayerDirection);
 				this->audioManager.updateListener(listenerData);
 			}
 

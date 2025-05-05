@@ -1,14 +1,13 @@
 #include "RenderCamera.h"
 #include "RendererUtils.h"
 
-void RenderCamera::init(const ChunkInt2 &chunk, const Double3 &point, const Double3 &direction, Degrees fovY, double aspectRatio, double tallPixelRatio)
+void RenderCamera::init(const WorldDouble3 &worldPoint, const Double3 &direction, Degrees fovY, double aspectRatio, double tallPixelRatio)
 {
-	this->chunk = chunk;
-	this->chunkPoint = point;
+	this->worldPoint = worldPoint;
 
-	// @todo: eventually I think the chunk should be zeroed out and everything should always treat
-	// the player's chunk as the origin chunk.
-	this->worldPoint = VoxelUtils::chunkPointToWorldPoint(chunk, point);
+	const CoordDouble3 coord = VoxelUtils::worldPointToCoord(worldPoint);
+	this->chunk = coord.chunk;
+	this->chunkPoint = coord.point;
 
 	this->forward = direction.normalized();
 	this->zoom = MathUtils::verticalFovToZoom(fovY);
