@@ -108,7 +108,7 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 		}
 	}
 
-	const WorldDouble2 cameraWorldPointXZ(camera.worldPoint.x, camera.worldPoint.z);
+	const WorldDouble2 cameraWorldPointXZ = camera.worldPoint.getXZ();
 
 	// Sort entities far to near.
 	std::sort(this->visibleEntityEntries.begin(), this->visibleEntityEntries.end(),
@@ -116,8 +116,8 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 	{
 		const WorldDouble3 entityPositionA = entryA.position;
 		const WorldDouble3 entityPositionB = entryB.position;
-		const WorldDouble2 entityPositionXZA(entityPositionA.x, entityPositionA.z);
-		const WorldDouble2 entityPositionXZB(entityPositionB.x, entityPositionB.z);
+		const WorldDouble2 entityPositionXZA = entityPositionA.getXZ();
+		const WorldDouble2 entityPositionXZB = entityPositionB.getXZ();
 		const double entityDistSqrA = (entityPositionXZA - cameraWorldPointXZ).lengthSquared();
 		const double entityDistSqrB = (entityPositionXZB - cameraWorldPointXZ).lengthSquared();
 		return entityDistSqrA > entityDistSqrB;

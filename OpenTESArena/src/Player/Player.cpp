@@ -493,7 +493,7 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 
 		const double moveSpeed = this->getMaxMoveSpeed();
 		const double clampedSpeed = moveSpeed * PlayerConstants::CLAMPED_MOVE_SPEED_PERCENT;
-		Double2 newVelocityXZ(newVelocity.x, newVelocity.z);
+		Double2 newVelocityXZ = newVelocity.getXZ();
 		if (newVelocityXZ.length() > clampedSpeed)
 		{
 			newVelocityXZ = newVelocityXZ.normalized() * clampedSpeed;
@@ -685,7 +685,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 	const bool isMovementSoundAccumulating = (this->movementType != PlayerMovementType::Climbing) && this->groundState.onGround && this->isMoving();
 	if (isMovementSoundAccumulating)
 	{
-		const Double2 physicsVelocityXZ(physicsVelocity.x, physicsVelocity.z);
+		const Double2 physicsVelocityXZ = physicsVelocity.getXZ();
 
 		constexpr double tempRateBias = 1.40; // @temp due to Jolt movement still being bouncy even with enhanced internal edge removal fix
 		const double clampedMoveSpeed = this->getMaxMoveSpeed() * PlayerConstants::CLAMPED_MOVE_SPEED_PERCENT;

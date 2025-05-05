@@ -79,7 +79,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 
 	auto &renderer = game.renderer;
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
-	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
+	const CoordInt2 playerCoordXZ(playerCoord.chunk, playerVoxel.getXZ());
 	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(
 		game.gameState, playerCoordXZ, playerDirection, voxelChunkManager, renderer);
 	this->mapTextureRef.init(mapTextureID, renderer);

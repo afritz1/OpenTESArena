@@ -610,17 +610,13 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 		CoordDouble2 startCoord;
 		if (this->nextMapStartCoord.has_value())
 		{
-			const VoxelInt2 startVoxelXZ(
-				this->nextMapStartCoord->voxel.x,
-				this->nextMapStartCoord->voxel.y);
+			const VoxelInt2 startVoxelXZ = this->nextMapStartCoord->voxel;
 			startCoord = CoordDouble2(this->nextMapStartCoord->chunk, VoxelUtils::getVoxelCenter(startVoxelXZ));
 			this->nextMapStartCoord = std::nullopt;
 		}
 		else if (shouldPopReturnCoord)
 		{
-			const VoxelInt2 returnVoxelXZ(
-				this->prevMapReturnCoord->voxel.x,
-				this->prevMapReturnCoord->voxel.z);
+			const VoxelInt2 returnVoxelXZ = this->prevMapReturnCoord->voxel.getXZ();
 			startCoord = CoordDouble2(this->prevMapReturnCoord->chunk, VoxelUtils::getVoxelCenter(returnVoxelXZ));
 			this->prevMapReturnCoord = std::nullopt;
 		}
