@@ -325,7 +325,8 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 {
 	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const EntityCitizenName &citizenName = entityChunkManager.getEntityCitizenName(entityInst.citizenNameID);
-	const std::string text = std::string(citizenName.name) + "\nNot implemented";
+	const std::string citizenNameStr(citizenName.name);
+	const std::string text = citizenNameStr + "\n(dialogue not implemented)";
 
 	Int2 center;
 	TextBox::InitInfo textBoxInitInfo;
