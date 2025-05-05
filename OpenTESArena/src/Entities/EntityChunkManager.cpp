@@ -544,7 +544,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ(entityPosition.x, entityPosition.z);
-		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToCoord(entityPositionXZ).chunk;
+		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
 		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
 		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
@@ -690,7 +690,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 			const WorldDouble2 newEntityPositionXZ = entityPositionXZ + (entityVelocity * dt);
 			entityPosition.x = newEntityPositionXZ.x;
 			entityPosition.z = newEntityPositionXZ.y;
-			curEntityChunkPos = VoxelUtils::worldPointToCoord(newEntityPositionXZ).chunk;
+			curEntityChunkPos = VoxelUtils::worldPointToChunk(newEntityPositionXZ);
 
 			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 			DebugAssert(!physicsBodyID.IsInvalid());
@@ -990,10 +990,9 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 				const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
 				const EntityInstance &entityInst = this->entities.get(entityInstID);
 				WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
-				const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
-				const CoordInt3 entityVoxelCoord(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point, ceilingScale));
+				WorldInt3 entityWorldVoxel = VoxelUtils::pointToVoxel(entityPosition, ceilingScale);
+				const CoordInt3 entityVoxelCoord = VoxelUtils::worldVoxelToCoord(entityWorldVoxel);
 				const VoxelInt3 entityVoxel = entityVoxelCoord.voxel;
-
 				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.z == fadeAnimInst.z);
 				
 				// @todo: we don't know if this was a raised platform because the voxel shape has already changed this frame, so just assume yes for "can be elevated" entities
@@ -1123,8 +1122,8 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool 
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-		const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
-		chunkToNotify = &entityCoord.chunk;
+		const ChunkInt2 entityChunkPos = VoxelUtils::worldPointToChunk(entityPosition);
+		chunkToNotify = &entityChunkPos;
 	}
 	
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
