@@ -7,6 +7,8 @@
 #include <type_traits>
 #include <unordered_map>
 
+#include "Vector2.h"
+
 class Random;
 
 template <typename T>
@@ -55,6 +57,10 @@ public:
 	Vector3i<T> operator/(T m) const;
 	Vector3i<T> operator/(const Vector3i<T> &v) const;
 
+	Vector2i<T> getXY() const;
+	Vector2i<T> getXZ() const;
+	Vector2i<T> getYZ() const;
+
 	std::string toString() const;
 };
 
@@ -102,6 +108,10 @@ public:
 	Vector3f<T> operator*(const Vector3f<T> &v) const;
 	Vector3f<T> operator/(T m) const;
 	Vector3f<T> operator/(const Vector3f<T> &v) const;
+
+	Vector2f<T> getXY() const;
+	Vector2f<T> getXZ() const;
+	Vector2f<T> getYZ() const;
 
 	std::string toString() const;
 	uint32_t toRGB() const;
