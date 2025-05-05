@@ -672,6 +672,7 @@ void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
 	charCreationState.rollAttributes(game.random);
 	
 	game.popSubPanel();
+	game.setPanel<ChooseAttributesPanel>();
 }
 
 void ChooseAttributesUiController::onAppearanceTextBoxSelected(Game &game)
