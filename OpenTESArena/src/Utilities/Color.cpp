@@ -80,7 +80,7 @@ bool Color::operator!=(const Color &other) const
 std::string Color::toString() const
 {
 	char buffer[64];
-	std::snprintf(buffer, std::size(buffer), "(%d, %d, %d, %d)", this->r, this->g, this->b, this->a);
+	std::snprintf(buffer, std::size(buffer), "%d, %d, %d, %d", this->r, this->g, this->b, this->a);
 	return std::string(buffer);
 }
 

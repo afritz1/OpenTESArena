@@ -29,7 +29,7 @@ namespace
 		UiTextureID textureID;
 		if (!renderer.tryCreateUiTexture(width, height, &textureID))
 		{
-			DebugCrash("Couldn't create status bar texture with color " + color.toString() + ".");
+			DebugCrash("Couldn't create status bar texture with color (" + color.toString() + ").");
 		}
 
 		uint32_t *texels = renderer.lockUiTexture(textureID);
