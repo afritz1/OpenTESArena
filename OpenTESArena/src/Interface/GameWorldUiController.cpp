@@ -296,8 +296,7 @@ void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &
 		postStatusPopUpCallback();
 	};
 
-	Renderer &renderer = game.renderer;
-	ScopedUiTextureRef textureRef(textureID, renderer);
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, onSelectedFunc, std::move(textureRef), center);
 }
 
@@ -318,9 +317,23 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 		audioManager.playSound(soundFilename.c_str(), soundPosition);
 	};
 
-	Renderer &renderer = game.renderer;
-	ScopedUiTextureRef textureRef(textureID, renderer);
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, onCloseCallback, std::move(textureRef), center);
+}
+
+void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance &entityInst)
+{
+	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	const EntityCitizenName &citizenName = entityChunkManager.getEntityCitizenName(entityInst.citizenNameID);
+	const std::string text = std::string(citizenName.name) + "\nNot implemented";
+
+	Int2 center;
+	TextBox::InitInfo textBoxInitInfo;
+	UiTextureID textureID;
+	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
+
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
 }
 
 void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight)
@@ -401,7 +414,6 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 		}
 	};
 
-	Renderer &renderer = game.renderer;
-	ScopedUiTextureRef textureRef(textureID, renderer);
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, onCloseCallback, std::move(textureRef), center);
 }

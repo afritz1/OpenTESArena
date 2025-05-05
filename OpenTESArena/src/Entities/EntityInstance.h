@@ -14,6 +14,7 @@ using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
 using EntityCreatureSoundInstanceID = int;
 using EntityCitizenDirectionIndexID = int;
+using EntityCitizenNameID = int;
 using EntityPaletteIndicesInstanceID = int;
 using EntityItemInventoryInstanceID = int;
 
@@ -27,6 +28,7 @@ struct EntityInstance
 	EntityAnimationInstanceID animInstID;
 	EntityCreatureSoundInstanceID creatureSoundInstID;
 	EntityCitizenDirectionIndexID citizenDirectionIndexID;
+	EntityCitizenNameID citizenNameID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;
 	JPH::BodyID physicsBodyID;

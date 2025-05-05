@@ -33,6 +33,14 @@ struct EntityObservedResult;
 struct MapSubDefinition;
 struct Player;
 
+struct EntityCitizenName
+{
+	char name[64];
+
+	EntityCitizenName(const char *name);
+	EntityCitizenName();
+};
+
 // Generated when an entity moves between chunks so systems can update resource ownership.
 struct EntityTransferResult
 {
@@ -53,6 +61,7 @@ private:
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
 	using EntityCitizenDirectionIndexPool = RecyclablePool<int8_t, EntityCitizenDirectionIndexID>;
+	using EntityCitizenNamePool = RecyclablePool<EntityCitizenName, EntityCitizenNameID>;
 	using EntityPaletteIndicesInstancePool = RecyclablePool<PaletteIndices, EntityPaletteIndicesInstanceID>;
 	using EntityItemInventoryInstancePool = RecyclablePool<ItemInventory, EntityItemInventoryInstanceID>;
 
@@ -63,6 +72,7 @@ private:
 	EntityAnimationInstancePool animInsts;
 	EntityCreatureSoundPool creatureSoundInsts;
 	EntityCitizenDirectionIndexPool citizenDirectionIndices;
+	EntityCitizenNamePool citizenNames;
 
 	// Each citizen has a unique palette indirection in place of unique textures for memory savings. It was found
 	// that hardly any citizen instances share textures due to variations in their random palette. As a result,
@@ -115,6 +125,7 @@ public:
 	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
 	int8_t getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
+	const EntityCitizenName &getEntityCitizenName(EntityCitizenNameID id) const;
 	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;
 	ItemInventory &getEntityItemInventory(EntityItemInventoryInstanceID id);
 

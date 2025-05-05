@@ -490,7 +490,11 @@ namespace PlayerLogicController
 
 			std::string entityName;
 			std::string text;
-			if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
+			if (entityInst.isCitizen())
+			{
+				GameWorldUiController::onCitizenInteracted(game, entityInst);
+			}
+			else if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
 			{
 				text = exeData.ui.inspectedEntityName;
 

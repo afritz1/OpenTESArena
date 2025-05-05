@@ -51,6 +51,7 @@ void EntityInstance::clear()
 	this->animInstID = -1;
 	this->creatureSoundInstID = -1;
 	this->citizenDirectionIndexID = -1;
+	this->citizenNameID = -1;
 	this->paletteIndicesInstID = -1;
 	this->itemInventoryInstID = -1;
 	this->physicsBodyID = JPH::BodyID();

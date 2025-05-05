@@ -9,6 +9,7 @@
 #include "EntityObservedResult.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Collision/PhysicsLayer.h"
@@ -42,6 +43,7 @@ namespace
 		bool isSensorCollider;
 		std::optional<Double2> direction;
 		std::optional<int8_t> citizenDirectionIndex;
+		std::optional<EntityCitizenName> citizenName;
 		std::optional<uint16_t> citizenColorSeed;
 		std::optional<int> raceID;
 		bool hasInventory;
@@ -147,6 +149,16 @@ namespace
 	}
 }
 
+EntityCitizenName::EntityCitizenName(const char *name)
+{
+	std::snprintf(this->name, std::size(this->name), "%s", name);
+}
+
+EntityCitizenName::EntityCitizenName()
+{
+	std::fill(std::begin(this->name), std::end(this->name), '\0');
+}
+
 EntityTransferResult::EntityTransferResult()
 {
 	this->id = -1;
@@ -208,6 +220,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 {
 	const ChunkInt2 chunkPos = voxelChunk.getPosition();
 	const double ceilingScale = levelInfoDefinition.getCeilingScale();
+	ArenaRandom arenaRandom(random.next()); // Don't need the one from Game, this is only a cosmetic random
 
 	auto initializeEntity = [this, &random, &binaryAssetLibrary, &physicsSystem, &renderer, ceilingScale](
 		EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef, const EntityInitInfo &initInfo)
@@ -279,6 +292,17 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			const uint8_t citizenDirectionIndex = *initInfo.citizenDirectionIndex;
 			this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID) = citizenDirectionIndex;
+		}
+
+		if (initInfo.citizenName.has_value())
+		{
+			if (!this->citizenNames.tryAlloc(&entityInst.citizenNameID))
+			{
+				DebugLogError("Couldn't allocate EntityCitizenNameID.");
+			}
+
+			const EntityCitizenName &citizenName = *initInfo.citizenName;
+			this->citizenNames.get(entityInst.citizenNameID) = citizenName;
 		}
 
 		if (initInfo.citizenColorSeed.has_value())
@@ -417,6 +441,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			return std::nullopt;
 		};
 
+		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+
 		const int currentCitizenCount = CitizenUtils::getCitizenCount(*this);
 		const int targetCitizensToSpawn = std::min(CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
 		const int remainingMaleCitizensToSpawn = targetCitizensToSpawn / 2;
@@ -428,6 +454,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const EntityDefinition *citizenDefs[] = { citizenGenInfo->maleEntityDef, citizenGenInfo->femaleEntityDef };
 		for (int citizenGenderIndex = 0; citizenGenderIndex < 2; citizenGenderIndex++)
 		{
+			const bool isMale = citizenGenderIndex == 0;
 			DebugAssertIndex(citizenCountsToSpawn, citizenGenderIndex);
 			const int citizensToSpawn = citizenCountsToSpawn[citizenGenderIndex];
 			const EntityDefID citizenEntityDefID = citizenDefIDs[citizenGenderIndex];
@@ -464,6 +491,10 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.initialAnimStateIndex = *initialCitizenAnimStateIndex;
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
+
+				const std::string citizenNameStr = textAssetLibrary.generateNpcName(citizenRaceID, isMale, arenaRandom);
+				citizenInitInfo.citizenName = EntityCitizenName(citizenNameStr.c_str());
+				
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);
 				citizenInitInfo.citizenColorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
 				citizenInitInfo.raceID = citizenRaceID;
@@ -771,6 +802,11 @@ const EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(En
 int8_t EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const
 {
 	return this->citizenDirectionIndices.get(id);
+}
+
+const EntityCitizenName &EntityChunkManager::getEntityCitizenName(EntityCitizenNameID id) const
+{
+	return this->citizenNames.get(id);
 }
 
 const PaletteIndices &EntityChunkManager::getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const
@@ -1165,6 +1201,11 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &re
 		if (entityInst.citizenDirectionIndexID >= 0)
 		{
 			this->citizenDirectionIndices.free(entityInst.citizenDirectionIndexID);
+		}
+
+		if (entityInst.citizenNameID >= 0)
+		{
+			this->citizenNames.free(entityInst.citizenNameID);
 		}
 
 		if (entityInst.paletteIndicesInstID >= 0)

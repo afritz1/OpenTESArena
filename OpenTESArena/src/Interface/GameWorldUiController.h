@@ -13,6 +13,7 @@ class TextBox;
 
 enum class MouseButtonType;
 
+struct EntityInstance;
 struct InputActionCallbackValues;
 struct Player;
 
@@ -44,6 +45,8 @@ namespace GameWorldUiController
 
 	void onKeyPickedUp(Game &game, int keyID, const ExeData &exeData, const std::function<void()> postStatusPopUpCallback);
 	void onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData);
+
+	void onCitizenInteracted(Game &game, const EntityInstance &entityInst);
 
 	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);
 }
