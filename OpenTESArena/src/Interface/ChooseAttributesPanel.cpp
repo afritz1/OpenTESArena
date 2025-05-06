@@ -265,13 +265,15 @@ bool ChooseAttributesPanel::init()
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	// code arrow
+	const Rect &firstAttributeTextBox = this->attributeTextBoxes[0].getRect();
+	int fixedArrowX = firstAttributeTextBox.getRight() + 3;
+	
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
 		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 		
 		const Int2 buttonCenter(
-			attributeTextBoxRect.getRight() + 5,
+			fixedArrowX,
 			attributeTextBoxRect.getCenter().y);
 		
 		const float scaleFactor = 0.5f;
