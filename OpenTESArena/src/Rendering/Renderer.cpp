@@ -333,8 +333,7 @@ double Renderer::getViewAspect() const
 SDL_Rect Renderer::getLetterboxDimensions() const
 {
 	const Int2 windowDims = this->getWindowDimensions();
-	const double nativeAspect = static_cast<double>(windowDims.x) /
-		static_cast<double>(windowDims.y);
+	const double nativeAspect = static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
 	const double letterboxAspect = this->getLetterboxAspect();
 
 	// Compare the two aspects to decide what the letterbox dimensions are.
@@ -351,8 +350,7 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 	else if (nativeAspect > letterboxAspect)
 	{
 		// Native window is wider = empty left and right.
-		const int subWidth = static_cast<int>(std::ceil(
-			static_cast<double>(windowDims.y) * letterboxAspect));
+		const int subWidth = static_cast<int>(std::ceil(static_cast<double>(windowDims.y) * letterboxAspect));
 		SDL_Rect rect;
 		rect.x = (windowDims.x - subWidth) / 2;
 		rect.y = 0;
@@ -363,8 +361,7 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 	else
 	{
 		// Native window is taller = empty top and bottom.
-		const int subHeight = static_cast<int>(std::ceil(
-			static_cast<double>(windowDims.x) / letterboxAspect));
+		const int subHeight = static_cast<int>(std::ceil(static_cast<double>(windowDims.x) / letterboxAspect));
 		SDL_Rect rect;
 		rect.x = 0;
 		rect.y = (windowDims.y - subHeight) / 2;
@@ -407,10 +404,8 @@ Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
 		nativePoint.y - letterbox.y);
 
 	// Then from letterbox point to original point.
-	const double letterboxXPercent = static_cast<double>(letterboxPoint.x) /
-		static_cast<double>(letterbox.w);
-	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) /
-		static_cast<double>(letterbox.h);
+	const double letterboxXPercent = static_cast<double>(letterboxPoint.x) / static_cast<double>(letterbox.w);
+	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) / static_cast<double>(letterbox.h);
 
 	const double originalWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
 	const double originalHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
@@ -436,13 +431,10 @@ Rect Renderer::nativeToOriginal(const Rect &nativeRect) const
 Int2 Renderer::originalToNative(const Int2 &originalPoint) const
 {
 	// From original point to letterbox point.
-	const double originalXPercent = static_cast<double>(originalPoint.x) /
-		ArenaRenderUtils::SCREEN_WIDTH_REAL;
-	const double originalYPercent = static_cast<double>(originalPoint.y) /
-		ArenaRenderUtils::SCREEN_HEIGHT_REAL;
+	const double originalXPercent = static_cast<double>(originalPoint.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
+	const double originalYPercent = static_cast<double>(originalPoint.y) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
 	const SDL_Rect letterbox = this->getLetterboxDimensions();
-
 	const double letterboxWidthReal = static_cast<double>(letterbox.w);
 	const double letterboxHeightReal = static_cast<double>(letterbox.h);
 

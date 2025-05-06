@@ -500,6 +500,91 @@ void GameWorldPanel::initUiDrawCalls()
 			[]() { return PivotType::Top; },
 			compassActiveFunc);
 
+		UiDrawCall::TextureFunc healthBarTextureFunc = [this]() { return this->healthBarTextureRef.get(); };
+		UiDrawCall::TextureFunc staminaBarTextureFunc = [this]() { return this->staminaBarTextureRef.get(); };
+		UiDrawCall::TextureFunc spellPointsBarTextureFunc = [this]() { return this->spellPointsBarTextureRef.get(); };
+
+		auto getStatusBarsModernModeOrigin = [&renderer]()
+		{
+			const Int2 windowDims = renderer.getWindowDimensions();
+			return Int2(GameWorldUiView::StatusBarModernModeXOffset, windowDims.y - GameWorldUiView::StatusBarModernModeYOffset);
+		};
+
+		auto getStatusBarScaledXDelta = [&renderer](const Rect &statusBarRect)
+		{
+			const int originalXDelta = statusBarRect.getLeft() - GameWorldUiView::HealthBarRect.getLeft();
+			const double originalXPercentDelta = static_cast<double>(originalXDelta) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
+
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const double scaleXRatio = static_cast<double>(windowDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
+			const double aspectRatioMultiplier = ArenaRenderUtils::ASPECT_RATIO / renderer.getWindowAspect();
+			return static_cast<int>(std::round(static_cast<double>(originalXDelta) * (scaleXRatio * aspectRatioMultiplier)));
+		};
+
+		UiDrawCall::PositionFunc healthBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin]()
+		{			
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const Int2 nativePoint = getStatusBarsModernModeOrigin();
+			return renderer.nativeToOriginal(nativePoint);
+		};
+
+		UiDrawCall::PositionFunc staminaBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
+		{
+			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::StaminaBarRect);
+			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
+			return renderer.nativeToOriginal(nativePoint);
+		};
+
+		UiDrawCall::PositionFunc spellPointsBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
+		{
+			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::SpellPointsBarRect);
+			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
+			return renderer.nativeToOriginal(nativePoint);
+		};
+
+		UiDrawCall::SizeFunc healthBarSizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::HealthBarRect;
+			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentHealth, player.maxHealth));
+		};
+
+		UiDrawCall::SizeFunc staminaBarSizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::StaminaBarRect;
+			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentStamina, player.maxStamina));
+		};
+
+		UiDrawCall::SizeFunc spellPointsBarSizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
+			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentSpellPoints, player.maxSpellPoints));
+		};
+
+		UiDrawCall::PivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
+		UiDrawCall::ActiveFunc statusBarActiveFunc = []() { return true; };
+
+		this->addDrawCall(
+			healthBarTextureFunc,
+			healthBarPositionFunc,
+			healthBarSizeFunc,
+			statusBarPivotFunc,
+			statusBarActiveFunc);
+		this->addDrawCall(
+			staminaBarTextureFunc,
+			staminaBarPositionFunc,
+			staminaBarSizeFunc,
+			statusBarPivotFunc,
+			statusBarActiveFunc);
+		this->addDrawCall(
+			spellPointsBarTextureFunc,
+			spellPointsBarPositionFunc,
+			spellPointsBarSizeFunc,
+			statusBarPivotFunc,
+			statusBarActiveFunc);
+
 		UiDrawCall::TextureFunc triggerTextTextureFunc = [this]()
 		{
 			return this->triggerText.getTextureID();
