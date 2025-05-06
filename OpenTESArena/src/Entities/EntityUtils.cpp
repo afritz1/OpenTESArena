@@ -180,24 +180,43 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 
 std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef)
 {
-	if (entityDef.type != EntityDefinitionType::Decoration)
+	constexpr double lightUnitsRatio = MIFUtils::ARENA_UNITS / 100.0;
+
+	const EntityDefinitionType entityDefType = entityDef.type;
+	switch (entityDefType)
 	{
-		return std::nullopt;
+	case EntityDefinitionType::Item:
+	{
+		const ItemEntityDefinition &itemDef = entityDef.item;
+		if (itemDef.type == ItemEntityDefinitionType::QuestItem)
+		{
+			const ItemEntityDefinition::QuestItemDefinition &questItemDef = itemDef.questItem;
+			const bool isStaffPiece = questItemDef.yOffset != 0; // @todo: maybe ask "is main quest item"?
+			if (isStaffPiece)
+			{
+				return 2.0 * lightUnitsRatio; // @todo this should take the .INF value properly
+			}			
+		}
+
+		break;
+	}		
+	case EntityDefinitionType::Decoration:
+	{
+		const DecorationEntityDefinition &decorationDef = entityDef.decoration;
+		if (decorationDef.streetlight)
+		{
+			return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
+		}
+		else if (decorationDef.lightIntensity > 0)
+		{
+			return static_cast<double>(decorationDef.lightIntensity) * lightUnitsRatio;
+		}
+
+		break;
+	}
 	}
 
-	const DecorationEntityDefinition &decorationDef = entityDef.decoration;
-	if (decorationDef.streetlight)
-	{
-		return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
-	}
-	else if (decorationDef.lightIntensity > 0)
-	{
-		return static_cast<double>(decorationDef.lightIntensity) * (MIFUtils::ARENA_UNITS / 100.0);
-	}
-	else
-	{
-		return std::nullopt;
-	}
+	return std::nullopt;
 }
 
 void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight)
