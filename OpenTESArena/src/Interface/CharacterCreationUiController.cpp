@@ -91,7 +91,7 @@ void ChooseClassUiController::onDownButtonSelected(ListBox &listBox)
 void ChooseClassUiController::onItemButtonSelected(Game &game, int charClassDefID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setClassDefID(charClassDefID);
+	charCreationState.classDefID = charClassDefID;
 
 	game.setPanel<ChooseNamePanel>();
 }
@@ -107,18 +107,16 @@ void ChooseGenderUiController::onBackToChooseNameInputAction(const InputActionCa
 
 void ChooseGenderUiController::onMaleButtonSelected(Game &game)
 {
-	constexpr bool male = true;
 	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setGender(male);
+	charCreationState.male = true;
 
 	game.setPanel<ChooseRacePanel>();
 }
 
 void ChooseGenderUiController::onFemaleButtonSelected(Game &game)
 {
-	constexpr bool male = false;
 	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setGender(male);
+	charCreationState.male = false;
 
 	game.setPanel<ChooseRacePanel>();
 }
@@ -205,8 +203,8 @@ void ChooseRaceUiController::onMouseButtonChanged(Game &game, MouseButtonType bu
 void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setRaceIndex(raceID);
-	charCreationState.rollAttributes(game.random);
+	charCreationState.raceIndex = raceID;
+	charCreationState.rollAttributes();
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
@@ -541,20 +539,20 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 		// Initialize player.
 		const auto &charCreationState = game.getCharacterCreationState();
-		const std::string_view name = charCreationState.getName();
-		const bool male = charCreationState.isMale();
-		const int raceIndex = charCreationState.getRaceIndex();
+		const std::string_view name = charCreationState.name;
+		const bool male = charCreationState.male;
+		const int raceIndex = charCreationState.raceIndex;
 
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const auto &exeData = binaryAssetLibrary.getExeData();
 
-		const int charClassDefID = charCreationState.getClassDefID();
+		const int charClassDefID = charCreationState.classDefID;
 		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
-		const PrimaryAttributes &attributes = charCreationState.getAttributes();
+		const PrimaryAttributes &attributes = charCreationState.attributes;
 
-		const int portraitIndex = charCreationState.getPortraitIndex();
+		const int portraitIndex = charCreationState.portraitIndex;
 
 		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
 		const int weaponID = charClassDef.getAllowedWeapon(game.random.next(allowedWeaponCount));
@@ -669,7 +667,7 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
 {
 	auto& charCreationState = game.getCharacterCreationState();
-	charCreationState.rollAttributes(game.random);
+	charCreationState.rollAttributes();
 	
 	game.popSubPanel();
 	game.setPanel<ChooseAttributesPanel>();
@@ -686,12 +684,12 @@ void ChooseAttributesUiController::onPortraitButtonSelected(Game &game, bool inc
 	constexpr int maxID = 9;
 
 	auto &charCreationState = game.getCharacterCreationState();
-	const int oldPortraitIndex = charCreationState.getPortraitIndex();
+	const int oldPortraitIndex = charCreationState.portraitIndex;
 	const int newPortraitIndex = incrementIndex ?
 		((oldPortraitIndex == maxID) ? minID : (oldPortraitIndex + 1)) :
 		((oldPortraitIndex == minID) ? maxID : (oldPortraitIndex - 1));
 
-	charCreationState.setPortraitIndex(newPortraitIndex);
+	charCreationState.portraitIndex = newPortraitIndex;
 }
 
 void ChooseAttributesUiController::onDoneButtonSelected(Game &game, bool *attributesAreSaved)

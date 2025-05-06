@@ -5,9 +5,11 @@
 #include "../Game/Game.h"
 #include "../Stats/PrimaryAttribute.h"
 #include "../UI/Button.h"
-#include "../UI/TextBox.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
+
+class Random;
 
 // For choosing character creation attributes and the portrait. I think it should be used for level-up
 // purposes, since distributing points is basically identical to setting your character's original attributes.
@@ -27,19 +29,19 @@ private:
 	Button<> upDownButtons[PrimaryAttributes::COUNT * 2];
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 	int bonusPoints;
-	int selectedAttribute;
-	int lastSelectedAttribute;
+	int selectedAttributeIndex;
+	int lastSelectedAttributeIndex;
 	int fixedArrowX;
 	int arrowDrawCallIndex;
-	int calculateInitialBonusPoints() const;
-	
+
+	int calculateInitialBonusPoints(Random &random) const;
 	void redrawAttributeArrows();
 public:
 	ChooseAttributesPanel(Game &game);
 	~ChooseAttributesPanel() override = default;
 
 	bool init();
-	
+
 	void tick(double dt) override;
 };
 
