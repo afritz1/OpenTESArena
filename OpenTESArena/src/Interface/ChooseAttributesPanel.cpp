@@ -294,7 +294,7 @@ bool ChooseAttributesPanel::init()
 			static_cast<int>(upDownTextureDims.x * scaleFactor),
 			static_cast<int>(upDownTextureDims.y * scaleFactor));
 		
-		// Botón flecha arriba
+		// Up arrow
 		const int upButtonIndex = attributeIndex * 2;
 		this->upDownButtons[upButtonIndex] = Button<>();
 		this->upDownButtons[upButtonIndex].setX(buttonCenter.x - (scaledDims.x / 2));
@@ -302,7 +302,7 @@ bool ChooseAttributesPanel::init()
 		this->upDownButtons[upButtonIndex].setWidth(scaledDims.x);
 		this->upDownButtons[upButtonIndex].setHeight(scaledDims.y / 2);
 		
-		// Botón flecha abajo
+		// Down arrow
 		const int downButtonIndex = (attributeIndex * 2) + 1;
 		this->upDownButtons[downButtonIndex] = Button<>();
 		this->upDownButtons[downButtonIndex].setX(buttonCenter.x - (scaledDims.x / 2));
@@ -310,7 +310,7 @@ bool ChooseAttributesPanel::init()
 		this->upDownButtons[downButtonIndex].setWidth(scaledDims.x);
 		this->upDownButtons[downButtonIndex].setHeight(scaledDims.y / 2);
 		
-		// Click handler para flecha arriba
+		// Click handler for up arrow
 		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[upButtonIndex].getRect(),
 			[this, attributeIndex]() {
 				if (attributeIndex == this->selectedAttribute && this->bonusPoints > 0) {
@@ -344,13 +344,13 @@ bool ChooseAttributesPanel::init()
 						Int2(bonusTextBoxRect.getWidth(), bonusTextBoxRect.getHeight()),
 						PivotType::TopLeft);
 
-					DebugLog(std::string(attribute.name) + " incrementado por " + 
+					DebugLog(std::string(attribute.name) + " increased by " + 
 						std::to_string(modifiableAttribute.maxValue) + 
-						", puntos bonus restantes: " + std::to_string(this->bonusPoints));
+						", bonus points remaining: " + std::to_string(this->bonusPoints));
 				}
 			});
 
-		// Click handler para flecha abajo
+		// Click handler for down arrow
 		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[downButtonIndex].getRect(),
 			[this, attributeIndex]() {
 				Game& game = this->getGame();
@@ -385,9 +385,9 @@ bool ChooseAttributesPanel::init()
 						Int2(bonusTextBoxRect.getWidth(), bonusTextBoxRect.getHeight()),
 						PivotType::TopLeft);
 
-					DebugLog(std::string(attribute.name) + " decrementado a " + 
+					DebugLog(std::string(attribute.name) + " decremented to " + 
 						std::to_string(modifiableAttribute.maxValue) + 
-						", puntos bonus restantes: " + std::to_string(this->bonusPoints));
+						", remaining bonus points: " + std::to_string(this->bonusPoints));
 				}
 			});
 	}
@@ -395,21 +395,18 @@ bool ChooseAttributesPanel::init()
 	// posicion charisma atributo
 	const Rect &lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 1].getRect();
 
-	// code for botton points
 	const Int2 bonusPointsTextureDims = *renderer.tryGetUiTextureDims(bonusPointsTextureID);
 	const Int2 bonusPointsPosition(
 		lastAttributeTextBoxRect.getLeft() + 25,
 		lastAttributeTextBoxRect.getTop()
 	);
 
-	// fondo bonus PTS
 	this->addDrawCall(
 		bonusPointsTextureID,
 		bonusPointsPosition,
 		bonusPointsTextureDims,
 		PivotType::TopLeft);
 
-	// Iniciar TextBox de puntos bonus
 	const TextBox::InitInfo bonusPointsTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		std::to_string(bonusPoints),
 		Int2(bonusPointsPosition.x + bonusPointsTextureDims.x - 28,
