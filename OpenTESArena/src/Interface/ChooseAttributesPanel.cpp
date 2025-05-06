@@ -24,7 +24,11 @@
 #include "../Assets/TextureUtils.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
-	: Panel(game) { }
+	: Panel(game) 
+{ 
+	this->selectedAttribute = 0;
+	this->lastSelectedAttribute = 0;
+}
 
 int ChooseAttributesPanel::calculateInitialBonusPoints() const
 {
@@ -50,6 +54,8 @@ bool ChooseAttributesPanel::init()
 	charCreationState.clearChangedPoints();
 
 	this->bonusPoints = calculateInitialBonusPoints();
+	this->selectedAttribute = 0;
+	this->lastSelectedAttribute = 0;
 
 	this->attributesAreSaved = false;
 
@@ -266,14 +272,21 @@ bool ChooseAttributesPanel::init()
 		PivotType::TopLeft);
 
 	const Rect &firstAttributeTextBox = this->attributeTextBoxes[0].getRect();
-	int fixedArrowX = firstAttributeTextBox.getRight() + 3;
 	
+	this->fixedArrowX = firstAttributeTextBox.getRight() + 3;
+	
+	// code arrow
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
 		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 		
+		this->addButtonProxy(MouseButtonType::Left, attributeTextBoxRect,
+			[this, attributeIndex]() {
+				this->selectedAttribute = attributeIndex;
+			});
+		
 		const Int2 buttonCenter(
-			fixedArrowX,
+			this->fixedArrowX,
 			attributeTextBoxRect.getCenter().y);
 		
 		const float scaleFactor = 0.5f;
@@ -297,16 +310,10 @@ bool ChooseAttributesPanel::init()
 		this->upDownButtons[downButtonIndex].setWidth(scaledDims.x);
 		this->upDownButtons[downButtonIndex].setHeight(scaledDims.y / 2);
 		
-		this->addDrawCall(
-			upDownTextureID,
-			buttonCenter,
-			scaledDims,
-			PivotType::Middle);
-			
 		// Click handler para flecha arriba
 		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[upButtonIndex].getRect(),
 			[this, attributeIndex]() {
-				if (this->bonusPoints > 0) {
+				if (attributeIndex == this->selectedAttribute && this->bonusPoints > 0) {
 					Game& game = this->getGame();
 					auto& charCreationState = game.getCharacterCreationState();
 					int* changedPoints = charCreationState.getChangedPoints();
@@ -320,10 +327,8 @@ bool ChooseAttributesPanel::init()
 					auto& modifiableAttribute = const_cast<PrimaryAttribute&>(attribute);
 					modifiableAttribute.maxValue += 1;
 					
-					// Actualizar el texto con el nuevo valor
 					this->attributeTextBoxes[attributeIndex].setText(std::to_string(modifiableAttribute.maxValue));
 					
-					// Actualizar visualización del atributo
 					const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 					this->addDrawCall(
 						this->attributeTextBoxes[attributeIndex].getTextureID(),
@@ -331,7 +336,6 @@ bool ChooseAttributesPanel::init()
 						Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()),
 						PivotType::TopLeft);
 
-					// Actualizar texto de puntos bonus
 					this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
 					const Rect &bonusTextBoxRect = this->bonusPointsTextBox.getRect();
 					this->addDrawCall(
@@ -353,7 +357,7 @@ bool ChooseAttributesPanel::init()
 				auto& charCreationState = game.getCharacterCreationState();
 				int* changedPoints = charCreationState.getChangedPoints();
 				
-				if (changedPoints[attributeIndex] > 0) {
+				if (attributeIndex == this->selectedAttribute && changedPoints[attributeIndex] > 0) {
 					changedPoints[attributeIndex]--;
 					this->bonusPoints++;
 
@@ -517,5 +521,185 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiController::onInitialPopUpSelected, std::move(initialPopUpTextureRef),
 		ChooseAttributesUiView::InitialTextureCenterPoint);
 
+	this->redrawAttributeArrows();
+
 	return true;
+}
+
+void ChooseAttributesPanel::redrawAttributeArrows()
+{
+	auto &renderer = this->getGame().renderer;
+	const UiTextureID upDownTextureID = this->upDownTextureRef.get();
+	const Int2 upDownTextureDims = *renderer.tryGetUiTextureDims(upDownTextureID);
+	
+	const float scaleFactor = 0.5f;
+	const Int2 scaledDims(
+		static_cast<int>(upDownTextureDims.x * scaleFactor),
+		static_cast<int>(upDownTextureDims.y * scaleFactor));
+		
+	this->clearDrawCalls();
+	
+	
+	auto &game = this->getGame();
+	this->addDrawCall(
+		this->bodyTextureRef.get(),
+		ChooseAttributesUiView::getBodyOffset(game),
+		*renderer.tryGetUiTextureDims(this->bodyTextureRef.get()),
+		PivotType::TopLeft);
+		
+	this->addDrawCall(
+		this->pantsTextureRef.get(),
+		ChooseAttributesUiView::getPantsOffset(game),
+		*renderer.tryGetUiTextureDims(this->pantsTextureRef.get()),
+		PivotType::TopLeft);
+		
+	this->addDrawCall(
+		this->statsBgTextureRef.get(),
+		Int2::Zero,
+		*renderer.tryGetUiTextureDims(this->statsBgTextureRef.get()),
+		PivotType::TopLeft);
+	
+	UiDrawCall::TextureFunc headTextureFunc = [this, &game]()
+	{
+		const auto &charCreationState = game.getCharacterCreationState();
+		const int portraitIndex = charCreationState.getPortraitIndex();
+		const ScopedUiTextureRef &headTextureRef = this->headTextureRefs.get(portraitIndex);
+		return headTextureRef.get();
+	};
+
+	UiDrawCall::PositionFunc headPositionFunc = [&game]()
+	{
+		return ChooseAttributesUiView::getHeadOffset(game);
+	};
+
+	UiDrawCall::SizeFunc headSizeFunc = [this, &game]()
+	{
+		const auto &charCreationState = game.getCharacterCreationState();
+		const int portraitIndex = charCreationState.getPortraitIndex();
+		const ScopedUiTextureRef &headTextureRef = this->headTextureRefs.get(portraitIndex);
+		return Int2(headTextureRef.getWidth(), headTextureRef.getHeight());
+	};
+
+	this->addDrawCall(
+		headTextureFunc,
+		headPositionFunc,
+		headSizeFunc,
+		[]() { return PivotType::TopLeft; },
+		UiDrawCall::defaultActiveFunc);
+		
+	this->addDrawCall(
+		this->shirtTextureRef.get(),
+		ChooseAttributesUiView::getShirtOffset(game),
+		*renderer.tryGetUiTextureDims(this->shirtTextureRef.get()),
+		PivotType::TopLeft);
+	
+	const Rect &nameTextBoxRect = this->nameTextBox.getRect();
+	this->addDrawCall(
+		this->nameTextBox.getTextureID(),
+		nameTextBoxRect.getTopLeft(),
+		Int2(nameTextBoxRect.getWidth(), nameTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+		
+	const Rect &raceTextBoxRect = this->raceTextBox.getRect();
+	this->addDrawCall(
+		this->raceTextBox.getTextureID(),
+		raceTextBoxRect.getTopLeft(),
+		Int2(raceTextBoxRect.getWidth(), raceTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+		
+	const Rect &classTextBoxRect = this->classTextBox.getRect();
+	this->addDrawCall(
+		this->classTextBox.getTextureID(),
+		classTextBoxRect.getTopLeft(),
+		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+	
+	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
+	{
+		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+		
+		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeIndex]()
+		{
+			const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+			const PrimaryAttributes &attributes = charCreationState.getAttributes();
+			const PrimaryAttribute &attribute = attributes.getAttributes()[attributeIndex];
+			const int attributeValue = attribute.maxValue;
+			const std::string attributeValueText = std::to_string(attributeValue);
+			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
+			attributeTextBox.setText(attributeValueText);
+			return attributeTextBox.getTextureID();
+		};
+
+		this->addDrawCall(
+			attributeTextureFunc,
+			[this, attributeIndex]() { return this->attributeTextBoxes[attributeIndex].getRect().getTopLeft(); },
+			[this, attributeIndex]()
+			{
+				const Rect &r = this->attributeTextBoxes[attributeIndex].getRect();
+				return Int2(r.getWidth(), r.getHeight());
+			},
+			[]() { return PivotType::TopLeft; },
+			UiDrawCall::defaultActiveFunc);
+			
+		if (attributeIndex == this->selectedAttribute)
+		{
+			const Int2 buttonCenter(
+				this->fixedArrowX,
+				attributeTextBoxRect.getCenter().y);
+				
+			this->addDrawCall(
+				upDownTextureID,
+				buttonCenter,
+				scaledDims,
+				PivotType::Middle);
+		}
+	}
+	
+	const Rect &experienceTextBoxRect = this->experienceTextBox.getRect();
+	this->addDrawCall(
+		this->experienceTextBox.getTextureID(),
+		experienceTextBoxRect.getTopLeft(),
+		Int2(experienceTextBoxRect.getWidth(), experienceTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+		
+	const Rect &levelTextBoxRect = this->levelTextBox.getRect();
+	this->addDrawCall(
+		this->levelTextBox.getTextureID(),
+		levelTextBoxRect.getTopLeft(),
+		Int2(levelTextBoxRect.getWidth(), levelTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+		
+	const Int2 bonusPointsPosition = ([this]() -> Int2 {
+		const Rect &lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 1].getRect();
+		return Int2(
+			lastAttributeTextBoxRect.getLeft() + 25,
+			lastAttributeTextBoxRect.getTop());
+	})();
+	
+	this->addDrawCall(
+		this->bonusPointsTextureRef.get(),
+		bonusPointsPosition,
+		*renderer.tryGetUiTextureDims(this->bonusPointsTextureRef.get()),
+		PivotType::TopLeft);
+		
+	const Rect &bonusPointsTextBoxRect = this->bonusPointsTextBox.getRect();
+	this->addDrawCall(
+		this->bonusPointsTextBox.getTextureID(),
+		bonusPointsTextBoxRect.getTopLeft(),
+		Int2(bonusPointsTextBoxRect.getWidth(), bonusPointsTextBoxRect.getHeight()),
+		PivotType::TopLeft);
+		
+	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
+}
+
+void ChooseAttributesPanel::tick(double dt)
+{
+	Panel::tick(dt);
+	
+	if (this->selectedAttribute != this->lastSelectedAttribute)
+	{
+		this->redrawAttributeArrows();
+		
+		this->lastSelectedAttribute = this->selectedAttribute;
+	}
 }
