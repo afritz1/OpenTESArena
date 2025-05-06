@@ -270,7 +270,7 @@ bool InputManager::applicationExit(const SDL_Event &e) const
 
 bool InputManager::windowResized(const SDL_Event &e) const
 {
-	return (e.type == SDL_WINDOWEVENT) && (e.window.event == SDL_WINDOWEVENT_RESIZED);
+	return (e.type == SDL_WINDOWEVENT) && ((e.window.event == SDL_WINDOWEVENT_RESIZED) || (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED));
 }
 
 bool InputManager::renderTargetsReset(const SDL_Event &e) const
