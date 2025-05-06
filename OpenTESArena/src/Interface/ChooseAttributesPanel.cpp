@@ -269,23 +269,40 @@ bool ChooseAttributesPanel::init()
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
 		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+		
 		const Int2 buttonCenter(
 			attributeTextBoxRect.getRight() + 5,
 			attributeTextBoxRect.getCenter().y);
 		
-		this->upDownButtons[attributeIndex] = Button<>();
-		this->upDownButtons[attributeIndex].setX(buttonCenter.x - (upDownTextureDims.x / 2));
-		this->upDownButtons[attributeIndex].setY(buttonCenter.y - (upDownTextureDims.y / 2));
-		this->upDownButtons[attributeIndex].setWidth(upDownTextureDims.x);
-		this->upDownButtons[attributeIndex].setHeight(upDownTextureDims.y);
-			
+		const float scaleFactor = 0.5f;
+		const Int2 scaledDims(
+			static_cast<int>(upDownTextureDims.x * scaleFactor),
+			static_cast<int>(upDownTextureDims.y * scaleFactor));
+		
+		// Botón flecha arriba
+		const int upButtonIndex = attributeIndex * 2;
+		this->upDownButtons[upButtonIndex] = Button<>();
+		this->upDownButtons[upButtonIndex].setX(buttonCenter.x - (scaledDims.x / 2));
+		this->upDownButtons[upButtonIndex].setY(buttonCenter.y - scaledDims.y / 2);
+		this->upDownButtons[upButtonIndex].setWidth(scaledDims.x);
+		this->upDownButtons[upButtonIndex].setHeight(scaledDims.y / 2);
+		
+		// Botón flecha abajo
+		const int downButtonIndex = (attributeIndex * 2) + 1;
+		this->upDownButtons[downButtonIndex] = Button<>();
+		this->upDownButtons[downButtonIndex].setX(buttonCenter.x - (scaledDims.x / 2));
+		this->upDownButtons[downButtonIndex].setY(buttonCenter.y);
+		this->upDownButtons[downButtonIndex].setWidth(scaledDims.x);
+		this->upDownButtons[downButtonIndex].setHeight(scaledDims.y / 2);
+		
 		this->addDrawCall(
 			upDownTextureID,
 			buttonCenter,
-			upDownTextureDims,
+			scaledDims,
 			PivotType::Middle);
 			
-		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[attributeIndex].getRect(),
+		// Click handler para flecha arriba
+		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[upButtonIndex].getRect(),
 			[this, attributeIndex]() {
 				if (this->bonusPoints > 0) {
 					Game& game = this->getGame();
@@ -322,6 +339,47 @@ bool ChooseAttributesPanel::init()
 						PivotType::TopLeft);
 
 					DebugLog(std::string(attribute.name) + " incrementado por " + 
+						std::to_string(modifiableAttribute.maxValue) + 
+						", puntos bonus restantes: " + std::to_string(this->bonusPoints));
+				}
+			});
+
+		// Click handler para flecha abajo
+		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[downButtonIndex].getRect(),
+			[this, attributeIndex]() {
+				Game& game = this->getGame();
+				auto& charCreationState = game.getCharacterCreationState();
+				int* changedPoints = charCreationState.getChangedPoints();
+				
+				if (changedPoints[attributeIndex] > 0) {
+					changedPoints[attributeIndex]--;
+					this->bonusPoints++;
+
+					const PrimaryAttributes& attributes = charCreationState.getAttributes();
+					const BufferView<const PrimaryAttribute> attributesView = attributes.getAttributes();
+					const PrimaryAttribute& attribute = attributesView.get(attributeIndex);
+					
+					auto& modifiableAttribute = const_cast<PrimaryAttribute&>(attribute);
+					modifiableAttribute.maxValue -= 1;
+					
+					this->attributeTextBoxes[attributeIndex].setText(std::to_string(modifiableAttribute.maxValue));
+					
+					const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+					this->addDrawCall(
+						this->attributeTextBoxes[attributeIndex].getTextureID(),
+						attributeTextBoxRect.getTopLeft(),
+						Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()),
+						PivotType::TopLeft);
+
+					this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
+					const Rect &bonusTextBoxRect = this->bonusPointsTextBox.getRect();
+					this->addDrawCall(
+						this->bonusPointsTextBox.getTextureID(),
+						bonusTextBoxRect.getTopLeft(),
+						Int2(bonusTextBoxRect.getWidth(), bonusTextBoxRect.getHeight()),
+						PivotType::TopLeft);
+
+					DebugLog(std::string(attribute.name) + " decrementado a " + 
 						std::to_string(modifiableAttribute.maxValue) + 
 						", puntos bonus restantes: " + std::to_string(this->bonusPoints));
 				}
