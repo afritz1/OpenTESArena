@@ -32,17 +32,13 @@ private:
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 	int bonusPoints;
 	int selectedAttributeIndex;
-	int lastSelectedAttributeIndex;
-
-	void populateAttributesRandomly(CharacterCreationState &charCreationState, ArenaRandom &random);
-	void redrawAttributeArrows();
 public:
 	ChooseAttributesPanel(Game &game);
 	~ChooseAttributesPanel() override = default;
 
 	bool init();
 
-	void tick(double dt) override;
+	void populateBaseAttributesRandomly(CharacterCreationState &charCreationState, ArenaRandom &random);
 };
 
 #endif
