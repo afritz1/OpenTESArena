@@ -326,21 +326,7 @@ bool ChooseAttributesPanel::init()
 
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
-
-			const Rect &attributeTextBoxRect = attributeTextBox.getRect();
-			this->addDrawCall(
-				attributeTextBox.getTextureID(),
-				attributeTextBoxRect.getTopLeft(),
-				Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()),
-				PivotType::TopLeft);
-
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
-			const Rect &bonusTextBoxRect = this->bonusPointsTextBox.getRect();
-			this->addDrawCall(
-				this->bonusPointsTextBox.getTextureID(),
-				bonusTextBoxRect.getTopLeft(),
-				Int2(bonusTextBoxRect.getWidth(), bonusTextBoxRect.getHeight()),
-				PivotType::TopLeft);
 		},
 			Rect(),
 			[this, attributeIndex]() { return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && this->bonusPoints > 0; });
@@ -362,21 +348,7 @@ bool ChooseAttributesPanel::init()
 
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
-
-			const Rect &attributeTextBoxRect = attributeTextBox.getRect();
-			this->addDrawCall(
-				attributeTextBox.getTextureID(),
-				attributeTextBoxRect.getTopLeft(),
-				Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()),
-				PivotType::TopLeft);
-
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
-			const Rect &bonusTextBoxRect = this->bonusPointsTextBox.getRect();
-			this->addDrawCall(
-				this->bonusPointsTextBox.getTextureID(),
-				bonusTextBoxRect.getTopLeft(),
-				Int2(bonusTextBoxRect.getWidth(), bonusTextBoxRect.getHeight()),
-				PivotType::TopLeft);
 		},
 			Rect(),
 			[this, attributeIndex]()
@@ -408,41 +380,42 @@ bool ChooseAttributesPanel::init()
 
 	const Rect &bonusPointsTextBoxRect = this->bonusPointsTextBox.getRect();
 	this->addDrawCall(
-		this->bonusPointsTextBox.getTextureID(),
-		bonusPointsTextBoxRect.getTopLeft(),
-		Int2(bonusPointsTextBoxRect.getWidth(), bonusPointsTextBoxRect.getHeight()),
-		PivotType::TopLeft);
+		[this]() { return this->bonusPointsTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(bonusPointsTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(Int2(bonusPointsTextBoxRect.getWidth(), bonusPointsTextBoxRect.getHeight())),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
 
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
-		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeIndex]()
+		UiDrawCall::TextureFunc attributeTextBoxTextureFunc = [this, &game, attributeIndex]()
 		{
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			return attributeTextBox.getTextureID();
 		};
 
-		UiDrawCall::PositionFunc attributePositionFunc = [this, attributeIndex]()
+		UiDrawCall::PositionFunc attributeTextBoxPositionFunc = [this, attributeIndex]()
 		{
 			const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 			return attributeTextBoxRect.getTopLeft();
 		};
 
-		UiDrawCall::SizeFunc attributeSizeFunc = [this, attributeIndex]()
+		UiDrawCall::SizeFunc attributeTextBoxSizeFunc = [this, attributeIndex]()
 		{
 			const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 			return Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight());
 		};
 
-		UiDrawCall::PivotFunc attributePivotFunc = []()
+		UiDrawCall::PivotFunc attributeTextBoxPivotFunc = []()
 		{
 			return PivotType::TopLeft;
 		};
 
 		this->addDrawCall(
-			attributeTextureFunc,
-			attributePositionFunc,
-			attributeSizeFunc,
-			attributePivotFunc,
+			attributeTextBoxTextureFunc,
+			attributeTextBoxPositionFunc,
+			attributeTextBoxSizeFunc,
+			attributeTextBoxPivotFunc,
 			UiDrawCall::defaultActiveFunc);
 	}
 
