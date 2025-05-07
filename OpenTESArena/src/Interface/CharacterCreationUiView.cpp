@@ -691,8 +691,8 @@ Int2 ChooseAttributesUiView::getBodyOffset(Game &game)
 Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
-	const int raceID = charCreationState.getRaceIndex();
+	const bool isMale = charCreationState.male;
+	const int raceID = charCreationState.raceIndex;
 
 	constexpr bool trimmed = false;
 	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
@@ -705,17 +705,17 @@ Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-	const int headOffsetIndex = charCreationState.getPortraitIndex();
+	const int headOffsetIndex = charCreationState.portraitIndex;
 	return textureFileMetadata.getOffset(headOffsetIndex);
 }
 
 Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
+	const bool isMale = charCreationState.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.getClassDefID();
+	const int charClassDefID = charCreationState.classDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.castsMagic;
 
@@ -725,15 +725,15 @@ Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
 Int2 ChooseAttributesUiView::getPantsOffset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
+	const bool isMale = charCreationState.male;
 	return ArenaPortraitUtils::getPantsOffset(isMale);
 }
 
 TextureAsset ChooseAttributesUiView::getBodyTextureAsset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
-	const int raceID = charCreationState.getRaceIndex();
+	const bool isMale = charCreationState.male;
+	const int raceID = charCreationState.raceIndex;
 
 	std::string bodyFilename = ArenaPortraitUtils::getBody(isMale, raceID);
 	return TextureAsset(std::move(bodyFilename));
@@ -742,8 +742,8 @@ TextureAsset ChooseAttributesUiView::getBodyTextureAsset(Game &game)
 Buffer<TextureAsset> ChooseAttributesUiView::getHeadTextureAssets(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
-	const int raceID = charCreationState.getRaceIndex();
+	const bool isMale = charCreationState.male;
+	const int raceID = charCreationState.raceIndex;
 
 	constexpr bool trimmed = false;
 	std::string headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
@@ -755,10 +755,10 @@ Buffer<TextureAsset> ChooseAttributesUiView::getHeadTextureAssets(Game &game)
 TextureAsset ChooseAttributesUiView::getShirtTextureAsset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
+	const bool isMale = charCreationState.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.getClassDefID();
+	const int charClassDefID = charCreationState.classDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.castsMagic;
 
@@ -769,7 +769,7 @@ TextureAsset ChooseAttributesUiView::getShirtTextureAsset(Game &game)
 TextureAsset ChooseAttributesUiView::getPantsTextureAsset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
+	const bool isMale = charCreationState.male;
 
 	std::string pantsFilename = ArenaPortraitUtils::getPants(isMale);
 	return TextureAsset(std::move(pantsFilename));
@@ -843,4 +843,14 @@ UiTextureID ChooseAttributesUiView::allocHeadTexture(const TextureAsset &texture
 UiTextureID ChooseAttributesUiView::allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	return CharacterSheetUiView::allocStatsBgTexture(textureManager, renderer);
+}
+
+UiTextureID ChooseAttributesUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocUpDownButtonTexture(textureManager, renderer);
+}
+
+UiTextureID ChooseAttributesUiView::allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocBonusPointsTexture(textureManager, renderer);
 }

@@ -86,6 +86,7 @@ public:
 		std::string chooseAttributes;
 		std::string chooseAttributesSave;
 		std::string chooseAttributesReroll;
+		std::string chooseAttributesBonusPointsRemaining;
 		std::string chooseAppearance;
 
 		bool init(const char *data, const KeyValueFile &keyValueFile);

@@ -118,6 +118,8 @@ namespace CharacterSheetUiView
 	UiTextureID allocPantsTexture(Game &game);
 	UiTextureID allocHeadTexture(Game &game);
 	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocNextPageTexture(TextureManager &textureManager, Renderer &renderer);
 }

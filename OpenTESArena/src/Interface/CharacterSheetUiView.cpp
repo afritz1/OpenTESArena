@@ -57,10 +57,9 @@ std::vector<TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxIn
 	for (int i = 0; i < attributes.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = attributes[i];
-		const int attributeValue = attribute.maxValue;
-		const std::string attributeValueStr = std::to_string(attributeValue);
+		const std::string worstCaseStr(3, TextRenderUtils::LARGEST_CHAR);
 		TextBox::InitInfo initInfo = TextBox::InitInfo::makeWithXY(
-			attributeValueStr,
+			worstCaseStr,
 			CharacterSheetUiView::PlayerAttributeTextBoxX,
 			CharacterSheetUiView::PlayerAttributeTextBoxesY + i * CharacterSheetUiView::PlayerAttributeTextBoxHeight,
 			CharacterSheetUiView::PlayerAttributeTextBoxFontName,
@@ -315,6 +314,36 @@ UiTextureID CharacterSheetUiView::allocStatsBgTexture(TextureManager &textureMan
 	}
 
 	return textureID;
+}
+
+UiTextureID CharacterSheetUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
+	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
+
+	UiTextureID upDownTextureID;
+	if (!TextureUtils::tryAllocUiTexture(upDownTextureAsset, paletteTextureAsset, textureManager, renderer, &upDownTextureID))
+	{
+		DebugLogError("Couldn't get texture ID for up/down arrows.");
+		return -1;
+	}
+
+	return upDownTextureID;
+}
+
+UiTextureID CharacterSheetUiView::allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAsset bonusPointsTextureAsset = TextureAsset(std::string(ArenaTextureName::BonusPointsText));
+	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
+
+	UiTextureID bonusPointsTextureID;
+	if (!TextureUtils::tryAllocUiTexture(bonusPointsTextureAsset, paletteTextureAsset, textureManager, renderer, &bonusPointsTextureID))
+	{
+		DebugLogError("Couldn't get texture ID for bonus points.");
+		return -1;
+	}
+
+	return bonusPointsTextureID;
 }
 
 UiTextureID CharacterSheetUiView::allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer)
