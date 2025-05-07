@@ -287,7 +287,10 @@ namespace ChooseAttributesUiView
 
 	const Rect AttributeButtonFirstRect(10, 52, 26, 8);
 	constexpr Int2 UpDownButtonFirstTopLeftPosition(38, 48);
+
 	constexpr Int2 BonusPointsTextureTopLeftPosition(45, 109);
+	constexpr Int2 BonusPointsTextBoxTopLeftPosition(92, 113);
+	const std::string BonusPointsFontName = ArenaFontName::Arena;
 	constexpr Color BonusPointsTextColor(199, 199, 199);
 
 	int getInitialTextureWidth();

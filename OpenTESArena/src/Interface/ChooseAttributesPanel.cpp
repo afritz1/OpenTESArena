@@ -8,18 +8,15 @@
 #include "ChooseAttributesPanel.h"
 #include "CommonUiView.h"
 #include "TextSubPanel.h"
+#include "../Assets/TextureUtils.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../Math/Random.h"
-#include "../Stats/PrimaryAttribute.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
-#include "../UI/TextRenderUtils.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextRenderUtils.h"
 #include "../UI/ArenaFontName.h"
-#include "../Assets/ArenaTextureName.h"
-#include "../Assets/ArenaPaletteName.h"
-#include "../Assets/TextureUtils.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game)
@@ -354,13 +351,12 @@ bool ChooseAttributesPanel::init()
 			return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && changedPoints[attributeIndex] > 0;
 		});
 	}
-
-	constexpr Int2 bonusPointsTextBoxTopLeftPosition(92, 113);
+	constexpr Int2 bonusPointsTextBoxTopLeftPosition = ChooseAttributesUiView::BonusPointsTextBoxTopLeftPosition;
 	const TextBox::InitInfo bonusPointsTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
-		std::to_string(bonusPoints),
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		bonusPointsTextBoxTopLeftPosition.x,
 		bonusPointsTextBoxTopLeftPosition.y,
-		ArenaFontName::Arena,
+		ChooseAttributesUiView::BonusPointsFontName,
 		ChooseAttributesUiView::BonusPointsTextColor,
 		TextAlignment::TopLeft,
 		std::nullopt,
