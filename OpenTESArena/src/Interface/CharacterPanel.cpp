@@ -166,21 +166,21 @@ bool CharacterPanel::init()
 	this->addDrawCall(
 		this->nameTextBox.getTextureID(),
 		playerNameTextBoxRect.getTopLeft(),
-		Int2(playerNameTextBoxRect.width, playerNameTextBoxRect.height),
+		playerNameTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &playerRaceTextBoxRect = this->raceTextBox.getRect();
 	this->addDrawCall(
 		this->raceTextBox.getTextureID(),
 		playerRaceTextBoxRect.getTopLeft(),
-		Int2(playerRaceTextBoxRect.width, playerRaceTextBoxRect.height),
+		playerRaceTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &playerClassTextBoxRect = this->classTextBox.getRect();
 	this->addDrawCall(
 		this->classTextBox.getTextureID(),
 		playerClassTextBoxRect.getTopLeft(),
-		Int2(playerClassTextBoxRect.width, playerClassTextBoxRect.height),
+		playerClassTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	for (TextBox &playerAttributeTextBox : this->attributeTextBoxes)
@@ -189,7 +189,7 @@ bool CharacterPanel::init()
 		this->addDrawCall(
 			playerAttributeTextBox.getTextureID(),
 			playerAttributeTextBoxRect.getTopLeft(),
-			Int2(playerAttributeTextBoxRect.width, playerAttributeTextBoxRect.height),
+			playerAttributeTextBoxRect.getSize(),
 			PivotType::TopLeft);
 	}
 
@@ -197,14 +197,14 @@ bool CharacterPanel::init()
 	this->addDrawCall(
 		this->experienceTextBox.getTextureID(),
 		playerExperienceTextBoxRect.getTopLeft(),
-		Int2(playerExperienceTextBoxRect.width, playerExperienceTextBoxRect.height),
+		playerExperienceTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &playerLevelTextBoxRect = this->levelTextBox.getRect();
 	this->addDrawCall(
 		this->levelTextBox.getTextureID(),
 		playerLevelTextBoxRect.getTopLeft(),
-		Int2(playerLevelTextBoxRect.width, playerLevelTextBoxRect.height),
+		playerLevelTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

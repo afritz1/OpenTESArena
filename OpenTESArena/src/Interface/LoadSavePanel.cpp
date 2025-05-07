@@ -73,7 +73,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 		this->addDrawCall(
 			textBoxTextureFunc,
 			textBoxRect.getCenter(),
-			Int2(textBoxRect.width, textBoxRect.height),
+			textBoxRect.getSize(),
 			PivotType::Middle);
 	}
 

@@ -252,21 +252,21 @@ bool ChooseAttributesPanel::init()
 	this->addDrawCall(
 		this->nameTextBox.getTextureID(),
 		nameTextBoxRect.getTopLeft(),
-		Int2(nameTextBoxRect.width, nameTextBoxRect.height),
+		nameTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &raceTextBoxRect = this->raceTextBox.getRect();
 	this->addDrawCall(
 		this->raceTextBox.getTextureID(),
 		raceTextBoxRect.getTopLeft(),
-		Int2(raceTextBoxRect.width, raceTextBoxRect.height),
+		raceTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &classTextBoxRect = this->classTextBox.getRect();
 	this->addDrawCall(
 		this->classTextBox.getTextureID(),
 		classTextBoxRect.getTopLeft(),
-		Int2(classTextBoxRect.width, classTextBoxRect.height),
+		classTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	// code arrow
@@ -373,7 +373,7 @@ bool ChooseAttributesPanel::init()
 	this->addDrawCall(
 		[this]() { return this->bonusPointsTextBox.getTextureID(); },
 		UiDrawCall::makePositionFunc(bonusPointsTextBoxRect.getTopLeft()),
-		UiDrawCall::makeSizeFunc(Int2(bonusPointsTextBoxRect.width, bonusPointsTextBoxRect.height)),
+		UiDrawCall::makeSizeFunc(bonusPointsTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
@@ -389,7 +389,7 @@ bool ChooseAttributesPanel::init()
 		this->addDrawCall(
 			attributeTextBoxTextureFunc,
 			UiDrawCall::makePositionFunc(attributeTextBoxRect.getTopLeft()),
-			UiDrawCall::makeSizeFunc(Int2(attributeTextBoxRect.width, attributeTextBoxRect.height)),
+			UiDrawCall::makeSizeFunc(attributeTextBoxRect.getSize()),
 			UiDrawCall::makePivotFunc(PivotType::TopLeft),
 			UiDrawCall::defaultActiveFunc);
 	}
@@ -398,14 +398,14 @@ bool ChooseAttributesPanel::init()
 	this->addDrawCall(
 		this->experienceTextBox.getTextureID(),
 		playerExperienceTextBoxRect.getTopLeft(),
-		Int2(playerExperienceTextBoxRect.width, playerExperienceTextBoxRect.height),
+		playerExperienceTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &playerLevelTextBoxRect = this->levelTextBox.getRect();
 	this->addDrawCall(
 		this->levelTextBox.getTextureID(),
 		playerLevelTextBoxRect.getTopLeft(),
-		Int2(playerLevelTextBoxRect.width, playerLevelTextBoxRect.height),
+		playerLevelTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

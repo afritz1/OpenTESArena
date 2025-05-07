@@ -181,7 +181,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	this->addDrawCall(
 		this->titleBackgroundTextureRef.get(),
 		this->titleBackgroundRect.getCenter(),
-		Int2(this->titleBackgroundRect.width, this->titleBackgroundRect.height),
+		this->titleBackgroundRect.getSize(),
 		PivotType::Middle);
 
 	for (const MessageBoxSubPanel::Item &item : this->items)
@@ -189,7 +189,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		this->addDrawCall(
 			item.backgroundTextureRef.get(),
 			item.backgroundTextureRect.getCenter(),
-			Int2(item.backgroundTextureRect.width, item.backgroundTextureRect.height),
+			item.backgroundTextureRect.getSize(),
 			PivotType::Middle);
 	}
 
@@ -207,7 +207,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	UiDrawCall::SizeFunc titleTextBoxSizeFunc = [this]()
 	{
 		const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-		return Int2(titleTextBoxRect.width, titleTextBoxRect.height);
+		return titleTextBoxRect.getSize();
 	};
 
 	UiDrawCall::PivotFunc textBoxPivotFunc = []() { return PivotType::Middle; };
@@ -238,7 +238,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		{
 			MessageBoxSubPanel::Item &item = this->items.get(i);
 			const Rect &itemRect = item.textBox.getRect();
-			return Int2(itemRect.width, itemRect.height);
+			return itemRect.getSize();
 		};
 
 		this->addDrawCall(

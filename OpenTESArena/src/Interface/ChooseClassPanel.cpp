@@ -197,7 +197,7 @@ bool ChooseClassPanel::init()
 	this->addDrawCall(
 		this->titleTextBox.getTextureID(),
 		titleTextBoxRect.getCenter(),
-		Int2(titleTextBoxRect.width, titleTextBoxRect.height),
+		titleTextBoxRect.getSize(),
 		PivotType::Middle);
 
 	UiDrawCall::TextureFunc classDescTextureFunc = [this]()
@@ -209,7 +209,7 @@ bool ChooseClassPanel::init()
 	this->addDrawCall(
 		classDescTextureFunc,
 		classDescTextBoxRect.getCenter(),
-		Int2(classDescTextBoxRect.width, classDescTextBoxRect.height),
+		classDescTextBoxRect.getSize(),
 		PivotType::Middle);
 
 	UiDrawCall::TextureFunc listBoxTextureFunc = [this]()
@@ -221,7 +221,7 @@ bool ChooseClassPanel::init()
 	this->addDrawCall(
 		listBoxTextureFunc,
 		listBoxRect.getCenter(),
-		Int2(listBoxRect.width, listBoxRect.height),
+		listBoxRect.getSize(),
 		PivotType::Middle);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

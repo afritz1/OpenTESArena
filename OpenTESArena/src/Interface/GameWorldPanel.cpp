@@ -622,7 +622,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			triggerTextTextureFunc,
 			[this, &game]() { return GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight()); },
-			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.width, triggerTextBoxRect.height); },
+			[triggerTextBoxRect]() { return triggerTextBoxRect.getSize(); },
 			[]() { return PivotType::Bottom; },
 			triggerTextActiveFunc);
 
@@ -630,7 +630,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			actionTextTextureFunc,
 			[]() { return GameWorldUiView::getActionTextPosition(); },
-			[actionTextBoxRect]() { return Int2(actionTextBoxRect.width, actionTextBoxRect.height); },
+			[actionTextBoxRect]() { return actionTextBoxRect.getSize(); },
 			[]() { return PivotType::Top; },
 			actionTextActiveFunc);
 
@@ -638,7 +638,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			effectTextTextureFunc,
 			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.width / 2), effectTextBoxRect.getTop()); },
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.width, effectTextBoxRect.height); },
+			[effectTextBoxRect]() { return effectTextBoxRect.getSize(); },
 			[]() { return PivotType::Bottom; },
 			effectTextActiveFunc);
 
@@ -781,7 +781,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			this->playerNameTextBox.getTextureID(),
 			playerNameTextBoxRect.getTopLeft(),
-			Int2(playerNameTextBoxRect.width, playerNameTextBoxRect.height),
+			playerNameTextBoxRect.getSize(),
 			PivotType::TopLeft);
 
 		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
@@ -848,7 +848,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			triggerTextTextureFunc,
 			[this, &game]() { return GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight()); },
-			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.width, triggerTextBoxRect.height); },
+			[triggerTextBoxRect]() { return triggerTextBoxRect.getSize(); },
 			[]() { return PivotType::Bottom; },
 			triggerTextActiveFunc);
 
@@ -856,7 +856,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			actionTextTextureFunc,
 			[]() { return GameWorldUiView::getActionTextPosition(); },
-			[actionTextBoxRect]() { return Int2(actionTextBoxRect.width, actionTextBoxRect.height); },
+			[actionTextBoxRect]() { return actionTextBoxRect.getSize(); },
 			[]() { return PivotType::Top; },
 			actionTextActiveFunc);
 
@@ -864,7 +864,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			effectTextTextureFunc,
 			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.width / 2), effectTextBoxRect.getTop()); },
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.width, effectTextBoxRect.height); },
+			[effectTextBoxRect]() { return effectTextBoxRect.getSize(); },
 			[]() { return PivotType::Bottom; },
 			effectTextActiveFunc);
 

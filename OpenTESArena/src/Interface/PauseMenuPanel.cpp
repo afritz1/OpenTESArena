@@ -220,35 +220,35 @@ bool PauseMenuPanel::init()
 	this->addDrawCall(
 		this->optionsButtonTextureRef.get(),
 		optionsButtonRect.getTopLeft(),
-		Int2(optionsButtonRect.width, optionsButtonRect.height),
+		optionsButtonRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &playerNameRect = this->playerNameTextBox.getRect();
 	this->addDrawCall(
 		this->playerNameTextBox.getTextureID(),
 		playerNameRect.getTopLeft(),
-		Int2(playerNameRect.width, playerNameRect.height),
+		playerNameRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &musicVolumeRect = this->musicTextBox.getRect();
 	this->addDrawCall(
 		[this]() { return this->musicTextBox.getTextureID(); },
 		musicVolumeRect.getCenter(),
-		Int2(musicVolumeRect.width, musicVolumeRect.height),
+		musicVolumeRect.getSize(),
 		PivotType::Middle);
 
 	const Rect &soundVolumeRect = this->soundTextBox.getRect();
 	this->addDrawCall(
 		[this]() { return this->soundTextBox.getTextureID(); },
 		soundVolumeRect.getCenter(),
-		Int2(soundVolumeRect.width, soundVolumeRect.height),
+		soundVolumeRect.getSize(),
 		PivotType::Middle);
 
 	const Rect &optionsTextRect = this->optionsTextBox.getRect();
 	this->addDrawCall(
 		this->optionsTextBox.getTextureID(),
 		optionsTextRect.getTopLeft(),
-		Int2(optionsTextRect.width, optionsTextRect.height),
+		optionsTextRect.getSize(),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

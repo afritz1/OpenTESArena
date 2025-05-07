@@ -142,7 +142,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	this->addDrawCall(
 		this->locationTextBox.getTextureID(),
 		locationTextBoxRect.getTopLeft(),
-		Int2(locationTextBoxRect.width, locationTextBoxRect.height),
+		locationTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);

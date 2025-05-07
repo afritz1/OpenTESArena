@@ -91,21 +91,21 @@ bool ChooseGenderPanel::init()
 	this->addDrawCall(
 		this->titleTextBox.getTextureID(),
 		titleTextBoxRect.getCenter(),
-		Int2(titleTextBoxRect.width, titleTextBoxRect.height),
+		titleTextBoxRect.getSize(),
 		PivotType::Middle);
 
 	const Rect &maleTextBoxRect = this->maleTextBox.getRect();
 	this->addDrawCall(
 		this->maleTextBox.getTextureID(),
 		maleTextBoxRect.getCenter(),
-		Int2(maleTextBoxRect.width, maleTextBoxRect.height),
+		maleTextBoxRect.getSize(),
 		PivotType::Middle);
 
 	const Rect &femaleTextBoxRect = this->femaleTextBox.getRect();
 	this->addDrawCall(
 		this->femaleTextBox.getTextureID(),
 		femaleTextBoxRect.getCenter(),
-		Int2(femaleTextBoxRect.width, femaleTextBoxRect.height),
+		femaleTextBoxRect.getSize(),
 		PivotType::Middle);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

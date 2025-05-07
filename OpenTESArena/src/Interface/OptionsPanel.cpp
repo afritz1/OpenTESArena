@@ -119,7 +119,7 @@ bool OptionsPanel::init()
 		this->addDrawCall(
 			this->tabButtonTextureRef.get(),
 			tabRect.getTopLeft(),
-			Int2(tabRect.width, tabRect.height),
+			tabRect.getSize(),
 			PivotType::TopLeft);
 	}
 
@@ -129,14 +129,14 @@ bool OptionsPanel::init()
 	this->addDrawCall(
 		this->backButtonTextureRef.get(),
 		backButtonRect.getTopLeft(),
-		Int2(backButtonRect.width, backButtonRect.height),
+		backButtonRect.getSize(),
 		PivotType::TopLeft);
 
 	const Rect &backButtonTextBoxRect = this->backButtonTextBox.getRect();
 	this->addDrawCall(
 		backButtonTextBox.getTextureID(),
 		backButtonTextBoxRect.getTopLeft(),
-		Int2(backButtonTextBoxRect.width, backButtonTextBoxRect.height),
+		backButtonTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const UiTextureID highlightTextureID = OptionsUiView::allocHighlightTexture(renderer);
@@ -169,7 +169,7 @@ bool OptionsPanel::init()
 		this->addDrawCall(
 			[this]() { return this->highlightTextureRef.get(); },
 			[textBoxRect]() { return textBoxRect.getTopLeft(); },
-			[textBoxRect]() { return Int2(textBoxRect.width, textBoxRect.height); },
+			[textBoxRect]() { return textBoxRect.getSize(); },
 			[]() { return PivotType::TopLeft; },
 			highlightActiveFunc);
 	}
@@ -180,7 +180,7 @@ bool OptionsPanel::init()
 		this->addDrawCall(
 			tabTextBox.getTextureID(),
 			tabTextBoxRect.getTopLeft(),
-			Int2(tabTextBoxRect.width, tabTextBoxRect.height),
+			tabTextBoxRect.getSize(),
 			PivotType::TopLeft);
 	}
 
@@ -198,7 +198,7 @@ bool OptionsPanel::init()
 		this->addDrawCall(
 			textureFunc,
 			optionTextBoxRect.getTopLeft(),
-			Int2(optionTextBoxRect.width, optionTextBoxRect.height),
+			optionTextBoxRect.getSize(),
 			PivotType::TopLeft);
 	}
 
@@ -211,7 +211,7 @@ bool OptionsPanel::init()
 	this->addDrawCall(
 		descTextureFunc,
 		descTextBoxRect.getTopLeft(),
-		Int2(descTextBoxRect.width, descTextBoxRect.height),
+		descTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

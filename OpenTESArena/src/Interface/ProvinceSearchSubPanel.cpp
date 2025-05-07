@@ -159,7 +159,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	this->addDrawCall(
 		[this]() { return this->textTitleTextBox.getTextureID(); },
 		[textTitleTextBoxRect]() { return textTitleTextBoxRect.getTopLeft(); },
-		[textTitleTextBoxRect]() { return Int2(textTitleTextBoxRect.width, textTitleTextBoxRect.height); },
+		[textTitleTextBoxRect]() { return textTitleTextBoxRect.getSize(); },
 		[]() { return PivotType::TopLeft; },
 		textEntryActiveFunc);
 
@@ -167,7 +167,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	this->addDrawCall(
 		[this]() { return this->textEntryTextBox.getTextureID(); },
 		[textEntryTextBoxRect]() { return textEntryTextBoxRect.getTopLeft(); },
-		[textEntryTextBoxRect]() { return Int2(textEntryTextBoxRect.width, textEntryTextBoxRect.height); },
+		[textEntryTextBoxRect]() { return textEntryTextBoxRect.getSize(); },
 		[]() { return PivotType::TopLeft; },
 		textEntryActiveFunc);
 
@@ -200,7 +200,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	{
 		// Have to get the size dynamically due to the list not being initialized or populated yet.
 		const Rect &locationsListBoxRect = this->locationsListBox.getRect();
-		return Int2(locationsListBoxRect.width, locationsListBoxRect.height);
+		return locationsListBoxRect.getSize();
 	};
 
 	this->addDrawCall(

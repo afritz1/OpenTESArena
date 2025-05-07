@@ -325,7 +325,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		this->testButtonTextureRef.get(),
 		testButtonRect.getTopLeft(),
-		Int2(testButtonRect.width, testButtonRect.height),
+		testButtonRect.getSize(),
 		PivotType::TopLeft);
 
 	const auto &fontLibrary = FontLibrary::getInstance();
@@ -340,7 +340,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		this->testButtonTextBox.getTextureID(),
 		testButtonTextBoxRect.getCenter(),
-		Int2(testButtonTextBoxRect.width, testButtonTextBoxRect.height),
+		testButtonTextBoxRect.getSize(),
 		PivotType::Middle);
 
 	const std::string testTypeText = "Test type: " + MainMenuUiModel::getTestTypeName(this->testType);
@@ -354,7 +354,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		[this]() { return this->testTypeTextBox.getTextureID(); },
 		Int2(testTypeTextBoxRect.getRight(), testTypeTextBoxRect.getTop()),
-		Int2(testTypeTextBoxRect.width, testTypeTextBoxRect.height),
+		testTypeTextBoxRect.getSize(),
 		PivotType::MiddleRight);
 
 	const std::string testNameText = "Test location: " +
@@ -369,7 +369,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		[this]() { return this->testNameTextBox.getTextureID(); },
 		Int2(testNameTextBoxRect.getRight(), testNameTextBoxRect.getTop()),
-		Int2(testNameTextBoxRect.width, testNameTextBoxRect.height),
+		testNameTextBoxRect.getSize(),
 		PivotType::MiddleRight);
 
 	const ArenaTypes::WeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
@@ -384,7 +384,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		[this]() { return this->testWeatherTextBox.getTextureID(); },
 		[testWeatherTextBoxRect]() { return Int2(testWeatherTextBoxRect.getRight(), testWeatherTextBoxRect.getTop()); },
-		[testWeatherTextBoxRect]() { return Int2(testWeatherTextBoxRect.width, testWeatherTextBoxRect.height); },
+		[testWeatherTextBoxRect]() { return testWeatherTextBoxRect.getSize(); },
 		[]() { return PivotType::MiddleRight; },
 		testWeatherActiveFunc);
 }
