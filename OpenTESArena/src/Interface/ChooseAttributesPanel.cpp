@@ -254,6 +254,14 @@ bool ChooseAttributesPanel::init()
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
+	const Int2 bonusPointsTextureTopLeftPosition = ChooseAttributesUiView::BonusPointsTextureTopLeftPosition;
+	const Int2 bonusPointsTextureDims = *renderer.tryGetUiTextureDims(bonusPointsTextureID);
+	this->addDrawCall(
+		bonusPointsTextureID,
+		bonusPointsTextureTopLeftPosition,
+		bonusPointsTextureDims,
+		PivotType::TopLeft);
+
 	// code arrow
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
@@ -369,16 +377,7 @@ bool ChooseAttributesPanel::init()
 		});
 	}
 
-	const Int2 bonusPointsTextureTopLeftPosition = ChooseAttributesUiView::BonusPointsTextureTopLeftPosition;
-	const Int2 bonusPointsTextureDims = *renderer.tryGetUiTextureDims(bonusPointsTextureID);
 	constexpr Int2 bonusPointsTextBoxTopLeftPosition(92, 113);
-
-	this->addDrawCall(
-		bonusPointsTextureID,
-		bonusPointsTextureTopLeftPosition,
-		bonusPointsTextureDims,
-		PivotType::TopLeft);
-
 	const TextBox::InitInfo bonusPointsTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
 		std::to_string(bonusPoints),
 		bonusPointsTextBoxTopLeftPosition.x,
@@ -571,6 +570,12 @@ void ChooseAttributesPanel::redrawAttributeArrows()
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
+	this->addDrawCall(
+		this->bonusPointsTextureRef.get(),
+		ChooseAttributesUiView::BonusPointsTextureTopLeftPosition,
+		*renderer.tryGetUiTextureDims(this->bonusPointsTextureRef.get()),
+		PivotType::TopLeft);
+
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
 		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
@@ -617,12 +622,6 @@ void ChooseAttributesPanel::redrawAttributeArrows()
 		this->levelTextBox.getTextureID(),
 		levelTextBoxRect.getTopLeft(),
 		Int2(levelTextBoxRect.getWidth(), levelTextBoxRect.getHeight()),
-		PivotType::TopLeft);
-
-	this->addDrawCall(
-		this->bonusPointsTextureRef.get(),
-		ChooseAttributesUiView::BonusPointsTextureTopLeftPosition,
-		*renderer.tryGetUiTextureDims(this->bonusPointsTextureRef.get()),
 		PivotType::TopLeft);
 
 	const Rect &bonusPointsTextBoxRect = this->bonusPointsTextBox.getRect();
