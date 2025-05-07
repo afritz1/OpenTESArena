@@ -402,13 +402,7 @@ bool ChooseAttributesPanel::init()
 	{
 		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeIndex]()
 		{
-			const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-			const PrimaryAttributes &attributes = charCreationState.attributes;
-			const PrimaryAttribute &attribute = attributes.getAttributes()[attributeIndex];
-			const int attributeValue = attribute.maxValue;
-			const std::string attributeValueText = std::to_string(attributeValue);
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
-			attributeTextBox.setText(attributeValueText);
 			return attributeTextBox.getTextureID();
 		};
 
@@ -578,13 +572,7 @@ void ChooseAttributesPanel::redrawAttributeArrows()
 
 		UiDrawCall::TextureFunc attributeTextureFunc = [this, &game, attributeIndex]()
 		{
-			const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-			const PrimaryAttributes &attributes = charCreationState.attributes;
-			const PrimaryAttribute &attribute = attributes.getAttributes()[attributeIndex];
-			const int attributeValue = attribute.maxValue;
-			const std::string attributeValueText = std::to_string(attributeValue);
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
-			attributeTextBox.setText(attributeValueText); // @todo: this seems gross, dirtying the text every frame?
 			return attributeTextBox.getTextureID();
 		};
 
