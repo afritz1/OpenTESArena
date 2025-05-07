@@ -257,14 +257,20 @@ bool ChooseAttributesPanel::init()
 	// code arrow
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
-		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+		const Rect attributeFirstButtonRect = ChooseAttributesUiView::AttributeButtonFirstRect;
+		const Rect attributeButtonRect(
+			attributeFirstButtonRect.getLeft(),
+			attributeFirstButtonRect.getTop() + (attributeFirstButtonRect.getHeight() * attributeIndex),
+			attributeFirstButtonRect.getWidth(),
+			attributeFirstButtonRect.getHeight());
 
-		this->addButtonProxy(MouseButtonType::Left, attributeTextBoxRect,
+		this->addButtonProxy(MouseButtonType::Left, attributeButtonRect,
 			[this, attributeIndex]() { this->selectedAttributeIndex = attributeIndex; },
 			Rect(),
 			[this]() { return !this->attributesAreSaved; });
 
 		const Int2 upDownButtonFirstTopLeftPos = ChooseAttributesUiView::UpDownButtonFirstTopLeftPosition;
+		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 
 		Button<> &upButton = this->increasePointButtons[attributeIndex];
 		upButton = Button<>();
