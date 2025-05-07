@@ -844,3 +844,13 @@ UiTextureID ChooseAttributesUiView::allocStatsBgTexture(TextureManager &textureM
 {
 	return CharacterSheetUiView::allocStatsBgTexture(textureManager, renderer);
 }
+
+UiTextureID ChooseAttributesUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocUpDownButtonTexture(textureManager, renderer);
+}
+
+UiTextureID ChooseAttributesUiView::allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocBonusPointsTexture(textureManager, renderer);
+}

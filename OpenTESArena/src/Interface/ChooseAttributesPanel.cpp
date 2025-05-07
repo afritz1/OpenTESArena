@@ -1,6 +1,4 @@
 #include <algorithm>
-#include <array>
-#include <map>
 
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
@@ -26,8 +24,10 @@
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game)
 {
+	this->bonusPoints = 0;
 	this->selectedAttributeIndex = 0;
 	this->lastSelectedAttributeIndex = 0;
+	this->arrowDrawCallIndex = -1;
 }
 
 int ChooseAttributesPanel::calculateInitialBonusPoints(Random &random) const
@@ -51,7 +51,7 @@ bool ChooseAttributesPanel::init()
 	charCreationState.portraitIndex = 0;
 	charCreationState.clearChangedPoints();
 
-	this->bonusPoints = calculateInitialBonusPoints(game.random);
+	this->bonusPoints = this->calculateInitialBonusPoints(game.random);
 	this->selectedAttributeIndex = 0;
 	this->lastSelectedAttributeIndex = 0;
 
@@ -159,25 +159,10 @@ bool ChooseAttributesPanel::init()
 	this->shirtTextureRef.init(shirtTextureID, renderer);
 	this->statsBgTextureRef.init(statsBgTextureID, renderer);
 
-	// texture for Arrows 
-	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
-	UiTextureID upDownTextureID;
-	const TextureAsset paletteTextureAsset = TextureAsset(std::string(ArenaPaletteName::CharSheet));
-	if (!TextureUtils::tryAllocUiTexture(upDownTextureAsset, paletteTextureAsset, textureManager, renderer, &upDownTextureID))
-	{
-		DebugLogError("Couldn't get texture ID for up/down arrows.");
-		return false;
-	}
+	const UiTextureID upDownTextureID = ChooseAttributesUiView::allocUpDownButtonTexture(textureManager, renderer);
 	this->upDownTextureRef.init(upDownTextureID, renderer);
 
-	// texture bonus points
-	const TextureAsset bonusPointsTextureAsset = TextureAsset(std::string(ArenaTextureName::BonusPointsText));
-	UiTextureID bonusPointsTextureID;
-	if (!TextureUtils::tryAllocUiTexture(bonusPointsTextureAsset, paletteTextureAsset, textureManager, renderer, &bonusPointsTextureID))
-	{
-		DebugLogError("Couldn't get texture ID for bonus points.");
-		return false;
-	}
+	const UiTextureID bonusPointsTextureID = ChooseAttributesUiView::allocBonusPointsTexture(textureManager, renderer);
 	this->bonusPointsTextureRef.init(bonusPointsTextureID, renderer);
 
 	const Buffer<TextureAsset> headTextureAssets = ChooseAttributesUiView::getHeadTextureAssets(game);
@@ -269,10 +254,6 @@ bool ChooseAttributesPanel::init()
 		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const Rect &firstAttributeTextBox = this->attributeTextBoxes[0].getRect();
-
-	this->fixedArrowX = firstAttributeTextBox.getRight() + 3;
-
 	// code arrow
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
@@ -284,33 +265,26 @@ bool ChooseAttributesPanel::init()
 			this->selectedAttributeIndex = attributeIndex;
 		});
 
-		const Int2 buttonCenter(
-			this->fixedArrowX,
-			attributeTextBoxRect.getCenter().y);
+		const Int2 upDownButtonFirstTopLeftPos = ChooseAttributesUiView::UpDownButtonFirstTopLeftPosition;
 
-		const float scaleFactor = 0.5f;
-		const Int2 scaledDims(
-			static_cast<int>(upDownTextureDims.x * scaleFactor),
-			static_cast<int>(upDownTextureDims.y * scaleFactor));
-
-		// Up arrow
 		const int upButtonIndex = attributeIndex * 2;
-		this->upDownButtons[upButtonIndex] = Button<>();
-		this->upDownButtons[upButtonIndex].setX(buttonCenter.x - (scaledDims.x / 2));
-		this->upDownButtons[upButtonIndex].setY(buttonCenter.y - scaledDims.y / 2);
-		this->upDownButtons[upButtonIndex].setWidth(scaledDims.x);
-		this->upDownButtons[upButtonIndex].setHeight(scaledDims.y / 2);
+		Button<> &upButton = this->upDownButtons[upButtonIndex];
+		upButton = Button<>();
+		upButton.setX(upDownButtonFirstTopLeftPos.x);
+		upButton.setY(attributeTextBoxRect.getCenter().y - (this->upDownTextureRef.getHeight() / 2));
+		upButton.setWidth(this->upDownTextureRef.getWidth());
+		upButton.setHeight(this->upDownTextureRef.getHeight() / 2);
 
-		// Down arrow
 		const int downButtonIndex = (attributeIndex * 2) + 1;
-		this->upDownButtons[downButtonIndex] = Button<>();
-		this->upDownButtons[downButtonIndex].setX(buttonCenter.x - (scaledDims.x / 2));
-		this->upDownButtons[downButtonIndex].setY(buttonCenter.y);
-		this->upDownButtons[downButtonIndex].setWidth(scaledDims.x);
-		this->upDownButtons[downButtonIndex].setHeight(scaledDims.y / 2);
+		Button<> &downButton = this->upDownButtons[downButtonIndex];
+		downButton = Button<>();
+		downButton.setX(upDownButtonFirstTopLeftPos.x);
+		downButton.setY(attributeTextBoxRect.getCenter().y);
+		downButton.setWidth(this->upDownTextureRef.getWidth());
+		downButton.setHeight(this->upDownTextureRef.getHeight() / 2);
 
 		// Click handler for up arrow
-		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[upButtonIndex].getRect(),
+		this->addButtonProxy(MouseButtonType::Left, upButton.getRect(),
 			[this, attributeIndex]()
 		{
 			if (attributeIndex == this->selectedAttributeIndex && this->bonusPoints > 0)
@@ -326,11 +300,12 @@ bool ChooseAttributesPanel::init()
 				PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 				attribute.maxValue += 1;
 
-				this->attributeTextBoxes[attributeIndex].setText(std::to_string(attribute.maxValue));
+				TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
+				attributeTextBox.setText(std::to_string(attribute.maxValue));
 
-				const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+				const Rect &attributeTextBoxRect = attributeTextBox.getRect();
 				this->addDrawCall(
-					this->attributeTextBoxes[attributeIndex].getTextureID(),
+					attributeTextBox.getTextureID(),
 					attributeTextBoxRect.getTopLeft(),
 					Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()),
 					PivotType::TopLeft);
@@ -348,7 +323,7 @@ bool ChooseAttributesPanel::init()
 		});
 
 		// Click handler for down arrow
-		this->addButtonProxy(MouseButtonType::Left, this->upDownButtons[downButtonIndex].getRect(),
+		this->addButtonProxy(MouseButtonType::Left, downButton.getRect(),
 			[this, attributeIndex]()
 		{
 			Game &game = this->getGame();
@@ -365,11 +340,12 @@ bool ChooseAttributesPanel::init()
 				PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 				attribute.maxValue -= 1;
 
-				this->attributeTextBoxes[attributeIndex].setText(std::to_string(attribute.maxValue));
+				TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
+				attributeTextBox.setText(std::to_string(attribute.maxValue));
 
-				const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+				const Rect &attributeTextBoxRect = attributeTextBox.getRect();
 				this->addDrawCall(
-					this->attributeTextBoxes[attributeIndex].getTextureID(),
+					attributeTextBox.getTextureID(),
 					attributeTextBoxRect.getTopLeft(),
 					Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight()),
 					PivotType::TopLeft);
@@ -387,27 +363,23 @@ bool ChooseAttributesPanel::init()
 		});
 	}
 
-	const Rect &lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 1].getRect();
-
+	const Int2 bonusPointsTextureTopLeftPosition = ChooseAttributesUiView::BonusPointsTextureTopLeftPosition;
 	const Int2 bonusPointsTextureDims = *renderer.tryGetUiTextureDims(bonusPointsTextureID);
-	const Int2 bonusPointsPosition(
-		lastAttributeTextBoxRect.getLeft() + 25,
-		lastAttributeTextBoxRect.getTop()
-	);
+	constexpr Int2 bonusPointsTextBoxTopLeftPosition(92, 113);
 
 	this->addDrawCall(
 		bonusPointsTextureID,
-		bonusPointsPosition,
+		bonusPointsTextureTopLeftPosition,
 		bonusPointsTextureDims,
 		PivotType::TopLeft);
 
-	const TextBox::InitInfo bonusPointsTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBox::InitInfo bonusPointsTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
 		std::to_string(bonusPoints),
-		Int2(bonusPointsPosition.x + bonusPointsTextureDims.x - 28,
-		bonusPointsPosition.y + (bonusPointsTextureDims.y / 2)),
+		bonusPointsTextBoxTopLeftPosition.x,
+		bonusPointsTextBoxTopLeftPosition.y,
 		ArenaFontName::Arena,
 		Color::Yellow,
-		TextAlignment::MiddleCenter,
+		TextAlignment::TopLeft,
 		std::nullopt,
 		1,
 		fontLibrary);
@@ -523,11 +495,6 @@ void ChooseAttributesPanel::redrawAttributeArrows()
 	const UiTextureID upDownTextureID = this->upDownTextureRef.get();
 	const Int2 upDownTextureDims = *renderer.tryGetUiTextureDims(upDownTextureID);
 
-	const float scaleFactor = 0.5f;
-	const Int2 scaledDims(
-		static_cast<int>(upDownTextureDims.x * scaleFactor),
-		static_cast<int>(upDownTextureDims.y * scaleFactor));
-
 	this->clearDrawCalls();
 
 	auto &game = this->getGame();
@@ -616,7 +583,7 @@ void ChooseAttributesPanel::redrawAttributeArrows()
 			const int attributeValue = attribute.maxValue;
 			const std::string attributeValueText = std::to_string(attributeValue);
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
-			attributeTextBox.setText(attributeValueText);
+			attributeTextBox.setText(attributeValueText); // @todo: this seems gross, dirtying the text every frame?
 			return attributeTextBox.getTextureID();
 		};
 
@@ -633,13 +600,13 @@ void ChooseAttributesPanel::redrawAttributeArrows()
 		if (attributeIndex == this->selectedAttributeIndex)
 		{
 			const Int2 buttonCenter(
-				this->fixedArrowX,
+				ChooseAttributesUiView::UpDownButtonFirstTopLeftPosition.x + (this->upDownTextureRef.getWidth() / 2),
 				attributeTextBoxRect.getCenter().y);
 
 			this->addDrawCall(
 				upDownTextureID,
 				buttonCenter,
-				scaledDims,
+				Int2(this->upDownTextureRef.getWidth(), this->upDownTextureRef.getHeight()),
 				PivotType::Middle);
 		}
 	}
@@ -658,17 +625,9 @@ void ChooseAttributesPanel::redrawAttributeArrows()
 		Int2(levelTextBoxRect.getWidth(), levelTextBoxRect.getHeight()),
 		PivotType::TopLeft);
 
-	const Int2 bonusPointsPosition = ([this]() -> Int2
-	{
-		const Rect &lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 1].getRect();
-		return Int2(
-			lastAttributeTextBoxRect.getLeft() + 25,
-			lastAttributeTextBoxRect.getTop());
-	})();
-
 	this->addDrawCall(
 		this->bonusPointsTextureRef.get(),
-		bonusPointsPosition,
+		ChooseAttributesUiView::BonusPointsTextureTopLeftPosition,
 		*renderer.tryGetUiTextureDims(this->bonusPointsTextureRef.get()),
 		PivotType::TopLeft);
 
