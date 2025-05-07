@@ -23,7 +23,7 @@ const Rect OptionsUiView::getListRect()
 		firstTabRect.getTop());
 	const Int2 listDimensions(
 		254,
-		firstTabRect.getHeight() * 5);
+		firstTabRect.height * 5);
 
 	return Rect(
 		listOrigin.x,
@@ -103,8 +103,8 @@ TextBox::InitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontL
 	const Rect rect(
 		listRect.getLeft(),
 		listRect.getTop() + (fontDef.getCharacterHeight() * index),
-		listRect.getWidth(),
-		listRect.getHeight());
+		listRect.width,
+		listRect.height);
 	return TextBox::InitInfo::makeWithXY(
 		dummyText,
 		rect.getLeft(),
@@ -163,8 +163,8 @@ UiTextureID OptionsUiView::allocTabTexture(TextureManager &textureManager, Rende
 	const Rect firstTabRect = OptionsUiView::getTabRect(0);
 	Surface surface = TextureUtils::generate(
 		OptionsUiView::TabBackgroundPatternType,
-		firstTabRect.getWidth(),
-		firstTabRect.getHeight(),
+		firstTabRect.width,
+		firstTabRect.height,
 		textureManager,
 		renderer);
 
@@ -194,7 +194,7 @@ UiTextureID OptionsUiView::allocTabTexture(TextureManager &textureManager, Rende
 UiTextureID OptionsUiView::allocHighlightTexture(Renderer &renderer)
 {
 	const Rect listRect = OptionsUiView::getListRect();
-	const int width = listRect.getWidth();
+	const int width = listRect.width;
 	const int height = 9;
 	UiTextureID textureID;
 	if (!renderer.tryCreateUiTexture(width, height, &textureID))
@@ -221,8 +221,8 @@ UiTextureID OptionsUiView::allocBackButtonTexture(TextureManager &textureManager
 	const Rect backButtonRect = OptionsUiView::getBackButtonRect();
 	Surface surface = TextureUtils::generate(
 		OptionsUiView::TabBackgroundPatternType,
-		backButtonRect.getWidth(),
-		backButtonRect.getHeight(),
+		backButtonRect.width,
+		backButtonRect.height,
 		textureManager,
 		renderer);
 

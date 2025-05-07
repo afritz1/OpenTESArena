@@ -71,13 +71,13 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 
 	// The background expands to fit the text, unless overridden.
 	const int titleBackgroundWidth = backgroundProperties.widthOverride.has_value() ?
-		*backgroundProperties.widthOverride : (titleRect.getWidth() + backgroundProperties.extraTitleWidth);
+		*backgroundProperties.widthOverride : (titleRect.width + backgroundProperties.extraTitleWidth);
 	const int titleBackgroundHeight = backgroundProperties.heightOverride.has_value() ?
-		*backgroundProperties.heightOverride : (titleRect.getHeight() + backgroundProperties.extraTitleHeight);
+		*backgroundProperties.heightOverride : (titleRect.height + backgroundProperties.extraTitleHeight);
 	this->titleBackgroundRect = Rect(titleRect.getCenter(), titleBackgroundWidth, titleBackgroundHeight);
 
 	const Surface titleBackgroundSurface = TextureUtils::generate(backgroundProperties.patternType,
-		this->titleBackgroundRect.getWidth(), this->titleBackgroundRect.getHeight(), textureManager, renderer);
+		this->titleBackgroundRect.width, this->titleBackgroundRect.height, textureManager, renderer);
 
 	UiTextureID titleBackgroundTextureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(titleBackgroundSurface, textureManager, renderer, &titleBackgroundTextureID))
@@ -121,11 +121,11 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		const Rect itemBackgroundRect(
 			titleBackgroundRect.getLeft(),
 			titleBackgroundRect.getBottom() + (i * backgroundProperties.itemTextureHeight),
-			titleBackgroundRect.getWidth(),
+			titleBackgroundRect.width,
 			backgroundProperties.itemTextureHeight);
 
 		const Surface itemBackgroundSurface = TextureUtils::generate(backgroundProperties.patternType,
-			itemBackgroundRect.getWidth(), itemBackgroundRect.getHeight(), textureManager, renderer);
+			itemBackgroundRect.width, itemBackgroundRect.height, textureManager, renderer);
 		
 		UiTextureID itemBackgroundTextureID;
 		if (!TextureUtils::tryAllocUiTextureFromSurface(itemBackgroundSurface, textureManager, renderer, &itemBackgroundTextureID))
@@ -181,7 +181,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	this->addDrawCall(
 		this->titleBackgroundTextureRef.get(),
 		this->titleBackgroundRect.getCenter(),
-		Int2(this->titleBackgroundRect.getWidth(), this->titleBackgroundRect.getHeight()),
+		Int2(this->titleBackgroundRect.width, this->titleBackgroundRect.height),
 		PivotType::Middle);
 
 	for (const MessageBoxSubPanel::Item &item : this->items)
@@ -189,7 +189,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		this->addDrawCall(
 			item.backgroundTextureRef.get(),
 			item.backgroundTextureRect.getCenter(),
-			Int2(item.backgroundTextureRect.getWidth(), item.backgroundTextureRect.getHeight()),
+			Int2(item.backgroundTextureRect.width, item.backgroundTextureRect.height),
 			PivotType::Middle);
 	}
 
@@ -207,7 +207,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	UiDrawCall::SizeFunc titleTextBoxSizeFunc = [this]()
 	{
 		const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-		return Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight());
+		return Int2(titleTextBoxRect.width, titleTextBoxRect.height);
 	};
 
 	UiDrawCall::PivotFunc textBoxPivotFunc = []() { return PivotType::Middle; };
@@ -238,7 +238,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		{
 			MessageBoxSubPanel::Item &item = this->items.get(i);
 			const Rect &itemRect = item.textBox.getRect();
-			return Int2(itemRect.getWidth(), itemRect.getHeight());
+			return Int2(itemRect.width, itemRect.height);
 		};
 
 		this->addDrawCall(

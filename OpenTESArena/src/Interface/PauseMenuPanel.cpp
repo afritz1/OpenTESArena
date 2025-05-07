@@ -159,21 +159,21 @@ bool PauseMenuPanel::init()
 	{
 		const Player &player = game.player;
 		const Rect &barRect = GameWorldUiView::HealthBarRect;
-		return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentHealth, player.maxHealth));
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
 	};
 
 	UiDrawCall::SizeFunc staminaBarSizeFunc = [&game]()
 	{
 		const Player &player = game.player;
 		const Rect &barRect = GameWorldUiView::StaminaBarRect;
-		return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentStamina, player.maxStamina));
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
 	};
 
 	UiDrawCall::SizeFunc spellPointsBarSizeFunc = [&game]()
 	{
 		const Player &player = game.player;
 		const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
-		return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentSpellPoints, player.maxSpellPoints));
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
 	};
 
 	UiDrawCall::PivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
@@ -220,35 +220,35 @@ bool PauseMenuPanel::init()
 	this->addDrawCall(
 		this->optionsButtonTextureRef.get(),
 		optionsButtonRect.getTopLeft(),
-		Int2(optionsButtonRect.getWidth(), optionsButtonRect.getHeight()),
+		Int2(optionsButtonRect.width, optionsButtonRect.height),
 		PivotType::TopLeft);
 
 	const Rect &playerNameRect = this->playerNameTextBox.getRect();
 	this->addDrawCall(
 		this->playerNameTextBox.getTextureID(),
 		playerNameRect.getTopLeft(),
-		Int2(playerNameRect.getWidth(), playerNameRect.getHeight()),
+		Int2(playerNameRect.width, playerNameRect.height),
 		PivotType::TopLeft);
 
 	const Rect &musicVolumeRect = this->musicTextBox.getRect();
 	this->addDrawCall(
 		[this]() { return this->musicTextBox.getTextureID(); },
 		musicVolumeRect.getCenter(),
-		Int2(musicVolumeRect.getWidth(), musicVolumeRect.getHeight()),
+		Int2(musicVolumeRect.width, musicVolumeRect.height),
 		PivotType::Middle);
 
 	const Rect &soundVolumeRect = this->soundTextBox.getRect();
 	this->addDrawCall(
 		[this]() { return this->soundTextBox.getTextureID(); },
 		soundVolumeRect.getCenter(),
-		Int2(soundVolumeRect.getWidth(), soundVolumeRect.getHeight()),
+		Int2(soundVolumeRect.width, soundVolumeRect.height),
 		PivotType::Middle);
 
 	const Rect &optionsTextRect = this->optionsTextBox.getRect();
 	this->addDrawCall(
 		this->optionsTextBox.getTextureID(),
 		optionsTextRect.getTopLeft(),
-		Int2(optionsTextRect.getWidth(), optionsTextRect.getHeight()),
+		Int2(optionsTextRect.width, optionsTextRect.height),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

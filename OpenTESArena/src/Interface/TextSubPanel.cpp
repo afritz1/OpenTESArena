@@ -58,7 +58,7 @@ bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::str
 	this->addDrawCall(
 		this->textBox.getTextureID(),
 		textBoxRect.getCenter(),
-		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
+		Int2(textBoxRect.width, textBoxRect.height),
 		PivotType::Middle);
 
 	auto &textureManager = game.textureManager;

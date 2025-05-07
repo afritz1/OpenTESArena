@@ -15,7 +15,8 @@
 #include "components/utilities/Buffer.h"
 
 class FontLibrary;
-class Rect;
+
+struct Rect;
 
 // A sub-panel intended for displaying text with some buttons.
 // @todo: might eventually make this not a panel, so it's more like TextBox and ListBox.

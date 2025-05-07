@@ -85,7 +85,7 @@ bool ChooseNamePanel::init()
 	this->addDrawCall(
 		this->titleTextBox.getTextureID(),
 		titleTextBoxRect.getCenter(),
-		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
+		Int2(titleTextBoxRect.width, titleTextBoxRect.height),
 		PivotType::Middle);
 
 	// Need a texture func for the name text box due to the non-constness of the getter.
@@ -98,7 +98,7 @@ bool ChooseNamePanel::init()
 	this->addDrawCall(
 		entryTextureFunc,
 		entryTextBoxRect.getCenter(),
-		Int2(entryTextBoxRect.getWidth(), entryTextBoxRect.getHeight()),
+		Int2(entryTextBoxRect.width, entryTextBoxRect.height),
 		PivotType::Middle);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

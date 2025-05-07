@@ -752,7 +752,7 @@ void Game::renderDebugInfo()
 	const UiTextureID textureID = this->debugInfoTextBox.getTextureID();
 	const Rect &debugInfoRect = this->debugInfoTextBox.getRect();
 	const Int2 position = debugInfoRect.getTopLeft();
-	const Int2 size(debugInfoRect.getWidth(), debugInfoRect.getHeight());
+	const Int2 size(debugInfoRect.width, debugInfoRect.height);
 	constexpr PivotType pivotType = PivotType::TopLeft;
 	constexpr RenderSpace renderSpace = RenderSpace::Classic;
 

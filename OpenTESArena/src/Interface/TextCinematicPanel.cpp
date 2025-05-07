@@ -122,7 +122,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	this->addDrawCall(
 		[this]() { return this->textBox.getTextureID(); },
 		textBoxRect.getCenter(),
-		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
+		Int2(textBoxRect.width, textBoxRect.height),
 		PivotType::Middle);
 
 	// Optionally initialize speech state if speech is available.

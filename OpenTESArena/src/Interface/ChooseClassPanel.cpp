@@ -81,8 +81,8 @@ bool ChooseClassPanel::init()
 		return Button<ListBox&>(
 			rect.getLeft(),
 			rect.getTop(),
-			rect.getWidth(),
-			rect.getHeight(),
+			rect.width,
+			rect.height,
 			ChooseClassUiController::onUpButtonSelected);
 	}();
 
@@ -92,8 +92,8 @@ bool ChooseClassPanel::init()
 		return Button<ListBox&>(
 			rect.getLeft(),
 			rect.getTop(),
-			rect.getWidth(),
-			rect.getHeight(),
+			rect.width,
+			rect.height,
 			ChooseClassUiController::onDownButtonSelected);
 	}();
 
@@ -197,7 +197,7 @@ bool ChooseClassPanel::init()
 	this->addDrawCall(
 		this->titleTextBox.getTextureID(),
 		titleTextBoxRect.getCenter(),
-		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
+		Int2(titleTextBoxRect.width, titleTextBoxRect.height),
 		PivotType::Middle);
 
 	UiDrawCall::TextureFunc classDescTextureFunc = [this]()
@@ -209,7 +209,7 @@ bool ChooseClassPanel::init()
 	this->addDrawCall(
 		classDescTextureFunc,
 		classDescTextBoxRect.getCenter(),
-		Int2(classDescTextBoxRect.getWidth(), classDescTextBoxRect.getHeight()),
+		Int2(classDescTextBoxRect.width, classDescTextBoxRect.height),
 		PivotType::Middle);
 
 	UiDrawCall::TextureFunc listBoxTextureFunc = [this]()
@@ -221,7 +221,7 @@ bool ChooseClassPanel::init()
 	this->addDrawCall(
 		listBoxTextureFunc,
 		listBoxRect.getCenter(),
-		Int2(listBoxRect.getWidth(), listBoxRect.getHeight()),
+		Int2(listBoxRect.width, listBoxRect.height),
 		PivotType::Middle);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

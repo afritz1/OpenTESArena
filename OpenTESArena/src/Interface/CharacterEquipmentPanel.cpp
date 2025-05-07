@@ -199,21 +199,21 @@ bool CharacterEquipmentPanel::init()
 	this->addDrawCall(
 		this->nameTextBox.getTextureID(),
 		playerNameTextBoxRect.getTopLeft(),
-		Int2(playerNameTextBoxRect.getWidth(), playerNameTextBoxRect.getHeight()),
+		Int2(playerNameTextBoxRect.width, playerNameTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const Rect &playerRaceTextBoxRect = this->raceTextBox.getRect();
 	this->addDrawCall(
 		this->raceTextBox.getTextureID(),
 		playerRaceTextBoxRect.getTopLeft(),
-		Int2(playerRaceTextBoxRect.getWidth(), playerRaceTextBoxRect.getHeight()),
+		Int2(playerRaceTextBoxRect.width, playerRaceTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const Rect &playerClassTextBoxRect = this->classTextBox.getRect();
 	this->addDrawCall(
 		this->classTextBox.getTextureID(),
 		playerClassTextBoxRect.getTopLeft(),
-		Int2(playerClassTextBoxRect.getWidth(), playerClassTextBoxRect.getHeight()),
+		Int2(playerClassTextBoxRect.width, playerClassTextBoxRect.height),
 		PivotType::TopLeft);
 
 	// Need a texture func for the list box due to the non-constness of the getter.
@@ -226,7 +226,7 @@ bool CharacterEquipmentPanel::init()
 	this->addDrawCall(
 		inventoryListBoxTextureFunc,
 		inventoryListBoxRect.getTopLeft(),
-		Int2(inventoryListBoxRect.getWidth(), inventoryListBoxRect.getHeight()),
+		Int2(inventoryListBoxRect.width, inventoryListBoxRect.height),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

@@ -11,11 +11,11 @@
 
 #include "components/utilities/BufferView2D.h"
 
-class Rect;
 class TextureManager;
 
 enum class RenderSpace;
 
+struct Rect;
 struct SDL_Window;
 
 // Abstract base class for UI renderer.

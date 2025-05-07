@@ -8,7 +8,6 @@
 class ExeData;
 class Game;
 class GameWorldPanel;
-class Rect;
 class TextBox;
 
 enum class MouseButtonType;
@@ -16,6 +15,7 @@ enum class MouseButtonType;
 struct EntityInstance;
 struct InputActionCallbackValues;
 struct Player;
+struct Rect;
 
 namespace GameWorldUiController
 {

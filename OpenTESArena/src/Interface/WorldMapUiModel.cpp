@@ -316,7 +316,7 @@ std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int t
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
 	const UiTextureID textureID = FastTravelUiView::allocCityArrivalPopUpTexture(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight(), textureManager, renderer);
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height, textureManager, renderer);
 	ScopedUiTextureRef textureRef(textureID, renderer);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);

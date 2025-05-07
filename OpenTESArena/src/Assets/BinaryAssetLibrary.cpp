@@ -243,7 +243,7 @@ bool BinaryAssetLibrary::initWorldMapMasks()
 		const Rect &rect = MaskRects[i];
 
 		// The number of bytes in the mask rect.
-		const int byteCount = WorldMapMask::getAdjustedWidth(rect.getWidth()) * rect.getHeight();
+		const int byteCount = WorldMapMask::getAdjustedWidth(rect.width) * rect.height;
 
 		// Copy the segment of mask bytes to a new vector.
 		const uint8_t *maskStart = srcPtr + startOffset + offset;

@@ -49,8 +49,8 @@ bool ProvinceMapPanel::init(int provinceID)
 		return Button<Game&, ProvinceMapPanel&, int>(
 			clickArea.getLeft(),
 			clickArea.getTop(),
-			clickArea.getWidth(),
-			clickArea.getHeight(),
+			clickArea.width,
+			clickArea.height,
 			ProvinceMapUiController::onSearchButtonSelected);
 	}();
 
@@ -60,8 +60,8 @@ bool ProvinceMapPanel::init(int provinceID)
 		return Button<Game&, ProvinceMapPanel&>(
 			clickArea.getLeft(),
 			clickArea.getTop(),
-			clickArea.getWidth(),
-			clickArea.getHeight(),
+			clickArea.width,
+			clickArea.height,
 			ProvinceMapUiController::onTravelButtonSelected);
 	}();
 
@@ -71,8 +71,8 @@ bool ProvinceMapPanel::init(int provinceID)
 		return Button<Game&>(
 			clickArea.getLeft(),
 			clickArea.getTop(),
-			clickArea.getWidth(),
-			clickArea.getHeight(),
+			clickArea.width,
+			clickArea.height,
 			ProvinceMapUiController::onBackToWorldMapButtonSelected);
 	}();
 
@@ -177,7 +177,7 @@ bool ProvinceMapPanel::init(int provinceID)
 	UiDrawCall::SizeFunc hoveredLocationSizeFunc = [this]()
 	{
 		const Rect &hoveredLocationTextBoxRect = this->hoveredLocationTextBox.getRect();
-		return Int2(hoveredLocationTextBoxRect.getWidth(), hoveredLocationTextBoxRect.getHeight());
+		return hoveredLocationTextBoxRect.getSize();
 	};
 
 	UiDrawCall::PivotFunc hoveredLocationPivotFunc = []()

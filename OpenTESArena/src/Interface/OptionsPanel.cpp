@@ -119,7 +119,7 @@ bool OptionsPanel::init()
 		this->addDrawCall(
 			this->tabButtonTextureRef.get(),
 			tabRect.getTopLeft(),
-			Int2(tabRect.getWidth(), tabRect.getHeight()),
+			Int2(tabRect.width, tabRect.height),
 			PivotType::TopLeft);
 	}
 
@@ -129,14 +129,14 @@ bool OptionsPanel::init()
 	this->addDrawCall(
 		this->backButtonTextureRef.get(),
 		backButtonRect.getTopLeft(),
-		Int2(backButtonRect.getWidth(), backButtonRect.getHeight()),
+		Int2(backButtonRect.width, backButtonRect.height),
 		PivotType::TopLeft);
 
 	const Rect &backButtonTextBoxRect = this->backButtonTextBox.getRect();
 	this->addDrawCall(
 		backButtonTextBox.getTextureID(),
 		backButtonTextBoxRect.getTopLeft(),
-		Int2(backButtonTextBoxRect.getWidth(), backButtonTextBoxRect.getHeight()),
+		Int2(backButtonTextBoxRect.width, backButtonTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const UiTextureID highlightTextureID = OptionsUiView::allocHighlightTexture(renderer);
@@ -169,7 +169,7 @@ bool OptionsPanel::init()
 		this->addDrawCall(
 			[this]() { return this->highlightTextureRef.get(); },
 			[textBoxRect]() { return textBoxRect.getTopLeft(); },
-			[textBoxRect]() { return Int2(textBoxRect.getWidth(), textBoxRect.getHeight()); },
+			[textBoxRect]() { return Int2(textBoxRect.width, textBoxRect.height); },
 			[]() { return PivotType::TopLeft; },
 			highlightActiveFunc);
 	}
@@ -180,7 +180,7 @@ bool OptionsPanel::init()
 		this->addDrawCall(
 			tabTextBox.getTextureID(),
 			tabTextBoxRect.getTopLeft(),
-			Int2(tabTextBoxRect.getWidth(), tabTextBoxRect.getHeight()),
+			Int2(tabTextBoxRect.width, tabTextBoxRect.height),
 			PivotType::TopLeft);
 	}
 
@@ -198,7 +198,7 @@ bool OptionsPanel::init()
 		this->addDrawCall(
 			textureFunc,
 			optionTextBoxRect.getTopLeft(),
-			Int2(optionTextBoxRect.getWidth(), optionTextBoxRect.getHeight()),
+			Int2(optionTextBoxRect.width, optionTextBoxRect.height),
 			PivotType::TopLeft);
 	}
 
@@ -211,7 +211,7 @@ bool OptionsPanel::init()
 	this->addDrawCall(
 		descTextureFunc,
 		descTextBoxRect.getTopLeft(),
-		Int2(descTextBoxRect.getWidth(), descTextBoxRect.getHeight()),
+		Int2(descTextBoxRect.width, descTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

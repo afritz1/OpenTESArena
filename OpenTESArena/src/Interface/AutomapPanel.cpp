@@ -106,8 +106,8 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
 		
 		const Rect &drawingArea = AutomapUiView::DrawingArea;
-		const int mapX = (drawingArea.getLeft() + (drawingArea.getWidth() / 2)) + offsetX;
-		const int mapY = (drawingArea.getTop() + (drawingArea.getHeight() / 2)) + offsetY;
+		const int mapX = (drawingArea.getLeft() + (drawingArea.width / 2)) + offsetX;
+		const int mapY = (drawingArea.getTop() + (drawingArea.height / 2)) + offsetY;
 		return Int2(mapX, mapY);
 	};
 
@@ -142,7 +142,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	this->addDrawCall(
 		this->locationTextBox.getTextureID(),
 		locationTextBoxRect.getTopLeft(),
-		Int2(locationTextBoxRect.getWidth(), locationTextBoxRect.getHeight()),
+		Int2(locationTextBoxRect.width, locationTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);

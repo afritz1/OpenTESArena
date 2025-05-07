@@ -11,7 +11,8 @@
 
 class ExeData;
 class Game;
-class Rect;
+
+struct Rect;
 
 namespace GameWorldUiModel
 {

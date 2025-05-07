@@ -60,7 +60,7 @@ bool MainQuestSplashPanel::init(int provinceID)
 	this->addDrawCall(
 		textBox.getTextureID(),
 		textBoxRect.getTopLeft(),
-		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
+		Int2(textBoxRect.width, textBoxRect.height),
 		PivotType::TopLeft);
 
 	UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

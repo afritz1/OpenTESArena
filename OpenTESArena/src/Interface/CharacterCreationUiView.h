@@ -16,7 +16,8 @@
 
 class ExeData;
 class Game;
-class Rect;
+
+struct Rect;
 
 namespace CharacterCreationUiView
 {

@@ -45,8 +45,8 @@ namespace
 		auto &renderer = game.renderer;
 		Surface surface = TextureUtils::generate(
 			GameWorldUiView::StatusPopUpTexturePatternType,
-			GameWorldUiView::getStatusPopUpTextureWidth(outTextBoxInitInfo->rect.getWidth()),
-			GameWorldUiView::getStatusPopUpTextureHeight(outTextBoxInitInfo->rect.getHeight()),
+			GameWorldUiView::getStatusPopUpTextureWidth(outTextBoxInitInfo->rect.width),
+			GameWorldUiView::getStatusPopUpTextureHeight(outTextBoxInitInfo->rect.height),
 			textureManager,
 			renderer);
 

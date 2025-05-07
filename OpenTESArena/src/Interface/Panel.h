@@ -17,7 +17,6 @@
 
 class FontLibrary;
 class Game;
-class Rect;
 class Renderer;
 class Texture;
 
@@ -25,6 +24,7 @@ enum class CursorAlignment;
 enum class MouseButtonType;
 
 struct Color;
+struct Rect;
 struct SDL_Texture;
 
 union SDL_Event;

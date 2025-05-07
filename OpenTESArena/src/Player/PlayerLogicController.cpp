@@ -69,37 +69,37 @@ namespace PlayerLogicController
 			{
 				// Forward.
 				accelDirection = accelDirection + groundDirection;
-				percent = 1.0 - (static_cast<double>(mouseY) / topLeft.getHeight());
+				percent = 1.0 - (static_cast<double>(mouseY) / topLeft.height);
 			}
 			else if (top.contains(mousePosition))
 			{
 				// Forward.
 				accelDirection = accelDirection + groundDirection;
-				percent = 1.0 - (static_cast<double>(mouseY) / top.getHeight());
+				percent = 1.0 - (static_cast<double>(mouseY) / top.height);
 			}
 			else if (topRight.contains(mousePosition))
 			{
 				// Forward.
 				accelDirection = accelDirection + groundDirection;
-				percent = 1.0 - (static_cast<double>(mouseY) / topRight.getHeight());
+				percent = 1.0 - (static_cast<double>(mouseY) / topRight.height);
 			}
 			else if (bottomLeft.contains(mousePosition))
 			{
 				// Left.
 				accelDirection = accelDirection - rightDirection;
-				percent = 1.0 - (static_cast<double>(mouseX) / bottomLeft.getWidth());
+				percent = 1.0 - (static_cast<double>(mouseX) / bottomLeft.width);
 			}
 			else if (bottom.contains(mousePosition))
 			{
 				// Backwards.
 				accelDirection = accelDirection - groundDirection;
-				percent = static_cast<double>(mouseY - bottom.getTop()) / bottom.getHeight();
+				percent = static_cast<double>(mouseY - bottom.getTop()) / bottom.height;
 			}
 			else if (bottomRight.contains(mousePosition))
 			{
 				// Right.
 				accelDirection = accelDirection + rightDirection;
-				percent = static_cast<double>(mouseX - bottomRight.getLeft()) / bottomRight.getWidth();
+				percent = static_cast<double>(mouseX - bottomRight.getLeft()) / bottomRight.width;
 			}
 
 			// Only attempt to accelerate if a direction was chosen.
@@ -641,19 +641,19 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, c
 
 					if (topLeft.contains(mousePosition))
 					{
-						return -1.0 + (static_cast<double>(mouseX) / topLeft.getWidth());
+						return -1.0 + (static_cast<double>(mouseX) / topLeft.width);
 					}
 					else if (topRight.contains(mousePosition))
 					{
-						return static_cast<double>(mouseX - topRight.getLeft()) / topRight.getWidth();
+						return static_cast<double>(mouseX - topRight.getLeft()) / topRight.width;
 					}
 					else if (middleLeft.contains(mousePosition))
 					{
-						return -1.0 + (static_cast<double>(mouseX) / middleLeft.getWidth());
+						return -1.0 + (static_cast<double>(mouseX) / middleLeft.width);
 					}
 					else if (middleRight.contains(mousePosition))
 					{
-						return static_cast<double>(mouseX - middleRight.getLeft()) / middleRight.getWidth();
+						return static_cast<double>(mouseX - middleRight.getLeft()) / middleRight.width;
 					}
 					else
 					{

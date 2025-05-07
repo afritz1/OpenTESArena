@@ -22,7 +22,7 @@ bool WorldMapMask::get(int x, int y) const
 	const int relativeX = x - this->rect.getLeft();
 	const int relativeY = y - this->rect.getTop();
 	const int byteIndex = ((relativeX / 8) + 
-		(relativeY * WorldMapMask::getAdjustedWidth(this->rect.getWidth())));
+		(relativeY * WorldMapMask::getAdjustedWidth(this->rect.width)));
 
 	DebugAssertIndex(this->mask, byteIndex);
 	const uint8_t maskByte = this->mask[byteIndex];

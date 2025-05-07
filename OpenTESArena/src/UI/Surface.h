@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-class Rect;
-
+struct Rect;
 struct SDL_Surface;
 
 // A thin SDL_Surface wrapper.

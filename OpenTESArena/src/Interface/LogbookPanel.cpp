@@ -66,11 +66,11 @@ bool LogbookPanel::init()
 		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
 		PivotType::TopLeft);
 
-	const Rect &titleTextBox = this->titleTextBox.getRect();
+	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
 	this->addDrawCall(
 		this->titleTextBox.getTextureID(),
-		titleTextBox.getCenter(),
-		Int2(titleTextBox.getWidth(), titleTextBox.getHeight()),
+		titleTextBoxRect.getCenter(),
+		titleTextBoxRect.getSize(),
 		PivotType::Middle);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

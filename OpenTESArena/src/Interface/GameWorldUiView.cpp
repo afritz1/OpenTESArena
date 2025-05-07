@@ -23,8 +23,8 @@ namespace
 {
 	UiTextureID AllocStatusBarTexture(const Rect &rect, const Color &color, Renderer &renderer)
 	{
-		const int width = rect.getWidth();
-		const int height = rect.getHeight();
+		const int width = rect.width;
+		const int height = rect.height;
 
 		UiTextureID textureID;
 		if (!renderer.tryCreateUiTexture(width, height, &textureID))
@@ -49,8 +49,8 @@ Rect GameWorldUiView::scaleClassicCursorRectToNative(int rectIndex, double xScal
 	return Rect(
 		static_cast<int>(std::ceil(static_cast<double>(classicRect.getLeft()) * xScale)),
 		static_cast<int>(std::ceil(static_cast<double>(classicRect.getTop()) * yScale)),
-		static_cast<int>(std::ceil(static_cast<double>(classicRect.getWidth()) * xScale)),
-		static_cast<int>(std::ceil(static_cast<double>(classicRect.getHeight()) * yScale)));
+		static_cast<int>(std::ceil(static_cast<double>(classicRect.width) * xScale)),
+		static_cast<int>(std::ceil(static_cast<double>(classicRect.height) * yScale)));
 }
 
 TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
@@ -307,7 +307,7 @@ Int2 GameWorldUiView::getTooltipPosition(Game &game)
 	DebugAssert(!game.options.getGraphics_ModernInterface());
 
 	const int x = 0;
-	const int y = ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.getHeight();
+	const int y = ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.height;
 	return Int2(x, y);
 }
 
@@ -365,7 +365,7 @@ Int2 GameWorldUiView::getInterfaceCenter(Game &game)
 	{
 		return Int2(
 			ArenaRenderUtils::SCREEN_WIDTH / 2,
-			(ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.getHeight()) / 2);
+			(ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.height) / 2);
 	}
 }
 

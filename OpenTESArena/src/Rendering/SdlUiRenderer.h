@@ -8,8 +8,7 @@
 
 #include "components/utilities/BufferView2D.h"
 
-class Rect;
-
+struct Rect;
 struct SDL_Renderer;
 struct SDL_Texture;
 

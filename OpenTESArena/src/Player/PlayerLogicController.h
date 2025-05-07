@@ -7,8 +7,9 @@
 #include "components/utilities/BufferView.h"
 
 class Game;
-class Rect;
 class TextBox;
+
+struct Rect;
 
 struct PlayerInputAcceleration
 {

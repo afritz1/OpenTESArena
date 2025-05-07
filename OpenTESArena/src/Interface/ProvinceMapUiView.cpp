@@ -24,9 +24,9 @@ Int2 ProvinceMapUiView::getLocationTextClampedCenter(const Rect &unclampedRect)
 {
 	const Int2 unclampedTopLeft = unclampedRect.getTopLeft();
 	const Int2 clampedTopLeft(
-		std::clamp(unclampedTopLeft.x, 2, ArenaRenderUtils::SCREEN_WIDTH - unclampedRect.getWidth() - 2),
-		std::clamp(unclampedTopLeft.y, 2, ArenaRenderUtils::SCREEN_HEIGHT - unclampedRect.getHeight() - 2));
-	return clampedTopLeft + Int2(unclampedRect.getWidth() / 2, unclampedRect.getHeight() / 2);
+		std::clamp(unclampedTopLeft.x, 2, ArenaRenderUtils::SCREEN_WIDTH - unclampedRect.width - 2),
+		std::clamp(unclampedTopLeft.y, 2, ArenaRenderUtils::SCREEN_HEIGHT - unclampedRect.height - 2));
+	return clampedTopLeft + Int2(unclampedRect.width / 2, unclampedRect.height / 2);
 }
 
 TextBox::InitInfo ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary)

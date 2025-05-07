@@ -127,7 +127,7 @@ UiTextureID PauseMenuUiView::allocOptionsButtonTexture(TextureManager &textureMa
 {
 	const Rect buttonRect = PauseMenuUiView::getOptionsButtonRect();
 	const Surface surface = TextureUtils::generate(PauseMenuUiView::OptionsButtonPatternType,
-		buttonRect.getWidth(), buttonRect.getHeight(), textureManager, renderer);
+		buttonRect.width, buttonRect.height, textureManager, renderer);
 	const BufferView2D<const uint32_t> surfaceTexelsView(
 		static_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
 

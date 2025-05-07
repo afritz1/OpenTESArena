@@ -546,21 +546,21 @@ void GameWorldPanel::initUiDrawCalls()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::HealthBarRect;
-			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentHealth, player.maxHealth));
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
 		};
 
 		UiDrawCall::SizeFunc staminaBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::StaminaBarRect;
-			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentStamina, player.maxStamina));
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
 		};
 
 		UiDrawCall::SizeFunc spellPointsBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
-			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentSpellPoints, player.maxSpellPoints));
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
 		};
 
 		UiDrawCall::PivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
@@ -622,7 +622,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			triggerTextTextureFunc,
 			[this, &game]() { return GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight()); },
-			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.getWidth(), triggerTextBoxRect.getHeight()); },
+			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.width, triggerTextBoxRect.height); },
 			[]() { return PivotType::Bottom; },
 			triggerTextActiveFunc);
 
@@ -630,15 +630,15 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			actionTextTextureFunc,
 			[]() { return GameWorldUiView::getActionTextPosition(); },
-			[actionTextBoxRect]() { return Int2(actionTextBoxRect.getWidth(), actionTextBoxRect.getHeight()); },
+			[actionTextBoxRect]() { return Int2(actionTextBoxRect.width, actionTextBoxRect.height); },
 			[]() { return PivotType::Top; },
 			actionTextActiveFunc);
 
 		const Rect &effectTextBoxRect = this->effectText.getRect();
 		this->addDrawCall(
 			effectTextTextureFunc,
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.getWidth() / 2), effectTextBoxRect.getTop()); },
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getWidth(), effectTextBoxRect.getHeight()); },
+			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.width / 2), effectTextBoxRect.getTop()); },
+			[effectTextBoxRect]() { return Int2(effectTextBoxRect.width, effectTextBoxRect.height); },
 			[]() { return PivotType::Bottom; },
 			effectTextActiveFunc);
 
@@ -727,21 +727,21 @@ void GameWorldPanel::initUiDrawCalls()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::HealthBarRect;
-			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentHealth, player.maxHealth));
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
 		};
 
 		UiDrawCall::SizeFunc staminaBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::StaminaBarRect;
-			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentStamina, player.maxStamina));
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
 		};
 
 		UiDrawCall::SizeFunc spellPointsBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
-			return Int2(barRect.getWidth(), GameWorldUiView::getStatusBarCurrentHeight(barRect.getHeight(), player.currentSpellPoints, player.maxSpellPoints));
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
 		};
 
 		UiDrawCall::PivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
@@ -781,7 +781,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			this->playerNameTextBox.getTextureID(),
 			playerNameTextBoxRect.getTopLeft(),
-			Int2(playerNameTextBoxRect.getWidth(), playerNameTextBoxRect.getHeight()),
+			Int2(playerNameTextBoxRect.width, playerNameTextBoxRect.height),
 			PivotType::TopLeft);
 
 		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
@@ -848,7 +848,7 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			triggerTextTextureFunc,
 			[this, &game]() { return GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight()); },
-			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.getWidth(), triggerTextBoxRect.getHeight()); },
+			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.width, triggerTextBoxRect.height); },
 			[]() { return PivotType::Bottom; },
 			triggerTextActiveFunc);
 
@@ -856,15 +856,15 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(
 			actionTextTextureFunc,
 			[]() { return GameWorldUiView::getActionTextPosition(); },
-			[actionTextBoxRect]() { return Int2(actionTextBoxRect.getWidth(), actionTextBoxRect.getHeight()); },
+			[actionTextBoxRect]() { return Int2(actionTextBoxRect.width, actionTextBoxRect.height); },
 			[]() { return PivotType::Top; },
 			actionTextActiveFunc);
 
 		const Rect &effectTextBoxRect = this->effectText.getRect();
 		this->addDrawCall(
 			effectTextTextureFunc,
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.getWidth() / 2), effectTextBoxRect.getTop()); },
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getWidth(), effectTextBoxRect.getHeight()); },
+			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.width / 2), effectTextBoxRect.getTop()); },
+			[effectTextBoxRect]() { return Int2(effectTextBoxRect.width, effectTextBoxRect.height); },
 			[]() { return PivotType::Bottom; },
 			effectTextActiveFunc);
 

@@ -231,8 +231,8 @@ void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace r
 		const double originalYPercent = static_cast<double>(point.y) /
 			ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
-		const double letterboxWidthReal = static_cast<double>(letterboxRect.getWidth());
-		const double letterboxHeightReal = static_cast<double>(letterboxRect.getHeight());
+		const double letterboxWidthReal = static_cast<double>(letterboxRect.width);
+		const double letterboxHeightReal = static_cast<double>(letterboxRect.height);
 		const Int2 letterboxPoint(
 			static_cast<int>(std::round(letterboxWidthReal * originalXPercent)),
 			static_cast<int>(std::round(letterboxHeightReal * originalYPercent)));

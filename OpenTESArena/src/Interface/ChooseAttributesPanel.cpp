@@ -252,21 +252,21 @@ bool ChooseAttributesPanel::init()
 	this->addDrawCall(
 		this->nameTextBox.getTextureID(),
 		nameTextBoxRect.getTopLeft(),
-		Int2(nameTextBoxRect.getWidth(), nameTextBoxRect.getHeight()),
+		Int2(nameTextBoxRect.width, nameTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const Rect &raceTextBoxRect = this->raceTextBox.getRect();
 	this->addDrawCall(
 		this->raceTextBox.getTextureID(),
 		raceTextBoxRect.getTopLeft(),
-		Int2(raceTextBoxRect.getWidth(), raceTextBoxRect.getHeight()),
+		Int2(raceTextBoxRect.width, raceTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const Rect &classTextBoxRect = this->classTextBox.getRect();
 	this->addDrawCall(
 		this->classTextBox.getTextureID(),
 		classTextBoxRect.getTopLeft(),
-		Int2(classTextBoxRect.getWidth(), classTextBoxRect.getHeight()),
+		Int2(classTextBoxRect.width, classTextBoxRect.height),
 		PivotType::TopLeft);
 
 	// code arrow
@@ -275,9 +275,9 @@ bool ChooseAttributesPanel::init()
 		const Rect attributeFirstButtonRect = ChooseAttributesUiView::AttributeButtonFirstRect;
 		const Rect attributeButtonRect(
 			attributeFirstButtonRect.getLeft(),
-			attributeFirstButtonRect.getTop() + (attributeFirstButtonRect.getHeight() * attributeIndex),
-			attributeFirstButtonRect.getWidth(),
-			attributeFirstButtonRect.getHeight());
+			attributeFirstButtonRect.getTop() + (attributeFirstButtonRect.height * attributeIndex),
+			attributeFirstButtonRect.width,
+			attributeFirstButtonRect.height);
 
 		this->addButtonProxy(MouseButtonType::Left, attributeButtonRect,
 			[this, attributeIndex]() { this->selectedAttributeIndex = attributeIndex; },
@@ -373,7 +373,7 @@ bool ChooseAttributesPanel::init()
 	this->addDrawCall(
 		[this]() { return this->bonusPointsTextBox.getTextureID(); },
 		UiDrawCall::makePositionFunc(bonusPointsTextBoxRect.getTopLeft()),
-		UiDrawCall::makeSizeFunc(Int2(bonusPointsTextBoxRect.getWidth(), bonusPointsTextBoxRect.getHeight())),
+		UiDrawCall::makeSizeFunc(Int2(bonusPointsTextBoxRect.width, bonusPointsTextBoxRect.height)),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
@@ -389,7 +389,7 @@ bool ChooseAttributesPanel::init()
 		this->addDrawCall(
 			attributeTextBoxTextureFunc,
 			UiDrawCall::makePositionFunc(attributeTextBoxRect.getTopLeft()),
-			UiDrawCall::makeSizeFunc(Int2(attributeTextBoxRect.getWidth(), attributeTextBoxRect.getHeight())),
+			UiDrawCall::makeSizeFunc(Int2(attributeTextBoxRect.width, attributeTextBoxRect.height)),
 			UiDrawCall::makePivotFunc(PivotType::TopLeft),
 			UiDrawCall::defaultActiveFunc);
 	}
@@ -398,14 +398,14 @@ bool ChooseAttributesPanel::init()
 	this->addDrawCall(
 		this->experienceTextBox.getTextureID(),
 		playerExperienceTextBoxRect.getTopLeft(),
-		Int2(playerExperienceTextBoxRect.getWidth(), playerExperienceTextBoxRect.getHeight()),
+		Int2(playerExperienceTextBoxRect.width, playerExperienceTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const Rect &playerLevelTextBoxRect = this->levelTextBox.getRect();
 	this->addDrawCall(
 		this->levelTextBox.getTextureID(),
 		playerLevelTextBoxRect.getTopLeft(),
-		Int2(playerLevelTextBoxRect.getWidth(), playerLevelTextBoxRect.getHeight()),
+		Int2(playerLevelTextBoxRect.width, playerLevelTextBoxRect.height),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

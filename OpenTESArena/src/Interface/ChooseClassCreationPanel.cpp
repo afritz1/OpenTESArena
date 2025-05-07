@@ -113,21 +113,21 @@ bool ChooseClassCreationPanel::init()
 	this->addDrawCall(
 		this->titleTextBox.getTextureID(),
 		titleTextBoxRect.getCenter(),
-		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
+		Int2(titleTextBoxRect.width, titleTextBoxRect.height),
 		PivotType::Middle);
 
 	const Rect &generateTextBoxRect = this->generateTextBox.getRect();
 	this->addDrawCall(
 		this->generateTextBox.getTextureID(),
 		generateTextBoxRect.getCenter(),
-		Int2(generateTextBoxRect.getWidth(), generateTextBoxRect.getHeight()),
+		Int2(generateTextBoxRect.width, generateTextBoxRect.height),
 		PivotType::Middle);
 
 	const Rect &selectTextBoxRect = this->selectTextBox.getRect();
 	this->addDrawCall(
 		this->selectTextBox.getTextureID(),
 		selectTextBoxRect.getCenter(),
-		Int2(selectTextBoxRect.getWidth(), selectTextBoxRect.getHeight()),
+		Int2(selectTextBoxRect.width, selectTextBoxRect.height),
 		PivotType::Middle);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

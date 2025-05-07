@@ -13,7 +13,8 @@
 
 class ArenaRandom;
 class BinaryAssetLibrary;
-class Rect;
+
+struct Rect;
 
 // Various functions for working with original game values like location IDs.
 namespace ArenaLocationUtils

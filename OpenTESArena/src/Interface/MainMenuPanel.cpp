@@ -325,7 +325,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		this->testButtonTextureRef.get(),
 		testButtonRect.getTopLeft(),
-		Int2(testButtonRect.getWidth(), testButtonRect.getHeight()),
+		Int2(testButtonRect.width, testButtonRect.height),
 		PivotType::TopLeft);
 
 	const auto &fontLibrary = FontLibrary::getInstance();
@@ -340,7 +340,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		this->testButtonTextBox.getTextureID(),
 		testButtonTextBoxRect.getCenter(),
-		Int2(testButtonTextBoxRect.getWidth(), testButtonTextBoxRect.getHeight()),
+		Int2(testButtonTextBoxRect.width, testButtonTextBoxRect.height),
 		PivotType::Middle);
 
 	const std::string testTypeText = "Test type: " + MainMenuUiModel::getTestTypeName(this->testType);
@@ -354,7 +354,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		[this]() { return this->testTypeTextBox.getTextureID(); },
 		Int2(testTypeTextBoxRect.getRight(), testTypeTextBoxRect.getTop()),
-		Int2(testTypeTextBoxRect.getWidth(), testTypeTextBoxRect.getHeight()),
+		Int2(testTypeTextBoxRect.width, testTypeTextBoxRect.height),
 		PivotType::MiddleRight);
 
 	const std::string testNameText = "Test location: " +
@@ -369,7 +369,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		[this]() { return this->testNameTextBox.getTextureID(); },
 		Int2(testNameTextBoxRect.getRight(), testNameTextBoxRect.getTop()),
-		Int2(testNameTextBoxRect.getWidth(), testNameTextBoxRect.getHeight()),
+		Int2(testNameTextBoxRect.width, testNameTextBoxRect.height),
 		PivotType::MiddleRight);
 
 	const ArenaTypes::WeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
@@ -384,7 +384,7 @@ void MainMenuPanel::initTestUI()
 	this->addDrawCall(
 		[this]() { return this->testWeatherTextBox.getTextureID(); },
 		[testWeatherTextBoxRect]() { return Int2(testWeatherTextBoxRect.getRight(), testWeatherTextBoxRect.getTop()); },
-		[testWeatherTextBoxRect]() { return Int2(testWeatherTextBoxRect.getWidth(), testWeatherTextBoxRect.getHeight()); },
+		[testWeatherTextBoxRect]() { return Int2(testWeatherTextBoxRect.width, testWeatherTextBoxRect.height); },
 		[]() { return PivotType::MiddleRight; },
 		testWeatherActiveFunc);
 }

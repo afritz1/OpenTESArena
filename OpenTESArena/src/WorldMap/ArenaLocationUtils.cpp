@@ -106,15 +106,15 @@ std::string ArenaLocationUtils::getMainQuestDungeonMifName(uint32_t dungeonSeed)
 
 Int2 ArenaLocationUtils::getGlobalPoint(const Int2 &localPoint, const Rect &provinceRect)
 {
-	const int globalX = ((localPoint.x * ((provinceRect.getWidth() * 100) / 320)) / 100) + provinceRect.getLeft();
-	const int globalY = ((localPoint.y * ((provinceRect.getHeight() * 100) / 200)) / 100) + provinceRect.getTop();
+	const int globalX = ((localPoint.x * ((provinceRect.width * 100) / 320)) / 100) + provinceRect.getLeft();
+	const int globalY = ((localPoint.y * ((provinceRect.height * 100) / 200)) / 100) + provinceRect.getTop();
 	return Int2(globalX, globalY);
 }
 
 Int2 ArenaLocationUtils::getLocalPoint(const Int2 &globalPoint, const Rect &provinceRect)
 {
-	const int localX = ((globalPoint.x - provinceRect.getLeft()) * 100) / ((provinceRect.getWidth() * 100) / 320);
-	const int localY = ((globalPoint.y - provinceRect.getTop()) * 100) / ((provinceRect.getHeight() * 100) / 200);
+	const int localX = ((globalPoint.x - provinceRect.getLeft()) * 100) / ((provinceRect.width * 100) / 320);
+	const int localY = ((globalPoint.y - provinceRect.getTop()) * 100) / ((provinceRect.height * 100) / 200);
 	return Int2(localX, localY);
 }
 

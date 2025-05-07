@@ -54,12 +54,12 @@ public:
 
 	int getWidth() const
 	{
-		return this->rect.getWidth();
+		return this->rect.width;
 	}
 
 	int getHeight() const
 	{
-		return this->rect.getHeight();
+		return this->rect.height;
 	}
 
 	// Returns whether the button's area contains the given point.
@@ -70,22 +70,22 @@ public:
 
 	void setX(int x)
 	{
-		this->rect.setX(x);
+		this->rect.x = x;
 	}
 
 	void setY(int y)
 	{
-		this->rect.setY(y);
+		this->rect.y = y;
 	}
 
 	void setWidth(int width)
 	{
-		this->rect.setWidth(width);
+		this->rect.width = width;
 	}
 
 	void setHeight(int height)
 	{
-		this->rect.setHeight(height);
+		this->rect.height = height;
 	}
 
 	// Sets the button's callback to the given function.

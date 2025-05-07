@@ -261,12 +261,12 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFirstTextureRect(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedFirstTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.textureManager, renderer);
+		textureRect.width, textureRect.height, game.textureManager, renderer);
 	
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
@@ -304,12 +304,12 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedSecondTextureRect(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedSecondTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.textureManager, renderer);
+		textureRect.width, textureRect.height, game.textureManager, renderer);
 	
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
@@ -338,12 +338,12 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedThirdTextureRect(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedThirdTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.textureManager, renderer);
+		textureRect.width, textureRect.height, game.textureManager, renderer);
 	
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
@@ -372,14 +372,14 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
 	Surface surface = TextureUtils::generate(
 		ChooseRaceUiView::ProvinceConfirmedFourthTextPatternType,
-		textureRect.getWidth(),
-		textureRect.getHeight(),
+		textureRect.width,
+		textureRect.height,
 		game.textureManager,
 		renderer);
 	
@@ -650,8 +650,8 @@ void ChooseAttributesUiController::onSaveButtonSelectedWithNoBonusPoints(Game &g
 	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(
 		ChooseAttributesUiView::AppearanceTextPatternType,
-		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
-		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
+		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.width),
+		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.height),
 		textureManager,
 		renderer);
 	
@@ -689,8 +689,8 @@ void ChooseAttributesUiController::onSaveButtonSelectedWithBonusPoints(Game &gam
 	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(
 		ChooseAttributesUiView::AppearanceTextPatternType,
-		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
-		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
+		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.width),
+		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.height),
 		textureManager,
 		renderer);
 

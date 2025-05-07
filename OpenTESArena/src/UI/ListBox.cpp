@@ -70,7 +70,7 @@ Rect ListBox::getItemLocalRect(int index) const
 	return Rect(
 		0,
 		static_cast<int>(baseYOffset - this->scrollPixelOffset),
-		this->rect.getWidth(),
+		this->rect.width,
 		this->properties.itemHeight);
 }
 
@@ -80,8 +80,8 @@ Rect ListBox::getItemGlobalRect(int index) const
 	return Rect(
 		this->rect.getLeft() + localRect.getLeft(),
 		this->rect.getTop() + localRect.getTop(),
-		localRect.getWidth(),
-		localRect.getHeight());
+		localRect.width,
+		localRect.height);
 }
 
 int ListBox::getCount() const
