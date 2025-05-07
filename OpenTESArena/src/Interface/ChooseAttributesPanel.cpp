@@ -329,8 +329,6 @@ bool ChooseAttributesPanel::init()
 				bonusTextBoxRect.getTopLeft(),
 				Int2(bonusTextBoxRect.getWidth(), bonusTextBoxRect.getHeight()),
 				PivotType::TopLeft);
-
-			DebugLogFormat("%s increased by %d, %d bonus points remaining.", attribute.name, attribute.maxValue, this->bonusPoints);
 		},
 			Rect(),
 			[this, attributeIndex]() { return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && this->bonusPoints > 0; });
@@ -367,8 +365,6 @@ bool ChooseAttributesPanel::init()
 				bonusTextBoxRect.getTopLeft(),
 				Int2(bonusTextBoxRect.getWidth(), bonusTextBoxRect.getHeight()),
 				PivotType::TopLeft);
-
-			DebugLogFormat("%s decremented to %d, %d remaining bonus points.", attribute.name, attribute.maxValue, this->bonusPoints);
 		},
 			Rect(),
 			[this, attributeIndex]()
