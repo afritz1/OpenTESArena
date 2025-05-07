@@ -260,10 +260,9 @@ bool ChooseAttributesPanel::init()
 		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
 
 		this->addButtonProxy(MouseButtonType::Left, attributeTextBoxRect,
-			[this, attributeIndex]()
-		{
-			this->selectedAttributeIndex = attributeIndex;
-		});
+			[this, attributeIndex]() { this->selectedAttributeIndex = attributeIndex; },
+			Rect(),
+			[this]() { return !this->attributesAreSaved; });
 
 		const Int2 upDownButtonFirstTopLeftPos = ChooseAttributesUiView::UpDownButtonFirstTopLeftPosition;
 
@@ -317,7 +316,7 @@ bool ChooseAttributesPanel::init()
 			DebugLogFormat("%s increased by %d, %d bonus points remaining.", attribute.name, attribute.maxValue, this->bonusPoints);
 		},
 			Rect(),
-			[this, attributeIndex]() { return attributeIndex == this->selectedAttributeIndex && this->bonusPoints > 0; });
+			[this, attributeIndex]() { return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && this->bonusPoints > 0; });
 
 		// Click handler for down arrow
 		this->addButtonProxy(MouseButtonType::Left, downButton.getRect(),
@@ -360,7 +359,7 @@ bool ChooseAttributesPanel::init()
 			Game &game = this->getGame();
 			CharacterCreationState &charCreationState = game.getCharacterCreationState();
 			const int *changedPoints = std::begin(charCreationState.changedPoints);
-			return attributeIndex == this->selectedAttributeIndex && changedPoints[attributeIndex] > 0;
+			return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && changedPoints[attributeIndex] > 0;
 		});
 	}
 
