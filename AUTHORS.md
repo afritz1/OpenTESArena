@@ -6,6 +6,7 @@ I started this project in 2016. Over time, several individuals have contributed 
     Aaron Fritz (afritz1)
     Allofich
     Alucowie
+    Alvaro (libertus21)
     Chris Robinson (kcat)
     enderdrag64
     gazorpo
