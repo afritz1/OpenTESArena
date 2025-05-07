@@ -384,7 +384,7 @@ bool ChooseAttributesPanel::init()
 		bonusPointsTextBoxTopLeftPosition.x,
 		bonusPointsTextBoxTopLeftPosition.y,
 		ArenaFontName::Arena,
-		Color::Yellow,
+		ChooseAttributesUiView::BonusPointsTextColor,
 		TextAlignment::TopLeft,
 		std::nullopt,
 		1,
