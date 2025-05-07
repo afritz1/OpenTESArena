@@ -267,16 +267,14 @@ bool ChooseAttributesPanel::init()
 
 		const Int2 upDownButtonFirstTopLeftPos = ChooseAttributesUiView::UpDownButtonFirstTopLeftPosition;
 
-		const int upButtonIndex = attributeIndex * 2;
-		Button<> &upButton = this->upDownButtons[upButtonIndex];
+		Button<> &upButton = this->increasePointButtons[attributeIndex];
 		upButton = Button<>();
 		upButton.setX(upDownButtonFirstTopLeftPos.x);
 		upButton.setY(attributeTextBoxRect.getCenter().y - (this->upDownTextureRef.getHeight() / 2));
 		upButton.setWidth(this->upDownTextureRef.getWidth());
 		upButton.setHeight(this->upDownTextureRef.getHeight() / 2);
 
-		const int downButtonIndex = (attributeIndex * 2) + 1;
-		Button<> &downButton = this->upDownButtons[downButtonIndex];
+		Button<> &downButton = this->decreasePointButtons[attributeIndex];
 		downButton = Button<>();
 		downButton.setX(upDownButtonFirstTopLeftPos.x);
 		downButton.setY(attributeTextBoxRect.getCenter().y);

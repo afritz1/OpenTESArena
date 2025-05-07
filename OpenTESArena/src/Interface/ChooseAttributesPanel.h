@@ -25,7 +25,8 @@ private:
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;
 	ScopedUiTextureRef bodyTextureRef, shirtTextureRef, pantsTextureRef, statsBgTextureRef, upDownTextureRef, bonusPointsTextureRef, cursorTextureRef;
-	Button<> upDownButtons[PrimaryAttributes::COUNT * 2];
+	Button<> increasePointButtons[PrimaryAttributes::COUNT];
+	Button<> decreasePointButtons[PrimaryAttributes::COUNT];
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 	int bonusPoints;
 	int selectedAttributeIndex;
