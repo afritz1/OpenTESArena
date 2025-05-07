@@ -9,6 +9,7 @@
 #include "../Stats/PrimaryAttribute.h"
 #include "../UI/TextRenderUtils.h"
 
+class ArenaRandom;
 class Game;
 
 struct CharacterClassDefinition;
@@ -68,6 +69,12 @@ namespace ChooseRaceUiModel
 
 namespace ChooseAttributesUiModel
 {
+	// Based on reversed wiki values
+	constexpr int PrimaryAttributeRandomMax = 20;
+	constexpr int BonusPointsRandomMax = 25;
+
+	int rollClassic(int n, ArenaRandom &random);
+
 	std::string getInitialText(Game &game);
 
 	std::string getMessageBoxTitleText(Game &game);

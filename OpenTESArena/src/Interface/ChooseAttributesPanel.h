@@ -9,7 +9,9 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 
-class Random;
+class ArenaRandom;
+
+struct CharacterCreationState;
 
 // For choosing character creation attributes and the portrait. I think it should be used for level-up
 // purposes, since distributing points is basically identical to setting your character's original attributes.
@@ -31,9 +33,8 @@ private:
 	int bonusPoints;
 	int selectedAttributeIndex;
 	int lastSelectedAttributeIndex;
-	int arrowDrawCallIndex;
 
-	int calculateInitialBonusPoints(Random &random) const;
+	void populateAttributesRandomly(CharacterCreationState &charCreationState, ArenaRandom &random);
 	void redrawAttributeArrows();
 public:
 	ChooseAttributesPanel(Game &game);

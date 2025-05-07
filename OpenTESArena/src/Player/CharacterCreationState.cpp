@@ -15,7 +15,7 @@ void CharacterCreationState::setName(const char *name)
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name != nullptr ? name : "");
 }
 
-void CharacterCreationState::rollAttributes()
+void CharacterCreationState::populateBaseAttributes()
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();

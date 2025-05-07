@@ -489,6 +489,62 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFourthText(Game &game)
 	return segment;
 }
 
+int ChooseAttributesUiModel::rollClassic(int n, ArenaRandom &random)
+{
+	auto throwXdY = [&random](int x, int y)
+	{
+		int total = 0;
+		for (int i = 0; i < x; i++)
+		{
+			total += 1 + (random.next() % y);
+		}
+
+		return total;
+	};
+
+	if (n <= 8)
+	{
+		return random.next() % n;
+	}
+
+	// Not fully understood but probably a normal distribution.
+	int test = n;
+	int x = 0, y = 0;
+	while (true)
+	{
+		if (test % 6 == 0)
+		{
+			x = test / 6;
+			y = 6;
+			break;
+		}
+		else if (test % 5 == 0)
+		{
+			x = test / 5;
+			y = 5;
+			break;
+		}
+		else if (test % 4 == 0)
+		{
+			x = test / 4;
+			y = 4;
+			break;
+		}
+		else
+		{
+			test++;
+		}
+	}
+
+	int value = 0;
+	do
+	{
+		value = throwXdY(x, y);
+	} while (value > n);
+
+	return value;
+}
+
 std::string ChooseAttributesUiModel::getInitialText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();

@@ -204,7 +204,6 @@ void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.raceIndex = raceID;
-	charCreationState.rollAttributes();
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
@@ -708,10 +707,7 @@ void ChooseAttributesUiController::onSaveButtonSelectedWithBonusPoints(Game &gam
 }
 
 void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
-{
-	auto& charCreationState = game.getCharacterCreationState();
-	charCreationState.rollAttributes();
-	
+{	
 	game.popSubPanel();
 	game.setPanel<ChooseAttributesPanel>();
 }

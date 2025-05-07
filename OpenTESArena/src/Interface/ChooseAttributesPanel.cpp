@@ -27,18 +27,19 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	this->bonusPoints = 0;
 	this->selectedAttributeIndex = 0;
 	this->lastSelectedAttributeIndex = 0;
-	this->arrowDrawCallIndex = -1;
 }
 
-int ChooseAttributesPanel::calculateInitialBonusPoints(Random &random) const
+void ChooseAttributesPanel::populateAttributesRandomly(CharacterCreationState &charCreationState, ArenaRandom &random)
 {
-	int totalPoints = 0;
-	for (int i = 0; i < 4; i++)
-	{
-		totalPoints += 1 + random.next(6);
-	}
+	charCreationState.populateBaseAttributes();
 
-	return totalPoints;
+	BufferView<PrimaryAttribute> attributes = charCreationState.attributes.getAttributes();
+	for (int i = 0; i < PrimaryAttributes::COUNT; i++)
+	{		
+		PrimaryAttribute &attribute = attributes[i];
+		const int addedValue = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::PrimaryAttributeRandomMax, random);
+		attribute.maxValue += addedValue;
+	}
 }
 
 bool ChooseAttributesPanel::init()
@@ -47,14 +48,16 @@ bool ChooseAttributesPanel::init()
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
-	auto &charCreationState = game.getCharacterCreationState();
+	CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	charCreationState.portraitIndex = 0;
 	charCreationState.clearChangedPoints();
+	
+	ArenaRandom &arenaRandom = game.arenaRandom;
+	this->populateAttributesRandomly(charCreationState, arenaRandom);
+	this->bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
 
-	this->bonusPoints = this->calculateInitialBonusPoints(game.random);
 	this->selectedAttributeIndex = 0;
 	this->lastSelectedAttributeIndex = 0;
-
 	this->attributesAreSaved = false;
 
 	const std::string playerNameText = CharacterCreationUiModel::getPlayerName(game);

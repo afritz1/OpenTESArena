@@ -19,7 +19,7 @@ struct CharacterCreationState
 	CharacterCreationState();
 
 	void setName(const char *name);
-	void rollAttributes();
+	void populateBaseAttributes();
 	void clearChangedPoints();
 
 	void clear();
