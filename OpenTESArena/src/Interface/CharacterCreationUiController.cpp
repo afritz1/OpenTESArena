@@ -415,7 +415,7 @@ void ChooseAttributesUiController::onInitialPopUpSelected(Game &game)
 	game.popSubPanel();
 }
 
-void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved)
 {
 	// Show message box to save or reroll.
 	auto &textureManager = game.textureManager;
@@ -448,9 +448,17 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 
 	const std::string saveText = ChooseAttributesUiModel::getMessageBoxSaveText(game);
 	panel->setItemText(0, saveText);
-	panel->setItemCallback(0, [&game, attributesAreSaved]()
+	panel->setItemCallback(0, [&game, bonusPointsRemaining, attributesAreSaved]()
 	{
-		ChooseAttributesUiController::onSaveButtonSelected(game, attributesAreSaved);
+		if (bonusPointsRemaining == 0)
+		{
+			*attributesAreSaved = true;
+			ChooseAttributesUiController::onSaveButtonSelectedWithNoBonusPoints(game);
+		}
+		else
+		{
+			ChooseAttributesUiController::onSaveButtonSelectedWithBonusPoints(game);
+		}
 	}, false);
 
 	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> saveTextColorOverrides =
@@ -622,7 +630,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	audioManager.setMusic(musicDef);
 }
 
-void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onSaveButtonSelectedWithNoBonusPoints(Game &game)
 {
 	// Confirming the chosen stats will bring up a text sub-panel, and the next time the done button is clicked,
 	// it starts the game.
@@ -645,7 +653,7 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 		ChooseAttributesUiView::AppearanceTextPatternType,
 		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
 		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
-		game.textureManager,
+		textureManager,
 		renderer);
 	
 	UiTextureID textureID;
@@ -660,8 +668,43 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 	// opening cinematic.
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseAttributesUiController::onAppearanceTextBoxSelected,
 		std::move(textureRef), ChooseAttributesUiView::AppearanceTextCenterPoint);
+}
 
-	*attributesAreSaved = true;
+void ChooseAttributesUiController::onSaveButtonSelectedWithBonusPoints(Game &game)
+{
+	// Pop the save/reroll sub-panel and tell the player to spend remaining points.
+	game.popSubPanel();
+
+	const std::string text = ChooseAttributesUiModel::getBonusPointsRemainingText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		ChooseAttributesUiView::AppearanceTextCenterPoint,
+		ChooseAttributesUiView::AppearanceTextFontName,
+		ChooseAttributesUiView::AppearanceTextColor,
+		ChooseAttributesUiView::AppearanceTextAlignment,
+		std::nullopt,
+		ChooseAttributesUiView::AppearanceTextLineSpacing,
+		FontLibrary::getInstance());
+
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
+	const Surface surface = TextureUtils::generate(
+		ChooseAttributesUiView::AppearanceTextPatternType,
+		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
+		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
+		textureManager,
+		renderer);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create bonus points remaining pop-up texture.");
+	}
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
+
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseAttributesUiController::onBonusPointsRemainingTextBoxSelected,
+		std::move(textureRef), ChooseAttributesUiView::AppearanceTextCenterPoint);
 }
 
 void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
@@ -671,6 +714,11 @@ void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
 	
 	game.popSubPanel();
 	game.setPanel<ChooseAttributesPanel>();
+}
+
+void ChooseAttributesUiController::onBonusPointsRemainingTextBoxSelected(Game &game)
+{
+	game.popSubPanel();
 }
 
 void ChooseAttributesUiController::onAppearanceTextBoxSelected(Game &game)
@@ -692,7 +740,7 @@ void ChooseAttributesUiController::onPortraitButtonSelected(Game &game, bool inc
 	charCreationState.portraitIndex = newPortraitIndex;
 }
 
-void ChooseAttributesUiController::onDoneButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved)
 {
 	if (*attributesAreSaved)
 	{
@@ -700,7 +748,7 @@ void ChooseAttributesUiController::onDoneButtonSelected(Game &game, bool *attrib
 	}
 	else
 	{
-		ChooseAttributesUiController::onUnsavedDoneButtonSelected(game, attributesAreSaved);
+		ChooseAttributesUiController::onUnsavedDoneButtonSelected(game, bonusPointsRemaining, attributesAreSaved);
 	}
 }
 

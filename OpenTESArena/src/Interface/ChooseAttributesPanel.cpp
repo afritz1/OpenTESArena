@@ -114,7 +114,7 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 
-	this->doneButton = Button<Game&, bool*>(
+	this->doneButton = Button<Game&, int, bool*>(
 		CharacterSheetUiView::DoneButtonCenterPoint,
 		CharacterSheetUiView::DoneButtonWidth,
 		CharacterSheetUiView::DoneButtonHeight,
@@ -126,7 +126,7 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiController::onPortraitButtonSelected);
 
 	this->addButtonProxy(MouseButtonType::Left, this->doneButton.getRect(),
-		[this, &game]() { this->doneButton.click(game, &this->attributesAreSaved); });
+		[this, &game]() { this->doneButton.click(game, this->bonusPoints, &this->attributesAreSaved); });
 	this->addButtonProxy(MouseButtonType::Left, this->portraitButton.getRect(),
 		[this, &game]()
 	{

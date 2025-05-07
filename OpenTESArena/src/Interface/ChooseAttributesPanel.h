@@ -21,7 +21,7 @@ private:
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
 	TextBox experienceTextBox, levelTextBox;
 	TextBox bonusPointsTextBox;
-	Button<Game&, bool*> doneButton;
+	Button<Game&, int, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;
 	ScopedUiTextureRef bodyTextureRef, shirtTextureRef, pantsTextureRef, statsBgTextureRef, upDownTextureRef, bonusPointsTextureRef, cursorTextureRef;

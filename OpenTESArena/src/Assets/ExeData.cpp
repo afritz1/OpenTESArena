@@ -277,6 +277,7 @@ bool ExeData::CharacterCreation::init(const char *data, const KeyValueFile &keyV
 	const auto chooseAttributesPair = ExeData::getPair(*section, "ChooseAttributes");
 	const auto chooseAttributesSavePair = ExeData::getPair(*section, "ChooseAttributesSave");
 	const auto chooseAttributesRerollPair = ExeData::getPair(*section, "ChooseAttributesReroll");
+	const auto chooseAttributesBonusPointsRemainingOffset = ExeData::get(*section, "ChooseAttributesBonusPointsRemaining");
 	const auto chooseAppearancePair = ExeData::getPair(*section, "ChooseAppearance");
 
 	this->chooseClassCreation = ExeData::readFixedString(data, chooseClassCreationPair);
@@ -299,6 +300,7 @@ bool ExeData::CharacterCreation::init(const char *data, const KeyValueFile &keyV
 	this->chooseAttributes = ExeData::readFixedString(data, chooseAttributesPair);
 	this->chooseAttributesSave = ExeData::readFixedString(data, chooseAttributesSavePair);
 	this->chooseAttributesReroll = ExeData::readFixedString(data, chooseAttributesRerollPair);
+	this->chooseAttributesBonusPointsRemaining = ExeData::readString(data + chooseAttributesBonusPointsRemainingOffset);
 	this->chooseAppearance = ExeData::readFixedString(data, chooseAppearancePair);
 
 	return true;

@@ -563,6 +563,13 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	return TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(text, palette);
 }
 
+std::string ChooseAttributesUiModel::getBonusPointsRemainingText(Game &game)
+{
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string text = exeData.charCreation.chooseAttributesBonusPointsRemaining;
+	return text;
+}
+
 std::string ChooseAttributesUiModel::getAppearanceText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();

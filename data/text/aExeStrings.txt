@@ -44,6 +44,7 @@ DistributeClassPoints=0x35D25,93
 ChooseAttributes=0x35FA3,23
 ChooseAttributesSave=0x3F669,14
 ChooseAttributesReroll=0x3F679,16
+ChooseAttributesBonusPointsRemaining=0x3F5EF
 ChooseAppearance=0x35D84,174
 
 [CityGeneration]
