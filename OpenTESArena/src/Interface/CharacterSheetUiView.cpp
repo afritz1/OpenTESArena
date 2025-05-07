@@ -57,10 +57,9 @@ std::vector<TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxIn
 	for (int i = 0; i < attributes.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = attributes[i];
-		const int attributeValue = attribute.maxValue;
-		const std::string attributeValueStr = std::to_string(attributeValue);
+		const std::string worstCaseStr(3, TextRenderUtils::LARGEST_CHAR);
 		TextBox::InitInfo initInfo = TextBox::InitInfo::makeWithXY(
-			attributeValueStr,
+			worstCaseStr,
 			CharacterSheetUiView::PlayerAttributeTextBoxX,
 			CharacterSheetUiView::PlayerAttributeTextBoxesY + i * CharacterSheetUiView::PlayerAttributeTextBoxHeight,
 			CharacterSheetUiView::PlayerAttributeTextBoxFontName,
