@@ -989,6 +989,8 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 		EntityInstance &entityInst = this->entities.get(instID);
 		if (entityInst.creatureSoundInstID >= 0)
 		{
+			// @todo: don't play if is dead. EntityCombatState::isDead?
+
 			double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
 			secondsTillCreatureSound -= dt;
 			if (secondsTillCreatureSound <= 0.0)
@@ -1011,6 +1013,39 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 					secondsTillCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
 				}
 			}
+		}
+	}
+}
+
+void EntityChunkManager::updateEnemyDeathStates(double dt, EntityChunk &entityChunk)
+{
+	// @todo: just check an EntityChunkManager::dyingEntities list instead, added to when player swing kills them
+
+	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityDefinitionType entityDefType = entityDef.type;
+		if (!EntityUtils::canDie(entityDef))
+		{
+			continue;
+		}
+
+		const std::optional<int> deathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(entityDef.animDef);
+		if (!deathAnimStateIndex.has_value())
+		{
+			continue;
+		}
+
+		// @todo: eventually set EntityCombatState::isDead and isDying, these are separate things
+
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
+		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
+		if (isInDeathAnimState && isDeathAnimComplete && !EntityUtils::leavesCorpse(entityDef))
+		{
+			this->queueEntityDestroy(entityInstID, true);
+			// @todo remove from dyingEntities list once that is a thing
 		}
 	}
 }
@@ -1131,6 +1166,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 
 		this->updateCreatureSounds(dt, entityChunk, playerPosition, random, audioManager);
 		this->updateFadedElevatedPlatforms(entityChunk, voxelChunk, ceilingScale, physicsSystem);
+		this->updateEnemyDeathStates(dt, entityChunk);
 	}
 }
 

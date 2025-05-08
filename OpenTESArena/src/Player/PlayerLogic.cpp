@@ -856,31 +856,28 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 				const WorldDouble3 hitEntityMiddlePosition(hitEntityPosition.x, hitEntityPosition.y + hitEntityBBox.halfHeight, hitEntityPosition.z);
 
 				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
-				const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
 				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
 				const int hitEntityAnimInstCurrentStateIndex = hitEntityAnimInst.currentStateIndex;				
-				const std::optional<int> hitEntityCorpseAnimStateIndex = hitEntityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
-				const bool hitEntityHasDeathAnim = hitEntityCorpseAnimStateIndex.has_value();
-				
-				// @todo use hitEntityDef.enemy.creature.hasNoCorpse since some enemies disintegrate (queueEntityDestroy) at end of death state
-				// - human enemies always leave corpse
-				const bool canHitEntityLeaveCorpse = hitEntityHasDeathAnim;
+				const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityDef.animDef);
+				const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
+				const bool isHitEntityInDeathAnim = hitEntityHasDeathAnim && hitEntityAnimInstCurrentStateIndex == *hitEntityDeathAnimStateIndex;
+				const double hitEntityAnimInstProgressPercent = hitEntityAnimInst.progressPercent;
+				const bool isHitEntityAnimStateFinished = hitEntityAnimInstProgressPercent == 1.0;
+				const bool isHitEntityDying = isHitEntityInDeathAnim && !isHitEntityAnimStateFinished;
+				const bool isHitEntityDead = isHitEntityInDeathAnim && isHitEntityAnimStateFinished && EntityUtils::leavesCorpse(hitEntityDef);
+				const bool canHitEntityBeKilled = !isHitEntityDying && !isHitEntityDead && EntityUtils::canDie(hitEntityDef);
 
-				// @todo as far as "can i hit them" is concerned, we care if 1) is not dying and 2) is not dead (i.e. death state progress == 1.0)
-				const bool isHitEntityDead = hitEntityHasDeathAnim && hitEntityAnimInstCurrentStateIndex == *hitEntityCorpseAnimStateIndex;
-
-				const EntityDefinitionType hitEntityDefType = hitEntityDef.type;
-				const bool canHitEntityDie = !isHitEntityDead && hitEntityHasDeathAnim || (hitEntityDefType == EntityDefinitionType::Citizen);
-
-				if (canHitEntityDie)
+				if (canHitEntityBeKilled)
 				{
-					const bool isHitEntityDying = random.nextBool(); // @todo actual hp dmg calculation
+					// Simulate weapon swing against them.
+					const bool canHitEntityResistDamage = hitEntityDef.type == EntityDefinitionType::Enemy; // @todo give citizens only 1 hp
+					const bool isHitEntityHpAtZero = !canHitEntityResistDamage || random.nextBool(); // @todo actual hp dmg calculation
 
-					if (isHitEntityDying)
+					if (isHitEntityHpAtZero)
 					{
 						if (hitEntityHasDeathAnim)
 						{
-							hitEntityAnimInst.setStateIndex(*hitEntityCorpseAnimStateIndex);
+							hitEntityAnimInst.setStateIndex(*hitEntityDeathAnimStateIndex);
 						}
 						else
 						{

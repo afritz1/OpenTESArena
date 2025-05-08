@@ -35,6 +35,9 @@ namespace EntityUtils
 	int getYOffset(const EntityDefinition &entityDef);
 
 	bool hasCollision(const EntityDefinition &entityDef);
+	bool canDie(const EntityDefinition &entityDef);
+	std::optional<int> tryGetDeathAnimStateIndex(const EntityAnimationDefinition &animDef);
+	bool leavesCorpse(const EntityDefinition &entityDef);
 
 	// Returns the entity definition's light radius, if any.
 	std::optional<double> tryGetLightRadius(const EntityDefinition &entityDef);

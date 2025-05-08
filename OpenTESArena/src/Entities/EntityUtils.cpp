@@ -178,6 +178,67 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 	}
 }
 
+bool EntityUtils::canDie(const EntityDefinition &entityDef)
+{
+	const EntityDefinitionType entityType = entityDef.type;
+	switch (entityType)
+	{
+	case EntityDefinitionType::Enemy:
+	case EntityDefinitionType::Citizen:
+		return true;
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Decoration:
+		return false;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
+	}
+}
+
+std::optional<int> EntityUtils::tryGetDeathAnimStateIndex(const EntityAnimationDefinition &animDef)
+{
+	const std::optional<int> deathStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
+	return deathStateIndex;
+}
+
+bool EntityUtils::leavesCorpse(const EntityDefinition &entityDef)
+{
+	const EntityDefinitionType entityType = entityDef.type;
+	switch (entityType)
+	{
+	case EntityDefinitionType::Enemy:
+	{
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+		const EnemyEntityDefinitionType enemyDefType = enemyDef.type;
+		if (enemyDefType == EnemyEntityDefinitionType::Human)
+		{
+			return true;
+		}
+		else if (enemyDefType == EnemyEntityDefinitionType::Creature)
+		{
+			return !enemyDef.creature.hasNoCorpse;
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(enemyDefType)));
+		}
+	}		
+	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Decoration:
+		return false;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
+	}
+}
+
 std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef)
 {
 	constexpr double lightUnitsRatio = MIFUtils::ARENA_UNITS / 100.0;
