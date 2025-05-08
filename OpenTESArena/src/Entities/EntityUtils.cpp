@@ -214,6 +214,8 @@ std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &ent
 
 		break;
 	}
+	default:
+		return std::nullopt;
 	}
 
 	return std::nullopt;
