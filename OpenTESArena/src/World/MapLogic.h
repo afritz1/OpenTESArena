@@ -1,5 +1,5 @@
-#ifndef MAP_LOGIC_CONTROLLER_H
-#define MAP_LOGIC_CONTROLLER_H
+#ifndef MAP_LOGIC_H
+#define MAP_LOGIC_H
 
 #include "../World/Coord.h"
 
@@ -9,7 +9,7 @@ class TextBox;
 struct RayCastHit;
 struct TransitionDefinition;
 
-namespace MapLogicController
+namespace MapLogic
 {
 	// Handles changing night-light-related things on and off.
 	void handleNightLightChange(Game &game, bool active);

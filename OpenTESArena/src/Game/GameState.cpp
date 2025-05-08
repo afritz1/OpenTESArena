@@ -30,7 +30,7 @@
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../Weather/WeatherUtils.h"
-#include "../World/MapLogicController.h"
+#include "../World/MapLogic.h"
 #include "../World/MapType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 #include "../WorldMap/LocationDefinition.h"
@@ -775,11 +775,11 @@ void GameState::tickGameClock(double dt, Game &game)
 
 	if (activateNightLights)
 	{
-		MapLogicController::handleNightLightChange(game, true);
+		MapLogic::handleNightLightChange(game, true);
 	}
 	else if (deactivateNightLights)
 	{
-		MapLogicController::handleNightLightChange(game, false);
+		MapLogic::handleNightLightChange(game, false);
 	}
 
 	// Check for changes in exterior music depending on the time.

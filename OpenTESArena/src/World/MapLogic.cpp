@@ -1,4 +1,4 @@
-#include "MapLogicController.h"
+#include "MapLogic.h"
 #include "MapType.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
@@ -14,7 +14,7 @@
 #include "../UI/TextBox.h"
 #include "../Voxels/VoxelFacing3D.h"
 
-void MapLogicController::handleNightLightChange(Game &game, bool active)
+void MapLogic::handleNightLightChange(Game &game, bool active)
 {
 	SceneManager &sceneManager = game.sceneManager;
 
@@ -49,7 +49,7 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 	renderLightChunkManager.setNightLightsActive(active, ceilingScale, entityChunkManager);
 }
 
-void MapLogicController::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
+void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
 {
 	GameState &gameState = game.gameState;
 	SceneManager &sceneManager = game.sceneManager;
@@ -106,7 +106,7 @@ void MapLogicController::handleTriggersInVoxel(Game &game, const CoordInt3 &coor
 	}
 }
 
-void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, const TransitionDefinition &transitionDef)
+void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const TransitionDefinition &transitionDef)
 {
 	const TransitionType transitionType = transitionDef.type;
 	DebugAssert(transitionType != TransitionType::InteriorLevelChange);
@@ -438,7 +438,7 @@ void MapLogicController::handleMapTransition(Game &game, const RayCastHit &hit, 
 	}
 }
 
-void MapLogicController::handleLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord)
+void MapLogic::handleLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord)
 {
 	GameState &gameState = game.gameState;
 

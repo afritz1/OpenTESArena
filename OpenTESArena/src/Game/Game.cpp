@@ -53,7 +53,7 @@
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
-#include "../World/MapLogicController.h"
+#include "../World/MapLogic.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
@@ -898,7 +898,7 @@ void Game::loop()
 
 				if (this->gameState.hasPendingLevelTransitionCalculation())
 				{
-					MapLogicController::handleLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());
+					MapLogic::handleLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());
 					this->gameState.clearLevelTransitionCalculation();
 				}
 

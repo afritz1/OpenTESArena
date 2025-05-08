@@ -4,7 +4,7 @@
 #include "PhysicsContactListener.h"
 #include "../Game/Game.h"
 #include "../Voxels/VoxelUtils.h"
-#include "../World/MapLogicController.h"
+#include "../World/MapLogic.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -79,7 +79,7 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 
 		TextBox *triggerTextBox = game.getTriggerTextBox();
 		DebugAssert(triggerTextBox != nullptr);
-		MapLogicController::handleTriggersInVoxel(game, otherSubShapeVoxelCoord, *triggerTextBox);
+		MapLogic::handleTriggersInVoxel(game, otherSubShapeVoxelCoord, *triggerTextBox);
 
 		const MapType activeMapType = gameState.getActiveMapType();
 		if (activeMapType == MapType::Interior)

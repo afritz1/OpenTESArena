@@ -17,7 +17,7 @@
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../World/CardinalDirection.h"
 #include "../World/CardinalDirectionName.h"
-#include "../World/MapLogicController.h"
+#include "../World/MapLogic.h"
 
 #include "components/utilities/String.h"
 
@@ -345,7 +345,7 @@ namespace PlayerLogic
 								const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
 								if (transitionDef.type != TransitionType::InteriorLevelChange)
 								{
-									MapLogicController::handleMapTransition(game, hit, transitionDef);
+									MapLogic::handleMapTransition(game, hit, transitionDef);
 								}
 							}
 						}
