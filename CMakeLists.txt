@@ -56,17 +56,26 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
     # Disable runtime type info (avoids linker error w/ Jolt DebugRendererSimple).
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
-    # Debug builds.
+    # Debug build.
     SET(CMAKE_CXX_FLAGS_DEBUG "-g")
 
-    # Generic release build (works with a variety of CPUs).
+    # Optimized development build with fast compilation.
     SET(CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO "-g -O3")
+
+    # Optimized release build, works with CPUs of the same arch (e.g. x86-64).
     SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "${CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO} -flto")
 
-    # Native release build for the computer compiling it.
-    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "-g -Ofast -flto -march=native")
-    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -mavx")
-    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -mfpu=neon")
+    # Max performance build only for the computer compiling it.
+    # Jolt Physics is sensitive to -ffast-math so be selective instead.
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "-g -O3 -flto -march=native")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-math-errno")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-trapping-math")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-signed-zeros")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -ffp-contract=on")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -freciprocal-math")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fapprox-func")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fassociative-math")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -ffinite-math-only")
 
     # Sanitizers (can affect performance).
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
