@@ -58,6 +58,14 @@ bool BoundingBox3D::contains(const BoundingBox3D &bbox) const
 	return containsX && containsY && containsZ;
 }
 
+bool BoundingBox3D::intersects(const BoundingBox3D &bbox) const
+{
+	const bool overlapsX = (this->min.x <= bbox.max.x) && (this->max.x >= bbox.min.x);
+	const bool overlapsY = (this->min.y <= bbox.max.y) && (this->max.y >= bbox.min.y);
+	const bool overlapsZ = (this->min.z <= bbox.max.z) && (this->max.z >= bbox.min.z);
+	return overlapsX && overlapsY && overlapsZ;
+}
+
 void BoundingBox3D::expandToInclude(const Double3 &point)
 {
 	if (point.x < this->min.x)
