@@ -16,6 +16,9 @@ struct VisibleEntityEntry
 {
 	EntityInstanceID id;
 	WorldDouble3 position;
+
+	VisibleEntityEntry(EntityInstanceID id, const WorldDouble3 &position);
+	VisibleEntityEntry();
 };
 
 struct EntityVisibilityChunk final : public Chunk

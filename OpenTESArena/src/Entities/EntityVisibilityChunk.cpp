@@ -6,6 +6,17 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
 
+VisibleEntityEntry::VisibleEntityEntry(EntityInstanceID id, const WorldDouble3 &position)
+	: position(position)
+{
+	this->id = id;
+}
+
+VisibleEntityEntry::VisibleEntityEntry()
+{
+	this->id = -1;
+}
+
 void EntityVisibilityChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
