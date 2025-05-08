@@ -129,6 +129,10 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/RayCastTypes.h"
     "${SRC_ROOT}/Collision/SelectionUtils.h")
 
+SET(TES_COMBAT
+    "${SRC_ROOT}/Combat/CombatLogic.cpp"
+    "${SRC_ROOT}/Combat/CombatLogic.h")
+
 SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/ArenaAnimUtils.cpp"
     "${SRC_ROOT}/Entities/ArenaAnimUtils.h"
@@ -674,6 +678,7 @@ SET(TES_SOURCES
     ${TES_ASSETS}
     ${TES_AUDIO}
     ${TES_COLLISION}
+    ${TES_COMBAT}
     ${TES_ENTITIES}
     ${TES_GAME}
     ${TES_INPUT}
