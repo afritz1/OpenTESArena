@@ -18,7 +18,7 @@
 #include "../Interface/GameWorldUiView.h"
 #include "../Math/Constants.h"
 #include "../Player/Player.h"
-#include "../Player/PlayerLogicController.h"
+#include "../Player/PlayerLogic.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
@@ -909,7 +909,7 @@ void GameState::tickPlayerAttack(double dt, Game &game)
 	const Int2 previousCombatMousePosition = inputManager.getPreviousCombatMousePosition();
 	const Int2 combatMouseDelta = mousePosition - previousCombatMousePosition;
 
-	PlayerLogicController::handlePlayerAttack(game, combatMouseDelta);
+	PlayerLogic::handleAttack(game, combatMouseDelta);
 }
 
 void GameState::tickVoxels(double dt, Game &game)

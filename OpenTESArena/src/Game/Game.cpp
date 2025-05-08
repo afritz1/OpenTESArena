@@ -41,7 +41,7 @@
 #include "../Items/ItemLibrary.h"
 #include "../Items/ItemMaterialLibrary.h"
 #include "../Player/PlayerInterface.h"
-#include "../Player/PlayerLogicController.h"
+#include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
@@ -826,7 +826,7 @@ void Game::loop()
 
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				const Double2 playerTurnAngleDeltas = PlayerLogicController::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), this->nativeCursorRegions);
+				const Double2 playerTurnAngleDeltas = PlayerLogic::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), this->nativeCursorRegions);
 
 				// Multiply by 100 so the values in options are more convenient.
 				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());
@@ -841,7 +841,7 @@ void Game::loop()
 					this->player.climbingState.isAccelerationValidForClimbing = false;
 				}
 				
-				const PlayerInputAcceleration inputAcceleration = PlayerLogicController::getPlayerInputAcceleration(*this, this->nativeCursorRegions);
+				const PlayerInputAcceleration inputAcceleration = PlayerLogic::getInputAcceleration(*this, this->nativeCursorRegions);
 				if (inputAcceleration.shouldResetVelocity)
 				{
 					this->player.setPhysicsVelocity(Double3::Zero);

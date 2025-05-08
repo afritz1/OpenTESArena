@@ -1,4 +1,4 @@
-#include "PlayerLogicController.h"
+#include "PlayerLogic.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Collision/ArenaSelectionUtils.h"
@@ -21,9 +21,9 @@
 
 #include "components/utilities/String.h"
 
-namespace PlayerLogicController
+namespace PlayerLogic
 {
-	PlayerInputAcceleration getPlayerInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
+	PlayerInputAcceleration getInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
 		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
 	{
 		PlayerInputAcceleration inputAcceleration;
@@ -189,8 +189,8 @@ namespace PlayerLogicController
 		return inputAcceleration;
 	}
 
-	PlayerInputAcceleration getPlayerInputAccelerationModern(Player &player, double moveSpeed, bool isOnGround, bool canJump,
-		bool isClimbing, double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
+	PlayerInputAcceleration getInputAccelerationModern(Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
+		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
 	{
 		PlayerInputAcceleration inputAcceleration;
 
@@ -603,7 +603,7 @@ PlayerInputAcceleration::PlayerInputAcceleration()
 	this->shouldResetVelocity = false;
 }
 
-Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, BufferView<const Rect> nativeCursorRegions)
+Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, BufferView<const Rect> nativeCursorRegions)
 {
 	const auto &inputManager = game.inputManager;
 
@@ -713,7 +713,7 @@ Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt, c
 	return Double2::Zero;
 }
 
-PlayerInputAcceleration PlayerLogicController::getPlayerInputAcceleration(Game &game, BufferView<const Rect> nativeCursorRegions)
+PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, BufferView<const Rect> nativeCursorRegions)
 {
 	const InputManager &inputManager = game.inputManager;
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
@@ -733,17 +733,17 @@ PlayerInputAcceleration PlayerLogicController::getPlayerInputAcceleration(Game &
 	PlayerInputAcceleration inputAcceleration;
 	if (!modernInterface)
 	{
-		inputAcceleration = PlayerLogicController::getPlayerInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, isClimbing, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
+		inputAcceleration = PlayerLogic::getInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, isClimbing, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		inputAcceleration = PlayerLogicController::getPlayerInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, isClimbing, ceilingScale, isGhostModeEnabled, inputManager);
+		inputAcceleration = PlayerLogic::getInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, isClimbing, ceilingScale, isGhostModeEnabled, inputManager);
 	}
 
 	return inputAcceleration;
 }
 
-void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelta)
+void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 {
 	Player &player = game.player;
 	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
@@ -780,7 +780,7 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 			const Double2 mouseDirection = Double2(mouseDeltaXPercent, -mouseDeltaYPercent).normalized();
 			CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(Double2(-mouseDirection.y, -mouseDirection.x));
 
-			newStateIndex = PlayerLogicController::getMeleeAnimDirectionStateIndex(weaponAnimDef, cardinalDirection);
+			newStateIndex = PlayerLogic::getMeleeAnimDirectionStateIndex(weaponAnimDef, cardinalDirection);
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::Swish;
 		}
@@ -831,7 +831,7 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	}
 }
 
-void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool isPrimaryInteraction,
+void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool isPrimaryInteraction,
 	bool debugFadeVoxel, TextBox &actionTextBox)
 {
 	SceneManager &sceneManager = game.sceneManager;

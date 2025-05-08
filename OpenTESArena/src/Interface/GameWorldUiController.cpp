@@ -14,7 +14,7 @@
 #include "../Interface/PauseMenuUiController.h"
 #include "../Interface/TextCinematicPanel.h"
 #include "../Player/Player.h"
-#include "../Player/PlayerLogicController.h"
+#include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ArenaDateUtils.h"
@@ -62,7 +62,7 @@ void GameWorldUiController::onActivate(Game &game, const Int2 &screenPoint, Text
 	constexpr bool primaryInteraction = true;
 	const auto &inputManager = game.inputManager;
 	const bool debugFadeVoxel = inputManager.keyIsDown(SDL_SCANCODE_G);
-	PlayerLogicController::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction, debugFadeVoxel, actionText);
+	PlayerLogic::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction, debugFadeVoxel, actionText);
 }
 
 void GameWorldUiController::onActivateInputAction(const InputActionCallbackValues &values, TextBox &actionText)
@@ -83,8 +83,7 @@ void GameWorldUiController::onInspect(Game &game, const Int2 &screenPoint, TextB
 {
 	constexpr bool primaryInteraction = false;
 	constexpr bool debugFadeVoxel = false;
-	PlayerLogicController::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction,
-		debugFadeVoxel, actionText);
+	PlayerLogic::handleScreenToWorldInteraction(game, screenPoint, primaryInteraction, debugFadeVoxel, actionText);
 }
 
 void GameWorldUiController::onInspectInputAction(const InputActionCallbackValues &values, TextBox &actionText)
