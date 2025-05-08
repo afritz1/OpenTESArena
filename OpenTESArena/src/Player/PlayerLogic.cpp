@@ -5,6 +5,7 @@
 #include "../Collision/Physics.h"
 #include "../Collision/RayCastTypes.h"
 #include "../Collision/SelectionUtils.h"
+#include "../Combat/CombatLogic.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Interface/GameWorldUiController.h"
@@ -522,7 +523,7 @@ namespace PlayerLogic
 								const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
 								const int keyID = triggerKeyDef.keyID;
 								player.addToKeyInventory(keyID);
-								
+
 								// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityChunkManager draw calls due to skipping scene simulation.
 								const auto callback = [&entityChunkManager, chunkPos, entityInstID]()
 								{
@@ -755,8 +756,15 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 		return;
 	}
 
-	const InputManager &inputManager = game.inputManager;
 	const Options &options = game.options;
+	const InputManager &inputManager = game.inputManager;
+	const GameState &gameState = game.gameState;
+	const double ceilingScale = gameState.getActiveCeilingScale();
+	AudioManager &audioManager = game.audioManager;
+	Random &random = game.random;
+	SceneManager &sceneManager = game.sceneManager;
+	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 
 	const bool isAttackMouseButtonDown = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 	const int weaponAnimIdleStateIndex = weaponAnimInst.currentStateIndex;
@@ -783,6 +791,112 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			newStateIndex = PlayerLogic::getMeleeAnimDirectionStateIndex(weaponAnimDef, cardinalDirection);
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::Swish;
+
+			constexpr double playerMeleeSwingRange = PlayerConstants::MELEE_HIT_RANGE;
+			constexpr double playerHitSearchRadius = PlayerConstants::MELEE_HIT_SEARCH_RADIUS;
+			constexpr double playerHalfHeight = PlayerConstants::TOP_OF_HEAD_HEIGHT / 2.0;
+			const WorldDouble3 hitSearchCenterPoint = player.getFeetPosition() + WorldDouble3(0.0, playerHalfHeight, 0.0) + (player.getGroundDirection() * playerMeleeSwingRange);
+			CombatHitSearchResult hitSearchResult;
+			CombatLogic::getHitSearchResult(hitSearchCenterPoint, playerHitSearchRadius, ceilingScale, voxelChunkManager, entityChunkManager, &hitSearchResult);
+
+			for (const WorldInt3 hitWorldVoxel : hitSearchResult.getVoxels())
+			{
+				const CoordInt3 hitVoxelCoord = VoxelUtils::worldVoxelToCoord(hitWorldVoxel);
+				const VoxelInt3 hitVoxel = hitVoxelCoord.voxel;
+				VoxelChunk &hitVoxelChunk = voxelChunkManager.getChunkAtPosition(hitVoxelCoord.chunk);
+
+				VoxelDoorDefID doorDefID;
+				if (!hitVoxelChunk.tryGetDoorDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &doorDefID))
+				{
+					continue;
+				}
+
+				// Can't hit if already open.
+				int doorAnimInstIndex;
+				if (hitVoxelChunk.tryGetDoorAnimInstIndex(hitVoxel.x, hitVoxel.y, hitVoxel.z, &doorAnimInstIndex))
+				{
+					continue;
+				}
+
+				// Can only hit if not previously unlocked.
+				bool isDoorBashable = false;
+				int triggerInstIndex;
+				if (!hitVoxelChunk.tryGetTriggerInstIndex(hitVoxel.x, hitVoxel.y, hitVoxel.z, &triggerInstIndex))
+				{
+					VoxelLockDefID lockDefID;
+					if (hitVoxelChunk.tryGetLockDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &lockDefID))
+					{
+						const LockDefinition &lockDef = hitVoxelChunk.getLockDef(lockDefID);
+						isDoorBashable = lockDef.lockLevel >= 0; // @todo don't allow key-only doors to be bashable
+					}
+				}
+
+				if (isDoorBashable)
+				{
+					const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
+					audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
+
+					DebugLog("Door bashing not implemented.");
+					if (random.nextBool())
+					{
+						/*VoxelTriggerInstance newTriggerInst;
+						newTriggerInst.init(hitVoxel.x, hitVoxel.y, hitVoxel.z);
+						hitVoxelChunk.addTriggerInst(std::move(newTriggerInst));*/
+
+						// @todo open door, add door anim, play open sound. maybe could be commonized in a MapLogic
+					}
+				}
+			}
+
+			for (const EntityInstanceID hitEntityInstID : hitSearchResult.getEntities())
+			{
+				const EntityInstance &hitEntityInst = entityChunkManager.getEntity(hitEntityInstID);
+				const WorldDouble3 hitEntityPosition = entityChunkManager.getEntityPosition(hitEntityInst.positionID);
+				const BoundingBox3D &hitEntityBBox = entityChunkManager.getEntityBoundingBox(hitEntityInst.bboxID);
+				const WorldDouble3 hitEntityMiddlePosition(hitEntityPosition.x, hitEntityPosition.y + hitEntityBBox.halfHeight, hitEntityPosition.z);
+
+				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
+				const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
+				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
+				const int hitEntityAnimInstCurrentStateIndex = hitEntityAnimInst.currentStateIndex;				
+				const std::optional<int> hitEntityCorpseAnimStateIndex = hitEntityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
+				const bool hitEntityHasDeathAnim = hitEntityCorpseAnimStateIndex.has_value();
+				
+				// @todo use hitEntityDef.enemy.creature.hasNoCorpse since some enemies disintegrate (queueEntityDestroy) at end of death state
+				// - human enemies always leave corpse
+				const bool canHitEntityLeaveCorpse = hitEntityHasDeathAnim;
+
+				// @todo as far as "can i hit them" is concerned, we care if 1) is not dying and 2) is not dead (i.e. death state progress == 1.0)
+				const bool isHitEntityDead = hitEntityHasDeathAnim && hitEntityAnimInstCurrentStateIndex == *hitEntityCorpseAnimStateIndex;
+
+				const EntityDefinitionType hitEntityDefType = hitEntityDef.type;
+				const bool canHitEntityDie = !isHitEntityDead && hitEntityHasDeathAnim || (hitEntityDefType == EntityDefinitionType::Citizen);
+
+				if (canHitEntityDie)
+				{
+					const bool isHitEntityDying = random.nextBool(); // @todo actual hp dmg calculation
+
+					if (isHitEntityDying)
+					{
+						if (hitEntityHasDeathAnim)
+						{
+							hitEntityAnimInst.setStateIndex(*hitEntityCorpseAnimStateIndex);
+						}
+						else
+						{
+							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
+						}
+						
+						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
+
+						// @todo spawn blood vfx at hit position
+					}
+					else
+					{
+						audioManager.playSound(ArenaSoundName::Clank, hitEntityMiddlePosition);
+					}
+				}				
+			}
 		}
 	}
 	else
@@ -825,7 +939,6 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 		if (sfxFilename != nullptr)
 		{
-			AudioManager &audioManager = game.audioManager;
 			audioManager.playSound(sfxFilename);
 		}
 	}

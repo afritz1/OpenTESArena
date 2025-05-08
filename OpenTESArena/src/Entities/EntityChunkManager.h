@@ -156,6 +156,7 @@ public:
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
 	// Prepares an entity for destruction later this frame, optionally notifying its chunk to remove its reference.
+	// Don't need to notify the chunk if it's being unloaded this frame.
 	void queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify);
 	void queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk);
 
