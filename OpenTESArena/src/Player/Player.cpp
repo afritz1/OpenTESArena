@@ -305,8 +305,20 @@ void Player::clearKeyInventory()
 void Player::setCameraFrame(const Double3 &forward)
 {
 	DebugAssert(forward.isNormalized());
-	this->forward = forward;
-	this->right = this->forward.cross(Double3::UnitY).normalized();
+
+	const Double3 normalizedForward = forward.normalized();
+
+	this->angleY = MathUtils::radToDeg(std::asin(-normalizedForward.y));
+
+	this->angleX = MathUtils::radToDeg(std::atan2(normalizedForward.x, normalizedForward.z));
+	if (this->angleX < 0.0) this->angleX += 360.0;
+
+	this->forward = normalizedForward;
+	this->right = Double3(
+		std::cos(MathUtils::degToRad(this->angleX)),
+		0.0,
+		-std::sin(MathUtils::degToRad(this->angleX))
+	).normalized();
 	this->up = this->right.cross(this->forward).normalized();
 }
 
@@ -405,7 +417,12 @@ WorldDouble3 Player::getFeetPosition() const
 
 Double3 Player::getGroundDirection() const
 {
-	return Double3(this->forward.x, 0.0, this->forward.z).normalized();
+	const Radians angleXRad = MathUtils::degToRad(this->angleX);
+	return Double3(
+		std::sin(angleXRad),
+		0.0,
+		std::cos(angleXRad)
+	).normalized();
 }
 
 Double2 Player::getGroundDirectionXZ() const
@@ -431,31 +448,58 @@ bool Player::isMoving() const
 
 void Player::rotateX(Degrees deltaX)
 {
-	DebugAssert(std::isfinite(this->forward.length()));
-	const Radians deltaAsRadians = MathUtils::safeDegToRad(deltaX);
-	const Quaternion quat = Quaternion::fromAxisAngle(-Double3::UnitY, deltaAsRadians) * Quaternion(this->forward, 0.0);	
-	const Double3 newForward = Double3(quat.x, quat.y, quat.z).normalized();
-	this->setCameraFrame(newForward);
+	const Degrees oldAngleX = this->angleX;
+	this->angleX = std::fmod(this->angleX + deltaX, 360.0);
+	if (this->angleX < 0.0) this->angleX += 360.0;
+
+	if (oldAngleX != this->angleX)
+	{
+		const Radians angleXRad = MathUtils::degToRad(this->angleX);
+		const Radians angleYRad = MathUtils::degToRad(this->angleY);
+
+		this->forward = Double3(
+			std::cos(angleYRad) * std::sin(angleXRad),
+			-std::sin(angleYRad),
+			std::cos(angleYRad) * std::cos(angleXRad)
+		).normalized();
+
+		this->right = Double3(
+			std::cos(angleXRad),
+			0.0,
+			-std::sin(angleXRad)
+		).normalized();
+
+		this->up = this->right.cross(this->forward).normalized();
+	}
 }
 
 void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
 {
-	DebugAssert(std::isfinite(this->forward.length()));
 	DebugAssert(pitchLimit >= 0.0);
 	DebugAssert(pitchLimit < 90.0);
 
-	const Radians deltaAsRadians = MathUtils::safeDegToRad(deltaY);
-	const Radians currentAngle = std::acos(this->forward.normalized().y);
-	const Radians requestedAngle = currentAngle - deltaAsRadians;
+	const Degrees oldAngleY = this->angleY;
+	this->angleY = std::clamp(this->angleY + deltaY, -90.0 + pitchLimit, 90.0 - pitchLimit);
 
-	// Clamp to avoid breaking cross product.
-	const Radians maxAngle = MathUtils::degToRad(90.0 - pitchLimit);
-	const Radians minAngle = MathUtils::degToRad(90.0 + pitchLimit);
-	const Radians actualDeltaAngle = (requestedAngle > minAngle) ? (currentAngle - minAngle) : ((requestedAngle < maxAngle) ? (currentAngle - maxAngle) : deltaAsRadians);
+	if (oldAngleY != this->angleY)
+	{
+		const Radians angleXRad = MathUtils::degToRad(this->angleX);
+		const Radians angleYRad = MathUtils::degToRad(this->angleY);
 
-	const Quaternion quat = Quaternion::fromAxisAngle(this->right, actualDeltaAngle) * Quaternion(this->forward, 0.0);
-	const Double3 newForward = Double3(quat.x, quat.y, quat.z).normalized();
-	this->setCameraFrame(newForward);
+		this->forward = Double3(
+			std::cos(angleYRad) * std::sin(angleXRad),
+			-std::sin(angleYRad),
+			std::cos(angleYRad) * std::cos(angleXRad)
+		).normalized();
+
+		this->right = Double3(
+			std::cos(angleXRad),
+			0.0,
+			-std::sin(angleXRad)
+		).normalized();
+
+		this->up = this->right.cross(this->forward).normalized();
+	}
 }
 
 void Player::lookAt(const WorldDouble3 &targetPosition)
