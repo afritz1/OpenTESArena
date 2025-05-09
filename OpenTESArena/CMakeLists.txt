@@ -718,27 +718,34 @@ IF (NOT APPLE)
     # Add the rest
     ADD_EXECUTABLE(otesa ${TES_SOURCES} ${TES_WIN32_RESOURCES})
 ELSE (APPLE)
-    # Info.plist properties
     SET(MACOSX_BUNDLE_LONG_VERSION_STRING ${OpenTESArena_VERSION})
     SET(MACOSX_BUNDLE_SHORT_VERSION_STRING ${OpenTESArena_VERSION})
 
-    # Icon
-    ## Find the file in source code
     SET(TES_MAC_ICON ${CMAKE_SOURCE_DIR}/macOS/OpenTESArena.icns)
-    ## Set the destination location to the standard .app location
     SET_SOURCE_FILES_PROPERTIES(${TES_MAC_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    ## Write the filename to the Info.plist file
     SET(MACOSX_BUNDLE_ICON_FILE OpenTESArena.icns)
 
-    # Copy over required files
-    # Using direct copy workaround because SET_SOURCE_FILES_PROPERTIES doesn't work recursively due to bug in CMake.
-    # See https://gitlab.kitware.com/cmake/cmake/issues/16886
-    FILE(COPY ${TES_DATA_FOLDER} DESTINATION ../otesa.app/Contents/Resources)
-    FILE(COPY ${TES_OPTIONS_FOLDER} DESTINATION ../otesa.app/Contents/Resources)
-
-    # Add the rest
-    SET(CMAKE_BUILD_RPATH "@executable_path/../Frameworks/")
     ADD_EXECUTABLE(otesa MACOSX_BUNDLE ${TES_SOURCES} ${TES_MAC_ICON})
+
+    SET(TES_RESOURCES_DESTINATION_FOLDER $<TARGET_BUNDLE_CONTENT_DIR:otesa>/Resources)
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${TES_DATA_FOLDER} ${TES_RESOURCES_DESTINATION_FOLDER}/data
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${TES_OPTIONS_FOLDER} ${TES_RESOURCES_DESTINATION_FOLDER}/options)
+
+    SET(TES_DYLIB_DESTINATION_FOLDER $<TARGET_BUNDLE_CONTENT_DIR:otesa>/Frameworks)
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${TES_DYLIB_DESTINATION_FOLDER})
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy /opt/homebrew/opt/sdl2/lib/libSDL2.dylib ${TES_DYLIB_DESTINATION_FOLDER})
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy /opt/homebrew/opt/openal-soft/lib/libopenal.dylib ${TES_DYLIB_DESTINATION_FOLDER})
+    IF (WILDMIDI_FOUND)
+        ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy /opt/homebrew/opt/wildmidi/lib/libWildMidi.dylib ${TES_DYLIB_DESTINATION_FOLDER})
+    ENDIF()
+	
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E env TES_APP_BUNDLE_PATH="$<TARGET_BUNDLE_DIR:otesa>" bash ${CMAKE_SOURCE_DIR}/macOS/fix_dylibs.sh)
 ENDIF()
 
 TARGET_INCLUDE_DIRECTORIES(otesa PUBLIC "${JoltPhysics_SOURCE_DIR}/..")
