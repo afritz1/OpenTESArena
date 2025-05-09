@@ -52,7 +52,7 @@ Controls:
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip)
 1. Extract the `.zip`
-1. Move the extracted `eawpats` folder inside the OpenTESArena `data` folder
+1. Copy the extracted `eawpats` folder inside the OpenTESArena `data` folder
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
   
 #### Run `otesa.exe`
@@ -95,7 +95,7 @@ rar x Arena106.exe
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
 1. Extract the `.tar.gz`
-1. Move the extracted `eawpats` folder inside the OpenTESArena `data` folder
+1. Copy the extracted `eawpats` folder inside the OpenTESArena `data` folder
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
 
 #### Run OpenTESArena
@@ -119,6 +119,12 @@ cd ..
 1. Open the `.dmg` and copy `otesa.app` to the `Applications` folder or another location you prefer
 1. Right-click on the .app and choose "Show Package Contents"
 1. Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier
+
+#### Music (optional)
+1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
+1. Extract the `.tar.gz`
+1. Copy the extracted `eawpats` folder inside the same `Contents/Resources/data` folder in `otesa.app`
+   - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
 
 #### Run OpenTESArena
 1. Return to the `Applications` folder or wherever you have the app installed and open `otesa.app`. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
