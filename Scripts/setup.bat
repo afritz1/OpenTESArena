@@ -323,11 +323,38 @@ if /i "%clonar%"=="S" (
     
     cd build
     
+    :: Seleccionar tipo de compilación
+    echo.
+    echo Selecciona el tipo de compilación:
+    echo 1. Debug - Para desarrollo y depuración (más lento, más información de debug)
+    echo 2. ReleaseGenericNoLTO - Compilación para lanzamiento sin optimización de enlace
+    echo 3. ReleaseGeneric - Compilación genérica optimizada (recomendada para máxima compatibilidad)
+    echo 4. ReleaseNative - Optimizada para tu CPU específica (máxima velocidad, menor compatibilidad)
+    echo.
+    set /p tipo_compilacion=Ingresa el número de tu elección (1-4): 
+
+    set "BUILD_TYPE=ReleaseGeneric"
+    if "!tipo_compilacion!"=="1" (
+        set "BUILD_TYPE=Debug"
+        echo Has seleccionado: Debug
+    ) else if "!tipo_compilacion!"=="2" (
+        set "BUILD_TYPE=ReleaseGenericNoLTO"
+        echo Has seleccionado: ReleaseGenericNoLTO
+    ) else if "!tipo_compilacion!"=="3" (
+        set "BUILD_TYPE=ReleaseGeneric"
+        echo Has seleccionado: ReleaseGeneric
+    ) else if "!tipo_compilacion!"=="4" (
+        set "BUILD_TYPE=ReleaseNative"
+        echo Has seleccionado: ReleaseNative
+    ) else (
+        echo Opción no válida. Usando ReleaseGeneric por defecto.
+    )
+    
     :: Generar archivos de proyecto con CMake
     echo Generando archivos de proyecto con CMake...
-    echo Usando: cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric ..
+    echo Usando: cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=!BUILD_TYPE! ..
     
-    cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=ReleaseGeneric ..
+    cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=!BUILD_TYPE! ..
     
     if %errorlevel% neq 0 (
         echo Error al generar los archivos de proyecto con CMake.
@@ -340,25 +367,51 @@ if /i "%clonar%"=="S" (
     
     :: Preguntar si desea abrir en Visual Studio o compilar directamente
     echo ¿Deseas abrir el proyecto en Visual Studio ahora? (S/N)
-    echo Nota: Recomendado para editar y configurar el proyecto.
+    echo Nota: Si eliges "S", el script configurará "otesa" como proyecto de inicio y abrirá Visual Studio.
     set /p abrirVS=
     
     if /i "!abrirVS!"=="S" (
-        echo Abriendo proyecto en Visual Studio...
-        start OpenTESArena.sln
+        :: Crear archivo de configuración de StartUp Project para Visual Studio
+        echo Configurando 'otesa' como proyecto de inicio...
+        
+        if not exist ".vs" mkdir ".vs"
+        if not exist ".vs\OpenTESArena" mkdir ".vs\OpenTESArena"
+        if not exist ".vs\OpenTESArena\v16" mkdir ".vs\OpenTESArena\v16"
+        
+        :: Crear archivo .suo para Visual Studio 2019 (v16)
+        echo ^<?xml version="1.0" encoding="utf-8"?^> > .vs\OpenTESArena\v16\startup.vs.xml
+        echo ^<StartUpProject xmlns="http://schemas.microsoft.com/developer/msbuild/2003"^> >> .vs\OpenTESArena\v16\startup.vs.xml
+        echo   ^<Project Name="otesa" /^> >> .vs\OpenTESArena\v16\startup.vs.xml
+        echo ^</StartUpProject^> >> .vs\OpenTESArena\v16\startup.vs.xml
+        
+        :: También crear un archivo .suo binario de respaldo con PowerShell
+        powershell -Command "& { try { $bytes = [byte[]]@(0xEF, 0xBB, 0xBF, 0x0D, 0x0A, 0x3C, 0x53, 0x74, 0x61, 0x72, 0x74, 0x55, 0x70, 0x50, 0x72, 0x6F, 0x6A, 0x65, 0x63, 0x74, 0x3E, 0x0D, 0x0A, 0x20, 0x20, 0x3C, 0x50, 0x72, 0x6F, 0x6A, 0x65, 0x63, 0x74, 0x20, 0x4E, 0x61, 0x6D, 0x65, 0x3D, 0x22, 0x6F, 0x74, 0x65, 0x73, 0x61, 0x22, 0x20, 0x2F, 0x3E, 0x0D, 0x0A, 0x3C, 0x2F, 0x53, 0x74, 0x61, 0x72, 0x74, 0x55, 0x70, 0x50, 0x72, 0x6F, 0x6A, 0x65, 0x63, 0x74, 0x3E); [System.IO.File]::WriteAllBytes('.vs\OpenTESArena\v16\OpenTESArena.suo', $bytes) } catch { Write-Host 'Error al crear archivo .suo' } }"
+        
+        echo ¿Deseas que Visual Studio compile automáticamente el proyecto al abrirlo? (S/N)
+        set /p autocompile=
+        
+        if /i "!autocompile!"=="S" (
+            :: Abre Visual Studio y ejecuta automáticamente la compilación
+            echo Abriendo Visual Studio y compilando automáticamente...
+            start "" "%vs_path%" OpenTESArena.sln /Build "!BUILD_TYPE!|x64"
+        ) else (
+            :: Solo abre Visual Studio con el proyecto configurado
+            echo Abriendo Visual Studio con 'otesa' configurado como proyecto de inicio...
+            start "" OpenTESArena.sln
+        )
         
         echo.
-        echo Para compilar en Visual Studio:
-        echo 1. Asegúrate de que 'otesa' esté seleccionado como proyecto de inicio (clic derecho -^> Establecer como proyecto de inicio)
-        echo 2. Selecciona Build -^> Build Solution
-        echo 3. Espera a que aparezca el mensaje 'Build: succeeded'
+        echo IMPORTANTE: Configuración en Visual Studio
+        echo - Se ha configurado 'otesa' como proyecto de inicio automáticamente
+        echo - Para compilar manualmente: Selecciona Build -^> Build Solution
+        echo - Espera a que aparezca el mensaje 'Build: succeeded'
     ) else (
         echo ¿Deseas compilar el proyecto desde la línea de comandos? (S/N)
         set /p compilarCMD=
         
         if /i "!compilarCMD!"=="S" (
             echo Compilando con CMake...
-            cmake --build . --config ReleaseGeneric
+            cmake --build . --config !BUILD_TYPE!
             
             if %errorlevel% neq 0 (
                 echo Error al compilar el proyecto.
@@ -379,9 +432,9 @@ if /i "%clonar%"=="S" (
         echo Copiando archivos necesarios...
         
         :: Determinar la ubicación del ejecutable según el tipo de compilación
-        set "EXECUTABLE_DIR=%SCRIPT_DIR%OpenTESArena\build\bin\ReleaseGeneric"
+        set "EXECUTABLE_DIR=%SCRIPT_DIR%OpenTESArena\build\bin\!BUILD_TYPE!"
         if not exist "!EXECUTABLE_DIR!" (
-            set "EXECUTABLE_DIR=%SCRIPT_DIR%OpenTESArena\build\ReleaseGeneric"
+            set "EXECUTABLE_DIR=%SCRIPT_DIR%OpenTESArena\build\!BUILD_TYPE!"
             if not exist "!EXECUTABLE_DIR!" (
                 echo No se pudo encontrar la carpeta del ejecutable.
                 echo Busca manualmente el archivo ejecutable y copia las carpetas 'data' y 'options' a ese directorio.
